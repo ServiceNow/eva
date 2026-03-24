@@ -1,0 +1,52 @@
+name: Tests
+
+on:
+  merge_group:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Required for git-auto-commit-action.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}  # Required in non-push events for git-auto-commit-action to work.
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ steps.setup-python.outputs.python-version }}-
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run pre-commit
+        id: run-pre-commit
+        continue-on-error: true
+        uses: pre-commit/action@v3.0.1
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: Apply pre-commit
+
+      - name: Run tests
+        run: pytest tests/ --cov=eva --cov-report=term-missing
+
+      - name: Fail if pre-commit failed
+        if: steps.run-pre-commit.outcome == 'failure'
+        run: exit 1

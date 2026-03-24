@@ -1,0 +1,533 @@
+{
+  "_current_date": "2026-04-14",
+  "reservations": {
+    "FAR0UM": {
+      "confirmation_number": "FAR0UM",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Lucas",
+          "last_name": "Rivera",
+          "ticket_number": "0741234567890",
+          "email": "lucas.rivera@gmail.com",
+          "phone": "+1-919-555-1912",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK302_20260414",
+          "fare_class": "main_cabin",
+          "fare_paid": 389.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK302",
+              "date": "2026-04-14",
+              "fare_paid": 389.0,
+              "seat": "22C",
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-03-02T14:18:00-08:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK302_20260414": {
+      "journey_id": "FL_SK302_20260414",
+      "date": "2026-04-14",
+      "origin": "SFO",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 255,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK302",
+          "origin": "SFO",
+          "destination": "ORD",
+          "scheduled_departure": "10:30",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "16:45",
+          "destination_utc_offset": -6,
+          "duration_minutes": 255,
+          "aircraft_type": "737-800",
+          "status": "cancelled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": "mechanical",
+          "gate": "C12",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": null,
+            "main_cabin": null,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "cancelled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": null,
+        "main_cabin": null,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK460_SK511_20260414": {
+      "journey_id": "FL_SK460_SK511_20260414",
+      "date": "2026-04-14",
+      "origin": "SFO",
+      "destination": "ORD",
+      "num_stops": 1,
+      "total_duration_minutes": 355,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK460",
+          "origin": "SFO",
+          "destination": "DEN",
+          "scheduled_departure": "10:50",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "14:05",
+          "destination_utc_offset": -7,
+          "duration_minutes": 135,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B4",
+          "available_seats": {
+            "basic_economy": 9,
+            "main_cabin": 0,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 169.0,
+            "main_cabin": 239.0,
+            "premium_economy": 459.0,
+            "business": 899.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        },
+        {
+          "segment_number": 2,
+          "flight_number": "SK511",
+          "origin": "DEN",
+          "destination": "ORD",
+          "scheduled_departure": "15:05",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "18:45",
+          "destination_utc_offset": -6,
+          "duration_minutes": 160,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A18",
+          "available_seats": {
+            "basic_economy": 10,
+            "main_cabin": 0,
+            "premium_economy": 3,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 179.0,
+            "main_cabin": 269.0,
+            "premium_economy": 489.0,
+            "business": 949.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 348.0,
+        "main_cabin": 508.0,
+        "premium_economy": 948.0,
+        "business": 1848.0,
+        "first": null
+      }
+    },
+    "FL_SK410_20260414": {
+      "journey_id": "FL_SK410_20260414",
+      "date": "2026-04-14",
+      "origin": "SFO",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 250,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK410",
+          "origin": "SFO",
+          "destination": "ORD",
+          "scheduled_departure": "13:30",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "19:40",
+          "destination_utc_offset": -6,
+          "duration_minutes": 250,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "D7",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 4,
+            "premium_economy": 2,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 279.0,
+            "main_cabin": 419.0,
+            "premium_economy": 689.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 279.0,
+        "main_cabin": 419.0,
+        "premium_economy": 689.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK430_20260414": {
+      "journey_id": "FL_SK430_20260414",
+      "date": "2026-04-14",
+      "origin": "SFO",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 250,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK430",
+          "origin": "SFO",
+          "destination": "ORD",
+          "scheduled_departure": "15:45",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "21:50",
+          "destination_utc_offset": -6,
+          "duration_minutes": 250,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C6",
+          "available_seats": {
+            "basic_economy": 3,
+            "main_cabin": 9,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 319.0,
+            "main_cabin": 479.0,
+            "premium_economy": 759.0,
+            "business": 1299.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 319.0,
+        "main_cabin": 479.0,
+        "premium_economy": 759.0,
+        "business": 1299.0,
+        "first": null
+      }
+    },
+    "FL_SK460_20260414": {
+      "journey_id": "FL_SK460_20260414",
+      "date": "2026-04-14",
+      "origin": "SFO",
+      "destination": "DEN",
+      "num_stops": 0,
+      "total_duration_minutes": 135,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK460",
+          "origin": "SFO",
+          "destination": "DEN",
+          "scheduled_departure": "10:50",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "14:05",
+          "destination_utc_offset": -7,
+          "duration_minutes": 135,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B4",
+          "available_seats": {
+            "basic_economy": 9,
+            "main_cabin": 7,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 169.0,
+            "main_cabin": 239.0,
+            "premium_economy": 459.0,
+            "business": 899.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 169.0,
+        "main_cabin": 239.0,
+        "premium_economy": 459.0,
+        "business": 899.0,
+        "first": null
+      }
+    },
+    "FL_SK511_20260414": {
+      "journey_id": "FL_SK511_20260414",
+      "date": "2026-04-14",
+      "origin": "DEN",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 160,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK511",
+          "origin": "DEN",
+          "destination": "ORD",
+          "scheduled_departure": "15:05",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "18:45",
+          "destination_utc_offset": -6,
+          "duration_minutes": 160,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A18",
+          "available_seats": {
+            "basic_economy": 10,
+            "main_cabin": 8,
+            "premium_economy": 3,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 179.0,
+            "main_cabin": 269.0,
+            "premium_economy": 489.0,
+            "business": 949.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 179.0,
+        "main_cabin": 269.0,
+        "premium_economy": 489.0,
+        "business": 949.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {
+    "SK302_2026-04-14": {
+      "flight_number": "SK302",
+      "date": "2026-04-14",
+      "disruption_type": "cancellation",
+      "cause": "mechanical",
+      "cause_category": "airline_fault",
+      "is_irrops": true,
+      "delay_minutes": null,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "refund_option": true,
+        "meal_voucher": true,
+        "hotel_accommodation": false,
+        "rebooking_window_days": 7
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

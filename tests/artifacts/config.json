@@ -1,0 +1,32 @@
+{
+  "run_id": "2026-02-25_05-17-58.773402",
+  "dataset_path": "data/airline.jsonl",
+  "tool_mocks_path": "data/airline",
+  "pipeline": {
+    "llm_model": "gpt-5.2",
+    "stt_model": "cartesia",
+    "tts_model": "cartesia",
+    "llm_params": {},
+    "stt_params": {
+      "model": "ink-whisper"
+    },
+    "tts_params": {}
+  },
+  "agent_config_path": "configs/agents/airline_agent.yaml",
+  "tool_module_path": null,
+  "run_mode": "simulations",
+  "max_rerun_attempts": 3,
+  "validation_thresholds": {
+    "conversation_finished": 1.0,
+    "user_behavioral_fidelity": 1.0,
+    "user_speech_fidelity": 0.7
+  },
+  "metrics_to_run": null,
+  "debug": true,
+  "record_ids": null,
+  "max_concurrent_conversations": 1,
+  "conversation_timeout_seconds": 360,
+  "output_dir": "output",
+  "base_port": 10000,
+  "port_pool_size": 150
+}

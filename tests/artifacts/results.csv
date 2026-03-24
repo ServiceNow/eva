@@ -1,0 +1,2 @@
+record_id,completed,duration_seconds,num_turns,num_tool_calls,ended_reason,error
+1.1.2,true,264.25,9,5,goodbye,

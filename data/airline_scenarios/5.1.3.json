@@ -1,0 +1,501 @@
+{
+  "_current_date": "2026-04-18",
+  "reservations": {
+    "Z5OROH": {
+      "ancillaries": {
+        "bags_fee": 35.0,
+        "seat_selection_fee": 25.0
+      },
+      "booking_date": "2026-03-10T14:22:00-08:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 320.0,
+          "journey_id": "FL_SK490_20260420",
+          "segments": [
+            {
+              "bags_checked": 1,
+              "date": "2026-04-20",
+              "fare_paid": 320.0,
+              "flight_number": "SK490",
+              "meal_request": null,
+              "seat": "18C"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "Z5OROH",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "robert.white@gmail.com",
+          "first_name": "Robert",
+          "last_name": "White",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-501-555-6124",
+          "seat_preference": "aisle",
+          "ticket_number": "1173456789012"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK490_20260420": {
+      "bookable": false,
+      "date": "2026-04-20",
+      "destination": "SFO",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": null,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK490_20260420",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": "operational",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SFO",
+          "destination_utc_offset": -7,
+          "duration_minutes": 125,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": null,
+            "premium_economy": null
+          },
+          "flight_number": "SK490",
+          "gate": "C12",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "14:45",
+          "scheduled_departure": "12:40",
+          "segment_number": 1,
+          "status": "cancelled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "cancelled",
+      "total_duration_minutes": 125
+    },
+    "FL_SK492_20260420": {
+      "bookable": false,
+      "date": "2026-04-20",
+      "destination": "SFO",
+      "fares": {
+        "basic_economy": 210.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 260.0,
+        "premium_economy": 540.0
+      },
+      "journey_id": "FL_SK492_20260420",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 9,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 14,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SFO",
+          "destination_utc_offset": -7,
+          "duration_minutes": 130,
+          "fares": {
+            "basic_economy": 210.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 260.0,
+            "premium_economy": 540.0
+          },
+          "flight_number": "SK492",
+          "gate": "B7",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "17:20",
+          "scheduled_departure": "15:10",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 130
+    },
+    "FL_SK496_20260420": {
+      "bookable": false,
+      "date": "2026-04-20",
+      "destination": "SFO",
+      "fares": {
+        "basic_economy": 245.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 315.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK496_20260420",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "737-900",
+          "available_seats": {
+            "basic_economy": 3,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 6,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SFO",
+          "destination_utc_offset": -7,
+          "duration_minutes": 135,
+          "fares": {
+            "basic_economy": 245.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 315.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK496",
+          "gate": "C3",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "21:40",
+          "scheduled_departure": "19:25",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 135
+    },
+    "FL_SK501_20260420": {
+      "bookable": false,
+      "date": "2026-04-20",
+      "destination": "PDX",
+      "fares": {
+        "basic_economy": 120.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 155.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK501_20260420",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 12,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 7,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "PDX",
+          "destination_utc_offset": -7,
+          "duration_minutes": 55,
+          "fares": {
+            "basic_economy": 120.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 155.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK501",
+          "gate": "A9",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "12:00",
+          "scheduled_departure": "11:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 55
+    },
+    "FL_SK501_SK650_20260420": {
+      "bookable": false,
+      "date": "2026-04-20",
+      "destination": "SFO",
+      "fares": {
+        "basic_economy": 260.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 340.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK501_SK650_20260420",
+      "num_stops": 1,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 12,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 7,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "PDX",
+          "destination_utc_offset": -7,
+          "duration_minutes": 55,
+          "fares": {
+            "basic_economy": 120.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 155.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK501",
+          "gate": "A9",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "12:00",
+          "scheduled_departure": "11:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        },
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 1,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SFO",
+          "destination_utc_offset": -7,
+          "duration_minutes": 85,
+          "fares": {
+            "basic_economy": 140.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 185.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK650",
+          "gate": "D4",
+          "origin": "PDX",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "14:30",
+          "scheduled_departure": "13:05",
+          "segment_number": 2,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 260
+    },
+    "FL_SK650_20260420": {
+      "bookable": false,
+      "date": "2026-04-20",
+      "destination": "SFO",
+      "fares": {
+        "basic_economy": 140.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 185.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK650_20260420",
+      "num_stops": 0,
+      "origin": "PDX",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 1,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SFO",
+          "destination_utc_offset": -7,
+          "duration_minutes": 85,
+          "fares": {
+            "basic_economy": 140.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 185.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK650",
+          "gate": "D4",
+          "origin": "PDX",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "14:30",
+          "scheduled_departure": "13:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 85
+    }
+  },
+  "disruptions": {
+    "SK490_2026-04-20": {
+      "cause": "operational",
+      "cause_category": "airline_fault",
+      "date": "2026-04-20",
+      "delay_minutes": null,
+      "disruption_type": "cancellation",
+      "flight_number": "SK490",
+      "is_irrops": true,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "hotel_accommodation": false,
+        "meal_voucher": true,
+        "rebooking_window_days": 7,
+        "refund_option": true
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

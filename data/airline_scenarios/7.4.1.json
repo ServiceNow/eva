@@ -1,0 +1,129 @@
+{
+  "_current_date": "2026-04-28",
+  "reservations": {
+    "383S8U": {
+      "confirmation_number": "383S8U",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Mina",
+          "last_name": "Park",
+          "ticket_number": "1801234567890",
+          "email": "mina.park@example.com",
+          "phone": "+1-415-555-0134",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "no_preference"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK814_20260429",
+          "fare_class": "main_cabin",
+          "fare_paid": 312.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK814",
+              "date": "2026-04-29",
+              "fare_paid": 312.0,
+              "seat": "22C",
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-03-02T09:18:00-08:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK814_20260429": {
+      "journey_id": "FL_SK814_20260429",
+      "date": "2026-04-29",
+      "origin": "SFO",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 95,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK814",
+          "origin": "SFO",
+          "destination": "LAX",
+          "scheduled_departure": "09:10",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "10:45",
+          "destination_utc_offset": -8,
+          "duration_minutes": 95,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C12",
+          "available_seats": {
+            "basic_economy": 18,
+            "main_cabin": 42,
+            "premium_economy": 10,
+            "business": 6,
+            "first": 2
+          },
+          "fares": {
+            "basic_economy": 169.0,
+            "main_cabin": 229.0,
+            "premium_economy": 489.0,
+            "business": 899.0,
+            "first": 1599.0
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 169.0,
+        "main_cabin": 229.0,
+        "premium_economy": 489.0,
+        "business": 899.0,
+        "first": 1599.0
+      }
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

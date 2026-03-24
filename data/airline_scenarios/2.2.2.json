@@ -1,0 +1,533 @@
+{
+  "_current_date": "2026-08-08",
+  "reservations": {
+    "MZ30GI": {
+      "confirmation_number": "MZ30GI",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Hannah",
+          "last_name": "Foster",
+          "ticket_number": "0812345678901",
+          "email": "hannah.foster@example.com",
+          "phone": "+1-917-555-0148",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK877_20260808",
+          "fare_class": "main_cabin",
+          "fare_paid": 389.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK877",
+              "date": "2026-08-08",
+              "fare_paid": 389.0,
+              "seat": "22C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-07-14T10:22:00-04:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 35.0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK877_20260808": {
+      "journey_id": "FL_SK877_20260808",
+      "date": "2026-08-08",
+      "origin": "JFK",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 375,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK877",
+          "origin": "JFK",
+          "destination": "LAX",
+          "scheduled_departure": "18:30",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "21:45",
+          "destination_utc_offset": -7,
+          "duration_minutes": 375,
+          "aircraft_type": "A321neo",
+          "status": "delayed",
+          "delay_minutes": 300,
+          "delay_reason": "mechanical",
+          "cancellation_reason": null,
+          "gate": "B42",
+          "available_seats": {
+            "basic_economy": 3,
+            "main_cabin": 2,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 279.0,
+            "main_cabin": 389.0,
+            "premium_economy": 649.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "delayed",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 279.0,
+        "main_cabin": 389.0,
+        "premium_economy": 649.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK915_20260808": {
+      "journey_id": "FL_SK915_20260808",
+      "date": "2026-08-08",
+      "origin": "JFK",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 380,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK915",
+          "origin": "JFK",
+          "destination": "LAX",
+          "scheduled_departure": "18:00",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "21:20",
+          "destination_utc_offset": -7,
+          "duration_minutes": 380,
+          "aircraft_type": "B737-900ER",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C11",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 6,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": null,
+            "main_cabin": 529.0,
+            "premium_economy": 799.0,
+            "business": 1299.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": null,
+        "main_cabin": 529.0,
+        "premium_economy": 799.0,
+        "business": 1299.0,
+        "first": null
+      }
+    },
+    "FL_SK640_SK221_20260808": {
+      "journey_id": "FL_SK640_SK221_20260808",
+      "date": "2026-08-08",
+      "origin": "JFK",
+      "destination": "LAX",
+      "num_stops": 1,
+      "total_duration_minutes": 510,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK640",
+          "origin": "JFK",
+          "destination": "DEN",
+          "scheduled_departure": "16:30",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "18:45",
+          "destination_utc_offset": -6,
+          "duration_minutes": 255,
+          "aircraft_type": "B737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B18",
+          "available_seats": {
+            "basic_economy": 2,
+            "main_cabin": 4,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 160.0,
+            "main_cabin": 220.0,
+            "premium_economy": 520.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        },
+        {
+          "segment_number": 2,
+          "flight_number": "SK221",
+          "origin": "DEN",
+          "destination": "LAX",
+          "scheduled_departure": "19:50",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "23:30",
+          "destination_utc_offset": -7,
+          "duration_minutes": 280,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A07",
+          "available_seats": {
+            "basic_economy": 1,
+            "main_cabin": 4,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 140.0,
+            "main_cabin": 210.0,
+            "premium_economy": 480.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 300.0,
+        "main_cabin": 430.0,
+        "premium_economy": 1000.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK640_20260808": {
+      "journey_id": "FL_SK640_20260808",
+      "date": "2026-08-08",
+      "origin": "JFK",
+      "destination": "DEN",
+      "num_stops": 0,
+      "total_duration_minutes": 255,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK640",
+          "origin": "JFK",
+          "destination": "DEN",
+          "scheduled_departure": "16:30",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "18:45",
+          "destination_utc_offset": -6,
+          "duration_minutes": 255,
+          "aircraft_type": "B737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B18",
+          "available_seats": {
+            "basic_economy": 2,
+            "main_cabin": 4,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 160.0,
+            "main_cabin": 220.0,
+            "premium_economy": 520.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 160.0,
+        "main_cabin": 220.0,
+        "premium_economy": 520.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK221_20260808": {
+      "journey_id": "FL_SK221_20260808",
+      "date": "2026-08-08",
+      "origin": "DEN",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 280,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK221",
+          "origin": "DEN",
+          "destination": "LAX",
+          "scheduled_departure": "19:50",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "23:30",
+          "destination_utc_offset": -7,
+          "duration_minutes": 280,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A07",
+          "available_seats": {
+            "basic_economy": 1,
+            "main_cabin": 4,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 140.0,
+            "main_cabin": 210.0,
+            "premium_economy": 480.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 140.0,
+        "main_cabin": 210.0,
+        "premium_economy": 480.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK903_20260808": {
+      "journey_id": "FL_SK903_20260808",
+      "date": "2026-08-08",
+      "origin": "JFK",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 380,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK903",
+          "origin": "JFK",
+          "destination": "LAX",
+          "scheduled_departure": "20:15",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "23:35",
+          "destination_utc_offset": -7,
+          "duration_minutes": 380,
+          "aircraft_type": "A321",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "D06",
+          "available_seats": {
+            "basic_economy": 2,
+            "main_cabin": 7,
+            "premium_economy": 2,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 240.0,
+            "main_cabin": 499.0,
+            "premium_economy": 780.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 240.0,
+        "main_cabin": 499.0,
+        "premium_economy": 780.0,
+        "business": null,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {
+    "SK877_2026-08-08": {
+      "flight_number": "SK877",
+      "date": "2026-08-08",
+      "disruption_type": "delay",
+      "cause": "mechanical",
+      "cause_category": "airline_fault",
+      "is_irrops": true,
+      "delay_minutes": 300,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "refund_option": true,
+        "meal_voucher": true,
+        "hotel_accommodation": false,
+        "rebooking_window_days": 7
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

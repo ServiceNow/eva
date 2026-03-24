@@ -1,0 +1,402 @@
+{
+  "_current_date": "2026-06-05",
+  "reservations": {
+    "A83QV2": {
+      "confirmation_number": "A83QV2",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Dennis",
+          "last_name": "Baker",
+          "ticket_number": "0741234567890",
+          "email": "dennis.baker@gmail.com",
+          "phone": "+1-501-555-8346",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK745_20260605",
+          "fare_class": "main_cabin",
+          "fare_paid": 320.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK745",
+              "date": "2026-06-05",
+              "fare_paid": 320.0,
+              "seat": "22C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-05-10T09:14:00-07:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 18.0,
+        "bags_fee": 35.0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK745_20260605": {
+      "journey_id": "FL_SK745_20260605",
+      "date": "2026-06-05",
+      "origin": "SFO",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 125,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK745",
+          "origin": "SFO",
+          "destination": "SEA",
+          "scheduled_departure": "15:00",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "17:05",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "aircraft_type": "737-800",
+          "status": "delayed",
+          "delay_minutes": 240,
+          "delay_reason": "mechanical",
+          "cancellation_reason": null,
+          "gate": "C12",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 210.0,
+            "main_cabin": 320.0,
+            "premium_economy": 620.0,
+            "business": 1150.0,
+            "first": 2100.0
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "delayed",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 210.0,
+        "main_cabin": 320.0,
+        "premium_economy": 620.0,
+        "business": 1150.0,
+        "first": 2100.0
+      }
+    },
+    "FL_SK650_20260605": {
+      "journey_id": "FL_SK650_20260605",
+      "date": "2026-06-05",
+      "origin": "SFO",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 125,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK650",
+          "origin": "SFO",
+          "destination": "SEA",
+          "scheduled_departure": "14:10",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "16:15",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "aircraft_type": "737-700",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C2",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 220.0,
+            "main_cabin": 345.0,
+            "premium_economy": 660.0,
+            "business": 1220.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 220.0,
+        "main_cabin": 345.0,
+        "premium_economy": 660.0,
+        "business": 1220.0,
+        "first": null
+      }
+    },
+    "FL_SK901_20260605": {
+      "journey_id": "FL_SK901_20260605",
+      "date": "2026-06-05",
+      "origin": "SFO",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 125,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK901",
+          "origin": "SFO",
+          "destination": "SEA",
+          "scheduled_departure": "18:30",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "20:35",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "aircraft_type": "A220-300",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "D4",
+          "available_seats": {
+            "basic_economy": 2,
+            "main_cabin": 7,
+            "premium_economy": 3,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 250.0,
+            "main_cabin": 360.0,
+            "premium_economy": 690.0,
+            "business": 1280.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 250.0,
+        "main_cabin": 360.0,
+        "premium_economy": 690.0,
+        "business": 1280.0,
+        "first": null
+      }
+    },
+    "FL_SK925_20260605": {
+      "journey_id": "FL_SK925_20260605",
+      "date": "2026-06-05",
+      "origin": "SFO",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 130,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK925",
+          "origin": "SFO",
+          "destination": "SEA",
+          "scheduled_departure": "19:10",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "21:20",
+          "destination_utc_offset": -8,
+          "duration_minutes": 130,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B9",
+          "available_seats": {
+            "basic_economy": 3,
+            "main_cabin": 0,
+            "premium_economy": 2,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 260.0,
+            "main_cabin": 395.0,
+            "premium_economy": 730.0,
+            "business": 1390.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 260.0,
+        "main_cabin": 395.0,
+        "premium_economy": 730.0,
+        "business": 1390.0,
+        "first": null
+      }
+    },
+    "FL_SK980_20260605": {
+      "journey_id": "FL_SK980_20260605",
+      "date": "2026-06-05",
+      "origin": "SFO",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 125,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK980",
+          "origin": "SFO",
+          "destination": "SEA",
+          "scheduled_departure": "20:30",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "22:35",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A3",
+          "available_seats": {
+            "basic_economy": 12,
+            "main_cabin": 5,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 230.0,
+            "main_cabin": 450.0,
+            "premium_economy": 820.0,
+            "business": 1550.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 230.0,
+        "main_cabin": 450.0,
+        "premium_economy": 820.0,
+        "business": 1550.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {
+    "SK745_2026-06-05": {
+      "flight_number": "SK745",
+      "date": "2026-06-05",
+      "disruption_type": "delay",
+      "cause": "mechanical",
+      "cause_category": "airline_fault",
+      "is_irrops": true,
+      "delay_minutes": 240,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "refund_option": true,
+        "meal_voucher": true,
+        "hotel_accommodation": false,
+        "rebooking_window_days": 7
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

@@ -1,0 +1,630 @@
+{
+  "_current_date": "2026-06-30",
+  "reservations": {
+    "N53W23": {
+      "confirmation_number": "N53W23",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Natalie",
+          "last_name": "Cruz",
+          "ticket_number": "0812345678901",
+          "email": "natalie.cruz@example.com",
+          "phone": "+1-617-555-0139",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "no_preference"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK610_20260630",
+          "fare_class": "main_cabin",
+          "fare_paid": 389.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK610",
+              "date": "2026-06-30",
+              "fare_paid": 389.0,
+              "seat": "22C",
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-05-12T14:22:00-04:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK610_20260630": {
+      "journey_id": "FL_SK610_20260630",
+      "date": "2026-06-30",
+      "origin": "BOS",
+      "destination": "DFW",
+      "num_stops": 0,
+      "total_duration_minutes": 270,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK610",
+          "origin": "BOS",
+          "destination": "DFW",
+          "scheduled_departure": "14:30",
+          "estimated_departure": "17:30",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "18:00",
+          "estimated_arrival": "21:00",
+          "destination_utc_offset": -5,
+          "duration_minutes": 270,
+          "aircraft_type": "A320",
+          "status": "delayed",
+          "delay_minutes": 180,
+          "delay_reason": "crew",
+          "cancellation_reason": null,
+          "gate": "B12",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 12,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 259.0,
+            "main_cabin": 389.0,
+            "premium_economy": 679.0,
+            "business": 1190.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "delayed",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 259.0,
+        "main_cabin": 389.0,
+        "premium_economy": 679.0,
+        "business": 1190.0,
+        "first": null
+      }
+    },
+    "FL_SK612_20260630": {
+      "journey_id": "FL_SK612_20260630",
+      "date": "2026-06-30",
+      "origin": "BOS",
+      "destination": "DFW",
+      "num_stops": 0,
+      "total_duration_minutes": 265,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK612",
+          "origin": "BOS",
+          "destination": "DFW",
+          "scheduled_departure": "12:10",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "15:35",
+          "destination_utc_offset": -5,
+          "duration_minutes": 265,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C19",
+          "available_seats": {
+            "basic_economy": 18,
+            "main_cabin": 22,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 245.0,
+            "main_cabin": 410.0,
+            "premium_economy": 720.0,
+            "business": 1280.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 245.0,
+        "main_cabin": 410.0,
+        "premium_economy": 720.0,
+        "business": 1280.0,
+        "first": null
+      }
+    },
+    "FL_SK614_20260630": {
+      "journey_id": "FL_SK614_20260630",
+      "date": "2026-06-30",
+      "origin": "BOS",
+      "destination": "DFW",
+      "num_stops": 0,
+      "total_duration_minutes": 275,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK614",
+          "origin": "BOS",
+          "destination": "DFW",
+          "scheduled_departure": "16:05",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "19:40",
+          "destination_utc_offset": -5,
+          "duration_minutes": 275,
+          "aircraft_type": "A321",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": null,
+          "available_seats": {
+            "basic_economy": 9,
+            "main_cabin": 18,
+            "premium_economy": 6,
+            "business": 3,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 279.0,
+            "main_cabin": 455.0,
+            "premium_economy": 760.0,
+            "business": 1360.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 279.0,
+        "main_cabin": 455.0,
+        "premium_economy": 760.0,
+        "business": 1360.0,
+        "first": null
+      }
+    },
+    "FL_SK620_20260630": {
+      "journey_id": "FL_SK620_20260630",
+      "date": "2026-06-30",
+      "origin": "BOS",
+      "destination": "DFW",
+      "num_stops": 0,
+      "total_duration_minutes": 280,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK620",
+          "origin": "BOS",
+          "destination": "DFW",
+          "scheduled_departure": "19:10",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "22:50",
+          "destination_utc_offset": -5,
+          "duration_minutes": 280,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A7",
+          "available_seats": {
+            "basic_economy": 14,
+            "main_cabin": 22,
+            "premium_economy": 8,
+            "business": 4,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 239.0,
+            "main_cabin": 365.0,
+            "premium_economy": 690.0,
+            "business": 1225.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 239.0,
+        "main_cabin": 365.0,
+        "premium_economy": 690.0,
+        "business": 1225.0,
+        "first": null
+      }
+    },
+    "FL_SK630_SK631_20260630": {
+      "journey_id": "FL_SK630_SK631_20260630",
+      "date": "2026-06-30",
+      "origin": "BOS",
+      "destination": "DFW",
+      "num_stops": 1,
+      "total_duration_minutes": 420,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK630",
+          "origin": "BOS",
+          "destination": "CLT",
+          "scheduled_departure": "11:20",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "13:25",
+          "destination_utc_offset": -4,
+          "duration_minutes": 125,
+          "aircraft_type": "E175",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B3",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 7,
+            "premium_economy": 2,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 140.0,
+            "main_cabin": 215.0,
+            "premium_economy": 420.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        },
+        {
+          "segment_number": 2,
+          "flight_number": "SK631",
+          "origin": "CLT",
+          "destination": "DFW",
+          "scheduled_departure": "14:35",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "16:55",
+          "destination_utc_offset": -5,
+          "duration_minutes": 200,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "E11",
+          "available_seats": {
+            "basic_economy": 3,
+            "main_cabin": 5,
+            "premium_economy": 1,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 155.0,
+            "main_cabin": 255.0,
+            "premium_economy": 480.0,
+            "business": 890.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 310.0,
+        "main_cabin": 490.0,
+        "premium_economy": 900.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK630_20260630": {
+      "journey_id": "FL_SK630_20260630",
+      "date": "2026-06-30",
+      "origin": "BOS",
+      "destination": "CLT",
+      "num_stops": 0,
+      "total_duration_minutes": 125,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK630",
+          "origin": "BOS",
+          "destination": "CLT",
+          "scheduled_departure": "11:20",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "13:25",
+          "destination_utc_offset": -4,
+          "duration_minutes": 125,
+          "aircraft_type": "E175",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B3",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 7,
+            "premium_economy": 2,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 140.0,
+            "main_cabin": 215.0,
+            "premium_economy": 420.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 140.0,
+        "main_cabin": 215.0,
+        "premium_economy": 420.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK631_20260630": {
+      "journey_id": "FL_SK631_20260630",
+      "date": "2026-06-30",
+      "origin": "CLT",
+      "destination": "DFW",
+      "num_stops": 0,
+      "total_duration_minutes": 200,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK631",
+          "origin": "CLT",
+          "destination": "DFW",
+          "scheduled_departure": "14:35",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "16:55",
+          "destination_utc_offset": -5,
+          "duration_minutes": 200,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "E11",
+          "available_seats": {
+            "basic_economy": 3,
+            "main_cabin": 5,
+            "premium_economy": 1,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 155.0,
+            "main_cabin": 255.0,
+            "premium_economy": 480.0,
+            "business": 890.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 155.0,
+        "main_cabin": 255.0,
+        "premium_economy": 480.0,
+        "business": 890.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {
+    "SK610_2026-06-30": {
+      "flight_number": "SK610",
+      "date": "2026-06-30",
+      "disruption_type": "delay",
+      "cause": "crew",
+      "cause_category": "airline_fault",
+      "is_irrops": true,
+      "delay_minutes": 180,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "refund_option": false,
+        "meal_voucher": true,
+        "meal_voucher_tier": "2_4_hours",
+        "voucher_reason_hint": "delay_over_2_hours",
+        "hotel_accommodation": false,
+        "rebooking_window_days": 7
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

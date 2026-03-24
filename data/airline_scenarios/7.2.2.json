@@ -1,0 +1,570 @@
+{
+  "_current_date": "2026-06-12",
+  "reservations": {
+    "XGHYZ6": {
+      "ancillaries": {
+        "bags_fee": 40.0,
+        "seat_selection_fee": 15.0
+      },
+      "booking_date": "2026-05-28T09:22:00-04:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 329.0,
+          "journey_id": "FL_SK312_20260612",
+          "segments": [
+            {
+              "bags_checked": 1,
+              "date": "2026-06-12",
+              "fare_paid": 329.0,
+              "flight_number": "SK312",
+              "meal_request": null,
+              "seat": "18C"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "XGHYZ6",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "tanya.griffin@example.com",
+          "first_name": "Tanya",
+          "last_name": "Griffin",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-305-555-0148",
+          "seat_preference": "aisle",
+          "ticket_number": "1234567890123"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK312_20260612": {
+      "bookable": true,
+      "date": "2026-06-12",
+      "destination": "JFK",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": 329.0,
+        "premium_economy": 579.0
+      },
+      "journey_id": "FL_SK312_20260612",
+      "num_stops": 0,
+      "origin": "MIA",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 4,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": 45,
+          "delay_reason": "operational",
+          "destination": "JFK",
+          "destination_utc_offset": -4,
+          "duration_minutes": 190,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 329.0,
+            "premium_economy": 579.0
+          },
+          "flight_number": "SK312",
+          "gate": "D22",
+          "origin": "MIA",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "20:40",
+          "scheduled_departure": "17:30",
+          "segment_number": 1,
+          "status": "delayed",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "delayed",
+      "total_duration_minutes": 190
+    },
+    "FL_SK410_20260612": {
+      "bookable": true,
+      "date": "2026-06-12",
+      "destination": "JFK",
+      "fares": {
+        "basic_economy": null,
+        "business": 949.0,
+        "first": null,
+        "main_cabin": 389.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK410_20260612",
+      "num_stops": 0,
+      "origin": "MIA",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 3,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "JFK",
+          "destination_utc_offset": -4,
+          "duration_minutes": 185,
+          "fares": {
+            "basic_economy": null,
+            "business": 949.0,
+            "first": null,
+            "main_cabin": 389.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK410",
+          "gate": "E05",
+          "origin": "MIA",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "21:30",
+          "scheduled_departure": "18:25",
+          "segment_number": 1,
+          "status": "on_time",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 185
+    },
+    "FL_SK488_20260612": {
+      "bookable": true,
+      "date": "2026-06-12",
+      "destination": "JFK",
+      "fares": {
+        "basic_economy": 259.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 459.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK488_20260612",
+      "num_stops": 0,
+      "origin": "MIA",
+      "segments": [
+        {
+          "aircraft_type": "A321",
+          "available_seats": {
+            "basic_economy": 6,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 1,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "JFK",
+          "destination_utc_offset": -4,
+          "duration_minutes": 190,
+          "fares": {
+            "basic_economy": 259.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 459.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK488",
+          "gate": "D08",
+          "origin": "MIA",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "22:20",
+          "scheduled_departure": "19:10",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 190
+    },
+    "FL_SK520_20260612": {
+      "bookable": false,
+      "date": "2026-06-12",
+      "destination": "JFK",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": null,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK520_20260612",
+      "num_stops": 0,
+      "origin": "MIA",
+      "segments": [
+        {
+          "aircraft_type": "737-900",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "JFK",
+          "destination_utc_offset": -4,
+          "duration_minutes": 185,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": null,
+            "premium_economy": null
+          },
+          "flight_number": "SK520",
+          "gate": "F11",
+          "origin": "MIA",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "23:20",
+          "scheduled_departure": "20:15",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 185
+    },
+    "FL_SK612_20260612": {
+      "bookable": true,
+      "date": "2026-06-12",
+      "destination": "CLT",
+      "fares": {
+        "basic_economy": 139.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 199.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK612_20260612",
+      "num_stops": 0,
+      "origin": "MIA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 8,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 6,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "CLT",
+          "destination_utc_offset": -4,
+          "duration_minutes": 120,
+          "fares": {
+            "basic_economy": 139.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 199.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK612",
+          "gate": "C14",
+          "origin": "MIA",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "20:05",
+          "scheduled_departure": "18:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 120
+    },
+    "FL_SK612_SK733_20260612": {
+      "bookable": true,
+      "date": "2026-06-12",
+      "destination": "JFK",
+      "fares": {
+        "basic_economy": 288.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 428.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK612_SK733_20260612",
+      "num_stops": 1,
+      "origin": "MIA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 8,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 6,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "CLT",
+          "destination_utc_offset": -4,
+          "duration_minutes": 120,
+          "fares": {
+            "basic_economy": 139.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 199.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK612",
+          "gate": "C14",
+          "origin": "MIA",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "20:05",
+          "scheduled_departure": "18:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        },
+        {
+          "aircraft_type": "A220",
+          "available_seats": {
+            "basic_economy": 9,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 6,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "JFK",
+          "destination_utc_offset": -4,
+          "duration_minutes": 155,
+          "fares": {
+            "basic_economy": 149.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 229.0,
+            "premium_economy": 399.0
+          },
+          "flight_number": "SK733",
+          "gate": "B03",
+          "origin": "CLT",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "23:40",
+          "scheduled_departure": "21:05",
+          "segment_number": 2,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 335
+    },
+    "FL_SK733_20260612": {
+      "bookable": true,
+      "date": "2026-06-12",
+      "destination": "JFK",
+      "fares": {
+        "basic_economy": 149.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 229.0,
+        "premium_economy": 399.0
+      },
+      "journey_id": "FL_SK733_20260612",
+      "num_stops": 0,
+      "origin": "CLT",
+      "segments": [
+        {
+          "aircraft_type": "A220",
+          "available_seats": {
+            "basic_economy": 9,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 6,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "JFK",
+          "destination_utc_offset": -4,
+          "duration_minutes": 155,
+          "fares": {
+            "basic_economy": 149.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 229.0,
+            "premium_economy": 399.0
+          },
+          "flight_number": "SK733",
+          "gate": "B03",
+          "origin": "CLT",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "23:40",
+          "scheduled_departure": "21:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 155
+    }
+  },
+  "disruptions": {
+    "SK312_2026-06-12": {
+      "cause": "operational",
+      "cause_category": "airline_fault",
+      "date": "2026-06-12",
+      "delay_minutes": 45,
+      "disruption_type": "delay",
+      "flight_number": "SK312",
+      "is_irrops": false,
+      "passenger_entitled_to": {
+        "fee_waiver": false,
+        "hotel_accommodation": false,
+        "meal_voucher": false,
+        "rebooking_window_days": 0,
+        "refund_option": false
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

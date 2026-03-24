@@ -1,0 +1,502 @@
+{
+  "_current_date": "2026-08-17",
+  "reservations": {
+    "KOLTSF": {
+      "confirmation_number": "KOLTSF",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Emily",
+          "last_name": "Johansson",
+          "ticket_number": "1234567890123",
+          "email": "emily.johansson@gmail.com",
+          "phone": "+1-206-555-0334",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK801_20260814",
+          "fare_class": "main_cabin",
+          "fare_paid": 310.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK801",
+              "origin": "SEA",
+              "destination": "BOS",
+              "date": "2026-08-14",
+              "fare_paid": 310.0,
+              "seat": "22C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        },
+        {
+          "journey_id": "FL_SK890_20260820",
+          "fare_class": "main_cabin",
+          "fare_paid": 310.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK890",
+              "origin": "BOS",
+              "destination": "SEA",
+              "date": "2026-08-20",
+              "fare_paid": 310.0,
+              "seat": "23C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-05-10T09:15:00-04:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0.0,
+        "bags_fee": 35.0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK801_20260814": {
+      "journey_id": "FL_SK801_20260814",
+      "date": "2026-08-14",
+      "origin": "SEA",
+      "destination": "BOS",
+      "num_stops": 0,
+      "total_duration_minutes": 315,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK801",
+          "origin": "SEA",
+          "destination": "BOS",
+          "scheduled_departure": "08:10",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "16:25",
+          "destination_utc_offset": -4,
+          "duration_minutes": 315,
+          "aircraft_type": "737-800",
+          "status": "on_time",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "N12",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 18,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 260.0,
+            "main_cabin": 310.0,
+            "premium_economy": 640.0,
+            "business": 1150.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "on_time",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 260.0,
+        "main_cabin": 310.0,
+        "premium_economy": 640.0,
+        "business": 1150.0,
+        "first": null
+      }
+    },
+    "FL_SK890_20260820": {
+      "journey_id": "FL_SK890_20260820",
+      "date": "2026-08-20",
+      "origin": "BOS",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 380,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK890",
+          "origin": "BOS",
+          "destination": "SEA",
+          "scheduled_departure": "13:10",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "16:30",
+          "destination_utc_offset": -7,
+          "duration_minutes": 380,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B22",
+          "available_seats": {
+            "basic_economy": 8,
+            "main_cabin": 22,
+            "premium_economy": 6,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 255.0,
+            "main_cabin": 310.0,
+            "premium_economy": 690.0,
+            "business": 1200.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 255.0,
+        "main_cabin": 310.0,
+        "premium_economy": 690.0,
+        "business": 1200.0,
+        "first": null
+      }
+    },
+    "FL_SK900_20260823": {
+      "journey_id": "FL_SK900_20260823",
+      "date": "2026-08-23",
+      "origin": "BOS",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 385,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK900",
+          "origin": "BOS",
+          "destination": "SEA",
+          "scheduled_departure": "14:50",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "18:15",
+          "destination_utc_offset": -7,
+          "duration_minutes": 385,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C18",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 14,
+            "premium_economy": 3,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 275.0,
+            "main_cabin": 330.0,
+            "premium_economy": 720.0,
+            "business": 1290.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 275.0,
+        "main_cabin": 330.0,
+        "premium_economy": 720.0,
+        "business": 1290.0,
+        "first": null
+      }
+    },
+    "FL_SK904_20260823": {
+      "journey_id": "FL_SK904_20260823",
+      "date": "2026-08-23",
+      "origin": "BOS",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 390,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK904",
+          "origin": "BOS",
+          "destination": "SEA",
+          "scheduled_departure": "12:30",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "15:00",
+          "destination_utc_offset": -7,
+          "duration_minutes": 390,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B10",
+          "available_seats": {
+            "basic_economy": 9,
+            "main_cabin": 26,
+            "premium_economy": 8,
+            "business": 4,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 240.0,
+            "main_cabin": 300.0,
+            "premium_economy": 650.0,
+            "business": 1180.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 240.0,
+        "main_cabin": 300.0,
+        "premium_economy": 650.0,
+        "business": 1180.0,
+        "first": null
+      }
+    },
+    "FL_SK910_20260823": {
+      "journey_id": "FL_SK910_20260823",
+      "date": "2026-08-23",
+      "origin": "BOS",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 392,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK910",
+          "origin": "BOS",
+          "destination": "SEA",
+          "scheduled_departure": "16:20",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "19:52",
+          "destination_utc_offset": -7,
+          "duration_minutes": 392,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C02",
+          "available_seats": {
+            "basic_economy": 5,
+            "main_cabin": 11,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 325.0,
+            "main_cabin": 465.0,
+            "premium_economy": 790.0,
+            "business": 1400.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 325.0,
+        "main_cabin": 465.0,
+        "premium_economy": 790.0,
+        "business": 1400.0,
+        "first": null
+      }
+    },
+    "FL_SK920_20260823": {
+      "journey_id": "FL_SK920_20260823",
+      "date": "2026-08-23",
+      "origin": "BOS",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 388,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK920",
+          "origin": "BOS",
+          "destination": "SEA",
+          "scheduled_departure": "15:40",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "19:08",
+          "destination_utc_offset": -7,
+          "duration_minutes": 388,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A06",
+          "available_seats": {
+            "basic_economy": 2,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 260.0,
+            "main_cabin": 320.0,
+            "premium_economy": 710.0,
+            "business": 1275.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 260.0,
+        "main_cabin": 320.0,
+        "premium_economy": 710.0,
+        "business": 1275.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

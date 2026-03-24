@@ -1,0 +1,33 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.2
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+        exclude: ^website/tsconfig.*\.json$
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+  - repo: local
+    hooks:
+      - id: check-version-bump
+        name: Check simulation/metrics version bump
+        entry: python3 scripts/check_version_bump.py
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: forbid-yml-file-extension
+        name: forbid .yml file extension in favor of .yaml
+        entry: bash -c 'printf "%s\n" "$@"; exit 1' --
+        language: system
+        files: \.yml$
+      - id: forbid-jpg-file-extension
+        name: forbid .jpg file extension in favor of .jpeg
+        entry: bash -c 'printf "%s\n" "$@"; exit 1' --
+        language: system
+        files: \.jpg$

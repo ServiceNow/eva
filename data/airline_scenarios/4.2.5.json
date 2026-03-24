@@ -1,0 +1,405 @@
+{
+  "_current_date": "2026-06-02",
+  "reservations": {
+    "NTJBNE": {
+      "ancillaries": {
+        "bags_fee": 35.0,
+        "seat_selection_fee": 0.0
+      },
+      "booking_date": "2026-05-18T14:22:00-04:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 289.0,
+          "journey_id": "FL_SK410_20260602",
+          "segments": [
+            {
+              "bags_checked": 1,
+              "date": "2026-06-02",
+              "fare_paid": 289.0,
+              "flight_number": "SK410",
+              "meal_request": null,
+              "seat": "21C"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "NTJBNE",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": "gold",
+          "email": "rebecca.walker@gmail.com",
+          "first_name": "Rebecca",
+          "last_name": "Walker",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-334-555-5891",
+          "seat_preference": "aisle",
+          "ticket_number": "3012345678901"
+        }
+      ],
+      "standby_list": [],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK401_20260602": {
+      "bookable": false,
+      "date": "2026-06-02",
+      "destination": "DCA",
+      "fares": {
+        "basic_economy": 169.0,
+        "business": 909.0,
+        "first": 1699.0,
+        "main_cabin": 249.0,
+        "premium_economy": 589.0
+      },
+      "journey_id": "FL_SK401_20260602",
+      "num_stops": 0,
+      "origin": "ATL",
+      "segments": [
+        {
+          "aircraft_type": "A319",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DCA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 110,
+          "fares": {
+            "basic_economy": 169.0,
+            "business": 909.0,
+            "first": 1699.0,
+            "main_cabin": 249.0,
+            "premium_economy": 589.0
+          },
+          "flight_number": "SK401",
+          "gate": "A02",
+          "origin": "ATL",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "08:50",
+          "scheduled_departure": "07:00",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "departed",
+      "total_duration_minutes": 110
+    },
+    "FL_SK405_20260602": {
+      "bookable": true,
+      "date": "2026-06-02",
+      "destination": "DCA",
+      "fares": {
+        "basic_economy": 179.0,
+        "business": 899.0,
+        "first": 1599.0,
+        "main_cabin": 239.0,
+        "premium_economy": 559.0
+      },
+      "journey_id": "FL_SK405_20260602",
+      "num_stops": 0,
+      "origin": "ATL",
+      "segments": [
+        {
+          "aircraft_type": "A220-300",
+          "available_seats": {
+            "basic_economy": 6,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 2,
+            "premium_economy": 1
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DCA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 105,
+          "fares": {
+            "basic_economy": 179.0,
+            "business": 899.0,
+            "first": 1599.0,
+            "main_cabin": 239.0,
+            "premium_economy": 559.0
+          },
+          "flight_number": "SK405",
+          "gate": "B12",
+          "origin": "ATL",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "11:45",
+          "scheduled_departure": "10:00",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "standby_list": [
+        {
+          "confirmation_number": "ZZZZ01",
+          "passenger_id": "PAX900",
+          "position": 1
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 105
+    },
+    "FL_SK410_20260602": {
+      "bookable": true,
+      "date": "2026-06-02",
+      "destination": "DCA",
+      "fares": {
+        "basic_economy": 199.0,
+        "business": 949.0,
+        "first": null,
+        "main_cabin": 289.0,
+        "premium_economy": 619.0
+      },
+      "journey_id": "FL_SK410_20260602",
+      "num_stops": 0,
+      "origin": "ATL",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 8,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 3,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DCA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 110,
+          "fares": {
+            "basic_economy": 199.0,
+            "business": 949.0,
+            "first": null,
+            "main_cabin": 289.0,
+            "premium_economy": 619.0
+          },
+          "flight_number": "SK410",
+          "gate": "C07",
+          "origin": "ATL",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "15:20",
+          "scheduled_departure": "13:30",
+          "segment_number": 1,
+          "status": "on_time",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "on_time",
+      "total_duration_minutes": 110
+    },
+    "FL_SK415_20260602": {
+      "bookable": true,
+      "date": "2026-06-02",
+      "destination": "DCA",
+      "fares": {
+        "basic_economy": 189.0,
+        "business": 939.0,
+        "first": null,
+        "main_cabin": 269.0,
+        "premium_economy": 609.0
+      },
+      "journey_id": "FL_SK415_20260602",
+      "num_stops": 0,
+      "origin": "ATL",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 6,
+            "business": 1,
+            "first": 0,
+            "main_cabin": 4,
+            "premium_economy": 1
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DCA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 110,
+          "fares": {
+            "basic_economy": 189.0,
+            "business": 939.0,
+            "first": null,
+            "main_cabin": 269.0,
+            "premium_economy": 609.0
+          },
+          "flight_number": "SK415",
+          "gate": "B20",
+          "origin": "ATL",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "13:20",
+          "scheduled_departure": "11:30",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 110
+    },
+    "FL_SK420_20260602": {
+      "bookable": true,
+      "date": "2026-06-02",
+      "destination": "DCA",
+      "fares": {
+        "basic_economy": 219.0,
+        "business": 999.0,
+        "first": null,
+        "main_cabin": 319.0,
+        "premium_economy": 659.0
+      },
+      "journey_id": "FL_SK420_20260602",
+      "num_stops": 0,
+      "origin": "ATL",
+      "segments": [
+        {
+          "aircraft_type": "737-900",
+          "available_seats": {
+            "basic_economy": 14,
+            "business": 1,
+            "first": 0,
+            "main_cabin": 9,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DCA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 115,
+          "fares": {
+            "basic_economy": 219.0,
+            "business": 999.0,
+            "first": null,
+            "main_cabin": 319.0,
+            "premium_economy": 659.0
+          },
+          "flight_number": "SK420",
+          "gate": "C15",
+          "origin": "ATL",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "18:25",
+          "scheduled_departure": "16:30",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 115
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

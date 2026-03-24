@@ -1,0 +1,570 @@
+{
+  "_current_date": "2026-05-10",
+  "reservations": {
+    "E66N08": {
+      "confirmation_number": "E66N08",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Sharon",
+          "last_name": "Scott",
+          "ticket_number": "1804567890123",
+          "email": "sharon.scott@gmail.com",
+          "phone": "+1-662-555-8013",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK680_20260510",
+          "fare_class": "business",
+          "fare_paid": 1240.0,
+          "status": "cancelled",
+          "segments": [
+            {
+              "flight_number": "SK680",
+              "date": "2026-05-10",
+              "fare_paid": 1240.0,
+              "seat": "3C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        },
+        {
+          "journey_id": "FL_SK681_SK923_20260510",
+          "fare_class": "main_cabin",
+          "fare_paid": 530.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK681",
+              "date": "2026-05-10",
+              "fare_paid": 240.0,
+              "seat": null,
+              "bags_checked": 1,
+              "meal_request": null
+            },
+            {
+              "flight_number": "SK923",
+              "date": "2026-05-10",
+              "fare_paid": 290.0,
+              "seat": null,
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-04-22T09:18:00-04:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 40
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK680_20260510": {
+      "journey_id": "FL_SK680_20260510",
+      "date": "2026-05-10",
+      "origin": "DCA",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 360,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK680",
+          "origin": "DCA",
+          "destination": "LAX",
+          "scheduled_departure": "09:10",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "12:10",
+          "destination_utc_offset": -7,
+          "duration_minutes": 360,
+          "aircraft_type": "A321neo",
+          "status": "cancelled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": "crew",
+          "gate": "B12",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 260.0,
+            "main_cabin": 340.0,
+            "premium_economy": 690.0,
+            "business": 1240.0,
+            "first": 1980.0
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "cancelled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 260.0,
+        "main_cabin": 340.0,
+        "premium_economy": 690.0,
+        "business": 1240.0,
+        "first": 1980.0
+      }
+    },
+    "FL_SK710_20260510": {
+      "journey_id": "FL_SK710_20260510",
+      "date": "2026-05-10",
+      "origin": "DCA",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 370,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK710",
+          "origin": "DCA",
+          "destination": "LAX",
+          "scheduled_departure": "16:05",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "19:15",
+          "destination_utc_offset": -7,
+          "duration_minutes": 370,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A03",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 3,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 410.0,
+            "main_cabin": 520.0,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 410.0,
+        "main_cabin": 520.0,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK702_20260510": {
+      "journey_id": "FL_SK702_20260510",
+      "date": "2026-05-10",
+      "origin": "DCA",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 365,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK702",
+          "origin": "DCA",
+          "destination": "LAX",
+          "scheduled_departure": "10:30",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "13:35",
+          "destination_utc_offset": -7,
+          "duration_minutes": 365,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B08",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 295.0,
+            "main_cabin": 380.0,
+            "premium_economy": 740.0,
+            "business": 1385.0,
+            "first": 2200.0
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 295.0,
+        "main_cabin": 380.0,
+        "premium_economy": 740.0,
+        "business": 1385.0,
+        "first": 2200.0
+      }
+    },
+    "FL_SK699_20260510": {
+      "journey_id": "FL_SK699_20260510",
+      "date": "2026-05-10",
+      "origin": "DCA",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 355,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK699",
+          "origin": "DCA",
+          "destination": "LAX",
+          "scheduled_departure": "13:20",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "16:15",
+          "destination_utc_offset": -7,
+          "duration_minutes": 355,
+          "aircraft_type": "A321",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A09",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 320.0,
+            "main_cabin": 420.0,
+            "premium_economy": 860.0,
+            "business": 1495.0,
+            "first": 2490.0
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 320.0,
+        "main_cabin": 420.0,
+        "premium_economy": 860.0,
+        "business": 1495.0,
+        "first": 2490.0
+      }
+    },
+    "FL_SK681_20260510": {
+      "journey_id": "FL_SK681_20260510",
+      "date": "2026-05-10",
+      "origin": "DCA",
+      "destination": "DFW",
+      "num_stops": 0,
+      "total_duration_minutes": 190,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK681",
+          "origin": "DCA",
+          "destination": "DFW",
+          "scheduled_departure": "11:05",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "13:15",
+          "destination_utc_offset": -5,
+          "duration_minutes": 190,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B04",
+          "available_seats": {
+            "basic_economy": 9,
+            "main_cabin": 6,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 180.0,
+            "main_cabin": 240.0,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 180.0,
+        "main_cabin": 240.0,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK923_20260510": {
+      "journey_id": "FL_SK923_20260510",
+      "date": "2026-05-10",
+      "origin": "DFW",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 185,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK923",
+          "origin": "DFW",
+          "destination": "LAX",
+          "scheduled_departure": "19:15",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "20:20",
+          "destination_utc_offset": -7,
+          "duration_minutes": 185,
+          "aircraft_type": "737 MAX 8",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C21",
+          "available_seats": {
+            "basic_economy": 14,
+            "main_cabin": 8,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 210.0,
+            "main_cabin": 290.0,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 210.0,
+        "main_cabin": 290.0,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK681_SK923_20260510": {
+      "journey_id": "FL_SK681_SK923_20260510",
+      "date": "2026-05-10",
+      "origin": "DCA",
+      "destination": "LAX",
+      "num_stops": 1,
+      "total_duration_minutes": 795,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK681",
+          "origin": "DCA",
+          "destination": "DFW",
+          "scheduled_departure": "11:05",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "13:15",
+          "destination_utc_offset": -5,
+          "duration_minutes": 190,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B04",
+          "available_seats": {
+            "basic_economy": 9,
+            "main_cabin": 6,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 180.0,
+            "main_cabin": 240.0,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        },
+        {
+          "segment_number": 2,
+          "flight_number": "SK923",
+          "origin": "DFW",
+          "destination": "LAX",
+          "scheduled_departure": "19:15",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "20:20",
+          "destination_utc_offset": -7,
+          "duration_minutes": 185,
+          "aircraft_type": "737 MAX 8",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C21",
+          "available_seats": {
+            "basic_economy": 14,
+            "main_cabin": 8,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 210.0,
+            "main_cabin": 290.0,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 390.0,
+        "main_cabin": 530.0,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {
+    "SK680_2026-05-10": {
+      "flight_number": "SK680",
+      "date": "2026-05-10",
+      "disruption_type": "cancellation",
+      "cause": "crew",
+      "cause_category": "airline_fault",
+      "is_irrops": true,
+      "delay_minutes": null,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "refund_option": true,
+        "meal_voucher": true,
+        "hotel_accommodation": false,
+        "rebooking_window_days": 7
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

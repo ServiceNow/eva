@@ -1,0 +1,109 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "eva"
+version = "0.1.1"
+description = "End-to-end Voice Agent (EVA)"
+authors = [
+    { name = "Tara Bogavelli" },
+    { name = "Gabrielle Gauthier Melançon" },
+    { name = "Katrina Stankiewicz" },
+    { name = "Oluwanifemi Bamgbose" },
+    { name = "Hoang Nguyen" },
+    { name = "Raghav Mehndiratta" },
+    { name = "Hari Subramani" },
+]
+readme = "README.md"
+requires-python = ">=3.11,<4.0"
+license = "MIT"
+dependencies = [
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "pipecat-ai==0.0.104",
+    "elevenlabs>=1.0.0",
+    "openai>=1.0.0",
+    "anthropic>=0.83.0",
+    "litellm>=1.30.0",
+    "deepgram-sdk>=3.5.0,<4.0.0",
+    "onnxruntime>=1.16.0",
+    "aioboto3>=12.0.0",
+    "google-generativeai>=0.3.0",
+    "google-genai>=0.3.0",
+    "google-cloud-speech>=2.0.0",
+    "google-cloud-texttospeech>=2.0.0",
+    "azure-cognitiveservices-speech>=1.31.0",
+    "cartesia>=1.0.0",
+    "assemblyai>=0.17.0",
+    "setuptools>=65.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "websockets>=12.0",
+    "httpx>=0.25.0",
+    "pyyaml>=6.0",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "pydub>=0.25.0",
+    "aiofiles>=23.0",
+    "structlog>=23.0",
+    "tqdm>=4.65",
+    "python-dotenv>=1.0.0",
+    "jiwer>=3.0.0",
+    "inflect>=7.0.0",
+    "jaconv>=0.3.0",
+    "regex>=2023.0.0",
+    "more-itertools>=10.0.0",
+    "nvidia-riva-client>=2.25.0,<3.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5",
+    "pre-commit>=4.0",
+]
+apps = [
+    "pandas>=2.0",
+    "plotly>=5.0",
+    "streamlit>=1.51.0",
+    "streamlit-diff-viewer>=0.0.2",
+]
+
+[project.scripts]
+eva = "eva.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eva"]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules/
+# https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+select = ["A", "B0", "C4", "D2", "D4", "E", "F", "I"]
+ignore = ["D203", "D206", "D213", "D400", "D401", "D413", "D415", "E1", "E501"]
+
+[tool.eva]
+# Bump when simulation pipeline changes (agent, user_simulator, orchestrator,
+# simulation prompts, agent configs, tool mocks). Old outputs become stale.
+simulation_version = "0.1.0"
+# Bump when metrics pipeline changes (metrics code, judge prompts, pricing,
+# postprocessor). Old metric results become stale — cheap to recompute.
+metrics_version = "0.1.1"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true

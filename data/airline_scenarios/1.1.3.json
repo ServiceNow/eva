@@ -1,0 +1,502 @@
+{
+  "_current_date": "2026-05-30",
+  "reservations": {
+    "IM2XU4": {
+      "confirmation_number": "IM2XU4",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "David",
+          "last_name": "Okonkwo",
+          "ticket_number": "1801234567890",
+          "email": "david.okonkwo@example.com",
+          "phone": "+1-312-555-0148",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK418_20260605",
+          "fare_class": "main_cabin",
+          "fare_paid": 255.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK418",
+              "date": "2026-06-05",
+              "fare_paid": 255.0,
+              "seat": "22C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        },
+        {
+          "journey_id": "FL_SK519_20260612",
+          "fare_class": "main_cabin",
+          "fare_paid": 265.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK519",
+              "date": "2026-06-12",
+              "fare_paid": 265.0,
+              "seat": "21C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-03-10T09:42:00-05:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0.0,
+        "bags_fee": 35.0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK418_20260605": {
+      "journey_id": "FL_SK418_20260605",
+      "date": "2026-06-05",
+      "origin": "ORD",
+      "destination": "MIA",
+      "num_stops": 0,
+      "total_duration_minutes": 195,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK418",
+          "origin": "ORD",
+          "destination": "MIA",
+          "scheduled_departure": "13:10",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "17:25",
+          "destination_utc_offset": -4,
+          "duration_minutes": 195,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C12",
+          "available_seats": {
+            "basic_economy": 12,
+            "main_cabin": 18,
+            "premium_economy": 6,
+            "business": 4,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 210.0,
+            "main_cabin": 255.0,
+            "premium_economy": 540.0,
+            "business": 980.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 210.0,
+        "main_cabin": 255.0,
+        "premium_economy": 540.0,
+        "business": 980.0,
+        "first": null
+      }
+    },
+    "FL_SK519_20260612": {
+      "journey_id": "FL_SK519_20260612",
+      "date": "2026-06-12",
+      "origin": "MIA",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 205,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK519",
+          "origin": "MIA",
+          "destination": "ORD",
+          "scheduled_departure": "11:30",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "13:55",
+          "destination_utc_offset": -5,
+          "duration_minutes": 205,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "D18",
+          "available_seats": {
+            "basic_economy": 9,
+            "main_cabin": 14,
+            "premium_economy": 5,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 220.0,
+            "main_cabin": 265.0,
+            "premium_economy": 560.0,
+            "business": 1020.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 220.0,
+        "main_cabin": 265.0,
+        "premium_economy": 560.0,
+        "business": 1020.0,
+        "first": null
+      }
+    },
+    "FL_SK301_20260603": {
+      "journey_id": "FL_SK301_20260603",
+      "date": "2026-06-03",
+      "origin": "ORD",
+      "destination": "MIA",
+      "num_stops": 0,
+      "total_duration_minutes": 190,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK301",
+          "origin": "ORD",
+          "destination": "MIA",
+          "scheduled_departure": "09:20",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "13:30",
+          "destination_utc_offset": -4,
+          "duration_minutes": 190,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B7",
+          "available_seats": {
+            "basic_economy": 16,
+            "main_cabin": 22,
+            "premium_economy": 8,
+            "business": 4,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 185.0,
+            "main_cabin": 235.0,
+            "premium_economy": 520.0,
+            "business": 940.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 185.0,
+        "main_cabin": 235.0,
+        "premium_economy": 520.0,
+        "business": 940.0,
+        "first": null
+      }
+    },
+    "FL_SK333_20260603": {
+      "journey_id": "FL_SK333_20260603",
+      "date": "2026-06-03",
+      "origin": "ORD",
+      "destination": "MIA",
+      "num_stops": 0,
+      "total_duration_minutes": 195,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK333",
+          "origin": "ORD",
+          "destination": "MIA",
+          "scheduled_departure": "12:05",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "16:20",
+          "destination_utc_offset": -4,
+          "duration_minutes": 195,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C3",
+          "available_seats": {
+            "basic_economy": 8,
+            "main_cabin": 11,
+            "premium_economy": 3,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 205.0,
+            "main_cabin": 255.0,
+            "premium_economy": 545.0,
+            "business": 990.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 205.0,
+        "main_cabin": 255.0,
+        "premium_economy": 545.0,
+        "business": 990.0,
+        "first": null
+      }
+    },
+    "FL_SK357_20260603": {
+      "journey_id": "FL_SK357_20260603",
+      "date": "2026-06-03",
+      "origin": "ORD",
+      "destination": "MIA",
+      "num_stops": 0,
+      "total_duration_minutes": 200,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK357",
+          "origin": "ORD",
+          "destination": "MIA",
+          "scheduled_departure": "15:10",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "19:30",
+          "destination_utc_offset": -4,
+          "duration_minutes": 200,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C21",
+          "available_seats": {
+            "basic_economy": 3,
+            "main_cabin": 4,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 260.0,
+            "main_cabin": 345.0,
+            "premium_economy": 690.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 260.0,
+        "main_cabin": 345.0,
+        "premium_economy": 690.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK371_20260603": {
+      "journey_id": "FL_SK371_20260603",
+      "date": "2026-06-03",
+      "origin": "ORD",
+      "destination": "MIA",
+      "num_stops": 0,
+      "total_duration_minutes": 195,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK371",
+          "origin": "ORD",
+          "destination": "MIA",
+          "scheduled_departure": "18:40",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "22:55",
+          "destination_utc_offset": -4,
+          "duration_minutes": 195,
+          "aircraft_type": "A321",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B14",
+          "available_seats": {
+            "basic_economy": 10,
+            "main_cabin": 16,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 240.0,
+            "main_cabin": 315.0,
+            "premium_economy": 660.0,
+            "business": 1280.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 240.0,
+        "main_cabin": 315.0,
+        "premium_economy": 660.0,
+        "business": 1280.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

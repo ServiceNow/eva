@@ -1,0 +1,294 @@
+# A New Framework for Evaluation of Voice Agents (EVA)
+
+> *Most voice agent benchmarks evaluate either what the agent **does** or how it **sounds** — EVA evaluates both.*
+
+[![Blog Post](https://img.shields.io/badge/Blog-Post-blue?style=flat-square&logo=huggingface)](https://your-blog-link)
+[![Website](https://img.shields.io/badge/Website-EVA-green?style=flat-square&logo=googlechrome)](https://your-website-link)
+[![Leaderboard](https://img.shields.io/badge/Leaderboard-Rankings-orange?style=flat-square&logo=trophy)](https://your-leaderboard-link)
+[![Demo](https://img.shields.io/badge/Demo-Try%20It-purple?style=flat-square&logo=rocket)](https://your-demo-link)
+
+**EVA** is an open-source evaluation framework for conversational voice agents that scores complete, multi-turn spoken conversations across two fundamental dimensions:
+
+- 🎯 **EVA-A (Accuracy)** — Did the agent complete the task correctly and faithfully?
+- ✨ **EVA-X (Experience)** — Was the interaction natural, concise, and appropriate for spoken dialogue?
+
+Using a realistic **bot-to-bot architecture**, EVA runs fully automated evaluations without human listeners — end to end, from speech in to judgment out.
+
+### 📊 What's included
+- **Metrics** for both EVA-A and EVA-X, fully documented and validated with judge prompts, code, etc.
+- **50 airline scenarios** spanning flight rebooking, cancellations, vouchers, and more
+- **Results** for 20 cascade and audio-native systems (speech-to-speech models, large audio language models) — see [Experiment Setup](docs/experiment_setup.md) for model configurations.
+
+### 🔍 Key finding
+Agents that score well on task completion tend to score worse on conversational experience — and vice versa. **The accuracy–experience tradeoff is real, consistent, and previously unmeasured.**
+
+<details>
+<summary><h2>Quick Start</h2></summary>
+
+### Installation
+
+We recommend using [uv](https://docs.astral.sh/uv/) for fast, reliable dependency management. If you don't have `uv` installed, see the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
+
+```bash
+# Clone the repository
+git clone <repo-url>
+cd EVA
+
+# Install all dependencies (uv automatically creates a virtual environment)
+uv sync --all-extras
+
+# Copy environment template
+cp .env.example .env
+# Edit .env with your API keys (ELEVENLABS_API_KEY, OPENAI_API_KEY required)
+```
+
+> [!TIP]
+> After installation, you can run EVA using either:
+> - `eva` — CLI entry point (e.g., `eva --domain airline`)
+> - `python main.py` — script at the repo root (e.g., `python main.py --domain airline`)
+>
+> If using an IDE, point your Python interpreter to `.venv/bin/python` so commands run in the virtual environment automatically. Otherwise, prefix commands with `uv run` or activate the environment with `source .venv/bin/activate`.
+
+<details>
+<summary>Alternative: using pip</summary>
+
+> [!NOTE]
+> This project requires Python 3.11. If you need to manage multiple Python versions, consider using [pyenv](https://github.com/pyenv/pyenv).
+
+```bash
+# Create and activate a virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install -e ".[dev]"
+```
+
+</details>
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and fill in your API keys:
+
+```bash
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+**Required:**
+- `OPENAI_API_KEY` (or another LLM provider): Powers the assistant LLM and text judge metrics
+- `ELEVENLABS_API_KEY` + agent IDs: For user simulation
+- STT/TTS API key and model: Passed via `EVA_MODEL__STT_PARAMS` / `EVA_MODEL__TTS_PARAMS` (default provider is Cartesia)
+
+**For all metrics:**
+- `OPENAI_API_KEY`: GPT-5.2 for text judge metrics (task completion, conciseness, turn taking, etc.)
+- `GOOGLE_APPLICATION_CREDENTIALS`: Gemini via Vertex AI (audio judge metrics)
+- `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`: Claude via Bedrock (faithfulness metric)
+
+> [!TIP]
+> **OpenAI-only setup:** If you only have an OpenAI key, set `JUDGE_MODEL=gpt-5.2` in your `.env` to override all text judge models including faithfulness (results may be less accurate). Audio metrics (agent/user speech fidelity) still require Gemini — to skip them, run only text-based metrics: `EVA_METRICS=task_completion,faithfulness,conciseness,turn_taking`.
+
+**Key Environment Variables:**
+```bash
+# Framework Configuration
+EVA_DOMAIN=airline           # Domain-based path conventions
+EVA_MAX_CONCURRENT_CONVERSATIONS=10   # Max parallel conversations
+EVA_DEBUG=false                       # Run only 1 record for testing
+EVA_RECORD_IDS=1.2.1,1.2.2            # Run specific records only
+
+# Pipeline Model Configuration (nested under EVA_MODEL__)
+EVA_MODEL__LLM=gpt-5.2                # LLM model name (must match EVA_MODEL_LIST)
+EVA_MODEL__STT=deepgram               # deepgram | openai_whisper
+EVA_MODEL__TTS=cartesia               # cartesia | elevenlabs
+
+# Or speech-to-speech model (mutually exclusive with LLM)
+# EVA_MODEL__S2S=gpt-realtime-mini    # Audio-native model name (S2S, S2T+TTS)
+
+# Logging
+EVA_LOG_LEVEL=INFO                    # DEBUG | INFO | WARNING | ERROR
+```
+
+See `.env.example` for the complete list of configuration options.
+
+### Running the framework
+
+```bash
+# Run with domain-based conventions (easiest):
+EVA_DOMAIN=airline python main.py
+# Automatically uses:
+#   data/airline_dataset.jsonl
+#   configs/agents/airline_agent.yaml
+#   data/airline_scenarios/
+
+# Run with CLI overrides
+python main.py --llm-model gpt-5.2 --max-concurrent 10
+```
+
+### Running Metrics
+
+```bash
+# Re-run specific metrics on an existing run
+python scripts/main.py \
+    --run-id <existing_run_id> \
+    --metrics task_completion,faithfulness,conciseness
+```
+
+### Using Docker
+
+```bash
+# Build the image
+docker-compose build
+
+# Run a benchmark
+docker-compose run --rm benchmark main.py
+```
+
+### Development Setup
+
+Install pre-commit hooks to lint and format code:
+
+```bash
+pre-commit install
+```
+
+### Running Tests
+
+Install the `[dev]` extra dependencies as shown in the [Installation](#installation) section.
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_postprocessor_transcript.py -v
+
+# Run with coverage
+pytest tests/ --cov=eva
+
+# Run metrics tests
+pytest tests/integration/test_metrics.py -v
+```
+
+
+</details>
+
+## Evaluation Gap
+
+Existing benchmarks evaluate voice agent components in isolation — speech understanding, TTS quality, or conversational dynamics — but none assess the full pipeline end to end. In real deployed systems, errors compound across modules and failure modes interact in ways that component-level evaluation cannot capture. EVA addresses this by treating voice agent quality as an integrated whole, evaluating accuracy and experience jointly across complete multi-turn spoken conversations.
+
+| **Framework** | **Interaction Mode** | **Multi-turn** | **Tool Calling** | **Goal Completion** | **Experience Metrics** | **Pass@k, Pass^k** | **Supported Systems** |
+|---|---|---|---|---|---|--------------------|---|
+| **EVA** | Live bot-to-bot | ✅ | ✅ | ✅ (Task Completion, Speech Fidelity, Faithfulness) | ✅ (Conciseness, Turn-taking, Latency, Progression) | ✅                  | Audio-native, Cascade |
+| **VoiceAgent&shy;Bench** | Static, TTS-synthesized | ✅ | ✅ | ⚠️ | ❌ | ❌                  | Audio-native, Cascade |
+| **CAVA** | Partial simulation | ✅ | ✅ | ⚠️ | ⚠️ (Latency, Tone-awareness) | ❌                  | Audio-native, Cascade |
+| **FDB-v2** | Live, automated examiner | ✅ | ❌ | ❌ | ✅ (Turn-taking fluency, Correction handling, Safety) | ❌                  | Audio-native |
+| **FDB-v1** | Static, pre-recorded | ❌ | ❌ | ❌ | ✅ (Turn-taking, Backchanneling, Interruption) | ❌                  | Audio-native |
+| **FD-Bench** | Live, simulated | ❌ | ❌ | ❌ | ✅ (Interruption, Delay, Robustness) | ❌                  | Audio-native |
+| **Talking Turns** | Static, curated | ❌ | ❌ | ❌ | ✅ (Turn change, Backchannel, Interruption) | ❌                  | Audio-native, Cascade |
+
+## 🏗️ Architecture
+
+EVA evaluates agents using a **bot-to-bot audio architecture** — no human listeners, no text replays. Two conversational AIs speak to each other over a live WebSocket connection, producing realistic speech-to-speech interactions that capture real STT behavior and turn-taking dynamics.
+
+| Component                           | Role                                                                                                                                                                                                                                                                                         |
+|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 🎭 **User Simulator** (ElevenAgent) | Plays the role of a caller with a defined goal and persona                                                                                                                                                                                                                                   |
+| 🤖 **Voice Agent** (Pipecat)        | The system under evaluation — supports cascade (STT→LLM→TTS) and speech-to-speech models                                                                                                                                                                                                     |
+| 🔧 **Tool Executor**                | The engine that provides deterministic, reproducible tool responses via custom Python functions. It dynamically queries and modifies a predefined per-scenario database.                                                                                                                     |
+| ✅ **Validators**                    | Automated checks that verify conversations are complete and that the user simulator faithfully reproduced its intended goal — no human annotation required. Conversations that fail validation are automatically regenerated, ensuring only clean, correctly executed runs enter evaluation. |
+| 📊 **Metrics Engine**               | Scores each conversation using the audio recording, transcripts, and tool call logs.                                                                                                                                                                                                         |
+
+
+## Output Structure
+
+```
+output/<run_id>/
+├── config.json              # Run configuration snapshot
+├── results.csv              # Quick results table
+├── metrics_summary.json     # Aggregate metrics (after metrics run)
+├── metrics_summary.csv      # Per-category metrics breakdown
+└── records/<record_id>/
+    ├── result.json          # Conversation result
+    ├── audio_assistant.wav  # Assistant audio channel
+    ├── audio_user.wav       # User audio channel
+    ├── audio_mixed.wav      # Mixed stereo audio
+    ├── transcript.jsonl     # Turn-by-turn transcript
+    ├── audit_log.json       # Complete interaction log
+    ├── pipecat_logs.jsonl   # Pipecat framework events
+    ├── elevenlabs_events.jsonl # ElevenLabs events
+    └── metrics.json         # Per-record metric scores and details
+```
+
+## Metrics
+
+| **🎯 EVA-A · Accuracy** | **✨ EVA-X · Experience** |
+|---|---|
+| *Did the agent complete the task correctly?* | *Was the conversational experience high quality?* |
+|  **Task Completion** · Deterministic |  **Turn Taking** · LLM Judge `BETA` |
+|  **Agent Speech Fidelity** · Audio LLM Judge `BETA` |  **Conciseness** · LLM Judge |
+|  **Faithfulness** · LLM Judge |  **Conversation Progression** · LLM Judge |
+
+See the [Metrics documentation](docs/metrics/README.md) for detailed scoring rubrics and judge prompts. For the data structures that metrics operate on, see [MetricContext documentation](docs/metric_context.md).
+
+## 🗂️ Dataset
+
+EVA includes **50 airline scenarios**, each specifying a user goal, persona, scenario database, and ground truth end state — making evaluations fully reproducible and directly comparable across agents and model versions. See the [Data documentation](docs/data.md) for a detailed breakdown of the data structure and scenario design, and the [Database & Tool Schema](docs/airline_database_tool_schema.md) for the airline scenario database format.
+
+Flight rebooking is a strong initial domain: it is high-stakes, time-pressured, and demands temporal reasoning, policy following, constraint satisfaction, and accurate transcription of named entities (confirmation codes, flight numbers, passenger names, dates).
+
+| Category | Description |
+|---|---|
+| ✈️ **IRROPS Rebooking** | Airline-initiated disruptions — user is entitled to rebooking at no cost |
+| 🔄 **Voluntary Changes** | User-initiated changes subject to fare differences and change fees |
+| 🔗 **Missed Connections** | Cascading disruptions across multiple legs |
+| ⏱️ **Same-Day Changes** | Time-sensitive standby and same-day change requests |
+| ⚠️ **Adversarial Scenarios** | Users seeking compensation they are not entitled to under policy |
+
+## Project Structure
+
+```
+EVA/
+├── src/eva/
+│   ├── models/              # Pydantic data models
+│   ├── orchestrator/        # Framework execution
+│   │   ├── runner.py        # Main orchestrator
+│   │   └── worker.py        # Per-conversation worker
+│   ├── assistant/           # Pipecat-based assistant
+│   │   ├── agentic/         # Agent orchestration
+│   │   ├── tools/           # Python-based tool implementations
+│   │   ├── pipeline/        # Agent processor
+│   │   └── services/        # STT/TTS/LLM factories
+│   ├── user_simulator/      # ElevenLabs user simulator
+│   ├── metrics/             # Evaluation metrics
+│   │   ├── base.py          # Base metric classes
+│   │   ├── processor.py     # Metrics context processor
+│   │   ├── runner.py        # Metrics execution
+│   │   ├── accuracy/        # Task completion metrics
+│   │   ├── experience/      # Responsiveness, intelligence, acoustic
+│   │   ├── diagnostic/      # Diagnostic metrics (not in final scores)
+│   │   └── validation_metrics/ # Quality control metrics
+│   └── utils/               # Utilities (LLM client, log processing)
+├── scripts/                 # CLI scripts
+│   ├── main.py              # Main evaluation runner
+│   └── run_text_only.py     # Text-only evaluation runner
+├── configs/                 # Configuration files
+│   ├── prompts/             # Judge and simulation prompts
+│   │   ├── judge.yaml       # Judge metric prompts
+│   │   └── simulation.yaml  # User simulator prompts
+│   └── agents/              # Agent configurations
+│       └── airline_agent.yaml
+├── docs/                    # Documentation
+│   ├── metrics/             # Per-metric documentation
+│   └── llm_configuration.md # LLM provider setup guide
+├── data/                    # Data files
+│   ├── airline_dataset.jsonl # Evaluation dataset
+│   └── airline_scenarios/   # Per-record scenario databases
+└── tests/                   # Test suite
+    ├── unit/                # Unit tests
+    └── integration/         # Integration tests
+```
+
+## Limitations
+
+See [Limitations](docs/limitations.md) for known limitations of the framework and metrics.

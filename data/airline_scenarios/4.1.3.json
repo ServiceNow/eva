@@ -1,0 +1,397 @@
+{
+  "_current_date": "2026-06-23",
+  "reservations": {
+    "AZ3UM9": {
+      "confirmation_number": "AZ3UM9",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Patrick",
+          "last_name": "Young",
+          "ticket_number": "1805123456789",
+          "email": "patrick.young@gmail.com",
+          "phone": "+1-307-555-5124",
+          "elite_status": "platinum",
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK460_20260623",
+          "fare_class": "main_cabin",
+          "fare_paid": 389.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK460",
+              "date": "2026-06-23",
+              "fare_paid": 389.0,
+              "seat": "14C",
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-05-18T09:22:00-04:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK455_20260623": {
+      "journey_id": "FL_SK455_20260623",
+      "date": "2026-06-23",
+      "origin": "DEN",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 190,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK455",
+          "origin": "DEN",
+          "destination": "SEA",
+          "scheduled_departure": "11:30",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "12:40",
+          "destination_utc_offset": -7,
+          "duration_minutes": 190,
+          "aircraft_type": "A320",
+          "status": "on_time",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A08",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 0,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 309.0,
+            "main_cabin": 399.0,
+            "premium_economy": 659.0,
+            "business": 999.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "on_time",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 309.0,
+        "main_cabin": 399.0,
+        "premium_economy": 659.0,
+        "business": 999.0,
+        "first": null
+      }
+    },
+    "FL_SK450_20260623": {
+      "journey_id": "FL_SK450_20260623",
+      "date": "2026-06-23",
+      "origin": "DEN",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 190,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK450",
+          "origin": "DEN",
+          "destination": "SEA",
+          "scheduled_departure": "13:00",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "14:10",
+          "destination_utc_offset": -7,
+          "duration_minutes": 190,
+          "aircraft_type": "737-800",
+          "status": "on_time",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B22",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 9,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": null,
+            "main_cabin": 419.0,
+            "premium_economy": 699.0,
+            "business": 1099.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "on_time",
+      "bookable": true,
+      "fares": {
+        "basic_economy": null,
+        "main_cabin": 419.0,
+        "premium_economy": 699.0,
+        "business": 1099.0,
+        "first": null
+      }
+    },
+    "FL_SK480_20260623": {
+      "journey_id": "FL_SK480_20260623",
+      "date": "2026-06-23",
+      "origin": "DEN",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 190,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK480",
+          "origin": "DEN",
+          "destination": "SEA",
+          "scheduled_departure": "13:30",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "14:40",
+          "destination_utc_offset": -7,
+          "duration_minutes": 190,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C11",
+          "available_seats": {
+            "basic_economy": 2,
+            "main_cabin": 6,
+            "premium_economy": 2,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 339.0,
+            "main_cabin": 449.0,
+            "premium_economy": 729.0,
+            "business": 1249.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 339.0,
+        "main_cabin": 449.0,
+        "premium_economy": 729.0,
+        "business": 1249.0,
+        "first": null
+      }
+    },
+    "FL_SK460_20260623": {
+      "journey_id": "FL_SK460_20260623",
+      "date": "2026-06-23",
+      "origin": "DEN",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 195,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK460",
+          "origin": "DEN",
+          "destination": "SEA",
+          "scheduled_departure": "16:00",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "17:15",
+          "destination_utc_offset": -7,
+          "duration_minutes": 195,
+          "aircraft_type": "737-900",
+          "status": "on_time",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B30",
+          "available_seats": {
+            "basic_economy": 7,
+            "main_cabin": 18,
+            "premium_economy": 3,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 289.0,
+            "main_cabin": 389.0,
+            "premium_economy": 649.0,
+            "business": 999.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "on_time",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 289.0,
+        "main_cabin": 389.0,
+        "premium_economy": 649.0,
+        "business": 999.0,
+        "first": null
+      }
+    },
+    "FL_SK452_20260623": {
+      "journey_id": "FL_SK452_20260623",
+      "date": "2026-06-23",
+      "origin": "DEN",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 190,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK452",
+          "origin": "DEN",
+          "destination": "SEA",
+          "scheduled_departure": "13:00",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "14:10",
+          "destination_utc_offset": -7,
+          "duration_minutes": 190,
+          "aircraft_type": "737-800",
+          "status": "cancelled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": "operational",
+          "gate": null,
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 40,
+            "premium_economy": 8,
+            "business": 4,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": null,
+            "main_cabin": 379.0,
+            "premium_economy": 649.0,
+            "business": 999.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "cancelled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": null,
+        "main_cabin": 379.0,
+        "premium_economy": 649.0,
+        "business": 999.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

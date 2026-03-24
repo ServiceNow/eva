@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0B0D17;
+  --color-bg-secondary: #12152A;
+  --color-bg-tertiary: #1A1F3D;
+  --color-bg-hover: #222850;
+
+  --color-purple: #8B5CF6;
+  --color-purple-light: #A78BFA;
+  --color-purple-dim: #6D28D9;
+
+  --color-blue: #38BDF8;
+  --color-blue-light: #7DD3FC;
+  --color-blue-dim: #0284C7;
+
+  --color-cyan: #06B6D4;
+  --color-amber: #F59E0B;
+
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+
+  --color-border-default: #1E293B;
+  --color-border-accent: #4C1D95;
+
+  --color-heatmap-bad: #EF4444;
+  --color-heatmap-bad-bg: #7F1D1D;
+  --color-heatmap-mid: #EAB308;
+  --color-heatmap-mid-bg: #713F12;
+  --color-heatmap-good: #22C55E;
+  --color-heatmap-good-bg: #14532D;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Light mode overrides */
+[data-theme="light"] {
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F8FAFC;
+  --color-bg-tertiary: #F1F5F9;
+  --color-bg-hover: #E2E8F0;
+
+  --color-purple: #7C3AED;
+  --color-purple-light: #6D28D9;
+  --color-purple-dim: #5B21B6;
+
+  --color-blue: #0284C7;
+  --color-blue-light: #0369A1;
+  --color-blue-dim: #075985;
+
+  --color-cyan: #0891B2;
+  --color-amber: #D97706;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+
+  --color-border-default: #E2E8F0;
+  --color-border-accent: #7C3AED;
+
+  --color-heatmap-bad: #DC2626;
+  --color-heatmap-bad-bg: #FEE2E2;
+  --color-heatmap-mid: #CA8A04;
+  --color-heatmap-mid-bg: #FEF9C3;
+  --color-heatmap-good: #16A34A;
+  --color-heatmap-good-bg: #DCFCE7;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-bg-hover);
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.animate-dash {
+  animation: dash 1s linear infinite;
+}

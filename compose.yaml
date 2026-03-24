@@ -1,0 +1,71 @@
+# Docker Compose for EVA
+#
+# Usage:
+#   # Build the image
+#   docker-compose build
+#
+#   # Run a benchmark (set EVA_DOMAIN in .env or pass --domain)
+#   docker-compose run --rm benchmark \
+#     scripts/run_benchmark.py
+
+services:
+  benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eva:latest
+    container_name: eva
+    env_file: .env
+
+    # Mount volumes for data and output persistence
+    volumes:
+      # Input data (dataset, tool mocks, agent configs)
+      - ./data:/app/data:ro
+      # Output directory (results, metrics)
+      - ./output:/app/output
+      # Mount configs for easy customization
+      - ./configs:/app/configs:ro
+      # Mount prompts
+      - ./prompts:/app/prompts:ro
+
+    # Resource limits (adjust based on your system)
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+
+    # Keep container running for interactive use
+    stdin_open: true
+    tty: true
+
+  # Development service with source mounted
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eva:latest
+    container_name: eva-dev
+    env_file: .env
+
+    volumes:
+      - ./data:/app/data:ro
+      - ./output:/app/output
+      - ./configs:/app/configs:ro
+      - ./prompts:/app/prompts:ro
+      # Mount source for development
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./scripts:/app/scripts
+
+    environment:
+      EVA_DEBUG: "true"
+      EVA_LOG_LEVEL: DEBUG
+
+    # Override entrypoint for shell access
+    entrypoint: /bin/bash
+    stdin_open: true
+    tty: true

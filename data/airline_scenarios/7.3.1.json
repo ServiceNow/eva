@@ -1,0 +1,405 @@
+{
+  "_current_date": "2026-05-25",
+  "reservations": {
+    "GQSIHM": {
+      "confirmation_number": "GQSIHM",
+      "status": "changed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Monica",
+          "last_name": "Alvarez",
+          "ticket_number": "3027894561230",
+          "email": "monica.alvarez@example.com",
+          "phone": "+1-210-555-0148",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "no_preference"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK340_20260525",
+          "fare_class": "main_cabin",
+          "fare_paid": 299.0,
+          "status": "cancelled",
+          "segments": [
+            {
+              "flight_number": "SK340",
+              "date": "2026-05-25",
+              "fare_paid": 299.0,
+              "seat": null,
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        },
+        {
+          "journey_id": "FL_SK355_20260526",
+          "fare_class": "main_cabin",
+          "fare_paid": 312.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK355",
+              "date": "2026-05-26",
+              "fare_paid": 312.0,
+              "seat": null,
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-05-10T09:12:00-05:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK340_20260525": {
+      "journey_id": "FL_SK340_20260525",
+      "date": "2026-05-25",
+      "origin": "SAT",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 155,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK340",
+          "origin": "SAT",
+          "destination": "ORD",
+          "scheduled_departure": "14:00",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "16:35",
+          "destination_utc_offset": -5,
+          "duration_minutes": 155,
+          "aircraft_type": "737-800",
+          "status": "on_time",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B7",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 7,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 229.0,
+            "main_cabin": 299.0,
+            "premium_economy": 589.0,
+            "business": 1099.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "on_time",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 229.0,
+        "main_cabin": 299.0,
+        "premium_economy": 589.0,
+        "business": 1099.0,
+        "first": null
+      }
+    },
+    "FL_SK355_20260526": {
+      "journey_id": "FL_SK355_20260526",
+      "date": "2026-05-26",
+      "origin": "SAT",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 155,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK355",
+          "origin": "SAT",
+          "destination": "ORD",
+          "scheduled_departure": "07:15",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "09:50",
+          "destination_utc_offset": -5,
+          "duration_minutes": 155,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A12",
+          "available_seats": {
+            "basic_economy": 10,
+            "main_cabin": 18,
+            "premium_economy": 6,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 245.0,
+            "main_cabin": 312.0,
+            "premium_economy": 612.0,
+            "business": 1175.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 245.0,
+        "main_cabin": 312.0,
+        "premium_economy": 612.0,
+        "business": 1175.0,
+        "first": null
+      }
+    },
+    "FL_SK370_20260526": {
+      "journey_id": "FL_SK370_20260526",
+      "date": "2026-05-26",
+      "origin": "SAT",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 160,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK370",
+          "origin": "SAT",
+          "destination": "ORD",
+          "scheduled_departure": "10:30",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "13:10",
+          "destination_utc_offset": -5,
+          "duration_minutes": 160,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B2",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 3,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": null,
+            "main_cabin": 415.0,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": null,
+        "main_cabin": 415.0,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK390_20260526": {
+      "journey_id": "FL_SK390_20260526",
+      "date": "2026-05-26",
+      "origin": "SAT",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 165,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK390",
+          "origin": "SAT",
+          "destination": "ORD",
+          "scheduled_departure": "18:20",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "21:05",
+          "destination_utc_offset": -5,
+          "duration_minutes": 165,
+          "aircraft_type": "A321",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A9",
+          "available_seats": {
+            "basic_economy": 22,
+            "main_cabin": 30,
+            "premium_economy": 8,
+            "business": 4,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 268.0,
+            "main_cabin": 345.0,
+            "premium_economy": 655.0,
+            "business": 1299.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 268.0,
+        "main_cabin": 345.0,
+        "premium_economy": 655.0,
+        "business": 1299.0,
+        "first": null
+      }
+    },
+    "FL_SK402_20260526": {
+      "journey_id": "FL_SK402_20260526",
+      "date": "2026-05-26",
+      "origin": "SAT",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 165,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK402",
+          "origin": "SAT",
+          "destination": "ORD",
+          "scheduled_departure": "21:45",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "00:30",
+          "destination_utc_offset": -5,
+          "duration_minutes": 165,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B11",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 255.0,
+            "main_cabin": 325.0,
+            "premium_economy": 625.0,
+            "business": 1250.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 255.0,
+        "main_cabin": 325.0,
+        "premium_economy": 625.0,
+        "business": 1250.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

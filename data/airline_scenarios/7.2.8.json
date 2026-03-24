@@ -1,0 +1,429 @@
+{
+  "_current_date": "2026-09-28",
+  "reservations": {
+    "DHNHYW": {
+      "confirmation_number": "DHNHYW",
+      "status": "changed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Kevin",
+          "last_name": "Matsuda",
+          "ticket_number": "1876543210987",
+          "email": "kevin.matsuda@gmail.com",
+          "phone": "+1-808-555-1231",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK041_20261005",
+          "fare_class": "business",
+          "fare_paid": 1550.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK041",
+              "date": "2026-10-05",
+              "fare_paid": 1550.0,
+              "seat": "6C",
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-09-10T09:12:00-10:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 0
+      },
+      "payment_history": [
+        {
+          "date_time": "2026-09-10T09:12:00-10:00",
+          "type": "ticket_purchase",
+          "amount": 700.0,
+          "currency": "USD",
+          "method": "card",
+          "note": "Original purchase in Main Cabin"
+        },
+        {
+          "date_time": "2026-09-21T15:48:00-10:00",
+          "type": "voluntary_upgrade",
+          "amount": 850.0,
+          "currency": "USD",
+          "method": "card",
+          "note": "Fare difference collected for upgrade to Business; no waiver notes on record"
+        }
+      ],
+      "agent_notes": [
+        {
+          "date_time": "2026-09-21T15:48:00-10:00",
+          "note": "Customer requested upgrade to Business. System collected fare difference. No documented waiver/complimentary upgrade authorization."
+        },
+        {
+          "date_time": "2026-09-21T15:49:00-10:00",
+          "note": "Customer later stated a prior agent mentioned the fare difference might be waived as a loyalty gesture; not documented/authorized in PNR."
+        }
+      ]
+    }
+  },
+  "journeys": {
+    "FL_SK041_20261005": {
+      "journey_id": "FL_SK041_20261005",
+      "date": "2026-10-05",
+      "origin": "HNL",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 330,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK041",
+          "origin": "HNL",
+          "destination": "LAX",
+          "scheduled_departure": "22:10",
+          "origin_utc_offset": -10,
+          "scheduled_arrival": "06:40",
+          "destination_utc_offset": -7,
+          "duration_minutes": 330,
+          "aircraft_type": "A321neo",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C7",
+          "available_seats": {
+            "basic_economy": 18,
+            "main_cabin": 22,
+            "premium_economy": 6,
+            "business": 3,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 320.0,
+            "main_cabin": 700.0,
+            "premium_economy": 1040.0,
+            "business": 1550.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 320.0,
+        "main_cabin": 700.0,
+        "premium_economy": 1040.0,
+        "business": 1550.0,
+        "first": null
+      }
+    },
+    "FL_SK043_20261005": {
+      "journey_id": "FL_SK043_20261005",
+      "date": "2026-10-05",
+      "origin": "HNL",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 335,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK043",
+          "origin": "HNL",
+          "destination": "LAX",
+          "scheduled_departure": "08:00",
+          "origin_utc_offset": -10,
+          "scheduled_arrival": "16:35",
+          "destination_utc_offset": -7,
+          "duration_minutes": 335,
+          "aircraft_type": "737-900ER",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B2",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 290.0,
+            "main_cabin": 610.0,
+            "premium_economy": 980.0,
+            "business": 1490.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 290.0,
+        "main_cabin": 610.0,
+        "premium_economy": 980.0,
+        "business": 1490.0,
+        "first": null
+      }
+    },
+    "FL_SK047_20261005": {
+      "journey_id": "FL_SK047_20261005",
+      "date": "2026-10-05",
+      "origin": "HNL",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 340,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK047",
+          "origin": "HNL",
+          "destination": "LAX",
+          "scheduled_departure": "13:30",
+          "origin_utc_offset": -10,
+          "scheduled_arrival": "22:10",
+          "destination_utc_offset": -7,
+          "duration_minutes": 340,
+          "aircraft_type": "A330-200",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C3",
+          "available_seats": {
+            "basic_economy": 12,
+            "main_cabin": 14,
+            "premium_economy": 3,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 360.0,
+            "main_cabin": 760.0,
+            "premium_economy": 1120.0,
+            "business": 1820.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 360.0,
+        "main_cabin": 760.0,
+        "premium_economy": 1120.0,
+        "business": 1820.0,
+        "first": null
+      }
+    },
+    "FL_SK049_20261005": {
+      "journey_id": "FL_SK049_20261005",
+      "date": "2026-10-05",
+      "origin": "HNL",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 335,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK049",
+          "origin": "HNL",
+          "destination": "LAX",
+          "scheduled_departure": "17:10",
+          "origin_utc_offset": -10,
+          "scheduled_arrival": "01:45",
+          "destination_utc_offset": -7,
+          "duration_minutes": 335,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B5",
+          "available_seats": {
+            "basic_economy": 25,
+            "main_cabin": 30,
+            "premium_economy": 8,
+            "business": 4,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 310.0,
+            "main_cabin": 680.0,
+            "premium_economy": 990.0,
+            "business": 1605.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 310.0,
+        "main_cabin": 680.0,
+        "premium_economy": 990.0,
+        "business": 1605.0,
+        "first": null
+      }
+    },
+    "FL_SK051_20261005": {
+      "journey_id": "FL_SK051_20261005",
+      "date": "2026-10-05",
+      "origin": "HNL",
+      "destination": "LAX",
+      "num_stops": 0,
+      "total_duration_minutes": 335,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK051",
+          "origin": "HNL",
+          "destination": "LAX",
+          "scheduled_departure": "23:35",
+          "origin_utc_offset": -10,
+          "scheduled_arrival": "08:10",
+          "destination_utc_offset": -7,
+          "duration_minutes": 335,
+          "aircraft_type": "A321neo",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C9",
+          "available_seats": {
+            "basic_economy": 10,
+            "main_cabin": 9,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 345.0,
+            "main_cabin": 735.0,
+            "premium_economy": 1095.0,
+            "business": 1695.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 345.0,
+        "main_cabin": 735.0,
+        "premium_economy": 1095.0,
+        "business": 1695.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

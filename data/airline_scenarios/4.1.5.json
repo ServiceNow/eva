@@ -1,0 +1,381 @@
+{
+  "_current_date": "2026-04-21",
+  "reservations": {
+    "240QJE": {
+      "confirmation_number": "240QJE",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Joseph",
+          "last_name": "Scott",
+          "ticket_number": "0834512789043",
+          "email": "joseph.scott@gmail.com",
+          "phone": "+1-208-555-5346",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK642_20260421",
+          "fare_class": "main_cabin",
+          "fare_paid": 312.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK642",
+              "date": "2026-04-21",
+              "fare_paid": 312.0,
+              "seat": "22C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-03-18T09:42:00-04:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 15.0,
+        "bags_fee": 35.0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK610_20260421": {
+      "journey_id": "FL_SK610_20260421",
+      "date": "2026-04-21",
+      "origin": "BOS",
+      "destination": "RDU",
+      "num_stops": 0,
+      "total_duration_minutes": 135,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK610",
+          "origin": "BOS",
+          "destination": "RDU",
+          "scheduled_departure": "14:35",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "16:50",
+          "destination_utc_offset": -4,
+          "duration_minutes": 135,
+          "aircraft_type": "A220-300",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B12",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 179.0,
+            "main_cabin": 259.0,
+            "premium_economy": 519.0,
+            "business": 899.0,
+            "first": 1599.0
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 179.0,
+        "main_cabin": 259.0,
+        "premium_economy": 519.0,
+        "business": 899.0,
+        "first": 1599.0
+      }
+    },
+    "FL_SK615_20260421": {
+      "journey_id": "FL_SK615_20260421",
+      "date": "2026-04-21",
+      "origin": "BOS",
+      "destination": "RDU",
+      "num_stops": 0,
+      "total_duration_minutes": 140,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK615",
+          "origin": "BOS",
+          "destination": "RDU",
+          "scheduled_departure": "14:55",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "17:15",
+          "destination_utc_offset": -4,
+          "duration_minutes": 140,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C4",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 189.0,
+            "main_cabin": 269.0,
+            "premium_economy": 549.0,
+            "business": 949.0,
+            "first": 1699.0
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 189.0,
+        "main_cabin": 269.0,
+        "premium_economy": 549.0,
+        "business": 949.0,
+        "first": 1699.0
+      }
+    },
+    "FL_SK621_20260421": {
+      "journey_id": "FL_SK621_20260421",
+      "date": "2026-04-21",
+      "origin": "BOS",
+      "destination": "RDU",
+      "num_stops": 0,
+      "total_duration_minutes": 135,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK621",
+          "origin": "BOS",
+          "destination": "RDU",
+          "scheduled_departure": "15:00",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "17:15",
+          "destination_utc_offset": -4,
+          "duration_minutes": 135,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B6",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 2,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 229.0,
+            "main_cabin": 352.0,
+            "premium_economy": 642.0,
+            "business": 1199.0,
+            "first": 1899.0
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 229.0,
+        "main_cabin": 352.0,
+        "premium_economy": 642.0,
+        "business": 1199.0,
+        "first": 1899.0
+      }
+    },
+    "FL_SK642_20260421": {
+      "journey_id": "FL_SK642_20260421",
+      "date": "2026-04-21",
+      "origin": "BOS",
+      "destination": "RDU",
+      "num_stops": 0,
+      "total_duration_minutes": 140,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK642",
+          "origin": "BOS",
+          "destination": "RDU",
+          "scheduled_departure": "18:10",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "20:30",
+          "destination_utc_offset": -4,
+          "duration_minutes": 140,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C18",
+          "available_seats": {
+            "basic_economy": 18,
+            "main_cabin": 22,
+            "premium_economy": 6,
+            "business": 4,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 189.0,
+            "main_cabin": 312.0,
+            "premium_economy": 612.0,
+            "business": 1099.0,
+            "first": 1799.0
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 189.0,
+        "main_cabin": 312.0,
+        "premium_economy": 612.0,
+        "business": 1099.0,
+        "first": 1799.0
+      }
+    },
+    "FL_SK660_20260421": {
+      "journey_id": "FL_SK660_20260421",
+      "date": "2026-04-21",
+      "origin": "BOS",
+      "destination": "RDU",
+      "num_stops": 0,
+      "total_duration_minutes": 140,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK660",
+          "origin": "BOS",
+          "destination": "RDU",
+          "scheduled_departure": "20:05",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "22:25",
+          "destination_utc_offset": -4,
+          "duration_minutes": 140,
+          "aircraft_type": "A321",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A3",
+          "available_seats": {
+            "basic_economy": 21,
+            "main_cabin": 34,
+            "premium_economy": 10,
+            "business": 6,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 169.0,
+            "main_cabin": 249.0,
+            "premium_economy": 529.0,
+            "business": 999.0,
+            "first": 1699.0
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 169.0,
+        "main_cabin": 249.0,
+        "premium_economy": 529.0,
+        "business": 999.0,
+        "first": 1699.0
+      }
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

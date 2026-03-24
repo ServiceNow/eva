@@ -1,0 +1,354 @@
+{
+  "_current_date": "2026-09-10",
+  "reservations": {
+    "YLCNSG": {
+      "confirmation_number": "YLCNSG",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Zoe",
+          "last_name": "Brown",
+          "ticket_number": "2201234567890",
+          "email": "zoe.brown@gmail.com",
+          "phone": "+1-704-555-2467",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK490_20260910",
+          "fare_class": "main_cabin",
+          "fare_paid": 289.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK490",
+              "date": "2026-09-10",
+              "fare_paid": 289.0,
+              "seat": "18C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-08-28T10:12:00-07:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 29.0,
+        "bags_fee": 40.0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK490_20260910": {
+      "journey_id": "FL_SK490_20260910",
+      "date": "2026-09-10",
+      "origin": "LAX",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 175,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK490",
+          "origin": "LAX",
+          "destination": "SEA",
+          "scheduled_departure": "16:10",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "19:05",
+          "destination_utc_offset": -8,
+          "duration_minutes": 175,
+          "aircraft_type": "737-800",
+          "status": "cancelled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": "operational",
+          "gate": "52B",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": null,
+            "main_cabin": null,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "cancelled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": null,
+        "main_cabin": null,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK702_20260910": {
+      "journey_id": "FL_SK702_20260910",
+      "date": "2026-09-10",
+      "origin": "LAX",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 170,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK702",
+          "origin": "LAX",
+          "destination": "SEA",
+          "scheduled_departure": "15:20",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "18:10",
+          "destination_utc_offset": -8,
+          "duration_minutes": 170,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "48A",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 219.0,
+            "main_cabin": 279.0,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 219.0,
+        "main_cabin": 279.0,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK714_20260910": {
+      "journey_id": "FL_SK714_20260910",
+      "date": "2026-09-10",
+      "origin": "LAX",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 180,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK714",
+          "origin": "LAX",
+          "destination": "SEA",
+          "scheduled_departure": "18:05",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "21:05",
+          "destination_utc_offset": -8,
+          "duration_minutes": 180,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "55C",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": null,
+            "main_cabin": 339.0,
+            "premium_economy": 579.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": null,
+        "main_cabin": 339.0,
+        "premium_economy": 579.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK721_20260910": {
+      "journey_id": "FL_SK721_20260910",
+      "date": "2026-09-10",
+      "origin": "LAX",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 175,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK721",
+          "origin": "LAX",
+          "destination": "SEA",
+          "scheduled_departure": "20:30",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "23:25",
+          "destination_utc_offset": -8,
+          "duration_minutes": 175,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "60D",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 199.0,
+            "main_cabin": null,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 199.0,
+        "main_cabin": null,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK810_20260910": {
+      "journey_id": "FL_SK810_20260910",
+      "date": "2026-09-10",
+      "origin": "LAX",
+      "destination": "SEA",
+      "num_stops": 0,
+      "total_duration_minutes": 175,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK810",
+          "origin": "LAX",
+          "destination": "SEA",
+          "scheduled_departure": "13:40",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "16:35",
+          "destination_utc_offset": -8,
+          "duration_minutes": 175,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "44F",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 249.0,
+            "main_cabin": 319.0,
+            "premium_economy": 609.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 249.0,
+        "main_cabin": 319.0,
+        "premium_economy": 609.0,
+        "business": null,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {
+    "SK490_2026-09-10": {
+      "flight_number": "SK490",
+      "date": "2026-09-10",
+      "disruption_type": "cancellation",
+      "cause": "operational",
+      "cause_category": "airline_fault",
+      "is_irrops": true,
+      "delay_minutes": null,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "refund_option": true,
+        "meal_voucher": true,
+        "hotel_accommodation": false,
+        "rebooking_window_days": 7
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

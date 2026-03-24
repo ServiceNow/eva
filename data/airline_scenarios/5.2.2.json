@@ -1,0 +1,621 @@
+{
+  "_current_date": "2026-03-22",
+  "reservations": {
+    "YP3GVQ": {
+      "confirmation_number": "YP3GVQ",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Kenneth",
+          "last_name": "Garcia",
+          "ticket_number": "1801234567890",
+          "email": "kenneth.garcia@gmail.com",
+          "phone": "+1-318-555-6568",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "no_preference"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK142_20260410",
+          "fare_class": "basic_economy",
+          "fare_paid": 95.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK142",
+              "date": "2026-04-10",
+              "fare_paid": 95.0,
+              "seat": null,
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-03-18T10:15:00-05:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK142_20260410": {
+      "journey_id": "FL_SK142_20260410",
+      "date": "2026-04-10",
+      "origin": "DFW",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 205,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK142",
+          "origin": "DFW",
+          "destination": "LGA",
+          "scheduled_departure": "09:10",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "13:35",
+          "destination_utc_offset": -4,
+          "duration_minutes": 205,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C12",
+          "available_seats": {
+            "basic_economy": 14,
+            "main_cabin": 22,
+            "premium_economy": 6,
+            "business": 4,
+            "first": 2
+          },
+          "fares": {
+            "basic_economy": 95.0,
+            "main_cabin": 189.0,
+            "premium_economy": 540.0,
+            "business": 1090.0,
+            "first": 1760.0
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 95.0,
+        "main_cabin": 189.0,
+        "premium_economy": 540.0,
+        "business": 1090.0,
+        "first": 1760.0
+      }
+    },
+    "FL_SK214_20260410": {
+      "journey_id": "FL_SK214_20260410",
+      "date": "2026-04-10",
+      "origin": "DFW",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 200,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK214",
+          "origin": "DFW",
+          "destination": "LGA",
+          "scheduled_departure": "12:05",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "16:25",
+          "destination_utc_offset": -4,
+          "duration_minutes": 200,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "D7",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 2,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 160.0,
+            "main_cabin": 230.0,
+            "premium_economy": 585.0,
+            "business": 1095.0,
+            "first": 1790.0
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 160.0,
+        "main_cabin": 230.0,
+        "premium_economy": 585.0,
+        "business": 1095.0,
+        "first": 1790.0
+      }
+    },
+    "FL_SK310_20260410": {
+      "journey_id": "FL_SK310_20260410",
+      "date": "2026-04-10",
+      "origin": "DFW",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 205,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK310",
+          "origin": "DFW",
+          "destination": "LGA",
+          "scheduled_departure": "15:10",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "19:35",
+          "destination_utc_offset": -4,
+          "duration_minutes": 205,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C4",
+          "available_seats": {
+            "basic_economy": 8,
+            "main_cabin": 12,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 1
+          },
+          "fares": {
+            "basic_economy": 210.0,
+            "main_cabin": 305.0,
+            "premium_economy": 649.0,
+            "business": 1250.0,
+            "first": 1995.0
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 210.0,
+        "main_cabin": 305.0,
+        "premium_economy": 649.0,
+        "business": 1250.0,
+        "first": 1995.0
+      }
+    },
+    "FL_SK980_20260410": {
+      "journey_id": "FL_SK980_20260410",
+      "date": "2026-04-10",
+      "origin": "DFW",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 210,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK980",
+          "origin": "DFW",
+          "destination": "LGA",
+          "scheduled_departure": "18:45",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "23:15",
+          "destination_utc_offset": -4,
+          "duration_minutes": 210,
+          "aircraft_type": "A321",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "E2",
+          "available_seats": {
+            "basic_economy": 3,
+            "main_cabin": 9,
+            "premium_economy": 3,
+            "business": 2,
+            "first": 1
+          },
+          "fares": {
+            "basic_economy": 245.0,
+            "main_cabin": 360.0,
+            "premium_economy": 712.0,
+            "business": 1310.0,
+            "first": 2150.0
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 245.0,
+        "main_cabin": 360.0,
+        "premium_economy": 712.0,
+        "business": 1310.0,
+        "first": 2150.0
+      }
+    },
+    "FL_SK501_20260410": {
+      "journey_id": "FL_SK501_20260410",
+      "date": "2026-04-10",
+      "origin": "DFW",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 125,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK501",
+          "origin": "DFW",
+          "destination": "ORD",
+          "scheduled_departure": "08:00",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "10:05",
+          "destination_utc_offset": -5,
+          "duration_minutes": 125,
+          "aircraft_type": "737-700",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B9",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 16,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 159.0,
+            "main_cabin": 209.0,
+            "premium_economy": 410.0,
+            "business": 860.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 159.0,
+        "main_cabin": 209.0,
+        "premium_economy": 410.0,
+        "business": 860.0,
+        "first": null
+      }
+    },
+    "FL_SK776_20260410": {
+      "journey_id": "FL_SK776_20260410",
+      "date": "2026-04-10",
+      "origin": "ORD",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 125,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK776",
+          "origin": "ORD",
+          "destination": "LGA",
+          "scheduled_departure": "11:15",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "13:20",
+          "destination_utc_offset": -4,
+          "duration_minutes": 125,
+          "aircraft_type": "A319",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "H4",
+          "available_seats": {
+            "basic_economy": 7,
+            "main_cabin": 18,
+            "premium_economy": 5,
+            "business": 3,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 171.0,
+            "main_cabin": 221.0,
+            "premium_economy": 430.0,
+            "business": 905.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 171.0,
+        "main_cabin": 221.0,
+        "premium_economy": 430.0,
+        "business": 905.0,
+        "first": null
+      }
+    },
+    "FL_SK501_SK776_20260410": {
+      "journey_id": "FL_SK501_SK776_20260410",
+      "date": "2026-04-10",
+      "origin": "DFW",
+      "destination": "LGA",
+      "num_stops": 1,
+      "total_duration_minutes": 380,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK501",
+          "origin": "DFW",
+          "destination": "ORD",
+          "scheduled_departure": "08:00",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "10:05",
+          "destination_utc_offset": -5,
+          "duration_minutes": 125,
+          "aircraft_type": "737-700",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B9",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 16,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 159.0,
+            "main_cabin": 209.0,
+            "premium_economy": 410.0,
+            "business": 860.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        },
+        {
+          "segment_number": 2,
+          "flight_number": "SK776",
+          "origin": "ORD",
+          "destination": "LGA",
+          "scheduled_departure": "11:15",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "13:20",
+          "destination_utc_offset": -4,
+          "duration_minutes": 125,
+          "aircraft_type": "A319",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "H4",
+          "available_seats": {
+            "basic_economy": 7,
+            "main_cabin": 18,
+            "premium_economy": 5,
+            "business": 3,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 171.0,
+            "main_cabin": 221.0,
+            "premium_economy": 430.0,
+            "business": 905.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 330.0,
+        "main_cabin": 430.0,
+        "premium_economy": 840.0,
+        "business": 1765.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

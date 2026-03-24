@@ -1,0 +1,7 @@
+{"timestamp": 0.599253167, "type": "TTFBMetricsData", "processor": "CartesiaSTTService#0", "model": null, "value": 0.0}
+{"timestamp": 0.599253167, "type": "ProcessingMetricsData", "processor": "CartesiaSTTService#0", "model": null, "value": 0.0}
+{"timestamp": 0.599253167, "type": "TTFBMetricsData", "processor": "CartesiaTTSService#1", "model": null, "value": 0.0}
+{"timestamp": 0.599253167, "type": "ProcessingMetricsData", "processor": "CartesiaTTSService#1", "model": null, "value": 0.0}
+{"timestamp": 0.602646542, "type": "TTSUsageMetricsData", "processor": "CartesiaTTSService#1", "model": "sonic-2024-10-19", "value": 32}
+{"timestamp": 0.602693167, "type": "ProcessingMetricsData", "processor": "CartesiaTTSService#1", "model": "sonic-2024-10-19", "value": 0.0003199577331542969}
+{"timestamp": 5.54901675, "type": "ProcessingMetricsData", "processor": "CartesiaSTTService#0", "model": "ink-whisper", "value": 0.00462794303894043}

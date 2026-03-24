@@ -1,0 +1,2186 @@
+{
+  "transcribed_assistant_turns": {
+    "0": "Hello, how can I help you today?",
+    "1": "Sure. First, I'll need to pull up your reservation. What's your six-character confirmation number and the last name on the booking?",
+    "2": "Thanks, Rodriguez. I want to make sure I have the confirmation number exactly right. Could you please say the full code again, one character at a time? It should be six letters and numbers.",
+    "3": "I've pulled up Samantha Rodriguez. Confirmation code Zulu Kilo three Foxtrot Foxtrot Whiskey. You're confirmed on Skyway Flight Sierra Kilo six twenty-one on March twentieth with C twenty-two A. To move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer? Morning, afternoon, or evening?",
+    "4": "For Wednesday, March twenty-fifth, Austin to Los Angeles, arriving by four PM Pacific, I have two good nonstop afternoon options. Option one is Skyway Flight Sierra Kilo seven thirty-nine. Departs one forty-five PM Austin time, arrives three PM Los Angeles time. Main cabin fare is three hundred forty dollars. Option two is Skyway Flight Sierra Kilo seven eighty-one. Departs two thirty-five PM Austin time, arrives three fifty-five PM Los Angeles time. Main cabin fare is five hundred twenty dollars. Since this is a voluntary change in main cabin, there's a seventy-five dollar change fee, plus any fare difference. Which option would you like me to book?",
+    "5": "For your current main cabin ticket, you paid two hundred and sixty dollars for flight Sierra Kilo seven thirty-nine at one forty-five PM. The new fare is three hundred and forty dollars. That's an eighty dollar fare difference, plus the seventy-five dollar change fee. So the total to change is one hundred and fifty-five dollars. For flight Sierra Kilo seven eighty-one at two thirty-five PM, the new fare is five hundred and twenty dollars. That's a two hundred and sixty dollar fare difference, plus the seventy-five dollar change fee. So the total to change is three hundred and thirty-five dollars. Those totals are based on the current available fares right now. Which one should I switch you to?[background noise]",
+    "6": "On March twenty-fifth, to keep your total change cost at one hundred twenty dollars or less. The only option I can see is an earlier non-stop. Skyway flight Sierra Kilo seven zero three. Departs eight fifteen AM Austin time, arrives nine twenty-five AM Los Angeles time. In main cabin, the fare is three hundred dollars, so your total to change would be one hundred fifteen dollars, which is the seventy-five dollar change, fee plus a forty dollar fare difference. Window seats are showing as available. If that morning arrival works for you, I can switch you to that flight and request a window seat. Do you want me to book it?",
+    "7": "I can do that. The total to change to Skyway flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth is one hundred fifteen dollars, which is the seventy-five dollar change fee, plus a forty dollar fare difference. Do I have your okay to charge that one hundred fifteen dollars and rebook you now?",
+    "8": "Mm-hmm ... I rebooked you to Skyway Flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth, Austin to Los Angeles. It departs at eight fifteen AM Austin time and arrives at nine twenty-five AM Los Angeles time. I charged a total of one hundred fifteen dollars, made up of the seventy-five dollar change fee plus a forty dollar fare difference. And you now have a confirmed window seat, seat twenty-one A. Your confirmation number remains Zulu Kilo three Foxtrot Foxtrot Whiskey.",
+    "9": "You're welcome. Yes, I can help. Right now, you have seat twenty-one A and no checked bags or special meal on the reservation. Do you want to add a checked bag or request a special meal?"
+  },
+  "transcribed_user_turns": {
+    "1": "Hi, I need to change my flight to March 25th.",
+    "2": "The confirmation  is Z.  3FFW  and the last name is Rodriguez.",
+    "3": "Zulu.  Kilo.  3 Foxtrot.  Foxtrot Whiskey.  Less than a person.  name Rodriguez.",
+    "4": "Yeah, same route.  Austin to LAX only. Afternoon. As long as I arrive by 4 p.m. Pacific,",
+    "5": "Before I pick, I need the total cost to change each option.  All in.  including the change fee and fair difference.",
+    "6": "Neither of those works.  My max total to change is $120. Can you look for any other Austin to LAX flight on March 25th?  that arrives by 4 p.m. Pacific.  Keeps it under 120 total.  And has a Windows seat available?",
+    "7": "That Please move me to Sierra Kilo 703 on March 22nd.  25th. And I need a confirmed Windows seat, not just a request.",
+    "8": "Yes, you have my okay to charge 115.  and rebook me on that that-specific window seat.",
+    "9": "Perfect. Thanks for getting that done.  Can you help me  with anything else on this reservation today.",
+    "10": "No, I do not want to add anything else. Thanks for your help, bye."
+  },
+  "intended_assistant_turns": {
+    "0": "Hello! How can I help you today?",
+    "1": "Sure. First, I\u2019ll need to pull up your reservation. What\u2019s your six-character confirmation number, and the last name on the booking?",
+    "2": "Thanks, Rodriguez. I want to make sure I have the confirmation number exactly right. Could you please say the full code again, one character at a time? It should be six letters and numbers.",
+    "3": "Got it. I\u2019ve pulled up Samantha Rodriguez, confirmation code Zulu Kilo Three Foxtrot Foxtrot Whiskey. You\u2019re confirmed on SkyWay flight Sierra Kilo six twenty-one on March twentieth, with seat twenty-two A. To move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer, morning, afternoon, or evening?",
+    "4": "Perfect. For Wednesday, March twenty-fifth, Austin to Los Angeles, arriving by four PM Pacific, I have two good nonstop afternoon options. Option one is SkyWay flight Sierra Kilo seven thirty-nine. Departs one forty-five PM Austin time, arrives three PM Los Angeles time. Main Cabin fare is three hundred forty dollars. Option two is SkyWay flight Sierra Kilo seven eighty-one. Departs two thirty-five PM Austin time, arrives three fifty-five PM Los Angeles time. Main Cabin fare is five hundred twenty dollars. Since this is a voluntary change in Main Cabin, there\u2019s a seventy-five dollar change fee, plus any fare difference. Which option would you like me to book?",
+    "5": "For your current Main Cabin ticket, you paid two hundred sixty dollars. For flight Sierra Kilo seven thirty-nine at one forty-five PM, the new fare is three hundred forty dollars. That\u2019s an eighty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is one hundred fifty-five dollars. For flight Sierra Kilo seven eighty-one at two thirty-five PM, the new fare is five hundred twenty dollars. That\u2019s a two hundred sixty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is three hundred thirty-five dollars. Those totals are based on the current available fares right now. Which one should I switch you to?",
+    "6": "On March twenty-fifth, to keep your total change cost at one hundred twenty dollars or less, the only option I can see is an earlier nonstop: SkyWay flight Sierra Kilo seven zero three. Departs eight fifteen AM Austin time, arrives nine twenty-five AM Los Angeles time. In Main Cabin, the fare is three hundred dollars, so your total to change would be one hundred fifteen dollars, which is the seventy-five dollar change fee plus a forty dollar fare difference. Window seats are showing as available. If that morning arrival works for you, I can switch you to that flight and request a window seat. Do you want me to book it?",
+    "7": "I can do that. The total to change to SkyWay flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth is one hundred fifteen dollars, which is the seventy-five dollar change fee plus a forty dollar fare difference. Do I have your okay to charge that one hundred fifteen dollars and rebook you now?",
+    "8": "All set. I rebooked you to SkyWay flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth, Austin to Los Angeles. It departs at eight fifteen AM Austin time and arrives at nine twenty-five AM Los Angeles time. I charged a total of one hundred fifteen dollars, made up of the seventy-five dollar change fee plus a forty dollar fare difference. And you now have a confirmed window seat, seat twenty-one A. Your confirmation number remains Zulu Kilo Three Foxtrot Foxtrot Whiskey.",
+    "9": "You\u2019re welcome. Yes, I can help. Right now you have seat twenty-one A, and no checked bags or special meal on the reservation. Do you want to add a checked bag, or request a special meal?"
+  },
+  "intended_user_turns": {
+    "1": "Hi, I need to change my flight to March twenty fifth.",
+    "2": "The confirmation is Z K three F F W, and the last name is Rodriguez.",
+    "3": "[slow] Zulu. Kilo. Three. Foxtrot. Foxtrot. Whiskey.  \nLast name Rodriguez.",
+    "4": "Yeah, same route, Austin to L A X only.  \nAfternoon, as long as I arrive by four p m Pacific.",
+    "5": "Before I pick, I need the total cost to change each option, all in, including the change fee and fare difference.",
+    "6": "Neither of those works; my max total to change is one hundred twenty dollars.  \nCan you look for any other Austin to L A X flight on March twenty-fifth that arrives by four p m Pacific, keeps it under one hundred twenty total, and has a window seat available?",
+    "7": "That works.  \nPlease move me to Sierra Kilo seven zero three on March twenty-fifth, and I need a confirmed window seat, not just a request.",
+    "8": "Yes, you have my okay to charge one hundred fifteen and rebook me on that flight, as long as you assign a specific window seat.",
+    "9": "Perfect, thanks for getting that done.  \n\nCan you help me with anything else on this reservation today?",
+    "10": "No, I do not want to add anything else. Thanks for your help, bye."
+  },
+  "audio_timestamps_assistant_turns": {
+    "0": [
+      [
+        1772403724.647605,
+        1772403727.245576
+      ]
+    ],
+    "1": [
+      [
+        1772403733.3349462,
+        1772403739.691956
+      ]
+    ],
+    "2": [
+      [
+        1772403751.7891579,
+        1772403761.4023108
+      ]
+    ],
+    "3": [
+      [
+        1772403776.159976,
+        1772403794.620748
+      ]
+    ],
+    "4": [
+      [
+        1772403810.133575,
+        1772403845.347048
+      ]
+    ],
+    "5": [
+      [
+        1772403860.0551932,
+        1772403894.0739589
+      ]
+    ],
+    "6": [
+      [
+        1772403930.889625,
+        1772403962.091439
+      ]
+    ],
+    "7": [
+      [
+        1772403978.431253,
+        1772403992.311546
+      ]
+    ],
+    "8": [
+      [
+        1772404008.294615,
+        1772404031.788522
+      ]
+    ],
+    "9": [
+      [
+        1772404042.1977642,
+        1772404052.7429702
+      ]
+    ]
+  },
+  "audio_timestamps_user_turns": {
+    "1": [
+      [
+        1772403727.94754,
+        1772403731.368855
+      ]
+    ],
+    "2": [
+      [
+        1772403742.613776,
+        1772403749.434989
+      ]
+    ],
+    "3": [
+      [
+        1772403763.783529,
+        1772403797.4478238
+      ]
+    ],
+    "4": [
+      [
+        1772403797.504352,
+        1772403804.7048872
+      ]
+    ],
+    "5": [
+      [
+        1772403848.829487,
+        1772403855.5498629
+      ]
+    ],
+    "6": [
+      [
+        1772403897.955505,
+        1772403913.3170938
+      ]
+    ],
+    "7": [
+      [
+        1772403964.8924348,
+        1772403974.69313
+      ]
+    ],
+    "8": [
+      [
+        1772403994.942067,
+        1772404001.442026
+      ]
+    ],
+    "9": [
+      [
+        1772404034.250272,
+        1772404039.691183
+      ]
+    ],
+    "10": [
+      [
+        1772404056.046836,
+        1772404060.9248
+      ]
+    ]
+  },
+  "num_assistant_turns": 10,
+  "num_user_turns": 9,
+  "num_tool_calls": 5,
+  "tool_called": [
+    "get_reservation",
+    "search_rebooking_options",
+    "search_rebooking_options",
+    "rebook_flight",
+    "assign_seat"
+  ],
+  "tool_params": [
+    {
+      "tool_name": "get_reservation",
+      "tool_parameters": {
+        "confirmation_number": "ZK3FFW",
+        "last_name": "Rodriguez"
+      }
+    },
+    {
+      "tool_name": "search_rebooking_options",
+      "tool_parameters": {
+        "origin": "AUS",
+        "destination": "LAX",
+        "date": "2026-03-25",
+        "passenger_count": 1,
+        "fare_class": "main_cabin"
+      }
+    },
+    {
+      "tool_name": "search_rebooking_options",
+      "tool_parameters": {
+        "origin": "AUS",
+        "destination": "LAX",
+        "date": "2026-03-25",
+        "passenger_count": 1,
+        "fare_class": "any"
+      }
+    },
+    {
+      "tool_name": "rebook_flight",
+      "tool_parameters": {
+        "confirmation_number": "ZK3FFW",
+        "journey_id": "FL_SK621_20260320",
+        "new_journey_id": "FL_SK703_20260325",
+        "rebooking_type": "voluntary",
+        "waive_change_fee": false
+      }
+    },
+    {
+      "tool_name": "assign_seat",
+      "tool_parameters": {
+        "confirmation_number": "ZK3FFW",
+        "passenger_id": "PAX001",
+        "journey_id": "FL_SK703_20260325",
+        "seat_preference": "window"
+      }
+    }
+  ],
+  "tool_responses": [
+    {
+      "tool_name": "get_reservation",
+      "tool_response": {
+        "status": "success",
+        "reservation": {
+          "ancillaries": {
+            "bags_fee": 0.0,
+            "seat_selection_fee": 0.0
+          },
+          "booking_date": "2026-02-02T14:18:00-06:00",
+          "bookings": [
+            {
+              "fare_class": "main_cabin",
+              "fare_paid": 260.0,
+              "journey_id": "FL_SK621_20260320",
+              "segments": [
+                {
+                  "bags_checked": 0,
+                  "date": "2026-03-20",
+                  "fare_paid": 260.0,
+                  "flight_number": "SK621",
+                  "meal_request": null,
+                  "seat": "22A"
+                }
+              ],
+              "status": "confirmed"
+            }
+          ],
+          "confirmation_number": "ZK3FFW",
+          "fare_type": "non_refundable",
+          "passengers": [
+            {
+              "elite_status": null,
+              "email": "samantha.rodriguez@example.com",
+              "first_name": "Samantha",
+              "last_name": "Rodriguez",
+              "meal_preference": "none",
+              "passenger_id": "PAX001",
+              "phone": "+1-512-555-0148",
+              "seat_preference": "window",
+              "ticket_number": "1801234567890"
+            }
+          ],
+          "status": "confirmed"
+        }
+      }
+    },
+    {
+      "tool_name": "search_rebooking_options",
+      "tool_response": {
+        "status": "success",
+        "options": [
+          {
+            "journey_id": "FL_SK703_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 190,
+            "segments": [
+              {
+                "aircraft_type": "A320",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 10,
+                  "business": 3,
+                  "first": 0,
+                  "main_cabin": 21,
+                  "premium_economy": 8
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 190,
+                "fares": {
+                  "basic_economy": 199.0,
+                  "business": 1050.0,
+                  "first": null,
+                  "main_cabin": 300.0,
+                  "premium_economy": 690.0
+                },
+                "flight_number": "SK703",
+                "gate": "B4",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "09:25",
+                "scheduled_departure": "08:15",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "08:15",
+            "arrival_time": "09:25",
+            "available_seats": {
+              "basic_economy": 10,
+              "main_cabin": 22,
+              "premium_economy": 8,
+              "business": 3,
+              "first": 0
+            },
+            "fare": 300.0
+          },
+          {
+            "journey_id": "FL_SK715_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 200,
+            "segments": [
+              {
+                "aircraft_type": "737-900",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 6,
+                  "business": 2,
+                  "first": 0,
+                  "main_cabin": 17,
+                  "premium_economy": 5
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 200,
+                "fares": {
+                  "basic_economy": 205.0,
+                  "business": 1100.0,
+                  "first": null,
+                  "main_cabin": 455.0,
+                  "premium_economy": 720.0
+                },
+                "flight_number": "SK715",
+                "gate": "A3",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "11:00",
+                "scheduled_departure": "10:40",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "10:40",
+            "arrival_time": "11:00",
+            "available_seats": {
+              "basic_economy": 6,
+              "main_cabin": 17,
+              "premium_economy": 5,
+              "business": 2,
+              "first": 0
+            },
+            "fare": 455.0
+          },
+          {
+            "journey_id": "FL_SK739_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 195,
+            "segments": [
+              {
+                "aircraft_type": "A321",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 12,
+                  "business": 4,
+                  "first": 0,
+                  "main_cabin": 24,
+                  "premium_economy": 9
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 195,
+                "fares": {
+                  "basic_economy": 215.0,
+                  "business": 1125.0,
+                  "first": null,
+                  "main_cabin": 340.0,
+                  "premium_economy": 705.0
+                },
+                "flight_number": "SK739",
+                "gate": "B9",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "15:00",
+                "scheduled_departure": "13:45",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "13:45",
+            "arrival_time": "15:00",
+            "available_seats": {
+              "basic_economy": 12,
+              "main_cabin": 24,
+              "premium_economy": 9,
+              "business": 4,
+              "first": 0
+            },
+            "fare": 340.0
+          },
+          {
+            "journey_id": "FL_SK781_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 200,
+            "segments": [
+              {
+                "aircraft_type": "737-800",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 5,
+                  "business": 0,
+                  "first": 0,
+                  "main_cabin": 9,
+                  "premium_economy": 3
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 200,
+                "fares": {
+                  "basic_economy": 195.0,
+                  "business": null,
+                  "first": null,
+                  "main_cabin": 520.0,
+                  "premium_economy": 760.0
+                },
+                "flight_number": "SK781",
+                "gate": "A11",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "15:55",
+                "scheduled_departure": "14:35",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "14:35",
+            "arrival_time": "15:55",
+            "available_seats": {
+              "basic_economy": 5,
+              "main_cabin": 9,
+              "premium_economy": 3,
+              "business": 0,
+              "first": 0
+            },
+            "fare": 520.0
+          },
+          {
+            "journey_id": "FL_SK809_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 205,
+            "segments": [
+              {
+                "aircraft_type": "A320",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 18,
+                  "business": 4,
+                  "first": 0,
+                  "main_cabin": 31,
+                  "premium_economy": 10
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 205,
+                "fares": {
+                  "basic_economy": 185.0,
+                  "business": 990.0,
+                  "first": null,
+                  "main_cabin": 290.0,
+                  "premium_economy": 670.0
+                },
+                "flight_number": "SK809",
+                "gate": "B2",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "17:35",
+                "scheduled_departure": "16:10",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "16:10",
+            "arrival_time": "17:35",
+            "available_seats": {
+              "basic_economy": 18,
+              "main_cabin": 31,
+              "premium_economy": 10,
+              "business": 4,
+              "first": 0
+            },
+            "fare": 290.0
+          }
+        ],
+        "count": 5,
+        "message": "5 flight(s) found"
+      }
+    },
+    {
+      "tool_name": "search_rebooking_options",
+      "tool_response": {
+        "status": "success",
+        "options": [
+          {
+            "journey_id": "FL_SK703_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 190,
+            "segments": [
+              {
+                "aircraft_type": "A320",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 10,
+                  "business": 3,
+                  "first": 0,
+                  "main_cabin": 21,
+                  "premium_economy": 8
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 190,
+                "fares": {
+                  "basic_economy": 199.0,
+                  "business": 1050.0,
+                  "first": null,
+                  "main_cabin": 300.0,
+                  "premium_economy": 690.0
+                },
+                "flight_number": "SK703",
+                "gate": "B4",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "09:25",
+                "scheduled_departure": "08:15",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "08:15",
+            "arrival_time": "09:25",
+            "available_seats": {
+              "basic_economy": 10,
+              "main_cabin": 22,
+              "premium_economy": 8,
+              "business": 3,
+              "first": 0
+            },
+            "fare": 199.0
+          },
+          {
+            "journey_id": "FL_SK715_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 200,
+            "segments": [
+              {
+                "aircraft_type": "737-900",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 6,
+                  "business": 2,
+                  "first": 0,
+                  "main_cabin": 17,
+                  "premium_economy": 5
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 200,
+                "fares": {
+                  "basic_economy": 205.0,
+                  "business": 1100.0,
+                  "first": null,
+                  "main_cabin": 455.0,
+                  "premium_economy": 720.0
+                },
+                "flight_number": "SK715",
+                "gate": "A3",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "11:00",
+                "scheduled_departure": "10:40",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "10:40",
+            "arrival_time": "11:00",
+            "available_seats": {
+              "basic_economy": 6,
+              "main_cabin": 17,
+              "premium_economy": 5,
+              "business": 2,
+              "first": 0
+            },
+            "fare": 205.0
+          },
+          {
+            "journey_id": "FL_SK739_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 195,
+            "segments": [
+              {
+                "aircraft_type": "A321",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 12,
+                  "business": 4,
+                  "first": 0,
+                  "main_cabin": 24,
+                  "premium_economy": 9
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 195,
+                "fares": {
+                  "basic_economy": 215.0,
+                  "business": 1125.0,
+                  "first": null,
+                  "main_cabin": 340.0,
+                  "premium_economy": 705.0
+                },
+                "flight_number": "SK739",
+                "gate": "B9",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "15:00",
+                "scheduled_departure": "13:45",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "13:45",
+            "arrival_time": "15:00",
+            "available_seats": {
+              "basic_economy": 12,
+              "main_cabin": 24,
+              "premium_economy": 9,
+              "business": 4,
+              "first": 0
+            },
+            "fare": 215.0
+          },
+          {
+            "journey_id": "FL_SK781_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 200,
+            "segments": [
+              {
+                "aircraft_type": "737-800",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 5,
+                  "business": 0,
+                  "first": 0,
+                  "main_cabin": 9,
+                  "premium_economy": 3
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 200,
+                "fares": {
+                  "basic_economy": 195.0,
+                  "business": null,
+                  "first": null,
+                  "main_cabin": 520.0,
+                  "premium_economy": 760.0
+                },
+                "flight_number": "SK781",
+                "gate": "A11",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "15:55",
+                "scheduled_departure": "14:35",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "14:35",
+            "arrival_time": "15:55",
+            "available_seats": {
+              "basic_economy": 5,
+              "main_cabin": 9,
+              "premium_economy": 3,
+              "business": 0,
+              "first": 0
+            },
+            "fare": 195.0
+          },
+          {
+            "journey_id": "FL_SK809_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 205,
+            "segments": [
+              {
+                "aircraft_type": "A320",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 18,
+                  "business": 4,
+                  "first": 0,
+                  "main_cabin": 31,
+                  "premium_economy": 10
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 205,
+                "fares": {
+                  "basic_economy": 185.0,
+                  "business": 990.0,
+                  "first": null,
+                  "main_cabin": 290.0,
+                  "premium_economy": 670.0
+                },
+                "flight_number": "SK809",
+                "gate": "B2",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "17:35",
+                "scheduled_departure": "16:10",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "16:10",
+            "arrival_time": "17:35",
+            "available_seats": {
+              "basic_economy": 18,
+              "main_cabin": 31,
+              "premium_economy": 10,
+              "business": 4,
+              "first": 0
+            },
+            "fare": 185.0
+          }
+        ],
+        "count": 5,
+        "message": "5 flight(s) found"
+      }
+    },
+    {
+      "tool_name": "rebook_flight",
+      "tool_response": {
+        "status": "success",
+        "confirmation_number": "ZK3FFW",
+        "new_journey": {
+          "journey_id": "FL_SK703_20260325",
+          "num_stops": 0,
+          "segments": [
+            {
+              "aircraft_type": "A320",
+              "available_seat_types": {
+                "basic_economy": [
+                  "window",
+                  "aisle",
+                  "middle"
+                ],
+                "business": [
+                  "window",
+                  "aisle"
+                ],
+                "first": [],
+                "main_cabin": [
+                  "window",
+                  "aisle",
+                  "middle"
+                ],
+                "premium_economy": [
+                  "window",
+                  "aisle",
+                  "middle"
+                ]
+              },
+              "available_seats": {
+                "basic_economy": 10,
+                "business": 3,
+                "first": 0,
+                "main_cabin": 21,
+                "premium_economy": 8
+              },
+              "cancellation_reason": null,
+              "delay_minutes": null,
+              "delay_reason": null,
+              "destination": "LAX",
+              "destination_utc_offset": -8,
+              "duration_minutes": 190,
+              "fares": {
+                "basic_economy": 199.0,
+                "business": 1050.0,
+                "first": null,
+                "main_cabin": 300.0,
+                "premium_economy": 690.0
+              },
+              "flight_number": "SK703",
+              "gate": "B4",
+              "origin": "AUS",
+              "origin_utc_offset": -6,
+              "scheduled_arrival": "09:25",
+              "scheduled_departure": "08:15",
+              "segment_number": 1,
+              "status": "scheduled"
+            }
+          ],
+          "departure": "08:15",
+          "arrival": "09:25",
+          "origin": "AUS",
+          "destination": "LAX"
+        },
+        "cost_summary": {
+          "original_fare_class": "main_cabin",
+          "new_fare_class": "main_cabin",
+          "cabin_changed": false,
+          "change_fee": 75,
+          "fare_difference": 40.0,
+          "credit_due": 0,
+          "total_collected": 115.0,
+          "fee_waived": false
+        },
+        "message": "Successfully rebooked to flight FL_SK703_20260325"
+      }
+    },
+    {
+      "tool_name": "assign_seat",
+      "tool_response": {
+        "status": "success",
+        "confirmation_number": "ZK3FFW",
+        "passenger_id": "PAX001",
+        "journey_id": "FL_SK703_20260325",
+        "flight_number": "SK703",
+        "seat_assigned": "21A",
+        "fare_class": "main_cabin",
+        "preference": "window",
+        "message": "Seat 21A (window) successfully assigned"
+      }
+    }
+  ],
+  "conversation_trace": [
+    {
+      "role": "assistant",
+      "content": "Hello! How can I help you today?",
+      "type": "intended",
+      "turn_id": 0
+    },
+    {
+      "role": "user",
+      "content": "Hi, I need to change my flight to March 25th.",
+      "type": "transcribed",
+      "turn_id": 1
+    },
+    {
+      "role": "assistant",
+      "content": "Sure. First, I\u2019ll need to pull up your reservation.\n\nWhat\u2019s your six-character confirmation number, and the last name on the booking?",
+      "type": "intended",
+      "turn_id": 1
+    },
+    {
+      "role": "user",
+      "content": "The confirmation  is Z.  3FFW  and the last name is Rodriguez.",
+      "type": "transcribed",
+      "turn_id": 2
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks, Rodriguez. I want to make sure I have the confirmation number exactly right.\n\nCould you please say the full code again, one character at a time? It should be six letters and numbers.",
+      "type": "intended",
+      "turn_id": 2
+    },
+    {
+      "role": "user",
+      "content": "Zulu.  Kilo.  3 Foxtrot.  Foxtrot Whiskey.  Less than a person.  name Rodriguez.",
+      "type": "transcribed",
+      "turn_id": 3
+    },
+    {
+      "tool_name": "get_reservation",
+      "parameters": {
+        "confirmation_number": "ZK3FFW",
+        "last_name": "Rodriguez"
+      },
+      "type": "tool_call",
+      "turn_id": 3
+    },
+    {
+      "tool_name": "get_reservation",
+      "tool_response": {
+        "status": "success",
+        "reservation": {
+          "ancillaries": {
+            "bags_fee": 0.0,
+            "seat_selection_fee": 0.0
+          },
+          "booking_date": "2026-02-02T14:18:00-06:00",
+          "bookings": [
+            {
+              "fare_class": "main_cabin",
+              "fare_paid": 260.0,
+              "journey_id": "FL_SK621_20260320",
+              "segments": [
+                {
+                  "bags_checked": 0,
+                  "date": "2026-03-20",
+                  "fare_paid": 260.0,
+                  "flight_number": "SK621",
+                  "meal_request": null,
+                  "seat": "22A"
+                }
+              ],
+              "status": "confirmed"
+            }
+          ],
+          "confirmation_number": "ZK3FFW",
+          "fare_type": "non_refundable",
+          "passengers": [
+            {
+              "elite_status": null,
+              "email": "samantha.rodriguez@example.com",
+              "first_name": "Samantha",
+              "last_name": "Rodriguez",
+              "meal_preference": "none",
+              "passenger_id": "PAX001",
+              "phone": "+1-512-555-0148",
+              "seat_preference": "window",
+              "ticket_number": "1801234567890"
+            }
+          ],
+          "status": "confirmed"
+        }
+      },
+      "type": "tool_response",
+      "turn_id": 3
+    },
+    {
+      "role": "assistant",
+      "content": "Got it. I\u2019ve pulled up Samantha Rodriguez, confirmation code Zulu Kilo Three Foxtrot Foxtrot Whiskey. You\u2019re confirmed on SkyWay flight Sierra Kilo six twenty-one on March twentieth, with seat twenty-two A.\n\nTo move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer, morning, afternoon, or evening?",
+      "type": "intended",
+      "turn_id": 3
+    },
+    {
+      "role": "user",
+      "content": "Yeah, same route.  Austin to LAX only. Afternoon. As long as I arrive by 4 p.m. Pacific,",
+      "type": "transcribed",
+      "turn_id": 4
+    },
+    {
+      "tool_name": "search_rebooking_options",
+      "parameters": {
+        "origin": "AUS",
+        "destination": "LAX",
+        "date": "2026-03-25",
+        "passenger_count": 1,
+        "fare_class": "main_cabin"
+      },
+      "type": "tool_call",
+      "turn_id": 4
+    },
+    {
+      "tool_name": "search_rebooking_options",
+      "tool_response": {
+        "status": "success",
+        "options": [
+          {
+            "journey_id": "FL_SK703_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 190,
+            "segments": [
+              {
+                "aircraft_type": "A320",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 10,
+                  "business": 3,
+                  "first": 0,
+                  "main_cabin": 21,
+                  "premium_economy": 8
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 190,
+                "fares": {
+                  "basic_economy": 199.0,
+                  "business": 1050.0,
+                  "first": null,
+                  "main_cabin": 300.0,
+                  "premium_economy": 690.0
+                },
+                "flight_number": "SK703",
+                "gate": "B4",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "09:25",
+                "scheduled_departure": "08:15",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "08:15",
+            "arrival_time": "09:25",
+            "available_seats": {
+              "basic_economy": 10,
+              "main_cabin": 22,
+              "premium_economy": 8,
+              "business": 3,
+              "first": 0
+            },
+            "fare": 300.0
+          },
+          {
+            "journey_id": "FL_SK715_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 200,
+            "segments": [
+              {
+                "aircraft_type": "737-900",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 6,
+                  "business": 2,
+                  "first": 0,
+                  "main_cabin": 17,
+                  "premium_economy": 5
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 200,
+                "fares": {
+                  "basic_economy": 205.0,
+                  "business": 1100.0,
+                  "first": null,
+                  "main_cabin": 455.0,
+                  "premium_economy": 720.0
+                },
+                "flight_number": "SK715",
+                "gate": "A3",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "11:00",
+                "scheduled_departure": "10:40",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "10:40",
+            "arrival_time": "11:00",
+            "available_seats": {
+              "basic_economy": 6,
+              "main_cabin": 17,
+              "premium_economy": 5,
+              "business": 2,
+              "first": 0
+            },
+            "fare": 455.0
+          },
+          {
+            "journey_id": "FL_SK739_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 195,
+            "segments": [
+              {
+                "aircraft_type": "A321",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 12,
+                  "business": 4,
+                  "first": 0,
+                  "main_cabin": 24,
+                  "premium_economy": 9
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 195,
+                "fares": {
+                  "basic_economy": 215.0,
+                  "business": 1125.0,
+                  "first": null,
+                  "main_cabin": 340.0,
+                  "premium_economy": 705.0
+                },
+                "flight_number": "SK739",
+                "gate": "B9",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "15:00",
+                "scheduled_departure": "13:45",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "13:45",
+            "arrival_time": "15:00",
+            "available_seats": {
+              "basic_economy": 12,
+              "main_cabin": 24,
+              "premium_economy": 9,
+              "business": 4,
+              "first": 0
+            },
+            "fare": 340.0
+          },
+          {
+            "journey_id": "FL_SK781_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 200,
+            "segments": [
+              {
+                "aircraft_type": "737-800",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 5,
+                  "business": 0,
+                  "first": 0,
+                  "main_cabin": 9,
+                  "premium_economy": 3
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 200,
+                "fares": {
+                  "basic_economy": 195.0,
+                  "business": null,
+                  "first": null,
+                  "main_cabin": 520.0,
+                  "premium_economy": 760.0
+                },
+                "flight_number": "SK781",
+                "gate": "A11",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "15:55",
+                "scheduled_departure": "14:35",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "14:35",
+            "arrival_time": "15:55",
+            "available_seats": {
+              "basic_economy": 5,
+              "main_cabin": 9,
+              "premium_economy": 3,
+              "business": 0,
+              "first": 0
+            },
+            "fare": 520.0
+          },
+          {
+            "journey_id": "FL_SK809_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 205,
+            "segments": [
+              {
+                "aircraft_type": "A320",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 18,
+                  "business": 4,
+                  "first": 0,
+                  "main_cabin": 31,
+                  "premium_economy": 10
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 205,
+                "fares": {
+                  "basic_economy": 185.0,
+                  "business": 990.0,
+                  "first": null,
+                  "main_cabin": 290.0,
+                  "premium_economy": 670.0
+                },
+                "flight_number": "SK809",
+                "gate": "B2",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "17:35",
+                "scheduled_departure": "16:10",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "16:10",
+            "arrival_time": "17:35",
+            "available_seats": {
+              "basic_economy": 18,
+              "main_cabin": 31,
+              "premium_economy": 10,
+              "business": 4,
+              "first": 0
+            },
+            "fare": 290.0
+          }
+        ],
+        "count": 5,
+        "message": "5 flight(s) found"
+      },
+      "type": "tool_response",
+      "turn_id": 4
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect. For Wednesday, March twenty-fifth, Austin to Los Angeles, arriving by four PM Pacific, I have two good nonstop afternoon options.\n\nOption one is SkyWay flight Sierra Kilo seven thirty-nine. Departs one forty-five PM Austin time, arrives three PM Los Angeles time. Main Cabin fare is three hundred forty dollars.\n\nOption two is SkyWay flight Sierra Kilo seven eighty-one. Departs two thirty-five PM Austin time, arrives three fifty-five PM Los Angeles time. Main Cabin fare is five hundred twenty dollars.\n\nSince this is a voluntary change in Main Cabin, there\u2019s a seventy-five dollar change fee, plus any fare difference. Which option would you like me to book?",
+      "type": "intended",
+      "turn_id": 4
+    },
+    {
+      "role": "user",
+      "content": "Before I pick, I need the total cost to change each option.  All in.  including the change fee and fair difference.",
+      "type": "transcribed",
+      "turn_id": 5
+    },
+    {
+      "role": "assistant",
+      "content": "For your current Main Cabin ticket, you paid two hundred sixty dollars.\n\nFor flight Sierra Kilo seven thirty-nine at one forty-five PM, the new fare is three hundred forty dollars. That\u2019s an eighty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is one hundred fifty-five dollars.\n\nFor flight Sierra Kilo seven eighty-one at two thirty-five PM, the new fare is five hundred twenty dollars. That\u2019s a two hundred sixty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is three hundred thirty-five dollars.\n\nThose totals are based on the current available fares right now. Which one should I switch you to?",
+      "type": "intended",
+      "turn_id": 5
+    },
+    {
+      "role": "user",
+      "content": "Neither of those works.  My max total to change is $120. Can you look for any other Austin to LAX flight on March 25th?  that arrives by 4 p.m. Pacific.  Keeps it under 120 total.  And has a Windows seat available?",
+      "type": "transcribed",
+      "turn_id": 6
+    },
+    {
+      "tool_name": "search_rebooking_options",
+      "parameters": {
+        "origin": "AUS",
+        "destination": "LAX",
+        "date": "2026-03-25",
+        "passenger_count": 1,
+        "fare_class": "any"
+      },
+      "type": "tool_call",
+      "turn_id": 6
+    },
+    {
+      "tool_name": "search_rebooking_options",
+      "tool_response": {
+        "status": "success",
+        "options": [
+          {
+            "journey_id": "FL_SK703_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 190,
+            "segments": [
+              {
+                "aircraft_type": "A320",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 10,
+                  "business": 3,
+                  "first": 0,
+                  "main_cabin": 21,
+                  "premium_economy": 8
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 190,
+                "fares": {
+                  "basic_economy": 199.0,
+                  "business": 1050.0,
+                  "first": null,
+                  "main_cabin": 300.0,
+                  "premium_economy": 690.0
+                },
+                "flight_number": "SK703",
+                "gate": "B4",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "09:25",
+                "scheduled_departure": "08:15",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "08:15",
+            "arrival_time": "09:25",
+            "available_seats": {
+              "basic_economy": 10,
+              "main_cabin": 22,
+              "premium_economy": 8,
+              "business": 3,
+              "first": 0
+            },
+            "fare": 199.0
+          },
+          {
+            "journey_id": "FL_SK715_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 200,
+            "segments": [
+              {
+                "aircraft_type": "737-900",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 6,
+                  "business": 2,
+                  "first": 0,
+                  "main_cabin": 17,
+                  "premium_economy": 5
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 200,
+                "fares": {
+                  "basic_economy": 205.0,
+                  "business": 1100.0,
+                  "first": null,
+                  "main_cabin": 455.0,
+                  "premium_economy": 720.0
+                },
+                "flight_number": "SK715",
+                "gate": "A3",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "11:00",
+                "scheduled_departure": "10:40",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "10:40",
+            "arrival_time": "11:00",
+            "available_seats": {
+              "basic_economy": 6,
+              "main_cabin": 17,
+              "premium_economy": 5,
+              "business": 2,
+              "first": 0
+            },
+            "fare": 205.0
+          },
+          {
+            "journey_id": "FL_SK739_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 195,
+            "segments": [
+              {
+                "aircraft_type": "A321",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 12,
+                  "business": 4,
+                  "first": 0,
+                  "main_cabin": 24,
+                  "premium_economy": 9
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 195,
+                "fares": {
+                  "basic_economy": 215.0,
+                  "business": 1125.0,
+                  "first": null,
+                  "main_cabin": 340.0,
+                  "premium_economy": 705.0
+                },
+                "flight_number": "SK739",
+                "gate": "B9",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "15:00",
+                "scheduled_departure": "13:45",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "13:45",
+            "arrival_time": "15:00",
+            "available_seats": {
+              "basic_economy": 12,
+              "main_cabin": 24,
+              "premium_economy": 9,
+              "business": 4,
+              "first": 0
+            },
+            "fare": 215.0
+          },
+          {
+            "journey_id": "FL_SK781_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 200,
+            "segments": [
+              {
+                "aircraft_type": "737-800",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 5,
+                  "business": 0,
+                  "first": 0,
+                  "main_cabin": 9,
+                  "premium_economy": 3
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 200,
+                "fares": {
+                  "basic_economy": 195.0,
+                  "business": null,
+                  "first": null,
+                  "main_cabin": 520.0,
+                  "premium_economy": 760.0
+                },
+                "flight_number": "SK781",
+                "gate": "A11",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "15:55",
+                "scheduled_departure": "14:35",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "14:35",
+            "arrival_time": "15:55",
+            "available_seats": {
+              "basic_economy": 5,
+              "main_cabin": 9,
+              "premium_economy": 3,
+              "business": 0,
+              "first": 0
+            },
+            "fare": 195.0
+          },
+          {
+            "journey_id": "FL_SK809_20260325",
+            "origin": "AUS",
+            "destination": "LAX",
+            "num_stops": 0,
+            "total_duration_minutes": 205,
+            "segments": [
+              {
+                "aircraft_type": "A320",
+                "available_seat_types": {
+                  "basic_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "business": [
+                    "window",
+                    "aisle"
+                  ],
+                  "first": [],
+                  "main_cabin": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ],
+                  "premium_economy": [
+                    "window",
+                    "aisle",
+                    "middle"
+                  ]
+                },
+                "available_seats": {
+                  "basic_economy": 18,
+                  "business": 4,
+                  "first": 0,
+                  "main_cabin": 31,
+                  "premium_economy": 10
+                },
+                "cancellation_reason": null,
+                "delay_minutes": null,
+                "delay_reason": null,
+                "destination": "LAX",
+                "destination_utc_offset": -8,
+                "duration_minutes": 205,
+                "fares": {
+                  "basic_economy": 185.0,
+                  "business": 990.0,
+                  "first": null,
+                  "main_cabin": 290.0,
+                  "premium_economy": 670.0
+                },
+                "flight_number": "SK809",
+                "gate": "B2",
+                "origin": "AUS",
+                "origin_utc_offset": -6,
+                "scheduled_arrival": "17:35",
+                "scheduled_departure": "16:10",
+                "segment_number": 1,
+                "status": "scheduled"
+              }
+            ],
+            "departure_time": "16:10",
+            "arrival_time": "17:35",
+            "available_seats": {
+              "basic_economy": 18,
+              "main_cabin": 31,
+              "premium_economy": 10,
+              "business": 4,
+              "first": 0
+            },
+            "fare": 185.0
+          }
+        ],
+        "count": 5,
+        "message": "5 flight(s) found"
+      },
+      "type": "tool_response",
+      "turn_id": 6
+    },
+    {
+      "role": "assistant",
+      "content": "On March twenty-fifth, to keep your total change cost at one hundred twenty dollars or less, the only option I can see is an earlier nonstop:\n\nSkyWay flight Sierra Kilo seven zero three. Departs eight fifteen AM Austin time, arrives nine twenty-five AM Los Angeles time. In Main Cabin, the fare is three hundred dollars, so your total to change would be one hundred fifteen dollars, which is the seventy-five dollar change fee plus a forty dollar fare difference. Window seats are showing as available.\n\nIf that morning arrival works for you, I can switch you to that flight and request a window seat. Do you want me to book it?",
+      "type": "intended",
+      "turn_id": 6
+    },
+    {
+      "role": "user",
+      "content": "That Please move me to Sierra Kilo 703 on March 22nd.  25th. And I need a confirmed Windows seat, not just a request.",
+      "type": "transcribed",
+      "turn_id": 7
+    },
+    {
+      "role": "assistant",
+      "content": "I can do that. The total to change to SkyWay flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth is one hundred fifteen dollars, which is the seventy-five dollar change fee plus a forty dollar fare difference.\n\nDo I have your okay to charge that one hundred fifteen dollars and rebook you now?",
+      "type": "intended",
+      "turn_id": 7
+    },
+    {
+      "role": "user",
+      "content": "Yes, you have my okay to charge 115.  and rebook me on that that-specific window seat.",
+      "type": "transcribed",
+      "turn_id": 8
+    },
+    {
+      "tool_name": "rebook_flight",
+      "parameters": {
+        "confirmation_number": "ZK3FFW",
+        "journey_id": "FL_SK621_20260320",
+        "new_journey_id": "FL_SK703_20260325",
+        "rebooking_type": "voluntary",
+        "waive_change_fee": false
+      },
+      "type": "tool_call",
+      "turn_id": 8
+    },
+    {
+      "tool_name": "rebook_flight",
+      "tool_response": {
+        "status": "success",
+        "confirmation_number": "ZK3FFW",
+        "new_journey": {
+          "journey_id": "FL_SK703_20260325",
+          "num_stops": 0,
+          "segments": [
+            {
+              "aircraft_type": "A320",
+              "available_seat_types": {
+                "basic_economy": [
+                  "window",
+                  "aisle",
+                  "middle"
+                ],
+                "business": [
+                  "window",
+                  "aisle"
+                ],
+                "first": [],
+                "main_cabin": [
+                  "window",
+                  "aisle",
+                  "middle"
+                ],
+                "premium_economy": [
+                  "window",
+                  "aisle",
+                  "middle"
+                ]
+              },
+              "available_seats": {
+                "basic_economy": 10,
+                "business": 3,
+                "first": 0,
+                "main_cabin": 21,
+                "premium_economy": 8
+              },
+              "cancellation_reason": null,
+              "delay_minutes": null,
+              "delay_reason": null,
+              "destination": "LAX",
+              "destination_utc_offset": -8,
+              "duration_minutes": 190,
+              "fares": {
+                "basic_economy": 199.0,
+                "business": 1050.0,
+                "first": null,
+                "main_cabin": 300.0,
+                "premium_economy": 690.0
+              },
+              "flight_number": "SK703",
+              "gate": "B4",
+              "origin": "AUS",
+              "origin_utc_offset": -6,
+              "scheduled_arrival": "09:25",
+              "scheduled_departure": "08:15",
+              "segment_number": 1,
+              "status": "scheduled"
+            }
+          ],
+          "departure": "08:15",
+          "arrival": "09:25",
+          "origin": "AUS",
+          "destination": "LAX"
+        },
+        "cost_summary": {
+          "original_fare_class": "main_cabin",
+          "new_fare_class": "main_cabin",
+          "cabin_changed": false,
+          "change_fee": 75,
+          "fare_difference": 40.0,
+          "credit_due": 0,
+          "total_collected": 115.0,
+          "fee_waived": false
+        },
+        "message": "Successfully rebooked to flight FL_SK703_20260325"
+      },
+      "type": "tool_response",
+      "turn_id": 8
+    },
+    {
+      "tool_name": "assign_seat",
+      "parameters": {
+        "confirmation_number": "ZK3FFW",
+        "passenger_id": "PAX001",
+        "journey_id": "FL_SK703_20260325",
+        "seat_preference": "window"
+      },
+      "type": "tool_call",
+      "turn_id": 8
+    },
+    {
+      "tool_name": "assign_seat",
+      "tool_response": {
+        "status": "success",
+        "confirmation_number": "ZK3FFW",
+        "passenger_id": "PAX001",
+        "journey_id": "FL_SK703_20260325",
+        "flight_number": "SK703",
+        "seat_assigned": "21A",
+        "fare_class": "main_cabin",
+        "preference": "window",
+        "message": "Seat 21A (window) successfully assigned"
+      },
+      "type": "tool_response",
+      "turn_id": 8
+    },
+    {
+      "role": "assistant",
+      "content": "All set. I rebooked you to SkyWay flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth, Austin to Los Angeles. It departs at eight fifteen AM Austin time and arrives at nine twenty-five AM Los Angeles time.\n\nI charged a total of one hundred fifteen dollars, made up of the seventy-five dollar change fee plus a forty dollar fare difference. And you now have a confirmed window seat, seat twenty-one A.\n\nYour confirmation number remains Zulu Kilo Three Foxtrot Foxtrot Whiskey.",
+      "type": "intended",
+      "turn_id": 8
+    },
+    {
+      "role": "user",
+      "content": "Perfect. Thanks for getting that done.  Can you help me  with anything else on this reservation today.",
+      "type": "transcribed",
+      "turn_id": 9
+    },
+    {
+      "role": "assistant",
+      "content": "You\u2019re welcome. Yes, I can help.\n\nRight now you have seat twenty-one A, and no checked bags or special meal on the reservation. Do you want to add a checked bag, or request a special meal?",
+      "type": "intended",
+      "turn_id": 9
+    },
+    {
+      "role": "user",
+      "content": "No, I do not want to add anything else. Thanks for your help, bye.",
+      "type": "intended",
+      "turn_id": 10
+    }
+  ],
+  "conversation_finished": false,
+  "conversation_ended_reason": null,
+  "is_audio_native": false,
+  "assistant_interrupted_turns": [],
+  "user_interrupted_turns": [],
+  "response_speed_latencies": [
+    2.7009661197662354,
+    3.109650135040283,
+    5.109460115432739,
+    4.568719863891602,
+    4.3735339641571045,
+    17.46663212776184,
+    3.3589282035827637,
+    6.89847207069397,
+    2.5780792236328125
+  ]
+}

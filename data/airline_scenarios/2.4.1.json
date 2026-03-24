@@ -1,0 +1,537 @@
+{
+  "_current_date": "2026-06-14",
+  "reservations": {
+    "5KR950": {
+      "confirmation_number": "5KR950",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Nathan",
+          "last_name": "Whitfield",
+          "ticket_number": "0712345678901",
+          "email": "nathan.whitfield@gmail.com",
+          "phone": "+1-303-555-0187",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "no_preference"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK672_20260614",
+          "fare_class": "main_cabin",
+          "fare_paid": 389.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK672",
+              "date": "2026-06-14",
+              "fare_paid": 389.0,
+              "seat": "22C",
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-05-20T09:12:00-06:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK672_20260614": {
+      "journey_id": "FL_SK672_20260614",
+      "date": "2026-06-14",
+      "origin": "DEN",
+      "destination": "JFK",
+      "num_stops": 0,
+      "total_duration_minutes": 225,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK672",
+          "origin": "DEN",
+          "destination": "JFK",
+          "scheduled_departure": "10:15",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "16:00",
+          "destination_utc_offset": -4,
+          "duration_minutes": 225,
+          "aircraft_type": "737-800",
+          "status": "cancelled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": "mechanical",
+          "gate": "B22",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 0,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": null,
+            "main_cabin": null,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "cancelled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": null,
+        "main_cabin": null,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK940_20260614": {
+      "journey_id": "FL_SK940_20260614",
+      "date": "2026-06-14",
+      "origin": "DEN",
+      "destination": "JFK",
+      "num_stops": 0,
+      "total_duration_minutes": 225,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK940",
+          "origin": "DEN",
+          "destination": "JFK",
+          "scheduled_departure": "16:30",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "21:45",
+          "destination_utc_offset": -4,
+          "duration_minutes": 195,
+          "aircraft_type": "737-900",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B18",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 9,
+            "premium_economy": 3,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 319.0,
+            "main_cabin": 459.0,
+            "premium_economy": 789.0,
+            "business": 1299.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 319.0,
+        "main_cabin": 459.0,
+        "premium_economy": 789.0,
+        "business": 1299.0,
+        "first": null
+      }
+    },
+    "FL_SK310_SK855_20260614": {
+      "journey_id": "FL_SK310_SK855_20260614",
+      "date": "2026-06-14",
+      "origin": "DEN",
+      "destination": "JFK",
+      "num_stops": 1,
+      "total_duration_minutes": 345,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK310",
+          "origin": "DEN",
+          "destination": "ORD",
+          "scheduled_departure": "13:15",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "16:25",
+          "destination_utc_offset": -5,
+          "duration_minutes": 130,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C10",
+          "available_seats": {
+            "basic_economy": 8,
+            "main_cabin": 0,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 149.0,
+            "main_cabin": 229.0,
+            "premium_economy": 469.0,
+            "business": 799.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        },
+        {
+          "segment_number": 2,
+          "flight_number": "SK855",
+          "origin": "ORD",
+          "destination": "JFK",
+          "scheduled_departure": "17:40",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "21:00",
+          "destination_utc_offset": -4,
+          "duration_minutes": 140,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "H6",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 6,
+            "premium_economy": 3,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 169.0,
+            "main_cabin": 249.0,
+            "premium_economy": 499.0,
+            "business": 899.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 318.0,
+        "main_cabin": 478.0,
+        "premium_economy": 968.0,
+        "business": 1698.0,
+        "first": null
+      }
+    },
+    "FL_SK310_20260614": {
+      "journey_id": "FL_SK310_20260614",
+      "date": "2026-06-14",
+      "origin": "DEN",
+      "destination": "ORD",
+      "num_stops": 0,
+      "total_duration_minutes": 130,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK310",
+          "origin": "DEN",
+          "destination": "ORD",
+          "scheduled_departure": "13:15",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "16:25",
+          "destination_utc_offset": -5,
+          "duration_minutes": 130,
+          "aircraft_type": "A320",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C10",
+          "available_seats": {
+            "basic_economy": 8,
+            "main_cabin": 0,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 149.0,
+            "main_cabin": 229.0,
+            "premium_economy": 469.0,
+            "business": 799.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 149.0,
+        "main_cabin": 229.0,
+        "premium_economy": 469.0,
+        "business": 799.0,
+        "first": null
+      }
+    },
+    "FL_SK855_20260614": {
+      "journey_id": "FL_SK855_20260614",
+      "date": "2026-06-14",
+      "origin": "ORD",
+      "destination": "JFK",
+      "num_stops": 0,
+      "total_duration_minutes": 140,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK855",
+          "origin": "ORD",
+          "destination": "JFK",
+          "scheduled_departure": "17:40",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "21:00",
+          "destination_utc_offset": -4,
+          "duration_minutes": 140,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "H6",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 6,
+            "premium_economy": 3,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 169.0,
+            "main_cabin": 249.0,
+            "premium_economy": 499.0,
+            "business": 899.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 169.0,
+        "main_cabin": 249.0,
+        "premium_economy": 499.0,
+        "business": 899.0,
+        "first": null
+      }
+    },
+    "FL_SK990_20260614": {
+      "journey_id": "FL_SK990_20260614",
+      "date": "2026-06-14",
+      "origin": "DEN",
+      "destination": "JFK",
+      "num_stops": 0,
+      "total_duration_minutes": 225,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK990",
+          "origin": "DEN",
+          "destination": "JFK",
+          "scheduled_departure": "18:10",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "23:55",
+          "destination_utc_offset": -4,
+          "duration_minutes": 225,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B30",
+          "available_seats": {
+            "basic_economy": 12,
+            "main_cabin": 14,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 289.0,
+            "main_cabin": 419.0,
+            "premium_economy": 749.0,
+            "business": 1199.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 289.0,
+        "main_cabin": 419.0,
+        "premium_economy": 749.0,
+        "business": 1199.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {
+    "SK672_2026-06-14": {
+      "flight_number": "SK672",
+      "date": "2026-06-14",
+      "disruption_type": "cancellation",
+      "cause": "mechanical",
+      "cause_category": "airline_fault",
+      "is_irrops": true,
+      "delay_minutes": null,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "refund_option": true,
+        "meal_voucher": true,
+        "hotel_accommodation": false,
+        "rebooking_window_days": 7
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

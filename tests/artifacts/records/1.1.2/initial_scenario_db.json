@@ -1,0 +1,480 @@
+{
+  "_current_date": "2026-03-17",
+  "disruptions": {},
+  "journeys": {
+    "FL_SK621_20260320": {
+      "bookable": true,
+      "date": "2026-03-20",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": 210.0,
+        "business": 980.0,
+        "first": null,
+        "main_cabin": 260.0,
+        "premium_economy": 640.0
+      },
+      "journey_id": "FL_SK621_20260320",
+      "num_stops": 0,
+      "origin": "AUS",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          },
+          "available_seats": {
+            "basic_economy": 8,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 18,
+            "premium_economy": 6
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 195,
+          "fares": {
+            "basic_economy": 210.0,
+            "business": 980.0,
+            "first": null,
+            "main_cabin": 260.0,
+            "premium_economy": 640.0
+          },
+          "flight_number": "SK621",
+          "gate": "A7",
+          "origin": "AUS",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "12:20",
+          "scheduled_departure": "11:05",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 195
+    },
+    "FL_SK703_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": 199.0,
+        "business": 1050.0,
+        "first": null,
+        "main_cabin": 300.0,
+        "premium_economy": 690.0
+      },
+      "journey_id": "FL_SK703_20260325",
+      "num_stops": 0,
+      "origin": "AUS",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          },
+          "available_seats": {
+            "basic_economy": 10,
+            "business": 3,
+            "first": 0,
+            "main_cabin": 22,
+            "premium_economy": 8
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 190,
+          "fares": {
+            "basic_economy": 199.0,
+            "business": 1050.0,
+            "first": null,
+            "main_cabin": 300.0,
+            "premium_economy": 690.0
+          },
+          "flight_number": "SK703",
+          "gate": "B4",
+          "origin": "AUS",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "09:25",
+          "scheduled_departure": "08:15",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 190
+    },
+    "FL_SK715_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": 205.0,
+        "business": 1100.0,
+        "first": null,
+        "main_cabin": 455.0,
+        "premium_economy": 720.0
+      },
+      "journey_id": "FL_SK715_20260325",
+      "num_stops": 0,
+      "origin": "AUS",
+      "segments": [
+        {
+          "aircraft_type": "737-900",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          },
+          "available_seats": {
+            "basic_economy": 6,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 17,
+            "premium_economy": 5
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 200,
+          "fares": {
+            "basic_economy": 205.0,
+            "business": 1100.0,
+            "first": null,
+            "main_cabin": 455.0,
+            "premium_economy": 720.0
+          },
+          "flight_number": "SK715",
+          "gate": "A3",
+          "origin": "AUS",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "11:00",
+          "scheduled_departure": "10:40",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 200
+    },
+    "FL_SK739_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": 215.0,
+        "business": 1125.0,
+        "first": null,
+        "main_cabin": 340.0,
+        "premium_economy": 705.0
+      },
+      "journey_id": "FL_SK739_20260325",
+      "num_stops": 0,
+      "origin": "AUS",
+      "segments": [
+        {
+          "aircraft_type": "A321",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          },
+          "available_seats": {
+            "basic_economy": 12,
+            "business": 4,
+            "first": 0,
+            "main_cabin": 24,
+            "premium_economy": 9
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 195,
+          "fares": {
+            "basic_economy": 215.0,
+            "business": 1125.0,
+            "first": null,
+            "main_cabin": 340.0,
+            "premium_economy": 705.0
+          },
+          "flight_number": "SK739",
+          "gate": "B9",
+          "origin": "AUS",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "15:00",
+          "scheduled_departure": "13:45",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 195
+    },
+    "FL_SK781_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": 195.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 520.0,
+        "premium_economy": 760.0
+      },
+      "journey_id": "FL_SK781_20260325",
+      "num_stops": 0,
+      "origin": "AUS",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          },
+          "available_seats": {
+            "basic_economy": 5,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 9,
+            "premium_economy": 3
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 200,
+          "fares": {
+            "basic_economy": 195.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 520.0,
+            "premium_economy": 760.0
+          },
+          "flight_number": "SK781",
+          "gate": "A11",
+          "origin": "AUS",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "15:55",
+          "scheduled_departure": "14:35",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 200
+    },
+    "FL_SK809_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": 185.0,
+        "business": 990.0,
+        "first": null,
+        "main_cabin": 290.0,
+        "premium_economy": 670.0
+      },
+      "journey_id": "FL_SK809_20260325",
+      "num_stops": 0,
+      "origin": "AUS",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          },
+          "available_seats": {
+            "basic_economy": 18,
+            "business": 4,
+            "first": 0,
+            "main_cabin": 31,
+            "premium_economy": 10
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 205,
+          "fares": {
+            "basic_economy": 185.0,
+            "business": 990.0,
+            "first": null,
+            "main_cabin": 290.0,
+            "premium_economy": 670.0
+          },
+          "flight_number": "SK809",
+          "gate": "B2",
+          "origin": "AUS",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "17:35",
+          "scheduled_departure": "16:10",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 205
+    }
+  },
+  "meal_vouchers": {},
+  "refunds": {},
+  "reservations": {
+    "ZK3FFW": {
+      "ancillaries": {
+        "bags_fee": 0.0,
+        "seat_selection_fee": 0.0
+      },
+      "booking_date": "2026-02-02T14:18:00-06:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 260.0,
+          "journey_id": "FL_SK621_20260320",
+          "segments": [
+            {
+              "bags_checked": 0,
+              "date": "2026-03-20",
+              "fare_paid": 260.0,
+              "flight_number": "SK621",
+              "meal_request": null,
+              "seat": "22A"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "ZK3FFW",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "samantha.rodriguez@example.com",
+          "first_name": "Samantha",
+          "last_name": "Rodriguez",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-512-555-0148",
+          "seat_preference": "window",
+          "ticket_number": "1801234567890"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "travel_credits": {}
+}

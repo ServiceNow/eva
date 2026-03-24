@@ -1,0 +1,547 @@
+{
+  "_current_date": "2026-04-02",
+  "reservations": {
+    "RHL505": {
+      "confirmation_number": "RHL505",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Scott",
+          "last_name": "Lewis",
+          "ticket_number": "1801234567890",
+          "email": "scott.lewis@example.com",
+          "phone": "+1-617-555-0142",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "no_preference"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK418_20260402",
+          "fare_class": "main_cabin",
+          "fare_paid": 348.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK418",
+              "date": "2026-04-02",
+              "fare_paid": 348.0,
+              "seat": null,
+              "bags_checked": 0,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-03-18T10:12:00-04:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 0,
+        "bags_fee": 0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK418_20260402": {
+      "journey_id": "FL_SK418_20260402",
+      "date": "2026-04-02",
+      "origin": "BOS",
+      "destination": "MCO",
+      "num_stops": 0,
+      "total_duration_minutes": 195,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK418",
+          "origin": "BOS",
+          "destination": "MCO",
+          "scheduled_departure": "18:20",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "21:35",
+          "destination_utc_offset": -5,
+          "duration_minutes": 195,
+          "aircraft_type": "A320",
+          "status": "delayed",
+          "delay_minutes": 180,
+          "delay_reason": "mechanical",
+          "cancellation_reason": null,
+          "gate": "B12",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 7,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 219.0,
+            "main_cabin": 349.0,
+            "premium_economy": 589.0,
+            "business": 899.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "delayed",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 219.0,
+        "main_cabin": 349.0,
+        "premium_economy": 589.0,
+        "business": 899.0,
+        "first": null
+      }
+    },
+    "FL_SK502_20260402": {
+      "journey_id": "FL_SK502_20260402",
+      "date": "2026-04-02",
+      "origin": "BOS",
+      "destination": "MCO",
+      "num_stops": 0,
+      "total_duration_minutes": 190,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK502",
+          "origin": "BOS",
+          "destination": "MCO",
+          "scheduled_departure": "19:10",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "22:20",
+          "destination_utc_offset": -5,
+          "duration_minutes": 190,
+          "aircraft_type": "737-800",
+          "status": "on_time",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C08",
+          "available_seats": {
+            "basic_economy": 9,
+            "main_cabin": 14,
+            "premium_economy": 3,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 229.0,
+            "main_cabin": 379.0,
+            "premium_economy": 609.0,
+            "business": 949.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "on_time",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 229.0,
+        "main_cabin": 379.0,
+        "premium_economy": 609.0,
+        "business": 949.0,
+        "first": null
+      }
+    },
+    "FL_SK610_20260402": {
+      "journey_id": "FL_SK610_20260402",
+      "date": "2026-04-02",
+      "origin": "BOS",
+      "destination": "MCO",
+      "num_stops": 0,
+      "total_duration_minutes": 200,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK610",
+          "origin": "BOS",
+          "destination": "MCO",
+          "scheduled_departure": "20:05",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "23:25",
+          "destination_utc_offset": -5,
+          "duration_minutes": 200,
+          "aircraft_type": "A321",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B06",
+          "available_seats": {
+            "basic_economy": 2,
+            "main_cabin": 6,
+            "premium_economy": 2,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 255.0,
+            "main_cabin": 405.0,
+            "premium_economy": 655.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 255.0,
+        "main_cabin": 405.0,
+        "premium_economy": 655.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK120_SK305_20260402": {
+      "journey_id": "FL_SK120_SK305_20260402",
+      "date": "2026-04-02",
+      "origin": "BOS",
+      "destination": "MCO",
+      "num_stops": 1,
+      "total_duration_minutes": 265,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK120",
+          "origin": "BOS",
+          "destination": "DCA",
+          "scheduled_departure": "18:45",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "20:10",
+          "destination_utc_offset": -5,
+          "duration_minutes": 85,
+          "aircraft_type": "E175",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A03",
+          "available_seats": {
+            "basic_economy": 12,
+            "main_cabin": 18,
+            "premium_economy": 4,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 129.0,
+            "main_cabin": 179.0,
+            "premium_economy": 279.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        },
+        {
+          "segment_number": 2,
+          "flight_number": "SK305",
+          "origin": "DCA",
+          "destination": "MCO",
+          "scheduled_departure": "21:05",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "23:10",
+          "destination_utc_offset": -5,
+          "duration_minutes": 125,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "D14",
+          "available_seats": {
+            "basic_economy": 7,
+            "main_cabin": 9,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 149.0,
+            "main_cabin": 219.0,
+            "premium_economy": 349.0,
+            "business": 699.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 278.0,
+        "main_cabin": 398.0,
+        "premium_economy": 628.0,
+        "business": 1348.0,
+        "first": null
+      }
+    },
+    "FL_SK120_20260402": {
+      "journey_id": "FL_SK120_20260402",
+      "date": "2026-04-02",
+      "origin": "BOS",
+      "destination": "DCA",
+      "num_stops": 0,
+      "total_duration_minutes": 85,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK120",
+          "origin": "BOS",
+          "destination": "DCA",
+          "scheduled_departure": "18:45",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "20:10",
+          "destination_utc_offset": -5,
+          "duration_minutes": 85,
+          "aircraft_type": "E175",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A03",
+          "available_seats": {
+            "basic_economy": 12,
+            "main_cabin": 18,
+            "premium_economy": 4,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 129.0,
+            "main_cabin": 179.0,
+            "premium_economy": 279.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 129.0,
+        "main_cabin": 179.0,
+        "premium_economy": 279.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK305_20260402": {
+      "journey_id": "FL_SK305_20260402",
+      "date": "2026-04-02",
+      "origin": "DCA",
+      "destination": "MCO",
+      "num_stops": 0,
+      "total_duration_minutes": 125,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK305",
+          "origin": "DCA",
+          "destination": "MCO",
+          "scheduled_departure": "21:05",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "23:10",
+          "destination_utc_offset": -5,
+          "duration_minutes": 125,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "D14",
+          "available_seats": {
+            "basic_economy": 7,
+            "main_cabin": 9,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 149.0,
+            "main_cabin": 219.0,
+            "premium_economy": 349.0,
+            "business": 699.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 149.0,
+        "main_cabin": 219.0,
+        "premium_economy": 349.0,
+        "business": 699.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {
+    "SK418_2026-04-02": {
+      "flight_number": "SK418",
+      "date": "2026-04-02",
+      "disruption_type": "delay",
+      "cause": "mechanical",
+      "cause_category": "airline_fault",
+      "is_irrops": true,
+      "delay_minutes": 180,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "refund_option": false,
+        "meal_voucher": true,
+        "hotel_accommodation": false,
+        "rebooking_window_days": 7,
+        "meal_voucher_tier": "2_4_hours",
+        "voucher_reason": "delay_over_2_hours"
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

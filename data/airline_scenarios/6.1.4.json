@@ -1,0 +1,525 @@
+{
+  "_current_date": "2026-06-16",
+  "reservations": {
+    "R0SDRU": {
+      "ancillaries": {
+        "bags_fee": 40.0,
+        "seat_selection_fee": 15.0
+      },
+      "booking_date": "2026-05-10T09:12:00-07:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 289.0,
+          "journey_id": "FL_SK621_20260617",
+          "segments": [
+            {
+              "bags_checked": 1,
+              "date": "2026-06-17",
+              "fare_paid": 289.0,
+              "flight_number": "SK621",
+              "meal_request": null,
+              "seat": "22C"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "R0SDRU",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "donna.young@gmail.com",
+          "first_name": "Donna",
+          "last_name": "Young",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-251-555-7457",
+          "seat_preference": "aisle",
+          "ticket_number": "1801234567890"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK311_20260616": {
+      "bookable": true,
+      "date": "2026-06-16",
+      "destination": "SFO",
+      "fares": {
+        "basic_economy": 169.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 219.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK311_20260616",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 2,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SFO",
+          "destination_utc_offset": -7,
+          "duration_minutes": 130,
+          "fares": {
+            "basic_economy": 169.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 219.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK311",
+          "gate": "D3",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "16:05",
+          "scheduled_departure": "13:55",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 130
+    },
+    "FL_SK311_SK790_20260616": {
+      "bookable": false,
+      "date": "2026-06-16",
+      "destination": "LGB",
+      "fares": {
+        "basic_economy": 358.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 458.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK311_SK790_20260616",
+      "num_stops": 1,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 2,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SFO",
+          "destination_utc_offset": -7,
+          "duration_minutes": 130,
+          "fares": {
+            "basic_economy": 169.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 219.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK311",
+          "gate": "D3",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "16:05",
+          "scheduled_departure": "13:55",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        },
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGB",
+          "destination_utc_offset": -7,
+          "duration_minutes": 100,
+          "fares": {
+            "basic_economy": 189.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 239.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK790",
+          "gate": "F11",
+          "origin": "SFO",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "19:00",
+          "scheduled_departure": "17:20",
+          "segment_number": 2,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 355
+    },
+    "FL_SK621_20260617": {
+      "bookable": false,
+      "date": "2026-06-17",
+      "destination": "SNA",
+      "fares": {
+        "basic_economy": 219.0,
+        "business": 999.0,
+        "first": 1799.0,
+        "main_cabin": 289.0,
+        "premium_economy": 649.0
+      },
+      "journey_id": "FL_SK621_20260617",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SNA",
+          "destination_utc_offset": -7,
+          "duration_minutes": 165,
+          "fares": {
+            "basic_economy": 219.0,
+            "business": 999.0,
+            "first": 1799.0,
+            "main_cabin": 289.0,
+            "premium_economy": 649.0
+          },
+          "flight_number": "SK621",
+          "gate": "C9",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "16:55",
+          "scheduled_departure": "14:10",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 165
+    },
+    "FL_SK700_20260616": {
+      "bookable": true,
+      "date": "2026-06-16",
+      "destination": "SNA",
+      "fares": {
+        "basic_economy": 239.0,
+        "business": 1049.0,
+        "first": 1899.0,
+        "main_cabin": 309.0,
+        "premium_economy": 679.0
+      },
+      "journey_id": "FL_SK700_20260616",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SNA",
+          "destination_utc_offset": -7,
+          "duration_minutes": 170,
+          "fares": {
+            "basic_economy": 239.0,
+            "business": 1049.0,
+            "first": 1899.0,
+            "main_cabin": 309.0,
+            "premium_economy": 679.0
+          },
+          "flight_number": "SK700",
+          "gate": "N2",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "18:20",
+          "scheduled_departure": "15:30",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 170
+    },
+    "FL_SK733_20260616": {
+      "bookable": true,
+      "date": "2026-06-16",
+      "destination": "LGB",
+      "fares": {
+        "basic_economy": 249.0,
+        "business": 1099.0,
+        "first": 1999.0,
+        "main_cabin": 329.0,
+        "premium_economy": 719.0
+      },
+      "journey_id": "FL_SK733_20260616",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 5,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 9,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGB",
+          "destination_utc_offset": -7,
+          "duration_minutes": 165,
+          "fares": {
+            "basic_economy": 249.0,
+            "business": 1099.0,
+            "first": 1999.0,
+            "main_cabin": 329.0,
+            "premium_economy": 719.0
+          },
+          "flight_number": "SK733",
+          "gate": "C14",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "17:20",
+          "scheduled_departure": "14:35",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 165
+    },
+    "FL_SK745_20260616": {
+      "bookable": true,
+      "date": "2026-06-16",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": 279.0,
+        "business": 1199.0,
+        "first": 2099.0,
+        "main_cabin": 389.0,
+        "premium_economy": 799.0
+      },
+      "journey_id": "FL_SK745_20260616",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "A321",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -7,
+          "duration_minutes": 170,
+          "fares": {
+            "basic_economy": 279.0,
+            "business": 1199.0,
+            "first": 2099.0,
+            "main_cabin": 389.0,
+            "premium_economy": 799.0
+          },
+          "flight_number": "SK745",
+          "gate": "B6",
+          "origin": "SEA",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "18:55",
+          "scheduled_departure": "16:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 170
+    },
+    "FL_SK790_20260616": {
+      "bookable": true,
+      "date": "2026-06-16",
+      "destination": "LGB",
+      "fares": {
+        "basic_economy": 189.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 239.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK790_20260616",
+      "num_stops": 0,
+      "origin": "SFO",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGB",
+          "destination_utc_offset": -7,
+          "duration_minutes": 100,
+          "fares": {
+            "basic_economy": 189.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 239.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK790",
+          "gate": "F11",
+          "origin": "SFO",
+          "origin_utc_offset": -7,
+          "scheduled_arrival": "19:00",
+          "scheduled_departure": "17:20",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 100
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

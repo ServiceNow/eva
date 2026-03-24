@@ -1,0 +1,360 @@
+{
+  "_current_date": "2026-08-06",
+  "reservations": {
+    "JL42CX": {
+      "ancillaries": {
+        "bags_fee": 0.0,
+        "seat_selection_fee": 0.0
+      },
+      "booking_date": "2026-06-18T14:12:00-07:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 260.0,
+          "journey_id": "FL_SK215_20260806",
+          "segments": [
+            {
+              "bags_checked": 0,
+              "date": "2026-08-06",
+              "fare_paid": 260.0,
+              "flight_number": "SK215",
+              "meal_request": null,
+              "seat": "22A"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "JL42CX",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "jordan.hill@example.com",
+          "first_name": "Jordan",
+          "last_name": "Hill",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-206-555-0142",
+          "seat_preference": "window",
+          "ticket_number": "1801234567890"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK215_20260806": {
+      "bookable": true,
+      "date": "2026-08-06",
+      "destination": "DFW",
+      "fares": {
+        "basic_economy": 210.0,
+        "business": 980.0,
+        "first": null,
+        "main_cabin": 260.0,
+        "premium_economy": 540.0
+      },
+      "journey_id": "FL_SK215_20260806",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 8,
+            "premium_economy": 4
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DFW",
+          "destination_utc_offset": -6,
+          "duration_minutes": 240,
+          "fares": {
+            "basic_economy": 210.0,
+            "business": 980.0,
+            "first": null,
+            "main_cabin": 260.0,
+            "premium_economy": 540.0
+          },
+          "flight_number": "SK215",
+          "gate": "N12",
+          "origin": "SEA",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "14:00",
+          "scheduled_departure": "09:00",
+          "segment_number": 1,
+          "status": "on_time",
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "on_time",
+      "total_duration_minutes": 240
+    },
+    "FL_SK331_20260806": {
+      "bookable": true,
+      "date": "2026-08-06",
+      "destination": "DFW",
+      "fares": {
+        "basic_economy": 225.0,
+        "business": 1020.0,
+        "first": null,
+        "main_cabin": 275.0,
+        "premium_economy": 560.0
+      },
+      "journey_id": "FL_SK331_20260806",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "737-900",
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          },
+          "available_seats": {
+            "basic_economy": 6,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 9,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DFW",
+          "destination_utc_offset": -6,
+          "duration_minutes": 240,
+          "fares": {
+            "basic_economy": 225.0,
+            "business": 1020.0,
+            "first": null,
+            "main_cabin": 275.0,
+            "premium_economy": 560.0
+          },
+          "flight_number": "SK331",
+          "gate": "N6",
+          "origin": "SEA",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "16:00",
+          "scheduled_departure": "11:00",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 240
+    },
+    "FL_SK451_20260806": {
+      "bookable": true,
+      "date": "2026-08-06",
+      "destination": "DFW",
+      "fares": {
+        "basic_economy": 240.0,
+        "business": 1090.0,
+        "first": null,
+        "main_cabin": 260.0,
+        "premium_economy": 590.0
+      },
+      "journey_id": "FL_SK451_20260806",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          },
+          "available_seats": {
+            "basic_economy": 4,
+            "business": 1,
+            "first": 0,
+            "main_cabin": 7,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DFW",
+          "destination_utc_offset": -6,
+          "duration_minutes": 245,
+          "fares": {
+            "basic_economy": 240.0,
+            "business": 1090.0,
+            "first": null,
+            "main_cabin": 260.0,
+            "premium_economy": 590.0
+          },
+          "flight_number": "SK451",
+          "gate": "N9",
+          "origin": "SEA",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "20:05",
+          "scheduled_departure": "15:00",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 245
+    },
+    "FL_SK612_20260806": {
+      "bookable": true,
+      "date": "2026-08-06",
+      "destination": "DFW",
+      "fares": {
+        "basic_economy": 255.0,
+        "business": 1290.0,
+        "first": null,
+        "main_cabin": 455.0,
+        "premium_economy": 690.0
+      },
+      "journey_id": "FL_SK612_20260806",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          },
+          "available_seats": {
+            "basic_economy": 10,
+            "business": 3,
+            "first": 0,
+            "main_cabin": 18,
+            "premium_economy": 6
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DFW",
+          "destination_utc_offset": -6,
+          "duration_minutes": 240,
+          "fares": {
+            "basic_economy": 255.0,
+            "business": 1290.0,
+            "first": null,
+            "main_cabin": 455.0,
+            "premium_economy": 690.0
+          },
+          "flight_number": "SK612",
+          "gate": "N4",
+          "origin": "SEA",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "22:30",
+          "scheduled_departure": "17:30",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 240
+    },
+    "FL_SK940_20260806": {
+      "bookable": true,
+      "date": "2026-08-06",
+      "destination": "DFW",
+      "fares": {
+        "basic_economy": 230.0,
+        "business": 1080.0,
+        "first": null,
+        "main_cabin": 260.0,
+        "premium_economy": 580.0
+      },
+      "journey_id": "FL_SK940_20260806",
+      "num_stops": 0,
+      "origin": "SEA",
+      "segments": [
+        {
+          "aircraft_type": "737-900",
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          },
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DFW",
+          "destination_utc_offset": -6,
+          "duration_minutes": 240,
+          "fares": {
+            "basic_economy": 230.0,
+            "business": 1080.0,
+            "first": null,
+            "main_cabin": 260.0,
+            "premium_economy": 580.0
+          },
+          "flight_number": "SK940",
+          "gate": "N2",
+          "origin": "SEA",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "20:00",
+          "scheduled_departure": "15:00",
+          "segment_number": 1,
+          "status": "scheduled"
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 240
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

@@ -1,0 +1,369 @@
+{
+  "_current_date": "2026-07-08",
+  "reservations": {
+    "W19LAE": {
+      "ancillaries": {
+        "bags_fee": 0.0,
+        "seat_selection_fee": 0.0
+      },
+      "booking_date": "2026-06-11T14:22:00-07:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 284.0,
+          "journey_id": "FL_SK510_20260708",
+          "segments": [
+            {
+              "bags_checked": 0,
+              "date": "2026-07-08",
+              "fare_paid": 284.0,
+              "flight_number": "SK510",
+              "meal_request": null,
+              "seat": "18C"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "W19LAE",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "michelle.baker@gmail.com",
+          "first_name": "Michelle",
+          "last_name": "Baker",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-802-555-5457",
+          "seat_preference": "no_preference",
+          "ticket_number": "1801234567890"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK501_20260708": {
+      "bookable": false,
+      "date": "2026-07-08",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": 329.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK501_20260708",
+      "num_stops": 0,
+      "origin": "SFO",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 1,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 95,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 329.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK501",
+          "gate": "B12",
+          "origin": "SFO",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "12:05",
+          "scheduled_departure": "10:30",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 95
+    },
+    "FL_SK503_20260708": {
+      "bookable": true,
+      "date": "2026-07-08",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": 312.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK503_20260708",
+      "num_stops": 0,
+      "origin": "SFO",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 1,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 90,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 312.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK503",
+          "gate": "C06",
+          "origin": "SFO",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "13:30",
+          "scheduled_departure": "12:00",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 90
+    },
+    "FL_SK507_20260708": {
+      "bookable": false,
+      "date": "2026-07-08",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": 358.0,
+        "premium_economy": 612.0
+      },
+      "journey_id": "FL_SK507_20260708",
+      "num_stops": 0,
+      "origin": "SFO",
+      "segments": [
+        {
+          "aircraft_type": "737-900",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 5,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 95,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 358.0,
+            "premium_economy": 612.0
+          },
+          "flight_number": "SK507",
+          "gate": "B18",
+          "origin": "SFO",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "15:35",
+          "scheduled_departure": "14:00",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 95
+    },
+    "FL_SK510_20260708": {
+      "bookable": true,
+      "date": "2026-07-08",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": 284.0,
+        "premium_economy": 540.0
+      },
+      "journey_id": "FL_SK510_20260708",
+      "num_stops": 0,
+      "origin": "SFO",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 9,
+            "premium_economy": 3
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 95,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 284.0,
+            "premium_economy": 540.0
+          },
+          "flight_number": "SK510",
+          "gate": "B22",
+          "origin": "SFO",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "18:35",
+          "scheduled_departure": "17:00",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 95
+    },
+    "FL_SK512_20260708": {
+      "bookable": false,
+      "date": "2026-07-08",
+      "destination": "LAX",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": 412.0,
+        "premium_economy": 710.0
+      },
+      "journey_id": "FL_SK512_20260708",
+      "num_stops": 0,
+      "origin": "SFO",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 22,
+            "premium_economy": 6
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LAX",
+          "destination_utc_offset": -8,
+          "duration_minutes": 95,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 412.0,
+            "premium_economy": 710.0
+          },
+          "flight_number": "SK512",
+          "gate": "C02",
+          "origin": "SFO",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "21:05",
+          "scheduled_departure": "19:30",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 95
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

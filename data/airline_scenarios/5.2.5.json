@@ -1,0 +1,585 @@
+{
+  "_current_date": "2026-08-30",
+  "reservations": {
+    "V062BJ": {
+      "ancillaries": {
+        "bags_fee": 35.0,
+        "seat_selection_fee": 18.0
+      },
+      "booking_date": "2026-08-12T14:22:00-05:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 412.0,
+          "journey_id": "FL_SK118_20260905",
+          "segments": [
+            {
+              "bags_checked": 1,
+              "date": "2026-09-05",
+              "fare_paid": 412.0,
+              "flight_number": "SK118",
+              "meal_request": null,
+              "seat": "22C"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "V062BJ",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "heather.clark@gmail.com",
+          "first_name": "Heather",
+          "last_name": "Clark",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-479-555-6891",
+          "seat_preference": "aisle",
+          "ticket_number": "1804567890123"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK118_20260905": {
+      "bookable": true,
+      "date": "2026-09-05",
+      "destination": "DEN",
+      "fares": {
+        "basic_economy": 238.0,
+        "business": 1020.0,
+        "first": null,
+        "main_cabin": 412.0,
+        "premium_economy": 635.0
+      },
+      "journey_id": "FL_SK118_20260905",
+      "num_stops": 0,
+      "origin": "XNA",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 4,
+            "business": 1,
+            "first": 0,
+            "main_cabin": 6,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DEN",
+          "destination_utc_offset": -6,
+          "duration_minutes": 155,
+          "fares": {
+            "basic_economy": 238.0,
+            "business": 1020.0,
+            "first": null,
+            "main_cabin": 412.0,
+            "premium_economy": 635.0
+          },
+          "flight_number": "SK118",
+          "gate": "B7",
+          "origin": "XNA",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "13:45",
+          "scheduled_departure": "11:10",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 155
+    },
+    "FL_SK122_20260905": {
+      "bookable": false,
+      "date": "2026-09-05",
+      "destination": "DEN",
+      "fares": {
+        "basic_economy": 210.0,
+        "business": 990.0,
+        "first": null,
+        "main_cabin": 389.0,
+        "premium_economy": 610.0
+      },
+      "journey_id": "FL_SK122_20260905",
+      "num_stops": 0,
+      "origin": "XNA",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DEN",
+          "destination_utc_offset": -6,
+          "duration_minutes": 160,
+          "fares": {
+            "basic_economy": 210.0,
+            "business": 990.0,
+            "first": null,
+            "main_cabin": 389.0,
+            "premium_economy": 610.0
+          },
+          "flight_number": "SK122",
+          "gate": "A3",
+          "origin": "XNA",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "07:55",
+          "scheduled_departure": "06:15",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 160
+    },
+    "FL_SK128_20260905": {
+      "bookable": false,
+      "date": "2026-09-05",
+      "destination": "DEN",
+      "fares": {
+        "basic_economy": 265.0,
+        "business": 1185.0,
+        "first": null,
+        "main_cabin": 468.0,
+        "premium_economy": 720.0
+      },
+      "journey_id": "FL_SK128_20260905",
+      "num_stops": 0,
+      "origin": "XNA",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 9,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 12,
+            "premium_economy": 5
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DEN",
+          "destination_utc_offset": -6,
+          "duration_minutes": 170,
+          "fares": {
+            "basic_economy": 265.0,
+            "business": 1185.0,
+            "first": null,
+            "main_cabin": 468.0,
+            "premium_economy": 720.0
+          },
+          "flight_number": "SK128",
+          "gate": "B2",
+          "origin": "XNA",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "17:30",
+          "scheduled_departure": "15:40",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 170
+    },
+    "FL_SK130_20260905": {
+      "bookable": false,
+      "date": "2026-09-05",
+      "destination": "DEN",
+      "fares": {
+        "basic_economy": 240.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 430.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK130_20260905",
+      "num_stops": 0,
+      "origin": "XNA",
+      "segments": [
+        {
+          "aircraft_type": "A319",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 3,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DEN",
+          "destination_utc_offset": -6,
+          "duration_minutes": 165,
+          "fares": {
+            "basic_economy": 240.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 430.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK130",
+          "gate": "A9",
+          "origin": "XNA",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "20:50",
+          "scheduled_departure": "19:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 165
+    },
+    "FL_SK210_20260905": {
+      "bookable": false,
+      "date": "2026-09-05",
+      "destination": "DFW",
+      "fares": {
+        "basic_economy": 140.0,
+        "business": null,
+        "first": null,
+        "main_cabin": 210.0,
+        "premium_economy": 360.0
+      },
+      "journey_id": "FL_SK210_20260905",
+      "num_stops": 0,
+      "origin": "XNA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 8,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 10,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DFW",
+          "destination_utc_offset": -5,
+          "duration_minutes": 85,
+          "fares": {
+            "basic_economy": 140.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 210.0,
+            "premium_economy": 360.0
+          },
+          "flight_number": "SK210",
+          "gate": "C4",
+          "origin": "XNA",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "09:30",
+          "scheduled_departure": "08:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 85
+    },
+    "FL_SK210_SK332_20260905": {
+      "bookable": false,
+      "date": "2026-09-05",
+      "destination": "DEN",
+      "fares": {
+        "basic_economy": 300.0,
+        "business": 1480.0,
+        "first": null,
+        "main_cabin": 455.0,
+        "premium_economy": 790.0
+      },
+      "journey_id": "FL_SK210_SK332_20260905",
+      "num_stops": 1,
+      "origin": "XNA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 8,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 10,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DFW",
+          "destination_utc_offset": -5,
+          "duration_minutes": 85,
+          "fares": {
+            "basic_economy": 140.0,
+            "business": null,
+            "first": null,
+            "main_cabin": 210.0,
+            "premium_economy": 360.0
+          },
+          "flight_number": "SK210",
+          "gate": "C4",
+          "origin": "XNA",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "09:30",
+          "scheduled_departure": "08:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        },
+        {
+          "aircraft_type": "737-900",
+          "available_seats": {
+            "basic_economy": 6,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 8,
+            "premium_economy": 3
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DEN",
+          "destination_utc_offset": -6,
+          "duration_minutes": 135,
+          "fares": {
+            "basic_economy": 160.0,
+            "business": 920.0,
+            "first": null,
+            "main_cabin": 245.0,
+            "premium_economy": 430.0
+          },
+          "flight_number": "SK332",
+          "gate": "D22",
+          "origin": "DFW",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "12:00",
+          "scheduled_departure": "10:45",
+          "segment_number": 2,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 295
+    },
+    "FL_SK332_20260905": {
+      "bookable": false,
+      "date": "2026-09-05",
+      "destination": "DEN",
+      "fares": {
+        "basic_economy": 160.0,
+        "business": 920.0,
+        "first": null,
+        "main_cabin": 245.0,
+        "premium_economy": 430.0
+      },
+      "journey_id": "FL_SK332_20260905",
+      "num_stops": 0,
+      "origin": "DFW",
+      "segments": [
+        {
+          "aircraft_type": "737-900",
+          "available_seats": {
+            "basic_economy": 6,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 8,
+            "premium_economy": 3
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DEN",
+          "destination_utc_offset": -6,
+          "duration_minutes": 135,
+          "fares": {
+            "basic_economy": 160.0,
+            "business": 920.0,
+            "first": null,
+            "main_cabin": 245.0,
+            "premium_economy": 430.0
+          },
+          "flight_number": "SK332",
+          "gate": "D22",
+          "origin": "DFW",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "12:00",
+          "scheduled_departure": "10:45",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 135
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

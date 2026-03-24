@@ -1,0 +1,108 @@
+"""Deterministic task completion metric via scenario database state hashing.
+
+This metric validates task correctness by comparing SHA-256 hashes of scenario
+database states. It follows tau-2 bench's approach and provides binary pass/fail
+validation without LLM subjectivity.
+
+When hashes don't match, it computes a detailed diff between expected and actual
+final states to help diagnose the discrepancy.
+"""
+
+from eva.metrics.base import BaseMetric, MetricContext, MetricType
+from eva.metrics.registry import register_metric
+from eva.models.results import MetricScore
+from eva.utils.hash_utils import compute_db_diff, get_dict_hash
+
+
+@register_metric
+class TaskCompletion(BaseMetric):
+    """Deterministic task completion metric.
+
+    Compares SHA-256 hashes of expected vs actual final scenario database states.
+    Returns 1.0 (pass) if hashes match, 0.0 (fail) if they don't.
+
+    The expected hash is computed on-the-fly from expected_scenario_db (from ground truth),
+    while the actual hash is computed during execution and stored in final_scenario_db_hash.
+    Both use canonical JSON serialization (sort_keys=True, separators=(',', ':')).
+
+    When hashes don't match, computes a detailed diff showing:
+    - Tables added/removed/modified
+    - Records added/removed/modified within tables
+    - Field-level changes within records
+
+    This provides exact, reproducible validation without LLM variability.
+    """
+
+    name = "task_completion"
+    description = "Binary task completion via scenario DB state hash comparison"
+    category = "accuracy"
+    metric_type = MetricType.CODE
+    pass_at_k_threshold = 1.0
+
+    async def compute(self, context: MetricContext) -> MetricScore:
+        """Compare expected vs actual scenario database hashes.
+
+        Args:
+            context: Metric context containing DB states and hashes
+
+        Returns:
+            MetricScore with:
+            - score: 1.0 (match) or 0.0 (mismatch)
+            - normalized_score: Same as score (already 0-1)
+            - details: Match status, hashes, and diff (if mismatch)
+        """
+        # Compute expected hash from expected_scenario_db on-the-fly
+        expected_hash = get_dict_hash(context.expected_scenario_db)
+        actual_hash = context.final_scenario_db_hash
+
+        # Compare hashes
+        match = expected_hash == actual_hash
+
+        if match:
+            # Hashes match - task completed correctly
+            return MetricScore(
+                name=self.name,
+                score=1.0,
+                normalized_score=1.0,
+                details={
+                    "match": True,
+                    "expected_hash": expected_hash,
+                    "actual_hash": actual_hash,
+                    "message": "Final database state matches expected state exactly",
+                },
+            )
+        else:
+            # Hashes don't match - compute diff to show what's different
+            diff = compute_db_diff(expected_db=context.expected_scenario_db, actual_db=context.final_scenario_db)
+
+            # Create human-readable summary
+            summary_parts = []
+            if diff["tables_added"]:
+                summary_parts.append(f"{len(diff['tables_added'])} tables added")
+            if diff["tables_removed"]:
+                summary_parts.append(f"{len(diff['tables_removed'])} tables removed")
+            if diff["tables_modified"]:
+                summary_parts.append(f"{len(diff['tables_modified'])} tables modified")
+
+            summary = ", ".join(summary_parts) if summary_parts else "No differences found (hash collision?)"
+
+            return MetricScore(
+                name=self.name,
+                score=0.0,
+                normalized_score=0.0,
+                details={
+                    "match": False,
+                    "expected_hash": expected_hash,
+                    "actual_hash": actual_hash,
+                    "message": f"Final database state differs from expected: {summary}",
+                    "diff": diff,
+                    "diff_summary": summary,
+                    "debugging_hints": [
+                        "Check diff.tables_modified for which tables changed",
+                        "For each modified table, check records_added/removed/modified",
+                        "For modified records, check field-level changes",
+                        "Expected state is from ground_truth in dataset",
+                        "Actual state is final_scenario_db.json from execution",
+                    ],
+                },
+            )

@@ -1,0 +1,587 @@
+{
+  "_current_date": "2026-09-05",
+  "reservations": {
+    "7MMHTS": {
+      "confirmation_number": "7MMHTS",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Rachel",
+          "last_name": "Bennett",
+          "ticket_number": "7391234567890",
+          "email": "rachel.bennett@gmail.com",
+          "phone": "+1-513-555-3235",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK445_20260906",
+          "fare_class": "main_cabin",
+          "fare_paid": 312.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK445",
+              "date": "2026-09-06",
+              "fare_paid": 312.0,
+              "seat": "14C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-08-20T15:42:00-05:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 15.0,
+        "bags_fee": 40.0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK445_20260906": {
+      "journey_id": "FL_SK445_20260906",
+      "date": "2026-09-06",
+      "origin": "ORD",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 140,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK445",
+          "origin": "ORD",
+          "destination": "LGA",
+          "scheduled_departure": "12:30",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "16:50",
+          "destination_utc_offset": -5,
+          "duration_minutes": 140,
+          "aircraft_type": "A220-300",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B12",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 6,
+            "premium_economy": 2,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": null,
+            "main_cabin": 312.0,
+            "premium_economy": 540.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": null,
+        "main_cabin": 312.0,
+        "premium_economy": 540.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK447_20260906": {
+      "journey_id": "FL_SK447_20260906",
+      "date": "2026-09-06",
+      "origin": "ORD",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 135,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK447",
+          "origin": "ORD",
+          "destination": "LGA",
+          "scheduled_departure": "09:10",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "13:25",
+          "destination_utc_offset": -5,
+          "duration_minutes": 135,
+          "aircraft_type": "737-800",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C4",
+          "available_seats": {
+            "basic_economy": 3,
+            "main_cabin": 0,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 189.0,
+            "main_cabin": 349.0,
+            "premium_economy": 575.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 189.0,
+        "main_cabin": 349.0,
+        "premium_economy": 575.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK449_20260906": {
+      "journey_id": "FL_SK449_20260906",
+      "date": "2026-09-06",
+      "origin": "ORD",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 145,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK449",
+          "origin": "ORD",
+          "destination": "LGA",
+          "scheduled_departure": "14:40",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "19:05",
+          "destination_utc_offset": -5,
+          "duration_minutes": 145,
+          "aircraft_type": "A320neo",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B20",
+          "available_seats": {
+            "basic_economy": 8,
+            "main_cabin": 22,
+            "premium_economy": 4,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 210.0,
+            "main_cabin": 402.0,
+            "premium_economy": 610.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 210.0,
+        "main_cabin": 402.0,
+        "premium_economy": 610.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK451_20260906": {
+      "journey_id": "FL_SK451_20260906",
+      "date": "2026-09-06",
+      "origin": "ORD",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 140,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK451",
+          "origin": "ORD",
+          "destination": "LGA",
+          "scheduled_departure": "18:15",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "22:35",
+          "destination_utc_offset": -5,
+          "duration_minutes": 140,
+          "aircraft_type": "737-900ER",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C11",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 18,
+            "premium_economy": 2,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 199.0,
+            "main_cabin": 365.0,
+            "premium_economy": 590.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 199.0,
+        "main_cabin": 365.0,
+        "premium_economy": 590.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK610_20260906": {
+      "journey_id": "FL_SK610_20260906",
+      "date": "2026-09-06",
+      "origin": "ORD",
+      "destination": "DTW",
+      "num_stops": 0,
+      "total_duration_minutes": 80,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK610",
+          "origin": "ORD",
+          "destination": "DTW",
+          "scheduled_departure": "08:00",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "10:20",
+          "destination_utc_offset": -5,
+          "duration_minutes": 80,
+          "aircraft_type": "E175",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "D7",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 12,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 120.0,
+            "main_cabin": 165.0,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 120.0,
+        "main_cabin": 165.0,
+        "premium_economy": null,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK612_20260906": {
+      "journey_id": "FL_SK612_20260906",
+      "date": "2026-09-06",
+      "origin": "DTW",
+      "destination": "LGA",
+      "num_stops": 0,
+      "total_duration_minutes": 105,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK612",
+          "origin": "DTW",
+          "destination": "LGA",
+          "scheduled_departure": "11:35",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "13:20",
+          "destination_utc_offset": -5,
+          "duration_minutes": 105,
+          "aircraft_type": "A220-100",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A18",
+          "available_seats": {
+            "basic_economy": 5,
+            "main_cabin": 9,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 140.0,
+            "main_cabin": 205.0,
+            "premium_economy": 430.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 140.0,
+        "main_cabin": 205.0,
+        "premium_economy": 430.0,
+        "business": null,
+        "first": null
+      }
+    },
+    "FL_SK610_SK612_20260906": {
+      "journey_id": "FL_SK610_SK612_20260906",
+      "date": "2026-09-06",
+      "origin": "ORD",
+      "destination": "LGA",
+      "num_stops": 1,
+      "total_duration_minutes": 380,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK610",
+          "origin": "ORD",
+          "destination": "DTW",
+          "scheduled_departure": "08:00",
+          "origin_utc_offset": -6,
+          "scheduled_arrival": "10:20",
+          "destination_utc_offset": -5,
+          "duration_minutes": 80,
+          "aircraft_type": "E175",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "D7",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 12,
+            "premium_economy": 0,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 120.0,
+            "main_cabin": 165.0,
+            "premium_economy": null,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [],
+            "business": [],
+            "first": []
+          }
+        },
+        {
+          "segment_number": 2,
+          "flight_number": "SK612",
+          "origin": "DTW",
+          "destination": "LGA",
+          "scheduled_departure": "11:35",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "13:20",
+          "destination_utc_offset": -5,
+          "duration_minutes": 105,
+          "aircraft_type": "A220-100",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A18",
+          "available_seats": {
+            "basic_economy": 5,
+            "main_cabin": 9,
+            "premium_economy": 1,
+            "business": 0,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 140.0,
+            "main_cabin": 205.0,
+            "premium_economy": 430.0,
+            "business": null,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 260.0,
+        "main_cabin": 448.0,
+        "premium_economy": 860.0,
+        "business": null,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {
+    "SK445_2026-09-06": {
+      "flight_number": "SK445",
+      "date": "2026-09-06",
+      "disruption_type": "schedule_change",
+      "cause": "operational",
+      "cause_category": "airline_fault",
+      "is_irrops": true,
+      "delay_minutes": 210,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "refund_option": false,
+        "meal_voucher": true,
+        "hotel_accommodation": false,
+        "rebooking_window_days": 7,
+        "meal_voucher_tier": "2_4_hours"
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

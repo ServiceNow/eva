@@ -1,0 +1,451 @@
+{
+  "_current_date": "2026-07-21",
+  "reservations": {
+    "SOCATW": {
+      "ancillaries": {
+        "bags_fee": 35.0,
+        "seat_selection_fee": 0.0
+      },
+      "booking_date": "2026-06-02T10:14:00-07:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 389.0,
+          "journey_id": "FL_SK432_20260721",
+          "segments": [
+            {
+              "bags_checked": 1,
+              "date": "2026-07-21",
+              "fare_paid": 389.0,
+              "flight_number": "SK432",
+              "meal_request": null,
+              "seat": "22C"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "SOCATW",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "gregory.walker@gmail.com",
+          "first_name": "Gregory",
+          "last_name": "Walker",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-205-555-7124",
+          "seat_preference": "no_preference",
+          "ticket_number": "1801234567890"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK432_20260721": {
+      "bookable": false,
+      "date": "2026-07-21",
+      "destination": "SEA",
+      "fares": {
+        "basic_economy": 279.0,
+        "business": 1199.0,
+        "first": 1899.0,
+        "main_cabin": 389.0,
+        "premium_economy": 699.0
+      },
+      "journey_id": "FL_SK432_20260721",
+      "num_stops": 0,
+      "origin": "OAK",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": "weather",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SEA",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "fares": {
+            "basic_economy": 279.0,
+            "business": 1199.0,
+            "first": 1899.0,
+            "main_cabin": 389.0,
+            "premium_economy": 699.0
+          },
+          "flight_number": "SK432",
+          "gate": "B12",
+          "origin": "OAK",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "18:15",
+          "scheduled_departure": "16:10",
+          "segment_number": 1,
+          "status": "cancelled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "cancelled",
+      "total_duration_minutes": 125
+    },
+    "FL_SK455_20260721": {
+      "bookable": false,
+      "date": "2026-07-21",
+      "destination": "SEA",
+      "fares": {
+        "basic_economy": 310.0,
+        "business": 1280.0,
+        "first": 1990.0,
+        "main_cabin": 420.0,
+        "premium_economy": 760.0
+      },
+      "journey_id": "FL_SK455_20260721",
+      "num_stops": 0,
+      "origin": "OAK",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SEA",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "fares": {
+            "basic_economy": 310.0,
+            "business": 1280.0,
+            "first": 1990.0,
+            "main_cabin": 420.0,
+            "premium_economy": 760.0
+          },
+          "flight_number": "SK455",
+          "gate": "B18",
+          "origin": "OAK",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "21:00",
+          "scheduled_departure": "18:55",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 125
+    },
+    "FL_SK461_20260721": {
+      "bookable": false,
+      "date": "2026-07-21",
+      "destination": "SEA",
+      "fares": {
+        "basic_economy": 295.0,
+        "business": 1245.0,
+        "first": 1945.0,
+        "main_cabin": 405.0,
+        "premium_economy": 735.0
+      },
+      "journey_id": "FL_SK461_20260721",
+      "num_stops": 0,
+      "origin": "OAK",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SEA",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "fares": {
+            "basic_economy": 295.0,
+            "business": 1245.0,
+            "first": 1945.0,
+            "main_cabin": 405.0,
+            "premium_economy": 735.0
+          },
+          "flight_number": "SK461",
+          "gate": "B20",
+          "origin": "OAK",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "22:35",
+          "scheduled_departure": "20:30",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 125
+    },
+    "FL_SK501_20260722": {
+      "bookable": true,
+      "date": "2026-07-22",
+      "destination": "SEA",
+      "fares": {
+        "basic_economy": 319.0,
+        "business": 1399.0,
+        "first": 2099.0,
+        "main_cabin": 449.0,
+        "premium_economy": 799.0
+      },
+      "journey_id": "FL_SK501_20260722",
+      "num_stops": 0,
+      "origin": "OAK",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 2,
+            "premium_economy": 1
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SEA",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "fares": {
+            "basic_economy": 319.0,
+            "business": 1399.0,
+            "first": 2099.0,
+            "main_cabin": 449.0,
+            "premium_economy": 799.0
+          },
+          "flight_number": "SK501",
+          "gate": "B09",
+          "origin": "OAK",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "10:20",
+          "scheduled_departure": "08:15",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 125
+    },
+    "FL_SK509_20260722": {
+      "bookable": true,
+      "date": "2026-07-22",
+      "destination": "SEA",
+      "fares": {
+        "basic_economy": 289.0,
+        "business": 1299.0,
+        "first": 2099.0,
+        "main_cabin": 419.0,
+        "premium_economy": 759.0
+      },
+      "journey_id": "FL_SK509_20260722",
+      "num_stops": 0,
+      "origin": "OAK",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 6,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 6,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SEA",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "fares": {
+            "basic_economy": 289.0,
+            "business": 1299.0,
+            "first": 2099.0,
+            "main_cabin": 419.0,
+            "premium_economy": 759.0
+          },
+          "flight_number": "SK509",
+          "gate": "B10",
+          "origin": "OAK",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "11:15",
+          "scheduled_departure": "09:10",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 125
+    },
+    "FL_SK513_20260722": {
+      "bookable": true,
+      "date": "2026-07-22",
+      "destination": "SEA",
+      "fares": {
+        "basic_economy": 259.0,
+        "business": 1249.0,
+        "first": 1999.0,
+        "main_cabin": 379.0,
+        "premium_economy": 699.0
+      },
+      "journey_id": "FL_SK513_20260722",
+      "num_stops": 0,
+      "origin": "OAK",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 8,
+            "business": 1,
+            "first": 0,
+            "main_cabin": 9,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "SEA",
+          "destination_utc_offset": -8,
+          "duration_minutes": 125,
+          "fares": {
+            "basic_economy": 259.0,
+            "business": 1249.0,
+            "first": 1999.0,
+            "main_cabin": 379.0,
+            "premium_economy": 699.0
+          },
+          "flight_number": "SK513",
+          "gate": "B14",
+          "origin": "OAK",
+          "origin_utc_offset": -8,
+          "scheduled_arrival": "14:45",
+          "scheduled_departure": "12:40",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 125
+    }
+  },
+  "disruptions": {
+    "SK432_2026-07-21": {
+      "cause": "weather",
+      "cause_category": "weather",
+      "date": "2026-07-21",
+      "delay_minutes": null,
+      "disruption_type": "cancellation",
+      "flight_number": "SK432",
+      "is_irrops": true,
+      "passenger_entitled_to": {
+        "fee_waiver": true,
+        "hotel_accommodation": true,
+        "meal_voucher": true,
+        "rebooking_window_days": 7,
+        "refund_option": true
+      }
+    }
+  },
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

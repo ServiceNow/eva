@@ -1,0 +1,112 @@
+"""Faithfulness metric using LLM-as-judge (whole conversation)."""
+
+import json
+from typing import Any
+
+from eva.metrics.base import ConversationTextJudgeMetric, MetricContext
+from eva.metrics.registry import register_metric
+from eva.models.results import MetricScore
+
+# --- Pipeline-specific prompt text for faithfulness evaluation ---
+
+_CASCADE_USER_TURNS_DISCLAIMER = (
+    "**About user turns:** User turns are **transcripts** produced by the assistant's speech-to-text (STT) "
+    "system. The assistant receives these transcripts as text input — this is the only representation of "
+    "user speech available to the assistant. STT transcripts may contain errors (misheard words, garbled "
+    "names, dropped syllables), but the assistant cannot know what the user actually said beyond what the "
+    "transcript shows. Therefore, judge faithfulness against the transcript: if the transcript says "
+    '"Kim" (even if the user actually said "Kin"), the assistant is faithful when it uses "Kim".'
+)
+
+_S2S_USER_TURNS_DISCLAIMER = (
+    "**About user turns:** This is a **speech-to-speech** system — the assistant receives raw audio "
+    "directly, not a text transcript. The user turns shown here are the **intended text** (what the user "
+    "simulator was instructed to say), not what the assistant heard. The assistant is responsible for its "
+    "own audio understanding. If the assistant misheard the user and used incorrect information in a tool "
+    "call or response, that IS a faithfulness issue — accurate audio understanding is part of the "
+    "assistant's responsibility. The only mitigation is proper disambiguation: if the assistant was unsure "
+    "about what it heard, it should have asked the user to confirm or clarify."
+)
+
+_CASCADE_DISAMBIGUATION_CONTEXT = (
+    "Since the assistant is working from a speech-to-text transcript, it should account for potential "
+    "transcription errors, and clarify any ambiguity in the user's intent, especially when they lead to "
+    "write/irreversible operations. It's not needed to clarify if the tools called are simple lookups, "
+    "but if the lookups fail, the assistant is expected to clarify the user's intent."
+)
+
+_S2S_DISAMBIGUATION_CONTEXT = (
+    "Since the assistant processes raw audio directly (speech-to-speech), it should account for potential "
+    "audio perception errors — mishearing letters, numbers, names, or codes is common with spoken input. "
+    "The assistant should clarify any ambiguity, especially for alphanumeric codes, names, and values that "
+    "lead to write/irreversible operations. It's not needed to clarify if the tools called are simple "
+    "lookups, but if the lookups fail, the assistant is expected to clarify the user's intent. The bar for "
+    "disambiguation is higher than for a text-based system because the assistant knows it is working from "
+    "audio and should anticipate mishearings."
+)
+
+
+@register_metric
+class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
+    """LLM-based faithfulness metric (whole conversation).
+
+    Evaluates whether the assistant remains faithful to information, policies,
+    and instructions (no hallucinations, grounded tool calls, policy adherence,
+    proper disambiguation).
+
+    Rating scale: 1 (faithful), 0 (violations)
+    Normalized: 1→1.0, 0→0.0
+    """
+
+    name = "faithfulness"
+    description = (
+        "LLM judge evaluation of whether the assistant remains faithful to information, policies, and instructions"
+    )
+    category = "accuracy"
+    default_model = "us.anthropic.claude-opus-4-6-v1"
+    rating_scale = (1, 3)
+
+    def get_prompt_variables(self, context: MetricContext, transcript_text: str) -> dict[str, Any]:
+        """Return variables for prompt formatting."""
+        if context.is_audio_native:
+            user_turns_disclaimer = _S2S_USER_TURNS_DISCLAIMER
+            disambiguation_context = _S2S_DISAMBIGUATION_CONTEXT
+        else:
+            user_turns_disclaimer = _CASCADE_USER_TURNS_DISCLAIMER
+            disambiguation_context = _CASCADE_DISAMBIGUATION_CONTEXT
+
+        return {
+            "agent_instructions": context.agent_instructions,
+            "agent_role": context.agent_role,
+            "available_tools": json.dumps(context.agent_tools, indent=4),
+            "conversation_trace": transcript_text,
+            "current_date_time": context.current_date_time,
+            "user_turns_disclaimer": user_turns_disclaimer,
+            "disambiguation_context": disambiguation_context,
+        }
+
+    def build_metric_score(
+        self,
+        rating: int,
+        normalized: float,
+        response: dict,
+        prompt: str,
+        context: MetricContext,
+        raw_response: str | None = None,
+    ) -> MetricScore:
+        """Build MetricScore with analysis details."""
+        analysis = {
+            "dimensions": response.get("dimensions", {}),
+        }
+        return MetricScore(
+            name=self.name,
+            score=float(rating),
+            normalized_score=normalized,
+            details={
+                "rating": rating,
+                "explanation": analysis,
+                "num_turns": len(context.conversation_trace),
+                "judge_prompt": prompt,
+                "judge_raw_response": raw_response,
+            },
+        )

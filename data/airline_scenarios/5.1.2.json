@@ -1,0 +1,486 @@
+{
+  "_current_date": "2026-08-12",
+  "reservations": {
+    "PZN19G": {
+      "ancillaries": {
+        "bags_fee": 0,
+        "seat_selection_fee": 0
+      },
+      "booking_date": "2026-08-12T02:00:00-05:00",
+      "bookings": [
+        {
+          "fare_class": "basic_economy",
+          "fare_paid": 218.4,
+          "journey_id": "FL_SK214_20260822",
+          "segments": [
+            {
+              "bags_checked": 0,
+              "date": "2026-08-22",
+              "destination": "LGA",
+              "fare_paid": 218.4,
+              "flight_number": "SK214",
+              "meal_request": null,
+              "origin": "CLT",
+              "seat": null
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "PZN19G",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "danielle.clark@gmail.com",
+          "first_name": "Danielle",
+          "last_name": "Clark",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-803-555-6013",
+          "seat_preference": "no_preference",
+          "ticket_number": "1234567890123"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK208_20260822": {
+      "bookable": false,
+      "date": "2026-08-22",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": 249.0,
+        "business": null,
+        "first": null,
+        "main_cabin": null,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK208_20260822",
+      "num_stops": 0,
+      "origin": "CLT",
+      "segments": [
+        {
+          "aircraft_type": "737-800",
+          "available_seats": {
+            "basic_economy": 1,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -5,
+          "duration_minutes": 120,
+          "fares": {
+            "basic_economy": 249.0,
+            "business": null,
+            "first": null,
+            "main_cabin": null,
+            "premium_economy": null
+          },
+          "flight_number": "SK208",
+          "gate": "C3",
+          "origin": "CLT",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "08:45",
+          "scheduled_departure": "06:45",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 120
+    },
+    "FL_SK214_20260822": {
+      "bookable": true,
+      "date": "2026-08-22",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": 218.4,
+        "business": 925.0,
+        "first": null,
+        "main_cabin": 279.6,
+        "premium_economy": 545.0
+      },
+      "journey_id": "FL_SK214_20260822",
+      "num_stops": 0,
+      "origin": "CLT",
+      "segments": [
+        {
+          "aircraft_type": "A220-300",
+          "available_seats": {
+            "basic_economy": 7,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 12,
+            "premium_economy": 4
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -5,
+          "duration_minutes": 115,
+          "fares": {
+            "basic_economy": 218.4,
+            "business": 925.0,
+            "first": null,
+            "main_cabin": 279.6,
+            "premium_economy": 545.0
+          },
+          "flight_number": "SK214",
+          "gate": "B12",
+          "origin": "CLT",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "11:05",
+          "scheduled_departure": "09:10",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 115
+    },
+    "FL_SK232_20260822": {
+      "bookable": false,
+      "date": "2026-08-22",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": 205.0,
+        "business": 890.0,
+        "first": null,
+        "main_cabin": 262.0,
+        "premium_economy": 515.0
+      },
+      "journey_id": "FL_SK232_20260822",
+      "num_stops": 0,
+      "origin": "CLT",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 9,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 10,
+            "premium_economy": 3
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -5,
+          "duration_minutes": 125,
+          "fares": {
+            "basic_economy": 205.0,
+            "business": 890.0,
+            "first": null,
+            "main_cabin": 262.0,
+            "premium_economy": 515.0
+          },
+          "flight_number": "SK232",
+          "gate": "B6",
+          "origin": "CLT",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "14:45",
+          "scheduled_departure": "12:40",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 125
+    },
+    "FL_SK240_20260822": {
+      "bookable": false,
+      "date": "2026-08-22",
+      "destination": "DCA",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": 190.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK240_20260822",
+      "num_stops": 0,
+      "origin": "CLT",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 3,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DCA",
+          "destination_utc_offset": -5,
+          "duration_minutes": 75,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 190.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK240",
+          "gate": "A9",
+          "origin": "CLT",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "09:20",
+          "scheduled_departure": "08:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 75
+    },
+    "FL_SK240_SK612_20260822": {
+      "bookable": false,
+      "date": "2026-08-22",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": 360.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK240_SK612_20260822",
+      "num_stops": 1,
+      "origin": "CLT",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 3,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DCA",
+          "destination_utc_offset": -5,
+          "duration_minutes": 75,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 190.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK240",
+          "gate": "A9",
+          "origin": "CLT",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "09:20",
+          "scheduled_departure": "08:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        },
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 2,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -5,
+          "duration_minutes": 80,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 170.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK612",
+          "gate": "C7",
+          "origin": "DCA",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "11:40",
+          "scheduled_departure": "10:20",
+          "segment_number": 2,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 275
+    },
+    "FL_SK612_20260822": {
+      "bookable": false,
+      "date": "2026-08-22",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": null,
+        "business": null,
+        "first": null,
+        "main_cabin": 170.0,
+        "premium_economy": null
+      },
+      "journey_id": "FL_SK612_20260822",
+      "num_stops": 0,
+      "origin": "DCA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 2,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -5,
+          "duration_minutes": 80,
+          "fares": {
+            "basic_economy": null,
+            "business": null,
+            "first": null,
+            "main_cabin": 170.0,
+            "premium_economy": null
+          },
+          "flight_number": "SK612",
+          "gate": "C7",
+          "origin": "DCA",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "11:40",
+          "scheduled_departure": "10:20",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 80
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

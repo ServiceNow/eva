@@ -1,0 +1,686 @@
+{
+  "_current_date": "2026-12-05",
+  "reservations": {
+    "1QTFVX": {
+      "confirmation_number": "1QTFVX",
+      "status": "confirmed",
+      "passengers": [
+        {
+          "passenger_id": "PAX001",
+          "first_name": "Sarah",
+          "last_name": "Adams",
+          "ticket_number": "0741234567890",
+          "email": "sarah.adams@example.com",
+          "phone": "+1-617-555-0139",
+          "elite_status": null,
+          "meal_preference": "none",
+          "seat_preference": "aisle"
+        }
+      ],
+      "bookings": [
+        {
+          "journey_id": "FL_SK412_20261205",
+          "fare_class": "main_cabin",
+          "fare_paid": 320.0,
+          "status": "confirmed",
+          "segments": [
+            {
+              "flight_number": "SK412",
+              "date": "2026-12-05",
+              "fare_paid": 320.0,
+              "seat": "22C",
+              "bags_checked": 1,
+              "meal_request": null
+            }
+          ]
+        }
+      ],
+      "booking_date": "2026-11-18T14:22:00-05:00",
+      "fare_type": "non_refundable",
+      "ancillaries": {
+        "seat_selection_fee": 15.0,
+        "bags_fee": 35.0
+      }
+    }
+  },
+  "journeys": {
+    "FL_SK412_20261205": {
+      "journey_id": "FL_SK412_20261205",
+      "date": "2026-12-05",
+      "origin": "JFK",
+      "destination": "LHR",
+      "num_stops": 0,
+      "total_duration_minutes": 420,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK412",
+          "origin": "JFK",
+          "destination": "LHR",
+          "scheduled_departure": "19:30",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "07:30",
+          "destination_utc_offset": 0,
+          "duration_minutes": 420,
+          "aircraft_type": "787-9",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B12",
+          "available_seats": {
+            "basic_economy": 0,
+            "main_cabin": 3,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 260.0,
+            "main_cabin": 320.0,
+            "premium_economy": 690.0,
+            "business": 1290.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": false,
+      "fares": {
+        "basic_economy": 260.0,
+        "main_cabin": 320.0,
+        "premium_economy": 690.0,
+        "business": 1290.0,
+        "first": null
+      }
+    },
+    "FL_SK412_20261226": {
+      "journey_id": "FL_SK412_20261226",
+      "date": "2026-12-26",
+      "origin": "JFK",
+      "destination": "LHR",
+      "num_stops": 0,
+      "total_duration_minutes": 420,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK412",
+          "origin": "JFK",
+          "destination": "LHR",
+          "scheduled_departure": "19:30",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "07:30",
+          "destination_utc_offset": 0,
+          "duration_minutes": 420,
+          "aircraft_type": "787-9",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B14",
+          "available_seats": {
+            "basic_economy": 12,
+            "main_cabin": 8,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 260.0,
+            "main_cabin": 360.0,
+            "premium_economy": 720.0,
+            "business": 1350.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 260.0,
+        "main_cabin": 360.0,
+        "premium_economy": 720.0,
+        "business": 1350.0,
+        "first": null
+      }
+    },
+    "FL_SK398_20261226": {
+      "journey_id": "FL_SK398_20261226",
+      "date": "2026-12-26",
+      "origin": "JFK",
+      "destination": "LHR",
+      "num_stops": 0,
+      "total_duration_minutes": 435,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK398",
+          "origin": "JFK",
+          "destination": "LHR",
+          "scheduled_departure": "09:10",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "21:25",
+          "destination_utc_offset": 0,
+          "duration_minutes": 435,
+          "aircraft_type": "777-200",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "A6",
+          "available_seats": {
+            "basic_economy": 6,
+            "main_cabin": 9,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 250.0,
+            "main_cabin": 520.0,
+            "premium_economy": 880.0,
+            "business": 1490.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 250.0,
+        "main_cabin": 520.0,
+        "premium_economy": 880.0,
+        "business": 1490.0,
+        "first": null
+      }
+    },
+    "FL_SK455_20261224": {
+      "journey_id": "FL_SK455_20261224",
+      "date": "2026-12-24",
+      "origin": "JFK",
+      "destination": "LHR",
+      "num_stops": 0,
+      "total_duration_minutes": 420,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK455",
+          "origin": "JFK",
+          "destination": "LHR",
+          "scheduled_departure": "20:10",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "08:10",
+          "destination_utc_offset": 0,
+          "duration_minutes": 420,
+          "aircraft_type": "787-8",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B4",
+          "available_seats": {
+            "basic_economy": 10,
+            "main_cabin": 10,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 240.0,
+            "main_cabin": 350.0,
+            "premium_economy": 710.0,
+            "business": 1330.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 240.0,
+        "main_cabin": 350.0,
+        "premium_economy": 710.0,
+        "business": 1330.0,
+        "first": null
+      }
+    },
+    "FL_SK901_SK221_20261226": {
+      "journey_id": "FL_SK901_SK221_20261226",
+      "date": "2026-12-26",
+      "origin": "JFK",
+      "destination": "LHR",
+      "num_stops": 1,
+      "total_duration_minutes": 620,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK901",
+          "origin": "JFK",
+          "destination": "BOS",
+          "scheduled_departure": "16:00",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "17:10",
+          "destination_utc_offset": -5,
+          "duration_minutes": 70,
+          "aircraft_type": "A220-300",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C3",
+          "available_seats": {
+            "basic_economy": 18,
+            "main_cabin": 16,
+            "premium_economy": 6,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 90.0,
+            "main_cabin": 120.0,
+            "premium_economy": 220.0,
+            "business": 420.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        },
+        {
+          "segment_number": 2,
+          "flight_number": "SK221",
+          "origin": "BOS",
+          "destination": "LHR",
+          "scheduled_departure": "19:05",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "06:35",
+          "destination_utc_offset": 0,
+          "duration_minutes": 390,
+          "aircraft_type": "A330-300",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "E8",
+          "available_seats": {
+            "basic_economy": 20,
+            "main_cabin": 2,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 150.0,
+            "main_cabin": 280.0,
+            "premium_economy": 520.0,
+            "business": 980.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 240.0,
+        "main_cabin": 455.0,
+        "premium_economy": 740.0,
+        "business": 1400.0,
+        "first": null
+      }
+    },
+    "FL_SK901_20261226": {
+      "journey_id": "FL_SK901_20261226",
+      "date": "2026-12-26",
+      "origin": "JFK",
+      "destination": "BOS",
+      "num_stops": 0,
+      "total_duration_minutes": 70,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK901",
+          "origin": "JFK",
+          "destination": "BOS",
+          "scheduled_departure": "16:00",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "17:10",
+          "destination_utc_offset": -5,
+          "duration_minutes": 70,
+          "aircraft_type": "A220-300",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "C3",
+          "available_seats": {
+            "basic_economy": 18,
+            "main_cabin": 16,
+            "premium_economy": 6,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 90.0,
+            "main_cabin": 120.0,
+            "premium_economy": 220.0,
+            "business": 420.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 90.0,
+        "main_cabin": 120.0,
+        "premium_economy": 220.0,
+        "business": 420.0,
+        "first": null
+      }
+    },
+    "FL_SK221_20261226": {
+      "journey_id": "FL_SK221_20261226",
+      "date": "2026-12-26",
+      "origin": "BOS",
+      "destination": "LHR",
+      "num_stops": 0,
+      "total_duration_minutes": 390,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK221",
+          "origin": "BOS",
+          "destination": "LHR",
+          "scheduled_departure": "19:05",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "06:35",
+          "destination_utc_offset": 0,
+          "duration_minutes": 390,
+          "aircraft_type": "A330-300",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "E8",
+          "available_seats": {
+            "basic_economy": 20,
+            "main_cabin": 2,
+            "premium_economy": 2,
+            "business": 1,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 150.0,
+            "main_cabin": 280.0,
+            "premium_economy": 520.0,
+            "business": 980.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 150.0,
+        "main_cabin": 280.0,
+        "premium_economy": 520.0,
+        "business": 980.0,
+        "first": null
+      }
+    },
+    "FL_SK412_20261227": {
+      "journey_id": "FL_SK412_20261227",
+      "date": "2026-12-27",
+      "origin": "JFK",
+      "destination": "LHR",
+      "num_stops": 0,
+      "total_duration_minutes": 420,
+      "segments": [
+        {
+          "segment_number": 1,
+          "flight_number": "SK412",
+          "origin": "JFK",
+          "destination": "LHR",
+          "scheduled_departure": "19:30",
+          "origin_utc_offset": -5,
+          "scheduled_arrival": "07:30",
+          "destination_utc_offset": 0,
+          "duration_minutes": 420,
+          "aircraft_type": "787-9",
+          "status": "scheduled",
+          "delay_minutes": null,
+          "delay_reason": null,
+          "cancellation_reason": null,
+          "gate": "B16",
+          "available_seats": {
+            "basic_economy": 4,
+            "main_cabin": 7,
+            "premium_economy": 4,
+            "business": 2,
+            "first": 0
+          },
+          "fares": {
+            "basic_economy": 260.0,
+            "main_cabin": 615.0,
+            "premium_economy": 940.0,
+            "business": 1590.0,
+            "first": null
+          },
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "bookable": true,
+      "fares": {
+        "basic_economy": 260.0,
+        "main_cabin": 615.0,
+        "premium_economy": 940.0,
+        "business": 1590.0,
+        "first": null
+      }
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}

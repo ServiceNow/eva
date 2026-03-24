@@ -1,0 +1,500 @@
+{
+  "_current_date": "2026-03-25",
+  "reservations": {
+    "98SHTT": {
+      "ancillaries": {
+        "bags_fee": 40.0,
+        "seat_selection_fee": 15.0
+      },
+      "booking_date": "2026-02-10T14:22:00-05:00",
+      "bookings": [
+        {
+          "fare_class": "main_cabin",
+          "fare_paid": 260.0,
+          "journey_id": "FL_SK184_20260326",
+          "segments": [
+            {
+              "bags_checked": 1,
+              "date": "2026-03-26",
+              "fare_paid": 260.0,
+              "flight_number": "SK184",
+              "meal_request": null,
+              "seat": "22C"
+            }
+          ],
+          "status": "confirmed"
+        }
+      ],
+      "confirmation_number": "98SHTT",
+      "fare_type": "non_refundable",
+      "passengers": [
+        {
+          "elite_status": null,
+          "email": "andrea.simmons@outlook.com",
+          "first_name": "Andrea",
+          "last_name": "Simmons",
+          "meal_preference": "none",
+          "passenger_id": "PAX001",
+          "phone": "+1-919-555-0968",
+          "seat_preference": "aisle",
+          "ticket_number": "1804567890123"
+        }
+      ],
+      "status": "confirmed"
+    }
+  },
+  "journeys": {
+    "FL_SK112_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": 210.0,
+        "business": 1150.0,
+        "first": null,
+        "main_cabin": 335.0,
+        "premium_economy": 610.0
+      },
+      "journey_id": "FL_SK112_20260325",
+      "num_stops": 0,
+      "origin": "RDU",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 1,
+            "first": 0,
+            "main_cabin": 5,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 100,
+          "fares": {
+            "basic_economy": 210.0,
+            "business": 1150.0,
+            "first": null,
+            "main_cabin": 335.0,
+            "premium_economy": 610.0
+          },
+          "flight_number": "SK112",
+          "gate": "B14",
+          "origin": "RDU",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "12:10",
+          "scheduled_departure": "10:30",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 100
+    },
+    "FL_SK128_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": 260.0,
+        "business": 1380.0,
+        "first": null,
+        "main_cabin": 460.0,
+        "premium_economy": 770.0
+      },
+      "journey_id": "FL_SK128_20260325",
+      "num_stops": 0,
+      "origin": "RDU",
+      "segments": [
+        {
+          "aircraft_type": "A320",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 0
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 100,
+          "fares": {
+            "basic_economy": 260.0,
+            "business": 1380.0,
+            "first": null,
+            "main_cabin": 460.0,
+            "premium_economy": 770.0
+          },
+          "flight_number": "SK128",
+          "gate": "C2",
+          "origin": "RDU",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "17:00",
+          "scheduled_departure": "15:20",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": []
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 100
+    },
+    "FL_SK184_20260326": {
+      "bookable": true,
+      "date": "2026-03-26",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": 180.0,
+        "business": 980.0,
+        "first": null,
+        "main_cabin": 260.0,
+        "premium_economy": 520.0
+      },
+      "journey_id": "FL_SK184_20260326",
+      "num_stops": 0,
+      "origin": "RDU",
+      "segments": [
+        {
+          "aircraft_type": "A220-300",
+          "available_seats": {
+            "basic_economy": 0,
+            "business": 2,
+            "first": 0,
+            "main_cabin": 3,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 95,
+          "fares": {
+            "basic_economy": 180.0,
+            "business": 980.0,
+            "first": null,
+            "main_cabin": 260.0,
+            "premium_economy": 520.0
+          },
+          "flight_number": "SK184",
+          "gate": "C6",
+          "origin": "RDU",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "14:45",
+          "scheduled_departure": "13:10",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 95
+    },
+    "FL_SK337_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": 140.0,
+        "business": 900.0,
+        "first": null,
+        "main_cabin": 245.0,
+        "premium_economy": 500.0
+      },
+      "journey_id": "FL_SK337_20260325",
+      "num_stops": 0,
+      "origin": "DCA",
+      "segments": [
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 65,
+          "fares": {
+            "basic_economy": 140.0,
+            "business": 900.0,
+            "first": null,
+            "main_cabin": 245.0,
+            "premium_economy": 500.0
+          },
+          "flight_number": "SK337",
+          "gate": "B9",
+          "origin": "DCA",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "13:10",
+          "scheduled_departure": "12:05",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 65
+    },
+    "FL_SK901_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "DCA",
+      "fares": {
+        "basic_economy": 120.0,
+        "business": 820.0,
+        "first": null,
+        "main_cabin": 210.0,
+        "premium_economy": 420.0
+      },
+      "journey_id": "FL_SK901_20260325",
+      "num_stops": 0,
+      "origin": "RDU",
+      "segments": [
+        {
+          "aircraft_type": "E170",
+          "available_seats": {
+            "basic_economy": 8,
+            "business": 1,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 3
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DCA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 60,
+          "fares": {
+            "basic_economy": 120.0,
+            "business": 820.0,
+            "first": null,
+            "main_cabin": 210.0,
+            "premium_economy": 420.0
+          },
+          "flight_number": "SK901",
+          "gate": "A7",
+          "origin": "RDU",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "10:10",
+          "scheduled_departure": "09:10",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 60
+    },
+    "FL_SK901_SK337_20260325": {
+      "bookable": true,
+      "date": "2026-03-25",
+      "destination": "LGA",
+      "fares": {
+        "basic_economy": 235.0,
+        "business": 1185.0,
+        "first": null,
+        "main_cabin": 345.0,
+        "premium_economy": 650.0
+      },
+      "journey_id": "FL_SK901_SK337_20260325",
+      "num_stops": 1,
+      "origin": "RDU",
+      "segments": [
+        {
+          "aircraft_type": "E170",
+          "available_seats": {
+            "basic_economy": 8,
+            "business": 1,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 3
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "DCA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 60,
+          "fares": {
+            "basic_economy": 120.0,
+            "business": 820.0,
+            "first": null,
+            "main_cabin": 210.0,
+            "premium_economy": 420.0
+          },
+          "flight_number": "SK901",
+          "gate": "A7",
+          "origin": "RDU",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "10:10",
+          "scheduled_departure": "09:10",
+          "segment_number": 1,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        },
+        {
+          "aircraft_type": "E175",
+          "available_seats": {
+            "basic_economy": 2,
+            "business": 0,
+            "first": 0,
+            "main_cabin": 0,
+            "premium_economy": 2
+          },
+          "cancellation_reason": null,
+          "delay_minutes": null,
+          "delay_reason": null,
+          "destination": "LGA",
+          "destination_utc_offset": -4,
+          "duration_minutes": 65,
+          "fares": {
+            "basic_economy": 140.0,
+            "business": 900.0,
+            "first": null,
+            "main_cabin": 245.0,
+            "premium_economy": 500.0
+          },
+          "flight_number": "SK337",
+          "gate": "B9",
+          "origin": "DCA",
+          "origin_utc_offset": -4,
+          "scheduled_arrival": "13:10",
+          "scheduled_departure": "12:05",
+          "segment_number": 2,
+          "status": "scheduled",
+          "available_seat_types": {
+            "basic_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ],
+            "business": [],
+            "first": [],
+            "main_cabin": [],
+            "premium_economy": [
+              "window",
+              "aisle",
+              "middle"
+            ]
+          }
+        }
+      ],
+      "status": "scheduled",
+      "total_duration_minutes": 295
+    }
+  },
+  "disruptions": {},
+  "travel_credits": {},
+  "meal_vouchers": {},
+  "refunds": {}
+}
