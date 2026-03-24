@@ -2,7 +2,7 @@
 
 ## Data Structure
 
-Each test case (aka scenario) in EVA-Bench is an evaluation record that specifies:
+Each test case (aka scenario) in EVA is an evaluation record that specifies:
 
 - User Goal — What the caller is trying to accomplish, with a detailed scenario of a highly specific user goal with an exact decision tree that guides the user simulator through the conversation, leaving no ambiguity about the intended outcome.
 - User Persona — How the caller should behave — their speaking style, patience level, and personality traits.
@@ -15,7 +15,7 @@ This structure makes tests reproducible. The same evaluation record always prese
 
 We believe flight rebooking is a strong initial domain for voice agent evaluation for several reasons. It is a high-stakes, real-world scenario where users regularly interact with voice agents under time pressure. It requires temporal reasoning (understanding IRROPS vs. voluntary changes, same day vs. future travel), complex policy following (voucher eligibility, rebooking options), and disambiguation (handling user constraints and preferences). And critically, it is heavily dependent on accurate transcription of named entities — confirmation codes, flight numbers, passenger names, dates — making it a demanding and realistic test of the full pipeline.
 
-The initial EVA-Bench dataset covers 50 scenarios across the following categories:
+The initial EVA dataset covers 50 scenarios across the following categories:
 
 - IRROPS rebooking: airline-initiated disruptions where the user is entitled to rebooking at no cost.
 - Voluntary changes: user-initiated change requests subject to fare difference and change fees.

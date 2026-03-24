@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "eva"
 version = "0.1.1"
-description = "End-to-end Voice Agent (EVA)"
+description = "A New End-to-end Framework for Evaluating Voice Agents (EVA)"
 authors = [
     { name = "Tara Bogavelli" },
     { name = "Gabrielle Gauthier Melançon" },

@@ -1,4 +1,4 @@
-"""End-to-end Voice Agent Benchmark (EVA).
+"""A New End-to-end Framework for Evaluating Voice Agents (EVA).
 
 End-to-end evaluation framework for voice assistants using Pipecat and ElevenLabs.
 """

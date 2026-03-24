@@ -210,7 +210,7 @@ ModelConfigUnion = Annotated[
 
 
 class RunConfig(BaseSettings):
-    """End-to-end Voice Agent Benchmark\033[94m
+    """A New End-to-end Framework for Evaluating Voice Agents\033[94m
 
     ▁▁▁▁▁▁▁▁▁▁ ▁▁▁        ▁▁▁  ▁▁▁▁
     ▏         ▏╲  ╲      ╱  ╱ ╱    ╲

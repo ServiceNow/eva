@@ -1,6 +1,6 @@
 # EVA Website
 
-A New Framework for Evaluation of Voice Agents (EVA)
+A New End-to-end Framework for Evaluating Voice Agents (EVA)
 
 Built with React, TypeScript, Vite, and Tailwind CSS.
 
