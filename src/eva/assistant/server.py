@@ -331,7 +331,7 @@ class AssistantServer:
                 user_turn_strategies = ExternalUserTurnStrategies()
                 vad_analyzer = None
             else:
-                logger.info(f"Using local smart turn analyzer")
+                logger.info("Using local smart turn analyzer")
                 user_turn_strategies = UserTurnStrategies(
                     start=[VADUserTurnStartStrategy()],
                     stop=[
