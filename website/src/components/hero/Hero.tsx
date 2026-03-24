@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Github, ExternalLink, Plane } from 'lucide-react';
+import { Github, ExternalLink, Database, Plane } from 'lucide-react';
 
 export function Hero() {
   return (
@@ -16,7 +16,7 @@ export function Hero() {
             Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz, Oluwanifemi Bamgbose, Hoang Nguyen, Raghav Mehndiratta, Hari Subramani*
           </p>
           <p className="text-base sm:text-lg font-semibold text-text-secondary max-w-3xl mx-auto mb-4">
-            ServiceNow Research
+            ServiceNow AI Research
           </p>
           <p className="text-base sm:text-lg text-text-muted max-w-3xl mx-auto mb-14 leading-relaxed">
             An open-source evaluation framework that measures voice agents over complete, multi-turn
@@ -103,6 +103,14 @@ export function Hero() {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-purple text-white font-medium text-sm hover:bg-purple-dim transition-colors"
           >
             <Github className="w-4 h-4" /> View on GitHub
+          </a>
+          <a
+            href="https://huggingface.co/datasets/ServiceNow-AI/eva"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-bg-tertiary text-text-primary font-medium text-sm hover:bg-bg-hover border border-border-default transition-colors"
+          >
+            <Database className="w-4 h-4" /> Dataset
           </a>
           <a
             href="https://huggingface.co/blog/ServiceNow-AI/eva"

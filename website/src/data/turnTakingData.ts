@@ -165,7 +165,7 @@ export const turnTakingData: TurnTakingEntry[] = [
     lateTurnBreakdown: { withToolCalls: 74.0, withoutToolCalls: 26.0 },
   },
   {
-    systemId: 'voxtral-mini-3b-gpt-oss-120b-chatterbox',
+    systemId: 'voxtral-mini-3b-gpt-oss-120b-chatterbox-turbo',
     allTurns: { onTime: 20.4, late: 77.4, early: 2.2, indeterminate: 0.0 },
     toolCallTurns: { onTime: 13.3, late: 84.9, early: 1.8, indeterminate: 0.0 },
     noToolCallTurns: { onTime: 24.4, late: 73.2, early: 2.4, indeterminate: 0.0 },
@@ -175,7 +175,7 @@ export const turnTakingData: TurnTakingEntry[] = [
     lateTurnBreakdown: { withToolCalls: 39.4, withoutToolCalls: 60.6 },
   },
   {
-    systemId: 'whisper-large-v3-gpt-oss-20b-chatterbox',
+    systemId: 'whisper-large-v3-gpt-oss-20b-chatterbox-turbo',
     allTurns: { onTime: 18.9, late: 78.5, early: 2.3, indeterminate: 0.3 },
     toolCallTurns: { onTime: 10.7, late: 85.9, early: 2.9, indeterminate: 0.4 },
     noToolCallTurns: { onTime: 25.3, late: 72.7, early: 1.9, indeterminate: 0.2 },
@@ -195,7 +195,7 @@ export const turnTakingData: TurnTakingEntry[] = [
     lateTurnBreakdown: { withToolCalls: 46.5, withoutToolCalls: 53.5 },
   },
   {
-    systemId: 'parakeet-ctc-1-1b-gpt-oss-120b-chatterbox',
+    systemId: 'parakeet-ctc-1-1b-gpt-oss-120b-chatterbox-turbo',
     allTurns: { onTime: 7.0, late: 90.4, early: 2.6, indeterminate: 0.0 },
     toolCallTurns: { onTime: 2.0, late: 96.2, early: 1.7, indeterminate: 0.0 },
     noToolCallTurns: { onTime: 10.6, late: 86.2, early: 3.2, indeterminate: 0.0 },
@@ -205,7 +205,7 @@ export const turnTakingData: TurnTakingEntry[] = [
     lateTurnBreakdown: { withToolCalls: 45.0, withoutToolCalls: 55.0 },
   },
   {
-    systemId: 'voxtral-mini-3b-qwen3-5-27b-chatterbox',
+    systemId: 'voxtral-mini-3b-qwen3-5-27b-chatterbox-turbo',
     allTurns: { onTime: 3.1, late: 92.1, early: 4.6, indeterminate: 0.2 },
     toolCallTurns: { onTime: 0.8, late: 94.7, early: 4.0, indeterminate: 0.4 },
     noToolCallTurns: { onTime: 5.1, late: 89.7, early: 5.1, indeterminate: 0.0 },
@@ -215,7 +215,7 @@ export const turnTakingData: TurnTakingEntry[] = [
     lateTurnBreakdown: { withToolCalls: 49.0, withoutToolCalls: 51.0 },
   },
   {
-    systemId: 'parakeet-ctc-1-1b-qwen3-5-27b-chatterbox',
+    systemId: 'parakeet-ctc-1-1b-qwen3-5-27b-chatterbox-turbo',
     allTurns: { onTime: 2.3, late: 94.5, early: 2.6, indeterminate: 0.5 },
     toolCallTurns: { onTime: 0.4, late: 97.3, early: 1.9, indeterminate: 0.4 },
     noToolCallTurns: { onTime: 4.4, late: 91.5, early: 3.5, indeterminate: 0.7 },

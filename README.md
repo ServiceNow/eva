@@ -5,6 +5,7 @@
 [![Blog Post](https://img.shields.io/badge/Blog-Post-blue?style=flat-square&logo=huggingface)](https://huggingface.co/blog/ServiceNow-AI/eva)
 [![Website](https://img.shields.io/badge/Website-EVA-green?style=flat-square&logo=googlechrome)](https://servicenow.github.io/eva/)
 [![Leaderboard](https://img.shields.io/badge/Leaderboard-Rankings-orange?style=flat-square&logo=trophy)](https://servicenow.github.io/eva/#early-results)
+[![Dataset](https://img.shields.io/badge/Dataset-HuggingFace-yellow?style=flat-square&logo=huggingface)](https://huggingface.co/datasets/ServiceNow-AI/eva)
 [![Demo](https://img.shields.io/badge/Demo-See%20It-purple?style=flat-square&logo=rocket)](https://servicenow.github.io/eva/#demo)
 
 **EVA** is an open-source evaluation framework for conversational voice agents that scores complete, multi-turn spoken conversations across two fundamental dimensions:
@@ -72,13 +73,6 @@ pip install -e ".[dev]"
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` and fill in your API keys:
-
-```bash
-cp .env.example .env
-# Edit .env with your API keys
-```
-
 **Required:**
 - `OPENAI_API_KEY` (or another LLM provider): Powers the assistant LLM and text judge metrics
 - `EVA_MODEL_LIST`: Model deployments that reference your API key (see `.env.example`). Also configurable via `--model-list` CLI flag. Only used for regular LLMs.
@@ -90,21 +84,21 @@ cp .env.example .env
 - `GOOGLE_APPLICATION_CREDENTIALS`: Gemini via Vertex AI (audio judge metrics)
 - `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`: Claude via Bedrock (faithfulness metric)
 
-> [!TIP]
-> **OpenAI-only setup:** If you only have an OpenAI key, set `JUDGE_MODEL=gpt-5.2` in your `.env` to override all text judge models including faithfulness (results may be less accurate). Audio metrics (agent/user speech fidelity) still require Gemini — to skip them, run only text-based metrics: `EVA_METRICS=task_completion,faithfulness,conciseness,turn_taking`.
-
 **Key Environment Variables:**
 ```bash
 # Framework Configuration
 EVA_DOMAIN=airline           # Domain-based path conventions
-EVA_MAX_CONCURRENT_CONVERSATIONS=10   # Max parallel conversations
-EVA_DEBUG=false                       # Run only 1 record for testing
-EVA_RECORD_IDS=1.2.1,1.2.2            # Run specific records only
+EVA_MAX_CONCURRENT_CONVERSATIONS=5   # Max parallel conversations
+EVA_DEBUG=false                       # Run only 1 record for testing when enabled
+EVA_RECORD_IDS=1.2.1,1.2.2            # Run specific records only (remove to run all records)
 
 # Pipeline Model Configuration (nested under EVA_MODEL__)
-EVA_MODEL__LLM=gpt-5.2                # LLM model name (must match EVA_MODEL_LIST)
+EVA_MODEL__LLM=gpt-5-mini                # LLM model name (must match EVA_MODEL_LIST)
 EVA_MODEL__STT=deepgram               # deepgram | openai_whisper
 EVA_MODEL__TTS=cartesia               # cartesia | elevenlabs
+
+EVA_MODEL__STT_PARAMS={"api_key":"", "alias": "deepgram-nova-3", "model": "nova-3"}
+EVA_MODEL__TTS_PARAMS={"api_key":"", "alias": "cartesia-sonic-3", "model": "sonic-3"}
 
 # Or speech-to-speech model (mutually exclusive with LLM)
 # EVA_MODEL__S2S=gpt-realtime-mini    # Audio-native model name (S2S, S2T+TTS)
@@ -126,7 +120,7 @@ EVA_DOMAIN=airline python main.py
 #   data/airline_scenarios/
 
 # Run with CLI overrides
-python main.py --llm-model gpt-5.2 --max-concurrent 10
+python main.py --llm-model gpt-5-mini --max-concurrent 10
 ```
 
 ### Running Metrics
@@ -252,45 +246,65 @@ Flight rebooking is a strong initial domain: it is high-stakes, time-pressured, 
 ## Project Structure
 
 ```
-EVA/
+eva/
+├── main.py                    # Main entry point
+├── pyproject.toml             # Python project configuration
+├── Dockerfile                 # Docker configuration
+├── compose.yaml               # Docker Compose configuration
 ├── src/eva/
-│   ├── models/              # Pydantic data models
-│   ├── orchestrator/        # Framework execution
-│   │   ├── runner.py        # Main orchestrator
-│   │   └── worker.py        # Per-conversation worker
-│   ├── assistant/           # Pipecat-based assistant
-│   │   ├── agentic/         # Agent orchestration
-│   │   ├── tools/           # Python-based tool implementations
-│   │   ├── pipeline/        # Agent processor
-│   │   └── services/        # STT/TTS/LLM factories
-│   ├── user_simulator/      # ElevenLabs user simulator
-│   ├── metrics/             # Evaluation metrics
-│   │   ├── base.py          # Base metric classes
-│   │   ├── processor.py     # Metrics context processor
-│   │   ├── runner.py        # Metrics execution
-│   │   ├── accuracy/        # Task completion metrics
-│   │   ├── experience/      # Responsiveness, intelligence, acoustic
-│   │   ├── diagnostic/      # Diagnostic metrics (not in final scores)
-│   │   └── validation_metrics/ # Quality control metrics
-│   └── utils/               # Utilities (LLM client, log processing)
-├── scripts/                 # CLI scripts
-│   ├── main.py              # Main evaluation runner
-│   └── run_text_only.py     # Text-only evaluation runner
-├── configs/                 # Configuration files
-│   ├── prompts/             # Judge and simulation prompts
-│   │   ├── judge.yaml       # Judge metric prompts
-│   │   └── simulation.yaml  # User simulator prompts
-│   └── agents/              # Agent configurations
+│   ├── cli.py                 # CLI interface
+│   ├── models/                # Pydantic data models
+│   ├── orchestrator/          # Framework execution
+│   │   ├── runner.py          # Main orchestrator
+│   │   ├── worker.py          # Per-conversation worker
+│   │   ├── validation_runner.py # Validation runner
+│   │   └── port_pool.py       # Port management
+│   ├── assistant/             # Pipecat-based assistant
+│   │   ├── agentic/           # Agent orchestration
+│   │   ├── tools/             # Python-based tool implementations
+│   │   ├── pipeline/          # Audio/LLM processing pipeline
+│   │   └── services/          # STT/TTS/LLM factories
+│   ├── user_simulator/        # ElevenLabs user simulator
+│   ├── metrics/               # Evaluation metrics
+│   │   ├── base.py            # Base metric classes
+│   │   ├── processor.py       # Metrics context processor
+│   │   ├── runner.py          # Metrics execution
+│   │   ├── registry.py        # Metric registry
+│   │   ├── aggregation.py     # Metric aggregation
+│   │   ├── accuracy/          # Task completion metrics
+│   │   ├── experience/        # Responsiveness, progression, turn-taking
+│   │   ├── diagnostic/        # Diagnostic metrics (not in final scores)
+│   │   └── validation/        # Quality control metrics
+│   └── utils/                 # Utilities (LLM client, log processing)
+├── scripts/                   # Utility scripts
+│   ├── run_benchmark.py       # Benchmark runner
+│   ├── run_text_only.py       # Text-only evaluation runner
+│   ├── docker_entrypoint.py   # Docker entry point
+│   ├── check_version_bump.py  # Version checking
+│   └── push_to_hf.py         # Hugging Face push script
+├── configs/                   # Configuration files
+│   ├── prompts/               # Judge and simulation prompts
+│   │   ├── judge.yaml         # Judge metric prompts
+│   │   └── simulation.yaml    # User simulator prompts
+│   └── agents/                # Agent configurations
 │       └── airline_agent.yaml
-├── docs/                    # Documentation
-│   ├── metrics/             # Per-metric documentation
-│   └── llm_configuration.md # LLM provider setup guide
-├── data/                    # Data files
-│   ├── airline_dataset.jsonl # Evaluation dataset
-│   └── airline_scenarios/   # Per-record scenario databases
-└── tests/                   # Test suite
-    ├── unit/                # Unit tests
-    └── integration/         # Integration tests
+├── docs/                      # Documentation
+│   ├── metrics/               # Per-metric documentation
+│   ├── data.md                # Data documentation
+│   ├── experiment_setup.md    # Experiment setup guide
+│   ├── llm_configuration.md   # LLM provider setup guide
+│   ├── metric_context.md      # Metric context documentation
+│   ├── limitations.md         # Known limitations
+│   └── demo/                  # Demo audio files
+├── data/                      # Data files
+│   ├── airline_dataset.jsonl  # Evaluation dataset
+│   └── airline_scenarios/     # Per-record scenario databases
+├── tests/                     # Test suite
+│   ├── unit/                  # Unit tests
+│   ├── integration/           # Integration tests
+│   ├── artifacts/             # Test artifacts and fixtures
+│   └── fixtures/              # Shared test fixtures
+└── website/                   # Project website (React/TypeScript)
 ```
 
 ## Limitations
