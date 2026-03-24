@@ -46,20 +46,20 @@ export function AcknowledgementsSection() {
           <div className="rounded-xl border border-amber/30 bg-amber/5 p-6">
             <h3 className="text-base font-semibold text-amber mb-2">Management and Leadership</h3>
             <p className="text-sm text-text-secondary mb-4">We are grateful to the following individuals for their management, leadership, and support.</p>
-            <div className="space-y-2">
-              <div className="flex justify-between items-baseline gap-4">
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
                 <span className="text-sm font-semibold text-text-primary">Fanny Riols</span>
                 <span className="text-xs text-text-muted">Research Scientist Manager</span>
               </div>
-              <div className="flex justify-between items-baseline gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
                 <span className="text-sm font-semibold text-text-primary">Anil Madamala</span>
                 <span className="text-xs text-text-muted">Director, Machine Learning Engineering Management</span>
               </div>
-              <div className="flex justify-between items-baseline gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
                 <span className="text-sm font-semibold text-text-primary">Sridhar Nemala</span>
                 <span className="text-xs text-text-muted">Senior Director, Machine Learning Engineering</span>
               </div>
-              <div className="flex justify-between items-baseline gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
                 <span className="text-sm font-semibold text-text-primary">Srinivas Sunkara</span>
                 <span className="text-xs text-text-muted">VP, Research Engineering Management</span>
               </div>
