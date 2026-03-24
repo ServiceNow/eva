@@ -5,8 +5,8 @@
 | Model | GPU Type | # GPUs | Precision | Deployment | Inference Params |
 |---|---|---|---|---|---|
 | gpt-oss-20b | NVIDIA A100 | 2 | BF16 | vLLM | default vLLM |
-| qwen3.5-27b | NVIDIA H100 | 2 | BF16 | vLLM | max-model-len=32768, max-num-seqs=8 |
-| gpt-oss-120b | NVIDIA H100 | 2 | BF16 | vLLM | max-logprobs=10 |
+| qwen3.5-27b | NVIDIA H100 | 2 | BF16 | | max-model-len=32768, max-num-seqs=8 |
+| gpt-oss-120b | NVIDIA H100 | 2 | BF16 | | max-logprobs=10 |
 | parakeet-ctc-1.1b | NVIDIA H100 | 1 | | | |
 | voxtral-mini-3b | NVIDIA H100 | 1 | BF16 | vLLM | max-logprobs=10, max-model-len=32768 |
 | whisper-large-v3 | NVIDIA A100 | 1 | FP16 | vLLM | max-logprobs=10, do_sample=false + defaults |

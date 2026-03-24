@@ -845,7 +845,7 @@ export function ConversationDemo() {
         <div className="flex-1 min-w-0">
           {/* Audio player */}
           <div className="mb-6">
-            <AudioPlayer src="/demo/audio_mixed.wav" />
+            <AudioPlayer src={`${import.meta.env.BASE_URL}demo/audio_mixed.wav`} />
           </div>
 
           {/* Conversation trace */}
