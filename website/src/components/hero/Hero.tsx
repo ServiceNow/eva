@@ -10,7 +10,7 @@ export function Hero() {
             className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold mb-2 leading-tight bg-clip-text text-transparent"
             style={{ backgroundImage: 'linear-gradient(to right, #7C3AED, #818CF8, #60A5FA)' }}
           >
-            A New End-to-end Framework for<br />Evaluation of Voice Agents (EVA)
+            A New End-to-end Framework for<br />Evaluating Voice Agents (EVA)
           </h1>
           <p className="text-sm sm:text-base font-bold text-[#A78BFA] max-w-3xl mx-auto mb-2.5">
             Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz, Oluwanifemi Bamgbose, Hoang Nguyen, Raghav Mehndiratta, Hari Subramani*
