@@ -246,7 +246,7 @@ Flight rebooking is a strong initial domain: it is high-stakes, time-pressured, 
 ## Project Structure
 
 ```
-EVA-Bench/
+eva/
 ├── main.py                    # Main entry point
 ├── pyproject.toml             # Python project configuration
 ├── Dockerfile                 # Docker configuration
