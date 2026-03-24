@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""CLI entry point for the `eva` command (installed via pip install)."""
+"""CLI entry point for eva.
+
+Used by both the `eva` console script (installed via pip/uv) and `python main.py`.
+"""
 
 import asyncio
 import sys
@@ -13,9 +16,9 @@ def main():
 
     config = RunConfig(_cli_parse_args=True, _env_file=".env")
 
-    from scripts.run_benchmark import main as run_main
+    from eva.run_benchmark import run_benchmark
 
-    sys.exit(asyncio.run(run_main(config)))
+    sys.exit(asyncio.run(run_benchmark(config)))
 
 
 if __name__ == "__main__":

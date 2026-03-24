@@ -16,7 +16,7 @@ authors = [
     { name = "Hari Subramani" },
 ]
 readme = "README.md"
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.11,<3.14"
 license = "MIT"
 dependencies = [
     "pydantic>=2.0",

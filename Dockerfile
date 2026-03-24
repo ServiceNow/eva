@@ -49,11 +49,11 @@ COPY configs/ ./configs/
 COPY data/ ./data/
 
 # Create non-root user for runtime security
-RUN groupadd --gid 1000 evabench && \
-    useradd --uid 1000 --gid evabench --create-home evabench
+RUN groupadd --gid 1000 eva && \
+    useradd --uid 1000 --gid eva --create-home eva
 
 # Create directory for output with correct ownership
-RUN mkdir -p /app/output && chown evabench:evabench /app/output
+RUN mkdir -p /app/output && chown eva:eva /app/output
 
 # Python runtime settings
 ENV PYTHONPATH="/app/src:$PYTHONPATH"

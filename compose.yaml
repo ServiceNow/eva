@@ -2,11 +2,10 @@
 #
 # Usage:
 #   # Build the image
-#   docker-compose build
+#   docker compose build
 #
 #   # Run a benchmark (set EVA_DOMAIN in .env or pass --domain)
-#   docker-compose run --rm benchmark \
-#     scripts/run_benchmark.py
+#   docker compose run --rm benchmark
 
 services:
   benchmark:
@@ -23,10 +22,8 @@ services:
       - ./data:/app/data:ro
       # Output directory (results, metrics)
       - ./output:/app/output
-      # Mount configs for easy customization
+      # Mount configs for easy customization (includes prompts)
       - ./configs:/app/configs:ro
-      # Mount prompts
-      - ./prompts:/app/prompts:ro
 
     # Resource limits (adjust based on your system)
     deploy:
@@ -55,7 +52,6 @@ services:
       - ./data:/app/data:ro
       - ./output:/app/output
       - ./configs:/app/configs:ro
-      - ./prompts:/app/prompts:ro
       # Mount source for development
       - ./src:/app/src
       - ./tests:/app/tests
