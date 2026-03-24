@@ -50,7 +50,7 @@ export function Hero() {
                   <span key={cat} className="px-2 py-0.5 rounded-full bg-amber/10 text-amber text-xs font-medium">{cat}</span>
                 ))}
               </div>
-              <div className="grid grid-cols-4 gap-3 mt-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-auto">
                 <div className="rounded-lg bg-bg-primary px-3 py-3 text-center">
                   <div className="text-2xl font-bold text-text-primary">15</div>
                   <div className="text-xs text-text-muted">Tools</div>
@@ -63,12 +63,12 @@ export function Hero() {
                   <div className="text-2xl font-bold text-text-primary">3</div>
                   <div className="text-xs text-text-muted">Trials each</div>
                 </div>
-                <div className="rounded-lg bg-bg-primary px-3 py-3 text-center">
+                <div className="rounded-lg bg-bg-primary px-3 py-3 flex flex-col items-center justify-center">
                   <div className="text-2xl font-bold text-text-primary">150</div>
-                  <div className="text-xs text-text-muted leading-tight">Simulated<br />Conversations</div>
+                  <div className="text-xs text-text-muted leading-tight text-center">Simulated<br />Conversations</div>
                 </div>
               </div>
-              <p className="text-sm font-bold text-white text-center mt-4">More domains coming soon!</p>
+              <p className="text-sm font-bold text-text-primary text-center mt-4">More domains coming soon!</p>
             </div>
           </div>
 

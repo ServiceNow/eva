@@ -101,7 +101,7 @@ Each metric produces a `MetricScore` stored in `metrics.json` per record:
 
 ## Running Metrics
 
-Metrics are run as part of the benchmark via `main.py`. Use `--metrics` to select which metrics to compute:
+Metrics are run as part of the benchmark via `eva` (or `python main.py`). Use `--metrics` to select which metrics to compute:
 
 ```bash
 # Run all metrics on benchmark output

@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-"""Core benchmark logic — imported by main.py and eva.cli."""
+"""Core benchmark orchestration — imported by eva.cli."""
 
 import asyncio
 import sys
@@ -16,8 +15,8 @@ from eva.utils.logging import get_logger, setup_logging
 load_dotenv()
 
 
-async def main(config: RunConfig) -> int:
-    """Main entry point."""
+async def run_benchmark(config: RunConfig) -> int:
+    """Run the benchmark end-to-end and return an exit code."""
     # Install custom hook to suppress threading cleanup errors at shutdown
     sys.unraisablehook = _suppress_threading_cleanup_error
 

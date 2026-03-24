@@ -1,4 +1,4 @@
-# A New Framework for Evaluation of Voice Agents (EVA)
+# A New Framework for Evaluating Voice Agents (EVA)
 
 > *Most voice agent benchmarks evaluate either what the agent **does** or how it **sounds** — EVA evaluates both.*
 
@@ -30,10 +30,13 @@ Agents that score well on task completion tend to score worse on conversational 
 
 We recommend using [uv](https://docs.astral.sh/uv/) for fast, reliable dependency management. If you don't have `uv` installed, see the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
+> [!NOTE]
+> This project requires **Python 3.11–3.13** (set via `requires-python` in `pyproject.toml`). `uv` will automatically select a compatible version. If you're using pip, make sure you're running a supported Python version.
+
 ```bash
 # Clone the repository
-git clone <repo-url>
-cd EVA
+git clone https://github.com/ServiceNow/eva.git
+cd eva
 
 # Install all dependencies (uv automatically creates a virtual environment)
 uv sync --all-extras
@@ -72,6 +75,7 @@ pip install -e ".[dev]"
 
 **Required:**
 - `OPENAI_API_KEY` (or another LLM provider): Powers the assistant LLM and text judge metrics
+- `EVA_MODEL_LIST`: Model deployments that reference your API key (see `.env.example`). Also configurable via `--model-list` CLI flag. Only used for regular LLMs.
 - `ELEVENLABS_API_KEY` + agent IDs: For user simulation
 - STT/TTS API key and model: Passed via `EVA_MODEL__STT_PARAMS` / `EVA_MODEL__TTS_PARAMS` (default provider is Cartesia)
 
@@ -123,7 +127,7 @@ python main.py --llm-model gpt-5-mini --max-concurrent 10
 
 ```bash
 # Re-run specific metrics on an existing run
-python scripts/main.py \
+python main.py \
     --run-id <existing_run_id> \
     --metrics task_completion,faithfulness,conciseness
 ```
@@ -132,10 +136,10 @@ python scripts/main.py \
 
 ```bash
 # Build the image
-docker-compose build
+docker compose build
 
 # Run a benchmark
-docker-compose run --rm benchmark main.py
+docker compose run --rm benchmark
 ```
 
 ### Development Setup

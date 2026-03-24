@@ -204,7 +204,7 @@ export function ScatterPlot({ systems }: ScatterPlotProps) {
   return (
     <div className="bg-bg-secondary rounded-xl border border-border-default p-6">
       {/* Dots indicator at top */}
-      <div className="flex justify-center gap-2 mb-6">
+      <div className="flex flex-wrap justify-center gap-2 mb-6">
         {plots.map((p, i) => (
           <button
             key={i}

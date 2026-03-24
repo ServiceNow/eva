@@ -35,15 +35,15 @@ export function Navbar({ activeTab, onTabChange, theme, onToggleTheme }: NavbarP
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
+            className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           {/* Spacer for desktop */}
-          <div className="hidden sm:block w-0" />
+          <div className="hidden md:block w-0" />
           {/* Desktop navigation */}
-          <div className="hidden sm:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {tabs.map(t => (
               <a
                 key={t.id}
@@ -70,7 +70,7 @@ export function Navbar({ activeTab, onTabChange, theme, onToggleTheme }: NavbarP
       </div>
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
-        <div className="sm:hidden border-t border-border-default bg-bg-primary/95 backdrop-blur-xl">
+        <div className="md:hidden border-t border-border-default bg-bg-primary/95 backdrop-blur-xl">
           <div className="px-4 py-3 space-y-1">
             {tabs.map(t => (
               <a
