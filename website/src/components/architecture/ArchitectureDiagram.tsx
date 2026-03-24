@@ -228,7 +228,7 @@ export function ArchitectureDiagram() {
               <Connector color="#F59E0B" className="h-5" />
             </div>
             <HLine color="#F59E0B" className="w-full" />
-            <Connector color="#F59E0B" className="h-5" />
+            <Connector color="#F59E0B" className="h-8" />
           </div>
         </div>
         {/* Mobile: simple vertical connector */}
@@ -237,7 +237,7 @@ export function ArchitectureDiagram() {
         </div>
 
         {/* Row 5: ValidationRunner — positioned with the rerun track on the right */}
-        <div className="flex justify-center px-4">
+        <div className="flex justify-center px-4 -mt-2">
           <div className="w-full max-w-80">
             <Node label="Validators" sublabel="Reruns invalid conversations" color="#F59E0B" delay={0.4} />
           </div>
