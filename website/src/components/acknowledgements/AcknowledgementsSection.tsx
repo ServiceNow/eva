@@ -91,13 +91,13 @@ export function AcknowledgementsSection() {
           <h3 className="text-base font-semibold text-text-primary mb-3">Citation</h3>
           <pre className="text-xs text-text-muted bg-bg-primary rounded-lg p-4 overflow-x-auto font-mono">
 {`@misc{eva-2026,
-  title={EVA: A New Framework for Evaluation of Voice Agents},
+  title={EVA: A New End-to-end Framework for Evaluating Voice Agents},
   author={Bogavelli, Tara and Gauthier Melançon, Gabrielle
           and Stankiewicz, Katrina and Bamgbose, Oluwanifemi
           and Nguyen, Hoang and Mehndiratta, Raghav
           and Subramani, Hari},
   year={2026},
-  url={https://github.com/ServiceNow/EVA-Bench}
+  url={https://github.com/ServiceNow/eva}
 }`}
           </pre>
         </motion.div>
