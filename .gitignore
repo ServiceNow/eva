@@ -72,6 +72,7 @@ Thumbs.db
 
 # Project specific
 output/
+debug_output/
 logs/
 *.log
 

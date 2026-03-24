@@ -72,7 +72,7 @@ logger = get_logger(__name__)
 # Audio/VAD constants
 SAMPLE_RATE = 24000
 VAD_STOP_SECS = 0.2  # How long silence must be detected before triggering stop (pipecat default: 0.2)
-SMART_TURN_STOP_SECS = 3
+SMART_TURN_STOP_SECS = 3  # Default from SmartTurnParams
 # Pre-speech audio buffer - captures audio BEFORE VAD fires to avoid cutting off speech start.
 # Should be larger than pipecat's VAD start_secs (0.2s) to account for VAD latency.
 VAD_PRE_SPEECH_BUFFER_SECS = 0.5
