@@ -233,18 +233,13 @@ class CallControlTransport(BaseTelephonyTransport):
                     media_obj = message.get("media", {})
                     payload_b64 = media_obj.get("payload")
                     track = media_obj.get("track", "unknown")
-                    if not hasattr(self, "_media_log_count"):
-                        self._media_log_count = 0
-                    if self._media_log_count < 5:
-                        logger.info(
-                            "Media event #%d: track=%s, payload_len=%d, encoding=%s@%dHz",
-                            self._media_log_count,
-                            track,
-                            len(payload_b64) if payload_b64 else 0,
-                            self._inbound_encoding,
-                            self._inbound_sample_rate,
-                        )
-                        self._media_log_count += 1
+                    logger.debug(
+                        "Media: track=%s, %d bytes, codec=%s@%dHz",
+                        track,
+                        len(payload_b64) if payload_b64 else 0,
+                        self._inbound_encoding,
+                        self._inbound_sample_rate,
+                    )
                     if payload_b64:
                         raw_audio = base64.b64decode(payload_b64)
                         pcm_16khz = self._convert_inbound_audio(raw_audio)

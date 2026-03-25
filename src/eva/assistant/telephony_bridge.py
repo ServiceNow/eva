@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Optional
+from typing import Any, Awaitable, Callable
 
 import httpx
 import uvicorn
@@ -192,9 +192,6 @@ class BaseTelephonyTransport(ABC):
     @abstractmethod
     async def send_audio(self, audio_data: bytes) -> None:
         """Send 16kHz 16-bit PCM (L16) audio to the external assistant."""
-
-
-
 
 
 @dataclass(slots=True)
@@ -422,16 +419,6 @@ class TelephonyBridgeServer:
                     audio_base64 = payload.get("media", {}).get("payload", "")
                     pcm_audio = base64.b64decode(audio_base64) if audio_base64 else b""
                     if pcm_audio:
-                        if not hasattr(self, "_outbound_log_count"):
-                            self._outbound_log_count = 0
-                        if self._outbound_log_count < 5:
-                            logger.info(
-                                "Outbound audio #%d: %d bytes, first4=%s",
-                                self._outbound_log_count,
-                                len(pcm_audio),
-                                pcm_audio[:4].hex(),
-                            )
-                            self._outbound_log_count += 1
                         assert self._session_state is not None
                         offset_seconds = self._elapsed_seconds()
                         self._session_state.add_chunk("user", pcm_audio, offset_seconds)
