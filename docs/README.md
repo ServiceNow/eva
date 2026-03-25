@@ -2,6 +2,7 @@
 
 | Document | Description |
 |---|---|
+| [Architecture](architecture.md) | Comprehensive system architecture: bot-to-bot audio, pipelines, orchestration, validation, metrics |
 | [Data](data.md) | Dataset structure, scenario design, and evaluation records |
 | [Metrics](metrics/README.md) | Metric definitions, scoring rubrics, and judge prompts |
 | [MetricContext](metric_context.md) | Data structures passed to metrics during evaluation |
