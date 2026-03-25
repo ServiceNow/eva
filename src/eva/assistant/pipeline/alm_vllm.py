@@ -200,10 +200,12 @@ class ALMvLLMClient:
 
                 # Extract reasoning if present (OpenAI o1 and compatible models)
                 reasoning = getattr(message, "reasoning_content", None)
+                reasoning_tokens = getattr(usage, "reasoning_tokens", 0) if usage else 0
 
                 stats = {
                     "prompt_tokens": usage.prompt_tokens if usage else 0,
                     "completion_tokens": usage.completion_tokens if usage else 0,
+                    "reasoning_tokens": reasoning_tokens,
                     "finish_reason": response.choices[0].finish_reason or "unknown",
                     "model": response.model or self.model,
                     "cost": 0.0,  # Self-hosted, no API cost

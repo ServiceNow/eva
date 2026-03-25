@@ -67,7 +67,7 @@ class TestProcessQueryNoTools:
         llm_client.complete = AsyncMock(
             return_value=(
                 _make_llm_response("Hello, how can I help you?"),
-                {"prompt_tokens": 10, "completion_tokens": 5, "finish_reason": "stop"},
+                {"prompt_tokens": 10, "completion_tokens": 5, "reasoning_tokens": 0, "finish_reason": "stop"},
             )
         )
 
@@ -117,11 +117,11 @@ class TestProcessQueryWithToolCall:
             side_effect=[
                 (
                     _make_llm_response("What if there is text here", tool_calls=[tool_call]),
-                    {"prompt_tokens": 20, "completion_tokens": 10, "finish_reason": "tool_calls"},
+                    {"prompt_tokens": 20, "completion_tokens": 10, "reasoning_tokens": 0, "finish_reason": "tool_calls"},
                 ),
                 (
                     _make_llm_response("Your reservation ABC123 is confirmed."),
-                    {"prompt_tokens": 30, "completion_tokens": 15, "finish_reason": "stop"},
+                    {"prompt_tokens": 30, "completion_tokens": 15, "reasoning_tokens": 0, "finish_reason": "stop"},
                 ),
             ]
         )
@@ -204,11 +204,11 @@ class TestProcessQueryWithToolCall:
             side_effect=[
                 (
                     _make_llm_response("", tool_calls=[tool_call]),
-                    {"prompt_tokens": 20, "completion_tokens": 10, "finish_reason": "tool_calls"},
+                    {"prompt_tokens": 20, "completion_tokens": 10, "reasoning_tokens": 0, "finish_reason": "tool_calls"},
                 ),
                 (
                     _make_llm_response("I couldn't find that reservation."),
-                    {"prompt_tokens": 30, "completion_tokens": 10, "finish_reason": "stop"},
+                    {"prompt_tokens": 30, "completion_tokens": 10, "reasoning_tokens": 0, "finish_reason": "stop"},
                 ),
             ]
         )
@@ -291,7 +291,7 @@ class TestProcessQueryTransfer:
         llm_client.complete = AsyncMock(
             return_value=(
                 _make_llm_response("", tool_calls=[tool_call]),
-                {"prompt_tokens": 20, "completion_tokens": 5, "finish_reason": "tool_calls"},
+                {"prompt_tokens": 20, "completion_tokens": 5, "reasoning_tokens": 0, "finish_reason": "tool_calls"},
             )
         )
 

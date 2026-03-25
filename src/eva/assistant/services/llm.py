@@ -74,6 +74,7 @@ class LiteLLMClient:
                 usage = getattr(response, "usage", None)
                 prompt_tokens = getattr(usage, "prompt_tokens", 0) if usage else 0
                 completion_tokens = getattr(usage, "completion_tokens", 0) if usage else 0
+                reasoning_tokens = getattr(usage, "reasoning_tokens", 0) if usage else 0
                 finish_reason = getattr(response.choices[0], "finish_reason", "unknown")
                 model = getattr(response, "model", self.model)
                 hidden_params = getattr(response, "_hidden_params", {}) or {}
@@ -86,6 +87,7 @@ class LiteLLMClient:
                 stats = {
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
+                    "reasoning_tokens": reasoning_tokens,
                     "finish_reason": finish_reason,
                     "model": model,
                     "cost": response_cost,

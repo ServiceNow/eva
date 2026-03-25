@@ -201,13 +201,14 @@ class AgenticSystem:
                     "response": response_content,
                     "prompt_tokens": llm_stats.get("prompt_tokens", 0),
                     "output_tokens": llm_stats.get("completion_tokens", 0),
+                    "reasoning_tokens": llm_stats.get("reasoning_tokens", 0),
                     "cost": llm_stats.get("cost", 0.0),
                     "cost_source": llm_stats.get("cost_source", "unknown"),
                     "stop_reason": llm_stats.get("finish_reason", "unknown"),
                     "latency": llm_stats.get("latency", 0.0),
                     "parameters": json.dumps(llm_stats.get("parameters", {})),
                     "tool_calls": json.dumps(response_tool_calls_for_stats) if response_tool_calls_for_stats else "",
-                    "reasoning": llm_stats.get("reasoning_content", ""),
+                    "reasoning": f'"{llm_stats.get("reasoning", "")}"',
                 }
                 self.agent_perf_stats.append(perf_stat)
                 logger.debug(
@@ -375,15 +376,16 @@ class AgenticSystem:
                 fieldnames = [
                     "prompt",
                     "response",
+                    "reasoning",
                     "prompt_tokens",
                     "output_tokens",
+                    "reasoning_tokens",
                     "cost",
                     "cost_source",
                     "stop_reason",
                     "parameters",
                     "tool_calls",
                     "latency",
-                    "reasoning"
                 ]
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
