@@ -31,6 +31,8 @@ class ToolWebhookService:
 
         self._lock = asyncio.Lock()
         self._conversations: dict[str, _ConversationRegistration] = {}
+        # Track unique registrations (by id) vs aliases that point to the same one
+        self._unique_registrations: set[int] = set()
 
         self._app = FastAPI()
         self._server: uvicorn.Server | None = None
@@ -100,12 +102,30 @@ class ToolWebhookService:
         registration = _ConversationRegistration(executor=executor, audit_log=audit_log or AuditLog())
         async with self._lock:
             self._conversations[call_id] = registration
+            self._unique_registrations.add(id(registration))
         logger.info(f"Registered tool webhook conversation {call_id}")
 
-    async def unregister_conversation(self, call_id: str) -> None:
-        """Remove a conversation from the webhook registry."""
+    async def add_alias(self, alias: str, primary_call_id: str) -> None:
+        """Register an additional key that routes to the same conversation as primary_call_id."""
         async with self._lock:
-            self._conversations.pop(call_id, None)
+            registration = self._conversations.get(primary_call_id)
+            if registration is None:
+                logger.warning("Cannot alias %s → %s: primary not found", alias, primary_call_id)
+                return
+            self._conversations[alias] = registration
+        logger.info("Registered tool webhook alias %s → %s", alias, primary_call_id)
+
+    async def unregister_conversation(self, call_id: str) -> None:
+        """Remove a conversation (and all its aliases) from the webhook registry."""
+        async with self._lock:
+            registration = self._conversations.pop(call_id, None)
+            if registration is not None:
+                reg_id = id(registration)
+                # Remove all aliases pointing to the same registration
+                aliases = [k for k, v in self._conversations.items() if id(v) == reg_id]
+                for alias in aliases:
+                    del self._conversations[alias]
+                self._unique_registrations.discard(reg_id)
         logger.info(f"Unregistered tool webhook conversation {call_id}")
 
     async def get_audit_log(self, call_id: str) -> AuditLog | None:
@@ -123,10 +143,35 @@ class ToolWebhookService:
         async def health() -> dict[str, str]:
             return {"status": "ok"}
 
+        @self._app.post("/call-control-events")
+        async def call_control_events(request: Request) -> dict[str, str]:
+            """Acknowledge Telnyx Call Control webhook events (answer, hangup, etc.)."""
+            return {"status": "ok"}
+
         @self._app.post("/tools/{call_id}/{tool_name}")
         async def invoke_tool(call_id: str, tool_name: str, request: Request) -> Any:
             registration = await self._get_registration(call_id)
             if registration is None:
+                # Try URL-decoded version (call_control_ids may contain colons)
+                from urllib.parse import unquote
+                registration = await self._get_registration(unquote(call_id))
+            if registration is None:
+                # Fallback: {{call_control_id}} in tool URLs resolves to the
+                # assistant's B-leg CC ID, which we don't know in advance.
+                # If there's exactly one unique conversation, route there.
+                async with self._lock:
+                    unique_count = len(self._unique_registrations)
+                    if unique_count == 1:
+                        registration = next(iter(self._conversations.values()))
+                        # Auto-register this B-leg CC ID so subsequent calls are fast
+                        self._conversations[call_id] = registration
+                if registration is not None:
+                    logger.info(
+                        "Auto-registered unknown call_id %s (B-leg) → sole active conversation",
+                        call_id,
+                    )
+            if registration is None:
+                logger.warning("Tool webhook 404: call_id=%s, active conversations=%d", call_id, len(self._conversations))
                 raise HTTPException(status_code=404, detail=f"Unknown call_id: {call_id}")
 
             try:

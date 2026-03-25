@@ -268,6 +268,19 @@ class ConversationWorker:
                 conversation_id=self.record.id,
             )
 
+        if is_telephony_bridge:
+            # Set up callback: when the transport learns the call_control_id,
+            # register it with the webhook service so tool calls route correctly
+            webhook_service = self.tool_webhook_service
+            bridge = self._assistant_server
+
+            record_id = self.record.id
+
+            async def _register_cc_id(call_control_id: str) -> None:
+                await webhook_service.add_alias(call_control_id, record_id)
+
+            bridge._tool_webhook_register_callback = _register_cc_id
+
         await self._assistant_server.start()
 
         if is_telephony_bridge:
