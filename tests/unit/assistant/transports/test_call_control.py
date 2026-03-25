@@ -3,94 +3,131 @@
 import asyncio
 import base64
 import json
+from unittest.mock import AsyncMock, MagicMock
 
 from aiohttp import web
 import pytest
-from websockets.asyncio.client import connect
 
-from eva.assistant.transports.call_control import CallControlTransport
+from eva.assistant.transports.call_control import CallControlTransport, _active_transports
+
+
+class _FakeWebSocket:
+    """Minimal stand-in for a FastAPI WebSocket."""
+
+    def __init__(self, messages: list[str] | None = None):
+        self._messages = list(messages or [])
+        self._sent: list[str] = []
+        self._closed = False
+        self._idx = 0
+
+    async def receive_text(self) -> str:
+        if self._idx >= len(self._messages):
+            # Simulate connection close
+            raise Exception("WebSocket closed")
+        msg = self._messages[self._idx]
+        self._idx += 1
+        return msg
+
+    async def send_text(self, data: str) -> None:
+        self._sent.append(data)
+
+    async def close(self) -> None:
+        self._closed = True
 
 
 class TestCallControlTransport:
     @pytest.mark.asyncio
-    async def test_start_send_audio_and_stop(self, unused_tcp_port: int) -> None:
+    async def test_start_places_call_and_registers(self, unused_tcp_port: int) -> None:
+        """start() places a call and registers in the global transport registry."""
         requests: list[dict] = []
         create_call_received = asyncio.Event()
         api_runner = await _start_api_server(unused_tcp_port, requests, create_call_received)
 
-        received_audio: list[bytes] = []
         transport = CallControlTransport(
             api_key="telnyx-key",
             to="sip:test@example.com",
-            stream_url="wss://stream.example.com/media",
-            connection_id="connection-123",
+            app_id="app-123",
             from_number="+15551234567",
-            conversation_id="conversation-123",
-            webhook_base_url="https://example.com",
+            conversation_id="conv-test-1",
+            webhook_base_url="https://example.ngrok-free.dev",
             api_base_url=f"http://127.0.0.1:{unused_tcp_port}/v2",
         )
-        transport.set_audio_handler(lambda audio: _append_audio(received_audio, audio))
 
         try:
+            # start() will block waiting for media stream — run it in background
+            # and simulate the stream connecting
             start_task = asyncio.create_task(transport.start())
             await asyncio.wait_for(create_call_received.wait(), timeout=5.0)
 
+            # Verify the API call
             assert requests[0]["path"] == "/v2/calls"
-            assert requests[0]["json"] == {
-                "connection_id": "connection-123",
-                "to": "sip:test@example.com",
-                "from": "+15551234567",
-                "stream_url": "wss://stream.example.com/media",
-                "stream_track": "both_tracks",
-                "stream_bidirectional_mode": "rtp",
-                "stream_bidirectional_codec": "PCMU",
-            }
+            call_payload = requests[0]["json"]
+            assert call_payload["connection_id"] == "app-123"
+            assert call_payload["to"] == "sip:test@example.com"
+            assert call_payload["from"] == "+15551234567"
+            assert call_payload["stream_url"] == "wss://example.ngrok-free.dev/media-stream/conv-test-1"
+            assert call_payload["stream_bidirectional_mode"] == "rtp"
+            assert call_payload["stream_bidirectional_codec"] == "PCMU"
 
-            async with connect(f"ws://127.0.0.1:{transport.local_ws_port}") as websocket:
-                await start_task
+            # Transport should be registered globally
+            assert _active_transports.get("conv-test-1") is transport
 
-                await websocket.send(
-                    json.dumps(
-                        {
-                            "event": "start",
-                            "stream_id": "stream-123",
-                            "start": {
-                                "call_control_id": "call-control-123",
-                                "media_format": {"encoding": "PCMU", "sample_rate": 8000},
-                            },
-                        }
-                    )
-                )
+            # Simulate the media stream connecting (what the webhook WS handler would do)
+            transport._connected_event.set()
+            await asyncio.wait_for(start_task, timeout=2.0)
 
-                inbound_audio = b"\xff" * 160
-                await websocket.send(
-                    json.dumps(
-                        {
-                            "event": "media",
-                            "media": {
-                                "track": "inbound",
-                                "payload": base64.b64encode(inbound_audio).decode("ascii"),
-                            },
-                        }
-                    )
-                )
-                await _wait_for(lambda: received_audio == [inbound_audio])
-
-                outbound_audio = b"\x7f" * 160
-                await transport.send_audio(outbound_audio)
-                outbound_message = json.loads(await websocket.recv())
-                assert outbound_message == {
-                    "event": "media",
-                    "media": {"payload": base64.b64encode(outbound_audio).decode("ascii")},
-                }
-
-                await transport.stop()
-
-            assert requests[1]["path"] == "/v2/calls/call-control-123/actions/hangup"
-            assert requests[1]["json"] == {}
+            assert transport._call_control_id == "call-control-123"
         finally:
             await transport.stop()
             await api_runner.cleanup()
+
+        # After stop, should be unregistered
+        assert "conv-test-1" not in _active_transports
+
+    @pytest.mark.asyncio
+    async def test_send_and_receive_audio(self) -> None:
+        """Audio flows bidirectionally through the media stream WebSocket."""
+        transport = CallControlTransport(
+            api_key="telnyx-key",
+            to="sip:test@example.com",
+            app_id="app-123",
+            from_number="+15551234567",
+            conversation_id="conv-audio-1",
+            webhook_base_url="https://example.ngrok-free.dev",
+        )
+
+        received_audio: list[bytes] = []
+        transport.set_audio_handler(lambda audio: _append_audio(received_audio, audio))
+
+        # Simulate inbound audio from Telnyx
+        inbound_audio = b"\xff" * 160
+        ws = _FakeWebSocket([
+            json.dumps({"event": "connected"}),
+            json.dumps({"event": "start", "stream_id": "stream-123"}),
+            json.dumps({
+                "event": "media",
+                "media": {
+                    "track": "inbound",
+                    "payload": base64.b64encode(inbound_audio).decode("ascii"),
+                },
+            }),
+            json.dumps({"event": "stop"}),
+        ])
+
+        await transport.handle_media_stream(ws)
+
+        # Should have received the inbound audio
+        assert received_audio == [inbound_audio]
+
+        # Now test sending outbound audio
+        transport._stream_ws = ws  # Re-attach for send test
+        outbound_audio = b"\x7f" * 160
+        await transport.send_audio(outbound_audio)
+
+        assert len(ws._sent) == 1
+        sent_msg = json.loads(ws._sent[0])
+        assert sent_msg["event"] == "media"
+        assert base64.b64decode(sent_msg["media"]["payload"]) == outbound_audio
 
     @pytest.mark.asyncio
     async def test_start_raises_when_call_creation_fails(self, unused_tcp_port: int) -> None:
@@ -107,20 +144,20 @@ class TestCallControlTransport:
         transport = CallControlTransport(
             api_key="telnyx-key",
             to="sip:test@example.com",
-            stream_url="wss://stream.example.com/media",
-            connection_id="connection-123",
+            app_id="app-123",
             from_number="+15551234567",
-            conversation_id="conversation-123",
-            webhook_base_url="https://example.com",
+            conversation_id="conv-fail-1",
+            webhook_base_url="https://example.ngrok-free.dev",
             api_base_url=f"http://127.0.0.1:{unused_tcp_port}/v2",
         )
 
         try:
-            with pytest.raises(RuntimeError, match="status 500"):
+            with pytest.raises(RuntimeError, match="500"):
                 await transport.start()
 
-            assert transport._server is None
+            # After failed start + cleanup, session should be closed
             assert transport._session is None
+            assert "conv-fail-1" not in _active_transports
         finally:
             await transport.stop()
             await runner.cleanup()
@@ -128,22 +165,12 @@ class TestCallControlTransport:
 
 async def _start_api_server(port: int, requests: list[dict], create_call_received: asyncio.Event) -> web.AppRunner:
     async def create_call(request: web.Request) -> web.Response:
-        requests.append(
-            {
-                "path": request.path,
-                "json": await request.json(),
-            }
-        )
+        requests.append({"path": request.path, "json": await request.json()})
         create_call_received.set()
         return web.json_response({"data": {"call_control_id": "call-control-123"}})
 
     async def hangup(request: web.Request) -> web.Response:
-        requests.append(
-            {
-                "path": request.path,
-                "json": await request.json(),
-            }
-        )
+        requests.append({"path": request.path, "json": await request.json()})
         return web.json_response({"data": {"result": "ok"}})
 
     app = web.Application()
@@ -159,11 +186,3 @@ async def _start_api_server(port: int, requests: list[dict], create_call_receive
 
 async def _append_audio(received_audio: list[bytes], audio: bytes) -> None:
     received_audio.append(audio)
-
-
-async def _wait_for(predicate, timeout: float = 5.0) -> None:
-    deadline = asyncio.get_running_loop().time() + timeout
-    while not predicate():
-        if asyncio.get_running_loop().time() >= deadline:
-            raise AssertionError("Timed out waiting for condition")
-        await asyncio.sleep(0.01)

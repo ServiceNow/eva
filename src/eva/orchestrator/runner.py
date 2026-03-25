@@ -9,7 +9,6 @@ from typing import Any
 
 from eva.metrics.runner import MetricsRunner, MetricsRunResult
 from eva.assistant.telnyx_setup import TelnyxAssistantManager
-from eva.assistant.transports import ensure_telnyx_webrtc_helper_dependencies
 from eva.models.agents import AgentConfig
 from eva.models.config import PipelineConfig, RunConfig, TelephonyBridgeConfig
 from eva.models.record import EvaluationRecord
@@ -59,7 +58,6 @@ class BenchmarkRunner:
         self._failed_record_ids: list[str] = []
         self.tool_webhook_service: ToolWebhookService | None = None
         self._telnyx_assistant_manager: TelnyxAssistantManager | None = None
-        self._auto_created_telnyx_assistant_id: str | None = None
 
     def _load_agent_config(self) -> AgentConfig:
         """Load single agent configuration."""
@@ -97,29 +95,6 @@ class BenchmarkRunner:
 
     async def _start_support_services(self) -> None:
         """Start optional runner-scoped services (e.g., tool webhook for telephony bridge)."""
-        if (
-            isinstance(self.config.model, TelephonyBridgeConfig)
-            and self.config.model.transport == "webrtc"
-            and (
-            self.config.model.telnyx_assistant_id or self.config.model.telnyx_model
-            )
-        ):
-            await ensure_telnyx_webrtc_helper_dependencies()
-        if (
-            isinstance(self.config.model, TelephonyBridgeConfig)
-            and self.config.model.transport == "webrtc"
-            and self.config.model.telnyx_model
-            and self.config.model.telnyx_assistant_id is None
-        ):
-            self._telnyx_assistant_manager = TelnyxAssistantManager(api_key=self.config.model.telnyx_api_key or "")
-            self._auto_created_telnyx_assistant_id = await self._telnyx_assistant_manager.create_benchmark_assistant(
-                agent_config=self.agent,
-                agent_config_path=str(self.config.agent_config_path),
-                webhook_base_url=self.config.model.webhook_base_url,
-                model=self.config.model.telnyx_model,
-                voice=self.config.model.telnyx_voice,
-            )
-            self.config.model.telnyx_assistant_id = self._auto_created_telnyx_assistant_id
         if isinstance(self.config.model, TelephonyBridgeConfig) and self.tool_webhook_service is None:
             self.tool_webhook_service = ToolWebhookService(port=self.config.model.webhook_port)
             await self.tool_webhook_service.start()
@@ -129,11 +104,6 @@ class BenchmarkRunner:
         if self.tool_webhook_service is not None:
             await self.tool_webhook_service.stop()
             self.tool_webhook_service = None
-        if self._auto_created_telnyx_assistant_id and self._telnyx_assistant_manager is not None:
-            await self._telnyx_assistant_manager.delete_assistant(self._auto_created_telnyx_assistant_id)
-            self._auto_created_telnyx_assistant_id = None
-            if isinstance(self.config.model, TelephonyBridgeConfig):
-                self.config.model.telnyx_assistant_id = None
         if self._telnyx_assistant_manager is not None:
             await self._telnyx_assistant_manager.close()
             self._telnyx_assistant_manager = None
@@ -189,19 +159,14 @@ class BenchmarkRunner:
             }
         elif isinstance(self.config.model, TelephonyBridgeConfig):
             self.config.resolved_models = {
-                "transport": self.config.model.transport,
+                "transport": "call_control",
                 "sip_uri": self.config.model.sip_uri,
                 "webhook_base_url": self.config.model.webhook_base_url,
+                "call_control_app_id": self.config.model.call_control_app_id,
+                "call_control_from": self.config.model.call_control_from,
                 "stt_provider": self.config.model.stt,
                 "stt_model": self.config.model.stt_params.get("model"),
             }
-            self.config.resolved_models["telnyx_assistant_id"] = self.config.model.telnyx_assistant_id
-            self.config.resolved_models["telnyx_model"] = self.config.model.telnyx_model
-            self.config.resolved_models["call_control_stream_url"] = self.config.model.call_control_stream_url
-            self.config.resolved_models["call_control_connection_id"] = self.config.model.call_control_connection_id
-            self.config.resolved_models["call_control_from"] = self.config.model.call_control_from
-            if self.config.model.transport == "webrtc" and self.config.model.telnyx_assistant_id:
-                self.config.resolved_models["transport"] = "telnyx_webrtc"
 
         config_path = self.output_dir / "config.json"
         config_path.write_text(self.config.model_dump_json(indent=2))

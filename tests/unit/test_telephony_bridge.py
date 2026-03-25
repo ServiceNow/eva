@@ -95,7 +95,10 @@ def _make_bridge(
         current_date_time="2026-01-01 00:00 UTC",
         bridge_config=TelephonyBridgeConfig(
             sip_uri="sip:test@example.com",
-            webhook_base_url="https://example.com",
+            telnyx_api_key="telnyx-key",
+            call_control_app_id="app-123",
+            call_control_from="+15551234567",
+            webhook_base_url="https://example.ngrok-free.dev",
             stt="deepgram",
             stt_params={"api_key": "test-key", "model": "nova-2"},
         ),
@@ -184,42 +187,14 @@ class TestTelephonyBridgeServer:
         assert initial_db["reservations"]["ABC123"]["status"] == "confirmed"
         assert final_db["reservations"]["ABC123"]["status"] == "confirmed"
 
-    def test_default_transport_factory_uses_telnyx_webrtc_for_assistant_ids(self, tmp_path: Path, monkeypatch):
+    def test_default_transport_factory_creates_call_control_transport(self, tmp_path: Path, monkeypatch):
         bridge, _transport = _make_bridge(tmp_path)
         bridge.bridge_config = TelephonyBridgeConfig(
-            telnyx_assistant_id="assistant-123",
-            webhook_base_url="https://example.com",
-        )
-
-        created: dict[str, str] = {}
-
-        class _FakeTelnyxTransport:
-            def __init__(self, assistant_id: str, conversation_id: str, webhook_base_url: str):
-                created["assistant_id"] = assistant_id
-                created["conversation_id"] = conversation_id
-                created["webhook_base_url"] = webhook_base_url
-
-        monkeypatch.setattr("eva.assistant.transports.TelnyxWebRTCTransport", _FakeTelnyxTransport)
-
-        transport = bridge._default_transport_factory(bridge.bridge_config, "conv-1")
-
-        assert isinstance(transport, _FakeTelnyxTransport)
-        assert created == {
-            "assistant_id": "assistant-123",
-            "conversation_id": "conv-1",
-            "webhook_base_url": "https://example.com",
-        }
-
-    def test_default_transport_factory_uses_call_control_when_selected(self, tmp_path: Path, monkeypatch):
-        bridge, _transport = _make_bridge(tmp_path)
-        bridge.bridge_config = TelephonyBridgeConfig(
-            transport="call_control",
             sip_uri="sip:test@example.com",
             telnyx_api_key="telnyx-key",
-            call_control_stream_url="wss://stream.example.com/media",
-            call_control_connection_id="connection-123",
+            call_control_app_id="app-123",
             call_control_from="+15551234567",
-            webhook_base_url="https://example.com",
+            webhook_base_url="https://example.ngrok-free.dev",
         )
 
         created: dict[str, str] = {}
@@ -229,16 +204,14 @@ class TestTelephonyBridgeServer:
                 self,
                 api_key: str,
                 to: str,
-                stream_url: str,
-                connection_id: str,
+                app_id: str,
                 from_number: str,
                 conversation_id: str,
                 webhook_base_url: str,
             ):
                 created["api_key"] = api_key
                 created["to"] = to
-                created["stream_url"] = stream_url
-                created["connection_id"] = connection_id
+                created["app_id"] = app_id
                 created["from_number"] = from_number
                 created["conversation_id"] = conversation_id
                 created["webhook_base_url"] = webhook_base_url
@@ -251,9 +224,8 @@ class TestTelephonyBridgeServer:
         assert created == {
             "api_key": "telnyx-key",
             "to": "sip:test@example.com",
-            "stream_url": "wss://stream.example.com/media",
-            "connection_id": "connection-123",
+            "app_id": "app-123",
             "from_number": "+15551234567",
             "conversation_id": "conv-1",
-            "webhook_base_url": "https://example.com",
+            "webhook_base_url": "https://example.ngrok-free.dev",
         }

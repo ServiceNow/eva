@@ -260,7 +260,10 @@ class TestTelephonyStart:
         worker = _make_worker(tmp_path)
         worker.config.model = TelephonyBridgeConfig(
             sip_uri="sip:test@example.com",
-            webhook_base_url="https://example.com",
+            telnyx_api_key="telnyx-key",
+            call_control_app_id="app-123",
+            call_control_from="+15551234567",
+            webhook_base_url="https://example.ngrok-free.dev",
         )
         worker.tool_webhook_service = MagicMock()
         worker.tool_webhook_service.register_conversation = AsyncMock()

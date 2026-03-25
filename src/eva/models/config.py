@@ -120,30 +120,17 @@ class AudioLLMConfig(BaseModel):
 
 
 class TelephonyBridgeConfig(BaseModel):
-    """Configuration for benchmarking an external voice assistant via SIP or Telnyx WebRTC."""
+    """Configuration for benchmarking an external voice assistant via telephony (Call Control)."""
 
     model_config = ConfigDict(extra="forbid")
 
-    transport: Literal["webrtc", "call_control"] = Field(
-        "webrtc",
-        description="Telephony bridge transport type",
+    sip_uri: str = Field(description="Target SIP URI or phone number for the external assistant")
+    telnyx_api_key: str = Field(description="Telnyx API key for Call Control")
+    call_control_app_id: str = Field(
+        description="Telnyx Call Control Application ID (routes webhooks for outbound calls)",
     )
-    sip_uri: str | None = Field(None, description="Target SIP URI or phone number for the external assistant")
-    telnyx_assistant_id: str | None = Field(None, description="Existing Telnyx assistant ID")
-    telnyx_model: str | None = Field(None, description="Telnyx model to use when auto-creating an assistant")
-    telnyx_voice: str | None = Field(None, description="Telnyx voice for an auto-created assistant")
-    telnyx_api_key: str | None = Field(None, description="Telnyx API key for assistant management")
-    call_control_stream_url: str | None = Field(
-        None,
-        description="Public WSS URL Telnyx connects to for Call Control media streaming",
-    )
-    call_control_connection_id: str | None = Field(
-        None,
-        description="Telnyx Call Control connection ID used to place outbound calls",
-    )
-    call_control_from: str | None = Field(
-        None,
-        description="Caller ID or source number for Telnyx Call Control outbound calls",
+    call_control_from: str = Field(
+        description="Caller ID / from number for outbound calls (E.164 format)",
     )
     webhook_port: int = Field(8888, description="Port for the tool webhook service")
     webhook_base_url: str = Field(description="Public URL for tool webhooks (e.g., ngrok URL)")
@@ -174,47 +161,15 @@ class TelephonyBridgeConfig(BaseModel):
             )
         return value
 
-    @model_validator(mode="after")
-    def _validate_connection_target(self) -> "TelephonyBridgeConfig":
-        if self.transport == "call_control":
-            if self.telnyx_assistant_id or self.telnyx_model:
-                raise ValueError("telnyx_assistant_id and telnyx_model are only supported with transport='webrtc'.")
-            if not self.sip_uri:
-                raise ValueError("sip_uri is required when transport='call_control'.")
-            if not self.telnyx_api_key:
-                raise ValueError("telnyx_api_key is required when transport='call_control'.")
-
-            missing_fields = [
-                field_name
-                for field_name, value in [
-                    ("call_control_stream_url", self.call_control_stream_url),
-                    ("call_control_connection_id", self.call_control_connection_id),
-                    ("call_control_from", self.call_control_from),
-                ]
-                if not value
-            ]
-            if missing_fields:
-                raise ValueError(
-                    f"Missing required Call Control fields for transport='call_control': {', '.join(missing_fields)}."
-                )
-            return self
-
-        active_targets = [
-            name
-            for name, value in [
-                ("sip_uri", self.sip_uri),
-                ("telnyx_assistant_id", self.telnyx_assistant_id),
-                ("telnyx_model", self.telnyx_model),
-            ]
-            if value
-        ]
-        if not active_targets:
-            raise ValueError("One of sip_uri, telnyx_assistant_id, or telnyx_model is required.")
-        if len(active_targets) > 1:
-            raise ValueError("Only one of sip_uri, telnyx_assistant_id, or telnyx_model may be set.")
-        if self.telnyx_model and not self.telnyx_api_key:
-            raise ValueError("telnyx_api_key is required when telnyx_model is set.")
-        return self
+    @field_validator("sip_uri")
+    @classmethod
+    def _validate_sip_uri(cls, value: str) -> str:
+        """Ensure sip_uri looks like a SIP URI or E.164 phone number."""
+        if not (value.startswith("sip:") or value.startswith("+") or value.startswith("tel:")):
+            raise ValueError(
+                f"sip_uri must be a SIP URI (sip:...), tel: URI, or E.164 phone number (+...): got {value!r}"
+            )
+        return value
 
 
 _PIPELINE_FIELDS = {
@@ -230,14 +185,9 @@ _PIPELINE_FIELDS = {
 _S2S_FIELDS = {"s2s", "s2s_params"}
 _AUDIO_LLM_FIELDS = {"audio_llm", "audio_llm_params", "tts", "tts_params"}
 _TELEPHONY_FIELDS = {
-    "transport",
     "sip_uri",
-    "telnyx_assistant_id",
-    "telnyx_model",
-    "telnyx_voice",
     "telnyx_api_key",
-    "call_control_stream_url",
-    "call_control_connection_id",
+    "call_control_app_id",
     "call_control_from",
     "webhook_port",
     "webhook_base_url",
@@ -252,12 +202,8 @@ def _model_config_discriminator(data: Any) -> str:
         if any(
             field in data
             for field in (
-                "transport",
                 "sip_uri",
-                "telnyx_assistant_id",
-                "telnyx_model",
-                "call_control_stream_url",
-                "call_control_connection_id",
+                "call_control_app_id",
                 "call_control_from",
             )
         ):
@@ -304,14 +250,14 @@ def _strip_other_mode_fields(data: dict) -> dict:
     has_llm = bool(data.get("llm") or data.get("llm_model"))
     has_s2s = bool(data.get("s2s"))
     has_audio_llm = bool(data.get("audio_llm"))
-    has_telephony = bool(data.get("sip_uri") or data.get("telnyx_assistant_id") or data.get("telnyx_model"))
+    has_telephony = bool(data.get("sip_uri") or data.get("call_control_app_id"))
     active = [
         name
         for flag, name in [
             (has_llm, "EVA_MODEL__LLM"),
             (has_s2s, "EVA_MODEL__S2S"),
             (has_audio_llm, "EVA_MODEL__AUDIO_LLM"),
-            (has_telephony, "EVA_MODEL__SIP_URI / EVA_MODEL__TELNYX_ASSISTANT_ID / EVA_MODEL__TELNYX_MODEL"),
+            (has_telephony, "EVA_MODEL__SIP_URI"),
         ]
         if flag
     ]

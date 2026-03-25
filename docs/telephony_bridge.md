@@ -1,161 +1,111 @@
-# Telephony Bridge — Benchmarking External Voice Assistants
+# Telephony Bridge
 
-Benchmark any voice assistant as a black box using EVA's telephony bridge. The bridge connects EVA's ElevenLabs user simulator to an external assistant via WebRTC or telephony, while routing the assistant's tool calls through EVA's deterministic scenario database.
+Benchmark any voice assistant as a black box using EVA's telephony bridge. The bridge connects EVA's ElevenLabs user simulator to an external assistant via Telnyx Call Control, while routing the assistant's tool calls through EVA's deterministic scenario database.
 
 ## Architecture
 
 ```
-ElevenLabs User Sim → WebSocket → TelephonyBridgeServer → [Transport] → External Voice Assistant
-                                                                              ↓ tool call webhook
-                                              ngrok → ToolWebhookService → EVA's ToolExecutor (scenario DB)
+┌───────────────────────────────────────────────────────────────────────┐
+│  EVA Runner                                                           │
+│                                                                       │
+│  ┌──────────────┐     ┌──────────────────────┐     ┌───────────────┐ │
+│  │ ElevenLabs   │ WS  │  Telephony Bridge     │ API │ Tool Webhook  │ │
+│  │ User Sim     │◄───►│  (audio routing)      │     │ Service       │ │
+│  │              │     │                       │     │ :8888         │ │
+│  └──────────────┘     └──────────┬───────────┘     └───────┬───────┘ │
+│                                  │                         │         │
+│                    Call Control   │ Media Stream            │ ngrok   │
+│                    API + WSS     │ (PCMU/8kHz)             │         │
+└──────────────────────────────────┼─────────────────────────┼─────────┘
+                                   │                         │
+                          ┌────────▼─────────┐     ┌────────▼────────┐
+                          │  Telnyx Platform  │     │  External       │
+                          │  (Call Control)   │────►│  Assistant      │
+                          └──────────────────┘     └─────────────────┘
 ```
 
-## Transports
+## How It Works
 
-### WebRTC (`transport=webrtc`)
+1. **Call Control transport** places an outbound call via Telnyx Call Control API to the assistant's SIP URI
+2. Audio flows bidirectionally through Telnyx's **media streaming** WebSocket (PCMU codec, 8kHz μ-law)
+3. The assistant's **tool calls** hit the tool webhook service via ngrok, which executes them against EVA's deterministic scenario database
+4. EVA records transcripts, audio, tool calls, and metrics for evaluation
 
-Connects to a **Telnyx AI Assistant** via the `@telnyx/webrtc` SDK. This is the same path a website widget user takes — lowest latency for Telnyx assistants.
+## Prerequisites
 
-**Requirements:**
-- Telnyx assistant ID (existing or auto-created)
-- Node.js (for the WebRTC helper subprocess)
+- Telnyx account with:
+  - A **Call Control Application** (routes call webhooks)
+  - A **phone number** assigned to that application (for caller ID)
+  - An **API key** (v2)
+- A **stable ngrok domain** (free tier includes one static domain)
+- ElevenLabs API key + Conversational AI agent(s) for user simulation
 
-### Call Control (`transport=call_control`)
+## Configuration
 
-Dials **any SIP URI or phone number** via Telnyx Call Control API and streams audio via media streaming WebSocket. Can benchmark:
-
-- Telnyx AI Assistants (via SIP URI)
-- Competitor voice agents (via phone number)
-- Live IVR systems
-- Any voice agent reachable by phone
-
-**Requirements:**
-- Telnyx API key
-- Telnyx SIP Connection ID (for placing outbound calls)
-- A public WebSocket URL for media streaming (e.g., ngrok)
-- A caller ID / from number
-
-## Setup
-
-### 1. Install EVA
+All configuration is via environment variables:
 
 ```bash
-git clone https://github.com/team-telnyx/eva.git
-cd eva
-pip install -e .
+# Required: Telnyx Call Control
+export EVA_MODEL__SIP_URI="sip:assistant@sip.telnyx.com"   # or +1NXXNXXXXXX
+export EVA_MODEL__TELNYX_API_KEY="KEY..."
+export EVA_MODEL__CALL_CONTROL_APP_ID="1234567890"
+export EVA_MODEL__CALL_CONTROL_FROM="+12125551234"
+
+# Required: Tool webhooks via ngrok
+export EVA_MODEL__WEBHOOK_BASE_URL="https://your-domain.ngrok-free.dev"
+
+# Required: ElevenLabs user simulator
+export ELEVENLABS_API_KEY="..."
+export ELEVENLABS_USER_AGENT_ID_USER_PERSONA_1="agent_..."
+export ELEVENLABS_USER_AGENT_ID_USER_PERSONA_2="agent_..."
+
+# Required: LLM judge (for metrics)
+export EVA_MODEL_LIST='[{"model_name": "gpt-4o", "litellm_params": {"model": "gpt-4o", "api_key": "sk-..."}}]'
+
+# Optional: STT for transcript generation
+export EVA_MODEL__STT="deepgram"
+export EVA_MODEL__STT_PARAMS='{"model": "nova-3"}'
 ```
 
-### 2. Set up ngrok
-
-The tool webhook service needs a public URL. Get a free static domain from [ngrok](https://ngrok.com):
+## Running
 
 ```bash
-# Start ngrok (tool webhooks)
-ngrok http 8888 --url your-domain.ngrok-free.app
+# Start ngrok (in a separate terminal)
+ngrok http 8888 --url your-domain.ngrok-free.dev
+
+# Run a single scenario
+python -m eva --record-ids 1.1.2
+
+# Run all scenarios
+python -m eva
 ```
-
-For Call Control transport, you also need a WebSocket tunnel for media streaming:
-
-```bash
-# Second tunnel for media streaming (separate terminal)
-ngrok http 8889 --url your-stream-domain.ngrok-free.app
-```
-
-### 3. Configure environment
-
-#### Option A: WebRTC with existing assistant
-
-```bash
-export EVA_MODEL__TRANSPORT="webrtc"
-export EVA_MODEL__TELNYX_ASSISTANT_ID="your-assistant-uuid"
-export EVA_MODEL__TELNYX_API_KEY="your-telnyx-api-key"
-export EVA_MODEL__WEBHOOK_BASE_URL="https://your-domain.ngrok-free.app"
-export EVA_MODEL__WEBHOOK_PORT=8888
-export ELEVENLABS_API_KEY="your-elevenlabs-key"
-```
-
-#### Option B: WebRTC with auto-created assistant
-
-EVA creates a Telnyx assistant from its agent config, runs the benchmark, and cleans up.
-
-```bash
-export EVA_MODEL__TRANSPORT="webrtc"
-export EVA_MODEL__TELNYX_API_KEY="your-telnyx-api-key"
-export EVA_MODEL__TELNYX_MODEL="moonshotai/Kimi-K2.5"
-export EVA_MODEL__TELNYX_VOICE="Telnyx.Ultra.a7a59115-2425-4192-844c-1e98ec7d6877"
-export EVA_MODEL__WEBHOOK_BASE_URL="https://your-domain.ngrok-free.app"
-export EVA_MODEL__WEBHOOK_PORT=8888
-export ELEVENLABS_API_KEY="your-elevenlabs-key"
-```
-
-#### Option C: Call Control (any phone number or SIP URI)
-
-```bash
-export EVA_MODEL__TRANSPORT="call_control"
-export EVA_MODEL__SIP_URI="sip:assistant-uuid@sip.telnyx.com"
-export EVA_MODEL__TELNYX_API_KEY="your-telnyx-api-key"
-export EVA_MODEL__CALL_CONTROL_CONNECTION_ID="your-sip-connection-id"
-export EVA_MODEL__CALL_CONTROL_FROM="+18005551234"
-export EVA_MODEL__CALL_CONTROL_STREAM_URL="wss://your-stream-domain.ngrok-free.app"
-export EVA_MODEL__WEBHOOK_BASE_URL="https://your-domain.ngrok-free.app"
-export EVA_MODEL__WEBHOOK_PORT=8888
-export ELEVENLABS_API_KEY="your-elevenlabs-key"
-```
-
-### 4. Configure assistant tools
-
-For the tool webhook to work, the Telnyx assistant's tools must point at the webhook URL with `{{call_control_id}}` for routing:
-
-```
-https://your-domain.ngrok-free.app/tools/{{call_control_id}}/get_reservation
-```
-
-If using auto-creation (Option B), this is handled automatically.
-
-### 5. Run the benchmark
-
-```bash
-python -m eva --config configs/your_config.yaml
-```
-
-## Tool Webhook
-
-The `ToolWebhookService` runs alongside EVA and exposes the scenario database as HTTP endpoints:
-
-```
-POST /tools/{call_id}/{tool_name}
-```
-
-Each conversation registers its own `ToolExecutor` instance, keyed by `call_control_id`. The assistant's webhook tools hit the ngrok URL → route to the right scenario DB → return deterministic results.
-
-This enables full EVA task completion scoring even for black-box external assistants.
 
 ## Audio Format
 
-- EVA user simulator: μ-law 8kHz (Twilio-style WebSocket framing)
-- Telnyx Call Control media streaming: μ-law 8kHz (PCMU)
-- WebRTC: Opus (converted by the SDK)
+- **Media streaming**: PCMU (μ-law, 8kHz, mono) — zero codec conversion on the wire
+- **Recordings**: PCM 16-bit WAV at 24kHz (EVA standard)
+- The bridge handles sample rate conversion between the transport (8kHz) and EVA's recording format (24kHz)
 
-The Call Control transport passes μ-law audio through with zero codec conversion.
+## Tool Webhooks
 
-## Metrics
+External assistants call tools by hitting webhook URLs. The tool webhook service:
 
-All EVA metrics work with the telephony bridge:
+1. Receives POST requests at `https://<ngrok-domain>/tools/{call_control_id}/{tool_name}`
+2. Routes to the correct conversation's `ToolExecutor`
+3. Executes against EVA's deterministic scenario database
+4. Returns the result as JSON
 
-- **Experience metrics** (audio/transcript-based): conciseness, turn-taking, latency, conversation progression
-- **Task completion** (tool webhook): deterministic, uses EVA's scenario database
-- **LLM judge metrics**: evaluated on transcripts
+Configure your assistant's tools with URL template:
+```
+https://your-domain.ngrok-free.dev/tools/{{call_control_id}}/{tool_name}
+```
 
-## Platform Defaults
+The `{{call_control_id}}` dynamic variable is resolved by Telnyx at runtime.
 
-When auto-creating assistants, EVA uses Telnyx platform defaults:
+## Stable ngrok Domain (Required)
 
-| Setting | Default |
-|---------|---------|
-| LLM | moonshotai/Kimi-K2.5 |
-| STT | deepgram/flux |
-| TTS Voice | Telnyx.Ultra.a7a59115-2425-4192-844c-1e98ec7d6877 |
-| Interruption | Enabled (0.1s endpointing) |
-| Voice speed | 1.0 |
-| Expressive mode | Enabled |
-| Language boost | English |
+Ephemeral ngrok URLs change on every restart, causing silent webhook mismatches. EVA rejects them and requires a stable domain:
+
+1. Go to https://dashboard.ngrok.com/domains
+2. Claim a free static domain (e.g., `your-name.ngrok-free.dev`)
+3. Start ngrok: `ngrok http 8888 --url your-name.ngrok-free.dev`

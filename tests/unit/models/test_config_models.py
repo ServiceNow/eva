@@ -265,7 +265,10 @@ class TestRunConfig:
             env_vars=_EVA_MODEL_LIST_ENV
             | {
                 "EVA_MODEL__SIP_URI": "sip:assistant@example.com",
-                "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.app/",
+                "EVA_MODEL__TELNYX_API_KEY": "telnyx-key",
+                "EVA_MODEL__CALL_CONTROL_APP_ID": "app-123",
+                "EVA_MODEL__CALL_CONTROL_FROM": "+15551234567",
+                "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.dev/",
                 "EVA_MODEL__WEBHOOK_PORT": "9999",
                 "EVA_MODEL__STT": "deepgram",
                 "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "test_key", "model": "nova-2"}),
@@ -275,60 +278,27 @@ class TestRunConfig:
         assert isinstance(config.model, TelephonyBridgeConfig)
         assert config.model.sip_uri == "sip:assistant@example.com"
         assert config.model.webhook_port == 9999
-        assert config.model.webhook_base_url == "https://example.ngrok-free.app"
+        assert config.model.webhook_base_url == "https://example.ngrok-free.dev"
         assert config.model.stt == "deepgram"
-
-    def test_telephony_bridge_config_supports_telnyx_assistant_id(self):
-        """Telephony bridge config is selected when a Telnyx assistant ID is present."""
-        config = _config(
-            env_vars=_EVA_MODEL_LIST_ENV
-            | {
-                "EVA_MODEL__TELNYX_ASSISTANT_ID": "assistant-123",
-                "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.app/",
-            }
-        )
-
-        assert isinstance(config.model, TelephonyBridgeConfig)
-        assert config.model.telnyx_assistant_id == "assistant-123"
-        assert config.model.webhook_base_url == "https://example.ngrok-free.app"
 
     def test_call_control_config(self):
         """Call Control transport requires and preserves its transport-specific settings."""
         config = _config(
             env_vars=_EVA_MODEL_LIST_ENV
             | {
-                "EVA_MODEL__TRANSPORT": "call_control",
                 "EVA_MODEL__SIP_URI": "sip:assistant@example.com",
                 "EVA_MODEL__TELNYX_API_KEY": "telnyx-key",
-                "EVA_MODEL__CALL_CONTROL_STREAM_URL": "wss://media.example.com/stream",
-                "EVA_MODEL__CALL_CONTROL_CONNECTION_ID": "connection-123",
+                "EVA_MODEL__CALL_CONTROL_APP_ID": "app-123",
                 "EVA_MODEL__CALL_CONTROL_FROM": "+15551234567",
-                "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.app/",
+                "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.dev/",
             }
         )
 
         assert isinstance(config.model, TelephonyBridgeConfig)
-        assert config.model.transport == "call_control"
         assert config.model.sip_uri == "sip:assistant@example.com"
         assert config.model.telnyx_api_key == "telnyx-key"
-        assert config.model.call_control_stream_url == "wss://media.example.com/stream"
-        assert config.model.call_control_connection_id == "connection-123"
+        assert config.model.call_control_app_id == "app-123"
         assert config.model.call_control_from == "+15551234567"
-
-    def test_call_control_requires_transport_specific_fields(self):
-        """Call Control config validates all required transport-specific fields."""
-        with pytest.raises(ValueError, match="call_control_stream_url"):
-            _config(
-                env_vars=_EVA_MODEL_LIST_ENV
-                | {
-                    "EVA_MODEL__TRANSPORT": "call_control",
-                    "EVA_MODEL__SIP_URI": "sip:assistant@example.com",
-                    "EVA_MODEL__TELNYX_API_KEY": "telnyx-key",
-                    "EVA_MODEL__CALL_CONTROL_CONNECTION_ID": "connection-123",
-                    "EVA_MODEL__CALL_CONTROL_FROM": "+15551234567",
-                    "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.app",
-                }
-            )
 
     def test_telephony_bridge_is_mutually_exclusive(self):
         """Telephony bridge config cannot be mixed with other pipeline modes."""
@@ -341,14 +311,17 @@ class TestRunConfig:
                 }
             )
 
-    def test_telephony_bridge_auto_create_requires_api_key(self):
-        """Auto-creating a Telnyx assistant requires an API key."""
-        with pytest.raises(ValueError, match="telnyx_api_key is required"):
+    def test_telephony_bridge_rejects_invalid_sip_uri(self):
+        """SIP URI must start with sip:, tel:, or + (E.164)."""
+        with pytest.raises(ValueError, match="sip_uri must be a SIP URI"):
             _config(
                 env_vars=_EVA_MODEL_LIST_ENV
                 | {
-                    "EVA_MODEL__TELNYX_MODEL": "telnyx-llm-gpt-4o",
-                    "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.app",
+                    "EVA_MODEL__SIP_URI": "http://not-a-sip-uri",
+                    "EVA_MODEL__TELNYX_API_KEY": "telnyx-key",
+                    "EVA_MODEL__CALL_CONTROL_APP_ID": "app-123",
+                    "EVA_MODEL__CALL_CONTROL_FROM": "+15551234567",
+                    "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.dev",
                 }
             )
 

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.tools.tool_executor import ToolExecutor
@@ -153,3 +153,23 @@ class ToolWebhookService:
 
             logger.info(f"Executed webhook tool {tool_name} for call {call_id}")
             return result
+
+        @self._app.websocket("/media-stream/{conversation_id}")
+        async def media_stream(websocket: WebSocket, conversation_id: str) -> None:
+            """Accept Telnyx Call Control media stream connections."""
+            from eva.assistant.transports.call_control import get_active_transport
+
+            transport = get_active_transport(conversation_id)
+            if transport is None:
+                logger.warning("No active transport for media stream conversation %s", conversation_id)
+                await websocket.close(code=1008, reason="No active transport for this conversation")
+                return
+
+            await websocket.accept()
+            logger.info("Accepted media stream WebSocket for conversation %s", conversation_id)
+            try:
+                await transport.handle_media_stream(websocket)
+            except WebSocketDisconnect:
+                logger.info("Media stream WebSocket disconnected for %s", conversation_id)
+            except Exception as exc:
+                logger.error("Media stream error for %s: %s", conversation_id, exc)
