@@ -94,8 +94,10 @@ Audio received on the WebSocket or transport side is converted from μ-law 8kHz 
 `TelephonyBridgeServer` is implemented against `BaseTelephonyTransport`.
 
 - `SIPTransport` currently exists as a scaffold.
+- `TelnyxWebRTCTransport` is available for Telnyx AI assistants via a Node.js helper.
 - It preserves the extension point for a real outbound SIP implementation without hard-coding a provider-specific dependency into EVA.
 - The server, webhook lifecycle, recordings, transcript generation, and tests all work with an injected concrete transport.
+- The Telnyx helper uses `@roamhq/wrtc` because the published `@telnyx/webrtc` bundle still expects browser globals at runtime, and the older `wrtc` package did not install cleanly on Node `v25.5.0` in this environment.
 
 If you want end-to-end external assistant calls today, implement a `BaseTelephonyTransport` subclass that can:
 

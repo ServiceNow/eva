@@ -278,6 +278,20 @@ class TestRunConfig:
         assert config.model.webhook_base_url == "https://example.ngrok-free.app"
         assert config.model.stt == "deepgram"
 
+    def test_telephony_bridge_config_supports_telnyx_assistant_id(self):
+        """Telephony bridge config is selected when a Telnyx assistant ID is present."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__TELNYX_ASSISTANT_ID": "assistant-123",
+                "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.app/",
+            }
+        )
+
+        assert isinstance(config.model, TelephonyBridgeConfig)
+        assert config.model.telnyx_assistant_id == "assistant-123"
+        assert config.model.webhook_base_url == "https://example.ngrok-free.app"
+
     def test_telephony_bridge_is_mutually_exclusive(self):
         """Telephony bridge config cannot be mixed with other pipeline modes."""
         with pytest.raises(ValueError, match="Multiple pipeline modes set"):
@@ -286,6 +300,17 @@ class TestRunConfig:
                 | {
                     "EVA_MODEL__LLM": "gpt-5.2",
                     "EVA_MODEL__SIP_URI": "sip:assistant@example.com",
+                }
+            )
+
+    def test_telephony_bridge_auto_create_requires_api_key(self):
+        """Auto-creating a Telnyx assistant requires an API key."""
+        with pytest.raises(ValueError, match="telnyx_api_key is required"):
+            _config(
+                env_vars=_EVA_MODEL_LIST_ENV
+                | {
+                    "EVA_MODEL__TELNYX_MODEL": "telnyx-llm-gpt-4o",
+                    "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.app",
                 }
             )
 

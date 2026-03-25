@@ -372,8 +372,16 @@ class TelephonyBridgeServer:
             await self._handle_session(websocket)
 
     def _default_transport_factory(self, config: TelephonyBridgeConfig, conversation_id: str) -> BaseTelephonyTransport:
+        if config.telnyx_assistant_id:
+            from eva.assistant.transports import TelnyxWebRTCTransport
+
+            return TelnyxWebRTCTransport(
+                assistant_id=config.telnyx_assistant_id,
+                conversation_id=conversation_id,
+                webhook_base_url=config.webhook_base_url,
+            )
         return SIPTransport(
-            sip_uri=config.sip_uri,
+            sip_uri=config.sip_uri or "",
             conversation_id=conversation_id,
             webhook_base_url=config.webhook_base_url,
         )

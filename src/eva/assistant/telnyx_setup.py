@@ -145,7 +145,9 @@ class TelnyxAssistantManager:
                 "url": f"{webhook_base_url}/tools/{{{{call_control_id}}}}/{tool.id}",
                 "method": "POST",
                 "body_parameters": {
-                    "function_params": "{{function_params}}",
+                    "type": "object",
+                    "properties": tool.get_parameter_properties(),
+                    "required": tool.get_required_param_names(),
                 },
             },
         }

@@ -104,7 +104,14 @@ class TestTelnyxAssistantManager:
                     "url": "https://example.ngrok-free.app/tools/{{call_control_id}}/get_reservation",
                     "method": "POST",
                     "body_parameters": {
-                        "function_params": "{{function_params}}",
+                        "type": "object",
+                        "properties": {
+                            "confirmation_number": {
+                                "type": "string",
+                                "description": "The booking confirmation number",
+                            }
+                        },
+                        "required": ["confirmation_number"],
                     },
                 },
             }

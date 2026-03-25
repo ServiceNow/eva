@@ -120,11 +120,15 @@ class AudioLLMConfig(BaseModel):
 
 
 class TelephonyBridgeConfig(BaseModel):
-    """Configuration for benchmarking an external voice assistant via SIP."""
+    """Configuration for benchmarking an external voice assistant via SIP or Telnyx WebRTC."""
 
     model_config = ConfigDict(extra="forbid")
 
-    sip_uri: str = Field(description="SIP URI of the external assistant")
+    sip_uri: str | None = Field(None, description="SIP URI of the external assistant")
+    telnyx_assistant_id: str | None = Field(None, description="Existing Telnyx assistant ID")
+    telnyx_model: str | None = Field(None, description="Telnyx model to use when auto-creating an assistant")
+    telnyx_voice: str | None = Field(None, description="Telnyx voice for an auto-created assistant")
+    telnyx_api_key: str | None = Field(None, description="Telnyx API key for assistant management")
     webhook_port: int = Field(8888, description="Port for the tool webhook service")
     webhook_base_url: str = Field(description="Public URL for tool webhooks (e.g., ngrok URL)")
     stt: str | None = Field(None, description="STT model used for transcript generation")
@@ -135,6 +139,25 @@ class TelephonyBridgeConfig(BaseModel):
     def _normalize_webhook_base_url(cls, value: str) -> str:
         """Normalize webhook_base_url by removing a trailing slash."""
         return value.rstrip("/")
+
+    @model_validator(mode="after")
+    def _validate_connection_target(self) -> "TelephonyBridgeConfig":
+        active_targets = [
+            name
+            for name, value in [
+                ("sip_uri", self.sip_uri),
+                ("telnyx_assistant_id", self.telnyx_assistant_id),
+                ("telnyx_model", self.telnyx_model),
+            ]
+            if value
+        ]
+        if not active_targets:
+            raise ValueError("One of sip_uri, telnyx_assistant_id, or telnyx_model is required.")
+        if len(active_targets) > 1:
+            raise ValueError("Only one of sip_uri, telnyx_assistant_id, or telnyx_model may be set.")
+        if self.telnyx_model and not self.telnyx_api_key:
+            raise ValueError("telnyx_api_key is required when telnyx_model is set.")
+        return self
 
 
 _PIPELINE_FIELDS = {
@@ -149,13 +172,23 @@ _PIPELINE_FIELDS = {
 }
 _S2S_FIELDS = {"s2s", "s2s_params"}
 _AUDIO_LLM_FIELDS = {"audio_llm", "audio_llm_params", "tts", "tts_params"}
-_TELEPHONY_FIELDS = {"sip_uri", "webhook_port", "webhook_base_url", "stt", "stt_params"}
+_TELEPHONY_FIELDS = {
+    "sip_uri",
+    "telnyx_assistant_id",
+    "telnyx_model",
+    "telnyx_voice",
+    "telnyx_api_key",
+    "webhook_port",
+    "webhook_base_url",
+    "stt",
+    "stt_params",
+}
 
 
 def _model_config_discriminator(data: Any) -> str:
     """Discriminate which pipeline config type to use based on unique fields."""
     if isinstance(data, dict):
-        if "sip_uri" in data:
+        if any(field in data for field in ("sip_uri", "telnyx_assistant_id", "telnyx_model")):
             return "telephony_bridge"
         if "audio_llm" in data:
             return "audio_llm"
@@ -199,14 +232,14 @@ def _strip_other_mode_fields(data: dict) -> dict:
     has_llm = bool(data.get("llm") or data.get("llm_model"))
     has_s2s = bool(data.get("s2s"))
     has_audio_llm = bool(data.get("audio_llm"))
-    has_telephony = bool(data.get("sip_uri"))
+    has_telephony = bool(data.get("sip_uri") or data.get("telnyx_assistant_id") or data.get("telnyx_model"))
     active = [
         name
         for flag, name in [
             (has_llm, "EVA_MODEL__LLM"),
             (has_s2s, "EVA_MODEL__S2S"),
             (has_audio_llm, "EVA_MODEL__AUDIO_LLM"),
-            (has_telephony, "EVA_MODEL__SIP_URI"),
+            (has_telephony, "EVA_MODEL__SIP_URI / EVA_MODEL__TELNYX_ASSISTANT_ID / EVA_MODEL__TELNYX_MODEL"),
         ]
         if flag
     ]

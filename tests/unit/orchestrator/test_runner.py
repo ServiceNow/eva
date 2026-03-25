@@ -231,3 +231,55 @@ class TestSupportServices:
         await runner._stop_support_services()
         mock_service.stop.assert_awaited_once()
         assert runner.tool_webhook_service is None
+
+    @pytest.mark.asyncio
+    async def test_auto_creates_and_deletes_telnyx_assistant(self, tmp_path, monkeypatch):
+        config = _make_config(tmp_path)
+        config = config.model_copy(
+            update={
+                "model": TelephonyBridgeConfig(
+                    telnyx_model="telnyx-llm-gpt-4o",
+                    telnyx_voice="alloy",
+                    telnyx_api_key="telnyx-key",
+                    webhook_base_url="https://example.com",
+                    webhook_port=9988,
+                )
+            }
+        )
+        runner = _make_runner(config)
+
+        mock_service = MagicMock()
+        mock_service.start = AsyncMock()
+        mock_service.stop = AsyncMock()
+        service_ctor = MagicMock(return_value=mock_service)
+        mock_manager = MagicMock()
+        mock_manager.create_benchmark_assistant = AsyncMock(return_value="assistant-123")
+        mock_manager.delete_assistant = AsyncMock()
+        mock_manager.close = AsyncMock()
+        manager_ctor = MagicMock(return_value=mock_manager)
+        ensure_helper = AsyncMock()
+
+        monkeypatch.setattr("eva.orchestrator.runner.ToolWebhookService", service_ctor)
+        monkeypatch.setattr("eva.orchestrator.runner.TelnyxAssistantManager", manager_ctor)
+        monkeypatch.setattr("eva.orchestrator.runner.ensure_telnyx_webrtc_helper_dependencies", ensure_helper)
+
+        await runner._start_support_services()
+
+        ensure_helper.assert_awaited_once()
+        manager_ctor.assert_called_once_with(api_key="telnyx-key")
+        mock_manager.create_benchmark_assistant.assert_awaited_once_with(
+            agent_config=runner.agent,
+            agent_config_path=str(config.agent_config_path),
+            webhook_base_url="https://example.com",
+            model="telnyx-llm-gpt-4o",
+            voice="alloy",
+        )
+        assert runner.config.model.telnyx_assistant_id == "assistant-123"
+        assert runner._auto_created_telnyx_assistant_id == "assistant-123"
+
+        await runner._stop_support_services()
+
+        mock_service.stop.assert_awaited_once()
+        mock_manager.delete_assistant.assert_awaited_once_with("assistant-123")
+        mock_manager.close.assert_awaited_once()
+        assert runner.config.model.telnyx_assistant_id is None
