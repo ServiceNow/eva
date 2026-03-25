@@ -153,8 +153,26 @@ class TelephonyBridgeConfig(BaseModel):
     @field_validator("webhook_base_url")
     @classmethod
     def _normalize_webhook_base_url(cls, value: str) -> str:
-        """Normalize webhook_base_url by removing a trailing slash."""
-        return value.rstrip("/")
+        """Normalize webhook_base_url and reject ephemeral ngrok URLs.
+
+        Ephemeral ngrok URLs (e.g., https://a1b2-1-2-3-4.ngrok-free.app) change
+        on every restart, causing silent mismatches with assistant webhook tool
+        configs. Require a stable/static domain instead.
+        """
+        import re
+
+        value = value.rstrip("/")
+        # Reject ephemeral ngrok URLs (hex prefix pattern like a1b2-1-2-3-4.ngrok-free.app)
+        if re.match(r"https?://[0-9a-f]+-[0-9a-f].*\.ngrok", value, re.IGNORECASE):
+            raise ValueError(
+                f"Ephemeral ngrok URL detected: {value}\n"
+                "Ephemeral URLs change on every ngrok restart, causing webhook mismatches.\n"
+                "Use a stable ngrok domain instead:\n"
+                "  1. Go to https://dashboard.ngrok.com/domains\n"
+                "  2. Claim a free static domain (e.g., your-name.ngrok-free.dev)\n"
+                "  3. Start ngrok: ngrok http 8888 --url your-name.ngrok-free.dev"
+            )
+        return value
 
     @model_validator(mode="after")
     def _validate_connection_target(self) -> "TelephonyBridgeConfig":
