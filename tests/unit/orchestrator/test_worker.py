@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from eva.models.config import TelephonyBridgeConfig
 from eva.orchestrator.worker import ConversationWorker, _percentile
 
 
@@ -210,6 +211,23 @@ class TestCleanup:
         worker = _make_worker(tmp_path)
         await worker._cleanup()  # Should not raise
 
+    @pytest.mark.asyncio
+    async def test_unregisters_tool_webhook_after_stopping_telephony_server(self, tmp_path):
+        worker = _make_worker(tmp_path)
+        mock_server = MagicMock()
+        mock_server.stop = AsyncMock()
+        mock_webhook = MagicMock()
+        mock_webhook.unregister_conversation = AsyncMock()
+        worker._assistant_server = mock_server
+        worker.tool_webhook_service = mock_webhook
+        worker._registered_tool_call_id = "test-record"
+
+        await worker._cleanup()
+
+        mock_server.stop.assert_called_once()
+        mock_webhook.unregister_conversation.assert_awaited_once_with("test-record")
+        assert worker._registered_tool_call_id is None
+
 
 class TestRunConversation:
     @pytest.mark.asyncio
@@ -234,3 +252,34 @@ class TestRunConversation:
 
         assert result == "goodbye"
         assert worker._conversation_stats == stats
+
+
+class TestTelephonyStart:
+    @pytest.mark.asyncio
+    async def test_start_assistant_uses_telephony_bridge_and_registers_webhook(self, tmp_path, monkeypatch):
+        worker = _make_worker(tmp_path)
+        worker.config.model = TelephonyBridgeConfig(
+            sip_uri="sip:test@example.com",
+            webhook_base_url="https://example.com",
+        )
+        worker.tool_webhook_service = MagicMock()
+        worker.tool_webhook_service.register_conversation = AsyncMock()
+
+        mock_bridge = MagicMock()
+        mock_bridge.start = AsyncMock()
+        mock_bridge.tool_handler = MagicMock()
+        mock_bridge.audit_log = MagicMock()
+
+        bridge_ctor = MagicMock(return_value=mock_bridge)
+        monkeypatch.setattr("eva.orchestrator.worker.TelephonyBridgeServer", bridge_ctor)
+
+        await worker._start_assistant()
+
+        bridge_ctor.assert_called_once()
+        mock_bridge.start.assert_awaited_once()
+        worker.tool_webhook_service.register_conversation.assert_awaited_once_with(
+            "test-record",
+            mock_bridge.tool_handler,
+            audit_log=mock_bridge.audit_log,
+        )
+        assert worker._registered_tool_call_id == "test-record"

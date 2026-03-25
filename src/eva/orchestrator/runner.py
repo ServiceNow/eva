@@ -9,12 +9,13 @@ from typing import Any
 
 from eva.metrics.runner import MetricsRunner, MetricsRunResult
 from eva.models.agents import AgentConfig
-from eva.models.config import PipelineConfig, RunConfig
+from eva.models.config import PipelineConfig, RunConfig, TelephonyBridgeConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RunResult
 from eva.orchestrator.port_pool import PortPool
 from eva.orchestrator.validation_runner import ValidationRunner
 from eva.orchestrator.worker import ConversationWorker
+from eva.assistant.tool_webhook import ToolWebhookService
 from eva.utils.conversation_checks import check_conversation_finished, find_records_with_llm_generic_error
 from eva.utils.logging import get_logger
 from eva.utils.provenance import capture_provenance, resolve_tool_module_file
@@ -54,6 +55,7 @@ class BenchmarkRunner:
         # Results tracking
         self._results: list[ConversationResult] = []
         self._failed_record_ids: list[str] = []
+        self.tool_webhook_service: ToolWebhookService | None = None
 
     def _load_agent_config(self) -> AgentConfig:
         """Load single agent configuration."""
@@ -89,6 +91,18 @@ class BenchmarkRunner:
         # No filtering - return all records
         return records
 
+    async def _start_support_services(self) -> None:
+        """Start optional runner-scoped services."""
+        if isinstance(self.config.model, TelephonyBridgeConfig) and self.tool_webhook_service is None:
+            self.tool_webhook_service = ToolWebhookService(port=self.config.model.webhook_port)
+            await self.tool_webhook_service.start()
+
+    async def _stop_support_services(self) -> None:
+        """Stop optional runner-scoped services."""
+        if self.tool_webhook_service is not None:
+            await self.tool_webhook_service.stop()
+            self.tool_webhook_service = None
+
     async def run(self, records: list[EvaluationRecord]) -> RunResult:
         """Run all records with validation and reruns.
 
@@ -106,268 +120,280 @@ class BenchmarkRunner:
         Returns:
             RunResult with final counts and duration
         """
-        if not self.config.tool_module_path:
-            self.config.tool_module_path = self.agent.tool_module_path
+        await self._start_support_services()
         try:
-            tool_module_file = resolve_tool_module_file(self.config.tool_module_path)
-            self.config.provenance = capture_provenance(self.config, tool_module_file=tool_module_file)
-        except Exception as e:
-            logger.warning(f"Failed to capture provenance: {e}")
+            if not self.config.tool_module_path:
+                self.config.tool_module_path = self.agent.tool_module_path
+            try:
+                tool_module_file = resolve_tool_module_file(self.config.tool_module_path)
+                self.config.provenance = capture_provenance(self.config, tool_module_file=tool_module_file)
+            except Exception as e:
+                logger.warning(f"Failed to capture provenance: {e}")
 
-        max_attempts = self.config.max_rerun_attempts
-        logger.info(f"Starting benchmark with up to {max_attempts} attempts per record")
+            max_attempts = self.config.max_rerun_attempts
+            logger.info(f"Starting benchmark with up to {max_attempts} attempts per record")
 
-        # Apply record filtering (debug mode or specific record IDs)
-        filtered_records = self._filter_records(records)
+            # Apply record filtering (debug mode or specific record IDs)
+            filtered_records = self._filter_records(records)
 
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        (self.output_dir / "records").mkdir(exist_ok=True)
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            (self.output_dir / "records").mkdir(exist_ok=True)
 
-        # Resolve exact models used (captures defaults from services.py + any alias labels)
-        if isinstance(self.config.model, PipelineConfig):
-            stt_params = self.config.model.stt_params
-            tts_params = self.config.model.tts_params
-            self.config.resolved_models = {
-                "stt_provider": self.config.model.stt,
-                "stt_model": stt_params["model"],
-                "stt_alias": stt_params.get("alias"),
-                "tts_provider": self.config.model.tts,
-                "tts_model": tts_params["model"],
-                "tts_alias": tts_params.get("alias"),
-                "llm": self.config.model.llm,
-            }
-
-        config_path = self.output_dir / "config.json"
-        config_path.write_text(self.config.model_dump_json(indent=2))
-
-        # Build output_id list for tracking (supports pass@k)
-        num_trials = self.config.num_trials
-        output_id_to_record: dict[str, EvaluationRecord] = {}
-
-        for record in filtered_records:
-            if num_trials > 1:
-                for trial_idx in range(num_trials):
-                    oid = f"{record.id}/trial_{trial_idx}"
-                    output_id_to_record[oid] = record
-            else:
-                output_id_to_record[record.id] = record
-
-        all_output_ids = list(output_id_to_record.keys())
-        pending_output_ids = list(all_output_ids)
-        rerun_history: dict[str, list[dict]] = {}
-        started_at = datetime.now()
-
-        # LOOP: Run and validate, up to max_attempts total
-        for attempt_number in range(1, max_attempts + 1):
-            if not pending_output_ids:
-                break
-
-            logger.info(
-                f"\n{'=' * 60}\n"
-                f"Attempt {attempt_number}/{max_attempts}: "
-                f"Running {len(pending_output_ids)} tasks\n"
-                f"{'=' * 60}"
-            )
-
-            # STEP 1: Run conversations for pending output_ids only
-            tasks = [(output_id_to_record[oid], oid) for oid in pending_output_ids]
-            run_results = await self._run_targeted(tasks)
-
-            # STEP 2: Check conversation_finished for each output_id
-            finished_ids: list[str] = []
-            not_finished_ids: list[str] = []
-
-            for output_id in pending_output_ids:
-                result = run_results.get(output_id)
-                record_dir = self.output_dir / "records" / output_id
-
-                # Treat exceptions and incomplete results as not finished
-                if isinstance(result, Exception) or (isinstance(result, ConversationResult) and not result.completed):
-                    not_finished_ids.append(output_id)
-                elif check_conversation_finished(record_dir):
-                    finished_ids.append(output_id)
-                else:
-                    not_finished_ids.append(output_id)
-
-            if not_finished_ids:
-                logger.info(
-                    f"{len(not_finished_ids)} tasks did not finish properly (attempt {attempt_number}/{max_attempts})"
-                )
-
-            # STEP 3: Run validation metrics on finished records only
-            failed_validation_ids: list[str] = []
-            if finished_ids:
-                finished_records = list(
-                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in finished_ids}.values()
-                )
-                logger.info(f"Running validation metrics on {len(finished_ids)} finished tasks...")
-                validation_runner = ValidationRunner(
-                    run_dir=self.output_dir,
-                    dataset=finished_records,
-                    thresholds=self.config.validation_thresholds,
-                    skip_conversation_finished=True,
-                    output_ids=finished_ids,
-                )
-                validation_results = await validation_runner.run_validation()
-
-                for output_id in finished_ids:
-                    vr = validation_results.get(output_id)
-                    if not vr or not vr.passed:
-                        failed_validation_ids.append(output_id)
-
-            # STEP 4: Determine which output_ids failed this attempt
-            failed_this_attempt = not_finished_ids + failed_validation_ids
-
-            # Record failures in history with structured entries
-            for oid in not_finished_ids:
-                rerun_history.setdefault(oid, []).append(
-                    {
-                        "attempt": attempt_number,
-                        "reason": "not_finished",
-                    }
-                )
-            for oid in failed_validation_ids:
-                vr = validation_results.get(oid)
-                entry: dict = {
-                    "attempt": attempt_number,
-                    "reason": "validation_failed",
-                    "failed_metrics": vr.failed_metrics if vr else [],
-                    "scores": vr.scores if vr else {},
+            # Resolve exact models used (captures defaults from services.py + any alias labels)
+            if isinstance(self.config.model, PipelineConfig):
+                stt_params = self.config.model.stt_params
+                tts_params = self.config.model.tts_params
+                self.config.resolved_models = {
+                    "stt_provider": self.config.model.stt,
+                    "stt_model": stt_params["model"],
+                    "stt_alias": stt_params.get("alias"),
+                    "tts_provider": self.config.model.tts,
+                    "tts_model": tts_params["model"],
+                    "tts_alias": tts_params.get("alias"),
+                    "llm": self.config.model.llm,
                 }
-                if vr and vr.details:
-                    failure_details = {}
-                    for metric_name in vr.failed_metrics:
-                        if metric_name in vr.details:
-                            failure_details[metric_name] = vr.details[metric_name]
-                    if failure_details:
-                        entry["failure_details"] = failure_details
-                rerun_history.setdefault(oid, []).append(entry)
+            elif isinstance(self.config.model, TelephonyBridgeConfig):
+                self.config.resolved_models = {
+                    "transport": "sip",
+                    "sip_uri": self.config.model.sip_uri,
+                    "webhook_base_url": self.config.model.webhook_base_url,
+                    "stt_provider": self.config.model.stt,
+                    "stt_model": self.config.model.stt_params.get("model"),
+                }
 
-            # STEP 5: Archive and prepare for next attempt
-            pending_output_ids = failed_this_attempt
+            config_path = self.output_dir / "config.json"
+            config_path.write_text(self.config.model_dump_json(indent=2))
 
-            if not pending_output_ids:
-                logger.info("All tasks passed validation!")
-                break
-            elif attempt_number < max_attempts:
-                logger.info(f"Archiving {len(pending_output_ids)} failed tasks for rerun...")
+            # Build output_id list for tracking (supports pass@k)
+            num_trials = self.config.num_trials
+            output_id_to_record: dict[str, EvaluationRecord] = {}
+
+            for record in filtered_records:
+                if num_trials > 1:
+                    for trial_idx in range(num_trials):
+                        oid = f"{record.id}/trial_{trial_idx}"
+                        output_id_to_record[oid] = record
+                else:
+                    output_id_to_record[record.id] = record
+
+            all_output_ids = list(output_id_to_record.keys())
+            pending_output_ids = list(all_output_ids)
+            rerun_history: dict[str, list[dict]] = {}
+            started_at = datetime.now()
+
+            # LOOP: Run and validate, up to max_attempts total
+            for attempt_number in range(1, max_attempts + 1):
+                if not pending_output_ids:
+                    break
+
+                logger.info(
+                    f"\n{'=' * 60}\n"
+                    f"Attempt {attempt_number}/{max_attempts}: "
+                    f"Running {len(pending_output_ids)} tasks\n"
+                    f"{'=' * 60}"
+                )
+
+                # STEP 1: Run conversations for pending output_ids only
+                tasks = [(output_id_to_record[oid], oid) for oid in pending_output_ids]
+                run_results = await self._run_targeted(tasks)
+
+                # STEP 2: Check conversation_finished for each output_id
+                finished_ids: list[str] = []
+                not_finished_ids: list[str] = []
+
                 for output_id in pending_output_ids:
-                    self._archive_failed_attempt(output_id, attempt_number)
-            else:
-                logger.warning(f"{len(pending_output_ids)} tasks still failing after {max_attempts} attempts")
+                    result = run_results.get(output_id)
+                    record_dir = self.output_dir / "records" / output_id
 
-        # STEP 6: Compute final success/failure sets
-        final_failed_ids = set(pending_output_ids)
-        successful_ids = set(all_output_ids) - final_failed_ids
+                    # Treat exceptions and incomplete results as not finished
+                    if isinstance(result, Exception) or (isinstance(result, ConversationResult) and not result.completed):
+                        not_finished_ids.append(output_id)
+                    elif check_conversation_finished(record_dir):
+                        finished_ids.append(output_id)
+                    else:
+                        not_finished_ids.append(output_id)
 
-        # Categorize failures
-        not_finished_count = 0
-        validation_failed_count = 0
-        for oid in final_failed_ids:
-            record_dir = self.output_dir / "records" / oid
-            if not check_conversation_finished(record_dir):
-                not_finished_count += 1
-            else:
-                validation_failed_count += 1
+                if not_finished_ids:
+                    logger.info(
+                        f"{len(not_finished_ids)} tasks did not finish properly (attempt {attempt_number}/{max_attempts})"
+                    )
 
-        # STEP 7: Run full metrics on successful records
-        if self.config.metrics and successful_ids:
-            logger.info(f"Running full metrics suite on {len(successful_ids)} successful tasks...")
-            successful_records = list(
-                {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in successful_ids}.values()
-            )
-            metrics_runner = MetricsRunner(
-                run_dir=self.output_dir,
-                dataset=successful_records,
-                metric_names=self.config.metrics,
-                record_ids=list(successful_ids),
-                num_draws=self.config.num_trials,
-                force_rerun=self.config.force_rerun_metrics,
-            )
-            await metrics_runner.run()
-        elif self.config.metrics and not successful_ids:
-            logger.info("Skipping metrics: no records passed validation")
+                # STEP 3: Run validation metrics on finished records only
+                failed_validation_ids: list[str] = []
+                if finished_ids:
+                    finished_records = list(
+                        {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in finished_ids}.values()
+                    )
+                    logger.info(f"Running validation metrics on {len(finished_ids)} finished tasks...")
+                    validation_runner = ValidationRunner(
+                        run_dir=self.output_dir,
+                        dataset=finished_records,
+                        thresholds=self.config.validation_thresholds,
+                        skip_conversation_finished=True,
+                        output_ids=finished_ids,
+                    )
+                    validation_results = await validation_runner.run_validation()
 
-        # STEP 8: Generate final summary
-        ended_at = datetime.now()
-        total_tasks = len(all_output_ids)
-        successful_count = len(successful_ids)
-        failed_count = len(final_failed_ids)
+                    for output_id in finished_ids:
+                        vr = validation_results.get(output_id)
+                        if not vr or not vr.passed:
+                            failed_validation_ids.append(output_id)
 
-        # Build final_failures from the last rerun_history entry for each failed record
-        final_failures: dict[str, dict] = {}
-        for oid in final_failed_ids:
-            if oid in rerun_history and rerun_history[oid]:
-                final_failures[oid] = rerun_history[oid][-1]
-            else:
-                # Failed on initial validation (no rerun history)
+                # STEP 4: Determine which output_ids failed this attempt
+                failed_this_attempt = not_finished_ids + failed_validation_ids
+
+                # Record failures in history with structured entries
+                for oid in not_finished_ids:
+                    rerun_history.setdefault(oid, []).append(
+                        {
+                            "attempt": attempt_number,
+                            "reason": "not_finished",
+                        }
+                    )
+                for oid in failed_validation_ids:
+                    vr = validation_results.get(oid)
+                    entry: dict = {
+                        "attempt": attempt_number,
+                        "reason": "validation_failed",
+                        "failed_metrics": vr.failed_metrics if vr else [],
+                        "scores": vr.scores if vr else {},
+                    }
+                    if vr and vr.details:
+                        failure_details = {}
+                        for metric_name in vr.failed_metrics:
+                            if metric_name in vr.details:
+                                failure_details[metric_name] = vr.details[metric_name]
+                        if failure_details:
+                            entry["failure_details"] = failure_details
+                    rerun_history.setdefault(oid, []).append(entry)
+
+                # STEP 5: Archive and prepare for next attempt
+                pending_output_ids = failed_this_attempt
+
+                if not pending_output_ids:
+                    logger.info("All tasks passed validation!")
+                    break
+                elif attempt_number < max_attempts:
+                    logger.info(f"Archiving {len(pending_output_ids)} failed tasks for rerun...")
+                    for output_id in pending_output_ids:
+                        self._archive_failed_attempt(output_id, attempt_number)
+                else:
+                    logger.warning(f"{len(pending_output_ids)} tasks still failing after {max_attempts} attempts")
+
+            # STEP 6: Compute final success/failure sets
+            final_failed_ids = set(pending_output_ids)
+            successful_ids = set(all_output_ids) - final_failed_ids
+
+            # Categorize failures
+            not_finished_count = 0
+            validation_failed_count = 0
+            for oid in final_failed_ids:
                 record_dir = self.output_dir / "records" / oid
                 if not check_conversation_finished(record_dir):
-                    final_failures[oid] = {"reason": "not_finished"}
+                    not_finished_count += 1
                 else:
-                    final_failures[oid] = {"reason": "validation_failed"}
+                    validation_failed_count += 1
 
-        llm_generic_error_record_ids = find_records_with_llm_generic_error(self.output_dir, successful_ids)
-        eval_summary_path = self.output_dir / "evaluation_summary.json"
-        with open(eval_summary_path, "w") as f:
-            json.dump(
-                {
-                    "started_at": started_at.isoformat(),
-                    "ended_at": ended_at.isoformat(),
-                    "duration_seconds": (ended_at - started_at).total_seconds(),
-                    "simulation": {
-                        "total_records": total_tasks,
-                        "successful_records": successful_count,
-                        "failed_records": failed_count,
-                        "not_finished_count": not_finished_count,
-                        "validation_failed_count": validation_failed_count,
-                        "records_with_llm_generic_error": len(llm_generic_error_record_ids),
-                        "llm_generic_error_record_ids": llm_generic_error_record_ids,
-                        "success_rate": successful_count / total_tasks if total_tasks > 0 else 0.0,
-                        "failure_rate": failed_count / total_tasks if total_tasks > 0 else 0.0,
-                        "total_attempts": attempt_number,
-                        "failed_record_ids": sorted(final_failed_ids),
-                        "successful_record_ids": sorted(successful_ids),
+            # STEP 7: Run full metrics on successful records
+            if self.config.metrics and successful_ids:
+                logger.info(f"Running full metrics suite on {len(successful_ids)} successful tasks...")
+                successful_records = list(
+                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in successful_ids}.values()
+                )
+                metrics_runner = MetricsRunner(
+                    run_dir=self.output_dir,
+                    dataset=successful_records,
+                    metric_names=self.config.metrics,
+                    record_ids=list(successful_ids),
+                    num_draws=self.config.num_trials,
+                    force_rerun=self.config.force_rerun_metrics,
+                )
+                await metrics_runner.run()
+            elif self.config.metrics and not successful_ids:
+                logger.info("Skipping metrics: no records passed validation")
+
+            # STEP 8: Generate final summary
+            ended_at = datetime.now()
+            total_tasks = len(all_output_ids)
+            successful_count = len(successful_ids)
+            failed_count = len(final_failed_ids)
+
+            # Build final_failures from the last rerun_history entry for each failed record
+            final_failures: dict[str, dict] = {}
+            for oid in final_failed_ids:
+                if oid in rerun_history and rerun_history[oid]:
+                    final_failures[oid] = rerun_history[oid][-1]
+                else:
+                    # Failed on initial validation (no rerun history)
+                    record_dir = self.output_dir / "records" / oid
+                    if not check_conversation_finished(record_dir):
+                        final_failures[oid] = {"reason": "not_finished"}
+                    else:
+                        final_failures[oid] = {"reason": "validation_failed"}
+
+            llm_generic_error_record_ids = find_records_with_llm_generic_error(self.output_dir, successful_ids)
+            eval_summary_path = self.output_dir / "evaluation_summary.json"
+            with open(eval_summary_path, "w") as f:
+                json.dump(
+                    {
+                        "started_at": started_at.isoformat(),
+                        "ended_at": ended_at.isoformat(),
+                        "duration_seconds": (ended_at - started_at).total_seconds(),
+                        "simulation": {
+                            "total_records": total_tasks,
+                            "successful_records": successful_count,
+                            "failed_records": failed_count,
+                            "not_finished_count": not_finished_count,
+                            "validation_failed_count": validation_failed_count,
+                            "records_with_llm_generic_error": len(llm_generic_error_record_ids),
+                            "llm_generic_error_record_ids": llm_generic_error_record_ids,
+                            "success_rate": successful_count / total_tasks if total_tasks > 0 else 0.0,
+                            "failure_rate": failed_count / total_tasks if total_tasks > 0 else 0.0,
+                            "total_attempts": attempt_number,
+                            "failed_record_ids": sorted(final_failed_ids),
+                            "successful_record_ids": sorted(successful_ids),
+                        },
+                        "rerun_history": rerun_history,
+                        "final_failures": final_failures,
                     },
-                    "rerun_history": rerun_history,
-                    "final_failures": final_failures,
-                },
-                f,
-                indent=2,
+                    f,
+                    indent=2,
+                )
+
+            # Save CSV with only successful records
+            successful_results: list[tuple[str, ConversationResult]] = []
+            for output_id in successful_ids:
+                result_path = self.output_dir / "records" / output_id / "result.json"
+                if result_path.exists():
+                    with open(result_path) as f:
+                        result_data = json.load(f)
+                        successful_results.append((output_id, ConversationResult(**result_data)))
+
+            self._save_results_csv(successful_results, list(final_failed_ids))
+
+            logger.info(f"\n{'=' * 60}")
+            logger.info("Benchmark complete:")
+            if total_tasks > 0:
+                logger.info(f"  Success: {successful_count}/{total_tasks} ({successful_count / total_tasks * 100:.1f}%)")
+                logger.info(f"  Failed: {failed_count}/{total_tasks} ({failed_count / total_tasks * 100:.1f}%)")
+                if not_finished_count > 0:
+                    logger.info(f"    Not finished: {not_finished_count}")
+                if validation_failed_count > 0:
+                    logger.info(f"    Validation failed: {validation_failed_count}")
+            else:
+                logger.info("  No records processed")
+            logger.info(f"  Total attempts used: {attempt_number}")
+            logger.info(f"{'=' * 60}\n")
+
+            return RunResult(
+                run_id=self.config.run_id,
+                total_records=total_tasks,
+                successful_records=successful_count,
+                failed_records=failed_count,
+                duration_seconds=(ended_at - started_at).total_seconds(),
             )
-
-        # Save CSV with only successful records
-        successful_results: list[tuple[str, ConversationResult]] = []
-        for output_id in successful_ids:
-            result_path = self.output_dir / "records" / output_id / "result.json"
-            if result_path.exists():
-                with open(result_path) as f:
-                    result_data = json.load(f)
-                    successful_results.append((output_id, ConversationResult(**result_data)))
-
-        self._save_results_csv(successful_results, list(final_failed_ids))
-
-        logger.info(f"\n{'=' * 60}")
-        logger.info("Benchmark complete:")
-        if total_tasks > 0:
-            logger.info(f"  Success: {successful_count}/{total_tasks} ({successful_count / total_tasks * 100:.1f}%)")
-            logger.info(f"  Failed: {failed_count}/{total_tasks} ({failed_count / total_tasks * 100:.1f}%)")
-            if not_finished_count > 0:
-                logger.info(f"    Not finished: {not_finished_count}")
-            if validation_failed_count > 0:
-                logger.info(f"    Validation failed: {validation_failed_count}")
-        else:
-            logger.info("  No records processed")
-        logger.info(f"  Total attempts used: {attempt_number}")
-        logger.info(f"{'=' * 60}\n")
-
-        return RunResult(
-            run_id=self.config.run_id,
-            total_records=total_tasks,
-            successful_records=successful_count,
-            failed_records=failed_count,
-            duration_seconds=(ended_at - started_at).total_seconds(),
-        )
+        finally:
+            await self._stop_support_services()
 
     async def _run_conversation(self, record: EvaluationRecord, output_id: str) -> ConversationResult:
         """Run a single conversation.
@@ -397,6 +423,7 @@ class BenchmarkRunner:
                 output_dir=self.output_dir / "records" / output_id,
                 port=port,
                 output_id=output_id,
+                tool_webhook_service=self.tool_webhook_service,
             )
 
             # Run conversation
@@ -553,83 +580,93 @@ class BenchmarkRunner:
         max_attempts = self.config.max_rerun_attempts
         rerun_history: dict[str, list[dict]] = {}
         pending_ids = list(failed_ids)
+        rerun_services_started = False
+        if pending_ids:
+            await self._start_support_services()
+            rerun_services_started = True
 
-        for attempt_number in range(1, max_attempts + 1):
-            if not pending_ids:
-                break
+        try:
+            for attempt_number in range(1, max_attempts + 1):
+                if not pending_ids:
+                    break
 
-            logger.info(
-                f"\n{'=' * 60}\nRerun attempt {attempt_number}/{max_attempts}: {len(pending_ids)} tasks\n{'=' * 60}"
-            )
-
-            # Archive failed outputs
-            for output_id in pending_ids:
-                self._archive_failed_attempt(output_id, attempt_number)
-
-            # Run conversations for failed output_ids only
-            tasks = [(output_id_to_record[oid], oid) for oid in pending_ids]
-            run_results = await self._run_targeted(tasks)
-
-            # Check conversation_finished
-            finished_ids: list[str] = []
-            still_not_finished: list[str] = []
-            for output_id in pending_ids:
-                result = run_results.get(output_id)
-                record_dir = records_dir / output_id
-                if isinstance(result, Exception) or (isinstance(result, ConversationResult) and not result.completed):
-                    still_not_finished.append(output_id)
-                elif check_conversation_finished(record_dir):
-                    finished_ids.append(output_id)
-                else:
-                    still_not_finished.append(output_id)
-
-            # Validate finished records
-            failed_validation: list[str] = []
-            if finished_ids:
-                finished_records = list(
-                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in finished_ids}.values()
+                logger.info(
+                    f"\n{'=' * 60}\nRerun attempt {attempt_number}/{max_attempts}: {len(pending_ids)} tasks\n{'=' * 60}"
                 )
-                vr_runner = ValidationRunner(
-                    run_dir=self.output_dir,
-                    dataset=finished_records,
-                    thresholds=self.config.validation_thresholds,
-                    skip_conversation_finished=True,
-                    output_ids=finished_ids,
-                )
-                new_results = await vr_runner.run_validation()
-                for output_id in finished_ids:
-                    vr = new_results.get(output_id)
-                    if not vr or not vr.passed:
-                        failed_validation.append(output_id)
 
-            pending_ids = still_not_finished + failed_validation
-            for oid in still_not_finished:
-                rerun_history.setdefault(oid, []).append(
-                    {
+                # Archive failed outputs
+                for output_id in pending_ids:
+                    self._archive_failed_attempt(output_id, attempt_number)
+
+                # Run conversations for failed output_ids only
+                tasks = [(output_id_to_record[oid], oid) for oid in pending_ids]
+                run_results = await self._run_targeted(tasks)
+
+                # Check conversation_finished
+                finished_ids: list[str] = []
+                still_not_finished: list[str] = []
+                for output_id in pending_ids:
+                    result = run_results.get(output_id)
+                    record_dir = records_dir / output_id
+                    if isinstance(result, Exception) or (
+                        isinstance(result, ConversationResult) and not result.completed
+                    ):
+                        still_not_finished.append(output_id)
+                    elif check_conversation_finished(record_dir):
+                        finished_ids.append(output_id)
+                    else:
+                        still_not_finished.append(output_id)
+
+                # Validate finished records
+                failed_validation: list[str] = []
+                if finished_ids:
+                    finished_records = list(
+                        {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in finished_ids}.values()
+                    )
+                    vr_runner = ValidationRunner(
+                        run_dir=self.output_dir,
+                        dataset=finished_records,
+                        thresholds=self.config.validation_thresholds,
+                        skip_conversation_finished=True,
+                        output_ids=finished_ids,
+                    )
+                    new_results = await vr_runner.run_validation()
+                    for output_id in finished_ids:
+                        vr = new_results.get(output_id)
+                        if not vr or not vr.passed:
+                            failed_validation.append(output_id)
+
+                pending_ids = still_not_finished + failed_validation
+                for oid in still_not_finished:
+                    rerun_history.setdefault(oid, []).append(
+                        {
+                            "attempt": attempt_number,
+                            "reason": "not_finished",
+                        }
+                    )
+                for oid in failed_validation:
+                    vr = new_results.get(oid) if finished_ids else None
+                    entry: dict = {
                         "attempt": attempt_number,
-                        "reason": "not_finished",
+                        "reason": "validation_failed",
+                        "failed_metrics": vr.failed_metrics if vr else [],
+                        "scores": vr.scores if vr else {},
                     }
-                )
-            for oid in failed_validation:
-                vr = new_results.get(oid) if finished_ids else None
-                entry: dict = {
-                    "attempt": attempt_number,
-                    "reason": "validation_failed",
-                    "failed_metrics": vr.failed_metrics if vr else [],
-                    "scores": vr.scores if vr else {},
-                }
-                if vr and vr.details:
-                    failure_details = {}
-                    for metric_name in vr.failed_metrics:
-                        if metric_name in vr.details:
-                            failure_details[metric_name] = vr.details[metric_name]
-                    if failure_details:
-                        entry["failure_details"] = failure_details
-                rerun_history.setdefault(oid, []).append(entry)
+                    if vr and vr.details:
+                        failure_details = {}
+                        for metric_name in vr.failed_metrics:
+                            if metric_name in vr.details:
+                                failure_details[metric_name] = vr.details[metric_name]
+                        if failure_details:
+                            entry["failure_details"] = failure_details
+                    rerun_history.setdefault(oid, []).append(entry)
 
-            if not pending_ids:
-                logger.info("All rerun records now pass validation!")
-                break
+                if not pending_ids:
+                    logger.info("All rerun records now pass validation!")
+                    break
+        finally:
+            if rerun_services_started:
+                await self._stop_support_services()
 
         if pending_ids:
             logger.warning(f"{len(pending_ids)} tasks still failing after {max_attempts} attempts")

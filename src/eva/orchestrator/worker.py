@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import Any, Optional
 
 from eva.assistant.server import AssistantServer
+from eva.assistant.telephony_bridge import TelephonyBridgeServer
+from eva.assistant.tool_webhook import ToolWebhookService
 from eva.models.agents import AgentConfig
-from eva.models.config import RunConfig
+from eva.models.config import RunConfig, TelephonyBridgeConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, ErrorDetails, LatencyStats
 from eva.user_simulator.client import UserSimulator
@@ -58,6 +60,7 @@ class ConversationWorker:
         output_dir: Path,
         port: int,
         output_id: str,
+        tool_webhook_service: ToolWebhookService | None = None,
     ):
         """Initialize the conversation worker.
 
@@ -79,12 +82,14 @@ class ConversationWorker:
         self.output_dir = output_dir
         self.port = port
         self.output_id = output_id
+        self.tool_webhook_service = tool_webhook_service
 
         # Will be set during run
-        self._assistant_server = None
+        self._assistant_server: AssistantServer | TelephonyBridgeServer | None = None
         self._user_simulator = None
         self._conversation_stats: dict[str, Any] = {}
         self._log_file_handler = None
+        self._registered_tool_call_id: str | None = None
 
     async def run(self) -> ConversationResult:
         """Execute one complete conversation.
@@ -235,18 +240,43 @@ class ConversationWorker:
 
     async def _start_assistant(self) -> None:
         """Start the assistant server."""
-        self._assistant_server = AssistantServer(
-            current_date_time=self.record.current_date_time,
-            pipeline_config=self.config.model,
-            agent=self.agent,
-            agent_config_path=self.agent_config_path,
-            scenario_db_path=self.scenario_db_path,
-            output_dir=self.output_dir,
-            port=self.port,
-            conversation_id=self.record.id,
-        )
+        is_telephony_bridge = isinstance(self.config.model, TelephonyBridgeConfig)
+
+        if is_telephony_bridge:
+            if self.tool_webhook_service is None:
+                raise RuntimeError("ToolWebhookService is required for telephony bridge conversations")
+
+            self._assistant_server = TelephonyBridgeServer(
+                current_date_time=self.record.current_date_time,
+                bridge_config=self.config.model,
+                agent=self.agent,
+                agent_config_path=self.agent_config_path,
+                scenario_db_path=self.scenario_db_path,
+                output_dir=self.output_dir,
+                port=self.port,
+                conversation_id=self.record.id,
+            )
+        else:
+            self._assistant_server = AssistantServer(
+                current_date_time=self.record.current_date_time,
+                pipeline_config=self.config.model,
+                agent=self.agent,
+                agent_config_path=self.agent_config_path,
+                scenario_db_path=self.scenario_db_path,
+                output_dir=self.output_dir,
+                port=self.port,
+                conversation_id=self.record.id,
+            )
 
         await self._assistant_server.start()
+
+        if is_telephony_bridge:
+            await self.tool_webhook_service.register_conversation(
+                self.record.id,
+                self._assistant_server.tool_handler,
+                audit_log=self._assistant_server.audit_log,
+            )
+            self._registered_tool_call_id = self.record.id
 
     async def _start_user_simulator(self) -> None:
         """Start the user simulator."""
@@ -284,6 +314,13 @@ class ConversationWorker:
             except Exception as e:
                 logger.warning(f"Error stopping assistant server: {e}")
             self._assistant_server = None
+
+        if self._registered_tool_call_id and self.tool_webhook_service is not None:
+            try:
+                await self.tool_webhook_service.unregister_conversation(self._registered_tool_call_id)
+            except Exception as e:
+                logger.warning(f"Error unregistering tool webhook conversation: {e}")
+            self._registered_tool_call_id = None
 
         if self._user_simulator:
             self._user_simulator = None
