@@ -48,7 +48,7 @@ def processor_context() -> _ProcessorContext:
     result_data = json.loads((ARTIFACTS_DIR / "result.json").read_text())
     # Fix paths to point to the local artifacts directory
     result_data["output_dir"] = str(ARTIFACTS_DIR)
-    result_data["pipecat_logs_path"] = str(ARTIFACTS_DIR / "pipecat_logs.jsonl")
+    result_data["framework_logs_path"] = str(ARTIFACTS_DIR / "framework_logs.jsonl")
     result_data["elevenlabs_logs_path"] = str(ARTIFACTS_DIR / "elevenlabs_events.jsonl")
     result_data["audio_mixed_path"] = str(ARTIFACTS_DIR / "audio_mixed.wav")
     result_data["audio_assistant_path"] = None

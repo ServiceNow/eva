@@ -26,7 +26,7 @@ dependencies = [
     "openai>=1.0.0",
     "anthropic>=0.83.0",
     "litellm>=1.30.0",
-    "deepgram-sdk>=3.5.0,<4.0.0",
+    "deepgram-sdk>=3.5.0",
     "onnxruntime>=1.16.0",
     "aioboto3>=12.0.0",
     "google-generativeai>=0.3.0",
@@ -54,7 +54,9 @@ dependencies = [
     "jaconv>=0.3.0",
     "regex>=2023.0.0",
     "more-itertools>=10.0.0",
-    "nvidia-riva-client>=2.25.0,<3.0.0"
+    # nvidia-riva-client moved to [nvidia] optional dep (pins websockets==15.0.1 exactly,
+    # which conflicts with deepgram-sdk>=6 and roomkit which need websockets>=16)
+    # "nvidia-riva-client>=2.25.0,<3.0.0"
 ]
 
 [project.optional-dependencies]
@@ -66,6 +68,14 @@ dev = [
     "mypy>=1.5",
     "pre-commit>=4.0",
 ]
+nvidia = [
+    "nvidia-riva-client>=2.25.0,<3.0.0",
+]
+roomkit = [
+    "roomkit>=0.7.0a2; python_version>='3.12'",
+    "deepgram-sdk>=6.0.0",
+    "websockets>=16.0",
+]
 apps = [
     "pandas>=2.0",
     "plotly>=5.0",
@@ -75,6 +85,11 @@ apps = [
 
 [project.scripts]
 eva = "eva.cli:main"
+
+[tool.uv]
+# nvidia and roomkit have incompatible websockets requirements
+# (nvidia-riva-client pins ==15.0.1, roomkit needs >=16.0)
+conflicts = [[{extra = "nvidia"}, {extra = "roomkit"}]]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/eva"]

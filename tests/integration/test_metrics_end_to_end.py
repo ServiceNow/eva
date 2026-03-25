@@ -54,7 +54,7 @@ def mock_run_dir(tmp_path):
     # Rewrite result.json with corrected paths (originals point to the run output dir)
     result_data = json.loads((record_dir / "result.json").read_text())
     result_data["output_dir"] = str(record_dir)
-    result_data["pipecat_logs_path"] = str(record_dir / "pipecat_logs.jsonl")
+    result_data["framework_logs_path"] = str(record_dir / "framework_logs.jsonl")
     result_data["elevenlabs_logs_path"] = str(record_dir / "elevenlabs_events.jsonl")
     # Fix audio paths if present
     for audio_key in ("audio_mixed_path", "audio_assistant_path", "audio_user_path"):

@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Callable
 
 import yaml
-from pipecat.services.llm_service import FunctionCallParams
 
 from eva.utils.logging import get_logger
 
@@ -123,11 +122,6 @@ class ToolExecutor:
         except Exception as e:
             logger.error(f"Failed to load tool module {self.tool_module_path}: {e}")
             raise
-
-    async def execute_realtime_tool(self, params: FunctionCallParams):
-        logger.info(f"Executing realtime tool: {params.function_name}, params {params.arguments}")
-        result = await self.execute(params.function_name, params.arguments)
-        await params.result_callback(result)
 
     async def execute(self, tool_name: str, params: dict) -> dict:
         """Execute a tool call and return the response.

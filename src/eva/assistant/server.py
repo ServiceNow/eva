@@ -1,4 +1,4 @@
-"""Assistant server - Pipecat-based WebSocket server for voice conversations.
+"""Pipecat-based assistant server for voice conversations.
 
 This module provides the Pipecat pipeline server that the user simulator connects to.
 It handles audio streaming via WebSocket with Twilio-style frame serialization.
@@ -46,6 +46,7 @@ from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies, UserT
 from pipecat.utils.time import time_now_iso8601
 
 from eva.assistant.agentic.audit_log import AuditLog, current_timestamp_ms
+from eva.assistant.base import AssistantServerBase
 from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor, UserAudioCollector, UserObserver
 from eva.assistant.pipeline.audio_llm_processor import (
     AudioLLMProcessor,
@@ -80,8 +81,8 @@ VAD_PRE_SPEECH_BUFFER_SECS = 0.5
 INITIAL_MESSAGE = "Hello! How can I help you today?"
 
 
-class AssistantServer:
-    """Pipecat-based WebSocket server for the assistant in voice conversations.
+class PipecatAssistantServer(AssistantServerBase):
+    """Pipecat-based implementation of the assistant server.
 
     This server:
     - Accepts WebSocket connections from the user simulator
@@ -879,3 +880,7 @@ async def override__maybe_trigger_user_turn_stopped(self):
     # For non-finalized, only trigger if timeout task has completed
     if self._timeout_task is None:
         await self.trigger_user_turn_stopped()
+
+
+# Backward-compatible alias
+AssistantServer = PipecatAssistantServer
