@@ -4,6 +4,7 @@ import asyncio
 import base64
 import io
 import json
+import struct
 import wave
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -36,6 +37,12 @@ PCM_SAMPLE_WIDTH = 2
 # into separate turns (inflating latency count), too long merges distinct
 # turns (missing measurements). 750ms matches typical conversational cadence.
 SEGMENT_GAP_SECONDS = 0.75
+
+# RMS energy threshold for speech detection on 16-bit PCM audio at 24kHz
+# (after upsampling). Chunks below this are treated as silence for segment
+# boundary purposes. Tuned for telephony audio; increase if background
+# noise causes false speech detection.
+SPEECH_ENERGY_THRESHOLD = 300
 
 
 def _pcm16k_to_pcm24k(pcm_16khz: bytes) -> bytes:
@@ -224,14 +231,34 @@ class _SessionState:
         if not pcm_24khz:
             return
 
+        is_speech = self._is_speech(pcm_24khz)
+
         if role == "user":
             _append_timed_audio(self.user_audio, pcm_24khz, offset_seconds)
-            self._append_segment(self.user_segments, role, pcm_24khz, offset_seconds)
+            if is_speech:
+                self._append_segment(self.user_segments, role, pcm_24khz, offset_seconds)
         else:
             _append_timed_audio(self.assistant_audio, pcm_24khz, offset_seconds)
-            self._append_segment(self.assistant_segments, role, pcm_24khz, offset_seconds)
+            if is_speech:
+                self._append_segment(self.assistant_segments, role, pcm_24khz, offset_seconds)
 
         _append_timed_audio(self.mixed_audio, pcm_24khz, offset_seconds)
+
+    @staticmethod
+    def _is_speech(pcm_data: bytes) -> bool:
+        """Simple energy-based speech detection on 16-bit PCM audio.
+
+        Returns True if the RMS energy of the audio chunk exceeds
+        SPEECH_ENERGY_THRESHOLD. This filters out silence and low-level
+        noise from continuous media streaming, enabling proper turn
+        boundary detection for latency measurement.
+        """
+        if len(pcm_data) < 2:
+            return False
+        n_samples = len(pcm_data) // 2
+        samples = struct.unpack(f"<{n_samples}h", pcm_data[:n_samples * 2])
+        rms = (sum(s * s for s in samples) / n_samples) ** 0.5
+        return rms > SPEECH_ENERGY_THRESHOLD
 
     def _append_segment(
         self,

@@ -162,6 +162,21 @@ class ToolWebhookService:
                 from urllib.parse import unquote
                 registration = await self._get_registration(unquote(call_id))
             if registration is None:
+                # The assistant resolves {{call_control_id}} to the B-leg CC ID,
+                # which differs from the A-leg CC ID returned by Call Control API.
+                # When only one conversation is active, we can safely auto-route
+                # and register the B-leg CC ID for subsequent calls.
+                async with self._lock:
+                    unique_count = len(self._unique_registrations)
+                    if unique_count == 1:
+                        registration = next(iter(self._conversations.values()))
+                        self._conversations[call_id] = registration
+                if registration is not None:
+                    logger.info(
+                        "Auto-registered B-leg call_id %s → sole active conversation",
+                        call_id,
+                    )
+            if registration is None:
                 logger.warning(
                     "Tool webhook 404: call_id=%s not found in registered conversations",
                     call_id,
