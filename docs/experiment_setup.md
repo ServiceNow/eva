@@ -17,7 +17,15 @@
 
 ## LLM Configuration
 
-LLM setups in `.env` for evaluated models and judge models:
+### Reasoning effort/level for each LLM evaluated:
+- **gpt-oss-20b** - default (medium)
+- **gpt-oss-120b** - default (medium)
+- **qwen3.5-27b** - no thinking 
+- **sonnet 4.6** - low thinking 
+- **gpt-5-mini** - minimal thinking
+
+
+### LLM setups in `.env` for evaluated models and judge models:
 
 ```json
 EVA_MODEL_LIST='[
@@ -36,8 +44,7 @@ EVA_MODEL_LIST='[
     "litellm_params": {
       "model": "openai/<vllm served model name>",
       "api_key": "",
-      "api_base": "",
-      "reasoning_effort": "low"
+      "api_base": ""
     }
   },
   {
@@ -45,8 +52,7 @@ EVA_MODEL_LIST='[
     "litellm_params": {
       "model": "openai/<vllm served model name>",
       "api_key": "",
-      "api_base": "",
-      "reasoning_effort": "low"
+      "api_base": ""
     }
   },
   {
