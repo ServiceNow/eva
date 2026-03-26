@@ -395,6 +395,13 @@ def _handle_elevenlabs_event(
         # Use the turn where assistant audio started, not the current turn — ElevenLabs transcripts can
         # arrive after a user audio_start has already advanced the turn.
         turn = state.last_assistant_audio_turn
+        # For continuous audio streams (e.g., Telnyx telephony bridge), the agent has a single
+        # audio_start for the entire call. When the assistant speaks after the user has finished
+        # (new turn), update last_assistant_audio_turn to the current turn so speech is attributed
+        # correctly and turn advancement works.
+        if turn != state.turn_num and not state.user_audio_open and state.assistant_audio_open:
+            turn = state.turn_num
+            state.last_assistant_audio_turn = turn
         # Only mark "assistant spoke" if the speech belongs to the current turn; late transcripts from a
         # previous turn must not trigger a spurious turn advance.
         if turn == state.turn_num:

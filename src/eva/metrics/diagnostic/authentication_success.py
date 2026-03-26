@@ -4,6 +4,8 @@ Debug metric for diagnosing model performance issues, not directly used in
 final evaluation scores.
 """
 
+import json
+
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
@@ -39,6 +41,12 @@ class AuthenticationSuccessMetric(CodeMetric):
             success_count = 0
             for resp in get_reservation_calls:
                 tool_response = resp.get("tool_response", {})
+                # tool_response may be a JSON string (from audit log) or a dict
+                if isinstance(tool_response, str):
+                    try:
+                        tool_response = json.loads(tool_response)
+                    except (json.JSONDecodeError, TypeError):
+                        pass
                 if isinstance(tool_response, dict) and tool_response.get("status") == "success":
                     success_count += 1
 
