@@ -158,12 +158,17 @@ class ToolWebhookService:
             if registration is None:
                 # Fallback: {{call_control_id}} in tool URLs resolves to the
                 # assistant's B-leg CC ID, which we don't know in advance.
-                # If there's exactly one unique conversation, route there.
+                # The worker's _register_cc_id callback normally adds this as
+                # an alias after call placement, but a race is possible if the
+                # first tool call arrives before the alias is registered.
+                #
+                # Safety net: if exactly one conversation is active, auto-route
+                # there. With concurrent calls this is disabled to prevent
+                # misrouting — the alias must be registered first.
                 async with self._lock:
                     unique_count = len(self._unique_registrations)
                     if unique_count == 1:
                         registration = next(iter(self._conversations.values()))
-                        # Auto-register this B-leg CC ID so subsequent calls are fast
                         self._conversations[call_id] = registration
                 if registration is not None:
                     logger.info(
@@ -171,7 +176,15 @@ class ToolWebhookService:
                         call_id,
                     )
             if registration is None:
-                logger.warning("Tool webhook 404: call_id=%s, active conversations=%d", call_id, len(self._conversations))
+                async with self._lock:
+                    unique_count = len(self._unique_registrations)
+                    known_keys = list(self._conversations.keys())
+                logger.warning(
+                    "Tool webhook 404: call_id=%s not found among %d active conversation(s) "
+                    "(keys: %s). If running concurrent calls, ensure the call_control_id alias "
+                    "is registered before the first tool call arrives.",
+                    call_id, unique_count, known_keys,
+                )
                 raise HTTPException(status_code=404, detail=f"Unknown call_id: {call_id}")
 
             try:

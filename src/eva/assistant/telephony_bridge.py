@@ -594,6 +594,10 @@ class TelephonyBridgeServer:
         base_url = "https://api.telnyx.com/v2/ai/conversations"
         headers = {"Authorization": f"Bearer {api_key}"}
 
+        # Brief delay to allow the Conversations API to fully index the call's
+        # messages. Without this, recently-ended calls may return incomplete data.
+        await asyncio.sleep(3)
+
         try:
             async with httpx.AsyncClient(timeout=30) as client:
                 # Look up the conversation by call_control_id using PostgREST metadata filter
