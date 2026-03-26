@@ -178,6 +178,10 @@ class TelnyxAssistantManager:
                 "data_retention": True,
                 "pii_redaction": "disabled",
             },
+            "dynamic_variables_webhook_url": f"{normalized_webhook_base}/dynamic-variables",
+            "dynamic_variables": {
+                "eva_call_id": None,
+            },
         }
 
     @staticmethod

@@ -318,6 +318,7 @@ class CallControlTransport(BaseTelephonyTransport):
                         await self.emit_audio(pcm_16khz)
                 elif event_type == "start":
                     self._stream_id = message.get("stream_id")
+                    logger.info("Media stream START event (full): %s", json.dumps(message)[:2000])
                     start_info = message.get("start", {})
                     media_format = start_info.get("media_format", {})
                     # Detect actual inbound codec from Telnyx

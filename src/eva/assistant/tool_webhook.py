@@ -1,6 +1,7 @@
 """FastAPI webhook service exposing EVA tools over HTTP."""
 
 import asyncio
+import json
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -31,6 +32,7 @@ class ToolWebhookService:
 
         self._lock = asyncio.Lock()
         self._conversations: dict[str, _ConversationRegistration] = {}
+        self._conversation_map: dict[str, str] = {}  # eva_call_id → telnyx_conversation_id
 
         self._app = FastAPI()
         self._server: uvicorn.Server | None = None
@@ -131,6 +133,10 @@ class ToolWebhookService:
                     del self._conversations[alias]
         logger.info(f"Unregistered tool webhook conversation {call_id}")
 
+    def get_telnyx_conversation_id(self, eva_call_id: str) -> str | None:
+        """Return the Telnyx conversation_id for a given eva_call_id, if known."""
+        return self._conversation_map.get(eva_call_id)
+
     async def get_audit_log(self, call_id: str) -> AuditLog | None:
         """Return the audit log for a registered conversation."""
         async with self._lock:
@@ -150,6 +156,42 @@ class ToolWebhookService:
         async def call_control_events(request: Request) -> dict[str, str]:
             """Acknowledge Telnyx Call Control webhook events (answer, hangup, etc.)."""
             return {"status": "ok"}
+
+        @self._app.post("/dynamic-variables")
+        async def dynamic_variables(request: Request) -> dict:
+            """Handle Telnyx AI Assistant dynamic variables webhook.
+
+            Extracts eva_call_id (from SIP header) and telnyx_conversation_id,
+            stores the mapping for later enrichment, and stamps eva_call_id
+            on the conversation metadata for queryability.
+            """
+            body = await request.json()
+            payload = body.get("data", {}).get("payload", {})
+
+            eva_call_id = payload.get("eva_call_id")
+            conversation_id = payload.get("telnyx_conversation_id")
+            call_control_id = payload.get("call_control_id")
+
+            logger.info(
+                "DV webhook: eva_call_id=%s, conversation_id=%s, cc_id=%s",
+                eva_call_id, conversation_id, call_control_id,
+            )
+
+            # Store mapping for enrichment
+            if eva_call_id and conversation_id:
+                self._conversation_map[eva_call_id] = conversation_id
+                logger.info(
+                    "Stored conversation mapping: %s → %s",
+                    eva_call_id, conversation_id,
+                )
+
+            response: dict = {"dynamic_variables": {}}
+            if eva_call_id:
+                response["dynamic_variables"]["eva_call_id"] = eva_call_id
+                response["conversation"] = {
+                    "metadata": {"eva_call_id": eva_call_id}
+                }
+            return response
 
         @self._app.post("/tools/{call_id}/{tool_name}")
         async def invoke_tool(call_id: str, tool_name: str, request: Request) -> Any:
