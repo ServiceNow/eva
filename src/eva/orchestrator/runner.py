@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 from eva.metrics.runner import MetricsRunner, MetricsRunResult
-from eva.assistant.telnyx_setup import TelnyxAssistantManager
 from eva.models.agents import AgentConfig
 from eva.models.config import PipelineConfig, RunConfig, TelephonyBridgeConfig
 from eva.models.record import EvaluationRecord
@@ -57,7 +56,6 @@ class BenchmarkRunner:
         self._results: list[ConversationResult] = []
         self._failed_record_ids: list[str] = []
         self.tool_webhook_service: ToolWebhookService | None = None
-        self._telnyx_assistant_manager: TelnyxAssistantManager | None = None
 
     def _load_agent_config(self) -> AgentConfig:
         """Load single agent configuration."""
@@ -104,9 +102,6 @@ class BenchmarkRunner:
         if self.tool_webhook_service is not None:
             await self.tool_webhook_service.stop()
             self.tool_webhook_service = None
-        if self._telnyx_assistant_manager is not None:
-            await self._telnyx_assistant_manager.close()
-            self._telnyx_assistant_manager = None
 
     async def run(self, records: list[EvaluationRecord]) -> RunResult:
         """Run all records with validation and reruns.

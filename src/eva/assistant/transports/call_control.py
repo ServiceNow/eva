@@ -7,7 +7,10 @@ before emitting so the rest of the pipeline always sees uniform L16.
 """
 
 import asyncio
-import audioop
+try:
+    import audioop
+except ImportError:
+    import audioop_lts as audioop  # Python 3.13+ removed audioop
 import base64
 import json
 from typing import Any
@@ -78,6 +81,11 @@ class CallControlTransport(BaseTelephonyTransport):
         # Defaults assume L16 16kHz; overridden once the stream reports actual format.
         self._inbound_encoding: str = "L16"
         self._inbound_sample_rate: int = 16000
+
+    @property
+    def external_call_id(self) -> str | None:
+        """Return the Telnyx call_control_id once the call is placed."""
+        return self._call_control_id
 
     async def start(self) -> None:
         if self._session is not None:

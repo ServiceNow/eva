@@ -31,6 +31,10 @@ logger = get_logger(__name__)
 INPUT_SAMPLE_RATE = 16000
 OUTPUT_SAMPLE_RATE = 24000
 PCM_SAMPLE_WIDTH = 2
+# Maximum silence gap before starting a new speech segment. Controls turn
+# boundary detection for latency measurement: too short splits natural pauses
+# into separate turns (inflating latency count), too long merges distinct
+# turns (missing measurements). 750ms matches typical conversational cadence.
 SEGMENT_GAP_SECONDS = 0.75
 
 
@@ -173,6 +177,16 @@ class BaseTelephonyTransport(ABC):
         self.conversation_id = conversation_id
         self.webhook_base_url = webhook_base_url
         self._audio_handler: Callable[[bytes], Awaitable[None]] | None = None
+
+    @property
+    def external_call_id(self) -> str | None:
+        """Return the platform-specific call identifier, if available.
+
+        For Call Control transports this is the call_control_id assigned by
+        Telnyx after the call is placed. Used for conversation API lookups
+        and tool webhook routing.
+        """
+        return None
 
     def set_audio_handler(self, handler: Callable[[bytes], Awaitable[None]]) -> None:
         self._audio_handler = handler
@@ -404,8 +418,8 @@ class TelephonyBridgeServer:
 
             # After transport starts, register the call_control_id with the webhook
             # so tool calls routed by {{call_control_id}} find the right executor
-            if hasattr(self._transport, '_call_control_id') and self._transport._call_control_id:
-                cc_id = self._transport._call_control_id
+            cc_id = self._transport.external_call_id
+            if cc_id:
                 if self._tool_webhook_register_callback:
                     await self._tool_webhook_register_callback(cc_id)
                     logger.info("Registered call_control_id %s for tool webhooks", cc_id)
@@ -571,7 +585,7 @@ class TelephonyBridgeServer:
         if self._transport is None:
             return
 
-        call_control_id = getattr(self._transport, "_call_control_id", None)
+        call_control_id = self._transport.external_call_id
         if not call_control_id:
             logger.warning("No call_control_id available — cannot fetch conversation messages")
             return
