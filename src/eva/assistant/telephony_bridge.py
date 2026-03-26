@@ -470,6 +470,16 @@ class TelephonyBridgeServer:
                             "Telnyx call ended (assistant hung up) for %s — ending session",
                             self.conversation_id,
                         )
+                        # Send a clean stop event so the user sim knows the call
+                        # ended normally (assistant hangup), not as an error.
+                        try:
+                            await websocket.send_json({
+                                "event": "stop",
+                                "conversation_id": self.conversation_id,
+                                "reason": "assistant_hangup",
+                            })
+                        except Exception:
+                            pass  # Best-effort — WS may already be closing
                         break
 
                     message = ws_receive.result()

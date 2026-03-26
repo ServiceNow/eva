@@ -500,6 +500,15 @@ class BotToBotAudioInterface(AudioInterface):
                                 # Pass 16kHz PCM audio to buffer for ElevenLabs
                                 await self.audio_buffer.put(pcm_audio)
 
+                    elif event == "stop":
+                        # Clean shutdown: assistant hung up or session ended normally
+                        reason = data.get("reason", "unknown")
+                        logger.info("Received stop event from bridge (reason=%s)", reason)
+                        self.running = False
+                        if self.conversation_done_callback:
+                            self.conversation_done_callback("assistant_hangup")
+                        return
+
                     elif event == "transcript":
                         # Assistant sent a transcript (for logging)
                         text = data.get("text", "")
