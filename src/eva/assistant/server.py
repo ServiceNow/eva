@@ -326,7 +326,10 @@ class AssistantServer:
                     "smart_turn_stop_secs", 0.8
                 )  # Shorter silence so we don't have to wait 3s if smart turn marks audio as incomplete
 
-            if isinstance(self.pipeline_config, PipelineConfig) and self.pipeline_config.turn_strategy == "external":
+            if (
+                isinstance(self.pipeline_config, (PipelineConfig, SpeechToSpeechConfig))
+                and self.pipeline_config.turn_strategy == "external"
+            ):
                 logger.info("Using external user turn strategies")
                 user_turn_strategies = ExternalUserTurnStrategies()
                 vad_analyzer = None
@@ -444,9 +447,29 @@ class AssistantServer:
             self._latency_measurements = []
 
             async def on_latency_measured(observer, latency_seconds: float):
-                """Event handler for UserBotLatencyObserver - stores latency measurements."""
-                self._latency_measurements.append(latency_seconds)
-                logger.debug(f"Response latency captured: {latency_seconds:.3f}s")
+                """Event handler for UserBotLatencyObserver - stores latency measurements.
+
+                For realtime LLM, adds VAD delay to get full user-perceived latency.
+                For pipecat VAD (non-realtime), uses the latency as-is.
+                """
+                adjusted_latency = latency_seconds
+
+                # Add VAD delay for realtime LLM to get full user-perceived latency
+                if isinstance(realtime_llm, InstrumentedRealtimeLLMService):
+                    vad_delay_ms = realtime_llm.last_vad_delay_ms
+                    if vad_delay_ms is not None:
+                        vad_delay_s = vad_delay_ms / 1000.0
+                        adjusted_latency = latency_seconds + vad_delay_s
+                        logger.debug(
+                            f"Response latency captured: {adjusted_latency:.3f}s "
+                            f"(VAD delay: {vad_delay_s:.3f}s + pipecat: {latency_seconds:.3f}s)"
+                        )
+                    else:
+                        logger.debug(f"Response latency captured: {latency_seconds:.3f}s (no VAD delay available)")
+                else:
+                    logger.debug(f"Response latency captured: {latency_seconds:.3f}s")
+
+                self._latency_measurements.append(adjusted_latency)
 
             user_bot_observer = UserBotLatencyObserver()
             user_bot_observer.add_event_handler("on_latency_measured", on_latency_measured)
