@@ -33,6 +33,8 @@ class ToolWebhookService:
         self._conversations: dict[str, _ConversationRegistration] = {}
         # Track unique registrations (by id) vs aliases that point to the same one
         self._unique_registrations: set[int] = set()
+        # Registrations awaiting their first B-leg tool call (for concurrent routing)
+        self._pending_bleg: set[int] = set()
 
         self._app = FastAPI()
         self._server: uvicorn.Server | None = None
@@ -103,6 +105,7 @@ class ToolWebhookService:
         async with self._lock:
             self._conversations[call_id] = registration
             self._unique_registrations.add(id(registration))
+            self._pending_bleg.add(id(registration))
         logger.info(f"Registered tool webhook conversation {call_id}")
 
     async def register_call_control_id(self, call_control_id: str, record_id: str) -> None:
@@ -132,6 +135,7 @@ class ToolWebhookService:
                 for alias in aliases:
                     del self._conversations[alias]
                 self._unique_registrations.discard(reg_id)
+                self._pending_bleg.discard(reg_id)
         logger.info(f"Unregistered tool webhook conversation {call_id}")
 
     async def get_audit_log(self, call_id: str) -> AuditLog | None:
@@ -163,17 +167,25 @@ class ToolWebhookService:
                 registration = await self._get_registration(unquote(call_id))
             if registration is None:
                 # The assistant resolves {{call_control_id}} to the B-leg CC ID,
-                # which differs from the A-leg CC ID returned by Call Control API.
-                # When only one conversation is active, we can safely auto-route
-                # and register the B-leg CC ID for subsequent calls.
+                # which differs from the A-leg CC ID we know. Route to the
+                # conversation that hasn't received a B-leg tool call yet.
+                # With concurrent calls, this works as long as first tool calls
+                # don't arrive in the exact same instant (each conversation's
+                # B-leg is resolved one at a time as they arrive).
                 async with self._lock:
-                    unique_count = len(self._unique_registrations)
-                    if unique_count == 1:
-                        registration = next(iter(self._conversations.values()))
-                        self._conversations[call_id] = registration
+                    if len(self._pending_bleg) == 1:
+                        # Exactly one conversation awaiting B-leg — route there
+                        pending_id = next(iter(self._pending_bleg))
+                        for reg in self._conversations.values():
+                            if id(reg) == pending_id:
+                                registration = reg
+                                break
+                        if registration is not None:
+                            self._conversations[call_id] = registration
+                            self._pending_bleg.discard(pending_id)
                 if registration is not None:
                     logger.info(
-                        "Auto-registered B-leg call_id %s → sole active conversation",
+                        "Auto-registered B-leg call_id %s → pending conversation",
                         call_id,
                     )
             if registration is None:
