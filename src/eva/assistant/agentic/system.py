@@ -207,7 +207,7 @@ class AgenticSystem:
                     "latency": llm_stats.get("latency", 0.0),
                     "parameters": json.dumps(llm_stats.get("parameters", {})),
                     "tool_calls": json.dumps(response_tool_calls_for_stats) if response_tool_calls_for_stats else "",
-                    "reasoning": llm_stats.get("reasoning_content", ""),
+                    "reasoning": f'"{llm_stats.get("reasoning_content", "")}"',
                 }
                 self.agent_perf_stats.append(perf_stat)
                 logger.debug(
