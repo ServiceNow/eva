@@ -160,13 +160,19 @@ class TestRunConfig:
         assert config.model_list == MODEL_LIST
 
     def test_secrets_redacted(self):
-        """Secrets are redacted in model_list."""
+        """Secrets are redacted in model_list and STT/TTS params."""
         config = _config(env_vars=_BASE_ENV)
         dumped = config.model_dump(mode="json")
         assert dumped["model_list"][0]["litellm_params"]["api_key"] == "***"
         assert dumped["model_list"][1]["litellm_params"]["vertex_credentials"] == "***"
         assert dumped["model_list"][2]["litellm_params"]["aws_access_key_id"] == "***"
         assert dumped["model_list"][2]["litellm_params"]["aws_secret_access_key"] == "***"
+        # STT/TTS params api_key must also be redacted
+        assert dumped["model"]["stt_params"]["api_key"] == "***"
+        assert dumped["model"]["tts_params"]["api_key"] == "***"
+        # Non-secret fields preserved
+        assert dumped["model"]["stt_params"]["model"] == "nova-2"
+        assert dumped["model"]["tts_params"]["model"] == "sonic"
 
     @pytest.mark.parametrize(
         "environ, expected_exception, expected_message",

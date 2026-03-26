@@ -532,6 +532,18 @@ class RunConfig(BaseSettings):
             redacted.append(deployment)
         return redacted
 
+    @field_serializer("model")
+    @classmethod
+    def _redact_model_params(cls, model: ModelConfigUnion) -> dict:
+        """Redact secret values in STT/TTS/S2S/AudioLLM params when serializing."""
+        data = model.model_dump(mode="json")
+        for field_name, value in data.items():
+            if field_name.endswith("_params") and isinstance(value, dict):
+                for key in value:
+                    if "key" in key or "credentials" in key:
+                        value[key] = "***"
+        return data
+
     @classmethod
     def from_yaml(cls, path: Path | str) -> "RunConfig":
         """Load configuration from YAML file."""
