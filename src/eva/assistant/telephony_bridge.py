@@ -334,9 +334,11 @@ class TelephonyBridgeServer:
         # Saved before transport cleanup for post-call enrichment
         self._enrichment_call_control_id: str | None = None
         self._enrichment_call_leg_id: str | None = None
+        self._enrichment_eva_call_id: str | None = None
         self._session_started_monotonic: float | None = None
         self._transport: BaseTelephonyTransport | None = None
         self._tool_webhook_register_callback: Callable[[str], Any] | None = None
+        self._conversation_id_resolver: Callable[[str], str | None] | None = None
 
         self._app = FastAPI()
         self._server: uvicorn.Server | None = None
@@ -551,6 +553,7 @@ class TelephonyBridgeServer:
             if self._transport is not None:
                 self._enrichment_call_control_id = self._transport.external_call_id
                 self._enrichment_call_leg_id = getattr(self._transport, "call_leg_id", None)
+                self._enrichment_eva_call_id = self._transport.eva_call_id
                 await self._transport.stop()
                 self._transport = None
 
@@ -669,18 +672,11 @@ class TelephonyBridgeServer:
         proper conversation turns. The local audit log only has tool call events, which
         isn't enough for LLM judge metrics.
 
-        Lookup strategy: The Conversations API stores the B-leg's call_control_id in
-        metadata, which differs from the A-leg's call_control_id that EVA has. We
-        query recent conversations and match by call_leg_id proximity (A-leg and B-leg
-        leg IDs are sequential UUIDs created within milliseconds of each other).
+        Lookup strategy (in priority order):
+        1. Dynamic variables webhook mapping: eva_call_id → conversation_id (fastest, no API call)
+        2. Call Events API fallback: query conversation_created event on the A-leg
         """
         logger.info("Starting post-call enrichment from Conversations API...")
-
-        # Use saved identifiers (captured before transport cleanup in _handle_session)
-        call_control_id = getattr(self, "_enrichment_call_control_id", None)
-        if not call_control_id:
-            logger.warning("No call_control_id available — cannot enrich (transport cleaned up before save?)")
-            return
 
         api_key = self.bridge_config.telnyx_api_key
         if not api_key:
@@ -694,20 +690,39 @@ class TelephonyBridgeServer:
         # Voice calls need more time than chat — transcription + message storage.
         await asyncio.sleep(5)
 
+        # Try to resolve conversation_id from the DV webhook mapping first
+        # (instant, no API call needed — the DV webhook stored it during the call).
+        conv_id: str | None = None
+        eva_call_id = getattr(self, "_enrichment_eva_call_id", None)
+        if eva_call_id and self._conversation_id_resolver:
+            conv_id = self._conversation_id_resolver(eva_call_id)
+            if conv_id:
+                logger.info(
+                    "Resolved conversation_id=%s from DV webhook mapping (eva_call_id=%s)",
+                    conv_id, eva_call_id,
+                )
+
+        # Fallback: query Call Events API
+        if not conv_id:
+            call_control_id = getattr(self, "_enrichment_call_control_id", None)
+            if not call_control_id:
+                logger.warning("No call_control_id or eva_call_id available — cannot enrich")
+                return
+
+            logger.info("DV mapping miss — falling back to Call Events API lookup")
+
         try:
             async with httpx.AsyncClient(timeout=30) as client:
-                # Look up the conversation_id via Call Events API.
-                # The conversation_created event on our A-leg contains the
-                # conversation_id needed for the Conversations messages API.
-                # This is deterministic — no heuristic matching required.
-                conv_id = await self._find_conversation_id_from_events(
-                    client, call_control_id, headers
-                )
+                if not conv_id:
+                    conv_id = await self._find_conversation_id_from_events(
+                        client, call_control_id, headers
+                    )
 
                 if not conv_id:
                     logger.warning(
-                        "Could not find conversation_id for call_control_id=%s",
-                        call_control_id,
+                        "Could not find conversation_id via DV mapping or Call Events API "
+                        "(eva_call_id=%s, call_control_id=%s)",
+                        eva_call_id, call_control_id,
                     )
                     return
 

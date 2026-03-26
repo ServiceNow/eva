@@ -283,6 +283,7 @@ class ConversationWorker:
                 await webhook_service.register_route_id(eva_call_id, record_id)
 
             bridge._tool_webhook_register_callback = _register_eva_call_id
+            bridge._conversation_id_resolver = webhook_service.get_telnyx_conversation_id
 
         await self._assistant_server.start()
 

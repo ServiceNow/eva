@@ -40,6 +40,8 @@ class _MockTransport(BaseTelephonyTransport):
         self.started = False
         self.stopped = False
         self.sent_audio: list[bytes] = []
+        import asyncio
+        self._disconnected_event = asyncio.Event()
 
     async def start(self) -> None:
         self.started = True
