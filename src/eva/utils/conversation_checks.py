@@ -53,9 +53,7 @@ def check_conversation_finished(output_dir: Path) -> bool:
 
     data = last_event.get("data", {})
     details = data.get("details", {})
-    reason = details.get("reason", "")
-    # "goodbye" = normal ElevenLabs end, "assistant_hangup" = Telnyx assistant hung up
-    return reason in ("goodbye", "assistant_hangup")
+    return details.get("reason") == "goodbye"
 
 
 LLM_GENERIC_ERROR_MESSAGE = "I'm sorry, I encountered an error processing your request."

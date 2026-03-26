@@ -501,12 +501,13 @@ class BotToBotAudioInterface(AudioInterface):
                                 await self.audio_buffer.put(pcm_audio)
 
                     elif event == "stop":
-                        # Clean shutdown: assistant hung up or session ended normally
-                        reason = data.get("reason", "unknown")
-                        logger.info("Received stop event from bridge (reason=%s)", reason)
+                        # Assistant server signaled end of conversation (e.g. hangup).
+                        # Treat the same as a normal goodbye so the existing end-of-call
+                        # flow (end_session, post-hoc API check, event logging) works.
+                        logger.info("Assistant server sent stop event — ending conversation")
                         self.running = False
                         if self.conversation_done_callback:
-                            self.conversation_done_callback("assistant_hangup")
+                            self.conversation_done_callback("goodbye")
                         return
 
                     elif event == "transcript":
