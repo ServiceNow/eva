@@ -25,6 +25,7 @@ from pipecat.services.cartesia.stt import CartesiaLiveOptions, CartesiaSTTServic
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
 from pipecat.services.deepgram.stt import DeepgramSTTService
+from pipecat.services.deepgram.tts import DeepgramTTSService
 from pipecat.services.elevenlabs.stt import CommitStrategy, ElevenLabsRealtimeSTTService
 from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 from pipecat.services.llm_service import LLMService
@@ -264,6 +265,15 @@ def create_tts_service(
         chatterbox_tts._settings.language = language_code
         return chatterbox_tts
 
+    elif model_lower == "deepgram":
+        logger.info(f"Using Deepgram TTS: {params['model']}")
+        return DeepgramTTSService(
+            api_key=api_key,
+            model=params["model"],
+            voice=params.get("voice", "aura-2-helena-en"),
+            sample_rate=SAMPLE_RATE,
+        )
+
     elif model_lower == "elevenlabs":
         logger.info(f"Using ElevenLabs TTS: {params['model']}")
         return ElevenLabsTTSService(
@@ -345,7 +355,7 @@ def create_tts_service(
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xtts"
         )
 
 
