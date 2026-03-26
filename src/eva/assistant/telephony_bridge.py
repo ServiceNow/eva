@@ -635,28 +635,14 @@ class TelephonyBridgeServer:
         with open(final_db_path, "w", encoding="utf-8") as final_db_file:
             json.dump(self.get_final_scenario_db(), final_db_file, indent=2, sort_keys=True, default=str)
 
-        # Generate pipecat_logs.jsonl from assistant speech events in the ElevenLabs log.
-        # The metrics processor uses these for intended_assistant_turns.
+        # Write an empty pipecat_logs.jsonl — no local TTS pipeline exists for telephony
+        # bridge calls.  The metrics processor will fall back to audit_log assistant entries
+        # (Conversations API text) as the authoritative source for intended_assistant_turns.
+        # Previously this file was populated from ElevenLabs assistant_speech transcriptions,
+        # but those are STT output (what ElevenLabs *heard*) and can garble alphanumeric
+        # strings, numbers, and formatting — producing incorrect "intended" text.
         pipecat_logs_path = self.output_dir / "pipecat_logs.jsonl"
-        with open(pipecat_logs_path, "w", encoding="utf-8") as pipecat_file:
-            elevenlabs_path = self.output_dir / "elevenlabs_events.jsonl"
-            if elevenlabs_path.exists():
-                with open(elevenlabs_path) as el_file:
-                    for line in el_file:
-                        event = json.loads(line)
-                        if event.get("type") == "assistant_speech":
-                            text = event.get("data", {}).get("text", "")
-                            if text:
-                                pipecat_file.write(
-                                    json.dumps(
-                                        {
-                                            "type": "tts_text",
-                                            "start_timestamp": event.get("timestamp"),
-                                            "data": {"frame": text},
-                                        }
-                                    )
-                                    + "\n"
-                                )
+        pipecat_logs_path.write_text("")
 
         # Generate response_latencies.json from client-side audio segment timing.
         # Mirrors Pipecat's UserStoppedSpeaking → BotStartedSpeaking measurement.

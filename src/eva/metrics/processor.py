@@ -869,7 +869,13 @@ class MetricsContextProcessor:
             if elevenlabs_path.exists() and elevenlabs_path.stat().st_size > 0:
                 history.extend(self._load_elevenlabs_logs(result.elevenlabs_logs_path))
 
-        history.sort(key=lambda e: e["timestamp_ms"])
+        # Sort by timestamp with tie-breaking: audio boundary events (audio_start/audio_end)
+        # must be processed before speech/text events at the same millisecond so that turn
+        # advancement happens before content is assigned to a turn.  Without this, pipecat
+        # tts_text events at the same timestamp as audio_start(elevenlabs_user) would land
+        # in the previous turn (turn counter hasn't advanced yet).
+        _EVENT_SORT_PRIORITY = {"audio_start": 0, "audio_end": 1, "connection_state": 2}
+        history.sort(key=lambda e: (e["timestamp_ms"], _EVENT_SORT_PRIORITY.get(e["event_type"], 5)))
         context.history = history
 
         source_counts = Counter(entry["source"] for entry in history)
