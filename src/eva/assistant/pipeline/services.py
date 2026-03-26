@@ -400,25 +400,8 @@ def create_realtime_llm_service(
                 )
         pipecat_tools = ToolsSchema(standard_tools=function_schemas)
 
-    session_properties = SessionProperties(
-        instructions=system_prompt,
-        audio=AudioConfiguration(
-            input=AudioInput(
-                transcription=InputAudioTranscription(
-                    model=params.get("transcription_model", "gpt-4o-mini-transcribe")
-                ),
-                # Set openai TurnDetection parameters. Not setting this at all will turn it on by default
-                turn_detection=SemanticTurnDetection(),
-            ),
-            output=AudioOutput(
-                voice=params.get("voice", "marin"),
-            ),
-        ),
-        tools=pipecat_tools,
-        tool_choice="auto",
-    )
-
     if model_lower.startswith("openai"):
+        session_properties = get_openai_session_properties(system_prompt, params, pipecat_tools)
         if audit_log is not None:
             logger.info(
                 f"Using InstrumentedRealtimeLLMService for audit log interception: openai: {params.get('model')}"
@@ -439,6 +422,7 @@ def create_realtime_llm_service(
         # base_url: The full Azure WebSocket endpoint URL including api-version and deployment.
         # Example: "wss://my-project.openai.azure.com/openai/v1/realtime"
         url = params.get("url", "")
+        session_properties = get_openai_session_properties(system_prompt, params, pipecat_tools)
 
         logger.info(f"Using Azure Realtime LLM: {model_lower}, url {url}")
 
@@ -474,6 +458,27 @@ def create_realtime_llm_service(
 
     else:
         raise ValueError(f"Unknown realtime model: {model}. Available: gpt-realtime, ultravox")
+
+
+def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tools) -> SessionProperties:
+    """Create openai compatible session properties object."""
+    return SessionProperties(
+        instructions=system_prompt,
+        audio=AudioConfiguration(
+            input=AudioInput(
+                transcription=InputAudioTranscription(
+                    model=params.get("transcription_model", "gpt-4o-mini-transcribe")
+                ),
+                # Set openai TurnDetection parameters. Not setting this at all will turn it on by default
+                turn_detection=SemanticTurnDetection(),
+            ),
+            output=AudioOutput(
+                voice=params.get("voice", "marin"),
+            ),
+        ),
+        tools=pipecat_tools,
+        tool_choice="auto",
+    )
 
 
 def create_audio_llm_client(
