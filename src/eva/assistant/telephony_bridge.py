@@ -656,9 +656,8 @@ class TelephonyBridgeServer:
             return
 
         call_control_id = self._transport.external_call_id
-        session_id = self._transport.call_session_id
-        if not call_control_id and not session_id:
-            logger.warning("No call_control_id or call_session_id available — cannot fetch conversation messages")
+        if not call_control_id:
+            logger.warning("No call_control_id available — cannot fetch conversation messages")
             return
 
         api_key = self.bridge_config.telnyx_api_key
@@ -671,34 +670,20 @@ class TelephonyBridgeServer:
 
         try:
             async with httpx.AsyncClient(timeout=30) as client:
-                # Look up the conversation by call_control_id first, then fall back
-                # to call_session_id. The Conversations API stores the B-leg's
-                # call_control_id in metadata, which differs from our A-leg ID.
-                # call_session_id is shared across legs and may be a more reliable
-                # lookup key.
-                conversations: list[dict] = []
-                for filter_key, filter_value in [
-                    ("metadata->call_control_id", call_control_id),
-                    ("metadata->call_session_id", session_id),
-                ]:
-                    if not filter_value:
-                        continue
-                    resp = await client.get(
-                        base_url,
-                        params={filter_key: f"eq.{filter_value}", "limit": 1},
-                        headers=headers,
-                    )
-                    resp.raise_for_status()
-                    conversations = resp.json().get("data", [])
-                    if conversations:
-                        break
+                # Look up the conversation by call_control_id using PostgREST metadata filter
+                resp = await client.get(
+                    base_url,
+                    params={
+                        "metadata->call_control_id": f"eq.{call_control_id}",
+                        "limit": 1,
+                    },
+                    headers=headers,
+                )
+                resp.raise_for_status()
+                conversations = resp.json().get("data", [])
 
                 if not conversations:
-                    logger.warning(
-                        "Could not find conversation for call_control_id=%s / call_session_id=%s",
-                        call_control_id,
-                        session_id,
-                    )
+                    logger.warning("Could not find conversation for call_control_id=%s", call_control_id)
                     return
 
                 conv_id = conversations[0]["id"]
