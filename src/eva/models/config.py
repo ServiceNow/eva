@@ -12,6 +12,7 @@ and explicit kwargs.  Scripts opt in to ``.env`` and/or CLI via
 ``RunConfig(_env_file=".env", _cli_parse_args=True)``.
 """
 
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any, ClassVar, Literal
@@ -33,6 +34,8 @@ from pydantic import (
 from pydantic_settings import BaseSettings, CliSuppress, SettingsConfigDict
 
 from eva.models.provenance import RunProvenance
+
+logger = logging.getLogger(__name__)
 
 
 def current_date_and_time():
@@ -543,6 +546,59 @@ class RunConfig(BaseSettings):
                     if "key" in key or "credentials" in key:
                         value[key] = "***"
         return data
+
+    def restore_redacted_secrets(self, live: "RunConfig") -> None:
+        """Replace redacted ``***`` values in ``*_params`` dicts with real values from *live* config.
+
+        Raises:
+            ValueError: If the saved and live configs use different providers or aliases
+                for any service that has redacted secrets.
+        """
+        # Map each params field to its provider field (e.g. stt_params -> stt)
+        _PARAMS_TO_PROVIDER = {
+            "stt_params": "stt",
+            "tts_params": "tts",
+            "s2s_params": "s2s",
+            "audio_llm_params": "audio_llm",
+        }
+        for params_field, provider_field in _PARAMS_TO_PROVIDER.items():
+            saved = getattr(self.model, params_field, None)
+            source = getattr(live.model, params_field, None)
+            if not isinstance(saved, dict) or not isinstance(source, dict):
+                continue
+            has_redacted = any(v == "***" for v in saved.values())
+            if not has_redacted:
+                continue
+
+            # Check provider matches (e.g. stt: "deepgram" vs "cartesia")
+            saved_provider = getattr(self.model, provider_field, None)
+            live_provider = getattr(live.model, provider_field, None)
+            if saved_provider != live_provider:
+                raise ValueError(
+                    f"Cannot restore secrets: saved {provider_field}={saved_provider!r} "
+                    f"but current environment has {provider_field}={live_provider!r}"
+                )
+
+            # Check alias matches (strict — aliases identify a specific configuration)
+            saved_alias = saved.get("alias")
+            live_alias = source.get("alias")
+            if saved_alias and live_alias and saved_alias != live_alias:
+                raise ValueError(
+                    f"Cannot restore secrets: saved {params_field}[alias]={saved_alias!r} "
+                    f"but current environment has {params_field}[alias]={live_alias!r}"
+                )
+
+            # Warn if model changed (non-fatal — models can be updated)
+            saved_model = saved.get("model")
+            live_model = source.get("model")
+            if saved_model and live_model and saved_model != live_model:
+                logger.warning(
+                    f"Model mismatch for {params_field}: saved {saved_model!r}, current environment has {live_model!r}"
+                )
+
+            for key, value in saved.items():
+                if value == "***" and key in source:
+                    saved[key] = source[key]
 
     @classmethod
     def from_yaml(cls, path: Path | str) -> "RunConfig":

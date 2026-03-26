@@ -174,6 +174,77 @@ class TestRunConfig:
         assert dumped["model"]["stt_params"]["model"] == "nova-2"
         assert dumped["model"]["tts_params"]["model"] == "sonic"
 
+    def test_restore_redacted_secrets(self):
+        """Redacted secrets are restored from a live config."""
+        config = _config(env_vars=_BASE_ENV)
+        # Simulate round-trip through config.json (redacted on dump, loaded back)
+        dumped_json = config.model_dump_json()
+        loaded = RunConfig.model_validate_json(dumped_json)
+        assert loaded.model.stt_params["api_key"] == "***"
+        assert loaded.model.tts_params["api_key"] == "***"
+
+        # Restore from live config (which has real keys from env)
+        loaded.restore_redacted_secrets(config)
+        assert loaded.model.stt_params["api_key"] == "test_key"
+        assert loaded.model.tts_params["api_key"] == "test_key"
+        # Non-secret fields unchanged
+        assert loaded.model.stt_params["model"] == "nova-2"
+
+    def test_restore_redacted_secrets_provider_mismatch(self):
+        """Restoring secrets fails if the STT/TTS provider changed."""
+        config = _config(env_vars=_BASE_ENV)
+        dumped_json = config.model_dump_json()
+        loaded = RunConfig.model_validate_json(dumped_json)
+
+        # Live config uses a different STT provider
+        live = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_MODEL__STT": "openai_whisper",
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "whisper-1"}),
+            }
+        )
+        with pytest.raises(ValueError, match=r"saved stt='deepgram'.*current environment has stt='openai_whisper'"):
+            loaded.restore_redacted_secrets(live)
+
+    def test_restore_redacted_secrets_model_mismatch_warns(self, caplog):
+        """Restoring secrets warns (but succeeds) if the STT/TTS model changed."""
+        config = _config(env_vars=_BASE_ENV)
+        dumped_json = config.model_dump_json()
+        loaded = RunConfig.model_validate_json(dumped_json)
+
+        # Same provider, different model
+        live = _config(env_vars=_BASE_ENV | {"EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic-2"})})
+        with caplog.at_level("WARNING", logger="eva.models.config"):
+            loaded.restore_redacted_secrets(live)
+        assert "sonic" in caplog.text
+        assert "sonic-2" in caplog.text
+        # Secrets still restored despite the warning
+        assert loaded.model.tts_params["api_key"] == "k"
+
+    def test_restore_redacted_secrets_alias_mismatch(self):
+        """Restoring secrets fails if the alias changed."""
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2", "alias": "stt-v1"}),
+            }
+        )
+        dumped_json = config.model_dump_json()
+        loaded = RunConfig.model_validate_json(dumped_json)
+
+        live = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2", "alias": "stt-v2"}),
+            }
+        )
+        with pytest.raises(
+            ValueError,
+            match=r"saved stt_params\[alias\]='stt-v1'.*current environment has stt_params\[alias\]='stt-v2'",
+        ):
+            loaded.restore_redacted_secrets(live)
+
     @pytest.mark.parametrize(
         "environ, expected_exception, expected_message",
         (

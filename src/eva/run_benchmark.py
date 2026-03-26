@@ -42,6 +42,9 @@ async def run_benchmark(config: RunConfig) -> int:
             logger.error(str(e))
             return 1
 
+        # Restore secrets redacted in config.json with live env values
+        runner.config.restore_redacted_secrets(config)
+
         # Apply CLI overrides
         runner.config.max_rerun_attempts = config.max_rerun_attempts
         runner.config.force_rerun_metrics = config.force_rerun_metrics
