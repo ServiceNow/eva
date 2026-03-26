@@ -550,13 +550,15 @@ class RunConfig(BaseSettings):
         return data
 
     def restore_redacted_secrets(self, live: "RunConfig") -> None:
-        """Replace redacted ``***`` values in ``*_params`` dicts with real values from *live* config.
+        """Replace ``***`` values in this config with real values from *live*.
+
+        Covers both ``model.*_params`` (STT/TTS/S2S/AudioLLM secrets) and
+        ``model_list[].litellm_params`` (LLM deployment secrets).
 
         Raises:
-            ValueError: If the saved and live configs use different providers or aliases
-                for any service that has redacted secrets.
+            ValueError: If provider or alias differs for a service with redacted secrets.
         """
-        # Map each params field to its provider field (e.g. stt_params -> stt)
+        # ── model.*_params (STT / TTS / S2S / AudioLLM) ──
         _PARAMS_TO_PROVIDER = {
             "stt_params": "stt",
             "tts_params": "tts",
@@ -568,11 +570,9 @@ class RunConfig(BaseSettings):
             source = getattr(live.model, params_field, None)
             if not isinstance(saved, dict) or not isinstance(source, dict):
                 continue
-            has_redacted = any(v == "***" for v in saved.values())
-            if not has_redacted:
+            if not any(v == "***" for v in saved.values()):
                 continue
 
-            # Check provider matches (e.g. stt: "deepgram" vs "cartesia")
             saved_provider = getattr(self.model, provider_field, None)
             live_provider = getattr(live.model, provider_field, None)
             if saved_provider != live_provider:
@@ -581,7 +581,6 @@ class RunConfig(BaseSettings):
                     f"but current environment has {provider_field}={live_provider!r}"
                 )
 
-            # Check alias matches (strict — aliases identify a specific configuration)
             saved_alias = saved.get("alias")
             live_alias = source.get("alias")
             if saved_alias and live_alias and saved_alias != live_alias:
@@ -590,17 +589,39 @@ class RunConfig(BaseSettings):
                     f"but current environment has {params_field}[alias]={live_alias!r}"
                 )
 
-            # Warn if model changed (non-fatal — models can be updated)
             saved_model = saved.get("model")
             live_model = source.get("model")
             if saved_model and live_model and saved_model != live_model:
                 logger.warning(
-                    f"Model mismatch for {params_field}: saved {saved_model!r}, current environment has {live_model!r}"
+                    "Model mismatch for %s: saved %r, current environment has %r",
+                    params_field,
+                    saved_model,
+                    live_model,
                 )
 
             for key, value in saved.items():
                 if value == "***" and key in source:
                     saved[key] = source[key]
+
+        # ── model_list[].litellm_params (LLM deployments) ──
+        live_by_name = {d["model_name"]: d for d in live.model_list if "model_name" in d}
+        for deployment in self.model_list:
+            name = deployment.get("model_name")
+            if not name:
+                continue
+            saved_params = deployment.get("litellm_params", {})
+            has_redacted = any(v == "***" for v in saved_params.values())
+            if not has_redacted:
+                continue
+            if name not in live_by_name:
+                raise ValueError(
+                    f"Cannot restore secrets: deployment {name!r} not found in "
+                    f"current EVA_MODEL_LIST (available: {list(live_by_name)})"
+                )
+            live_params = live_by_name[name].get("litellm_params", {})
+            for key, value in saved_params.items():
+                if value == "***" and key in live_params:
+                    saved_params[key] = live_params[key]
 
     @classmethod
     def from_yaml(cls, path: Path | str) -> "RunConfig":
