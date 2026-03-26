@@ -121,7 +121,7 @@ class PromptManager:
             return value.format(**formatted_vars)
         except KeyError as e:
             raise KeyError(
-                "Missing variable {e} for prompt '{path}'. Available variables: {sorted(formatted_vars.keys())}"
+                f"Missing variable {e} for prompt '{path}'. Available variables: {sorted(formatted_vars.keys())}"
             ) from e
 
 

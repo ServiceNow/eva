@@ -22,6 +22,7 @@ from pipecat.observers.base_observer import BaseObserver, FramePushed
 from pipecat.observers.turn_tracking_observer import TurnTrackingObserver
 from pipecat.services.azure.realtime.llm import AzureRealtimeLLMService
 from pipecat.services.llm_service import LLMService
+from pipecat.services.openai.realtime.llm import OpenAIRealtimeLLMService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 
@@ -31,7 +32,7 @@ from eva.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-_TRANSCRIPTION_SERVICES = (STTService, AzureRealtimeLLMService)
+_TRANSCRIPTION_SERVICES = (STTService, AzureRealtimeLLMService, OpenAIRealtimeLLMService)
 
 
 class WallClock(SystemClock):

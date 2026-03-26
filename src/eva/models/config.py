@@ -97,6 +97,17 @@ class SpeechToSpeechConfig(BaseModel):
     s2s: str = Field(description="Speech-to-speech model name", examples=["gpt-realtime-mini", "gemini_live"])
     s2s_params: dict[str, Any] = Field({}, description="Additional speech-to-speech model parameters (JSON)")
 
+    turn_strategy: Literal["smart", "external"] = Field(
+        "smart",
+        description=(
+            "User turn detection strategy. "
+            "'smart' uses LocalSmartTurnAnalyzerV3 + SileroVAD (default). "
+            "'external' uses ExternalUserTurnStrategies for services with built-in turn detection "
+            "(e.g., deepgram-flux, Speechmatics). "
+            "Set via EVA_MODEL__TURN_STRATEGY=external."
+        ),
+    )
+
 
 class AudioLLMConfig(BaseModel):
     """Configuration for an Audio-LLM pipeline (audio in, text out, separate TTS).
@@ -129,7 +140,7 @@ _PIPELINE_FIELDS = {
     *PipelineConfig._LEGACY_RENAMES,
     *PipelineConfig._LEGACY_DROP,
 }
-_S2S_FIELDS = {"s2s", "s2s_params"}
+_S2S_FIELDS = {"s2s", "s2s_params", "turn_strategy"}
 _AUDIO_LLM_FIELDS = {"audio_llm", "audio_llm_params", "tts", "tts_params"}
 
 
