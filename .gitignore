@@ -94,7 +94,3 @@ scripts/extract_and_generate_leaderboard.py
 
 # Website data generation scripts (local only)
 website/scripts/
-
-# API credentials - NEVER COMMIT
-.eva-credentials
-*.credentials
