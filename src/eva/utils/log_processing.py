@@ -178,8 +178,8 @@ def align_turn_keys(
         audio_timestamps.setdefault(key, timestamps_default)
 
 
-def aggregate_pipecat_logs_by_type(pipecat_logs: list[dict]) -> list[dict]:
-    """Aggregate consecutive pipecat logs of the same type.
+def aggregate_framework_logs_by_type(framework_logs: list[dict]) -> list[dict]:
+    """Aggregate consecutive framework logs of the same type.
 
     Only tts_text/llm_response entries can appear consecutively and need aggregation;
     turn_start/turn_end are single events that pass through unchanged.
@@ -188,21 +188,21 @@ def aggregate_pipecat_logs_by_type(pipecat_logs: list[dict]) -> list[dict]:
     already contain proper spacing and are joined without a separator.
 
     Args:
-        pipecat_logs: Filtered pipecat logs (tts_text, llm_response, turn_start, turn_end).
+        framework_logs: Filtered framework logs (tts_text, llm_response, turn_start, turn_end).
 
     Returns:
         A list of aggregated log dictionaries.
     """
-    if not pipecat_logs:
+    if not framework_logs:
         return []
 
     aggregated: list[dict] = []
-    current = pipecat_logs[0]
+    current = framework_logs[0]
     data_key = next(iter(current["data"]))
     text = current["data"][data_key]
     min_ts = max_ts = current.get("timestamp", 0)
 
-    for log in pipecat_logs[1:]:
+    for log in framework_logs[1:]:
         if log["type"] == current["type"]:
             # Consecutive text chunks — tts_text needs space, llm_response already has spacing
             sep = " " if current["type"] == "tts_text" else ""

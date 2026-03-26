@@ -34,7 +34,7 @@
   "transcript_path": "output/2026-03-01_22-22-03.547446/records/1.1.2/transcript.jsonl",
   "audit_log_path": "output/2026-03-01_22-22-03.547446/records/1.1.2/audit_log.json",
   "conversation_log_path": "output/2026-03-01_22-22-03.547446/records/1.1.2/logs.log",
-  "pipecat_logs_path": "output/2026-03-01_22-22-03.547446/records/1.1.2/pipecat_logs.jsonl",
+  "framework_logs_path": "output/2026-03-01_22-22-03.547446/records/1.1.2/framework_logs.jsonl",
   "elevenlabs_logs_path": "output/2026-03-01_22-22-03.547446/records/1.1.2/elevenlabs_events.jsonl",
   "num_turns": 14,
   "num_tool_calls": 5,

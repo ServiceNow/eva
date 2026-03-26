@@ -10,7 +10,7 @@ from eva.assistant.agentic.system import GENERIC_ERROR
 from eva.models.results import ConversationResult
 from eva.utils.log_processing import (
     AnnotationLabel,
-    aggregate_pipecat_logs_by_type,
+    aggregate_framework_logs_by_type,
     align_turn_keys,
     annotate_last_entry,
     append_turn_text,
@@ -240,7 +240,7 @@ def _handle_audit_log_event(
         conversation_trace.append(get_entry_for_audit_log(event, state.turn_num))
 
 
-def _handle_pipecat_event(
+def _handle_framework_event(
     event: dict,
     state: "_TurnExtractionState",
     context: "_ProcessorContext",
@@ -752,30 +752,30 @@ class MetricsContextProcessor:
         return history
 
     @staticmethod
-    def _load_pipecat_logs(pipecat_logs_path: str) -> list[dict]:
-        """Load and normalize pipecat log entries into history format."""
+    def _load_framework_logs(framework_logs_path: str) -> list[dict]:
+        """Load and normalize framework log entries into history format."""
         history = []
-        raw_pipecat = []
-        with open(pipecat_logs_path) as f:
+        raw_logs = []
+        with open(framework_logs_path) as f:
             for line in f:
-                raw_pipecat.append(json.loads(line))
+                raw_logs.append(json.loads(line))
 
         allowed_types = {"turn_start", "turn_end", "tts_text", "llm_response"}
-        raw_pipecat = [entry for entry in raw_pipecat if entry.get("type") in allowed_types]
+        raw_logs = [entry for entry in raw_logs if entry.get("type") in allowed_types]
 
         # Some audio-native models emit llm_response (full text with spaces); some emits tts_text (per-token chunks).
-        has_tts_text = any(entry.get("type") == "tts_text" for entry in raw_pipecat)
+        has_tts_text = any(entry.get("type") == "tts_text" for entry in raw_logs)
         if has_tts_text:
-            raw_pipecat = [entry for entry in raw_pipecat if entry.get("type") != "llm_response"]
+            raw_logs = [entry for entry in raw_logs if entry.get("type") != "llm_response"]
 
-        grouped_pipecat = aggregate_pipecat_logs_by_type(raw_pipecat)
-        for entry in grouped_pipecat:
+        grouped_logs = aggregate_framework_logs_by_type(raw_logs)
+        for entry in grouped_logs:
             if (ts := entry.get("start_timestamp")) is None:
                 continue
             history.append(
                 {
                     "timestamp_ms": int(ts),
-                    "source": "pipecat",
+                    "source": "framework",
                     "event_type": entry.get("type", "unknown"),
                     "data": entry.get("data", {}),
                 }
@@ -813,12 +813,12 @@ class MetricsContextProcessor:
         output_dir: Path,
         result: ConversationResult,
     ) -> None:
-        """Merge audit log, pipecat, and ElevenLabs logs into a timestamp-sorted context.history.
+        """Merge audit log, framework, and ElevenLabs logs into a timestamp-sorted context.history.
 
         Each entry: {timestamp_ms, source, event_type, data}.
         """
         history = self._load_audit_log_transcript(output_dir)
-        history.extend(self._load_pipecat_logs(result.pipecat_logs_path))
+        history.extend(self._load_framework_logs(result.framework_logs_path))
         history.extend(self._load_elevenlabs_logs(result.elevenlabs_logs_path))
 
         history.sort(key=lambda e: e["timestamp_ms"])
@@ -854,8 +854,8 @@ class MetricsContextProcessor:
         for event in context.history:
             if event["source"] == "audit_log":
                 _handle_audit_log_event(event, state, context, conversation_trace, context.is_audio_native)
-            elif event["source"] == "pipecat":
-                _handle_pipecat_event(event, state, context, conversation_trace)
+            elif event["source"] == "framework":
+                _handle_framework_event(event, state, context, conversation_trace)
             elif event["source"] == "elevenlabs":
                 if _handle_elevenlabs_event(event, state, context, conversation_trace, context.is_audio_native):
                     continue

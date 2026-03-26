@@ -281,6 +281,15 @@ class RunConfig(BaseSettings):
         description="Pipeline (STT + LLM + TTS), speech-to-speech, or audio-LLM model configuration",
     )
 
+    # Assistant framework
+    framework: Literal["pipecat", "roomkit"] = Field(
+        "pipecat",
+        description=(
+            "Voice framework for the assistant server. "
+            "Set via EVA_FRAMEWORK=pipecat (default)."
+        ),
+    )
+
     # Run identifier
     run_id: str = Field(
         default_factory=current_date_and_time,

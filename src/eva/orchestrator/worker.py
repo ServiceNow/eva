@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from eva.assistant.server import AssistantServer
+from eva.assistant import create_assistant_server
 from eva.models.agents import AgentConfig
 from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
@@ -223,7 +223,7 @@ class ConversationWorker:
             transcript_path=str(self.output_dir / "transcript.jsonl"),
             audit_log_path=str(self.output_dir / "audit_log.json"),
             conversation_log_path=str(self.output_dir / "logs.log"),
-            pipecat_logs_path=str(self.output_dir / "pipecat_logs.jsonl"),
+            framework_logs_path=str(self.output_dir / "framework_logs.jsonl"),
             elevenlabs_logs_path=str(self.output_dir / "elevenlabs_events.jsonl"),
             num_turns=self._conversation_stats.get("num_turns", 0),
             num_tool_calls=self._conversation_stats.get("num_tool_calls", 0),
@@ -235,7 +235,8 @@ class ConversationWorker:
 
     async def _start_assistant(self) -> None:
         """Start the assistant server."""
-        self._assistant_server = AssistantServer(
+        self._assistant_server = create_assistant_server(
+            framework=self.config.framework,
             current_date_time=self.record.current_date_time,
             pipeline_config=self.config.model,
             agent=self.agent,

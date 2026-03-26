@@ -60,13 +60,13 @@ LLM_GENERIC_ERROR_MESSAGE = "I'm sorry, I encountered an error processing your r
 
 
 def find_records_with_llm_generic_error(output_dir: Path, record_ids: set[str] | list[str]) -> list[str]:
-    """Find records that have the LLM generic error message in pipecat_logs.jsonl."""
+    """Find records that have the LLM generic error message in framework_logs.jsonl."""
     affected = []
     for record_id in record_ids:
-        pipecat_logs_path = output_dir / "records" / record_id / "pipecat_logs.jsonl"
-        if not pipecat_logs_path.exists():
+        framework_logs_path = output_dir / "records" / record_id / "framework_logs.jsonl"
+        if not framework_logs_path.exists():
             continue
-        with open(pipecat_logs_path) as f:
+        with open(framework_logs_path) as f:
             for line in f:
                 line = line.strip()
                 if not line:

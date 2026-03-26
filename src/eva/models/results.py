@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ErrorDetails(BaseModel):
@@ -63,8 +63,16 @@ class ConversationResult(BaseModel):
     transcript_path: Optional[str] = Field(None, description="Path to transcript JSONL file")
     audit_log_path: Optional[str] = Field(None, description="Path to audit log JSON file")
     conversation_log_path: Optional[str] = Field(None, description="Path to conversation log file")
-    pipecat_logs_path: Optional[str] = Field(None, description="Path to pipecat logs JSONL file")
+    framework_logs_path: Optional[str] = Field(None, description="Path to framework logs JSONL file")
     elevenlabs_logs_path: Optional[str] = Field(None, description="Path to elevenlabs logs JSONL file")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_pipecat_logs_path(cls, data: Any) -> Any:
+        """Accept legacy ``pipecat_logs_path`` field from old result.json files."""
+        if isinstance(data, dict) and "pipecat_logs_path" in data and "framework_logs_path" not in data:
+            data["framework_logs_path"] = data.pop("pipecat_logs_path")
+        return data
 
     # Summary stats (pre-metrics)
     num_turns: int = Field(0, description="Number of conversation turns")

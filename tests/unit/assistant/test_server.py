@@ -9,12 +9,12 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from eva.assistant.agentic.audit_log import AuditLog
-from eva.assistant.server import SAMPLE_RATE, AssistantServer
+from eva.assistant.server import SAMPLE_RATE, PipecatAssistantServer
 
 
 def _make_server(tmp_path: Path):
     """Build a lightweight AssistantServer without invoking __init__ (avoids Pipecat I/O)."""
-    srv = object.__new__(AssistantServer)
+    srv = object.__new__(PipecatAssistantServer)
     srv.output_dir = tmp_path
     srv.audit_log = AuditLog()
     srv.agentic_system = None

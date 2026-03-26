@@ -81,17 +81,17 @@ def test_check_conversation_finished_no_details(record_dir):
     assert check_conversation_finished(record_dir) is False
 
 
-def _write_pipecat_logs(output_dir, record_id, entries):
-    """Helper to write pipecat_logs.jsonl for a record."""
+def _write_framework_logs(output_dir, record_id, entries):
+    """Helper to write framework_logs.jsonl for a record."""
     record_path = output_dir / "records" / record_id
     record_path.mkdir(parents=True, exist_ok=True)
-    logs_path = record_path / "pipecat_logs.jsonl"
+    logs_path = record_path / "framework_logs.jsonl"
     logs_path.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
 
 
 def test_find_records_with_llm_generic_error_detects_error(temp_dir):
     """Test that records containing the generic LLM error are detected."""
-    _write_pipecat_logs(
+    _write_framework_logs(
         temp_dir,
         "1.1.1",
         [
@@ -99,7 +99,7 @@ def test_find_records_with_llm_generic_error_detects_error(temp_dir):
             {"type": "llm_response", "data": {"frame": "I'm sorry, I encountered an error processing your request."}},
         ],
     )
-    _write_pipecat_logs(
+    _write_framework_logs(
         temp_dir,
         "1.1.2",
         [
@@ -113,14 +113,14 @@ def test_find_records_with_llm_generic_error_detects_error(temp_dir):
 
 def test_find_records_with_llm_generic_error_no_errors(temp_dir):
     """Test that no records are returned when there are no generic LLM errors."""
-    _write_pipecat_logs(
+    _write_framework_logs(
         temp_dir,
         "1.1.1",
         [
             {"type": "llm_response", "data": {"frame": "Hello, how can I help you?"}},
         ],
     )
-    _write_pipecat_logs(
+    _write_framework_logs(
         temp_dir,
         "1.1.2",
         [
@@ -133,6 +133,6 @@ def test_find_records_with_llm_generic_error_no_errors(temp_dir):
 
 
 def test_find_records_with_llm_generic_error_missing_logs(temp_dir):
-    """Test that records without pipecat_logs.jsonl are skipped."""
+    """Test that records without framework_logs.jsonl are skipped."""
     result = find_records_with_llm_generic_error(temp_dir, ["nonexistent"])
     assert result == []

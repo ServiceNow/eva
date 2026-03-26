@@ -74,7 +74,7 @@ class BenchmarkLogObserver(TurnTrackingObserver):
         self.output_path = Path(output_path)
         self.conversation_id = conversation_id
         self.clock = clock
-        self.log_file = self.output_path / "pipecat_logs.jsonl"
+        self.log_file = self.output_path / "framework_logs.jsonl"
 
         # Ensure output directory exists
         self.output_path.mkdir(parents=True, exist_ok=True)
