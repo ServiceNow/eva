@@ -120,6 +120,24 @@ class TestToolWebhookService:
         executor_b.execute.assert_awaited_once()
 
     @pytest.mark.asyncio
+    async def test_unregister_removes_session_id_alias(self, webhook_service: ToolWebhookService):
+        """Unregistering a conversation also removes call_session_id aliases."""
+        executor = MagicMock()
+        executor.execute = AsyncMock(return_value={"ok": True})
+        await webhook_service.register_conversation("record-x", executor)
+        await webhook_service.register_call_session_id("session-xyz", "record-x")
+
+        # Both keys work before unregister
+        async with await _make_client(webhook_service) as client:
+            assert (await client.post("/tools/session-xyz/test_tool", json={})).status_code == 200
+
+        await webhook_service.unregister_conversation("record-x")
+
+        # Session ID alias should be gone too
+        async with await _make_client(webhook_service) as client:
+            assert (await client.post("/tools/session-xyz/test_tool", json={})).status_code == 404
+
+    @pytest.mark.asyncio
     async def test_unregister_conversation_removes_audit_log(self, webhook_service: ToolWebhookService):
         executor = MagicMock()
         executor.execute = AsyncMock(return_value={"status": "success"})

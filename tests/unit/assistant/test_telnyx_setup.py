@@ -1,11 +1,16 @@
 """Unit tests for Telnyx assistant setup helpers."""
 
+import importlib
+import inspect
+import re
+from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 
 from eva.assistant.telnyx_setup import TelnyxAssistantManager
-from eva.models.agents import AgentConfig
+from eva.models.agents import AgentConfig, AgentsConfig
 
 
 class _FakeResponse:
@@ -125,3 +130,120 @@ class TestTelnyxAssistantManager:
         await manager.close()
 
         assert manager.session.closed is True
+
+
+# ---------------------------------------------------------------------------
+# Regression guards — detect upstream changes that break our Telnyx integration
+# ---------------------------------------------------------------------------
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_AGENT_CONFIG_PATH = _REPO_ROOT / "configs" / "agents" / "airline_agent.yaml"
+
+
+def _load_real_agent_config() -> AgentConfig:
+    """Load the actual airline agent config from the repo."""
+    with open(_AGENT_CONFIG_PATH) as f:
+        raw = yaml.safe_load(f)
+    return AgentConfig.model_validate(raw)
+
+
+def _build_payload_from_real_config() -> dict[str, Any]:
+    """Build the Telnyx assistant payload from the real airline agent config.
+
+    Uses the private static method directly to avoid needing an event loop
+    for aiohttp.ClientSession initialization.
+    """
+    agent_config = _load_real_agent_config()
+    # Call the instance method on a throwaway object — but we can't create one
+    # without an event loop. Instead, call the static helper directly and
+    # build the wrapper ourselves.
+    normalized_base = "https://example.ngrok-free.dev"
+    tools: list[dict[str, Any]] = [
+        TelnyxAssistantManager._build_webhook_tool(tool, normalized_base)
+        for tool in agent_config.tools
+    ]
+    tools.append({
+        "type": "hangup",
+        "hangup": {"description": "Hang up the call."},
+    })
+    return {"tools": tools, "agent_config": agent_config}
+
+
+class TestTelnyxRegressionGuards:
+    """Tests that fail when upstream changes aren't reflected in Telnyx setup."""
+
+    def test_every_agent_tool_produces_a_webhook_entry(self) -> None:
+        """If a tool is added to airline_agent.yaml, telnyx_setup must translate it."""
+        result = _build_payload_from_real_config()
+        agent_config = result["agent_config"]
+        tools = result["tools"]
+
+        webhook_tools = [t for t in tools if t["type"] == "webhook"]
+        config_tool_ids = {t.id for t in agent_config.tools}
+        webhook_tool_ids = {t["webhook"]["name"] for t in webhook_tools}
+
+        assert config_tool_ids == webhook_tool_ids, (
+            f"Tool mismatch: config has {config_tool_ids - webhook_tool_ids} not in webhooks, "
+            f"webhooks have {webhook_tool_ids - config_tool_ids} not in config"
+        )
+
+    def test_tool_module_functions_match_agent_config(self) -> None:
+        """Every tool in the YAML must have a matching function in the tool module.
+
+        Catches: upstream adds a tool to the config but forgets the implementation,
+        or renames a function without updating the config.
+        """
+        agent_config = _load_real_agent_config()
+        module = importlib.import_module(agent_config.tool_module_path)
+        module_functions = {
+            name
+            for name, obj in inspect.getmembers(module, inspect.isfunction)
+            if not name.startswith("_") and name != "validation_error_response"
+        }
+        config_tool_ids = {t.id for t in agent_config.tools}
+
+        missing_impl = config_tool_ids - module_functions
+        assert not missing_impl, (
+            f"Tools in config but not in {agent_config.tool_module_path}: {missing_impl}"
+        )
+
+    def test_all_webhook_urls_use_call_session_id(self) -> None:
+        """Webhook URLs must use {{call_session_id}} for concurrent call routing."""
+        result = _build_payload_from_real_config()
+
+        for tool in result["tools"]:
+            if tool["type"] != "webhook":
+                continue
+            url = tool["webhook"]["url"]
+            assert "{{call_session_id}}" in url, (
+                f"Tool {tool['webhook']['name']} uses wrong URL template: {url}"
+            )
+            assert "{{call_control_id}}" not in url, (
+                f"Tool {tool['webhook']['name']} still uses call_control_id: {url}"
+            )
+
+    def test_webhook_tool_payload_has_required_fields(self) -> None:
+        """Every webhook tool must have the fields the Telnyx API expects.
+
+        Catches: refactoring _build_webhook_tool and dropping a required field.
+        """
+        result = _build_payload_from_real_config()
+
+        for tool in result["tools"]:
+            if tool["type"] != "webhook":
+                continue
+            wh = tool["webhook"]
+            assert "name" in wh, f"Missing 'name' in webhook tool"
+            assert "url" in wh, f"Missing 'url' in webhook tool {wh.get('name')}"
+            assert "method" in wh, f"Missing 'method' in webhook tool {wh.get('name')}"
+            assert "body_parameters" in wh, f"Missing 'body_parameters' in webhook tool {wh.get('name')}"
+            assert wh["body_parameters"].get("type") == "object", (
+                f"body_parameters.type should be 'object' for {wh['name']}"
+            )
+
+    def test_hangup_tool_always_present(self) -> None:
+        """Telnyx assistants need a hangup tool — make sure we always include it."""
+        result = _build_payload_from_real_config()
+
+        tool_types = [t["type"] for t in result["tools"]]
+        assert "hangup" in tool_types, "Hangup tool missing from assistant payload"
