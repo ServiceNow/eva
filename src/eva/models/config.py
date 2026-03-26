@@ -12,6 +12,7 @@ and explicit kwargs.  Scripts opt in to ``.env`` and/or CLI via
 ``RunConfig(_env_file=".env", _cli_parse_args=True)``.
 """
 
+import copy
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
@@ -527,6 +528,7 @@ class RunConfig(BaseSettings):
         """Redact secret values in litellm_params when serializing."""
         redacted = []
         for deployment in deployments:
+            deployment = copy.deepcopy(deployment)
             if "litellm_params" in deployment:
                 params = deployment["litellm_params"]
                 for key in params:

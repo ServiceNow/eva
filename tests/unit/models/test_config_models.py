@@ -174,6 +174,17 @@ class TestRunConfig:
         assert dumped["model"]["stt_params"]["model"] == "nova-2"
         assert dumped["model"]["tts_params"]["model"] == "sonic"
 
+    def test_secrets_redaction_does_not_mutate_live_config(self):
+        """Serializing must not corrupt the in-memory config objects."""
+        config = _config(env_vars=_BASE_ENV)
+        config.model_dump(mode="json")
+        # model_list keys must still hold real values
+        assert config.model_list[0]["litellm_params"]["api_key"] == "must_be_redacted"
+        assert config.model_list[1]["litellm_params"]["vertex_credentials"] == "must_be_redacted"
+        # STT/TTS params must still hold real values
+        assert config.model.stt_params["api_key"] == "test_key"
+        assert config.model.tts_params["api_key"] == "test_key"
+
     def test_restore_redacted_secrets(self):
         """Redacted secrets are restored from a live config."""
         config = _config(env_vars=_BASE_ENV)
