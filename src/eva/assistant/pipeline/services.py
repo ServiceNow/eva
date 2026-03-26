@@ -345,9 +345,10 @@ def create_tts_service(
         return xtts_tts
 
     elif model_lower == "deepgram":
-        logger.info(f"Using Deepgram TTS: {params.get('model', 'aura-2-helena-en')}")
+        logger.info(f"Using Deepgram TTS: {params["model"]}")
         return DeepgramTTSService(
             api_key=api_key,
+            model=params["model"],
             voice=params.get("voice", "aura-2-helena-en"),
             sample_rate=SAMPLE_RATE
         )
