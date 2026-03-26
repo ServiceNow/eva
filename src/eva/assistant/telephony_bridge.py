@@ -911,18 +911,28 @@ class TelephonyBridgeServer:
             user_segs = self._session_state.user_segments
             asst_segs = self._session_state.assistant_segments
 
-            # For each user segment, find the next assistant segment that starts after it ends.
-            # This pairs conversational turns the same way Pipecat's VAD-based observer does.
-            asst_idx = 0
-            for user_seg in user_segs:
-                # Advance past assistant segments that started before this user segment ended
-                while asst_idx < len(asst_segs) and asst_segs[asst_idx].started_at <= user_seg.ended_at:
-                    asst_idx += 1
+            # Build an interleaved timeline of (start_time, role, segment) to pair turns correctly.
+            # A conversational turn = user speaks → assistant responds.  If the assistant speaks
+            # multiple times without the user responding in between (e.g. a farewell + a second
+            # goodbye triggered by a silence timeout), only the first assistant response counts
+            # as the turn's latency measurement.
+            timeline = []
+            for seg in user_segs:
+                timeline.append((seg.started_at, "user", seg))
+            for seg in asst_segs:
+                timeline.append((seg.started_at, "assistant", seg))
+            timeline.sort(key=lambda x: x[0])
 
-                if asst_idx < len(asst_segs):
-                    gap = asst_segs[asst_idx].started_at - user_seg.ended_at
+            last_user_end: float | None = None
+            for _ts, role, seg in timeline:
+                if role == "user":
+                    last_user_end = seg.ended_at
+                elif role == "assistant" and last_user_end is not None:
+                    gap = seg.started_at - last_user_end
                     if gap > 0:
                         latencies.append(round(gap, 4))
+                    # Consume — don't pair additional assistant segments with the same user turn
+                    last_user_end = None
 
         latencies_data = {
             "latencies": latencies,

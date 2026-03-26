@@ -144,6 +144,10 @@ def _process_user_speech(
     existing = context.intended_user_turns.get(turn_idx, "")
     sep = f" {AnnotationLabel.CUT_OFF_ON_ITS_OWN} " if existing else ""
     user_text = event["data"]["data"]["text"]
+    # Skip non-speech control events (e.g. <call:end_call> from ElevenLabs user sim silence timeouts).
+    # These are not real user speech and should not count as a turn boundary.
+    if user_text.strip().startswith("<call:") and user_text.strip().endswith(">"):
+        return
     if not existing and state.pending_user_interrupts_label:
         user_text = f"{AnnotationLabel.USER_INTERRUPTS} {user_text}"
     append_turn_text(context.intended_user_turns, turn_idx, user_text, sep)

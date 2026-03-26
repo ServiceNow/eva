@@ -138,7 +138,7 @@ class TelnyxAssistantManager:
             "voice_settings": {
                 "voice": voice,
                 "voice_speed": 1.2,
-                "expressive_mode": True,
+                "expressive_mode": False,
                 "language_boost": "English",
                 "similarity_boost": 0.5,
                 "style": 0.0,
