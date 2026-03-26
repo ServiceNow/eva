@@ -582,6 +582,7 @@ async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[F
 
 
 async def override__connect(self):
+    # Allow connections to azure / other providers using a base_url
     try:
         if self._websocket:
             # Here we assume that if we have a websocket, we are connected. We
