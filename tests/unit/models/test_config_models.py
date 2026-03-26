@@ -56,6 +56,10 @@ _BASE_ENV = _EVA_MODEL_LIST_ENV | {
     "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "test_key", "model": "nova-2"}),
     "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "test_key", "model": "sonic"}),
 }
+_S2S_ENV = _EVA_MODEL_LIST_ENV | {
+    "EVA_MODEL__S2S": "gpt-realtime-mini",
+    "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": ""}),
+}
 
 
 def _config(
@@ -355,14 +359,14 @@ class TestDeprecatedEnvVars:
                 lambda c: c.model.tts,
             ),
             (
-                _EVA_MODEL_LIST_ENV,
+                _S2S_ENV,
                 "REALTIME_MODEL",
                 "EVA_MODEL__S2S",
                 "test-model",
                 lambda c: c.model.s2s,
             ),
             (
-                _EVA_MODEL_LIST_ENV,
+                _S2S_ENV,
                 "EVA_MODEL__REALTIME_MODEL",
                 "EVA_MODEL__S2S",
                 "test-model",
@@ -383,17 +387,17 @@ class TestDeprecatedEnvVars:
                 lambda c: c.model.tts_params,
             ),
             (
-                _EVA_MODEL_LIST_ENV | {"EVA_MODEL__S2S": "test-model"},
+                _S2S_ENV,
                 "REALTIME_MODEL_PARAMS",
                 "EVA_MODEL__S2S_PARAMS",
-                {"foo": "bar"},
+                {"api_key": "k"},
                 lambda c: c.model.s2s_params,
             ),
             (
-                _EVA_MODEL_LIST_ENV | {"EVA_MODEL__S2S": "test-model"},
+                _S2S_ENV,
                 "EVA_MODEL__REALTIME_MODEL_PARAMS",
                 "EVA_MODEL__S2S_PARAMS",
-                {"foo": "bar"},
+                {"api_key": "k"},
                 lambda c: c.model.s2s_params,
             ),
             (
@@ -580,7 +584,7 @@ class TestCliArgs:
         assert c.model.tts == "cartesia"
 
     def test_realtime_model(self):
-        config = _config(env_vars=_EVA_MODEL_LIST_ENV, cli_args=["--realtime-model", "test-model"])
+        config = _config(env_vars=_S2S_ENV, cli_args=["--realtime-model", "test-model"])
         assert config.model.s2s == "test-model"
 
     def test_domain_cli(self):
@@ -656,20 +660,31 @@ class TestSpeechToSpeechConfig:
 
     def test_s2s_config_from_env(self):
         """EVA_MODEL__S2S selects SpeechToSpeechConfig."""
-        config = _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__S2S": "gpt-realtime-mini"})
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__S2S": "gpt-realtime-mini",
+                "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": ""}),
+            }
+        )
         assert isinstance(config.model, SpeechToSpeechConfig)
         assert config.model.s2s == "gpt-realtime-mini"
 
     def test_s2s_config_from_cli(self):
         """--s2s-model selects SpeechToSpeechConfig."""
-        config = _config(env_vars=_EVA_MODEL_LIST_ENV, cli_args=["--model.s2s", "gemini_live"])
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV,
+            cli_args=["--model.s2s", "gemini_live", "--model.s2s-params", '{"api_key": "test-key"}'],
+        )
         assert isinstance(config.model, SpeechToSpeechConfig)
         assert config.model.s2s == "gemini_live"
+        assert config.model.s2s_params == {"api_key": "test-key"}
 
     def test_s2s_config_with_params(self):
         """S2S params are passed through."""
         config = _config(
-            env_vars=_EVA_MODEL_LIST_ENV, model={"s2s": "gpt-realtime-mini", "s2s_params": {"voice": "alloy"}}
+            env_vars=_EVA_MODEL_LIST_ENV,
+            model={"s2s": "gpt-realtime-mini", "s2s_params": {"voice": "alloy", "api_key": "key_1"}},
         )
         assert isinstance(config.model, SpeechToSpeechConfig)
-        assert config.model.s2s_params == {"voice": "alloy"}
+        assert config.model.s2s_params == {"voice": "alloy", "api_key": "key_1"}
