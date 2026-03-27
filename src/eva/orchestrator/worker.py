@@ -277,10 +277,13 @@ class ConversationWorker:
             webhook_service = self.tool_webhook_service
             bridge = self._assistant_server
 
+            # Use output_id (e.g. "1.1.2/trial_0") as registration key so
+            # concurrent trials of the same record don't clobber each other.
+            registration_key = self.output_id
             record_id = self.record.id
 
             async def _register_eva_call_id(eva_call_id: str) -> None:
-                await webhook_service.register_route_id(eva_call_id, record_id)
+                await webhook_service.register_route_id(eva_call_id, registration_key)
                 webhook_service.set_record_id(eva_call_id, record_id)
 
             bridge._tool_webhook_register_callback = _register_eva_call_id
@@ -290,11 +293,11 @@ class ConversationWorker:
 
         if is_telephony_bridge:
             await self.tool_webhook_service.register_conversation(
-                self.record.id,
+                registration_key,
                 self._assistant_server.tool_handler,
                 audit_log=self._assistant_server.audit_log,
             )
-            self._registered_tool_call_id = self.record.id
+            self._registered_tool_call_id = registration_key
 
     async def _start_user_simulator(self) -> None:
         """Start the user simulator."""
