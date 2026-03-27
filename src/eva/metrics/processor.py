@@ -525,19 +525,26 @@ def _validate_conversation_trace(
     return validated_trace
 
 
-def _fix_interruption_labels(context: "_ProcessorContext", state: "_TurnExtractionState") -> None:
-    """Fix interruption labels that may have been missed during the event loop.
+def _build_message_trace(conversation_trace: list[dict]) -> list[dict]:
+    """Build the authoritative message trace before spoken-prefix validation."""
+    stripped_trace = []
+    for entry in conversation_trace:
+        cleaned = entry.copy()
+        cleaned.pop("_audit_source", None)
+        cleaned.pop("interrupted", None)
+        stripped_trace.append(cleaned)
+    return group_consecutive_turns(stripped_trace)
 
-    The audit_log/assistant entry can arrive before the interruption is detected at audio_start(pipecat_agent),
-    so the prefix wasn't applied during the loop. Only fix the first assistant entry per interrupted turn.
-    """
-    # Clean up per-entry interrupted keys (used during event loop only)
-    for entry in context.conversation_trace:
-        entry.pop("interrupted", None)
 
-    # Fix [assistant interrupts] labels
+def _fix_interruption_labels_in_trace(trace: list[dict], state: "_TurnExtractionState") -> None:
+    """Fix interruption labels that may have been missed during the event loop."""
+    if not trace:
+        return
+
+    # Fix [assistant interrupts] labels. The audit_log/assistant entry can arrive before the interruption
+    # is detected at audio_start(pipecat_agent), so the prefix wasn't applied during the loop.
     labeled_asst_turns: set[int] = set()
-    for entry in context.conversation_trace:
+    for entry in trace:
         if entry.get("role") != "assistant":
             continue
         tid = entry.get("turn_id")
@@ -552,10 +559,16 @@ def _fix_interruption_labels(context: "_ProcessorContext", state: "_TurnExtracti
     # turn already carries it — avoids mislabeling the first entry in no-advance (rollback) cases where
     # the original speech precedes the interrupting speech at the same turn.
     for tid in state.user_interrupted_turns:
-        user_entries = [e for e in context.conversation_trace if e.get("role") == "user" and e.get("turn_id") == tid]
+        user_entries = [e for e in trace if e.get("role") == "user" and e.get("turn_id") == tid]
         already_labeled = any(e["content"].startswith(AnnotationLabel.USER_INTERRUPTS) for e in user_entries)
         if not already_labeled and user_entries:
             user_entries[0]["content"] = f"{AnnotationLabel.USER_INTERRUPTS} {user_entries[0]['content']}"
+
+
+def _fix_interruption_labels(context: "_ProcessorContext", state: "_TurnExtractionState") -> None:
+    """Fix interruption labels on both spoken and message-native traces."""
+    _fix_interruption_labels_in_trace(context.conversation_trace, state)
+    _fix_interruption_labels_in_trace(context.message_trace, state)
 
 
 def _finalize_extraction(
@@ -611,23 +624,28 @@ def _finalize_extraction(
     )
 
 
-def _ensure_greeting_is_first(context: "_ProcessorContext") -> None:
-    """Ensure the assistant greeting (turn 0) is the first entry in conversation_trace.
+def _ensure_greeting_is_first(trace: list[dict], context: "_ProcessorContext", *, require_pipecat: bool) -> None:
+    """Ensure the assistant greeting (turn 0) is the first entry in a trace.
 
     With audio-native models, a ElevenLabs user_speech timestamp can arrive before the audit-log assistant entry, so the
     greeting ends up out of order. Move it to the front, or synthesize it from pipecat text if absent.
     """
-    first = context.conversation_trace[0]
+    if not trace:
+        return
+
+    first = trace[0]
     if not (first.get("role") == "user" and first.get("turn_id", 0) > 0):
         return
 
     greeting_idx = next(
-        (i for i, e in enumerate(context.conversation_trace) if e.get("role") == "assistant" and e.get("turn_id") == 0),
+        (i for i, e in enumerate(trace) if e.get("role") == "assistant" and e.get("turn_id") == 0),
         None,
     )
     if greeting_idx is not None:
-        greeting = context.conversation_trace.pop(greeting_idx)
+        greeting = trace.pop(greeting_idx)
     else:
+        if require_pipecat and 0 not in context._intended_assistant_segments:
+            return
         # Cascade: greeting not in audit log — create from pipecat text.
         greeting = {
             "role": "assistant",
@@ -635,7 +653,7 @@ def _ensure_greeting_is_first(context: "_ProcessorContext") -> None:
             "type": "intended",
             "turn_id": 0,
         }
-    context.conversation_trace.insert(0, greeting)
+    trace.insert(0, greeting)
 
 
 def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dict, last_turn_id: int) -> None:
@@ -652,6 +670,8 @@ def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dic
     elif context.intended_assistant_turns:
         max_asst = max(context.intended_assistant_turns.keys())
         if max_asst >= last_turn_id:
+            if max_asst not in context._intended_assistant_segments:
+                return
             has_asst_in_trace = any(
                 e.get("role") == "assistant" and e.get("turn_id") == max_asst for e in context.conversation_trace
             )
@@ -685,6 +705,45 @@ def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dic
     logger.info(f"Record {context.record_id}: Labeled trailing assistant at turn {trailing_turn_id}")
 
 
+def _reconcile_message_trace(context: "_ProcessorContext") -> None:
+    """Apply light reconciliation to the message-native trace."""
+    if not context.message_trace:
+        if context.intended_assistant_turns.get(0):
+            context.message_trace.append(
+                {
+                    "role": "assistant",
+                    "content": context.intended_assistant_turns[0],
+                    "type": "intended",
+                    "turn_id": 0,
+                }
+            )
+        return
+
+    _ensure_greeting_is_first(context.message_trace, context, require_pipecat=False)
+
+    if not context.intended_user_turns:
+        return
+
+    last_user_turn_id = max(context.intended_user_turns.keys())
+    last_turn_id = context.message_trace[-1].get("turn_id", -1)
+    has_last_user = any(
+        entry.get("role") == "user" and entry.get("turn_id") == last_user_turn_id for entry in context.message_trace
+    )
+    if last_user_turn_id > last_turn_id and not has_last_user:
+        transcribed = context.transcribed_user_turns.get(last_user_turn_id)
+        intended = context.intended_user_turns[last_user_turn_id]
+        if not transcribed and not intended:
+            return
+        context.message_trace.append(
+            {
+                "role": "user",
+                "content": transcribed or intended,
+                "type": "transcribed" if transcribed else "intended",
+                "turn_id": last_user_turn_id,
+            }
+        )
+
+
 class _ProcessorContext:
     """Processed log data for metric computation."""
 
@@ -711,6 +770,7 @@ class _ProcessorContext:
         self.tool_responses: list[dict] = []
 
         self.conversation_trace: list[dict] = []
+        self.message_trace: list[dict] = []
 
         self.audio_assistant_path: Optional[str] = None
         self.audio_user_path: Optional[str] = None
@@ -922,6 +982,8 @@ class MetricsContextProcessor:
             state.session_end_ts = context.history[-1].get("timestamp_ms") / 1000.0
 
         _pair_audio_segments(state, context)
+        context.is_continuous_assistant_stream = state.is_continuous_assistant_stream
+        context.message_trace = _build_message_trace(conversation_trace)
         validated_trace = _validate_conversation_trace(conversation_trace, context)
         context.conversation_trace = group_consecutive_turns(validated_trace)
         _fix_interruption_labels(context, state)
@@ -940,7 +1002,7 @@ class MetricsContextProcessor:
         if not context.conversation_trace:
             # Empty trace (e.g. greeting-only conversation with no user turns). Create from pipecat intended text if
             # available.
-            if context.intended_assistant_turns.get(0):
+            if 0 in context._intended_assistant_segments and context.intended_assistant_turns.get(0):
                 context.conversation_trace.append(
                     {
                         "role": "assistant",
@@ -949,39 +1011,49 @@ class MetricsContextProcessor:
                         "turn_id": 0,
                     }
                 )
-            return
 
-        _ensure_greeting_is_first(context)
+        if context.conversation_trace:
+            _ensure_greeting_is_first(context.conversation_trace, context, require_pipecat=True)
 
-        if not context.intended_user_turns:
-            return
+            if context.intended_user_turns:
+                last_user_turn_id = max(context.intended_user_turns.keys())
+                last_entry = context.conversation_trace[-1]
+                last_turn_id = last_entry.get("turn_id")
+                has_last_user = any(
+                    entry.get("role") == "user" and entry.get("turn_id") == last_user_turn_id
+                    for entry in context.conversation_trace
+                )
 
-        last_user_turn_id = max(context.intended_user_turns.keys())
-        last_entry = context.conversation_trace[-1]
-        last_turn_id = last_entry.get("turn_id")
+                # User's final turn arrived after the last audit-log entry — append it and we're done.
+                if last_user_turn_id > last_turn_id and not has_last_user:
+                    last_user_text = context.intended_user_turns[last_user_turn_id]
+                    if last_user_text:
+                        context.conversation_trace.append(
+                            {
+                                "role": "user",
+                                "content": last_user_text,
+                                "type": "intended",
+                                "turn_id": last_user_turn_id,
+                            }
+                        )
+                    if last_user_text and not context.transcribed_user_turns.get(last_user_turn_id):
+                        context.transcribed_user_turns[last_user_turn_id] = last_user_text
+                    if last_user_text:
+                        logger.info(f"Record {context.record_id}: Appended last user turn: {last_user_text[:50]}")
+                else:
+                    _label_trailing_assistant_turn(context, last_entry, last_turn_id)
 
-        # User's final turn arrived after the last audit-log entry — append it and we're done.
-        if last_user_turn_id > last_turn_id:
-            last_user_text = context.intended_user_turns[last_user_turn_id]
-            context.conversation_trace.append(
-                {"role": "user", "content": last_user_text, "type": "intended", "turn_id": last_user_turn_id}
-            )
-            if not context.transcribed_user_turns.get(last_user_turn_id):
-                context.transcribed_user_turns[last_user_turn_id] = last_user_text
-            logger.info(f"Record {context.record_id}: Appended last user turn: {last_user_text[:50]}")
-            return
+                # Backfill: if the last intended user turn has no transcription (conversation ended before STT
+                # finished), use the intended text.
+                if last_user_turn_id is not None and not context.transcribed_user_turns.get(last_user_turn_id):
+                    last_user_text = context.intended_user_turns[last_user_turn_id]
+                    context.transcribed_user_turns[last_user_turn_id] = last_user_text
+                    logger.info(
+                        f"Record {context.record_id}: Backfilled transcribed_user_turns[{last_user_turn_id}] "
+                        f"from intended: {last_user_text[:50]}"
+                    )
 
-        _label_trailing_assistant_turn(context, last_entry, last_turn_id)
-
-        # Backfill: if the last intended user turn has no transcription (conversation ended before STT finished), use
-        # the intended text.
-        if last_user_turn_id is not None and not context.transcribed_user_turns.get(last_user_turn_id):
-            last_user_text = context.intended_user_turns[last_user_turn_id]
-            context.transcribed_user_turns[last_user_turn_id] = last_user_text
-            logger.info(
-                f"Record {context.record_id}: Backfilled transcribed_user_turns[{last_user_turn_id}] "
-                f"from intended: {last_user_text[:50]}"
-            )
+        _reconcile_message_trace(context)
 
     @staticmethod
     def _synthesize_continuous_stream_timestamps(context: _ProcessorContext) -> None:

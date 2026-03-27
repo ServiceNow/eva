@@ -61,7 +61,7 @@ class TestExtractTurnsFromHistory:
         for key, expected_value in case["expected"].items():
             actual = getattr(ctx, key)
             expected = _convert_expected_value(key, expected_value)
-            if key == "conversation_trace":
+            if key in {"conversation_trace", "message_trace"}:
                 # Strip timestamps for comparison (exact ms values are brittle)
                 actual = [{k: v for k, v in entry.items() if k != "timestamp"} for entry in actual]
             assert actual == expected, (
