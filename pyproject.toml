@@ -54,7 +54,7 @@ dependencies = [
     "jaconv>=0.3.0",
     "regex>=2023.0.0",
     "more-itertools>=10.0.0",
-    "nvidia-riva-client>=2.25.0,<3.0.0"
+    "nvidia-riva-client>=2.25.0,<2.25.1"
 ]
 
 [project.optional-dependencies]

@@ -220,6 +220,11 @@ async def run_user_turn(
         return content, True
 
     content = getattr(response, "content", "") or (response if isinstance(response, str) else "")
+
+    # Fallback: detect end_call emitted as text instead of structured tool call.
+    if "functions.end_call" in content or ("end_call" in content and content.strip().startswith(("{", "[", "<"))):
+        return "", True
+
     return content, False
 
 
@@ -778,9 +783,9 @@ async def main() -> None:
     if not tool_module:
         sys.exit("Error: tool_module_path not set in agent YAML config.")
 
-    llm_model = args.llm_model or os.getenv("LLM_MODEL")
+    llm_model = args.llm_model or os.getenv("EVA_MODEL__LLM")
     if not llm_model:
-        sys.exit("Error: --llm-model or LLM_MODEL env var is required.")
+        sys.exit("Error: --llm-model or EVA_MODEL__LLM env var is required.")
 
     # Initialize the LiteLLM Router from EVA_MODEL_LIST
     model_list_json = os.getenv("EVA_MODEL_LIST")

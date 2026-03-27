@@ -827,7 +827,7 @@ requires-dist = [
     { name = "more-itertools", specifier = ">=10.0.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5" },
     { name = "numpy", specifier = ">=1.24" },
-    { name = "nvidia-riva-client", specifier = ">=2.25.0,<3.0.0" },
+    { name = "nvidia-riva-client", specifier = ">=2.25.0,<2.25.1" },
     { name = "onnxruntime", specifier = ">=1.16.0" },
     { name = "openai", specifier = ">=1.0.0" },
     { name = "pandas", specifier = ">=2.0" },

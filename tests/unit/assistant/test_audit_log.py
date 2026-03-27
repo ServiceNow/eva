@@ -138,6 +138,27 @@ class TestAuditLog:
         assert self.log.llm_prompts[0]["response"] == ""
         assert self.log.llm_prompts[0]["response_message"] is None
 
+    def test_append_llm_call_with_reasoning(self):
+        response_msg = ConversationMessage(
+            role=MessageRole.ASSISTANT, content="Sure!", reasoning="I thought about this carefully..."
+        )
+        llm_call = LLMCall(
+            messages=[{"role": "user", "content": "Hi"}],
+            response=response_msg,
+            duration_seconds=1.5,
+            start_time="100",
+            end_time="200",
+            model="o1-preview",
+            latency_ms=1500.0,
+        )
+        self.log.append_llm_call(llm_call, agent_name="TestAgent")
+
+        # Check that reasoning is added to transcript entry
+        assert len(self.log.transcript) == 1
+        assert "reasoning" in self.log.transcript[0]["value"]
+        assert self.log.transcript[0]["value"]["reasoning"] == "I thought about this carefully..."
+        assert self.log.transcript[0]["value"]["response"] == "Sure!"
+
     def test_append_tool_call_without_response(self):
         self.log.append_tool_call("search", {"query": "test"})
         assert len(self.log.transcript) == 1
