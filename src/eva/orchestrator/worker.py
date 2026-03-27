@@ -254,7 +254,9 @@ class ConversationWorker:
                 scenario_db_path=self.scenario_db_path,
                 output_dir=self.output_dir,
                 port=self.port,
-                conversation_id=self.record.id,
+                # Use output_id (e.g. "1.1.2/trial_0") so concurrent trials
+                # get unique media stream paths and transport registrations.
+                conversation_id=self.output_id,
             )
         else:
             self._assistant_server = AssistantServer(
