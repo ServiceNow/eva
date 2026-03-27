@@ -173,17 +173,20 @@ class AgenticSystem:
 
                 # Convert tool calls to dicts if present and extract content as string
                 response_tool_calls = getattr(response, "tool_calls", []) or []
-                tool_calls_dicts = [
-                    {
-                        "id": str(tc.id),
-                        "type": "function",
-                        "function": {
-                            "name": _clean_tool_name(str(tc.function.name)),
-                            "arguments": str(tc.function.arguments),
-                        },
-                    }
-                    for tc in response_tool_calls
-                ]
+                tool_calls_dicts = []
+                for tc in response_tool_calls:
+                    # Use model_dump() to preserve provider_specific_fields (e.g., Gemini thought signatures)
+                    tc_dict = tc.model_dump(exclude_none=True)
+                    # Apply tool name cleaning for Harmony token leak bug
+                    tc_dict["function"]["name"] = _clean_tool_name(tc_dict["function"]["name"])
+
+                    # Log if provider_specific_fields are present (e.g., Gemini thought signatures)
+                    if "provider_specific_fields" in tc_dict:
+                        fields = tc_dict["provider_specific_fields"]
+                        if "thought_signature" in fields:
+                            logger.info("🔮 Gemini thought signature present in tool call (will be preserved for next turn)")
+
+                    tool_calls_dicts.append(tc_dict)
 
                 response_content = getattr(response, "content", "") or (response if isinstance(response, str) else "")
                 response_tool_calls_for_stats = (
@@ -196,6 +199,13 @@ class AgenticSystem:
                 )
 
                 # Store performance stats
+                reasoning_content_for_csv = llm_stats.get("reasoning_content") or ""
+                reasoning_tokens = llm_stats.get("reasoning_tokens", 0)
+
+                # Log if reasoning tokens are present but no reasoning content
+                if reasoning_tokens > 0 and not reasoning_content_for_csv:
+                    logger.debug(f"⚠️ Model used {reasoning_tokens} reasoning tokens but did not return thinking blocks.")
+
                 perf_stat = {
                     "prompt": prompt_str,
                     "response": response_content,
@@ -207,7 +217,8 @@ class AgenticSystem:
                     "latency": llm_stats.get("latency", 0.0),
                     "parameters": json.dumps(llm_stats.get("parameters", {})),
                     "tool_calls": json.dumps(response_tool_calls_for_stats) if response_tool_calls_for_stats else "",
-                    "reasoning": f'"{llm_stats.get("reasoning_content", "")}"',
+                    "reasoning": f'"{reasoning_content_for_csv}"',
+                    "reasoning_tokens": reasoning_tokens,
                 }
                 self.agent_perf_stats.append(perf_stat)
                 logger.debug(
@@ -218,7 +229,7 @@ class AgenticSystem:
                     role=MessageRole.ASSISTANT,
                     content=response_content,
                     tool_calls=tool_calls_dicts if tool_calls_dicts else None,
-                    reasoning=llm_stats.get("reasoning"),
+                    reasoning=llm_stats.get("reasoning_content"),
                 )
 
                 llm_call = LLMCall(
@@ -276,15 +287,32 @@ class AgenticSystem:
                 return
 
             if tool_calls_dicts:
-                messages.append(
-                    {
-                        "role": "assistant",
-                        "content": response_content,
-                        "tool_calls": tool_calls_dicts,
-                    }
-                )
+                # Build assistant message with tool calls
+                assistant_msg = {
+                    "role": "assistant",
+                    "content": response_content,
+                    "tool_calls": tool_calls_dicts,
+                }
 
-                self.audit_log.append_assistant_output(content=response_content, tool_calls=tool_calls_dicts)
+                # For Anthropic: include thinking blocks in message history
+                # LiteLLM will handle these appropriately when sending to Anthropic
+                thinking_blocks = llm_stats.get("thinking_blocks")
+                if thinking_blocks:
+                    assistant_msg["thinking_blocks"] = thinking_blocks
+                    logger.info(f"🧠 Including {len(thinking_blocks)} thinking block(s) in message history for next turn")
+
+                # For Gemini: thought signatures are already embedded in tool_calls by LiteLLM
+                # They're stored in provider_specific_fields and will be preserved automatically
+
+                messages.append(assistant_msg)
+
+                # Pass reasoning content to audit log for metrics/debugging
+                reasoning_content = llm_stats.get("reasoning_content") or llm_stats.get("reasoning")
+                self.audit_log.append_assistant_output(
+                    content=response_content,
+                    tool_calls=tool_calls_dicts,
+                    reasoning=reasoning_content
+                )
 
                 # Execute each tool call
                 for tool_call in response_tool_calls:
@@ -310,7 +338,10 @@ class AgenticSystem:
 
                         logger.info(f"🔀 Transfer initiated: {transfer_message}")
                         yield transfer_message
-                        self.audit_log.append_assistant_output(transfer_message)
+
+                        # Pass reasoning content to audit log for metrics/debugging
+                        reasoning_content = llm_stats.get("reasoning_content") or llm_stats.get("reasoning")
+                        self.audit_log.append_assistant_output(transfer_message, reasoning=reasoning_content)
                         return
 
                     result = await self.tool_handler.execute(tool_name, params)
@@ -344,7 +375,10 @@ class AgenticSystem:
                     response_content = response_content.strip()
                     logger.info(f"💬 Assistant LLM response: {response_content}")
                     yield response_content
-                    self.audit_log.append_assistant_output(response_content)
+
+                    # Pass reasoning content to audit log for metrics/debugging
+                    reasoning_content = llm_stats.get("reasoning_content") or llm_stats.get("reasoning")
+                    self.audit_log.append_assistant_output(response_content, reasoning=reasoning_content)
                 return
 
     def get_stats(self) -> dict[str, Any]:
@@ -383,7 +417,8 @@ class AgenticSystem:
                     "parameters",
                     "tool_calls",
                     "latency",
-                    "reasoning"
+                    "reasoning",
+                    "reasoning_tokens"
                 ]
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()

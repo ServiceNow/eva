@@ -190,6 +190,7 @@ class AuditLog:
         content: str,
         tool_calls: list[dict[str, Any]] | None = None,
         timestamp_ms: Optional[str] = None,
+        reasoning: Optional[str] = None,
     ) -> None:
         """Record assistant output.
 
@@ -201,6 +202,7 @@ class AuditLog:
                 is used.  The realtime instrumented LLM service passes the
                 wall-clock captured at the first ``audio_delta`` so the audit
                 log reflects when the assistant actually started responding.
+            reasoning: Optional reasoning content from the model (for metrics/debugging).
         """
         if content and not tool_calls:
             entry = {
@@ -220,6 +222,7 @@ class AuditLog:
                 role=MessageRole.ASSISTANT,
                 content="" if tool_calls else content,
                 tool_calls=tool_calls,
+                reasoning=reasoning,  # Include reasoning for metrics/debugging
             )
         )
 
