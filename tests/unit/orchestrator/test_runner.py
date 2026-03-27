@@ -4,11 +4,11 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from eva.models.config import PipelineConfig, RunConfig
+from eva.models.config import PipelineConfig, RunConfig, TelephonyBridgeConfig
 from eva.models.results import ConversationResult
 from eva.orchestrator.runner import BenchmarkRunner
 from tests.unit.conftest import make_evaluation_record
@@ -200,3 +200,68 @@ class TestFromExistingRun:
 
         with pytest.raises(FileNotFoundError, match="config.json not found"):
             BenchmarkRunner.from_existing_run(run_dir)
+
+
+class TestSupportServices:
+    @pytest.mark.asyncio
+    async def test_start_and_stop_tool_webhook_service_for_telephony(self, tmp_path, monkeypatch):
+        config = _make_config(tmp_path)
+        config = config.model_copy(
+            update={
+                "model": TelephonyBridgeConfig(
+                    sip_uri="sip:test@example.com",
+                    telnyx_api_key="telnyx-key",
+                    call_control_app_id="app-123",
+                    call_control_from="+15551234567",
+                    webhook_base_url="https://example.ngrok-free.dev",
+                    webhook_port=9988,
+                )
+            }
+        )
+        runner = _make_runner(config)
+
+        mock_service = MagicMock()
+        mock_service.start = AsyncMock()
+        mock_service.stop = AsyncMock()
+        service_ctor = MagicMock(return_value=mock_service)
+        monkeypatch.setattr("eva.orchestrator.runner.ToolWebhookService", service_ctor)
+
+        await runner._start_support_services()
+        assert runner.tool_webhook_service is mock_service
+        service_ctor.assert_called_once_with(port=9988)
+        mock_service.start.assert_awaited_once()
+
+        await runner._stop_support_services()
+        mock_service.stop.assert_awaited_once()
+        assert runner.tool_webhook_service is None
+
+    @pytest.mark.asyncio
+    async def test_call_control_starts_webhook_service(self, tmp_path, monkeypatch):
+        config = _make_config(tmp_path)
+        config = config.model_copy(
+            update={
+                "model": TelephonyBridgeConfig(
+                    sip_uri="sip:test@example.com",
+                    telnyx_api_key="telnyx-key",
+                    call_control_app_id="app-123",
+                    call_control_from="+15551234567",
+                    webhook_base_url="https://example.ngrok-free.dev",
+                    webhook_port=9988,
+                )
+            }
+        )
+        runner = _make_runner(config)
+
+        mock_service = MagicMock()
+        mock_service.start = AsyncMock()
+        mock_service.stop = AsyncMock()
+        service_ctor = MagicMock(return_value=mock_service)
+
+        monkeypatch.setattr("eva.orchestrator.runner.ToolWebhookService", service_ctor)
+
+        await runner._start_support_services()
+
+        service_ctor.assert_called_once_with(port=9988)
+        mock_service.start.assert_awaited_once()
+
+        await runner._stop_support_services()

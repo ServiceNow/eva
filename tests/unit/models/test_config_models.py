@@ -10,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 from pydantic_settings import SettingsError
 
-from eva.models.config import RunConfig, SpeechToSpeechConfig
+from eva.models.config import RunConfig, SpeechToSpeechConfig, TelephonyBridgeConfig
 
 MODEL_LIST = [
     {
@@ -258,6 +258,72 @@ class TestRunConfig:
         # Audio-LLM without TTS
         with pytest.raises(ValueError, match="EVA_MODEL__TTS is required"):
             _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__AUDIO_LLM": "ultravox"})
+
+    def test_telephony_bridge_config(self):
+        """Telephony bridge config is selected when sip_uri is present."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__SIP_URI": "sip:assistant@example.com",
+                "EVA_MODEL__TELNYX_API_KEY": "telnyx-key",
+                "EVA_MODEL__CALL_CONTROL_APP_ID": "app-123",
+                "EVA_MODEL__CALL_CONTROL_FROM": "+15551234567",
+                "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.dev/",
+                "EVA_MODEL__WEBHOOK_PORT": "9999",
+                "EVA_MODEL__STT": "deepgram",
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "test_key", "model": "nova-2"}),
+            }
+        )
+
+        assert isinstance(config.model, TelephonyBridgeConfig)
+        assert config.model.sip_uri == "sip:assistant@example.com"
+        assert config.model.webhook_port == 9999
+        assert config.model.webhook_base_url == "https://example.ngrok-free.dev"
+        assert config.model.stt == "deepgram"
+
+    def test_call_control_config(self):
+        """Call Control transport requires and preserves its transport-specific settings."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__SIP_URI": "sip:assistant@example.com",
+                "EVA_MODEL__TELNYX_API_KEY": "telnyx-key",
+                "EVA_MODEL__CALL_CONTROL_APP_ID": "app-123",
+                "EVA_MODEL__CALL_CONTROL_FROM": "+15551234567",
+                "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.dev/",
+            }
+        )
+
+        assert isinstance(config.model, TelephonyBridgeConfig)
+        assert config.model.sip_uri == "sip:assistant@example.com"
+        assert config.model.telnyx_api_key == "telnyx-key"
+        assert config.model.call_control_app_id == "app-123"
+        assert config.model.call_control_from == "+15551234567"
+
+    def test_telephony_bridge_is_mutually_exclusive(self):
+        """Telephony bridge config cannot be mixed with other pipeline modes."""
+        with pytest.raises(ValueError, match="Multiple pipeline modes set"):
+            _config(
+                env_vars=_EVA_MODEL_LIST_ENV
+                | {
+                    "EVA_MODEL__LLM": "gpt-5.2",
+                    "EVA_MODEL__SIP_URI": "sip:assistant@example.com",
+                }
+            )
+
+    def test_telephony_bridge_rejects_invalid_sip_uri(self):
+        """SIP URI must start with sip:, tel:, or + (E.164)."""
+        with pytest.raises(ValueError, match="sip_uri must be a SIP URI"):
+            _config(
+                env_vars=_EVA_MODEL_LIST_ENV
+                | {
+                    "EVA_MODEL__SIP_URI": "http://not-a-sip-uri",
+                    "EVA_MODEL__TELNYX_API_KEY": "telnyx-key",
+                    "EVA_MODEL__CALL_CONTROL_APP_ID": "app-123",
+                    "EVA_MODEL__CALL_CONTROL_FROM": "+15551234567",
+                    "EVA_MODEL__WEBHOOK_BASE_URL": "https://example.ngrok-free.dev",
+                }
+            )
 
     def test_missing_stt_tts_params(self):
         """Missing api_key or model in STT/TTS params causes a clear error."""

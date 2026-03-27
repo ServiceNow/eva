@@ -89,6 +89,14 @@ class _TurnExtractionState:
     # the user is interrupting the assistant (assistant_audio_open), this is the same utterance — skip the advance so
     # user_speech lands at the same turn.
     rollback_advance_consumed_by_user: bool = False
+    # Whether pipecat_agent had a single continuous audio stream (Telnyx telephony).
+    is_continuous_assistant_stream: bool = False
+    # Timestamp of the latest ElevenLabs user audio_start event. Used to attribute
+    # assistant_speech emitted at the same millisecond to the preceding turn.
+    last_user_audio_start_timestamp_ms: int | None = None
+    # Per-turn intended text from audit_log assistant events, used as fallback when
+    # pipecat tts_text events don't populate intended_assistant_turns for a given turn.
+    audit_log_intended_turns: dict[int, list[str]] = field(default_factory=dict)
 
     def advance_turn_if_needed(self) -> None:
         """Advance turn if the assistant responded since the last user event.
@@ -139,6 +147,10 @@ def _process_user_speech(
     existing = context.intended_user_turns.get(turn_idx, "")
     sep = f" {AnnotationLabel.CUT_OFF_ON_ITS_OWN} " if existing else ""
     user_text = event["data"]["data"]["text"]
+    # Skip non-speech control events (e.g. <call:end_call> from ElevenLabs user sim silence timeouts).
+    # These are not real user speech and should not count as a turn boundary.
+    if user_text.strip().startswith("<call:") and user_text.strip().endswith(">"):
+        return
     if not existing and state.pending_user_interrupts_label:
         user_text = f"{AnnotationLabel.USER_INTERRUPTS} {user_text}"
     append_turn_text(context.intended_user_turns, turn_idx, user_text, sep)
@@ -214,6 +226,8 @@ def _handle_audit_log_event(
     elif event["event_type"] == "assistant":
         turn = state.turn_num
         content = event["data"]
+        if not content:
+            return
         # Apply interruption prefix if this is the first assistant entry in a turn where assistant barged in
         # on the user.
         if turn in state.assistant_interrupted_turns:
@@ -234,6 +248,14 @@ def _handle_audit_log_event(
                 "_audit_source": True,
             }
         )
+        # Also populate intended_assistant_turns from audit_log as a fallback source.
+        # Pipecat tts_text events are the primary source (more granular), but for turns
+        # where pipecat events aren't available (e.g. Telnyx telephony bridge enriched
+        # from Conversations API), the audit_log provides the intended text.
+        # Track which turns got audit_log text; _finalize_extraction merges them only
+        # for turns that pipecat didn't already populate.
+        state.assistant_spoke_in_turn = True
+        state.audit_log_intended_turns.setdefault(turn, []).append(content)
 
     elif event["event_type"] in ("tool_call", "tool_response"):
         state.assistant_processed_in_turn = True
@@ -304,6 +326,7 @@ def _handle_audio_start(
     timestamp = event["data"]["audio_timestamp"]
 
     if role == "elevenlabs_user":
+        state.last_user_audio_start_timestamp_ms = event["timestamp_ms"]
         if state.assistant_audio_open:
             # User interrupts assistant — apply "[likely cut off by user]" labels to the OLD turn now,
             # then advance so the user's retry starts a new turn.
@@ -395,6 +418,23 @@ def _handle_elevenlabs_event(
         # Use the turn where assistant audio started, not the current turn — ElevenLabs transcripts can
         # arrive after a user audio_start has already advanced the turn.
         turn = state.last_assistant_audio_turn
+        # Telnyx assistant_speech often lands at the exact millisecond as the next
+        # user audio_start. The audio_start has already advanced the turn counter, so
+        # the speech belongs to the immediately preceding assistant turn.
+        if (
+            state.user_audio_open
+            and state.last_user_audio_start_timestamp_ms == event["timestamp_ms"]
+            and state.turn_num > 0
+        ):
+            turn = state.turn_num - 1
+            state.last_assistant_audio_turn = turn
+        # For continuous audio streams (e.g., Telnyx telephony bridge), the agent has a single
+        # audio_start for the entire call. When the assistant speaks after the user has finished
+        # (new turn), update last_assistant_audio_turn to the current turn so speech is attributed
+        # correctly and turn advancement works.
+        if turn != state.turn_num and not state.user_audio_open and state.assistant_audio_open:
+            turn = state.turn_num
+            state.last_assistant_audio_turn = turn
         # Only mark "assistant spoke" if the speech belongs to the current turn; late transcripts from a
         # previous turn must not trigger a spurious turn advance.
         if turn == state.turn_num:
@@ -456,6 +496,32 @@ def _pair_audio_segments(state: "_TurnExtractionState", context: "_ProcessorCont
         if segments:
             getattr(context, AUDIO_ATTR[role])[turn_idx] = segments
 
+    # Detect continuous assistant audio stream (e.g. Telnyx telephony bridge).
+    # Synthesis happens later in _synthesize_continuous_stream_timestamps using
+    # pipecat's measured response latencies for accuracy.
+    agent_keys = [k for k in state.audio_starts if k[0] == "pipecat_agent"]
+    if len(agent_keys) == 1:
+        state.is_continuous_assistant_stream = True
+
+
+def _has_pipecat_assistant_text(history: list[dict]) -> bool:
+    """Return True when local Pipecat assistant text exists in the merged history."""
+    return any(
+        event["source"] == "pipecat" and event["event_type"] in ("tts_text", "llm_response")
+        for event in history
+    )
+
+
+def _uses_telnyx_message_native_stream(context: "_ProcessorContext") -> bool:
+    """Return True for the Telnyx bridge path with assistant audio but no Pipecat text."""
+    has_assistant_audio = any(
+        event["source"] == "elevenlabs"
+        and event["event_type"] in ("audio_start", "audio_end")
+        and event["data"].get("user") == "pipecat_agent"
+        for event in context.history
+    )
+    return has_assistant_audio and not _has_pipecat_assistant_text(context.history)
+
 
 def _validate_conversation_trace(
     conversation_trace: list[dict],
@@ -492,19 +558,26 @@ def _validate_conversation_trace(
     return validated_trace
 
 
-def _fix_interruption_labels(context: "_ProcessorContext", state: "_TurnExtractionState") -> None:
-    """Fix interruption labels that may have been missed during the event loop.
+def _build_message_trace(conversation_trace: list[dict]) -> list[dict]:
+    """Build the authoritative message trace before spoken-prefix validation."""
+    stripped_trace = []
+    for entry in conversation_trace:
+        cleaned = entry.copy()
+        cleaned.pop("_audit_source", None)
+        cleaned.pop("interrupted", None)
+        stripped_trace.append(cleaned)
+    return group_consecutive_turns(stripped_trace)
 
-    The audit_log/assistant entry can arrive before the interruption is detected at audio_start(pipecat_agent),
-    so the prefix wasn't applied during the loop. Only fix the first assistant entry per interrupted turn.
-    """
-    # Clean up per-entry interrupted keys (used during event loop only)
-    for entry in context.conversation_trace:
-        entry.pop("interrupted", None)
 
-    # Fix [assistant interrupts] labels
+def _fix_interruption_labels_in_trace(trace: list[dict], state: "_TurnExtractionState") -> None:
+    """Fix interruption labels that may have been missed during the event loop."""
+    if not trace:
+        return
+
+    # Fix [assistant interrupts] labels. The audit_log/assistant entry can arrive before the interruption
+    # is detected at audio_start(pipecat_agent), so the prefix wasn't applied during the loop.
     labeled_asst_turns: set[int] = set()
-    for entry in context.conversation_trace:
+    for entry in trace:
         if entry.get("role") != "assistant":
             continue
         tid = entry.get("turn_id")
@@ -519,10 +592,16 @@ def _fix_interruption_labels(context: "_ProcessorContext", state: "_TurnExtracti
     # turn already carries it — avoids mislabeling the first entry in no-advance (rollback) cases where
     # the original speech precedes the interrupting speech at the same turn.
     for tid in state.user_interrupted_turns:
-        user_entries = [e for e in context.conversation_trace if e.get("role") == "user" and e.get("turn_id") == tid]
+        user_entries = [e for e in trace if e.get("role") == "user" and e.get("turn_id") == tid]
         already_labeled = any(e["content"].startswith(AnnotationLabel.USER_INTERRUPTS) for e in user_entries)
         if not already_labeled and user_entries:
             user_entries[0]["content"] = f"{AnnotationLabel.USER_INTERRUPTS} {user_entries[0]['content']}"
+
+
+def _fix_interruption_labels(context: "_ProcessorContext", state: "_TurnExtractionState") -> None:
+    """Fix interruption labels on both spoken and message-native traces."""
+    _fix_interruption_labels_in_trace(context.conversation_trace, state)
+    _fix_interruption_labels_in_trace(context.message_trace, state)
 
 
 def _finalize_extraction(
@@ -533,6 +612,7 @@ def _finalize_extraction(
     """Assign derived context variables, log results, and align turn keys across all sources."""
     context.assistant_interrupted_turns = state.assistant_interrupted_turns
     context.user_interrupted_turns = state.user_interrupted_turns
+    context.is_continuous_assistant_stream = state.is_continuous_assistant_stream
 
     all_interrupted = state.assistant_interrupted_turns | state.user_interrupted_turns
     if all_interrupted:
@@ -541,6 +621,14 @@ def _finalize_extraction(
             f"assistant interrupted user at turns {sorted(state.assistant_interrupted_turns)}, "
             f"user interrupted assistant at turns {sorted(state.user_interrupted_turns)}"
         )
+    # Merge audit_log intended text for turns that pipecat didn't populate.
+    # Pipecat tts_text is the primary source; audit_log/assistant is the fallback
+    # (e.g. Telnyx telephony bridge enriched from Conversations API).
+    for turn_id, texts in state.audit_log_intended_turns.items():
+        existing = context.intended_assistant_turns.get(turn_id, "")
+        if not existing:
+            context.intended_assistant_turns[turn_id] = "\n".join(texts)
+
     context.tool_params, context.tool_responses = extract_tool_params_and_responses(conversation_trace)
     context.tool_called = [t["tool_name"].lower() for t in context.tool_params]
     context.num_tool_calls = len(context.tool_params)
@@ -569,23 +657,28 @@ def _finalize_extraction(
     )
 
 
-def _ensure_greeting_is_first(context: "_ProcessorContext") -> None:
-    """Ensure the assistant greeting (turn 0) is the first entry in conversation_trace.
+def _ensure_greeting_is_first(trace: list[dict], context: "_ProcessorContext", *, require_pipecat: bool) -> None:
+    """Ensure the assistant greeting (turn 0) is the first entry in a trace.
 
     With audio-native models, a ElevenLabs user_speech timestamp can arrive before the audit-log assistant entry, so the
     greeting ends up out of order. Move it to the front, or synthesize it from pipecat text if absent.
     """
-    first = context.conversation_trace[0]
+    if not trace:
+        return
+
+    first = trace[0]
     if not (first.get("role") == "user" and first.get("turn_id", 0) > 0):
         return
 
     greeting_idx = next(
-        (i for i, e in enumerate(context.conversation_trace) if e.get("role") == "assistant" and e.get("turn_id") == 0),
+        (i for i, e in enumerate(trace) if e.get("role") == "assistant" and e.get("turn_id") == 0),
         None,
     )
     if greeting_idx is not None:
-        greeting = context.conversation_trace.pop(greeting_idx)
+        greeting = trace.pop(greeting_idx)
     else:
+        if require_pipecat and 0 not in context._intended_assistant_segments:
+            return
         # Cascade: greeting not in audit log — create from pipecat text.
         greeting = {
             "role": "assistant",
@@ -593,7 +686,7 @@ def _ensure_greeting_is_first(context: "_ProcessorContext") -> None:
             "type": "intended",
             "turn_id": 0,
         }
-    context.conversation_trace.insert(0, greeting)
+    trace.insert(0, greeting)
 
 
 def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dict, last_turn_id: int) -> None:
@@ -610,6 +703,8 @@ def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dic
     elif context.intended_assistant_turns:
         max_asst = max(context.intended_assistant_turns.keys())
         if max_asst >= last_turn_id:
+            if max_asst not in context._intended_assistant_segments:
+                return
             has_asst_in_trace = any(
                 e.get("role") == "assistant" and e.get("turn_id") == max_asst for e in context.conversation_trace
             )
@@ -643,6 +738,45 @@ def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dic
     logger.info(f"Record {context.record_id}: Labeled trailing assistant at turn {trailing_turn_id}")
 
 
+def _reconcile_message_trace(context: "_ProcessorContext") -> None:
+    """Apply light reconciliation to the message-native trace."""
+    if not context.message_trace:
+        if context.intended_assistant_turns.get(0):
+            context.message_trace.append(
+                {
+                    "role": "assistant",
+                    "content": context.intended_assistant_turns[0],
+                    "type": "intended",
+                    "turn_id": 0,
+                }
+            )
+        return
+
+    _ensure_greeting_is_first(context.message_trace, context, require_pipecat=False)
+
+    if not context.intended_user_turns:
+        return
+
+    last_user_turn_id = max(context.intended_user_turns.keys())
+    last_turn_id = context.message_trace[-1].get("turn_id", -1)
+    has_last_user = any(
+        entry.get("role") == "user" and entry.get("turn_id") == last_user_turn_id for entry in context.message_trace
+    )
+    if last_user_turn_id > last_turn_id and not has_last_user:
+        transcribed = context.transcribed_user_turns.get(last_user_turn_id)
+        intended = context.intended_user_turns[last_user_turn_id]
+        if not transcribed and not intended:
+            return
+        context.message_trace.append(
+            {
+                "role": "user",
+                "content": transcribed or intended,
+                "type": "transcribed" if transcribed else "intended",
+                "turn_id": last_user_turn_id,
+            }
+        )
+
+
 class _ProcessorContext:
     """Processed log data for metric computation."""
 
@@ -669,6 +803,7 @@ class _ProcessorContext:
         self.tool_responses: list[dict] = []
 
         self.conversation_trace: list[dict] = []
+        self.message_trace: list[dict] = []
 
         self.audio_assistant_path: Optional[str] = None
         self.audio_user_path: Optional[str] = None
@@ -685,6 +820,9 @@ class _ProcessorContext:
 
         # Response latencies from Pipecat's UserBotLatencyObserver
         self.response_speed_latencies: list[float] = []
+
+        # Whether pipecat_agent had a single continuous audio stream (Telnyx telephony)
+        self.is_continuous_assistant_stream: bool = False
 
         # Unified timeline of all events from all log sources
         self.history: list[dict] = []
@@ -720,6 +858,7 @@ class MetricsContextProcessor:
             self._build_history(context, output_dir, result)
             self._extract_turns_from_history(context)
             self._load_response_latencies(context, output_dir)
+            self._synthesize_continuous_stream_timestamps(context)
             self._reconcile_transcript_with_tools(context)
 
             return context
@@ -746,7 +885,7 @@ class MetricsContextProcessor:
                     "timestamp_ms": int(entry["timestamp"]),
                     "source": "audit_log",
                     "event_type": entry.get("message_type", "unknown"),
-                    "data": entry.get("value", {}),
+                    "data": entry.get("content") or entry.get("value", {}),
                 }
             )
         return history
@@ -818,10 +957,22 @@ class MetricsContextProcessor:
         Each entry: {timestamp_ms, source, event_type, data}.
         """
         history = self._load_audit_log_transcript(output_dir)
-        history.extend(self._load_pipecat_logs(result.pipecat_logs_path))
-        history.extend(self._load_elevenlabs_logs(result.elevenlabs_logs_path))
+        if result.pipecat_logs_path:
+            pipecat_path = Path(result.pipecat_logs_path)
+            if pipecat_path.exists() and pipecat_path.stat().st_size > 0:
+                history.extend(self._load_pipecat_logs(result.pipecat_logs_path))
+        if result.elevenlabs_logs_path:
+            elevenlabs_path = Path(result.elevenlabs_logs_path)
+            if elevenlabs_path.exists() and elevenlabs_path.stat().st_size > 0:
+                history.extend(self._load_elevenlabs_logs(result.elevenlabs_logs_path))
 
-        history.sort(key=lambda e: e["timestamp_ms"])
+        # Sort by timestamp with tie-breaking: audio boundary events (audio_start/audio_end)
+        # must be processed before speech/text events at the same millisecond so that turn
+        # advancement happens before content is assigned to a turn.  Without this, pipecat
+        # tts_text events at the same timestamp as audio_start(elevenlabs_user) would land
+        # in the previous turn (turn counter hasn't advanced yet).
+        _EVENT_SORT_PRIORITY = {"audio_start": 0, "audio_end": 1, "connection_state": 2}
+        history.sort(key=lambda e: (e["timestamp_ms"], _EVENT_SORT_PRIORITY.get(e["event_type"], 5)))
         context.history = history
 
         source_counts = Counter(entry["source"] for entry in history)
@@ -864,6 +1015,10 @@ class MetricsContextProcessor:
             state.session_end_ts = context.history[-1].get("timestamp_ms") / 1000.0
 
         _pair_audio_segments(state, context)
+        if _uses_telnyx_message_native_stream(context):
+            state.is_continuous_assistant_stream = True
+        context.is_continuous_assistant_stream = state.is_continuous_assistant_stream
+        context.message_trace = _build_message_trace(conversation_trace)
         validated_trace = _validate_conversation_trace(conversation_trace, context)
         context.conversation_trace = group_consecutive_turns(validated_trace)
         _fix_interruption_labels(context, state)
@@ -882,7 +1037,7 @@ class MetricsContextProcessor:
         if not context.conversation_trace:
             # Empty trace (e.g. greeting-only conversation with no user turns). Create from pipecat intended text if
             # available.
-            if context.intended_assistant_turns.get(0):
+            if 0 in context._intended_assistant_segments and context.intended_assistant_turns.get(0):
                 context.conversation_trace.append(
                     {
                         "role": "assistant",
@@ -891,38 +1046,131 @@ class MetricsContextProcessor:
                         "turn_id": 0,
                     }
                 )
+
+        if context.conversation_trace:
+            _ensure_greeting_is_first(context.conversation_trace, context, require_pipecat=True)
+
+            if context.intended_user_turns:
+                last_user_turn_id = max(context.intended_user_turns.keys())
+                last_entry = context.conversation_trace[-1]
+                last_turn_id = last_entry.get("turn_id")
+                has_last_user = any(
+                    entry.get("role") == "user" and entry.get("turn_id") == last_user_turn_id
+                    for entry in context.conversation_trace
+                )
+
+                # User's final turn arrived after the last audit-log entry — append it and we're done.
+                if last_user_turn_id > last_turn_id and not has_last_user:
+                    last_user_text = context.intended_user_turns[last_user_turn_id]
+                    if last_user_text:
+                        context.conversation_trace.append(
+                            {
+                                "role": "user",
+                                "content": last_user_text,
+                                "type": "intended",
+                                "turn_id": last_user_turn_id,
+                            }
+                        )
+                    if last_user_text and not context.transcribed_user_turns.get(last_user_turn_id):
+                        context.transcribed_user_turns[last_user_turn_id] = last_user_text
+                    if last_user_text:
+                        logger.info(f"Record {context.record_id}: Appended last user turn: {last_user_text[:50]}")
+                else:
+                    _label_trailing_assistant_turn(context, last_entry, last_turn_id)
+
+                # Backfill: if the last intended user turn has no transcription (conversation ended before STT
+                # finished), use the intended text.
+                if last_user_turn_id is not None and not context.transcribed_user_turns.get(last_user_turn_id):
+                    last_user_text = context.intended_user_turns[last_user_turn_id]
+                    context.transcribed_user_turns[last_user_turn_id] = last_user_text
+                    logger.info(
+                        f"Record {context.record_id}: Backfilled transcribed_user_turns[{last_user_turn_id}] "
+                        f"from intended: {last_user_text[:50]}"
+                    )
+
+        _reconcile_message_trace(context)
+
+    @staticmethod
+    def _synthesize_continuous_stream_timestamps(context: _ProcessorContext) -> None:
+        """Synthesize per-turn assistant audio timestamps for continuous streams.
+
+        For Telnyx telephony calls, pipecat_agent has a single audio_start/end for the
+        entire call (continuous RTP stream). Only turn 0 (greeting) gets real audio
+        timestamps. This method creates synthetic timestamps for other turns using
+        pipecat's measured response latencies (user_end + latency = assistant_start).
+        """
+        telnyx_message_native = _uses_telnyx_message_native_stream(context)
+        if not context.is_continuous_assistant_stream and not telnyx_message_native:
             return
-
-        _ensure_greeting_is_first(context)
-
-        if not context.intended_user_turns:
-            return
-
-        last_user_turn_id = max(context.intended_user_turns.keys())
-        last_entry = context.conversation_trace[-1]
-        last_turn_id = last_entry.get("turn_id")
-
-        # User's final turn arrived after the last audit-log entry — append it and we're done.
-        if last_user_turn_id > last_turn_id:
-            last_user_text = context.intended_user_turns[last_user_turn_id]
-            context.conversation_trace.append(
-                {"role": "user", "content": last_user_text, "type": "intended", "turn_id": last_user_turn_id}
+        if not context.response_speed_latencies:
+            logger.warning(
+                f"Record {context.record_id}: Continuous assistant stream detected but no "
+                f"response latencies available — cannot synthesize assistant audio timestamps"
             )
-            if not context.transcribed_user_turns.get(last_user_turn_id):
-                context.transcribed_user_turns[last_user_turn_id] = last_user_text
-            logger.info(f"Record {context.record_id}: Appended last user turn: {last_user_text[:50]}")
             return
 
-        _label_trailing_assistant_turn(context, last_entry, last_turn_id)
+        # Get user turns that have audio timestamps, sorted, excluding greeting (turn 0).
+        user_turns_with_audio = sorted(k for k, v in context.audio_timestamps_user_turns.items() if v and k > 0)
+        if not user_turns_with_audio:
+            return
 
-        # Backfill: if the last intended user turn has no transcription (conversation ended before STT finished), use
-        # the intended text.
-        if last_user_turn_id is not None and not context.transcribed_user_turns.get(last_user_turn_id):
-            last_user_text = context.intended_user_turns[last_user_turn_id]
-            context.transcribed_user_turns[last_user_turn_id] = last_user_text
+        latencies = context.response_speed_latencies
+        assistant_turn_ids = sorted(k for k in context.intended_assistant_turns if k > 0)
+        if not assistant_turn_ids:
+            return
+
+        user_turn_index = {turn_id: idx for idx, turn_id in enumerate(user_turns_with_audio)}
+        session_end = max((event["timestamp_ms"] / 1000.0 for event in context.history), default=None)
+        synthesized: list[int] = []
+
+        if telnyx_message_native and context.audio_timestamps_assistant_turns.get(0):
+            first_user_segments = context.audio_timestamps_user_turns.get(user_turns_with_audio[0])
+            if first_user_segments:
+                greeting = context.audio_timestamps_assistant_turns[0]
+                greeting_start = greeting[0][0]
+                greeting_end = min(greeting[-1][1], first_user_segments[0][0])
+                if greeting_end > greeting_start:
+                    context.audio_timestamps_assistant_turns[0] = [(greeting_start, greeting_end)]
+
+        for turn_id in assistant_turn_ids:
+            idx = user_turn_index.get(turn_id)
+            if idx is None or idx >= len(latencies):
+                continue
+
+            user_segments = context.audio_timestamps_user_turns.get(turn_id)
+            if not user_segments:
+                continue
+
+            assistant_start = user_segments[-1][1] + latencies[idx]
+            assistant_end: float | None = None
+
+            if idx + 1 < len(user_turns_with_audio):
+                next_turn = user_turns_with_audio[idx + 1]
+                next_user_segments = context.audio_timestamps_user_turns.get(next_turn)
+                if next_user_segments:
+                    assistant_end = next_user_segments[0][0]
+
+            if assistant_end is None:
+                existing = context.audio_timestamps_assistant_turns.get(turn_id)
+                if existing and existing[-1][1] > assistant_start:
+                    assistant_end = existing[-1][1]
+                elif session_end is not None and session_end > assistant_start:
+                    assistant_end = session_end
+                else:
+                    assistant_end = assistant_start + 5.0
+
+            if assistant_end <= assistant_start:
+                continue
+
+            existing = context.audio_timestamps_assistant_turns.get(turn_id)
+            if telnyx_message_native or not existing:
+                context.audio_timestamps_assistant_turns[turn_id] = [(assistant_start, assistant_end)]
+                synthesized.append(turn_id)
+
+        if synthesized:
             logger.info(
-                f"Record {context.record_id}: Backfilled transcribed_user_turns[{last_user_turn_id}] "
-                f"from intended: {last_user_text[:50]}"
+                f"Record {context.record_id}: Synthesized assistant audio timestamps for "
+                f"continuous stream using response latencies (turns {synthesized})"
             )
 
     def _load_response_latencies(self, context: _ProcessorContext, output_dir: Path) -> bool:

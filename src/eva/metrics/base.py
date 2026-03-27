@@ -80,11 +80,13 @@ class MetricContext:
         tool_params: list[dict] | None = None,
         tool_responses: list[dict] | None = None,
         conversation_trace: list[dict] | None = None,
+        message_trace: list[dict] | None = None,
         conversation_finished: bool | None = None,
         response_speed_latencies: list[float] | None = None,
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
         is_audio_native: bool = False,
+        is_continuous_assistant_stream: bool = False,
     ):
         self.record_id = record_id
 
@@ -130,11 +132,13 @@ class MetricContext:
         self.tool_params = tool_params or []
         self.tool_responses = tool_responses or []
         self.conversation_trace = conversation_trace or []
+        self.message_trace = message_trace or []
         self.conversation_finished = conversation_finished or False
         self.response_speed_latencies = response_speed_latencies or []
         self.assistant_interrupted_turns = assistant_interrupted_turns or set()
         self.user_interrupted_turns = user_interrupted_turns or set()
         self.is_audio_native = is_audio_native
+        self.is_continuous_assistant_stream = is_continuous_assistant_stream
 
     def to_dict(self) -> dict[str, Any]:
         """Convert MetricContext to a serializable dictionary."""
@@ -255,6 +259,10 @@ class TextJudgeMetric(BaseMetric):
 class ConversationTextJudgeMetric(TextJudgeMetric):
     """Base class for text judges that evaluate entire conversations."""
 
+    def get_transcript_trace(self, context: MetricContext) -> list[dict]:
+        """Return the trace to format for the judge prompt."""
+        return context.conversation_trace
+
     async def compute(self, context: MetricContext) -> MetricScore:
         """Standard flow for conversation-level text judges."""
         try:
@@ -311,7 +319,11 @@ class ConversationTextJudgeMetric(TextJudgeMetric):
 
     def format_transcript(self, context: MetricContext) -> str:
         """Format transcript. Can be overridden."""
-        return format_transcript_with_tools(context.conversation_trace)
+        return format_transcript_with_tools(self.get_transcript_trace(context))
+
+    def get_num_turns(self, context: MetricContext) -> int:
+        """Return the number of entries in the trace shown to the judge."""
+        return len(self.get_transcript_trace(context))
 
     def build_metric_score(
         self,
@@ -330,7 +342,7 @@ class ConversationTextJudgeMetric(TextJudgeMetric):
             details={
                 "rating": rating,
                 "explanation": response.get("explanation", ""),
-                "num_turns": len(context.conversation_trace),
+                "num_turns": self.get_num_turns(context),
                 "judge_prompt": prompt,
                 "judge_raw_response": raw_response,
             },
@@ -359,9 +371,13 @@ class PerTurnConversationJudgeMetric(TextJudgeMetric):
     def get_expected_turn_ids(self, context: MetricContext) -> list[int]:
         """Return the ordered list of turn IDs that the judge should rate."""
 
+    def get_transcript_trace(self, context: MetricContext) -> list[dict]:
+        """Return the trace to format for the judge prompt."""
+        return context.conversation_trace
+
     def format_transcript(self, context: MetricContext) -> str:
         """Format conversation content for the judge prompt. Can be overridden."""
-        return format_transcript_with_tools(context.conversation_trace)
+        return format_transcript_with_tools(self.get_transcript_trace(context))
 
     @abstractmethod
     def get_prompt_variables(self, context: MetricContext, transcript_text: str) -> dict[str, Any]:

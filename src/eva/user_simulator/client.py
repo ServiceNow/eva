@@ -43,6 +43,7 @@ class UserSimulator:
         output_dir: Path,
         timeout: int = 600,
         user_simulator_context: str = "",
+        audio_codec: str = "mulaw",
     ):
         """Initialize the user simulator.
 
@@ -54,6 +55,7 @@ class UserSimulator:
             output_dir: Directory for output files
             timeout: Conversation timeout in seconds
             user_simulator_context: Domain-specific context line from agent config
+            audio_codec: Audio codec for assistant connection ("mulaw" or "pcm")
         """
         self.persona_config = persona_config
         self.goal = goal
@@ -62,6 +64,7 @@ class UserSimulator:
         self.timeout = timeout
         self.current_date_time = current_date_time
         self.user_simulator_context = user_simulator_context
+        self.audio_codec = audio_codec
 
         # State
         self._conversation = None
@@ -133,6 +136,7 @@ class UserSimulator:
             record_callback=self._record_audio,
             event_logger=self.event_logger,
             conversation_done_callback=self._on_conversation_end,
+            codec=self.audio_codec,
         )
 
         # Start the audio interface WebSocket connection

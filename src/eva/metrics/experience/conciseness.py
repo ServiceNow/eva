@@ -23,9 +23,16 @@ class ConcisenessJudgeMetric(PerTurnConversationJudgeMetric):
     category = "experience"
     rating_scale = (1, 3)
 
+    def get_transcript_trace(self, context: MetricContext) -> list[dict]:
+        """Use message-native traces for continuous-stream Telnyx conversations."""
+        if context.is_continuous_assistant_stream and context.message_trace:
+            return context.message_trace
+        return super().get_transcript_trace(context)
+
     def get_expected_turn_ids(self, context: MetricContext) -> list[int]:
         """Return unique turn IDs from conversation trace, preserving order."""
-        return list(dict.fromkeys(e.get("turn_id") for e in context.conversation_trace if e.get("turn_id") is not None))
+        trace = self.get_transcript_trace(context)
+        return list(dict.fromkeys(e.get("turn_id") for e in trace if e.get("turn_id") is not None))
 
     def get_prompt_variables(self, context: MetricContext, transcript_text: str) -> dict[str, Any]:
         """Return variables for prompt formatting."""

@@ -384,6 +384,14 @@ class AuditLog:
             "total_llm_calls": len(self.llm_prompts),
         }
 
+    def replace_transcript(self, transcript: list[dict[str, Any]]) -> None:
+        """Replace the transcript with enriched data from an external source.
+
+        Used by the telephony bridge to replace local tool-only events
+        with full conversation history fetched from the Telnyx Conversations API.
+        """
+        self.transcript = transcript
+
     def save(self, path: Path) -> None:
         """Save audit log to JSON file.
 
