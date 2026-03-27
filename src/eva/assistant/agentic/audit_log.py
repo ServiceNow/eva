@@ -36,6 +36,7 @@ class ConversationMessage(BaseModel):
     tool_call_id: Optional[str] = None
     name: Optional[str] = None  # For tool messages
     turn_id: Optional[int] = None  # For associating transcription updates
+    reasoning: Optional[str] = None  # For model reasoning (e.g., from OpenAI o1)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to a plain dict, excluding None fields and internal tracking fields."""
@@ -268,6 +269,9 @@ class AuditLog:
             "timestamp": current_timestamp_ms(),
             "message_type": "llm_call",
         }
+        # Add reasoning if present
+        if llm_call.response and llm_call.response.reasoning:
+            transcript_entry["value"]["reasoning"] = llm_call.response.reasoning
         self.transcript.append(transcript_entry)
 
     def append_tool_call(

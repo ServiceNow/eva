@@ -207,6 +207,7 @@ class AgenticSystem:
                     "latency": llm_stats.get("latency", 0.0),
                     "parameters": json.dumps(llm_stats.get("parameters", {})),
                     "tool_calls": json.dumps(response_tool_calls_for_stats) if response_tool_calls_for_stats else "",
+                    "reasoning": f'"{llm_stats.get("reasoning_content", "")}"',
                 }
                 self.agent_perf_stats.append(perf_stat)
                 logger.debug(
@@ -217,6 +218,7 @@ class AgenticSystem:
                     role=MessageRole.ASSISTANT,
                     content=response_content,
                     tool_calls=tool_calls_dicts if tool_calls_dicts else None,
+                    reasoning=llm_stats.get("reasoning"),
                 )
 
                 llm_call = LLMCall(
@@ -381,6 +383,7 @@ class AgenticSystem:
                     "parameters",
                     "tool_calls",
                     "latency",
+                    "reasoning",
                 ]
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()

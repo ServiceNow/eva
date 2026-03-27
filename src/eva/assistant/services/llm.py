@@ -80,6 +80,9 @@ class LiteLLMClient:
                 response_cost = hidden_params.get("response_cost")
                 cost_source = "litellm"
 
+                # Extract reasoning if present (OpenAI o1 and compatible models)
+                reasoning = getattr(message, "reasoning_content", None)
+
                 stats = {
                     "prompt_tokens": prompt_tokens,
                     "completion_tokens": completion_tokens,
@@ -88,6 +91,7 @@ class LiteLLMClient:
                     "cost": response_cost,
                     "cost_source": cost_source,
                     "latency": round(elapsed_time, 3),
+                    "reasoning": reasoning,
                 }
 
                 if hasattr(message, "tool_calls") and message.tool_calls:
