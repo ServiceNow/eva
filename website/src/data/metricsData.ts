@@ -16,6 +16,7 @@ export interface MetricDefinition {
   judgeAccuracy?: number;
   judgeScores?: { label: string; value: number; std?: number }[];
   judgeDevelopmentNotes?: string;
+  developmentDocUrl?: string;
 }
 
 export const metricTypeLabels: Record<MetricType, string> = {
@@ -52,14 +53,15 @@ export const metrics: MetricDefinition[] = [
     judgeAccuracy: 0.8957,
     judgeScores: [
       { label: 'accuracy', value: 0.8957, std: 0.0258 },
-      { label: 'macro_f1_classes_0_1', value: 0.856, std: 0.024 },
+      { label: 'macro_f1', value: 0.856, std: 0.024 },
     ],
     description: 'Measures whether the agent correctly spoke the information it intended to communicate. TTS systems can mispronounce, skip, or distort words \u2014 in a voice context, if a confirmation code is not spoken correctly, the user cannot act on it regardless of whether the LLM produced the right answer.',
     inputs: 'Agent audio recording, intended assistant text (what LLM generated)',
     outputRange: 'Binary per turn (0=low fidelity, 1=high fidelity), aggregated as mean across turns',
     passThreshold: '≥ 0.95',
-    judgePrompt: `You are an expert evaluator judging the fidelity of text-to-speech (TTS) audio against the intended text. You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
-
+    judgePrompt: `You are an expert evaluator judging the fidelity of this audio file against the intended text.
+You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
+The audio provided is a recording of the agent's side of a conversation, and contains only the agent responses, not the user.
 
 ## Intended Turns
 {intended_turns_formatted}
@@ -76,16 +78,9 @@ The intended text may contain non-spoken tags and markers. You must understand t
 Tags like [slow], [firm], [annoyed] describe how the words were meant to be spoken. They are NOT spoken aloud and should never be expected in the audio.
 
 ### Interruption Tags
-These are metadata markers inserted during post-processing to describe what happened in the conversation. They are NOT spoken aloud. Never penalize the audio for not containing these tags.
-The tags also tell you that certain portions of the intended text were likely never spoken, because the speaker was interrupted or cut themselves off. Do NOT penalize for missing words that fall in a region the tags indicate was not spoken.
+{interruption_tags_reference}
 
-Tag definitions:
-\u2022 [assistant interrupts] \u2014 The agent started speaking over the user. Text after this tag in the user's intended text may have been partially or fully drowned out by the agent speaking. Expect that some words after this tag may be missing or garbled in the audio.
-\u2022 [user interrupts] \u2014 The user started speaking over the agent. Text after this tag in the agent's intended text may have been partially or fully spoken before the agent yielded the floor. Expect that some words after this tag may be missing.
-\u2022 [likely cut off by user] \u2014 In agent intended text, marks approximately where the agent's speech was cut off by the user. Text BEFORE this tag was likely cut off at some point \u2014 the speaker may not have finished everything before it. Text AFTER this tag was most likely said (the agent resumed after the interruption). Do not penalize for missing words before this tag.
-\u2022 [speaker likely cut itself off] \u2014 The agent stopped talking on its own, probably because it detected the user was speaking. Words before this tag were probably not all said. The text after this tag is what the agent said after resuming. Do not penalize for missing words before this tag.
-\u2022 [likely interruption] \u2014 An unexplained break in the speaker's audio. Words around this boundary may be missing or fragmented.
-\u2022 [assistant starts replying - user interrupts] \u2014 In user intended text, the user was speaking, the agent began to reply, and the user interrupted the agent. Text around this boundary may have overlapping speech. Some words near this tag may be missing or garbled.
+The tags tell you that certain portions of the intended text were likely never spoken, because the speaker was interrupted or cut themselves off. Do NOT penalize for missing words that fall in a region the tags indicate was not spoken.
 
 **Key principle:** If a tag indicates that a section of text was likely not spoken aloud (due to interruption or cut-off), do NOT penalize for those words being missing from the audio. Only evaluate fidelity for words that were reasonably expected to have been spoken.
 
@@ -118,8 +113,6 @@ For each intended turn, compare what you hear in the audio against the intended 
 - Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
 - Words in regions flagged by interruption tags as likely not spoken
 
-**IMPORTANT: Only rate what you clearly hear.** If you cannot clearly make out a word or entity, note the uncertainty in your explanation rather than guessing. Do not fabricate or assume what was spoken.
-
 ## Rating Scale (per turn)
 - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
 - **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn.
@@ -130,12 +123,14 @@ Respond with a JSON object. Each turn entry must include the turn_id matching th
   "turns": [
     {{
       "turn_id": <int: the turn number from the Intended Turns>,
+      "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the intended text>
       "explanation": "<string: 1-3 sentence analysis of fidelity for this turn, citing specific intended vs actual mismatches, noting any regions skipped due to interruption flags>",
       "rating": <0 or 1>
     }}
   ],
   "explanation": "<string: overall summary of fidelity assessment>"
 }}`,
+    developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/agent_speech_fidelity_development.md',
   },
   {
     id: 'faithfulness',
@@ -342,6 +337,7 @@ Respond in JSON format:
     }},
     "rating": <int: 1, 2, or 3 - minimum rating across all dimensions>
 }}`,
+    developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/faithfulness_development.md',
   },
 
   // ─── EVA-X Core Metrics (3) ───
@@ -529,6 +525,7 @@ Return a JSON array with one object per turn:
 ]
 Make sure to use the same turn ids as provided in the conversation context. It typically starts at 1.
 The length of the array must equal the number of assistant turns in the conversation.`,
+    developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/turn_taking_development.md',
   },
   {
     id: 'conciseness',
@@ -649,6 +646,7 @@ Provide your response as a valid JSON array, one entry per turn. Each entry must
 ]
 
 If the turn is rated 3 or null, failure_modes must be an empty list: [].`,
+    developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/conciseness_development.md',
   },
   {
     id: 'conversation_progression',
@@ -821,6 +819,7 @@ Respond in JSON format. The "evidence" field must ALWAYS contain 1-2 sentences r
     }},
     "rating": <int: 1, 2, or 3>
 }}`,
+    developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/conversation_progression_development.md',
   },
 
   // ─── Debug Metrics (6) ───
@@ -1036,6 +1035,7 @@ Transcribed: \`My phone number is 404-555.\`
     "summary": "<1-2 sentence summary for this turn>"
 }}
 ]`,
+    developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/transcription_accuracy_key_entities.md',
   },
 
   // ─── Validation Metrics (3) ───

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Code, MessageSquare, Volume2 } from 'lucide-react';
+import { ChevronDown, Code, ExternalLink, MessageSquare, Volume2 } from 'lucide-react';
 import { metricTypeLabels, metricTypeColors } from '../../data/metricsData';
 import type { MetricDefinition } from '../../data/metricsData';
 import { JudgePromptViewer } from './JudgePromptViewer';
@@ -131,10 +131,19 @@ export function MetricNode({ metric }: MetricNodeProps) {
                               ))}
                             </div>
                           </div>
-                          {metric.judgeDevelopmentNotes ? (
+                          {metric.developmentDocUrl && (
+                            <a
+                              href={metric.developmentDocUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-sm text-accent-primary hover:text-accent-hover transition-colors"
+                            >
+                              View judge development details
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          {metric.judgeDevelopmentNotes && (
                             <p className="text-sm text-text-secondary leading-relaxed">{metric.judgeDevelopmentNotes}</p>
-                          ) : (
-                            <p className="text-sm text-text-muted italic"></p>
                           )}
                         </div>
                       </motion.div>
