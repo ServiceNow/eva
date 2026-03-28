@@ -515,24 +515,13 @@ class TelephonyBridgeServer:
         if self._session_end_reason:
             return self._session_end_reason
 
-        # Check for end_call tool invocation (local pipeline path).
+        # Check for end_call tool invocation.
         for entry in reversed(self.audit_log.transcript):
             if entry.get("message_type") not in {"tool_call", "tool_response"}:
                 continue
             value = entry.get("value", {})
             if isinstance(value, dict) and value.get("tool") == "end_call":
                 return "goodbye"
-
-        # For telephony bridge calls, the external assistant may not use an
-        # end_call tool — it just hangs up. Detect goodbye from the last few
-        # user/assistant speech entries in the audit log.
-        goodbye_keywords = {"goodbye", "bye", "have a great", "thank you for calling"}
-        for entry in reversed(self.audit_log.transcript[-6:]):
-            msg_type = entry.get("message_type", "")
-            if msg_type in {"user", "assistant"}:
-                text = str(entry.get("value", "")).lower()
-                if any(kw in text for kw in goodbye_keywords):
-                    return "goodbye"
 
         return None
 
