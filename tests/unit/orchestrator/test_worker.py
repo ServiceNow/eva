@@ -279,6 +279,9 @@ class TestTelephonyStart:
         await worker._start_assistant()
 
         bridge_ctor.assert_called_once()
+        assert bridge_ctor.call_args.kwargs["telnyx_conversation_lookup"] == (
+            worker.tool_webhook_service.get_telnyx_conversation_id
+        )
         mock_bridge.start.assert_awaited_once()
         worker.tool_webhook_service.register_conversation.assert_awaited_once_with(
             "test-record",

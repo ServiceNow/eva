@@ -4,7 +4,7 @@ import base64
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import yaml
@@ -83,6 +83,41 @@ class _MockTransport(BaseTelephonyTransport):
     async def send_audio(self, audio_data: bytes) -> None:
         self.sent_audio.append(audio_data)
         await self.emit_audio(audio_data)
+
+
+class _FakeAiohttpResponse:
+    def __init__(self, *, status: int, payload: dict):
+        self.status = status
+        self._payload = payload
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    async def json(self) -> dict:
+        return self._payload
+
+    async def text(self) -> str:
+        return json.dumps(self._payload)
+
+
+class _FakeAiohttpSession:
+    def __init__(self, *, response: _FakeAiohttpResponse, capture: dict, **kwargs):
+        self._response = response
+        self._capture = capture
+        self._capture["session_kwargs"] = kwargs
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    def get(self, url: str):
+        self._capture["url"] = url
+        return self._response
 
 
 def _write_agent_config(path: Path) -> None:
@@ -229,6 +264,107 @@ class TestTelephonyBridgeServer:
         assert latencies["source"] == "vad_observer"
 
         assert (bridge.output_dir / "pipecat_logs.jsonl").read_text() == ""
+
+    @pytest.mark.asyncio
+    async def test_fetch_intended_assistant_speech_filters_and_orders_messages(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        bridge, _transport, _observer = _make_bridge(tmp_path)
+        capture: dict[str, object] = {}
+        payload = {
+            "data": [
+                {
+                    "role": "assistant",
+                    "text": "Second response",
+                    "sent_at": "2026-03-28T00:30:13Z",
+                },
+                {
+                    "role": "tool",
+                    "text": "{\"status\":\"success\"}",
+                    "sent_at": "2026-03-28T00:30:12Z",
+                },
+                {
+                    "role": "assistant",
+                    "text": "",
+                    "sent_at": "2026-03-28T00:30:11Z",
+                },
+                {
+                    "role": "assistant",
+                    "text": "First response",
+                    "sent_at": "2026-03-28T00:30:10Z",
+                },
+            ]
+        }
+        response = _FakeAiohttpResponse(status=200, payload=payload)
+
+        def _session_factory(*args, **kwargs):
+            return _FakeAiohttpSession(response=response, capture=capture, **kwargs)
+
+        monkeypatch.setattr("eva.assistant.telephony_bridge.aiohttp.ClientSession", _session_factory)
+
+        messages = await bridge._fetch_intended_assistant_speech("tel-conv-123")
+
+        assert capture["url"] == "https://api.telnyx.com/v2/ai/conversations/tel-conv-123/messages"
+        assert capture["session_kwargs"]["headers"] == {"Authorization": "Bearer telnyx-key"}
+        assert messages == [
+            {
+                "text": "First response",
+                "timestamp_ms": 1774657810000,
+            },
+            {
+                "text": "Second response",
+                "timestamp_ms": 1774657813000,
+            },
+        ]
+
+    @pytest.mark.asyncio
+    async def test_fetch_intended_assistant_speech_returns_empty_on_http_error(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        bridge, _transport, _observer = _make_bridge(tmp_path)
+        response = _FakeAiohttpResponse(status=500, payload={"errors": [{"detail": "boom"}]})
+
+        monkeypatch.setattr(
+            "eva.assistant.telephony_bridge.aiohttp.ClientSession",
+            lambda *args, **kwargs: _FakeAiohttpSession(response=response, capture={}, **kwargs),
+        )
+
+        messages = await bridge._fetch_intended_assistant_speech("tel-conv-123")
+
+        assert messages == []
+
+    @pytest.mark.asyncio
+    async def test_save_outputs_writes_pipecat_tts_events_from_telnyx_messages(self, tmp_path: Path):
+        bridge, _transport, _observer = _make_bridge(tmp_path)
+        bridge._eva_call_id = "eva-call-123"
+        bridge._telnyx_conversation_lookup = lambda eva_call_id: "tel-conv-123" if eva_call_id == "eva-call-123" else None
+        bridge._fetch_intended_assistant_speech = AsyncMock(
+            return_value=[
+                {"text": "Hello there", "timestamp_ms": 1774657810000},
+                {"text": "How can I help?", "timestamp_ms": 1774657813000},
+            ]
+        )
+
+        await bridge._save_outputs()
+
+        lines = (bridge.output_dir / "pipecat_logs.jsonl").read_text(encoding="utf-8").strip().splitlines()
+        assert [json.loads(line) for line in lines] == [
+            {
+                "type": "tts_text",
+                "start_timestamp": 1774657810000,
+                "data": {"frame": "Hello there"},
+            },
+            {
+                "type": "tts_text",
+                "start_timestamp": 1774657813000,
+                "data": {"frame": "How can I help?"},
+            },
+        ]
+        bridge._fetch_intended_assistant_speech.assert_awaited_once_with("tel-conv-123")
 
     def test_default_transport_factory_creates_call_control_transport(self, tmp_path: Path, monkeypatch):
         bridge, _transport, _observer = _make_bridge(tmp_path)

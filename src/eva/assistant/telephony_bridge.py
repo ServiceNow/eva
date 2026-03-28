@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
+import aiohttp
 import httpx
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -33,6 +34,7 @@ logger = get_logger(__name__)
 INPUT_SAMPLE_RATE = 16000
 OUTPUT_SAMPLE_RATE = 24000
 PCM_SAMPLE_WIDTH = 2
+_TELNYX_CONVERSATIONS_API_BASE_URL = "https://api.telnyx.com/v2"
 
 
 def _pcm16k_to_pcm24k(pcm_16khz: bytes) -> bytes:
@@ -247,6 +249,7 @@ class TelephonyBridgeServer:
         transport_factory: Callable[[TelephonyBridgeConfig, str], BaseTelephonyTransport] | None = None,
         segment_transcriber: BaseSegmentTranscriber | None = None,
         observer_factory: Callable[[Path, BaseSegmentTranscriber, AuditLog], BridgeVADObserver] | None = None,
+        telnyx_conversation_lookup: Callable[[str], str | None] | None = None,
     ):
         self.current_date_time = current_date_time
         self.bridge_config = bridge_config
@@ -276,6 +279,8 @@ class TelephonyBridgeServer:
         self._session_end_reason: str | None = None
         self._transport: BaseTelephonyTransport | None = None
         self._tool_webhook_register_callback: Callable[[str], Any] | None = None
+        self._telnyx_conversation_lookup = telnyx_conversation_lookup
+        self._eva_call_id: str | None = None
 
         self._app = FastAPI()
         self._server: uvicorn.Server | None = None
@@ -414,6 +419,7 @@ class TelephonyBridgeServer:
             # custom SIP header, so it's deterministic and known upfront.
             eva_id = self._transport.eva_call_id
             if eva_id:
+                self._eva_call_id = eva_id
                 if self._tool_webhook_register_callback:
                     await self._tool_webhook_register_callback(eva_id)
                     logger.info("Registered eva_call_id %s for tool webhooks", eva_id)
@@ -527,6 +533,112 @@ class TelephonyBridgeServer:
 
         return None
 
+    async def _fetch_intended_assistant_speech(self, conversation_id: str) -> list[dict[str, Any]]:
+        """Fetch assistant messages from Telnyx Conversations API in chronological order."""
+        api_key = self.bridge_config.telnyx_api_key
+        if not api_key:
+            logger.warning("Skipping Telnyx conversation message fetch: missing API key")
+            return []
+
+        url = f"{_TELNYX_CONVERSATIONS_API_BASE_URL}/ai/conversations/{conversation_id}/messages"
+        timeout = aiohttp.ClientTimeout(total=30.0)
+
+        try:
+            async with aiohttp.ClientSession(
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=timeout,
+            ) as session:
+                async with session.get(url) as response:
+                    try:
+                        payload = await response.json()
+                    except aiohttp.ContentTypeError:
+                        payload = {"message": await response.text()}
+
+                    if response.status >= 400:
+                        logger.warning(
+                            "Failed to fetch Telnyx conversation messages for %s: %s %s",
+                            conversation_id,
+                            response.status,
+                            payload,
+                        )
+                        return []
+        except Exception as exc:
+            logger.warning("Failed to fetch Telnyx conversation messages for %s: %s", conversation_id, exc)
+            return []
+
+        data = payload.get("data", [])
+        if not isinstance(data, list):
+            logger.warning(
+                "Unexpected Telnyx conversation messages payload for %s: data was %s",
+                conversation_id,
+                type(data).__name__,
+            )
+            return []
+
+        intended_speech: list[dict[str, Any]] = []
+        for message in reversed(data):
+            if not isinstance(message, dict):
+                continue
+            if message.get("role") != "assistant":
+                continue
+
+            text = str(message.get("text", "")).strip()
+            if not text:
+                continue
+
+            sent_at = message.get("sent_at")
+            if not isinstance(sent_at, str) or not sent_at.strip():
+                logger.warning("Skipping assistant message without sent_at for conversation %s", conversation_id)
+                continue
+
+            try:
+                timestamp_ms = self._iso8601_to_epoch_ms(sent_at)
+            except ValueError:
+                logger.warning(
+                    "Skipping assistant message with invalid sent_at '%s' for conversation %s",
+                    sent_at,
+                    conversation_id,
+                )
+                continue
+
+            intended_speech.append({"text": text, "timestamp_ms": timestamp_ms})
+
+        return intended_speech
+
+    @staticmethod
+    def _iso8601_to_epoch_ms(value: str) -> int:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return int(dt.timestamp() * 1000)
+
+    def _resolve_telnyx_conversation_id(self) -> str | None:
+        if self._eva_call_id and self._telnyx_conversation_lookup is not None:
+            conversation_id = self._telnyx_conversation_lookup(self._eva_call_id)
+            if conversation_id:
+                return conversation_id
+        return None
+
+    async def _write_pipecat_tts_events(self, pipecat_logs_path: Path) -> None:
+        intended_speech: list[dict[str, Any]] = []
+        telnyx_conversation_id = self._resolve_telnyx_conversation_id()
+        if telnyx_conversation_id:
+            intended_speech = await self._fetch_intended_assistant_speech(telnyx_conversation_id)
+        elif self._eva_call_id:
+            logger.warning("No Telnyx conversation_id found for eva_call_id %s", self._eva_call_id)
+
+        with open(pipecat_logs_path, "w", encoding="utf-8") as file_obj:
+            for item in intended_speech:
+                file_obj.write(
+                    json.dumps(
+                        {
+                            "type": "tts_text",
+                            "start_timestamp": item["timestamp_ms"],
+                            "data": {"frame": item["text"]},
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+
     async def _save_outputs(self) -> None:
         """Persist bridge outputs in the same shape as AssistantServer."""
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -558,8 +670,7 @@ class TelephonyBridgeServer:
             json.dump(self.get_final_scenario_db(), final_db_file, indent=2, sort_keys=True, default=str)
 
         pipecat_logs_path = self.output_dir / "pipecat_logs.jsonl"
-        if not pipecat_logs_path.exists():
-            pipecat_logs_path.write_text("", encoding="utf-8")
+        await self._write_pipecat_tts_events(pipecat_logs_path)
 
         response_latencies_path = self.output_dir / "response_latencies.json"
         if not response_latencies_path.exists():

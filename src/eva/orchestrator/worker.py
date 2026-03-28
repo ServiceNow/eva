@@ -257,6 +257,7 @@ class ConversationWorker:
                 # Use output_id (e.g. "1.1.2/trial_0") so concurrent trials
                 # get unique media stream paths and transport registrations.
                 conversation_id=self.output_id,
+                telnyx_conversation_lookup=self.tool_webhook_service.get_telnyx_conversation_id,
             )
         else:
             self._assistant_server = AssistantServer(
