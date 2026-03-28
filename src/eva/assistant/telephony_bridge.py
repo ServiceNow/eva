@@ -617,6 +617,32 @@ class TelephonyBridgeServer:
                 return conversation_id
         return None
 
+    def _read_assistant_speech_timestamps(self) -> list[int]:
+        """Read assistant_speech timestamps from the bridge VAD observer's event log.
+
+        These timestamps reflect when the assistant's speech was actually heard
+        (via Deepgram transcription), as opposed to Conversations API sent_at
+        timestamps which reflect when the LLM generated the text.
+        """
+        events_path = self.output_dir / "elevenlabs_events.jsonl"
+        if not events_path.exists():
+            return []
+        timestamps: list[int] = []
+        with open(events_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if event.get("type") == "assistant_speech":
+                    ts = event.get("data", {}).get("audio_timestamp", 0)
+                    if ts:
+                        timestamps.append(ts)
+        return timestamps
+
     async def _write_pipecat_tts_events(self, pipecat_logs_path: Path) -> None:
         intended_speech: list[dict[str, Any]] = []
         telnyx_conversation_id = self._resolve_telnyx_conversation_id()
@@ -624,6 +650,15 @@ class TelephonyBridgeServer:
             intended_speech = await self._fetch_intended_assistant_speech(telnyx_conversation_id)
         elif self._eva_call_id:
             logger.warning("No Telnyx conversation_id found for eva_call_id %s", self._eva_call_id)
+
+        # Use bridge VAD observer timestamps (when speech was actually heard)
+        # instead of Conversations API sent_at (when LLM generated the text).
+        # This ensures pipecat events interleave correctly with user speech
+        # events for proper turn boundary detection.
+        spoken_timestamps = self._read_assistant_speech_timestamps()
+        for i, item in enumerate(intended_speech):
+            if i < len(spoken_timestamps):
+                item["timestamp_ms"] = spoken_timestamps[i]
 
         with open(pipecat_logs_path, "w", encoding="utf-8") as file_obj:
             for i, item in enumerate(intended_speech):

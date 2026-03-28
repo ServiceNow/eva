@@ -8,6 +8,7 @@ from typing import Any
 
 from eva.metrics.base import MetricContext, PerTurnConversationJudgeMetric
 from eva.metrics.registry import register_metric
+from eva.utils.log_processing import strip_labels
 
 
 @register_metric
@@ -44,12 +45,17 @@ class SpeakabilityJudgeMetric(PerTurnConversationJudgeMetric):
         ]
 
     def format_transcript(self, context: MetricContext) -> str:
-        """Format intended assistant turns for the judge prompt."""
+        """Format intended assistant turns for the judge prompt.
+
+        Strips processor annotations (e.g. [speaker likely cut itself off],
+        [pause]) so that the judge evaluates the raw LLM text for
+        voice-friendliness, not the processor's interruption metadata.
+        """
         lines = []
         for turn_id in sorted(context.intended_assistant_turns.keys()):
             content = context.intended_assistant_turns[turn_id]
             if content:
-                lines.append(f"[Turn {turn_id}]\n{content}")
+                lines.append(f"[Turn {turn_id}]\n{strip_labels(content)}")
         return "\n\n".join(lines)
 
     def get_prompt_variables(self, context: MetricContext, transcript_text: str) -> dict[str, Any]:
