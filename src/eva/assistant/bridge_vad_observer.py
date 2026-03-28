@@ -191,8 +191,10 @@ class BridgeVADObserver:
                 }
             )
 
-    async def _log_speech_event(self, event_type: str, text: str, source: str) -> None:
-        ts = self._time_provider()
+    async def _log_speech_event(
+        self, event_type: str, text: str, source: str, *, timestamp_s: float | None = None
+    ) -> None:
+        ts = timestamp_s if timestamp_s is not None else self._time_provider()
         async with self._event_lock:
             self._write_event_now(
                 {
@@ -221,7 +223,9 @@ class BridgeVADObserver:
         if not text:
             return
 
-        await self._log_speech_event(stream.speech_event_type, text, stream.speech_source)
+        await self._log_speech_event(
+            stream.speech_event_type, text, stream.speech_source, timestamp_s=speech_started_at
+        )
 
         timestamp_ms = str(int(speech_started_at * 1000))
         stream.audit_append(text, timestamp_ms)
