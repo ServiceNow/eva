@@ -61,6 +61,13 @@ class TestExtractTurnsFromHistory:
         ctx.record_id = case["id"]
         ctx.history = case["history"]
         ctx.is_audio_native = case.get("is_audio_native", False)
+        # Detect bridge mode from history (same logic as _build_history)
+        ctx.is_bridge = any(
+            entry.get("event_type") == "assistant_speech"
+            and isinstance(entry.get("data", {}).get("data"), dict)
+            and entry["data"]["data"].get("source") == "pipecat_assistant"
+            for entry in ctx.history
+        )
 
         MetricsContextProcessor._extract_turns_from_history(ctx)
         MetricsContextProcessor._reconcile_transcript_with_tools(ctx)

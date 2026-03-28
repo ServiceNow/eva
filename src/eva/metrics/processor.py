@@ -197,6 +197,12 @@ def _handle_audit_log_event(
         # advance so that hold_turn is consumed if set.
         if state.user_audio_open:
             state.assistant_spoke_in_turn = False
+            # Mark that we have real user speech in this audio session.  The telephony bridge writes
+            # audit_log/user entries during the audio session (timestamp = speech start), but the
+            # corresponding ElevenLabs user_speech event only arrives later (after Deepgram finishes
+            # transcribing).  Without this, _handle_audio_end treats the session as "empty" (no
+            # user_speech received) and rolls back the turn counter.
+            state.user_speech_in_session = True
         state.advance_turn_if_needed()
         turn = state.turn_num
         entry = get_entry_for_audit_log(event, turn)
@@ -475,12 +481,26 @@ def _validate_conversation_trace(
 
     The audit log records the full LLM response, but only the portion sent to TTS was actually spoken.
     Truncates entries to the spoken prefix; drops entries with no overlap (never spoken at all).
+
+    In bridge mode, audit-log assistant entries are already STT transcriptions of what was actually
+    spoken (produced by the bridge's Deepgram transcriber), so no truncation is needed.  The pipecat
+    segments in bridge mode contain intended text from the Conversations API, which won't match the
+    STT output character-for-character.
     """
     validated_trace = []
     for entry in conversation_trace:
         if not entry.get("_audit_source"):
             validated_trace.append(entry)
             continue
+
+        # In bridge mode, audit_log assistant text IS the spoken text (Deepgram STT).
+        # Skip truncation validation — it would incorrectly filter entries because the
+        # STT output doesn't prefix-match the LLM's intended text.
+        if context.is_bridge:
+            entry.pop("_audit_source")
+            validated_trace.append(entry)
+            continue
+
         turn_id = entry.get("turn_id")
         pipecat_segments = context._intended_assistant_segments.get(turn_id, [])
         if not pipecat_segments:
@@ -753,6 +773,12 @@ class _ProcessorContext:
         self.assistant_interrupted_turns: set[int] = set()
         self.user_interrupted_turns: set[int] = set()
 
+        # True when logs come from BridgeVADObserver (telephony bridge) rather
+        # than a native ElevenLabs pipeline.  Detected in _build_history by the
+        # presence of ``data.data.source == "pipecat_assistant"`` on assistant_speech
+        # events.
+        self.is_bridge: bool = False
+
         # Conversation metadata
         self.conversation_finished: bool = False
         self.conversation_ended_reason: Optional[str] = None
@@ -912,6 +938,19 @@ class MetricsContextProcessor:
         context.history = history
 
         source_counts = Counter(entry["source"] for entry in history)
+
+        # Detect bridge mode: BridgeVADObserver writes assistant_speech events
+        # with ``data.data.source == "pipecat_assistant"``.  Native ElevenLabs
+        # events do not have this field.
+        context.is_bridge = any(
+            entry.get("event_type") == "assistant_speech"
+            and isinstance(entry.get("data", {}).get("data"), dict)
+            and entry["data"]["data"].get("source") == "pipecat_assistant"
+            for entry in history
+        )
+        if context.is_bridge:
+            logger.info(f"Record {context.record_id}: Detected telephony bridge mode")
+
         logger.info(f"Record {context.record_id}: Built history with {len(history)} events ({dict(source_counts)})")
 
     @staticmethod
