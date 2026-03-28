@@ -667,6 +667,16 @@ class TelephonyBridgeServer:
         for i, item in enumerate(intended_speech):
             if i < len(audio_start_timestamps):
                 item["timestamp_ms"] = audio_start_timestamps[i]
+            elif audio_start_timestamps:
+                # More API responses than speech segments — the assistant
+                # generated multiple responses within a single turn (e.g.
+                # "let me search" → [tool call] → "here are your options").
+                # Assign them to the same turn as the last matched tts_text
+                # with a small offset so they sort after it but stay in the
+                # same turn boundary.
+                last_ts = audio_start_timestamps[-1]
+                offset = i - len(audio_start_timestamps) + 1
+                item["timestamp_ms"] = last_ts + offset
 
         with open(pipecat_logs_path, "w", encoding="utf-8") as file_obj:
             for i, item in enumerate(intended_speech):
