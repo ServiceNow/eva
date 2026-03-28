@@ -638,7 +638,7 @@ class TelephonyBridgeServer:
                 except json.JSONDecodeError:
                     continue
                 if event.get("type") == "assistant_speech":
-                    ts = event.get("data", {}).get("audio_timestamp", 0)
+                    ts = event.get("timestamp", 0)
                     if ts:
                         timestamps.append(ts)
         return timestamps
