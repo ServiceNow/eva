@@ -512,16 +512,18 @@ class TelephonyBridgeServer:
         return time.time()
 
     def _infer_session_end_reason(self) -> str | None:
-        if self._session_end_reason:
-            return self._session_end_reason
-
-        # Check for end_call tool invocation.
+        # Check for end_call tool invocation first — if the assistant
+        # called end_call, the session ended with a proper goodbye
+        # regardless of whether the transport reported "assistant_hangup".
         for entry in reversed(self.audit_log.transcript):
             if entry.get("message_type") not in {"tool_call", "tool_response"}:
                 continue
             value = entry.get("value", {})
             if isinstance(value, dict) and value.get("tool") == "end_call":
                 return "goodbye"
+
+        if self._session_end_reason:
+            return self._session_end_reason
 
         return None
 
