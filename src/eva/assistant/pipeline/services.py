@@ -4,7 +4,6 @@ Creates Pipecat services with proper configuration.
 """
 
 import datetime
-import os
 from typing import Any, AsyncGenerator, Optional
 
 from deepgram import LiveOptions
@@ -20,7 +19,6 @@ from pipecat.services.assemblyai.stt import (
     AssemblyAIConnectionParams,
     AssemblyAISTTService,
 )
-from pipecat.services.azure.realtime.llm import AzureRealtimeLLMService
 from pipecat.services.cartesia.stt import CartesiaLiveOptions, CartesiaSTTService
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
@@ -37,12 +35,14 @@ from pipecat.services.openai.realtime.events import (
     SemanticTurnDetection,
     SessionProperties,
 )
+from pipecat.services.openai.realtime.llm import OpenAIRealtimeLLMService
 from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import VALID_VOICES, OpenAITTSService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 from pipecat.transcriptions.language import Language
 from pipecat.utils.text.base_text_filter import BaseTextFilter
+from websockets.asyncio.client import connect as websocket_connect
 
 from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
 from eva.assistant.pipeline.nvidia_baseten import BasetenSTTService, BasetenTTSService
@@ -381,6 +381,15 @@ def create_realtime_llm_service(
     """
     model_lower = (model or "").lower()
 
+    # Get realtime server prompt
+    prompt_manager = PromptManager()
+    system_prompt = prompt_manager.get_prompt(
+        "realtime_agent.system_prompt",
+        agent_personality=agent.description,
+        agent_instructions=agent.instructions,
+        datetime=current_date_time,
+    )
+
     openai_tools = agent.build_tools_for_realtime() if agent else None
 
     # Convert OpenAI format tools to pipecat format
@@ -400,62 +409,54 @@ def create_realtime_llm_service(
                 )
         pipecat_tools = ToolsSchema(standard_tools=function_schemas)
 
-    # Get realtime server prompt
-    prompt_manager = PromptManager()
-    system_prompt = prompt_manager.get_prompt(
-        "realtime_agent.system_prompt",
-        agent_personality=agent.description,
-        agent_instructions=agent.instructions,
-        datetime=current_date_time,
-    )
-
-    if model_lower.startswith("gpt-realtime"):
-        #
-        # base_url =The full Azure WebSocket endpoint URL including api-version and deployment.
-        # Example: "wss://my-project.openai.azure.com/openai/v1/realtime"
-        url = os.environ.get("AZURE_OPENAI_REALTIME_ENDPOINT", "")
-        url += f"?model={model_lower}"
-
-        session_properties = SessionProperties(
-            instructions=system_prompt,
-            audio=AudioConfiguration(
-                input=AudioInput(
-                    transcription=InputAudioTranscription(model="whisper-1"),
-                    # Set openai TurnDetection parameters. Not setting this at all will turn it
-                    # on by default
-                    turn_detection=SemanticTurnDetection(),
-                    # Or set to False to disable openai turn detection and use transport VAD
-                    # turn_detection=False,
-                    # noise_reduction=InputAudioNoiseReduction(type="near_field"),
-                ),
-                output=AudioOutput(
-                    voice=params.get("voice", "marin"),
-                ),
-            ),
-            tools=pipecat_tools,
-            tool_choice="auto",
-        )
-        logger.info(f"Using Azure Realtime LLM: {model_lower}")
-
+    if model_lower.startswith("openai"):
+        session_properties = get_openai_session_properties(system_prompt, params, pipecat_tools)
         if audit_log is not None:
-            logger.info("Using InstrumentedRealtimeLLMService for audit log interception")
+            logger.info(
+                f"Using InstrumentedRealtimeLLMService for audit log interception: openai: {params.get('model')}"
+            )
             return InstrumentedRealtimeLLMService(
-                model=model_lower,
+                model=params.get("model"),
                 audit_log=audit_log,
-                api_key=os.environ.get("AZURE_OPENAI_REALTIME_API_KEY"),
-                base_url=url,
+                api_key=params["api_key"],
                 session_properties=session_properties,
             )
 
-        return AzureRealtimeLLMService(
-            api_key=os.environ.get("AZURE_OPENAI_REALTIME_API_KEY"),
+        return OpenAIRealtimeLLMService(
+            api_key=params["api_key"],
+            session_properties=session_properties,
+        )
+    elif model_lower.startswith("azure") or model_lower.startswith("gpt-realtime"):
+        #
+        # base_url: The full Azure WebSocket endpoint URL including api-version and deployment.
+        # Example: "wss://my-project.openai.azure.com/openai/v1/realtime"
+        url = params.get("url", "")
+        session_properties = get_openai_session_properties(system_prompt, params, pipecat_tools)
+
+        logger.info(f"Using Azure Realtime LLM: {model_lower}, url {url}")
+
+        if audit_log is not None:
+            logger.info("Using InstrumentedRealtimeLLMService for audit log interception")
+            service = InstrumentedRealtimeLLMService(
+                model=params.get("model"),
+                audit_log=audit_log,
+                api_key=params["api_key"],
+                base_url=url,
+                session_properties=session_properties,
+            )
+            InstrumentedRealtimeLLMService._connect = override__connect  # azure realtime connect
+            return service
+
+        return OpenAIRealtimeLLMService(
+            api_key=params["api_key"],
             base_url=url,
             session_properties=session_properties,
         )
     elif model_lower == "ultravox":
+        logger.info("Using Ultravox LLM")
         return UltravoxRealtimeLLMService(
             params=OneShotInputParams(
-                api_key=os.getenv("ULTRAVOX_API_KEY"),
+                api_key=params["api_key"],
                 system_prompt=system_prompt,
                 temperature=0.3,
                 max_duration=datetime.timedelta(minutes=6),
@@ -466,6 +467,27 @@ def create_realtime_llm_service(
 
     else:
         raise ValueError(f"Unknown realtime model: {model}. Available: gpt-realtime, ultravox")
+
+
+def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tools) -> SessionProperties:
+    """Create openai compatible session properties object."""
+    return SessionProperties(
+        instructions=system_prompt,
+        audio=AudioConfiguration(
+            input=AudioInput(
+                transcription=InputAudioTranscription(
+                    model=params.get("transcription_model", "gpt-4o-mini-transcribe")
+                ),
+                # Set openai TurnDetection parameters. Not setting this at all will turn it on by default
+                turn_detection=SemanticTurnDetection(),
+            ),
+            output=AudioOutput(
+                voice=params.get("voice", "marin"),
+            ),
+        ),
+        tools=pipecat_tools,
+        tool_choice="auto",
+    )
 
 
 def create_audio_llm_client(
@@ -571,6 +593,27 @@ async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[F
             yield TTSStoppedFrame(context_id=context_id)
     except BadRequestError as e:
         yield ErrorFrame(error=f"Unknown error occurred: {e}")
+
+
+async def override__connect(self):
+    # Allow connections to azure / other providers using a base_url
+    try:
+        if self._websocket:
+            # Here we assume that if we have a websocket, we are connected. We
+            # handle disconnections in the send/recv code paths.
+            return
+
+        logger.info(f"Connecting to {self.base_url}")
+        self._websocket = await websocket_connect(
+            uri=self.base_url,
+            additional_headers={
+                "api-key": self.api_key,
+            },
+        )
+        self._receive_task = self.create_task(self._receive_task_handler())
+    except Exception as e:
+        await self.push_error(error_msg=f"initialization error: {e}", exception=e)
+        self._websocket = None
 
 
 # Unicode to ASCII replacements for TTS
