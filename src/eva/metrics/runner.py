@@ -223,7 +223,7 @@ class MetricsRunner:
             targeted = all_record_dirs
         targeted_ids = {rid for rid, _ in targeted}
 
-        # Run targeted records concurrently; the LLMClient semaphore limits concurrent API calls.
+        # Run targeted records concurrently; LiteLLM limits concurrent API calls.
         tasks = [self._run_and_save_record(rid, rdir) for rid, rdir in targeted]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
