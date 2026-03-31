@@ -204,60 +204,61 @@ class TestRunConfig:
             _config(env_vars=environ)
 
     @pytest.mark.parametrize(
-        "environ, expected_exception, expected_message",
+        "environ, expected_message",
         (
             (
                 {},
-                ValidationError,
                 r"model\s+Field required",
             ),
             (
                 {"EVA_MODEL": "{}"},
-                ValidationError,
                 # Discriminator defaults to PipelineConfig when no unique field present
                 r"model\.pipeline\.llm\s+Field required",
             ),
+            (
+                {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b"},
+                "Multiple pipeline modes set",
+            ),
+            (
+                {"EVA_MODEL__LLM": "a", "EVA_MODEL__AUDIO_LLM": "ultravox"},
+                "Multiple pipeline modes set",
+            ),
+            (
+                {"EVA_MODEL__S2S": "a", "EVA_MODEL__AUDIO_LLM": "ultravox"},
+                "Multiple pipeline modes set",
+            ),
+            (
+                {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b", "EVA_MODEL__AUDIO_LLM": "ultravox"},
+                "Multiple pipeline modes set",
+            ),
+            (
+                {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__TTS": "cartesia"},
+                "EVA_MODEL__STT is required",
+            ),
+            (
+                {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__STT": "deepgram"},
+                "EVA_MODEL__TTS is required",
+            ),
+            (
+                {"EVA_MODEL__AUDIO_LLM": "ultravox"},
+                "EVA_MODEL__TTS is required",
+            ),
+        ),
+        ids=(
+            "Missing",
+            "Empty",
+            "Mixed LLM + S2S",
+            "Mixed LLM + Audio LLM",
+            "Mixed S2S + Audio LLM",
+            "Mixed all three",
+            "LLM without STT",
+            "LLM without TTS",
+            "Audio LLM without TTS",
         ),
     )
-    def test_model_missing_or_empty(self, environ, expected_exception, expected_message):
-        environ |= _EVA_MODEL_LIST_ENV
-        with pytest.raises(expected_exception, match=expected_message):
-            _config(env_vars=environ)
-
-    def test_mixed_mode_fields_raises_error(self):
-        """Multiple pipeline mode indicators cause a clear error."""
-        # llm + s2s
-        with pytest.raises(ValueError, match="Multiple pipeline modes set"):
-            _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b"})
-
-        # llm + audio_llm
-        with pytest.raises(ValueError, match="Multiple pipeline modes set"):
-            _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__LLM": "a", "EVA_MODEL__AUDIO_LLM": "ultravox"})
-
-        # s2s + audio_llm
-        with pytest.raises(ValueError, match="Multiple pipeline modes set"):
-            _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__S2S": "a", "EVA_MODEL__AUDIO_LLM": "ultravox"})
-
-        # all three
-        with pytest.raises(ValueError, match="Multiple pipeline modes set"):
-            _config(
-                env_vars=_EVA_MODEL_LIST_ENV
-                | {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b", "EVA_MODEL__AUDIO_LLM": "ultravox"}
-            )
-
-    def test_missing_companion_services(self):
-        """Required companion services cause a clear error when missing."""
-        # LLM without STT
-        with pytest.raises(ValueError, match="EVA_MODEL__STT is required"):
-            _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__TTS": "cartesia"})
-
-        # LLM without TTS
-        with pytest.raises(ValueError, match="EVA_MODEL__TTS is required"):
-            _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__STT": "deepgram"})
-
-        # Audio-LLM without TTS
-        with pytest.raises(ValueError, match="EVA_MODEL__TTS is required"):
-            _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__AUDIO_LLM": "ultravox"})
+    def test_invalid_model_pipeline(self, environ, expected_message):
+        with pytest.raises(ValidationError, match=expected_message):
+            _config(env_vars=_EVA_MODEL_LIST_ENV | environ)
 
     def test_missing_stt_tts_params(self):
         """Missing api_key or model in STT/TTS params causes a clear error."""
