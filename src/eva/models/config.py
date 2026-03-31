@@ -56,8 +56,8 @@ class PipelineConfig(BaseModel):
         description="LLM model name matching a model_name in --model-list/EVA_MODEL_LIST",
         examples=["gpt-5.2", "gemini-3-pro"],
     )
-    stt: str | None = Field(None, description="STT model", examples=["deepgram", "openai_whisper"])
-    tts: str | None = Field(None, description="TTS model", examples=["cartesia", "elevenlabs"])
+    stt: str = Field(description="STT model", examples=["deepgram", "openai_whisper"])
+    tts: str = Field(description="TTS model", examples=["cartesia", "elevenlabs"])
 
     stt_params: dict[str, Any] = Field({}, description="Additional STT model parameters (JSON)")
     tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
@@ -126,7 +126,7 @@ class AudioLLMConfig(BaseModel):
         {},
         description="Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, max_tokens",
     )
-    tts: str | None = Field(None, description="TTS model", examples=["cartesia", "elevenlabs"])
+    tts: str = Field(description="TTS model", examples=["cartesia", "elevenlabs"])
     tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
 
 
@@ -299,7 +299,7 @@ class RunConfig(BaseSettings):
     )
 
     # Data paths
-    domain: str = "airline"
+    domain: Literal["airline"] = "airline"
 
     # Rerun settings
     max_rerun_attempts: int = Field(3, ge=0, le=20, description="Maximum number of rerun attempts for failed records")
@@ -454,15 +454,9 @@ class RunConfig(BaseSettings):
         """Ensure required companion services are set for each pipeline mode."""
         required_keys = ["api_key", "model"]
         if isinstance(self.model, PipelineConfig):
-            if not self.model.stt:
-                raise ValueError("EVA_MODEL__STT is required when using EVA_MODEL__LLM (ASR-LLM-TTS pipeline).")
-            if not self.model.tts:
-                raise ValueError("EVA_MODEL__TTS is required when using EVA_MODEL__LLM (ASR-LLM-TTS pipeline).")
             self._validate_service_params("STT", self.model.stt, required_keys, self.model.stt_params)
             self._validate_service_params("TTS", self.model.tts, required_keys, self.model.tts_params)
         elif isinstance(self.model, AudioLLMConfig):
-            if not self.model.tts:
-                raise ValueError("EVA_MODEL__TTS is required when using EVA_MODEL__AUDIO_LLM (SpeechLM-TTS pipeline).")
             self._validate_service_params("TTS", self.model.tts, required_keys, self.model.tts_params)
             self._validate_service_params("audio_llm", self.model.audio_llm, required_keys, self.model.audio_llm_params)
         elif isinstance(self.model, SpeechToSpeechConfig):

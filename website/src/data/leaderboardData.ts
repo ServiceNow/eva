@@ -75,13 +75,13 @@ export const ossSystems: SystemScore[] = [
     shortName: 'gpt-realtime-mini',
     stt: '-', llm: 'gpt-realtime-mini', tts: '-',
     type: 's2s',
-    evaA: 0.1800, evaX: 0.4267,
-    accuracyMetrics: { task_completion: 0.2667, agent_tts_fidelity: 0.9833, faithfulness: 0.1733 },
-    experienceMetrics: { turn_taking: 0.7801, conciseness: 0.7477, conversation_progression: 0.3533 },
-    diagnosticMetrics: { key_entity_transcription: 0.8925, response_speed: 3.6711 },
+    evaA: 0.1867, evaX: 0.4333,
+    accuracyMetrics: { task_completion: 0.2867, agent_tts_fidelity: 0.9882, faithfulness: 0.1833 },
+    experienceMetrics: { turn_taking: 0.7607, conciseness: 0.8116, conversation_progression: 0.3567 },
+    diagnosticMetrics: { key_entity_transcription: 0.0000, response_speed: 3.7524 },
     successRates: {
-      accuracy: { pass_threshold: 0.1800, mean: 0.4744, pass_at_k: 0.3200, pass_k: 0.1044 },
-      experience: { pass_threshold: 0.4267, mean: 0.6270, pass_at_k: 0.7200, pass_k: 0.2163 },
+      accuracy: { pass_threshold: 0.1867, mean: 0.4861, pass_at_k: 0.2800, pass_k: 0.1185 },
+      experience: { pass_threshold: 0.4333, mean: 0.6430, pass_at_k: 0.7000, pass_k: 0.2615 },
     },
   },
   {
@@ -97,6 +97,21 @@ export const ossSystems: SystemScore[] = [
     successRates: {
       accuracy: { pass_threshold: 0.2800, mean: 0.5820, pass_at_k: 0.4600, pass_k: 0.1511 },
       experience: { pass_threshold: 0.4400, mean: 0.6024, pass_at_k: 0.7600, pass_k: 0.2356 },
+    },
+  },
+  {
+    id: 'cohere-transcribe-gpt-5-4-mini-kokoro',
+    name: 'cohere-transcribe + gpt-5.4-mini + kokoro',
+    shortName: 'gpt-5.4-mini (cohere-transcribe)',
+    stt: 'cohere-transcribe', llm: 'gpt-5.4-mini', tts: 'kokoro',
+    type: 'cascade',
+    evaA: 0.2600, evaX: 0.3733,
+    accuracyMetrics: { task_completion: 0.3933, agent_tts_fidelity: 0.9846, faithfulness: 0.3300 },
+    experienceMetrics: { turn_taking: 0.5097, conciseness: 0.8345, conversation_progression: 0.3433 },
+    diagnosticMetrics: { key_entity_transcription: 0.6150, response_speed: 4.9451 },
+    successRates: {
+      accuracy: { pass_threshold: 0.2600, mean: 0.5693, pass_at_k: 0.5200, pass_k: 0.1133 },
+      experience: { pass_threshold: 0.3733, mean: 0.5625, pass_at_k: 0.8000, pass_k: 0.1304 },
     },
   },
   {
@@ -322,6 +337,21 @@ export const ossSystems: SystemScore[] = [
     successRates: {
       accuracy: { pass_threshold: 0.4933, mean: 0.6983, pass_at_k: 0.7400, pass_k: 0.3348 },
       experience: { pass_threshold: 0.2467, mean: 0.5337, pass_at_k: 0.5000, pass_k: 0.0985 },
+    },
+  },
+  {
+    id: 'voxtral-mini-3b-gpt-5-4-mini-voxtral-4b-tts',
+    name: 'voxtral-mini-3b + gpt-5.4-mini + voxtral-4b-tts',
+    shortName: 'gpt-5.4-mini (voxtral-mini-3b)',
+    stt: 'voxtral-mini-3b', llm: 'gpt-5.4-mini', tts: 'voxtral-4b-tts',
+    type: 'cascade',
+    evaA: 0.2733, evaX: 0.0067,
+    accuracyMetrics: { task_completion: 0.4200, agent_tts_fidelity: 0.9831, faithfulness: 0.3733 },
+    experienceMetrics: { turn_taking: 0.0629, conciseness: 0.8469, conversation_progression: 0.3800 },
+    diagnosticMetrics: { key_entity_transcription: 0.6682, response_speed: 8.5170 },
+    successRates: {
+      accuracy: { pass_threshold: 0.2733, mean: 0.5921, pass_at_k: 0.4600, pass_k: 0.1548 },
+      experience: { pass_threshold: 0.0067, mean: 0.4299, pass_at_k: 0.0200, pass_k: 0.0007 },
     },
   },
   {

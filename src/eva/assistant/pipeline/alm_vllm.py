@@ -198,6 +198,9 @@ class ALMvLLMClient:
                 message = response.choices[0].message
                 usage = response.usage
 
+                # Extract reasoning if present (OpenAI o1 and compatible models)
+                reasoning = getattr(message, "reasoning_content", None)
+
                 stats = {
                     "prompt_tokens": usage.prompt_tokens if usage else 0,
                     "completion_tokens": usage.completion_tokens if usage else 0,
@@ -206,6 +209,7 @@ class ALMvLLMClient:
                     "cost": 0.0,  # Self-hosted, no API cost
                     "cost_source": "self_hosted",
                     "latency": round(elapsed, 3),
+                    "reasoning": reasoning,
                 }
 
                 if hasattr(message, "tool_calls") and message.tool_calls:

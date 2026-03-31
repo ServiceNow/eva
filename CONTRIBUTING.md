@@ -6,6 +6,15 @@ This document should be able to guide contributors in their different types of c
 
 Just want to ask a question? Open a topic on our [Discussion page](https://github.com/ServiceNow/eva/discussions).
 
+## Before You Start
+
+We welcome contributions, but want to be upfront: our team has limited bandwidth for reviewing pull requests, and not every contribution will align with the direction we're taking EVA. To make the best use of everyone's time:
+
+- **For bug fixes and small improvements**: Feel free to open a PR directly.
+- **For larger features or significant changes**: Please [open an issue](https://github.com/ServiceNow/eva/issues/new/choose) or [start a discussion](https://github.com/ServiceNow/eva/discussions) **before** writing any code. This lets us confirm the change fits our vision and saves you from investing time in work we may not be able to merge.
+
+Check out our [roadmap and current limitations](https://servicenow.github.io/eva/#limitations) to see the areas we're most interested in improving. Contributions that address items on the roadmap are much more likely to be reviewed and merged quickly.
+
 ## Get Your Environment Setup
 
 Go to our [Quick Start](README.md) section in the README to get set up.
