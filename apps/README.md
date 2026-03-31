@@ -1,10 +1,10 @@
 # EVA Apps
 
-Streamlit applications for exploring EVA benchmark data and results.
+Streamlit applications for exploring EVA data and results.
 
 ## Analysis App
 
-Interactive dashboard for visualizing and comparing benchmark results.
+Interactive dashboard for visualizing and comparing results.
 
 ### Usage
 
