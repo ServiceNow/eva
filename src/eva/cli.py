@@ -7,6 +7,8 @@ Used by both the `eva` console script (installed via pip/uv) and `python main.py
 import asyncio
 import sys
 
+from pydantic import ValidationError
+
 
 def main():
     """Entry point for the `eva` console script."""
@@ -14,7 +16,11 @@ def main():
     # Heavy deps (pipecat, litellm, etc.) are imported only in run_benchmark.
     from eva.models.config import RunConfig
 
-    config = RunConfig(_cli_parse_args=True, _env_file=".env")
+    try:
+        config = RunConfig(_cli_parse_args=True, _env_file=".env")
+    except ValidationError as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
 
     from eva.run_benchmark import run_benchmark
 

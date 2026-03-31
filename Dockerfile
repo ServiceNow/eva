@@ -58,14 +58,12 @@ RUN mkdir -p /app/output && chown eva:eva /app/output
 # Python runtime settings
 ENV PYTHONPATH="/app/src:$PYTHONPATH"
 ENV PYTHONUNBUFFERED=1
-# Optional: set EVA_OUTPUT_FOLDER to organize results into /app/output/<folder_name>/<run_id>/
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import eva; print('ok')" || exit 1
 
 # Switch to non-root user
-USER evabench
+USER eva
 
-# Use docker entrypoint that handles run modes
-ENTRYPOINT ["python", "scripts/docker_entrypoint.py"]
+ENTRYPOINT ["eva"]
