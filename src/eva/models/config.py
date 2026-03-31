@@ -39,10 +39,6 @@ from eva.models.provenance import RunProvenance
 logger = logging.getLogger(__name__)
 
 
-def current_date_and_time():
-    return f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}"
-
-
 def _param_alias(params: dict[str, Any]) -> str:
     """Return the display alias from a params dict."""
     return params.get("alias") or params.get("model") or ""
@@ -329,7 +325,7 @@ class RunConfig(BaseSettings):
 
     # Run identifier
     run_id: str = Field(
-        default_factory=current_date_and_time,
+        "timestamp and model name(s)",  # Overwritten by _set_default_run_id()
         description="Run identifier, auto-generated if not provided",
     )
 
@@ -498,12 +494,13 @@ class RunConfig(BaseSettings):
             if not self.model.tts:
                 raise ValueError("EVA_MODEL__TTS is required when using EVA_MODEL__AUDIO_LLM (SpeechLM-TTS pipeline).")
             self._validate_service_params("TTS", self.model.tts, self.model.tts_params)
+        return self
 
-        # Append model names to auto-generated run_id
+    @model_validator(mode="after")
+    def _set_default_run_id(self) -> "RunConfig":
         if "run_id" not in self.model_fields_set:
             suffix = "_".join(v for v in self.model.pipeline_parts.values() if v)
-            self.run_id = f"{self.run_id}_{suffix}"
-
+            self.run_id = f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}_{suffix}"
         return self
 
     @classmethod
