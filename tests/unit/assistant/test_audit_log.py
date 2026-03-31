@@ -7,6 +7,7 @@ from eva.assistant.agentic.audit_log import (
     ConversationMessage,
     LLMCall,
     MessageRole,
+    convert_to_epoch_ms,
     current_timestamp_ms,
 )
 
@@ -21,6 +22,17 @@ class TestCurrentTimestampMs:
         ts = int(result)
         # Should be 13 digits (ms since epoch)
         assert ts > 1_000_000_000_000
+
+
+class TestConvertToEpochMs:
+    def test_returns_string(self):
+        result = convert_to_epoch_ms("2024-01-01T00:00:00Z")
+        assert isinstance(result, str)
+        assert result == "1704067200000"
+
+    def test_returns_millisecond_epoch(self):
+        result = convert_to_epoch_ms("1774987946485")
+        assert result == "1774987946485"
 
 
 class TestConversationMessage:
