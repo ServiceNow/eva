@@ -21,7 +21,7 @@ class TurnTakingMetric(TextJudgeMetric):
 
     name = "turn_taking"
     description = "Turn-taking evaluation"
-    category = "conversation_quality/responsiveness"
+    category = "experience"
     rating_scale = (-1, 1)
     aggregation = "abs_mean"
 
