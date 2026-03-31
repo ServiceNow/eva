@@ -233,15 +233,15 @@ class TestRunConfig:
             ),
             (
                 {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__TTS": "cartesia"},
-                "EVA_MODEL__STT is required",
+                r"model\.pipeline\.stt\s+Field required",
             ),
             (
                 {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__STT": "deepgram"},
-                "EVA_MODEL__TTS is required",
+                r"model\.pipeline\.tts\s+Field required",
             ),
             (
                 {"EVA_MODEL__AUDIO_LLM": "ultravox"},
-                "EVA_MODEL__TTS is required",
+                r"model\.audio_llm\.tts\s+Field required",
             ),
         ),
         ids=(
