@@ -584,11 +584,6 @@ class TestCliArgs:
         config = _config(env_vars=_EVA_MODEL_LIST_ENV, cli_args=["--realtime-model", "test-model"])
         assert config.model.s2s == "test-model"
 
-    def test_domain_cli(self):
-        """--domain sets derived paths."""
-        c = _config(env_vars=_BASE_ENV, cli_args=["--domain", "my_domain"])
-        assert c.agent_config_path == Path("configs/agents/my_domain_agent.yaml")
-
     def test_run_id(self):
         c = _config(env_vars=_BASE_ENV, cli_args=["--run-id", "my-run"])
         assert c.run_id == "my-run"

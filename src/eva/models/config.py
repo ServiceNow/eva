@@ -288,7 +288,7 @@ class RunConfig(BaseSettings):
     )
 
     # Data paths
-    domain: str = "airline"
+    domain: Literal["airline"] = "airline"
 
     # Rerun settings
     max_rerun_attempts: int = Field(3, ge=0, le=20, description="Maximum number of rerun attempts for failed records")
