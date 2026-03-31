@@ -300,6 +300,21 @@ class RunConfig(BaseSettings):
         "EVA_METRICS_TO_RUN": "EVA_METRICS",
     }
 
+    # Providers that manage their own model/key resolution (e.g. WebSocket-based)
+    _SKIP_PARAMS_VALIDATION: ClassVar[set[str]] = {"nvidia"}
+
+    # Maps *_params field names to their provider field for env override logic
+    _PARAMS_TO_PROVIDER: ClassVar[dict[str, str]] = {
+        "stt_params": "stt",
+        "tts_params": "tts",
+        "s2s_params": "s2s",
+        "audio_llm_params": "audio_llm",
+    }
+    # Keys always read from the live environment (not persisted across runs)
+    _ENV_OVERRIDE_KEYS: ClassVar[set[str]] = {"url", "urls"}
+    # Substrings that identify secret keys (redacted in logs and config.json)
+    _SECRET_KEY_PATTERNS: ClassVar[set[str]] = {"key", "credentials", "secret"}
+
     class ModelDeployment(DeploymentTypedDict):
         """DeploymentTypedDict that preserves extra keys in litellm_params."""
 
@@ -491,9 +506,6 @@ class RunConfig(BaseSettings):
 
         return self
 
-    # Providers that manage their own model/key resolution (e.g. WebSocket-based)
-    _SKIP_PARAMS_VALIDATION: ClassVar[set[str]] = {"nvidia"}
-
     @classmethod
     def _validate_service_params(cls, service: str, provider: str, params: dict[str, Any]) -> None:
         """Validate that STT/TTS params contain required keys."""
@@ -555,58 +567,65 @@ class RunConfig(BaseSettings):
                         value[key] = "***"
         return data
 
-    def restore_redacted_secrets(self, live: "RunConfig") -> None:
-        """Replace ``***`` values in this config with real values from *live*.
+    def apply_env_overrides(self, live: "RunConfig") -> None:
+        """Apply environment-dependent values from *live* config onto this (saved) config.
 
-        Covers both ``model.*_params`` (STT/TTS/S2S/AudioLLM secrets) and
-        ``model_list[].litellm_params`` (LLM deployment secrets).
+        Restores redacted secrets (``***``) and overrides dynamic fields (``url``,
+        ``urls``) in ``model.*_params`` and ``model_list[].litellm_params``.
 
         Raises:
             ValueError: If provider or alias differs for a service with redacted secrets.
         """
         # ── model.*_params (STT / TTS / S2S / AudioLLM) ──
-        _PARAMS_TO_PROVIDER = {
-            "stt_params": "stt",
-            "tts_params": "tts",
-            "s2s_params": "s2s",
-            "audio_llm_params": "audio_llm",
-        }
-        for params_field, provider_field in _PARAMS_TO_PROVIDER.items():
+        for params_field, provider_field in self._PARAMS_TO_PROVIDER.items():
             saved = getattr(self.model, params_field, None)
             source = getattr(live.model, params_field, None)
             if not isinstance(saved, dict) or not isinstance(source, dict):
                 continue
-            if not any(v == "***" for v in saved.values()):
+
+            has_redacted = any(v == "***" for v in saved.values())
+            has_env_overrides = any(k in saved or k in source for k in self._ENV_OVERRIDE_KEYS)
+            if not has_redacted and not has_env_overrides:
                 continue
 
-            saved_provider = getattr(self.model, provider_field, None)
-            live_provider = getattr(live.model, provider_field, None)
-            if saved_provider != live_provider:
-                raise ValueError(
-                    f"Cannot restore secrets: saved {provider_field}={saved_provider!r} "
-                    f"but current environment has {provider_field}={live_provider!r}"
-                )
+            if has_redacted:
+                saved_provider = getattr(self.model, provider_field, None)
+                live_provider = getattr(live.model, provider_field, None)
+                if saved_provider != live_provider:
+                    raise ValueError(
+                        f"Cannot restore secrets: saved {provider_field}={saved_provider!r} "
+                        f"but current environment has {provider_field}={live_provider!r}"
+                    )
 
-            saved_alias = saved.get("alias")
-            live_alias = source.get("alias")
-            if saved_alias and live_alias and saved_alias != live_alias:
-                raise ValueError(
-                    f"Cannot restore secrets: saved {params_field}[alias]={saved_alias!r} "
-                    f"but current environment has {params_field}[alias]={live_alias!r}"
-                )
+                saved_alias = saved.get("alias")
+                live_alias = source.get("alias")
+                if saved_alias and live_alias and saved_alias != live_alias:
+                    raise ValueError(
+                        f"Cannot restore secrets: saved {params_field}[alias]={saved_alias!r} "
+                        f"but current environment has {params_field}[alias]={live_alias!r}"
+                    )
 
-            saved_model = saved.get("model")
-            live_model = source.get("model")
-            if saved_model and live_model and saved_model != live_model:
-                logger.warning(
-                    "Model mismatch for %s: saved %r, current environment has %r",
-                    params_field,
-                    saved_model,
-                    live_model,
-                )
+                saved_model = saved.get("model")
+                live_model = source.get("model")
+                if saved_model and live_model and saved_model != live_model:
+                    logger.warning(
+                        f"Model mismatch for {params_field}: saved {saved_model!r}, "
+                        f"current environment has {live_model!r}"
+                    )
 
-            for key, value in saved.items():
-                if value == "***" and key in source:
+                for key, value in saved.items():
+                    if value == "***" and key in source:
+                        saved[key] = source[key]
+
+            # Always use url/urls from the live environment
+            for key in self._ENV_OVERRIDE_KEYS:
+                if key in source:
+                    saved_val = saved.get(key)
+                    if saved_val and saved_val != source[key]:
+                        logger.warning(
+                            f"{params_field}[{key}] differs: saved {saved_val!r}, "
+                            f"using {source[key]!r} from current environment"
+                        )
                     saved[key] = source[key]
 
         # ── model_list[].litellm_params (LLM deployments) ──
@@ -628,6 +647,21 @@ class RunConfig(BaseSettings):
             for key, value in saved_params.items():
                 if value == "***" and key in live_params:
                     saved_params[key] = live_params[key]
+
+        # ── Log resolved configuration ──
+        def _safe_params(p: dict) -> dict:
+            return {k: "***" if any(s in k for s in self._SECRET_KEY_PATTERNS) else v for k, v in p.items()}
+
+        for params_field, provider_field in self._PARAMS_TO_PROVIDER.items():
+            params = getattr(self.model, params_field, None)
+            provider = getattr(self.model, provider_field, None)
+            if isinstance(params, dict) and params:
+                logger.info(f"Resolved {provider_field} ({provider}): {_safe_params(params)}")
+
+        for deployment in self.model_list:
+            name = deployment.get("model_name", "?")
+            params = deployment.get("litellm_params", {})
+            logger.info(f"Resolved deployment {name}: {_safe_params(params)}")
 
     @classmethod
     def from_yaml(cls, path: Path | str) -> "RunConfig":
