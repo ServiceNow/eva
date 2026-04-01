@@ -502,7 +502,7 @@ def page_overview(records: list[dict]):
             color_discrete_sequence=px.colors.qualitative.Set2,
         )
         fig.update_layout(showlegend=False, xaxis_tickangle=-30, height=350)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig)
 
     with col2:
         fare_counts = df["Fare Class"].value_counts().reset_index()
@@ -515,7 +515,7 @@ def page_overview(records: list[dict]):
             color_discrete_sequence=px.colors.qualitative.Pastel,
         )
         fig.update_layout(height=350)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig)
 
     col3, col4 = st.columns(2)
     with col3:
@@ -532,7 +532,7 @@ def page_overview(records: list[dict]):
             color_discrete_sequence=["#f87171", "#6ee7b7"],
         )
         fig.update_layout(height=350)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig)
 
     with col4:
         # Top routes
@@ -547,14 +547,13 @@ def page_overview(records: list[dict]):
             color_discrete_sequence=["#818cf8"],
         )
         fig.update_layout(height=350, yaxis={"autorange": "reversed"})
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig)
 
     # Data table
     st.markdown("### All Scenarios")
     st.dataframe(
         df[["ID", "Group", "Route", "Fare Class", "Passengers", "Disruption", "Name", "Goal"]],
         hide_index=True,
-        use_container_width=True,
         height=400,
     )
 

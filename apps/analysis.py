@@ -851,7 +851,7 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
         margin={"l": 60, "r": 10, "t": 10, "b": 60},
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig)
 
 
 # ============================================================================
@@ -1027,7 +1027,7 @@ def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
             height=450,
             margin={"l": 50, "r": 10, "t": 10, "b": 120},
         )
-        st.plotly_chart(bar_fig, use_container_width=True)
+        st.plotly_chart(bar_fig)
 
     # Metrics table: EVA composites first, then all individual metrics
     table_composites = [c for c in _EVA_BAR_COMPOSITES if c in summary_df.columns]
@@ -1052,7 +1052,6 @@ def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
     styled = styled.format(dict.fromkeys(all_score_cols, "{:.3f}"), na_rep="—")
     st.dataframe(
         styled,
-        use_container_width=True,
         hide_index=True,
         column_config={
             "link": st.column_config.LinkColumn(" ", display_text="🔍", width=40),
@@ -1171,7 +1170,7 @@ def render_run_overview(run_dir: Path):
                 height=max(350, len(chart_df) * 35 + 100),
                 margin={"l": 10, "r": 10, "t": 10, "b": 40},
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig)
 
         # Render standalone metrics (non-normalized) as separate bar charts
         for m, stats in standalone_data.items():
@@ -1209,7 +1208,7 @@ def render_run_overview(run_dir: Path):
                 margin={"l": 10, "r": 10, "t": 10, "b": 40},
                 showlegend=False,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig)
 
     st.divider()
 
@@ -1239,7 +1238,6 @@ def render_run_overview(run_dir: Path):
     styled = styled.format(dict.fromkeys(renamed_metrics, "{:.3f}"), na_rep="—")
     st.dataframe(
         styled,
-        use_container_width=True,
         hide_index=True,
         column_config={
             "link": st.column_config.LinkColumn(" ", display_text="🔍", width=40),
@@ -1926,13 +1924,13 @@ def main():
                         column_config["timestamp"] = st.column_config.TextColumn("timestamp", width="small")
                     if "role" in transcript_df.columns:
                         column_config["role"] = st.column_config.TextColumn("role", width="small")
-                    st.dataframe(transcript_df, use_container_width=True, hide_index=True, column_config=column_config)
+                    st.dataframe(transcript_df, hide_index=True, column_config=column_config)
                 else:
                     st.info("No transcript data available")
             except Exception:
                 transcript_df = format_transcript(selected_record_dir / "transcript.jsonl")
                 if not transcript_df.empty:
-                    st.dataframe(transcript_df, use_container_width=True, hide_index=True)
+                    st.dataframe(transcript_df, hide_index=True)
         else:
             transcript_df = format_transcript(selected_record_dir / "transcript.jsonl")
             if not transcript_df.empty:
@@ -1943,7 +1941,7 @@ def main():
                     column_config["timestamp"] = st.column_config.TextColumn("timestamp", width="small")
                 if "role" in transcript_df.columns:
                     column_config["role"] = st.column_config.TextColumn("role", width="small")
-                st.dataframe(transcript_df, use_container_width=True, hide_index=True, column_config=column_config)
+                st.dataframe(transcript_df, hide_index=True, column_config=column_config)
             else:
                 st.info("No transcript data available")
 
