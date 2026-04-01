@@ -414,7 +414,7 @@ def render_record_detail(record: dict):
     # User persona card
     col1, col2 = st.columns([1, 3])
     with col1:
-        st.markdown(
+        st.html(
             f"<div style='text-align:center;padding:1rem;'>"
             f"<div style='width:64px;height:64px;border-radius:50%;background:#6366f1;"
             f"display:inline-flex;align-items:center;justify-content:center;"
@@ -422,16 +422,12 @@ def render_record_detail(record: dict):
             f"{user_cfg['name'][0]}</div>"
             f"<div style='margin-top:0.5rem;font-weight:600;'>{user_cfg['name']}</div>"
             f"<div style='color:#888;font-size:0.85rem;'>Persona {user_cfg['user_persona_id']}</div>"
-            f"</div>",
-            unsafe_allow_html=True,
+            f"</div>"
         )
     with col2:
         st.markdown("**User Goal**")
         st.info(user_goal["high_level_user_goal"])
-        st.markdown(
-            f"<div style='color:#888;font-size:0.9rem;padding:0.5rem 0;'><em>{user_cfg['user_persona']}</em></div>",
-            unsafe_allow_html=True,
-        )
+        st.html(f"<div style='color:#888;font-size:0.9rem;padding:0.5rem 0;'><em>{user_cfg['user_persona']}</em></div>")
 
     # Starting utterance
     st.markdown("**Starting Utterance**")
@@ -661,10 +657,9 @@ def main():
         initial_sidebar_state="expanded",
     )
 
-    st.markdown(
+    st.html(
         "<h1 style='margin-bottom:0;'>EVA Dataset Explorer</h1>"
-        "<p style='color:#888;margin-top:0;'>Airline benchmark scenarios & tools</p>",
-        unsafe_allow_html=True,
+        "<p style='color:#888;margin-top:0;'>Airline benchmark scenarios & tools</p>"
     )
 
     records = load_dataset()

@@ -769,12 +769,11 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
     }
     subscript = subscript_map.get(view_key, view_key)
 
-    st.markdown(
+    st.html(
         f"<div style='text-align:center'>"
         f"<h4 style='margin-bottom:0.2em'>EVA-A vs EVA-X ({subscript})</h4>"
         f"<p style='color:gray;font-size:0.85em;margin-top:0'>{view_cfg['description']}</p>"
-        f"</div>",
-        unsafe_allow_html=True,
+        f"</div>"
     )
 
     fig = go.Figure()
@@ -1442,13 +1441,12 @@ def render_conversation_trace_tab(metrics: Optional[RecordMetrics], record_dir: 
     if all_top_metrics:
         selected = st.session_state.get("selected_metric")
 
-        st.markdown(
+        st.html(
             """<style>
             div[class*="st-key-metric_btn_"] button {
                 height: 4.5rem;
             }
-            </style>""",
-            unsafe_allow_html=True,
+            </style>"""
         )
         st.markdown("### Metrics Overview")
 
@@ -1527,14 +1525,13 @@ def render_conversation_trace_tab(metrics: Optional[RecordMetrics], record_dir: 
                             color = "#ff9800"
                         else:
                             color = "#f44336"
-                        st.markdown(
+                        st.html(
                             f'<div style="margin-bottom:8px; padding:6px 10px; background:#fafafa; border-radius:6px; border-left:3px solid {color};">'
                             f"<strong>Turn {tid_str}</strong> — "
                             f'<span style="color:{color}; font-weight:600;">{label}</span> '
                             f'<span style="opacity:0.6;">(latency: {latency_str})</span>'
                             f"{'<br><span style=font-size:0.88em;opacity:0.75;>' + html.escape(str(explanation)) + '</span>' if explanation else ''}"
-                            f"</div>",
-                            unsafe_allow_html=True,
+                            f"</div>"
                         )
                     else:
                         rating = None
@@ -1551,13 +1548,12 @@ def render_conversation_trace_tab(metrics: Optional[RecordMetrics], record_dir: 
 
                         color = _score_color(rating)
                         rating_str = f"{rating:.2f}" if isinstance(rating, (int, float)) else str(rating)
-                        st.markdown(
+                        st.html(
                             f'<div style="margin-bottom:8px; padding:6px 10px; background:#fafafa; border-radius:6px; border-left:3px solid {color};">'
                             f"<strong>Turn {tid_str}</strong> — "
                             f'<span style="color:{color}; font-weight:600;">{rating_str}</span>'
                             f"{'<br><span style=font-size:0.88em;opacity:0.75;>' + html.escape(str(explanation)) + '</span>' if explanation else ''}"
-                            f"</div>",
-                            unsafe_allow_html=True,
+                            f"</div>"
                         )
             else:
                 details_to_show = {
@@ -1610,13 +1606,12 @@ def render_conversation_trace_tab(metrics: Optional[RecordMetrics], record_dir: 
                 col_right = None
 
             with col_left:
-                st.markdown(
+                st.html(
                     f'<div style="background-color:rgba(25, 118, 210, 0.15); padding:10px 14px; border-radius:8px; '
                     f'border-left:4px solid #1976d2; margin-bottom:8px; color:inherit;">'
                     f'<strong style="color:#42a5f5;">Assistant</strong> '
                     f'<span style="font-size:0.72em; opacity:0.5;">turn {turn_id}</span><br>{content}'
-                    f"{reverse_html}{badges_html}</div>",
-                    unsafe_allow_html=True,
+                    f"{reverse_html}{badges_html}</div>"
                 )
 
             if turn_metrics and col_right is not None:
@@ -1624,20 +1619,18 @@ def render_conversation_trace_tab(metrics: Optional[RecordMetrics], record_dir: 
                 if explanations:
                     with col_right:
                         if prev_role != "assistant":
-                            st.markdown(
+                            st.html(
                                 '<div style="border-top:2px solid #1976d2; margin-bottom:6px; padding-top:4px;">'
-                                '<strong style="color:#42a5f5; font-size:0.85em;">Assistant Metrics</strong></div>',
-                                unsafe_allow_html=True,
+                                '<strong style="color:#42a5f5; font-size:0.85em;">Assistant Metrics</strong></div>'
                             )
                         for m in explanations:
                             color = _score_color(m["rating"])
-                            st.markdown(
+                            st.html(
                                 f'<div style="font-size:0.82em; margin-bottom:8px;">'
                                 f"<strong>{m['short_name']}</strong> "
                                 f'<span style="color:{color}; font-weight:600;">{m["rating"]:.2f}</span>'
                                 f'<br><span style="font-size:0.85em; opacity:0.7;">{html.escape(str(m["explanation"]))}</span>'
-                                f"</div>",
-                                unsafe_allow_html=True,
+                                f"</div>"
                             )
             prev_role = "assistant"
 
@@ -1690,13 +1683,12 @@ def render_conversation_trace_tab(metrics: Optional[RecordMetrics], record_dir: 
                 col_right = None
 
             with col_left:
-                st.markdown(
+                st.html(
                     f'<div style="background-color:rgba(123, 31, 162, 0.15); padding:10px 14px; border-radius:8px; '
                     f'border-left:4px solid #7b1fa2; margin-bottom:8px; color:inherit;">'
                     f'<strong style="color:#ce93d8;">User</strong> '
                     f'<span style="font-size:0.72em; opacity:0.5;">turn {turn_id}</span><br>{content}'
-                    f"{reverse_html}{wer_html}{badges_html}</div>",
-                    unsafe_allow_html=True,
+                    f"{reverse_html}{wer_html}{badges_html}</div>"
                 )
 
             if turn_metrics and col_right is not None:
@@ -1704,20 +1696,18 @@ def render_conversation_trace_tab(metrics: Optional[RecordMetrics], record_dir: 
                 if explanations:
                     with col_right:
                         if prev_role != "user":
-                            st.markdown(
+                            st.html(
                                 '<div style="border-top:2px solid #7b1fa2; margin-bottom:6px; padding-top:4px;">'
-                                '<strong style="color:#ce93d8; font-size:0.85em;">User Metrics</strong></div>',
-                                unsafe_allow_html=True,
+                                '<strong style="color:#ce93d8; font-size:0.85em;">User Metrics</strong></div>'
                             )
                         for m in explanations:
                             color = _score_color(m["rating"])
-                            st.markdown(
+                            st.html(
                                 f'<div style="font-size:0.82em; margin-bottom:8px;">'
                                 f"<strong>{m['short_name']}</strong> "
                                 f'<span style="color:{color}; font-weight:600;">{m["rating"]:.2f}</span>'
                                 f'<br><span style="font-size:0.85em; opacity:0.7;">{html.escape(str(m["explanation"]))}</span>'
-                                f"</div>",
-                                unsafe_allow_html=True,
+                                f"</div>"
                             )
             prev_role = "user"
 
