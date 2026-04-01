@@ -9,18 +9,69 @@ import { useThemeColors, useThemeMode } from '../../styles/theme';
 
 // ─── Shared constants & utilities ────────────────────────────────────────────
 
-const componentPaletteDark = [
-  '#F59E0B', '#38BDF8', '#34D399', '#A78BFA',  // amber, sky, emerald, purple
-  '#F87171', '#22D3EE', '#FB923C', '#818CF8',  // red, cyan, orange, indigo
-  '#F472B6', '#4ADE80', '#FACC15', '#2DD4BF',  // pink, green, yellow, teal
-  '#C084FC', '#FB7185', '#67E8F9', '#A3E635',  // violet, rose, light-cyan, lime
-];
-const componentPaletteLight = [
-  '#B45309', '#0369A1', '#047857', '#6D28D9',  // amber, sky, emerald, purple
-  '#B91C1C', '#0E7490', '#C2410C', '#4338CA',  // red, cyan, orange, indigo
-  '#BE185D', '#15803D', '#A16207', '#0D9488',  // pink, green, yellow, teal
-  '#7C3AED', '#E11D48', '#0891B2', '#65A30D',  // violet, rose, light-cyan, lime
-];
+// Per-category color palettes — each category uses maximally distinct colors so
+// components you actually compare (e.g. two STT models) never look alike.
+const categoryPalettesDark: Record<string, string[]> = {
+  stt: [
+    '#F59E0B',  // amber
+    '#38BDF8',  // sky blue
+    '#34D399',  // emerald
+    '#F87171',  // red
+    '#A78BFA',  // purple
+    '#FACC15',  // yellow
+  ],
+  llm: [
+    '#22D3EE',  // cyan
+    '#FB923C',  // orange
+    '#818CF8',  // indigo
+    '#4ADE80',  // green
+    '#F59E0B',  // amber
+    '#F472B6',  // pink
+    '#94A3B8',  // slate
+    '#A3E635',  // lime
+    '#E879F9',  // fuchsia
+    '#F87171',  // red
+  ],
+  tts: [
+    '#A3E635',  // lime
+    '#FB7185',  // rose
+    '#67E8F9',  // light cyan
+    '#C084FC',  // violet
+    '#FDBA74',  // peach
+    '#2DD4BF',  // teal
+  ],
+};
+
+const categoryPalettesLight: Record<string, string[]> = {
+  stt: [
+    '#B45309',  // amber
+    '#0369A1',  // sky blue
+    '#047857',  // emerald
+    '#B91C1C',  // red
+    '#6D28D9',  // purple
+    '#A16207',  // yellow
+  ],
+  llm: [
+    '#0E7490',  // cyan
+    '#C2410C',  // orange
+    '#4338CA',  // indigo
+    '#15803D',  // green
+    '#B45309',  // amber
+    '#BE185D',  // pink
+    '#475569',  // slate
+    '#65A30D',  // lime
+    '#A21CAF',  // fuchsia
+    '#B91C1C',  // red
+  ],
+  tts: [
+    '#65A30D',  // lime
+    '#E11D48',  // rose
+    '#0891B2',  // light cyan
+    '#7C3AED',  // violet
+    '#EA580C',  // peach
+    '#0D9488',  // teal
+  ],
+};
 
 const distributionColors = {
   dark:  { onTime: '#34D399', late: '#F68EC4', early: '#F59E0B', indeterminate: '#64748B' },
@@ -32,19 +83,26 @@ const breakdownColors = {
   light: { withToolCalls: '#0891B2', withoutToolCalls: '#7C3AED' },
 };
 
-function getComponentColorMap(systems: SystemScore[], palette: string[]): Map<string, string> {
-  const allComponents = new Set<string>();
+function getComponentColorMap(systems: SystemScore[], isDark: boolean): Map<string, string> {
+  const palettes = isDark ? categoryPalettesDark : categoryPalettesLight;
+
+  const sttNames: string[] = [];
+  const llmNames: string[] = [];
+  const ttsNames: string[] = [];
+  const seen = new Set<string>();
   for (const s of systems) {
-    if (s.stt !== '-') allComponents.add(s.stt);
-    allComponents.add(s.llm);
-    if (s.tts !== '-') allComponents.add(s.tts);
+    if (s.stt !== '-' && !seen.has('stt:' + s.stt)) { sttNames.push(s.stt); seen.add('stt:' + s.stt); }
+    if (!seen.has('llm:' + s.llm)) { llmNames.push(s.llm); seen.add('llm:' + s.llm); }
+    if (s.tts !== '-' && !seen.has('tts:' + s.tts)) { ttsNames.push(s.tts); seen.add('tts:' + s.tts); }
   }
+
   const map = new Map<string, string>();
-  let i = 0;
-  for (const name of allComponents) {
-    map.set(name, palette[i % palette.length]);
-    i++;
-  }
+  const assign = (names: string[], pal: string[]) => {
+    names.forEach((name, i) => map.set(name, pal[i % pal.length]));
+  };
+  assign(sttNames, palettes.stt);
+  assign(llmNames, palettes.llm);
+  assign(ttsNames, palettes.tts);
   return map;
 }
 
@@ -790,8 +848,8 @@ interface TurnTakingAnalysisProps {
 
 export function TurnTakingAnalysis({ systems }: TurnTakingAnalysisProps) {
   const themeMode = useThemeMode();
-  const palette = themeMode === 'light' ? componentPaletteLight : componentPaletteDark;
-  const componentColors = useMemo(() => getComponentColorMap(systems, palette), [systems, palette]);
+  const isDark = themeMode !== 'light';
+  const componentColors = useMemo(() => getComponentColorMap(systems, isDark), [systems, isDark]);
   const [isOpen, setIsOpen] = useState(false);
   const [layout, setLayout] = useState<LayoutMode>('sideBySide');
 

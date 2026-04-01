@@ -48,8 +48,8 @@ cp .env.example .env
 
 > [!TIP]
 > After installation, you can run EVA using either:
-> - `eva` — CLI entry point (e.g., `eva --domain airline`)
-> - `python main.py` — script at the repo root (e.g., `python main.py --domain airline`)
+> - `eva` — CLI entry point (e.g., `eva --help`)
+> - `python main.py` — script at the repo root (e.g., `python main.py --help`)
 >
 > If using an IDE, point your Python interpreter to `.venv/bin/python` so commands run in the virtual environment automatically. Otherwise, prefix commands with `uv run` or activate the environment with `source .venv/bin/activate`.
 

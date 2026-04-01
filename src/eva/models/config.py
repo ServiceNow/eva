@@ -61,8 +61,8 @@ class PipelineConfig(BaseModel):
         description="LLM model name matching a model_name in --model-list/EVA_MODEL_LIST",
         examples=["gpt-5.2", "gemini-3-pro"],
     )
-    stt: str | None = Field(None, description="STT model", examples=["deepgram", "openai_whisper"])
-    tts: str | None = Field(None, description="TTS model", examples=["cartesia", "elevenlabs"])
+    stt: str = Field(description="STT model", examples=["deepgram", "openai_whisper"])
+    tts: str = Field(description="TTS model", examples=["cartesia", "elevenlabs"])
 
     stt_params: dict[str, Any] = Field({}, description="Additional STT model parameters (JSON)")
     tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
@@ -111,6 +111,17 @@ class SpeechToSpeechConfig(BaseModel):
     s2s: str = Field(description="Speech-to-speech model name", examples=["gpt-realtime-mini", "gemini_live"])
     s2s_params: dict[str, Any] = Field({}, description="Additional speech-to-speech model parameters (JSON)")
 
+    turn_strategy: Literal["smart", "external"] = Field(
+        "smart",
+        description=(
+            "User turn detection strategy. "
+            "'smart' uses LocalSmartTurnAnalyzerV3 + SileroVAD (default). "
+            "'external' uses ExternalUserTurnStrategies for services with built-in turn detection "
+            "(e.g., deepgram-flux, Speechmatics). "
+            "Set via EVA_MODEL__TURN_STRATEGY=external."
+        ),
+    )
+    
     @property
     def pipeline_parts(self) -> dict[str, str]:
         """Component names for this pipeline."""
@@ -134,7 +145,7 @@ class AudioLLMConfig(BaseModel):
         {},
         description="Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, max_tokens",
     )
-    tts: str | None = Field(None, description="TTS model", examples=["cartesia", "elevenlabs"])
+    tts: str = Field(description="TTS model", examples=["cartesia", "elevenlabs"])
     tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
 
     @property
@@ -156,7 +167,7 @@ _PIPELINE_FIELDS = {
     *PipelineConfig._LEGACY_RENAMES,
     *PipelineConfig._LEGACY_DROP,
 }
-_S2S_FIELDS = {"s2s", "s2s_params"}
+_S2S_FIELDS = {"s2s", "s2s_params", "turn_strategy"}
 _AUDIO_LLM_FIELDS = {"audio_llm", "audio_llm_params", "tts", "tts_params"}
 
 
@@ -330,7 +341,7 @@ class RunConfig(BaseSettings):
     )
 
     # Data paths
-    domain: str = "airline"
+    domain: Literal["airline"] = "airline"
 
     # Rerun settings
     max_rerun_attempts: int = Field(3, ge=0, le=20, description="Maximum number of rerun attempts for failed records")
@@ -483,17 +494,16 @@ class RunConfig(BaseSettings):
     @model_validator(mode="after")
     def _check_companion_services(self) -> "RunConfig":
         """Ensure required companion services are set for each pipeline mode."""
+        required_keys = ["api_key", "model"]
         if isinstance(self.model, PipelineConfig):
-            if not self.model.stt:
-                raise ValueError("EVA_MODEL__STT is required when using EVA_MODEL__LLM (ASR-LLM-TTS pipeline).")
-            if not self.model.tts:
-                raise ValueError("EVA_MODEL__TTS is required when using EVA_MODEL__LLM (ASR-LLM-TTS pipeline).")
-            self._validate_service_params("STT", self.model.stt, self.model.stt_params)
-            self._validate_service_params("TTS", self.model.tts, self.model.tts_params)
+            self._validate_service_params("STT", self.model.stt, required_keys, self.model.stt_params)
+            self._validate_service_params("TTS", self.model.tts, required_keys, self.model.tts_params)
         elif isinstance(self.model, AudioLLMConfig):
-            if not self.model.tts:
-                raise ValueError("EVA_MODEL__TTS is required when using EVA_MODEL__AUDIO_LLM (SpeechLM-TTS pipeline).")
-            self._validate_service_params("TTS", self.model.tts, self.model.tts_params)
+            self._validate_service_params("TTS", self.model.tts, required_keys, self.model.tts_params)
+            self._validate_service_params("audio_llm", self.model.audio_llm, required_keys, self.model.audio_llm_params)
+        elif isinstance(self.model, SpeechToSpeechConfig):
+            # api_key is required, some s2s services don't require model
+            self._validate_service_params("S2S", self.model.s2s, ["api_key"], self.model.s2s_params)
         return self
 
     @model_validator(mode="after")
@@ -504,11 +514,13 @@ class RunConfig(BaseSettings):
         return self
 
     @classmethod
-    def _validate_service_params(cls, service: str, provider: str, params: dict[str, Any]) -> None:
+    def _validate_service_params(
+        cls, service: str, provider: str, required_keys: list[str], params: dict[str, Any]
+    ) -> None:
         """Validate that STT/TTS params contain required keys."""
         if provider.lower() in cls._SKIP_PARAMS_VALIDATION:
             return
-        missing = [key for key in ("api_key", "model") if key not in params]
+        missing = [key for key in required_keys if key not in params]
         if missing:
             missing_str = " and ".join(f'"{k}"' for k in missing)
             env_var = f"EVA_MODEL__{service}_PARAMS"
