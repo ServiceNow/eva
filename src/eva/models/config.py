@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 def _param_alias(params: dict[str, Any]) -> str:
     """Return the display alias from a params dict."""
-    return params.get("alias") or params["model"]
+    return params.get("alias") or params.get("model", "")
 
 
 class PipelineConfig(BaseModel):
@@ -67,14 +67,47 @@ class PipelineConfig(BaseModel):
     stt_params: dict[str, Any] = Field({}, description="Additional STT model parameters (JSON)")
     tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
 
-    turn_strategy: Literal["smart", "external"] = Field(
-        "smart",
+    # Configurable turn start/stop strategies (optional)
+    turn_start_strategy: str | None = Field(
+        None,
         description=(
-            "User turn detection strategy. "
-            "'smart' uses LocalSmartTurnAnalyzerV3 + SileroVAD (default). "
-            "'external' uses ExternalUserTurnStrategies for services with built-in turn detection "
-            "(e.g., deepgram-flux, Speechmatics). "
-            "Set via EVA_MODEL__TURN_STRATEGY=external."
+            "User turn start strategy: 'vad', 'transcription', or 'external'. "
+            "If not specified, uses default (vad). "
+            "Set via EVA_MODEL__TURN_START_STRATEGY."
+        ),
+    )
+    turn_start_strategy_params: dict[str, Any] = Field(
+        {},
+        description="Parameters for turn start strategy (JSON). Set via EVA_MODEL__TURN_START_STRATEGY_PARAMS.",
+    )
+
+    turn_stop_strategy: str | None = Field(
+        None,
+        description=(
+            "User turn stop strategy: 'speech_timeout', 'turn_analyzer', or 'external'. "
+            "If not specified, uses default (turn_analyzer). "
+            "Set via EVA_MODEL__TURN_STOP_STRATEGY."
+        ),
+    )
+    turn_stop_strategy_params: dict[str, Any] = Field(
+        {},
+        description="Parameters for turn stop strategy (JSON). Set via EVA_MODEL__TURN_STOP_STRATEGY_PARAMS.",
+    )
+
+    # VAD configuration (optional)
+    vad: str | None = Field(
+        None,
+        description=(
+            "VAD analyzer type: 'silero'. "
+            "If not specified, uses default VAD (SileroVADAnalyzer). "
+            "Set via EVA_MODEL__VAD."
+        ),
+    )
+    vad_params: dict[str, Any] = Field(
+        {},
+        description=(
+            "VAD parameters (JSON): confidence, start_secs, stop_secs, min_volume. "
+            "Set via EVA_MODEL__VAD_PARAMS."
         ),
     )
 
@@ -102,6 +135,15 @@ class PipelineConfig(BaseModel):
             data.pop(key, None)
         return data
 
+    @field_serializer("stt_params", "tts_params")
+    @classmethod
+    def _redact_api_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
+        """Redact API keys when serializing."""
+        redacted = params.copy()
+        if "api_key" in redacted:
+            redacted["api_key"] = "***"
+        return redacted
+
 
 class SpeechToSpeechConfig(BaseModel):
     """Configuration for a speech-to-speech model."""
@@ -111,21 +153,19 @@ class SpeechToSpeechConfig(BaseModel):
     s2s: str = Field(description="Speech-to-speech model name", examples=["gpt-realtime-mini", "gemini_live"])
     s2s_params: dict[str, Any] = Field({}, description="Additional speech-to-speech model parameters (JSON)")
 
-    turn_strategy: Literal["smart", "external"] = Field(
-        "smart",
-        description=(
-            "User turn detection strategy. "
-            "'smart' uses LocalSmartTurnAnalyzerV3 + SileroVAD (default). "
-            "'external' uses ExternalUserTurnStrategies for services with built-in turn detection "
-            "(e.g., deepgram-flux, Speechmatics). "
-            "Set via EVA_MODEL__TURN_STRATEGY=external."
-        ),
-    )
-    
     @property
     def pipeline_parts(self) -> dict[str, str]:
         """Component names for this pipeline."""
         return {"s2s": _param_alias(self.s2s_params) or self.s2s}
+
+    @field_serializer("s2s_params")
+    @classmethod
+    def _redact_api_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
+        """Redact API keys when serializing."""
+        redacted = params.copy()
+        if "api_key" in redacted:
+            redacted["api_key"] = "***"
+        return redacted
 
 
 class AudioLLMConfig(BaseModel):
@@ -143,10 +183,57 @@ class AudioLLMConfig(BaseModel):
     )
     audio_llm_params: dict[str, Any] = Field(
         {},
-        description="Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, max_tokens",
+        description=(
+            "Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, max_tokens, "
+            "vad_stop_secs (default: 0.4), smart_turn_stop_secs (default: 0.8)"
+        ),
     )
     tts: str = Field(description="TTS model", examples=["cartesia", "elevenlabs"])
     tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
+
+    # Configurable turn start/stop strategies (optional, same as PipelineConfig)
+    turn_start_strategy: str | None = Field(
+        None,
+        description=(
+            "User turn start strategy: 'vad', 'transcription', or 'external'. "
+            "If not specified, uses default (vad). "
+            "Set via EVA_MODEL__TURN_START_STRATEGY."
+        ),
+    )
+    turn_start_strategy_params: dict[str, Any] = Field(
+        {},
+        description="Parameters for turn start strategy (JSON). Set via EVA_MODEL__TURN_START_STRATEGY_PARAMS.",
+    )
+
+    turn_stop_strategy: str | None = Field(
+        None,
+        description=(
+            "User turn stop strategy: 'speech_timeout', 'turn_analyzer', or 'external'. "
+            "If not specified, uses default (turn_analyzer). "
+            "Set via EVA_MODEL__TURN_STOP_STRATEGY."
+        ),
+    )
+    turn_stop_strategy_params: dict[str, Any] = Field(
+        {},
+        description="Parameters for turn stop strategy (JSON). Set via EVA_MODEL__TURN_STOP_STRATEGY_PARAMS.",
+    )
+
+    # VAD configuration (optional)
+    vad: str | None = Field(
+        None,
+        description=(
+            "VAD analyzer type: 'silero'. "
+            "If not specified, uses default VAD (SileroVADAnalyzer). "
+            "Set via EVA_MODEL__VAD."
+        ),
+    )
+    vad_params: dict[str, Any] = Field(
+        {},
+        description=(
+            "VAD parameters (JSON): confidence, start_secs, stop_secs, min_volume. "
+            "Set via EVA_MODEL__VAD_PARAMS."
+        ),
+    )
 
     @property
     def pipeline_parts(self) -> dict[str, str]:
@@ -156,6 +243,15 @@ class AudioLLMConfig(BaseModel):
             "tts": _param_alias(self.tts_params) or self.tts,
         }
 
+    @field_serializer("audio_llm_params", "tts_params")
+    @classmethod
+    def _redact_api_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
+        """Redact API keys when serializing."""
+        redacted = params.copy()
+        if "api_key" in redacted:
+            redacted["api_key"] = "***"
+        return redacted
+
 
 _PIPELINE_FIELDS = {
     "llm",
@@ -163,12 +259,28 @@ _PIPELINE_FIELDS = {
     "tts",
     "stt_params",
     "tts_params",
-    "turn_strategy",
+    "turn_start_strategy",
+    "turn_start_strategy_params",
+    "turn_stop_strategy",
+    "turn_stop_strategy_params",
+    "vad",
+    "vad_params",
     *PipelineConfig._LEGACY_RENAMES,
     *PipelineConfig._LEGACY_DROP,
 }
-_S2S_FIELDS = {"s2s", "s2s_params", "turn_strategy"}
-_AUDIO_LLM_FIELDS = {"audio_llm", "audio_llm_params", "tts", "tts_params"}
+_S2S_FIELDS = {"s2s", "s2s_params"}
+_AUDIO_LLM_FIELDS = {
+    "audio_llm",
+    "audio_llm_params",
+    "tts",
+    "tts_params",
+    "turn_start_strategy",
+    "turn_start_strategy_params",
+    "turn_stop_strategy",
+    "turn_stop_strategy_params",
+    "vad",
+    "vad_params",
+}
 
 
 def _model_config_discriminator(data: Any) -> str:

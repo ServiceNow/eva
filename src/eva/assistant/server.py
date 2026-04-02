@@ -42,7 +42,7 @@ from pipecat.transports.websocket.fastapi import (
 )
 from pipecat.turns.user_start import VADUserTurnStartStrategy
 from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
-from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies, UserTurnStrategies
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
 
 from eva.assistant.agentic.audit_log import AuditLog, current_timestamp_ms
@@ -60,6 +60,11 @@ from eva.assistant.pipeline.services import (
     create_realtime_llm_service,
     create_stt_service,
     create_tts_service,
+)
+from eva.assistant.pipeline.turn_config import (
+    create_turn_start_strategy,
+    create_turn_stop_strategy,
+    create_vad_analyzer,
 )
 from eva.assistant.services.llm import LiteLLMClient
 from eva.assistant.tools.tool_executor import ToolExecutor
@@ -326,26 +331,65 @@ class AssistantServer:
                     "smart_turn_stop_secs", 0.8
                 )  # Shorter silence so we don't have to wait 3s if smart turn marks audio as incomplete
 
-            if (
-                isinstance(self.pipeline_config, (PipelineConfig, SpeechToSpeechConfig))
-                and self.pipeline_config.turn_strategy == "external"
-            ):
-                logger.info("Using external user turn strategies")
-                user_turn_strategies = ExternalUserTurnStrategies()
-                vad_analyzer = None
+            # Use configurable turn strategies if specified, otherwise fall back to defaults
+            if isinstance(self.pipeline_config, (PipelineConfig, AudioLLMConfig)):
+                turn_start_cfg = self.pipeline_config.turn_start_strategy
+                turn_start_params = self.pipeline_config.turn_start_strategy_params
+                turn_stop_cfg = self.pipeline_config.turn_stop_strategy
+                turn_stop_params = self.pipeline_config.turn_stop_strategy_params
+                vad_cfg = self.pipeline_config.vad
+                vad_cfg_params = self.pipeline_config.vad_params
             else:
-                logger.info("Using local smart turn analyzer")
-                user_turn_strategies = UserTurnStrategies(
-                    start=[VADUserTurnStartStrategy()],
-                    stop=[
-                        TurnAnalyzerUserTurnStopStrategy(
-                            turn_analyzer=LocalSmartTurnAnalyzerV3(
-                                params=SmartTurnParams(stop_secs=smart_turn_stop_secs)
-                            )
-                        )
-                    ],
+                turn_start_cfg = None
+                turn_start_params = {}
+                turn_stop_cfg = None
+                turn_stop_params = {}
+                vad_cfg = None
+                vad_cfg_params = {}
+
+            # Create turn start strategy
+            turn_start_strategy = create_turn_start_strategy(turn_start_cfg, turn_start_params)
+            if turn_start_strategy is None:
+                # Default: VADUserTurnStartStrategy
+                turn_start_strategy = VADUserTurnStartStrategy()
+                logger.info("Using default VAD user turn start strategy")
+            else:
+                logger.info(f"Using configured turn start strategy: {turn_start_cfg}")
+
+            # Create turn stop strategy
+            turn_stop_strategy = create_turn_stop_strategy(
+                turn_stop_cfg, turn_stop_params, smart_turn_stop_secs
+            )
+            if turn_stop_strategy is None:
+                # Default: TurnAnalyzerUserTurnStopStrategy with LocalSmartTurnAnalyzerV3
+                turn_stop_strategy = TurnAnalyzerUserTurnStopStrategy(
+                    turn_analyzer=LocalSmartTurnAnalyzerV3(
+                        params=SmartTurnParams(stop_secs=smart_turn_stop_secs)
+                    )
                 )
-                vad_analyzer = SileroVADAnalyzer(params=VADParams(stop_secs=vad_stop_secs))
+                logger.info("Using default turn analyzer user turn stop strategy")
+            else:
+                logger.info(f"Using configured turn stop strategy: {turn_stop_cfg}")
+
+            logger.info("Using local smart turn analyzer")
+            user_turn_strategies = UserTurnStrategies(
+                start=[turn_start_strategy],
+                stop=[turn_stop_strategy],
+            )
+
+            # Create VAD analyzer
+            vad_analyzer = create_vad_analyzer(vad_cfg, vad_cfg_params)
+            if vad_analyzer is None:
+                # Default: SileroVADAnalyzer with configured stop_secs
+                # If vad_cfg_params were provided without vad_cfg, merge them with default stop_secs
+                vad_params_dict = {"stop_secs": vad_stop_secs}
+                if vad_cfg_params:
+                    # User provided params without specifying vad type - merge with defaults
+                    vad_params_dict.update(vad_cfg_params)
+                vad_analyzer = SileroVADAnalyzer(params=VADParams(**vad_params_dict))
+                logger.info("Using default Silero VAD analyzer")
+            else:
+                logger.info(f"Using configured VAD analyzer: {vad_cfg}")
             user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
                 context,
                 user_params=LLMUserAggregatorParams(
