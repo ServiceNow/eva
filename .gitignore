@@ -80,6 +80,7 @@ logs/
 .env
 !.env.example
 creds/
+google_credentials.json
 
 # Claude Code
 .claude/
