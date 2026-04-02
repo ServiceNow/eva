@@ -6,9 +6,8 @@ It handles audio streaming via WebSocket with Twilio-style frame serialization.
 
 import asyncio
 import json
-import wave
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
@@ -46,6 +45,7 @@ from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies, UserT
 from pipecat.utils.time import time_now_iso8601
 
 from eva.assistant.agentic.audit_log import AuditLog, current_timestamp_ms
+from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
 from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor, UserAudioCollector, UserObserver
 from eva.assistant.pipeline.audio_llm_processor import (
     AudioLLMProcessor,
@@ -62,7 +62,6 @@ from eva.assistant.pipeline.services import (
     create_tts_service,
 )
 from eva.assistant.services.llm import LiteLLMClient
-from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
 from eva.models.config import AudioLLMConfig, PipelineConfig, SpeechToSpeechConfig
 from eva.utils.logging import get_logger
@@ -77,10 +76,7 @@ SMART_TURN_STOP_SECS = 3  # Default from SmartTurnParams
 # Should be larger than pipecat's VAD start_secs (0.2s) to account for VAD latency.
 VAD_PRE_SPEECH_BUFFER_SECS = 0.5
 
-INITIAL_MESSAGE = "Hello! How can I help you today?"
-
-
-class AssistantServer:
+class AssistantServer(AbstractAssistantServer):
     """Pipecat-based WebSocket server for the assistant in voice conversations.
 
     This server:
@@ -113,35 +109,24 @@ class AssistantServer:
             port: Port to listen on
             conversation_id: Unique ID for this conversation
         """
-        self.pipeline_config = pipeline_config
-        self.agent: AgentConfig = agent
-        self.agent_config_path = agent_config_path
-        self.scenario_db_path = scenario_db_path
-        self.output_dir = Path(output_dir)
-        self.port = port
-        self.conversation_id = conversation_id
-        self.current_date_time = current_date_time
-
-        # Components (initialized on start)
-        self.audit_log = AuditLog()
-        self.agentic_system = None  # Will be set in _handle_session
-
-        # Initialize Python-based tool executor
-        self.tool_handler = ToolExecutor(
-            tool_config_path=agent_config_path,
+        super().__init__(
+            current_date_time=current_date_time,
+            pipeline_config=pipeline_config,
+            agent=agent,
+            agent_config_path=agent_config_path,
             scenario_db_path=scenario_db_path,
-            tool_module_path=self.agent.tool_module_path,
-            current_date_time=self.current_date_time,
+            output_dir=output_dir,
+            port=port,
+            conversation_id=conversation_id,
         )
+
+        self.agentic_system = None  # Will be set in _handle_session
 
         # Wall-clock captured at on_user_turn_started for non-instrumented S2S models
         self._user_turn_started_wall_ms: Optional[str] = None
 
-        # Audio buffer for accumulating audio data
-        self._audio_buffer = bytearray()
+        # Override audio sample rate for pipecat
         self._audio_sample_rate = SAMPLE_RATE
-        self.user_audio_buffer = bytearray()
-        self.assistant_audio_buffer = bytearray()
 
         # Server state
         self._app = None
@@ -151,7 +136,6 @@ class AssistantServer:
         self._task: Optional[PipelineTask] = None
         self._running = False
         self.num_seconds = 0
-        self._latency_measurements: list[float] = []
         self._metrics_observer: Optional[MetricsFileObserver] = None
         self.non_instrumented_realtime_llm = False
 
@@ -230,7 +214,7 @@ class AssistantServer:
             self._server_task = None
 
         # Save outputs
-        await self._save_outputs()
+        await self.save_outputs()
 
         logger.info(f"Assistant server stopped on port {self.port}")
 
@@ -757,112 +741,18 @@ class AssistantServer:
         """Return the current time as an ISO 8601 string with timezone."""
         return time_now_iso8601()
 
-    def _save_wav_file(self, audio_data: bytes, file_path: Path, sample_rate: int, num_channels: int) -> None:
-        """Save audio data to a WAV file.
-
-        Args:
-            audio_data: Raw audio bytes (16-bit PCM)
-            file_path: Path to save the WAV file
-            sample_rate: Sample rate in Hz
-            num_channels: Number of channels (1=mono, 2=stereo)
-        """
-        try:
-            with wave.open(str(file_path), "wb") as wav_file:
-                wav_file.setnchannels(num_channels)
-                wav_file.setsampwidth(2)  # 16-bit PCM
-                wav_file.setframerate(sample_rate)
-                wav_file.writeframes(audio_data)
-            logger.debug(f"Audio saved to {file_path} ({len(audio_data)} bytes)")
-        except Exception as e:
-            logger.error(f"Error saving audio to {file_path}: {e}")
-
-    def _save_audio(self) -> None:
-        """Save accumulated audio to WAV file."""
-        if not self._audio_buffer:
-            logger.warning("No audio data to save")
-            return
-
-        audio_path = self.output_dir / "audio_mixed.wav"
-        self._save_wav_file(
-            bytes(self._audio_buffer),
-            audio_path,
-            self._audio_sample_rate,
-            1,  # Mono
-        )
-        user_audio_path = self.output_dir / "audio_user.wav"
-        self._save_wav_file(
-            bytes(self.user_audio_buffer),
-            user_audio_path,
-            self._audio_sample_rate,
-            1,  # Mono
-        )
-        assistant_audio_path = self.output_dir / "audio_assistant.wav"
-        self._save_wav_file(
-            bytes(self.assistant_audio_buffer),
-            assistant_audio_path,
-            self._audio_sample_rate,
-            1,  # Mono
-        )
-        logger.info(f"Saved {len(self._audio_buffer)} bytes of audio to {audio_path}")
-
-    async def _save_outputs(self) -> None:
-        """Save all outputs (audit log, audio files, etc.)."""
-        # Save audit log
-        audit_path = self.output_dir / "audit_log.json"
-        self.audit_log.save(audit_path)
-
-        # Save transcript from audit log.
-        # When using the instrumented realtime pipeline, always overwrite the
-        # eagerly-written transcript.jsonl with a version derived from the
-        # (correctly ordered) audit log.
-        transcript_path = self.output_dir / "transcript.jsonl"
-        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-            self.audit_log.save_transcript_jsonl(transcript_path)
-        elif not transcript_path.exists():
-            self.audit_log.save_transcript_jsonl(transcript_path)
-
-        # Save agent performance stats
+    async def save_outputs(self) -> None:
+        """Save all outputs, with pipecat-specific additions."""
+        # Save agent performance stats (pipecat-specific: AgenticSystem tracking)
         if self.agentic_system:
             try:
-                logger.info("Saving agent performance stats from _save_outputs()...")
+                logger.info("Saving agent performance stats from save_outputs()...")
                 self.agentic_system.save_agent_perf_stats()
             except Exception as e:
                 logger.error(f"Error saving agent perf stats: {e}", exc_info=True)
 
-        # Save accumulated audio files
-        self._save_audio()
-
-        # Save initial and final scenario database states (REQUIRED for deterministic metrics)
-        try:
-            initial_db = self.get_initial_scenario_db()
-            final_db = self.get_final_scenario_db()
-
-            initial_db_path = self.output_dir / "initial_scenario_db.json"
-            with open(initial_db_path, "w") as f:
-                json.dump(initial_db, f, indent=2, sort_keys=True, default=str)
-
-            final_db_path = self.output_dir / "final_scenario_db.json"
-            with open(final_db_path, "w") as f:
-                json.dump(final_db, f, indent=2, sort_keys=True, default=str)
-
-            logger.info(f"Saved scenario database states to {self.output_dir}")
-        except Exception as e:
-            logger.error(f"Error saving scenario database states: {e}", exc_info=True)
-            raise  # Re-raise since this is now required for deterministic metrics
-
-        logger.info(f"Outputs saved to {self.output_dir}")
-
-    def get_conversation_stats(self) -> dict[str, Any]:
-        """Get statistics about the conversation."""
-        return self.audit_log.get_stats()
-
-    def get_initial_scenario_db(self) -> dict[str, Any]:
-        """Get initial scenario database state."""
-        return self.tool_handler.original_db
-
-    def get_final_scenario_db(self) -> dict[str, Any]:
-        """Get final scenario database state."""
-        return self.tool_handler.db
+        # Call base class to save audit_log, audio, scenario DBs, latencies
+        await super().save_outputs()
 
 
 async def override__maybe_trigger_user_turn_stopped(self):
