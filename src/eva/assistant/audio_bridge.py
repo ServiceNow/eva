@@ -1,0 +1,238 @@
+"""Shared audio bridge utilities for framework-specific assistant servers.
+
+All framework servers need to:
+1. Accept Twilio-framed WebSocket connections from the user simulator
+2. Convert audio between Twilio's mulaw 8kHz and the framework's native format
+3. Write framework_logs.jsonl with timestamped events
+
+This module provides the common infrastructure.
+"""
+
+import asyncio
+import audioop
+import json
+import struct
+import time
+from pathlib import Path
+from typing import Optional
+
+from eva.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
+
+# ── Audio format conversion ──────────────────────────────────────────
+
+def mulaw_8k_to_pcm16_16k(mulaw_bytes: bytes) -> bytes:
+    """Convert 8kHz mu-law audio to 16kHz 16-bit PCM."""
+    # Decode mu-law to 16-bit PCM at 8kHz
+    pcm_8k = audioop.ulaw2lin(mulaw_bytes, 2)
+    # Upsample from 8kHz to 16kHz
+    pcm_16k, _ = audioop.ratecv(pcm_8k, 2, 1, 8000, 16000, None)
+    return pcm_16k
+
+
+def mulaw_8k_to_pcm16_24k(mulaw_bytes: bytes) -> bytes:
+    """Convert 8kHz mu-law audio to 24kHz 16-bit PCM."""
+    # Decode mu-law to 16-bit PCM at 8kHz
+    pcm_8k = audioop.ulaw2lin(mulaw_bytes, 2)
+    # Upsample from 8kHz to 24kHz
+    pcm_24k, _ = audioop.ratecv(pcm_8k, 2, 1, 8000, 24000, None)
+    return pcm_24k
+
+
+def pcm16_16k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
+    """Convert 16kHz 16-bit PCM to 8kHz mu-law."""
+    # Downsample from 16kHz to 8kHz
+    pcm_8k, _ = audioop.ratecv(pcm_bytes, 2, 1, 16000, 8000, None)
+    # Encode to mu-law
+    return audioop.lin2ulaw(pcm_8k, 2)
+
+
+def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
+    """Convert 24kHz 16-bit PCM to 8kHz mu-law."""
+    # Downsample from 24kHz to 8kHz
+    pcm_8k, _ = audioop.ratecv(pcm_bytes, 2, 1, 24000, 8000, None)
+    # Encode to mu-law
+    return audioop.lin2ulaw(pcm_8k, 2)
+
+
+def pcm16_mix(track_a: bytes, track_b: bytes) -> bytes:
+    """Mix two 16-bit PCM tracks by sample-wise addition with clipping.
+
+    Both tracks must be the same sample rate. If lengths differ,
+    the shorter track is zero-padded.
+    """
+    len_a, len_b = len(track_a), len(track_b)
+    max_len = max(len_a, len_b)
+
+    # Zero-pad shorter track
+    if len_a < max_len:
+        track_a = track_a + b'\x00' * (max_len - len_a)
+    if len_b < max_len:
+        track_b = track_b + b'\x00' * (max_len - len_b)
+
+    # Mix with clipping
+    n_samples = max_len // 2
+    fmt = f'<{n_samples}h'
+    samples_a = struct.unpack(fmt, track_a)
+    samples_b = struct.unpack(fmt, track_b)
+    mixed = struct.pack(fmt, *(max(-32768, min(32767, a + b)) for a, b in zip(samples_a, samples_b)))
+    return mixed
+
+
+# ── Twilio WebSocket Protocol ────────────────────────────────────────
+
+import base64
+
+
+def parse_twilio_media_message(message: str) -> Optional[bytes]:
+    """Parse a Twilio media WebSocket message and extract raw audio bytes.
+
+    Returns None if the message is not a media message.
+    """
+    try:
+        data = json.loads(message)
+        if data.get("event") == "media":
+            payload = data["media"]["payload"]
+            return base64.b64decode(payload)
+    except (json.JSONDecodeError, KeyError):
+        pass
+    return None
+
+
+def create_twilio_media_message(stream_sid: str, audio_bytes: bytes) -> str:
+    """Create a Twilio media WebSocket message with the given audio bytes."""
+    payload = base64.b64encode(audio_bytes).decode("ascii")
+    return json.dumps({
+        "event": "media",
+        "streamSid": stream_sid,
+        "media": {
+            "payload": payload,
+        },
+    })
+
+
+def create_twilio_start_response(stream_sid: str) -> str:
+    """Create a Twilio 'start' event response."""
+    return json.dumps({
+        "event": "start",
+        "streamSid": stream_sid,
+        "start": {
+            "streamSid": stream_sid,
+            "mediaFormat": {
+                "encoding": "audio/x-mulaw",
+                "sampleRate": 8000,
+                "channels": 1,
+            },
+        },
+    })
+
+
+# ── Framework Logs Writer ────────────────────────────────────────────
+
+class FrameworkLogWriter:
+    """Writes framework_logs.jsonl (replacement for pipecat_logs.jsonl).
+
+    Captures turn boundaries, TTS text, and LLM responses with accurate
+    wall-clock timestamps.
+    """
+
+    def __init__(self, output_dir: Path):
+        self.log_file = output_dir / "framework_logs.jsonl"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    def write(self, event_type: str, data: dict, timestamp_ms: Optional[int] = None) -> None:
+        """Write a single log entry.
+
+        Args:
+            event_type: One of 'turn_start', 'turn_end', 'tts_text', 'llm_response'
+            data: Event data dict. Must contain a 'frame' key for tts_text/llm_response.
+            timestamp_ms: Wall-clock timestamp in milliseconds. Defaults to now.
+        """
+        if timestamp_ms is None:
+            timestamp_ms = int(time.time() * 1000)
+
+        entry = {
+            "timestamp": timestamp_ms,
+            "type": event_type,
+            "data": data,
+        }
+        try:
+            with open(self.log_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception as e:
+            logger.error(f"Error writing framework log: {e}")
+
+    def turn_start(self, timestamp_ms: Optional[int] = None) -> None:
+        """Log a turn start event."""
+        self.write("turn_start", {"frame": "turn_start"}, timestamp_ms)
+
+    def turn_end(self, was_interrupted: bool = False, timestamp_ms: Optional[int] = None) -> None:
+        """Log a turn end event."""
+        self.write("turn_end", {"frame": "turn_end", "was_interrupted": was_interrupted}, timestamp_ms)
+
+    def tts_text(self, text: str, timestamp_ms: Optional[int] = None) -> None:
+        """Log TTS text (what was actually spoken)."""
+        self.write("tts_text", {"frame": text}, timestamp_ms)
+
+    def llm_response(self, text: str, timestamp_ms: Optional[int] = None) -> None:
+        """Log LLM response text (full intended response)."""
+        self.write("llm_response", {"frame": text}, timestamp_ms)
+
+
+# ── Metrics Log Writer ───────────────────────────────────────────────
+
+class MetricsLogWriter:
+    """Writes pipecat_metrics.jsonl equivalent for non-pipecat frameworks."""
+
+    def __init__(self, output_dir: Path):
+        self.log_file = output_dir / "pipecat_metrics.jsonl"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    def write_processing_metric(self, processor: str, value_seconds: float, model: str = "") -> None:
+        """Write a ProcessingMetricsData entry (e.g., for STT latency)."""
+        entry = {
+            "timestamp": int(time.time() * 1000),
+            "type": "ProcessingMetricsData",
+            "processor": processor,
+            "model": model,
+            "value": value_seconds,
+        }
+        self._append(entry)
+
+    def write_ttfb_metric(self, processor: str, value_seconds: float, model: str = "") -> None:
+        """Write a TTFBMetricsData entry (e.g., for TTS time-to-first-byte)."""
+        entry = {
+            "timestamp": int(time.time() * 1000),
+            "type": "TTFBMetricsData",
+            "processor": processor,
+            "model": model,
+            "value": value_seconds,
+        }
+        self._append(entry)
+
+    def write_token_usage(
+        self, processor: str, model: str,
+        prompt_tokens: int, completion_tokens: int,
+    ) -> None:
+        """Write an LLMTokenUsageMetricsData entry."""
+        entry = {
+            "timestamp": int(time.time() * 1000),
+            "type": "LLMTokenUsageMetricsData",
+            "processor": processor,
+            "model": model,
+            "value": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            },
+        }
+        self._append(entry)
+
+    def _append(self, entry: dict) -> None:
+        try:
+            with open(self.log_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry) + "\n")
+        except Exception as e:
+            logger.error(f"Error writing metrics log: {e}")
