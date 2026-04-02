@@ -281,6 +281,19 @@ class RunConfig(BaseSettings):
         description="Pipeline (STT + LLM + TTS), speech-to-speech, or audio-LLM model configuration",
     )
 
+    # Framework selection
+    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "deepgram"] = Field(
+        "pipecat",
+        description=(
+            "Agent framework to use for the assistant server. "
+            "'pipecat' (default): Pipecat pipeline. "
+            "'openai_realtime': OpenAI Realtime API directly. "
+            "'gemini_live': Gemini Live API via google-genai. "
+            "'elevenlabs': ElevenLabs Conversational AI. "
+            "'deepgram': Deepgram Voice Agent API."
+        ),
+    )
+
     # Run identifier
     run_id: str = Field(
         default_factory=current_date_and_time,
