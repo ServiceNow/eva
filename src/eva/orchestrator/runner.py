@@ -692,7 +692,8 @@ class BenchmarkRunner:
                             entry["failure_details"] = failure_details
                     final_failures[oid] = entry
 
-        # Build evaluation summary with separate simulation and metrics sections
+        # Build evaluation summary with simulation results only
+        # Note: metrics status is tracked in metrics_summary.json, not here
         llm_generic_error_record_ids = find_records_with_llm_generic_error(self.output_dir, successful_ids)
         eval_summary: dict[str, Any] = {
             "started_at": started_at.isoformat(),
@@ -713,16 +714,6 @@ class BenchmarkRunner:
             "rerun_history": rerun_history,
             "final_failures": final_failures,
         }
-
-        if metrics_result is not None:
-            eval_summary["metrics"] = {
-                "records_evaluated": metrics_result.total_records,
-                "metrics_computed": self.config.metrics,
-                "total_metric_failures": metrics_result.total_metric_failures,
-                "metric_failures": {
-                    name: sorted(record_ids) for name, record_ids in metrics_result.metric_failures.items()
-                },
-            }
 
         eval_summary_path = self.output_dir / "evaluation_summary.json"
         with open(eval_summary_path, "w") as f:
@@ -768,7 +759,7 @@ class BenchmarkRunner:
     ) -> RunResult:
         """Rerun only previously failed metric computations.
 
-        Reads metric_failures from evaluation_summary.json and reruns only
+        Reads metric_errors from metrics_summary.json and reruns only
         the specific failed metrics on the specific failed records. Existing
         successful metric values are preserved and read from disk.
 
@@ -784,27 +775,38 @@ class BenchmarkRunner:
         started_at = datetime.now()
         self.output_dir = run_dir
 
-        # Read evaluation_summary.json
+        # Read metrics_summary.json
+        metrics_summary_path = run_dir / "metrics_summary.json"
+        if not metrics_summary_path.exists():
+            raise FileNotFoundError(
+                f"metrics_summary.json not found in {run_dir}. "
+                "Run metrics first before using --rerun-failed-metrics."
+            )
+
+        with open(metrics_summary_path) as f:
+            metrics_summary = json.load(f)
+
+        # Read evaluation_summary.json for successful_record_ids
         eval_summary_path = run_dir / "evaluation_summary.json"
         if not eval_summary_path.exists():
             raise FileNotFoundError(
                 f"evaluation_summary.json not found in {run_dir}. "
-                "Run metrics first before using --rerun-failed-metrics."
+                "This file is required to identify which records passed simulation validation."
             )
 
         with open(eval_summary_path) as f:
             eval_summary = json.load(f)
 
-        # Support both old and new schema
+        # Get successful record IDs from evaluation_summary.json
         sim = eval_summary.get("simulation", eval_summary)
         successful_ids = sim.get("successful_record_ids", [])
 
-        metrics_section = eval_summary.get("metrics", {})
-        metric_failures = metrics_section.get("metric_failures", {})
-        metrics_computed = metrics_section.get("metrics_computed", [])
+        # Get metric errors from metrics_summary.json
+        metric_errors = metrics_summary.get("metric_errors", {})
+        metrics_computed = metrics_summary.get("provenance", {}).get("metrics_computed", [])
 
-        if not metric_failures:
-            logger.info("No metric failures found in evaluation_summary.json — nothing to rerun")
+        if not metric_errors:
+            logger.info("No metric errors found in metrics_summary.json — nothing to rerun")
             ended_at = datetime.now()
             return RunResult(
                 run_id=self.config.run_id,
@@ -815,19 +817,21 @@ class BenchmarkRunner:
             )
 
         # Use explicit CLI --metrics if provided, otherwise prefer metrics_computed
-        # from evaluation_summary.json (reflects actual metric names from the last run),
+        # from metrics_summary.json (reflects actual metric names from the last run),
         # falling back to config.json metrics as a last resort.
         metric_names = cli_metrics or metrics_computed or self.config.metrics
         if not metric_names:
             raise ValueError(
-                "No metrics to run. Specify --metrics or ensure evaluation_summary.json has metrics_computed."
+                "No metrics to run. Specify --metrics or ensure metrics_summary.json has metrics_computed."
             )
 
         # Build record_metric_filter: record_id -> set of metric names to rerun
+        # metric_errors format: {metric_name: {failed_count, total_count, failed_records: [...]}}
         successful_set = set(successful_ids)
         record_metric_filter: dict[str, set[str]] = {}
-        for metric_name, failed_record_ids in metric_failures.items():
+        for metric_name, error_info in metric_errors.items():
             if metric_name in metric_names:
+                failed_record_ids = error_info.get("failed_records", [])
                 for record_id in failed_record_ids:
                     if record_id in successful_set:
                         record_metric_filter.setdefault(record_id, set()).add(metric_name)
@@ -847,37 +851,30 @@ class BenchmarkRunner:
         logger.info(
             f"Rerunning {total_reruns} failed metric computation(s) across {len(record_metric_filter)} record(s)"
         )
-        for metric_name, failed_ids in metric_failures.items():
+        for metric_name, error_info in metric_errors.items():
             if metric_name in metric_names:
+                failed_ids = error_info.get("failed_records", [])
                 applicable = [rid for rid in failed_ids if rid in record_metric_filter]
                 if applicable:
                     logger.info(f"  {metric_name}: {len(applicable)} record(s)")
 
-        # Create MetricsRunner with all metrics but filter per-record.
-        # Records not in record_metric_filter will read existing metrics from disk.
-        # Records in the filter will only recompute the failed metrics and merge.
+        # Create MetricsRunner with ONLY the records that have failed metrics.
+        # This is more efficient - we only process records that need recomputation.
+        # MetricsRunner.run() will automatically load all other records from disk
+        # (line 237-245 in metrics/runner.py) to ensure aggregates include ALL records.
+        records_to_rerun = list(record_metric_filter.keys())
         metrics_runner = MetricsRunner(
             run_dir=run_dir,
             dataset=records,
             metric_names=metric_names,
-            record_ids=successful_ids,
+            record_ids=records_to_rerun,
             num_draws=self.config.num_trials,
             record_metric_filter=record_metric_filter,
         )
         metrics_result = await metrics_runner.run()
 
-        # Update evaluation_summary.json with new metrics status
-        eval_summary["metrics"] = {
-            "records_evaluated": metrics_result.total_records,
-            "metrics_computed": metric_names,
-            "total_metric_failures": metrics_result.total_metric_failures,
-            "metric_failures": {
-                name: sorted(record_ids) for name, record_ids in metrics_result.metric_failures.items()
-            },
-        }
-
-        with open(eval_summary_path, "w") as f:
-            json.dump(eval_summary, f, indent=2)
+        # Note: metrics_summary.json is automatically updated by MetricsRunner.run()
+        # No need to manually update evaluation_summary.json - it only tracks simulation status
 
         # Terminal output
         logger.info("=" * 60)
