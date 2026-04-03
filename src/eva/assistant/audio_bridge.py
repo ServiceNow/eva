@@ -9,6 +9,7 @@ This module provides the common infrastructure.
 """
 
 import audioop
+import base64
 import json
 import struct
 import time
@@ -82,8 +83,6 @@ def pcm16_mix(track_a: bytes, track_b: bytes) -> bytes:
 
 
 # ── Twilio WebSocket Protocol ────────────────────────────────────────
-
-import base64
 
 
 def parse_twilio_media_message(message: str) -> Optional[bytes]:
