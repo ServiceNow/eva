@@ -77,7 +77,7 @@ SMART_TURN_STOP_SECS = 3  # Default from SmartTurnParams
 VAD_PRE_SPEECH_BUFFER_SECS = 0.5
 
 
-class AssistantServer(AbstractAssistantServer):
+class PipecatAssistantServer(AbstractAssistantServer):
     """Pipecat-based WebSocket server for the assistant in voice conversations.
 
     This server:
