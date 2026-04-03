@@ -170,6 +170,14 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
     async def save_outputs(self) -> None:
         """Save all outputs including mixed audio."""
+        user_duration = len(self.user_audio_buffer) / (OPENAI_SAMPLE_RATE * 2) if self.user_audio_buffer else 0.0
+        asst_duration = (
+            len(self.assistant_audio_buffer) / (OPENAI_SAMPLE_RATE * 2) if self.assistant_audio_buffer else 0.0
+        )
+        logger.info(
+            f"[SILENCE DEBUG] Final buffers: user={user_duration:.2f}s, "
+            f"assistant={asst_duration:.2f}s, diff={user_duration - asst_duration:.2f}s"
+        )
         # Compute mixed audio from user + assistant tracks
         if self.user_audio_buffer and self.assistant_audio_buffer:
             self._audio_buffer = bytearray(pcm16_mix(bytes(self.user_audio_buffer), bytes(self.assistant_audio_buffer)))
@@ -427,7 +435,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             self._user_turn.flushed = True
 
         self.audit_log.append_user_input(transcript, timestamp_ms=timestamp_ms)
-        logger.debug(f"User transcription: {transcript[:60]}...")
+        logger.debug(f"User transcription: {transcript}...")
 
     async def _on_audio_delta(self, event: Any, websocket: WebSocket) -> None:
         """Handle response.audio.delta - assistant audio chunk."""
@@ -452,7 +460,20 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             gap = now - ref_time
             if gap > 0.02:  # >20ms gap → insert silence
                 silence_samples = int(gap * OPENAI_SAMPLE_RATE)
+                silence_duration = silence_samples / OPENAI_SAMPLE_RATE
+                logger.info(
+                    f"[SILENCE DEBUG] Inserting {silence_duration:.3f}s silence "
+                    f"({silence_samples} samples). gap={gap:.3f}s, "
+                    f"ref_time={ref_time:.3f}, now={now:.3f}, "
+                    f"asst_buf_before={len(self.assistant_audio_buffer)}, "
+                    f"user_buf={len(self.user_audio_buffer)}"
+                )
                 self.assistant_audio_buffer.extend(b"\x00\x00" * silence_samples)
+            else:
+                logger.info(
+                    f"[SILENCE DEBUG] Gap too small, NO silence inserted. "
+                    f"gap={gap:.3f}s, ref_time={ref_time:.3f}, now={now:.3f}"
+                )
 
             self._assistant_state.first_audio_wall_ms = _wall_ms()
             self._assistant_state.responding = True
@@ -473,6 +494,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         # within the same response — they arrive rapidly and represent
         # continuous speech).
         self.assistant_audio_buffer.extend(pcm16_bytes)
+        self._last_audio_delta_wall = time.time()
 
         # Update the last-write wall time only at RESPONSE boundaries
         # (done in _reset_assistant_state, called from _on_response_done).
@@ -506,7 +528,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         transcript = getattr(event, "transcript", "") or ""
         if transcript:
             self._assistant_state.transcript_done_text = transcript.strip()
-            logger.debug(f"Assistant transcript done: {transcript[:80]}...")
+            logger.debug(f"Assistant transcript done: {transcript}...")
             if self._fw_log:
                 self._fw_log.tts_text(transcript)
 
@@ -632,11 +654,23 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
     def _reset_assistant_state(self) -> None:
         """Clear accumulated assistant response state.
 
-        Also updates the wall-clock reference for the next silence gap
-        calculation (the gap between the end of THIS response and the
-        start of the NEXT one).
+        Only updates the wall-clock reference when audio was actually
+        streamed in this response. Tool-call-only responses must NOT
+        advance the reference, otherwise the silence gap for the next
+        audio response gets swallowed.
         """
-        self._assistant_audio_last_wall = time.time()
+        audio_was_streamed = self._assistant_state.first_audio_wall_ms is not None
+        now = time.time()
+        last_delta = getattr(self, "_last_audio_delta_wall", 0.0)
+        drift = now - last_delta if last_delta > 0 else 0.0
+        logger.info(
+            f"[SILENCE DEBUG] reset_assistant_state: audio_was_streamed={audio_was_streamed}, "
+            f"now={now:.3f}, last_audio_delta={last_delta:.3f}, drift={drift:.3f}s, "
+            f"asst_buf={len(self.assistant_audio_buffer)}, "
+            f"user_buf={len(self.user_audio_buffer)}"
+        )
+        if audio_was_streamed:
+            self._assistant_audio_last_wall = now
         self._assistant_state = _AssistantResponseState()
 
     def _build_realtime_tools(self) -> list[dict]:
