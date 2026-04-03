@@ -58,6 +58,18 @@ def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
     return audioop.lin2ulaw(pcm_8k, 2)
 
 
+def sync_buffer_to_position(buffer: bytearray, target_position: int) -> None:
+    """Pad *buffer* with silence bytes so it reaches *target_position*.
+
+    Mirrors pipecat's ``AudioBufferProcessor._sync_buffer_to_position``.
+    Call this **before** extending the *other* track so both tracks stay
+    positionally aligned.
+    """
+    current_len = len(buffer)
+    if current_len < target_position:
+        buffer.extend(b"\x00" * (target_position - current_len))
+
+
 def pcm16_mix(track_a: bytes, track_b: bytes) -> bytes:
     """Mix two 16-bit PCM tracks by sample-wise addition with clipping.
 
