@@ -27,8 +27,21 @@ class TurnTakingMetric(TextJudgeMetric):
 
     @staticmethod
     def _get_turn_ids_with_turn_taking(context: MetricContext) -> list[int]:
-        """Return sorted turn IDs for user-assistant exchange pairs (excludes greeting)."""
-        return sorted(context.transcribed_user_turns.keys() & context.transcribed_assistant_turns.keys() - {0})
+        """Return sorted assistant turn IDs to evaluate (excludes greeting).
+
+        Includes assistant turns that have a responding_to user turn mapping,
+        even if there's no user transcript at the same turn ID (e.g., after tool calls).
+        """
+        # All assistant turns except greeting
+        assistant_turns = set(context.transcribed_assistant_turns.keys()) - {0}
+        # Filter to those with a valid user turn to measure latency against
+        responding_to = context.assistant_responding_to_user_turn
+        valid_turns = {
+            t
+            for t in assistant_turns
+            if t in context.transcribed_user_turns or responding_to.get(t) in context.transcribed_user_turns
+        }
+        return sorted(valid_turns)
 
     def _format_conversation_context(
         self,
@@ -52,14 +65,17 @@ class TurnTakingMetric(TextJudgeMetric):
         all_starts = [segs[0][0] for segs in all_timestamps.values() if segs]
         t0 = min(all_starts) if all_starts else 0
 
+        responding_to = context.assistant_responding_to_user_turn
         blocks = []
         for turn_id in turn_keys:
-            user_heard = context.transcribed_user_turns.get(turn_id, "")
+            # Use responding_to user turn for user data (handles tool call advances)
+            user_turn_id = responding_to.get(turn_id, turn_id)
+            user_heard = context.transcribed_user_turns.get(user_turn_id, "")
             asst_heard = context.transcribed_assistant_turns.get(turn_id, "")
-            user_expected = context.intended_user_turns.get(turn_id, "")
+            user_expected = context.intended_user_turns.get(user_turn_id, "")
             asst_expected = context.intended_assistant_turns.get(turn_id, "")
 
-            u_segments = context.audio_timestamps_user_turns.get(turn_id)
+            u_segments = context.audio_timestamps_user_turns.get(user_turn_id)
             a_segments = context.audio_timestamps_assistant_turns.get(turn_id)
             latency = per_turn_latency.get(turn_id)
 
@@ -136,6 +152,7 @@ class TurnTakingMetric(TextJudgeMetric):
         Turns with missing timestamps get None values.
 
         Latency is user_end -> asst_start in seconds.
+        For assistant turns after tool calls, uses the responding_to user turn's timestamps.
         Timing label thresholds:
           latency < 200 ms              -> "Early / Interrupting"
           200 ms <= latency < 4000 ms   -> "On-Time"
@@ -143,15 +160,18 @@ class TurnTakingMetric(TextJudgeMetric):
         """
         user_ts = context.audio_timestamps_user_turns
         asst_ts = context.audio_timestamps_assistant_turns
+        responding_to = context.assistant_responding_to_user_turn
         latencies: dict[int, float | None] = {}
         labels: dict[int, str | None] = {}
         for turn_id in turn_keys:
-            u = user_ts.get(turn_id)
+            # Use the responding_to user turn for latency calculation (handles tool call advances)
+            user_turn_id = responding_to.get(turn_id, turn_id)
+            u = user_ts.get(user_turn_id)
             a = asst_ts.get(turn_id)
             if not u or not a:
                 if turn_id != len(turn_keys):
                     self.logger.warning(
-                        f"[{context.record_id}] Missing audio timestamps at turn {turn_id}/{len(turn_keys)} (user={u}, assistant={a}); skipping turn taking for this turn."
+                        f"[{context.record_id}] Missing audio timestamps at turn {turn_id}/{len(turn_keys)} (user={u} at turn {user_turn_id}, assistant={a}); skipping turn taking for this turn."
                     )
                 latencies[turn_id] = None
                 labels[turn_id] = None
@@ -176,8 +196,11 @@ class TurnTakingMetric(TextJudgeMetric):
             # Identify turn keys where either timestamp is missing.
             _user_ts = context.audio_timestamps_user_turns
             _asst_ts = context.audio_timestamps_assistant_turns
+            _responding_to = context.assistant_responding_to_user_turn
             skipped_turn_ids = {
-                turn_id for turn_id in turn_keys if not _user_ts.get(turn_id) or not _asst_ts.get(turn_id)
+                turn_id
+                for turn_id in turn_keys
+                if not _user_ts.get(_responding_to.get(turn_id, turn_id)) or not _asst_ts.get(turn_id)
             }
             turns_missing_timestamps = sorted(skipped_turn_ids)
             if skipped_turn_ids:

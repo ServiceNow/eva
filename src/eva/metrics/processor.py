@@ -66,6 +66,7 @@ class _TurnExtractionState:
     assistant_interrupted_turns: set[int] = field(default_factory=set)
     user_interrupted_turns: set[int] = field(default_factory=set)
     pending_user_interrupts_label: bool = False  # Next user entry should get [user interrupts] prefix
+    current_assistant_audio_is_interruption: bool = False  # Current assistant audio session started while user speaking
     # Track which turn each speaker's audio started at, so late-arriving speech transcripts land at the correct turn.
     last_assistant_audio_turn: int = 0
     last_user_audio_turn: int = 0
@@ -95,6 +96,7 @@ class _TurnExtractionState:
 
         Called on audio_start(elevenlabs_user) and audit_log/user events.
         After an interruption, hold_turn consumes one advance without incrementing.
+        The turn will advance when the assistant interrupts again (repeat interruption).
         """
         if self.hold_turn:
             self.hold_turn = False
@@ -254,8 +256,22 @@ def _handle_pipecat_event(
     """
     if event["event_type"] not in ("tts_text", "llm_response"):
         return
+    # If a tool call happened in this turn, advance to a new turn for the tool response
+    # This creates a separate turn for measuring response speed accurately
+    if state.assistant_processed_in_turn:
+        # Only carry over the interrupted label if the CURRENT assistant audio session
+        # started while the user was speaking (i.e., this speech is the interruption)
+        is_interruption = state.current_assistant_audio_is_interruption
+        state.turn_num += 1
+        if is_interruption:
+            state.assistant_interrupted_turns.add(state.turn_num)
+        state.assistant_processed_in_turn = False
+        state.user_audio_started_in_turn = False
     state.assistant_spoke_in_turn = True
     turn = state.turn_num
+    # Record which user turn this assistant turn is responding to (for latency calculation)
+    if turn not in context.assistant_responding_to_user_turn:
+        context.assistant_responding_to_user_turn[turn] = state.last_user_audio_turn
     existing = context.intended_assistant_turns.get(turn, "")
 
     if existing:
@@ -268,6 +284,8 @@ def _handle_pipecat_event(
         sep = ""
     elif turn in state.user_interrupted_turns:
         sep = f" {AnnotationLabel.CUT_OFF_BY_USER} "
+    elif turn in state.assistant_interrupted_turns:
+        sep = f" {AnnotationLabel.ASSISTANT_INTERRUPTS} "
     elif state.assistant_processed_in_turn:
         sep = f" {AnnotationLabel.PAUSE_TOOL_CALL} "
     else:
@@ -354,6 +372,9 @@ def _handle_audio_start(
         if state.user_audio_open and state.user_audio_started_in_turn and not state.assistant_processed_in_turn:
             state.assistant_interrupted_turns.add(state.turn_num)
             state.hold_turn = True
+            state.current_assistant_audio_is_interruption = True
+        else:
+            state.current_assistant_audio_is_interruption = False
 
     turn_idx = state.turn_num
     key = (role, turn_idx)
@@ -677,6 +698,10 @@ class _ProcessorContext:
         # Interruption data
         self.assistant_interrupted_turns: set[int] = set()
         self.user_interrupted_turns: set[int] = set()
+
+        # Maps each assistant turn to the user turn it's responding to
+        # (for latency calculation when turns advance after tool calls)
+        self.assistant_responding_to_user_turn: dict[int, int] = {}
 
         # Conversation metadata
         self.conversation_finished: bool = False
