@@ -121,7 +121,7 @@ class SpeechToSpeechConfig(BaseModel):
             "Set via EVA_MODEL__TURN_STRATEGY=external."
         ),
     )
-    
+
     @property
     def pipeline_parts(self) -> dict[str, str]:
         """Component names for this pipeline."""
