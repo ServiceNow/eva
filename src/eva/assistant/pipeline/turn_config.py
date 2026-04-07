@@ -28,22 +28,19 @@ from eva.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-def create_vad_analyzer(vad_type: str | None, vad_params: dict[str, Any]) -> VADAnalyzer | None:
+def create_vad_analyzer(vad_type: str, vad_params: dict[str, Any]) -> VADAnalyzer:
     """Create a VAD analyzer from configuration.
 
     Args:
-        vad_type: VAD analyzer type ('silero' or None for default)
+        vad_type: VAD analyzer type ('silero')
         vad_params: VAD parameters (confidence, start_secs, stop_secs, min_volume)
 
     Returns:
-        VAD analyzer instance, or None if vad_type is None
+        VAD analyzer instance
 
     Raises:
         ValueError: If vad_type is not supported
     """
-    if vad_type is None:
-        return None
-
     vad_type_lower = vad_type.lower()
 
     if vad_type_lower == "silero":
@@ -57,24 +54,21 @@ def create_vad_analyzer(vad_type: str | None, vad_params: dict[str, Any]) -> VAD
 
 
 def create_turn_start_strategy(
-    strategy_type: str | None,
+    strategy_type: str,
     strategy_params: dict[str, Any],
-) -> BaseUserTurnStartStrategy | None:
+) -> BaseUserTurnStartStrategy:
     """Create a user turn start strategy from configuration.
 
     Args:
-        strategy_type: Strategy type ('vad', 'transcription', 'external', or None for default)
+        strategy_type: Strategy type ('vad', 'transcription', 'external')
         strategy_params: Strategy-specific parameters
 
     Returns:
-        Turn start strategy instance, or None if strategy_type is None
+        Turn start strategy instance
 
     Raises:
         ValueError: If strategy_type is not supported
     """
-    if strategy_type is None:
-        return None
-
     strategy_type_lower = strategy_type.lower()
 
     if strategy_type_lower == "vad":
@@ -94,26 +88,23 @@ def create_turn_start_strategy(
 
 
 def create_turn_stop_strategy(
-    strategy_type: str | None,
+    strategy_type: str,
     strategy_params: dict[str, Any],
     smart_turn_stop_secs: float | None = None,
-) -> BaseUserTurnStopStrategy | None:
+) -> BaseUserTurnStopStrategy:
     """Create a user turn stop strategy from configuration.
 
     Args:
-        strategy_type: Strategy type ('speech_timeout', 'turn_analyzer', 'external', or None for default)
+        strategy_type: Strategy type ('speech_timeout', 'turn_analyzer', 'external')
         strategy_params: Strategy-specific parameters
         smart_turn_stop_secs: stop_secs for SmartTurnParams (used with turn_analyzer strategy)
 
     Returns:
-        Turn stop strategy instance, or None if strategy_type is None
+        Turn stop strategy instance
 
     Raises:
         ValueError: If strategy_type is not supported
     """
-    if strategy_type is None:
-        return None
-
     strategy_type_lower = strategy_type.lower()
 
     if strategy_type_lower == "speech_timeout":

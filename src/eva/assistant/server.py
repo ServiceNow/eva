@@ -347,49 +347,28 @@ class AssistantServer:
                 vad_cfg = None
                 vad_cfg_params = {}
 
-            # Create turn start strategy
+            # Create turn start strategy using factory function
             turn_start_strategy = create_turn_start_strategy(turn_start_cfg, turn_start_params)
-            if turn_start_strategy is None:
-                # Default: VADUserTurnStartStrategy
-                turn_start_strategy = VADUserTurnStartStrategy()
-                logger.info("Using default VAD user turn start strategy")
-            else:
-                logger.info(f"Using configured turn start strategy: {turn_start_cfg}")
+            logger.info(f"Using turn start strategy: {turn_start_cfg}")
 
-            # Create turn stop strategy
+            # Create turn stop strategy using factory function
             turn_stop_strategy = create_turn_stop_strategy(
                 turn_stop_cfg, turn_stop_params, smart_turn_stop_secs
             )
-            if turn_stop_strategy is None:
-                # Default: TurnAnalyzerUserTurnStopStrategy with LocalSmartTurnAnalyzerV3
-                turn_stop_strategy = TurnAnalyzerUserTurnStopStrategy(
-                    turn_analyzer=LocalSmartTurnAnalyzerV3(
-                        params=SmartTurnParams(stop_secs=smart_turn_stop_secs)
-                    )
-                )
-                logger.info("Using default turn analyzer user turn stop strategy")
-            else:
-                logger.info(f"Using configured turn stop strategy: {turn_stop_cfg}")
+            logger.info(f"Using turn stop strategy: {turn_stop_cfg}")
 
-            logger.info("Using local smart turn analyzer")
             user_turn_strategies = UserTurnStrategies(
                 start=[turn_start_strategy],
                 stop=[turn_stop_strategy],
             )
 
-            # Create VAD analyzer
-            vad_analyzer = create_vad_analyzer(vad_cfg, vad_cfg_params)
-            if vad_analyzer is None:
-                # Default: SileroVADAnalyzer with configured stop_secs
-                # If vad_cfg_params were provided without vad_cfg, merge them with default stop_secs
-                vad_params_dict = {"stop_secs": vad_stop_secs}
-                if vad_cfg_params:
-                    # User provided params without specifying vad type - merge with defaults
-                    vad_params_dict.update(vad_cfg_params)
-                vad_analyzer = SileroVADAnalyzer(params=VADParams(**vad_params_dict))
-                logger.info("Using default Silero VAD analyzer")
-            else:
-                logger.info(f"Using configured VAD analyzer: {vad_cfg}")
+            # Create VAD analyzer using factory function
+            # Merge user params with pipeline-specific stop_secs
+            vad_params_dict = {"stop_secs": vad_stop_secs}
+            if vad_cfg_params:
+                vad_params_dict.update(vad_cfg_params)
+            vad_analyzer = create_vad_analyzer(vad_cfg, vad_params_dict)
+            logger.info(f"Using VAD analyzer: {vad_cfg}")
             user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
                 context,
                 user_params=LLMUserAggregatorParams(

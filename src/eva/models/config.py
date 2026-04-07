@@ -67,12 +67,12 @@ class PipelineConfig(BaseModel):
     stt_params: dict[str, Any] = Field({}, description="Additional STT model parameters (JSON)")
     tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
 
-    # Configurable turn start/stop strategies (optional)
-    turn_start_strategy: str | None = Field(
-        None,
+    # Configurable turn start/stop strategies
+    turn_start_strategy: str = Field(
+        "vad",
         description=(
             "User turn start strategy: 'vad', 'transcription', or 'external'. "
-            "If not specified, uses default (vad). "
+            "Defaults to 'vad' (VADUserTurnStartStrategy). "
             "Set via EVA_MODEL__TURN_START_STRATEGY."
         ),
     )
@@ -81,11 +81,11 @@ class PipelineConfig(BaseModel):
         description="Parameters for turn start strategy (JSON). Set via EVA_MODEL__TURN_START_STRATEGY_PARAMS.",
     )
 
-    turn_stop_strategy: str | None = Field(
-        None,
+    turn_stop_strategy: str = Field(
+        "turn_analyzer",
         description=(
             "User turn stop strategy: 'speech_timeout', 'turn_analyzer', or 'external'. "
-            "If not specified, uses default (turn_analyzer). "
+            "Defaults to 'turn_analyzer' (TurnAnalyzerUserTurnStopStrategy with LocalSmartTurnAnalyzerV3). "
             "Set via EVA_MODEL__TURN_STOP_STRATEGY."
         ),
     )
@@ -94,12 +94,12 @@ class PipelineConfig(BaseModel):
         description="Parameters for turn stop strategy (JSON). Set via EVA_MODEL__TURN_STOP_STRATEGY_PARAMS.",
     )
 
-    # VAD configuration (optional)
-    vad: str | None = Field(
-        None,
+    # VAD configuration
+    vad: str = Field(
+        "silero",
         description=(
             "VAD analyzer type: 'silero'. "
-            "If not specified, uses default VAD (SileroVADAnalyzer). "
+            "Defaults to 'silero' (SileroVADAnalyzer). "
             "Set via EVA_MODEL__VAD."
         ),
     )
@@ -153,12 +153,12 @@ class SpeechToSpeechConfig(BaseModel):
     s2s: str = Field(description="Speech-to-speech model name", examples=["gpt-realtime-mini", "gemini_live"])
     s2s_params: dict[str, Any] = Field({}, description="Additional speech-to-speech model parameters (JSON)")
 
-    # Configurable turn start/stop strategies (optional, same as PipelineConfig)
-    turn_start_strategy: str | None = Field(
-        None,
+    # Configurable turn start/stop strategies (same as PipelineConfig)
+    turn_start_strategy: str = Field(
+        "vad",
         description=(
             "User turn start strategy: 'vad', 'transcription', or 'external'. "
-            "If not specified, uses default (vad). "
+            "Defaults to 'vad' (VADUserTurnStartStrategy). "
             "Set via EVA_MODEL__TURN_START_STRATEGY."
         ),
     )
@@ -167,11 +167,11 @@ class SpeechToSpeechConfig(BaseModel):
         description="Parameters for turn start strategy (JSON). Set via EVA_MODEL__TURN_START_STRATEGY_PARAMS.",
     )
 
-    turn_stop_strategy: str | None = Field(
-        None,
+    turn_stop_strategy: str = Field(
+        "turn_analyzer",
         description=(
             "User turn stop strategy: 'speech_timeout', 'turn_analyzer', or 'external'. "
-            "If not specified, uses default (turn_analyzer). "
+            "Defaults to 'turn_analyzer' (TurnAnalyzerUserTurnStopStrategy with LocalSmartTurnAnalyzerV3). "
             "Set via EVA_MODEL__TURN_STOP_STRATEGY."
         ),
     )
@@ -180,12 +180,12 @@ class SpeechToSpeechConfig(BaseModel):
         description="Parameters for turn stop strategy (JSON). Set via EVA_MODEL__TURN_STOP_STRATEGY_PARAMS.",
     )
 
-    # VAD configuration (optional)
-    vad: str | None = Field(
-        None,
+    # VAD configuration
+    vad: str = Field(
+        "silero",
         description=(
             "VAD analyzer type: 'silero'. "
-            "If not specified, uses default VAD (SileroVADAnalyzer). "
+            "Defaults to 'silero' (SileroVADAnalyzer). "
             "Set via EVA_MODEL__VAD."
         ),
     )
@@ -235,12 +235,12 @@ class AudioLLMConfig(BaseModel):
     tts: str = Field(description="TTS model", examples=["cartesia", "elevenlabs"])
     tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
 
-    # Configurable turn start/stop strategies (optional, same as PipelineConfig)
-    turn_start_strategy: str | None = Field(
-        None,
+    # Configurable turn start/stop strategies (same as PipelineConfig)
+    turn_start_strategy: str = Field(
+        "vad",
         description=(
             "User turn start strategy: 'vad', 'transcription', or 'external'. "
-            "If not specified, uses default (vad). "
+            "Defaults to 'vad' (VADUserTurnStartStrategy). "
             "Set via EVA_MODEL__TURN_START_STRATEGY."
         ),
     )
@@ -249,11 +249,11 @@ class AudioLLMConfig(BaseModel):
         description="Parameters for turn start strategy (JSON). Set via EVA_MODEL__TURN_START_STRATEGY_PARAMS.",
     )
 
-    turn_stop_strategy: str | None = Field(
-        None,
+    turn_stop_strategy: str = Field(
+        "turn_analyzer",
         description=(
             "User turn stop strategy: 'speech_timeout', 'turn_analyzer', or 'external'. "
-            "If not specified, uses default (turn_analyzer). "
+            "Defaults to 'turn_analyzer' (TurnAnalyzerUserTurnStopStrategy with LocalSmartTurnAnalyzerV3). "
             "Set via EVA_MODEL__TURN_STOP_STRATEGY."
         ),
     )
@@ -262,12 +262,12 @@ class AudioLLMConfig(BaseModel):
         description="Parameters for turn stop strategy (JSON). Set via EVA_MODEL__TURN_STOP_STRATEGY_PARAMS.",
     )
 
-    # VAD configuration (optional)
-    vad: str | None = Field(
-        None,
+    # VAD configuration
+    vad: str = Field(
+        "silero",
         description=(
             "VAD analyzer type: 'silero'. "
-            "If not specified, uses default VAD (SileroVADAnalyzer). "
+            "Defaults to 'silero' (SileroVADAnalyzer). "
             "Set via EVA_MODEL__VAD."
         ),
     )
