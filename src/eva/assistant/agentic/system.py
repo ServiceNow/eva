@@ -275,7 +275,15 @@ class AgenticSystem:
                     yield GENERIC_ERROR
                 return
 
-            if tool_calls_dicts:
+            if not tool_calls_dicts:
+                # No tool calls, this is the final response
+                if response_content:
+                    response_content = response_content.strip()
+                    logger.info(f"💬 Assistant LLM response: {response_content}")
+                    yield response_content
+                    self.audit_log.append_assistant_output(response_content)
+                return
+            else:
                 messages.append(
                     {
                         "role": "assistant",
@@ -338,14 +346,6 @@ class AgenticSystem:
                     )
 
                     self.audit_log.append_tool_message(tool_call_id=tool_call.id, content=tool_content)
-            else:
-                # No tool calls, this is the final response
-                if response_content:
-                    response_content = response_content.strip()
-                    logger.info(f"💬 Assistant LLM response: {response_content}")
-                    yield response_content
-                    self.audit_log.append_assistant_output(response_content)
-                return
 
     def get_stats(self) -> dict[str, Any]:
         """Get conversation statistics."""
