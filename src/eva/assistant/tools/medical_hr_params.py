@@ -72,8 +72,8 @@ Tool sequences per flow:
 
 from enum import StrEnum
 from typing import Annotated, Literal, Optional
-from pydantic import BaseModel, Field, ValidationError
 
+from pydantic import BaseModel, Field, ValidationError
 
 # ---------------------------------------------------------------------------
 # Shared ID / format annotated types
@@ -267,6 +267,7 @@ DepartmentCodeStr = Annotated[
 # Enums
 # ---------------------------------------------------------------------------
 
+
 class ExtensionType(StrEnum):
     provisional = "provisional"
     supervised = "supervised"
@@ -279,6 +280,7 @@ class LeaveCategory(StrEnum):
     - bonding: birth, adoption, or foster placement of a child (within 12 months of the event)
     - military_exigency: qualifying exigency arising from a family member's active military duty
     """
+
     employee_medical_condition = "employee_medical_condition"
     family_member_serious_illness = "family_member_serious_illness"
     bonding = "bonding"
@@ -301,6 +303,7 @@ class PtoType(StrEnum):
     - pto: general paid time off (covers vacation and personal days)
     - sick: sick leave (separate accrual and legal protections)
     """
+
     pto = "pto"
     sick = "sick"
 
@@ -311,6 +314,7 @@ class LeaveTypeOnRecord(StrEnum):
     - personal_leave: approved personal or unpaid leave (not medical, not FMLA)
     - fmla_leave: FMLA-protected leave (federally protected, with specific eligibility)
     """
+
     medical_leave = "medical_leave"
     personal_leave = "personal_leave"
     fmla_leave = "fmla_leave"
@@ -337,6 +341,7 @@ class TransferReason(StrEnum):
     - role_change: new clinical role at a different facility
     - additional_practice_site: adding a second practice location while keeping the original
     """
+
     facility_relocation = "facility_relocation"
     role_change = "role_change"
     additional_practice_site = "additional_practice_site"
@@ -349,6 +354,7 @@ class I9VerificationAction(StrEnum):
 
 class AppointmentType(StrEnum):
     """Types of schedulable appointments — each maps to a specific flow."""
+
     orientation_followup = "orientation_followup"
     return_to_work_checkin = "return_to_work_checkin"
     competency_review = "competency_review"
@@ -372,6 +378,7 @@ class HrComplianceNotificationType(StrEnum):
     - initial_verification → i9_verified
     - reverification → i9_reverified
     """
+
     i9_verified = "i9_verified"
     i9_reverified = "i9_reverified"
 
@@ -382,6 +389,7 @@ class EhrAccessChangeType(StrEnum):
     - reactivate_restricted: limited access (read-only or specific modules only)
     - suspend: remove access (used for departures, not typically caller-initiated)
     """
+
     reactivate_full = "reactivate_full"
     reactivate_restricted = "reactivate_restricted"
     suspend = "suspend"
@@ -395,14 +403,17 @@ class ImmigrationNotificationType(StrEnum):
 # Auth Params
 # ---------------------------------------------------------------------------
 
+
 class VerifyEmployeeAuthParams(BaseModel):
     """Standard Employee Auth — employee_id + date_of_birth."""
+
     employee_id: EmployeeIdStr
     date_of_birth: DateStr
 
 
 class VerifyProviderAuthParams(BaseModel):
     """Credentialed Provider Auth — NPI + facility_code + PIN."""
+
     npi: NpiStr
     facility_code: FacilityCodeStr
     pin: PinStr
@@ -410,11 +421,13 @@ class VerifyProviderAuthParams(BaseModel):
 
 class InitiateOtpAuthParams(BaseModel):
     """OTP step 1 — send OTP SMS to phone on file."""
+
     employee_id: EmployeeIdStr
 
 
 class VerifyOtpAuthParams(BaseModel):
     """OTP step 2 — verify the 6-digit code."""
+
     employee_id: EmployeeIdStr
     otp_code: OtpStr
 
@@ -422,6 +435,7 @@ class VerifyOtpAuthParams(BaseModel):
 # ---------------------------------------------------------------------------
 # Shared lookup tools (used across multiple flows)
 # ---------------------------------------------------------------------------
+
 
 class GetProviderProfileParams(BaseModel):
     npi: NpiStr
@@ -435,8 +449,10 @@ class GetEmployeeRecordParams(BaseModel):
 # Shared scheduling tools
 # ---------------------------------------------------------------------------
 
+
 class CheckAppointmentAvailabilityParams(BaseModel):
     """Check available time slots for a specific appointment type on a given date."""
+
     department_code: DepartmentCodeStr
     appointment_type: AppointmentType
     preferred_date: DateStr
@@ -445,6 +461,7 @@ class CheckAppointmentAvailabilityParams(BaseModel):
 # ---------------------------------------------------------------------------
 # Flow 1: License Expiration Extension
 # ---------------------------------------------------------------------------
+
 
 class GetLicenseRecordParams(BaseModel):
     npi: NpiStr
@@ -476,6 +493,7 @@ class NotifyCredentialingCommitteeParams(BaseModel):
 # ---------------------------------------------------------------------------
 # Flow 2: Shift Swap
 # ---------------------------------------------------------------------------
+
 
 class GetShiftRecordParams(BaseModel):
     employee_id: EmployeeIdStr
@@ -509,6 +527,7 @@ class NotifyDepartmentManagerParams(BaseModel):
 # Flow 3: Malpractice Coverage Update
 # ---------------------------------------------------------------------------
 
+
 class GetMalpracticeRecordParams(BaseModel):
     npi: NpiStr
 
@@ -533,6 +552,7 @@ class UpdateMalpracticeCoverageParams(BaseModel):
 # Flow 4: Onboarding Task Completion
 # ---------------------------------------------------------------------------
 
+
 class GetOnboardingChecklistParams(BaseModel):
     employee_id: EmployeeIdStr
 
@@ -552,6 +572,7 @@ class ScheduleOrientationFollowupParams(BaseModel):
 # Flow 5: DEA Registration Transfer
 # ---------------------------------------------------------------------------
 
+
 class GetDeaRecordParams(BaseModel):
     npi: NpiStr
     dea_number: DeaNumberStr
@@ -570,6 +591,7 @@ class NotifyPdmpParams(BaseModel):
     """Notify the state PDMP of a DEA registration transfer.
     No notification_type param — this tool is only used for transfers.
     """
+
     npi: NpiStr
     dea_number: DeaNumberStr
     state_code: StateCodeStr
@@ -579,6 +601,7 @@ class NotifyPdmpParams(BaseModel):
 # ---------------------------------------------------------------------------
 # Flow 6: FMLA / Leave of Absence Filing
 # ---------------------------------------------------------------------------
+
 
 class CheckLeaveEligibilityParams(BaseModel):
     employee_id: EmployeeIdStr
@@ -603,6 +626,7 @@ class ScheduleReturnToWorkCheckinParams(BaseModel):
 # Flow 7: Payroll Correction
 # ---------------------------------------------------------------------------
 
+
 class GetTimesheetRecordParams(BaseModel):
     employee_id: EmployeeIdStr
     shift_id: ShiftIdStr
@@ -618,7 +642,8 @@ class SubmitPayrollCorrectionParams(BaseModel):
     shift_id: ShiftIdStr
     correction_type: PayrollCorrectionType
     corrected_hours: float = Field(
-        gt=0, le=24,
+        gt=0,
+        le=24,
         description="Correct total hours for the shift (not the delta). Example: 12.0 if 12 hours were worked.",
         examples=[8.0, 12.0, 12.5],
     )
@@ -628,6 +653,7 @@ class SubmitPayrollCorrectionParams(BaseModel):
 # ---------------------------------------------------------------------------
 # Flow 8: Privilege Reactivation After Leave
 # ---------------------------------------------------------------------------
+
 
 class GetPrivilegeRecordParams(BaseModel):
     npi: NpiStr
@@ -644,6 +670,7 @@ class CheckReactivationEligibilityParams(BaseModel):
 
 class ScheduleCompetencyReviewParams(BaseModel):
     """Schedule competency review BEFORE reactivating privileges."""
+
     npi: NpiStr
     department_code: DepartmentCodeStr
     appointment_datetime: AppointmentDatetimeStr
@@ -651,6 +678,7 @@ class ScheduleCompetencyReviewParams(BaseModel):
 
 class ReactivatePrivilegesParams(BaseModel):
     """Reactivate suspended privileges. Called AFTER scheduling the competency review."""
+
     npi: NpiStr
     privilege_codes: list[PrivilegeCodeStr]
     clearance_code: str = Field(
@@ -670,6 +698,7 @@ class UpdateEhrAccessParams(BaseModel):
 # ---------------------------------------------------------------------------
 # Flow 9: On-Call Schedule Registration
 # ---------------------------------------------------------------------------
+
 
 class GetOncallScheduleParams(BaseModel):
     employee_id: EmployeeIdStr
@@ -693,6 +722,7 @@ class RegisterOncallAvailabilityParams(BaseModel):
 # ---------------------------------------------------------------------------
 # Flow 10: I-9 Verification
 # ---------------------------------------------------------------------------
+
 
 class GetI9RecordParams(BaseModel):
     employee_id: EmployeeIdStr
@@ -721,6 +751,7 @@ class NotifyHrComplianceParams(BaseModel):
 # ---------------------------------------------------------------------------
 # Flow 11: Visa Dependent Addition
 # ---------------------------------------------------------------------------
+
 
 class GetVisaRecordParams(BaseModel):
     employee_id: EmployeeIdStr
@@ -755,6 +786,7 @@ class NotifyImmigrationCounselParams(BaseModel):
 # ---------------------------------------------------------------------------
 # Flow 12: PTO Request
 # ---------------------------------------------------------------------------
+
 
 class GetPtoBalanceParams(BaseModel):
     employee_id: EmployeeIdStr
