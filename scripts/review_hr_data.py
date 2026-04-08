@@ -188,7 +188,6 @@ if st.session_state.get("_prev_record_id") != current_id:
         st.session_state["trace_comments"] = gt.get("comments", "")
 
         df = existing.get("diff", {})
-        st.session_state["q_mods_sensible"] = df.get("modifications_sensible", "")
         st.session_state["diff_comments"] = df.get("comments", "")
 
         gen = existing.get("general", {})
@@ -204,7 +203,7 @@ if st.session_state.get("_prev_record_id") != current_id:
             "q_missing_mods",
             "q_alt_path",
             "trace_comments",
-            "q_mods_sensible",
+
             "diff_comments",
             "general_comments",
         ]:
@@ -337,12 +336,6 @@ with st.sidebar:
     # -- Diff --
     st.markdown("---")
     st.markdown("#### Diff")
-    q_mods_sensible = st.selectbox(
-        "Do all modifications make sense given tool calls?",
-        YES_NO_UNCLEAR,
-        key="q_mods_sensible",
-        help="This shows you the comparison between the initial database and the expected database after the correct modification tool calls have happened. Check whether all the changes in the diff are expected given the tool call sequence.",
-    )
     diff_comments = st.text_area(
         "Diff comments",
         key="diff_comments",
@@ -386,7 +379,6 @@ with st.sidebar:
                 "comments": st.session_state.get("trace_comments", ""),
             },
             "diff": {
-                "modifications_sensible": st.session_state.get("q_mods_sensible", ""),
                 "comments": st.session_state.get("diff_comments", ""),
             },
             "general": {
