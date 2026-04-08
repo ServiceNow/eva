@@ -63,96 +63,98 @@ Tool sequences per flow:
 """
 
 import copy
+
 from pydantic import ValidationError
 
-from  eva.assistant.tools.medical_hr_params import (
-    # Auth
-    VerifyEmployeeAuthParams,
-    VerifyProviderAuthParams,
-    InitiateOtpAuthParams,
-    VerifyOtpAuthParams,
-    # Shared lookups
-    GetProviderProfileParams,
-    GetEmployeeRecordParams,
+from eva.assistant.tools.medical_hr_params import (
+    AddVisaDependentParams,
     # Shared scheduling
     CheckAppointmentAvailabilityParams,
-    # Flow 1
-    GetLicenseRecordParams,
+    CheckCorrectionEligibilityParams,
     CheckExtensionEligibilityParams,
-    SubmitLicenseExtensionParams,
-    NotifyCredentialingCommitteeParams,
-    # Flow 2
-    GetShiftRecordParams,
-    CheckSwapEligibilityParams,
-    VerifyColleagueCertificationsParams,
-    ConfirmShiftSwapParams,
-    NotifyDepartmentManagerParams,
-    # Flow 3
-    GetMalpracticeRecordParams,
-    UpdateMalpracticeCoverageParams,
-    # Flow 4
-    GetOnboardingChecklistParams,
-    CompleteOnboardingTaskParams,
-    ScheduleOrientationFollowupParams,
-    # Flow 5
-    GetDeaRecordParams,
-    TransferDeaRegistrationParams,
-    NotifyPdmpParams,
     # Flow 6
     CheckLeaveEligibilityParams,
-    SubmitFmlaCaseParams,
-    ScheduleReturnToWorkCheckinParams,
-    # Flow 7
-    GetTimesheetRecordParams,
-    CheckCorrectionEligibilityParams,
-    SubmitPayrollCorrectionParams,
-    # Flow 8
-    GetPrivilegeRecordParams,
-    CheckReactivationEligibilityParams,
-    ScheduleCompetencyReviewParams,
-    ReactivatePrivilegesParams,
-    UpdateEhrAccessParams,
-    # Flow 9
-    GetOncallScheduleParams,
     CheckOncallEligibilityParams,
-    RegisterOncallAvailabilityParams,
+    CheckPtoEligibilityParams,
+    CheckReactivationEligibilityParams,
+    CheckSwapEligibilityParams,
+    CompleteOnboardingTaskParams,
+    ConfirmShiftSwapParams,
+    # Flow 5
+    GetDeaRecordParams,
+    GetEmployeeRecordParams,
     # Flow 10
     GetI9RecordParams,
-    SubmitI9VerificationParams,
-    NotifyHrComplianceParams,
-    # Flow 11
-    GetVisaRecordParams,
-    AddVisaDependentParams,
-    NotifyImmigrationCounselParams,
+    # Flow 1
+    GetLicenseRecordParams,
+    # Flow 3
+    GetMalpracticeRecordParams,
+    # Flow 4
+    GetOnboardingChecklistParams,
+    # Flow 9
+    GetOncallScheduleParams,
+    # Flow 8
+    GetPrivilegeRecordParams,
+    # Shared lookups
+    GetProviderProfileParams,
     # Flow 12
     GetPtoBalanceParams,
-    CheckPtoEligibilityParams,
+    # Flow 2
+    GetShiftRecordParams,
+    # Flow 7
+    GetTimesheetRecordParams,
+    # Flow 11
+    GetVisaRecordParams,
+    InitiateOtpAuthParams,
+    NotifyCredentialingCommitteeParams,
+    NotifyDepartmentManagerParams,
+    NotifyHrComplianceParams,
+    NotifyImmigrationCounselParams,
+    NotifyPdmpParams,
+    ReactivatePrivilegesParams,
+    RegisterOncallAvailabilityParams,
+    ScheduleCompetencyReviewParams,
+    ScheduleOrientationFollowupParams,
+    ScheduleReturnToWorkCheckinParams,
+    SubmitFmlaCaseParams,
+    SubmitI9VerificationParams,
+    SubmitLicenseExtensionParams,
+    SubmitPayrollCorrectionParams,
     SubmitPtoRequestParams,
+    TransferDeaRegistrationParams,
+    UpdateEhrAccessParams,
+    UpdateMalpracticeCoverageParams,
+    VerifyColleagueCertificationsParams,
+    # Auth
+    VerifyEmployeeAuthParams,
+    VerifyOtpAuthParams,
+    VerifyProviderAuthParams,
     validation_error_response,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_case_id(prefix: str, suffix: str) -> str:
     return f"CASE-{prefix}-{suffix[-6:]}"
 
 
 def _employee_not_found(employee_id: str) -> dict:
-    return {"status": "error", "error_type": "not_found",
-            "message": f"Employee {employee_id} not found"}
+    return {"status": "error", "error_type": "not_found", "message": f"Employee {employee_id} not found"}
 
 
 def _provider_not_found(npi: str) -> dict:
-    return {"status": "error", "error_type": "not_found",
-            "message": f"Provider with NPI {npi} not found"}
+    return {"status": "error", "error_type": "not_found", "message": f"Provider with NPI {npi} not found"}
 
 
 def _auth_required(auth_type: str = "employee_auth") -> dict:
-    return {"status": "error", "error_type": "authentication_required",
-            "message": f"Authentication ({auth_type}) must be completed before calling this tool"}
+    return {
+        "status": "error",
+        "error_type": "authentication_required",
+        "message": f"Authentication ({auth_type}) must be completed before calling this tool",
+    }
 
 
 def _is_authenticated(db: dict, key: str) -> bool:
@@ -162,6 +164,7 @@ def _is_authenticated(db: dict, key: str) -> bool:
 # ---------------------------------------------------------------------------
 # AUTH TOOLS
 # ---------------------------------------------------------------------------
+
 
 def verify_employee_auth(params: dict, db: dict, call_index: int) -> dict:
     """Authenticate an employee using employee_id + date_of_birth."""
@@ -174,14 +177,21 @@ def verify_employee_auth(params: dict, db: dict, call_index: int) -> dict:
     if not emp:
         return _employee_not_found(p.employee_id)
     if emp.get("date_of_birth") != p.date_of_birth:
-        return {"status": "error", "error_type": "authentication_failed",
-                "message": "Date of birth does not match records for this employee ID"}
+        return {
+            "status": "error",
+            "error_type": "authentication_failed",
+            "message": "Date of birth does not match records for this employee ID",
+        }
 
     db.setdefault("session", {})["employee_auth"] = True
     db["session"]["authenticated_employee_id"] = p.employee_id
-    return {"status": "success", "authenticated": True, "employee_id": p.employee_id,
-            "first_name": emp.get("first_name"),
-            "message": f"Employee {p.employee_id} authenticated successfully"}
+    return {
+        "status": "success",
+        "authenticated": True,
+        "employee_id": p.employee_id,
+        "first_name": emp.get("first_name"),
+        "message": f"Employee {p.employee_id} authenticated successfully",
+    }
 
 
 def verify_provider_auth(params: dict, db: dict, call_index: int) -> dict:
@@ -195,20 +205,30 @@ def verify_provider_auth(params: dict, db: dict, call_index: int) -> dict:
     if not provider:
         return _provider_not_found(p.npi)
     if provider.get("facility_code") != p.facility_code:
-        return {"status": "error", "error_type": "authentication_failed",
-                "message": "Facility code does not match records for this NPI"}
+        return {
+            "status": "error",
+            "error_type": "authentication_failed",
+            "message": "Facility code does not match records for this NPI",
+        }
     if provider.get("pin") != p.pin:
-        return {"status": "error", "error_type": "authentication_failed",
-                "message": "PIN does not match records for this NPI"}
+        return {
+            "status": "error",
+            "error_type": "authentication_failed",
+            "message": "PIN does not match records for this NPI",
+        }
 
     db.setdefault("session", {})["provider_auth"] = True
     db["session"]["authenticated_npi"] = p.npi
     # Also set employee_id so initiate_otp_auth can be called without re-asking
     db["session"]["authenticated_employee_id"] = provider.get("employee_id")
-    return {"status": "success", "authenticated": True, "npi": p.npi,
-            "first_name": provider.get("first_name"),
-            "employee_id": provider.get("employee_id"),
-            "message": f"Provider NPI {p.npi} authenticated successfully"}
+    return {
+        "status": "success",
+        "authenticated": True,
+        "npi": p.npi,
+        "first_name": provider.get("first_name"),
+        "employee_id": provider.get("employee_id"),
+        "message": f"Provider NPI {p.npi} authenticated successfully",
+    }
 
 
 def initiate_otp_auth(params: dict, db: dict, call_index: int) -> dict:
@@ -224,8 +244,11 @@ def initiate_otp_auth(params: dict, db: dict, call_index: int) -> dict:
 
     db.setdefault("session", {})["otp_employee_id"] = p.employee_id
     db["session"]["otp_issued"] = True
-    return {"status": "success", "phone_last_four": emp.get("phone_last_four"),
-            "message": f"OTP sent to number ending in {emp.get('phone_last_four')}. Ask the caller to read the code."}
+    return {
+        "status": "success",
+        "phone_last_four": emp.get("phone_last_four"),
+        "message": f"OTP sent to number ending in {emp.get('phone_last_four')}. Ask the caller to read the code.",
+    }
 
 
 def verify_otp_auth(params: dict, db: dict, call_index: int) -> dict:
@@ -236,26 +259,37 @@ def verify_otp_auth(params: dict, db: dict, call_index: int) -> dict:
         return validation_error_response(exc, VerifyOtpAuthParams)
 
     if not db.get("session", {}).get("otp_issued"):
-        return {"status": "error", "error_type": "otp_not_initiated",
-                "message": "OTP has not been initiated. Call initiate_otp_auth first."}
+        return {
+            "status": "error",
+            "error_type": "otp_not_initiated",
+            "message": "OTP has not been initiated. Call initiate_otp_auth first.",
+        }
 
     emp = db.get("employees", {}).get(p.employee_id)
     if not emp:
         return _employee_not_found(p.employee_id)
     if emp.get("otp_code") != p.otp_code:
-        return {"status": "error", "error_type": "authentication_failed",
-                "message": "OTP code does not match. Ask the caller to read the code again."}
+        return {
+            "status": "error",
+            "error_type": "authentication_failed",
+            "message": "OTP code does not match. Ask the caller to read the code again.",
+        }
 
     db["session"]["otp_auth"] = True
     db["session"]["authenticated_employee_id"] = p.employee_id
-    return {"status": "success", "authenticated": True, "employee_id": p.employee_id,
-            "first_name": emp.get("first_name"),
-            "message": f"OTP verified. Employee {p.employee_id} authenticated successfully."}
+    return {
+        "status": "success",
+        "authenticated": True,
+        "employee_id": p.employee_id,
+        "first_name": emp.get("first_name"),
+        "message": f"OTP verified. Employee {p.employee_id} authenticated successfully.",
+    }
 
 
 # ---------------------------------------------------------------------------
 # SHARED LOOKUP TOOLS
 # ---------------------------------------------------------------------------
+
 
 def get_provider_profile(params: dict, db: dict, call_index: int) -> dict:
     """Fetch provider identity, role, department.
@@ -280,10 +314,17 @@ def get_provider_profile(params: dict, db: dict, call_index: int) -> dict:
     if not provider:
         return _provider_not_found(p.npi)
 
-    safe_fields = ["npi", "employee_id", "first_name", "last_name",
-                   "facility_code", "role_code", "department_code", "hire_date"]
-    return {"status": "success",
-            "provider": {k: provider[k] for k in safe_fields if k in provider}}
+    safe_fields = [
+        "npi",
+        "employee_id",
+        "first_name",
+        "last_name",
+        "facility_code",
+        "role_code",
+        "department_code",
+        "hire_date",
+    ]
+    return {"status": "success", "provider": {k: provider[k] for k in safe_fields if k in provider}}
 
 
 def get_employee_record(params: dict, db: dict, call_index: int) -> dict:
@@ -309,15 +350,23 @@ def get_employee_record(params: dict, db: dict, call_index: int) -> dict:
     if not emp:
         return _employee_not_found(p.employee_id)
 
-    safe_fields = ["employee_id", "first_name", "last_name", "department_code",
-                   "role_code", "unit_code", "hire_date", "employment_status"]
-    return {"status": "success",
-            "employee": {k: emp[k] for k in safe_fields if k in emp}}
+    safe_fields = [
+        "employee_id",
+        "first_name",
+        "last_name",
+        "department_code",
+        "role_code",
+        "unit_code",
+        "hire_date",
+        "employment_status",
+    ]
+    return {"status": "success", "employee": {k: emp[k] for k in safe_fields if k in emp}}
 
 
 # ---------------------------------------------------------------------------
 # SHARED SCHEDULING TOOLS
 # ---------------------------------------------------------------------------
+
 
 def check_appointment_availability(params: dict, db: dict, call_index: int) -> dict:
     """Check available time slots for a specific appointment type on a given date.
@@ -347,26 +396,36 @@ def check_appointment_availability(params: dict, db: dict, call_index: int) -> d
                 nearby.append({"date": date_str, "available_slots": date_slots})
                 if len(nearby) >= 3:
                     break
-        return {"status": "success", "available_slots": [],
-                "date": p.preferred_date,
-                "alternative_dates": nearby,
-                "message": f"No availability on {p.preferred_date} for {p.appointment_type} in {p.department_code}"}
-
-    return {"status": "success", "available_slots": slots,
+        return {
+            "status": "success",
+            "available_slots": [],
             "date": p.preferred_date,
-            "message": f"{len(slots)} slot(s) available on {p.preferred_date}"}
+            "alternative_dates": nearby,
+            "message": f"No availability on {p.preferred_date} for {p.appointment_type} in {p.department_code}",
+        }
+
+    return {
+        "status": "success",
+        "available_slots": slots,
+        "date": p.preferred_date,
+        "message": f"{len(slots)} slot(s) available on {p.preferred_date}",
+    }
 
 
-def _validate_and_book_slot(db: dict, appointment_type: str, department_code: str,
-                            appointment_datetime: str) -> tuple[bool, dict | None]:
+def _validate_and_book_slot(
+    db: dict, appointment_type: str, department_code: str, appointment_datetime: str
+) -> tuple[bool, dict | None]:
     """Validate a slot is available and book it (remove from availability).
 
     Returns (success, error_response). If success is True, error_response is None.
     """
     parts = appointment_datetime.split(" ")
     if len(parts) != 2:
-        return False, {"status": "error", "error_type": "invalid_datetime",
-                       "message": f"Invalid datetime format: {appointment_datetime}"}
+        return False, {
+            "status": "error",
+            "error_type": "invalid_datetime",
+            "message": f"Invalid datetime format: {appointment_datetime}",
+        }
     date_str, time_str = parts
 
     avail = db.get("appointment_availability", {})
@@ -375,10 +434,13 @@ def _validate_and_book_slot(db: dict, appointment_type: str, department_code: st
     slots = dept_avail.get(date_str, [])
 
     if time_str not in slots:
-        return False, {"status": "error", "error_type": "slot_not_available",
-                       "message": f"Time slot {time_str} on {date_str} is not available for "
-                                  f"{appointment_type} in {department_code}. "
-                                  f"Available slots: {slots if slots else 'none on this date'}"}
+        return False, {
+            "status": "error",
+            "error_type": "slot_not_available",
+            "message": f"Time slot {time_str} on {date_str} is not available for "
+            f"{appointment_type} in {department_code}. "
+            f"Available slots: {slots if slots else 'none on this date'}",
+        }
 
     # Book the slot by removing it from availability
     slots.remove(time_str)
@@ -388,6 +450,7 @@ def _validate_and_book_slot(db: dict, appointment_type: str, department_code: st
 # ---------------------------------------------------------------------------
 # FLOW 1: License Expiration Extension
 # ---------------------------------------------------------------------------
+
 
 def get_license_record(params: dict, db: dict, call_index: int) -> dict:
     """Look up a provider's license by NPI and state license number."""
@@ -405,8 +468,11 @@ def get_license_record(params: dict, db: dict, call_index: int) -> dict:
 
     lic = provider.get("licenses", {}).get(p.state_license_number)
     if not lic:
-        return {"status": "error", "error_type": "license_not_found",
-                "message": f"License {p.state_license_number} not found for NPI {p.npi}"}
+        return {
+            "status": "error",
+            "error_type": "license_not_found",
+            "message": f"License {p.state_license_number} not found for NPI {p.npi}",
+        }
 
     return {"status": "success", "license": copy.deepcopy(lic)}
 
@@ -430,19 +496,31 @@ def check_extension_eligibility(params: dict, db: dict, call_index: int) -> dict
 
     lic = provider.get("licenses", {}).get(p.state_license_number)
     if not lic:
-        return {"status": "error", "error_type": "license_not_found",
-                "message": f"License {p.state_license_number} not found for NPI {p.npi}"}
+        return {
+            "status": "error",
+            "error_type": "license_not_found",
+            "message": f"License {p.state_license_number} not found for NPI {p.npi}",
+        }
 
     if lic.get("extension_status") == "pending":
-        return {"status": "error", "error_type": "already_extended",
-                "message": "An extension request is already pending for this license"}
+        return {
+            "status": "error",
+            "error_type": "already_extended",
+            "message": "An extension request is already pending for this license",
+        }
     if lic.get("investigation_hold"):
-        return {"status": "error", "error_type": "investigation_hold",
-                "message": "License is under investigation and cannot be extended"}
+        return {
+            "status": "error",
+            "error_type": "investigation_hold",
+            "message": "License is under investigation and cannot be extended",
+        }
 
-    return {"status": "success", "eligible": True,
-            "license_expiration_date": lic.get("expiration_date"),
-            "message": "License is eligible for extension"}
+    return {
+        "status": "success",
+        "eligible": True,
+        "license_expiration_date": lic.get("expiration_date"),
+        "message": "License is eligible for extension",
+    }
 
 
 def submit_license_extension(params: dict, db: dict, call_index: int) -> dict:
@@ -465,38 +543,58 @@ def submit_license_extension(params: dict, db: dict, call_index: int) -> dict:
 
     lic = provider.get("licenses", {}).get(p.state_license_number)
     if not lic:
-        return {"status": "error", "error_type": "license_not_found",
-                "message": f"License {p.state_license_number} not found for NPI {p.npi}"}
+        return {
+            "status": "error",
+            "error_type": "license_not_found",
+            "message": f"License {p.state_license_number} not found for NPI {p.npi}",
+        }
 
     # Supervised extensions require a supervising physician
     if p.extension_type == "supervised":
         if not p.supervising_physician_npi:
-            return {"status": "error", "error_type": "supervising_physician_required",
-                    "message": "Supervised extensions require a supervising physician NPI"}
+            return {
+                "status": "error",
+                "error_type": "supervising_physician_required",
+                "message": "Supervised extensions require a supervising physician NPI",
+            }
         if p.supervising_physician_npi not in db.get("providers", {}):
-            return {"status": "error", "error_type": "supervising_physician_not_found",
-                    "message": f"Supervising physician NPI {p.supervising_physician_npi} not found"}
+            return {
+                "status": "error",
+                "error_type": "supervising_physician_not_found",
+                "message": f"Supervising physician NPI {p.supervising_physician_npi} not found",
+            }
 
     # Provisional extensions must NOT have a supervising physician
     if p.extension_type == "provisional" and p.supervising_physician_npi:
-        return {"status": "error", "error_type": "invalid_parameter",
-                "message": "Provisional extensions do not require a supervising physician — omit supervising_physician_npi"}
+        return {
+            "status": "error",
+            "error_type": "invalid_parameter",
+            "message": "Provisional extensions do not require a supervising physician — omit supervising_physician_npi",
+        }
 
     case_id = _make_case_id("LIC", provider.get("employee_id", p.npi))
 
     # Only include supervising_physician_npi in the record for supervised extensions
-    update_fields = {"extension_status": "pending", "extension_type": p.extension_type,
-                     "extension_days": p.extension_days, "extension_case_id": case_id}
+    update_fields = {
+        "extension_status": "pending",
+        "extension_type": p.extension_type,
+        "extension_days": p.extension_days,
+        "extension_case_id": case_id,
+    }
     if p.extension_type == "supervised":
         update_fields["supervising_physician_npi"] = p.supervising_physician_npi
     lic.update(update_fields)
 
-    return {"status": "success", "npi": p.npi,
-            "state_license_number": p.state_license_number,
-            "extension_type": p.extension_type, "extension_days": p.extension_days,
-            "supervising_physician_npi": p.supervising_physician_npi,
-            "case_id": case_id,
-            "message": f"{p.extension_type} extension submitted. Case ID: {case_id}"}
+    return {
+        "status": "success",
+        "npi": p.npi,
+        "state_license_number": p.state_license_number,
+        "extension_type": p.extension_type,
+        "extension_days": p.extension_days,
+        "supervising_physician_npi": p.supervising_physician_npi,
+        "case_id": case_id,
+        "message": f"{p.extension_type} extension submitted. Case ID: {case_id}",
+    }
 
 
 def notify_credentialing_committee(params: dict, db: dict, call_index: int) -> dict:
@@ -523,14 +621,19 @@ def notify_credentialing_committee(params: dict, db: dict, call_index: int) -> d
     if notif not in notifications:
         notifications.append(notif)
 
-    return {"status": "success", "npi": p.npi, "case_id": p.case_id,
-            "notification_type": p.notification_type,
-            "message": f"Credentialing committee notified: {p.notification_type}"}
+    return {
+        "status": "success",
+        "npi": p.npi,
+        "case_id": p.case_id,
+        "notification_type": p.notification_type,
+        "message": f"Credentialing committee notified: {p.notification_type}",
+    }
 
 
 # ---------------------------------------------------------------------------
 # FLOW 2: Shift Swap
 # ---------------------------------------------------------------------------
+
 
 def get_shift_record(params: dict, db: dict, call_index: int) -> dict:
     """Look up a specific shift owned by an employee."""
@@ -544,11 +647,13 @@ def get_shift_record(params: dict, db: dict, call_index: int) -> dict:
 
     shift = db.get("shifts", {}).get(p.shift_id)
     if not shift:
-        return {"status": "error", "error_type": "shift_not_found",
-                "message": f"Shift {p.shift_id} not found"}
+        return {"status": "error", "error_type": "shift_not_found", "message": f"Shift {p.shift_id} not found"}
     if shift.get("employee_id") != p.employee_id:
-        return {"status": "error", "error_type": "shift_not_owned",
-                "message": f"Shift {p.shift_id} does not belong to employee {p.employee_id}"}
+        return {
+            "status": "error",
+            "error_type": "shift_not_owned",
+            "message": f"Shift {p.shift_id} does not belong to employee {p.employee_id}",
+        }
 
     return {"status": "success", "shift": copy.deepcopy(shift)}
 
@@ -569,25 +674,29 @@ def check_swap_eligibility(params: dict, db: dict, call_index: int) -> dict:
 
     shift = db.get("shifts", {}).get(p.shift_id)
     if not shift:
-        return {"status": "error", "error_type": "shift_not_found",
-                "message": f"Shift {p.shift_id} not found"}
+        return {"status": "error", "error_type": "shift_not_found", "message": f"Shift {p.shift_id} not found"}
     if shift.get("status") == "swapped":
-        return {"status": "error", "error_type": "already_swapped",
-                "message": "This shift has already been swapped"}
+        return {"status": "error", "error_type": "already_swapped", "message": "This shift has already been swapped"}
     if shift.get("status") == "cancelled":
-        return {"status": "error", "error_type": "shift_cancelled",
-                "message": "Cannot swap a cancelled shift"}
+        return {"status": "error", "error_type": "shift_cancelled", "message": "Cannot swap a cancelled shift"}
     if shift.get("swap_locked"):
-        return {"status": "error", "error_type": "swap_locked",
-                "message": "Shift is within the 24-hour swap lockout window"}
+        return {
+            "status": "error",
+            "error_type": "swap_locked",
+            "message": "Shift is within the 24-hour swap lockout window",
+        }
 
     unit_code = shift.get("unit_code")
     required_certs = sorted(db.get("unit_cert_requirements", {}).get(unit_code, []))
 
-    return {"status": "success", "eligible": True,
-            "shift_date": shift.get("date"), "unit_code": unit_code,
-            "required_cert_codes": required_certs,
-            "message": "Shift is eligible for swap"}
+    return {
+        "status": "success",
+        "eligible": True,
+        "shift_date": shift.get("date"),
+        "unit_code": unit_code,
+        "required_cert_codes": required_certs,
+        "message": "Shift is eligible for swap",
+    }
 
 
 def verify_colleague_certifications(params: dict, db: dict, call_index: int) -> dict:
@@ -611,14 +720,20 @@ def verify_colleague_certifications(params: dict, db: dict, call_index: int) -> 
     required_certs = db.get("unit_cert_requirements", {}).get(p.unit_code, [])
     missing = sorted(set(required_certs) - set(colleague.get("certifications", [])))
     if missing:
-        return {"status": "error", "error_type": "certification_missing",
-                "message": f"Colleague {p.colleague_employee_id} is missing: {missing}",
-                "missing_certs": missing}
+        return {
+            "status": "error",
+            "error_type": "certification_missing",
+            "message": f"Colleague {p.colleague_employee_id} is missing: {missing}",
+            "missing_certs": missing,
+        }
 
-    return {"status": "success", "colleague_employee_id": p.colleague_employee_id,
-            "unit_code": p.unit_code,
-            "certifications_verified": sorted(required_certs),
-            "message": "All required certifications verified"}
+    return {
+        "status": "success",
+        "colleague_employee_id": p.colleague_employee_id,
+        "unit_code": p.unit_code,
+        "certifications_verified": sorted(required_certs),
+        "message": "All required certifications verified",
+    }
 
 
 def confirm_shift_swap(params: dict, db: dict, call_index: int) -> dict:
@@ -633,18 +748,22 @@ def confirm_shift_swap(params: dict, db: dict, call_index: int) -> dict:
 
     shift = db.get("shifts", {}).get(p.shift_id)
     if not shift:
-        return {"status": "error", "error_type": "shift_not_found",
-                "message": f"Shift {p.shift_id} not found"}
+        return {"status": "error", "error_type": "shift_not_found", "message": f"Shift {p.shift_id} not found"}
 
     case_id = _make_case_id("SWP", p.employee_id)
-    shift.update({"status": "swapped", "swapped_to_employee_id": p.colleague_employee_id,
-                  "swap_confirmation_id": case_id})
+    shift.update(
+        {"status": "swapped", "swapped_to_employee_id": p.colleague_employee_id, "swap_confirmation_id": case_id}
+    )
 
-    return {"status": "success", "shift_id": p.shift_id,
-            "original_employee_id": p.employee_id,
-            "new_employee_id": p.colleague_employee_id,
-            "unit_code": p.unit_code, "case_id": case_id,
-            "message": f"Shift swap confirmed. Case ID: {case_id}"}
+    return {
+        "status": "success",
+        "shift_id": p.shift_id,
+        "original_employee_id": p.employee_id,
+        "new_employee_id": p.colleague_employee_id,
+        "unit_code": p.unit_code,
+        "case_id": case_id,
+        "message": f"Shift swap confirmed. Case ID: {case_id}",
+    }
 
 
 def notify_department_manager(params: dict, db: dict, call_index: int) -> dict:
@@ -681,14 +800,19 @@ def notify_department_manager(params: dict, db: dict, call_index: int) -> dict:
     if notif not in notifications:
         notifications.append(notif)
 
-    return {"status": "success", "employee_id": p.employee_id,
-            "case_id": p.case_id, "notification_type": p.notification_type,
-            "message": f"Department manager notified: {p.notification_type}"}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "case_id": p.case_id,
+        "notification_type": p.notification_type,
+        "message": f"Department manager notified: {p.notification_type}",
+    }
 
 
 # ---------------------------------------------------------------------------
 # FLOW 3: Malpractice Coverage Update
 # ---------------------------------------------------------------------------
+
 
 def get_malpractice_record(params: dict, db: dict, call_index: int) -> dict:
     """Retrieve current malpractice insurance record for a provider."""
@@ -706,8 +830,11 @@ def get_malpractice_record(params: dict, db: dict, call_index: int) -> dict:
 
     mal = provider.get("malpractice")
     if not mal:
-        return {"status": "error", "error_type": "record_not_found",
-                "message": f"No malpractice record found for NPI {p.npi}"}
+        return {
+            "status": "error",
+            "error_type": "record_not_found",
+            "message": f"No malpractice record found for NPI {p.npi}",
+        }
 
     return {"status": "success", "malpractice": copy.deepcopy(mal)}
 
@@ -728,27 +855,41 @@ def update_malpractice_coverage(params: dict, db: dict, call_index: int) -> dict
 
     mal = provider.get("malpractice")
     if not mal:
-        return {"status": "error", "error_type": "record_not_found",
-                "message": f"No malpractice record on file for NPI {p.npi}. "
-                           "Contact credentialing to have a record initialized first."}
+        return {
+            "status": "error",
+            "error_type": "record_not_found",
+            "message": f"No malpractice record on file for NPI {p.npi}. "
+            "Contact credentialing to have a record initialized first.",
+        }
 
     recredential_flag = p.per_occurrence_limit_usd < 1_000_000
     case_id = _make_case_id("MAL", provider.get("employee_id", p.npi))
-    mal.update({"carrier": p.new_carrier, "policy_number": p.new_policy_number,
-                "per_occurrence_limit_usd": p.per_occurrence_limit_usd,
-                "aggregate_limit_usd": p.aggregate_limit_usd,
-                "effective_date": p.effective_date,
-                "expiration_date": p.expiration_date,
-                "recredential_required": recredential_flag,
-                "update_case_id": case_id})
-
-    resp = {"status": "success", "npi": p.npi,
-            "new_carrier": p.new_carrier, "new_policy_number": p.new_policy_number,
+    mal.update(
+        {
+            "carrier": p.new_carrier,
+            "policy_number": p.new_policy_number,
             "per_occurrence_limit_usd": p.per_occurrence_limit_usd,
             "aggregate_limit_usd": p.aggregate_limit_usd,
-            "effective_date": p.effective_date, "expiration_date": p.expiration_date,
-            "recredential_required": recredential_flag, "case_id": case_id,
-            "message": "Malpractice coverage updated successfully"}
+            "effective_date": p.effective_date,
+            "expiration_date": p.expiration_date,
+            "recredential_required": recredential_flag,
+            "update_case_id": case_id,
+        }
+    )
+
+    resp = {
+        "status": "success",
+        "npi": p.npi,
+        "new_carrier": p.new_carrier,
+        "new_policy_number": p.new_policy_number,
+        "per_occurrence_limit_usd": p.per_occurrence_limit_usd,
+        "aggregate_limit_usd": p.aggregate_limit_usd,
+        "effective_date": p.effective_date,
+        "expiration_date": p.expiration_date,
+        "recredential_required": recredential_flag,
+        "case_id": case_id,
+        "message": "Malpractice coverage updated successfully",
+    }
 
     if recredential_flag:
         resp["message"] += f". Coverage below threshold — re-credentialing required. Case ID: {case_id}"
@@ -759,6 +900,7 @@ def update_malpractice_coverage(params: dict, db: dict, call_index: int) -> dict
 # ---------------------------------------------------------------------------
 # FLOW 4: Onboarding Task Completion
 # ---------------------------------------------------------------------------
+
 
 def get_onboarding_checklist(params: dict, db: dict, call_index: int) -> dict:
     """Retrieve the onboarding task checklist for a new hire."""
@@ -776,8 +918,11 @@ def get_onboarding_checklist(params: dict, db: dict, call_index: int) -> dict:
 
     checklist = emp.get("onboarding_checklist")
     if not checklist:
-        return {"status": "error", "error_type": "checklist_not_found",
-                "message": f"No onboarding checklist found for {p.employee_id}"}
+        return {
+            "status": "error",
+            "error_type": "checklist_not_found",
+            "message": f"No onboarding checklist found for {p.employee_id}",
+        }
 
     return {"status": "success", "onboarding_checklist": copy.deepcopy(checklist)}
 
@@ -798,15 +943,22 @@ def complete_onboarding_task(params: dict, db: dict, call_index: int) -> dict:
 
     tasks = emp.get("onboarding_checklist", {}).get("tasks", {})
     if p.task_code not in tasks:
-        return {"status": "error", "error_type": "task_not_found",
-                "message": f"Task {p.task_code} not in checklist for {p.employee_id}"}
+        return {
+            "status": "error",
+            "error_type": "task_not_found",
+            "message": f"Task {p.task_code} not in checklist for {p.employee_id}",
+        }
 
     tasks[p.task_code]["status"] = "complete"
     remaining = [t for t, v in tasks.items() if v.get("status") != "complete"]
 
-    return {"status": "success", "employee_id": p.employee_id,
-            "task_code": p.task_code, "remaining_tasks": remaining,
-            "message": f"Task {p.task_code} marked complete. {len(remaining)} task(s) remaining."}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "task_code": p.task_code,
+        "remaining_tasks": remaining,
+        "message": f"Task {p.task_code} marked complete. {len(remaining)} task(s) remaining.",
+    }
 
 
 def schedule_orientation_followup(params: dict, db: dict, call_index: int) -> dict:
@@ -827,29 +979,35 @@ def schedule_orientation_followup(params: dict, db: dict, call_index: int) -> di
         return _employee_not_found(p.employee_id)
 
     # Validate and book the slot
-    ok, err = _validate_and_book_slot(db, "orientation_followup", p.department_code,
-                                      p.appointment_datetime)
+    ok, err = _validate_and_book_slot(db, "orientation_followup", p.department_code, p.appointment_datetime)
     if not ok:
         return err
 
     appt_id = _make_case_id("ORI", p.employee_id)
-    emp.setdefault("scheduled_appointments", []).append({
+    emp.setdefault("scheduled_appointments", []).append(
+        {
+            "appointment_id": appt_id,
+            "type": "orientation_followup",
+            "department_code": p.department_code,
+            "appointment_datetime": p.appointment_datetime,
+            "status": "scheduled",
+        }
+    )
+
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
         "appointment_id": appt_id,
-        "type": "orientation_followup",
         "department_code": p.department_code,
         "appointment_datetime": p.appointment_datetime,
-        "status": "scheduled",
-    })
-
-    return {"status": "success", "employee_id": p.employee_id,
-            "appointment_id": appt_id, "department_code": p.department_code,
-            "appointment_datetime": p.appointment_datetime,
-            "message": f"Orientation follow-up scheduled for {p.appointment_datetime}. Appointment ID: {appt_id}"}
+        "message": f"Orientation follow-up scheduled for {p.appointment_datetime}. Appointment ID: {appt_id}",
+    }
 
 
 # ---------------------------------------------------------------------------
 # FLOW 5: DEA Registration Transfer
 # ---------------------------------------------------------------------------
+
 
 def get_dea_record(params: dict, db: dict, call_index: int) -> dict:
     """Retrieve a provider's DEA registration. Requires both provider_auth and otp_auth."""
@@ -861,8 +1019,11 @@ def get_dea_record(params: dict, db: dict, call_index: int) -> dict:
     if not _is_authenticated(db, "provider_auth"):
         return _auth_required("provider_auth")
     if not _is_authenticated(db, "otp_auth"):
-        return {"status": "error", "error_type": "second_factor_required",
-                "message": "DEA operations require OTP verification as a second factor"}
+        return {
+            "status": "error",
+            "error_type": "second_factor_required",
+            "message": "DEA operations require OTP verification as a second factor",
+        }
 
     provider = db.get("providers", {}).get(p.npi)
     if not provider:
@@ -870,8 +1031,11 @@ def get_dea_record(params: dict, db: dict, call_index: int) -> dict:
 
     dea = provider.get("dea_registration")
     if not dea or dea.get("dea_number") != p.dea_number:
-        return {"status": "error", "error_type": "dea_record_not_found",
-                "message": f"DEA number {p.dea_number} not found for NPI {p.npi}"}
+        return {
+            "status": "error",
+            "error_type": "dea_record_not_found",
+            "message": f"DEA number {p.dea_number} not found for NPI {p.npi}",
+        }
 
     return {"status": "success", "dea_registration": copy.deepcopy(dea)}
 
@@ -890,8 +1054,11 @@ def transfer_dea_registration(params: dict, db: dict, call_index: int) -> dict:
     if not _is_authenticated(db, "provider_auth"):
         return _auth_required("provider_auth")
     if not _is_authenticated(db, "otp_auth"):
-        return {"status": "error", "error_type": "second_factor_required",
-                "message": "DEA transfer requires OTP verification as a second factor"}
+        return {
+            "status": "error",
+            "error_type": "second_factor_required",
+            "message": "DEA transfer requires OTP verification as a second factor",
+        }
 
     provider = db.get("providers", {}).get(p.npi)
     if not provider:
@@ -899,19 +1066,35 @@ def transfer_dea_registration(params: dict, db: dict, call_index: int) -> dict:
 
     dea = provider.get("dea_registration")
     if not dea or dea.get("dea_number") != p.dea_number:
-        return {"status": "error", "error_type": "dea_record_not_found",
-                "message": f"DEA number {p.dea_number} not found for NPI {p.npi}"}
+        return {
+            "status": "error",
+            "error_type": "dea_record_not_found",
+            "message": f"DEA number {p.dea_number} not found for NPI {p.npi}",
+        }
 
     case_id = _make_case_id("DEA", provider.get("employee_id", p.npi))
-    dea.update({"facility_code": p.new_facility_code, "state_code": p.new_state_code,
-                "transfer_reason": p.transfer_reason, "effective_date": p.effective_date,
-                "transfer_case_id": case_id, "status": "transfer_pending"})
+    dea.update(
+        {
+            "facility_code": p.new_facility_code,
+            "state_code": p.new_state_code,
+            "transfer_reason": p.transfer_reason,
+            "effective_date": p.effective_date,
+            "transfer_case_id": case_id,
+            "status": "transfer_pending",
+        }
+    )
 
-    return {"status": "success", "npi": p.npi, "dea_number": p.dea_number,
-            "new_facility_code": p.new_facility_code, "new_state_code": p.new_state_code,
-            "transfer_reason": p.transfer_reason, "effective_date": p.effective_date,
-            "case_id": case_id,
-            "message": f"DEA transfer submitted. Case ID: {case_id}"}
+    return {
+        "status": "success",
+        "npi": p.npi,
+        "dea_number": p.dea_number,
+        "new_facility_code": p.new_facility_code,
+        "new_state_code": p.new_state_code,
+        "transfer_reason": p.transfer_reason,
+        "effective_date": p.effective_date,
+        "case_id": case_id,
+        "message": f"DEA transfer submitted. Case ID: {case_id}",
+    }
 
 
 def notify_pdmp(params: dict, db: dict, call_index: int) -> dict:
@@ -943,14 +1126,20 @@ def notify_pdmp(params: dict, db: dict, call_index: int) -> dict:
     if notif not in notifications:
         notifications.append(notif)
 
-    return {"status": "success", "npi": p.npi, "dea_number": p.dea_number,
-            "state_code": p.state_code, "facility_code": p.facility_code,
-            "message": f"PDMP notified for state {p.state_code}, facility {p.facility_code}"}
+    return {
+        "status": "success",
+        "npi": p.npi,
+        "dea_number": p.dea_number,
+        "state_code": p.state_code,
+        "facility_code": p.facility_code,
+        "message": f"PDMP notified for state {p.state_code}, facility {p.facility_code}",
+    }
 
 
 # ---------------------------------------------------------------------------
 # FLOW 6: FMLA / Leave of Absence Filing
 # ---------------------------------------------------------------------------
+
 
 def check_leave_eligibility(params: dict, db: dict, call_index: int) -> dict:
     """Check FMLA eligibility: 12 months tenure and 1250 hours worked in past year."""
@@ -968,16 +1157,22 @@ def check_leave_eligibility(params: dict, db: dict, call_index: int) -> dict:
 
     eligibility = emp.get("fmla_eligibility", {})
     if not eligibility.get("eligible"):
-        return {"status": "error", "error_type": "not_eligible",
-                "message": eligibility.get("reason", "Employee does not meet FMLA eligibility requirements"),
-                "months_employed": eligibility.get("months_employed"),
-                "hours_worked_past_year": eligibility.get("hours_worked_past_year")}
-
-    return {"status": "success", "eligible": True,
+        return {
+            "status": "error",
+            "error_type": "not_eligible",
+            "message": eligibility.get("reason", "Employee does not meet FMLA eligibility requirements"),
             "months_employed": eligibility.get("months_employed"),
             "hours_worked_past_year": eligibility.get("hours_worked_past_year"),
-            "fmla_weeks_remaining": eligibility.get("fmla_weeks_remaining"),
-            "message": "Employee is eligible for FMLA leave"}
+        }
+
+    return {
+        "status": "success",
+        "eligible": True,
+        "months_employed": eligibility.get("months_employed"),
+        "hours_worked_past_year": eligibility.get("hours_worked_past_year"),
+        "fmla_weeks_remaining": eligibility.get("fmla_weeks_remaining"),
+        "message": "Employee is eligible for FMLA leave",
+    }
 
 
 def submit_fmla_case(params: dict, db: dict, call_index: int) -> dict:
@@ -997,19 +1192,26 @@ def submit_fmla_case(params: dict, db: dict, call_index: int) -> dict:
         return _employee_not_found(p.covering_employee_id)
 
     case_id = _make_case_id("FMLA", p.employee_id)
-    leave_record = {"case_id": case_id, "leave_category": p.leave_category,
-                    "leave_start_date": p.leave_start_date,
-                    "leave_end_date": p.leave_end_date,
-                    "covering_employee_id": p.covering_employee_id,
-                    "status": "open"}
+    leave_record = {
+        "case_id": case_id,
+        "leave_category": p.leave_category,
+        "leave_start_date": p.leave_start_date,
+        "leave_end_date": p.leave_end_date,
+        "covering_employee_id": p.covering_employee_id,
+        "status": "open",
+    }
     emp.setdefault("leave_records", []).append(leave_record)
 
-    return {"status": "success", "employee_id": p.employee_id, "case_id": case_id,
-            "leave_category": p.leave_category,
-            "leave_start_date": p.leave_start_date,
-            "leave_end_date": p.leave_end_date,
-            "covering_employee_id": p.covering_employee_id,
-            "message": f"FMLA case opened. Case ID: {case_id}"}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "case_id": case_id,
+        "leave_category": p.leave_category,
+        "leave_start_date": p.leave_start_date,
+        "leave_end_date": p.leave_end_date,
+        "covering_employee_id": p.covering_employee_id,
+        "message": f"FMLA case opened. Case ID: {case_id}",
+    }
 
 
 def schedule_return_to_work_checkin(params: dict, db: dict, call_index: int) -> dict:
@@ -1030,29 +1232,35 @@ def schedule_return_to_work_checkin(params: dict, db: dict, call_index: int) -> 
         return _employee_not_found(p.employee_id)
 
     # Validate and book the slot
-    ok, err = _validate_and_book_slot(db, "return_to_work_checkin", p.department_code,
-                                      p.appointment_datetime)
+    ok, err = _validate_and_book_slot(db, "return_to_work_checkin", p.department_code, p.appointment_datetime)
     if not ok:
         return err
 
     appt_id = _make_case_id("RTW", p.employee_id)
-    emp.setdefault("scheduled_appointments", []).append({
-        "appointment_id": appt_id,
-        "type": "return_to_work_checkin",
-        "fmla_case_id": p.case_id,
-        "appointment_datetime": p.appointment_datetime,
-        "status": "scheduled",
-    })
-
-    return {"status": "success", "employee_id": p.employee_id,
-            "appointment_id": appt_id, "case_id": p.case_id,
+    emp.setdefault("scheduled_appointments", []).append(
+        {
+            "appointment_id": appt_id,
+            "type": "return_to_work_checkin",
+            "fmla_case_id": p.case_id,
             "appointment_datetime": p.appointment_datetime,
-            "message": f"Return-to-work check-in scheduled for {p.appointment_datetime}. Appointment ID: {appt_id}"}
+            "status": "scheduled",
+        }
+    )
+
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "appointment_id": appt_id,
+        "case_id": p.case_id,
+        "appointment_datetime": p.appointment_datetime,
+        "message": f"Return-to-work check-in scheduled for {p.appointment_datetime}. Appointment ID: {appt_id}",
+    }
 
 
 # ---------------------------------------------------------------------------
 # FLOW 7: Payroll Correction
 # ---------------------------------------------------------------------------
+
 
 def get_timesheet_record(params: dict, db: dict, call_index: int) -> dict:
     """Retrieve a timesheet entry for a specific shift."""
@@ -1066,11 +1274,13 @@ def get_timesheet_record(params: dict, db: dict, call_index: int) -> dict:
 
     shift = db.get("shifts", {}).get(p.shift_id)
     if not shift:
-        return {"status": "error", "error_type": "shift_not_found",
-                "message": f"Shift {p.shift_id} not found"}
+        return {"status": "error", "error_type": "shift_not_found", "message": f"Shift {p.shift_id} not found"}
     if shift.get("employee_id") != p.employee_id:
-        return {"status": "error", "error_type": "shift_not_owned",
-                "message": f"Shift {p.shift_id} does not belong to employee {p.employee_id}"}
+        return {
+            "status": "error",
+            "error_type": "shift_not_owned",
+            "message": f"Shift {p.shift_id} does not belong to employee {p.employee_id}",
+        }
 
     return {"status": "success", "shift": copy.deepcopy(shift)}
 
@@ -1090,22 +1300,33 @@ def check_correction_eligibility(params: dict, db: dict, call_index: int) -> dic
 
     shift = db.get("shifts", {}).get(p.shift_id)
     if not shift:
-        return {"status": "error", "error_type": "shift_not_found",
-                "message": f"Shift {p.shift_id} not found"}
+        return {"status": "error", "error_type": "shift_not_found", "message": f"Shift {p.shift_id} not found"}
     if shift.get("correction_status") == "pending":
-        return {"status": "error", "error_type": "correction_already_pending",
-                "message": "A correction is already pending for this shift"}
+        return {
+            "status": "error",
+            "error_type": "correction_already_pending",
+            "message": "A correction is already pending for this shift",
+        }
     if shift.get("pay_period_closed"):
-        return {"status": "error", "error_type": "pay_period_closed",
-                "message": "The pay period for this shift is closed and cannot be corrected"}
+        return {
+            "status": "error",
+            "error_type": "pay_period_closed",
+            "message": "The pay period for this shift is closed and cannot be corrected",
+        }
     if shift.get("status") not in ("logged", "approved"):
-        return {"status": "error", "error_type": "shift_not_logged",
-                "message": "Shift must be in logged or approved status to submit a correction"}
+        return {
+            "status": "error",
+            "error_type": "shift_not_logged",
+            "message": "Shift must be in logged or approved status to submit a correction",
+        }
 
-    return {"status": "success", "eligible": True,
-            "shift_id": p.shift_id,
-            "logged_hours": shift.get("hours_logged"),
-            "message": "Shift is eligible for payroll correction"}
+    return {
+        "status": "success",
+        "eligible": True,
+        "shift_id": p.shift_id,
+        "logged_hours": shift.get("hours_logged"),
+        "message": "Shift is eligible for payroll correction",
+    }
 
 
 def submit_payroll_correction(params: dict, db: dict, call_index: int) -> dict:
@@ -1120,18 +1341,29 @@ def submit_payroll_correction(params: dict, db: dict, call_index: int) -> dict:
 
     shift = db.get("shifts", {}).get(p.shift_id)
     if not shift:
-        return {"status": "error", "error_type": "shift_not_found",
-                "message": f"Shift {p.shift_id} not found"}
+        return {"status": "error", "error_type": "shift_not_found", "message": f"Shift {p.shift_id} not found"}
 
     case_id = _make_case_id("PAY", p.employee_id)
-    shift.update({"corrected_hours": p.corrected_hours, "correction_type": p.correction_type,
-                  "pay_period_end_date": p.pay_period_end_date,
-                  "correction_case_id": case_id, "correction_status": "pending"})
+    shift.update(
+        {
+            "corrected_hours": p.corrected_hours,
+            "correction_type": p.correction_type,
+            "pay_period_end_date": p.pay_period_end_date,
+            "correction_case_id": case_id,
+            "correction_status": "pending",
+        }
+    )
 
-    return {"status": "success", "employee_id": p.employee_id, "shift_id": p.shift_id,
-            "correction_type": p.correction_type, "corrected_hours": p.corrected_hours,
-            "pay_period_end_date": p.pay_period_end_date, "case_id": case_id,
-            "message": f"Payroll correction submitted. Case ID: {case_id}"}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "shift_id": p.shift_id,
+        "correction_type": p.correction_type,
+        "corrected_hours": p.corrected_hours,
+        "pay_period_end_date": p.pay_period_end_date,
+        "case_id": case_id,
+        "message": f"Payroll correction submitted. Case ID: {case_id}",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1139,6 +1371,7 @@ def submit_payroll_correction(params: dict, db: dict, call_index: int) -> dict:
 #
 # New ordering: schedule competency review BEFORE reactivating privileges.
 # ---------------------------------------------------------------------------
+
 
 def get_privilege_record(params: dict, db: dict, call_index: int) -> dict:
     """Retrieve a provider's clinical privilege record."""
@@ -1156,8 +1389,11 @@ def get_privilege_record(params: dict, db: dict, call_index: int) -> dict:
 
     privileges = provider.get("privileges")
     if not privileges:
-        return {"status": "error", "error_type": "privilege_record_not_found",
-                "message": f"No privilege record found for NPI {p.npi}"}
+        return {
+            "status": "error",
+            "error_type": "privilege_record_not_found",
+            "message": f"No privilege record found for NPI {p.npi}",
+        }
 
     return {"status": "success", "privileges": copy.deepcopy(privileges)}
 
@@ -1177,15 +1413,24 @@ def check_reactivation_eligibility(params: dict, db: dict, call_index: int) -> d
         return _provider_not_found(p.npi)
 
     if provider.get("clearance_code") != p.clearance_code:
-        return {"status": "error", "error_type": "invalid_clearance_code",
-                "message": "Clearance code does not match occupational health records"}
+        return {
+            "status": "error",
+            "error_type": "invalid_clearance_code",
+            "message": "Clearance code does not match occupational health records",
+        }
 
-    suspended = [prv["code"] for prv in provider.get("privileges", {}).get("privilege_list", [])
-                 if prv.get("status") == "suspended"]
+    suspended = [
+        prv["code"]
+        for prv in provider.get("privileges", {}).get("privilege_list", [])
+        if prv.get("status") == "suspended"
+    ]
 
-    return {"status": "success", "eligible": True,
-            "suspended_privilege_codes": suspended,
-            "message": f"Clearance verified. {len(suspended)} suspended privilege(s) available for reactivation"}
+    return {
+        "status": "success",
+        "eligible": True,
+        "suspended_privilege_codes": suspended,
+        "message": f"Clearance verified. {len(suspended)} suspended privilege(s) available for reactivation",
+    }
 
 
 def schedule_competency_review(params: dict, db: dict, call_index: int) -> dict:
@@ -1206,24 +1451,29 @@ def schedule_competency_review(params: dict, db: dict, call_index: int) -> dict:
         return _provider_not_found(p.npi)
 
     # Validate and book the slot
-    ok, err = _validate_and_book_slot(db, "competency_review", p.department_code,
-                                      p.appointment_datetime)
+    ok, err = _validate_and_book_slot(db, "competency_review", p.department_code, p.appointment_datetime)
     if not ok:
         return err
 
     appt_id = _make_case_id("CMP", provider.get("employee_id", p.npi))
-    provider.setdefault("scheduled_appointments", []).append({
-        "appointment_id": appt_id,
-        "type": "competency_review",
-        "department_code": p.department_code,
-        "appointment_datetime": p.appointment_datetime,
-        "status": "scheduled",
-    })
-
-    return {"status": "success", "npi": p.npi, "appointment_id": appt_id,
+    provider.setdefault("scheduled_appointments", []).append(
+        {
+            "appointment_id": appt_id,
+            "type": "competency_review",
             "department_code": p.department_code,
             "appointment_datetime": p.appointment_datetime,
-            "message": f"Competency review scheduled for {p.appointment_datetime}. Appointment ID: {appt_id}"}
+            "status": "scheduled",
+        }
+    )
+
+    return {
+        "status": "success",
+        "npi": p.npi,
+        "appointment_id": appt_id,
+        "department_code": p.department_code,
+        "appointment_datetime": p.appointment_datetime,
+        "message": f"Competency review scheduled for {p.appointment_datetime}. Appointment ID: {appt_id}",
+    }
 
 
 def reactivate_privileges(params: dict, db: dict, call_index: int) -> dict:
@@ -1245,8 +1495,11 @@ def reactivate_privileges(params: dict, db: dict, call_index: int) -> dict:
         return _provider_not_found(p.npi)
 
     if provider.get("clearance_code") != p.clearance_code:
-        return {"status": "error", "error_type": "invalid_clearance_code",
-                "message": "Clearance code does not match occupational health records"}
+        return {
+            "status": "error",
+            "error_type": "invalid_clearance_code",
+            "message": "Clearance code does not match occupational health records",
+        }
 
     privilege_list = provider.get("privileges", {}).get("privilege_list", [])
     activated, not_found = [], []
@@ -1259,16 +1512,23 @@ def reactivate_privileges(params: dict, db: dict, call_index: int) -> dict:
             not_found.append(code)
 
     if not_found:
-        return {"status": "error", "error_type": "privilege_not_found",
-                "message": f"Privilege code(s) not found: {not_found}"}
+        return {
+            "status": "error",
+            "error_type": "privilege_not_found",
+            "message": f"Privilege code(s) not found: {not_found}",
+        }
 
     case_id = _make_case_id("PRV", provider.get("employee_id", p.npi))
     provider["privileges"]["reactivation_case_id"] = case_id
 
-    return {"status": "success", "npi": p.npi, "activated_privileges": activated,
-            "leave_type_on_record": p.leave_type_on_record,
-            "case_id": case_id,
-            "message": f"Privileges reactivated. Case ID: {case_id}"}
+    return {
+        "status": "success",
+        "npi": p.npi,
+        "activated_privileges": activated,
+        "leave_type_on_record": p.leave_type_on_record,
+        "case_id": case_id,
+        "message": f"Privileges reactivated. Case ID: {case_id}",
+    }
 
 
 def update_ehr_access(params: dict, db: dict, call_index: int) -> dict:
@@ -1288,14 +1548,19 @@ def update_ehr_access(params: dict, db: dict, call_index: int) -> dict:
     provider["ehr_access_status"] = p.access_change_type
     provider["ehr_access_case_id"] = p.case_id
 
-    return {"status": "success", "npi": p.npi, "case_id": p.case_id,
-            "access_change_type": p.access_change_type,
-            "message": f"EHR access updated to {p.access_change_type}"}
+    return {
+        "status": "success",
+        "npi": p.npi,
+        "case_id": p.case_id,
+        "access_change_type": p.access_change_type,
+        "message": f"EHR access updated to {p.access_change_type}",
+    }
 
 
 # ---------------------------------------------------------------------------
 # FLOW 9: On-Call Schedule Registration
 # ---------------------------------------------------------------------------
+
 
 def get_oncall_schedule(params: dict, db: dict, call_index: int) -> dict:
     """Retrieve the current on-call schedule registrations for an employee and unit."""
@@ -1311,9 +1576,12 @@ def get_oncall_schedule(params: dict, db: dict, call_index: int) -> dict:
     if not emp:
         return _employee_not_found(p.employee_id)
 
-    return {"status": "success", "employee_id": p.employee_id,
-            "unit_code": p.unit_code,
-            "oncall_schedule": copy.deepcopy(emp.get("oncall_schedule", {}))}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "unit_code": p.unit_code,
+        "oncall_schedule": copy.deepcopy(emp.get("oncall_schedule", {})),
+    }
 
 
 def check_oncall_eligibility(params: dict, db: dict, call_index: int) -> dict:
@@ -1335,20 +1603,30 @@ def check_oncall_eligibility(params: dict, db: dict, call_index: int) -> dict:
         return _employee_not_found(p.employee_id)
 
     if emp.get("employment_status") == "on_leave":
-        return {"status": "error", "error_type": "employee_on_leave",
-                "message": "Employee is on leave and cannot register for on-call shifts"}
+        return {
+            "status": "error",
+            "error_type": "employee_on_leave",
+            "message": "Employee is on leave and cannot register for on-call shifts",
+        }
 
     unit_reqs = db.get("unit_cert_requirements", {}).get(p.unit_code, [])
     emp_certs = set(emp.get("certifications", []))
     missing = sorted(set(unit_reqs) - emp_certs)
     if missing:
-        return {"status": "error", "error_type": "certification_missing",
-                "message": f"Missing certifications for unit {p.unit_code}: {missing}",
-                "missing_certs": missing}
+        return {
+            "status": "error",
+            "error_type": "certification_missing",
+            "message": f"Missing certifications for unit {p.unit_code}: {missing}",
+            "missing_certs": missing,
+        }
 
-    return {"status": "success", "eligible": True,
-            "employee_id": p.employee_id, "unit_code": p.unit_code,
-            "message": "Employee is eligible to register for on-call on this unit"}
+    return {
+        "status": "success",
+        "eligible": True,
+        "employee_id": p.employee_id,
+        "unit_code": p.unit_code,
+        "message": "Employee is eligible to register for on-call on this unit",
+    }
 
 
 def register_oncall_availability(params: dict, db: dict, call_index: int) -> dict:
@@ -1367,29 +1645,42 @@ def register_oncall_availability(params: dict, db: dict, call_index: int) -> dic
 
     for bd in p.blackout_dates:
         if not (p.availability_start_date <= bd <= p.availability_end_date):
-            return {"status": "error", "error_type": "invalid_blackout_date",
-                    "message": f"Blackout date {bd} is outside the availability window "
-                               f"({p.availability_start_date} – {p.availability_end_date})"}
+            return {
+                "status": "error",
+                "error_type": "invalid_blackout_date",
+                "message": f"Blackout date {bd} is outside the availability window "
+                f"({p.availability_start_date} – {p.availability_end_date})",
+            }
 
     reg_id = _make_case_id("ONC", p.employee_id)
-    registration = {"registration_id": reg_id, "unit_code": p.unit_code,
-                    "availability_start_date": p.availability_start_date,
-                    "availability_end_date": p.availability_end_date,
-                    "oncall_tier": p.oncall_tier,
-                    "blackout_dates": p.blackout_dates, "status": "registered"}
+    registration = {
+        "registration_id": reg_id,
+        "unit_code": p.unit_code,
+        "availability_start_date": p.availability_start_date,
+        "availability_end_date": p.availability_end_date,
+        "oncall_tier": p.oncall_tier,
+        "blackout_dates": p.blackout_dates,
+        "status": "registered",
+    }
     emp.setdefault("oncall_schedule", {}).setdefault("registrations", []).append(registration)
 
-    return {"status": "success", "employee_id": p.employee_id,
-            "registration_id": reg_id, "unit_code": p.unit_code,
-            "availability_start_date": p.availability_start_date,
-            "availability_end_date": p.availability_end_date,
-            "oncall_tier": p.oncall_tier, "blackout_dates": p.blackout_dates,
-            "message": f"On-call availability registered. Registration ID: {reg_id}"}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "registration_id": reg_id,
+        "unit_code": p.unit_code,
+        "availability_start_date": p.availability_start_date,
+        "availability_end_date": p.availability_end_date,
+        "oncall_tier": p.oncall_tier,
+        "blackout_dates": p.blackout_dates,
+        "message": f"On-call availability registered. Registration ID: {reg_id}",
+    }
 
 
 # ---------------------------------------------------------------------------
 # FLOW 10: I-9 Verification
 # ---------------------------------------------------------------------------
+
 
 def get_i9_record(params: dict, db: dict, call_index: int) -> dict:
     """Retrieve the I-9 verification record for an employee."""
@@ -1407,8 +1698,11 @@ def get_i9_record(params: dict, db: dict, call_index: int) -> dict:
 
     i9 = emp.get("i9_record")
     if not i9:
-        return {"status": "error", "error_type": "i9_record_not_found",
-                "message": f"No I-9 record found for {p.employee_id}"}
+        return {
+            "status": "error",
+            "error_type": "i9_record_not_found",
+            "message": f"No I-9 record found for {p.employee_id}",
+        }
 
     return {"status": "success", "i9_record": copy.deepcopy(i9)}
 
@@ -1429,23 +1723,31 @@ def submit_i9_verification(params: dict, db: dict, call_index: int) -> dict:
 
     case_id = _make_case_id("I9V", p.employee_id)
     i9 = emp.setdefault("i9_record", {})
-    i9.update({"verification_action": p.verification_action,
-               "document_list_type": p.document_list_type,
-               "document_type_code": p.document_type_code,
-               "document_number": p.document_number,
-               "document_expiration_date": p.document_expiration_date,
-               "issuing_country_code": p.issuing_country_code,
-               "verification_status": "verified", "case_id": case_id})
-
-    return {"status": "success", "employee_id": p.employee_id,
+    i9.update(
+        {
             "verification_action": p.verification_action,
             "document_list_type": p.document_list_type,
             "document_type_code": p.document_type_code,
             "document_number": p.document_number,
             "document_expiration_date": p.document_expiration_date,
             "issuing_country_code": p.issuing_country_code,
+            "verification_status": "verified",
             "case_id": case_id,
-            "message": f"I-9 {p.verification_action} completed. Case ID: {case_id}"}
+        }
+    )
+
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "verification_action": p.verification_action,
+        "document_list_type": p.document_list_type,
+        "document_type_code": p.document_type_code,
+        "document_number": p.document_number,
+        "document_expiration_date": p.document_expiration_date,
+        "issuing_country_code": p.issuing_country_code,
+        "case_id": case_id,
+        "message": f"I-9 {p.verification_action} completed. Case ID: {case_id}",
+    }
 
 
 def notify_hr_compliance(params: dict, db: dict, call_index: int) -> dict:
@@ -1472,14 +1774,19 @@ def notify_hr_compliance(params: dict, db: dict, call_index: int) -> dict:
     if notif not in notifications:
         notifications.append(notif)
 
-    return {"status": "success", "employee_id": p.employee_id,
-            "case_id": p.case_id, "notification_type": p.notification_type,
-            "message": f"HR compliance notified: {p.notification_type}"}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "case_id": p.case_id,
+        "notification_type": p.notification_type,
+        "message": f"HR compliance notified: {p.notification_type}",
+    }
 
 
 # ---------------------------------------------------------------------------
 # FLOW 11: Visa Dependent Addition
 # ---------------------------------------------------------------------------
+
 
 def get_visa_record(params: dict, db: dict, call_index: int) -> dict:
     """Retrieve visa sponsorship record for an employee."""
@@ -1497,8 +1804,11 @@ def get_visa_record(params: dict, db: dict, call_index: int) -> dict:
 
     visa = emp.get("visa_record")
     if not visa or visa.get("petition_number") != p.visa_petition_number:
-        return {"status": "error", "error_type": "visa_record_not_found",
-                "message": f"Visa petition {p.visa_petition_number} not found for {p.employee_id}"}
+        return {
+            "status": "error",
+            "error_type": "visa_record_not_found",
+            "message": f"Visa petition {p.visa_petition_number} not found for {p.employee_id}",
+        }
 
     return {"status": "success", "visa_record": copy.deepcopy(visa)}
 
@@ -1519,28 +1829,38 @@ def add_visa_dependent(params: dict, db: dict, call_index: int) -> dict:
 
     visa = emp.get("visa_record")
     if not visa or visa.get("petition_number") != p.visa_petition_number:
-        return {"status": "error", "error_type": "visa_record_not_found",
-                "message": f"Visa petition {p.visa_petition_number} not found for {p.employee_id}"}
+        return {
+            "status": "error",
+            "error_type": "visa_record_not_found",
+            "message": f"Visa petition {p.visa_petition_number} not found for {p.employee_id}",
+        }
 
     amendment_id = _make_case_id("VISA", p.employee_id)
-    dependent = {"first_name": p.dependent_first_name, "last_name": p.dependent_last_name,
-                 "relationship": p.relationship,
-                 "date_of_birth": p.dependent_date_of_birth,
-                 "country_of_birth": p.dependent_country_of_birth,
-                 "uscis_receipt_number": p.uscis_receipt_number,
-                 "amendment_id": amendment_id, "status": "pending"}
+    dependent = {
+        "first_name": p.dependent_first_name,
+        "last_name": p.dependent_last_name,
+        "relationship": p.relationship,
+        "date_of_birth": p.dependent_date_of_birth,
+        "country_of_birth": p.dependent_country_of_birth,
+        "uscis_receipt_number": p.uscis_receipt_number,
+        "amendment_id": amendment_id,
+        "status": "pending",
+    }
     visa.setdefault("dependents", []).append(dependent)
     visa["amendment_id"] = amendment_id
 
-    return {"status": "success", "employee_id": p.employee_id,
-            "visa_petition_number": p.visa_petition_number,
-            "dependent_name": f"{p.dependent_first_name} {p.dependent_last_name}",
-            "relationship": p.relationship,
-            "dependent_date_of_birth": p.dependent_date_of_birth,
-            "dependent_country_of_birth": p.dependent_country_of_birth,
-            "uscis_receipt_number": p.uscis_receipt_number,
-            "amendment_id": amendment_id,
-            "message": f"Dependent added to petition {p.visa_petition_number}. Amendment ID: {amendment_id}"}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "visa_petition_number": p.visa_petition_number,
+        "dependent_name": f"{p.dependent_first_name} {p.dependent_last_name}",
+        "relationship": p.relationship,
+        "dependent_date_of_birth": p.dependent_date_of_birth,
+        "dependent_country_of_birth": p.dependent_country_of_birth,
+        "uscis_receipt_number": p.uscis_receipt_number,
+        "amendment_id": amendment_id,
+        "message": f"Dependent added to petition {p.visa_petition_number}. Amendment ID: {amendment_id}",
+    }
 
 
 def notify_immigration_counsel(params: dict, db: dict, call_index: int) -> dict:
@@ -1567,10 +1887,13 @@ def notify_immigration_counsel(params: dict, db: dict, call_index: int) -> dict:
     if notif not in notifications:
         notifications.append(notif)
 
-    return {"status": "success", "employee_id": p.employee_id,
-            "visa_petition_number": p.visa_petition_number,
-            "notification_type": p.notification_type,
-            "message": f"Immigration counsel notified: {p.notification_type}"}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "visa_petition_number": p.visa_petition_number,
+        "notification_type": p.notification_type,
+        "message": f"Immigration counsel notified: {p.notification_type}",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1581,9 +1904,11 @@ def notify_immigration_counsel(params: dict, db: dict, call_index: int) -> dict:
 #   - "shift" (nurses, doctors, techs): count scheduled shifts in range
 # ---------------------------------------------------------------------------
 
+
 def _count_weekdays(start: str, end: str) -> list[str]:
     """Return list of weekday date strings (Mon-Fri) in [start, end] inclusive."""
     from datetime import date, timedelta
+
     s = date.fromisoformat(start)
     e = date.fromisoformat(end)
     days = []
@@ -1626,15 +1951,21 @@ def get_pto_balance(params: dict, db: dict, call_index: int) -> dict:
 
     balances = emp.get("pto_balances")
     if not balances:
-        return {"status": "error", "error_type": "pto_record_not_found",
-                "message": f"No PTO balance record found for {p.employee_id}"}
+        return {
+            "status": "error",
+            "error_type": "pto_record_not_found",
+            "message": f"No PTO balance record found for {p.employee_id}",
+        }
 
     schedule_type = emp.get("schedule_type", "standard")
 
-    return {"status": "success", "employee_id": p.employee_id,
-            "schedule_type": schedule_type,
-            "pto_balances": copy.deepcopy(balances),
-            "message": f"PTO balances retrieved. Schedule type: {schedule_type}"}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "schedule_type": schedule_type,
+        "pto_balances": copy.deepcopy(balances),
+        "message": f"PTO balances retrieved. Schedule type: {schedule_type}",
+    }
 
 
 def check_pto_eligibility(params: dict, db: dict, call_index: int) -> dict:
@@ -1663,8 +1994,11 @@ def check_pto_eligibility(params: dict, db: dict, call_index: int) -> dict:
         return _employee_not_found(p.employee_id)
 
     if p.start_date > p.end_date:
-        return {"status": "error", "error_type": "invalid_date_range",
-                "message": "Start date must be on or before end date"}
+        return {
+            "status": "error",
+            "error_type": "invalid_date_range",
+            "message": "Start date must be on or before end date",
+        }
 
     balances = emp.get("pto_balances", {})
     current_balance = balances.get(p.pto_type, 0.0)
@@ -1684,44 +2018,55 @@ def check_pto_eligibility(params: dict, db: dict, call_index: int) -> dict:
 
     # Check balance
     if pto_days_required > current_balance:
-        return {"status": "error", "error_type": "insufficient_pto_balance",
-                "message": f"Insufficient {p.pto_type} balance: {pto_days_required} days "
-                           f"required but only {current_balance} available",
-                "pto_days_required": pto_days_required,
-                "current_balance": current_balance}
+        return {
+            "status": "error",
+            "error_type": "insufficient_pto_balance",
+            "message": f"Insufficient {p.pto_type} balance: {pto_days_required} days "
+            f"required but only {current_balance} available",
+            "pto_days_required": pto_days_required,
+            "current_balance": current_balance,
+        }
 
     # Check department blackout dates
     dept = emp.get("department_code", "")
     blackout_dates = set(db.get("department_blackout_dates", {}).get(dept, []))
     blocked = sorted(set(working_days) & blackout_dates)
     if blocked:
-        return {"status": "error", "error_type": "blackout_date_conflict",
-                "message": f"Requested dates overlap with department blackout dates: {blocked}",
-                "conflicting_dates": blocked}
+        return {
+            "status": "error",
+            "error_type": "blackout_date_conflict",
+            "message": f"Requested dates overlap with department blackout dates: {blocked}",
+            "conflicting_dates": blocked,
+        }
 
     # Check overlap with existing PTO requests
     existing = emp.get("pto_requests", [])
     for req in existing:
         if req.get("status") in ("pending", "approved"):
             if p.start_date <= req.get("end_date", "") and p.end_date >= req.get("start_date", ""):
-                return {"status": "error", "error_type": "pto_overlap",
-                        "message": f"Requested dates overlap with existing PTO request "
-                                   f"{req.get('start_date')} to {req.get('end_date')} "
-                                   f"(case {req.get('case_id')})",
-                        "overlapping_case_id": req.get("case_id")}
+                return {
+                    "status": "error",
+                    "error_type": "pto_overlap",
+                    "message": f"Requested dates overlap with existing PTO request "
+                    f"{req.get('start_date')} to {req.get('end_date')} "
+                    f"(case {req.get('case_id')})",
+                    "overlapping_case_id": req.get("case_id"),
+                }
 
     remaining = current_balance - pto_days_required
 
-    return {"status": "success", "eligible": True,
-            "employee_id": p.employee_id,
-            "schedule_type": schedule_type,
-            "pto_type": p.pto_type,
-            "pto_days_required": pto_days_required,
-            "working_days_in_range": working_days,
-            "current_balance": current_balance,
-            "remaining_after": remaining,
-            "message": f"Eligible. {pto_days_required} {p.pto_type} day(s) required, "
-                       f"{remaining} remaining after."}
+    return {
+        "status": "success",
+        "eligible": True,
+        "employee_id": p.employee_id,
+        "schedule_type": schedule_type,
+        "pto_type": p.pto_type,
+        "pto_days_required": pto_days_required,
+        "working_days_in_range": working_days,
+        "current_balance": current_balance,
+        "remaining_after": remaining,
+        "message": f"Eligible. {pto_days_required} {p.pto_type} day(s) required, {remaining} remaining after.",
+    }
 
 
 def submit_pto_request(params: dict, db: dict, call_index: int) -> dict:
@@ -1743,8 +2088,11 @@ def submit_pto_request(params: dict, db: dict, call_index: int) -> dict:
         return _employee_not_found(p.employee_id)
 
     if p.start_date > p.end_date:
-        return {"status": "error", "error_type": "invalid_date_range",
-                "message": "Start date must be on or before end date"}
+        return {
+            "status": "error",
+            "error_type": "invalid_date_range",
+            "message": "Start date must be on or before end date",
+        }
 
     balances = emp.get("pto_balances", {})
     current_balance = balances.get(p.pto_type, 0.0)
@@ -1761,9 +2109,12 @@ def submit_pto_request(params: dict, db: dict, call_index: int) -> dict:
     pto_days = float(len(working_days))
 
     if pto_days > current_balance:
-        return {"status": "error", "error_type": "insufficient_pto_balance",
-                "message": f"Insufficient {p.pto_type} balance: {pto_days} days "
-                           f"required but only {current_balance} available"}
+        return {
+            "status": "error",
+            "error_type": "insufficient_pto_balance",
+            "message": f"Insufficient {p.pto_type} balance: {pto_days} days "
+            f"required but only {current_balance} available",
+        }
 
     # Deduct from balance
     balances[p.pto_type] = current_balance - pto_days
@@ -1780,12 +2131,15 @@ def submit_pto_request(params: dict, db: dict, call_index: int) -> dict:
     }
     emp.setdefault("pto_requests", []).append(pto_record)
 
-    return {"status": "success", "employee_id": p.employee_id,
-            "case_id": case_id,
-            "pto_type": p.pto_type,
-            "start_date": p.start_date, "end_date": p.end_date,
-            "pto_days_deducted": pto_days,
-            "working_days": working_days,
-            "remaining_balance": balances[p.pto_type],
-            "message": f"PTO request submitted. {pto_days} {p.pto_type} day(s) deducted. "
-                       f"Case ID: {case_id}"}
+    return {
+        "status": "success",
+        "employee_id": p.employee_id,
+        "case_id": case_id,
+        "pto_type": p.pto_type,
+        "start_date": p.start_date,
+        "end_date": p.end_date,
+        "pto_days_deducted": pto_days,
+        "working_days": working_days,
+        "remaining_balance": balances[p.pto_type],
+        "message": f"PTO request submitted. {pto_days} {p.pto_type} day(s) deducted. Case ID: {case_id}",
+    }

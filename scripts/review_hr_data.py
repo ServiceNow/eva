@@ -21,8 +21,8 @@ FEEDBACK_DIR = ROOT / "hr_review_feedback"
 st.set_page_config(page_title="HR Data Review", layout="wide")
 
 TOOL_TYPE_COLORS = {
-    "auth": "#FF9800",   # amber
-    "read": "#4CAF50",   # green
+    "auth": "#FF9800",  # amber
+    "read": "#4CAF50",  # green
     "write": "#F44336",  # red
 }
 
@@ -87,7 +87,8 @@ def save_feedback(record_id: str, feedback: dict):
 
 # ── Trace helpers ────────────────────────────────────────────────────────────
 def extract_write_tool_calls(
-    trace: list[dict], tool_type_map: dict[str, str],
+    trace: list[dict],
+    tool_type_map: dict[str, str],
 ) -> list[dict]:
     """Extract write tool_call events from the expected trace."""
     calls = []
@@ -95,10 +96,12 @@ def extract_write_tool_calls(
         if msg.get("event_type") == "tool_call":
             name = msg.get("tool_name", "unknown")
             if tool_type_map.get(name) == "write":
-                calls.append({
-                    "name": name,
-                    "params": msg.get("params", {}),
-                })
+                calls.append(
+                    {
+                        "name": name,
+                        "params": msg.get("params", {}),
+                    }
+                )
     return calls
 
 
@@ -125,7 +128,7 @@ def render_trace(trace: list[dict], tool_type_map: dict[str, str]):
                 st.markdown(
                     f'<span style="background:{color};color:white;padding:2px 8px;'
                     f'border-radius:4px;font-size:0.75em;font-weight:bold">{label}</span> '
-                    f'**`{name}`**',
+                    f"**`{name}`**",
                     unsafe_allow_html=True,
                 )
                 if params:
@@ -142,7 +145,7 @@ def render_trace(trace: list[dict], tool_type_map: dict[str, str]):
                 st.markdown(
                     f'<span style="background:{color};color:white;padding:2px 8px;'
                     f'border-radius:4px;font-size:0.75em;font-weight:bold">{label}</span> '
-                    f'`{name}` — **{status}**',
+                    f"`{name}` — **{status}**",
                     unsafe_allow_html=True,
                 )
                 if response:
@@ -192,10 +195,18 @@ if st.session_state.get("_prev_record_id") != current_id:
         st.session_state["general_comments"] = gen.get("comments", "")
     else:
         for key in [
-            "q_reflects", "q_realistic", "q_complete", "q_raw_info",
-            "user_goal_comments", "q_unwanted_mods", "q_missing_mods",
-            "q_alt_path", "trace_comments", "q_mods_sensible",
-            "diff_comments", "general_comments",
+            "q_reflects",
+            "q_realistic",
+            "q_complete",
+            "q_raw_info",
+            "user_goal_comments",
+            "q_unwanted_mods",
+            "q_missing_mods",
+            "q_alt_path",
+            "trace_comments",
+            "q_mods_sensible",
+            "diff_comments",
+            "general_comments",
         ]:
             st.session_state[key] = ""
 
@@ -243,22 +254,26 @@ with st.sidebar:
     st.markdown("#### User Goal")
     q_reflects = st.selectbox(
         "Does it reflect intended scenario context?",
-        YES_NO_UNCLEAR, key="q_reflects",
+        YES_NO_UNCLEAR,
+        key="q_reflects",
         help="We are trying to test a specific scenario that is described by the scenario context. We just want to check that the user goal is aligned with that scenario. Intents that are not meant to be satisfiable should be in nice to have, whereas intents that are satisfiable should be in must have. Adversarial intents should always be in nice to have.",
     )
     q_realistic = st.selectbox(
         "Is it sufficiently realistic — could a caller reasonably ask this over the phone?",
-        YES_NO_UNCLEAR, key="q_realistic",
+        YES_NO_UNCLEAR,
+        key="q_realistic",
         help="Just a quick check that the user goal is sufficiently realistic to include in this dataset (i.e. is topical, sounds reasonable).",
     )
     q_complete = st.selectbox(
         "Is it complete/deterministic?",
-        YES_NO_UNCLEAR, key="q_complete",
+        YES_NO_UNCLEAR,
+        key="q_complete",
         help="Does this user goal cover all directions the agent might go in? Is there enough information on how to respond to different scenarios, are the resolution and failure conditions sufficiently clear and distinct from each other, etc. You may need to read the trace and check the expected flow to understand this one.",
     )
     q_raw_info = st.selectbox(
         "Is all raw info present? (codes, names, etc.)",
-        YES_NO_UNCLEAR, key="q_raw_info",
+        YES_NO_UNCLEAR,
+        key="q_raw_info",
         help="Does the user info contain all the required raw information that the caller would need to do the flow? You may need to read the trace and check the expected flow to understand this one.",
     )
     user_goal_comments = st.text_area(
@@ -275,14 +290,16 @@ with st.sidebar:
     if write_tool_calls:
         st.markdown("**Per write tool call:**")
         for i, tc in enumerate(write_tool_calls):
-            st.markdown(f'`{tc["name"]}`')
+            st.markdown(f"`{tc['name']}`")
             st.selectbox(
-                "Inputs grounded?", YES_NO_NA,
+                "Inputs grounded?",
+                YES_NO_NA,
                 key=f"wtc_{current_id}_{i}_grounded",
                 help="Can this tool call's inputs be inferred from previous tool call output, user info, or policies?",
             )
             st.selectbox(
-                "Consistent with policies?", YES_NO_NA,
+                "Consistent with policies?",
+                YES_NO_NA,
                 key=f"wtc_{current_id}_{i}_policy",
                 help="Is this tool call consistent with the agent policies?",
             )
@@ -294,21 +311,26 @@ with st.sidebar:
     st.markdown("**Overall trace:**")
     q_unwanted_mods = st.selectbox(
         "Modification tools that shouldn't have happened?",
-        YES_NO, key="q_unwanted_mods",
+        YES_NO,
+        key="q_unwanted_mods",
         help="Are there any modification/write tools in the trace that should not have happened (they violate policies, aren't required for this flow, etc)?",
     )
     q_missing_mods = st.selectbox(
         "Missing modification tools?",
-        YES_NO, key="q_missing_mods",
+        YES_NO,
+        key="q_missing_mods",
         help="Are there modification tools we expect to see in this flow that are missing? For example maybe a missing notification tool that's in the expected flow sequence, etc.",
     )
     q_alt_path = st.selectbox(
         "Another way to reach a different end DB state (following policies)?",
-        YES_NO_UNCLEAR, key="q_alt_path",
+        YES_NO_UNCLEAR,
+        key="q_alt_path",
         help="Is there a different sequence of modification tools or different parameters that could be used to still arrive at a correct end outcome? If so this is a problem because we need there to only be 1 correct answer.",
     )
     trace_comments = st.text_area(
-        "Trace comments", key="trace_comments", height=80,
+        "Trace comments",
+        key="trace_comments",
+        height=80,
         help="Any comments you have about the trace.",
     )
 
@@ -317,11 +339,14 @@ with st.sidebar:
     st.markdown("#### Diff")
     q_mods_sensible = st.selectbox(
         "Do all modifications make sense given tool calls?",
-        YES_NO_UNCLEAR, key="q_mods_sensible",
+        YES_NO_UNCLEAR,
+        key="q_mods_sensible",
         help="This shows you the comparison between the initial database and the expected database after the correct modification tool calls have happened. Check whether all the changes in the diff are expected given the tool call sequence.",
     )
     diff_comments = st.text_area(
-        "Diff comments", key="diff_comments", height=80,
+        "Diff comments",
+        key="diff_comments",
+        height=80,
         help="Any comments you have about the diff. If you see changes that don't make sense given the tool sequence, please flag them here.",
     )
 
@@ -330,7 +355,8 @@ with st.sidebar:
     st.markdown("#### General")
     general_comments = st.text_area(
         "Any other comments or issues",
-        key="general_comments", height=100,
+        key="general_comments",
+        height=100,
         help="Any other comments or concerns about this record that don't fit into the sections above.",
     )
 
@@ -382,11 +408,12 @@ with st.sidebar:
 st.title(f"Record {current_id}")
 st.info(record.get("scenario_context", "No scenario context available."))
 
+
 # ── Reference expander ───────────────────────────────────────────────────────
 def _render_tools(tool_list: list[dict]):
     for tool in tool_list:
         name = tool["name"]
-        st.markdown(f'**`{name}`** — {tool.get("description", "")}')
+        st.markdown(f"**`{name}`** — {tool.get('description', '')}")
         req = tool.get("required_parameters", [])
         opt = tool.get("optional_parameters", [])
         if req or opt:
@@ -397,6 +424,7 @@ def _render_tools(tool_list: list[dict]):
                 params_md += f"- *`{p['name']}`* ({p['type']}, optional): {p['description']}\n"
             st.markdown(params_md)
         st.divider()
+
 
 tools_by_type: dict[str, list[dict]] = {"auth": [], "read": [], "write": []}
 for tool in tools:
@@ -503,59 +531,51 @@ with st.expander("Scenario DB Diff (Initial vs Expected Final)", expanded=True):
     else:
         initial_json = json.dumps(initial_db, indent=2, sort_keys=True)
         expected_json = json.dumps(expected_db, indent=2, sort_keys=True)
-        diff_lines = list(difflib.unified_diff(
-            initial_json.splitlines(),
-            expected_json.splitlines(),
-            fromfile="Initial DB",
-            tofile="Expected DB",
-            lineterm="",
-        ))
+        diff_lines = list(
+            difflib.unified_diff(
+                initial_json.splitlines(),
+                expected_json.splitlines(),
+                fromfile="Initial DB",
+                tofile="Expected DB",
+                lineterm="",
+            )
+        )
         if not diff_lines:
             st.success("No differences between initial and expected scenario DB.")
         else:
             # Build GitHub-style unified diff HTML
             rows = []
             for line in diff_lines:
-                escaped = (
-                    line.replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                )
+                escaped = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 if line.startswith("@@"):
                     rows.append(
                         f'<div style="background:#1e3a5f;color:#58a6ff;'
-                        f'padding:4px 12px;margin-top:8px;border-radius:3px;'
+                        f"padding:4px 12px;margin-top:8px;border-radius:3px;"
                         f'font-weight:600">{escaped}</div>'
                     )
                 elif line.startswith("+++") or line.startswith("---"):
-                    rows.append(
-                        f'<div style="color:#8b949e;padding:2px 12px;'
-                        f'font-weight:700">{escaped}</div>'
-                    )
+                    rows.append(f'<div style="color:#8b949e;padding:2px 12px;font-weight:700">{escaped}</div>')
                 elif line.startswith("+"):
                     rows.append(
                         f'<div style="background:#0d2818;color:#56d364;'
                         f'padding:1px 12px;border-left:3px solid #2ea043">'
-                        f'{escaped}</div>'
+                        f"{escaped}</div>"
                     )
                 elif line.startswith("-"):
                     rows.append(
                         f'<div style="background:#2d1115;color:#f85149;'
                         f'padding:1px 12px;border-left:3px solid #da3633">'
-                        f'{escaped}</div>'
+                        f"{escaped}</div>"
                     )
                 else:
-                    rows.append(
-                        f'<div style="color:#c9d1d9;padding:1px 12px">'
-                        f'{escaped}</div>'
-                    )
+                    rows.append(f'<div style="color:#c9d1d9;padding:1px 12px">{escaped}</div>')
             body = "\n".join(rows)
             html = (
                 f'<div style="font-family:ui-monospace,SFMono-Regular,'
                 f"'SF Mono',Menlo,Consolas,monospace;font-size:13px;"
-                f'line-height:1.6;background:#0d1117;border:1px solid #30363d;'
+                f"line-height:1.6;background:#0d1117;border:1px solid #30363d;"
                 f'border-radius:6px;padding:8px 0;overflow-x:auto">'
-                f'{body}</div>'
+                f"{body}</div>"
             )
             n_lines = len(diff_lines)
             height = min(max(300, n_lines * 24), 800)
