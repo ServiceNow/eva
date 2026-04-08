@@ -513,12 +513,15 @@ def notify_credentialing_committee(params: dict, db: dict, call_index: int) -> d
     if not provider:
         return _provider_not_found(p.npi)
 
-    db.setdefault("notifications", []).append({
+    notif = {
         "recipient": "credentialing_committee",
         "npi": p.npi,
         "case_id": p.case_id,
         "notification_type": p.notification_type,
-    })
+    }
+    notifications = db.setdefault("notifications", [])
+    if notif not in notifications:
+        notifications.append(notif)
 
     return {"status": "success", "npi": p.npi, "case_id": p.case_id,
             "notification_type": p.notification_type,
@@ -667,13 +670,16 @@ def notify_department_manager(params: dict, db: dict, call_index: int) -> dict:
     if not emp:
         return _employee_not_found(p.employee_id)
 
-    db.setdefault("notifications", []).append({
+    notif = {
         "recipient": "department_manager",
         "employee_id": p.employee_id,
         "department_code": emp.get("department_code"),
         "case_id": p.case_id,
         "notification_type": p.notification_type,
-    })
+    }
+    notifications = db.setdefault("notifications", [])
+    if notif not in notifications:
+        notifications.append(notif)
 
     return {"status": "success", "employee_id": p.employee_id,
             "case_id": p.case_id, "notification_type": p.notification_type,
@@ -720,10 +726,14 @@ def update_malpractice_coverage(params: dict, db: dict, call_index: int) -> dict
     if not provider:
         return _provider_not_found(p.npi)
 
+    mal = provider.get("malpractice")
+    if not mal:
+        return {"status": "error", "error_type": "record_not_found",
+                "message": f"No malpractice record on file for NPI {p.npi}. "
+                           "Contact credentialing to have a record initialized first."}
+
     recredential_flag = p.per_occurrence_limit_usd < 1_000_000
     case_id = _make_case_id("MAL", provider.get("employee_id", p.npi))
-
-    mal = provider.setdefault("malpractice", {})
     mal.update({"carrier": p.new_carrier, "policy_number": p.new_policy_number,
                 "per_occurrence_limit_usd": p.per_occurrence_limit_usd,
                 "aggregate_limit_usd": p.aggregate_limit_usd,
@@ -921,14 +931,17 @@ def notify_pdmp(params: dict, db: dict, call_index: int) -> dict:
     if not provider:
         return _provider_not_found(p.npi)
 
-    db.setdefault("notifications", []).append({
+    notif = {
         "recipient": "pdmp",
         "npi": p.npi,
         "dea_number": p.dea_number,
         "state_code": p.state_code,
         "facility_code": p.facility_code,
         "notification_type": "dea_transfer",
-    })
+    }
+    notifications = db.setdefault("notifications", [])
+    if notif not in notifications:
+        notifications.append(notif)
 
     return {"status": "success", "npi": p.npi, "dea_number": p.dea_number,
             "state_code": p.state_code, "facility_code": p.facility_code,
@@ -1449,12 +1462,15 @@ def notify_hr_compliance(params: dict, db: dict, call_index: int) -> dict:
     if not emp:
         return _employee_not_found(p.employee_id)
 
-    db.setdefault("notifications", []).append({
+    notif = {
         "recipient": "hr_compliance",
         "employee_id": p.employee_id,
         "case_id": p.case_id,
         "notification_type": p.notification_type,
-    })
+    }
+    notifications = db.setdefault("notifications", [])
+    if notif not in notifications:
+        notifications.append(notif)
 
     return {"status": "success", "employee_id": p.employee_id,
             "case_id": p.case_id, "notification_type": p.notification_type,
@@ -1541,12 +1557,15 @@ def notify_immigration_counsel(params: dict, db: dict, call_index: int) -> dict:
     if not emp:
         return _employee_not_found(p.employee_id)
 
-    db.setdefault("notifications", []).append({
+    notif = {
         "recipient": "immigration_counsel",
         "employee_id": p.employee_id,
         "visa_petition_number": p.visa_petition_number,
         "notification_type": p.notification_type,
-    })
+    }
+    notifications = db.setdefault("notifications", [])
+    if notif not in notifications:
+        notifications.append(notif)
 
     return {"status": "success", "employee_id": p.employee_id,
             "visa_petition_number": p.visa_petition_number,
