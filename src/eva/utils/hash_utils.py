@@ -6,7 +6,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-ORDER_INDEPENDENT_LIST_FIELDS: set[str] = {"standby_list"}
+ORDER_INDEPENDENT_LIST_FIELDS: set[str] = {"standby_list", "notifications"}
 
 
 def hash_file(path: Path) -> str:
