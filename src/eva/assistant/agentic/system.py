@@ -283,69 +283,69 @@ class AgenticSystem:
                     yield response_content
                     self.audit_log.append_assistant_output(response_content)
                 return
-            else:
-                messages.append(
-                    {
-                        "role": "assistant",
-                        "content": response_content,
-                        "tool_calls": tool_calls_dicts,
-                    }
-                )
 
-                self.audit_log.append_assistant_output(content=response_content, tool_calls=tool_calls_dicts)
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": response_content,
+                    "tool_calls": tool_calls_dicts,
+                }
+            )
 
-                # Execute each tool call
-                for tool_call in response_tool_calls:
-                    tool_name = _clean_tool_name(tool_call.function.name)
-                    try:
-                        # TODO Consider this a model error instead of handling this gracefully
-                        params = json.loads(tool_call.function.arguments)
-                    except json.JSONDecodeError:
-                        params = {}
+            self.audit_log.append_assistant_output(content=response_content, tool_calls=tool_calls_dicts)
 
-                    # Log tool call
-                    logger.info(f"🔧 Tool call: {tool_name}")
-                    logger.info(f"   Parameters: {json.dumps(params, indent=2)}")
+            # Execute each tool call
+            for tool_call in response_tool_calls:
+                tool_name = _clean_tool_name(tool_call.function.name)
+                try:
+                    # TODO Consider this a model error instead of handling this gracefully
+                    params = json.loads(tool_call.function.arguments)
+                except json.JSONDecodeError:
+                    params = {}
 
-                    # Special handling for transfer to live agent
-                    if tool_name == "transfer_to_agent":
-                        transfer_message = "Transferring you to a live agent. Please wait."
-                        self.audit_log.append_tool_call(
-                            tool_name=tool_name,
-                            parameters=params,
-                            response={"status": "transfer_initiated"},
-                        )
+                # Log tool call
+                logger.info(f"🔧 Tool call: {tool_name}")
+                logger.info(f"   Parameters: {json.dumps(params, indent=2)}")
 
-                        logger.info(f"🔀 Transfer initiated: {transfer_message}")
-                        yield transfer_message
-                        self.audit_log.append_assistant_output(transfer_message)
-                        return
-
-                    result = await self.tool_handler.execute(tool_name, params)
-
-                    if result.get("status") == "error":
-                        logger.warning(f"❌ Tool error: {tool_name} - {result.get('message', 'Unknown error')}")
-                    else:
-                        logger.info(f"✅ Tool response: {tool_name}")
-                        logger.info(f"   Result: {json.dumps(result, indent=2)}")
-
+                # Special handling for transfer to live agent
+                if tool_name == "transfer_to_agent":
+                    transfer_message = "Transferring you to a live agent. Please wait."
                     self.audit_log.append_tool_call(
                         tool_name=tool_name,
                         parameters=params,
-                        response=result,
+                        response={"status": "transfer_initiated"},
                     )
 
-                    # Add tool response to messages
-                    tool_content = json.dumps(result)
-                    messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": tool_call.id,
-                            "content": tool_content,
-                        }
-                    )
+                    logger.info(f"🔀 Transfer initiated: {transfer_message}")
+                    yield transfer_message
+                    self.audit_log.append_assistant_output(transfer_message)
+                    return
 
-                    self.audit_log.append_tool_message(tool_call_id=tool_call.id, content=tool_content)
+                result = await self.tool_handler.execute(tool_name, params)
+
+                if result.get("status") == "error":
+                    logger.warning(f"❌ Tool error: {tool_name} - {result.get('message', 'Unknown error')}")
+                else:
+                    logger.info(f"✅ Tool response: {tool_name}")
+                    logger.info(f"   Result: {json.dumps(result, indent=2)}")
+
+                self.audit_log.append_tool_call(
+                    tool_name=tool_name,
+                    parameters=params,
+                    response=result,
+                )
+
+                # Add tool response to messages
+                tool_content = json.dumps(result)
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": tool_content,
+                    }
+                )
+
+                self.audit_log.append_tool_message(tool_call_id=tool_call.id, content=tool_content)
 
     def get_stats(self) -> dict[str, Any]:
         """Get conversation statistics."""
