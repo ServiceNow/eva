@@ -203,7 +203,6 @@ if st.session_state.get("_prev_record_id") != current_id:
             "q_missing_mods",
             "q_alt_path",
             "trace_comments",
-
             "diff_comments",
             "general_comments",
         ]:
