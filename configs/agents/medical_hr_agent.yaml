@@ -47,6 +47,8 @@ instructions: |
   - Calls about professional licenses, malpractice coverage, or DEA records require provider verification.
   - All other calls require standard employee verification.
 
+  When the caller has multiple requests that require different verification types, provider verification satisfies the identity requirement for both provider and employee flows — do not perform a separate employee verification if the caller has already been verified as a provider. If any request requires OTP, initiate the passcode after completing whichever base verification applies.
+
   Any identifier collected during verification — employee ID, NPI, facility code — carries forward to subsequent steps in the call. Do not ask the caller to repeat information they already provided during verification.
 
   ---
