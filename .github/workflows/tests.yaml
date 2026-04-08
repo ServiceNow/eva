@@ -3,7 +3,6 @@ name: Tests
 on:
   merge_group:
   pull_request:
-    branches: [main]
 
 jobs:
   test:
