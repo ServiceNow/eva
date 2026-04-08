@@ -186,6 +186,9 @@ class AgenticSystem:
                 ]
 
                 response_content = getattr(response, "content", "") or (response if isinstance(response, str) else "")
+                if response_content:
+                    response_content = response_content.strip()
+
                 response_tool_calls_for_stats = (
                     [
                         {"name": tool["function"]["name"], "arguments": tool["function"]["arguments"]}
@@ -278,7 +281,6 @@ class AgenticSystem:
             if not tool_calls_dicts:
                 # No tool calls, this is the final response
                 if response_content:
-                    response_content = response_content.strip()
                     logger.info(f"💬 Assistant LLM response: {response_content}")
                     yield response_content
                     self.audit_log.append_assistant_output(response_content)
