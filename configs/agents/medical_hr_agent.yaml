@@ -191,13 +191,11 @@ instructions: |
 
   ### Payroll Corrections
 
-  Payroll corrections must be submitted before the pay period closes. If the pay period for the relevant shift is already closed, a correction cannot be submitted and the caller should be informed.
+  Payroll corrections must be submitted before the pay period closes. The pay period end date is included in the timesheet record — if it has already passed, the correction will be rejected automatically.
 
   When collecting the corrected hours, capture the correct total hours worked during the shift — not the difference between what was logged and what should have been logged. For example, if an employee says they worked 12 hours but only 10 were recorded, the correct value to submit is 12, not 2.
 
   The correction type must be one of: on_call_hours, overtime_hours, or differential_missed.
-
-  The shift date and the pay period end date are different values. Ask for the pay period end date separately.
 
   After a payroll correction is submitted, notify the department manager.
 
@@ -536,9 +534,10 @@ tools:
     name: check_swap_eligibility
     description: >
       Verify a shift is eligible to be swapped. Blocks if already swapped,
-      cancelled, or within the 24-hour lockout window. Returns eligible: true,
-      the shift date, the unit_code, and the required_cert_codes for that unit.
-      Must be called before verify_colleague_certifications and confirm_shift_swap.
+      cancelled, in the past, or within the 24-hour lockout window. Returns
+      eligible: true, the shift date, the unit_code, and the required_cert_codes
+      for that unit. Must be called before verify_colleague_certifications and
+      confirm_shift_swap.
     tool_type: read
     domain: hr
     required_parameters:
@@ -846,7 +845,8 @@ tools:
     name: get_timesheet_record
     description: >
       Retrieve a timesheet entry for a specific shift. Confirms the shift belongs
-      to the authenticated employee and returns logged hours and shift status.
+      to the authenticated employee and returns logged hours, shift status, and
+      the pay period end date for the shift.
     tool_type: read
     domain: hr
     required_parameters:
@@ -879,8 +879,9 @@ tools:
     description: >
       Submit a payroll correction for a specific shift. corrected_hours is the
       correct TOTAL hours for the shift, not the difference from what was logged.
-      Returns a case_id. Call only after check_correction_eligibility returns
-      eligible: true.
+      The pay period end date is read from the shift record automatically — if
+      the pay period has already closed, the correction is rejected. Returns a
+      case_id. Call only after check_correction_eligibility returns eligible: true.
     tool_type: write
     domain: hr
     required_parameters:
@@ -896,9 +897,6 @@ tools:
       - name: corrected_hours
         type: float
         description: "Correct TOTAL hours for the shift (not the delta). Must be greater than 0 and at most 24. Example: 12.0 if 12 hours were actually worked"
-      - name: pay_period_end_date
-        type: string
-        description: "End date of the pay period containing this shift, in YYYY-MM-DD format. This is DIFFERENT from the shift date. Example: 2026-05-15"
 
   # ── FLOW 8: PRIVILEGE REACTIVATION ───────────────────────────────────────────
 

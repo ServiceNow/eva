@@ -679,6 +679,14 @@ def check_swap_eligibility(params: dict, db: dict, call_index: int) -> dict:
         return {"status": "error", "error_type": "already_swapped", "message": "This shift has already been swapped"}
     if shift.get("status") == "cancelled":
         return {"status": "error", "error_type": "shift_cancelled", "message": "Cannot swap a cancelled shift"}
+    current_date = db.get("_current_date", "")
+    shift_date = shift.get("date", "")
+    if shift_date and current_date and shift_date < current_date:
+        return {
+            "status": "error",
+            "error_type": "shift_in_past",
+            "message": f"Shift date {shift_date} is in the past (current date: {current_date}). Cannot swap a past shift.",
+        }
     if shift.get("swap_locked"):
         return {
             "status": "error",
@@ -1343,12 +1351,27 @@ def submit_payroll_correction(params: dict, db: dict, call_index: int) -> dict:
     if not shift:
         return {"status": "error", "error_type": "shift_not_found", "message": f"Shift {p.shift_id} not found"}
 
+    pay_period_end_date = shift.get("pay_period_end_date")
+    if not pay_period_end_date:
+        return {
+            "status": "error",
+            "error_type": "pay_period_not_set",
+            "message": f"No pay period end date found for shift {p.shift_id}",
+        }
+
+    current_date = db.get("_current_date", "")
+    if current_date and pay_period_end_date < current_date:
+        return {
+            "status": "error",
+            "error_type": "pay_period_closed",
+            "message": f"Pay period ending {pay_period_end_date} has already closed (current date: {current_date}). Correction cannot be submitted.",
+        }
+
     case_id = _make_case_id("PAY", p.employee_id)
     shift.update(
         {
             "corrected_hours": p.corrected_hours,
             "correction_type": p.correction_type,
-            "pay_period_end_date": p.pay_period_end_date,
             "correction_case_id": case_id,
             "correction_status": "pending",
         }
@@ -1360,7 +1383,7 @@ def submit_payroll_correction(params: dict, db: dict, call_index: int) -> dict:
         "shift_id": p.shift_id,
         "correction_type": p.correction_type,
         "corrected_hours": p.corrected_hours,
-        "pay_period_end_date": p.pay_period_end_date,
+        "pay_period_end_date": pay_period_end_date,
         "case_id": case_id,
         "message": f"Payroll correction submitted. Case ID: {case_id}",
     }

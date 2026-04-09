@@ -647,7 +647,6 @@ class SubmitPayrollCorrectionParams(BaseModel):
         description="Correct total hours for the shift (not the delta). Example: 12.0 if 12 hours were worked.",
         examples=[8.0, 12.0, 12.5],
     )
-    pay_period_end_date: DateStr
 
 
 # ---------------------------------------------------------------------------
