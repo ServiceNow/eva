@@ -3,6 +3,7 @@
 import asyncio
 import csv
 import json
+import os
 import time
 import warnings
 from pathlib import Path
@@ -170,6 +171,24 @@ class AgenticSystem:
                     tools=self.tools,
                 )
                 end_time = str(int(time.time() * 1000))
+
+                # Debug: dump request + response to file
+                if self.output_dir and os.environ.get("EVA_DUMP_LLM_REQUESTS", "").lower() in ("1", "true", "yes"):
+                    response_content_raw = getattr(response, "content", "") or (response if isinstance(response, str) else "")
+                    dump_payload = {
+                        "messages": messages,
+                        "response": {
+                            "content": response_content_raw,
+                            "reasoning_content": llm_stats.get("reasoning_content"),
+                            "finish_reason": llm_stats.get("finish_reason"),
+                            "prompt_tokens": llm_stats.get("prompt_tokens"),
+                            "completion_tokens": llm_stats.get("completion_tokens"),
+                            "latency": llm_stats.get("latency"),
+                        },
+                    }
+                    dump_path = Path(self.output_dir) / f"llm_request_{start_time}.json"
+                    dump_path.write_text(json.dumps(dump_payload, indent=2, ensure_ascii=False))
+                    logger.debug(f"Dumped LLM request+response to {dump_path}")
 
                 # Convert tool calls to dicts if present and extract content as string
                 response_tool_calls = getattr(response, "tool_calls", []) or []

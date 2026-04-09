@@ -212,6 +212,11 @@ class ALMvLLMClient:
                     "reasoning": reasoning,
                 }
 
+                # Include reasoning in stats if present (vLLM reasoning models)
+                reasoning = getattr(message, "reasoning", None)
+                if reasoning:
+                    stats["reasoning"] = reasoning
+
                 if hasattr(message, "tool_calls") and message.tool_calls:
                     return message, stats
                 else:
