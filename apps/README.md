@@ -1,6 +1,6 @@
 # EVA Apps
 
-Streamlit applications for exploring EVA data and results.
+Streamlit applications for exploring EVA results.
 
 ## Analysis App
 
