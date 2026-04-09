@@ -35,6 +35,11 @@ logger = get_logger(__name__)
 # OpenAI Realtime operates at 24 kHz 16-bit mono PCM
 OPENAI_SAMPLE_RATE = 24000
 
+# Audio output pacing: send 160-byte mulaw chunks (20ms at 8kHz) at real-time rate
+# so the user simulator's silence detection works correctly.
+MULAW_CHUNK_SIZE = 160  # bytes per chunk (20ms at 8kHz, 1 byte per sample)
+MULAW_CHUNK_DURATION_S = 0.02  # 20ms per chunk
+
 
 def _wall_ms() -> str:
     """Return current wall-clock time as epoch-milliseconds string."""
@@ -102,6 +107,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._bot_speaking: bool = False
         self._user_frame_count: int = 0
         self._delta_count: int = 0
+
+        # Audio output pacing: absolute time target for next chunk send
+        self._next_chunk_send_time: float = 0.0
 
         self._model: str = self.pipeline_config.s2s
 
@@ -529,17 +537,30 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 f"usr_spk={self._user_speaking} added={len(pcm16_bytes)} synced_user={synced}"
             )
 
-        # Convert 24kHz PCM16 -> 8kHz mulaw and send in small chunks
-        # (160 bytes = 20ms at 8kHz mulaw) for proper user sim timing
+        # Convert 24kHz PCM16 -> 8kHz mulaw and send in real-time-paced chunks.
+        # Each 160-byte chunk = 20ms of audio at 8kHz. We sleep between sends
+        # so the user simulator receives audio at playback rate, which ensures
+        # its silence-based audio_start/audio_end detection works correctly.
         try:
             mulaw_bytes = pcm16_24k_to_mulaw_8k(pcm16_bytes)
-            _MULAW_CHUNK = 160
+            now = time.monotonic()
+
+            # Initialize pacing clock on first chunk of a new response
+            if self._next_chunk_send_time <= now:
+                self._next_chunk_send_time = now
+
             offset = 0
             while offset < len(mulaw_bytes):
-                chunk = mulaw_bytes[offset : offset + _MULAW_CHUNK]
-                offset += _MULAW_CHUNK
+                chunk = mulaw_bytes[offset : offset + MULAW_CHUNK_SIZE]
+                offset += MULAW_CHUNK_SIZE
                 twilio_msg = create_twilio_media_message(self._stream_sid, chunk)
                 await websocket.send_text(twilio_msg)
+
+                # Advance absolute clock and sleep until next send time
+                self._next_chunk_send_time += MULAW_CHUNK_DURATION_S
+                sleep_duration = self._next_chunk_send_time - time.monotonic()
+                if sleep_duration > 0:
+                    await asyncio.sleep(sleep_duration)
         except Exception as e:
             logger.error(f"Error sending audio to Twilio WS: {e}")
 
