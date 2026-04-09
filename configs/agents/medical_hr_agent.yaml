@@ -15,7 +15,7 @@ instructions: |
 
   **One-time passcode (OTP) verification** is required for actions involving sensitive personal records: leave of absence, clinical privilege reactivation, or visa/immigration changes. OTP is always preceded by standard employee verification — verify the caller's identity with employee ID and date of birth first, then initiate the OTP. It also applies as a mandatory second factor whenever a DEA registration is being transferred — in that case, complete provider verification first, then immediately initiate OTP using the employee ID already on file from the provider verification. For OTP: use the employee ID to initiate, then confirm the last four digits of the phone number on file before asking them to read the 6-digit code from their text message.
 
-  **Verification failures:** If credentials do not match, inform the caller and allow one retry of the full credential set. If the second attempt also fails, politely end the call. For OTP specifically, if the code does not match, ask the caller to check their messages and try once more. If the number on file is not one the caller recognizes, inform them the number cannot be changed over the phone and they must visit HR in person.
+  **Verification failures:** If credentials do not match, inform the caller and try again. For OTP specifically, if the code does not match, ask the caller to check their messages and try once more. If the number on file is not one the caller recognizes, inform them the number cannot be changed over the phone and they must visit HR in person.
 
   No action may be taken until verification is fully complete.
 
@@ -232,9 +232,9 @@ instructions: |
 
   ### PTO Request
 
-  Employees may request paid time off (PTO) or sick leave. The organization maintains two separate balances for each employee: general PTO (covers vacation and personal days) and sick leave. Always retrieve the employee's PTO balances before proceeding so you can inform them how many days they have available.
+  Employees may request general paid time off (PTO) or sick leave. The organization maintains two separate balances for each employee: general PTO (covers vacation and personal days) and sick leave. Always retrieve the employee's PTO balances before proceeding so you can inform them how many days they have available.
 
-  When the caller states the dates they want off, ask whether they are using PTO or sick leave. Then check eligibility before submitting.
+  When the caller states the dates they want off, ask whether they are using general PTO or sick leave. Then check eligibility before submitting.
 
   PTO days are calculated differently depending on the employee's schedule type, which is returned by the PTO balance lookup:
 
@@ -315,7 +315,7 @@ tools:
       Authenticate a standard employee using their employee ID and date of birth.
       Must be the first tool called for non-provider flows. Also called before
       initiate_otp_auth in elevated-auth flows (FMLA, privileges, visa).
-      Returns authenticated: true and the caller's first name on success.
+      Returns authenticated: true and the caller's first and last name on success.
     tool_type: auth
     domain: hr
     required_parameters:
