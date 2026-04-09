@@ -16,6 +16,9 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
+import soxr
+
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -51,9 +54,15 @@ def pcm16_16k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
 
 
 def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
-    """Convert 24kHz 16-bit PCM to 8kHz mu-law."""
-    # Downsample from 24kHz to 8kHz
-    pcm_8k, _ = audioop.ratecv(pcm_bytes, 2, 1, 24000, 8000, None)
+    """Convert 24kHz 16-bit PCM to 8kHz mu-law.
+
+    Uses soxr VHQ resampling (same as Pipecat) for proper anti-aliasing during the 3:1 downsampling.
+    audioop.ratecv produces muffled audio because it lacks an anti-aliasing filter.
+    """
+    # Downsample from 24kHz to 8kHz using high-quality resampler
+    audio_data = np.frombuffer(pcm_bytes, dtype=np.int16)
+    resampled = soxr.resample(audio_data, 24000, 8000, quality="VHQ")
+    pcm_8k = resampled.astype(np.int16).tobytes()
     # Encode to mu-law
     return audioop.lin2ulaw(pcm_8k, 2)
 
