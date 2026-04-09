@@ -266,7 +266,7 @@ Flight rebooking is a strong initial domain: it is high-stakes, time-pressured, 
 eva/
 ├── main.py                    # Main entry point
 ├── pyproject.toml             # Python project configuration
-├── apps/                      # Streamlit apps (analysis, dataset explorer)
+├── apps/                      # Streamlit apps
 ├── Dockerfile                 # Docker configuration
 ├── compose.yaml               # Docker Compose configuration
 ├── src/eva/
