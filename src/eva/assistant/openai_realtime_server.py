@@ -26,7 +26,7 @@ from eva.assistant.audio_bridge import (
     pcm16_24k_to_mulaw_8k,
     sync_buffer_to_position,
 )
-from eva.assistant.base_server import AbstractAssistantServer
+from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -200,30 +200,56 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         client = AsyncOpenAI(api_key=api_key)
 
         try:
-            async with client.beta.realtime.connect(model=self._model) as conn:
+            async with client.realtime.connect(model=self._model) as conn:
                 # Configure the session
                 await conn.session.update(
                     session={
-                        "modalities": ["text", "audio"],
+                        "type": "realtime",
+                        "output_modalities": ["audio"],
                         "instructions": self._system_prompt,
-                        "voice": self.pipeline_config.s2s_params.get("voice", "marin"),
-                        "input_audio_format": "pcm16",
-                        "output_audio_format": "pcm16",
-                        "input_audio_transcription": {
-                            "model": self.pipeline_config.s2s_params.get("transcription_model", "whisper-1"),
-                        },
-                        # TODO: Add support for client_vad and configurable turn detection params
-                        "turn_detection": {
-                            "type": "server_vad",
-                            "threshold": 0.5,
-                            "prefix_padding_ms": 300,
-                            "silence_duration_ms": 200,
+                        "audio": {
+                            "output": {
+                                "voice": self.pipeline_config.s2s_params.get("voice", "marin"),
+                                "format": {"type": "audio/pcm", "rate": 24000},
+                            },
+                            "input": {
+                                "format": {"type": "audio/pcm", "rate": 24000},
+                                "turn_detection": {
+                                    "type": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
+                                        "type", "server_vad"
+                                    ),
+                                    "threshold": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
+                                        "threshold", 0.5
+                                    ),
+                                    "prefix_padding_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
+                                        "prefix_padding_ms", 300
+                                    ),
+                                    "silence_duration_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
+                                        "silence_duration_ms", 200
+                                    ),
+                                },
+                                "transcription": {
+                                    "model": self.pipeline_config.s2s_params.get("transcription_model", "whisper-1")
+                                },
+                            },
                         },
                         "tools": self._realtime_tools,
                     }
                 )
 
                 # Trigger the initial greeting
+                await conn.conversation.item.create(
+                    item={
+                        "type": "message",
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "input_text",
+                                "text": f"Say: '{INITIAL_MESSAGE}'",
+                            }
+                        ],
+                    }
+                )
                 await conn.response.create()
 
                 # Run forwarding tasks concurrently
@@ -363,13 +389,13 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                     )
                     self._user_turn.flushed = True
 
-            case "response.audio.delta":
+            case "response.output_audio.delta":
                 await self._on_audio_delta(event, websocket)
 
-            case "response.audio_transcript.delta":
+            case "response.output_audio_transcript.delta":
                 self._on_transcript_delta(event)
 
-            case "response.audio_transcript.done":
+            case "response.output_audio_transcript.done":
                 self._on_transcript_done(event)
 
             case "response.function_call_arguments.done":
@@ -412,19 +438,23 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             logger.debug(f"Flushed interrupted assistant response: {partial_text[:60]}...")
             self._assistant_state = _AssistantResponseState()
 
-        # Start new user turn
-        self._user_turn = _UserTurnRecord(speech_started_wall_ms=wall)
-        if self._fw_log:
-            self._fw_log.turn_start(timestamp_ms=int(wall))
-
-        logger.debug(f"Speech started at {wall}")
+        # Start new user turn only if previous one was flushed (or doesn't exist)
+        # This preserves the original timestamp when VAD fires multiple speech_started
+        # events during a single logical user utterance (due to brief pauses)
+        if not self._user_turn or self._user_turn.flushed:
+            self._user_turn = _UserTurnRecord(speech_started_wall_ms=wall)
+            if self._fw_log:
+                self._fw_log.turn_start(timestamp_ms=int(wall))
+            logger.debug(f"Speech started at {wall} (new turn)")
+        else:
+            logger.debug(f"Speech started at {wall} (continuing existing turn)")
 
     async def _on_speech_stopped(self, event: Any) -> None:
         """Handle input_audio_buffer.speech_stopped."""
         self._user_speaking = False
         diff = len(self.user_audio_buffer) - len(self.assistant_audio_buffer)
         diff_ms = diff / (OPENAI_SAMPLE_RATE * 2) * 1000
-        logger.debug(
+        logger.info(
             f"[ALIGN DEBUG] speech_stopped: user={len(self.user_audio_buffer)} "
             f"asst={len(self.assistant_audio_buffer)} diff={diff}({diff_ms:.0f}ms) "
             f"bot_spk={self._bot_speaking}"
@@ -598,6 +628,12 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                     prompt_tokens=input_tokens,
                     completion_tokens=output_tokens,
                 )
+
+        # Skip cancelled responses - these were interrupted and not fully spoken
+        if response and getattr(response, "status", None) == "cancelled":
+            logger.debug("response_done: cancelled response, skipping transcript entry")
+            self._reset_assistant_state()
+            return
 
         has_function_calls = self._response_has_function_calls(event)
 
