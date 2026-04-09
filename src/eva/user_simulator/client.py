@@ -414,7 +414,7 @@ class UserSimulator:
             transcript: The text that the assistant said
         """
         self._reset_keepalive_counter()
-        logger.info(f"🤖 Assistant (Pipecat): {transcript}")
+        logger.info(f"🤖 Assistant: {transcript}")
 
         self.event_logger.log_event(
             "assistant_speech",
