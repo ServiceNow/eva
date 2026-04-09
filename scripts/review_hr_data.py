@@ -26,12 +26,14 @@ TOOL_TYPE_COLORS = {
     "auth": "#FF9800",  # amber
     "read": "#4CAF50",  # green
     "write": "#F44336",  # red
+    "system": "#9E9E9E",  # gray
 }
 
 TOOL_TYPE_LABELS = {
     "auth": "AUTH",
     "read": "READ",
     "write": "WRITE",
+    "system": "SYSTEM",
 }
 
 YES_NO = ["Yes", "No"]
@@ -73,6 +75,12 @@ QUESTIONS = [
                 "question": "Is all raw info present? (codes, names, etc.)",
                 "options": YES_NO,
                 "help": "Does the user info contain all the required raw information that the caller would need to do the flow? You may need to read the trace and check the expected flow to understand this one.",
+            },
+            {
+                "key": "q_dates_make_sense",
+                "question": "Do dates in the user goal make sense given the current date/time?",
+                "options": ["Yes", "No", "N/A"],
+                "help": "If any dates are mentioned in the user goal (appointment dates, shift dates, birth dates of dependents/spouses, etc.), do they make sense relative to the current date and time? Select N/A if no dates are present.",
             },
         ],
         "comment_key": "user_goal_comments",
@@ -137,7 +145,7 @@ def _id_sort_key(rid: str) -> tuple:
 
 
 @st.cache_data
-def load_records() -> list[dict]:
+def load_records(_mtime: float = 0) -> list[dict]:
     records = []
     with open(DATASET_PATH) as f:
         for line in f:
@@ -148,7 +156,7 @@ def load_records() -> list[dict]:
 
 
 @st.cache_data
-def load_agent_config() -> tuple[list[dict], str, dict[str, str]]:
+def load_agent_config(_mtime: float = 0) -> tuple[list[dict], str, dict[str, str]]:
     with open(AGENT_YAML_PATH) as f:
         config = yaml.safe_load(f)
     tools = config.get("tools", [])
@@ -158,7 +166,7 @@ def load_agent_config() -> tuple[list[dict], str, dict[str, str]]:
 
 
 @st.cache_data
-def load_flow_sequences() -> list[dict]:
+def load_flow_sequences(_mtime: float = 0) -> list[dict]:
     """Parse flow sequences from medical_hr_tools.py docstring."""
     with open(TOOLS_MODULE_PATH) as f:
         content = f.read()
@@ -189,7 +197,7 @@ def load_flow_sequences() -> list[dict]:
 
 
 @st.cache_data
-def load_initial_scenario(record_id: str) -> dict:
+def load_initial_scenario(record_id: str, _mtime: float = 0) -> dict:
     path = SCENARIOS_DIR / f"{record_id}.json"
     if path.exists():
         with open(path) as f:
@@ -305,10 +313,10 @@ def render_trace(trace: list[dict], tool_type_map: dict[str, str]):
 
 
 # ── Load data ────────────────────────────────────────────────────────────────
-records = load_records()
+records = load_records(DATASET_PATH.stat().st_mtime)
 all_ids = [r["id"] for r in records]
-tools, instructions, tool_type_map = load_agent_config()
-flow_sequences = load_flow_sequences()
+tools, instructions, tool_type_map = load_agent_config(AGENT_YAML_PATH.stat().st_mtime)
+flow_sequences = load_flow_sequences(TOOLS_MODULE_PATH.stat().st_mtime)
 assignments = load_assignments()
 labeler_names = sorted(assignments.keys())
 
@@ -346,6 +354,7 @@ if st.session_state.get("_prev_record_id") != current_id:
         st.session_state["q_realistic"] = ug.get("is_realistic", "")
         st.session_state["q_complete"] = ug.get("is_complete", "")
         st.session_state["q_raw_info"] = ug.get("raw_info_present", "")
+        st.session_state["q_dates_make_sense"] = ug.get("dates_make_sense", "")
         st.session_state["user_goal_comments"] = ug.get("comments", "")
 
         gt = existing.get("ground_truth_trace", {})
@@ -368,6 +377,7 @@ if st.session_state.get("_prev_record_id") != current_id:
             "q_realistic",
             "q_complete",
             "q_raw_info",
+            "q_dates_make_sense",
             "user_goal_comments",
             "q_unwanted_mods",
             "q_missing_mods",
@@ -385,7 +395,8 @@ ground_truth = record.get("ground_truth", {})
 expected_trace = ground_truth.get("expected_trace", {})
 trace = expected_trace.get("trace", None) if expected_trace else None
 expected_db = ground_truth.get("expected_scenario_db", {})
-initial_db = load_initial_scenario(current_id)
+_scenario_path = SCENARIOS_DIR / f"{current_id}.json"
+initial_db = load_initial_scenario(current_id, _scenario_path.stat().st_mtime if _scenario_path.exists() else 0)
 
 # Extract tool calls from trace (if it exists) for the review form
 review_tool_calls = extract_review_tool_calls(trace, tool_type_map) if trace else []
@@ -437,9 +448,12 @@ for q_section, tab in zip(QUESTIONS, q_tabs):
                 cols = st.columns(len(row_fields))
                 for col, field in zip(cols, row_fields):
                     with col:
+                        current_val = st.session_state.get(field["key"], "")
+                        idx = field["options"].index(current_val) if current_val in field["options"] else None
                         st.radio(
                             field["question"],
                             field["options"],
+                            index=idx,
                             key=field["key"],
                             help=field["help"],
                             horizontal=True,
@@ -465,17 +479,23 @@ for q_section, tab in zip(QUESTIONS, q_tabs):
                                 f"`{tc['name']}`",
                                 unsafe_allow_html=True,
                             )
+                            _gk = f"wtc_{current_id}_{i}_grounded"
+                            _gv = st.session_state.get(_gk, "")
                             st.radio(
                                 "Inputs grounded?",
                                 YES_NO,
-                                key=f"wtc_{current_id}_{i}_grounded",
+                                index=YES_NO.index(_gv) if _gv in YES_NO else None,
+                                key=_gk,
                                 help="Can this tool call's inputs be inferred from previous tool call output, user info, or policies?",
                                 horizontal=True,
                             )
+                            _pk = f"wtc_{current_id}_{i}_policy"
+                            _pv = st.session_state.get(_pk, "")
                             st.radio(
                                 "Consistent with policies?",
                                 YES_NO,
-                                key=f"wtc_{current_id}_{i}_policy",
+                                index=YES_NO.index(_pv) if _pv in YES_NO else None,
+                                key=_pk,
                                 help="Is this tool call consistent with the agent policies?",
                                 horizontal=True,
                             )
@@ -500,6 +520,7 @@ for q_section, tab in zip(QUESTIONS, q_tabs):
                     "is_realistic": st.session_state.get("q_realistic", ""),
                     "is_complete": st.session_state.get("q_complete", ""),
                     "raw_info_present": st.session_state.get("q_raw_info", ""),
+                    "dates_make_sense": st.session_state.get("q_dates_make_sense", ""),
                     "comments": st.session_state.get("user_goal_comments", ""),
                 },
                 "ground_truth_trace": {
@@ -573,6 +594,7 @@ with st.expander("Reference: Tool Schemas, Flows & Agent Policies", expanded=Fal
             ("auth", "Auth Tools"),
             ("read", "Read Tools"),
             ("write", "Write Tools"),
+            ("system", "System Tools"),
         ]:
             group = tools_by_type.get(tt, [])
             with st.expander(f"{label} ({len(group)})", expanded=False):
