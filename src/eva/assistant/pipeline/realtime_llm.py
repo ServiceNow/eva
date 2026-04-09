@@ -14,7 +14,7 @@ Writing user entries on #3 and assistant entries on #5 guarantees correct order.
 import struct
 import time
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from pipecat.frames.frames import Frame, InputAudioRawFrame, VADUserStartedSpeakingFrame, VADUserStoppedSpeakingFrame
 from pipecat.processors.frame_processor import FrameDirection
@@ -75,14 +75,14 @@ class InstrumentedRealtimeLLMService(OpenAIRealtimeLLMService):
 
         # Assistant response accumulation (across audio_transcript_delta events)
         self._current_assistant_transcript_parts: list[str] = []
-        self._assistant_response_start_wall_ms: Optional[str] = None
+        self._assistant_response_start_wall_ms: str | None = None
 
         # Track whether we're mid-assistant-response (for interruption flushing)
         self._assistant_responding: bool = False
 
         # Track audio frame timing for VAD delay calculation
-        self._last_audio_frame_time: Optional[float] = None
-        self._vad_delay_ms: Optional[int] = None
+        self._last_audio_frame_time: float | None = None
+        self._vad_delay_ms: int | None = None
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
         """Track audio frame timing before passing to parent.
@@ -295,7 +295,7 @@ class InstrumentedRealtimeLLMService(OpenAIRealtimeLLMService):
         self._assistant_responding = False
 
     @property
-    def last_vad_delay_ms(self) -> Optional[int]:
+    def last_vad_delay_ms(self) -> int | None:
         """Return the most recent VAD delay in milliseconds.
 
         This is the time between when audio frames stopped arriving and when

@@ -4,7 +4,8 @@ Creates Pipecat services with proper configuration.
 """
 
 import datetime
-from typing import Any, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from deepgram import LiveOptions
 from openai import AsyncAzureOpenAI, BadRequestError
@@ -82,8 +83,8 @@ _audio_llm_url_counter: int = 0
 
 
 def create_stt_service(
-    model: Optional[str],
-    params: Optional[dict[str, Any]] = None,
+    model: str | None,
+    params: dict[str, Any] | None = None,
     language_code: str = "en",
 ) -> STTService | None:
     """Create speech-to-text service.
@@ -212,8 +213,8 @@ def create_stt_service(
 
 
 def create_tts_service(
-    model: Optional[str],
-    params: Optional[dict[str, Any]] = None,
+    model: str | None,
+    params: dict[str, Any] | None = None,
     language_code: str = "en",
 ) -> TTSService | None:
     """Create text-to-speech service.
@@ -360,11 +361,11 @@ def create_tts_service(
 
 
 def create_realtime_llm_service(
-    model: Optional[str],
-    params: Optional[dict[str, Any]] = None,
-    agent: Optional[AgentConfig] = None,
-    audit_log: Optional[AuditLog] = None,
-    current_date_time: Optional[str] = None,
+    model: str | None,
+    params: dict[str, Any] | None = None,
+    agent: AgentConfig | None = None,
+    audit_log: AuditLog | None = None,
+    current_date_time: str | None = None,
 ) -> LLMService:
     """Create realtime LLM service.
 

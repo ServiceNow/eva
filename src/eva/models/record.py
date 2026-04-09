@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -99,9 +99,9 @@ class GroundTruth(BaseModel):
 class AgentOverride(BaseModel):
     """Override agent configuration for a specific record."""
 
-    instructions: Optional[str] = Field(None, description="Override agent instructions")
-    tools_enabled: Optional[list[str]] = Field(None, description="Subset of tools to enable")
-    personality: Optional[str] = Field(None, description="Override agent personality")
+    instructions: str | None = Field(None, description="Override agent instructions")
+    tools_enabled: list[str] | None = Field(None, description="Subset of tools to enable")
+    personality: str | None = Field(None, description="Override agent personality")
 
 
 class EvaluationRecord(BaseModel):
@@ -123,10 +123,10 @@ class EvaluationRecord(BaseModel):
     ground_truth: GroundTruth = Field(default_factory=GroundTruth, description="Expected outcomes for evaluation")
 
     # Optional overrides
-    agent_override: Optional[AgentOverride] = Field(None, description="Override agent configuration for this record")
+    agent_override: AgentOverride | None = Field(None, description="Override agent configuration for this record")
 
     # Metadata
-    category: Optional[str] = Field(None, description="Category for grouping, e.g., 'hr_pto', 'it_support'")
+    category: str | None = Field(None, description="Category for grouping, e.g., 'hr_pto', 'it_support'")
 
     @classmethod
     def load_dataset(cls, path: Path | str) -> list["EvaluationRecord"]:
@@ -145,5 +145,4 @@ class EvaluationRecord(BaseModel):
         """Save records to JSONL file."""
         path = Path(path)
         with open(path, "w", encoding="utf-8") as f:
-            for record in records:
-                f.write(record.model_dump_json() + "\n")
+            f.writelines(record.model_dump_json() + "\n" for record in records)

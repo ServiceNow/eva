@@ -5,8 +5,9 @@ Used with self-hosted model (via vLLM) where the model accepts audio input
 audio so the model has full conversational context across turns.
 """
 
+from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Any, AsyncGenerator, Optional
+from typing import Any
 
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.agentic.system import AgenticSystem
@@ -37,7 +38,7 @@ class AudioLLMAgenticSystem(AgenticSystem):
         tool_handler: ToolExecutor,
         audit_log: AuditLog,
         alm_client: ALMvLLMClient,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
     ):
         super().__init__(
             current_date_time=current_date_time,

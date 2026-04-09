@@ -10,7 +10,7 @@ Uses JSON + base64 μ-law encoding (Twilio-style protocol).
 import asyncio
 import base64
 import json
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import websockets
 from websockets.protocol import State as WebSocketState
@@ -71,9 +71,9 @@ class BotToBotAudioInterface(AudioInterface):
         self,
         websocket_uri: str,
         conversation_id: str,
-        record_callback: Optional[Callable[[str, bytes], None]] = None,
+        record_callback: Callable[[str, bytes], None] | None = None,
         event_logger=None,
-        conversation_done_callback: Optional[Callable[[str], None]] = None,
+        conversation_done_callback: Callable[[str], None] | None = None,
     ):
         """Initialize the audio interface.
 
@@ -447,7 +447,7 @@ class BotToBotAudioInterface(AudioInterface):
                         chunk = await asyncio.wait_for(self.audio_buffer.get(), timeout=timeout)
                         audio_chunk += chunk
                         consecutive_empty_chunks = 0  # Reset on successful audio
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         # In silence mode with short timeout, keep trying until chunk duration elapsed
                         if consecutive_empty_chunks > 0 and remaining_time > NORMAL_POLL_TIMEOUT_S:
                             continue
@@ -597,7 +597,7 @@ class BotToBotAudioInterface(AudioInterface):
                         # Reset silence timing when transitioning to audio
                         silence_start_time = None
                         silence_chunks_sent = 0
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
 
                 # Refresh current_time after queue wait for accurate timing

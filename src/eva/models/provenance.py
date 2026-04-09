@@ -1,7 +1,6 @@
 """Provenance model for tracking run artifacts and environment."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -19,14 +18,14 @@ class BaseProvenance(BaseModel):
     eva_version: str
     simulation_version: str = ""
     metrics_version: str = ""
-    git_commit_sha: Optional[str] = None
-    git_branch: Optional[str] = None
-    git_dirty: Optional[bool] = None
-    git_diff_hash: Optional[str] = None
-    dataset: Optional[ArtifactInfo] = None
-    agent_config: Optional[ArtifactInfo] = None
-    tool_module: Optional[ArtifactInfo] = None
-    scenario_db: Optional[ArtifactInfo] = None
+    git_commit_sha: str | None = None
+    git_branch: str | None = None
+    git_dirty: bool | None = None
+    git_diff_hash: str | None = None
+    dataset: ArtifactInfo | None = None
+    agent_config: ArtifactInfo | None = None
+    tool_module: ArtifactInfo | None = None
+    scenario_db: ArtifactInfo | None = None
     python_version: str = ""
     platform: str = ""
     captured_at: datetime = Field(default_factory=datetime.now)

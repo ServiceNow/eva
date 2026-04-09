@@ -5,8 +5,9 @@ import csv
 import json
 import time
 import warnings
+from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from eva.assistant.agentic.audit_log import (
     AuditLog,
@@ -220,7 +221,7 @@ class AgenticSystem:
                 llm_call_response = ConversationMessage(
                     role=MessageRole.ASSISTANT,
                     content=response_content,
-                    tool_calls=tool_calls_dicts if tool_calls_dicts else None,
+                    tool_calls=tool_calls_dicts or None,
                     reasoning=llm_stats.get("reasoning"),
                 )
 

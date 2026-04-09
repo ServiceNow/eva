@@ -4,7 +4,6 @@ import json
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from eva.assistant.agentic.system import GENERIC_ERROR
 from eva.models.results import ConversationResult
@@ -647,7 +646,7 @@ class _ProcessorContext:
     """Processed log data for metric computation."""
 
     def __init__(self):
-        self.record_id: Optional[str] = None
+        self.record_id: str | None = None
 
         # Per-role turn data (indexed by turn_id, 0-indexed)
         self.transcribed_assistant_turns: dict[int, str] = {}
@@ -670,9 +669,9 @@ class _ProcessorContext:
 
         self.conversation_trace: list[dict] = []
 
-        self.audio_assistant_path: Optional[str] = None
-        self.audio_user_path: Optional[str] = None
-        self.audio_mixed_path: Optional[str] = None
+        self.audio_assistant_path: str | None = None
+        self.audio_user_path: str | None = None
+        self.audio_mixed_path: str | None = None
 
         # Interruption data
         self.assistant_interrupted_turns: set[int] = set()
@@ -680,7 +679,7 @@ class _ProcessorContext:
 
         # Conversation metadata
         self.conversation_finished: bool = False
-        self.conversation_ended_reason: Optional[str] = None
+        self.conversation_ended_reason: str | None = None
         self.is_audio_native: bool = False
 
         # Response latencies from Pipecat's UserBotLatencyObserver
@@ -698,7 +697,7 @@ class MetricsContextProcessor:
         result: ConversationResult,
         output_dir: Path,
         is_audio_native: bool = False,
-    ) -> Optional[_ProcessorContext]:
+    ) -> _ProcessorContext | None:
         """Process a single conversation record to create metric context.
 
         Args:

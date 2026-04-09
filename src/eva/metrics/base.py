@@ -4,7 +4,7 @@ import os
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pydub import AudioSegment
 
@@ -61,13 +61,13 @@ class MetricContext:
         num_turns: int = 0,
         num_tool_calls: int = 0,
         tools_called: list[str] = None,
-        conversation_ended_reason: Optional[str] = None,
+        conversation_ended_reason: str | None = None,
         duration_seconds: float = 0.0,
         # Paths to files
         output_dir: str = "",
-        audio_assistant_path: Optional[str] = None,
-        audio_user_path: Optional[str] = None,
-        audio_mixed_path: Optional[str] = None,
+        audio_assistant_path: str | None = None,
+        audio_user_path: str | None = None,
+        audio_mixed_path: str | None = None,
         # Processed log data from postprocessor
         transcribed_assistant_turns: dict[int, str] | None = None,
         transcribed_user_turns: dict[int, str] | None = None,

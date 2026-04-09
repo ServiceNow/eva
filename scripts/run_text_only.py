@@ -25,7 +25,7 @@ import json
 import os
 import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -514,7 +514,7 @@ async def run_record(
     user_message = record.user_goal["starting_utterance"]
     end_reason = "max_turns"
     turn_count = 0
-    started_at = datetime.now(timezone.utc)
+    started_at = datetime.now(UTC)
 
     for turn in range(max_turns):
         turn_count = turn + 1
@@ -546,7 +546,7 @@ async def run_record(
     else:
         end_reason = "max_turns"
 
-    ended_at = datetime.now(timezone.utc)
+    ended_at = datetime.now(UTC)
     duration = (ended_at - started_at).total_seconds()
     logger.info(f"Conversation ended: {end_reason} ({turn_count} turns, {duration:.1f}s)")
 

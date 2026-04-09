@@ -954,16 +954,15 @@ class BenchmarkRunner:
             f.write("record_id,completed,duration_seconds,num_turns,num_tool_calls,ended_reason,error\n")
 
             # Successful records
-            for output_id, result in successful:
-                f.write(
-                    f"{output_id},true,{result.duration_seconds:.2f},"
-                    f"{result.num_turns},{result.num_tool_calls},"
-                    f"{result.conversation_ended_reason or ''},\n"
-                )
+            f.writelines(
+                f"{output_id},true,{result.duration_seconds:.2f},"
+                f"{result.num_turns},{result.num_tool_calls},"
+                f"{result.conversation_ended_reason or ''},\n"
+                for output_id, result in successful
+            )
 
             # Failed records
-            for record_id in failed_ids:
-                f.write(f"{record_id},false,0,0,0,error,failed\n")
+            f.writelines(f"{record_id},false,0,0,0,error,failed\n" for record_id in failed_ids)
 
     @classmethod
     def from_config_file(cls, config_path: Path | str) -> "BenchmarkRunner":

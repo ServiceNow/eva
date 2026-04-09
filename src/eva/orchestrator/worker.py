@@ -5,7 +5,7 @@ import json
 import math
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from eva.assistant.server import AssistantServer
 from eva.models.agents import AgentConfig
@@ -106,9 +106,9 @@ class ConversationWorker:
 
         logger.info(f"Starting conversation for record {self.record.id} on port {self.port}")
 
-        conversation_ended_reason: Optional[str] = None
-        error: Optional[str] = None
-        error_details: Optional[ErrorDetails] = None
+        conversation_ended_reason: str | None = None
+        error: str | None = None
+        error_details: ErrorDetails | None = None
 
         try:
             # 1. Start assistant server
@@ -126,7 +126,7 @@ class ConversationWorker:
                     timeout=self.config.conversation_timeout_seconds,
                 )
                 logger.info(f"Conversation {self.record.id} ended: {conversation_ended_reason}")
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 conversation_ended_reason = "timeout"
                 logger.warning(f"Conversation {self.record.id} timed out")
             except asyncio.CancelledError:
@@ -288,7 +288,7 @@ class ConversationWorker:
         if self._user_simulator:
             self._user_simulator = None
 
-    def _calculate_stt_latency(self) -> Optional[LatencyStats]:
+    def _calculate_stt_latency(self) -> LatencyStats | None:
         """Calculate STT latency statistics from Pipecat metrics.
 
         Uses ProcessingMetricsData from pipecat_metrics.jsonl, which measures
@@ -330,7 +330,7 @@ class ConversationWorker:
             logger.warning(f"Failed to calculate STT latency: {e}")
             return None
 
-    def _calculate_tts_latency(self) -> Optional[LatencyStats]:
+    def _calculate_tts_latency(self) -> LatencyStats | None:
         """Calculate TTS latency statistics from Pipecat metrics.
 
         Uses TTFBMetricsData (Time To First Byte) from pipecat_metrics.jsonl,
@@ -375,7 +375,7 @@ class ConversationWorker:
             logger.warning(f"Failed to calculate TTS latency: {e}")
             return None
 
-    def _calculate_llm_latency(self) -> Optional[LatencyStats]:
+    def _calculate_llm_latency(self) -> LatencyStats | None:
         """Calculate LLM latency statistics from audit log.
 
         LLM latency = time from LLM call start to response completion

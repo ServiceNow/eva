@@ -93,7 +93,7 @@ target-version = "py311"
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/rules/
 # https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
-select = ["A", "B0", "C4", "D2", "D4", "E", "F", "I"]
+select = ["A", "B0", "C4", "D2", "D4", "E", "F", "FURB", "I", "PYI", "UP"]
 ignore = ["D203", "D206", "D213", "D400", "D401", "D413", "D415", "E1", "E501"]
 
 [tool.eva]

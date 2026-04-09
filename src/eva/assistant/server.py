@@ -8,7 +8,7 @@ import asyncio
 import json
 import wave
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
@@ -135,7 +135,7 @@ class AssistantServer:
         )
 
         # Wall-clock captured at on_user_turn_started for non-instrumented S2S models
-        self._user_turn_started_wall_ms: Optional[str] = None
+        self._user_turn_started_wall_ms: str | None = None
 
         # Audio buffer for accumulating audio data
         self._audio_buffer = bytearray()
@@ -147,12 +147,12 @@ class AssistantServer:
         self._app = None
         self._server = None
         self._server_task = None
-        self._runner: Optional[PipelineRunner] = None
-        self._task: Optional[PipelineTask] = None
+        self._runner: PipelineRunner | None = None
+        self._task: PipelineTask | None = None
         self._running = False
         self.num_seconds = 0
         self._latency_measurements: list[float] = []
-        self._metrics_observer: Optional[MetricsFileObserver] = None
+        self._metrics_observer: MetricsFileObserver | None = None
         self.non_instrumented_realtime_llm = False
 
     async def start(self) -> None:
@@ -217,7 +217,7 @@ class AssistantServer:
             if self._server_task:
                 try:
                     await asyncio.wait_for(self._server_task, timeout=5.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # Force cancellation if graceful shutdown times out
                     self._server_task.cancel()
                     try:
