@@ -13,7 +13,6 @@ import html
 import json
 import os
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 import plotly.express as px
@@ -110,7 +109,7 @@ def get_record_directories(run_dir: Path) -> list[Path]:
     return sorted([d for d in records_dir.iterdir() if d.is_dir()], key=lambda d: d.name)
 
 
-def load_record_result(record_dir: Path) -> Optional[ConversationResult]:
+def load_record_result(record_dir: Path) -> ConversationResult | None:
     """Load ConversationResult from result.json."""
     result_path = record_dir / "result.json"
     if not result_path.exists():
@@ -123,7 +122,7 @@ def load_record_result(record_dir: Path) -> Optional[ConversationResult]:
         return None
 
 
-def load_record_metrics(record_dir: Path) -> Optional[RecordMetrics]:
+def load_record_metrics(record_dir: Path) -> RecordMetrics | None:
     """Load RecordMetrics from metrics.json."""
     metrics_path = record_dir / "metrics.json"
     if not metrics_path.exists():
@@ -136,7 +135,7 @@ def load_record_metrics(record_dir: Path) -> Optional[RecordMetrics]:
         return None
 
 
-def load_evaluation_record(run_dir: Path, record_id: str) -> Optional[EvaluationRecord]:
+def load_evaluation_record(run_dir: Path, record_id: str) -> EvaluationRecord | None:
     """Load EvaluationRecord from dataset referenced in config."""
     config_path = run_dir / "config.json"
     dataset_path = None
@@ -1248,7 +1247,7 @@ def render_run_overview(run_dir: Path):
     st.download_button("Download CSV", csv, file_name=f"{run_dir.name}_metrics.csv", mime="text/csv")
 
 
-def render_metrics_tab(metrics: Optional[RecordMetrics]):
+def render_metrics_tab(metrics: RecordMetrics | None):
     """Render the metrics tab with judge ratings and scores."""
     if not metrics:
         st.warning("No metrics.json found for this record")
@@ -1306,7 +1305,7 @@ def render_metrics_tab(metrics: Optional[RecordMetrics]):
                         st.json(details_to_show)
 
 
-def render_processed_data_tab(metrics: Optional[RecordMetrics]):
+def render_processed_data_tab(metrics: RecordMetrics | None):
     """Render the processed data tab with all context variables."""
     if not metrics or not metrics.context:
         st.warning("No processed data available (metrics context not found)")
@@ -1403,7 +1402,7 @@ def render_processed_data_tab(metrics: Optional[RecordMetrics]):
             st.info("No agent instructions data")
 
 
-def render_conversation_trace_tab(metrics: Optional[RecordMetrics], record_dir: Path):
+def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Path):
     """Render conversation trace with chat-like visualization and per-turn metrics."""
     if not metrics or not metrics.context:
         st.warning("No processed data available (metrics context not found)")
