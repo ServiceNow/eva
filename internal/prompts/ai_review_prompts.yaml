@@ -1,0 +1,364 @@
+ai_review:
+  # ============================================================================
+  # Shared metric reference for cross-metric prompts
+  # ============================================================================
+  metric_reference: |
+      ## Pipeline Architecture
+
+      Each pipeline has three components in this data flow:
+
+      ```
+      User speaks → [STT] transcribes audio to text → [LLM] reasons and generates text response → [TTS] synthesizes text to audio → User hears
+      ```
+
+      - **STT (Speech-to-Text):** Converts user audio into text. Errors here (misheard words, garbled codes) feed wrong input to the LLM.
+      - **LLM (Language Model):** Reads the STT transcript, reasons about what to do, calls tools, and generates a text response. Errors here are reasoning/logic failures.
+      - **TTS (Text-to-Speech):** Converts the LLM's text response into audio the user hears. Errors here mean the user hears something different from what the LLM wrote.
+
+      {pipeline_config}
+
+      ## Metric Reference
+
+      Use this reference to correctly interpret scores, attribute failures to the right component,
+      and compare metrics across pipelines. All scores are normalized to 0-1 where **higher is better**.
+
+      | Metric | Evaluates | Input → Output | What it measures | Raw scale | Normalization |
+      |--------|-----------|----------------|-----------------|-----------|---------------|
+      | task_completion | LLM | LLM tool calls → DB state | Whether LLM tool calls produced correct final DB state | 0-1 (F1) | Already 0-1 |
+      | faithfulness | LLM | LLM text responses vs tool results | Whether LLM remained faithful to tool results and policies | 1-3 integer | (r-1)/2 → 0-1 |
+      | conversation_progression | LLM | Full conversation flow | Whether conversation progresses logically toward goal | 1-3 integer | (r-1)/2 → 0-1 |
+      | conciseness | LLM | LLM text responses | Whether LLM responses are appropriately brief for voice | 1-3 integer | (r-1)/2 → 0-1 |
+      | transcription_accuracy_key_entities | STT | User audio → STT text output | Whether STT correctly transcribed key entities (names, codes, dates) | 0-1 (ratio) | Already 0-1 |
+      | agent_speech_fidelity | TTS | LLM text → TTS audio output | Whether TTS audio matches what the LLM intended to say | 0-1 (per-turn avg) | Already 0-1 |
+      | turn_taking | TTS/STT | Audio timing between turns | Whether responses are timed correctly (not too early/late) | -2 to +2 | (r+2)/4 → 0-1 |
+
+      **Critical: when discussing failures, attribute them to the correct component.**
+      - If TTS garbles a code in audio, that is a **TTS** failure (agent_speech_fidelity) — name the TTS model, not the STT model.
+      - If STT mis-transcribes a spoken code, that is an **STT** failure (transcription_accuracy_key_entities) — name the STT model, not the TTS model.
+      - If the LLM uses wrong tool parameters despite correct STT input, that is an **LLM** failure.
+      - When referring to a pipeline, use the full configuration name or specify the relevant component explicitly (e.g., "the Cartesia TTS" not just "Cartesia" if discussing speech fidelity).
+
+  # ============================================================================
+  # Shared issue output format referenced by Pass 1 prompts
+  # ============================================================================
+  issue_format_shared: |
+      ## Output Format
+
+      ### Issue
+
+      For each issue, include the following components in the specified format:
+
+      **Important:** Use the exact markdown formatting shown below (bold labels with `**Label:**`, bullet points with `*`, etc.).
+
+      #### Issue 1: [Title - Following detailed guidelines below!]
+      * **Description:** [Clear, 1-2 sentence explanation of the failure mode]
+
+      * **Example:** [Brief description of one representative sample. Include a short quote from the actual sample only if it helps illustrate the problem. Only include sample ID at end: (Sample #)]
+
+      * **Representative samples:** [List no more than 4 distinct sample IDs that represent the issue well. Include 2-3 word parentheticals indicating the sample topic. Strictly as examples: 12 (password update), 45 (email update).]
+
+      * **Sample count:** (# samples) - Count of distinct sample IDs affected by this issue. If a sample has multiple problems for this same issue, count it only once. This count will match the number of unique IDs in the Summary Table row.]
+
+      ---
+
+      [Repeat for Issue 2, Issue 3, etc.]
+
+      ### Summary Table
+
+      | Issue | Sample Count | All Affected Sample IDs |
+      |-------|--------------|-------------------------|
+      | Issue 1: [title] | [count each ID once - no duplicates] | [list each ID once only, comma-separated] |
+      | Issue 2: [title] | [count each ID once - no duplicates] | [list each ID once only, comma-separated] |
+      | ... | ... | ... |
+
+      ## Important Guidelines
+
+      ### Title writing guidelines
+      - Write titles in sentence case (capitalize only the first word).
+      - **Keep titles under 10 words.** Cut every word that doesn't add meaning.
+      - Use active voice and explicit language — say what the agent *did wrong*, not what "was observed".
+      - Name the failure, not the metric. The reader shouldn't need context to understand.
+      - Do NOT use parenthetical qualifiers in titles — put details in the description.
+      - When helpful, specify the failure scope (e.g., "to the user" vs "in the database").
+
+      Good examples:
+      - "Agent skips cancellation and refund steps"
+      - "TTS drops alphanumeric codes and booking references"
+      - "Missing confirmation before executing action"
+      - "Agent repeats verification questions already answered"
+
+      Bad examples (do NOT write titles like these):
+      - "Cancellation/refund workflow not applied (booking remains confirmed)" — too long, has parenthetical
+      - "Issues with tool call accuracy" — too vague
+      - "Faithfulness violations were observed across samples" — passive, wordy
+
+      ### Overall guidelines
+      - **Group issues by failure mode** - Each issue should correspond to a distinct failure pattern. Group all samples exhibiting the same underlying problem into a single issue; do not split minor variations into separate issues.
+      - **Be specific** - Use concrete details from the {{sample_context}}, not generic descriptions.
+      - **Verify accuracy** - Only reference sample IDs that actually exhibit the issue described.
+      - **Prioritize clarity** - The reader should immediately understand each issue without needing to read the full {{sample_context}}.
+
+  # ============================================================================
+  # Pass 1: Per-Metric Summarization (single generic prompt for all metrics)
+  # ============================================================================
+  pass1:
+    generic: |
+      You are an expert voice agent evaluator analyzing **{metric_name}** metric failures.
+
+      {metric_description}
+
+      ## Failure Samples ({batch_size} total)
+      {batch_issues}
+
+      ## Task
+      Analyze these {batch_size} failure samples. Identify the distinct failure
+      patterns — let the data guide you. Group samples that share the same
+      underlying problem into a single issue.
+
+      Each issue must be **clearly distinct** from every other issue. If two
+      patterns overlap significantly, merge them into one. The goal is that a
+      reader can scan the issue titles and immediately understand the different
+      ways this metric fails — with no ambiguity about which issue a given
+      sample belongs to.
+
+      For each issue, explain the **causal chain**: what happened in the
+      conversation or pipeline that led to the failure? Where did things diverge
+      from the expected path? If tool calls, conversation traces, or DB diffs
+      are provided, use them to pinpoint the exact step where the failure
+      originated (e.g., "agent never called cancel_reservation" or "agent asked
+      for confirmation number twice before proceeding").
+
+      {issue_format}
+
+      ## Critical: Sample ID accuracy
+      - `affected_samples` must list **EVERY** sample ID that exhibits this issue — not just representatives. Go through all {batch_size} samples and include every one that matches.
+      - `sample_count` must equal exactly `len(affected_samples)`. Do not estimate — count the list you wrote.
+      - Only use sample IDs from the failure samples provided above. Do not invent IDs.
+      - A sample can appear in multiple issues if it exhibits multiple failure patterns.
+
+      Respond in JSON:
+      {{"issues": [{{"title": "<short title — under 10 words>", "description": "<1-2 sentence evidence-based description of the failure pattern>", "causal_chain": "<What specifically went wrong? Trace from trigger to failure. Reference tool calls, conversation turns, or DB state.>", "example": "<concrete example from one sample — quote the specific failing text, wrong parameter, garbled word, or timing value. Include the sample ID in parentheses at the end.>", "affected_samples": ["<every_sample_id_that_exhibits_this_issue>"], "sample_count": "<must equal len(affected_samples)>"}}], "batch_summary": "<1-2 sentence summary>"}}
+
+  # ============================================================================
+  # Pass 2: Error Category Assignment
+  # ============================================================================
+  pass2:
+    batch_categorizer: |
+      You are categorizing voice agent benchmark failures for the {metric} metric.
+
+      ## Failure Samples ({num_samples} total)
+      {samples}
+
+      ## Task
+      For EACH sample above, assign ALL applicable error categories from the
+      following list. Most failures have multiple contributing error types — list
+      every category that applies, not just the primary one.
+
+      {category_list}
+
+      Respond in JSON with an "assignments" array containing one entry per sample,
+      in the same order as the samples above:
+      {{"assignments": [{{"sample_id": "<sample_id>", "categories": ["<category_name>", ...], "confidence": "high|medium|low", "reasoning": "<1 sentence justification>"}}]}}
+
+    categories:
+      task_completion: |
+        - missing_tool_call: Required tool was never called
+        - wrong_tool_params: Tool called with incorrect parameter values
+        - extra_tool_call: Unnecessary tool call that modified state incorrectly
+        - wrong_tool_sequence: Tools called in incorrect order causing wrong state
+        - state_mutation_error: Tool called correctly but state not updated as expected
+        - partial_completion: Some but not all required changes were made
+
+      agent_speech_fidelity: |
+        - word_substitution: Words replaced with phonetically similar but different words
+        - word_omission: Words or phrases dropped from intended text
+        - word_addition: Extra words added not present in intended text
+        - pronunciation_error: Words present but spoken incorrectly
+        - number_mangling: Numbers, codes, or alphanumeric strings garbled
+        - name_mangling: Proper names mispronounced or substituted
+
+      # turn_taking, faithfulness, conversation_progression, conciseness,
+      # stt_wer, and transcription_accuracy_key_entities categories are all
+      # extracted deterministically from metric details — no prompts needed.
+
+  # ============================================================================
+  # Pass 3: Critical Issues (cross-metric synthesis)
+  # ============================================================================
+  pass3:
+    cross_metric_synthesis: |
+      You are identifying the **critical issues** for a voice agent pipeline: {combo_label}.
+
+      {metric_reference}
+
+      Below are the per-metric issues found in Pass 1. Each issue has a title,
+      description, causal chain, and sample count. Your job is to look across
+      ALL metrics and produce a unified list of **critical issues** — merging
+      related per-metric issues that share the same root cause.
+
+      ## Per-Metric Issues
+      {per_metric_issues}
+
+      ## Error Category Distribution
+      {category_distribution}
+
+      ## Overall Statistics
+      - Total samples: {total_samples}
+      - EVA-A mean: {eva_a_mean:.3f}
+      - EVA-X mean: {eva_x_mean:.3f}
+
+      ## Task
+
+      ### 1. Merge related issues
+      Many per-metric issues are different views of the same root problem. For
+      example, "Agent never calls cancel_reservation" (task_completion) and
+      "Agent claims cancellation was successful" (faithfulness) are the same
+      root issue. Merge them into one critical issue that names the root cause.
+
+      ### 2. Assign severity
+      Classify each critical issue with ALL applicable tags:
+      - **high_impact**: Directly blocks the user's goal or corrupts state — wrong outcome, task not completed.
+      - **cascading**: This failure triggers or worsens failures in other metrics — root-cause failures with downstream effects.
+      - **common**: Frequent and widespread but may not individually block the user's goal — high volume, lower per-instance impact.
+      An issue can have multiple tags (e.g. high_impact + cascading).
+
+      ### 3. Count affected samples
+      For each critical issue, list ALL unique sample IDs from the merged
+      per-metric issues. A sample counted in two metrics is still one sample.
+
+      ## Title Writing Guidelines
+      - Sentence case. Under 10 words. Active voice.
+      - Name the root failure, not the metric.
+      - Be specific: "Agent skips baggage transfer after rebooking" not "State issues".
+
+      Respond in JSON:
+      {{"critical_issues": [{{"title": "<short active title>", "description": "<what goes wrong and why it matters>", "severity": ["high_impact", "cascading", "common"], "source_metrics": ["<metric_name>"], "affected_samples": ["<sample_id>"], "sample_count": 0, "merged_from": ["<original per-metric issue title>"]}}], "overall_assessment": ["<bullet 1: dominant failure pattern>", "<bullet 2: secondary pattern>", "<bullet 3 (optional)>"]}}
+
+  # ============================================================================
+  # Model-Level Reports
+  # ============================================================================
+  model_reports:
+    cross_combo_comparison: |
+      Compare these pipeline configurations. Each profile includes metric scores,
+      top issues, error category distributions, and conversation-length analysis.
+
+      {metric_reference}
+
+      {combo_profiles}
+
+      ## Task
+
+      Produce a structured comparison. Be concise, specific, and grounded in the
+      data above. Use active voice. No filler, no hedging, no restating scores
+      that the reader can already see in tables.
+
+      ### 1. Key findings (3-5 bullets)
+      Each bullet is one sentence in active voice. State the finding, not the metric.
+      Focus on patterns that differentiate configurations or reveal systemic issues.
+
+      ### 2. Best overall
+      Name the best configuration and give a 1-sentence reason citing specific
+      metric advantages and failure patterns.
+
+      ### 3. Shared failures
+      List failure patterns that appear in ALL configurations. Each is a short
+      phrase naming the specific failure (not a metric name).
+
+      ### 4. Dominant failures per configuration
+      For each config, list 2-3 failure modes unique or especially severe for
+      that config. Keep each to a short phrase.
+
+      ### 5. Structural insights
+      Only include insights supported by the data. Focus on:
+      - Cascading failure chains (which failure triggers others, in what order)
+      - Early vs late conversation failures
+      - Conversation length effects on metrics
+      Skip any pattern not observable in the data.
+
+      Respond in JSON:
+      {{"key_findings": ["<1 sentence each — concise, active voice, specific>"], "best_overall": "<combo_label>", "best_overall_reasoning": "<1 sentence>", "shared_failures": ["<short failure phrase>"], "per_combo_dominant_failures": {{"<combo_label>": ["<short failure phrase>"]}}, "structural_insights": [{{"pattern": "<short name>", "finding": "<1-2 sentences with evidence>", "affected_configs": ["<combo_label or 'all'>"]}}]}}
+
+    component_comparison: |
+      You are comparing pipeline configurations that differ ONLY in their
+      {component_name} ({component_values}).
+
+      {metric_reference}
+
+      ## Per-Configuration Results
+      {config_results}
+
+      Identify which {component_name} performs best and what specific failure
+      patterns are attributable to the {component_name} choice.
+
+      Respond in JSON:
+      {{"best_component": "<component_value>", "reasoning": "<evidence-based reasoning>", "component_specific_patterns": [{{"component_value": "<value>", "unique_patterns": ["<pattern>"]}}], "summary": "<2-3 sentence summary>"}}
+
+    pattern_summary: |
+      You are synthesizing findings across all voice agent pipeline configurations.
+
+      {metric_reference}
+
+      ## All Configuration Profiles
+      {all_profiles}
+
+      ## Cross-Combo Comparison
+      {cross_combo}
+
+      ## Component-Isolated Comparisons
+      {component_comparisons}
+
+      Produce the top 3-5 key findings — the most important takeaways a reader
+      should remember. The output will be rendered as markdown, so use formatting
+      that makes findings easy to skim.
+
+      Each finding has two parts separated by " | ":
+      - **Title** (before the pipe): 3-6 words, active voice, names the finding
+      - **Description** (after the pipe): A concise explanation with specific data.
+        You MAY use markdown tables, bullet lists, or bold text inside the
+        description to present numbers clearly. A small comparison table is
+        preferred over a wall of inline numbers.
+
+      Cover:
+      - Performance differences between configurations
+      - Structural patterns (how/when pipelines break down)
+      - Component-level findings (which LLM/STT/TTS choices matter most)
+
+      **IMPORTANT: Only state observations grounded in the data. Do NOT include
+      recommendations, suggestions, takeaways, or advice on what to change or
+      prioritize. The reader will draw their own conclusions.**
+
+      Example formats:
+      - Simple: "STT choice drives entity accuracy | Deepgram achieves 12% lower entity error rate than Whisper across all LLM pairings."
+      - With table: "LLM choice dominates accuracy | \n\n| Metric | Config A | Config B |\n|---|---|---|\n| Task Completion | 0.80 | 0.40 |\n| Faithfulness | 0.85 | 0.40 |\n\nConfig A completes tasks at 2x the rate."
+
+      Respond in JSON:
+      {{"key_findings": ["<title> | <description>"]}}
+
+  # ============================================================================
+  # Error Propagation Analysis
+  # ============================================================================
+  error_propagation:
+    entity_error_analysis: |
+      You are analyzing how STT entity transcription errors propagate into
+      downstream failures in a voice agent pipeline.
+
+      ## Quantitative Context
+      {quantitative_summary}
+
+      ## Co-failure Samples (entity error + task completion failure)
+      These samples had BOTH entity transcription errors AND task completion failures.
+      For each, I show the entity errors and the task completion context.
+      {cofailure_samples}
+
+      ## Task
+      Analyze the causal chains from entity transcription errors to downstream
+      failures. For each pattern you identify:
+      1. Name the causal chain concisely (e.g., "Misheard confirmation code → lookup failure → conversation stall")
+      2. Explain the mechanism — how exactly does the entity error lead to the downstream failure?
+      3. Cite specific samples as evidence
+      4. Estimate how preventable this is (if STT were perfect, would the task succeed?)
+
+      Focus on the most impactful and frequent patterns. Be specific — name the
+      entity types involved, the tools that failed, and the downstream effects.
+
+      Respond in JSON:
+      {{"causal_chains": [{{"pattern": "<short name>", "mechanism": "<2-3 sentence explanation>", "entity_types_involved": ["<entity_type>"], "downstream_effects": ["<metric: effect>"], "sample_ids": ["<id>"], "preventability": "high|medium|low"}}], "overall_finding": "<2-3 sentence summary of how entity errors propagate in this pipeline>"}}
