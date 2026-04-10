@@ -874,7 +874,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "setuptools", specifier = ">=65.0.0" },
     { name = "soundfile", marker = "extra == 'apps'", specifier = ">=0.13" },
-    { name = "streamlit", marker = "extra == 'apps'", specifier = ">=1.51.0" },
+    { name = "streamlit", marker = "extra == 'apps'", specifier = ">=1.56.0" },
     { name = "streamlit-diff-viewer", marker = "extra == 'apps'", specifier = ">=0.0.2" },
     { name = "structlog", specifier = ">=23.0" },
     { name = "tqdm", specifier = ">=4.65" },
