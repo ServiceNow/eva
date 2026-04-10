@@ -12,6 +12,7 @@ Usage:
 import html
 import json
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -99,6 +100,28 @@ def get_run_directories(output_dir: Path) -> list[Path]:
         return []
     run_dirs = [d for d in output_dir.iterdir() if d.is_dir() and (d / "records").exists()]
     return sorted(run_dirs, key=lambda d: d.name, reverse=True)
+
+
+def _system_name_from_run(run_dir: Path) -> str:
+    """Extract the system name from a run folder name (<timestamp>_<system_name>)."""
+    m = re.match(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d+_(.+)$", run_dir.name)
+    return m.group(1) if m else run_dir.name
+
+
+def filter_latest_runs(run_dirs: list[Path]) -> list[Path]:
+    """Keep only the most recent run per system name.
+
+    Assumes run_dirs is already sorted newest-first (as returned by
+    get_run_directories), so the first occurrence of each system name wins.
+    """
+    seen: set[str] = set()
+    result = []
+    for d in run_dirs:
+        system = _system_name_from_run(d)
+        if system not in seen:
+            seen.add(system)
+            result.append(d)
+    return result
 
 
 def get_record_directories(run_dir: Path) -> list[Path]:
@@ -1761,6 +1784,10 @@ def main():
     output_dirs = [Path(p.strip()) for p in output_dirs_input.splitlines() if p.strip()] or [Path(_DEFAULT_OUTPUT_DIR)]
 
     run_dirs = [rd for od in output_dirs for rd in get_run_directories(od)]
+
+    latest_only = st.sidebar.toggle("Latest run per system only", value=True)
+    if latest_only:
+        run_dirs = filter_latest_runs(run_dirs)
 
     if not run_dirs:
         st.error(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
