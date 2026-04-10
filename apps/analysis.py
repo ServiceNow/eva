@@ -24,6 +24,7 @@ import eva.metrics  # noqa: F401
 from eva.metrics.registry import get_global_registry
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RecordMetrics
+from internal.ai_review_view import render_ai_review
 
 # ============================================================================
 # Configuration
@@ -1884,6 +1885,10 @@ def record_detail():
     render_record_detail(_select_run(_get_run_dirs()))
 
 
+def ai_review():
+    render_ai_review(_get_run_dirs())
+
+
 def main():
     st.set_page_config(page_title="EVA Results Analysis", layout="wide", page_icon="website/public/favicon.svg")
 
@@ -1891,6 +1896,7 @@ def main():
         st.Page(cross_run_comparison, title="Cross-Run Comparison", icon=":material/compare_arrows:"),
         st.Page(run_overview, title="Run Overview", icon=":material/summarize:"),
         st.Page(record_detail, title="Record Detail", icon=":material/article:"),
+        st.Page(ai_review, title="AI Review", icon=":material/smart_toy:"),
     )
     st.navigation(pages).run()
 
