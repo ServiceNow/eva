@@ -471,8 +471,15 @@ def _model_suffix_from_config(run_config: dict) -> str:
     return "_".join(p for p in parts if p)
 
 
+_TIMESTAMP_RUN_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d+)_(.+)$")
+
+
 def _get_run_label(run_name: str, run_config: dict) -> str:
     """Build a display label for a run, appending model info if not already in the name."""
+    # If the run name is <timestamp>_<system_name>, reformat as <system_name> (<timestamp>)
+    m = _TIMESTAMP_RUN_RE.match(run_name)
+    if m:
+        return f"{m.group(2)} ({m.group(1)})"
     suffix = _model_suffix_from_config(run_config)
     if not suffix or suffix in run_name:
         return run_name
