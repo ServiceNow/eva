@@ -858,7 +858,7 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
 # ============================================================================
 
 
-def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
+def render_cross_run_comparison(run_dirs: list[Path]):
     """Render a comparison view across multiple runs."""
     st.markdown("### Cross-Run Comparison")
     st.caption("Compare aggregate metrics across all runs that have metrics data.")
@@ -1001,12 +1001,7 @@ def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
     display_df = summary_df[display_cols].copy()
 
     # Add link column to navigate to Run Overview
-    output_dir_str = str(run_dirs[0].parent) if run_dirs else ""
-    display_df.insert(
-        0,
-        "link",
-        summary_df["run"].apply(lambda r: f"?output_dir={output_dir_str}&view=Run+Overview&run={r}"),
-    )
+    display_df.insert(0, "link", f"/run_overview?output_dir={run_dirs[0].parent}&run=" + summary_df["run"])
 
     composite_rename = {c: f"[EVA] {_EVA_COMPOSITE_DISPLAY[c]}" for c in table_composites}
     display_df = display_df.rename(columns={"label": "Run", "records": "# Records", **composite_rename, **col_rename})
@@ -1707,15 +1702,8 @@ def _render_sidebar_run_metadata(run_name: str, run_config: dict):
     st.sidebar.info("\n\n".join(metadata_parts))
 
 
-# ============================================================================
-# Main App
-# ============================================================================
-
-
-def main():
-    st.set_page_config(page_title="EVA Results Analysis", layout="wide")
-    st.title("EVA Results Analysis")
-
+def _get_run_dirs():
+    """Get run directories, showing an error if none found."""
     output_dir = Path(
         st.sidebar.text_input("Output directory", value=_DEFAULT_OUTPUT_DIR, key="output_dir", bind="query-params")
     )
@@ -1724,18 +1712,12 @@ def main():
 
     if not run_dirs:
         st.error(f"No run directories found in {output_dir}")
-        return
+        st.stop()
 
-    # View mode
-    st.sidebar.header("View")
-    view_options = ["Cross-Run Comparison", "Run Overview", "Record Detail"]
-    view_mode = st.sidebar.radio("View", view_options, key="view", label_visibility="collapsed", bind="query-params")
+    return run_dirs
 
-    if view_mode == "Cross-Run Comparison":
-        render_cross_run_comparison([output_dir / d.name for d in run_dirs], str(output_dir))
-        return
 
-    # Sidebar: run selection
+def _select_run(run_dirs: list[Path]):
     st.sidebar.header("Run Selection")
     selected_run_dir = st.sidebar.selectbox(
         "Select Run", run_dirs, format_func=lambda d: d.name, key="run", bind="query-params"
@@ -1747,11 +1729,10 @@ def main():
     else:
         st.sidebar.info(f"**Run:** {selected_run_dir.name}")
 
-    if view_mode == "Run Overview":
-        render_run_overview(selected_run_dir)
-        return
+    return selected_run_dir
 
-    # Record detail view
+
+def render_record_detail(selected_run_dir: Path):
     record_dirs = get_record_directories(selected_run_dir)
 
     if not record_dirs:
@@ -1884,6 +1865,34 @@ def main():
 
     with tab4:
         render_processed_data_tab(metrics)
+
+
+# ============================================================================
+# Main App
+# ============================================================================
+
+
+def cross_run_comparison():
+    render_cross_run_comparison(_get_run_dirs())
+
+
+def run_overview():
+    render_run_overview(_select_run(_get_run_dirs()))
+
+
+def record_detail():
+    render_record_detail(_select_run(_get_run_dirs()))
+
+
+def main():
+    st.set_page_config(page_title="EVA Results Analysis", layout="wide")
+
+    pages = (
+        st.Page(cross_run_comparison, title="Cross-Run Comparison", icon=":material/compare_arrows:"),
+        st.Page(run_overview, title="Run Overview", icon=":material/summarize:"),
+        st.Page(record_detail, title="Record Detail", icon=":material/article:"),
+    )
+    st.navigation(pages).run()
 
 
 if __name__ == "__main__":
