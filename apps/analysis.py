@@ -476,7 +476,7 @@ def _get_run_label(run_name: str, run_config: dict) -> str:
     suffix = _model_suffix_from_config(run_config)
     if not suffix or suffix in run_name:
         return run_name
-    return f"{run_name} ({suffix})"
+    return f"{suffix} ({run_name})"
 
 
 def _color_cell(val):
