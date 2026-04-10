@@ -1752,14 +1752,18 @@ def main():
     query_params = st.query_params
 
     # Sidebar: output directory selection
-    st.sidebar.header("Output Directory")
+    st.sidebar.header("Output Directories")
     default_output = query_params.get("output_dir", _DEFAULT_OUTPUT_DIR)
-    output_dir = Path(st.sidebar.text_input("Path to output directory", value=default_output))
+    # Normalize comma-separated (from URL query params) to newline-separated (for text area)
+    if "," in default_output and "\n" not in default_output:
+        default_output = "\n".join(p.strip() for p in default_output.split(","))
+    output_dirs_input = st.sidebar.text_area("Paths to output directories (one per line)", value=default_output)
+    output_dirs = [Path(p.strip()) for p in output_dirs_input.splitlines() if p.strip()] or [Path(_DEFAULT_OUTPUT_DIR)]
 
-    run_dirs = get_run_directories(output_dir)
+    run_dirs = [rd for od in output_dirs for rd in get_run_directories(od)]
 
     if not run_dirs:
-        st.error(f"No run directories found in {output_dir}")
+        st.error(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
         return
 
     # View mode
@@ -1770,17 +1774,19 @@ def main():
     view_mode = st.sidebar.radio("View", view_options, index=default_view_idx, label_visibility="collapsed")
 
     if view_mode == "Cross-Run Comparison":
-        render_cross_run_comparison([output_dir / d.name for d in run_dirs], str(output_dir))
+        render_cross_run_comparison(run_dirs, ", ".join(str(d) for d in output_dirs))
         return
 
     # Sidebar: run selection
     st.sidebar.header("Run Selection")
-    run_dir_names = [d.name for d in run_dirs]
+    multiple_output_dirs = len(output_dirs) > 1
+    run_dir_labels = [str(d) if multiple_output_dirs else d.name for d in run_dirs]
     default_run_idx = 0
-    if "run" in query_params and query_params["run"] in run_dir_names:
-        default_run_idx = run_dir_names.index(query_params["run"])
-    selected_run_name = st.sidebar.selectbox("Select Run", run_dir_names, index=default_run_idx)
-    selected_run_dir = output_dir / selected_run_name
+    if "run" in query_params and query_params["run"] in run_dir_labels:
+        default_run_idx = run_dir_labels.index(query_params["run"])
+    selected_run_label = st.sidebar.selectbox("Select Run", run_dir_labels, index=default_run_idx)
+    selected_run_dir = run_dirs[run_dir_labels.index(selected_run_label)]
+    selected_run_name = selected_run_dir.name
 
     run_config = _load_run_config(selected_run_dir)
     if run_config:
@@ -1791,9 +1797,9 @@ def main():
     if view_mode == "Run Overview":
         st.query_params.from_dict(
             {
-                "output_dir": str(output_dir),
+                "output_dir": ",".join(str(d) for d in output_dirs),
                 "view": "Run Overview",
-                "run": selected_run_name,
+                "run": selected_run_label,
             }
         )
         render_run_overview(selected_run_dir)
@@ -1840,9 +1846,9 @@ def main():
 
     # Update query params for deep linking
     new_params = {
-        "output_dir": str(output_dir),
+        "output_dir": ",".join(str(d) for d in output_dirs),
         "view": "Record Detail",
-        "run": selected_run_name,
+        "run": selected_run_label,
         "record": selected_record_name,
     }
     if selected_trial:
