@@ -981,6 +981,7 @@ def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
             system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
             summary: dict = {
                 "run": run_name,
+                "run_output_dir": str(run_dir.parent),
                 "label": _get_run_label(run_name, run_config),
                 "system_name": system_name,
                 "run_timestamp": run_timestamp,
@@ -1008,6 +1009,7 @@ def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
             system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
             summary = {
                 "run": run_name,
+                "run_output_dir": str(run_dir.parent),
                 "label": _get_run_label(run_name, run_config),
                 "system_name": system_name,
                 "run_timestamp": run_timestamp,
@@ -1074,12 +1076,11 @@ def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
     display_cols = ["system_name", "run_timestamp", "records"] + table_composites + ordered_metrics
     display_df = summary_df[display_cols].copy()
 
-    # Add link column to navigate to Run Overview
-    output_dir_str = str(run_dirs[0].parent) if run_dirs else ""
+    # Add link column to navigate to Run Overview (use per-run output dir to support multiple output dirs)
     display_df.insert(
         0,
         "link",
-        summary_df["run"].apply(lambda r: f"?output_dir={output_dir_str}&view=Run+Overview&run={r}"),
+        summary_df.apply(lambda row: f"?output_dir={row['run_output_dir']}&view=Run+Overview&run={row['run']}", axis=1),
     )
 
     composite_rename = {c: f"[EVA] {_EVA_COMPOSITE_DISPLAY[c]}" for c in table_composites}
