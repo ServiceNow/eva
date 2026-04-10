@@ -28,6 +28,8 @@ Agents that score well on task completion tend to score worse on conversational 
 
 ### Cloning the Repository
 
+#### Clone the Public Repository (`origin`)
+
 If you're only interested in running the latest stable version of EVA, you can clone with `--branch latest`, and optionally speed things up with `--depth 1 --no-tags --single-branch`.
 ```bash
 git clone https://github.com/ServiceNow/eva.git --branch latest --depth 1 --no-tags --single-branch
@@ -36,6 +38,22 @@ git clone https://github.com/ServiceNow/eva.git --branch latest --depth 1 --no-t
 Otherwise, for development, you can clone the default branch, `main`.
 ```bash
 git clone https://github.com/ServiceNow/eva.git
+```
+
+#### Add the Private Repository (`internal`)
+
+The private internal repo can be used for Toolkit-specific work, experimental apps, etc.
+
+Add a remote named `internal` for the private internal repo:
+```bash
+git remote add internal git@github.com:ServiceNow/eva-internal.git --fetch
+```
+
+Now, when pushing a branch, you can specify `-u origin` or `-u internal` to push to the public or private repo, respectively.
+
+To avoid confusion, the default branch of the internal repo is named `main-internal`. You can checkout `main-internal` as usual without conflicting with the public `main` branch:
+```bash
+git checkout internal/main-internal
 ```
 
 ### Installation
