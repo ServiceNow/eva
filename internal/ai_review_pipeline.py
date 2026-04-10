@@ -13,8 +13,9 @@ import json
 import os
 import re
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any
 
 from eva.models.results import RecordMetrics
 from eva.utils.json_utils import extract_and_load_json
@@ -461,7 +462,7 @@ def get_valid_trial_dirs(record_dir: Path) -> list[tuple[str, Path]]:
     return [("", record_dir)]
 
 
-def load_record_metrics(data_path: Path) -> Optional[RecordMetrics]:
+def load_record_metrics(data_path: Path) -> RecordMetrics | None:
     """Load RecordMetrics from metrics.json."""
     metrics_path = data_path / "metrics.json"
     if not metrics_path.exists():
@@ -487,7 +488,7 @@ def _cache_key(combo_label: str) -> str:
 
 def collect_combo_data(
     run_dirs: list[Path],
-    max_samples: Optional[int] = None,
+    max_samples: int | None = None,
 ) -> dict[str, dict]:
     """Collect all record data grouped by pipeline combo.
 
@@ -531,7 +532,7 @@ def collect_combo_data(
     return combos
 
 
-def _get_metric_score(metrics: RecordMetrics, metric_name: str) -> Optional[float]:
+def _get_metric_score(metrics: RecordMetrics, metric_name: str) -> float | None:
     """Get the normalized score for a metric, or raw score as fallback."""
     ms = metrics.metrics.get(metric_name)
     if ms is None or ms.error:
@@ -613,7 +614,7 @@ def _load_tool_call_sequence(data_path: Path) -> str:
                     elif count is not None:
                         result_summary = f"{status} ({count} results)"
                     else:
-                        result_summary = status if status else "ok"
+                        result_summary = status or "ok"
             else:
                 result_summary = str(resp)[:120]
             tool_calls.append(
@@ -1393,7 +1394,7 @@ def _save_cache(cache_dir: Path, data: Any, *path_parts: str) -> None:
         json.dump(data, f, indent=2, default=str)
 
 
-def _load_cache(cache_dir: Path, *path_parts: str) -> Optional[Any]:
+def _load_cache(cache_dir: Path, *path_parts: str) -> Any | None:
     """Load a cached JSON file, returning None if not found."""
     file_path = cache_dir
     for part in path_parts:
@@ -1457,7 +1458,7 @@ def _save_metadata(
 async def _cached_llm_call(
     llm_client: LLMClient,
     messages: list[dict],
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
     cache_parts: tuple[str, ...] = (),
     force_rerun: bool = False,
     label: str = "",
@@ -1494,7 +1495,7 @@ async def run_pass1_per_metric(
     total_samples: int,
     prompt_manager: PromptManager,
     llm_client: LLMClient,
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
     force_rerun: bool = False,
 ) -> dict:
     """Pass 1: Summarize all failures for one metric in a single LLM call."""
@@ -1610,7 +1611,7 @@ def _extract_flagged_dimensions(details: dict) -> list[str]:
     explanation = details.get("explanation", {})
     dimensions = explanation.get("dimensions", {}) if isinstance(explanation, dict) else {}
     flagged = [dim for dim, data in dimensions.items() if isinstance(data, dict) and data.get("flagged")]
-    return flagged if flagged else ["unknown"]
+    return flagged or ["unknown"]
 
 
 def _extract_conciseness_categories(details: dict) -> list[str]:
@@ -1653,7 +1654,7 @@ def _extract_stt_wer_categories(details: dict) -> list[str]:
         ("word_insertion", details.get("total_insertions", 0)),
     ]
     cats = [name for name, count in sorted(counts, key=lambda x: x[1], reverse=True) if count > 0]
-    return cats if cats else ["unknown"]
+    return cats or ["unknown"]
 
 
 def _extract_transcription_accuracy_categories(details: dict) -> list[str]:
@@ -1770,7 +1771,7 @@ async def run_pass2_error_categories(
     metric_name: str,
     prompt_manager: PromptManager,
     llm_client: LLMClient,
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
     force_rerun: bool = False,
 ) -> list[dict]:
     """Pass 2: Categorize failures — deterministic for metrics with structured details, LLM for others."""
@@ -1828,9 +1829,9 @@ async def run_pass3_synthesis(
     eva_x_mean: float,
     prompt_manager: PromptManager,
     llm_client: LLMClient,
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
     force_rerun: bool = False,
-    pipeline_config: Optional[dict] = None,
+    pipeline_config: dict | None = None,
 ) -> dict:
     """Pass 3: Cross-metric synthesis for one combo."""
     per_metric_parts = []
@@ -1886,14 +1887,10 @@ async def run_pass3_synthesis(
     if was_cached:
         return parsed
 
-    result = (
-        parsed
-        if parsed
-        else {
-            "systemic_issues": [],
-            "overall_assessment": ["Analysis failed (LLM call error — likely rate limited)."],
-        }
-    )
+    result = parsed or {
+        "systemic_issues": [],
+        "overall_assessment": ["Analysis failed (LLM call error — likely rate limited)."],
+    }
 
     if cache_dir:
         _save_cache(cache_dir, result, "pass3_synthesis.json")
@@ -2022,7 +2019,7 @@ async def run_error_propagation_analysis(
     propagation_stats: dict,
     prompt_manager: PromptManager,
     llm_client: LLMClient,
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
     force_rerun: bool = False,
 ) -> dict:
     """Run LLM analysis on error propagation patterns for a combo."""
@@ -2085,14 +2082,10 @@ async def run_error_propagation_analysis(
     if was_cached:
         return parsed
 
-    result = (
-        parsed
-        if parsed
-        else {
-            "causal_chains": [],
-            "overall_finding": "LLM analysis failed.",
-        }
-    )
+    result = parsed or {
+        "causal_chains": [],
+        "overall_finding": "LLM analysis failed.",
+    }
 
     if cache_dir and parsed is not None:
         _save_cache(cache_dir, result, "error_propagation.json")
@@ -2159,7 +2152,7 @@ async def generate_combo_report(
     batch_size: int = DEFAULT_BATCH_SIZE,
     threshold: float = DEFAULT_FAILURE_THRESHOLD,
     force_rerun: set[str] | None = None,
-    progress_callback: Optional[Callable[[float, str], None]] = None,
+    progress_callback: Callable[[float, str], None] | None = None,
 ) -> dict:
     """Run Passes 1-3 + model report for a single combo. Returns ComboReport as dict."""
     force_rerun = force_rerun or set()
@@ -2304,7 +2297,7 @@ async def generate_cross_combo_report(
     combo_reports: dict[str, dict],
     prompt_manager: PromptManager,
     llm_client: LLMClient,
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
     force_rerun: bool = False,
 ) -> dict:
     """Cross-combo comparison report."""
@@ -2348,7 +2341,7 @@ async def generate_component_comparison(
     component: str,
     prompt_manager: PromptManager,
     llm_client: LLMClient,
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
     force_rerun: bool = False,
 ) -> dict:
     """Compare combos that differ only in one component (llm_model, stt_model, tts_model)."""
@@ -2417,7 +2410,7 @@ async def generate_pattern_summary(
     component_comparisons: dict[str, dict],
     prompt_manager: PromptManager,
     llm_client: LLMClient,
-    cache_dir: Optional[Path] = None,
+    cache_dir: Path | None = None,
     force_rerun: bool = False,
     component_focus: str = "all",
 ) -> dict:
@@ -2502,9 +2495,9 @@ async def run_full_pipeline(
     batch_size: int = DEFAULT_BATCH_SIZE,
     failure_threshold: float = DEFAULT_FAILURE_THRESHOLD,
     force_rerun: set[str] | None = None,
-    max_samples: Optional[int] = None,
-    progress_callback: Optional[Callable[[float, str], None]] = None,
-    result_callback: Optional[Callable[[dict], None]] = None,
+    max_samples: int | None = None,
+    progress_callback: Callable[[float, str], None] | None = None,
+    result_callback: Callable[[dict], None] | None = None,
     component_focus: str = "all",
 ) -> dict:
     """Orchestrate the full multi-pass pipeline across all combos.

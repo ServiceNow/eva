@@ -12,7 +12,7 @@ import difflib
 import json
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import streamlit as st
 import yaml
@@ -66,7 +66,7 @@ def load_dataset_and_scenarios(jsonl_path: Path, scenarios_dir: Path) -> tuple[d
         return {}, []
 
 
-def load_scenario_db(scenarios_dir: Path, record_id: str) -> Optional[dict]:
+def load_scenario_db(scenarios_dir: Path, record_id: str) -> dict | None:
     """Load initial scenario database for a record."""
     scenario_path = scenarios_dir / f"{record_id}.json"
 
@@ -82,7 +82,7 @@ def load_scenario_db(scenarios_dir: Path, record_id: str) -> Optional[dict]:
         return None
 
 
-def load_agent_config(config_path: Path) -> Optional[dict]:
+def load_agent_config(config_path: Path) -> dict | None:
     """Load agent configuration YAML."""
     if not config_path.exists():
         logger.warning(f"Agent config not found: {config_path}")
@@ -111,7 +111,7 @@ def build_tool_type_map(agent_config: dict) -> dict[str, str]:
 # ============================================================================
 
 
-def load_feedback(feedback_dir: Path, record_id: str) -> Optional[dict]:
+def load_feedback(feedback_dir: Path, record_id: str) -> dict | None:
     """Load existing feedback if it exists."""
     feedback_path = feedback_dir / f"{record_id}.json"
 
@@ -189,7 +189,7 @@ def generate_unified_diff(initial_db: dict, expected_db: dict) -> str:
     )
 
     diff_text = "".join(diff)
-    return diff_text if diff_text else "No changes expected between initial and expected databases."
+    return diff_text or "No changes expected between initial and expected databases."
 
 
 # ============================================================================
@@ -238,7 +238,7 @@ def render_user_goal_section(record: EvaluationRecord):
             st.write(record.user_goal)
 
 
-def render_starting_scenario_db_section(initial_db: Optional[dict]):
+def render_starting_scenario_db_section(initial_db: dict | None):
     """Render starting scenario database section."""
     with st.expander("Starting Scenario Database", expanded=False):
         if initial_db:
@@ -298,7 +298,7 @@ def _render_trace_entry(
     step: int,
     entry: Any,
     tool_type_map: dict[str, str],
-    paired_response: Optional[dict] = None,
+    paired_response: dict | None = None,
 ):
     """Render a single trace entry with appropriate formatting."""
     if isinstance(entry, str):
@@ -351,7 +351,7 @@ def _render_trace_entry(
         st.json(entry)
 
 
-def render_scenario_db_diff_section(record: EvaluationRecord, initial_db: Optional[dict]):
+def render_scenario_db_diff_section(record: EvaluationRecord, initial_db: dict | None):
     """Render scenario database diff section."""
     with st.expander("Scenario Database Diff", expanded=False):
         st.caption("Shows diff between initial and final database after the tool calls in the trace occurred")
@@ -372,7 +372,7 @@ def render_scenario_db_diff_section(record: EvaluationRecord, initial_db: Option
             st.info("No expected scenario database available")
 
 
-def render_information_section(agent_config: Optional[dict], tool_type_map: dict[str, str]):
+def render_information_section(agent_config: dict | None, tool_type_map: dict[str, str]):
     """Render information section with agent instructions and tool configs."""
     st.subheader("Information")
 
@@ -457,14 +457,14 @@ def _answer_badge(key: str, feedback: dict, invert: bool = False) -> str:
     return ":green[Yes]" if val == "Yes" else ":red[No]"
 
 
-def _show_question(label: str, badge: str, explanation: Optional[str] = None):
+def _show_question(label: str, badge: str, explanation: str | None = None):
     """Render a single question row with badge and optional explanation."""
     st.sidebar.markdown(f"**{label}** {badge}")
     if explanation and explanation.strip():
         st.sidebar.warning(explanation)
 
 
-def render_feedback_display(record_id: str, feedback: Optional[dict]):
+def render_feedback_display(record_id: str, feedback: dict | None):
     """Render read-only feedback panel in the sidebar."""
     st.sidebar.header("Feedback")
 

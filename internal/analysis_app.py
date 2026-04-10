@@ -15,7 +15,6 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 import streamlit as st
@@ -65,7 +64,7 @@ def get_record_directories(run_dir: Path) -> list[Path]:
     return sorted(record_dirs, key=lambda d: d.name)
 
 
-def load_record_result(record_dir: Path) -> Optional[ConversationResult]:
+def load_record_result(record_dir: Path) -> ConversationResult | None:
     """Load ConversationResult from result.json."""
     result_path = record_dir / "result.json"
     if not result_path.exists():
@@ -80,7 +79,7 @@ def load_record_result(record_dir: Path) -> Optional[ConversationResult]:
         return None
 
 
-def load_record_metrics(record_dir: Path) -> Optional[RecordMetrics]:
+def load_record_metrics(record_dir: Path) -> RecordMetrics | None:
     """Load RecordMetrics from metrics.json."""
     metrics_path = record_dir / "metrics.json"
     if not metrics_path.exists():
@@ -95,9 +94,7 @@ def load_record_metrics(record_dir: Path) -> Optional[RecordMetrics]:
         return None
 
 
-def load_evaluation_record(
-    run_dir: Path, record_id: str, dataset_path: Optional[Path] = None
-) -> Optional[EvaluationRecord]:
+def load_evaluation_record(run_dir: Path, record_id: str, dataset_path: Path | None = None) -> EvaluationRecord | None:
     """Load EvaluationRecord from dataset."""
     # Try to find dataset path from config
     if not dataset_path:
@@ -162,7 +159,7 @@ def format_transcript(transcript_path: Path) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def format_pipecat_logs(pipecat_path: Path, log_type_filter: Optional[str] = None) -> pd.DataFrame:
+def format_pipecat_logs(pipecat_path: Path, log_type_filter: str | None = None) -> pd.DataFrame:
     """Load and format pipecat logs as a DataFrame with optional filtering."""
     if not pipecat_path.exists():
         return pd.DataFrame()
@@ -348,7 +345,7 @@ def render_llm_analysis(analysis: dict):
         st.caption(f"Analysis generated at: {generated_at}")
 
 
-def check_authentication_success(record_dir: Path) -> Optional[bool]:
+def check_authentication_success(record_dir: Path) -> bool | None:
     """Check if get_reservation was called and returned status: 'success'.
 
     Checks conversation_messages in audit_log.json for a tool call to get_reservation
@@ -406,7 +403,7 @@ def check_authentication_success(record_dir: Path) -> Optional[bool]:
     return False if get_reservation_called else None
 
 
-def render_metrics_tab(metrics: Optional[RecordMetrics]):
+def render_metrics_tab(metrics: RecordMetrics | None):
     """Render the metrics tab with judge ratings and scores."""
     if not metrics:
         st.warning("No metrics.json found for this record")
@@ -470,7 +467,7 @@ def render_metrics_tab(metrics: Optional[RecordMetrics]):
                         st.json(details_to_show)
 
 
-def render_processed_data_tab(metrics: Optional[RecordMetrics], record_dir: Path):
+def render_processed_data_tab(metrics: RecordMetrics | None, record_dir: Path):
     """Render the processed data tab with all context variables."""
     if not metrics or not hasattr(metrics, "context") or not metrics.context:
         st.warning("No processed data available (metrics context not found)")
@@ -815,7 +812,7 @@ def _render_turn_metric_badges(turn_metrics: list[dict]) -> str:
 
 
 @st.cache_data(show_spinner=False)
-def _load_audio(audio_path: str) -> Optional[bytes]:
+def _load_audio(audio_path: str) -> bytes | None:
     """Load a WAV file and return raw bytes (cached)."""
     p = Path(audio_path)
     if not p.exists():
@@ -906,7 +903,7 @@ def _get_turn_timestamps(turn_id: int, role: str, context: dict) -> list | None:
     return [min(s[0] for s in segs), max(s[1] for s in segs)]
 
 
-def render_conversation_trace_tab(metrics: Optional[RecordMetrics], record_dir: Path):
+def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Path):
     """Render the conversation trace tab with a chat-like visualization.
 
     Shows conversation-level metrics at the top, then the trace with per-turn

@@ -13,7 +13,6 @@ Usage:
 import io
 import json
 from pathlib import Path
-from typing import Optional
 
 import jiwer
 import streamlit as st
@@ -87,12 +86,12 @@ def _display_key(record_dir: Path, records_root: Path) -> str:
 
 
 @st.cache_data(show_spinner="Processing all records...")
-def load_all_contexts(run_dir_str: str) -> dict[str, Optional[dict]]:
+def load_all_contexts(run_dir_str: str) -> dict[str, dict | None]:
     """Process all records and return serialised _ProcessorContext dicts keyed by display key."""
     run_dir = Path(run_dir_str)
     records_root = run_dir / "records"
     processor = MetricsContextProcessor()
-    contexts: dict[str, Optional[dict]] = {}
+    contexts: dict[str, dict | None] = {}
 
     for record_dir in get_record_directories(run_dir):
         result_path = record_dir / "result.json"
@@ -119,7 +118,7 @@ def load_all_contexts(run_dir_str: str) -> dict[str, Optional[dict]]:
     return contexts
 
 
-def _context_to_dict(ctx: _ProcessorContext, audio_path: Optional[Path] = None) -> dict:
+def _context_to_dict(ctx: _ProcessorContext, audio_path: Path | None = None) -> dict:
     """Serialise a _ProcessorContext into a plain dict for caching."""
     # Build a linear mapping from ElevenLabs audio timestamps to WAV offsets.
     #
@@ -134,8 +133,8 @@ def _context_to_dict(ctx: _ProcessorContext, audio_path: Optional[Path] = None) 
     # Linear mapping:
     #   wav_offset = (el_ts - session_started) * (wav_duration / session_duration)
 
-    session_started_sec: Optional[float] = None
-    session_ended_sec: Optional[float] = None
+    session_started_sec: float | None = None
+    session_ended_sec: float | None = None
 
     for event in ctx.history:
         if event["source"] != "elevenlabs" or event["event_type"] != "connection_state":
@@ -151,7 +150,7 @@ def _context_to_dict(ctx: _ProcessorContext, audio_path: Optional[Path] = None) 
             session_ended_sec = event["timestamp_ms"] / 1000.0
 
     # Compute scale from WAV duration vs session duration
-    wav_duration_sec: Optional[float] = None
+    wav_duration_sec: float | None = None
     if audio_path and audio_path.exists():
         try:
             audio = AudioSegment.from_wav(str(audio_path))
@@ -195,7 +194,7 @@ def _context_to_dict(ctx: _ProcessorContext, audio_path: Optional[Path] = None) 
 
 
 @st.cache_data(show_spinner=False)
-def load_audio(audio_path: str) -> Optional[bytes]:
+def load_audio(audio_path: str) -> bytes | None:
     """Load a WAV file and return raw bytes (cached)."""
     p = Path(audio_path)
     if not p.exists():
@@ -235,7 +234,7 @@ def extract_audio_segment(audio_bytes: bytes, start_sec: float, end_sec: float, 
 
 
 def render_segment_player(
-    audio_bytes: Optional[bytes],
+    audio_bytes: bytes | None,
     ctx: dict,
     timestamps: list[float],
     label: str,
@@ -561,7 +560,7 @@ _CSS = """
 """
 
 
-def _get_val(d: dict, turn_id: int) -> Optional[str]:
+def _get_val(d: dict, turn_id: int) -> str | None:
     """Look up turn_id as int or str key."""
     return d.get(turn_id) or d.get(str(turn_id))
 
@@ -668,7 +667,7 @@ def _render_entry_html(entry: dict) -> str:
     return ""
 
 
-def _render_cell_html(value: Optional[str], css_class: str) -> str:
+def _render_cell_html(value: str | None, css_class: str) -> str:
     """Render a transcript/tts_text value as a styled div."""
     if not value:
         return '<div class="cell-empty">--</div>'
@@ -677,7 +676,7 @@ def _render_cell_html(value: Optional[str], css_class: str) -> str:
 
 def render_record(
     ctx: dict,
-    audio_bytes: Optional[bytes] = None,
+    audio_bytes: bytes | None = None,
 ):
     """Render the combined 3-column view: transcript_with_tools | transcribed | intended."""
     st.markdown(_CSS, unsafe_allow_html=True)
@@ -835,12 +834,12 @@ def render_issues_summary(issues: list[dict]):
         st.markdown(f"- {icon} **{issue['category']}**: {issue['message']}")
 
 
-def _is_failed(ctx: Optional[dict]) -> bool:
+def _is_failed(ctx: dict | None) -> bool:
     """Return True if the context represents a failed record."""
     return ctx is None or "_error" in ctx
 
 
-def render_run_overview(all_contexts: dict[str, Optional[dict]]):
+def render_run_overview(all_contexts: dict[str, dict | None]):
     """Render an overview table of all records with issue counts."""
     rows = []
     for record_id, ctx in sorted(all_contexts.items()):

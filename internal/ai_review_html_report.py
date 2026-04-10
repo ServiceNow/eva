@@ -9,7 +9,7 @@ import io
 import json
 import re
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -1395,7 +1395,7 @@ def _generate_html(
     ]
 
     body = "\n".join(s for s in sections if s)
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     base_title = "EVA Error Analysis Highlights"
     if recipient:
         title = f"{recipient} \u2014 {base_title}"
