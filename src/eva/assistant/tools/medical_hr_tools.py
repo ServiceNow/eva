@@ -228,6 +228,7 @@ def verify_provider_auth(params: dict, db: dict, call_index: int) -> dict:
         "authenticated": True,
         "npi": p.npi,
         "first_name": provider.get("first_name"),
+        "last_name": provider.get("last_name"),
         "employee_id": provider.get("employee_id"),
         "message": f"Provider NPI {p.npi} authenticated successfully",
     }
