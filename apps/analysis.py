@@ -858,7 +858,7 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
 # ============================================================================
 
 
-def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
+def render_cross_run_comparison(run_dirs: list[Path]):
     """Render a comparison view across multiple runs."""
     st.markdown("### Cross-Run Comparison")
     st.caption("Compare aggregate metrics across all runs that have metrics data.")
@@ -875,45 +875,12 @@ def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
         all_providers.update(_extract_providers(cfg))
         all_types.add(_classify_pipeline_type(cfg))
 
-    # Read defaults from query params
-    qp = st.query_params
-    default_models = [m for m in qp.get_all("model") if m in all_models] or sorted(all_models)
-    default_providers = [p for p in qp.get_all("provider") if p in all_providers] or sorted(all_providers)
-    default_types = [t for t in qp.get_all("type") if t in all_types] or sorted(all_types)
-
     # Render filters
-    sel_types = st.multiselect("Pipeline Type", sorted(all_types), default=default_types)
-    sel_providers = st.multiselect("Provider", sorted(all_providers), default=default_providers)
-    sel_models = st.multiselect("Model", sorted(all_models), default=default_models)
-
-    # Update query params only when they differ to avoid rerun loops
-    new_params: dict[str, str | list[str]] = {
-        "output_dir": output_dir_str or (str(run_dirs[0].parent) if run_dirs else ""),
-        "view": "Cross-Run Comparison",
-    }
-    if sel_models and set(sel_models) != all_models:
-        new_params["model"] = sel_models
-    if sel_providers and set(sel_providers) != all_providers:
-        new_params["provider"] = sel_providers
-    if sel_types and set(sel_types) != all_types:
-        new_params["type"] = sel_types
-
-    # Compare with current params to avoid unnecessary rerun
-    current = dict(st.query_params)
-    needs_update = False
-    for k, v in new_params.items():
-        cur_val = current.get(k)
-        if isinstance(v, list):
-            if sorted(v) != sorted(st.query_params.get_all(k)):
-                needs_update = True
-                break
-        elif cur_val != v:
-            needs_update = True
-            break
-    if set(current.keys()) != set(new_params.keys()):
-        needs_update = True
-    if needs_update:
-        st.query_params.from_dict(new_params)
+    sel_types = st.multiselect("Pipeline Type", sorted(all_types), default=all_types, key="type", bind="query-params")
+    sel_providers = st.multiselect(
+        "Provider", sorted(all_providers), default=all_providers, key="provider", bind="query-params"
+    )
+    sel_models = st.multiselect("Model", sorted(all_models), default=all_models, key="model", bind="query-params")
 
     # Apply filters
     filtered_dirs = [
@@ -1034,12 +1001,7 @@ def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
     display_df = summary_df[display_cols].copy()
 
     # Add link column to navigate to Run Overview
-    output_dir_str = str(run_dirs[0].parent) if run_dirs else ""
-    display_df.insert(
-        0,
-        "link",
-        summary_df["run"].apply(lambda r: f"?output_dir={output_dir_str}&view=Run+Overview&run={r}"),
-    )
+    display_df.insert(0, "link", f"/run_overview?output_dir={run_dirs[0].parent}&run=" + summary_df["run"])
 
     composite_rename = {c: f"[EVA] {_EVA_COMPOSITE_DISPLAY[c]}" for c in table_composites}
     display_df = display_df.rename(columns={"label": "Run", "records": "# Records", **composite_rename, **col_rename})
@@ -1740,66 +1702,37 @@ def _render_sidebar_run_metadata(run_name: str, run_config: dict):
     st.sidebar.info("\n\n".join(metadata_parts))
 
 
-# ============================================================================
-# Main App
-# ============================================================================
-
-
-def main():
-    st.set_page_config(page_title="EVA Results Analysis", layout="wide")
-    st.title("EVA Results Analysis")
-
-    query_params = st.query_params
-
-    # Sidebar: output directory selection
-    st.sidebar.header("Output Directory")
-    default_output = query_params.get("output_dir", _DEFAULT_OUTPUT_DIR)
-    output_dir = Path(st.sidebar.text_input("Path to output directory", value=default_output))
+def _get_run_dirs():
+    """Get run directories, showing an error if none found."""
+    output_dir = Path(
+        st.sidebar.text_input("Output directory", value=_DEFAULT_OUTPUT_DIR, key="output_dir", bind="query-params")
+    )
 
     run_dirs = get_run_directories(output_dir)
 
     if not run_dirs:
         st.error(f"No run directories found in {output_dir}")
-        return
+        st.stop()
 
-    # View mode
-    st.sidebar.header("View")
-    default_view = query_params.get("view", "Cross-Run Comparison")
-    view_options = ["Cross-Run Comparison", "Run Overview", "Record Detail"]
-    default_view_idx = view_options.index(default_view) if default_view in view_options else 0
-    view_mode = st.sidebar.radio("View", view_options, index=default_view_idx, label_visibility="collapsed")
+    return run_dirs
 
-    if view_mode == "Cross-Run Comparison":
-        render_cross_run_comparison([output_dir / d.name for d in run_dirs], str(output_dir))
-        return
 
-    # Sidebar: run selection
+def _select_run(run_dirs: list[Path]):
     st.sidebar.header("Run Selection")
-    run_dir_names = [d.name for d in run_dirs]
-    default_run_idx = 0
-    if "run" in query_params and query_params["run"] in run_dir_names:
-        default_run_idx = run_dir_names.index(query_params["run"])
-    selected_run_name = st.sidebar.selectbox("Select Run", run_dir_names, index=default_run_idx)
-    selected_run_dir = output_dir / selected_run_name
+    selected_run_dir = st.sidebar.selectbox(
+        "Select Run", run_dirs, format_func=lambda d: d.name, key="run", bind="query-params"
+    )
 
     run_config = _load_run_config(selected_run_dir)
     if run_config:
-        _render_sidebar_run_metadata(selected_run_name, run_config)
+        _render_sidebar_run_metadata(selected_run_dir.name, run_config)
     else:
-        st.sidebar.info(f"**Run:** {selected_run_name}")
+        st.sidebar.info(f"**Run:** {selected_run_dir.name}")
 
-    if view_mode == "Run Overview":
-        st.query_params.from_dict(
-            {
-                "output_dir": str(output_dir),
-                "view": "Run Overview",
-                "run": selected_run_name,
-            }
-        )
-        render_run_overview(selected_run_dir)
-        return
+    return selected_run_dir
 
-    # Record detail view
+
+def render_record_detail(selected_run_dir: Path):
     record_dirs = get_record_directories(selected_run_dir)
 
     if not record_dirs:
@@ -1809,10 +1742,7 @@ def main():
     # Sidebar: record selection
     st.sidebar.header("Record Selection")
     record_names = [d.name for d in record_dirs]
-    default_record_idx = 0
-    if "record" in query_params and query_params["record"] in record_names:
-        default_record_idx = record_names.index(query_params["record"])
-    selected_record_name = st.sidebar.selectbox("Select Record", record_names, index=default_record_idx)
+    selected_record_name = st.sidebar.selectbox("Select Record", record_names, key="record", bind="query-params")
     selected_record_dir = selected_run_dir / "records" / selected_record_name
 
     # Detect trial subdirectories
@@ -1832,22 +1762,8 @@ def main():
     selected_trial = None
     if trial_dirs:
         trial_names = [d.name for d in trial_dirs]
-        default_trial_idx = 0
-        if "trial" in query_params and query_params["trial"] in trial_names:
-            default_trial_idx = trial_names.index(query_params["trial"])
-        selected_trial = st.sidebar.selectbox("Select Trial", trial_names, index=default_trial_idx)
+        selected_trial = st.sidebar.selectbox("Select Trial", trial_names, key="trial", bind="query-params")
         selected_record_dir = selected_record_dir / selected_trial
-
-    # Update query params for deep linking
-    new_params = {
-        "output_dir": str(output_dir),
-        "view": "Record Detail",
-        "run": selected_run_name,
-        "record": selected_record_name,
-    }
-    if selected_trial:
-        new_params["trial"] = selected_trial
-    st.query_params.from_dict(new_params)
 
     # Load data
     result = load_record_result(selected_record_dir)
@@ -1949,6 +1865,34 @@ def main():
 
     with tab4:
         render_processed_data_tab(metrics)
+
+
+# ============================================================================
+# Main App
+# ============================================================================
+
+
+def cross_run_comparison():
+    render_cross_run_comparison(_get_run_dirs())
+
+
+def run_overview():
+    render_run_overview(_select_run(_get_run_dirs()))
+
+
+def record_detail():
+    render_record_detail(_select_run(_get_run_dirs()))
+
+
+def main():
+    st.set_page_config(page_title="EVA Results Analysis", layout="wide", page_icon="website/public/favicon.svg")
+
+    pages = (
+        st.Page(cross_run_comparison, title="Cross-Run Comparison", icon=":material/compare_arrows:"),
+        st.Page(run_overview, title="Run Overview", icon=":material/summarize:"),
+        st.Page(record_detail, title="Record Detail", icon=":material/article:"),
+    )
+    st.navigation(pages).run()
 
 
 if __name__ == "__main__":
