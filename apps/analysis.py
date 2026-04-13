@@ -24,6 +24,7 @@ import eva.metrics  # noqa: F401
 from eva.metrics.registry import get_global_registry
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RecordMetrics
+from apps.audio_plots import render_audio_analysis_tab
 
 # ============================================================================
 # Configuration
@@ -1813,12 +1814,13 @@ def render_record_detail(selected_run_dir: Path):
     st.divider()
 
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [
             "Conversation Trace",
             "Transcript",
             "Metrics Detail",
             "Processed Data",
+            "Audio Analysis",
         ]
     )
 
@@ -1865,6 +1867,9 @@ def render_record_detail(selected_run_dir: Path):
 
     with tab4:
         render_processed_data_tab(metrics)
+
+    with tab5:
+        render_audio_analysis_tab(selected_record_dir)
 
 
 # ============================================================================
