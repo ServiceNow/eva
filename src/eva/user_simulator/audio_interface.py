@@ -22,6 +22,7 @@ except ImportError:
 
 from elevenlabs.conversational_ai.conversation import AudioInterface
 
+from eva.user_simulator.perturbation import AudioPerturbator
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -74,6 +75,7 @@ class BotToBotAudioInterface(AudioInterface):
         record_callback: Callable[[str, bytes], None] | None = None,
         event_logger=None,
         conversation_done_callback: Callable[[str], None] | None = None,
+        perturbator: AudioPerturbator | None = None,
     ):
         """Initialize the audio interface.
 
@@ -83,12 +85,14 @@ class BotToBotAudioInterface(AudioInterface):
             record_callback: Optional callback for recording audio (source, data)
             event_logger: Optional ElevenLabsEventLogger for logging audio timing
             conversation_done_callback: Optional callback for signaling conversation end
+            perturbator: Optional perturbator to apply to user audio before sending
         """
         self.websocket_uri = websocket_uri
         self.conversation_id = conversation_id
         self.record_callback = record_callback
         self.event_logger = event_logger
         self.conversation_done_callback = conversation_done_callback
+        self._perturbator = perturbator
 
         self.websocket = None
         self.running = False
@@ -231,6 +235,8 @@ class BotToBotAudioInterface(AudioInterface):
         """
         if self.running:
             try:
+                if self._perturbator is not None:
+                    audio = self._perturbator.apply(audio)
                 self.send_queue.put_nowait(audio)
                 # Record user audio
                 if self.record_callback:
@@ -337,8 +343,10 @@ class BotToBotAudioInterface(AudioInterface):
         Returns:
             True if silence was sent, False otherwise
         """
-        # Create PCM silence and convert to μ-law
-        silence_pcm = b"\x00" * chunk_size
+        if self._perturbator is not None and self._perturbator.has_ambient_noise:
+            silence_pcm = self._perturbator.get_ambient_chunk(chunk_size)
+        else:
+            silence_pcm = b"\x00" * chunk_size
         silence_mulaw = self._convert_pcm_to_mulaw(silence_pcm)
 
         if not silence_mulaw:

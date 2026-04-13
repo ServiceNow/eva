@@ -15,6 +15,7 @@ and explicit kwargs.  Scripts opt in to ``.env`` and/or CLI via
 import copy
 import logging
 from datetime import UTC, datetime
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Any, ClassVar, Literal
 
@@ -239,6 +240,74 @@ def _strip_other_mode_fields(data: dict) -> dict:
     return {k: v for k, v in data.items() if k in _PIPELINE_FIELDS}
 
 
+class BackgroundNoiseType(StrEnum):
+    """Ambient noise type mixed into user audio (speech and silence)."""
+
+    coffee_shop = "coffee_shop"
+    airport_gate = "airport_gate"
+    bad_connection_static = "bad_connection_static"
+    road_noise = "road_noise"
+    nyc_street = "nyc_street"
+    background_music = "background_music"
+    loud_construction = "loud_construction"
+
+
+class AccentType(StrEnum):
+    """Accent variant — selects a different ElevenLabs agent ID for the user simulator."""
+
+    french = "french"
+    indian = "indian"
+    spanish = "spanish"
+    chinese = "chinese"
+
+
+class BehaviorType(StrEnum):
+    """User behavior variant — modifies persona prompt and selects a different agent ID."""
+
+    elderly_slow = "elderly_slow"
+    aggressive_impatient = "aggressive_impatient"
+    forgetful_disorganized = "forgetful_disorganized"
+
+
+class PerturbationConfig(BaseModel):
+    """Perturbations applied to the simulated user during a benchmark run.
+
+    Three independent axes:
+    - background_noise: ambient audio mixed into user speech and silence
+    - accent: uses accent-specific ElevenLabs agent IDs (mutually exclusive with behavior)
+    - behavior: modifies persona prompt + uses behavior-specific agent IDs (mutually exclusive with accent)
+    - connection_degradation: stacks codec artifacts, packet loss, and volume fluctuation on top
+
+    Agent ID env vars follow the pattern EVA_{TYPE}_USER_F / EVA_{TYPE}_USER_M.
+    Default (no accent/behavior): EVA_DEFAULT_USER_F and EVA_DEFAULT_USER_M.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    background_noise: BackgroundNoiseType | None = Field(
+        None,
+        description="Ambient noise type to mix into user audio",
+    )
+    snr_db: float = Field(
+        15.0,
+        description="Signal-to-noise ratio in dB for file-based background noise (higher = cleaner)",
+    )
+    accent: AccentType | None = Field(None, description="Accent variant for the user simulator voice")
+    behavior: BehaviorType | None = Field(None, description="User behavior variant (modifies persona + agent ID)")
+    connection_degradation: bool = Field(
+        False,
+        description="Apply VoIP degradation (codec artifacts, packet loss, volume fluctuation) on top of other perturbations",
+    )
+
+    @model_validator(mode="after")
+    def _validate_exclusivity(self) -> "PerturbationConfig":
+        if self.accent is not None and self.behavior is not None:
+            raise ValueError(
+                "accent and behavior cannot both be set — they each require exclusive use of the ElevenLabs agent ID"
+            )
+        return self
+
+
 # Discriminated union so Pydantic picks the right config type from env vars / CLI
 ModelConfigUnion = Annotated[
     Annotated[PipelineConfig, Tag("pipeline")]
@@ -397,6 +466,15 @@ class RunConfig(BaseSettings):
     aggregate_only: bool = Field(
         False,
         description="Recompute EVA aggregate scores from existing metrics.json files without re-running judges",
+    )
+
+    perturbation: PerturbationConfig | None = Field(
+        None,
+        description=(
+            "Perturbations applied to the simulated user. "
+            "Example: EVA_PERTURBATION__BACKGROUND_NOISE=coffee_shop EVA_PERTURBATION__ACCENT=french. "
+            "See PerturbationConfig for all options."
+        ),
     )
 
     # Debug and filtering
