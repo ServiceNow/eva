@@ -504,7 +504,7 @@
   {
     "id": "s2s_assistant_speak_tool_speak",
     "description": "S2S pipeline (llm_response): greeting at turn 0, user reply at turn 1, assistant speak\u2192tool_call\u2192speak at turn 2. Tests that: (1) user entries use ElevenLabs intended text, (2) assistant entries come from audit_log with proper tool call boundaries, (3) greeting is moved to front when ElevenLabs timestamps arrive before audit_log.",
-    "is_audio_native": true,
+    "pipeline_type": "s2s",
     "history": [
       {"timestamp_ms": 4784, "source": "pipecat", "event_type": "turn_start", "data": {}},
       {"timestamp_ms": 7000, "source": "pipecat", "event_type": "llm_response", "data": {"frame": "Hello, thank you for calling SkyWay Airlines. How can I help you?"}},
@@ -556,16 +556,15 @@
       "num_user_turns": 3,
       "num_tool_calls": 2,
       "conversation_trace": [
-        {"role": "assistant", "content": "Hello, thank you for calling SkyWay Airlines. How can I help you?", "type": "intended", "turn_id": 0},
+        {"role": "assistant", "content": "Hello, thank you for calling Skyway Airlines. How can I help you?", "type": "transcribed", "turn_id": 0},
         {"role": "user", "content": "I need to change my flight to March 25th.", "type": "intended", "turn_id": 1},
-        {"role": "assistant", "content": "Sure! Could you provide your confirmation number and last name?", "type": "intended", "turn_id": 1},
+        {"role": "assistant", "content": "Sure! Could you provide your confirmation number and last name?", "type": "transcribed", "turn_id": 1},
         {"role": "user", "content": "Confirmation is ZK3FFW, last name Rodriguez.", "type": "intended", "turn_id": 2},
         {"tool_name": "get_reservation", "parameters": {"confirmation_number": "ZK3FFW", "last_name": "Rodriguez"}, "type": "tool_call", "turn_id": 2},
         {"tool_name": "get_reservation", "tool_response": {"status": "success", "reservation": {"confirmation_number": "ZK3FFW"}}, "type": "tool_response", "turn_id": 2},
-        {"role": "assistant", "content": "Thank you! Let me pull up your booking.", "type": "intended", "turn_id": 2},
         {"tool_name": "search_flights", "parameters": {"origin": "AUS", "destination": "ORD", "date": "2026-03-25"}, "type": "tool_call", "turn_id": 2},
         {"tool_name": "search_flights", "tool_response": {"status": "success", "count": 3}, "type": "tool_response", "turn_id": 2},
-        {"role": "assistant", "content": "I found your reservation. You are booked on flight SK621 from Austin to Chicago.", "type": "intended", "turn_id": 2},
+        {"role": "assistant", "content": "Thank you. Let me pull up your booking. I found your reservation. You are booked on flight SK 621 from Austin to Chicago.", "type": "transcribed", "turn_id": 2},
         {"role": "user", "content": "That is not right. I am Austin to LAX.", "type": "intended", "turn_id": 3}
       ],
       "assistant_interrupted_turns": [],
@@ -798,7 +797,7 @@
   {
     "id": "s2s_audit_truncated_to_spoken",
     "description": "S2S pipeline (llm_response): audit_log/assistant has the full LLM response but llm_response only covers the spoken prefix. Tests that _truncate_to_spoken truncates audit_log text for S2S conversations.",
-    "is_audio_native": true,
+    "pipeline_type": "s2s",
     "history": [
       {"timestamp_ms": 1000, "source": "pipecat", "event_type": "turn_start", "data": {}},
       {"timestamp_ms": 1100, "source": "pipecat", "event_type": "llm_response", "data": {"frame": "Welcome to SkyWay Airlines!"}},
@@ -831,9 +830,9 @@
       "num_user_turns": 1,
       "num_tool_calls": 0,
       "conversation_trace": [
-        {"role": "assistant", "content": "Welcome to SkyWay Airlines!", "type": "intended", "turn_id": 0},
+        {"role": "assistant", "content": "Welcome to SkyWay Airlines!", "type": "transcribed", "turn_id": 0},
         {"role": "user", "content": "I need to change my flight date.", "type": "intended", "turn_id": 1},
-        {"role": "assistant", "content": "Sure, I can help you change your flight. [speaker likely cut itself off]", "type": "intended", "turn_id": 1}
+        {"role": "assistant", "content": "Sure, I can help you change your flight. [speaker likely cut itself off]", "type": "transcribed", "turn_id": 1}
       ],
       "assistant_interrupted_turns": [],
       "user_interrupted_turns": []

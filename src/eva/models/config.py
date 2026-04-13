@@ -13,6 +13,7 @@ and explicit kwargs.  Scripts opt in to ``.env`` and/or CLI via
 """
 
 from datetime import UTC, datetime
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Any, ClassVar, Literal
 
@@ -133,6 +134,14 @@ _S2S_FIELDS = {"s2s", "s2s_params"}
 _AUDIO_LLM_FIELDS = {"audio_llm", "audio_llm_params", "tts", "tts_params"}
 
 
+class PipelineType(StrEnum):
+    """Type of voice pipeline."""
+
+    CASCADE = "cascade"
+    AUDIO_LLM = "audio_llm"
+    S2S = "s2s"
+
+
 def _model_config_discriminator(data: Any) -> str:
     """Discriminate which pipeline config type to use based on unique fields."""
     if isinstance(data, dict):
@@ -148,21 +157,22 @@ def _model_config_discriminator(data: Any) -> str:
     return "pipeline"
 
 
-def is_audio_native_pipeline(model_data: dict | Any) -> bool:
-    """Return True if the model config represents an audio-native pipeline (S2S or AudioLLM).
+def get_pipeline_type(model_data: dict | Any) -> PipelineType:
+    """Return the pipeline type for the given model config.
 
     Works with both raw dicts (e.g. from config.json) and parsed model config objects.
     Also handles legacy configs where ``realtime_model`` was stored alongside
     ``llm_model`` in a flat dict (before the discriminated-union refactor).
-    Returns False for configs missing the ``model`` key.
     """
     mode = _model_config_discriminator(model_data)
-    if mode in ("s2s", "audio_llm"):
-        return True
+    if mode == "s2s":
+        return PipelineType.S2S
+    if mode == "audio_llm":
+        return PipelineType.AUDIO_LLM
     # Legacy: realtime_model was a sibling of llm_model before the union split
     if isinstance(model_data, dict) and model_data.get("realtime_model"):
-        return True
-    return False
+        return PipelineType.S2S
+    return PipelineType.CASCADE
 
 
 def _strip_other_mode_fields(data: dict) -> dict:

@@ -13,7 +13,7 @@ from eva.metrics.aggregation import compute_record_aggregates, compute_run_level
 from eva.metrics.base import BaseMetric, MetricContext
 from eva.metrics.processor import MetricsContextProcessor
 from eva.metrics.registry import MetricRegistry, get_global_registry
-from eva.models.config import is_audio_native_pipeline
+from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
 from eva.utils.hash_utils import get_dict_hash
@@ -130,7 +130,7 @@ class MetricsRunner:
 
         # Determine pipeline type from config (fallback to False for legacy runs)
         model_data = config_data.get("model", {})
-        self._is_audio_native = is_audio_native_pipeline(model_data) if model_data else False
+        self._pipeline_type = get_pipeline_type(model_data) if model_data else PipelineType.CASCADE
 
         agent_config_path = config_data.get("agent_config_path")
 
@@ -429,9 +429,7 @@ class MetricsRunner:
         result = ConversationResult(**result_data)
 
         # Use postprocessor to process logs and create enriched context
-        metrics_context = self.metrics_processor.process_record(
-            result, record_dir, is_audio_native=self._is_audio_native
-        )
+        metrics_context = self.metrics_processor.process_record(result, record_dir, pipeline_type=self._pipeline_type)
 
         # Get agent instructions and tools from config
         agent_instructions = self._agent_config["instructions"]
