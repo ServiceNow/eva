@@ -264,18 +264,18 @@ def render_trace(trace: list[dict], tool_type_map: dict[str, str]):
 
         if event == "user_utterance":
             st.markdown(
-                f'<div style="background:#1a2733;border-left:3px solid #2196F3;'
+                f'<div style="border-left:3px solid #2196F3;'
                 f'padding:8px 12px;margin:4px 0;border-radius:4px">'
-                f'<strong style="color:#64B5F6">User:</strong> '
+                f'<strong style="color:#2196F3">User:</strong> '
                 f"{msg.get('utterance', '')}</div>",
                 unsafe_allow_html=True,
             )
 
         elif event == "agent_utterance":
             st.markdown(
-                f'<div style="background:#1a1a2e;border-left:3px solid #9C27B0;'
+                f'<div style="border-left:3px solid #9C27B0;'
                 f'padding:8px 12px;margin:4px 0;border-radius:4px">'
-                f'<strong style="color:#CE93D8">Agent:</strong> '
+                f'<strong style="color:#9C27B0">Agent:</strong> '
                 f"{msg.get('utterance', '')}</div>",
                 unsafe_allow_html=True,
             )
@@ -290,7 +290,7 @@ def render_trace(trace: list[dict], tool_type_map: dict[str, str]):
                 f'border-radius:4px;font-size:0.75em;font-weight:bold">{label}</span>'
             )
             st.markdown(
-                f'<div style="background:#1c1c1c;border-left:3px solid {color};'
+                f'<div style="border-left:3px solid {color};'
                 f'padding:8px 12px;margin:4px 0;border-radius:4px">'
                 f"{badge} <code>{name}</code></div>",
                 unsafe_allow_html=True,
@@ -309,7 +309,7 @@ def render_trace(trace: list[dict], tool_type_map: dict[str, str]):
                 f'border-radius:4px;font-size:0.75em;font-weight:bold">{label}</span>'
             )
             st.markdown(
-                f'<div style="background:#111;border-left:3px solid #666;'
+                f'<div style="border-left:3px solid #aaa;'
                 f'padding:8px 12px;margin:4px 0;border-radius:4px">'
                 f"{badge} <code>{name}</code> — <strong>{status}</strong></div>",
                 unsafe_allow_html=True,
@@ -566,14 +566,14 @@ def _build_and_save_feedback(save_key: str):
         ("q_unwanted_mods", "Modification tools that shouldn't have happened?"),
         ("q_missing_mods", "Missing modification tools?"),
         ("q_alt_path", "Another way to reach different end DB state?"),
-        ("usability_as_is", "Can this sample be used as is?"),
+        ("acceptability_as_is", "Can this sample be used as is?"),
     ]
     for i, tc in enumerate(review_tool_calls):
         required_checks.append((f"wtc_{current_id}_{i}_grounded", f"Inputs grounded? ({tc['name']})"))
         required_checks.append((f"wtc_{current_id}_{i}_policy", f"Consistent with policies? ({tc['name']})"))
 
     missing = [label for key, label in required_checks if not st.session_state.get(key)]
-    if st.session_state.get("usability_as_is") == "No" and not st.session_state.get("usability_with_edits"):
+    if st.session_state.get("acceptability_as_is") == "No" and not st.session_state.get("acceptability_with_edits"):
         missing.append("Can it be submitted with your edits?")
 
     if missing:
@@ -720,37 +720,37 @@ for q_section, tab in zip(QUESTIONS, q_tabs[:-1]):
 
 # ── acceptability tab ─────────────────────────────────────────────────────────────
 with q_tabs[-1]:
-    _as_is_val = st.session_state.get("usability_as_is", "")
+    _as_is_val = st.session_state.get("acceptability_as_is", "")
     st.radio(
         "Can this sample be used as is? *",
         YES_NO,
         index=YES_NO.index(_as_is_val) if _as_is_val in YES_NO else None,
-        key="usability_as_is",
+        key="acceptability_as_is",
         help="Criteria: the user goal is sufficient AND the modification tools are exactly what we expect.",
         horizontal=True,
     )
 
-    if st.session_state.get("usability_as_is") == "No":
-        _with_edits_val = st.session_state.get("usability_with_edits", "")
+    if st.session_state.get("acceptability_as_is") == "No":
+        _with_edits_val = st.session_state.get("acceptability_with_edits", "")
         st.radio(
             "Can it be submitted with your edits? *",
             YES_NO,
             index=YES_NO.index(_with_edits_val) if _with_edits_val in YES_NO else None,
-            key="usability_with_edits",
+            key="acceptability_with_edits",
             help="After applying your edits to the user goal, would this sample be usable?",
             horizontal=True,
         )
 
-        if st.session_state.get("usability_with_edits") == "No":
+        if st.session_state.get("acceptability_with_edits") == "No":
             st.text_area(
                 "What would need to change?",
-                key="usability_needs_change",
+                key="acceptability_needs_change",
                 height=max(80, q_height - 250),
                 help="Describe what fundamental changes would be needed to make this sample usable.",
             )
 
-    if st.button("Save Feedback", type="primary", key="save_usability"):
-        _build_and_save_feedback("save_usability")
+    if st.button("Save Feedback", type="primary", key="save_acceptability"):
+        _build_and_save_feedback("save_acceptability")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
