@@ -21,7 +21,6 @@ from pipecat.frames.frames import (
     TTSSpeakFrame,
 )
 from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
-from pipecat.observers.user_bot_latency_observer import UserBotLatencyObserver
 from pipecat.pipeline.parallel_pipeline import ParallelPipeline
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -426,15 +425,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
             )
 
             metrics_log_path = self.output_dir / "pipecat_metrics.jsonl"
-            self._latency_measurements = []
-
-            async def on_latency_measured(observer, latency_seconds: float):
-                """Event handler for UserBotLatencyObserver - stores latency measurements."""
-                self._latency_measurements.append(latency_seconds)
-                logger.debug(f"Response latency captured: {latency_seconds:.3f}s")
-
-            user_bot_observer = UserBotLatencyObserver()
-            user_bot_observer.add_event_handler("on_latency_measured", on_latency_measured)
 
             # Create wall clock for consistent timestamps across log sources
             wall_clock = WallClock()
@@ -443,7 +433,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
 
             observers = [
                 BenchmarkLogObserver(str(self.output_dir), self.conversation_id, clock=wall_clock),
-                user_bot_observer,  # Track end-to-end response latency
                 MetricsLogObserver(),  # Log all metrics to console
                 self._metrics_observer,  # Write metrics to JSONL file
             ]
@@ -491,28 +480,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
             if self._metrics_observer:
                 self._metrics_observer.close()
                 self._metrics_observer = None
-
-            # Save response latencies from UserBotLatencyObserver
-            try:
-                latencies = self._latency_measurements
-                latencies_file = self.output_dir / "response_latencies.json"
-                mean_latency = sum(latencies) / len(latencies) if latencies else 0.0
-                max_latency = max(latencies) if latencies else 0.0
-
-                with open(latencies_file, "w") as f:
-                    json.dump(
-                        {
-                            "latencies": latencies,
-                            "mean": mean_latency,
-                            "max": max_latency,
-                            "count": len(latencies),
-                        },
-                        f,
-                        indent=2,
-                    )
-                logger.info(f"Saved {len(latencies)} response latencies to {latencies_file}")
-            except Exception as e:
-                logger.error(f"Error saving response latencies: {e}", exc_info=True)
 
             logger.info("Client disconnected from assistant server")
 
