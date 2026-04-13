@@ -54,33 +54,39 @@ QUESTIONS = [
         "fields": [
             {
                 "key": "q_reflects",
-                "question": "Does it reflect intended scenario context?",
+                "question": "Does it reflect intended scenario context? *",
                 "options": YES_NO,
                 "help": "We are trying to test a specific scenario that is described by the scenario context. We just want to check that the user goal is aligned with that scenario. Intents that are not meant to be satisfiable should be in nice to have, whereas intents that are satisfiable should be in must have. Adversarial intents should always be in nice to have.",
             },
             {
                 "key": "q_realistic",
-                "question": "Is it sufficiently realistic — could a caller reasonably ask this over the phone?",
+                "question": "Is it sufficiently realistic — could a caller reasonably ask this over the phone? *",
                 "options": YES_NO,
                 "help": "Just a quick check that the user goal is sufficiently realistic to include in this dataset (i.e. is topical, sounds reasonable).",
             },
             {
                 "key": "q_complete",
-                "question": "Is it complete/deterministic?",
+                "question": "Is it complete/deterministic? *",
                 "options": YES_NO,
                 "help": "Does this user goal cover all directions the agent might go in? Is there enough information on how to respond to different scenarios, are the resolution and failure conditions sufficiently clear and distinct from each other, etc. You may need to read the trace and check the expected flow to understand this one.",
             },
             {
                 "key": "q_raw_info",
-                "question": "Is all raw info present? (codes, names, etc.)",
+                "question": "Is all raw info present? (codes, names, etc.) *",
                 "options": YES_NO,
                 "help": "Does the user info contain all the required raw information that the caller would need to do the flow? You may need to read the trace and check the expected flow to understand this one.",
             },
             {
                 "key": "q_dates_make_sense",
-                "question": "Do dates in the user goal make sense given the current date/time?",
+                "question": "Do dates in the user goal make sense given the current date/time? *",
                 "options": ["Yes", "No", "N/A"],
                 "help": "If any dates are mentioned in the user goal (appointment dates, shift dates, birth dates of dependents/spouses, etc.), do they make sense relative to the current date and time? Select N/A if no dates are present.",
+            },
+            {
+                "key": "q_issues_from_seed",
+                "question": "If the user goal has issues, do they come from the seed data? *",
+                "options": ["Yes", "No", "N/A"],
+                "help": "For example, if certain pieces of information in 'information required' don't make sense, are those same pieces of information present (and incorrect) in the seed data? Select N/A if the user goal has no issues.",
             },
         ],
         "comment_key": "user_goal_comments",
@@ -93,19 +99,19 @@ QUESTIONS = [
         "fields": [
             {
                 "key": "q_unwanted_mods",
-                "question": "Modification tools that shouldn't have happened?",
+                "question": "Modification tools that shouldn't have happened? *",
                 "options": YES_NO,
                 "help": "Are there any modification/write tools in the trace that should not have happened (they violate policies, aren't required for this flow, etc)?",
             },
             {
                 "key": "q_missing_mods",
-                "question": "Missing modification tools?",
+                "question": "Missing modification tools? *",
                 "options": YES_NO,
                 "help": "Are there modification tools we expect to see in this flow that are missing? For example maybe a missing notification tool that's in the expected flow sequence, etc.",
             },
             {
                 "key": "q_alt_path",
-                "question": "Another way to reach a different end DB state (following policies)?",
+                "question": "Another way to reach a different end DB state (following policies)? *",
                 "options": YES_NO,
                 "help": "Is there a different sequence of modification tools or different parameters that could be used to still arrive at a correct end outcome? If so this is a problem because we need there to only be 1 correct answer.",
             },
@@ -344,7 +350,7 @@ if current_id not in id_set:
     current_id = ids[0]
 current_idx = ids.index(current_id)
 
-# ── Detect record change and pre-populate feedback state ─────────────────────
+# ── Detect record change and pre-populate review-question feedback state ──────
 if st.session_state.get("_prev_record_id") != current_id:
     st.session_state["_prev_record_id"] = current_id
     existing = load_feedback(current_id)
@@ -355,6 +361,7 @@ if st.session_state.get("_prev_record_id") != current_id:
         st.session_state["q_complete"] = ug.get("is_complete", "")
         st.session_state["q_raw_info"] = ug.get("raw_info_present", "")
         st.session_state["q_dates_make_sense"] = ug.get("dates_make_sense", "")
+        st.session_state["q_issues_from_seed"] = ug.get("issues_from_seed", "")
         st.session_state["user_goal_comments"] = ug.get("comments", "")
 
         gt = existing.get("ground_truth_trace", {})
@@ -371,6 +378,11 @@ if st.session_state.get("_prev_record_id") != current_id:
 
         gen = existing.get("general", {})
         st.session_state["general_comments"] = gen.get("comments", "")
+
+        usab = existing.get("acceptability", {})
+        st.session_state["acceptability_as_is"] = usab.get("can_use_as_is", "")
+        st.session_state["acceptability_with_edits"] = usab.get("can_submit_with_edits", "")
+        st.session_state["acceptability_needs_change"] = usab.get("needs_change_notes", "")
     else:
         for key in [
             "q_reflects",
@@ -378,6 +390,7 @@ if st.session_state.get("_prev_record_id") != current_id:
             "q_complete",
             "q_raw_info",
             "q_dates_make_sense",
+            "q_issues_from_seed",
             "user_goal_comments",
             "q_unwanted_mods",
             "q_missing_mods",
@@ -385,6 +398,9 @@ if st.session_state.get("_prev_record_id") != current_id:
             "trace_comments",
             "diff_comments",
             "general_comments",
+            "acceptability_as_is",
+            "acceptability_with_edits",
+            "acceptability_needs_change",
         ]:
             st.session_state[key] = ""
 
@@ -397,6 +413,31 @@ trace = expected_trace.get("trace", None) if expected_trace else None
 expected_db = ground_truth.get("expected_scenario_db", {})
 _scenario_path = SCENARIOS_DIR / f"{current_id}.json"
 initial_db = load_initial_scenario(current_id, _scenario_path.stat().st_mtime if _scenario_path.exists() else 0)
+
+# ── Per-record edit-field initialization (run once per record per session) ────
+# Uses record-scoped keys so each record has independent state; value= sets the
+# initial content the first time the record is visited, then session state takes over.
+_eid = current_id  # shorthand for key suffix
+if f"edit_high_level_goal_{_eid}" not in st.session_state:
+    _fb = load_feedback(current_id) or {}
+    _eug = _fb.get("edited_user_goal", {})
+    _edt = _eug.get("decision_tree", dt)
+    st.session_state[f"edit_high_level_goal_{_eid}"] = _eug.get("high_level_user_goal", goal.get("high_level_user_goal", ""))
+    st.session_state[f"edit_starting_utterance_{_eid}"] = _eug.get("starting_utterance", goal.get("starting_utterance", ""))
+    for _fkey, _items in [
+        (f"edit_must_have_{_eid}", _edt.get("must_have_criteria", dt.get("must_have_criteria", []))),
+        (f"edit_nice_to_have_{_eid}", _edt.get("nice_to_have_criteria", dt.get("nice_to_have_criteria", []))),
+        (f"edit_negotiation_{_eid}", _edt.get("negotiation_behavior", dt.get("negotiation_behavior", []))),
+        (f"edit_edge_cases_{_eid}", _edt.get("edge_cases", dt.get("edge_cases", []))),
+    ]:
+        st.session_state[f"{_fkey}_count"] = len(_items)
+        for _i, _item in enumerate(_items):
+            st.session_state[f"{_fkey}_{_i}"] = _item
+    st.session_state[f"edit_resolution_{_eid}"] = _edt.get("resolution_condition", dt.get("resolution_condition", ""))
+    st.session_state[f"edit_failure_{_eid}"] = _edt.get("failure_condition", dt.get("failure_condition", ""))
+    st.session_state[f"edit_escalation_{_eid}"] = _edt.get("escalation_behavior", dt.get("escalation_behavior", ""))
+    _info = _eug.get("information_required", goal.get("information_required", {}))
+    st.session_state[f"edit_info_required_{_eid}"] = json.dumps(_info, indent=2) if _info else "{}"
 
 # Extract tool calls from trace (if it exists) for the review form
 review_tool_calls = extract_review_tool_calls(trace, tool_type_map) if trace else []
@@ -433,12 +474,98 @@ with nav_height:
 # REVIEW QUESTIONS
 # ══════════════════════════════════════════════════════════════════════════════
 
-q_labels = [q["label"] for q in QUESTIONS]
-st.markdown("**Review Questions**")
+q_labels = [q["label"] for q in QUESTIONS] + ["Acceptability"]
+st.markdown("**Review Questions** — questions marked \\* are required")
 with st.container(height=q_height):
     q_tabs = st.tabs(q_labels)
 
-for q_section, tab in zip(QUESTIONS, q_tabs):
+# ── Helper: build feedback dict and validate required fields ─────────────────
+def _build_and_save_feedback(save_key: str):
+    required_checks = [
+        ("q_reflects", "Does it reflect intended scenario context?"),
+        ("q_realistic", "Is it sufficiently realistic?"),
+        ("q_complete", "Is it complete/deterministic?"),
+        ("q_raw_info", "Is all raw info present?"),
+        ("q_dates_make_sense", "Do dates make sense?"),
+        ("q_issues_from_seed", "If the user goal has issues, do they come from the seed data?"),
+        ("q_unwanted_mods", "Modification tools that shouldn't have happened?"),
+        ("q_missing_mods", "Missing modification tools?"),
+        ("q_alt_path", "Another way to reach different end DB state?"),
+        ("usability_as_is", "Can this sample be used as is?"),
+    ]
+    for i, tc in enumerate(review_tool_calls):
+        required_checks.append((f"wtc_{current_id}_{i}_grounded", f"Inputs grounded? ({tc['name']})"))
+        required_checks.append((f"wtc_{current_id}_{i}_policy", f"Consistent with policies? ({tc['name']})"))
+
+    missing = [label for key, label in required_checks if not st.session_state.get(key)]
+    if st.session_state.get("usability_as_is") == "No" and not st.session_state.get("usability_with_edits"):
+        missing.append("Can it be submitted with your edits?")
+
+    if missing:
+        st.error("Please answer all required questions before saving:\n- " + "\n- ".join(missing))
+        return
+
+    try:
+        _info_edited = json.loads(st.session_state.get(f"edit_info_required_{current_id}", "{}") or "{}")
+    except json.JSONDecodeError:
+        _info_edited = {}
+
+    feedback = {
+        "user_goal": {
+            "reflects_context": st.session_state.get("q_reflects", ""),
+            "is_realistic": st.session_state.get("q_realistic", ""),
+            "is_complete": st.session_state.get("q_complete", ""),
+            "raw_info_present": st.session_state.get("q_raw_info", ""),
+            "dates_make_sense": st.session_state.get("q_dates_make_sense", ""),
+            "issues_from_seed": st.session_state.get("q_issues_from_seed", ""),
+            "comments": st.session_state.get("user_goal_comments", ""),
+        },
+        "edited_user_goal": {
+            "high_level_user_goal": st.session_state.get(f"edit_high_level_goal_{current_id}", ""),
+            "starting_utterance": st.session_state.get(f"edit_starting_utterance_{current_id}", ""),
+            "decision_tree": {
+                "must_have_criteria": _get_list_values(f"edit_must_have_{current_id}"),
+                "nice_to_have_criteria": _get_list_values(f"edit_nice_to_have_{current_id}"),
+                "negotiation_behavior": _get_list_values(f"edit_negotiation_{current_id}"),
+                "resolution_condition": st.session_state.get(f"edit_resolution_{current_id}", ""),
+                "failure_condition": st.session_state.get(f"edit_failure_{current_id}", ""),
+                "escalation_behavior": st.session_state.get(f"edit_escalation_{current_id}", ""),
+                "edge_cases": _get_list_values(f"edit_edge_cases_{current_id}"),
+            },
+            "information_required": _info_edited,
+        },
+        "ground_truth_trace": {
+            "review_tool_calls": [
+                {
+                    "tool_name": tc["name"],
+                    "tool_type": tc.get("tool_type", "write"),
+                    "inputs_grounded": st.session_state.get(f"wtc_{current_id}_{i}_grounded", ""),
+                    "policy_consistent": st.session_state.get(f"wtc_{current_id}_{i}_policy", ""),
+                }
+                for i, tc in enumerate(review_tool_calls)
+            ],
+            "unwanted_modifications": st.session_state.get("q_unwanted_mods", ""),
+            "missing_modifications": st.session_state.get("q_missing_mods", ""),
+            "alternative_path_exists": st.session_state.get("q_alt_path", ""),
+            "comments": st.session_state.get("trace_comments", ""),
+        },
+        "diff": {
+            "comments": st.session_state.get("diff_comments", ""),
+        },
+        "general": {
+            "comments": st.session_state.get("general_comments", ""),
+        },
+        "acceptability": {
+            "can_use_as_is": st.session_state.get("acceptability_as_is", ""),
+            "can_submit_with_edits": st.session_state.get("acceptability_with_edits", ""),
+            "needs_change_notes": st.session_state.get("acceptability_needs_change", ""),
+        },
+    }
+    save_feedback(current_id, feedback)
+    st.success(f"Saved feedback for {current_id}")
+
+
+for q_section, tab in zip(QUESTIONS, q_tabs[:-1]):
     with tab:
         fields = q_section["fields"]
         # Lay out radio questions in a grid (2 per row)
@@ -482,7 +609,7 @@ for q_section, tab in zip(QUESTIONS, q_tabs):
                             _gk = f"wtc_{current_id}_{i}_grounded"
                             _gv = st.session_state.get(_gk, "")
                             st.radio(
-                                "Inputs grounded?",
+                                "Inputs grounded? *",
                                 YES_NO,
                                 index=YES_NO.index(_gv) if _gv in YES_NO else None,
                                 key=_gk,
@@ -492,7 +619,7 @@ for q_section, tab in zip(QUESTIONS, q_tabs):
                             _pk = f"wtc_{current_id}_{i}_policy"
                             _pv = st.session_state.get(_pk, "")
                             st.radio(
-                                "Consistent with policies?",
+                                "Consistent with policies? *",
                                 YES_NO,
                                 index=YES_NO.index(_pv) if _pv in YES_NO else None,
                                 key=_pk,
@@ -514,39 +641,41 @@ for q_section, tab in zip(QUESTIONS, q_tabs):
 
         # Save button in every tab for convenience
         if st.button("Save Feedback", type="primary", key=f"save_{q_section['id']}"):
-            feedback = {
-                "user_goal": {
-                    "reflects_context": st.session_state.get("q_reflects", ""),
-                    "is_realistic": st.session_state.get("q_realistic", ""),
-                    "is_complete": st.session_state.get("q_complete", ""),
-                    "raw_info_present": st.session_state.get("q_raw_info", ""),
-                    "dates_make_sense": st.session_state.get("q_dates_make_sense", ""),
-                    "comments": st.session_state.get("user_goal_comments", ""),
-                },
-                "ground_truth_trace": {
-                    "review_tool_calls": [
-                        {
-                            "tool_name": tc["name"],
-                            "tool_type": tc.get("tool_type", "write"),
-                            "inputs_grounded": st.session_state.get(f"wtc_{current_id}_{i}_grounded", ""),
-                            "policy_consistent": st.session_state.get(f"wtc_{current_id}_{i}_policy", ""),
-                        }
-                        for i, tc in enumerate(review_tool_calls)
-                    ],
-                    "unwanted_modifications": st.session_state.get("q_unwanted_mods", ""),
-                    "missing_modifications": st.session_state.get("q_missing_mods", ""),
-                    "alternative_path_exists": st.session_state.get("q_alt_path", ""),
-                    "comments": st.session_state.get("trace_comments", ""),
-                },
-                "diff": {
-                    "comments": st.session_state.get("diff_comments", ""),
-                },
-                "general": {
-                    "comments": st.session_state.get("general_comments", ""),
-                },
-            }
-            save_feedback(current_id, feedback)
-            st.success(f"Saved feedback for {current_id}")
+            _build_and_save_feedback(f"save_{q_section['id']}")
+
+# ── acceptability tab ─────────────────────────────────────────────────────────────
+with q_tabs[-1]:
+    _as_is_val = st.session_state.get("usability_as_is", "")
+    st.radio(
+        "Can this sample be used as is? *",
+        YES_NO,
+        index=YES_NO.index(_as_is_val) if _as_is_val in YES_NO else None,
+        key="usability_as_is",
+        help="Criteria: the user goal is sufficient AND the modification tools are exactly what we expect.",
+        horizontal=True,
+    )
+
+    if st.session_state.get("usability_as_is") == "No":
+        _with_edits_val = st.session_state.get("usability_with_edits", "")
+        st.radio(
+            "Can it be submitted with your edits? *",
+            YES_NO,
+            index=YES_NO.index(_with_edits_val) if _with_edits_val in YES_NO else None,
+            key="usability_with_edits",
+            help="After applying your edits to the user goal, would this sample be usable?",
+            horizontal=True,
+        )
+
+        if st.session_state.get("usability_with_edits") == "No":
+            st.text_area(
+                "What would need to change?",
+                key="usability_needs_change",
+                height=max(80, q_height - 250),
+                help="Describe what fundamental changes would be needed to make this sample usable.",
+            )
+
+    if st.button("Save Feedback", type="primary", key="save_usability"):
+        _build_and_save_feedback("save_usability")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -642,8 +771,22 @@ with st.expander("Reference: Tool Schemas, Flows & Agent Policies", expanded=Fal
             with st.expander(display_title, expanded=False):
                 st.markdown(body)
 
+_seed_data = record.get("seed_data", None)
+if _seed_data is not None:
+    with st.expander("Seed Data", expanded=False):
+        if isinstance(_seed_data, dict):
+            st.json(_seed_data)
+        else:
+            st.write(_seed_data)
+
 with st.expander("Scenario Context", expanded=False):
-    st.info(record.get("scenario_context", "No scenario context available."))
+    _sc = record.get("scenario_context")
+    if isinstance(_sc, dict):
+        st.json(_sc)
+    elif _sc:
+        st.info(_sc)
+    else:
+        st.caption("No scenario context available.")
 _raw_dt = record.get("current_date_time", "—")
 _dt_display = _raw_dt
 try:
@@ -662,58 +805,159 @@ st.markdown(
 # ── Side-by-side: User Goal | Trace ──────────────────────────────────────────
 col_goal, col_trace = st.columns(2)
 
+def _auto_height(text: str, min_height: int = 68, chars_per_line: int = 65) -> int:
+    """Estimate the pixel height needed to display text without scrolling."""
+    if not text:
+        return min_height
+    lines = text.split("\n")
+    total_rows = sum(max(1, -(-len(line) // chars_per_line)) for line in lines)
+    return max(min_height, total_rows * 22 + 40)
+
+
+def _render_list_field(label: str, base_key: str):
+    """Render a list field as individually editable text areas, one per item."""
+    st.markdown(f"**{label}**")
+    count = st.session_state.get(f"{base_key}_count", 0)
+    for i in range(count):
+        item_key = f"{base_key}_{i}"
+        if item_key not in st.session_state:
+            st.session_state[item_key] = ""
+        text = st.session_state.get(item_key, "")
+        st.text_area(f"item {i + 1}", key=item_key, height=_auto_height(text), label_visibility="collapsed")
+
+
+def _get_list_values(base_key: str) -> list[str]:
+    """Read back edited list items from session state."""
+    count = st.session_state.get(f"{base_key}_count", 0)
+    return [v for i in range(count) if (v := st.session_state.get(f"{base_key}_{i}", "").strip())]
+
+
+def _render_diff_html(diff_lines: list[str]):
+    """Render unified diff lines as colored HTML (reused for user goal and scenario DB diffs)."""
+    rows = []
+    for line in diff_lines:
+        escaped = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        if line.startswith("@@"):
+            rows.append(
+                f'<div style="background:#1e3a5f;color:#58a6ff;'
+                f"padding:4px 12px;margin-top:8px;border-radius:3px;"
+                f'font-weight:600">{escaped}</div>'
+            )
+        elif line.startswith("+++") or line.startswith("---"):
+            rows.append(f'<div style="color:#8b949e;padding:2px 12px;font-weight:700">{escaped}</div>')
+        elif line.startswith("+"):
+            rows.append(
+                f'<div style="background:#0d2818;color:#56d364;'
+                f'padding:1px 12px;border-left:3px solid #2ea043">'
+                f"{escaped}</div>"
+            )
+        elif line.startswith("-"):
+            rows.append(
+                f'<div style="background:#2d1115;color:#f85149;'
+                f'padding:1px 12px;border-left:3px solid #da3633">'
+                f"{escaped}</div>"
+            )
+        else:
+            rows.append(f'<div style="color:#c9d1d9;padding:1px 12px">{escaped}</div>')
+    body = "\n".join(rows)
+    n_lines = len(diff_lines)
+    height = min(max(200, n_lines * 22), 600)
+    html = (
+        f'<div style="font-family:ui-monospace,SFMono-Regular,'
+        f"'SF Mono',Menlo,Consolas,monospace;font-size:12px;"
+        f"line-height:1.5;background:#0d1117;border:1px solid #30363d;"
+        f'border-radius:6px;padding:8px 0;overflow-x:auto">'
+        f"{body}</div>"
+    )
+    components.html(html, height=height, scrolling=True)
+
+
+# Estimate total pixel height of the user goal column so the trace container matches
+_goal_height = 60  # title + top padding
+_goal_height += _auto_height(st.session_state.get(f"edit_high_level_goal_{_eid}", "")) + 48
+_goal_height += _auto_height(st.session_state.get(f"edit_starting_utterance_{_eid}", "")) + 48
+for _lkey in [f"edit_must_have_{_eid}", f"edit_nice_to_have_{_eid}", f"edit_negotiation_{_eid}", f"edit_edge_cases_{_eid}"]:
+    _cnt = st.session_state.get(f"{_lkey}_count", 0)
+    _goal_height += 32  # bold label
+    for _li in range(_cnt):
+        _goal_height += _auto_height(st.session_state.get(f"{_lkey}_{_li}", "")) + 16
+_goal_height += _auto_height(st.session_state.get(f"edit_resolution_{_eid}", "")) + 48
+_goal_height += _auto_height(st.session_state.get(f"edit_failure_{_eid}", "")) + 48
+_goal_height += _auto_height(st.session_state.get(f"edit_escalation_{_eid}", "")) + 48
+_goal_height += _auto_height(st.session_state.get(f"edit_info_required_{_eid}", ""), min_height=100) + 48
+
 with col_goal:
     st.markdown("##### User Goal")
-    with st.container(height=700):
-        st.markdown("###### High-level Goal")
-        st.info(goal.get("high_level_user_goal", "—"))
+    st.text_area("High-level Goal", key=f"edit_high_level_goal_{_eid}",
+                 height=_auto_height(st.session_state.get(f"edit_high_level_goal_{_eid}", "")))
+    st.text_area("Starting Utterance", key=f"edit_starting_utterance_{_eid}",
+                 height=_auto_height(st.session_state.get(f"edit_starting_utterance_{_eid}", "")))
+    _render_list_field("Must-Have Criteria", f"edit_must_have_{_eid}")
+    _render_list_field("Nice-to-Have Criteria", f"edit_nice_to_have_{_eid}")
+    _render_list_field("Negotiation Behavior", f"edit_negotiation_{_eid}")
+    st.text_area("Resolution Condition", key=f"edit_resolution_{_eid}",
+                 height=_auto_height(st.session_state.get(f"edit_resolution_{_eid}", "")))
+    st.text_area("Failure Condition", key=f"edit_failure_{_eid}",
+                 height=_auto_height(st.session_state.get(f"edit_failure_{_eid}", "")))
+    st.text_area("Escalation Behavior", key=f"edit_escalation_{_eid}",
+                 height=_auto_height(st.session_state.get(f"edit_escalation_{_eid}", "")))
+    _render_list_field("Edge Cases", f"edit_edge_cases_{_eid}")
+    _info_text = st.session_state.get(f"edit_info_required_{_eid}", "")
+    st.text_area("Information Required (JSON)", key=f"edit_info_required_{_eid}",
+                 height=_auto_height(_info_text, min_height=100))
 
-        st.markdown("###### Starting Utterance")
-        st.code(goal.get("starting_utterance", "—"), language=None)
+    # ── Diff: original vs edited ──────────────────────────────────────────────
+    try:
+        _info_for_diff = json.loads(st.session_state.get(f"edit_info_required_{_eid}", "{}") or "{}")
+    except json.JSONDecodeError:
+        _info_for_diff = {}
 
-        if dt.get("must_have_criteria"):
-            st.markdown("###### Must-Have Criteria")
-            for i, item in enumerate(dt["must_have_criteria"], 1):
-                st.markdown(f"{i}. {item}")
-
-        if dt.get("nice_to_have_criteria"):
-            st.markdown("###### Nice-to-Have Criteria")
-            for item in dt["nice_to_have_criteria"]:
-                st.markdown(f"- {item}")
-
-        if dt.get("negotiation_behavior"):
-            st.markdown("###### Negotiation Behavior")
-            for i, item in enumerate(dt["negotiation_behavior"], 1):
-                st.markdown(f"{i}. {item}")
-
-        st.markdown("###### Resolution Condition")
-        st.success(dt.get("resolution_condition", "—"))
-
-        st.markdown("###### Failure Condition")
-        st.error(dt.get("failure_condition", "—"))
-
-        if dt.get("escalation_behavior"):
-            st.markdown("###### Escalation Behavior")
-            st.warning(dt["escalation_behavior"])
-
-        if dt.get("edge_cases"):
-            st.markdown("###### Edge Cases")
-            for item in dt["edge_cases"]:
-                st.markdown(f"- {item}")
-
-        info = goal.get("information_required", {})
-        if info:
-            st.markdown("###### Information Required")
-            rows = []
-            for k, v in info.items():
-                if isinstance(v, (dict, list)):
-                    v = json.dumps(v, default=str)
-                rows.append(f"| **{k}** | `{v}` |")
-            st.markdown("| Field | Value |\n|---|---|\n" + "\n".join(rows))
+    _original_goal_dict = {
+        "high_level_user_goal": goal.get("high_level_user_goal", ""),
+        "starting_utterance": goal.get("starting_utterance", ""),
+        "decision_tree": {
+            "must_have_criteria": dt.get("must_have_criteria", []),
+            "nice_to_have_criteria": dt.get("nice_to_have_criteria", []),
+            "negotiation_behavior": dt.get("negotiation_behavior", []),
+            "resolution_condition": dt.get("resolution_condition", ""),
+            "failure_condition": dt.get("failure_condition", ""),
+            "escalation_behavior": dt.get("escalation_behavior", ""),
+            "edge_cases": dt.get("edge_cases", []),
+        },
+        "information_required": goal.get("information_required", {}),
+    }
+    _edited_goal_dict = {
+        "high_level_user_goal": st.session_state.get(f"edit_high_level_goal_{_eid}", ""),
+        "starting_utterance": st.session_state.get(f"edit_starting_utterance_{_eid}", ""),
+        "decision_tree": {
+            "must_have_criteria": _get_list_values(f"edit_must_have_{_eid}"),
+            "nice_to_have_criteria": _get_list_values(f"edit_nice_to_have_{_eid}"),
+            "negotiation_behavior": _get_list_values(f"edit_negotiation_{_eid}"),
+            "resolution_condition": st.session_state.get(f"edit_resolution_{_eid}", ""),
+            "failure_condition": st.session_state.get(f"edit_failure_{_eid}", ""),
+            "escalation_behavior": st.session_state.get(f"edit_escalation_{_eid}", ""),
+            "edge_cases": _get_list_values(f"edit_edge_cases_{_eid}"),
+        },
+        "information_required": _info_for_diff,
+    }
+    _orig_json = json.dumps(_original_goal_dict, indent=2, sort_keys=True)
+    _edit_json = json.dumps(_edited_goal_dict, indent=2, sort_keys=True)
+    _goal_diff = list(
+        difflib.unified_diff(
+            _orig_json.splitlines(),
+            _edit_json.splitlines(),
+            fromfile="Original",
+            tofile="Edited",
+            lineterm="",
+        )
+    )
+    if _goal_diff:
+        st.markdown("**Edits (diff)**")
+        _render_diff_html(_goal_diff)
 
 with col_trace:
     st.markdown("##### Ground Truth Trace")
-    with st.container(height=700):
+    with st.container(height=_goal_height, border=False):
         if trace is None:
             st.warning(
                 "Trace data not yet available for this record. "
@@ -743,39 +987,4 @@ with st.expander("Scenario DB Diff (Initial vs Expected Final)", expanded=True):
         if not diff_lines:
             st.success("No differences between initial and expected scenario DB.")
         else:
-            rows = []
-            for line in diff_lines:
-                escaped = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                if line.startswith("@@"):
-                    rows.append(
-                        f'<div style="background:#1e3a5f;color:#58a6ff;'
-                        f"padding:4px 12px;margin-top:8px;border-radius:3px;"
-                        f'font-weight:600">{escaped}</div>'
-                    )
-                elif line.startswith("+++") or line.startswith("---"):
-                    rows.append(f'<div style="color:#8b949e;padding:2px 12px;font-weight:700">{escaped}</div>')
-                elif line.startswith("+"):
-                    rows.append(
-                        f'<div style="background:#0d2818;color:#56d364;'
-                        f'padding:1px 12px;border-left:3px solid #2ea043">'
-                        f"{escaped}</div>"
-                    )
-                elif line.startswith("-"):
-                    rows.append(
-                        f'<div style="background:#2d1115;color:#f85149;'
-                        f'padding:1px 12px;border-left:3px solid #da3633">'
-                        f"{escaped}</div>"
-                    )
-                else:
-                    rows.append(f'<div style="color:#c9d1d9;padding:1px 12px">{escaped}</div>')
-            body = "\n".join(rows)
-            html = (
-                f'<div style="font-family:ui-monospace,SFMono-Regular,'
-                f"'SF Mono',Menlo,Consolas,monospace;font-size:13px;"
-                f"line-height:1.6;background:#0d1117;border:1px solid #30363d;"
-                f'border-radius:6px;padding:8px 0;overflow-x:auto">'
-                f"{body}</div>"
-            )
-            n_lines = len(diff_lines)
-            height = min(max(300, n_lines * 24), 800)
-            components.html(html, height=height, scrolling=True)
+            _render_diff_html(diff_lines)
