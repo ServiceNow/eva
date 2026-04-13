@@ -1003,7 +1003,6 @@ def render_cross_run_comparison(run_dirs: list[Path]):
 
     # Add link column to navigate to Run Overview
     display_df.insert(0, "link", f"/run_overview?output_dir={run_dirs[0].parent}&run=" + summary_df["run"])
-    display_df.insert(0, "link", f"/run_overview?output_dir={run_dirs[0].parent}&run=" + summary_df["run"])
 
     composite_rename = {c: f"[EVA] {_EVA_COMPOSITE_DISPLAY[c]}" for c in table_composites}
     display_df = display_df.rename(columns={"label": "Run", "records": "# Records", **composite_rename, **col_rename})
