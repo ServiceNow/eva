@@ -517,7 +517,6 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
 
     for record_dir in record_dirs:
         record_id = record_dir.name
-        is_failed_attempt = "_failed_attempt_" in record_id
         data_dirs = _get_record_data_dirs(record_dir)
 
         for trial_label, data_path in data_dirs:
@@ -525,6 +524,7 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
             if not metrics:
                 continue
 
+            is_failed_attempt = "_failed_attempt_" in trial_label
             row: dict = {"record": record_id, "_is_failed_attempt": is_failed_attempt}
             if trial_label:
                 row["trial"] = trial_label
@@ -1113,8 +1113,8 @@ def render_cross_run_comparison(run_dirs: list[Path], output_dir_str: str = ""):
             column_config={"link": st.column_config.LinkColumn(" ", display_text="🔍", width=40)},
         )
 
-    _show_subtable("Accuracy Metrics", eva_a_composites, accuracy_metrics)
-    _show_subtable("EVA-X Metrics", eva_x_composites, experience_metrics)
+    _show_subtable("Accuracy Metrics (EVA-A)", eva_a_composites, accuracy_metrics)
+    _show_subtable("Experience Metrics (EVA-X)", eva_x_composites, experience_metrics)
     _show_subtable("Diagnostic & Other Metrics", [], other_metrics)
 
     csv = summary_df.drop(columns=["label"]).to_csv(index=False)
