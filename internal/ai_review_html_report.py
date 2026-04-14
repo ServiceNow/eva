@@ -17,7 +17,8 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from ai_review_pipeline import (
+
+from internal.ai_review_pipeline import (
     ALL_ANALYSIS_METRICS,
     EVA_A_METRICS,
     EVA_X_METRICS,

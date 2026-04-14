@@ -18,8 +18,12 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from ai_review_html_report import generate_report_zip
-from ai_review_pipeline import (
+from dotenv import dotenv_values
+from plotly.subplots import make_subplots
+
+from eva.utils import router
+from internal.ai_review_html_report import generate_report_zip
+from internal.ai_review_pipeline import (
     ALL_ANALYSIS_METRICS,
     DEFAULT_JUDGE_MODEL,
     collect_combo_data,
@@ -35,10 +39,6 @@ from ai_review_pipeline import (
     normalize_entity_type,
     run_full_pipeline,
 )
-from dotenv import dotenv_values
-from plotly.subplots import make_subplots
-
-from eva.utils import router
 
 # --- Constants ---
 
