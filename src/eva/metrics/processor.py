@@ -24,6 +24,19 @@ from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+
+def _resolve_path(stored: str | None, fallback: Path) -> str | Path:
+    """Return *stored* if it exists on disk, otherwise *fallback*.
+
+    Allows metrics to re-run correctly when a run directory has been moved:
+    the stored path reflects the original location, but the file is now at
+    *fallback* (i.e. output_dir / filename).
+    """
+    if stored and Path(stored).exists():
+        return stored
+    return fallback
+
+
 # Elevenlabs audio user field → _ProcessorContext attribute name
 AUDIO_ATTR = {
     "pipecat_agent": "audio_timestamps_assistant_turns",
@@ -824,8 +837,10 @@ class MetricsContextProcessor:
         Each entry: {timestamp_ms, source, event_type, data}.
         """
         history = self._load_audit_log_transcript(output_dir)
-        history.extend(self._load_pipecat_logs(result.pipecat_logs_path))
-        history.extend(self._load_elevenlabs_logs(result.elevenlabs_logs_path))
+        pipecat_path = _resolve_path(result.pipecat_logs_path, output_dir / "pipecat_logs.jsonl")
+        history.extend(self._load_pipecat_logs(pipecat_path))
+        elevenlabs_path = _resolve_path(result.elevenlabs_logs_path, output_dir / "elevenlabs_events.jsonl")
+        history.extend(self._load_elevenlabs_logs(elevenlabs_path))
 
         history.sort(key=lambda e: e["timestamp_ms"])
         context.history = history
