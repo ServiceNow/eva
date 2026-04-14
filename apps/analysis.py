@@ -1349,6 +1349,20 @@ def render_metrics_tab(metrics: RecordMetrics | None):
                     if metric_score.error:
                         st.error(f"Error: {metric_score.error}")
 
+                    # Dimension scores (e.g. faithfulness, conversation_progression)
+                    explanation = metric_score.details.get("explanation") if metric_score.details else None
+                    dimensions = explanation.get("dimensions") if isinstance(explanation, dict) else None
+                    if dimensions:
+                        st.markdown("**Dimensions**")
+                        for dim_name, dim_data in dimensions.items():
+                            if isinstance(dim_data, dict):
+                                rating = dim_data.get("rating")
+                                flagged = dim_data.get("flagged", False)
+                                label = dim_name.replace("_", " ").title()
+                                score_str = f"{rating}/3" if rating is not None else "N/A"
+                                prefix = "⚠ " if flagged else ""
+                                st.markdown(f"{prefix}**{label}:** {score_str}")
+
                 with col2:
                     if metric_score.details:
                         st.markdown("**Details:**")
