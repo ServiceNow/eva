@@ -7,8 +7,7 @@ by leveraging LiteLLM's built-in exception types and attributes instead of strin
 import asyncio
 import traceback
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from litellm.exceptions import (
     # Network/Connection Errors
@@ -46,7 +45,7 @@ class ErrorInfo:
     error_type: str  # Maps to ErrorDetails.error_type
     error_source: str  # Provider or component name
     is_retryable: bool
-    status_code: Optional[int]
+    status_code: int | None
     original_exception: Exception
 
 
@@ -353,7 +352,7 @@ def create_error_details(
         is_retryable=error_info.is_retryable,
         retry_count=retry_count,
         retry_succeeded=retry_succeeded,
-        timestamps=[datetime.now(timezone.utc).isoformat()],
+        timestamps=[datetime.now(UTC).isoformat()],
         stack_trace=stack_trace,
         original_error=str(error),
     )

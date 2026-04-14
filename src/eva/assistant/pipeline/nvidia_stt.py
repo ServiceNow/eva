@@ -10,7 +10,7 @@ import asyncio
 import json
 import ssl
 import time
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
 
 import websockets
 from loguru import logger
@@ -48,7 +48,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         self,
         *,
         url: str = "ws://localhost:8080",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         sample_rate: int = 16000,
         verify: bool = True,
         **kwargs,
@@ -58,7 +58,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         self._api_key = api_key
         self._verify = verify
         self._websocket = None
-        self._receive_task: Optional[asyncio.Task] = None
+        self._receive_task: asyncio.Task | None = None
         self._ready = False
 
     def can_generate_metrics(self) -> bool:
@@ -135,7 +135,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
             self._websocket = await websockets.connect(
                 self._url,
                 ssl=ssl_context,
-                additional_headers=extra_headers if extra_headers else None,
+                additional_headers=extra_headers or None,
             )
             self._ready = False
 
@@ -149,7 +149,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
                 else:
                     logger.warning(f"{self} unexpected initial message: {data}")
                     self._ready = True
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning(f"{self} timeout waiting for ready, proceeding")
                 self._ready = True
 

@@ -4,7 +4,6 @@ import json
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from eva.assistant.agentic.system import GENERIC_ERROR
 from eva.models.results import ConversationResult
@@ -90,16 +89,23 @@ class _TurnExtractionState:
     # user_speech lands at the same turn.
     rollback_advance_consumed_by_user: bool = False
 
-    def advance_turn_if_needed(self) -> None:
+    def advance_turn_if_needed(self, from_audio_start: bool = False) -> None:
         """Advance turn if the assistant responded since the last user event.
 
         Called on audio_start(elevenlabs_user) and audit_log/user events.
-        After an interruption, hold_turn consumes one advance without incrementing.
+        After an interruption, hold_turn suppresses one advance from audit_log/user
+        (late STT from the interrupted session) but never blocks audio_start
+        (the user speaking again always starts a new turn).
         """
         if self.hold_turn:
-            self.hold_turn = False
-            self.assistant_spoke_in_turn = False
-            return
+            if from_audio_start:
+                # New user speech — clear hold_turn but still advance
+                self.hold_turn = False
+            else:
+                # Late STT chunk from interrupted session — consume without advancing
+                self.hold_turn = False
+                self.assistant_spoke_in_turn = False
+                return
         if self.assistant_spoke_in_turn:
             self.turn_num += 1
             self.assistant_spoke_in_turn = False
@@ -327,7 +333,7 @@ def _handle_audio_start(
             state.assistant_spoke_in_turn = True
             state.pending_advance_after_rollback = False
         state.rollback_advance_consumed_by_user = False
-        state.advance_turn_if_needed()
+        state.advance_turn_if_needed(from_audio_start=True)
         # Mark the NEW turn (after advance) as a user-interrupted turn — the user's interrupting speech
         # lands here, symmetric with assistant_interrupted_turns.
         if state.pending_user_interrupts_label:
@@ -647,7 +653,7 @@ class _ProcessorContext:
     """Processed log data for metric computation."""
 
     def __init__(self):
-        self.record_id: Optional[str] = None
+        self.record_id: str | None = None
 
         # Per-role turn data (indexed by turn_id, 0-indexed)
         self.transcribed_assistant_turns: dict[int, str] = {}
@@ -670,9 +676,9 @@ class _ProcessorContext:
 
         self.conversation_trace: list[dict] = []
 
-        self.audio_assistant_path: Optional[str] = None
-        self.audio_user_path: Optional[str] = None
-        self.audio_mixed_path: Optional[str] = None
+        self.audio_assistant_path: str | None = None
+        self.audio_user_path: str | None = None
+        self.audio_mixed_path: str | None = None
 
         # Interruption data
         self.assistant_interrupted_turns: set[int] = set()
@@ -680,7 +686,7 @@ class _ProcessorContext:
 
         # Conversation metadata
         self.conversation_finished: bool = False
-        self.conversation_ended_reason: Optional[str] = None
+        self.conversation_ended_reason: str | None = None
         self.is_audio_native: bool = False
 
         # Response latencies from Pipecat's UserBotLatencyObserver
@@ -698,7 +704,7 @@ class MetricsContextProcessor:
         result: ConversationResult,
         output_dir: Path,
         is_audio_native: bool = False,
-    ) -> Optional[_ProcessorContext]:
+    ) -> _ProcessorContext | None:
         """Process a single conversation record to create metric context.
 
         Args:

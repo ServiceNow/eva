@@ -434,7 +434,7 @@ def rebook_flight(params: dict, db: dict, call_index: int) -> dict:
 
     # Determine fare classes
     original_fare_class = booking.get("fare_class", "main_cabin")
-    target_fare_class = new_fare_class if new_fare_class else original_fare_class
+    target_fare_class = new_fare_class or original_fare_class
 
     # Computations
     is_irrops = "irrops" in rebooking_type

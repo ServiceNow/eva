@@ -42,6 +42,9 @@ async def run_benchmark(config: RunConfig) -> int:
             logger.error(str(e))
             return 1
 
+        # Apply env-dependent values (secrets, urls) from live env onto saved config
+        runner.config.apply_env_overrides(config)
+
         # Apply CLI overrides
         runner.config.max_rerun_attempts = config.max_rerun_attempts
         runner.config.force_rerun_metrics = config.force_rerun_metrics

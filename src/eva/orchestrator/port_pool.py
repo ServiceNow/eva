@@ -1,7 +1,6 @@
 """Port pool for managing WebSocket server ports."""
 
 import asyncio
-from typing import Optional
 
 from eva.utils.logging import get_logger
 
@@ -46,7 +45,7 @@ class PortPool:
                 f"(range: {self.base_port}-{self.base_port + self.pool_size - 1})"
             )
 
-    async def acquire(self, timeout: Optional[float] = None) -> int:
+    async def acquire(self, timeout: float | None = None) -> int:
         """Acquire an available port from the pool.
 
         Args:
@@ -71,7 +70,7 @@ class PortPool:
             logger.debug(f"Acquired port {port} ({len(self._in_use)} in use)")
             return port
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(f"Timeout waiting for available port (timeout={timeout}s)")
             raise
 
@@ -107,10 +106,10 @@ class PortPool:
 class PortPoolContextManager:
     """Context manager for acquiring and releasing ports."""
 
-    def __init__(self, pool: PortPool, timeout: Optional[float] = None):
+    def __init__(self, pool: PortPool, timeout: float | None = None):
         self.pool = pool
         self.timeout = timeout
-        self.port: Optional[int] = None
+        self.port: int | None = None
 
     async def __aenter__(self) -> int:
         self.port = await self.pool.acquire(timeout=self.timeout)

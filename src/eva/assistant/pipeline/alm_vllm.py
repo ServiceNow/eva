@@ -10,7 +10,7 @@ import io
 import struct
 import time
 import wave
-from typing import Any, Optional
+from typing import Any
 
 from openai import AsyncOpenAI
 
@@ -163,7 +163,7 @@ class ALMvLLMClient:
     async def complete(
         self,
         messages: list[dict[str, Any]],
-        tools: Optional[list[dict]] = None,
+        tools: list[dict] | None = None,
     ) -> tuple[Any, dict[str, Any]]:
         """Chat completion with audio and tool support.
 
@@ -188,7 +188,7 @@ class ALMvLLMClient:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
 
-        last_exception: Optional[Exception] = None
+        last_exception: Exception | None = None
         for attempt in range(self.max_retries + 1):
             try:
                 start_time = time.time()

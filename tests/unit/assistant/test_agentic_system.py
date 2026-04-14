@@ -146,7 +146,7 @@ class TestProcessQueryWithToolCall:
         async for msg in system.process_query("Check reservation ABC123"):
             responses.append(msg)
 
-        assert responses == ["Your reservation ABC123 is confirmed."]
+        assert responses == ["What if there is text here", "Your reservation ABC123 is confirmed."]
 
         # Verify tool was executed with correct params
         tool_handler.execute.assert_awaited_once_with("get_reservation", {"confirmation_number": "ABC123"})
@@ -154,21 +154,30 @@ class TestProcessQueryWithToolCall:
         # Verify LLM was called twice (tool call + final response)
         assert llm_client.complete.await_count == 2
 
-        # Verify transcript
+        # Verify transcript — content alongside tool calls now appears as an assistant entry
         transcript = audit_log.transcript
         message_types = [e["message_type"] for e in transcript]
-        assert message_types == ["user", "llm_call", "tool_call", "tool_response", "llm_call", "assistant"]
+        assert message_types == [
+            "user",
+            "llm_call",
+            "assistant",
+            "tool_call",
+            "tool_response",
+            "llm_call",
+            "assistant",
+        ]
         assert transcript[0]["value"] == "Check reservation ABC123"
-        assert transcript[2]["value"]["tool"] == "get_reservation"
-        assert transcript[3]["value"]["response"]["status"] == "success"
-        assert transcript[5]["value"] == "Your reservation ABC123 is confirmed."
+        assert transcript[2]["value"] == "What if there is text here"
+        assert transcript[3]["value"]["tool"] == "get_reservation"
+        assert transcript[4]["value"]["response"]["status"] == "success"
+        assert transcript[6]["value"] == "Your reservation ABC123 is confirmed."
 
-        # Verify conversation messages
+        # Verify conversation messages — content is preserved even with tool calls
         assert _conv_to_dicts(audit_log.get_conversation_messages()) == [
             {"role": "user", "content": "Check reservation ABC123"},
             {
                 "role": "assistant",
-                "content": "",
+                "content": "What if there is text here",
                 "tool_calls": [
                     {
                         "id": "call_1",

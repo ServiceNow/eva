@@ -114,20 +114,25 @@ EVA_MODEL_LIST='[
 
 ## ElevenLabs User Simulator
 
-The user simulator is an ElevenLabs Agent with the following configuration:
+We created 2 ElevenLabs Agents for the user simulator, one with a female and one with a male voice. When you create a new agent, create a "Blank Agent".
+Then, use the following configuration:
 
-| Parameter | Value |
-|---|---|
-| LLM | GPT-4.1 |
-| Voice (female) | Natalee Champlin |
-| Voice (male) | Eric |
-| Input audio | μ-law telephony, 8000 Hz |
-| Turn detection silence | 15ms |
-| Max conversation duration | 600s |
-| Interruptions | Disabled |
-| First message | None (agent speaks first) |
-| Default personality | Disabled |
-| Tools | end_call (user ends the call once task is complete or conversation cannot be advanced) |
+| Parameter                            | Value                                                                             |
+|--------------------------------------|-----------------------------------------------------------------------------------|
+| Voice (female)                       | Natalee Champlin                                                                  |
+| Voice (male)                         | Eric - Smooth, Trustworthy                                                        |
+| TTS model family                     | V3 Conversational                                                                 |
+| Expressive mode                      | Enabled (no tags selected)                                                        |
+| Language                             | English                                                                           |
+| LLM                                  | GPT-5.1                                                                           |
+| System prompt                        | {{prompt}}                                                                        |
+| Default personality                  | Disabled                                                                          |
+| First message                        | None (remove the default first message, as the agent speaks first)                |
+| Interruptible                        | Disabled                                                                          |
+| Advanced > Input audio               | μ-law telephony, 8000 Hz                                                          |
+| Advanced > Take turn after silence   | 15ms                                                                              |
+| Advanced > Max conversation duration | 600s                                                                              |
+| Tools > System tools                 | Enable "End conversation" (Name is `end_call`, and Description is provided below) |
 
 The simulator is prompted with a specific user goal and is instructed to stay on task, communicate all required named entities clearly, and terminate when the goal is accomplished or the task is clearly unlikely to succeed.
 
@@ -146,3 +151,5 @@ Call this function when any ONE of the following is true:
 
 Before calling this tool, always say a brief goodbye first.
 ```
+
+You can then get your `agent-id` from the Widget tab of your agent.

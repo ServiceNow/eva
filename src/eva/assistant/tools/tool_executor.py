@@ -3,8 +3,8 @@
 import copy
 import importlib
 import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import yaml
 from pipecat.services.llm_service import FunctionCallParams

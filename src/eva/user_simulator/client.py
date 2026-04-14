@@ -8,7 +8,6 @@ import asyncio
 import json
 import os
 from pathlib import Path
-from typing import Optional
 
 import httpx
 from elevenlabs.client import ElevenLabs
@@ -65,7 +64,7 @@ class UserSimulator:
 
         # State
         self._conversation = None
-        self._audio_interface: Optional[BotToBotAudioInterface] = None
+        self._audio_interface: BotToBotAudioInterface | None = None
         self._end_reason: str = "unknown"
         self._conversation_done = asyncio.Event()
 
@@ -203,7 +202,7 @@ class UserSimulator:
             try:
                 await asyncio.wait_for(self._conversation_done.wait(), timeout=self.timeout)
                 logger.info(f"Conversation ended: {self._end_reason}")
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.info(f"Conversation timed out after {self.timeout}s")
                 self._end_reason = "timeout"
                 self.event_logger.log_event("timeout", {"duration": self.timeout})
@@ -309,8 +308,7 @@ class UserSimulator:
                 audio_iter = self._client.conversational_ai.conversations.audio.get(conversation_id)
                 audio_path = self.output_dir / "elevenlabs_audio_recording.mp3"
                 with open(audio_path, "wb") as f:
-                    for chunk in audio_iter:
-                        f.write(chunk)
+                    f.writelines(audio_iter)
                 logger.info(f"Saved ElevenLabs server-side audio to {audio_path}")
                 return
             except Exception as e:

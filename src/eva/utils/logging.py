@@ -3,7 +3,6 @@
 import contextvars
 import logging
 import sys
-from typing import Optional
 
 # ContextVar that tracks which record_id the current asyncio task is processing.
 # Each ConversationWorker sets this at the start of its run() method.
@@ -47,8 +46,8 @@ def get_logger(name: str) -> logging.Logger:
 
 def setup_logging(
     level: str = "INFO",
-    log_file: Optional[str] = None,
-    format_string: Optional[str] = None,
+    log_file: str | None = None,
+    format_string: str | None = None,
 ) -> None:
     """Set up logging configuration for the application.
 
