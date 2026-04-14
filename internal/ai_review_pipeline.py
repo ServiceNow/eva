@@ -219,7 +219,9 @@ DISPLAY_NAMES: dict[str, dict[str, str]] = {
         "gpt-5.2-eval": "GPT-5.2 Low Reasoning",
         "gpt-4o": "OpenAI GPT-4o",
         "gpt-4o-mini": "OpenAI GPT-4o Mini",
+        "gpt-realtime": "GPT Realtime",
         "gpt-realtime-mini": "GPT Realtime Mini",
+        "gpt-realtime-1.5": "GPT Realtime 1.5",
         "gpt-oss": "OpenAI GPT-OSS",
         "gpt-oss-120b": "OpenAI GPT-OSS 120B",
         "gpt-oss-20b": "OpenAI GPT-OSS 20B",
@@ -231,6 +233,9 @@ DISPLAY_NAMES: dict[str, dict[str, str]] = {
         "gemini-3.1-pro-preview": "Google Gemini 3.1 Pro",
         "ultravox": "Ultravox",
         "qwen35-27B": "Qwen 3.5 27B",
+        "gemini-live": "Google Gemini Live",
+        "gemini-3.1-flash-live-preview": "Google Gemini 3.1 Flash Live",
+        "gemini-3-flash-live-preview": "Google Gemini 3 Flash Live",
     },
 }
 
@@ -262,11 +267,21 @@ def display_name(raw: str, component: str) -> str:
 
 
 def get_display_combo_label(combo_label: str) -> str:
-    """Convert a raw combo label like 'gpt-5-mini / openai / openai' to display names."""
-    parts = [p.strip() for p in combo_label.split("/")]
+    """Convert a raw combo label like 'gpt-5-mini / openai / openai' to display names.
+
+    Parts equal to 'n/a' (S2S or Audio-Native pipelines) are omitted.
+    Components are joined with ' + ' instead of ' / '.
+    """
+    parts = combo_label.split(" / ")
     if len(parts) == 3:
         llm, stt, tts = parts
-        return f"{display_name(stt, 'stt')} / {display_name(llm, 'llm')} / {display_name(tts, 'tts')}"
+        components = []
+        if stt != "n/a":
+            components.append(display_name(stt, "stt"))
+        components.append(display_name(llm, "llm"))
+        if tts != "n/a":
+            components.append(display_name(tts, "tts"))
+        return " + ".join(components)
     return combo_label
 
 
@@ -407,11 +422,38 @@ def extract_pipeline_config(run_config: dict) -> dict:
     """Extract llm/stt/tts model names from run config.
 
     Handles multiple config key formats:
-    - pipeline.realtime_model / pipeline.llm_model / pipeline.llm
+    - pipeline.s2s / pipeline.s2s_params (speech-to-speech, no STT/TTS)
+    - pipeline.audio_llm / pipeline.audio_llm_params + pipeline.tts (audio-native, no STT)
+    - pipeline.realtime_model / pipeline.llm_model / pipeline.llm (cascade or realtime)
     - pipeline.stt_model / pipeline.stt
     - pipeline.tts_model / pipeline.tts
     """
     pipeline = run_config.get("pipeline") or run_config.get("model") or {}
+
+    # Speech-to-speech pipeline (single end-to-end model, no separate STT/TTS)
+    s2s = pipeline.get("s2s") or ""
+    if s2s and not pipeline.get("llm") and not pipeline.get("llm_model"):
+        s2s_params = pipeline.get("s2s_params") or {}
+        s2s_model = s2s_params.get("model") or s2s
+        return {
+            "llm_model": s2s_model,
+            "stt_model": "n/a",
+            "tts_model": "n/a",
+        }
+
+    # Audio-Native pipeline (audio LLM + TTS, no separate STT)
+    audio_llm = pipeline.get("audio_llm") or ""
+    if audio_llm:
+        audio_llm_params = pipeline.get("audio_llm_params") or {}
+        audio_llm_model = audio_llm_params.get("alias") or audio_llm_params.get("model") or audio_llm
+        tts_params = pipeline.get("tts_params") or {}
+        tts_model = tts_params.get("alias") or tts_params.get("model") or pipeline.get("tts") or "unknown"
+        return {
+            "llm_model": audio_llm_model,
+            "stt_model": "n/a",
+            "tts_model": tts_model,
+        }
+
     return {
         "llm_model": pipeline.get("realtime_model") or pipeline.get("llm_model") or pipeline.get("llm") or "unknown",
         "stt_model": pipeline.get("stt_model") or pipeline.get("stt") or "unknown",
@@ -2172,7 +2214,7 @@ async def generate_combo_report(
     failures_per_metric = {m: collect_metric_failures(combo_data, m, threshold) for m in ALL_ANALYSIS_METRICS}
 
     if progress_callback:
-        progress_callback(0.1, f"Pass 1 — summarizing all metrics for {combo_label}...")
+        progress_callback(0.1, f"Pass 1 — summarizing all metrics for {get_display_combo_label(combo_label)}...")
 
     # Turn-taking uses deterministic stats, not LLM
     llm_metrics = [m for m in ALL_ANALYSIS_METRICS if m != "turn_taking"]
@@ -2205,7 +2247,7 @@ async def generate_combo_report(
     pass1_results["turn_taking"] = tt_stats
 
     if progress_callback:
-        progress_callback(0.3, f"Pass 2 — categorizing errors for {combo_label}...")
+        progress_callback(0.3, f"Pass 2 — categorizing errors for {get_display_combo_label(combo_label)}...")
 
     pass2_tasks = {
         m: run_pass2_error_categories(
@@ -2248,7 +2290,7 @@ async def generate_combo_report(
         failures_compact[m] = {f["sample_id"]: {"score": f["score"], "explanation": f["explanation"]} for f in failures}
 
     if progress_callback:
-        progress_callback(0.55, f"Analyzing error propagation for {combo_label}...")
+        progress_callback(0.55, f"Analyzing error propagation for {get_display_combo_label(combo_label)}...")
     propagation_stats = compute_error_propagation_stats(combo_data, threshold)
     propagation_analysis = await run_error_propagation_analysis(
         combo_label=combo_label,
@@ -2525,7 +2567,7 @@ async def run_full_pipeline(
         if progress_callback:
             progress_callback(
                 idx / total_combos * 0.7,
-                f"Analyzing combo {idx + 1}/{total_combos}: {combo_label}",
+                f"Analyzing combo {idx + 1}/{total_combos}: {get_display_combo_label(combo_label)}",
             )
 
         report = await generate_combo_report(

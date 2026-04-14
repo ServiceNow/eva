@@ -504,11 +504,23 @@ def _render_issue_analysis_tab(pipeline_result: dict):
 
     pc = report.get("pipeline_config", {})
     if pc:
-        st.markdown(
-            f"**STT:** {display_name(pc.get('stt_model', '?'), 'stt')} · "
-            f"**LLM:** {display_name(pc.get('llm_model', '?'), 'llm')} · "
-            f"**TTS:** {display_name(pc.get('tts_model', '?'), 'tts')}"
-        )
+        stt = pc.get("stt_model")
+        tts = pc.get("tts_model")
+        if stt == "n/a" and tts == "n/a":
+            # Speech-to-speech: single end-to-end model
+            st.markdown(f"**S2S:** {display_name(pc.get('llm_model', '?'), 'llm')}")
+        elif stt == "n/a":
+            # Audio-Native: audio LLM + TTS, no separate STT
+            st.markdown(
+                f"**Audio LLM:** {display_name(pc.get('llm_model', '?'), 'llm')} · "
+                f"**TTS:** {display_name(tts or '?', 'tts')}"
+            )
+        else:
+            st.markdown(
+                f"**STT:** {display_name(stt or '?', 'stt')} · "
+                f"**LLM:** {display_name(pc.get('llm_model', '?'), 'llm')} · "
+                f"**TTS:** {display_name(tts or '?', 'tts')}"
+            )
     else:
         st.markdown(f"## {_dl(selected_label)}")
 
