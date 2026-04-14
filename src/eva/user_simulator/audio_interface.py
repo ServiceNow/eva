@@ -370,7 +370,7 @@ class BotToBotAudioInterface(AudioInterface):
         """Handle user audio starting."""
         self._user_audio_active = True
         self._user_audio_ended_time = None
-        timestamp_ms = str(int(round(time.time() * 1000)))
+        timestamp_ms = time.time()
 
         if self._assistant_audio_ended_time is not None:
             silence_duration = asyncio.get_event_loop().time() - self._assistant_audio_ended_time
@@ -388,7 +388,7 @@ class BotToBotAudioInterface(AudioInterface):
                         {
                             "event": "user_speech_start",
                             "conversation_id": self.conversation_id,
-                            "timestamp_ms": timestamp_ms,
+                            "timestamp_ms": str(int(round(timestamp_ms * 1000))),
                         }
                     )
                 )

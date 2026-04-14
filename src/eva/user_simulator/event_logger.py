@@ -100,7 +100,7 @@ class ElevenLabsEventLogger:
             },
         )
 
-    def log_audio_start(self, role: str, timestamp: str | None = None) -> None:
+    def log_audio_start(self, role: str, timestamp: float | None = None) -> None:
         """Log when audio starts for a given role.
 
         Args:

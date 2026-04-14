@@ -12,7 +12,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: registry.console.elementai.com/snow.core_llm/eva:latest
+    image: eva:latest
     container_name: eva
     env_file: .env
 
@@ -44,7 +44,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: registry.console.elementai.com/snow.core_llm/eva:latest
+    image: eva:latest
     container_name: eva-dev
     env_file: .env
 
