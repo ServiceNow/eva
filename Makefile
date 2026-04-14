@@ -38,8 +38,8 @@ apps/analysis.py/toolkit-job-new: %/toolkit-job-new:
 	eai job new \
 		--account $(TOOLKIT_ACCOUNT) \
 		--data $(TOOLKIT_DATA)/$(TOOLKIT_JOB_NAME):/tmp/eva:rw \
-		--data snow.core_llm.voice_agent:/app/output:rw \
-		--env EVA_OUTPUT_DIR=/app/output \
+		--data snow.core_llm.voice_agent:/mnt/voice_agent:rw \
+		--env EVA_OUTPUT_DIR=/mnt/voice_agent \
 		--env STREAMLIT_BROWSER_SERVER_ADDRESS=$(subst .,-,$(TOOLKIT_JOB)).job.console.elementai.com \
 		--env STREAMLIT_BROWSER_SERVER_PORT=80 \
 		--env STREAMLIT_CLIENT_TOOLBAR_MODE=developer \
