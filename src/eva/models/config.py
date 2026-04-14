@@ -648,10 +648,17 @@ class RunConfig(BaseSettings):
             if not has_redacted:
                 continue
             if name not in live_by_name:
-                raise ValueError(
-                    f"Cannot restore secrets: deployment {name!r} not found in "
-                    f"current EVA_MODEL_LIST (available: {list(live_by_name)})"
+                active_llm = getattr(self.model, "llm", None)
+                if name == active_llm:
+                    raise ValueError(
+                        f"Cannot restore secrets: deployment {name!r} not found in "
+                        f"current EVA_MODEL_LIST (available: {list(live_by_name)})"
+                    )
+                logger.warning(
+                    f"Deployment {name!r} has redacted secrets but is not in the current "
+                    f"EVA_MODEL_LIST — skipping (not used in this run)."
                 )
+                continue
             live_params = live_by_name[name].get("litellm_params", {})
             for key, value in saved_params.items():
                 if value == "***" and key in live_params:
