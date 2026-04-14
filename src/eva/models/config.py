@@ -250,6 +250,7 @@ class BackgroundNoiseType(StrEnum):
     nyc_street = "nyc_street"
     background_music = "background_music"
     loud_construction = "loud_construction"
+    baby_crying = "baby_crying"
 
 
 class AccentType(StrEnum):
