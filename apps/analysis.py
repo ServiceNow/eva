@@ -21,10 +21,10 @@ import streamlit as st
 from diff_viewer import diff_viewer
 
 import eva.metrics  # noqa: F401
+from apps.audio_plots import render_audio_analysis_tab
 from eva.metrics.registry import get_global_registry
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RecordMetrics
-from apps.audio_plots import render_audio_analysis_tab
 
 # ============================================================================
 # Configuration
