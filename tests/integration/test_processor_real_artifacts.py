@@ -81,7 +81,7 @@ class TestProcessorRealArtifacts:
     def test_conversation_metadata(self, processor_context, expected_context):
         assert processor_context.conversation_finished == expected_context["conversation_finished"]
         assert processor_context.conversation_ended_reason == expected_context["conversation_ended_reason"]
-        assert processor_context.is_audio_native == expected_context["is_audio_native"]
+        assert processor_context.pipeline_type.value == expected_context.get("pipeline_type", "cascade")
 
     def test_transcribed_assistant_turns(self, processor_context, expected_context):
         expected = _convert_expected_value(
