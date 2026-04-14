@@ -111,7 +111,8 @@ class TestSilenceDetectionStateMachine:
 class TestAudioStateTransitions:
     """Test that audio start/end callbacks correctly update state and timestamps."""
 
-    def test_user_start_clears_assistant_ended_time(self):
+    @pytest.mark.asyncio
+    async def test_user_start_clears_assistant_ended_time(self):
         """When user starts speaking, we stop waiting for assistant."""
         event_logger = MagicMock()
         iface = _make_interface(event_logger=event_logger)
@@ -119,7 +120,7 @@ class TestAudioStateTransitions:
 
         with patch("eva.user_simulator.audio_interface.asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.time.return_value = 100.0
-            iface._on_user_audio_start()
+            await iface._on_user_audio_start()
 
         assert iface._user_audio_active is True
         assert iface._user_audio_ended_time is None

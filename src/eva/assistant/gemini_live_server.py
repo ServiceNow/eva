@@ -350,6 +350,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         _in_model_turn = False
         _user_speaking = False
         _user_speech_start_ts: str | None = None  # Timestamp from audio_interface
+        _assistant_turn_start_ts: str | None = None  # Wall-clock ms when first audio chunk arrives
 
         # Queue for outbound mulaw chunks; the pacer task drains it at real-time rate
         # so _process_gemini_events never sleeps and keeps reading Gemini events promptly.
@@ -395,7 +396,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                             elif event == "user_speech_start":
                                 nonlocal _user_speech_start_ts
                                 _user_speech_start_ts = msg.get("timestamp_ms")
-                                logger.debug(f"User speech start timestamp received: {_user_speech_start_ts}")
+                                logger.info(f"User speech start timestamp received: {_user_speech_start_ts}")
                                 continue
                             elif event == "media":
                                 # Extract raw mulaw bytes
@@ -463,7 +464,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                 async def _process_gemini_events() -> None:
                     """Consume events from the Gemini Live session."""
                     nonlocal _assistant_turn_text, _user_turn_text
-                    nonlocal _in_model_turn, _user_speaking, _user_speech_start_ts
+                    nonlocal _in_model_turn, _user_speaking, _user_speech_start_ts, _assistant_turn_start_ts
                     nonlocal twilio_connected
 
                     logger.info("Gemini event processor started")
@@ -494,6 +495,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                     if not _in_model_turn:
                                         _in_model_turn = True
                                         _assistant_turn_text = []
+                                        _assistant_turn_start_ts = str(int(round(time.time() * 1000)))
                                         self._fw_log.turn_start()
 
                                     for part in sc.model_turn.parts:
@@ -533,12 +535,14 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                     logger.debug("Gemini turn complete")
                                     full_text = " ".join(_assistant_turn_text).strip()
                                     if full_text:
-                                        self.audit_log.append_assistant_output(full_text)
-                                        self._fw_log.tts_text(full_text)
+                                        self.audit_log.append_assistant_output(
+                                            full_text, timestamp_ms=_assistant_turn_start_ts
+                                        )
                                         self._fw_log.llm_response(full_text)
                                     self._fw_log.turn_end(was_interrupted=False)
                                     _in_model_turn = False
                                     _assistant_turn_text = []
+                                    _assistant_turn_start_ts = None
 
                                 # Barge-in / interruption
                                 if sc.interrupted:
@@ -546,11 +550,14 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                     logger.debug("Gemini turn interrupted (barge-in)")
                                     full_text = " ".join(_assistant_turn_text).strip()
                                     if full_text:
-                                        self.audit_log.append_assistant_output(full_text + " [interrupted]")
+                                        self.audit_log.append_assistant_output(
+                                            full_text + " [interrupted]", timestamp_ms=_assistant_turn_start_ts
+                                        )
                                         self._fw_log.tts_text(full_text)
                                     self._fw_log.turn_end(was_interrupted=True)
                                     _in_model_turn = False
                                     _assistant_turn_text = []
+                                    _assistant_turn_start_ts = None
 
                                 # Input transcription (user speech)
                                 if sc.input_transcription:

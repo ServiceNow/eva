@@ -602,8 +602,6 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         if transcript:
             self._assistant_state.transcript_done_text = transcript.strip()
             logger.debug(f"Assistant transcript done: {transcript}...")
-            if self._fw_log:
-                self._fw_log.tts_text(transcript)
 
     async def _on_function_call_done(self, event: Any, conn: Any) -> None:
         """Handle response.function_call_arguments.done - execute tool call."""

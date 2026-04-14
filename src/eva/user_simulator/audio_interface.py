@@ -370,18 +370,19 @@ class BotToBotAudioInterface(AudioInterface):
         """Handle user audio starting."""
         self._user_audio_active = True
         self._user_audio_ended_time = None
+        timestamp_ms = str(int(round(time.time() * 1000)))
+
         if self._assistant_audio_ended_time is not None:
             silence_duration = asyncio.get_event_loop().time() - self._assistant_audio_ended_time
             logger.info(f"🎤 User audio START - stopping user silence after {silence_duration:.2f}s")
             self._assistant_audio_ended_time = None
         if self.event_logger:
-            self.event_logger.log_audio_start("elevenlabs_user")
+            self.event_logger.log_audio_start("elevenlabs_user", timestamp_ms)
         logger.info("🎤 User audio START")
 
         # Send user_speech_start event to assistant server with timestamp
         if self.websocket and self.websocket.state == WebSocketState.OPEN:
             try:
-                timestamp_ms = str(int(round(time.time() * 1000)))
                 await self.websocket.send(
                     json.dumps(
                         {
