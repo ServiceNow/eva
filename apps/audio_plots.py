@@ -10,6 +10,16 @@ Layout (dynamic — spectrograms are optional):
   Row 3        : ElevenLabs waveform, colour-coded by speaker turn
   Row 4 (opt)  : ElevenLabs spectrogram
   Row 5        : Speaker Turn Timeline
+
+Turn data is loaded from metrics.json (same source as the turn_taking metric):
+  context.audio_timestamps_user_turns / audio_timestamps_assistant_turns
+    → dict[turn_id → list[(abs_start, abs_end)]] — may have multiple segments per turn
+  context.transcribed_*_turns / intended_*_turns
+    → dict[turn_id → str] — keyed by the same turn IDs
+  metrics.turn_taking.details.per_turn_latency
+    → dict[turn_id → seconds] — user_last_seg_end → asst_first_seg_start
+
+Falls back to parsing elevenlabs_events.jsonl directly when metrics.json is absent.
 """
 
 import json
@@ -37,10 +47,100 @@ PAUSE_FILL  = "rgba(140,140,140,0.18)"
 
 
 # =============================================================================
-# Parsing / loading helpers
+# Turn data loading — metrics.json first, elevenlabs_events.jsonl fallback
 # =============================================================================
 
-def _parse_elevenlabs_events(events_file: Path) -> dict:
+def _load_metrics_context(record_dir: Path) -> dict | None:
+    """Load metrics.json; return None if absent."""
+    metrics_file = record_dir / "metrics.json"
+    if not metrics_file.exists():
+        return None
+    with open(metrics_file) as f:
+        return json.load(f)
+
+
+def _build_turns_from_metrics(metrics_data: dict) -> list[dict] | None:
+    """Build a turns list from metrics.json using the same timestamps the turn_taking metric uses.
+
+    Each turn dict has:
+      turn_id, speaker ("user"|"assistant"),
+      segments [(rel_start, rel_end), ...],  ← may be >1 for interrupted turns
+      start, end, duration,
+      transcript_heard, transcript_intended,
+      latency_s (user→assistant gap, user turns only), timing_label.
+    """
+    ctx = metrics_data.get("context") or {}
+    user_ts  = ctx.get("audio_timestamps_user_turns")  or {}
+    asst_ts  = ctx.get("audio_timestamps_assistant_turns") or {}
+    if not user_ts and not asst_ts:
+        return None
+
+    transcribed_user = ctx.get("transcribed_user_turns")  or {}
+    transcribed_asst = ctx.get("transcribed_assistant_turns") or {}
+    intended_user    = ctx.get("intended_user_turns")   or {}
+    intended_asst    = ctx.get("intended_assistant_turns") or {}
+
+    # Per-turn latency / timing label from turn_taking metric (if already computed)
+    metrics      = metrics_data.get("metrics") or {}
+    tt_details   = (metrics.get("turn_taking") or {}).get("details") or {}
+    per_turn_latency = {int(k): v for k, v in (tt_details.get("per_turn_latency") or {}).items()}
+    per_turn_labels  = {int(k): v for k, v in (tt_details.get("per_turn_judge_timing_ratings") or {}).items()}
+
+    # Reference time: earliest timestamp across all turns
+    all_starts = [
+        segs[0][0]
+        for segs in list(user_ts.values()) + list(asst_ts.values())
+        if segs
+    ]
+    t0 = min(all_starts) if all_starts else 0.0
+
+    def _rel(segs: list) -> list[tuple[float, float]]:
+        return [(s - t0, e - t0) for s, e in segs] if segs else []
+
+    turns: list[dict] = []
+
+    for tid_str, segs in asst_ts.items():
+        if not segs:
+            continue
+        tid = int(tid_str)
+        rel = _rel(segs)
+        turns.append({
+            "turn_id":             tid,
+            "speaker":             "assistant",
+            "segments":            rel,
+            "start":               rel[0][0],
+            "end":                 rel[-1][1],
+            "duration":            rel[-1][1] - rel[0][0],
+            "transcript_heard":    transcribed_asst.get(tid_str, ""),
+            "transcript_intended": intended_asst.get(tid_str, ""),
+            "latency_s":           None,
+            "timing_label":        None,
+        })
+
+    for tid_str, segs in user_ts.items():
+        if not segs:
+            continue
+        tid = int(tid_str)
+        rel = _rel(segs)
+        turns.append({
+            "turn_id":             tid,
+            "speaker":             "user",
+            "segments":            rel,
+            "start":               rel[0][0],
+            "end":                 rel[-1][1],
+            "duration":            rel[-1][1] - rel[0][0],
+            "transcript_heard":    transcribed_user.get(tid_str, ""),
+            "transcript_intended": intended_user.get(tid_str, ""),
+            "latency_s":           per_turn_latency.get(tid),
+            "timing_label":        per_turn_labels.get(tid),
+        })
+
+    turns.sort(key=lambda t: t["start"])
+    return turns
+
+
+def _parse_elevenlabs_events(events_file: Path) -> list[dict]:
+    """Fallback: parse elevenlabs_events.jsonl into a flat turns list (no turn IDs)."""
     events = []
     with open(events_file) as f:
         for line in f:
@@ -50,65 +150,103 @@ def _parse_elevenlabs_events(events_file: Path) -> dict:
     audio_events = [e for e in events if e.get("event_type") in ("audio_start", "audio_end")]
     audio_events.sort(key=lambda x: x.get("audio_timestamp", 0))
 
-    active_turns: dict = {}
-    turns: list = []
-    for event in audio_events:
-        user = event.get("user")
-        etype = event.get("event_type")
-        ts = event.get("audio_timestamp")
+    active: dict = {}
+    raw: list = []
+    for ev in audio_events:
+        user  = ev.get("user")
+        etype = ev.get("event_type")
+        ts    = ev.get("audio_timestamp")
         if etype == "audio_start":
-            if user not in active_turns or active_turns[user].get("end") is not None:
-                active_turns[user] = {"user": user, "start": ts, "end": None}
+            if user not in active or active[user].get("end") is not None:
+                active[user] = {"user": user, "start": ts, "end": None}
         elif etype == "audio_end":
-            if user in active_turns and active_turns[user].get("end") is None:
-                active_turns[user]["end"] = ts
-                active_turns[user]["duration"] = ts - active_turns[user]["start"]
-                turns.append(active_turns[user].copy())
+            if user in active and active[user].get("end") is None:
+                active[user]["end"] = ts
+                active[user]["duration"] = ts - active[user]["start"]
+                raw.append(active[user].copy())
 
-    turns.sort(key=lambda x: x["start"])
-    return {"turns": turns}
+    raw.sort(key=lambda x: x["start"])
+    t0 = min((t["start"] for t in raw), default=0.0)
+
+    user_idx = asst_idx = 0
+    turns: list[dict] = []
+    for i, t in enumerate(raw):
+        is_asst = t["user"] == "pipecat_agent"
+        speaker = "assistant" if is_asst else "user"
+        s_rel   = t["start"] - t0
+        e_rel   = t["end"]   - t0
+        turns.append({
+            "turn_id":             i,
+            "speaker":             speaker,
+            "segments":            [(s_rel, e_rel)],
+            "start":               s_rel,
+            "end":                 e_rel,
+            "duration":            t.get("duration", e_rel - s_rel),
+            "transcript_heard":    "",
+            "transcript_intended": "",
+            "latency_s":           None,
+            "timing_label":        None,
+            "_seq_idx":            asst_idx if is_asst else user_idx,
+        })
+        if is_asst:
+            asst_idx += 1
+        else:
+            user_idx += 1
+    return turns
 
 
-def _calculate_pauses(turns: list) -> list:
+def _patch_fallback_transcripts(turns: list[dict], transcript_file: Path) -> None:
+    """Fill transcript fields in fallback turns from transcript.jsonl using sequential order."""
+    tx: dict[str, list[str]] = {"user": [], "assistant": []}
+    if transcript_file.exists():
+        with open(transcript_file) as f:
+            for line in f:
+                if line.strip():
+                    entry = json.loads(line)
+                    role  = entry.get("type", "")
+                    content = entry.get("content", "")
+                    if role in tx:
+                        tx[role].append(content)
+    for turn in turns:
+        idx  = turn.pop("_seq_idx", 0)
+        key  = "assistant" if turn["speaker"] == "assistant" else "user"
+        text = tx[key][idx] if idx < len(tx[key]) else ""
+        turn["transcript_heard"]    = text
+        turn["transcript_intended"] = text
+
+
+def _calculate_pauses(turns_rel: list[dict]) -> list[dict]:
+    """Compute pause gaps between consecutive audio segments across all turns."""
+    all_segs = sorted(
+        [(s, e, turn["speaker"]) for turn in turns_rel for s, e in turn["segments"]],
+        key=lambda x: x[0],
+    )
     pauses = []
-    for i in range(len(turns) - 1):
-        cur, nxt = turns[i], turns[i + 1]
-        if cur["end"] and nxt["start"]:
-            gap = nxt["start"] - cur["end"]
-            if gap > 0:
-                pauses.append({
-                    "from_speaker": cur["user"],
-                    "to_speaker": nxt["user"],
-                    "start": cur["end"],
-                    "end": nxt["start"],
-                    "duration_seconds": gap,
-                })
+    for i in range(len(all_segs) - 1):
+        cur_end   = all_segs[i][1]
+        nxt_start = all_segs[i + 1][0]
+        gap = nxt_start - cur_end
+        if gap > 0.001:
+            pauses.append({
+                "from_speaker":     all_segs[i][2],
+                "to_speaker":       all_segs[i + 1][2],
+                "start":            cur_end,
+                "end":              nxt_start,
+                "duration_seconds": gap,
+            })
     return pauses
 
 
-def _parse_transcript(transcript_file: Path) -> dict:
-    result: dict = {"user": [], "assistant": []}
-    if not transcript_file or not transcript_file.exists():
-        return result
-    with open(transcript_file) as f:
-        for line in f:
-            if line.strip():
-                entry = json.loads(line)
-                role = entry.get("type", "")
-                content = entry.get("content", "")
-                if role == "user":
-                    result["user"].append(content)
-                elif role == "assistant":
-                    result["assistant"].append(content)
-    return result
-
+# =============================================================================
+# Audio loading helpers
+# =============================================================================
 
 def _load_pydub(path: Path) -> tuple:
     seg = AudioSegment.from_file(str(path))
     if seg.channels > 1:
         seg = seg.set_channels(1)
     sr = seg.frame_rate
-    y = np.array(seg.get_array_of_samples()).astype(np.float32) / 32768.0
+    y  = np.array(seg.get_array_of_samples()).astype(np.float32) / 32768.0
     return y, sr
 
 
@@ -121,11 +259,11 @@ def _load_librosa(path: Path) -> tuple:
 
 def _downsample(y: np.ndarray, sr: float, target_rate: int = 100) -> tuple:
     duration = len(y) / sr
-    target = max(2, int(duration * target_rate))
+    target   = max(2, int(duration * target_rate))
     if len(y) > target:
-        step = max(1, len(y) // target)
-        y_ds = y[::step]
-        sr_ds = sr * len(y_ds) / len(y)
+        step    = max(1, len(y) // target)
+        y_ds    = y[::step]
+        sr_ds   = sr * len(y_ds) / len(y)
     else:
         y_ds, sr_ds = y, sr
     return y_ds, sr_ds
@@ -151,83 +289,75 @@ def _wrap(text: str, width: int = 80) -> str:
 # =============================================================================
 
 def _prepare_data(record_dir: Path) -> dict:
-    audio_mixed = next(record_dir.glob("audio_mixed*.wav"), record_dir / "audio_mixed.wav")
-    audio_el    = record_dir / "elevenlabs_audio_recording.mp3"
-    events_file = record_dir / "elevenlabs_events.jsonl"
-    transcript  = record_dir / "transcript.jsonl"
+    audio_mixed  = next(record_dir.glob("audio_mixed*.wav"), record_dir / "audio_mixed.wav")
+    audio_el     = record_dir / "elevenlabs_audio_recording.mp3"
+    events_file  = record_dir / "elevenlabs_events.jsonl"
+    transcript   = record_dir / "transcript.jsonl"
 
-    # Turns / pauses
-    if events_file.exists():
-        turns = _parse_elevenlabs_events(events_file)["turns"]
-    else:
-        turns = []
-    pauses = _calculate_pauses(turns)
+    # --- Turn data: prefer metrics.json (same source as turn_taking metric) ---
+    turns_rel: list[dict] = []
+    metrics_data = _load_metrics_context(record_dir)
+    if metrics_data:
+        built = _build_turns_from_metrics(metrics_data)
+        if built:
+            turns_rel = built
 
-    start_time = min((t["start"] for t in turns), default=0)
-    turns_rel = [{
-        "user":     t["user"],
-        "start":    t["start"] - start_time,
-        "end":      (t["end"] - start_time) if t["end"] else None,
-        "duration": t.get("duration", (t["end"] - t["start"]) if t["end"] else 0),
-    } for t in turns]
-    pauses_rel = [{
-        "from_speaker":     p["from_speaker"],
-        "to_speaker":       p["to_speaker"],
-        "start":            p["start"] - start_time,
-        "end":              p["end"]   - start_time,
-        "duration_seconds": p["duration_seconds"],
-    } for p in pauses]
+    # Fallback: parse ElevenLabs event log directly
+    if not turns_rel and events_file.exists():
+        turns_rel = _parse_elevenlabs_events(events_file)
+        _patch_fallback_transcripts(turns_rel, transcript)
 
-    transcript_map = _parse_transcript(transcript)
+    pauses_rel = _calculate_pauses(turns_rel)
 
-    # Mixed audio
+    # --- Audio: mixed ---
     y_mixed, sr_mixed, duration, mixed_loaded = None, None, 0.0, False
     if audio_mixed.exists():
         try:
             y_mixed, sr_mixed = _load_pydub(audio_mixed)
-            duration = len(y_mixed) / sr_mixed
+            duration    = len(y_mixed) / sr_mixed
             mixed_loaded = True
         except Exception:
             pass
 
-    plot_xlim = [0, max(duration, 1.0)]
+    # Use the later of audio duration and last turn end for x-axis
+    turns_end   = max((t["end"] for t in turns_rel), default=0.0)
+    plot_xlim   = [0, max(duration, turns_end, 1.0)]
 
     if mixed_loaded:
         y_ds, _ = _downsample(y_mixed, sr_mixed)
         t_mixed = np.linspace(0, duration, len(y_ds))
     else:
-        y_ds = np.array([])
+        y_ds    = np.array([])
         t_mixed = np.array([])
 
-    # ElevenLabs audio
-    el_y_ds, el_t, el_sr_ds, el_loaded = np.array([]), np.array([]), 1.0, False
-    el_spec = None
+    # --- Audio: ElevenLabs ---
+    el_y_ds, el_t, el_spec = np.array([]), np.array([]), None
+    el_loaded = False
     if audio_el.exists():
         try:
             _el_y, _el_sr = _load_librosa(audio_el)
-            el_y_ds, _ = _downsample(_el_y, _el_sr)
-            el_sr_ds   = _el_sr * len(el_y_ds) / len(_el_y)
-            el_t       = np.linspace(0, len(_el_y) / _el_sr, len(el_y_ds))
-            el_loaded  = True
-            D = librosa.amplitude_to_db(
+            el_y_ds, _    = _downsample(_el_y, _el_sr)
+            el_t          = np.linspace(0, len(_el_y) / _el_sr, len(el_y_ds))
+            el_loaded     = True
+            D      = librosa.amplitude_to_db(
                 np.abs(librosa.stft(_el_y, hop_length=512, n_fft=2048)), ref=np.max)
-            freqs = librosa.fft_frequencies(sr=int(_el_sr), n_fft=2048)
-            times = librosa.frames_to_time(np.arange(D.shape[1]),
-                                           sr=int(_el_sr), hop_length=512)
+            freqs  = librosa.fft_frequencies(sr=int(_el_sr), n_fft=2048)
+            times  = librosa.frames_to_time(np.arange(D.shape[1]),
+                                            sr=int(_el_sr), hop_length=512)
             el_spec = (D, freqs, times)
         except Exception:
             pass
 
-    # Mixed spectrogram
+    # --- Spectrogram: mixed ---
     mixed_spec = None
     if mixed_loaded and len(y_ds) > 0:
         try:
-            sr_ds = sr_mixed * len(y_ds) / len(y_mixed)
-            D     = librosa.amplitude_to_db(
+            sr_ds  = sr_mixed * len(y_ds) / len(y_mixed)
+            D      = librosa.amplitude_to_db(
                 np.abs(librosa.stft(y_ds, hop_length=512, n_fft=2048)), ref=np.max)
-            freqs = librosa.fft_frequencies(sr=int(sr_ds), n_fft=2048)
-            times = librosa.frames_to_time(np.arange(D.shape[1]),
-                                           sr=int(sr_ds), hop_length=512)
+            freqs  = librosa.fft_frequencies(sr=int(sr_ds), n_fft=2048)
+            times  = librosa.frames_to_time(np.arange(D.shape[1]),
+                                            sr=int(sr_ds), hop_length=512)
             mixed_spec = (D, freqs, times)
         except Exception:
             pass
@@ -241,12 +371,10 @@ def _prepare_data(record_dir: Path) -> dict:
         "el_loaded":    el_loaded,
         "el_y_ds":      el_y_ds,
         "el_t":         el_t,
-        "el_sr_ds":     el_sr_ds,
         "mixed_spec":   mixed_spec,
         "el_spec":      el_spec,
         "turns_rel":    turns_rel,
         "pauses_rel":   pauses_rel,
-        "transcript_map": transcript_map,
     }
 
 
@@ -259,10 +387,9 @@ def _build_figure(data: dict,
                   show_el_spec: bool = False,
                   title_suffix: str = "") -> go.Figure:
 
-    turns_rel      = data["turns_rel"]
-    pauses_rel     = data["pauses_rel"]
-    transcript_map = data["transcript_map"]
-    plot_xlim      = data["plot_xlim"]
+    turns_rel  = data["turns_rel"]
+    pauses_rel = data["pauses_rel"]
+    plot_xlim  = data["plot_xlim"]
 
     # ------------------------------------------------------------------ #
     # Dynamic row layout
@@ -290,8 +417,8 @@ def _build_figure(data: dict,
         "timeline":       1.5,
     }
 
-    n_rows     = len(row_keys)
-    row_of     = {k: i + 1 for i, k in enumerate(row_keys)}
+    n_rows      = len(row_keys)
+    row_of      = {k: i + 1 for i, k in enumerate(row_keys)}
     row_heights = [_heights[k] for k in row_keys]
 
     fig = make_subplots(
@@ -320,10 +447,10 @@ def _build_figure(data: dict,
     # All real traces use showlegend=False + legendgroup for toggling.
     # ------------------------------------------------------------------ #
     for _name, _color, _symbol in [
-        ("User",      USER_COLOR,                  "square"),
-        ("Assistant", ASST_COLOR,                  "square"),
-        ("Silence",   "rgba(140,140,140,0.55)",    "square"),
-        ("Pause",     "rgba(140,140,140,0.40)",    "square-open"),
+        ("User",      USER_COLOR,               "square"),
+        ("Assistant", ASST_COLOR,               "square"),
+        ("Silence",   "rgba(140,140,140,0.55)", "square"),
+        ("Pause",     "rgba(140,140,140,0.40)", "square-open"),
     ]:
         fig.add_trace(go.Scatter(
             x=[None], y=[None], mode="markers",
@@ -333,43 +460,53 @@ def _build_figure(data: dict,
         ), row=1, col=1)
 
     # ------------------------------------------------------------------ #
-    # Hover text — per-sample transcript strings
+    # Hover text — per-sample transcript strings, keyed by turn segment
     # ------------------------------------------------------------------ #
     def _hover_texts(time_array: np.ndarray) -> list:
         if len(time_array) == 0:
             return []
         texts = np.full(len(time_array), "", dtype=object)
-        tc: dict = {"user": 0, "assistant": 0}
+
         for turn in turns_rel:
-            if not turn["end"]:
-                continue
-            is_asst = turn["user"] == "pipecat_agent"
-            speaker = "Assistant" if is_asst else "User"
-            key     = "assistant" if is_asst else "user"
-            tx_list = transcript_map[key]
-            text    = tx_list[tc[key]] if tc[key] < len(tx_list) else "(no transcript)"
-            tc[key] += 1
-            hover = (f"<b>{speaker}</b><br>"
-                     f"t\u00a0=\u00a0{turn['start']:.2f}s\u2013{turn['end']:.2f}s "
-                     f"({turn['duration']:.1f}s)<br><br>"
-                     f"{_wrap(text)}")
-            mask = (time_array >= turn["start"]) & (time_array <= turn["end"])
-            texts[mask] = hover
+            speaker    = "Assistant" if turn["speaker"] == "assistant" else "User"
+            transcript = turn["transcript_heard"] or turn["transcript_intended"] or "(no transcript)"
+
+            latency_line = ""
+            if turn["speaker"] == "user" and turn.get("latency_s") is not None:
+                latency_line = (
+                    f"<br>Response latency:\u00a0{turn['latency_s'] * 1000:.0f}\u00a0ms"
+                    + (f"\u00a0({turn['timing_label']})" if turn.get("timing_label") else "")
+                )
+
+            hover = (
+                f"<b>Turn\u00a0{turn['turn_id']}\u00a0\u2014\u00a0{speaker}</b><br>"
+                f"t\u00a0=\u00a0{turn['start']:.2f}s\u2013{turn['end']:.2f}s "
+                f"({turn['duration']:.1f}s)"
+                + latency_line
+                + f"<br><br>{_wrap(transcript)}"
+            )
+
+            for seg_s, seg_e in turn["segments"]:
+                mask = (time_array >= seg_s) & (time_array <= seg_e)
+                texts[mask] = hover
+
         for pause in pauses_rel:
-            hover = (f"<b>Pause</b><br>"
-                     f"t\u00a0=\u00a0{pause['start']:.2f}s\u2013{pause['end']:.2f}s<br>"
-                     f"Duration:\u00a0{pause['duration_seconds'] * 1000:.0f}\u00a0ms<br>"
-                     f"{pause['from_speaker']}\u00a0\u2192\u00a0{pause['to_speaker']}")
+            hover = (
+                f"<b>Pause</b><br>"
+                f"t\u00a0=\u00a0{pause['start']:.2f}s\u2013{pause['end']:.2f}s<br>"
+                f"Duration:\u00a0{pause['duration_seconds'] * 1000:.0f}\u00a0ms<br>"
+                f"{pause['from_speaker']}\u00a0\u2192\u00a0{pause['to_speaker']}"
+            )
             mask = (time_array >= pause["start"]) & (time_array <= pause["end"])
             texts[mask] = hover
+
         return texts.tolist()
 
     # ------------------------------------------------------------------ #
-    # Colour-coded waveform — one Scatter trace per speaker segment
+    # Colour-coded waveform — one Scatter trace per contiguous segment
     # ------------------------------------------------------------------ #
     def _colored_waveform(row: int, y: np.ndarray, t: np.ndarray,
                           y_range: list) -> None:
-        """Split waveform into per-speaker segments and colour each differently."""
         if len(y) == 0:
             fig.add_annotation(
                 text="No file available", xref="x domain", yref="y domain",
@@ -378,16 +515,17 @@ def _build_figure(data: dict,
             fig.update_yaxes(title_text="Amplitude", range=[-1.0, 1.0], row=row, col=1)
             return
 
-        # Build ordered segment list: (t_start, t_end, label)
-        turn_segs = sorted(
-            [(tr["start"], tr["end"],
-              "asst" if tr["user"] == "pipecat_agent" else "user")
-             for tr in turns_rel if tr["end"]],
+        # Flat list of individual speaker audio segments, sorted by start time
+        all_segs = sorted(
+            [(s, e, "asst" if turn["speaker"] == "assistant" else "user")
+             for turn in turns_rel for s, e in turn["segments"]],
             key=lambda s: s[0],
         )
+
+        # Insert gap segments between speaker audio
         segments: list[tuple] = []
         prev_end = 0.0
-        for seg_s, seg_e, spk in turn_segs:
+        for seg_s, seg_e, spk in all_segs:
             if seg_s > prev_end + 1e-3:
                 segments.append((prev_end, seg_s, "gap"))
             segments.append((seg_s, seg_e, spk))
@@ -404,7 +542,6 @@ def _build_figure(data: dict,
             if not mask.any():
                 continue
             name = _name_map[spk]
-
             fig.add_trace(go.Scatter(
                 x=t[mask].tolist(), y=y[mask].tolist(),
                 mode="lines",
@@ -440,7 +577,7 @@ def _build_figure(data: dict,
             showscale=True,
         ), row=row, col=1)
 
-        # Transcript strip at freq_max for hover
+        # Invisible transcript strip at freq_max
         strip_t  = np.asarray(times, dtype=float)
         freq_max = float(freqs[-1])
         fig.add_trace(go.Scatter(
@@ -451,11 +588,9 @@ def _build_figure(data: dict,
             hovertemplate="%{text}<extra>Transcript</extra>",
         ), row=row, col=1)
 
-        # Turn boundary vrects
+        # Turn boundary vrects (use envelope start/end per turn)
         for turn in turns_rel:
-            if not turn["end"]:
-                continue
-            color = ASST_FILL if turn["user"] == "pipecat_agent" else USER_FILL
+            color = ASST_FILL if turn["speaker"] == "assistant" else USER_FILL
             fig.add_vrect(x0=turn["start"], x1=turn["end"],
                           fillcolor=color, line_width=0, layer="below",
                           row=row, col=1)
@@ -506,38 +641,45 @@ def _build_figure(data: dict,
             _no_file(row_of["el_spec"])
             fig.update_yaxes(title_text="Freq (Hz)", row=row_of["el_spec"], col=1)
 
-    # ---- Timeline ----
-    tl: dict = {"user": 0, "assistant": 0}
-    tl_row   = row_of["timeline"]
+    # ------------------------------------------------------------------ #
+    # Speaker Turn Timeline
+    # ------------------------------------------------------------------ #
+    tl_row = row_of["timeline"]
 
     for turn in turns_rel:
-        if not turn["end"]:
-            continue
-        is_asst  = turn["user"] == "pipecat_agent"
+        is_asst  = turn["speaker"] == "assistant"
         speaker  = "Assistant" if is_asst else "User"
         y_pos    = 2.0 if is_asst else 1.0
         bar_fill = "rgba(232,114,74,0.80)" if is_asst else "rgba(74,144,217,0.80)"
         bar_line = "rgba(180,70,30,1)"     if is_asst else "rgba(30,90,170,1)"
-        key      = "assistant" if is_asst else "user"
 
-        texts = transcript_map[key]
-        text  = texts[tl[key]] if tl[key] < len(texts) else "(no transcript)"
-        tl[key] += 1
+        transcript   = turn["transcript_heard"] or turn["transcript_intended"] or "(no transcript)"
+        latency_line = ""
+        if not is_asst and turn.get("latency_s") is not None:
+            latency_line = (
+                f"<br>Response latency:\u00a0{turn['latency_s'] * 1000:.0f}\u00a0ms"
+                + (f"\u00a0({turn['timing_label']})" if turn.get("timing_label") else "")
+            )
 
-        hover = (f"<b>{speaker}</b><br>"
-                 f"t\u00a0=\u00a0{turn['start']:.2f}s\u2013{turn['end']:.2f}s "
-                 f"({turn['duration']:.1f}s)<br><br>{_wrap(text)}")
+        hover = (
+            f"<b>Turn\u00a0{turn['turn_id']}\u00a0\u2014\u00a0{speaker}</b><br>"
+            f"t\u00a0=\u00a0{turn['start']:.2f}s\u2013{turn['end']:.2f}s "
+            f"({turn['duration']:.1f}s)"
+            + latency_line
+            + f"<br><br>{_wrap(transcript)}"
+        )
 
-        # Visual bar (hoverinfo='skip' — corners are too sparse)
-        fig.add_trace(go.Scatter(
-            x=[turn["start"], turn["end"], turn["end"], turn["start"], turn["start"]],
-            y=[y_pos - 0.38, y_pos - 0.38, y_pos + 0.38, y_pos + 0.38, y_pos - 0.38],
-            fill="toself", fillcolor=bar_fill, line=dict(color=bar_line, width=1),
-            mode="lines", hoverinfo="skip",
-            name=speaker, legendgroup=speaker, showlegend=False,
-        ), row=tl_row, col=1)
+        # Visual bars — one per segment (handles multi-segment interrupted turns)
+        for seg_s, seg_e in turn["segments"]:
+            fig.add_trace(go.Scatter(
+                x=[seg_s, seg_e, seg_e, seg_s, seg_s],
+                y=[y_pos - 0.38, y_pos - 0.38, y_pos + 0.38, y_pos + 0.38, y_pos - 0.38],
+                fill="toself", fillcolor=bar_fill, line=dict(color=bar_line, width=1),
+                mode="lines", hoverinfo="skip",
+                name=speaker, legendgroup=speaker, showlegend=False,
+            ), row=tl_row, col=1)
 
-        # Dense hover strip at bar midline (~2 pts/sec, min 5)
+        # Dense hover strip across full turn envelope (~2 pts/sec, min 5)
         n_pts   = max(5, int(turn["duration"] * 2))
         x_strip = np.linspace(turn["start"], turn["end"], n_pts).tolist()
         fig.add_trace(go.Scatter(
@@ -547,19 +689,44 @@ def _build_figure(data: dict,
             showlegend=False, name="",
         ), row=tl_row, col=1)
 
+        # Duration label on the first (or only) segment
+        seg0_s, seg0_e = turn["segments"][0]
         fig.add_annotation(
-            x=turn["start"] + turn["duration"] / 2, y=y_pos,
-            text=f"{turn['duration']:.1f}s",
+            x=seg0_s + (seg0_e - seg0_s) / 2, y=y_pos,
+            text=f"T{turn['turn_id']}\u00a0{turn['duration']:.1f}s",
             showarrow=False, font=dict(size=8, color="white"),
             xref=f"x{tl_row}", yref=f"y{tl_row}",
         )
 
-    for pause in pauses_rel:
-        hover = (f"<b>Pause</b><br>"
-                 f"t\u00a0=\u00a0{pause['start']:.2f}s\u2013{pause['end']:.2f}s<br>"
-                 f"Duration:\u00a0{pause['duration_seconds'] * 1000:.0f}\u00a0ms<br>"
-                 f"{pause['from_speaker']}\u00a0\u2192\u00a0{pause['to_speaker']}")
+    # Latency arrows: user last-segment-end → assistant first-segment-start
+    user_by_id = {t["turn_id"]: t for t in turns_rel if t["speaker"] == "user"}
+    asst_by_id = {t["turn_id"]: t for t in turns_rel if t["speaker"] == "assistant"}
+    for tid, user_turn in user_by_id.items():
+        if not user_turn.get("latency_s") or user_turn["latency_s"] <= 0.05:
+            continue
+        asst_turn = asst_by_id.get(tid)
+        if asst_turn is None:
+            continue
+        user_end   = user_turn["segments"][-1][1]
+        asst_start = asst_turn["segments"][0][0]
+        if asst_start <= user_end:
+            continue
+        fig.add_annotation(
+            x=(user_end + asst_start) / 2, y=1.5,
+            text=f"\u2194\u00a0{user_turn['latency_s'] * 1000:.0f}ms",
+            showarrow=False, font=dict(size=7, color="dimgray"),
+            bgcolor="rgba(255,255,255,0.7)",
+            xref=f"x{tl_row}", yref=f"y{tl_row}",
+        )
 
+    # Pause boxes on timeline
+    for pause in pauses_rel:
+        hover = (
+            f"<b>Pause</b><br>"
+            f"t\u00a0=\u00a0{pause['start']:.2f}s\u2013{pause['end']:.2f}s<br>"
+            f"Duration:\u00a0{pause['duration_seconds'] * 1000:.0f}\u00a0ms<br>"
+            f"{pause['from_speaker']}\u00a0\u2192\u00a0{pause['to_speaker']}"
+        )
         fig.add_trace(go.Scatter(
             x=[pause["start"], pause["end"], pause["end"], pause["start"], pause["start"]],
             y=[1.15, 1.15, 1.85, 1.85, 1.15],
