@@ -3,12 +3,20 @@
 Renders a Plotly figure directly into a Streamlit tab without writing files.
 
 Layout (dynamic — spectrograms are optional):
-  Row 1        : audio_mixed waveform, colour-coded by speaker turn
+  Row 1        : audio_mixed waveform
   Row 2 (opt)  : audio_mixed spectrogram
-  Row 3        : ElevenLabs waveform, colour-coded by speaker turn (only when
-                 elevenlabs_audio_recording.mp3 exists in the record directory)
+  Row 3        : ElevenLabs waveform (only when elevenlabs_audio_recording.mp3 exists)
   Row 4 (opt)  : ElevenLabs spectrogram
   Row 5        : Speaker Turn Timeline
+
+Waveform rendering:
+  • Full recording is always shown as a light gray base trace so the true audio
+    duration is visible even in regions where no speaker turn is active.
+  • Speaker segments are overlaid in colour: blue = user, orange-red = assistant.
+  • Pause regions (speaker-change gaps) are drawn as shaded bands linked to the
+    "Pause" legend item so they can be toggled on/off.
+  • Silence between same-speaker consecutive segments is not marked separately —
+    only speaker-transition gaps are treated as pauses (consistent with turn_taking.py).
 
 Turn data source (primary → fallback):
   1. metrics.json context  — the same MetricContext fields that turn_taking.py uses:
@@ -16,9 +24,13 @@ Turn data source (primary → fallback):
          → dict[turn_id → list[[abs_start, abs_end]]]  (may be multi-segment)
        context.transcribed_*/intended_*_turns → dict[turn_id → str]
        latency_s = asst.segments[0][0] − user.segments[-1][1]  (per turn_id, same formula)
-  2. elevenlabs_events.jsonl  — used when metrics.json is absent or has no timestamps:
+  2. elevenlabs_events.jsonl  — fallback when metrics.json is absent or has no timestamps:
        one turn per completed audio_start/audio_end session
        latency_s computed by temporal proximity (next assistant after this user)
+
+X-axis range:
+  Covers the longest of: audio_mixed duration, ElevenLabs audio duration, last turn end.
+  Ensures neither audio file is clipped when they differ in length.
 
 Spectrograms use a 4 kHz intermediate sample rate (_SPEC_SR) via librosa.resample so that:
   • frequency content up to 2 kHz (Nyquist) is preserved — representative of speech
@@ -44,7 +56,6 @@ from pydub import AudioSegment
 
 USER_COLOR = "#4A90D9"  # mid-blue   — clear on white & dark
 ASST_COLOR = "#E8724A"  # orange-red — clear on white & dark
-GAP_COLOR = "rgba(140,140,140,0.55)"  # neutral gray for silence gaps
 USER_FILL = "rgba(74,144,217,0.22)"
 ASST_FILL = "rgba(232,114,74,0.22)"
 PAUSE_FILL = "rgba(140,140,140,0.18)"
@@ -400,10 +411,6 @@ def _prepare_data(record_dir: Path) -> dict:
         except Exception:
             pass
 
-    # Use the later of audio duration and last turn end for x-axis
-    turns_end = max((t["end"] for t in turns_rel), default=0.0)
-    plot_xlim = [0, max(duration, turns_end, 1.0)]
-
     if mixed_loaded:
         y_ds, _ = _downsample(y_mixed, sr_mixed)
         t_mixed = np.linspace(0, duration, len(y_ds))
@@ -435,6 +442,12 @@ def _prepare_data(record_dir: Path) -> dict:
                 pass
         except Exception:
             pass
+
+    # x-axis range: longest of mixed audio, EL audio, and last turn end.
+    # Ensures neither recording is clipped when the two files differ in length.
+    el_duration = float(el_t[-1]) if el_loaded and len(el_t) > 0 else 0.0
+    turns_end = max((t["end"] for t in turns_rel), default=0.0)
+    plot_xlim = [0, max(duration, el_duration, turns_end, 1.0)]
 
     # --- Spectrogram: mixed ---
     # Resample to _SPEC_SR so both spectrograms share the same frequency axis
@@ -546,7 +559,6 @@ def _build_figure(
     for _name, _color, _symbol in [
         ("User", USER_COLOR, "square"),
         ("Assistant", ASST_COLOR, "square"),
-        ("Silence", "rgba(140,140,140,0.55)", "square"),
         ("Pause", "rgba(140,140,140,0.40)", "square-open"),
     ]:
         fig.add_trace(
@@ -602,7 +614,10 @@ def _build_figure(
         return texts.tolist()
 
     # ------------------------------------------------------------------ #
-    # Colour-coded waveform — one Scatter trace per contiguous segment
+    # Colour-coded waveform
+    # Layer 1 (bottom): full-recording base trace — light gray, no legend.
+    # Layer 2 (top):    speaker segments — blue (user) / orange-red (assistant).
+    # Layer 3:          pause shaded bands — linked to "Pause" legend toggle.
     # ------------------------------------------------------------------ #
     def _colored_waveform(
         row: int, y: np.ndarray, t: np.ndarray, y_range: list, speaker_filter: set[str] | None = None
@@ -622,9 +637,23 @@ def _build_figure(
             fig.update_yaxes(title_text="Amplitude", range=[-1.0, 1.0], row=row, col=1)
             return
 
-        # Flat list of individual speaker audio segments, sorted by start time.
-        # speaker_filter restricts which speakers are coloured (e.g. {"assistant"} for
-        # the ElevenLabs recording which only contains TTS audio).
+        # Base trace — full recording at low opacity so gaps between turns
+        # are still visible and the x-axis always reflects the true duration.
+        fig.add_trace(
+            go.Scatter(
+                x=t.tolist(),
+                y=y.tolist(),
+                mode="lines",
+                line={"width": 0.8, "color": "rgba(160,160,160,0.35)"},
+                showlegend=False,
+                hoverinfo="skip",
+                name="",
+            ),
+            row=row,
+            col=1,
+        )
+
+        # Flat list of speaker audio segments, sorted by start time.
         visible_turns = [turn for turn in turns_rel if speaker_filter is None or turn["speaker"] in speaker_filter]
         all_segs = sorted(
             [
@@ -635,35 +664,22 @@ def _build_figure(
             key=lambda s: s[0],
         )
 
-        # Insert gap segments between speaker audio
-        segments: list[tuple] = []
-        prev_end = 0.0
+        _color_map = {"user": USER_COLOR, "asst": ASST_COLOR}
+        _name_map = {"user": "User", "asst": "Assistant"}
+
         for seg_s, seg_e, spk in all_segs:
-            if seg_s > prev_end + 1e-3:
-                segments.append((prev_end, seg_s, "gap"))
-            segments.append((seg_s, seg_e, spk))
-            prev_end = seg_e
-        duration = float(t[-1]) if len(t) > 0 else 0.0
-        if prev_end < duration - 1e-3:
-            segments.append((prev_end, duration, "gap"))
-
-        _color_map = {"user": USER_COLOR, "asst": ASST_COLOR, "gap": GAP_COLOR}
-        _name_map = {"user": "User", "asst": "Assistant", "gap": "Silence"}
-
-        for seg_s, seg_e, spk in segments:
             mask = (t >= seg_s) & (t <= seg_e)
             if not mask.any():
                 continue
-            name = _name_map[spk]
             fig.add_trace(
                 go.Scatter(
                     x=t[mask].tolist(),
                     y=y[mask].tolist(),
                     mode="lines",
                     line={"width": 1.0, "color": _color_map[spk]},
-                    opacity=0.85 if spk != "gap" else 0.45,
-                    name=name,
-                    legendgroup=name,
+                    opacity=0.85,
+                    name=_name_map[spk],
+                    legendgroup=_name_map[spk],
                     showlegend=False,
                     text=_hover_texts(t[mask]),
                     hovertemplate="%{text}<extra></extra>",
@@ -672,16 +688,34 @@ def _build_figure(
                 col=1,
             )
 
-        # Pause vrects (visual only)
+        # Pause shaded bands — Scatter traces so they toggle with the legend.
+        y0, y1 = y_range[0], y_range[1]
         for pause in pauses_rel:
-            fig.add_vrect(
-                x0=pause["start"], x1=pause["end"], fillcolor=PAUSE_FILL, line_width=0, layer="below", row=row, col=1
+            fig.add_trace(
+                go.Scatter(
+                    x=[pause["start"], pause["end"], pause["end"], pause["start"], pause["start"]],
+                    y=[y1, y1, y0, y0, y1],
+                    fill="toself",
+                    fillcolor=PAUSE_FILL,
+                    line={"width": 0},
+                    mode="lines",
+                    name="Pause",
+                    legendgroup="Pause",
+                    showlegend=False,
+                    hoverinfo="skip",
+                ),
+                row=row,
+                col=1,
             )
 
         fig.update_yaxes(title_text="Amplitude", range=y_range, row=row, col=1)
 
     # ------------------------------------------------------------------ #
-    # Spectrogram row — heatmap + invisible transcript strip
+    # Spectrogram row
+    # Layer 1: Heatmap (STFT at _SPEC_SR=4 kHz, 0–2 kHz Nyquist).
+    # Layer 2: Invisible transcript strip for hover tooltips.
+    # Layer 3: Speaker turn vrects (user / assistant fill colours).
+    # Layer 4: Pause shaded bands — linked to "Pause" legend toggle.
     # ------------------------------------------------------------------ #
     def _spec_row(row: int, spec: tuple, label: str, speaker_filter: set[str] | None = None) -> None:
         D, freqs, times = spec
@@ -720,17 +754,31 @@ def _build_figure(
             col=1,
         )
 
-        # Turn boundary vrects (use envelope start/end per turn).
-        # Restrict to speaker_filter when set (e.g. EL spectrogram only shows assistant turns).
+        # Speaker turn fill bands (envelope start/end per turn).
         visible_turns = [turn for turn in turns_rel if speaker_filter is None or turn["speaker"] in speaker_filter]
         for turn in visible_turns:
             color = ASST_FILL if turn["speaker"] == "assistant" else USER_FILL
             fig.add_vrect(
                 x0=turn["start"], x1=turn["end"], fillcolor=color, line_width=0, layer="below", row=row, col=1
             )
+        # Pause shaded bands — Scatter traces so they toggle with the legend.
+        f0, f1 = float(freqs[0]), float(freqs[-1])
         for pause in pauses_rel:
-            fig.add_vrect(
-                x0=pause["start"], x1=pause["end"], fillcolor=PAUSE_FILL, line_width=0, layer="below", row=row, col=1
+            fig.add_trace(
+                go.Scatter(
+                    x=[pause["start"], pause["end"], pause["end"], pause["start"], pause["start"]],
+                    y=[f1, f1, f0, f0, f1],
+                    fill="toself",
+                    fillcolor=PAUSE_FILL,
+                    line={"width": 0},
+                    mode="lines",
+                    name="Pause",
+                    legendgroup="Pause",
+                    showlegend=False,
+                    hoverinfo="skip",
+                ),
+                row=row,
+                col=1,
             )
 
         fig.update_yaxes(title_text="Freq (Hz)", row=row, col=1)

@@ -54,34 +54,59 @@ The **Audio Analysis** tab in the Record Detail view renders an interactive Plot
 
 ### Subplots
 
-| Row | Content | Always shown |
-|-----|---------|--------------|
-| 1 | Mixed audio waveform, colour-coded by speaker | Yes |
-| 2 | Mixed audio spectrogram | Optional (checkbox) |
-| 3 | ElevenLabs audio waveform, colour-coded by speaker | Yes |
-| 4 | ElevenLabs audio spectrogram | Optional (checkbox) |
-| 5 | Speaker Turn Timeline with per-turn durations and pause markers | Yes |
+| Row | Content | Shown when |
+|-----|---------|------------|
+| 1 | Mixed audio waveform, colour-coded by speaker turn | Always |
+| 2 | Mixed audio spectrogram | "Show Mixed Audio Spectrogram" checkbox is on |
+| 3 | ElevenLabs audio waveform, colour-coded by speaker turn | `elevenlabs_audio_recording.mp3` exists in the record directory |
+| 4 | ElevenLabs audio spectrogram | EL recording exists **and** "Show ElevenLabs Spectrogram" checkbox is on |
+| 5 | Speaker Turn Timeline with per-turn durations and pause markers | Always |
 
-Toggle spectrograms on or off using the checkboxes above the chart. Results are cached per trial so switching between records is fast after the first load.
+When `elevenlabs_audio_recording.mp3` is not found, rows 3 and 4 are hidden and an info message is shown instead. Spectrogram checkboxes appear above the chart only for the recordings that are available. Results are cached per trial so switching between records is fast after the first load.
+
+### Waveform Rendering
+
+Each waveform subplot is drawn in three layers:
+
+1. **Base trace** — the complete audio file rendered as a light gray line so the full recording duration is always visible, including regions between turns.
+2. **Speaker segments** — overlaid in colour on top of the base trace for each active turn window.
+3. **Pause bands** — semi-transparent gray rectangles over speaker-transition gaps, linked to the **Pause** legend item so they can be toggled on/off.
 
 ### Colour Coding
 
 | Colour | Meaning |
 |--------|---------|
 | Blue | User speaker turn |
-| Orange | Assistant speaker turn |
-| Gray (semi-transparent line) | Silence — audio not covered by any speaker turn |
-| Gray shaded box | Pause — gap between consecutive speaker turns |
+| Orange-red | Assistant speaker turn |
+| Gray shaded band | Pause — speaker-transition gap (user→assistant or assistant→user) |
 
-Colours are chosen for visibility in both Streamlit light and dark mode.
+Colours are chosen for visibility in both Streamlit light and dark mode. Clicking a legend item (User, Assistant, Pause) toggles that category across all subplots simultaneously.
 
 ### Hover Tooltips
 
-Hovering over any waveform sample shows the **transcript text** for the active speaker turn, along with the turn start/end time and duration. Hovering over a pause region shows the pause duration and the from/to speakers. The timeline row shows the same transcript text when hovering over each bar.
+Hovering over any waveform sample or timeline bar shows:
+- Turn ID, speaker, start/end time, and duration
+- Transcript text (heard and intended where available)
+- Response latency in ms for user turns (time from user's last segment end to assistant's first segment start)
 
-### Silence vs. Pause
+Hovering over a pause band shows the pause duration and the from/to speakers.
 
-- **Pause** — derived from speaker turn event logs. The gap between one speaker's audio end event and the next speaker's audio start event: `pause = turns[i+1].start − turns[i].end`. Only recorded when `> 0`.
-- **Silence** — derived from the waveform timeline. Any portion of the audio not covered by a speaker turn event (including audio before the first turn or after the last turn).
+### Pause Definition
 
-A Pause always coincides with a Silence region, but Silence can be wider (e.g. leading/trailing audio with no events).
+Pauses are computed consistently with `turn_taking.py`:
+
+- Only **speaker-transition gaps** count as pauses: a gap between a user segment end and the next assistant segment start, or vice versa.
+- Same-speaker consecutive segments (e.g. two user audio sessions back to back) are not marked as pauses.
+- Formula: `pause_duration = next_speaker.segments[0].start − current_speaker.segments[-1].end`
+- Only gaps `> 1 ms` are shown.
+
+### Turn Data Source
+
+Turn timestamps, transcripts, and response latencies are loaded in priority order:
+
+1. **`metrics.json` context** (primary) — uses the same `MetricContext` fields (`audio_timestamps_user_turns`, `audio_timestamps_assistant_turns`, `transcribed_*_turns`) that `turn_taking.py` operates on. Latency is computed as `asst.segments[0].start − user.segments[-1].end` per matching turn ID.
+2. **`elevenlabs_events.jsonl`** (fallback) — used when `metrics.json` is absent or contains no timestamp data. One entry per completed `audio_start`/`audio_end` session; latency computed by temporal proximity.
+
+### Spectrogram Details
+
+Spectrograms are computed at a 4 kHz intermediate sample rate (via `librosa.resample`) to preserve speech content up to 2 kHz (Nyquist) while keeping heatmap size bounded (~60–250 K cells for typical 5–90 s recordings). The time axis starts at `t = 0` to align with the waveform.
