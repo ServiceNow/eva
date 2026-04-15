@@ -189,6 +189,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         self._model = s2s_params.get("model", "gemini-3.1-flash-live-preview")
         self._voice = s2s_params.get("voice", "Kore")
         self._language_code = s2s_params.get("language_code", "en-US")
+        self._api_key = s2s_params.get("api_key", "")
 
         # Build system prompt (same pattern as pipecat realtime)
         prompt_manager = PromptManager()
@@ -279,10 +280,9 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
 
     def _create_genai_client(self) -> genai.Client:
         """Create a google-genai Client using Vertex AI or API key."""
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if api_key:
+        if self._api_key:
             logger.info("Using Gemini API key for authentication")
-            return genai.Client(api_key=api_key)
+            return genai.Client(api_key=self._api_key)
 
         project = os.environ.get("GOOGLE_CLOUD_PROJECT")
         location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
