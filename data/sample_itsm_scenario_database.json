@@ -1,0 +1,657 @@
+{
+  "_current_date": "2026-08-12",
+  "_ticket_counter": 48270,
+  "employees": {
+    "EMP048271": {
+      "employee_id": "EMP048271",
+      "first_name": "Marcus",
+      "last_name": "Chen",
+      "date_of_birth": "1989-06-17",
+      "phone_last_four": "7294",
+      "otp_code": "839201",
+      "department_code": "ENG",
+      "role_code": "SWE",
+      "hire_date": "2021-03-15",
+      "employment_status": "active",
+      "building_code": "BLD3",
+      "floor_code": "FL2",
+      "is_manager": false,
+      "manager_employee_id": "EMP031482",
+      "manager_auth_code": null,
+      "direct_reports": [],
+      "hardware_entitlements": {
+        "laptop_replacement": {
+          "current_asset_tag": "AST-LPT-284719",
+          "device_age_months": 52,
+          "pending_request": false,
+          "pending_request_id": null
+        },
+        "monitor_bundle": {
+          "current_asset_tag": null,
+          "device_age_months": null,
+          "pending_request": false,
+          "pending_request_id": null
+        }
+      },
+      "software_licenses": [
+        {
+          "license_assignment_id": "LASGN-048271",
+          "catalog_id": "LIC-0018",
+          "software_name": "JetBrains IntelliJ IDEA",
+          "license_type": "permanent",
+          "expiration_date": "2026-09-01",
+          "status": "active"
+        },
+        {
+          "license_assignment_id": "LASGN-048272",
+          "catalog_id": "LIC-0034",
+          "software_name": "Figma Enterprise",
+          "license_type": "temporary",
+          "expiration_date": "2026-07-15",
+          "status": "expired"
+        }
+      ],
+      "group_memberships": [
+        {
+          "group_code": "GRP-ENGCORE",
+          "group_name": "Engineering Core Access",
+          "status": "active",
+          "added_date": "2021-03-15"
+        },
+        {
+          "group_code": "GRP-VPNALL",
+          "group_name": "VPN Full Access",
+          "status": "active",
+          "added_date": "2021-03-15"
+        }
+      ],
+      "system_accounts": [
+        {
+          "case_id": "CASE-ACCT-048271",
+          "status": "active",
+          "provisioned_date": "2021-03-15",
+          "access_groups": ["GRP-ENGCORE", "GRP-VPNALL"]
+        }
+      ],
+      "offboarding_record": null,
+      "pending_role_change": null,
+      "ergonomic_assessment": {
+        "status": "completed",
+        "completion_date": "2025-11-20"
+      },
+      "account_status": {
+        "active_directory": {"locked": true, "password_expired": false, "requires_in_person_reset": false},
+        "sso_identity": {"locked": false, "password_expired": false, "requires_in_person_reset": false},
+        "email_exchange": {"locked": false, "password_expired": false, "requires_in_person_reset": false},
+        "vpn_gateway": {"locked": false, "password_expired": true, "requires_in_person_reset": false},
+        "erp_oracle": {"locked": false, "password_expired": false, "requires_in_person_reset": true}
+      }
+    },
+    "EMP031482": {
+      "employee_id": "EMP031482",
+      "first_name": "Priya",
+      "last_name": "Ramaswamy",
+      "date_of_birth": "1984-02-28",
+      "phone_last_four": "3614",
+      "otp_code": "472018",
+      "department_code": "ENG",
+      "role_code": "MGENG",
+      "hire_date": "2018-09-04",
+      "employment_status": "active",
+      "building_code": "BLD3",
+      "floor_code": "FL3",
+      "is_manager": true,
+      "manager_employee_id": null,
+      "manager_auth_code": "K4M2P9",
+      "direct_reports": ["EMP048271", "EMP092841", "EMP072948"],
+      "hardware_entitlements": {
+        "laptop_replacement": {
+          "current_asset_tag": "AST-LPT-194830",
+          "device_age_months": 28,
+          "pending_request": false,
+          "pending_request_id": null
+        },
+        "monitor_bundle": {
+          "current_asset_tag": "AST-MON-381047",
+          "device_age_months": 28,
+          "pending_request": false,
+          "pending_request_id": null
+        }
+      },
+      "software_licenses": [],
+      "group_memberships": [
+        {
+          "group_code": "GRP-ENGCORE",
+          "group_name": "Engineering Core Access",
+          "status": "active",
+          "added_date": "2018-09-04"
+        },
+        {
+          "group_code": "GRP-VPNALL",
+          "group_name": "VPN Full Access",
+          "status": "active",
+          "added_date": "2018-09-04"
+        },
+        {
+          "group_code": "GRP-MGMT",
+          "group_name": "Management Portal",
+          "status": "active",
+          "added_date": "2020-01-15"
+        }
+      ],
+      "system_accounts": [
+        {
+          "case_id": "CASE-ACCT-031482",
+          "status": "active",
+          "provisioned_date": "2018-09-04",
+          "access_groups": ["GRP-ENGCORE", "GRP-VPNALL", "GRP-MGMT"]
+        }
+      ],
+      "offboarding_record": null,
+      "pending_role_change": null
+    },
+    "EMP092841": {
+      "employee_id": "EMP092841",
+      "first_name": "Tomoko",
+      "last_name": "Ishikawa",
+      "date_of_birth": "1996-11-03",
+      "phone_last_four": "5182",
+      "otp_code": "629401",
+      "department_code": "ENG",
+      "role_code": "SWE",
+      "hire_date": "2026-08-18",
+      "start_date": "2026-08-18",
+      "employment_status": "pending_start",
+      "building_code": "BLD3",
+      "floor_code": "FL2",
+      "is_manager": false,
+      "manager_employee_id": "EMP031482",
+      "manager_auth_code": null,
+      "direct_reports": [],
+      "hardware_entitlements": {},
+      "software_licenses": [],
+      "group_memberships": [],
+      "system_accounts": [],
+      "offboarding_record": null,
+      "pending_role_change": null
+    },
+    "EMP072948": {
+      "employee_id": "EMP072948",
+      "first_name": "Derek",
+      "last_name": "Okonkwo",
+      "date_of_birth": "1992-08-09",
+      "phone_last_four": "6473",
+      "otp_code": "318504",
+      "department_code": "ENG",
+      "role_code": "SWE",
+      "hire_date": "2020-06-22",
+      "employment_status": "active",
+      "building_code": "BLD3",
+      "floor_code": "FL2",
+      "is_manager": false,
+      "manager_employee_id": "EMP031482",
+      "manager_auth_code": null,
+      "direct_reports": [],
+      "hardware_entitlements": {
+        "laptop_replacement": {
+          "current_asset_tag": "AST-LPT-372910",
+          "device_age_months": 38,
+          "pending_request": false,
+          "pending_request_id": null
+        }
+      },
+      "software_licenses": [
+        {
+          "license_assignment_id": "LASGN-072948",
+          "catalog_id": "LIC-0018",
+          "software_name": "JetBrains IntelliJ IDEA",
+          "license_type": "permanent",
+          "expiration_date": "2027-03-15",
+          "status": "active"
+        }
+      ],
+      "group_memberships": [
+        {
+          "group_code": "GRP-ENGCORE",
+          "group_name": "Engineering Core Access",
+          "status": "active",
+          "added_date": "2020-06-22"
+        },
+        {
+          "group_code": "GRP-VPNALL",
+          "group_name": "VPN Full Access",
+          "status": "active",
+          "added_date": "2020-06-22"
+        }
+      ],
+      "system_accounts": [
+        {
+          "case_id": "CASE-ACCT-072948",
+          "status": "active",
+          "provisioned_date": "2020-06-22",
+          "access_groups": ["GRP-ENGCORE", "GRP-VPNALL"]
+        }
+      ],
+      "offboarding_record": {
+        "status": "confirmed",
+        "last_working_day": "2026-08-29",
+        "initiated_by": "HR",
+        "initiated_date": "2026-08-05",
+        "access_removed": false,
+        "removal_case_id": null,
+        "removal_scope": null
+      },
+      "pending_role_change": null
+    }
+  },
+  "assets": {
+    "AST-LPT-284719": {
+      "asset_tag": "AST-LPT-284719",
+      "asset_type": "laptop",
+      "manufacturer": "Dell",
+      "model": "Latitude 5540",
+      "serial_number": "DL5540-8KX2M9",
+      "assigned_employee_id": "EMP048271",
+      "status": "active",
+      "purchase_date": "2022-04-10",
+      "warranty_expiration": "2026-04-10",
+      "lifecycle_status": "end_of_life"
+    },
+    "AST-LPT-194830": {
+      "asset_tag": "AST-LPT-194830",
+      "asset_type": "laptop",
+      "manufacturer": "Apple",
+      "model": "MacBook Pro 16-inch M3",
+      "serial_number": "MBP16M3-4VN8R2",
+      "assigned_employee_id": "EMP031482",
+      "status": "active",
+      "purchase_date": "2024-04-18",
+      "warranty_expiration": "2027-04-18",
+      "lifecycle_status": "current"
+    },
+    "AST-MON-381047": {
+      "asset_tag": "AST-MON-381047",
+      "asset_type": "monitor",
+      "manufacturer": "Dell",
+      "model": "UltraSharp U2723QE",
+      "serial_number": "DU27-3PQ7K1",
+      "assigned_employee_id": "EMP031482",
+      "status": "active",
+      "purchase_date": "2024-04-18",
+      "warranty_expiration": "2027-04-18",
+      "lifecycle_status": "current"
+    },
+    "AST-LPT-372910": {
+      "asset_tag": "AST-LPT-372910",
+      "asset_type": "laptop",
+      "manufacturer": "Lenovo",
+      "model": "ThinkPad X1 Carbon Gen 10",
+      "serial_number": "TPX1C10-2WB4N7",
+      "assigned_employee_id": "EMP072948",
+      "status": "active",
+      "purchase_date": "2023-06-15",
+      "warranty_expiration": "2026-06-15",
+      "lifecycle_status": "active"
+    }
+  },
+  "software_catalog": {
+    "applications": {
+      "APP-0042": {
+        "catalog_id": "APP-0042",
+        "name": "Confluence Wiki",
+        "description": "Enterprise wiki and knowledge management platform",
+        "vendor": "Atlassian",
+        "available_access_levels": ["read_only", "standard"],
+        "requires_manager_approval": false,
+        "department_restrictions": []
+      },
+      "APP-0017": {
+        "catalog_id": "APP-0017",
+        "name": "Datadog Monitoring",
+        "description": "Infrastructure and application performance monitoring",
+        "vendor": "Datadog",
+        "available_access_levels": ["read_only", "standard", "admin"],
+        "requires_manager_approval": true,
+        "department_restrictions": ["ENG", "INFRA"]
+      },
+      "APP-0089": {
+        "catalog_id": "APP-0089",
+        "name": "Salesforce CRM",
+        "description": "Customer relationship management platform",
+        "vendor": "Salesforce",
+        "available_access_levels": ["read_only", "standard"],
+        "requires_manager_approval": true,
+        "department_restrictions": ["SALES", "MKTG"]
+      }
+    },
+    "licenses": {
+      "LIC-0018": {
+        "catalog_id": "LIC-0018",
+        "name": "JetBrains IntelliJ IDEA Ultimate",
+        "vendor": "JetBrains",
+        "license_type": "annual_subscription",
+        "available": true,
+        "cost_center_required": true,
+        "department_restrictions": ["ENG"]
+      },
+      "LIC-0034": {
+        "catalog_id": "LIC-0034",
+        "name": "Figma Enterprise",
+        "vendor": "Figma",
+        "license_type": "annual_subscription",
+        "available": true,
+        "cost_center_required": false,
+        "department_restrictions": ["ENG", "DSGN"]
+      },
+      "LIC-0051": {
+        "catalog_id": "LIC-0051",
+        "name": "Adobe Creative Cloud",
+        "vendor": "Adobe",
+        "license_type": "annual_subscription",
+        "available": true,
+        "cost_center_required": true,
+        "department_restrictions": ["DSGN", "MKTG"]
+      }
+    }
+  },
+  "access_groups": {
+    "GRP-ENGCORE": {
+      "group_code": "GRP-ENGCORE",
+      "name": "Engineering Core Access",
+      "description": "Access to code repositories, CI/CD pipelines, and development environments",
+      "requires_approval": false,
+      "member_count": 142
+    },
+    "GRP-VPNALL": {
+      "group_code": "GRP-VPNALL",
+      "name": "VPN Full Access",
+      "description": "Full VPN tunnel access to corporate network from any location",
+      "requires_approval": false,
+      "member_count": 891
+    },
+    "GRP-DBREAD": {
+      "group_code": "GRP-DBREAD",
+      "name": "Database Read Access",
+      "description": "Read-only access to production databases for reporting and debugging",
+      "requires_approval": true,
+      "member_count": 67
+    },
+    "GRP-MGMT": {
+      "group_code": "GRP-MGMT",
+      "name": "Management Portal",
+      "description": "Access to management dashboards, HR reviews, and budget tools",
+      "requires_approval": true,
+      "member_count": 34
+    },
+    "GRP-DEPLPD": {
+      "group_code": "GRP-DEPLPD",
+      "name": "Production Deploy Access",
+      "description": "Permission to deploy to production environments",
+      "requires_approval": true,
+      "member_count": 28
+    }
+  },
+  "permission_templates": {
+    "PTPL-SWE-01": {
+      "template_id": "PTPL-SWE-01",
+      "role_code": "SWE",
+      "name": "Standard Software Engineer",
+      "description": "Code repositories, CI/CD, dev environments, VPN",
+      "groups": ["GRP-ENGCORE", "GRP-VPNALL"],
+      "permissions": ["repo_read_write", "ci_trigger", "dev_env_access"]
+    },
+    "PTPL-SWE-02": {
+      "template_id": "PTPL-SWE-02",
+      "role_code": "SWE",
+      "name": "Senior Software Engineer",
+      "description": "Everything in Standard plus production deploy and database read",
+      "groups": ["GRP-ENGCORE", "GRP-VPNALL", "GRP-DEPLPD", "GRP-DBREAD"],
+      "permissions": ["repo_read_write", "ci_trigger", "dev_env_access", "prod_deploy", "db_read"]
+    },
+    "PTPL-PM-01": {
+      "template_id": "PTPL-PM-01",
+      "role_code": "PM",
+      "name": "Product Manager",
+      "description": "Project tools, analytics dashboards, VPN",
+      "groups": ["GRP-VPNALL"],
+      "permissions": ["project_tools", "analytics_read", "roadmap_edit"]
+    },
+    "PTPL-MGENG-01": {
+      "template_id": "PTPL-MGENG-01",
+      "role_code": "MGENG",
+      "name": "Engineering Manager Standard",
+      "description": "Management portal, engineering core, VPN, team dashboards",
+      "groups": ["GRP-ENGCORE", "GRP-VPNALL", "GRP-MGMT"],
+      "permissions": ["repo_read_write", "ci_trigger", "mgmt_dashboard", "team_reviews"]
+    },
+    "PTPL-MGENG-02": {
+      "template_id": "PTPL-MGENG-02",
+      "role_code": "MGENG",
+      "name": "Engineering Manager with Deploy",
+      "description": "Standard manager plus production deploy oversight",
+      "groups": ["GRP-ENGCORE", "GRP-VPNALL", "GRP-MGMT", "GRP-DEPLPD"],
+      "permissions": ["repo_read_write", "ci_trigger", "mgmt_dashboard", "team_reviews", "deploy_approve"]
+    }
+  },
+  "active_outages": {
+    "email_exchange": {
+      "ticket_number": "INC0047892",
+      "service_name": "email_exchange",
+      "reported_at": "2026-08-12T08:30:00",
+      "status": "investigating",
+      "affected_user_count": 47,
+      "affected_users": ["EMP019284", "EMP037261"],
+      "description": "Intermittent email delivery delays and calendar sync failures"
+    }
+  },
+  "troubleshooting_guides": {
+    "login_issue": {
+      "category": "login_issue",
+      "steps": [
+        {
+          "step_number": 1,
+          "instruction": "Confirm the username being used. Ask the caller to spell their username letter by letter. Verify it matches the format firstname.lastname.",
+          "expected_outcome": "Username is confirmed correct or corrected."
+        },
+        {
+          "step_number": 2,
+          "instruction": "Ask the caller to check their Caps Lock key and try entering their password again slowly.",
+          "expected_outcome": "Password entry succeeds or fails again."
+        },
+        {
+          "step_number": 3,
+          "instruction": "Ask the caller to try the self-service password reset portal at reset.company.com. They will need to answer their security questions.",
+          "expected_outcome": "Password is reset successfully, or the portal is inaccessible."
+        },
+        {
+          "step_number": 4,
+          "instruction": "Ask the caller whether they recently changed devices or locations. If so, ask them to check for a multi-factor authentication prompt on their registered device.",
+          "expected_outcome": "MFA prompt is found and completed, or no MFA prompt received."
+        }
+      ]
+    },
+    "network_connectivity": {
+      "category": "network_connectivity",
+      "steps": [
+        {
+          "step_number": 1,
+          "instruction": "Ask the caller whether they are on Wi-Fi, Ethernet, or VPN. If Wi-Fi, ask them to forget the network and reconnect to 'CorpNet-5G'.",
+          "expected_outcome": "Wi-Fi reconnection succeeds or fails."
+        },
+        {
+          "step_number": 2,
+          "instruction": "Ask the caller to open a web browser and navigate to connectivity-check.company.com. Report what they see.",
+          "expected_outcome": "Page loads (DNS working) or fails (DNS issue)."
+        },
+        {
+          "step_number": 3,
+          "instruction": "If the caller is using VPN, ask them to disconnect from the VPN, restart the VPN client, and reconnect. The VPN client is GlobalConnect.",
+          "expected_outcome": "VPN reconnection succeeds or continues to fail."
+        },
+        {
+          "step_number": 4,
+          "instruction": "Ask the caller to restart their computer and try connecting again after the full reboot is complete.",
+          "expected_outcome": "Connectivity restored after restart, or issue persists."
+        }
+      ]
+    }
+  },
+  "facilities": {
+    "desks": {
+      "BLD3-FL2-D107": {
+        "desk_code": "BLD3-FL2-D107",
+        "building_code": "BLD3",
+        "floor_code": "FL2",
+        "zone": "east_wing",
+        "near_window": true,
+        "status": "available"
+      },
+      "BLD3-FL2-D118": {
+        "desk_code": "BLD3-FL2-D118",
+        "building_code": "BLD3",
+        "floor_code": "FL2",
+        "zone": "west_wing",
+        "near_window": false,
+        "status": "available"
+      },
+      "BLD3-FL2-D204": {
+        "desk_code": "BLD3-FL2-D204",
+        "building_code": "BLD3",
+        "floor_code": "FL2",
+        "zone": "east_wing",
+        "near_window": false,
+        "status": "assigned",
+        "assigned_employee_id": "EMP048271"
+      },
+      "BLD3-FL3-D301": {
+        "desk_code": "BLD3-FL3-D301",
+        "building_code": "BLD3",
+        "floor_code": "FL3",
+        "zone": "north_wing",
+        "near_window": true,
+        "status": "available"
+      }
+    },
+    "parking": {
+      "PZA-042": {
+        "parking_space_id": "PZA-042",
+        "zone_code": "PZA",
+        "level": "L1",
+        "covered": true,
+        "status": "available"
+      },
+      "PZA-087": {
+        "parking_space_id": "PZA-087",
+        "zone_code": "PZA",
+        "level": "L2",
+        "covered": false,
+        "status": "assigned",
+        "assigned_employee_id": "EMP031482"
+      },
+      "PZC-014": {
+        "parking_space_id": "PZC-014",
+        "zone_code": "PZC",
+        "level": "L1",
+        "covered": true,
+        "status": "available"
+      }
+    },
+    "conference_rooms": {
+      "BLD3-FL2-RM204": {
+        "room_code": "BLD3-FL2-RM204",
+        "building_code": "BLD3",
+        "floor_code": "FL2",
+        "capacity": 8,
+        "equipment": ["projector", "whiteboard", "video_conferencing"],
+        "bookings": [
+          {
+            "booking_id": "REQ-FAC-019284",
+            "date": "2026-08-15",
+            "start_time": "10:00",
+            "end_time": "11:00",
+            "employee_id": "EMP019284",
+            "attendee_count": 6,
+            "meeting_subject": "Sprint Planning"
+          }
+        ]
+      },
+      "BLD3-FL2-RM210": {
+        "room_code": "BLD3-FL2-RM210",
+        "building_code": "BLD3",
+        "floor_code": "FL2",
+        "capacity": 12,
+        "equipment": ["projector", "whiteboard", "video_conferencing", "phone_bridge"],
+        "bookings": []
+      },
+      "BLD3-FL3-RM302": {
+        "room_code": "BLD3-FL3-RM302",
+        "building_code": "BLD3",
+        "floor_code": "FL3",
+        "capacity": 4,
+        "equipment": ["whiteboard"],
+        "bookings": []
+      }
+    }
+  },
+  "tickets": {},
+  "requests": {},
+  "session": {},
+  "known_errors": {
+    "email_exchange": {
+      "known_error_id": "KE-0047",
+      "service_name": "email_exchange",
+      "summary": "Exchange hybrid connector intermittent sync failure",
+      "workaround": "Clear local Outlook cache: File > Account Settings > Data Files > select profile > Remove, then re-add account",
+      "root_cause": "Under investigation — hybrid connector certificate rotation issue",
+      "created_date": "2026-08-10"
+    },
+    "vpn_gateway": {
+      "known_error_id": "KE-0051",
+      "service_name": "vpn_gateway",
+      "summary": "GlobalConnect VPN client disconnects after 30 minutes on macOS 15.2+",
+      "workaround": "Downgrade GlobalConnect client to version 4.8.1 from the software portal",
+      "root_cause": "Incompatibility with macOS 15.2 network extension API changes",
+      "created_date": "2026-08-08"
+    }
+  },
+  "field_dispatch_availability": {
+    "2026-08-13": {
+      "morning": {"available": true, "technician": "T-204"},
+      "afternoon": {"available": false, "technician": null},
+      "full_day": {"available": false, "technician": null}
+    },
+    "2026-08-14": {
+      "morning": {"available": true, "technician": "T-118"},
+      "afternoon": {"available": true, "technician": "T-118"},
+      "full_day": {"available": false, "technician": null}
+    },
+    "2026-08-15": {
+      "morning": {"available": false, "technician": null},
+      "afternoon": {"available": true, "technician": "T-204"},
+      "full_day": {"available": false, "technician": null}
+    }
+  },
+  "cost_centers": {
+    "CC-4021": {
+      "cost_center_code": "CC-4021",
+      "department_code": "ENG",
+      "description": "Engineering — Software Tools & Licenses",
+      "has_budget": true,
+      "remaining_budget_usd": 28500
+    },
+    "CC-4022": {
+      "cost_center_code": "CC-4022",
+      "department_code": "ENG",
+      "description": "Engineering — Hardware & Equipment",
+      "has_budget": true,
+      "remaining_budget_usd": 12300
+    },
+    "CC-5010": {
+      "cost_center_code": "CC-5010",
+      "department_code": "MKTG",
+      "description": "Marketing — Software & Tools",
+      "has_budget": false,
+      "remaining_budget_usd": 0
+    }
+  }
+}
