@@ -19,6 +19,7 @@ from eva.metrics.utils import (
     resolve_turn_id,
     validate_rating,
 )
+from eva.models.config import PipelineType
 from eva.models.results import MetricScore
 from eva.utils.llm_client import LLMClient
 from eva.utils.logging import get_logger
@@ -84,7 +85,7 @@ class MetricContext:
         response_speed_latencies: list[float] | None = None,
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
-        is_audio_native: bool = False,
+        pipeline_type: PipelineType = PipelineType.CASCADE,
     ):
         self.record_id = record_id
 
@@ -134,7 +135,11 @@ class MetricContext:
         self.response_speed_latencies = response_speed_latencies or []
         self.assistant_interrupted_turns = assistant_interrupted_turns or set()
         self.user_interrupted_turns = user_interrupted_turns or set()
-        self.is_audio_native = is_audio_native
+        self.pipeline_type = pipeline_type
+
+    @property
+    def is_audio_native(self) -> bool:
+        return self.pipeline_type in (PipelineType.S2S, PipelineType.AUDIO_LLM)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert MetricContext to a serializable dictionary."""
