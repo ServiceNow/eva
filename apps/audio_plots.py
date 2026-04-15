@@ -355,9 +355,9 @@ def _wrap(text: str, width: int = 80) -> str:
 # Intermediate sample rate used for spectrogram computation.
 # 4 kHz preserves speech content up to 2 kHz (Nyquist) while keeping the
 # heatmap to roughly 60–250K cells for typical 5–90 s recordings.
-_SPEC_SR = 4000   # Hz
+_SPEC_SR = 4000  # Hz
 _SPEC_N_FFT = 512  # → 257 freq bins, 7.8 Hz resolution
-_SPEC_HOP = 512   # → ~0.128 s/frame at 4 kHz
+_SPEC_HOP = 512  # → ~0.128 s/frame at 4 kHz
 
 
 # =============================================================================
