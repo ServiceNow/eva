@@ -11,7 +11,7 @@ Layout (dynamic — spectrograms are optional):
 
 Waveform rendering:
   • Speaker segments are drawn in colour: blue = user, orange-red = assistant.
-    Toggling a legend item hides all traces in that group.
+    Toggling a legend item hides all traces for that speaker.
   • Pause regions (speaker-change gaps) are drawn as shaded bands linked to the
     "Pause" legend item so they can be toggled on/off.
   • Only speaker-transition gaps are treated as pauses (consistent with turn_taking.py).
@@ -38,6 +38,7 @@ Spectrograms use a 4 kHz intermediate sample rate (_SPEC_SR) via librosa.resampl
 """
 
 import json
+import struct
 import warnings
 from pathlib import Path
 
@@ -314,12 +315,100 @@ def _calculate_pauses(turns_rel: list[dict]) -> list[dict]:
 # =============================================================================
 
 
+def _wav_actual_n_samples(path: Path) -> tuple[int, int, int] | None:
+    """Return (n_samples_per_channel, sr, sample_width) from actual WAV file bytes.
+
+    Scans the RIFF chunks to find the fmt and data chunks.  The data chunk size
+    is derived from (file_size − data_chunk_start) rather than from the header
+    field, which is frequently wrong when the recorder fails to update it.
+
+    Returns None for non-WAV files or unreadable files.
+    """
+    try:
+        with open(path, "rb") as f:
+            if f.read(4) != b"RIFF":
+                return None
+            f.read(4)  # RIFF chunk size — unreliable, ignore
+            if f.read(4) != b"WAVE":
+                return None
+            sr = channels = sample_width = None
+            while True:
+                hdr = f.read(8)
+                if len(hdr) < 8:
+                    break
+                cid = hdr[:4]
+                csz = struct.unpack("<I", hdr[4:])[0]
+                if csz > 100_000_000:
+                    break  # sanity guard against corrupt chunk sizes
+                if cid == b"fmt ":
+                    raw = f.read(min(csz, 16))
+                    _, channels, sr, _, _, bits = struct.unpack_from("<HHIIHH", raw)
+                    sample_width = bits // 8
+                    # skip remaining fmt bytes + RIFF pad (chunks are even-aligned)
+                    skip = (csz - min(csz, 16)) + (csz % 2)
+                    if skip > 0:
+                        f.seek(skip, 1)
+                elif cid == b"data":
+                    if sr and channels and sample_width:
+                        data_start = f.tell()
+                        file_size = path.stat().st_size
+                        actual_bytes = file_size - data_start
+                        n_samples = actual_bytes // (sample_width * channels)
+                        return n_samples, sr, sample_width
+                    break
+                else:
+                    # RIFF chunks are padded to even byte boundaries
+                    f.seek(csz + (csz % 2), 1)
+    except Exception:
+        pass
+    return None
+
+
 def _load_pydub(path: Path) -> tuple:
     seg = AudioSegment.from_file(str(path))
-    if seg.channels > 1:
+    n_channels = seg.channels
+    if n_channels > 1:
         seg = seg.set_channels(1)
     sr = seg.frame_rate
+    sample_width = seg.sample_width
     y = np.array(seg.get_array_of_samples()).astype(np.float32) / 32768.0
+
+    # WAV files from some recorders have an incorrect data-chunk size in the
+    # header (written before the call starts, never updated when it ends).
+    # Cross-check against the real file size and reload raw PCM if the
+    # declared duration is more than 5% shorter than the actual file content.
+    if path.suffix.lower() == ".wav":
+        info = _wav_actual_n_samples(path)
+        if info is not None:
+            n_actual, _, sw = info
+            dur_declared = len(y) / sr
+            dur_actual = n_actual / sr
+            if dur_actual > dur_declared + 1.0:
+                try:
+                    dtype = np.int16 if sw == 2 else np.int32
+                    divisor = 32768.0 if sw == 2 else 2_147_483_648.0
+                    with open(path, "rb") as f:
+                        # Re-seek to the data chunk start
+                        f.read(4); f.read(4); f.read(4)  # RIFF + size + WAVE
+                        while True:
+                            hdr = f.read(8)
+                            if len(hdr) < 8:
+                                break
+                            cid = hdr[:4]
+                            csz = struct.unpack("<I", hdr[4:])[0]
+                            if cid == b"data":
+                                raw = np.frombuffer(f.read(), dtype=dtype).astype(np.float32) / divisor
+                                if n_channels > 1:
+                                    raw = raw[: (len(raw) // n_channels) * n_channels]
+                                    raw = raw.reshape(-1, n_channels).mean(axis=1)
+                                y = raw
+                                break
+                            if csz > 100_000_000:
+                                break
+                            f.seek(csz + (csz % 2), 1)
+                except Exception:
+                    pass  # keep pydub result
+
     return y, sr
 
 
@@ -419,37 +508,38 @@ def _prepare_data(record_dir: Path) -> dict:
     # --- Audio: ElevenLabs ---
     el_y_ds, el_t, el_spec = np.array([]), np.array([]), None
     el_loaded = False
+    el_duration = 0.0
     if audio_el.exists():
         try:
             _el_y, _el_sr = _load_librosa(audio_el)
             el_y_ds, _ = _downsample(_el_y, _el_sr)
-            el_t = np.linspace(0, len(_el_y) / _el_sr, len(el_y_ds))
+            el_duration = len(_el_y) / _el_sr
+            el_t = np.linspace(0, el_duration, len(el_y_ds))
             el_loaded = True
-            # Spectrogram: resample to _SPEC_SR (4 kHz) to get meaningful
-            # frequency content (0–2 kHz Nyquist) with a bounded heatmap.
-            # Times from frames_to_time start at 0 — aligned with el_t.
+            # Spectrogram: resample to _SPEC_SR (4 kHz) for speech-range content.
+            # x axis pinned to el_duration via np.linspace so it aligns with el_t.
             try:
                 _el_y_spec = librosa.resample(_el_y, orig_sr=_el_sr, target_sr=_SPEC_SR)
                 D = librosa.amplitude_to_db(
                     np.abs(librosa.stft(_el_y_spec, hop_length=_SPEC_HOP, n_fft=_SPEC_N_FFT)), ref=np.max
                 )
                 freqs = librosa.fft_frequencies(sr=_SPEC_SR, n_fft=_SPEC_N_FFT)
-                times = librosa.frames_to_time(np.arange(D.shape[1]), sr=_SPEC_SR, hop_length=_SPEC_HOP)
+                times = np.linspace(0, el_duration, D.shape[1])
                 el_spec = (D, freqs, times)
             except Exception:
                 pass
         except Exception:
             pass
 
-    # x-axis range: longest of mixed audio, EL audio, and last turn end.
-    # Ensures neither recording is clipped when the two files differ in length.
-    el_duration = float(el_t[-1]) if el_loaded and len(el_t) > 0 else 0.0
-    turns_end = max((t["end"] for t in turns_rel), default=0.0)
-    plot_xlim = [0, max(duration, el_duration, turns_end, 1.0)]
+    # x-axis: audio file durations only.
+    # turns_end is excluded — turn timestamps can exceed the recording length
+    # and would push the axis beyond the actual audio.
+    plot_xlim = [0, max(duration if mixed_loaded else 0.0, el_duration, 1.0)]
 
     # --- Spectrogram: mixed ---
-    # Resample to _SPEC_SR so both spectrograms share the same frequency axis
-    # and have meaningful content. Times start at 0 — aligned with t_mixed.
+    # x axis pinned to `duration` via np.linspace so it aligns exactly with
+    # t_mixed. STFT data is unchanged; only the frame→time mapping differs from
+    # frames_to_time by at most one hop (128 ms), which is visually imperceptible.
     mixed_spec = None
     if mixed_loaded:
         try:
@@ -458,7 +548,7 @@ def _prepare_data(record_dir: Path) -> dict:
                 np.abs(librosa.stft(_y_spec, hop_length=_SPEC_HOP, n_fft=_SPEC_N_FFT)), ref=np.max
             )
             freqs = librosa.fft_frequencies(sr=_SPEC_SR, n_fft=_SPEC_N_FFT)
-            times = librosa.frames_to_time(np.arange(D.shape[1]), sr=_SPEC_SR, hop_length=_SPEC_HOP)
+            times = np.linspace(0, duration, D.shape[1])
             mixed_spec = (D, freqs, times)
         except Exception:
             pass
@@ -613,9 +703,9 @@ def _build_figure(
 
     # ------------------------------------------------------------------ #
     # Colour-coded waveform
-    # Layer 1 (bottom): full-recording base trace — light gray, no legend.
-    # Layer 2 (top):    speaker segments — blue (user) / orange-red (assistant).
-    # Layer 3:          pause shaded bands — linked to "Pause" legend toggle.
+    # Speaker segments — blue (user) / orange-red (assistant).
+    # Pause shaded bands — linked to "Pause" legend toggle.
+    # X-axis range is set by plot_xlim (independent of trace data extent).
     # ------------------------------------------------------------------ #
     def _colored_waveform(
         row: int, y: np.ndarray, t: np.ndarray, y_range: list, speaker_filter: set[str] | None = None
@@ -736,13 +826,6 @@ def _build_figure(
             col=1,
         )
 
-        # Speaker turn fill bands (envelope start/end per turn).
-        visible_turns = [turn for turn in turns_rel if speaker_filter is None or turn["speaker"] in speaker_filter]
-        for turn in visible_turns:
-            color = ASST_FILL if turn["speaker"] == "assistant" else USER_FILL
-            fig.add_vrect(
-                x0=turn["start"], x1=turn["end"], fillcolor=color, line_width=0, layer="below", row=row, col=1
-            )
         # Pause shaded bands — Scatter traces so they toggle with the legend.
         f0, f1 = float(freqs[0]), float(freqs[-1])
         for pause in pauses_rel:
@@ -987,13 +1070,29 @@ def _build_figure(
 # =============================================================================
 
 
+def _audio_mtime(record_dir: Path) -> int:
+    """Return the most-recent mtime (seconds) of audio files in record_dir.
+
+    Included in the cache key so the cache is invalidated when a file changes
+    — e.g. when a new recording replaces a shorter one, or when the WAV was
+    still being written when preload_audio_data() was first called.
+    """
+    audio_mixed = next(record_dir.glob("audio_mixed*.wav"), record_dir / "audio_mixed.wav")
+    audio_el = record_dir / "elevenlabs_audio_recording.mp3"
+    mtime = 0
+    for p in (audio_mixed, audio_el):
+        if p.exists():
+            mtime = max(mtime, int(p.stat().st_mtime))
+    return mtime
+
+
 @st.cache_data(show_spinner="Loading audio files\u2026")
-def _cache_audio_data(path_str: str) -> dict:
+def _cache_audio_data(path_str: str, audio_mtime: int = 0) -> dict:
     """Cache the heavy data-loading step (file I/O + spectrogram computation).
 
-    Keyed only on the record directory path, so the cache is shared across
-    all spectrogram-toggle states.  _build_figure() is fast and runs on each
-    rerun with the pre-loaded data.
+    Keyed on the record directory path AND the audio file mtime so the cache
+    is automatically invalidated when the audio files change.
+    _build_figure() is fast and runs on each rerun with the pre-loaded data.
     """
     return _prepare_data(Path(path_str))
 
@@ -1008,7 +1107,7 @@ def preload_audio_data(record_dir: Path) -> None:
     events_file = record_dir / "elevenlabs_events.jsonl"
     audio_mixed = next(record_dir.glob("audio_mixed*.wav"), record_dir / "audio_mixed.wav")
     if events_file.exists() or audio_mixed.exists():
-        _cache_audio_data(str(record_dir))
+        _cache_audio_data(str(record_dir), _audio_mtime(record_dir))
 
 
 # =============================================================================
@@ -1028,8 +1127,8 @@ def render_audio_analysis_tab(record_dir: Path) -> None:
         return
 
     try:
-        # Data is already cached by preload_audio_data(); this is a cache hit.
-        data = _cache_audio_data(str(record_dir))
+        # Cache hit when mtime unchanged; re-loads if the file was updated.
+        data = _cache_audio_data(str(record_dir), _audio_mtime(record_dir))
     except Exception as exc:
         st.error(f"Could not load audio data: {exc}")
         return
@@ -1045,6 +1144,7 @@ def render_audio_analysis_tab(record_dir: Path) -> None:
         show_mixed_spec = st.checkbox("Show Mixed Audio Spectrogram", value=False)
         show_el_spec = False
         st.info("ElevenLabs audio recording is not available for this record.")
+
 
     try:
         fig = _build_figure(data, show_mixed_spec=show_mixed_spec, show_el_spec=show_el_spec)
