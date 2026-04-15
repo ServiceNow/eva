@@ -27,24 +27,23 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Make sidebar resizable and wider by default
-st.markdown(
-    """
-    <style>
-    [data-testid="stSidebar"] {
-        min-width: 400px;
-        max-width: 900px;
-        width: 500px;
-        resize: horizontal;
-        overflow: auto;
-    }
-    [data-testid="stSidebar"] [data-testid="stExpander"] details[open] summary ~ div {
-        overflow: visible;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+def _set_sidebar_width(width_px: int) -> None:
+    """Inject CSS to force sidebar to a specific width."""
+    st.markdown(
+        f"""
+        <style>
+        [data-testid="stSidebar"] {{
+            min-width: {width_px}px !important;
+            max-width: {width_px}px !important;
+            width: {width_px}px !important;
+        }}
+        [data-testid="stSidebar"] > div:first-child {{
+            width: {width_px}px !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ============================================================================
 # Tool descriptions (human-readable pseudocode for each tool)
@@ -674,7 +673,7 @@ with st.sidebar:
                     responses[item["key"]] = st.text_area(
                         item["label"],
                         key=item["key"],
-                        height=500,
+                        height=400,
                     )
 
         submitted = st.form_submit_button("Submit Review", use_container_width=True)
