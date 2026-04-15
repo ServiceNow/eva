@@ -557,7 +557,7 @@ def _build_figure(
     for _name, _color, _symbol in [
         ("User", USER_COLOR, "square"),
         ("Assistant", ASST_COLOR, "square"),
-        ("Pause", "rgba(140,140,140,0.40)", "square-open"),
+        ("Pause", "rgba(140,140,140,0.40)", "square"),
     ]:
         fig.add_trace(
             go.Scatter(
