@@ -26,7 +26,8 @@ logger = get_logger(__name__)
 
 # Elevenlabs audio user field → _ProcessorContext attribute name
 AUDIO_ATTR = {
-    "pipecat_agent": "audio_timestamps_assistant_turns",
+    "framework_agent": "audio_timestamps_assistant_turns",
+    "pipecat_agent": "audio_timestamps_assistant_turns",  # Deprecated name - kept for old runs
     "elevenlabs_user": "audio_timestamps_user_turns",
 }
 
@@ -68,7 +69,7 @@ class _TurnExtractionState:
     # Track which turn each speaker's audio started at, so late-arriving speech transcripts land at the correct turn.
     last_assistant_audio_turn: int = 0
     last_user_audio_turn: int = 0
-    # True when pipecat_agent audio started after user audio ended, meaning any subsequent user_speech (while
+    # True when framework_agent audio started after user audio ended, meaning any subsequent user_speech (while
     # user_audio_open is False) belongs to a new speaking session and should be buffered until the next
     # audio_start(elevenlabs_user) sets the correct turn.
     assistant_responded_since_user_ended: bool = False
@@ -350,7 +351,7 @@ def _handle_audio_start(
                 _process_user_speech(buffered, state, context, conversation_trace, pipeline_type)
             state.buffered_user_speech.clear()
 
-    elif role == "pipecat_agent":
+    elif role in ("framework_agent", "pipecat_agent"):
         state.assistant_audio_open = True
         state.last_assistant_audio_turn = state.turn_num
         if not state.user_audio_open:
@@ -387,7 +388,7 @@ def _handle_audio_end(event: dict, state: "_TurnExtractionState") -> None:
             # assistant_spoke_in_turn — this prevents late audit_log/user STT chunks from advancing
             # (they naturally stay at the current turn).
             state.pending_advance_after_rollback = True
-    elif role == "pipecat_agent":
+    elif role in ("framework_agent", "pipecat_agent"):
         state.assistant_audio_open = False
 
 
@@ -514,7 +515,7 @@ def _validate_conversation_trace(
 def _fix_interruption_labels(context: "_ProcessorContext", state: "_TurnExtractionState") -> None:
     """Fix interruption labels that may have been missed during the event loop.
 
-    The audit_log/assistant entry can arrive before the interruption is detected at audio_start(pipecat_agent),
+    The audit_log/assistant entry can arrive before the interruption is detected at audio_start(framework_agent),
     so the prefix wasn't applied during the loop. Only fix the first assistant entry per interrupted turn.
     """
     # Clean up per-entry interrupted keys (used during event loop only)
