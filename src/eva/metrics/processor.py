@@ -17,7 +17,6 @@ from eva.utils.log_processing import (
     extract_tool_params_and_responses,
     filter_empty_responses,
     get_entry_for_audit_log,
-    group_consecutive_logs_by_speaker,
     group_consecutive_turns,
     truncate_to_spoken,
 )
@@ -816,8 +815,8 @@ class MetricsContextProcessor:
             for line in f:
                 raw_elevenlabs.append(json.loads(line))
 
-        grouped_elevenlabs = group_consecutive_logs_by_speaker(filter_empty_responses(raw_elevenlabs))
-        for entry in grouped_elevenlabs:
+        filtered_elevenlabs = filter_empty_responses(raw_elevenlabs)
+        for entry in filtered_elevenlabs:
             if (ts := entry.get("timestamp")) is None:
                 continue
             event_type = entry.get("type") or entry.get("event_type", "unknown")
