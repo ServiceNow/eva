@@ -576,14 +576,21 @@ class RunConfig(BaseSettings):
                 data[field_name] = cls._redact_dict(value)
         return data
 
-    def apply_env_overrides(self, live: "RunConfig") -> None:
+    def apply_env_overrides(self, live: "RunConfig", strict_llm: bool = True) -> None:
         """Apply environment-dependent values from *live* config onto this (saved) config.
 
         Restores redacted secrets (``***``) and overrides dynamic fields (``url``,
         ``urls``) in ``model.*_params`` and ``model_list[].litellm_params``.
 
+        Args:
+            live: The live RunConfig with current environment values.
+            strict_llm: If True (default), raise when the active LLM deployment has
+                redacted secrets but is not in the current EVA_MODEL_LIST. Set to False
+                for metrics-only re-runs where the LLM is not needed.
+
         Raises:
-            ValueError: If provider or alias differs for a service with redacted secrets.
+            ValueError: If provider or alias differs for a service with redacted secrets,
+                or (when strict_llm=True) if the active LLM deployment is missing.
         """
         # ── model.*_params (STT / TTS / S2S / AudioLLM) ──
         for params_field, provider_field in self._PARAMS_TO_PROVIDER.items():
@@ -648,9 +655,15 @@ class RunConfig(BaseSettings):
             if not has_redacted:
                 continue
             if name not in live_by_name:
-                raise ValueError(
-                    f"Cannot restore secrets: deployment {name!r} not found in "
-                    f"current EVA_MODEL_LIST (available: {list(live_by_name)})"
+                active_llm = getattr(self.model, "llm", None)
+                if name == active_llm and strict_llm:
+                    raise ValueError(
+                        f"Cannot restore secrets: deployment {name!r} not found in "
+                        f"current EVA_MODEL_LIST (available: {list(live_by_name)})"
+                    )
+                logger.warning(
+                    f"Deployment {name!r} has redacted secrets but is not in the current "
+                    f"EVA_MODEL_LIST — skipping (not used in this run)."
                 )
             live_params = live_by_name[name].get("litellm_params", {})
             for key, value in saved_params.items():
