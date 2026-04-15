@@ -289,6 +289,18 @@ def _wrap(text: str, width: int = 80) -> str:
 
 
 # =============================================================================
+# Spectrogram parameters
+# =============================================================================
+
+# Intermediate sample rate used for spectrogram computation.
+# 4 kHz preserves speech content up to 2 kHz (Nyquist) while keeping the
+# heatmap to roughly 60–250K cells for typical 5–90 s recordings.
+_SPEC_SR = 4000   # Hz
+_SPEC_N_FFT = 512  # → 257 freq bins, 7.8 Hz resolution
+_SPEC_HOP = 512   # → ~0.128 s/frame at 4 kHz
+
+
+# =============================================================================
 # Data preparation
 # =============================================================================
 
@@ -344,21 +356,34 @@ def _prepare_data(record_dir: Path) -> dict:
             el_y_ds, _ = _downsample(_el_y, _el_sr)
             el_t = np.linspace(0, len(_el_y) / _el_sr, len(el_y_ds))
             el_loaded = True
-            D = librosa.amplitude_to_db(np.abs(librosa.stft(_el_y, hop_length=512, n_fft=2048)), ref=np.max)
-            freqs = librosa.fft_frequencies(sr=int(_el_sr), n_fft=2048)
-            times = librosa.frames_to_time(np.arange(D.shape[1]), sr=int(_el_sr), hop_length=512)
-            el_spec = (D, freqs, times)
+            # Spectrogram: resample to _SPEC_SR (4 kHz) to get meaningful
+            # frequency content (0–2 kHz Nyquist) with a bounded heatmap.
+            # Times from frames_to_time start at 0 — aligned with el_t.
+            try:
+                _el_y_spec = librosa.resample(_el_y, orig_sr=_el_sr, target_sr=_SPEC_SR)
+                D = librosa.amplitude_to_db(
+                    np.abs(librosa.stft(_el_y_spec, hop_length=_SPEC_HOP, n_fft=_SPEC_N_FFT)), ref=np.max
+                )
+                freqs = librosa.fft_frequencies(sr=_SPEC_SR, n_fft=_SPEC_N_FFT)
+                times = librosa.frames_to_time(np.arange(D.shape[1]), sr=_SPEC_SR, hop_length=_SPEC_HOP)
+                el_spec = (D, freqs, times)
+            except Exception:
+                pass
         except Exception:
             pass
 
     # --- Spectrogram: mixed ---
+    # Resample to _SPEC_SR so both spectrograms share the same frequency axis
+    # and have meaningful content. Times start at 0 — aligned with t_mixed.
     mixed_spec = None
-    if mixed_loaded and len(y_ds) > 0:
+    if mixed_loaded:
         try:
-            sr_ds = sr_mixed * len(y_ds) / len(y_mixed)
-            D = librosa.amplitude_to_db(np.abs(librosa.stft(y_ds, hop_length=512, n_fft=2048)), ref=np.max)
-            freqs = librosa.fft_frequencies(sr=int(sr_ds), n_fft=2048)
-            times = librosa.frames_to_time(np.arange(D.shape[1]), sr=int(sr_ds), hop_length=512)
+            _y_spec = librosa.resample(y_mixed, orig_sr=sr_mixed, target_sr=_SPEC_SR)
+            D = librosa.amplitude_to_db(
+                np.abs(librosa.stft(_y_spec, hop_length=_SPEC_HOP, n_fft=_SPEC_N_FFT)), ref=np.max
+            )
+            freqs = librosa.fft_frequencies(sr=_SPEC_SR, n_fft=_SPEC_N_FFT)
+            times = librosa.frames_to_time(np.arange(D.shape[1]), sr=_SPEC_SR, hop_length=_SPEC_HOP)
             mixed_spec = (D, freqs, times)
         except Exception:
             pass
@@ -398,9 +423,10 @@ def _build_figure(
     row_keys: list[str] = ["mixed_waveform"]
     if show_mixed_spec and data["mixed_spec"]:
         row_keys.append("mixed_spec")
-    row_keys.append("el_waveform")
-    if show_el_spec and data["el_spec"]:
-        row_keys.append("el_spec")
+    if data["el_loaded"]:
+        row_keys.append("el_waveform")
+        if show_el_spec and data["el_spec"]:
+            row_keys.append("el_spec")
     row_keys.append("timeline")
 
     _titles = {
@@ -436,7 +462,7 @@ def _build_figure(
             "text": f"Speaker Turn Analysis \u2014 Pause Detection{title_suffix}",
             "font": {"size": 15},
         },
-        height=max(500, 320 * n_rows),
+        height=max(700, 420 * n_rows),
         hovermode="closest",
         legend={
             "orientation": "h",
@@ -516,7 +542,9 @@ def _build_figure(
     # ------------------------------------------------------------------ #
     # Colour-coded waveform — one Scatter trace per contiguous segment
     # ------------------------------------------------------------------ #
-    def _colored_waveform(row: int, y: np.ndarray, t: np.ndarray, y_range: list) -> None:
+    def _colored_waveform(
+        row: int, y: np.ndarray, t: np.ndarray, y_range: list, speaker_filter: set[str] | None = None
+    ) -> None:
         if len(y) == 0:
             fig.add_annotation(
                 text="No file available",
@@ -532,11 +560,14 @@ def _build_figure(
             fig.update_yaxes(title_text="Amplitude", range=[-1.0, 1.0], row=row, col=1)
             return
 
-        # Flat list of individual speaker audio segments, sorted by start time
+        # Flat list of individual speaker audio segments, sorted by start time.
+        # speaker_filter restricts which speakers are coloured (e.g. {"assistant"} for
+        # the ElevenLabs recording which only contains TTS audio).
+        visible_turns = [turn for turn in turns_rel if speaker_filter is None or turn["speaker"] in speaker_filter]
         all_segs = sorted(
             [
                 (s, e, "asst" if turn["speaker"] == "assistant" else "user")
-                for turn in turns_rel
+                for turn in visible_turns
                 for s, e in turn["segments"]
             ],
             key=lambda s: s[0],
@@ -590,7 +621,7 @@ def _build_figure(
     # ------------------------------------------------------------------ #
     # Spectrogram row — heatmap + invisible transcript strip
     # ------------------------------------------------------------------ #
-    def _spec_row(row: int, spec: tuple, label: str) -> None:
+    def _spec_row(row: int, spec: tuple, label: str, speaker_filter: set[str] | None = None) -> None:
         D, freqs, times = spec
 
         fig.add_trace(
@@ -627,8 +658,10 @@ def _build_figure(
             col=1,
         )
 
-        # Turn boundary vrects (use envelope start/end per turn)
-        for turn in turns_rel:
+        # Turn boundary vrects (use envelope start/end per turn).
+        # Restrict to speaker_filter when set (e.g. EL spectrogram only shows assistant turns).
+        visible_turns = [turn for turn in turns_rel if speaker_filter is None or turn["speaker"] in speaker_filter]
+        for turn in visible_turns:
             color = ASST_FILL if turn["speaker"] == "assistant" else USER_FILL
             fig.add_vrect(
                 x0=turn["start"], x1=turn["end"], fillcolor=color, line_width=0, layer="below", row=row, col=1
@@ -669,18 +702,22 @@ def _build_figure(
             _no_file(row_of["mixed_spec"])
             fig.update_yaxes(title_text="Freq (Hz)", row=row_of["mixed_spec"], col=1)
 
-    # ---- ElevenLabs waveform ----
-    if data["el_loaded"] and len(data["el_y_ds"]) > 0:
-        el_range = [float(data["el_y_ds"].min() * 1.1), float(data["el_y_ds"].max() * 1.1)]
-        _colored_waveform(row_of["el_waveform"], data["el_y_ds"], data["el_t"], el_range)
-    else:
-        _no_file(row_of["el_waveform"])
-        fig.update_yaxes(title_text="Amplitude", range=[-1.0, 1.0], row=row_of["el_waveform"], col=1)
+    # ---- ElevenLabs waveform (only present when el_loaded=True) ----
+    # speaker_filter={"user"}: the EL recording captures the ElevenLabs user-simulator's
+    # outgoing audio (user speech sent to the assistant).  Assistant-turn time ranges
+    # are silent in this file and should not be coloured as "Assistant".
+    if "el_waveform" in row_of:
+        if len(data["el_y_ds"]) > 0:
+            el_range = [float(data["el_y_ds"].min() * 1.1), float(data["el_y_ds"].max() * 1.1)]
+            _colored_waveform(row_of["el_waveform"], data["el_y_ds"], data["el_t"], el_range, speaker_filter={"user"})
+        else:
+            _no_file(row_of["el_waveform"])
+            fig.update_yaxes(title_text="Amplitude", range=[-1.0, 1.0], row=row_of["el_waveform"], col=1)
 
     # ---- ElevenLabs spectrogram (optional) ----
     if "el_spec" in row_of:
         if data["el_spec"]:
-            _spec_row(row_of["el_spec"], data["el_spec"], "EL Spec")
+            _spec_row(row_of["el_spec"], data["el_spec"], "EL Spec", speaker_filter={"user"})
         else:
             _no_file(row_of["el_spec"])
             fig.update_yaxes(title_text="Freq (Hz)", row=row_of["el_spec"], col=1)
@@ -855,6 +892,35 @@ def _build_figure(
 
 
 # =============================================================================
+# Streamlit caching — module-level so the cache persists across reruns
+# =============================================================================
+
+
+@st.cache_data(show_spinner="Loading audio files\u2026")
+def _cache_audio_data(path_str: str) -> dict:
+    """Cache the heavy data-loading step (file I/O + spectrogram computation).
+
+    Keyed only on the record directory path, so the cache is shared across
+    all spectrogram-toggle states.  _build_figure() is fast and runs on each
+    rerun with the pre-loaded data.
+    """
+    return _prepare_data(Path(path_str))
+
+
+def preload_audio_data(record_dir: Path) -> None:
+    """Warm the audio-data cache for *record_dir*.
+
+    Call this before the tab widgets are rendered so the heavy I/O happens
+    while the rest of the page is being built, rather than on first tab open.
+    Silently skips records that have no audio files.
+    """
+    events_file = record_dir / "elevenlabs_events.jsonl"
+    audio_mixed = next(record_dir.glob("audio_mixed*.wav"), record_dir / "audio_mixed.wav")
+    if events_file.exists() or audio_mixed.exists():
+        _cache_audio_data(str(record_dir))
+
+
+# =============================================================================
 # Streamlit tab renderer
 # =============================================================================
 
@@ -870,23 +936,27 @@ def render_audio_analysis_tab(record_dir: Path) -> None:
         st.info("No audio files found in this record directory.")
         return
 
-    # Spectrogram toggles
-    col1, col2 = st.columns(2)
-    with col1:
-        show_mixed_spec = st.checkbox("Show Mixed Audio Spectrogram", value=False)
-    with col2:
-        show_el_spec = st.checkbox("Show ElevenLabs Spectrogram", value=False)
+    try:
+        # Data is already cached by preload_audio_data(); this is a cache hit.
+        data = _cache_audio_data(str(record_dir))
+    except Exception as exc:
+        st.error(f"Could not load audio data: {exc}")
+        return
 
-    @st.cache_data(show_spinner="Loading audio and building interactive plot\u2026")
-    def _cached(path_str: str, mixed_spec: bool, el_spec: bool) -> go.Figure:
-        return _build_figure(
-            _prepare_data(Path(path_str)),
-            show_mixed_spec=mixed_spec,
-            show_el_spec=el_spec,
-        )
+    # Spectrogram toggles — side-by-side when EL is available, single when not
+    if data["el_loaded"]:
+        col1, col2 = st.columns(2)
+        with col1:
+            show_mixed_spec = st.checkbox("Show Mixed Audio Spectrogram", value=False)
+        with col2:
+            show_el_spec = st.checkbox("Show ElevenLabs Spectrogram", value=False)
+    else:
+        show_mixed_spec = st.checkbox("Show Mixed Audio Spectrogram", value=False)
+        show_el_spec = False
+        st.info("ElevenLabs audio recording is not available for this record.")
 
     try:
-        fig = _cached(str(record_dir), show_mixed_spec, show_el_spec)
+        fig = _build_figure(data, show_mixed_spec=show_mixed_spec, show_el_spec=show_el_spec)
         st.plotly_chart(fig, width="stretch", theme="streamlit")
     except Exception as exc:
         st.error(f"Could not render audio plot: {exc}")

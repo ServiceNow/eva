@@ -21,7 +21,7 @@ import streamlit as st
 from diff_viewer import diff_viewer
 
 import eva.metrics  # noqa: F401
-from apps.audio_plots import render_audio_analysis_tab
+from apps.audio_plots import preload_audio_data, render_audio_analysis_tab
 from eva.metrics.registry import get_global_registry
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RecordMetrics
@@ -1812,6 +1812,10 @@ def render_record_detail(selected_run_dir: Path):
             st.json(eval_record.ground_truth.expected_scenario_db)
 
     st.divider()
+
+    # Pre-load audio data before the tabs so the cache is warm when the user
+    # opens the Audio Analysis tab (or switches trials).
+    preload_audio_data(selected_record_dir)
 
     # Tabs
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
