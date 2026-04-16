@@ -2325,8 +2325,11 @@ def _render_sidebar_config() -> dict:
     """Render AI Review sidebar controls and return config."""
     st.sidebar.header("AI Review Config")
     available_models = get_available_models()
-    default_idx = available_models.index(DEFAULT_JUDGE_MODEL) if DEFAULT_JUDGE_MODEL in available_models else 0
+    qp_judge_model = st.query_params.get("judge_model", DEFAULT_JUDGE_MODEL)
+    default_judge = qp_judge_model if qp_judge_model in available_models else DEFAULT_JUDGE_MODEL
+    default_idx = available_models.index(default_judge) if default_judge in available_models else 0
     judge_model = st.sidebar.selectbox("Judge Model", available_models, index=default_idx)
+    st.query_params["judge_model"] = judge_model
     debug_mode = st.sidebar.checkbox("Debug mode (first 10 samples)")
 
     component_focus = st.sidebar.selectbox(
@@ -2360,6 +2363,33 @@ def _render_sidebar_config() -> dict:
     }
 
 
+def _has_any_valid_cache(run_dirs: list[Path], judge_model: str) -> bool:
+    """Return True if any combo in .ai_review_cache/ has a valid metadata for these runs + model."""
+    if not run_dirs:
+        return False
+    cache_root = run_dirs[0].parent / ".ai_review_cache"
+    if not cache_root.exists():
+        return False
+    selected_run_strs = {str(d) for d in run_dirs}
+    for subdir in cache_root.iterdir():
+        if not subdir.is_dir() or subdir.name.startswith("_"):
+            continue
+        meta_path = subdir / "metadata.json"
+        if not meta_path.exists():
+            continue
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+            if meta.get("judge_model") != judge_model:
+                continue
+            cached_runs = set(meta.get("run_dirs", []))
+            if cached_runs & selected_run_strs:
+                return True
+        except Exception:
+            continue
+    return False
+
+
 def _render_run_selection(run_dirs: list[Path]) -> list[Path]:
     """Render run selection multiselect in sidebar."""
     st.sidebar.header("Run Selection")
@@ -2373,36 +2403,68 @@ def _render_run_selection(run_dirs: list[Path]) -> list[Path]:
             label = d.name
         run_labels[label] = d
     label_list = list(run_labels.keys())
-    selected = st.sidebar.multiselect("Select Runs to Analyze", label_list, default=label_list[:1])
+
+    # Read selected run dir names from query params (comma-separated)
+    qp_runs_raw = st.query_params.get("ai_runs", "")
+    qp_run_names = {r.strip() for r in qp_runs_raw.split(",") if r.strip()} if qp_runs_raw else set()
+    default_labels = [lbl for lbl in label_list if run_labels[lbl].name in qp_run_names] if qp_run_names else []
+    if not default_labels:
+        default_labels = label_list[:1]
+
+    selected = st.sidebar.multiselect("Select Runs to Analyze", label_list, default=default_labels)
+
+    # Save selected run dir names to query params
+    st.query_params["ai_runs"] = ",".join(run_labels[lbl].name for lbl in selected)
+
     return [run_labels[lbl] for lbl in selected]
 
 
 def _run_or_load_pipeline(run_dirs: list[Path], config: dict) -> dict | None:
-    """Run the pipeline if button clicked, otherwise return cached result."""
+    """Run pipeline if button clicked; auto-load from disk cache when available."""
     run_pipeline = st.sidebar.button("Run AI Review Pipeline", type="primary")
+
+    # Detect run-selection changes and clear stale session state so the new
+    # selection auto-loads its own cache (or prompts a fresh run).
+    current_runs_key = tuple(sorted(str(d) for d in run_dirs))
+    if st.session_state.get("ai_review_last_runs") != current_runs_key:
+        st.session_state.pop("ai_review_result", None)
+        st.session_state["ai_review_last_runs"] = current_runs_key
+
     pipeline_result = st.session_state.get("ai_review_result")
 
-    if run_pipeline:
+    should_auto_load = (
+        pipeline_result is None
+        and not run_pipeline
+        and _has_any_valid_cache(run_dirs, config["judge_model"])
+    )
+
+    if run_pipeline or should_auto_load:
         _ensure_router_initialized()
 
-        progress_bar = st.progress(0.0)
-        status_text = st.empty()
+        progress_bar = None
+        status_text = None
+        if run_pipeline:
+            progress_bar = st.progress(0.0)
+            status_text = st.empty()
 
         def progress_callback(pct: float, msg: str) -> None:
-            progress_bar.progress(min(pct, 1.0))
-            status_text.text(msg)
+            if progress_bar is not None:
+                progress_bar.progress(min(pct, 1.0))
+            if status_text is not None:
+                status_text.text(msg)
 
         def result_callback(partial_result: dict) -> None:
             st.session_state["ai_review_result"] = partial_result
 
-        with st.spinner("Running AI Review Pipeline..."):
+        spinner_msg = "Running AI Review Pipeline..." if run_pipeline else "Loading cached report..."
+        with st.spinner(spinner_msg):
             result = asyncio.run(
                 run_full_pipeline(
                     run_dirs=run_dirs,
                     judge_model=config["judge_model"],
                     force_rerun=config["force_rerun"],
                     max_samples=config["max_samples"],
-                    progress_callback=progress_callback,
+                    progress_callback=progress_callback if run_pipeline else None,
                     result_callback=result_callback,
                     component_focus=config["component_focus"],
                 )
@@ -2410,7 +2472,8 @@ def _run_or_load_pipeline(run_dirs: list[Path], config: dict) -> dict | None:
             st.session_state["ai_review_result"] = result
             pipeline_result = result
 
-        progress_bar.progress(1.0)
-        status_text.text("Pipeline complete!")
+        if run_pipeline and progress_bar is not None and status_text is not None:
+            progress_bar.progress(1.0)
+            status_text.text("Pipeline complete!")
 
     return pipeline_result

@@ -399,6 +399,26 @@ def get_available_models() -> list[str]:
     return [DEFAULT_JUDGE_MODEL]
 
 
+def _get_judge_llm_params(judge_model: str) -> dict:
+    """Return LLM params for the judge, deferring to EVA_MODEL_LIST first.
+
+    If the deployment for judge_model already specifies temperature in litellm_params,
+    returns an empty dict so the router applies it without being overridden. Otherwise
+    returns {"temperature": 0.0} as the default for deterministic judge outputs.
+    """
+    try:
+        model_list_json = os.environ.get("EVA_MODEL_LIST", "")
+        if model_list_json:
+            deployments = json.loads(model_list_json)
+            for d in deployments:
+                if d.get("model_name") == judge_model:
+                    if "temperature" in d.get("litellm_params", {}):
+                        return {}
+    except Exception:
+        pass
+    return {"temperature": 0.0}
+
+
 def format_metric_name(name: str) -> str:
     """Format a metric name for display, preserving acronyms in upper case."""
     parts = name.split("_")
@@ -2550,7 +2570,7 @@ async def run_full_pipeline(
 
     prompts_dir = Path(__file__).parent / "prompts"
     prompt_manager = PromptManager(prompts_path=prompts_dir)
-    llm_client = LLMClient(model=judge_model, params={"temperature": 0.0})
+    llm_client = LLMClient(model=judge_model, params=_get_judge_llm_params(judge_model))
 
     if progress_callback:
         progress_callback(0.0, "Collecting data from run directories...")
