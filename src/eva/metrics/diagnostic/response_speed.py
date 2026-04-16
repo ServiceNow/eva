@@ -103,18 +103,9 @@ class ResponseSpeedMetric(CodeMetric):
                 )
 
             all_latencies = list(per_turn_latency.values())
-            speeds = []
-            per_turn_speeds = []
-            for latency in all_latencies:
-                if latency is not None and 0 < latency < 1000:
-                    speeds.append(latency)
-                    per_turn_speeds.append(round(latency, 3))
-                else:
-                    self.logger.warning(
-                        f"[{context.record_id}] Unusual response speed detected and dropped: {latency} seconds"
-                    )
+            overall_stats = _compute_speed_stats(all_latencies)
 
-            if not speeds:
+            if not overall_stats:
                 return MetricScore(
                     name=self.name,
                     score=0.0,
@@ -122,7 +113,11 @@ class ResponseSpeedMetric(CodeMetric):
                     error="No valid response speeds computed",
                 )
 
-            mean_speed = sum(speeds) / len(speeds)
+            dropped = [v for v in all_latencies if not (0 < v < 1000)]
+            if dropped:
+                self.logger.warning(
+                    f"[{context.record_id}] Dropped {len(dropped)} unusual response speed(s): {dropped}"
+                )
 
             with_tool, no_tool = _split_by_tool_calls(per_turn_latency, context)
 
@@ -139,14 +134,9 @@ class ResponseSpeedMetric(CodeMetric):
 
             return MetricScore(
                 name=self.name,
-                score=round(mean_speed, 3),
+                score=overall_stats["mean_speed_seconds"],
                 normalized_score=None,
-                details={
-                    "mean_speed_seconds": round(mean_speed, 3),
-                    "max_speed_seconds": round(max(speeds), 3),
-                    "num_turns": len(speeds),
-                    "per_turn_speeds": per_turn_speeds,
-                },
+                details=overall_stats,
                 sub_metrics=sub_metrics or None,
             )
 
