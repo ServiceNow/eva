@@ -112,7 +112,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         # User speech start timestamp from audio_interface (source of truth)
         self._audio_interface_speech_start_ts: str | None = None
 
-        self._model: str = self.pipeline_config.s2s
+        self._model: str = self.pipeline_config.s2s_params.get("model")
 
         assert isinstance(self.pipeline_config, SpeechToSpeechConfig), "Pipeline config must be SpeechToSpeechConfig"
 
@@ -211,6 +211,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         client = AsyncOpenAI(api_key=api_key)
 
         try:
+            logger.info(f"Starting OpenAI Realtime session (model={self._model})")
             async with client.realtime.connect(model=self._model) as conn:
                 # Configure the session
                 await conn.session.update(
