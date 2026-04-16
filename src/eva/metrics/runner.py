@@ -510,6 +510,26 @@ class MetricsRunner:
         return metric_context
 
     @staticmethod
+    def _aggregate_scores(
+        scores: list[float],
+        total_records: int,
+        error_count: int = 0,
+        missing_count: int = 0,
+    ) -> dict[str, Any]:
+        """Compute standard aggregate stats from a list of scores."""
+        none_count = error_count + missing_count
+        return {
+            "mean": round(sum(scores) / len(scores), 4) if scores else None,
+            "min": round(min(scores), 4) if scores else None,
+            "max": round(max(scores), 4) if scores else None,
+            "count": len(scores),
+            "none_count": none_count,
+            "error_count": error_count,
+            "missing_count": missing_count,
+            "total_records": total_records,
+        }
+
+    @staticmethod
     def _build_per_metric_aggregates(
         all_metrics: dict[str, RecordMetrics],
         metric_names: list[str],
@@ -566,16 +586,7 @@ class MetricsRunner:
 
             none_count = error_count + missing_count
             if scores or none_count > 0:
-                entry: dict[str, Any] = {
-                    "mean": round(sum(scores) / len(scores), 4) if scores else None,
-                    "min": round(min(scores), 4) if scores else None,
-                    "max": round(max(scores), 4) if scores else None,
-                    "count": len(scores),
-                    "none_count": none_count,
-                    "error_count": error_count,
-                    "missing_count": missing_count,
-                    "total_records": total_records,
-                }
+                entry = MetricsRunner._aggregate_scores(scores, total_records, error_count, missing_count)
 
                 if total_turns_across_records > 0:
                     none_turns = total_turns_across_records - total_evaluated_across_records
@@ -619,6 +630,40 @@ class MetricsRunner:
                         "k": num_draws,
                         "count": count,
                     }
+
+        # Generic sub-metric aggregation
+        for name in metric_aggregates:
+            all_sub_keys: set[str] = set()
+            for record_metrics in all_metrics.values():
+                ms = record_metrics.metrics.get(name)
+                if ms and ms.sub_metrics:
+                    all_sub_keys.update(ms.sub_metrics.keys())
+
+            if not all_sub_keys:
+                continue
+
+            sub_aggs: dict[str, dict[str, Any]] = {}
+            for sub_key in sorted(all_sub_keys):
+                sub_scores: list[float] = []
+                sub_missing = 0
+                for record_metrics in all_metrics.values():
+                    ms = record_metrics.metrics.get(name)
+                    if ms is None or ms.error is not None:
+                        sub_missing += 1
+                        continue
+                    sub_ms = (ms.sub_metrics or {}).get(sub_key)
+                    if sub_ms is not None and sub_ms.score is not None:
+                        sub_scores.append(
+                            sub_ms.normalized_score if sub_ms.normalized_score is not None else sub_ms.score
+                        )
+                    else:
+                        sub_missing += 1
+
+                if sub_scores or sub_missing > 0:
+                    sub_aggs[sub_key] = MetricsRunner._aggregate_scores(sub_scores, total_records, 0, sub_missing)
+
+            if sub_aggs:
+                metric_aggregates[name]["sub_metrics"] = sub_aggs
 
         return metric_aggregates
 

@@ -231,6 +231,11 @@ def format_transcript(transcript_path: Path) -> pd.DataFrame:
 # ============================================================================
 
 
+def _is_sub_metric(name: str) -> bool:
+    """Return True if the metric name is a sub-metric (contains __ separator)."""
+    return "__" in name
+
+
 def _sort_metrics_by_category(metric_names: list[str]) -> list[str]:
     """Sort metric names grouped by category."""
 
@@ -544,6 +549,22 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
                     if metric_score.normalized_score is not None
                     else metric_score.score
                 )
+
+                if metric_score.sub_metrics:
+                    for sub_key, sub_ms in metric_score.sub_metrics.items():
+                        col = f"{metric_name}__{sub_key}"
+                        row[col] = (
+                            None
+                            if sub_ms.error
+                            else sub_ms.normalized_score
+                            if sub_ms.normalized_score is not None
+                            else sub_ms.score
+                        )
+                        all_metric_names.add(col)
+                        if col not in _METRIC_GROUP:
+                            _METRIC_GROUP[col] = _METRIC_GROUP.get(metric_name, "Other")
+                        if metric_name in _NON_NORMALIZED_METRICS:
+                            _NON_NORMALIZED_METRICS.add(col)
 
             rows.append(row)
 
@@ -970,6 +991,15 @@ def render_cross_run_comparison(run_dirs: list[Path]):
             for m, stats in per_metric.items():
                 if stats.get("mean") is not None:
                     summary[m] = stats["mean"]
+                for sub_key, sub_stats in (stats.get("sub_metrics") or {}).items():
+                    if sub_stats.get("mean") is not None:
+                        col = f"{m}__{sub_key}"
+                        summary[col] = sub_stats["mean"]
+                        all_metric_names.add(col)
+                        if col not in _METRIC_GROUP:
+                            _METRIC_GROUP[col] = _METRIC_GROUP.get(m, "Other")
+                        if m in _NON_NORMALIZED_METRICS:
+                            _NON_NORMALIZED_METRICS.add(col)
             # Add EVA composite scores from overall_scores
             overall = metrics_summary.get("overall_scores", {})
             for composite in _EVA_BAR_COMPOSITES:
@@ -1012,6 +1042,9 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         return
 
     metric_names = _sort_metrics_by_category(sorted(all_metric_names))
+    if not st.session_state.get("show_sub_metrics"):
+        metric_names = [m for m in metric_names if not _is_sub_metric(m)]
+
     col_rename = _make_category_header_rename(metric_names)
     summary_df = pd.DataFrame(run_summaries)
 
@@ -1112,6 +1145,9 @@ def render_run_overview(run_dir: Path):
     has_trials = "trial" in rows[0]
     df = pd.DataFrame(rows)
     metric_names = _sort_metrics_by_category(metric_names)
+    if not st.session_state.get("show_sub_metrics"):
+        metric_names = [m for m in metric_names if not _is_sub_metric(m)]
+
     col_rename = _make_category_header_rename(metric_names)
 
     # --- Aggregate summary ---
@@ -1838,6 +1874,8 @@ def _get_run_dirs():
     latest_only = st.sidebar.toggle("Latest run per system only", value=True)
     if latest_only:
         run_dirs = filter_latest_runs(run_dirs)
+
+    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics")
 
     if not run_dirs:
         st.error(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")

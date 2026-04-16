@@ -182,7 +182,7 @@ Counts and flags computed during benchmark execution.
   - `"error"`: An error occurred
 - **`duration_seconds: float`** - Total duration of the conversation in seconds.
 - **`is_audio_native: bool`** - Whether this conversation used an audio-native architecture. Metrics should check this flag to adjust behavior (e.g., audio-native uses intended user text in conversation_trace).
-- **`response_speed_latencies: list[float]`** - List of response latencies in seconds (time from user speech end to assistant speech start).
+- **`latency_assistant_turns: dict[int, float]`** - Per-turn latency in seconds (user speech end to assistant speech start), keyed by turn ID.
 
 ### File Paths
 

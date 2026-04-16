@@ -24,6 +24,22 @@ from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+
+def _resolve_path(stored: str | None, output_dir: Path) -> str | None:
+    """Return *stored* if it exists on disk, otherwise ``output_dir / basename(stored)``.
+
+    Allows metrics to re-run correctly when a run directory has been moved:
+    *stored* reflects the original location, but the file is now under *output_dir*
+    with the same filename. Returns ``None`` when *stored* is ``None`` so callers
+    can treat ``None`` as "feature disabled" (e.g. audio recording was off).
+    """
+    if stored is None:
+        return None
+    if Path(stored).exists():
+        return stored
+    return str(output_dir / Path(stored).name)
+
+
 # Elevenlabs audio user field → _ProcessorContext attribute name
 AUDIO_ATTR = {
     "pipecat_agent": "audio_timestamps_assistant_turns",
@@ -689,8 +705,8 @@ class _ProcessorContext:
         self.conversation_ended_reason: str | None = None
         self.is_audio_native: bool = False
 
-        # Response latencies from Pipecat's UserBotLatencyObserver
-        self.response_speed_latencies: list[float] = []
+        # Per-turn latency: user_end -> assistant_start (seconds)
+        self.latency_assistant_turns: dict[int, float] = {}
 
         # Unified timeline of all events from all log sources
         self.history: list[dict] = []
@@ -698,6 +714,22 @@ class _ProcessorContext:
 
 class MetricsContextProcessor:
     """Postprocessor for voice agent logs to create metric variables."""
+
+    @staticmethod
+    def _compute_per_turn_latency(context: "_ProcessorContext") -> None:
+        """Compute per-turn latency from audio timestamps and save to context.
+
+        Latency is measured as the time from the end of the user's last audio
+        segment to the start of the assistant's first audio segment for each turn.
+        Turns with missing timestamps are silently skipped.
+        """
+        latencies: dict[int, float] = {}
+        for turn_id, u in context.audio_timestamps_user_turns.items():
+            a = context.audio_timestamps_assistant_turns.get(turn_id)
+            if not u or not a:
+                continue
+            latencies[turn_id] = round(a[0][0] - u[-1][1], 6)
+        context.latency_assistant_turns = latencies
 
     def process_record(
         self,
@@ -717,15 +749,18 @@ class MetricsContextProcessor:
         """
         context = _ProcessorContext()
         context.record_id = result.record_id
-        context.audio_assistant_path = result.audio_assistant_path
-        context.audio_user_path = result.audio_user_path
-        context.audio_mixed_path = result.audio_mixed_path
+        context.audio_assistant_path = _resolve_path(result.audio_assistant_path, output_dir)
+        context.audio_user_path = _resolve_path(result.audio_user_path, output_dir)
+        context.audio_mixed_path = _resolve_path(result.audio_mixed_path, output_dir)
         context.is_audio_native = is_audio_native
 
+        pipecat_path = _resolve_path(result.pipecat_logs_path, output_dir)
+        elevenlabs_path = _resolve_path(result.elevenlabs_logs_path, output_dir)
+
         try:
-            self._build_history(context, output_dir, result)
+            self._build_history(context, output_dir, pipecat_path, elevenlabs_path)
             self._extract_turns_from_history(context)
-            self._load_response_latencies(context, output_dir)
+            self._compute_per_turn_latency(context)
             self._reconcile_transcript_with_tools(context)
 
             return context
@@ -817,15 +852,18 @@ class MetricsContextProcessor:
         self,
         context: _ProcessorContext,
         output_dir: Path,
-        result: ConversationResult,
+        pipecat_path: str | None,
+        elevenlabs_path: str | None,
     ) -> None:
         """Merge audit log, pipecat, and ElevenLabs logs into a timestamp-sorted context.history.
 
         Each entry: {timestamp_ms, source, event_type, data}.
         """
         history = self._load_audit_log_transcript(output_dir)
-        history.extend(self._load_pipecat_logs(result.pipecat_logs_path))
-        history.extend(self._load_elevenlabs_logs(result.elevenlabs_logs_path))
+        if pipecat_path:
+            history.extend(self._load_pipecat_logs(pipecat_path))
+        if elevenlabs_path:
+            history.extend(self._load_elevenlabs_logs(elevenlabs_path))
 
         history.sort(key=lambda e: e["timestamp_ms"])
         context.history = history
@@ -930,41 +968,3 @@ class MetricsContextProcessor:
                 f"Record {context.record_id}: Backfilled transcribed_user_turns[{last_user_turn_id}] "
                 f"from intended: {last_user_text[:50]}"
             )
-
-    def _load_response_latencies(self, context: _ProcessorContext, output_dir: Path) -> bool:
-        """Load response latencies from UserBotLatencyObserver.
-
-        Args:
-            context: _ProcessorContext to populate
-            output_dir: Path to output directory
-
-        Returns:
-            True if successful, False otherwise
-        """
-        latencies_path = output_dir / "response_latencies.json"
-
-        # File may not exist if conversation failed or used older version
-        if not latencies_path.exists():
-            logger.debug(f"Response latencies file not found: {latencies_path}")
-            return False
-
-        try:
-            with open(latencies_path) as f:
-                data = json.load(f)
-
-            latencies = data.get("latencies", [])
-            context.response_speed_latencies = latencies
-
-            logger.info(
-                f"Record {context.record_id}: Loaded {len(latencies)} response latencies "
-                f"(mean={data.get('mean', 0):.3f}s, max={data.get('max', 0):.3f}s)"
-            )
-
-            return True
-
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            logger.warning(f"Failed to load response latencies: {e}")
-            return False
-        except Exception as e:
-            logger.exception(f"Failed to load response latencies: {e}")
-            return False

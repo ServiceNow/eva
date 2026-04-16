@@ -130,5 +130,7 @@ class TestProcessorRealArtifacts:
         assert processor_context.assistant_interrupted_turns == set(expected_context["assistant_interrupted_turns"])
         assert processor_context.user_interrupted_turns == set(expected_context["user_interrupted_turns"])
 
-    def test_response_speed_latencies(self, processor_context, expected_context):
-        assert processor_context.response_speed_latencies == expected_context["response_speed_latencies"]
+    def test_latency_assistant_turns(self, processor_context, expected_context):
+        assert processor_context.latency_assistant_turns == {
+            int(k): v for k, v in expected_context["latency_assistant_turns"].items()
+        }
