@@ -2433,9 +2433,7 @@ def _run_or_load_pipeline(run_dirs: list[Path], config: dict) -> dict | None:
     pipeline_result = st.session_state.get("ai_review_result")
 
     should_auto_load = (
-        pipeline_result is None
-        and not run_pipeline
-        and _has_any_valid_cache(run_dirs, config["judge_model"])
+        pipeline_result is None and not run_pipeline and _has_any_valid_cache(run_dirs, config["judge_model"])
     )
 
     if run_pipeline or should_auto_load:
