@@ -47,6 +47,11 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                 )
 
             intended_turns = self._get_intended_turns(context)
+            if intended_turns and not isinstance(next(iter(intended_turns.keys())), int):
+                self.logger.warning(
+                    f"[{context.record_id}] intended_turns has non-int keys: "
+                    f"{[type(k).__name__ for k in list(intended_turns.keys())[:3]]}"
+                )
             num_turns = len(intended_turns)
             audio_b64 = self.encode_audio_segment(audio_segment)
             intended_turns_formatted = self._format_intended_turns(intended_turns)
@@ -62,7 +67,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             per_turn_explanations: dict[int, str] = {}
             per_turn_transcripts: dict[int, str] = {}
             per_turn_normalized: dict[int, float] = {}
-            tts_turn_ids = sorted(intended_turns.keys())
+            tts_turn_ids = sorted(int(k) for k in intended_turns.keys())
             min_rating, max_rating = self.rating_scale
             valid_ratings_range = list(range(min_rating, max_rating + 1))
 
@@ -86,6 +91,9 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             for response_item in turns:
                 turn_id = resolve_turn_id(response_item, tts_turn_ids, self.name)
                 if turn_id is None:
+                    self.logger.warning(
+                        f"[{context.record_id}] Could not resolve turn ID for {response_item} turn_ids {tts_turn_ids}"
+                    )
                     continue
                 rating = response_item.get("rating")
                 transcript = response_item.get("transcript")

@@ -27,6 +27,7 @@ from eva.assistant.audio_bridge import (
     sync_buffer_to_position,
 )
 from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
+from eva.models.config import SpeechToSpeechConfig
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -112,6 +113,8 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._audio_interface_speech_start_ts: str | None = None
 
         self._model: str = self.pipeline_config.s2s
+
+        assert isinstance(self.pipeline_config, SpeechToSpeechConfig), "Pipeline config must be SpeechToSpeechConfig"
 
     async def start(self) -> None:
         """Start the FastAPI WebSocket server."""
@@ -617,14 +620,8 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         logger.info(f"Tool call: {func_name}({json.dumps(arguments)})")
         self._assistant_state.has_function_calls = True
 
-        # Record in audit log
-        self.audit_log.append_realtime_tool_call(func_name, arguments)
-
-        # Execute tool
-        result = await self.tool_handler.execute(func_name, arguments)
-
-        # Record tool response
-        self.audit_log.append_tool_response(func_name, result)
+        # Execute tool and record in audit log
+        result = await self.execute_tool(func_name, arguments)
 
         if self._fw_log:
             self._fw_log.write(

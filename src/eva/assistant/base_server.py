@@ -121,6 +121,20 @@ class AbstractAssistantServer(ABC):
         """Get final (mutated) scenario database state."""
         return self.tool_handler.db
 
+    # ── Shared tool execution ─────────────────────────────────────────
+
+    async def execute_tool(self, tool_name: str, arguments: dict) -> Any:
+        """Execute a tool call and record it in the audit log.
+
+        For s2s/realtime servers where tool calls arrive as events from the
+        model API.  Cascade pipelines use AgenticSystem which manages its own
+        tool execution and logging internally.
+        """
+        self.audit_log.append_realtime_tool_call(tool_name, arguments)
+        result = await self.tool_handler.execute(tool_name, arguments)
+        self.audit_log.append_tool_response(tool_name, result)
+        return result
+
     # ── Shared output helpers ──────────────────────────────────────────
 
     async def save_outputs(self) -> None:
@@ -149,9 +163,23 @@ class AbstractAssistantServer(ABC):
 
         If _audio_buffer (mixed) is empty but user and assistant buffers are
         available, compute mixed audio automatically via sample-wise addition.
+
+        NOTE: user_audio_buffer and assistant_audio_buffer must be time-aligned
+        (same total length in samples) before this method is called.  S2s/realtime
+        servers are responsible for calling ``sync_buffer_to_position`` during
+        streaming so the two tracks stay aligned.  A length mismatch produces a
+        usable but temporally skewed mixed recording.
         """
         # Auto-compute mixed audio from user + assistant tracks when not populated
         if not self._audio_buffer and self.user_audio_buffer and self.assistant_audio_buffer:
+            diff_bytes = abs(len(self.user_audio_buffer) - len(self.assistant_audio_buffer))
+            diff_ms = diff_bytes / (2 * self._audio_sample_rate) * 1000  # 16-bit PCM → 2 bytes/sample
+            if diff_ms > 500:
+                logger.warning(
+                    f"Audio buffer length mismatch: user={len(self.user_audio_buffer)} "
+                    f"assistant={len(self.assistant_audio_buffer)} "
+                    f"diff={diff_ms:.0f}ms — mixed recording may be temporally skewed"
+                )
             from eva.assistant.audio_bridge import pcm16_mix
 
             self._audio_buffer = bytearray(pcm16_mix(bytes(self.user_audio_buffer), bytes(self.assistant_audio_buffer)))

@@ -254,12 +254,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     else:
                         arguments = {}
 
-                    # Record tool call synchronously (before any await)
-                    self.audit_log.append_realtime_tool_call(tool_name, arguments)
-
-                    result = await self.tool_handler.execute(tool_name, arguments)
-                    self.audit_log.append_tool_response(tool_name, result)
-
+                    result = await self.execute_tool(tool_name, arguments)
                     await params.result_callback(result)
 
                 realtime_llm.register_function(function_name=None, handler=_realtime_tool_handler)

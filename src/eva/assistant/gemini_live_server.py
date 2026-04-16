@@ -38,7 +38,7 @@ from eva.assistant.audio_bridge import (
 )
 from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
 from eva.models.agents import AgentConfig
-from eva.models.config import AudioLLMConfig, PipelineConfig, SpeechToSpeechConfig
+from eva.models.config import SpeechToSpeechConfig
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -154,7 +154,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
     def __init__(
         self,
         current_date_time: str,
-        pipeline_config: PipelineConfig | SpeechToSpeechConfig | AudioLLMConfig,
+        pipeline_config: SpeechToSpeechConfig,
         agent: AgentConfig,
         agent_config_path: str,
         scenario_db_path: str,
@@ -185,7 +185,10 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         # Gemini model name from s2s_params or default
         s2s_params: dict[str, Any] = {}
         if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-            s2s_params = self.pipeline_config.s2s_params or {}
+            s2s_params = self.pipeline_config.s2s_params
+        else:
+            logger.error("Pipeline config is not SpeechToSpeechConfig")
+            return
         self._model = s2s_params.get("model", "gemini-3.1-flash-live-preview")
         self._voice = s2s_params.get("voice", "Kore")
         self._language_code = s2s_params.get("language_code", "en-US")
@@ -584,13 +587,9 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                     tool_args = dict(fc.args) if fc.args else {}
                                     logger.info(f"Tool call: {tool_name}({json.dumps(tool_args)})")
 
-                                    # Record in audit log
-                                    self.audit_log.append_realtime_tool_call(tool_name, tool_args)
-
-                                    # Execute tool
-                                    result = await self.tool_handler.execute(tool_name, tool_args)
+                                    # Execute tool and record in audit log
+                                    result = await self.execute_tool(tool_name, tool_args)
                                     logger.debug(f"Tool result: {tool_name} -> {json.dumps(result)}")
-                                    self.audit_log.append_tool_response(tool_name, result)
 
                                     # Send result back to Gemini
                                     await session.send_tool_response(
