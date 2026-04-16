@@ -4,34 +4,12 @@ Debug metric for diagnosing model performance issues, not directly used in
 final evaluation scores.
 """
 
-import json
-from pathlib import Path
-
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
 
 
-def _load_per_turn_latency(context: MetricContext) -> dict[str, float]:
-    """Load turn_taking per_turn_latency from the record's metrics.json.
-
-    Returns an empty dict if the data is unavailable.
-    """
-    if not context.output_dir:
-        return {}
-
-    metrics_path = Path(context.output_dir) / "metrics.json"
-    if not metrics_path.exists():
-        return {}
-
-    with open(metrics_path) as f:
-        data = json.load(f)
-
-    return data.get("metrics", {}).get("turn_taking", {}).get("details", {}).get("per_turn_latency", {})
-
-
 def _split_by_tool_calls(
-    per_turn_latency: dict[str, float],
     context: MetricContext,
 ) -> tuple[list[float], list[float]]:
     """Partition per_turn_latency values into (with_tool_calls, no_tool_calls).
@@ -44,8 +22,8 @@ def _split_by_tool_calls(
 
     with_tool: list[float] = []
     no_tool: list[float] = []
-    for turn_id_str, latency in per_turn_latency.items():
-        if int(turn_id_str) in tool_call_turn_ids:
+    for turn_id, latency in context.latency_assistant_turns.items():
+        if turn_id in tool_call_turn_ids:
             with_tool.append(latency)
         else:
             no_tool.append(latency)
@@ -92,17 +70,15 @@ class ResponseSpeedMetric(CodeMetric):
 
     async def compute(self, context: MetricContext) -> MetricScore:
         try:
-            per_turn_latency = _load_per_turn_latency(context)
-
-            if not per_turn_latency:
+            if not context.latency_assistant_turns:
                 return MetricScore(
                     name=self.name,
                     score=0.0,
                     normalized_score=None,
-                    error="No response latencies available (turn_taking per_turn_latency data missing)",
+                    error="No response latencies available (missing audio timestamps)",
                 )
 
-            all_latencies = list(per_turn_latency.values())
+            all_latencies = list(context.latency_assistant_turns.values())
             overall_stats = _compute_speed_stats(all_latencies)
 
             if not overall_stats:
@@ -119,7 +95,7 @@ class ResponseSpeedMetric(CodeMetric):
                     f"[{context.record_id}] Dropped {len(dropped)} unusual response speed(s): {dropped}"
                 )
 
-            with_tool, no_tool = _split_by_tool_calls(per_turn_latency, context)
+            with_tool, no_tool = _split_by_tool_calls(context)
 
             sub_metrics: dict[str, MetricScore] = {}
             for key, latencies in (("with_tool_calls", with_tool), ("no_tool_calls", no_tool)):

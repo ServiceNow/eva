@@ -702,8 +702,8 @@ class _ProcessorContext:
         self.conversation_ended_reason: str | None = None
         self.is_audio_native: bool = False
 
-        # Response latencies from Pipecat's UserBotLatencyObserver
-        self.response_speed_latencies: list[float] = []
+        # Per-turn latency: user_end -> assistant_start (seconds)
+        self.latency_assistant_turns: dict[int, float] = {}
 
         # Unified timeline of all events from all log sources
         self.history: list[dict] = []
@@ -711,6 +711,22 @@ class _ProcessorContext:
 
 class MetricsContextProcessor:
     """Postprocessor for voice agent logs to create metric variables."""
+
+    @staticmethod
+    def _compute_per_turn_latency(context: "_ProcessorContext") -> None:
+        """Compute per-turn latency from audio timestamps and save to context.
+
+        Latency is measured as the time from the end of the user's last audio
+        segment to the start of the assistant's first audio segment for each turn.
+        Turns with missing timestamps are silently skipped.
+        """
+        latencies: dict[int, float] = {}
+        for turn_id, u in context.audio_timestamps_user_turns.items():
+            a = context.audio_timestamps_assistant_turns.get(turn_id)
+            if not u or not a:
+                continue
+            latencies[turn_id] = round(a[0][0] - u[-1][1], 6)
+        context.latency_assistant_turns = latencies
 
     def process_record(
         self,
@@ -738,7 +754,7 @@ class MetricsContextProcessor:
         try:
             self._build_history(context, output_dir, result)
             self._extract_turns_from_history(context)
-            self._load_response_latencies(context, output_dir)
+            self._compute_per_turn_latency(context)
             self._reconcile_transcript_with_tools(context)
 
             return context
@@ -945,41 +961,3 @@ class MetricsContextProcessor:
                 f"Record {context.record_id}: Backfilled transcribed_user_turns[{last_user_turn_id}] "
                 f"from intended: {last_user_text[:50]}"
             )
-
-    def _load_response_latencies(self, context: _ProcessorContext, output_dir: Path) -> bool:
-        """Load response latencies from UserBotLatencyObserver.
-
-        Args:
-            context: _ProcessorContext to populate
-            output_dir: Path to output directory
-
-        Returns:
-            True if successful, False otherwise
-        """
-        latencies_path = output_dir / "response_latencies.json"
-
-        # File may not exist if conversation failed or used older version
-        if not latencies_path.exists():
-            logger.debug(f"Response latencies file not found: {latencies_path}")
-            return False
-
-        try:
-            with open(latencies_path) as f:
-                data = json.load(f)
-
-            latencies = data.get("latencies", [])
-            context.response_speed_latencies = latencies
-
-            logger.info(
-                f"Record {context.record_id}: Loaded {len(latencies)} response latencies "
-                f"(mean={data.get('mean', 0):.3f}s, max={data.get('max', 0):.3f}s)"
-            )
-
-            return True
-
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            logger.warning(f"Failed to load response latencies: {e}")
-            return False
-        except Exception as e:
-            logger.exception(f"Failed to load response latencies: {e}")
-            return False
