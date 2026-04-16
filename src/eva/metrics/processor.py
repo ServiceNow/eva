@@ -774,17 +774,10 @@ class MetricsContextProcessor:
         """
         context = _ProcessorContext()
         context.record_id = result.record_id
-<<<<<<< ggm/fix-processing-for-s2s-contd
-        context.audio_assistant_path = result.audio_assistant_path
-        context.audio_user_path = result.audio_user_path
-        context.audio_mixed_path = result.audio_mixed_path
-        context.pipeline_type = pipeline_type
-=======
         context.audio_assistant_path = _resolve_path(result.audio_assistant_path, output_dir)
         context.audio_user_path = _resolve_path(result.audio_user_path, output_dir)
         context.audio_mixed_path = _resolve_path(result.audio_mixed_path, output_dir)
-        context.is_audio_native = is_audio_native
->>>>>>> main
+        context.pipeline_type = pipeline_type
 
         pipecat_path = _resolve_path(result.pipecat_logs_path, output_dir)
         elevenlabs_path = _resolve_path(result.elevenlabs_logs_path, output_dir)
@@ -892,16 +885,10 @@ class MetricsContextProcessor:
         Each entry: {timestamp_ms, source, event_type, data}.
         """
         history = self._load_audit_log_transcript(output_dir)
-<<<<<<< ggm/fix-processing-for-s2s-contd
-        if context.pipeline_type != PipelineType.S2S:
-            history.extend(self._load_pipecat_logs(result.pipecat_logs_path))
-        history.extend(self._load_elevenlabs_logs(result.elevenlabs_logs_path))
-=======
-        if pipecat_path:
+        if context.pipeline_type != PipelineType.S2S and pipecat_path:
             history.extend(self._load_pipecat_logs(pipecat_path))
-        if elevenlabs_path:
+        if elevenlabs_path:    
             history.extend(self._load_elevenlabs_logs(elevenlabs_path))
->>>>>>> main
 
         history.sort(key=lambda e: e["timestamp_ms"])
         context.history = history
