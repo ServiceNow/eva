@@ -211,6 +211,7 @@ def _strip_other_mode_fields(data: dict, strict: bool = True) -> dict:
     ``extra="forbid"`` on each config class doesn't reject them.
 
     Args:
+        data: Raw config dictionary from the YAML/env input.
         strict: If False, skip the conflict error (used for metrics-only re-runs
             where the model config is not needed).
     """
