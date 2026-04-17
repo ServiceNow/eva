@@ -1068,14 +1068,41 @@ def test_get_reservation_success(sample_db):
     assert result["reservation"]["bookings"][1]["status"] == "confirmed"
 
 
-def test_get_reservation_not_found(sample_db):
-    """Test reservation not found."""
+def test_get_reservation_writes_session(sample_db):
+    """Successful get_reservation should write confirmation_number and last_name to db session."""
+    params = {"confirmation_number": "abc123", "last_name": "Doe"}
+    get_reservation(params, sample_db, call_index=1)
+
+    assert sample_db["session"]["confirmation_number"] == "ABC123"
+    assert sample_db["session"]["last_name"] == "doe"
+
+
+def test_get_reservation_session_last_name_lowercased(sample_db):
+    """Session last_name should be stored lowercase regardless of input case."""
+    params = {"confirmation_number": "ABC123", "last_name": "DOE"}
+    get_reservation(params, sample_db, call_index=1)
+
+    assert sample_db["session"]["last_name"] == "doe"
+
+
+def test_get_reservation_failed_auth_does_not_write_session(sample_db):
+    """Failed authentication (bad last name) should not write to db session."""
+    params = {"confirmation_number": "ABC123", "last_name": "Wrong"}
+    result = get_reservation(params, sample_db, call_index=1)
+
+    assert result["status"] == "error"
+    assert "session" not in sample_db
+
+
+def test_get_reservation_not_found_does_not_write_session(sample_db):
+    """Reservation not found should not write to db session."""
     params = {"confirmation_number": "XXXXXX", "last_name": "Smith"}
     result = get_reservation(params, sample_db, call_index=1)
 
     assert result["status"] == "error"
     assert result["error_type"] == "not_found"
     assert "XXXXXX" in result["message"]
+    assert "session" not in sample_db
 
 
 def test_get_flight_status_success(sample_db):
