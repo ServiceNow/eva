@@ -809,14 +809,17 @@ class MetricsRunner:
         if not all_metrics:
             return {}
 
-        metric_names = [m.name for m in self.metrics]
+        run_metric_names = [m.name for m in self.metrics]
+        # Aggregate per_metric for ALL metrics present across records (not just those just run),
+        # so that a partial re-run (e.g. --metrics response_speed) preserves other metrics.
+        all_metric_names = sorted({name for rm in all_metrics.values() for name in rm.metrics})
         metric_aggregates = self._build_per_metric_aggregates(
-            all_metrics, metric_names, pass_at_k_results, self.num_draws
+            all_metrics, all_metric_names, pass_at_k_results, self.num_draws
         )
 
-        # Compute metric failures for MetricsRunResult
+        # Compute metric failures for MetricsRunResult (only for metrics just run)
         metric_failures: dict[str, list[str]] = {}
-        for name in metric_names:
+        for name in run_metric_names:
             for record_id, record_metrics in all_metrics.items():
                 if name in record_metrics.metrics:
                     score = record_metrics.metrics[name]
@@ -826,14 +829,27 @@ class MetricsRunner:
         # Compute EVA composite run-level aggregates
         overall_scores = compute_run_level_aggregates(all_metrics, self.num_draws)
 
-        # Build metric_errors for summary JSON (record IDs only; full errors are in per-record metrics.json)
-        metric_errors_summary: dict[str, dict[str, Any]] = {}
+        # Load existing summary to preserve fields for metrics not being re-run
+        summary_path = self.run_dir / "metrics_summary.json"
+        existing_summary: dict[str, Any] = {}
+        if summary_path.exists():
+            try:
+                existing_summary = json.loads(summary_path.read_text())
+            except Exception as e:
+                logger.warning(f"Failed to read existing metrics_summary.json: {e}")
+
+        # Merge metric_errors: preserve existing errors for metrics not being re-run
+        merged_metric_errors: dict[str, dict[str, Any]] = dict(existing_summary.get("metric_errors") or {})
         for metric_name, failed_record_ids in metric_failures.items():
-            metric_errors_summary[metric_name] = {
+            merged_metric_errors[metric_name] = {
                 "failed_count": len(failed_record_ids),
                 "total_count": len(all_metrics),
                 "failed_records": failed_record_ids,
             }
+        # Remove error entries for metrics that are now in run_metric_names but had no failures
+        for name in run_metric_names:
+            if name not in metric_failures:
+                merged_metric_errors.pop(name, None)
 
         data_quality = self._build_data_quality(all_metrics, metric_aggregates)
 
@@ -844,8 +860,8 @@ class MetricsRunner:
             "per_metric": metric_aggregates,
         }
 
-        if metric_errors_summary:
-            summary["metric_errors"] = metric_errors_summary
+        if merged_metric_errors:
+            summary["metric_errors"] = merged_metric_errors
 
         # Add pass@k configuration if applicable
         if pass_at_k_results:
@@ -856,15 +872,16 @@ class MetricsRunner:
                 },
                 "exclude_metrics": sorted(m.name for m in self.metrics if m.exclude_from_pass_at_k),
             }
+        elif existing_summary.get("pass_at_k_config"):
+            summary["pass_at_k_config"] = existing_summary["pass_at_k_config"]
 
         try:
             run_config = json.loads((self.run_dir / "config.json").read_text())
-            provenance = capture_metrics_provenance(metric_names, run_config=run_config)
+            provenance = capture_metrics_provenance(run_metric_names, run_config=run_config)
             summary["provenance"] = provenance.model_dump(mode="json")
         except Exception as e:
             logger.warning(f"Failed to capture metrics provenance: {e}")
 
-        summary_path = self.run_dir / "metrics_summary.json"
         summary_path.write_text(json.dumps(summary, indent=2))
 
         logger.info(f"Metrics summary saved to {summary_path}")
