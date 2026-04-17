@@ -60,7 +60,9 @@ class AuthenticationSuccessMetric(CodeMetric):
                     "expected_session": expected_session,
                     "actual_session": actual_session,
                     "mismatches": mismatches,
-                    "reason": "Authentication successful" if success else f"Session mismatch on keys: {list(mismatches)}",
+                    "reason": "Authentication successful"
+                    if success
+                    else f"Session mismatch on keys: {list(mismatches)}",
                 },
             )
 
