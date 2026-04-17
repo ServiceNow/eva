@@ -163,7 +163,7 @@ class TestGetDictHash:
         assert get_dict_hash(d1) == get_dict_hash(d2)
 
     def test_session_key_excluded_from_hash(self):
-        """session key should not affect the hash."""
+        """Session key should not affect the hash."""
         db_without_session = {"reservations": {"ABC": {"status": "confirmed"}}}
         db_with_session = {**db_without_session, "session": {"confirmation_number": "ABC", "last_name": "doe"}}
         assert get_dict_hash(db_without_session) == get_dict_hash(db_with_session)
