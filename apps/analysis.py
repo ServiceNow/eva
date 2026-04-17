@@ -1298,7 +1298,7 @@ def render_run_overview(run_dir: Path):
 
     # Add link column to navigate to Record Detail
     def _record_link(row):
-        params = f"?view=Record+Detail&run={run_name}&record={row['record']}"
+        params = f"/record_detail?output_dir={run_dir.parent}&run={run_name}&record={row['record']}"
         if "trial" in row and pd.notna(row.get("trial")):
             params += f"&trial={row['trial']}"
         return params
