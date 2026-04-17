@@ -680,7 +680,8 @@ class RunConfig(BaseSettings):
                     )
                 logger.warning(
                     f"Deployment {name!r} has redacted secrets but is not in the current "
-                    f"EVA_MODEL_LIST — skipping (not used in this run)."
+                    f"EVA_MODEL_LIST (available: {list(live_by_name)}) — skipping. "
+                    f"Any metric or agent call routed to this deployment will fail."
                 )
                 continue
             live_params = live_by_name[name].get("litellm_params", {})
