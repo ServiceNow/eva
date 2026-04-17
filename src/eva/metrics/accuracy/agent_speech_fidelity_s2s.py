@@ -131,12 +131,17 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
             avg_rating = sum(valid_ratings) / len(valid_ratings) if valid_ratings else 0.0
             num_skipped_no_entities = sum(1 for v in per_turn_has_entities.values() if not v)
 
+            # No valid scores to aggregate — not an error, just nothing to score
+            skipped = not valid_ratings
+
             details: dict[str, Any] = {
                 "variant": "s2s",
                 "aggregation": self.aggregation,
                 "num_turns": num_turns,
                 "num_evaluated": len(valid_ratings),
                 "num_skipped_no_entities": num_skipped_no_entities,
+                "skipped": skipped,
+                "skipped_reason": "No valid ratings to aggregate" if skipped else None,
                 "per_turn_ratings": per_turn_ratings,
                 "per_turn_has_entities": per_turn_has_entities,
                 "per_turn_explanations": per_turn_explanations,
@@ -147,9 +152,8 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
             return MetricScore(
                 name=self.name,
                 score=round(avg_rating, 3),
-                normalized_score=round(aggregated_score, 3) if aggregated_score is not None else 0,
+                normalized_score=round(aggregated_score, 3) if aggregated_score is not None else None,
                 details=details,
-                error="Aggregation failed" if aggregated_score is None else None,
             )
 
         except Exception as e:

@@ -311,7 +311,7 @@ class TestS2SCompute:
 
     @pytest.mark.asyncio
     async def test_all_turns_no_entities(self, s2s_metric):
-        """If all turns have no entities, score should be 0 with no evaluated turns."""
+        """If all turns have no entities, it is not an error — normalized score is None."""
         response = make_judge_response(
             [
                 {"turn_id": 1, "rating": 1, "has_entities": False, "explanation": "No entities"},
@@ -326,7 +326,9 @@ class TestS2SCompute:
 
         assert result.details["num_evaluated"] == 0
         assert result.details["num_skipped_no_entities"] == 2
-        assert result.score == 0.0
+        assert result.normalized_score is None
+        assert result.error is None
+        assert result.details.get("skipped") is True
 
     @pytest.mark.asyncio
     async def test_has_entities_defaults_to_true(self, s2s_metric):
