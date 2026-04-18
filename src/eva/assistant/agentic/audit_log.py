@@ -2,6 +2,7 @@
 
 import json
 import time
+from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,19 @@ logger = get_logger(__name__)
 def current_timestamp_ms() -> str:
     """Return current POSIX timestamp in milliseconds as string."""
     return str(int(round(time.time() * 1000)))
+
+
+def convert_to_epoch_ms(timestamp: str) -> str:
+    """Convert a timestamp to epoch milliseconds string.
+
+    If the timestamp is already in epoch milliseconds format (all digits),
+    return it as-is. Otherwise, parse as ISO 8601 and convert.
+    """
+    if timestamp.isdigit():
+        return timestamp
+
+    dt = datetime.fromisoformat(timestamp)
+    return str(int(dt.timestamp() * 1000))
 
 
 class MessageRole(StrEnum):

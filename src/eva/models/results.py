@@ -86,6 +86,9 @@ class MetricScore(BaseModel):
     normalized_score: float | None = Field(None, description="Normalized score (0-1 scale)")
     details: dict[str, Any] = Field(default_factory=dict, description="Additional metric details")
     error: str | None = Field(None, description="Error message if metric computation failed")
+    sub_metrics: dict[str, "MetricScore"] | None = Field(
+        None, description="Optional sub-metric breakdowns, aggregated generically by the runner"
+    )
 
 
 class PassAtKResult(BaseModel):

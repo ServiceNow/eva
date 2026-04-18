@@ -13,7 +13,7 @@ from eva.metrics.aggregation import compute_record_aggregates, compute_run_level
 from eva.metrics.base import BaseMetric, MetricContext
 from eva.metrics.processor import MetricsContextProcessor
 from eva.metrics.registry import MetricRegistry, get_global_registry
-from eva.models.config import is_audio_native_pipeline
+from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
 from eva.utils.hash_utils import get_dict_hash
@@ -130,7 +130,7 @@ class MetricsRunner:
 
         # Determine pipeline type from config (fallback to False for legacy runs)
         model_data = config_data.get("model", {})
-        self._is_audio_native = is_audio_native_pipeline(model_data) if model_data else False
+        self._pipeline_type = get_pipeline_type(model_data) if model_data else PipelineType.CASCADE
 
         agent_config_path = config_data.get("agent_config_path")
 
@@ -429,9 +429,7 @@ class MetricsRunner:
         result = ConversationResult(**result_data)
 
         # Use postprocessor to process logs and create enriched context
-        metrics_context = self.metrics_processor.process_record(
-            result, record_dir, is_audio_native=self._is_audio_native
-        )
+        metrics_context = self.metrics_processor.process_record(result, record_dir, pipeline_type=self._pipeline_type)
 
         # Get agent instructions and tools from config
         agent_instructions = self._agent_config["instructions"]
@@ -510,6 +508,26 @@ class MetricsRunner:
         return metric_context
 
     @staticmethod
+    def _aggregate_scores(
+        scores: list[float],
+        total_records: int,
+        error_count: int = 0,
+        missing_count: int = 0,
+    ) -> dict[str, Any]:
+        """Compute standard aggregate stats from a list of scores."""
+        none_count = error_count + missing_count
+        return {
+            "mean": round(sum(scores) / len(scores), 4) if scores else None,
+            "min": round(min(scores), 4) if scores else None,
+            "max": round(max(scores), 4) if scores else None,
+            "count": len(scores),
+            "none_count": none_count,
+            "error_count": error_count,
+            "missing_count": missing_count,
+            "total_records": total_records,
+        }
+
+    @staticmethod
     def _build_per_metric_aggregates(
         all_metrics: dict[str, RecordMetrics],
         metric_names: list[str],
@@ -566,16 +584,7 @@ class MetricsRunner:
 
             none_count = error_count + missing_count
             if scores or none_count > 0:
-                entry: dict[str, Any] = {
-                    "mean": round(sum(scores) / len(scores), 4) if scores else None,
-                    "min": round(min(scores), 4) if scores else None,
-                    "max": round(max(scores), 4) if scores else None,
-                    "count": len(scores),
-                    "none_count": none_count,
-                    "error_count": error_count,
-                    "missing_count": missing_count,
-                    "total_records": total_records,
-                }
+                entry = MetricsRunner._aggregate_scores(scores, total_records, error_count, missing_count)
 
                 if total_turns_across_records > 0:
                     none_turns = total_turns_across_records - total_evaluated_across_records
@@ -619,6 +628,40 @@ class MetricsRunner:
                         "k": num_draws,
                         "count": count,
                     }
+
+        # Generic sub-metric aggregation
+        for name in metric_aggregates:
+            all_sub_keys: set[str] = set()
+            for record_metrics in all_metrics.values():
+                ms = record_metrics.metrics.get(name)
+                if ms and ms.sub_metrics:
+                    all_sub_keys.update(ms.sub_metrics.keys())
+
+            if not all_sub_keys:
+                continue
+
+            sub_aggs: dict[str, dict[str, Any]] = {}
+            for sub_key in sorted(all_sub_keys):
+                sub_scores: list[float] = []
+                sub_missing = 0
+                for record_metrics in all_metrics.values():
+                    ms = record_metrics.metrics.get(name)
+                    if ms is None or ms.error is not None:
+                        sub_missing += 1
+                        continue
+                    sub_ms = (ms.sub_metrics or {}).get(sub_key)
+                    if sub_ms is not None and sub_ms.score is not None:
+                        sub_scores.append(
+                            sub_ms.normalized_score if sub_ms.normalized_score is not None else sub_ms.score
+                        )
+                    else:
+                        sub_missing += 1
+
+                if sub_scores or sub_missing > 0:
+                    sub_aggs[sub_key] = MetricsRunner._aggregate_scores(sub_scores, total_records, 0, sub_missing)
+
+            if sub_aggs:
+                metric_aggregates[name]["sub_metrics"] = sub_aggs
 
         return metric_aggregates
 
@@ -766,14 +809,17 @@ class MetricsRunner:
         if not all_metrics:
             return {}
 
-        metric_names = [m.name for m in self.metrics]
+        run_metric_names = [m.name for m in self.metrics]
+        # Aggregate per_metric for ALL metrics present across records (not just those just run),
+        # so that a partial re-run (e.g. --metrics response_speed) preserves other metrics.
+        all_metric_names = sorted({name for rm in all_metrics.values() for name in rm.metrics})
         metric_aggregates = self._build_per_metric_aggregates(
-            all_metrics, metric_names, pass_at_k_results, self.num_draws
+            all_metrics, all_metric_names, pass_at_k_results, self.num_draws
         )
 
-        # Compute metric failures for MetricsRunResult
+        # Compute metric failures for MetricsRunResult (only for metrics just run)
         metric_failures: dict[str, list[str]] = {}
-        for name in metric_names:
+        for name in run_metric_names:
             for record_id, record_metrics in all_metrics.items():
                 if name in record_metrics.metrics:
                     score = record_metrics.metrics[name]
@@ -783,14 +829,27 @@ class MetricsRunner:
         # Compute EVA composite run-level aggregates
         overall_scores = compute_run_level_aggregates(all_metrics, self.num_draws)
 
-        # Build metric_errors for summary JSON (record IDs only; full errors are in per-record metrics.json)
-        metric_errors_summary: dict[str, dict[str, Any]] = {}
+        # Load existing summary to preserve fields for metrics not being re-run
+        summary_path = self.run_dir / "metrics_summary.json"
+        existing_summary: dict[str, Any] = {}
+        if summary_path.exists():
+            try:
+                existing_summary = json.loads(summary_path.read_text())
+            except Exception as e:
+                logger.warning(f"Failed to read existing metrics_summary.json: {e}")
+
+        # Merge metric_errors: preserve existing errors for metrics not being re-run
+        merged_metric_errors: dict[str, dict[str, Any]] = dict(existing_summary.get("metric_errors") or {})
         for metric_name, failed_record_ids in metric_failures.items():
-            metric_errors_summary[metric_name] = {
+            merged_metric_errors[metric_name] = {
                 "failed_count": len(failed_record_ids),
                 "total_count": len(all_metrics),
                 "failed_records": failed_record_ids,
             }
+        # Remove error entries for metrics that are now in run_metric_names but had no failures
+        for name in run_metric_names:
+            if name not in metric_failures:
+                merged_metric_errors.pop(name, None)
 
         data_quality = self._build_data_quality(all_metrics, metric_aggregates)
 
@@ -801,8 +860,8 @@ class MetricsRunner:
             "per_metric": metric_aggregates,
         }
 
-        if metric_errors_summary:
-            summary["metric_errors"] = metric_errors_summary
+        if merged_metric_errors:
+            summary["metric_errors"] = merged_metric_errors
 
         # Add pass@k configuration if applicable
         if pass_at_k_results:
@@ -813,15 +872,16 @@ class MetricsRunner:
                 },
                 "exclude_metrics": sorted(m.name for m in self.metrics if m.exclude_from_pass_at_k),
             }
+        elif existing_summary.get("pass_at_k_config"):
+            summary["pass_at_k_config"] = existing_summary["pass_at_k_config"]
 
         try:
             run_config = json.loads((self.run_dir / "config.json").read_text())
-            provenance = capture_metrics_provenance(metric_names, run_config=run_config)
+            provenance = capture_metrics_provenance(run_metric_names, run_config=run_config)
             summary["provenance"] = provenance.model_dump(mode="json")
         except Exception as e:
             logger.warning(f"Failed to capture metrics provenance: {e}")
 
-        summary_path = self.run_dir / "metrics_summary.json"
         summary_path.write_text(json.dumps(summary, indent=2))
 
         logger.info(f"Metrics summary saved to {summary_path}")

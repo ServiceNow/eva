@@ -21,16 +21,15 @@ license = "MIT"
 dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
-    "pipecat-ai==0.0.104",
+    "pipecat-ai>=0.0.108",
     "elevenlabs>=1.0.0",
     "openai>=1.0.0",
     "anthropic>=0.83.0",
     "litellm>=1.30.0",
-    "deepgram-sdk>=3.5.0,<4.0.0",
+    "deepgram-sdk>=6.1.1,<7",
     "onnxruntime>=1.16.0",
     "aioboto3>=12.0.0",
-    "google-generativeai>=0.3.0",
-    "google-genai>=0.3.0",
+    "google-genai>=1.69.0",
     "google-cloud-speech>=2.0.0",
     "google-cloud-texttospeech>=2.0.0",
     "azure-cognitiveservices-speech>=1.31.0",
@@ -54,7 +53,6 @@ dependencies = [
     "jaconv>=0.3.0",
     "regex>=2023.0.0",
     "more-itertools>=10.0.0",
-    "nvidia-riva-client>=2.25.0,<2.25.1"
 ]
 
 [project.optional-dependencies]
@@ -69,9 +67,13 @@ dev = [
 apps = [
     "pandas>=2.0",
     "plotly>=5.0",
-    "streamlit>=1.51.0",
+    "streamlit>=1.56.0",
     "streamlit-diff-viewer>=0.0.2",
+    "librosa>=0.11",
+    "soundfile>=0.13",
+    "audioread>=3.1",
 ]
+
 
 [project.scripts]
 eva = "eva.cli:main"
@@ -102,7 +104,7 @@ ignore = ["D203", "D206", "D213", "D400", "D401", "D413", "D415", "E1", "E501"]
 simulation_version = "0.1.0"
 # Bump when metrics pipeline changes (metrics code, judge prompts, pricing,
 # postprocessor). Old metric results become stale — cheap to recompute.
-metrics_version = "0.1.1"
+metrics_version = "0.1.2"
 
 [tool.mypy]
 python_version = "3.11"

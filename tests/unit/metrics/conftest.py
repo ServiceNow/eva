@@ -1,14 +1,19 @@
 """Shared fixtures for metric tests."""
 
 import logging
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 from eva.metrics.base import MetricContext
+from eva.metrics.processor import MetricsContextProcessor
 from eva.models.results import MetricScore, RecordMetrics
 
 
 def make_metric_context(**overrides) -> MetricContext:
     """Create a MetricContext with sensible defaults, overridable via kwargs.
+
+    If audio_timestamps_*_turns are provided but latency_assistant_turns is not,
+    it is automatically derived from the timestamps.
 
     Usage::
 
@@ -30,6 +35,20 @@ def make_metric_context(**overrides) -> MetricContext:
         "current_date_time": "2026-01-01T00:00:00Z",
     }
     defaults.update(overrides)
+
+    # Auto-derive latency_assistant_turns from audio timestamps if not provided
+    if "latency_assistant_turns" not in overrides:
+        user_ts = defaults.get("audio_timestamps_user_turns")
+        asst_ts = defaults.get("audio_timestamps_assistant_turns")
+        if user_ts and asst_ts:
+            tmp = SimpleNamespace(
+                audio_timestamps_user_turns=user_ts,
+                audio_timestamps_assistant_turns=asst_ts,
+                latency_assistant_turns={},
+            )
+            MetricsContextProcessor._compute_per_turn_latency(tmp)
+            defaults["latency_assistant_turns"] = tmp.latency_assistant_turns
+
     return MetricContext(**defaults)
 
 

@@ -7,9 +7,9 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from eva.user_simulator.perturbation import AudioPerturbator
 
 from eva.models.config import PerturbationConfig
+from eva.user_simulator.perturbation import AudioPerturbator
 
 
 def _make_pcm(duration_s: float = 0.5, sample_rate: int = 16000) -> bytes:
