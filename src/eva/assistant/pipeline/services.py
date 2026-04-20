@@ -7,7 +7,6 @@ import datetime
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from deepgram import LiveOptions
 from openai import AsyncAzureOpenAI, BadRequestError
 from pipecat.frames.frames import (
     ErrorFrame,
@@ -52,11 +51,14 @@ from eva.models.agents import AgentConfig
 
 # Conditional Gemini imports - may fail if google-genai package version is incompatible
 try:
+    from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService, GeminiVADParams
     from pipecat.services.google.tts import GeminiTTSService
 
     GEMINI_AVAILABLE = True
 except ImportError:
     # Gemini services unavailable - will fail at runtime if requested
+    GeminiLiveLLMService = None
+    GeminiVADParams = None
     GeminiTTSService = None
     GEMINI_AVAILABLE = False
 from pipecat.adapters.schemas.function_schema import FunctionSchema
@@ -147,11 +149,9 @@ def create_stt_service(
         logger.info(f"Using Deepgram STT: {params['model']}")
         return DeepgramSTTService(
             api_key=api_key,
-            live_options=LiveOptions(
+            settings=DeepgramSTTService.Settings(
                 language=language_code,
                 model=params["model"],
-                encoding="linear16",
-                sample_rate=SAMPLE_RATE,
                 interim_results=True,
             ),
             sample_rate=SAMPLE_RATE,
@@ -474,8 +474,29 @@ def create_realtime_llm_service(
             one_shot_selected_tools=pipecat_tools,
         )
 
+    elif model_lower == "gemini-live":
+        if not GEMINI_AVAILABLE:
+            raise ValueError(
+                "Gemini Live requested but Gemini services are unavailable. "
+                "Check google-genai package installation and version compatibility."
+            )
+
+        gemini_model = params.get("model")
+        logger.info(f"Using Gemini Live LLM: {gemini_model}")
+
+        return GeminiLiveLLMService(
+            api_key=params["api_key"],
+            tools=pipecat_tools,
+            settings=GeminiLiveLLMService.Settings(
+                model=gemini_model,
+                system_instruction=system_prompt,
+                voice=params.get("voice", "Puck"),  # Aoede, Charon, Fenrir, Kore, Puck
+                vad=GeminiVADParams(disabled=params.get("vad_disabled", True)),
+            ),
+        )
+
     else:
-        raise ValueError(f"Unknown realtime model: {model}. Available: gpt-realtime, ultravox")
+        raise ValueError(f"Unknown realtime model: {model}. Available: gpt-realtime, ultravox, gemini-live")
 
 
 def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tools) -> SessionProperties:

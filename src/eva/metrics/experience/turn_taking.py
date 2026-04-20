@@ -141,24 +141,21 @@ class TurnTakingMetric(TextJudgeMetric):
           200 ms <= latency < 4000 ms   -> "On-Time"
           latency >= 4000 ms            -> "Late"
         """
-        user_ts = context.audio_timestamps_user_turns
-        asst_ts = context.audio_timestamps_assistant_turns
         latencies: dict[int, float | None] = {}
         labels: dict[int, str | None] = {}
         for turn_id in turn_keys:
-            u = user_ts.get(turn_id)
-            a = asst_ts.get(turn_id)
-            if not u or not a:
+            if turn_id not in context.latency_assistant_turns:
                 if turn_id != len(turn_keys):
+                    u = context.audio_timestamps_user_turns.get(turn_id)
+                    a = context.audio_timestamps_assistant_turns.get(turn_id)
                     self.logger.warning(
                         f"[{context.record_id}] Missing audio timestamps at turn {turn_id}/{len(turn_keys)} (user={u}, assistant={a}); skipping turn taking for this turn."
                     )
                 latencies[turn_id] = None
                 labels[turn_id] = None
                 continue
-            # Use last user segment end → first assistant segment start
-            latency_s = a[0][0] - u[-1][1]
-            latencies[turn_id] = round(latency_s, 6)
+            latency_s = context.latency_assistant_turns[turn_id]
+            latencies[turn_id] = latency_s
             latency_ms = latency_s * 1000
             if latency_ms < 200:
                 labels[turn_id] = "Early / Interrupting"

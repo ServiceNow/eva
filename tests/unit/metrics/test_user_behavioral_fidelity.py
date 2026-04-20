@@ -25,7 +25,7 @@ class TestUserBehavioralFidelity:
                 {"name": "search_flights", "tool_type": "read"},
                 {"name": "book_flight", "tool_type": "write"},
             ],
-            is_audio_native=False,
+            pipeline_type="cascade",
             intended_user_turns={0: "Hi, I need to book a flight"},
         )
         variables = self.metric.get_prompt_variables(ctx, "User: hi\nBot: hello")
@@ -44,7 +44,7 @@ class TestUserBehavioralFidelity:
             user_goal="Book a flight",
             user_persona="Friendly traveler",
             agent_tools=[],
-            is_audio_native=True,
+            pipeline_type="s2s",
             intended_user_turns={0: "Hi"},
         )
         variables = self.metric.get_prompt_variables(ctx, "transcript text")
