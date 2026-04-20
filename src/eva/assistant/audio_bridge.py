@@ -223,29 +223,32 @@ class FrameworkLogWriter:
 
 
 class MetricsLogWriter:
-    """Writes pipecat_metrics.jsonl equivalent for non-pipecat frameworks."""
+    """Writes pipecat_metrics.jsonl for non-Pipecat frameworks.
+
+    Pipecat writes its own metrics natively via MetricsFileObserver.  This
+    writer covers OpenAI Realtime, Gemini Live, and any other framework that
+    manages its own session loop.
+    """
 
     def __init__(self, output_dir: Path):
         self.log_file = output_dir / "pipecat_metrics.jsonl"
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    def write_processing_metric(self, processor: str, value_seconds: float, model: str = "") -> None:
-        """Write a ProcessingMetricsData entry (e.g., for STT latency)."""
-        entry = {
-            "timestamp": int(time.time() * 1000),
-            "type": "ProcessingMetricsData",
-            "processor": processor,
-            "model": model,
-            "value": value_seconds,
-        }
-        self._append(entry)
+    def write_latency(self, stage: str, value_seconds: float, model: str = "") -> None:
+        """Write a LatencyMetric entry.
 
-    def write_ttfb_metric(self, processor: str, value_seconds: float, model: str = "") -> None:
-        """Write a TTFBMetricsData entry (e.g., for TTS time-to-first-byte)."""
+        Args:
+            stage: Semantic label for the stage being measured. Use ``"stt"``
+                for STT processing time, ``"tts"`` for TTS time-to-first-byte,
+                ``"model_response"`` for s2s/realtime time from user speech end
+                to first model audio chunk.
+            value_seconds: Latency in seconds.
+            model: Model identifier (optional).
+        """
         entry = {
             "timestamp": int(time.time() * 1000),
-            "type": "TTFBMetricsData",
-            "processor": processor,
+            "type": "LatencyMetric",
+            "stage": stage,
             "model": model,
             "value": value_seconds,
         }

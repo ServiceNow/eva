@@ -560,6 +560,15 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             self._assistant_state.responding = True
             self._bot_speaking = True
 
+            # Record model response latency: user speech end → first audio chunk.
+            # speech_stopped_wall_ms may be absent on the initial greeting turn.
+            if self._user_turn and self._user_turn.speech_stopped_wall_ms and self._metrics_log:
+                latency_ms = int(self._assistant_state.first_audio_wall_ms) - int(
+                    self._user_turn.speech_stopped_wall_ms
+                )
+                if 0 < latency_ms < 30_000:
+                    self._metrics_log.write_latency("model_response", latency_ms / 1000, self._model)
+
         user_before = len(self.user_audio_buffer)
         synced = 0
         if not self._user_speaking:

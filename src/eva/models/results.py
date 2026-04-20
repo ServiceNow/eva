@@ -47,8 +47,12 @@ class ConversationResult(BaseModel):
 
     # Latency statistics
     llm_latency: LatencyStats | None = Field(None, description="LLM latency statistics")
-    stt_latency: LatencyStats | None = Field(None, description="STT latency statistics")
-    tts_latency: LatencyStats | None = Field(None, description="TTS latency statistics")
+    stt_latency: LatencyStats | None = Field(None, description="STT latency statistics (cascade pipelines)")
+    tts_latency: LatencyStats | None = Field(None, description="TTS latency statistics (cascade pipelines)")
+    model_response_latency: LatencyStats | None = Field(
+        None,
+        description="Time from user speech end to first model audio (s2s/realtime frameworks)",
+    )
 
     # Timing
     started_at: datetime = Field(..., description="When the conversation started")

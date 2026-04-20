@@ -402,6 +402,21 @@ class BotToBotAudioInterface(AudioInterface):
         if self.event_logger:
             self.event_logger.log_audio_end("elevenlabs_user")
         logger.info("🎤 User audio END")
+
+        # Send user_speech_stop event so assistant servers can compute model response latency.
+        if self.websocket and self.websocket.state == WebSocketState.OPEN:
+            try:
+                await self.websocket.send(
+                    json.dumps(
+                        {
+                            "event": "user_speech_stop",
+                            "conversation_id": self.conversation_id,
+                            "timestamp_ms": str(int(round(current_time * 1000))),
+                        }
+                    )
+                )
+            except Exception as e:
+                logger.warning(f"Error sending user_speech_stop event: {e}")
         # Don't send catch-up silence for user audio end - let the continuous
         # silence sending in _send_to_assistant handle it naturally. This avoids
         # blocking and lets the VAD detect end-of-speech from actual silence.

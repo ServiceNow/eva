@@ -352,7 +352,8 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
 
         _in_model_turn = False
         _user_speaking = False
-        _user_speech_start_ts: str | None = None  # Timestamp from audio_interface
+        _user_speech_start_ts: str | None = None  # Timestamp from audio_interface (speech start)
+        _user_speech_stop_ts: str | None = None  # Timestamp from audio_interface (speech end)
         _assistant_turn_start_ts: str | None = None  # Wall-clock ms when first audio chunk arrives
 
         # Queue for outbound mulaw chunks; the pacer task drains it at real-time rate
@@ -400,6 +401,11 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                 nonlocal _user_speech_start_ts
                                 _user_speech_start_ts = msg.get("timestamp_ms")
                                 logger.info(f"User speech start timestamp received: {_user_speech_start_ts}")
+                                continue
+                            elif event == "user_speech_stop":
+                                nonlocal _user_speech_stop_ts
+                                _user_speech_stop_ts = msg.get("timestamp_ms")
+                                logger.info(f"User speech stop timestamp received: {_user_speech_stop_ts}")
                                 continue
                             elif event == "media":
                                 # Extract raw mulaw bytes
@@ -467,7 +473,12 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                 async def _process_gemini_events() -> None:
                     """Consume events from the Gemini Live session."""
                     nonlocal _assistant_turn_text, _user_turn_text
-                    nonlocal _in_model_turn, _user_speaking, _user_speech_start_ts, _assistant_turn_start_ts
+                    nonlocal \
+                        _in_model_turn, \
+                        _user_speaking, \
+                        _user_speech_start_ts, \
+                        _user_speech_stop_ts, \
+                        _assistant_turn_start_ts
                     nonlocal twilio_connected
 
                     logger.info("Gemini event processor started")
@@ -500,6 +511,16 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                         _assistant_turn_text = []
                                         _assistant_turn_start_ts = str(int(round(time.time() * 1000)))
                                         self._fw_log.turn_start()
+
+                                        # Record model response latency: user speech end → first audio.
+                                        # _user_speech_stop_ts is absent on the initial greeting turn.
+                                        if _user_speech_stop_ts and self._metrics_log:
+                                            latency_ms = int(_assistant_turn_start_ts) - int(_user_speech_stop_ts)
+                                            if 0 < latency_ms < 30_000:
+                                                self._metrics_log.write_latency(
+                                                    "model_response", latency_ms / 1000, self._model
+                                                )
+                                        _user_speech_stop_ts = None  # Reset for next turn
 
                                     for part in sc.model_turn.parts:
                                         if part.inline_data and part.inline_data.data:
