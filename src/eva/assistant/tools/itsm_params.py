@@ -101,57 +101,149 @@ Tool sequences per flow (updated):
 """
 
 from enum import StrEnum
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
+
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 # ---------------------------------------------------------------------------
 # Annotated ID types
 # ---------------------------------------------------------------------------
 
-EmployeeIdStr = Annotated[str, Field(pattern=r"^EMP\d{6}$", description="EMP followed by 6 digits", examples=["EMP048271"])]
-PhoneLastFourStr = Annotated[str, Field(pattern=r"^\d{4}$", description="Last 4 digits of phone number", examples=["7294"])]
+EmployeeIdStr = Annotated[
+    str, Field(pattern=r"^EMP\d{6}$", description="EMP followed by 6 digits", examples=["EMP048271"])
+]
+PhoneLastFourStr = Annotated[
+    str, Field(pattern=r"^\d{4}$", description="Last 4 digits of phone number", examples=["7294"])
+]
 OtpStr = Annotated[str, Field(pattern=r"^\d{6}$", description="6-digit OTP code", examples=["483920"])]
-ManagerAuthCodeStr = Annotated[str, Field(pattern=r"^[A-Z0-9]{6}$", description="6-char alphanumeric manager auth code", examples=["K4M2P9"])]
-TicketNumberStr = Annotated[str, Field(pattern=r"^INC\d{7}$", description="INC followed by 7 digits", examples=["INC0048271"])]
-AssetTagStr = Annotated[str, Field(pattern=r"^AST-[A-Z]{3}-\d{6}$", description="AST-XXX-NNNNNN", examples=["AST-LPT-284719"])]
-LicenseAssignmentIdStr = Annotated[str, Field(pattern=r"^LASGN-\d{6}$", description="LASGN-NNNNNN", examples=["LASGN-048271"])]
-BuildingCodeStr = Annotated[str, Field(min_length=1, max_length=60, description="Building code (e.g. 'BLD3') OR building name/alias (e.g. 'Headquarters', 'HQ', 'Downtown'). Tools resolve names to canonical code via facilities.buildings aliases; unknown names return `name_not_found`.", examples=["BLD3", "Downtown"])]
+ManagerAuthCodeStr = Annotated[
+    str, Field(pattern=r"^[A-Z0-9]{6}$", description="6-char alphanumeric manager auth code", examples=["K4M2P9"])
+]
+TicketNumberStr = Annotated[
+    str, Field(pattern=r"^INC\d{7}$", description="INC followed by 7 digits", examples=["INC0048271"])
+]
+AssetTagStr = Annotated[
+    str, Field(pattern=r"^AST-[A-Z]{3}-\d{6}$", description="AST-XXX-NNNNNN", examples=["AST-LPT-284719"])
+]
+LicenseAssignmentIdStr = Annotated[
+    str, Field(pattern=r"^LASGN-\d{6}$", description="LASGN-NNNNNN", examples=["LASGN-048271"])
+]
+BuildingCodeStr = Annotated[
+    str,
+    Field(
+        min_length=1,
+        max_length=60,
+        description="Building code (e.g. 'BLD3') OR building name/alias (e.g. 'Headquarters', 'HQ', 'Downtown'). Tools resolve names to canonical code via facilities.buildings aliases; unknown names return `name_not_found`.",
+        examples=["BLD3", "Downtown"],
+    ),
+]
 FloorCodeStr = Annotated[str, Field(pattern=r"^FL\d{1,2}$", description="FL followed by 1-2 digits", examples=["FL2"])]
-RoomCodeStr = Annotated[str, Field(pattern=r"^BLD\d{1,2}-FL\d{1,2}-RM\d{3}$", description="BLD-FL-RM code (returned by check_room_availability; not caller-provided)", examples=["BLD3-FL2-RM204"])]
-DeskCodeStr = Annotated[str, Field(pattern=r"^BLD\d{1,2}-FL\d{1,2}-D\d{3}$", description="BLD-FL-D code (returned by check_desk_availability)", examples=["BLD3-FL2-D107"])]
-ParkingZoneStr = Annotated[str, Field(min_length=1, max_length=60, description="Parking zone code (e.g. 'PZA') OR zone name/alias (e.g. 'Executive Garage'). Tools resolve names to canonical code via facilities.zones aliases.", examples=["PZA", "Executive Garage"])]
-ParkingSpaceIdStr = Annotated[str, Field(pattern=r"^PZ[A-Z]-\d{3}$", description="PZX-NNN (returned by check_parking_availability)", examples=["PZA-042"])]
-DepartmentCodeStr = Annotated[str, Field(pattern=r"^(ENG|MKTG|SALES|FIN|HR|OPS|LEGAL|INFRA|SECUR|EXEC|DSGN|DATA)$", description="Department code", examples=["ENG"])]
-RoleCodeStr = Annotated[str, Field(pattern=r"^(SWE|PM|DESGN|ANLST|ADMIN|MGENG|MGOPS|MGSLS|MGHR|SECUR|INFRA|DATAN|LEGAL)$", description="Role code", examples=["SWE"])]
+RoomCodeStr = Annotated[
+    str,
+    Field(
+        pattern=r"^BLD\d{1,2}-FL\d{1,2}-RM\d{3}$",
+        description="BLD-FL-RM code (returned by check_room_availability; not caller-provided)",
+        examples=["BLD3-FL2-RM204"],
+    ),
+]
+DeskCodeStr = Annotated[
+    str,
+    Field(
+        pattern=r"^BLD\d{1,2}-FL\d{1,2}-D\d{3}$",
+        description="BLD-FL-D code (returned by check_desk_availability)",
+        examples=["BLD3-FL2-D107"],
+    ),
+]
+ParkingZoneStr = Annotated[
+    str,
+    Field(
+        min_length=1,
+        max_length=60,
+        description="Parking zone code (e.g. 'PZA') OR zone name/alias (e.g. 'Executive Garage'). Tools resolve names to canonical code via facilities.zones aliases.",
+        examples=["PZA", "Executive Garage"],
+    ),
+]
+ParkingSpaceIdStr = Annotated[
+    str,
+    Field(
+        pattern=r"^PZ[A-Z]-\d{3}$", description="PZX-NNN (returned by check_parking_availability)", examples=["PZA-042"]
+    ),
+]
+DepartmentCodeStr = Annotated[
+    str,
+    Field(
+        pattern=r"^(ENG|MKTG|SALES|FIN|HR|OPS|LEGAL|INFRA|SECUR|EXEC|DSGN|DATA)$",
+        description="Department code",
+        examples=["ENG"],
+    ),
+]
+RoleCodeStr = Annotated[
+    str,
+    Field(
+        pattern=r"^(SWE|PM|DESGN|ANLST|ADMIN|MGENG|MGOPS|MGSLS|MGHR|SECUR|INFRA|DATAN|LEGAL)$",
+        description="Role code",
+        examples=["SWE"],
+    ),
+]
 GroupCodeStr = Annotated[str, Field(pattern=r"^GRP-[A-Z]{2,8}$", description="GRP-XXXXXX", examples=["GRP-ENGCORE"])]
-PermissionTemplateIdStr = Annotated[str, Field(pattern=r"^PTPL-[A-Z]{2,5}-\d{2}$", description="PTPL-XXX-NN", examples=["PTPL-SWE-01"])]
-RequestIdStr = Annotated[str, Field(pattern=r"^REQ-[A-Z]{2,5}-\d{6}$", description="REQ-CAT-NNNNNN", examples=["REQ-HW-048271"])]
-CaseIdStr = Annotated[str, Field(pattern=r"^CASE-[A-Z]{2,5}-\d{6}$", description="CASE-CAT-NNNNNN", examples=["CASE-ACCT-048271"])]
+PermissionTemplateIdStr = Annotated[
+    str, Field(pattern=r"^PTPL-[A-Z]{2,5}-\d{2}$", description="PTPL-XXX-NN", examples=["PTPL-SWE-01"])
+]
+RequestIdStr = Annotated[
+    str, Field(pattern=r"^REQ-[A-Z]{2,5}-\d{6}$", description="REQ-CAT-NNNNNN", examples=["REQ-HW-048271"])
+]
+CaseIdStr = Annotated[
+    str, Field(pattern=r"^CASE-[A-Z]{2,5}-\d{6}$", description="CASE-CAT-NNNNNN", examples=["CASE-ACCT-048271"])
+]
 SecurityCaseIdStr = Annotated[str, Field(pattern=r"^SEC-\d{6}$", description="SEC-NNNNNN", examples=["SEC-048271"])]
 DateStr = Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="YYYY-MM-DD", examples=["2026-08-15"])]
 TimeStr = Annotated[str, Field(pattern=r"^\d{2}:\d{2}$", description="HH:MM", examples=["09:00"])]
-DiagnosticRefCodeStr = Annotated[str, Field(pattern=r"^DIAG-[A-Z0-9]{8}$", description="DIAG-XXXXXXXX", examples=["DIAG-4KM29X7B"])]
+DiagnosticRefCodeStr = Annotated[
+    str, Field(pattern=r"^DIAG-[A-Z0-9]{8}$", description="DIAG-XXXXXXXX", examples=["DIAG-4KM29X7B"])
+]
 
 # Application/License names are free-form strings; tools validate against catalog names + name_aliases (exact, case-insensitive).
-CatalogNameStr = Annotated[str, Field(min_length=1, max_length=120, description="Catalog item name (e.g. 'Slack Enterprise'); resolved to catalog_id via names + aliases", examples=["Slack Enterprise"])]
+CatalogNameStr = Annotated[
+    str,
+    Field(
+        min_length=1,
+        max_length=120,
+        description="Catalog item name (e.g. 'Slack Enterprise'); resolved to catalog_id via names + aliases",
+        examples=["Slack Enterprise"],
+    ),
+]
 
-ServiceNameStr = Annotated[str, Field(
-    pattern=r"^(email_exchange|vpn_gateway|erp_oracle|crm_platform|hr_portal|code_repository|ci_cd_pipeline|file_storage|sso_identity|print_service)$",
-    description="Service catalog name", examples=["email_exchange"])]
+ServiceNameStr = Annotated[
+    str,
+    Field(
+        pattern=r"^(email_exchange|vpn_gateway|erp_oracle|crm_platform|hr_portal|code_repository|ci_cd_pipeline|file_storage|sso_identity|print_service)$",
+        description="Service catalog name",
+        examples=["email_exchange"],
+    ),
+]
 
-TargetSystemStr = Annotated[str, Field(
-    pattern=r"^(active_directory|sso_identity|email_exchange|vpn_gateway|erp_oracle)$",
-    description="Target system: active_directory, sso_identity, email_exchange, vpn_gateway, or erp_oracle",
-    examples=["active_directory"])]
+TargetSystemStr = Annotated[
+    str,
+    Field(
+        pattern=r"^(active_directory|sso_identity|email_exchange|vpn_gateway|erp_oracle)$",
+        description="Target system: active_directory, sso_identity, email_exchange, vpn_gateway, or erp_oracle",
+        examples=["active_directory"],
+    ),
+]
 
-AffectedSystemStr = Annotated[str, Field(
-    pattern=r"^(active_directory|sso_identity|email_exchange|vpn_gateway|erp_oracle|crm_platform|hr_portal|code_repository|ci_cd_pipeline|file_storage|print_service|vpn|wifi|ethernet|AST-[A-Z]{3}-\d{6})$",
-    description="Affected system ID: service name, network type (vpn/wifi/ethernet), or asset tag",
-    examples=["email_exchange", "vpn", "AST-LPT-284719"])]
+AffectedSystemStr = Annotated[
+    str,
+    Field(
+        pattern=r"^(active_directory|sso_identity|email_exchange|vpn_gateway|erp_oracle|crm_platform|hr_portal|code_repository|ci_cd_pipeline|file_storage|print_service|vpn|wifi|ethernet|AST-[A-Z]{3}-\d{6})$",
+        description="Affected system ID: service name, network type (vpn/wifi/ethernet), or asset tag",
+        examples=["email_exchange", "vpn", "AST-LPT-284719"],
+    ),
+]
 
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
+
 
 class IncidentCategory(StrEnum):
     login_issue = "login_issue"
@@ -159,24 +251,29 @@ class IncidentCategory(StrEnum):
     hardware_malfunction = "hardware_malfunction"
     network_connectivity = "network_connectivity"
 
+
 class Urgency(StrEnum):
     low = "low"
     medium = "medium"
     high = "high"
+
 
 class SLATier(StrEnum):
     tier_1 = "tier_1"
     tier_2 = "tier_2"
     tier_3 = "tier_3"
 
+
 class DispatchTimeWindow(StrEnum):
     morning = "morning"
     afternoon = "afternoon"
     full_day = "full_day"
 
+
 class HardwareRequestType(StrEnum):
     laptop_replacement = "laptop_replacement"
     monitor_bundle = "monitor_bundle"
+
 
 class LaptopReplacementReason(StrEnum):
     end_of_life = "end_of_life"
@@ -184,28 +281,34 @@ class LaptopReplacementReason(StrEnum):
     physical_damage = "physical_damage"
     lost_or_stolen = "lost_or_stolen"
 
+
 class MonitorSetupReason(StrEnum):
     new_setup = "new_setup"
     replacement = "replacement"
+
 
 class MonitorSize(StrEnum):
     size_24 = "24_inch"
     size_27 = "27_inch"
     size_32 = "32_inch"
 
+
 class LaptopOS(StrEnum):
     macos = "macos"
     windows = "windows"
+
 
 class LaptopSize(StrEnum):
     size_13 = "13_inch"
     size_14 = "14_inch"
     size_16 = "16_inch"
 
+
 class AccessLevel(StrEnum):
     read_only = "read_only"
     standard = "standard"
     admin = "admin"
+
 
 class EquipmentType(StrEnum):
     standing_desk_converter = "standing_desk_converter"
@@ -214,22 +317,27 @@ class EquipmentType(StrEnum):
     monitor_arm = "monitor_arm"
     footrest = "footrest"
 
+
 class GroupMembershipAction(StrEnum):
     add = "add"
     remove = "remove"
+
 
 class AccessRemovalScope(StrEnum):
     full = "full"
     staged = "staged"
 
+
 class AssetRecoveryMethod(StrEnum):
     shipping_label = "shipping_label"
     drop_off = "drop_off"
+
 
 class TroubleshootingCategory(StrEnum):
     login_issue = "login_issue"
     network_connectivity = "network_connectivity"
     hardware_malfunction = "hardware_malfunction"
+
 
 class TransferReason(StrEnum):
     caller_requested = "caller_requested"
@@ -238,14 +346,17 @@ class TransferReason(StrEnum):
     complaint_escalation = "complaint_escalation"
     technical_issue = "technical_issue"
 
+
 class SecurityIncidentType(StrEnum):
     lost = "lost"
     stolen = "stolen"
     suspected_compromise = "suspected_compromise"
 
+
 class WaitlistResourceType(StrEnum):
     desk = "desk"
     parking = "parking"
+
 
 class InteractionResolutionType(StrEnum):
     """How a resolved-without-ticket call concluded. Used by `mark_resolved`.
@@ -261,15 +372,18 @@ class InteractionResolutionType(StrEnum):
     resolved_via_troubleshooting = "resolved_via_troubleshooting"
     transferred = "transferred"
 
+
 class InteractionFlowId(StrEnum):
     login_issue = "login_issue"
     network_connectivity = "network_connectivity"
     hardware_malfunction = "hardware_malfunction"
 
+
 class AccountLockReason(StrEnum):
     failed_attempts = "failed_attempts"
     security_investigation = "security_investigation"
     admin_hold = "admin_hold"
+
 
 class RoomEquipment(StrEnum):
     projector = "projector"
@@ -278,58 +392,74 @@ class RoomEquipment(StrEnum):
     display_screen = "display_screen"
     speakerphone = "speakerphone"
 
+
 # ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------
+
 
 class VerifyEmployeeAuthParams(BaseModel):
     employee_id: EmployeeIdStr
     phone_last_four: PhoneLastFourStr
 
+
 class InitiateOtpAuthParams(BaseModel):
     employee_id: EmployeeIdStr
+
 
 class VerifyOtpAuthParams(BaseModel):
     employee_id: EmployeeIdStr
     otp_code: OtpStr
 
+
 class VerifyManagerAuthParams(BaseModel):
     """Performs standard employee verification AND manager authorization in one call."""
+
     employee_id: EmployeeIdStr
     phone_last_four: PhoneLastFourStr
     manager_auth_code: ManagerAuthCodeStr
+
 
 # ---------------------------------------------------------------------------
 # Shared lookups
 # ---------------------------------------------------------------------------
 
+
 class GetEmployeeRecordParams(BaseModel):
     employee_id: EmployeeIdStr
+
 
 class GetAssetRecordParams(BaseModel):
     asset_tag: AssetTagStr
 
+
 class GetEmployeeAssetsParams(BaseModel):
     employee_id: EmployeeIdStr
+
 
 # ---------------------------------------------------------------------------
 # Troubleshooting + direct resolution (Flow 1)
 # ---------------------------------------------------------------------------
 
+
 class GetTroubleshootingGuideParams(BaseModel):
     issue_category: TroubleshootingCategory
+
 
 class AttemptAccountUnlockParams(BaseModel):
     employee_id: EmployeeIdStr
     target_system: TargetSystemStr
 
+
 class AttemptPasswordResetParams(BaseModel):
     employee_id: EmployeeIdStr
     target_system: TargetSystemStr
 
+
 # ---------------------------------------------------------------------------
 # Incident creation + trailing actions (Flows 1-4)
 # ---------------------------------------------------------------------------
+
 
 class CreateIncidentTicketParams(BaseModel):
     employee_id: EmployeeIdStr
@@ -338,20 +468,25 @@ class CreateIncidentTicketParams(BaseModel):
     affected_system: AffectedSystemStr
     troubleshooting_completed: bool
 
+
 class AssignSLATierParams(BaseModel):
     ticket_number: TicketNumberStr
     sla_tier: SLATier
 
+
 class CheckExistingOutageParams(BaseModel):
     service_name: ServiceNameStr
+
 
 class AddAffectedUserParams(BaseModel):
     ticket_number: TicketNumberStr
     employee_id: EmployeeIdStr
 
+
 class LinkKnownErrorParams(BaseModel):
     ticket_number: TicketNumberStr
     service_name: ServiceNameStr
+
 
 class ScheduleFieldDispatchParams(BaseModel):
     ticket_number: TicketNumberStr
@@ -361,26 +496,30 @@ class ScheduleFieldDispatchParams(BaseModel):
     preferred_date: DateStr
     time_window: DispatchTimeWindow
 
+
 class AttachDiagnosticLogParams(BaseModel):
     ticket_number: TicketNumberStr
     diagnostic_ref_code: DiagnosticRefCodeStr
+
 
 # ---------------------------------------------------------------------------
 # Hardware (Flows 5-6, 19)
 # ---------------------------------------------------------------------------
 
+
 class CheckHardwareEntitlementParams(BaseModel):
     employee_id: EmployeeIdStr
     request_type: HardwareRequestType
+
 
 class SubmitHardwareRequestParams(BaseModel):
     employee_id: EmployeeIdStr
     request_type: HardwareRequestType
     justification: str
-    current_asset_tag: Optional[AssetTagStr] = None
-    laptop_os: Optional[LaptopOS] = None
-    laptop_size: Optional[LaptopSize] = None
-    monitor_size: Optional[MonitorSize] = None
+    current_asset_tag: AssetTagStr | None = None
+    laptop_os: LaptopOS | None = None
+    laptop_size: LaptopSize | None = None
+    monitor_size: MonitorSize | None = None
     delivery_building: BuildingCodeStr
     delivery_floor: FloorCodeStr
 
@@ -397,7 +536,9 @@ class SubmitHardwareRequestParams(BaseModel):
             if self.laptop_size is None:
                 raise ValueError("laptop_size is required when request_type is laptop_replacement")
             if self.justification != LaptopReplacementReason.lost_or_stolen.value and self.current_asset_tag is None:
-                raise ValueError("current_asset_tag is required when request_type is laptop_replacement (except when justification is lost_or_stolen)")
+                raise ValueError(
+                    "current_asset_tag is required when request_type is laptop_replacement (except when justification is lost_or_stolen)"
+                )
         elif self.request_type == HardwareRequestType.monitor_bundle:
             if self.justification not in {m.value for m in MonitorSetupReason}:
                 raise ValueError(
@@ -408,92 +549,127 @@ class SubmitHardwareRequestParams(BaseModel):
                 raise ValueError("monitor_size is required when request_type is monitor_bundle")
         return self
 
+
 class InitiateAssetReturnParams(BaseModel):
     employee_id: EmployeeIdStr
     asset_tag: AssetTagStr
     request_id: RequestIdStr
 
+
 class VerifyCostCenterBudgetParams(BaseModel):
     """Auto-fetches department_code and cost_center_code from the employee record."""
+
     employee_id: EmployeeIdStr
+
 
 # ---------------------------------------------------------------------------
 # Software - access (Flow 7)
 # ---------------------------------------------------------------------------
 
+
 class GetApplicationDetailsParams(BaseModel):
     application_name: CatalogNameStr
 
+
 class SubmitAccessRequestParams(BaseModel):
     employee_id: EmployeeIdStr
-    catalog_id: str = Field(pattern=r"^APP-\d{4}$", description="APP-NNNN (obtained from get_application_details)", examples=["APP-0042"])
+    catalog_id: str = Field(
+        pattern=r"^APP-\d{4}$", description="APP-NNNN (obtained from get_application_details)", examples=["APP-0042"]
+    )
     access_level: AccessLevel
+
 
 class RouteApprovalWorkflowParams(BaseModel):
     request_id: RequestIdStr
     employee_id: EmployeeIdStr
     approver_employee_id: EmployeeIdStr
 
+
 # ---------------------------------------------------------------------------
 # Software - license (Flows 8-9)
 # ---------------------------------------------------------------------------
 
+
 class GetLicenseCatalogItemParams(BaseModel):
     license_name: CatalogNameStr
 
+
 class ValidateCostCenterParams(BaseModel):
     """Auto-fetches department_code and cost_center_code from the employee record."""
+
     employee_id: EmployeeIdStr
+
 
 class SubmitLicenseRequestParams(BaseModel):
     employee_id: EmployeeIdStr
-    catalog_id: str = Field(pattern=r"^LIC-\d{4}$", description="LIC-NNNN (obtained from get_license_catalog_item)", examples=["LIC-0018"])
-    duration_days: Optional[Literal[30, 60, 90]] = None  # None = permanent
+    catalog_id: str = Field(
+        pattern=r"^LIC-\d{4}$", description="LIC-NNNN (obtained from get_license_catalog_item)", examples=["LIC-0018"]
+    )
+    duration_days: Literal[30, 60, 90] | None = None  # None = permanent
+
 
 # ---------------------------------------------------------------------------
 # Software - renewal (Flow 10)
 # ---------------------------------------------------------------------------
 
+
 class GetEmployeeLicensesParams(BaseModel):
     employee_id: EmployeeIdStr
 
+
 class SubmitLicenseRenewalParams(BaseModel):
     """Enforces the renewal window directly: within 30 days of expiration or <=14 days expired."""
+
     employee_id: EmployeeIdStr
     license_assignment_id: LicenseAssignmentIdStr
+
 
 # ---------------------------------------------------------------------------
 # Facilities (Flows 11-14)
 # ---------------------------------------------------------------------------
 
+
 class CheckDeskAvailabilityParams(BaseModel):
     building_code: BuildingCodeStr
     floor_code: FloorCodeStr
+
 
 class SubmitDeskAssignmentParams(BaseModel):
     employee_id: EmployeeIdStr
     desk_code: DeskCodeStr
 
+
 class CheckParkingAvailabilityParams(BaseModel):
-    zone_code: Optional[ParkingZoneStr] = None
+    zone_code: ParkingZoneStr | None = None
+
 
 class SubmitParkingAssignmentParams(BaseModel):
     employee_id: EmployeeIdStr
     parking_space_id: ParkingSpaceIdStr
 
+
 class SubmitWaitlistParams(BaseModel):
     employee_id: EmployeeIdStr
     resource_type: WaitlistResourceType
-    zone_or_building: str = Field(min_length=1, max_length=20, description="Building code for desks, zone code for parking", examples=["BLD3", "PZA"])
+    zone_or_building: str = Field(
+        min_length=1,
+        max_length=20,
+        description="Building code for desks, zone code for parking",
+        examples=["BLD3", "PZA"],
+    )
+
 
 class MarkResolvedParams(BaseModel):
     """X10-R2: final step in resolved-without-ticket flows. Writes an interactions row so state validation can confirm the call closed cleanly."""
+
     employee_id: EmployeeIdStr
     flow_id: InteractionFlowId
     resolution_type: InteractionResolutionType
 
+
 class CheckErgonomicAssessmentParams(BaseModel):
     employee_id: EmployeeIdStr
+
 
 class SubmitEquipmentRequestParams(BaseModel):
     employee_id: EmployeeIdStr
@@ -501,14 +677,16 @@ class SubmitEquipmentRequestParams(BaseModel):
     delivery_building: BuildingCodeStr
     delivery_floor: FloorCodeStr
 
+
 class CheckRoomAvailabilityParams(BaseModel):
     building_code: BuildingCodeStr
-    floor_code: Optional[FloorCodeStr] = None
+    floor_code: FloorCodeStr | None = None
     date: DateStr
     start_time: TimeStr
     end_time: TimeStr
     min_capacity: int = Field(gt=0, le=50)
-    equipment_required: Optional[list[RoomEquipment]] = None
+    equipment_required: list[RoomEquipment] | None = None
+
 
 class SubmitRoomBookingParams(BaseModel):
     employee_id: EmployeeIdStr
@@ -518,6 +696,7 @@ class SubmitRoomBookingParams(BaseModel):
     end_time: TimeStr
     attendee_count: int = Field(gt=0, le=50)
 
+
 class SendCalendarInviteParams(BaseModel):
     request_id: RequestIdStr
     employee_id: EmployeeIdStr
@@ -526,15 +705,19 @@ class SendCalendarInviteParams(BaseModel):
     start_time: TimeStr
     end_time: TimeStr
 
+
 # ---------------------------------------------------------------------------
 # Accounts (Flows 15-18)
 # ---------------------------------------------------------------------------
 
+
 class LookupNewHireParams(BaseModel):
     new_hire_employee_id: EmployeeIdStr
 
+
 class CheckExistingAccountsParams(BaseModel):
     employee_id: EmployeeIdStr
+
 
 class ProvisionNewAccountParams(BaseModel):
     manager_employee_id: EmployeeIdStr
@@ -544,23 +727,29 @@ class ProvisionNewAccountParams(BaseModel):
     start_date: DateStr
     access_groups: list[GroupCodeStr]
 
+
 class GetGroupMembershipsParams(BaseModel):
     employee_id: EmployeeIdStr
 
+
 class GetGroupDetailsParams(BaseModel):
     group_code: GroupCodeStr
+
 
 class SubmitGroupMembershipChangeParams(BaseModel):
     employee_id: EmployeeIdStr
     group_code: GroupCodeStr
     action: GroupMembershipAction
 
+
 class CheckRoleChangeAuthorizedParams(BaseModel):
     employee_id: EmployeeIdStr
     new_role_code: RoleCodeStr
 
+
 class GetPermissionTemplatesParams(BaseModel):
     role_code: RoleCodeStr
+
 
 class SubmitPermissionChangeParams(BaseModel):
     employee_id: EmployeeIdStr
@@ -568,13 +757,16 @@ class SubmitPermissionChangeParams(BaseModel):
     permission_template_id: PermissionTemplateIdStr
     effective_date: DateStr
 
+
 class ScheduleAccessReviewParams(BaseModel):
     case_id: CaseIdStr
     employee_id: EmployeeIdStr
     review_date: DateStr
 
+
 class GetOffboardingRecordParams(BaseModel):
     employee_id: EmployeeIdStr
+
 
 class SubmitAccessRemovalParams(BaseModel):
     manager_employee_id: EmployeeIdStr
@@ -582,43 +774,53 @@ class SubmitAccessRemovalParams(BaseModel):
     last_working_day: DateStr
     removal_scope: AccessRemovalScope
 
+
 class InitiateAssetRecoveryParams(BaseModel):
     departing_employee_id: EmployeeIdStr
     case_id: CaseIdStr
     recovery_method: AssetRecoveryMethod
 
+
 # ---------------------------------------------------------------------------
 # Extended flows (19-21)
 # ---------------------------------------------------------------------------
+
 
 class ReportSecurityIncidentParams(BaseModel):
     employee_id: EmployeeIdStr
     asset_tag: AssetTagStr
     incident_type: SecurityIncidentType
 
+
 class InitiateRemoteWipeParams(BaseModel):
     asset_tag: AssetTagStr
     security_case_id: SecurityCaseIdStr
+
 
 class SubmitMfaResetParams(BaseModel):
     employee_id: EmployeeIdStr
     new_phone_last_four: PhoneLastFourStr
 
+
 class GetRequestStatusParams(BaseModel):
     request_id: RequestIdStr
+
 
 class EscalateApprovalParams(BaseModel):
     request_id: RequestIdStr
     escalate_to_employee_id: EmployeeIdStr
 
+
 # ---------------------------------------------------------------------------
 # System
 # ---------------------------------------------------------------------------
+
 
 class TransferToAgentParams(BaseModel):
     employee_id: EmployeeIdStr
     transfer_reason: TransferReason
     issue_summary: str = Field(min_length=10, max_length=500)
+
 
 # ---------------------------------------------------------------------------
 # FIELD_ERROR_TYPES
@@ -691,6 +893,7 @@ FIELD_ERROR_TYPES: dict[str, tuple[str, str]] = {
     "delivery_floor": ("invalid_floor_code_format", "delivery_floor"),
 }
 
+
 def validation_error_response(exc: ValidationError, model: type[BaseModel]) -> dict:
     for error in exc.errors():
         loc = error.get("loc", ())
@@ -702,9 +905,15 @@ def validation_error_response(exc: ValidationError, model: type[BaseModel]) -> d
                 msg = f"Invalid {label} '{input_val}'"
                 if (fi := model.model_fields.get(field)) and fi.description:
                     msg += f": must be {fi.description}"
-                    if fi.examples: msg += f" (e.g. {', '.join(str(e) for e in fi.examples)})"
-                elif detail := error.get("msg", ""): msg += f": {detail}"
+                    if fi.examples:
+                        msg += f" (e.g. {', '.join(str(e) for e in fi.examples)})"
+                elif detail := error.get("msg", ""):
+                    msg += f": {detail}"
                 return {"status": "error", "error_type": error_type, "message": msg}
     first = exc.errors()[0] if exc.errors() else {}
     loc = first.get("loc", ("parameter",))
-    return {"status": "error", "error_type": "invalid_parameter", "message": f"Invalid '{loc[0] if loc else 'parameter'}': {first.get('msg', str(exc))}"}
+    return {
+        "status": "error",
+        "error_type": "invalid_parameter",
+        "message": f"Invalid '{loc[0] if loc else 'parameter'}': {first.get('msg', str(exc))}",
+    }

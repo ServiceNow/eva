@@ -27,6 +27,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
 def _set_sidebar_width(width_px: int) -> None:
     """Inject CSS to force sidebar to a specific width."""
     st.markdown(
@@ -44,6 +45,7 @@ def _set_sidebar_width(width_px: int) -> None:
         """,
         unsafe_allow_html=True,
     )
+
 
 # ============================================================================
 # Tool descriptions (human-readable pseudocode for each tool)
@@ -389,38 +391,70 @@ TOOL_DESCRIPTIONS: dict[str, list[str]] = {
 
 TOOL_CATEGORIES: dict[str, list[str]] = {
     "Auth": [
-        "verify_employee_auth", "initiate_otp_auth", "verify_otp_auth", "verify_manager_auth",
+        "verify_employee_auth",
+        "initiate_otp_auth",
+        "verify_otp_auth",
+        "verify_manager_auth",
     ],
     "Shared Lookups": [
-        "get_employee_record", "get_asset_record", "get_employee_assets",
+        "get_employee_record",
+        "get_asset_record",
+        "get_employee_assets",
     ],
     "Resolving Issues (Flows 1-4)": [
-        "get_troubleshooting_guide", "attempt_account_unlock", "attempt_password_reset",
-        "create_incident_ticket", "assign_sla_tier",
-        "check_existing_outage", "add_affected_user", "link_known_error",
-        "schedule_field_dispatch", "attach_diagnostic_log",
+        "get_troubleshooting_guide",
+        "attempt_account_unlock",
+        "attempt_password_reset",
+        "create_incident_ticket",
+        "assign_sla_tier",
+        "check_existing_outage",
+        "add_affected_user",
+        "link_known_error",
+        "schedule_field_dispatch",
+        "attach_diagnostic_log",
     ],
     "Hardware Requests (Flows 5-6)": [
-        "check_hardware_entitlement", "submit_hardware_request",
-        "initiate_asset_return", "verify_cost_center_budget",
+        "check_hardware_entitlement",
+        "submit_hardware_request",
+        "initiate_asset_return",
+        "verify_cost_center_budget",
     ],
     "Software Requests (Flows 7-10)": [
-        "get_application_details", "submit_access_request", "route_approval_workflow",
-        "get_license_catalog_item", "validate_cost_center",
-        "submit_license_request", "submit_temporary_license",
-        "get_employee_licenses", "check_renewal_eligibility", "submit_license_renewal",
+        "get_application_details",
+        "submit_access_request",
+        "route_approval_workflow",
+        "get_license_catalog_item",
+        "validate_cost_center",
+        "submit_license_request",
+        "submit_temporary_license",
+        "get_employee_licenses",
+        "check_renewal_eligibility",
+        "submit_license_renewal",
     ],
     "Facilities Requests (Flows 11-14)": [
-        "check_space_availability", "submit_desk_assignment",
-        "check_parking_availability", "submit_parking_assignment",
-        "check_ergonomic_assessment", "submit_equipment_request",
-        "check_room_availability", "submit_room_booking", "send_calendar_invite",
+        "check_space_availability",
+        "submit_desk_assignment",
+        "check_parking_availability",
+        "submit_parking_assignment",
+        "check_ergonomic_assessment",
+        "submit_equipment_request",
+        "check_room_availability",
+        "submit_room_booking",
+        "send_calendar_invite",
     ],
     "Accounts & Access (Flows 15-18)": [
-        "lookup_new_hire", "check_existing_accounts", "provision_new_account",
-        "get_group_memberships", "get_group_details", "submit_group_membership_change",
-        "get_permission_templates", "submit_permission_change", "schedule_access_review",
-        "get_offboarding_record", "submit_access_removal", "initiate_asset_recovery",
+        "lookup_new_hire",
+        "check_existing_accounts",
+        "provision_new_account",
+        "get_group_memberships",
+        "get_group_details",
+        "submit_group_membership_change",
+        "get_permission_templates",
+        "submit_permission_change",
+        "schedule_access_review",
+        "get_offboarding_record",
+        "submit_access_removal",
+        "initiate_asset_recovery",
     ],
     "System": [
         "transfer_to_agent",
