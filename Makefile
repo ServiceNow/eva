@@ -1,6 +1,25 @@
 NOW:=$(shell date -u +%Y%m%dt%H%M%Sz)
 
-PRINT_BLUE=printf '\033[4;94m%s\033[m\n'
+# ANSI Select Graphic Rendition escape codes
+ITALIC:=3
+UNDERLINE:=4
+# Colors - For example, set the foreground bright blue: $(FG_BRIGHT)$(BLUE)
+FG:=3
+BG:=4
+FG_BRIGHT:=9
+BG_BRIGHT:=10
+BLACK:=0
+RED:=1
+GREEN:=2
+YELLOW:=3
+BLUE:=4
+MAGENTA:=5
+CYAN:=6
+WHITE:=7
+STYLE = \033[$(1)m$(2)\033[m
+
+help:  # Show this help message
+	@grep -E '^\w.*:.*  # ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*  # "}; {printf "$(call STYLE,$(FG)$(CYAN),%-40s) %s\n", $$1, $$2}'
 
 apps/analysis.py/toolkit-%: TOOLKIT_ACCOUNT=snow.core_llm
 apps/analysis.py/toolkit-%: TOOLKIT_DATA=snow.core_llm.eva
@@ -8,33 +27,33 @@ apps/analysis.py/toolkit-%: TOOLKIT_JOB_NAME=eva_results_analysis
 apps/analysis.py/toolkit-%: TOOLKIT_JOB=$(TOOLKIT_ACCOUNT).$(TOOLKIT_JOB_NAME)
 apps/analysis.py/toolkit-%: TOOLKIT_JOB_TEMPORARY_NAME=$(TOOLKIT_JOB_NAME)__initializing_$(NOW)
 
-apps/analysis.py/toolkit-data-push: %/toolkit-data-push:
+apps/analysis.py/toolkit-data-push: %/toolkit-data-push:  # Push app code to Toolkit
 	for path in \
+		$* \
 		internal/ \
 		src/eva/ \
-		apps/analysis.py \
 		pyproject.toml \
 		README.md \
 		uv.lock \
 		website/public/favicon.svg \
 	; do eai data push $(TOOLKIT_DATA) $${path}:$(TOOLKIT_JOB_NAME)/$${path}; done
 
-apps/analysis.py/toolkit-job-clear-name:
+apps/analysis.py/toolkit-job-clear-name:  # Rename current Toolkit job as deprecated
 	eai job set --name $(TOOLKIT_JOB_NAME)__deprecated_on_$(shell date -u +%Y%m%dt%H%M%Sz) $(TOOLKIT_JOB) --format text --format-template $$'Job $(TOOLKIT_JOB) is now {{ .FullName }}\n'
 
-apps/analysis.py/toolkit-job-get:
+apps/analysis.py/toolkit-job-get:  # Get Toolkit job details
 	eai job get $(TOOLKIT_JOB)
 
-apps/analysis.py/toolkit-job-info:
+apps/analysis.py/toolkit-job-info:  # Get Toolkit job info
 	eai job info $(TOOLKIT_JOB)
 
-apps/analysis.py/toolkit-job-kill:
+apps/analysis.py/toolkit-job-kill:  # Kill Toolkit job
 	eai job kill $(TOOLKIT_JOB) --format text --format-template $$'Job $(TOOLKIT_JOB) is now {{ .State }}\n'
 
-apps/analysis.py/toolkit-job-log:
+apps/analysis.py/toolkit-job-log:  # Follow Toolkit job logs, optionally set TAIL=123
 	eai job log -f $(TOOLKIT_JOB) $(if $(TAIL),--tail $(TAIL))
 
-apps/analysis.py/toolkit-job-new: %/toolkit-job-new:
+apps/analysis.py/toolkit-job-new: %/toolkit-job-new:  # Deploy app as new Toolkit job, and once started, kill the old job and switch its name to the new job
 	eai job new \
 		--account $(TOOLKIT_ACCOUNT) \
 		--data $(TOOLKIT_DATA)/$(TOOLKIT_JOB_NAME):/tmp/eva:rw \
@@ -71,5 +90,5 @@ apps/analysis.py/toolkit-job-new: %/toolkit-job-new:
 	eai job set --name $(TOOLKIT_JOB_NAME) $(TOOLKIT_ACCOUNT).$(TOOLKIT_JOB_TEMPORARY_NAME) --format text --format-template $$'Job $(TOOLKIT_ACCOUNT).$(TOOLKIT_JOB_TEMPORARY_NAME) is now {{ .FullName }}\n'
 	-@$(MAKE) --no-print-directory $*/toolkit-job-url
 
-apps/analysis.py/toolkit-job-url:
-	@$(PRINT_BLUE) 'https://$(subst .,-,$(TOOLKIT_JOB)).job.console.elementai.com'
+apps/analysis.py/toolkit-job-url:  # Print Toolkit job URL
+	@printf '$(call STYLE,$(UNDERLINE);$(FG_BRIGHT)$(BLUE),https://$(subst .,-,$(TOOLKIT_JOB)).job.console.elementai.com)\n'
