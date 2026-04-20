@@ -21,6 +21,20 @@ STYLE = \033[$(1)m$(2)\033[m
 help:  # Show this help message
 	@grep -E '^\w.*:.*  # ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*  # "}; {printf "$(call STYLE,$(FG)$(CYAN),%-40s) %s\n", $$1, $$2}'
 
+FORCE:
+
+install:  # Install dependencies
+	uv sync --all-extras
+
+output/%/toolkit-data-push:  # Push output file(s) to Toolkit
+	eai data push snow.core_llm.voice_agent "output/$*:$*"
+
+output/%/toolkit-data-pull output/%: FORCE  # Pull output file(s) from Toolkit
+	eai data pull snow.core_llm.voice_agent "$*" output
+
+apps/analysis.py/run: %/run:  # Run app locally
+	uv run streamlit run $* --server.runOnSave true
+
 apps/analysis.py/toolkit-%: TOOLKIT_ACCOUNT=snow.core_llm
 apps/analysis.py/toolkit-%: TOOLKIT_DATA=snow.core_llm.eva
 apps/analysis.py/toolkit-%: TOOLKIT_JOB_NAME=eva_results_analysis
