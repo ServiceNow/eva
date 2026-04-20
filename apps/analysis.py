@@ -718,6 +718,23 @@ def _extract_all_models(run_config: dict) -> set[str]:
     return models or {"unknown"}
 
 
+def _extract_system_label(run_config: dict) -> str:
+    """Build a human-readable system label like 'nova-3 + gpt-4.1-mini + sonic-3'."""
+    details = _extract_model_details(run_config)
+    if "S2S" in details:
+        return details["S2S"]
+    parts = []
+    if "STT" in details:
+        parts.append(details["STT"])
+    if "Audio LLM" in details:
+        parts.append(details["Audio LLM"])
+    elif "LLM" in details:
+        parts.append(details["LLM"])
+    if "TTS" in details:
+        parts.append(details["TTS"])
+    return " + ".join(parts) if parts else "unknown"
+
+
 def _extract_providers(run_config: dict) -> set[str]:
     """Extract all providers (LLM, STT, TTS) from config."""
     model_list = run_config.get("model_list") or []
@@ -935,28 +952,36 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
     run_configs = {d.name: _load_run_config(d) for d in run_dirs}
 
     # Collect filter options
-    all_models: set[str] = set()
     all_providers: set[str] = set()
     all_types: set[str] = set()
-    for cfg in run_configs.values():
-        all_models.update(_extract_all_models(cfg))
-        all_providers.update(_extract_providers(cfg))
+    providers_by_run: dict[str, set[str]] = {}
+    system_by_run: dict[str, str] = {}
+    for run_name, cfg in run_configs.items():
+        providers_by_run[run_name] = _extract_providers(cfg)
+        system_by_run[run_name] = _extract_system_label(cfg)
+        all_providers.update(providers_by_run[run_name])
         all_types.add(_classify_pipeline_type(cfg))
 
-    # Render filters
+    # Render filters — Provider is rendered before System so its selection can
+    # constrain which systems are shown (cascading filter).
     sel_types = st.multiselect("Pipeline Type", sorted(all_types), default=all_types, key="type", bind="query-params")
     sel_providers = st.multiselect(
         "Provider", sorted(all_providers), default=all_providers, key="provider", bind="query-params"
     )
-    sel_models = st.multiselect("Model", sorted(all_models), default=all_models, key="model", bind="query-params")
+
+    # Only show systems that contain at least one model from a selected provider.
+    available_systems = sorted(
+        {system_by_run[run_name] for run_name, providers in providers_by_run.items() if providers & set(sel_providers)}
+    )
+    sel_systems = st.multiselect(
+        "System", available_systems, default=available_systems, key="model", bind="query-params"
+    )
 
     # Apply filters
     filtered_dirs = [
         d
         for d in run_dirs
-        if _extract_all_models(run_configs[d.name]) & set(sel_models)
-        and _extract_providers(run_configs[d.name]) & set(sel_providers)
-        and _classify_pipeline_type(run_configs[d.name]) in sel_types
+        if system_by_run[d.name] in sel_systems and _classify_pipeline_type(run_configs[d.name]) in sel_types
     ]
 
     if not filtered_dirs:
