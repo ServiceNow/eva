@@ -1074,6 +1074,14 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
     col_rename = _make_category_header_rename(metric_names)
     summary_df = pd.DataFrame(run_summaries)
 
+    complete_runs_only = st.sidebar.toggle(
+        "Complete runs only", value=True, key="complete_runs_only", bind="query-params"
+    )
+    if complete_runs_only and not summary_df.empty:
+        max_records = summary_df["records"].max()
+        if max_records > 0:
+            summary_df = summary_df[summary_df["records"] == max_records]
+
     ordered_metrics = [m for m in metric_names if m in summary_df.columns]
 
     # EVA-A vs EVA-X scatter plot
