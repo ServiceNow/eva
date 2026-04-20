@@ -44,12 +44,13 @@ ANALYSIS_FILE = "analysis.json"
 # ============================================================================
 
 
-def get_run_directories() -> list[Path]:
+def get_run_directories(output_dir: Path | None = None) -> list[Path]:
     """Get all run directories in output/, sorted by timestamp (newest first)."""
-    if not OUTPUT_DIR.exists():
+    base = output_dir if output_dir is not None else OUTPUT_DIR
+    if not base.exists():
         return []
 
-    run_dirs = [d for d in OUTPUT_DIR.iterdir() if d.is_dir() and (d / "records").exists()]
+    run_dirs = [d for d in base.iterdir() if d.is_dir() and (d / "records").exists()]
     # Sort by directory name (which is timestamp format YYYYMMDD_HHMMSS)
     return sorted(run_dirs, key=lambda d: d.name, reverse=True)
 
@@ -1592,11 +1593,18 @@ def main():
     # Read query params for deep linking
     query_params = st.query_params
 
+    # Sidebar: Output directory (with query param support for shareable links)
+    st.sidebar.header("Configuration")
+    default_output_dir = query_params.get("output_dir", str(OUTPUT_DIR))
+    output_dir_input = st.sidebar.text_input("Output Directory", value=default_output_dir)
+    effective_output_dir = Path(output_dir_input) if output_dir_input else OUTPUT_DIR
+    st.query_params["output_dir"] = str(effective_output_dir)
+
     # Get run directories
-    run_dirs = get_run_directories()
+    run_dirs = get_run_directories(effective_output_dir)
 
     if not run_dirs:
-        st.error(f"No run directories found in {OUTPUT_DIR}")
+        st.error(f"No run directories found in {effective_output_dir}")
         return
 
     # View mode toggle
@@ -1608,12 +1616,12 @@ def main():
 
     if view_mode == "Cross-Run Comparison":
         st.query_params.update({"view": "Cross-Run Comparison"})
-        render_cross_run_comparison([OUTPUT_DIR / d.name for d in run_dirs])
+        render_cross_run_comparison(run_dirs)
         return
 
     if view_mode == "AI Review":
         st.query_params.update({"view": "AI Review"})
-        render_ai_review([OUTPUT_DIR / d.name for d in run_dirs])
+        render_ai_review(run_dirs)
         return
 
     # Sidebar: Run selection (for Run Overview and Record Detail)
@@ -1629,7 +1637,7 @@ def main():
         index=default_run_idx,
     )
 
-    selected_run_dir = OUTPUT_DIR / selected_run_name
+    selected_run_dir = effective_output_dir / selected_run_name
 
     # Display run metadata from config.json
     run_config = _load_run_config(selected_run_dir)

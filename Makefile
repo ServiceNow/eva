@@ -43,6 +43,7 @@ apps/analysis.py/toolkit-%: TOOLKIT_JOB_TEMPORARY_NAME=$(TOOLKIT_JOB_NAME)__init
 
 apps/analysis.py/toolkit-data-push: %/toolkit-data-push:  # Push app code to Toolkit
 	for path in \
+		.env \
 		$* \
 		internal/ \
 		src/eva/ \
@@ -86,6 +87,7 @@ apps/analysis.py/toolkit-job-new: %/toolkit-job-new:  # Deploy app as new Toolki
 		--name $(TOOLKIT_JOB_TEMPORARY_NAME) \
 		--restartable \
 		-- bash -c 'cd ~/eva && \
+			set -a && source .env && set +a && \
 			time curl -LsSf https://astral.sh/uv/install.sh | sh && \
 			export PATH=$$PATH:~/.local/bin && \
 			time uv sync --extra apps && \
