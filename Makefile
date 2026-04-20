@@ -43,11 +43,8 @@ apps/analysis.py/toolkit-%: TOOLKIT_JOB_TEMPORARY_NAME=$(TOOLKIT_JOB_NAME)__init
 
 apps/analysis.py/toolkit-data-push: %/toolkit-data-push:  # Push app code to Toolkit
 	for path in \
-<<<<<<< pr/fr/fix-analysis-app
 		.env \
-=======
 		$* \
->>>>>>> main-internal
 		internal/ \
 		src/eva/ \
 		pyproject.toml \
