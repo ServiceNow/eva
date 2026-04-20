@@ -22,6 +22,7 @@ import streamlit as st
 from diff_viewer import diff_viewer
 
 import eva.metrics  # noqa: F401
+from apps.audio_plots import preload_audio_data, render_audio_analysis_tab
 from eva.metrics.registry import get_global_registry
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RecordMetrics
@@ -550,8 +551,9 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
                     else metric_score.score
                 )
 
-                if metric_score.sub_metrics:
-                    for sub_key, sub_ms in metric_score.sub_metrics.items():
+                sub_metrics = getattr(metric_score, "sub_metrics", None)
+                if sub_metrics:
+                    for sub_key, sub_ms in sub_metrics.items():
                         col = f"{metric_name}__{sub_key}"
                         row[col] = (
                             None
@@ -1297,7 +1299,7 @@ def render_run_overview(run_dir: Path):
 
     # Add link column to navigate to Record Detail
     def _record_link(row):
-        params = f"?view=Record+Detail&run={run_name}&record={row['record']}"
+        params = f"/record_detail?output_dir={run_dir.parent}&run={run_name}&record={row['record']}"
         if "trial" in row and pd.notna(row.get("trial")):
             params += f"&trial={row['trial']}"
         return params
@@ -1984,13 +1986,18 @@ def render_record_detail(selected_run_dir: Path):
 
     st.divider()
 
+    # Pre-load audio data before the tabs so the cache is warm when the user
+    # opens the Audio Analysis tab (or switches trials).
+    preload_audio_data(selected_record_dir)
+
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [
             "Conversation Trace",
             "Transcript",
             "Metrics Detail",
             "Processed Data",
+            "Turn Taking Analysis",
         ]
     )
 
@@ -2037,6 +2044,9 @@ def render_record_detail(selected_run_dir: Path):
 
     with tab4:
         render_processed_data_tab(metrics)
+
+    with tab5:
+        render_audio_analysis_tab(selected_record_dir)
 
 
 # ============================================================================

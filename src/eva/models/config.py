@@ -213,12 +213,17 @@ def get_pipeline_type(model_data: dict | Any) -> PipelineType:
     return PipelineType.CASCADE
 
 
-def _strip_other_mode_fields(data: dict) -> dict:
+def _strip_other_mode_fields(data: dict, strict: bool = True) -> dict:
     """Validate pipeline mode exclusivity, then strip irrelevant shared fields.
 
-    Raises ``ValueError`` if multiple pipeline modes are specified.
+    Raises ``ValueError`` if multiple pipeline modes are specified (when strict=True).
     Then strips shared fields (e.g. ``tts`` from S2S mode) so that
     ``extra="forbid"`` on each config class doesn't reject them.
+
+    Args:
+        data: Raw config dictionary from the YAML/env input.
+        strict: If False, skip the conflict error (used for metrics-only re-runs
+            where the model config is not needed).
     """
     # --- Mutual exclusivity: only one pipeline mode allowed ---
     has_llm = bool(data.get("llm") or data.get("llm_model"))
@@ -233,7 +238,7 @@ def _strip_other_mode_fields(data: dict) -> dict:
         ]
         if flag
     ]
-    if len(active) > 1:
+    if len(active) > 1 and strict:
         raise ValueError(
             f"Multiple pipeline modes set: {', '.join(active)}. "
             f"Set exactly one of: EVA_MODEL__LLM (ASR-LLM-TTS), "
@@ -493,8 +498,10 @@ class RunConfig(BaseSettings):
             raise ValueError("Deprecated environment variables detected:\n" + "\n".join(found))
 
         # Strip env-var fields from other pipeline modes so extra="forbid" doesn't reject them.
+        # For metrics-only re-runs, skip the strict conflict check — the model isn't used.
         if isinstance(data.get("model"), dict):
-            data["model"] = _strip_other_mode_fields(data["model"])
+            force_rerun = bool(data.get("force_rerun_metrics"))
+            data["model"] = _strip_other_mode_fields(data["model"], strict=not force_rerun)
 
         return data
 
@@ -586,14 +593,21 @@ class RunConfig(BaseSettings):
                 data[field_name] = cls._redact_dict(value)
         return data
 
-    def apply_env_overrides(self, live: "RunConfig") -> None:
+    def apply_env_overrides(self, live: "RunConfig", strict_llm: bool = True) -> None:
         """Apply environment-dependent values from *live* config onto this (saved) config.
 
         Restores redacted secrets (``***``) and overrides dynamic fields (``url``,
         ``urls``) in ``model.*_params`` and ``model_list[].litellm_params``.
 
+        Args:
+            live: The live RunConfig with current environment values.
+            strict_llm: If True (default), raise when the active LLM deployment has
+                redacted secrets but is not in the current EVA_MODEL_LIST. Set to False
+                for metrics-only re-runs where the LLM is not needed.
+
         Raises:
-            ValueError: If provider or alias differs for a service with redacted secrets.
+            ValueError: If provider or alias differs for a service with redacted secrets,
+                or (when strict_llm=True) if the active LLM deployment is missing.
         """
         # ── model.*_params (STT / TTS / S2S / AudioLLM) ──
         for params_field, provider_field in self._PARAMS_TO_PROVIDER.items():
@@ -659,14 +673,15 @@ class RunConfig(BaseSettings):
                 continue
             if name not in live_by_name:
                 active_llm = getattr(self.model, "llm", None)
-                if name == active_llm:
+                if name == active_llm and strict_llm:
                     raise ValueError(
                         f"Cannot restore secrets: deployment {name!r} not found in "
                         f"current EVA_MODEL_LIST (available: {list(live_by_name)})"
                     )
                 logger.warning(
                     f"Deployment {name!r} has redacted secrets but is not in the current "
-                    f"EVA_MODEL_LIST — skipping (not used in this run)."
+                    f"EVA_MODEL_LIST (available: {list(live_by_name)}) — skipping. "
+                    f"Any metric or agent call routed to this deployment will fail."
                 )
                 continue
             live_params = live_by_name[name].get("litellm_params", {})
