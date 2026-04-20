@@ -45,7 +45,7 @@ from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
 from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies, UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
 
-from eva.assistant.agentic.audit_log import AuditLog, current_timestamp_ms
+from eva.assistant.agentic.audit_log import AuditLog, convert_to_epoch_ms, current_timestamp_ms
 from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor, UserAudioCollector, UserObserver
 from eva.assistant.pipeline.audio_llm_processor import (
     AudioLLMProcessor,
@@ -734,6 +734,9 @@ class AssistantServer:
                         timestamp_ms=self._user_turn_started_wall_ms,
                     )
                     self._user_turn_started_wall_ms = None
+                    await self._save_transcript_message_from_turn(
+                        role="user", content=message.content, timestamp=self._user_turn_started_wall_ms
+                    )
 
         @user_aggregator.event_handler("on_user_turn_started")
         async def on_user_turn_started(aggregator, strategy):
@@ -754,9 +757,12 @@ class AssistantServer:
                 # Prefer content from the aggregator (populated when output_modalities includes
                 # "text").
                 content = message.content
-                self.audit_log.append_assistant_output(content or "[audio response - transcription unavailable]")
+                self.audit_log.append_assistant_output(
+                    content or "[audio response - transcription unavailable]",
+                    timestamp_ms=convert_to_epoch_ms(message.timestamp),
+                )
                 await self._save_transcript_message_from_turn(
-                    role="assistant", content=content, timestamp=message.timestamp
+                    role="assistant", content=content, timestamp=convert_to_epoch_ms(message.timestamp)
                 )
 
     async def _save_transcript_message_from_turn(self, role: str, content: str, timestamp: str) -> None:
