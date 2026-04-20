@@ -177,6 +177,42 @@ def load_flows_markdown(mtime: float = 0) -> str:
 
 
 @st.cache_data
+def load_flow_sections(mtime: float = 0) -> list[dict]:
+    """Split itsm_flows.md into per-flow sections keyed by heading.
+
+    Returns entries shaped ``{"title": "Flow 1 — Login Issue", "body": "..."}``,
+    in document order. Each body contains the markdown between the flow's
+    ``### Flow ...`` heading and the next ``##`` or ``###`` heading.
+    """
+    if not FLOWS_MD_PATH.exists():
+        return []
+    text = FLOWS_MD_PATH.read_text()
+    flow_pat = re.compile(r"^###\s+(Flow\s+[^\n]+)$", re.MULTILINE)
+    any_heading = re.compile(r"^##+\s+.+$", re.MULTILINE)
+    sections: list[dict] = []
+    matches = list(flow_pat.finditer(text))
+    for i, m in enumerate(matches):
+        title = m.group(1).strip()
+        body_start = m.end()
+        # Next heading of any level is the end of this section.
+        next_heading = any_heading.search(text, pos=body_start)
+        body_end = next_heading.start() if next_heading else len(text)
+        body = text[body_start:body_end].strip().strip("-").strip()
+        sections.append({"title": title, "body": body})
+    return sections
+
+
+def extract_tools_in_flow(body: str, tool_type_map: dict[str, str]) -> list[str]:
+    """Return tool names (in first-appearance order) referenced inside a flow body."""
+    seen: list[str] = []
+    for m in re.finditer(r"`([a-z_][a-z0-9_]+)`", body):
+        name = m.group(1)
+        if name in tool_type_map and name not in seen:
+            seen.append(name)
+    return seen
+
+
+@st.cache_data
 def load_initial_scenario(record_id: str, mtime: float = 0) -> dict:
     path = SCENARIOS_DIR / f"{record_id}.json"
     if path.exists():
@@ -296,7 +332,9 @@ def render_trace(trace: list[dict], tool_type_map: dict[str, str]):
 records = load_records(DATASET_PATH.stat().st_mtime)
 all_ids = [r["id"] for r in records]
 tools, instructions, tool_type_map = load_agent_config(AGENT_YAML_PATH.stat().st_mtime)
-flows_markdown = load_flows_markdown(FLOWS_MD_PATH.stat().st_mtime if FLOWS_MD_PATH.exists() else 0)
+_flows_mtime = FLOWS_MD_PATH.stat().st_mtime if FLOWS_MD_PATH.exists() else 0
+flows_markdown = load_flows_markdown(_flows_mtime)
+flow_sections = load_flow_sections(_flows_mtime)
 assignments = load_assignments()
 labeler_names = sorted(assignments.keys())
 
@@ -606,8 +644,128 @@ for idx, m in enumerate(_matches):
     _policy_sections.append((title, body))
 _preamble = instructions[: _matches[0].start()].strip() if _matches else ""
 
-with st.expander("Reference: Tool Schemas, Flows & Agent Policies", expanded=False):
-    tab_tools, tab_flows, tab_policies = st.tabs(["Tool Schemas", "Flows", "Agent Policies"])
+_tool_by_name = {t["name"]: t for t in tools}
+
+# Policy sections that apply to every flow (universal guidance).
+_UNIVERSAL_POLICY_TITLES = {
+    "Authentication",
+    "Core Principles",
+    "Voice Guidelines",
+    "Escalation Policy",
+    "Policies",
+    "General Record Handling",
+    "Post-Action Steps",
+    "Caller-Provided vs. System-Returned Identifiers",
+}
+
+# Additional policy sections relevant to each flow. Key = leading integer
+# parsed from the flow title (e.g. "Flow 2a — ..." -> 2).
+_FLOW_POLICY_MAP: dict[int, list[str]] = {
+    1: ["Incident Reporting and Resolution", "Troubleshooting Guides"],
+    2: ["Incident Reporting and Resolution"],
+    3: ["Incident Reporting and Resolution", "Troubleshooting Guides"],
+    4: ["Incident Reporting and Resolution", "Troubleshooting Guides"],
+    5: ["Hardware Requests"],
+    6: ["Hardware Requests"],
+    7: ["Software Requests"],
+    8: ["Software Requests"],
+    9: ["Software Requests"],
+    10: ["Software Requests"],
+    11: ["Facilities Requests"],
+    12: ["Facilities Requests"],
+    13: ["Facilities Requests"],
+    14: ["Facilities Requests"],
+    15: ["Accounts and Access"],
+    16: ["Accounts and Access"],
+    17: ["Accounts and Access"],
+    18: ["Accounts and Access"],
+    19: ["Accounts and Access", "Incident Reporting and Resolution"],
+    20: ["Accounts and Access"],
+    21: ["Software Requests"],
+}
+
+
+def _flow_number(title: str) -> int | None:
+    m = re.match(r"Flow\s+(\d+)", title)
+    return int(m.group(1)) if m else None
+
+
+def _policies_for_flow(flow_title: str) -> list[tuple[str, str]]:
+    """Return (title, body) policy sections specific to the given flow.
+
+    Universal policies (listed in ``_UNIVERSAL_POLICY_TITLES``) are excluded —
+    they're always relevant and would add noise to the per-flow quick reference.
+    """
+    num = _flow_number(flow_title)
+    keep = set(_FLOW_POLICY_MAP.get(num, [])) if num is not None else set()
+    return [(t, b) for t, b in _policy_sections if t in keep]
+
+
+def _render_quick_reference():
+    """One-pane view of a single flow: steps, tools used (with params), and policies."""
+    if not flow_sections:
+        st.caption("No flows reference found at data/itsm_flows.md.")
+        return
+    titles = [s["title"] for s in flow_sections]
+    selected_title = st.selectbox(
+        "Flow",
+        titles,
+        key="quick_ref_flow",
+        help="Pick a flow to see its steps, referenced tool schemas, and agent policies in one view.",
+    )
+    section = next(s for s in flow_sections if s["title"] == selected_title)
+
+    st.markdown(f"### {section['title']}")
+    st.markdown(section["body"])
+
+    st.markdown("---")
+    st.markdown("#### Tools used in this flow")
+    tool_names = extract_tools_in_flow(section["body"], tool_type_map)
+    if not tool_names:
+        st.caption("No tools detected in this flow's markdown.")
+    else:
+        for name in tool_names:
+            tool = _tool_by_name.get(name)
+            if not tool:
+                continue
+            tt = tool.get("tool_type", "read")
+            color, label = get_display_style(tt)
+            badge = (
+                f'<span style="background:{color};color:white;padding:2px 8px;'
+                f'border-radius:4px;font-size:0.7em;font-weight:bold">{label}</span>'
+            )
+            st.markdown(
+                f"{badge} **`{tool['name']}`** — {tool.get('description', '')}",
+                unsafe_allow_html=True,
+            )
+            req = tool.get("required_parameters", [])
+            opt = tool.get("optional_parameters", [])
+            if req or opt:
+                params_md = ""
+                for p in req:
+                    params_md += f"- **`{p['name']}`** ({p['type']}): {p['description']}\n"
+                for p in opt:
+                    params_md += f"- *`{p['name']}`* ({p['type']}, optional): {p['description']}\n"
+                st.markdown(params_md)
+            st.markdown("")
+
+    st.markdown("---")
+    st.markdown("#### Relevant agent policies")
+    relevant = _policies_for_flow(section["title"])
+    if not relevant:
+        st.caption("No matching policy sections for this flow.")
+    else:
+        for title, body in relevant:
+            with st.expander(title, expanded=False):
+                st.markdown(body)
+
+
+with st.expander("Reference: Quick Reference, Tool Schemas, Flows & Agent Policies", expanded=False):
+    tab_quick, tab_tools, tab_flows, tab_policies = st.tabs(
+        ["Quick Reference", "Tool Schemas", "Flows", "Agent Policies"]
+    )
+    with tab_quick:
+        _render_quick_reference()
     with tab_tools:
         for tt, label in [
             ("auth", "Auth Tools"),
@@ -623,18 +781,12 @@ with st.expander("Reference: Tool Schemas, Flows & Agent Policies", expanded=Fal
             st.markdown(flows_markdown)
         else:
             st.caption("No flows reference found at data/itsm_flows.md.")
-    _policy_flow_map: dict[str, str] = {}
     with tab_policies:
         if _preamble:
             with st.expander("General", expanded=False):
                 st.markdown(_preamble)
-        _general_sections = [(t, b) for t, b in _policy_sections if t not in _policy_flow_map]
-        _flow_sections = [(t, b) for t, b in _policy_sections if t in _policy_flow_map]
-        _flow_sections.sort(key=lambda x: int(_policy_flow_map[x[0]].split()[1]))
-        for title, body in _general_sections + _flow_sections:
-            flow_label = _policy_flow_map.get(title, "")
-            display_title = f"{title} ({flow_label})" if flow_label else title
-            with st.expander(display_title, expanded=False):
+        for title, body in _policy_sections:
+            with st.expander(title, expanded=False):
                 st.markdown(body)
 
 _seed_data = record.get("seed_data", None)
