@@ -19,19 +19,16 @@ jobs:
         with:
           ref: ${{ github.head_ref }}  # Required in non-push events for git-auto-commit-action to work.
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+
       - name: Set up Python
         uses: actions/setup-python@v6
-
-      - name: Cache pip packages
-        uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-${{ steps.setup-python.outputs.python-version }}-
+          python-version-file: pyproject.toml
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        run: uv sync --extra dev --frozen
 
       - name: Run pre-commit
         id: run-pre-commit
@@ -44,7 +41,7 @@ jobs:
           commit_message: Apply pre-commit
 
       - name: Run tests
-        run: pytest tests/ --cov=eva --cov-report=term-missing
+        run: uv run pytest tests/ --color=yes --cov=eva --cov-report=term-missing --durations=10
 
       - name: Fail if pre-commit failed
         if: steps.run-pre-commit.outcome == 'failure'
