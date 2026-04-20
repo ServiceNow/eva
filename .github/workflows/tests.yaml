@@ -41,7 +41,7 @@ jobs:
           commit_message: Apply pre-commit
 
       - name: Run tests
-        run: uv run pytest tests/ --cov=eva --cov-report=term-missing
+        run: uv run pytest tests/ --color=yes --cov=eva --cov-report=term-missing --durations=10
 
       - name: Fail if pre-commit failed
         if: steps.run-pre-commit.outcome == 'failure'
