@@ -257,14 +257,14 @@ def _strip_other_mode_fields(data: dict, strict: bool = True) -> dict:
 class BackgroundNoiseType(StrEnum):
     """Ambient noise type mixed into user audio (speech and silence)."""
 
-    coffee_shop = "coffee_shop"
     airport_gate = "airport_gate"
-    bad_connection_static = "bad_connection_static"
-    road_noise = "road_noise"
-    nyc_street = "nyc_street"
-    background_music = "background_music"
-    loud_construction = "loud_construction"
     baby_crying = "baby_crying"
+    background_music = "background_music"
+    bad_connection_static = "bad_connection_static"
+    coffee_shop = "coffee_shop"
+    loud_construction = "loud_construction"
+    nyc_street = "nyc_street"
+    road_noise = "road_noise"
 
 
 class AccentType(StrEnum):
