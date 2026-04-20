@@ -19,7 +19,7 @@ Deterministic metric that measures the elapsed time between the end of a user ut
 
 ### Input Data
 
-Uses `response_speed_latencies` from MetricContext — pre-computed latencies (in seconds) from Pipecat's UserBotLatencyObserver, which measures time from user stopped speaking to assistant started speaking.
+Uses `latency_assistant_turns` from MetricContext — per-turn latencies (in seconds) computed from audio timestamps (user speech end to assistant speech start).
 
 ### Audio-Native vs Cascade
 
