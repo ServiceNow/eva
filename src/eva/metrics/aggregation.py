@@ -113,18 +113,23 @@ def compute_record_aggregates(
 
     for comp in composites:
         if comp.aggregation_type == "pass":
-            # All components must be present; if any missing -> None
+            # Components missing or errored collapse the composite to None (genuine data
+            # absence). Components flagged as skipped are excluded from the pass check
+            # so they don't mask applicable components.
             scores: list[tuple[float, str, float]] = []
-            missing = False
+            has_error_or_missing = False
             for metric_name in comp.component_metrics:
-                val = record_metrics.get_score(metric_name)
-                if val is None:
-                    missing = True
+                metric = record_metrics.metrics.get(metric_name)
+                if metric is None or metric.error:
+                    has_error_or_missing = True
                     break
+                if metric.skipped:
+                    continue
+                val = metric.normalized_score if metric.normalized_score is not None else metric.score
                 op, thresh = comp.thresholds[metric_name]
                 scores.append((val, op, thresh))
 
-            if missing:
+            if has_error_or_missing or not scores:
                 results[comp.name] = None
             else:
                 all_pass = all(_check_threshold(v, op, th) for v, op, th in scores)

@@ -189,6 +189,11 @@ class ValidationRunner:
                 failed_metrics.append(metric_name)
                 continue
 
+            # Skipped metric (no applicable data) — exclude from validation, not a failure.
+            if metric_score.skipped:
+                logger.debug(f"Record {record_id}: Metric '{metric_name}' was skipped")
+                continue
+
             score = metric_score.normalized_score if metric_score.normalized_score is not None else metric_score.score
             scores[metric_name] = score
 

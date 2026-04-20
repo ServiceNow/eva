@@ -69,6 +69,9 @@ apps = [
     "plotly>=5.0",
     "streamlit>=1.56.0",
     "streamlit-diff-viewer>=0.0.2",
+    "librosa>=0.11",
+    "soundfile>=0.13",
+    "audioread>=3.1",
 ]
 
 
@@ -101,7 +104,7 @@ ignore = ["D203", "D206", "D213", "D400", "D401", "D413", "D415", "E1", "E501"]
 simulation_version = "0.1.0"
 # Bump when metrics pipeline changes (metrics code, judge prompts, pricing,
 # postprocessor). Old metric results become stale — cheap to recompute.
-metrics_version = "0.1.1"
+metrics_version = "0.1.2"
 
 [tool.mypy]
 python_version = "3.11"

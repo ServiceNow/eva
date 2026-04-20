@@ -12,6 +12,7 @@ Usage:
 import html
 import json
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -21,6 +22,7 @@ import streamlit as st
 from diff_viewer import diff_viewer
 
 import eva.metrics  # noqa: F401
+from apps.audio_plots import preload_audio_data, render_audio_analysis_tab
 from eva.metrics.registry import get_global_registry
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RecordMetrics
@@ -99,6 +101,28 @@ def get_run_directories(output_dir: Path) -> list[Path]:
         return []
     run_dirs = [d for d in output_dir.iterdir() if d.is_dir() and (d / "records").exists()]
     return sorted(run_dirs, key=lambda d: d.name, reverse=True)
+
+
+def _system_name_from_run(run_dir: Path) -> str:
+    """Extract the system name from a run folder name (<timestamp>_<system_name>)."""
+    m = re.match(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d+_(.+)$", run_dir.name)
+    return m.group(1) if m else run_dir.name
+
+
+def filter_latest_runs(run_dirs: list[Path]) -> list[Path]:
+    """Keep only the most recent run per system name.
+
+    Assumes run_dirs is already sorted newest-first (as returned by
+    get_run_directories), so the first occurrence of each system name wins.
+    """
+    seen: set[str] = set()
+    result = []
+    for d in run_dirs:
+        system = _system_name_from_run(d)
+        if system not in seen:
+            seen.add(system)
+            result.append(d)
+    return result
 
 
 def get_record_directories(run_dir: Path) -> list[Path]:
@@ -206,6 +230,11 @@ def format_transcript(transcript_path: Path) -> pd.DataFrame:
 # ============================================================================
 # Helpers
 # ============================================================================
+
+
+def _is_sub_metric(name: str) -> bool:
+    """Return True if the metric name is a sub-metric (contains __ separator)."""
+    return "__" in name
 
 
 def _sort_metrics_by_category(metric_names: list[str]) -> list[str]:
@@ -448,12 +477,30 @@ def _model_suffix_from_config(run_config: dict) -> str:
     return "_".join(p for p in parts if p)
 
 
-def _get_run_label(run_name: str, run_config: dict) -> str:
-    """Build a display label for a run, appending model info if not already in the name."""
+_TIMESTAMP_RUN_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d+)_(.+)$")
+_TIMESTAMP_ONLY_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d+)$")
+
+
+def _get_system_and_timestamp(run_name: str, run_config: dict) -> tuple[str, str]:
+    """Return (system_name, timestamp) for a run."""
+    m = _TIMESTAMP_RUN_RE.match(run_name)
+    if m:
+        return m.group(2), m.group(1)
+    # Timestamp-only directory (no system name suffix) — still extract the timestamp
+    m = _TIMESTAMP_ONLY_RE.match(run_name)
+    if m:
+        suffix = _model_suffix_from_config(run_config)
+        return suffix or "", m.group(1)
     suffix = _model_suffix_from_config(run_config)
-    if not suffix or suffix in run_name:
-        return run_name
-    return f"{run_name} ({suffix})"
+    if suffix and suffix not in run_name:
+        return f"{suffix} ({run_name})", ""
+    return run_name, ""
+
+
+def _get_run_label(run_name: str, run_config: dict) -> str:
+    """Build a display label for a run (used for chart legends)."""
+    system, timestamp = _get_system_and_timestamp(run_name, run_config)
+    return f"{system} ({timestamp})" if timestamp else system
 
 
 def _color_cell(val):
@@ -471,7 +518,11 @@ def _color_cell(val):
 
 
 def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
-    """Collect all metrics rows for a run. Returns (rows, metric_names)."""
+    """Collect all metrics rows for a run. Returns (rows, metric_names).
+
+    Rows for failed attempts (directories named *_failed_attempt_*) are marked
+    with ``_is_failed_attempt=True`` so the caller can filter them.
+    """
     record_dirs = get_record_directories(run_dir)
     rows: list[dict] = []
     all_metric_names: set[str] = set()
@@ -485,7 +536,8 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
             if not metrics:
                 continue
 
-            row: dict = {"record": record_id}
+            is_failed_attempt = "_failed_attempt_" in trial_label
+            row: dict = {"record": record_id, "_is_failed_attempt": is_failed_attempt}
             if trial_label:
                 row["trial"] = trial_label
 
@@ -498,6 +550,23 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
                     if metric_score.normalized_score is not None
                     else metric_score.score
                 )
+
+                sub_metrics = getattr(metric_score, "sub_metrics", None)
+                if sub_metrics:
+                    for sub_key, sub_ms in sub_metrics.items():
+                        col = f"{metric_name}__{sub_key}"
+                        row[col] = (
+                            None
+                            if sub_ms.error
+                            else sub_ms.normalized_score
+                            if sub_ms.normalized_score is not None
+                            else sub_ms.score
+                        )
+                        all_metric_names.add(col)
+                        if col not in _METRIC_GROUP:
+                            _METRIC_GROUP[col] = _METRIC_GROUP.get(metric_name, "Other")
+                        if metric_name in _NON_NORMALIZED_METRICS:
+                            _NON_NORMALIZED_METRICS.add(col)
 
             rows.append(row)
 
@@ -910,9 +979,13 @@ def render_cross_run_comparison(run_dirs: list[Path]):
             metric_names = list(per_metric.keys())
             all_metric_names.update(metric_names)
             model_details = _extract_model_details(run_config)
+            system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
             summary: dict = {
                 "run": run_name,
+                "run_output_dir": str(run_dir.parent),
                 "label": _get_run_label(run_name, run_config),
+                "system_name": system_name,
+                "run_timestamp": run_timestamp,
                 "records": metrics_summary.get("total_records", 0),
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
@@ -920,6 +993,15 @@ def render_cross_run_comparison(run_dirs: list[Path]):
             for m, stats in per_metric.items():
                 if stats.get("mean") is not None:
                     summary[m] = stats["mean"]
+                for sub_key, sub_stats in (stats.get("sub_metrics") or {}).items():
+                    if sub_stats.get("mean") is not None:
+                        col = f"{m}__{sub_key}"
+                        summary[col] = sub_stats["mean"]
+                        all_metric_names.add(col)
+                        if col not in _METRIC_GROUP:
+                            _METRIC_GROUP[col] = _METRIC_GROUP.get(m, "Other")
+                        if m in _NON_NORMALIZED_METRICS:
+                            _NON_NORMALIZED_METRICS.add(col)
             # Add EVA composite scores from overall_scores
             overall = metrics_summary.get("overall_scores", {})
             for composite in _EVA_BAR_COMPOSITES:
@@ -934,9 +1016,13 @@ def render_cross_run_comparison(run_dirs: list[Path]):
             all_metric_names.update(metric_names)
             df = pd.DataFrame(rows)
             model_details = _extract_model_details(run_config)
+            system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
             summary = {
                 "run": run_name,
+                "run_output_dir": str(run_dir.parent),
                 "label": _get_run_label(run_name, run_config),
+                "system_name": system_name,
+                "run_timestamp": run_timestamp,
                 "records": len(df),
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
@@ -958,6 +1044,9 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         return
 
     metric_names = _sort_metrics_by_category(sorted(all_metric_names))
+    if not st.session_state.get("show_sub_metrics"):
+        metric_names = [m for m in metric_names if not _is_sub_metric(m)]
+
     col_rename = _make_category_header_rename(metric_names)
     summary_df = pd.DataFrame(run_summaries)
 
@@ -995,29 +1084,44 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         )
         st.plotly_chart(bar_fig)
 
-    # Metrics table: EVA composites first, then all individual metrics
-    table_composites = [c for c in _EVA_BAR_COMPOSITES if c in summary_df.columns]
-    display_cols = ["label", "records"] + table_composites + ordered_metrics
-    display_df = summary_df[display_cols].copy()
+    # Split metrics into three groups by category
+    eva_a_composites = [c for c in ["EVA-A_pass", "EVA-A_mean"] if c in summary_df.columns]
+    eva_x_composites = [c for c in ["EVA-X_pass", "EVA-X_mean"] if c in summary_df.columns]
+    accuracy_metrics = [m for m in ordered_metrics if _METRIC_GROUP.get(m) == "Accuracy"]
+    experience_metrics = [m for m in ordered_metrics if _METRIC_GROUP.get(m) == "Experience"]
+    other_metrics = [m for m in ordered_metrics if _METRIC_GROUP.get(m) not in {"Accuracy", "Experience"}]
 
-    # Add link column to navigate to Run Overview
-    display_df.insert(0, "link", f"/run_overview?output_dir={run_dirs[0].parent}&run=" + summary_df["run"])
+    multiple_output_dirs = summary_df["run_output_dir"].nunique() > 1
+    id_cols = ["system_name", "run_timestamp"] + (["run_output_dir"] if multiple_output_dirs else []) + ["records"]
+    id_rename = {
+        "system_name": "System",
+        "run_timestamp": "Timestamp",
+        "run_output_dir": "Output Dir",
+        "records": "# Records",
+    }
+    link_series = "/run_overview?output_dir=" + summary_df["run_output_dir"] + "&run=" + summary_df["run"]
 
-    composite_rename = {c: f"[EVA] {_EVA_COMPOSITE_DISPLAY[c]}" for c in table_composites}
-    display_df = display_df.rename(columns={"label": "Run", "records": "# Records", **composite_rename, **col_rename})
-    renamed_composites = [composite_rename[c] for c in table_composites]
-    renamed_metrics = [col_rename[m] for m in ordered_metrics]
-    all_score_cols = renamed_composites + renamed_metrics
+    def _show_subtable(heading: str, composites: list, metrics: list) -> None:
+        if not composites and not metrics:
+            return
+        st.markdown(f"#### {heading}")
+        composite_rename = {c: f"[EVA] {_EVA_COMPOSITE_DISPLAY[c]}" for c in composites}
+        cols = id_cols + composites + metrics
+        sub_df = summary_df[cols].copy()
+        sub_df.insert(0, "link", link_series)
+        sub_df = sub_df.rename(columns={**id_rename, **composite_rename, **col_rename})
+        score_cols = [composite_rename[c] for c in composites] + [col_rename[m] for m in metrics]
+        styled = sub_df.style.map(_color_cell, subset=score_cols)
+        styled = styled.format(dict.fromkeys(score_cols, "{:.3f}"), na_rep="—")
+        st.dataframe(
+            styled,
+            hide_index=True,
+            column_config={"link": st.column_config.LinkColumn(" ", display_text="🔍", width=40)},
+        )
 
-    styled = display_df.style.map(_color_cell, subset=all_score_cols)
-    styled = styled.format(dict.fromkeys(all_score_cols, "{:.3f}"), na_rep="—")
-    st.dataframe(
-        styled,
-        hide_index=True,
-        column_config={
-            "link": st.column_config.LinkColumn(" ", display_text="🔍", width=40),
-        },
-    )
+    _show_subtable("Accuracy Metrics (EVA-A)", eva_a_composites, accuracy_metrics)
+    _show_subtable("Experience Metrics (EVA-X)", eva_x_composites, experience_metrics)
+    _show_subtable("Diagnostic & Other Metrics", [], other_metrics)
 
     csv = summary_df.drop(columns=["label"]).to_csv(index=False)
     st.download_button("Download CSV", csv, file_name="cross_run_comparison.csv", mime="text/csv")
@@ -1043,6 +1147,9 @@ def render_run_overview(run_dir: Path):
     has_trials = "trial" in rows[0]
     df = pd.DataFrame(rows)
     metric_names = _sort_metrics_by_category(metric_names)
+    if not st.session_state.get("show_sub_metrics"):
+        metric_names = [m for m in metric_names if not _is_sub_metric(m)]
+
     col_rename = _make_category_header_rename(metric_names)
 
     # --- Aggregate summary ---
@@ -1176,26 +1283,33 @@ def render_run_overview(run_dir: Path):
     # --- Per-record table ---
     st.markdown("### Per-Record Metrics")
 
+    has_failed_attempts = df["_is_failed_attempt"].any()
+    show_failed = False
+    if has_failed_attempts:
+        show_failed = st.toggle("Show failed attempts", value=False)
+
+    table_df = df if show_failed else df[~df["_is_failed_attempt"]]
+
     run_name = run_dir.name
     leading_cols = ["record"]
     if has_trials:
         leading_cols.append("trial")
-    ordered_metrics = [m for m in metric_names if m in df.columns]
-    df = df[leading_cols + ordered_metrics]
+    ordered_metrics = [m for m in metric_names if m in table_df.columns]
+    table_df = table_df[leading_cols + ordered_metrics]
 
     # Add link column to navigate to Record Detail
     def _record_link(row):
-        params = f"?view=Record+Detail&run={run_name}&record={row['record']}"
+        params = f"/record_detail?output_dir={run_dir.parent}&run={run_name}&record={row['record']}"
         if "trial" in row and pd.notna(row.get("trial")):
             params += f"&trial={row['trial']}"
         return params
 
-    df = df.copy()
-    df.insert(0, "link", df.apply(_record_link, axis=1))
-    df = df.rename(columns=col_rename)
+    table_df = table_df.copy()
+    table_df.insert(0, "link", table_df.apply(_record_link, axis=1))
+    table_df = table_df.rename(columns=col_rename)
 
     renamed_metrics = [col_rename[m] for m in ordered_metrics]
-    styled = df.style.map(_color_cell, subset=renamed_metrics)
+    styled = table_df.style.map(_color_cell, subset=renamed_metrics)
     styled = styled.format(dict.fromkeys(renamed_metrics, "{:.3f}"), na_rep="—")
     st.dataframe(
         styled,
@@ -1205,7 +1319,7 @@ def render_run_overview(run_dir: Path):
         },
     )
 
-    csv = df.drop(columns=["link"]).to_csv(index=False)
+    csv = table_df.drop(columns=["link"]).to_csv(index=False)
     st.download_button("Download CSV", csv, file_name=f"{run_dir.name}_metrics.csv", mime="text/csv")
 
 
@@ -1217,54 +1331,78 @@ def render_metrics_tab(metrics: RecordMetrics | None):
 
     st.markdown("### Metrics")
 
+    # Group metrics by category, preserving insertion order within each group
+    grouped: dict[str, list[tuple[str, object]]] = {}
     for metric_name, metric_score in metrics.metrics.items():
-        with st.expander(
-            f"**{metric_name}**: {metric_score.normalized_score:.3f}"
-            if metric_score.normalized_score is not None
-            else f"**{metric_name}**"
-        ):
-            col1, col2 = st.columns([1, 3])
+        cat = _METRIC_GROUP.get(metric_name, "Other")
+        grouped.setdefault(cat, []).append((metric_name, metric_score))
 
-            with col1:
-                st.metric("Score", f"{metric_score.score:.3f}" if metric_score.score is not None else "N/A")
-                st.metric(
-                    "Normalized",
-                    f"{metric_score.normalized_score:.3f}" if metric_score.normalized_score is not None else "N/A",
-                )
-                if metric_score.error:
-                    st.error(f"Error: {metric_score.error}")
+    for cat in _CATEGORY_ORDER + [c for c in grouped if c not in _CATEGORY_ORDER]:
+        if cat not in grouped:
+            continue
+        st.markdown(f"#### {cat}")
+        for metric_name, metric_score in grouped[cat]:
+            with st.expander(
+                f"**{metric_name}**: {metric_score.normalized_score:.3f}"
+                if metric_score.normalized_score is not None
+                else f"**{metric_name}**"
+            ):
+                col1, col2 = st.columns([1, 3])
 
-            with col2:
-                if metric_score.details:
-                    st.markdown("**Details:**")
-                    if "explanation" in metric_score.details:
-                        st.write(metric_score.details["explanation"])
+                with col1:
+                    st.metric("Score", f"{metric_score.score:.3f}" if metric_score.score is not None else "N/A")
+                    st.metric(
+                        "Normalized",
+                        f"{metric_score.normalized_score:.3f}" if metric_score.normalized_score is not None else "N/A",
+                    )
+                    if metric_score.error:
+                        st.error(f"Error: {metric_score.error}")
 
-                    if "judge_prompt" in metric_score.details:
-                        with st.expander("View Judge Prompt"):
-                            prompt = metric_score.details["judge_prompt"]
-                            if isinstance(prompt, str):
-                                st.text(prompt)
-                            else:
-                                st.json(prompt)
-                    elif "judge_prompts" in metric_score.details:
-                        with st.expander("View Judge Prompts"):
-                            prompts = metric_score.details["judge_prompts"]
-                            if isinstance(prompts, list):
-                                for i, prompt in enumerate(prompts):
-                                    st.markdown(f"**Turn {i + 1}:**")
+                    # Dimension scores (e.g. faithfulness, conversation_progression)
+                    explanation = metric_score.details.get("explanation") if metric_score.details else None
+                    dimensions = explanation.get("dimensions") if isinstance(explanation, dict) else None
+                    if dimensions:
+                        st.markdown("**Dimensions**")
+                        for dim_name, dim_data in dimensions.items():
+                            if isinstance(dim_data, dict):
+                                rating = dim_data.get("rating")
+                                flagged = dim_data.get("flagged", False)
+                                label = dim_name.replace("_", " ").title()
+                                score_str = f"{rating}/3" if rating is not None else "N/A"
+                                prefix = "⚠ " if flagged else ""
+                                st.markdown(f"{prefix}**{label}:** {score_str}")
+
+                with col2:
+                    if metric_score.details:
+                        st.markdown("**Details:**")
+                        if "explanation" in metric_score.details:
+                            st.write(metric_score.details["explanation"])
+
+                        if "judge_prompt" in metric_score.details:
+                            with st.expander("View Judge Prompt"):
+                                prompt = metric_score.details["judge_prompt"]
+                                if isinstance(prompt, str):
                                     st.text(prompt)
-                                    st.divider()
-                            else:
-                                st.json(prompts)
+                                else:
+                                    st.json(prompt)
+                        elif "judge_prompts" in metric_score.details:
+                            with st.expander("View Judge Prompts"):
+                                prompts = metric_score.details["judge_prompts"]
+                                if isinstance(prompts, list):
+                                    for i, prompt in enumerate(prompts):
+                                        st.markdown(f"**Turn {i + 1}:**")
+                                        st.text(prompt)
+                                        st.divider()
+                                else:
+                                    st.json(prompts)
 
-                    details_to_show = {
-                        k: v
-                        for k, v in metric_score.details.items()
-                        if k not in ["explanation", "judge_prompt", "judge_prompts"]
-                    }
-                    if details_to_show:
-                        st.json(details_to_show)
+                        details_to_show = {
+                            k: v
+                            for k, v in metric_score.details.items()
+                            if k not in ["explanation", "judge_prompt", "judge_prompts"]
+                        }
+                        if details_to_show:
+                            st.json(details_to_show)
 
 
 def render_processed_data_tab(metrics: RecordMetrics | None):
@@ -1414,10 +1552,34 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
             group = _METRIC_GROUP.get(name, "Other")
             grouped.setdefault(group, []).append(name)
 
-        for group in ["Accuracy", "Experience", "Validation", "Other"]:
-            names_in_group = grouped.get(group)
-            if not names_in_group:
-                continue
+        # Accuracy / Experience / Diagnostic / Validation side by side in 4 columns
+        col_groups = ["Accuracy", "Experience", "Diagnostic", "Validation"]
+        present_col_groups = [g for g in col_groups if grouped.get(g)]
+        if present_col_groups:
+            outer_cols = st.columns(len(present_col_groups))
+            for outer_col, group in zip(outer_cols, present_col_groups):
+                names_in_group = grouped[group]
+                with outer_col:
+                    st.caption(group)
+                    for name in names_in_group:
+                        m = all_top_metrics[name]
+                        score = m["normalized_score"]
+                        display_name = _format_metric_name(name)
+                        score_str = f"{score:.3f}" if score is not None else "N/A"
+                        icon = None if score is None else "🟢" if score >= 0.8 else "🟡" if score >= 0.4 else "🔴"
+                        st.button(
+                            f"{display_name}\n{score_str}",
+                            key=f"metric_btn_{name}",
+                            on_click=st.session_state.update,
+                            kwargs={"selected_metric": None if selected == name else name},
+                            type="primary" if selected == name else "secondary",
+                            icon=icon,
+                            width="stretch",
+                        )
+
+        # Any remaining groups (Other, Conversation Quality, etc.) rendered below
+        for group in [g for g in grouped if g not in col_groups]:
+            names_in_group = grouped[group]
             st.caption(group)
             cols = st.columns(min(len(names_in_group), 5))
             for i, name in enumerate(names_in_group):
@@ -1485,7 +1647,7 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
                         else:
                             color = "#f44336"
                         st.html(
-                            f'<div style="margin-bottom:8px; padding:6px 10px; background:#fafafa; border-radius:6px; border-left:3px solid {color};">'
+                            f'<div style="margin-bottom:8px; padding:6px 10px; background:rgba(128,128,128,0.1); border-radius:6px; border-left:3px solid {color};">'
                             f"<strong>Turn {tid_str}</strong> — "
                             f'<span style="color:{color}; font-weight:600;">{label}</span> '
                             f'<span style="opacity:0.6;">(latency: {latency_str})</span>'
@@ -1508,7 +1670,7 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
                         color = _score_color(rating)
                         rating_str = f"{rating:.2f}" if isinstance(rating, (int, float)) else str(rating)
                         st.html(
-                            f'<div style="margin-bottom:8px; padding:6px 10px; background:#fafafa; border-radius:6px; border-left:3px solid {color};">'
+                            f'<div style="margin-bottom:8px; padding:6px 10px; background:rgba(128,128,128,0.1); border-radius:6px; border-left:3px solid {color};">'
                             f"<strong>Turn {tid_str}</strong> — "
                             f'<span style="color:{color}; font-weight:600;">{rating_str}</span>'
                             f"{'<br><span style=font-size:0.88em;opacity:0.75;>' + html.escape(str(explanation)) + '</span>' if explanation else ''}"
@@ -1704,14 +1866,21 @@ def _render_sidebar_run_metadata(run_name: str, run_config: dict):
 
 def _get_run_dirs():
     """Get run directories, showing an error if none found."""
-    output_dir = Path(
-        st.sidebar.text_input("Output directory", value=_DEFAULT_OUTPUT_DIR, key="output_dir", bind="query-params")
+    output_dirs_input = st.sidebar.text_area(
+        "Output directories (one per line)", value=_DEFAULT_OUTPUT_DIR, key="output_dir", bind="query-params"
     )
+    output_dirs = [Path(stripped) for p in output_dirs_input.splitlines() if (stripped := p.strip())]
 
-    run_dirs = get_run_directories(output_dir)
+    run_dirs = [rd for od in output_dirs for rd in get_run_directories(od)]
+
+    latest_only = st.sidebar.toggle("Latest run per system only", value=True)
+    if latest_only:
+        run_dirs = filter_latest_runs(run_dirs)
+
+    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics")
 
     if not run_dirs:
-        st.error(f"No run directories found in {output_dir}")
+        st.error(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
         st.stop()
 
     return run_dirs
@@ -1719,8 +1888,13 @@ def _get_run_dirs():
 
 def _select_run(run_dirs: list[Path]):
     st.sidebar.header("Run Selection")
+    multiple_output_dirs = len({d.parent for d in run_dirs}) > 1
     selected_run_dir = st.sidebar.selectbox(
-        "Select Run", run_dirs, format_func=lambda d: d.name, key="run", bind="query-params"
+        "Select Run",
+        run_dirs,
+        format_func=lambda d: str(d) if multiple_output_dirs else d.name,
+        key="run",
+        bind="query-params",
     )
 
     run_config = _load_run_config(selected_run_dir)
@@ -1812,13 +1986,18 @@ def render_record_detail(selected_run_dir: Path):
 
     st.divider()
 
+    # Pre-load audio data before the tabs so the cache is warm when the user
+    # opens the Audio Analysis tab (or switches trials).
+    preload_audio_data(selected_record_dir)
+
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
         [
             "Conversation Trace",
             "Transcript",
             "Metrics Detail",
             "Processed Data",
+            "Turn Taking Analysis",
         ]
     )
 
@@ -1865,6 +2044,9 @@ def render_record_detail(selected_run_dir: Path):
 
     with tab4:
         render_processed_data_tab(metrics)
+
+    with tab5:
+        render_audio_analysis_tab(selected_record_dir)
 
 
 # ============================================================================

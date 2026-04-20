@@ -82,7 +82,7 @@ class MetricContext:
         tool_responses: list[dict] | None = None,
         conversation_trace: list[dict] | None = None,
         conversation_finished: bool | None = None,
-        response_speed_latencies: list[float] | None = None,
+        latency_assistant_turns: dict[int, float] | None = None,
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
         pipeline_type: PipelineType = PipelineType.CASCADE,
@@ -132,7 +132,7 @@ class MetricContext:
         self.tool_responses = tool_responses or []
         self.conversation_trace = conversation_trace or []
         self.conversation_finished = conversation_finished or False
-        self.response_speed_latencies = response_speed_latencies or []
+        self.latency_assistant_turns = latency_assistant_turns or {}
         self.assistant_interrupted_turns = assistant_interrupted_turns or set()
         self.user_interrupted_turns = user_interrupted_turns or set()
         self.pipeline_type = pipeline_type

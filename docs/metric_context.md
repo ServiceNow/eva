@@ -182,7 +182,7 @@ Counts and flags computed during benchmark execution.
   - `"error"`: An error occurred
 - **`duration_seconds: float`** - Total duration of the conversation in seconds.
 - **`pipeline_type: PipelineType`** - The pipeline architecture used (`CASCADE`, `AUDIO_LLM`, or `S2S`). Access `context.is_audio_native` for a convenience boolean that returns `True` for both `AUDIO_LLM` and `S2S`.
-- **`response_speed_latencies: list[float]`** - List of response latencies in seconds (time from user speech end to assistant speech start).
+- **`latency_assistant_turns: dict[int, float]`** - Per-turn latency in seconds (user speech end to assistant speech start), keyed by turn ID.
 
 ### File Paths
 
