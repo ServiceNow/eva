@@ -311,6 +311,10 @@ class AgenticSystem:
             if thinking_blocks:
                 assistant_msg["thinking_blocks"] = thinking_blocks
                 logger.info(f"🧠 Including {len(thinking_blocks)} thinking block(s) in message history for next turn")
+            responses_output_items = llm_stats.get("responses_output_items")
+            if responses_output_items:
+                assistant_msg["responses_output_items"] = responses_output_items
+                logger.info(f"🔮 Including {len(responses_output_items)} responses output item(s) for next turn")
             messages.append(assistant_msg)
 
             # Execute each tool call
