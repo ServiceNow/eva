@@ -388,12 +388,10 @@ class MetricsRunner:
                 )
 
         # Filter out metrics incompatible with the pipeline type
-        applicable_metrics = metrics_to_run
-        if context.is_audio_native:
-            skipped = [m.name for m in metrics_to_run if m.skip_audio_native]
-            if skipped:
-                logger.info(f"[{record_id}] Skipping metrics incompatible with audio-native pipeline: {skipped}")
-            applicable_metrics = [m for m in metrics_to_run if not m.skip_audio_native]
+        skipped = [m.name for m in metrics_to_run if context.pipeline_type not in m.supported_pipeline_types]
+        if skipped:
+            logger.info(f"[{record_id}] Skipping metrics incompatible with {context.pipeline_type} pipeline: {skipped}")
+        applicable_metrics = [m for m in metrics_to_run if context.pipeline_type in m.supported_pipeline_types]
 
         # Run all metrics in parallel
         tasks = [compute_metric(metric) for metric in applicable_metrics]

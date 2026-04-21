@@ -25,7 +25,7 @@ Uses `intended_assistant_turns` from MetricContext — the text sent to the TTS 
 ### Audio-Native vs Cascade
 
 - **Cascade**: Fully applicable — evaluates whether the LLM's text output is appropriate for TTS.
-- **Audio-native (S2S, S2T+TTS):** **Skipped entirely** (`skip_s2s = True` (audio-native)). Audio-native models generate audio directly, so there is no separate text-to-TTS step and "speakability" of intermediate text is not meaningful.
+- **S2S:** **Skipped** (`supported_pipeline_types = {CASCADE, AUDIO_LLM}`). S2S models generate audio directly without a separate TTS step, so there is no intermediate text whose speakability can be evaluated. AUDIO_LLM models do have a TTS step and are evaluated.
 
 ### Evaluation Methodology
 

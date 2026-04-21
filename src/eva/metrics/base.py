@@ -159,7 +159,7 @@ class BaseMetric(ABC):
     metric_type: MetricType = MetricType.CODE  # Override in subclasses
     pass_at_k_threshold: float = 0.5  # Normalized score threshold for pass@k pass/fail
     exclude_from_pass_at_k: bool = False  # Set True for metrics not suitable for pass@k
-    skip_audio_native: bool = False  # Set True for metrics that should not run on audio-native records (S2S, AudioLLM)
+    supported_pipeline_types: frozenset[PipelineType] = frozenset(PipelineType)  # Pipeline types this metric supports
 
     def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the metric.

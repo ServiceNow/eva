@@ -257,6 +257,7 @@ class ConversationWorker:
             server_url=f"ws://localhost:{self.port}/ws",
             output_dir=self.output_dir,
             user_simulator_context=self.agent.user_simulator_context,
+            perturbation_config=self.config.perturbation,
         )
 
     async def _run_conversation(self) -> str:
