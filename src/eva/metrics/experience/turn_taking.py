@@ -78,7 +78,7 @@ class TurnTakingMetric(CodeMetric):
     # EARLY_THRESHOLD_MS is shared across all turns — early-response behaviour is not
     # affected by whether a tool call occurred.
     EARLY_THRESHOLD_MS: float = 200  # latency < this ⇒ "early"
-    LATE_THRESHOLD_MS: float = 3000  # latency >= this ⇒ "late" (no tool call)
+    LATE_THRESHOLD_MS: float = 4000  # latency >= this ⇒ "late" (no tool call)
     LATE_THRESHOLD_MS_TOOL: float = 6000  # latency >= this ⇒ "late" (turn with tool call)
 
     @staticmethod

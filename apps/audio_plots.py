@@ -332,9 +332,6 @@ def _format_tt_for_turn(tid: int | None, tt_by_id: dict) -> str:
     if isinstance(score, (int, float)):
         lines.append(f"Score: {score:.2f}")
     lines.append(f"Reason: {reason_label}")
-    has_tool = evidence.get("has_tool_call")
-    if has_tool is not None:
-        lines.append(f"Tool call: {'yes ⚙' if has_tool else 'no'}")
     if "latency_ms" in evidence:
         lines.append(f"Latency: {evidence['latency_ms']:.0f}\u00a0ms")
     if "overlap_ms" in evidence:
@@ -1208,14 +1205,10 @@ def _build_figure(
         if not is_asst and turn.get("latency_s") is not None:
             latency_line = f"<br>Response latency:\u00a0{turn['latency_s'] * 1000:.0f}\u00a0ms"
 
-        tool_call_line = ""
-        if _tool_turns:
-            tool_call_line = f"<br>Tool call: {'yes \u2699' if turn['turn_id'] in _tool_turns else 'no'}"
-
         hover = (
             f"<b>Turn\u00a0{turn['turn_id']}\u00a0\u2014\u00a0{speaker}</b><br>"
             f"t\u00a0=\u00a0{turn['start']:.2f}s\u2013{turn['end']:.2f}s "
-            f"({turn['duration']:.1f}s)" + latency_line + tool_call_line + f"<br><br>{_wrap(transcript)}"
+            f"({turn['duration']:.1f}s)" + latency_line + f"<br><br>{_wrap(transcript)}"
         )
 
         # Visual bars — one per segment (handles multi-segment interrupted turns)
@@ -1372,6 +1365,9 @@ def _build_figure(
         tt_block = _format_turn_taking_hover(pause, tt_by_id)
         if tt_block:
             hover = hover + "<br><br>" + tt_block
+        if _tool_turns and pause["from_speaker"] == "user" and pause["to_speaker"] == "assistant":
+            to_tid = pause.get("to_turn_id")
+            hover = hover + f"<br>Tool call: {'yes \u2699' if to_tid in _tool_turns else 'no'}"
         # Highlight user→assistant pauses — these are the ones turn_taking scores.
         # Assistant→user gaps use the original muted style so the scored ones pop.
         is_scored = pause["from_speaker"] == "user" and pause["to_speaker"] == "assistant"
