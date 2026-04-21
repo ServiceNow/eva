@@ -68,8 +68,9 @@ class TestConvertMessagesForResponsesApi:
         assert items == [{"role": "user", "content": "Hello"}]
 
     def test_assistant_tool_calls_reconstructed_and_tool_messages_consumed(self):
-        """Assistant message with tool_calls is converted to function_call items;
-        the immediately following tool messages are consumed as function_call_output.
+        """Assistant message with tool_calls is converted to function_call items.
+
+        The immediately following tool messages are consumed as function_call_output.
         """
         messages = [
             {"role": "user", "content": "Check reservation"},
@@ -109,8 +110,9 @@ class TestConvertMessagesForResponsesApi:
         ]
 
     def test_responses_output_items_injected_directly(self):
-        """When an assistant message has responses_output_items (current-turn loop),
-        those raw items are injected directly into input_items without reconstruction.
+        """When an assistant message has responses_output_items (current-turn loop).
+
+        Those raw items are injected directly into input_items without reconstruction.
         """
         raw_items = [
             {"type": "reasoning", "encrypted_content": "enc_abc"},
@@ -214,8 +216,9 @@ class TestCompleteViaResponsesApiReasoning:
 
     @pytest.mark.asyncio
     async def test_tool_call_response_includes_output_items(self):
-        """Tool call responses return a SimpleNamespace with tool_calls, and
-        responses_output_items in stats contains all output items for the next turn.
+        """Tool call responses return a SimpleNamespace with tool_calls.
+
+        Responses_output_items in stats contains all output items for the next turn.
         """
         client = LiteLLMClient(model="gpt-5.2", use_responses_api=True)
 
