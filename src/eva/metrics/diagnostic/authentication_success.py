@@ -9,6 +9,22 @@ from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
 
 
+def compute_session_auth_mismatches(expected_scenario_db: dict, final_scenario_db: dict) -> dict:
+    """Check whether the final DB session satisfies the expected session.
+
+    Returns a dict of mismatched keys (empty dict means auth succeeded or no auth expected).
+    """
+    expected_session = expected_scenario_db.get("session", {})
+    if not expected_session:
+        return {}
+    actual_session = final_scenario_db.get("session", {})
+    return {
+        k: {"expected": v, "actual": actual_session.get(k)}
+        for k, v in expected_session.items()
+        if actual_session.get(k) != v
+    }
+
+
 @register_metric
 class AuthenticationSuccessMetric(CodeMetric):
     """Checks whether the agent successfully authenticated the user.
@@ -43,13 +59,7 @@ class AuthenticationSuccessMetric(CodeMetric):
                     details={"reason": "No expected session to verify — skipping auth check"},
                 )
 
-            # Check superset: every key-value in expected_session must be in actual_session
-            mismatches = {
-                k: {"expected": v, "actual": actual_session.get(k)}
-                for k, v in expected_session.items()
-                if actual_session.get(k) != v
-            }
-
+            mismatches = compute_session_auth_mismatches(context.expected_scenario_db, context.final_scenario_db)
             success = len(mismatches) == 0
 
             return MetricScore(

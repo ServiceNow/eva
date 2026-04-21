@@ -9,6 +9,7 @@ final states to help diagnose the discrepancy.
 """
 
 from eva.metrics.base import BaseMetric, MetricContext, MetricType
+from eva.metrics.diagnostic.authentication_success import compute_session_auth_mismatches
 from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
 from eva.utils.hash_utils import compute_db_diff, get_dict_hash
@@ -51,6 +52,21 @@ class TaskCompletion(BaseMetric):
             - normalized_score: Same as score (already 0-1)
             - details: Match status, hashes, and diff (if mismatch)
         """
+        # Require auth success — if session mismatches, task cannot be complete
+        auth_mismatches = compute_session_auth_mismatches(context.expected_scenario_db, context.final_scenario_db)
+        if auth_mismatches:
+            return MetricScore(
+                name=self.name,
+                score=0.0,
+                normalized_score=0.0,
+                details={
+                    "match": False,
+                    "auth_failed": True,
+                    "message": f"Authentication failed — session mismatch on keys: {list(auth_mismatches)}",
+                    "auth_mismatches": auth_mismatches,
+                },
+            )
+
         # Compute expected hash from expected_scenario_db on-the-fly
         expected_hash = get_dict_hash(context.expected_scenario_db)
         actual_hash = context.final_scenario_db_hash
