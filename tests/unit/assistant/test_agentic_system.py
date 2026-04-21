@@ -359,8 +359,9 @@ class TestProcessQueryTransfer:
 class TestResponsesOutputItemsThreading:
     @pytest.mark.asyncio
     async def test_responses_output_items_passed_to_next_llm_call(self):
-        """When stats includes responses_output_items (OpenAI Responses API encrypted reasoning),
-        they are attached to the assistant message and forwarded to the next LLM call.
+        """When stats includes responses_output_items (OpenAI Responses API encrypted reasoning).
+
+        They are attached to the assistant message and forwarded to the next LLM call.
         """
         tool = _make_tool("get_info")
         agent = _make_agent(tools=[tool])
