@@ -61,19 +61,19 @@ judge:
       - If the response enumerates options or items (e.g., "Option one is… Option two is…"), does the structure help the user? The volume should not be overwhelming.
       - Is the provided information justified by context (e.g., confirming a detail the user may have misheard)? Or is it inappropriate (e.g., excessive itemization or explanation when the user may only care about the end result)?
       - Within turns, is repetition avoided? Across turns there may be valid reasons for repetition, but it should usually not occur within a single turn.
-      - Essential information — such as confirmation codes, voucher numbers, reference IDs, or specific details the user needs — should never be penalized, regardless of length.
+      - Essential information — such as confirmation codes, reference IDs, ticket numbers, or other specific details the user needs to take away — should never be penalized, regardless of length.
 
       ## Allowed Exceptions (Voice Interaction Realities)
       The assistant may occasionally produce longer turns when the context requires precise information transfer. The following cases should NOT be penalized for verbosity or information density. The turn itself may still be penalized for other reasons.
       1. **Phonetic Confirmation of Codes**
-        - When confirming a confirmation code, booking reference, voucher code, or similar identifier, the assistant may spell characters using the NATO phonetic alphabet (e.g., "B as in Bravo, F as in Foxtrot").
-        - This is especially appropriate when the user previously misheard or asked for clarification.
-      2. **Voucher or Reference Code Delivery**
-        - When providing meal voucher codes, hotel voucher codes, travel credit codes etc the assistant may read the whole code out loud.
-        - This information is essential and should not be penalized regardless of length.
+      - When confirming a confirmation code, reference number, ticket number, or similar identifier, the assistant may spell characters using the NATO phonetic alphabet (e.g., "B as in Bravo, F as in Foxtrot").
+      - This is especially appropriate when the user previously misheard or asked for clarification.
+      2. **Reference or Identifier Delivery**
+      - When providing an identifier the user needs to take away (e.g., a ticket number, reference code, or voucher code), the assistant may read the whole code out loud.
+      - This information is essential and should not be penalized regardless of length.
       3. **End-of-Call Wrap-Up**
-        - The final assistant turn in a conversation may include a slightly longer recap or confirmation of next steps (e.g., summarizing booking details, confirming vouchers sent, thanking the user).
-        - Minor additional detail in this final wrap-up should not be penalized unless it becomes excessively long or introduces unrelated information.
+      - The final assistant turn in a conversation may include a slightly longer recap or confirmation of next steps (e.g., summarizing the action taken, confirming what will be sent or followed up on, thanking the user).
+      - Minor additional detail in this final wrap-up should not be penalized unless it becomes excessively long or introduces unrelated information.
 
       Important principle: Information given in assistant turns must be short enough for an average person to easily follow in real-time conversation and retain in working memory.
 
@@ -84,7 +84,7 @@ judge:
       Contains unnecessary wording, repetition within the same turn, hedging, or explanation beyond what the context requires.
 
       **excess_information_density**
-      Presents too many distinct facts, options, numbers, steps, or requests at once, making it difficult for a listener to process in real time. Note: bundling closely related transactional details that the user needs to act on or remember together (e.g., confirming a flight number, departure time, and seat in one turn) is expected behavior — only flag this when the volume of information genuinely exceeds what a listener can comfortably retain.
+      Presents too many distinct facts, options, numbers, steps, or requests at once, making it difficult for a listener to process in real time. Note: bundling closely related transactional details that the user needs to act on or remember together (e.g., confirming a reference number, date, and one or two key details in a single turn) is expected behavior — only flag this when the volume of information genuinely exceeds what a listener can comfortably retain.
 
       **over_enumeration_or_list_exhaustion**
       Reads out long lists instead of summarizing, or presents multiple options with excessive detail rather than inviting follow-up.
@@ -98,7 +98,7 @@ judge:
       If none of the above are present, return an empty list for failure_modes.
 
       ## Rating Scale For Each Turn With Assistant Content
-      - 3 (Highly Concise / No Cognitive Overload) – The response is clear, appropriately scoped for voice, and comfortably digestible in real time. No failure modes are present. A turn that delivers a few closely related facts as part of a single transactional step (e.g., confirming booking details) still qualifies as 3 if the listener can comfortably absorb it in one pass.
+      - 3 (Highly Concise / No Cognitive Overload) – The response is clear, appropriately scoped for voice, and comfortably digestible in real time. No failure modes are present. A turn that delivers a few closely related facts as part of a single transactional step (e.g., confirming the key details of a booking or incident) still qualifies as 3 if the listener can comfortably absorb it in one pass.
       - 2 (Adequate but Not Optimally Concise) – One minor failure mode is present, but the response remains reasonably processable in a voice setting and does not meaningfully overwhelm the listener. Reserve this rating for turns where you can identify specific content that should have been omitted or deferred to a later turn — not merely for turns that happen to contain several necessary details.
       - 1 (Not Concise / Causes Cognitive Overload) – One or more significant failure modes are present that materially increase cognitive load and would hinder comprehension in a voice conversation.
 
@@ -118,7 +118,6 @@ judge:
       ]
 
       If the turn is rated 3 or null, failure_modes must be an empty list: [].
-
   conversation_progression:
     user_prompt: |
       You are an expert evaluator analyzing whether a voice assistant effectively moved a conversation forward. You will evaluate the conversation across four dimensions, each scored as a binary flag (true = issue present, false = no issue).
@@ -126,8 +125,8 @@ judge:
       Each dimension evaluates a **different type of action**. Every issue in the conversation maps to exactly one dimension — there is no overlap.
       Ensure to consider both the assistant agent instructions and the following agent dimensions when evaluating the conversation.
 
-      **IMPORTANT — Scope boundary with faithfulness:** This metric evaluates whether the conversation moved forward efficiently. It does NOT evaluate whether the assistant followed policies, complied with user constraints, or acted faithfully to its instructions — those are faithfulness concerns.
-      If an issue is primarily about the assistant violating a policy or acting against the user's explicit instructions (e.g., rebooking when the user said not to, not disclosing fees), do NOT flag it here even if it also affected conversation flow. Only flag issues where the assistant's conversational choices (questions asked, information repeated, tools called) were themselves inefficient or counterproductive.
+      **IMPORTANT — Scope boundary with faithfulness:** This metric evaluates whether the conversation moved forward efficiently. It does NOT evaluate whether the assistant followed policies, complied with user constraints, or acted faithfully to its instructions — those are faithfulness concerns. 
+      If an issue is primarily about the assistant violating a policy or acting against the user's explicit instructions (e.g., taking an action the user said not to, not disclosing fees), do NOT flag it here even if it also affected conversation flow. Only flag issues where the assistant's conversational choices (questions asked, information repeated, tools called) were themselves inefficient or counterproductive.
 
       **IMPORTANT — Voice conversation context:** This is a voice (spoken) conversation, which means speech recognition errors are common.
       When the assistant repeats a request because the previous attempt was misheard or garbled, this is expected behavior in a voice interface, not a progression issue.
@@ -148,17 +147,17 @@ judge:
 
       **IS a flag:**
       - Calling the same tool with the same parameters after a prior successful response (no new user input or error in between)
-      - Calling a tool with empty or missing required parameters, causing a predictable error (e.g., `get_reservation` with empty strings before asking the user)
+      - Calling a tool with empty or missing required parameters, causing a predictable error (e.g., calling a lookup tool with empty strings before asking the user for the required identifier)
       - Calling a tool when the needed information was already returned by a previous tool response
       - Calling a tool to verify something a prior tool response already confirmed
 
       **Is NOT a flag:**
       - Retrying a tool call after a tool error with corrected parameters
-      - Calling the same tool with different parameters (e.g., different flight numbers)
-      - Sequential tool calls that each return new, necessary information (e.g., get_reservation → get_flight_status → get_disruption_info)
+      - Calling the same tool with different parameters (e.g., different IDs or search criteria)
+      - Sequential tool calls that each return new, necessary information (e.g., a record lookup followed by a status check followed by a related-details fetch)
       - A tool call that fails unexpectedly (the assistant could not have predicted the failure)
       - Tool calls that are necessary for the task but were executed prematurely (e.g., before the user confirmed) — premature execution is a faithfulness/policy compliance issue, not a conversation progression issue
-      - Tool calls that follow standard agent instructions (e.g., automatically carrying over seat assignments or baggage when rebooking) even if the user did not explicitly request those specific actions
+      - Tool calls that follow standard agent instructions (e.g., automatically carrying over related attributes or defaults when taking an action) even if the user did not explicitly request those specific actions
 
       **CAVEAT: If the model makes 3 or more unnecessary tool calls, this dimension should be rated 1.**
 
@@ -168,20 +167,20 @@ judge:
       This dimension is about the assistant **forgetting or ignoring known facts**, regardless of how that failure manifests (re-asking, wrong assumptions, ignoring constraints).
 
       **IS a flag:**
-      - Re-asking the user for information they already provided (e.g., asking for the confirmation number after the user stated it and it was used successfully). Note: if the assistant says "could you repeat your confirmation code?" and the transcript shows the user already clearly provided it (no speech recognition garbling), this IS information_loss — the assistant failed to retain established facts.
-      - Ignoring a constraint the user explicitly stated (e.g., user said "no rebooking" but assistant asks about rebooking options or asked for specific details before a booking should be made)
-      - Failing to use relevant data from a prior tool response when it was needed for the next step (e.g., not using the flight number from get_reservation when calling get_flight_status)
+      - Re-asking the user for information they already provided (e.g., asking for the confirmation number or reference ID after the user stated it and it was used successfully).
+      - Ignoring a constraint the user explicitly stated (e.g., the user ruled out a particular action but the assistant still asks about it or asks for the details that would only be needed to take that action)
+      - Failing to use relevant data from a prior tool response when it was needed for the next step (e.g., not using an identifier returned by an earlier lookup when making a follow-up tool call that requires it)
 
       **Is NOT a flag:**
       - Asking for information the user has not yet provided
       - Asking a clarifying question about genuinely ambiguous information
-      - Asking for authentication details (confirmation number, last name) at the start of the conversation
+      - Asking for authentication or identification details required by the agent instructions (e.g., a confirmation number, reference ID, or user's name) at the start of the conversation
       - The assistant acting on information that contradicts what the user said, when the contradiction is due to a faithfulness or policy violation — flag that under faithfulness, not here. Only flag here if the assistant demonstrably forgot or ignored previously established facts within the conversation flow.
 
       **Disambiguation from other dimensions:**
       - If the assistant re-asks for user-provided info → flag here (not redundant_statements)
       - If the assistant makes an unnecessary tool call because it forgot a prior result → flag under unnecessary_tool_calls (the tool action is the observable problem)
-      - If the assistant proceeds with an action that contradicts the user's stated preference (e.g., rebooking instead of standby) → this is a faithfulness violation, not information_loss. Only flag here if the assistant clearly forgot the user's input, not if it chose to override it.
+      - If the assistant proceeds with an action that contradicts the user's stated preference (e.g., choosing a different option than the one the user requested) → this is a faithfulness violation, not information_loss. Only flag here if the assistant clearly forgot the user's input, not if it chose to override it.
 
       ### 3. redundant_statements
       **Scope: The assistant repeating its own previous output.** Did the assistant restate information it had already communicated to the user?
@@ -189,11 +188,11 @@ judge:
       This dimension ONLY covers the assistant repeating **its own prior utterances** — not forgetting user input (that is information_loss) and not tool call issues (that is unnecessary_tool_calls).
 
       **IS a flag:**
-      - Restating flight details, times, or gate information the assistant already told the user in an earlier turn (outside of a final recap) when the user did not ask for it
+      - Restating details, times, amounts, or status information the assistant already told the user in an earlier turn (outside of a final recap) when the user did not ask for it
       - Repeating the same explanation or instruction in multiple turns when the user has acknowledged and moved on
 
       **Is NOT a flag:**
-      - A single brief recap or summary at the very end of the conversation as a closing confirmation (this is helpful, not redundant). However, if the assistant provides multiple recaps across different turns, only the final one is exempt — earlier recaps that restate already-communicated information are still flagged.
+      - A brief recap or summary at the end of the conversation (this is helpful, not redundant). However, if the assistant provides multiple recaps across different turns, only the final one is exempt — earlier recaps that restate already-communicated information are still flagged.
       - Confirming back details to the user once for verification (e.g., reading back a confirmation number the user just provided)
       - Stating information for the first time, even if it was available from a tool response earlier
       - Repeating information in direct response to the user explicitly requesting confirmation or asking to hear it again (the user must clearly ask — simply continuing the conversation is not a request for repetition)
@@ -210,13 +209,13 @@ judge:
       - Failing to ask for clarification when there are multiple options that meet the users requirements
       - Failing to ask for required information before taking an action (e.g., not asking for required details for a tool call before making the tool call, when those details have not been made available through a previous tool call, or inputs from the user)
       - Failing to provide necessary information for the user to make a decision (e.g not providing clear information about the details of the options available to the user)
-      - Taking an irreversible action (rebooking, cancellation) without first confirming when user input is ambiguous or contradicts system data (e.g., user claims a 4-hour delay but system shows 45 minutes — assistant should clarify before acting)
+      - Taking an irreversible action (e.g., cancellation, rebooking, ticket submission, access grant, account change) without first confirming when user input is ambiguous or contradicts system data (e.g., user claims a 4-hour delay but system shows 45 minutes — assistant should clarify before acting)
 
       **Is NOT a flag:**
-      - Asking for required authentication information (confirmation number, last name)
+      - Asking for required authentication or identification information required by the agent instructions (e.g., confirmation number, reference ID, user's name)
       - Asking a clarifying question when the user's intent is genuinely ambiguous
       - Asking a follow-up question based on new information from a tool response
-      - Not disclosing fees, fare differences, or other policy-required details before taking an action — policy compliance (e.g., whether the assistant explained costs before rebooking) is a faithfulness concern, not a conversation progression issue. This dimension only evaluates whether the assistant's questions and information-sharing effectively moved the conversation forward.
+      - Not disclosing fees, costs, or other policy-required details before taking an action — policy compliance (e.g., whether the assistant explained consequences before an irreversible action) is a faithfulness concern, not a conversation progression issue. This dimension only evaluates whether the assistant's questions and information-sharing effectively moved the conversation forward.
       - Referencing information that exists in the agent instructions (e.g., standard fees, policies) without verifying it via a tool call — the agent is expected to know its own instructions. Only flag if the information was genuinely unknown and required a tool call or user input.
 
       **Disambiguation from information_loss:**
@@ -273,10 +272,9 @@ judge:
           }},
           "rating": <int: 1, 2, or 3>
       }}
-
   faithfulness:
     user_prompt: |
-      You are an expert evaluator analyzing whether a voice assistant remains faithful to information, policies, and instructions throughout a conversation. You will evaluate the conversation across five dimensions, each scored as a binary flag (true = issue present, false = no issue).
+      You are an expert evaluator analyzing whether a voice assistant remains faithful to information, policies, and instructions throughout a conversation. You will evaluate the conversation across five dimensions, each scored as a binary flag (true = issue present, false = no issue) and, when flagged, a severity rating (1 = major user impact, 2 = minor or ambiguous; 3 = no issue). See the Rating Scale section below for detailed severity guidance.
 
       Each dimension evaluates a **different type of faithfulness violation**. Every issue in the conversation maps to exactly one dimension — there is no overlap.
 
@@ -314,21 +312,21 @@ judge:
 
       **IS a flag:**
       - Using a confirmation number, ID, or value that the user did not provide and no prior tool returned
-      - Guessing or inventing parameter values instead of asking the user — including fabricated segment IDs and placeholder values like "?", "UNKNOWN", "MISSING", or "N/A"
+      - Guessing or inventing parameter values instead of asking the user — including fabricated IDs and placeholder values like "?", "UNKNOWN", "MISSING", or "N/A"
       - Using a parameter value from a different context or conversation segment where it does not apply
-      - Incorrectly categorizing data for enum/categorical tool parameters (e.g., voucher_reason, rebooking_type) when the categorization is not supported by the data (e.g., using "delay_over_4_hours" when the delay is 239 minutes, since 239 < 240)
+      - Incorrectly categorizing data for enum/categorical tool parameters when the categorization is not supported by the data (e.g., choosing an "over-threshold" bucket when the actual value falls below the threshold; or choosing a higher severity/priority category than the described situation supports)
       - A tool call parameter that cannot be traced to any user statement or prior tool result is a fabrication — even if the tool happens to return correct results
       - Hallucinated details in free-text tool fields (e.g., issue_summary, transfer notes) that were not provided by the user or returned by any tool
       - Adding random characters to a confirmation number or doubling arbitrary characters to get to the right number of characters.
 
       **Is NOT a flag:**
       - Using parameter values explicitly stated by the user
-      - Using parameter values returned by a prior tool response (e.g., using a segment_id from get_reservation in a subsequent call)
+      - Using parameter values returned by a prior tool response (e.g., reusing an ID or record returned by an earlier lookup in a subsequent call)
       - Using reasonable defaults that are standard for the tool (e.g., a date format conversion)
-      - Standard domain mappings from user-stated information (e.g., "Chicago O'Hare" → "ORD", "Miami" → "MIA") — unambiguous geographic or industry-standard mappings are considered grounded
-      - Parameters grounded in policy entitlements derived from prior tool results (e.g., setting waive_change_fee=true when the passenger's elite status entitles them to a fee waiver per policy)
-      - Reasonable contextual inferences for categorical parameters (e.g., using rebooking_type="same_day" when the user asks to move to a different flight on the same day)
-      - Numeric values derived from prior tool results through simple arithmetic (e.g., summing ancillary fees from a reservation)
+      - Standard domain mappings from user-stated information (e.g., "Chicago O'Hare" → "ORD", "Miami" → "MIA"; or other unambiguous geographic, enterprise, or industry-standard mappings present in the agent's domain) — unambiguous mappings are considered grounded
+      - Parameters grounded in policy entitlements derived from prior tool results (e.g., setting an entitlement/waiver/priority flag to the value that the user's status or situation qualifies for per policy, when that qualification is clearly supported by a prior tool result)
+      - Reasonable contextual inferences for categorical parameters, when the enum value's meaning is clearly supported by the user's stated intent
+      - Numeric values derived from prior tool results through simple arithmetic (e.g., summing line items, subtracting used amounts from a balance, or computing a total from prior results)
       - System-level or framework-generated tool calls made before the assistant has any user input, if the assistant subsequently asks for proper information
 
       **Before flagging a parameter as fabricated:** Verify it cannot be traced to ANY source — user statements, prior tool results, policy entitlements, simple arithmetic from known values, or standard domain mappings. Also verify enum values against the actual tool specification before claiming a value is invalid.
@@ -339,22 +337,22 @@ judge:
       **Scope: How the assistant reports tool results to the user.** Did the assistant inaccurately convey information that was returned by a tool?
 
       **IS a flag:**
-      - Stating incorrect values for fields that the tool response explicitly provided (e.g., wrong departure time, wrong fare amount, wrong seat number)
-      - Contradicting what a tool response returned (e.g., saying a flight is on time when the tool showed a delay, stating "window seat" when tools show an aisle seat)
-      - Omitting critical information from a tool result that changes the meaning (e.g., not mentioning a cancellation fee when the tool returned one and total_collected > $0)
-      - Failing to disclose costs/fees shown in tool results that the user would need to make an informed decision (when total_collected > $0)
-      - Arithmetic errors when computing values from tool data (e.g., incorrectly calculating fare differences, arrival times) — verify all math carefully before flagging or clearing
+      - Stating incorrect values for fields that the tool response explicitly provided (e.g., wrong departure time, wrong fare amount, wrong seat number, wrong appointment date, wrong ticket priority, wrong PTO balance)
+      - Contradicting what a tool response returned (e.g., saying a flight is on time when the tool showed a delay, stating "window seat" when tools show an aisle seat, telling a user their ticket was resolved when status is still open, or reporting a prescription refill was approved when the tool shows denied)
+      - Omitting critical information from a tool result that changes the meaning (e.g., not mentioning a cancellation fee when the tool returned one and a non-zero amount is being charged; not mentioning a side-effect warning returned by a medication lookup; not mentioning that an access request requires manager approval)
+      - Failing to disclose costs/fees or other user-consequential information shown in tool results that the user would need to make an informed decision (e.g., when a non-zero charge is being collected, or when a tool returns eligibility/approval caveats)
+      - Arithmetic errors when computing values from tool data (e.g., incorrectly calculating fare differences, arrival times, remaining balances, or proration amounts) — verify all math carefully before flagging or clearing
 
       **Is NOT a flag:**
       - Minor rounding or formatting differences that don't change the meaning (e.g., "$384.00" vs "$384")
       - Omitting non-essential details from a tool result while accurately conveying the key information
       - Paraphrasing tool results in conversational language while preserving accuracy
-      - Failing to mention a fare difference or fee that was $0 or fully waived (total_collected = $0), when the financial outcome is accurately communicated
-      - Filtering tool results based on user-stated constraints (e.g., showing only 4 of 5 flights when the 5th doesn't meet the user's arrival time requirement) — this is correct behavior, not misrepresentation
-      - Reasonable inferences combining tool data with contextual information (e.g., inferring a flight has departed when scheduled departure is before current time and status shows no cancellation)
+      - Failing to mention a fee or cost that was $0 or fully waived (i.e., no amount is being charged), when the financial outcome is accurately communicated
+      - Filtering tool results based on user-stated constraints (e.g., showing only 4 of 5 flights when the 5th doesn't meet the user's arrival time requirement; showing only weekday appointment slots when the user specified weekdays only) — this is correct behavior, not misrepresentation
+      - Reasonable inferences combining tool data with contextual information (e.g., inferring a flight has departed when scheduled departure is before current time and status shows no cancellation; inferring an SLA breach when a ticket's due date has passed and status is still open)
       - Time format conversions (e.g., 16:40 = 4:40 PM, 17:00 = 5:00 PM)
 
-      **Verification requirements:** When checking the assistant's statements against tool results: (1) carefully compute fare differences as (new fare - original fare) + fees, not confusing total new fare with fare difference; (2) check time format conversions (24h ↔ 12h); (3) verify arithmetic independently before flagging a cost discrepancy; (4) cross-reference ALL relevant tool result fields, not just one.
+      **Verification requirements:** When checking the assistant's statements against tool results: (1) carefully compute differences/totals (e.g., fare differences as (new fare - original fare) + fees) rather than confusing a total with a delta; (2) check time-format and unit conversions (24h ↔ 12h, local vs. UTC, currency); (3) verify arithmetic independently before flagging a discrepancy; (4) cross-reference ALL relevant tool result fields, not just one.
 
       ### 3. violating_policies
       **Scope: Agent instructions and policies only.** Did the assistant act in a way that contradicts the agent instructions, system policies, or procedural requirements?
@@ -365,21 +363,20 @@ judge:
       - Not applying policies that are clearly applicable to the situation (e.g., not offering an entitled benefit, not following a required disclosure)
       - Stating a policy incorrectly, fabricating a policy not present in the instructions, or significantly changing a policy's meaning
       - **Temporal sequencing for consequential actions:** When instructions require "explain before acting" or "get explicit confirmation before proceeding," the assistant must pause for user confirmation BETWEEN read operations and write operations that have financial consequences or are irreversible. Executing such read and write operations in the same turn without intermediate user confirmation violates these instructions. Summarizing results TO the caller after the fact does NOT satisfy a requirement to get confirmation FROM the caller before acting.
-      - **Irreversible write operations** (cancellations, rebookings, refunds) executed without required prior explanation of specific financial implications (fees, fare differences, credit amounts) and explicit user confirmation. A generic mention of potential fees without specifying amounts is insufficient when the amounts are knowable.
+      - **Irreversible write operations** (e.g., cancellations, rebookings, refunds, account or record changes, ticket submissions, access grants, or any other action that creates/modifies state and is hard to undo) executed without required prior explanation of specific user-consequential implications (fees, fare differences, credit amounts, approvals needed, downstream effects) and explicit user confirmation. A generic mention of potential consequences without specifying knowable details is insufficient when those details are knowable.
 
       **Is NOT a flag:**
       - Following reasonable interpretations of ambiguous instructions
       - Minor stylistic deviations from instructions that don't affect the outcome (e.g., slightly different wording for a required disclosure)
       - Actions not covered by any explicit policy or instruction
-      - Adopting incorrect terminology from the user (e.g., wrong airline name) while processing the correct reservation, when it doesn't cause confusion or incorrect actions
-      - Proactive issuance of no-cost benefits the customer is clearly entitled to (e.g., meal vouchers during IRROPS, compensation) without explicit confirmation — these are beneficial actions with no negative consequence, and the customer's entitlement or explicit request serves as sufficient basis
+      - Proactive issuance of no-cost benefits the user is clearly entitled to (e.g., goodwill compensation during a service disruption, waiving a fee the user is explicitly entitled to) without explicit confirmation — these are beneficial actions with no negative consequence, and the user's entitlement or explicit request serves as sufficient basis
       - When a user explicitly requests a specific action AND the general cost structure has been communicated, proceeding without re-stating exact amounts (if not yet knowable) is not a clear violation
 
-      **Evaluating "explain before acting":** This principle protects passengers from unexpected costs or negative consequences. Severity should be proportional to potential negative impact:
-      - **Clear violation:** Executing irreversible actions without disclosing known specific fees/costs, especially when total_collected > $0
-      - **Not a violation:** Issuing benefits the customer explicitly requested or is entitled to with no negative consequence. Mentioning an action should not have any financial consequence based on the policy before seeing it in the tool results is not a violation, as long as the assistant corrects itself after seeing the actual costs in the tool results (e.g., "There should be no fare difference based on IRROPS policy" → proceeds to call tool → if tool shows fare difference is waived, no violation.)
+      **Evaluating "explain before acting":** This principle protects users from unexpected costs or negative consequences. Severity should be proportional to potential negative impact:
+      - **Clear violation:** Executing irreversible actions without disclosing known specific fees/costs/consequences, especially when a non-zero amount is being charged or when the action is hard to undo
+      - **Not a violation:** Issuing benefits the user explicitly requested or is entitled to with no negative consequence. Mentioning that an action should not have any financial consequence based on the policy before seeing it in the tool results is not a violation, as long as the assistant corrects itself after seeing the actual costs in the tool results (e.g., stating "there should be no fee based on policy" → proceeds to call tool → if the tool confirms the fee is waived, no violation).
 
-      **Evaluating policy application:** When two policy paths could apply (e.g., same-day change vs. missed flight), consider timeline carefully. If a flight hasn't departed yet and the passenger is within the policy window, applying the more favorable applicable policy is not a violation. Also, if two policy paths produce the identical fee/outcome, choosing one over the other is not a material violation.
+      **Evaluating policy application:** When two policy paths could apply (e.g., same-day change vs. missed flight; in-warranty repair vs. out-of-warranty replacement), consider timeline and eligibility carefully. If the user is within the more favorable policy window (e.g., a flight hasn't departed yet, a request is within SLA, a return is within the return window), applying the more favorable applicable policy is not a violation. Also, if two policy paths produce the identical fee/outcome, choosing one over the other is not a material violation.
 
       ### 4. failing_to_disambiguate
       **Scope: Handling of ambiguous or contradictory information.** Did the assistant make assumptions or proceed without clarification when the user's input was ambiguous or contradictory? {disambiguation_context}
@@ -404,17 +401,17 @@ judge:
       **Scope: Information the assistant states to the user that has no source — not already covered by the preceding dimensions.** Did the assistant present information that was not provided by the user, not returned by any tool response, and not stated in the agent instructions or system context?
 
       **IS a flag:**
-      - Stating facts, details, or numbers that do not appear in any tool response, user utterance, agent instruction, or system context (e.g., inventing a gate number, adding a benefit the passenger doesn't have)
+      - Stating facts, details, or numbers that do not appear in any tool response, user utterance, agent instruction, or system context (e.g., inventing a gate number, adding a benefit the user doesn't have, fabricating an ID or reference number, inventing an amount or deadline)
       - Presenting fabricated policies, timelines, or conditions not found in any available source
-      - Claiming the system can perform lookups or actions using identifiers not supported by any available tool (e.g., offering to look up a reservation by ticket number when the tool only accepts confirmation_number)
-      - Misidentifying the airline/brand from the agent role (e.g., using a different airline name)
+      - Claiming the system can perform lookups or actions using identifiers not supported by any available tool (e.g., offering to look up a record by an identifier the tools don't accept, or offering a capability not present in the available tools)
+      - Misidentifying the brand, company, or agent role (e.g., using a different airline name, naming the wrong organization)
 
       **Is NOT a flag:**
-      - Stating information that is directly inferable from tool results and/or system context (e.g., computing an arrival time from departure + duration, calculating an expiration date from current date + valid_months)
+      - Stating information that is directly inferable from tool results and/or system context (e.g., computing an arrival time from departure + duration, calculating an expiration date from current date + valid_months, or computing a remaining amount from a limit minus used amount)
       - Referencing the current date/time from the system context — this is grounded information, NOT hallucination
       - Providing general conversational courtesies that don't assert factual claims
       - Hedged, commonsense caveats (e.g., "you may want to verify at the counter") that don't contradict tool results or policy — only flag fabricated information presented as definitive fact
-      - General domain knowledge (e.g., standard check-in windows) that is reasonable and not contradicted by tool results
+      - General domain knowledge (e.g., standard check-in windows, typical appointment lead times, standard password-reset flows) that is reasonable and not contradicted by tool results
 
       **Critical verification step:** Before flagging hallucination, check ALL available sources: (1) all tool responses in the conversation, (2) user utterances, (3) agent instructions, (4) the Current Date/Time field and other system context metadata — do NOT assume these fields are empty without verifying. Information derived from system context (e.g., current date) is grounded, not hallucinated.
 
@@ -426,22 +423,29 @@ judge:
       You will focus only on the above dimensions. You will NOT consider conversation flow, task completion, or other criteria outside of faithfulness.
 
       ## Rating Scale
-      For all five dimensions, determine if there is evidence that one or more issues should be flagged and rate that dimension based on the following guidelines:
+      For all five dimensions, determine if there is evidence that one or more issues should be flagged and rate that dimension based on the following guidelines. Severity hinges on the **impact on the user** — both inside the conversation and beyond it.
 
       - **3** (No faithfulness issues):
         - No issue with this dimension
 
-      - **2** (Minor or ambiguous faithfulness issues):
-        - A single isolated issue that does not materially affect the outcome (e.g., a minor misstatement that is quickly corrected, a single ungrounded tool parameter that doesn't affect results, a minor policy deviation that doesn't affect the customer's decision-making)
+      - **2** (Minor or ambiguous faithfulness issues — low user impact):
+        - A single isolated issue that does not materially affect the outcome, such as:
+          - Calling a **read-only** tool (e.g., a lookup, search, or status tool) with wrong parameters, when the error is caught quickly and no incorrect information reaches the user
+          - A small hallucination or misstatement with no consequence inside the conversation and no downstream effect (e.g., a minor phrasing embellishment that does not alter any decision or action)
+          - A minor ungrounded tool parameter that doesn't affect results
+          - A minor policy deviation that doesn't affect the user's decision-making or their understanding of the policy
         - Minor instruction-following deviations that do not materially affect the outcome (e.g., slight formatting differences, omitting low-importance optional steps)
         - Borderline cases where it is unclear whether a faithfulness violation occurred due to ambiguous instructions, incomplete context, or reasonable interpretation differences
-        - Adopting incorrect terminology from the user (e.g., wrong airline name) while processing the correct reservation, when it doesn't cause confusion or incorrect actions
+        - Adopting incorrect terminology from the user (e.g., wrong brand or product name) while processing the correct record, when it doesn't cause confusion or incorrect actions
         - If something appears as being borderline an issue, it should probably be rated 2.
 
-      - **1** (Clear faithfulness violations):
-        - Any issue that materially affects the outcome — financial consequences, irreversible actions taken without informed consent, or incorrect information that could mislead the customer. Such as:
-          - Executing irreversible write operations (cancellations, rebookings, refunds) without required prior explanation of specific financial implications AND explicit user confirmation — especially when total_collected > $0
-          - Hallucinating information not present in tool results, especially financial figures (fares, fees, refund amounts) communicated to the user
+      - **1** (Clear faithfulness violations — major user impact):
+        - Any issue that materially affects the user, either during the conversation or afterward. Such as:
+          - Calling a **write** tool (one that creates, modifies, cancels, or otherwise changes state) with wrong or fabricated parameters — regardless of whether the tool call happens to succeed
+          - Executing an **irreversible action without explicit user consent** — especially without required prior explanation of specific implications and explicit user confirmation
+          - **Financial or reputational impact** on the user or the company — e.g., communicating incorrect charges, fees, refunds, balances, or amounts; making commitments the company cannot honor; misstating obligations in a way that could harm trust
+          - Leaving the user with an **incorrect understanding of company policy** that they could act on in the future (e.g., misstating eligibility rules, entitlement conditions, or process requirements), even if the current conversation ends up fine
+          - Hallucinating information not present in tool results, especially consequential figures (costs, balances, dates, approvals) communicated to the user as fact
         - Any faithfulness issue that repeatedly prevents the conversation from progressing is also rated 1.
       
       For the final rating of the conversation, use the minimum rating across all dimensions as the overall faithfulness rating (i.e., if any dimension is rated 1, overall rating is 1; if all dimensions are 3, overall rating is 3; if there are no 1s but at least one 2, overall rating is 2).
@@ -478,8 +482,6 @@ judge:
           }},
           "rating": <int: 1, 2, or 3 - minimum rating across all dimensions>
       }}
-
-
   turn_taking:
     user_prompt: |
       ROLE
@@ -789,11 +791,11 @@ judge:
 
         **Entity categories to watch:**
         - Confirmation codes (e.g., ZK3FFW, FAR0UM, 8JVSDF)
-        - Flight numbers (e.g., SkyWay 410, SW302)
+        - Domain-specific identifiers (e.g., flight numbers like "SkyWay 410", ticket or incident numbers, order numbers, case IDs)
         - Dollar amounts (e.g., $15, $1,285.00)
-        - Seat numbers (e.g., 21C, 14A)
+        - Short alphanumeric codes (e.g., seat numbers like "21C", room numbers, extension numbers)
         - Spelled-out codes (e.g., "Z K three F F W") — verify EVERY letter and digit individually; "K O L T S F" vs "K O L T S S F" is an error
-        - Reference/voucher IDs (e.g., REF-8JVSDF-001, MEAL-FAR0UM-PAX0) — verify each segment; "M E L" vs "M E A L" is an error
+        - Reference IDs with segments (e.g., REF-8JVSDF-001,  MEAL-FAR0UM-PAX0) — verify each segment; "M E L" vs "M E A L" is an error
         - Times (e.g., 3:55 PM, 10:30 AM)
         - Dates (e.g., March 25th, February 3rd)
         - Names (e.g., Mr. Rivera, Rodriguez)

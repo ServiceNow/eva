@@ -38,7 +38,7 @@ class ConversationFinishedMetric(CodeMetric):
                     details={"file_path": str(elevenlabs_events_path)},
                 )
 
-            with open(elevenlabs_events_path, "r") as f:
+            with open(elevenlabs_events_path) as f:
                 lines = f.readlines()
 
             if not lines:

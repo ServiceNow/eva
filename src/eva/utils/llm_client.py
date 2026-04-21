@@ -3,7 +3,7 @@
 import asyncio
 import itertools
 import random
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from dotenv import load_dotenv
 
@@ -88,7 +88,7 @@ class LLMClient:
         # Ensure delay is positive
         return max(0, delay)
 
-    async def generate_text(self, messages: list[dict], response_format: Optional[dict] = None) -> str:
+    async def generate_text(self, messages: list[dict], response_format: dict | None = None) -> str:
         """Generate text completion with automatic retries.
 
         Args:

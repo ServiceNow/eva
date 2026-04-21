@@ -8,7 +8,7 @@ import asyncio
 import json
 import wave
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
@@ -45,7 +45,7 @@ from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
 from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies, UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
 
-from eva.assistant.agentic.audit_log import AuditLog, current_timestamp_ms
+from eva.assistant.agentic.audit_log import AuditLog, convert_to_epoch_ms, current_timestamp_ms
 from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor, UserAudioCollector, UserObserver
 from eva.assistant.pipeline.audio_llm_processor import (
     AudioLLMProcessor,
@@ -135,7 +135,7 @@ class AssistantServer:
         )
 
         # Wall-clock captured at on_user_turn_started for non-instrumented S2S models
-        self._user_turn_started_wall_ms: Optional[str] = None
+        self._user_turn_started_wall_ms: str | None = None
 
         # Audio buffer for accumulating audio data
         self._audio_buffer = bytearray()
@@ -147,12 +147,12 @@ class AssistantServer:
         self._app = None
         self._server = None
         self._server_task = None
-        self._runner: Optional[PipelineRunner] = None
-        self._task: Optional[PipelineTask] = None
+        self._runner: PipelineRunner | None = None
+        self._task: PipelineTask | None = None
         self._running = False
         self.num_seconds = 0
         self._latency_measurements: list[float] = []
-        self._metrics_observer: Optional[MetricsFileObserver] = None
+        self._metrics_observer: MetricsFileObserver | None = None
         self.non_instrumented_realtime_llm = False
 
     async def start(self) -> None:
@@ -217,7 +217,7 @@ class AssistantServer:
             if self._server_task:
                 try:
                     await asyncio.wait_for(self._server_task, timeout=5.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # Force cancellation if graceful shutdown times out
                     self._server_task.cancel()
                     try:
@@ -326,7 +326,10 @@ class AssistantServer:
                     "smart_turn_stop_secs", 0.8
                 )  # Shorter silence so we don't have to wait 3s if smart turn marks audio as incomplete
 
-            if isinstance(self.pipeline_config, PipelineConfig) and self.pipeline_config.turn_strategy == "external":
+            if (
+                isinstance(self.pipeline_config, (PipelineConfig, SpeechToSpeechConfig))
+                and self.pipeline_config.turn_strategy == "external"
+            ):
                 logger.info("Using external user turn strategies")
                 user_turn_strategies = ExternalUserTurnStrategies()
                 vad_analyzer = None
@@ -444,9 +447,29 @@ class AssistantServer:
             self._latency_measurements = []
 
             async def on_latency_measured(observer, latency_seconds: float):
-                """Event handler for UserBotLatencyObserver - stores latency measurements."""
-                self._latency_measurements.append(latency_seconds)
-                logger.debug(f"Response latency captured: {latency_seconds:.3f}s")
+                """Event handler for UserBotLatencyObserver - stores latency measurements.
+
+                For realtime LLM, adds VAD delay to get full user-perceived latency.
+                For pipecat VAD (non-realtime), uses the latency as-is.
+                """
+                adjusted_latency = latency_seconds
+
+                # Add VAD delay for realtime LLM to get full user-perceived latency
+                if isinstance(realtime_llm, InstrumentedRealtimeLLMService):
+                    vad_delay_ms = realtime_llm.last_vad_delay_ms
+                    if vad_delay_ms is not None:
+                        vad_delay_s = vad_delay_ms / 1000.0
+                        adjusted_latency = latency_seconds + vad_delay_s
+                        logger.debug(
+                            f"Response latency captured: {adjusted_latency:.3f}s "
+                            f"(VAD delay: {vad_delay_s:.3f}s + pipecat: {latency_seconds:.3f}s)"
+                        )
+                    else:
+                        logger.debug(f"Response latency captured: {latency_seconds:.3f}s (no VAD delay available)")
+                else:
+                    logger.debug(f"Response latency captured: {latency_seconds:.3f}s")
+
+                self._latency_measurements.append(adjusted_latency)
 
             user_bot_observer = UserBotLatencyObserver()
             user_bot_observer.add_event_handler("on_latency_measured", on_latency_measured)
@@ -711,6 +734,9 @@ class AssistantServer:
                         timestamp_ms=self._user_turn_started_wall_ms,
                     )
                     self._user_turn_started_wall_ms = None
+                    await self._save_transcript_message_from_turn(
+                        role="user", content=message.content, timestamp=self._user_turn_started_wall_ms
+                    )
 
         @user_aggregator.event_handler("on_user_turn_started")
         async def on_user_turn_started(aggregator, strategy):
@@ -731,9 +757,12 @@ class AssistantServer:
                 # Prefer content from the aggregator (populated when output_modalities includes
                 # "text").
                 content = message.content
-                self.audit_log.append_assistant_output(content or "[audio response - transcription unavailable]")
+                self.audit_log.append_assistant_output(
+                    content or "[audio response - transcription unavailable]",
+                    timestamp_ms=convert_to_epoch_ms(message.timestamp),
+                )
                 await self._save_transcript_message_from_turn(
-                    role="assistant", content=content, timestamp=message.timestamp
+                    role="assistant", content=content, timestamp=convert_to_epoch_ms(message.timestamp)
                 )
 
     async def _save_transcript_message_from_turn(self, role: str, content: str, timestamp: str) -> None:

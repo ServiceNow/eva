@@ -106,8 +106,7 @@ def dataset_file(temp_dir, sample_record_data):
     """Create a temporary dataset JSONL file."""
     path = temp_dir / "dataset.jsonl"
     with open(path, "w") as f:
-        for record in sample_record_data:
-            f.write(json.dumps(record) + "\n")
+        f.writelines(json.dumps(record) + "\n" for record in sample_record_data)
     return path
 
 

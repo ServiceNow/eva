@@ -147,8 +147,7 @@ class ElevenLabsEventLogger:
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(self.output_path, "w") as f:
-            for event in self._events:
-                f.write(json.dumps(event) + "\n")
+            f.writelines(json.dumps(event) + "\n" for event in self._events)
 
         logger.info(f"Saved {len(self._events)} ElevenLabs events to {self.output_path}")
 

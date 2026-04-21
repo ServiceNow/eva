@@ -29,6 +29,16 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # ============================================
 FROM python:3.11-slim as runtime
 
+# Git provenance baked in at build time
+ARG GIT_COMMIT_SHA
+ARG GIT_BRANCH
+ARG GIT_DIRTY
+ARG GIT_DIFF_HASH
+ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
+ENV GIT_BRANCH=${GIT_BRANCH}
+ENV GIT_DIRTY=${GIT_DIRTY}
+ENV GIT_DIFF_HASH=${GIT_DIFF_HASH}
+
 WORKDIR /app
 
 # Install runtime dependencies (ffmpeg, libsndfile1 for audio; curl for debugging)

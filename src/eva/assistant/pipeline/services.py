@@ -4,10 +4,9 @@ Creates Pipecat services with proper configuration.
 """
 
 import datetime
-import os
-from typing import Any, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Any
 
-from deepgram import LiveOptions
 from openai import AsyncAzureOpenAI, BadRequestError
 from pipecat.frames.frames import (
     ErrorFrame,
@@ -20,7 +19,6 @@ from pipecat.services.assemblyai.stt import (
     AssemblyAIConnectionParams,
     AssemblyAISTTService,
 )
-from pipecat.services.azure.realtime.llm import AzureRealtimeLLMService
 from pipecat.services.cartesia.stt import CartesiaLiveOptions, CartesiaSTTService
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
@@ -37,12 +35,14 @@ from pipecat.services.openai.realtime.events import (
     SemanticTurnDetection,
     SessionProperties,
 )
+from pipecat.services.openai.realtime.llm import OpenAIRealtimeLLMService
 from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import VALID_VOICES, OpenAITTSService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 from pipecat.transcriptions.language import Language
 from pipecat.utils.text.base_text_filter import BaseTextFilter
+from websockets.asyncio.client import connect as websocket_connect
 
 from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
 from eva.assistant.pipeline.nvidia_baseten import BasetenSTTService, BasetenTTSService
@@ -51,11 +51,14 @@ from eva.models.agents import AgentConfig
 
 # Conditional Gemini imports - may fail if google-genai package version is incompatible
 try:
+    from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService, GeminiVADParams
     from pipecat.services.google.tts import GeminiTTSService
 
     GEMINI_AVAILABLE = True
 except ImportError:
     # Gemini services unavailable - will fail at runtime if requested
+    GeminiLiveLLMService = None
+    GeminiVADParams = None
     GeminiTTSService = None
     GEMINI_AVAILABLE = False
 from pipecat.adapters.schemas.function_schema import FunctionSchema
@@ -82,8 +85,8 @@ _audio_llm_url_counter: int = 0
 
 
 def create_stt_service(
-    model: Optional[str],
-    params: Optional[dict[str, Any]] = None,
+    model: str | None,
+    params: dict[str, Any] | None = None,
     language_code: str = "en",
 ) -> STTService | None:
     """Create speech-to-text service.
@@ -146,11 +149,9 @@ def create_stt_service(
         logger.info(f"Using Deepgram STT: {params['model']}")
         return DeepgramSTTService(
             api_key=api_key,
-            live_options=LiveOptions(
+            settings=DeepgramSTTService.Settings(
                 language=language_code,
                 model=params["model"],
-                encoding="linear16",
-                sample_rate=SAMPLE_RATE,
                 interim_results=True,
             ),
             sample_rate=SAMPLE_RATE,
@@ -212,8 +213,8 @@ def create_stt_service(
 
 
 def create_tts_service(
-    model: Optional[str],
-    params: Optional[dict[str, Any]] = None,
+    model: str | None,
+    params: dict[str, Any] | None = None,
     language_code: str = "en",
 ) -> TTSService | None:
     """Create text-to-speech service.
@@ -360,11 +361,11 @@ def create_tts_service(
 
 
 def create_realtime_llm_service(
-    model: Optional[str],
-    params: Optional[dict[str, Any]] = None,
-    agent: Optional[AgentConfig] = None,
-    audit_log: Optional[AuditLog] = None,
-    current_date_time: Optional[str] = None,
+    model: str | None,
+    params: dict[str, Any] | None = None,
+    agent: AgentConfig | None = None,
+    audit_log: AuditLog | None = None,
+    current_date_time: str | None = None,
 ) -> LLMService:
     """Create realtime LLM service.
 
@@ -380,6 +381,15 @@ def create_realtime_llm_service(
         Configured LLM service
     """
     model_lower = (model or "").lower()
+
+    # Get realtime server prompt
+    prompt_manager = PromptManager()
+    system_prompt = prompt_manager.get_prompt(
+        "realtime_agent.system_prompt",
+        agent_personality=agent.description,
+        agent_instructions=agent.instructions,
+        datetime=current_date_time,
+    )
 
     openai_tools = agent.build_tools_for_realtime() if agent else None
 
@@ -400,72 +410,114 @@ def create_realtime_llm_service(
                 )
         pipecat_tools = ToolsSchema(standard_tools=function_schemas)
 
-    # Get realtime server prompt
-    prompt_manager = PromptManager()
-    system_prompt = prompt_manager.get_prompt(
-        "realtime_agent.system_prompt",
-        agent_personality=agent.description,
-        agent_instructions=agent.instructions,
-        datetime=current_date_time,
-    )
-
-    if model_lower.startswith("gpt-realtime"):
-        #
-        # base_url =The full Azure WebSocket endpoint URL including api-version and deployment.
-        # Example: "wss://my-project.openai.azure.com/openai/v1/realtime"
-        url = os.environ.get("AZURE_OPENAI_REALTIME_ENDPOINT", "")
-        url += f"?model={model_lower}"
-
-        session_properties = SessionProperties(
-            instructions=system_prompt,
-            audio=AudioConfiguration(
-                input=AudioInput(
-                    transcription=InputAudioTranscription(model="whisper-1"),
-                    # Set openai TurnDetection parameters. Not setting this at all will turn it
-                    # on by default
-                    turn_detection=SemanticTurnDetection(),
-                    # Or set to False to disable openai turn detection and use transport VAD
-                    # turn_detection=False,
-                    # noise_reduction=InputAudioNoiseReduction(type="near_field"),
+    if model_lower.startswith("openai"):
+        session_properties = get_openai_session_properties(system_prompt, params, pipecat_tools)
+        if audit_log is not None:
+            logger.info(f"Using InstrumentedRealtimeLLMService for audit log interception: openai: {params['model']}")
+            return InstrumentedRealtimeLLMService(
+                settings=OpenAIRealtimeLLMService.Settings(
+                    model=params["model"],
+                    session_properties=session_properties,
                 ),
-                output=AudioOutput(
-                    voice=params.get("voice", "marin"),
-                ),
+                audit_log=audit_log,
+                api_key=params["api_key"],
+            )
+
+        return OpenAIRealtimeLLMService(
+            api_key=params["api_key"],
+            settings=OpenAIRealtimeLLMService.Settings(
+                model=params["model"],
+                session_properties=session_properties,
             ),
-            tools=pipecat_tools,
-            tool_choice="auto",
         )
-        logger.info(f"Using Azure Realtime LLM: {model_lower}")
+    elif model_lower.startswith("azure") or model_lower.startswith("gpt-realtime"):
+        #
+        # base_url: The full Azure WebSocket endpoint URL including api-version and deployment.
+        # Example: "wss://my-project.openai.azure.com/openai/v1/realtime"
+        url = params.get("url", "")
+        session_properties = get_openai_session_properties(system_prompt, params, pipecat_tools)
+
+        logger.info(f"Using Azure Realtime LLM: {model_lower}, url {url}")
 
         if audit_log is not None:
             logger.info("Using InstrumentedRealtimeLLMService for audit log interception")
-            return InstrumentedRealtimeLLMService(
-                model=model_lower,
+            service = InstrumentedRealtimeLLMService(
                 audit_log=audit_log,
-                api_key=os.environ.get("AZURE_OPENAI_REALTIME_API_KEY"),
+                api_key=params["api_key"],
                 base_url=url,
                 session_properties=session_properties,
+                settings=OpenAIRealtimeLLMService.Settings(
+                    model=params["model"],
+                    session_properties=session_properties,
+                ),
             )
+            InstrumentedRealtimeLLMService._connect = override__connect  # azure realtime connect
+            return service
 
-        return AzureRealtimeLLMService(
-            api_key=os.environ.get("AZURE_OPENAI_REALTIME_API_KEY"),
+        return OpenAIRealtimeLLMService(
+            api_key=params["api_key"],
+            model=params["model"],
             base_url=url,
             session_properties=session_properties,
         )
     elif model_lower == "ultravox":
+        logger.info("Using Ultravox LLM")
         return UltravoxRealtimeLLMService(
             params=OneShotInputParams(
-                api_key=os.getenv("ULTRAVOX_API_KEY"),
+                api_key=params["api_key"],
                 system_prompt=system_prompt,
                 temperature=0.3,
                 max_duration=datetime.timedelta(minutes=6),
                 voice=params.get("voice", "03e20d03-35e4-43c4-bb18-9b18a2cd3086"),
+                model=params["model"],
             ),
             one_shot_selected_tools=pipecat_tools,
         )
 
+    elif model_lower == "gemini-live":
+        if not GEMINI_AVAILABLE:
+            raise ValueError(
+                "Gemini Live requested but Gemini services are unavailable. "
+                "Check google-genai package installation and version compatibility."
+            )
+
+        gemini_model = params.get("model")
+        logger.info(f"Using Gemini Live LLM: {gemini_model}")
+
+        return GeminiLiveLLMService(
+            api_key=params["api_key"],
+            tools=pipecat_tools,
+            settings=GeminiLiveLLMService.Settings(
+                model=gemini_model,
+                system_instruction=system_prompt,
+                voice=params.get("voice", "Puck"),  # Aoede, Charon, Fenrir, Kore, Puck
+                vad=GeminiVADParams(disabled=params.get("vad_disabled", True)),
+            ),
+        )
+
     else:
-        raise ValueError(f"Unknown realtime model: {model}. Available: gpt-realtime, ultravox")
+        raise ValueError(f"Unknown realtime model: {model}. Available: gpt-realtime, ultravox, gemini-live")
+
+
+def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tools) -> SessionProperties:
+    """Create openai compatible session properties object."""
+    return SessionProperties(
+        instructions=system_prompt,
+        audio=AudioConfiguration(
+            input=AudioInput(
+                transcription=InputAudioTranscription(
+                    model=params.get("transcription_model", "gpt-4o-mini-transcribe")
+                ),
+                # Set openai TurnDetection parameters. Not setting this at all will turn it on by default
+                turn_detection=SemanticTurnDetection(),
+            ),
+            output=AudioOutput(
+                voice=params.get("voice", "marin"),
+            ),
+        ),
+        tools=pipecat_tools,
+        tool_choice="auto",
+    )
 
 
 def create_audio_llm_client(
@@ -571,6 +623,27 @@ async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[F
             yield TTSStoppedFrame(context_id=context_id)
     except BadRequestError as e:
         yield ErrorFrame(error=f"Unknown error occurred: {e}")
+
+
+async def override__connect(self):
+    # Allow connections to azure / other providers using a base_url
+    try:
+        if self._websocket:
+            # Here we assume that if we have a websocket, we are connected. We
+            # handle disconnections in the send/recv code paths.
+            return
+
+        logger.info(f"Connecting to {self.base_url}")
+        self._websocket = await websocket_connect(
+            uri=self.base_url,
+            additional_headers={
+                "api-key": self.api_key,
+            },
+        )
+        self._receive_task = self.create_task(self._receive_task_handler())
+    except Exception as e:
+        await self.push_error(error_msg=f"initialization error: {e}", exception=e)
+        self._websocket = None
 
 
 # Unicode to ASCII replacements for TTS

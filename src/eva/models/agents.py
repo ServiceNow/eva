@@ -1,7 +1,7 @@
 """Agent configuration models."""
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -12,11 +12,11 @@ class AgentToolParameter(BaseModel):
 
     name: str = Field(..., description="Parameter name")
     type: str = Field("string", description="Parameter type")
-    enum: Optional[list[str]] = Field(None, description="Allowed values for enum types")
+    enum: list[str] | None = Field(None, description="Allowed values for enum types")
     description: str = Field("", description="Parameter description")
-    items: Optional[dict[str, Any]] = Field(None, description="Items schema for array types")
-    properties: Optional[dict[str, Any]] = Field(None, description="Properties schema for object types")
-    additionalProperties: Optional[bool | dict[str, Any]] = Field(
+    items: dict[str, Any] | None = Field(None, description="Items schema for array types")
+    properties: dict[str, Any] | None = Field(None, description="Properties schema for object types")
+    additionalProperties: bool | dict[str, Any] | None = Field(
         None, description="Additional properties for object types"
     )
 
@@ -30,7 +30,7 @@ class AgentTool(BaseModel):
     required_parameters: list[str | AgentToolParameter] = Field(default_factory=list, description="Required parameters")
     optional_parameters: list[str | AgentToolParameter] = Field(default_factory=list, description="Optional parameters")
     invoke_cache_flush: bool = Field(False, description="Whether to flush cache on invocation")
-    tool_type: Optional[str] = Field(None, description="Type of tool: 'read' or 'write'")
+    tool_type: str | None = Field(None, description="Type of tool: 'read' or 'write'")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     model_config = ConfigDict(extra="allow")
@@ -104,7 +104,7 @@ class AgentConfig(BaseModel):
     role: str = Field(..., description="Agent role description")
     instructions: str = Field(..., description="Agent instructions/prompt")
     tools: list[AgentTool] = Field(default_factory=list, description="Tools available to this agent")
-    personality: Optional[str] = Field(None, description="Agent personality description")
+    personality: str | None = Field(None, description="Agent personality description")
     tool_module_path: str = Field(
         description="Python module path for tool implementations (e.g., 'eva.assistant.tools.airline_tools')",
     )
@@ -215,14 +215,14 @@ class AgentsConfig(BaseModel):
 
     agents: list[AgentConfig] = Field(default_factory=list, description="List of available agents")
 
-    def get_agent_by_id(self, agent_id: str) -> Optional[AgentConfig]:
+    def get_agent_by_id(self, agent_id: str) -> AgentConfig | None:
         """Get an agent by its ID."""
         for agent in self.agents:
             if agent.id == agent_id:
                 return agent
         return None
 
-    def get_agent_by_name(self, name: str) -> Optional[AgentConfig]:
+    def get_agent_by_name(self, name: str) -> AgentConfig | None:
         """Get an agent by its name."""
         for agent in self.agents:
             if agent.name == name:

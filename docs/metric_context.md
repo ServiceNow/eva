@@ -181,8 +181,8 @@ Counts and flags computed during benchmark execution.
   - `"transfer"`: Assistant transferred to live agent
   - `"error"`: An error occurred
 - **`duration_seconds: float`** - Total duration of the conversation in seconds.
-- **`is_audio_native: bool`** - Whether this conversation used an audio-native architecture. Metrics should check this flag to adjust behavior (e.g., audio-native uses intended user text in conversation_trace).
-- **`response_speed_latencies: list[float]`** - List of response latencies in seconds (time from user speech end to assistant speech start).
+- **`pipeline_type: PipelineType`** - The pipeline architecture used (`CASCADE`, `AUDIO_LLM`, or `S2S`). Access `context.is_audio_native` for a convenience boolean that returns `True` for both `AUDIO_LLM` and `S2S`.
+- **`latency_assistant_turns: dict[int, float]`** - Per-turn latency in seconds (user speech end to assistant speech start), keyed by turn ID.
 
 ### File Paths
 
@@ -212,11 +212,11 @@ The LLM processes **transcribed text**, so `transcribed_user_turns` reflects wha
 
 The model processes **raw audio**. The audit log may contain a transcript from the service's own secondary STT, but this is **not what the model used** — it's just for reference. This is why `transcribed_user_turns` is unreliable for audio-native models and `intended_user_turns` should be used instead.
 
-Check `context.is_audio_native` (audio-native) to determine which mode was used.
+Check `context.pipeline_type` to determine which mode was used, or `context.is_audio_native` for a boolean grouping of `S2S` and `AUDIO_LLM`.
 
 ### Writing Audio-Native-Aware Metrics
 
-If your metric needs user text directly (rather than via `conversation_trace`, which handles this automatically), branch on `context.is_audio_native` (audio-native):
+If your metric needs user text directly (rather than via `conversation_trace`, which handles this automatically), branch on `context.is_audio_native`:
 
 ```python
 async def compute(self, context: MetricContext) -> MetricScore:

@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +21,7 @@ class ErrorDetails(BaseModel):
     retry_count: int = Field(0, description="Number of retry attempts")
     retry_succeeded: bool = Field(False, description="Whether retry succeeded")
     timestamps: list[str] = Field(default_factory=list, description="Timestamp of each attempt")
-    stack_trace: Optional[str] = Field(None, description="Stack trace if available")
+    stack_trace: str | None = Field(None, description="Stack trace if available")
     original_error: str = Field(..., description="Original error message")
 
 
@@ -40,15 +40,15 @@ class ConversationResult(BaseModel):
 
     record_id: str = Field(..., description="ID of the evaluation record")
     completed: bool = Field(..., description="Whether the conversation completed successfully")
-    error: Optional[str] = Field(None, description="Error message if failed")
-    error_details: Optional[ErrorDetails] = Field(
+    error: str | None = Field(None, description="Error message if failed")
+    error_details: ErrorDetails | None = Field(
         None, description="Detailed error information (new field, optional for backward compatibility)"
     )
 
     # Latency statistics
-    llm_latency: Optional[LatencyStats] = Field(None, description="LLM latency statistics")
-    stt_latency: Optional[LatencyStats] = Field(None, description="STT latency statistics")
-    tts_latency: Optional[LatencyStats] = Field(None, description="TTS latency statistics")
+    llm_latency: LatencyStats | None = Field(None, description="LLM latency statistics")
+    stt_latency: LatencyStats | None = Field(None, description="STT latency statistics")
+    tts_latency: LatencyStats | None = Field(None, description="TTS latency statistics")
 
     # Timing
     started_at: datetime = Field(..., description="When the conversation started")
@@ -57,25 +57,25 @@ class ConversationResult(BaseModel):
 
     # Paths to outputs
     output_dir: str = Field(..., description="Path to output directory for this record")
-    audio_assistant_path: Optional[str] = Field(None, description="Path to assistant audio file")
-    audio_user_path: Optional[str] = Field(None, description="Path to user audio file")
-    audio_mixed_path: Optional[str] = Field(None, description="Path to mixed audio file")
-    transcript_path: Optional[str] = Field(None, description="Path to transcript JSONL file")
-    audit_log_path: Optional[str] = Field(None, description="Path to audit log JSON file")
-    conversation_log_path: Optional[str] = Field(None, description="Path to conversation log file")
-    pipecat_logs_path: Optional[str] = Field(None, description="Path to pipecat logs JSONL file")
-    elevenlabs_logs_path: Optional[str] = Field(None, description="Path to elevenlabs logs JSONL file")
+    audio_assistant_path: str | None = Field(None, description="Path to assistant audio file")
+    audio_user_path: str | None = Field(None, description="Path to user audio file")
+    audio_mixed_path: str | None = Field(None, description="Path to mixed audio file")
+    transcript_path: str | None = Field(None, description="Path to transcript JSONL file")
+    audit_log_path: str | None = Field(None, description="Path to audit log JSON file")
+    conversation_log_path: str | None = Field(None, description="Path to conversation log file")
+    pipecat_logs_path: str | None = Field(None, description="Path to pipecat logs JSONL file")
+    elevenlabs_logs_path: str | None = Field(None, description="Path to elevenlabs logs JSONL file")
 
     # Summary stats (pre-metrics)
     num_turns: int = Field(0, description="Number of conversation turns")
     num_tool_calls: int = Field(0, description="Number of tool calls made")
     tools_called: list[str] = Field(default_factory=list, description="List of tools that were called")
-    conversation_ended_reason: Optional[str] = Field(
+    conversation_ended_reason: str | None = Field(
         None,
         description="Reason conversation ended: 'goodbye', 'timeout', 'transfer', 'error'",
     )
-    initial_scenario_db_hash: Optional[str] = Field(None, description="SHA-256 hash of initial scenario database")
-    final_scenario_db_hash: Optional[str] = Field(None, description="SHA-256 hash of final scenario database")
+    initial_scenario_db_hash: str | None = Field(None, description="SHA-256 hash of initial scenario database")
+    final_scenario_db_hash: str | None = Field(None, description="SHA-256 hash of final scenario database")
 
 
 class MetricScore(BaseModel):
@@ -86,6 +86,9 @@ class MetricScore(BaseModel):
     normalized_score: float | None = Field(None, description="Normalized score (0-1 scale)")
     details: dict[str, Any] = Field(default_factory=dict, description="Additional metric details")
     error: str | None = Field(None, description="Error message if metric computation failed")
+    sub_metrics: dict[str, "MetricScore"] | None = Field(
+        None, description="Optional sub-metric breakdowns, aggregated generically by the runner"
+    )
 
 
 class PassAtKResult(BaseModel):
@@ -108,16 +111,14 @@ class RecordMetrics(BaseModel):
     model_config = {"extra": "allow"}  # Allow extra fields for backwards compatibility
 
     record_id: str = Field(..., description="ID of the evaluation record")
-    context: Optional[dict[str, Any]] = Field(
-        default=None, description="MetricContext fields used for computing metrics"
-    )
+    context: dict[str, Any] | None = Field(default=None, description="MetricContext fields used for computing metrics")
     metrics: dict[str, MetricScore] = Field(default_factory=dict, description="Metrics keyed by metric name")
     aggregate_metrics: dict[str, float | None] = Field(
         default_factory=dict,
         description="EVA composite aggregate scores (EVA-A, EVA-X, EVA-overall)",
     )
 
-    def get_score(self, metric_name: str) -> Optional[float]:
+    def get_score(self, metric_name: str) -> float | None:
         """Get the normalized score for a metric, falling back to raw score."""
         if metric_name not in self.metrics:
             return None
@@ -126,7 +127,7 @@ class RecordMetrics(BaseModel):
             return None
         return metric.normalized_score if metric.normalized_score is not None else metric.score
 
-    def get_context_field(self, field_name: str) -> Optional[Any]:
+    def get_context_field(self, field_name: str) -> Any | None:
         """Safely get a field from context."""
         if self.context and isinstance(self.context, dict):
             return self.context.get(field_name)

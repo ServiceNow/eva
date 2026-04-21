@@ -4,9 +4,9 @@ import json
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from eva.assistant.agentic.system import GENERIC_ERROR
+from eva.models.config import PipelineType
 from eva.models.results import ConversationResult
 from eva.utils.log_processing import (
     AnnotationLabel,
@@ -17,7 +17,6 @@ from eva.utils.log_processing import (
     extract_tool_params_and_responses,
     filter_empty_responses,
     get_entry_for_audit_log,
-    group_consecutive_logs_by_speaker,
     group_consecutive_turns,
     truncate_to_spoken,
 )
@@ -25,9 +24,26 @@ from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+
+def _resolve_path(stored: str | None, output_dir: Path) -> str | None:
+    """Return *stored* if it exists on disk, otherwise ``output_dir / basename(stored)``.
+
+    Allows metrics to re-run correctly when a run directory has been moved:
+    *stored* reflects the original location, but the file is now under *output_dir*
+    with the same filename. Returns ``None`` when *stored* is ``None`` so callers
+    can treat ``None`` as "feature disabled" (e.g. audio recording was off).
+    """
+    if stored is None:
+        return None
+    if Path(stored).exists():
+        return stored
+    return str(output_dir / Path(stored).name)
+
+
 # Elevenlabs audio user field → _ProcessorContext attribute name
 AUDIO_ATTR = {
-    "pipecat_agent": "audio_timestamps_assistant_turns",
+    "framework_agent": "audio_timestamps_assistant_turns",
+    "pipecat_agent": "audio_timestamps_assistant_turns",  # Deprecated name - kept for old runs
     "elevenlabs_user": "audio_timestamps_user_turns",
 }
 
@@ -69,7 +85,7 @@ class _TurnExtractionState:
     # Track which turn each speaker's audio started at, so late-arriving speech transcripts land at the correct turn.
     last_assistant_audio_turn: int = 0
     last_user_audio_turn: int = 0
-    # True when pipecat_agent audio started after user audio ended, meaning any subsequent user_speech (while
+    # True when framework_agent audio started after user audio ended, meaning any subsequent user_speech (while
     # user_audio_open is False) belongs to a new speaking session and should be buffered until the next
     # audio_start(elevenlabs_user) sets the correct turn.
     assistant_responded_since_user_ended: bool = False
@@ -90,16 +106,23 @@ class _TurnExtractionState:
     # user_speech lands at the same turn.
     rollback_advance_consumed_by_user: bool = False
 
-    def advance_turn_if_needed(self) -> None:
+    def advance_turn_if_needed(self, from_audio_start: bool = False) -> None:
         """Advance turn if the assistant responded since the last user event.
 
         Called on audio_start(elevenlabs_user) and audit_log/user events.
-        After an interruption, hold_turn consumes one advance without incrementing.
+        After an interruption, hold_turn suppresses one advance from audit_log/user
+        (late STT from the interrupted session) but never blocks audio_start
+        (the user speaking again always starts a new turn).
         """
         if self.hold_turn:
-            self.hold_turn = False
-            self.assistant_spoke_in_turn = False
-            return
+            if from_audio_start:
+                # New user speech — clear hold_turn but still advance
+                self.hold_turn = False
+            else:
+                # Late STT chunk from interrupted session — consume without advancing
+                self.hold_turn = False
+                self.assistant_spoke_in_turn = False
+                return
         if self.assistant_spoke_in_turn:
             self.turn_num += 1
             self.assistant_spoke_in_turn = False
@@ -132,7 +155,7 @@ def _process_user_speech(
     state: _TurnExtractionState,
     context: "_ProcessorContext",
     conversation_trace: list[dict],
-    is_audio_native: bool,
+    pipeline_type: PipelineType,
 ) -> None:
     """Process a single user_speech event into intended_user_turns (and audio-native trace)."""
     turn_idx = state.last_user_audio_turn
@@ -144,7 +167,7 @@ def _process_user_speech(
     append_turn_text(context.intended_user_turns, turn_idx, user_text, sep)
     state.user_speech_in_session = True
     # For audio-native models, use intended user text in the conversation trace
-    if is_audio_native:
+    if pipeline_type in (PipelineType.S2S, PipelineType.AUDIO_LLM):
         trace_entry = {
             "role": "user",
             "content": user_text,
@@ -180,7 +203,7 @@ def _handle_audit_log_event(
     state: "_TurnExtractionState",
     context: "_ProcessorContext",
     conversation_trace: list[dict],
-    is_audio_native: bool,
+    pipeline_type: PipelineType,
 ) -> None:
     """Process a single audit_log source event into turn variables and conversation trace."""
     if event["event_type"] == "user":
@@ -206,12 +229,14 @@ def _handle_audit_log_event(
             entry["content"] = f"{AnnotationLabel.USER_INTERRUPTS} {entry['content']}"
             state.pending_user_interrupts_label = False
         # For audio-native models, user trace entries come from ElevenLabs user_speech instead
-        if not is_audio_native:
+        if pipeline_type == PipelineType.CASCADE:
             conversation_trace.append(entry)
         sep = _user_transcript_separator(existing, turn, state)
         append_turn_text(context.transcribed_user_turns, turn, entry["content"], sep)
 
     elif event["event_type"] == "assistant":
+        if pipeline_type == PipelineType.S2S:
+            return
         turn = state.turn_num
         content = event["data"]
         # Apply interruption prefix if this is the first assistant entry in a turn where assistant barged in
@@ -220,7 +245,7 @@ def _handle_audit_log_event(
             has_prior = any(e.get("role") == "assistant" and e.get("turn_id") == turn for e in conversation_trace)
             if not has_prior:
                 content = f"{AnnotationLabel.ASSISTANT_INTERRUPTS} {content}"
-                user_entry_type = "intended" if is_audio_native else "transcribed"
+                user_entry_type = "transcribed" if pipeline_type == PipelineType.CASCADE else "intended"
                 annotate_last_entry(
                     conversation_trace, turn, "user", user_entry_type, AnnotationLabel.CUT_OFF_BY_ASSISTANT
                 )
@@ -297,7 +322,7 @@ def _handle_audio_start(
     state: "_TurnExtractionState",
     context: "_ProcessorContext",
     conversation_trace: list[dict],
-    is_audio_native: bool,
+    pipeline_type: PipelineType,
 ) -> None:
     """Process an ElevenLabs audio_start event, advancing the turn counter if needed."""
     role = event["data"]["user"]
@@ -327,7 +352,7 @@ def _handle_audio_start(
             state.assistant_spoke_in_turn = True
             state.pending_advance_after_rollback = False
         state.rollback_advance_consumed_by_user = False
-        state.advance_turn_if_needed()
+        state.advance_turn_if_needed(from_audio_start=True)
         # Mark the NEW turn (after advance) as a user-interrupted turn — the user's interrupting speech
         # lands here, symmetric with assistant_interrupted_turns.
         if state.pending_user_interrupts_label:
@@ -339,14 +364,19 @@ def _handle_audio_start(
         # Replay any buffered user_speech that arrived before this audio_start — now we know the correct turn.
         if state.buffered_user_speech:
             for buffered in state.buffered_user_speech:
-                _process_user_speech(buffered, state, context, conversation_trace, is_audio_native)
+                _process_user_speech(buffered, state, context, conversation_trace, pipeline_type)
             state.buffered_user_speech.clear()
 
-    elif role == "pipecat_agent":
+    elif role in ("framework_agent", "pipecat_agent"):
         state.assistant_audio_open = True
         state.last_assistant_audio_turn = state.turn_num
         if not state.user_audio_open:
             state.assistant_responded_since_user_ended = True
+            # For S2S pipelines, mark that the assistant spoke as soon as audio starts.
+            # EL assistant_speech transcripts arrive late (often at the same timestamp as
+            # the next user's audio_start) and can't be relied on for turn boundary detection.
+            if pipeline_type == PipelineType.S2S:
+                state.assistant_spoke_in_turn = True
         # Interruption: assistant starts speaking while user is still speaking. Only count if (a) user
         # audio started in the current turn (not lingering from a previous turn's delayed delivery) and
         # (b) no tool calls happened yet — tool calls mean the assistant is responding to the user's
@@ -379,7 +409,7 @@ def _handle_audio_end(event: dict, state: "_TurnExtractionState") -> None:
             # assistant_spoke_in_turn — this prevents late audit_log/user STT chunks from advancing
             # (they naturally stay at the current turn).
             state.pending_advance_after_rollback = True
-    elif role == "pipecat_agent":
+    elif role in ("framework_agent", "pipecat_agent"):
         state.assistant_audio_open = False
 
 
@@ -388,7 +418,7 @@ def _handle_elevenlabs_event(
     state: "_TurnExtractionState",
     context: "_ProcessorContext",
     conversation_trace: list[dict],
-    is_audio_native: bool,
+    pipeline_type: PipelineType,
 ) -> bool:
     """Process a single elevenlabs source event. Returns True if the caller should continue."""
     if event["event_type"] == "assistant_speech":
@@ -396,7 +426,8 @@ def _handle_elevenlabs_event(
         # arrive after a user audio_start has already advanced the turn.
         turn = state.last_assistant_audio_turn
         # Only mark "assistant spoke" if the speech belongs to the current turn; late transcripts from a
-        # previous turn must not trigger a spurious turn advance.
+        # previous turn must not trigger a spurious turn advance.  For S2S pipelines, audio_start(framework_agent)
+        # already sets assistant_spoke_in_turn, so the S2S-specific override here is no longer needed.
         if turn == state.turn_num:
             state.assistant_spoke_in_turn = True
         existing = context.transcribed_assistant_turns.get(turn, "")
@@ -405,6 +436,17 @@ def _handle_elevenlabs_event(
         if not existing and turn in state.assistant_interrupted_turns:
             text = f"{AnnotationLabel.ASSISTANT_INTERRUPTS} {text}"
         append_turn_text(context.transcribed_assistant_turns, turn, text, sep)
+        # For S2S, assistant trace entries come from EL (audit log assistant entries are skipped)
+        if pipeline_type == PipelineType.S2S:
+            conversation_trace.append(
+                {
+                    "role": "assistant",
+                    "content": text,
+                    "timestamp": event["timestamp_ms"],
+                    "type": "transcribed",
+                    "turn_id": turn,
+                }
+            )
 
     elif event["event_type"] == "user_speech":
         # Buffer user_speech when it cannot be paired with the current user audio session. This happens when:
@@ -425,10 +467,10 @@ def _handle_elevenlabs_event(
         if raw_text in state.buffered_user_speech_texts:
             state.buffered_user_speech_texts.discard(raw_text)
             return False
-        _process_user_speech(event, state, context, conversation_trace, is_audio_native)
+        _process_user_speech(event, state, context, conversation_trace, pipeline_type)
 
     elif event["event_type"] == "audio_start":
-        _handle_audio_start(event, state, context, conversation_trace, is_audio_native)
+        _handle_audio_start(event, state, context, conversation_trace, pipeline_type)
 
     elif event["event_type"] == "audio_end":
         _handle_audio_end(event, state)
@@ -495,7 +537,7 @@ def _validate_conversation_trace(
 def _fix_interruption_labels(context: "_ProcessorContext", state: "_TurnExtractionState") -> None:
     """Fix interruption labels that may have been missed during the event loop.
 
-    The audit_log/assistant entry can arrive before the interruption is detected at audio_start(pipecat_agent),
+    The audit_log/assistant entry can arrive before the interruption is detected at audio_start(framework_agent),
     so the prefix wasn't applied during the loop. Only fix the first assistant entry per interrupted turn.
     """
     # Clean up per-entry interrupted keys (used during event loop only)
@@ -544,7 +586,10 @@ def _finalize_extraction(
     context.tool_params, context.tool_responses = extract_tool_params_and_responses(conversation_trace)
     context.tool_called = [t["tool_name"].lower() for t in context.tool_params]
     context.num_tool_calls = len(context.tool_params)
-    context.num_assistant_turns = len(context.intended_assistant_turns)
+    if context.pipeline_type == PipelineType.S2S:
+        context.num_assistant_turns = len(context.transcribed_assistant_turns)
+    else:
+        context.num_assistant_turns = len(context.intended_assistant_turns)
     context.num_user_turns = len(context.transcribed_user_turns)
 
     _warn_turn_misalignment(context)
@@ -586,11 +631,12 @@ def _ensure_greeting_is_first(context: "_ProcessorContext") -> None:
     if greeting_idx is not None:
         greeting = context.conversation_trace.pop(greeting_idx)
     else:
-        # Cascade: greeting not in audit log — create from pipecat text.
+        # Greeting not in audit log — create from pipecat text (cascade) or transcribed text (S2S).
+        greeting_text = context.intended_assistant_turns.get(0) or context.transcribed_assistant_turns.get(0)
         greeting = {
             "role": "assistant",
-            "content": context.intended_assistant_turns.get(0),
-            "type": "intended",
+            "content": greeting_text,
+            "type": "intended" if context.intended_assistant_turns.get(0) else "transcribed",
             "turn_id": 0,
         }
     context.conversation_trace.insert(0, greeting)
@@ -633,8 +679,9 @@ def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dic
             {"role": "assistant", "content": labeled, "type": "intended", "turn_id": trailing_turn_id}
         )
 
-    # Sync intended + transcribed
-    context.intended_assistant_turns[trailing_turn_id] = labeled
+    # Sync intended + transcribed (skip intended for S2S — no intended text exists)
+    if context.pipeline_type != PipelineType.S2S:
+        context.intended_assistant_turns[trailing_turn_id] = labeled
     if not context.transcribed_assistant_turns.get(trailing_turn_id):
         context.transcribed_assistant_turns[trailing_turn_id] = labeled
     else:
@@ -647,7 +694,7 @@ class _ProcessorContext:
     """Processed log data for metric computation."""
 
     def __init__(self):
-        self.record_id: Optional[str] = None
+        self.record_id: str | None = None
 
         # Per-role turn data (indexed by turn_id, 0-indexed)
         self.transcribed_assistant_turns: dict[int, str] = {}
@@ -670,9 +717,9 @@ class _ProcessorContext:
 
         self.conversation_trace: list[dict] = []
 
-        self.audio_assistant_path: Optional[str] = None
-        self.audio_user_path: Optional[str] = None
-        self.audio_mixed_path: Optional[str] = None
+        self.audio_assistant_path: str | None = None
+        self.audio_user_path: str | None = None
+        self.audio_mixed_path: str | None = None
 
         # Interruption data
         self.assistant_interrupted_turns: set[int] = set()
@@ -680,11 +727,11 @@ class _ProcessorContext:
 
         # Conversation metadata
         self.conversation_finished: bool = False
-        self.conversation_ended_reason: Optional[str] = None
-        self.is_audio_native: bool = False
+        self.conversation_ended_reason: str | None = None
+        self.pipeline_type: PipelineType = PipelineType.CASCADE
 
-        # Response latencies from Pipecat's UserBotLatencyObserver
-        self.response_speed_latencies: list[float] = []
+        # Per-turn latency: user_end -> assistant_start (seconds)
+        self.latency_assistant_turns: dict[int, float] = {}
 
         # Unified timeline of all events from all log sources
         self.history: list[dict] = []
@@ -693,33 +740,52 @@ class _ProcessorContext:
 class MetricsContextProcessor:
     """Postprocessor for voice agent logs to create metric variables."""
 
+    @staticmethod
+    def _compute_per_turn_latency(context: "_ProcessorContext") -> None:
+        """Compute per-turn latency from audio timestamps and save to context.
+
+        Latency is measured as the time from the end of the user's last audio
+        segment to the start of the assistant's first audio segment for each turn.
+        Turns with missing timestamps are silently skipped.
+        """
+        latencies: dict[int, float] = {}
+        for turn_id, u in context.audio_timestamps_user_turns.items():
+            a = context.audio_timestamps_assistant_turns.get(turn_id)
+            if not u or not a:
+                continue
+            latencies[turn_id] = round(a[0][0] - u[-1][1], 6)
+        context.latency_assistant_turns = latencies
+
     def process_record(
         self,
         result: ConversationResult,
         output_dir: Path,
-        is_audio_native: bool = False,
-    ) -> Optional[_ProcessorContext]:
+        pipeline_type: PipelineType = PipelineType.CASCADE,
+    ) -> _ProcessorContext | None:
         """Process a single conversation record to create metric context.
 
         Args:
             result: ConversationResult object
             output_dir: Path to the output directory containing logs
-            is_audio_native: Whether the model is audio-native
+            pipeline_type: The type of voice pipeline used
 
         Returns:
             _ProcessorContext object with all processed variables, or None if processing failed
         """
         context = _ProcessorContext()
         context.record_id = result.record_id
-        context.audio_assistant_path = result.audio_assistant_path
-        context.audio_user_path = result.audio_user_path
-        context.audio_mixed_path = result.audio_mixed_path
-        context.is_audio_native = is_audio_native
+        context.audio_assistant_path = _resolve_path(result.audio_assistant_path, output_dir)
+        context.audio_user_path = _resolve_path(result.audio_user_path, output_dir)
+        context.audio_mixed_path = _resolve_path(result.audio_mixed_path, output_dir)
+        context.pipeline_type = pipeline_type
+
+        pipecat_path = _resolve_path(result.pipecat_logs_path, output_dir)
+        elevenlabs_path = _resolve_path(result.elevenlabs_logs_path, output_dir)
 
         try:
-            self._build_history(context, output_dir, result)
+            self._build_history(context, output_dir, pipecat_path, elevenlabs_path)
             self._extract_turns_from_history(context)
-            self._load_response_latencies(context, output_dir)
+            self._compute_per_turn_latency(context)
             self._reconcile_transcript_with_tools(context)
 
             return context
@@ -791,8 +857,8 @@ class MetricsContextProcessor:
             for line in f:
                 raw_elevenlabs.append(json.loads(line))
 
-        grouped_elevenlabs = group_consecutive_logs_by_speaker(filter_empty_responses(raw_elevenlabs))
-        for entry in grouped_elevenlabs:
+        filtered_elevenlabs = filter_empty_responses(raw_elevenlabs)
+        for entry in filtered_elevenlabs:
             if (ts := entry.get("timestamp")) is None:
                 continue
             event_type = entry.get("type") or entry.get("event_type", "unknown")
@@ -811,15 +877,18 @@ class MetricsContextProcessor:
         self,
         context: _ProcessorContext,
         output_dir: Path,
-        result: ConversationResult,
+        pipecat_path: str | None,
+        elevenlabs_path: str | None,
     ) -> None:
         """Merge audit log, pipecat, and ElevenLabs logs into a timestamp-sorted context.history.
 
         Each entry: {timestamp_ms, source, event_type, data}.
         """
         history = self._load_audit_log_transcript(output_dir)
-        history.extend(self._load_pipecat_logs(result.pipecat_logs_path))
-        history.extend(self._load_elevenlabs_logs(result.elevenlabs_logs_path))
+        if context.pipeline_type != PipelineType.S2S and pipecat_path:
+            history.extend(self._load_pipecat_logs(pipecat_path))
+        if elevenlabs_path:
+            history.extend(self._load_elevenlabs_logs(elevenlabs_path))
 
         history.sort(key=lambda e: e["timestamp_ms"])
         context.history = history
@@ -853,18 +922,22 @@ class MetricsContextProcessor:
         conversation_trace: list[dict] = []
         for event in context.history:
             if event["source"] == "audit_log":
-                _handle_audit_log_event(event, state, context, conversation_trace, context.is_audio_native)
+                _handle_audit_log_event(event, state, context, conversation_trace, context.pipeline_type)
             elif event["source"] == "pipecat":
                 _handle_pipecat_event(event, state, context, conversation_trace)
             elif event["source"] == "elevenlabs":
-                if _handle_elevenlabs_event(event, state, context, conversation_trace, context.is_audio_native):
+                if _handle_elevenlabs_event(event, state, context, conversation_trace, context.pipeline_type):
                     continue
 
         if not state.session_end_ts:
             state.session_end_ts = context.history[-1].get("timestamp_ms") / 1000.0
 
         _pair_audio_segments(state, context)
-        validated_trace = _validate_conversation_trace(conversation_trace, context)
+        if context.pipeline_type == PipelineType.S2S:
+            # S2S has no pipecat segments to validate against — trace entries come from EL directly
+            validated_trace = conversation_trace
+        else:
+            validated_trace = _validate_conversation_trace(conversation_trace, context)
         context.conversation_trace = group_consecutive_turns(validated_trace)
         _fix_interruption_labels(context, state)
         _finalize_extraction(context, state, conversation_trace)
@@ -924,41 +997,3 @@ class MetricsContextProcessor:
                 f"Record {context.record_id}: Backfilled transcribed_user_turns[{last_user_turn_id}] "
                 f"from intended: {last_user_text[:50]}"
             )
-
-    def _load_response_latencies(self, context: _ProcessorContext, output_dir: Path) -> bool:
-        """Load response latencies from UserBotLatencyObserver.
-
-        Args:
-            context: _ProcessorContext to populate
-            output_dir: Path to output directory
-
-        Returns:
-            True if successful, False otherwise
-        """
-        latencies_path = output_dir / "response_latencies.json"
-
-        # File may not exist if conversation failed or used older version
-        if not latencies_path.exists():
-            logger.debug(f"Response latencies file not found: {latencies_path}")
-            return False
-
-        try:
-            with open(latencies_path) as f:
-                data = json.load(f)
-
-            latencies = data.get("latencies", [])
-            context.response_speed_latencies = latencies
-
-            logger.info(
-                f"Record {context.record_id}: Loaded {len(latencies)} response latencies "
-                f"(mean={data.get('mean', 0):.3f}s, max={data.get('max', 0):.3f}s)"
-            )
-
-            return True
-
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            logger.warning(f"Failed to load response latencies: {e}")
-            return False
-        except Exception as e:
-            logger.exception(f"Failed to load response latencies: {e}")
-            return False

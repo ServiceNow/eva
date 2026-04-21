@@ -19,12 +19,11 @@ Provides FrameProcessors for the audio-LLM pipeline:
 import asyncio
 import base64
 import io
-import os
 import time
 import wave
 from collections.abc import Awaitable
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from openai import AsyncOpenAI
 from pipecat.frames.frames import (
@@ -82,7 +81,7 @@ class AudioLLMUserAudioCollector(FrameProcessor):
         self,
         context,
         user_context_aggregator,
-        pre_speech_secs: Optional[float] = None,
+        pre_speech_secs: float | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -177,7 +176,7 @@ class AudioLLMProcessor(FrameProcessor):
         audit_log: AuditLog,
         alm_client: ALMvLLMClient,
         audio_collector: AudioLLMUserAudioCollector,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -196,11 +195,11 @@ class AudioLLMProcessor(FrameProcessor):
         )
 
         # State tracking (mirrors BenchmarkAgentProcessor)
-        self._current_query_task: Optional[asyncio.Task] = None
+        self._current_query_task: asyncio.Task | None = None
         self._interrupted = asyncio.Event()
 
         # Optional callback for transcript saving (set by server.py)
-        self.on_assistant_response: Optional[Awaitable] = None
+        self.on_assistant_response: Awaitable | None = None
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
         if isinstance(frame, (EndFrame, CancelFrame)):
@@ -411,14 +410,14 @@ Rules:
         audio_collector: AudioLLMUserAudioCollector,
         model: str = "",
         params: dict[str, Any] = None,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         sample_rate: int = PIPELINE_SAMPLE_RATE,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._audio_collector = audio_collector
         params = params or {}
-        self._api_key = params.get("api_key") or os.getenv("OPENAI_API_KEY")
+        self._api_key = params.get["api_key"]
         self._model = model
         self._system_prompt = system_prompt or self.DEFAULT_SYSTEM_PROMPT
         self._sample_rate = sample_rate
@@ -427,7 +426,7 @@ Rules:
         self._client: AsyncOpenAI = AsyncOpenAI(api_key=self._api_key, base_url=base_url)
 
         # Callback for when transcription is ready (set by server.py)
-        self.on_transcription: Optional[Any] = None
+        self.on_transcription: Any | None = None
 
         # Track background transcription tasks so they can complete even during interruptions
         self._transcription_tasks: list[asyncio.Task] = []
@@ -464,7 +463,7 @@ Rules:
         # Clean up completed tasks
         self._transcription_tasks = [t for t in self._transcription_tasks if not t.done()]
 
-    async def transcribe(self, timestamp: str, turn_id: Optional[int] = None) -> Optional[str]:
+    async def transcribe(self, timestamp: str, turn_id: int | None = None) -> str | None:
         """Transcribe audio from the collector using chat completions.
 
         This method can be called directly from event handlers or via frame processing.
@@ -480,9 +479,7 @@ Rules:
         audio_data = self._audio_collector.peek_buffered_audio()
         return await self._transcribe_audio(audio_data, timestamp, turn_id)
 
-    async def _transcribe_audio(
-        self, audio_data: bytes, timestamp: str, turn_id: Optional[int] = None
-    ) -> Optional[str]:
+    async def _transcribe_audio(self, audio_data: bytes, timestamp: str, turn_id: int | None = None) -> str | None:
         """Transcribe pre-captured audio data using chat completions.
 
         This method takes audio data directly instead of reading from the collector,

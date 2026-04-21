@@ -10,7 +10,7 @@ compare equal to their string counterparts (e.g. ``FareClass.main_cabin == "main
 """
 
 from enum import StrEnum
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -133,8 +133,8 @@ class RebookFlightParams(BaseModel):
     new_journey_id: JourneyIdStr
     rebooking_type: RebookingType
     waive_change_fee: bool
-    new_fare_class: Optional[FareClass] = None
-    flight_number: Optional[FlightNumberStr] = None
+    new_fare_class: FareClass | None = None
+    flight_number: FlightNumberStr | None = None
 
 
 class AddToStandbyParams(BaseModel):
@@ -148,14 +148,14 @@ class AssignSeatParams(BaseModel):
     passenger_id: PassengerIdStr
     journey_id: JourneyIdStr
     seat_preference: SeatPreference
-    flight_number: Optional[FlightNumberStr] = None
+    flight_number: FlightNumberStr | None = None
 
 
 class AddBaggageAllowanceParams(BaseModel):
     confirmation_number: ConfirmationNumber
     journey_id: JourneyIdStr
     num_bags: int = Field(ge=0, le=5)
-    flight_number: Optional[FlightNumberStr] = None
+    flight_number: FlightNumberStr | None = None
 
 
 class AddMealRequestParams(BaseModel):
@@ -163,7 +163,7 @@ class AddMealRequestParams(BaseModel):
     passenger_id: PassengerIdStr
     journey_id: JourneyIdStr
     meal_type: MealType
-    flight_number: Optional[FlightNumberStr] = None
+    flight_number: FlightNumberStr | None = None
 
 
 class IssueTravelCreditParams(BaseModel):

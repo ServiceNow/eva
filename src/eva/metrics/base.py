@@ -4,7 +4,7 @@ import os
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pydub import AudioSegment
 
@@ -19,6 +19,7 @@ from eva.metrics.utils import (
     resolve_turn_id,
     validate_rating,
 )
+from eva.models.config import PipelineType
 from eva.models.results import MetricScore
 from eva.utils.llm_client import LLMClient
 from eva.utils.logging import get_logger
@@ -61,13 +62,13 @@ class MetricContext:
         num_turns: int = 0,
         num_tool_calls: int = 0,
         tools_called: list[str] = None,
-        conversation_ended_reason: Optional[str] = None,
+        conversation_ended_reason: str | None = None,
         duration_seconds: float = 0.0,
         # Paths to files
         output_dir: str = "",
-        audio_assistant_path: Optional[str] = None,
-        audio_user_path: Optional[str] = None,
-        audio_mixed_path: Optional[str] = None,
+        audio_assistant_path: str | None = None,
+        audio_user_path: str | None = None,
+        audio_mixed_path: str | None = None,
         # Processed log data from postprocessor
         transcribed_assistant_turns: dict[int, str] | None = None,
         transcribed_user_turns: dict[int, str] | None = None,
@@ -81,10 +82,10 @@ class MetricContext:
         tool_responses: list[dict] | None = None,
         conversation_trace: list[dict] | None = None,
         conversation_finished: bool | None = None,
-        response_speed_latencies: list[float] | None = None,
+        latency_assistant_turns: dict[int, float] | None = None,
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
-        is_audio_native: bool = False,
+        pipeline_type: PipelineType = PipelineType.CASCADE,
     ):
         self.record_id = record_id
 
@@ -131,10 +132,14 @@ class MetricContext:
         self.tool_responses = tool_responses or []
         self.conversation_trace = conversation_trace or []
         self.conversation_finished = conversation_finished or False
-        self.response_speed_latencies = response_speed_latencies or []
+        self.latency_assistant_turns = latency_assistant_turns or {}
         self.assistant_interrupted_turns = assistant_interrupted_turns or set()
         self.user_interrupted_turns = user_interrupted_turns or set()
-        self.is_audio_native = is_audio_native
+        self.pipeline_type = pipeline_type
+
+    @property
+    def is_audio_native(self) -> bool:
+        return self.pipeline_type in (PipelineType.S2S, PipelineType.AUDIO_LLM)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert MetricContext to a serializable dictionary."""

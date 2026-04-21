@@ -138,7 +138,10 @@ class BenchmarkRunner:
             }
 
         config_path = self.output_dir / "config.json"
-        config_path.write_text(self.config.model_dump_json(indent=2))
+        config_data = self.config.model_dump(mode="json")
+        pipeline_parts = self.config.model.pipeline_parts
+        config_data["pipeline_parts"] = pipeline_parts
+        config_path.write_text(json.dumps(config_data, indent=2))
 
         # Build output_id list for tracking (supports pass@k)
         num_trials = self.config.num_trials
@@ -913,7 +916,16 @@ class BenchmarkRunner:
         if not config_path.exists():
             raise FileNotFoundError(f"config.json not found in {run_dir}")
 
-        config = RunConfig.model_validate_json(config_path.read_text())
+        # Load the saved config without reading from env vars or .env file.
+        # This prevents conflicts when the current environment has a different pipeline
+        # mode set (e.g. EVA_MODEL__LLM in env but the saved run used S2S).
+        class _StoredRunConfig(RunConfig):
+            @classmethod
+            def settings_customise_sources(cls, settings_cls, init_settings, **kwargs):
+                return (init_settings,)
+
+        config_data = json.loads(config_path.read_text())
+        config = _StoredRunConfig(**config_data)
         runner = cls(config)
         runner.output_dir = run_dir  # Use existing output dir, don't create new
         return runner
@@ -951,16 +963,15 @@ class BenchmarkRunner:
             f.write("record_id,completed,duration_seconds,num_turns,num_tool_calls,ended_reason,error\n")
 
             # Successful records
-            for output_id, result in successful:
-                f.write(
-                    f"{output_id},true,{result.duration_seconds:.2f},"
-                    f"{result.num_turns},{result.num_tool_calls},"
-                    f"{result.conversation_ended_reason or ''},\n"
-                )
+            f.writelines(
+                f"{output_id},true,{result.duration_seconds:.2f},"
+                f"{result.num_turns},{result.num_tool_calls},"
+                f"{result.conversation_ended_reason or ''},\n"
+                for output_id, result in successful
+            )
 
             # Failed records
-            for record_id in failed_ids:
-                f.write(f"{record_id},false,0,0,0,error,failed\n")
+            f.writelines(f"{record_id},false,0,0,0,error,failed\n" for record_id in failed_ids)
 
     @classmethod
     def from_config_file(cls, config_path: Path | str) -> "BenchmarkRunner":
