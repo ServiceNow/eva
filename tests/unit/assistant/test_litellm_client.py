@@ -13,7 +13,6 @@ import pytest
 
 from eva.assistant.services.llm import LiteLLMClient
 
-
 # ---------------------------------------------------------------------------
 # _convert_tools_for_responses_api
 # ---------------------------------------------------------------------------
@@ -70,15 +69,14 @@ class TestConvertMessagesForResponsesApi:
 
     def test_assistant_tool_calls_reconstructed_and_tool_messages_consumed(self):
         """Assistant message with tool_calls is converted to function_call items;
-        the immediately following tool messages are consumed as function_call_output."""
+        the immediately following tool messages are consumed as function_call_output.
+        """
         messages = [
             {"role": "user", "content": "Check reservation"},
             {
                 "role": "assistant",
                 "content": "",
-                "tool_calls": [
-                    {"id": "call_1", "function": {"name": "get_reservation", "arguments": '{"id": "1"}'}}
-                ],
+                "tool_calls": [{"id": "call_1", "function": {"name": "get_reservation", "arguments": '{"id": "1"}'}}],
             },
             {"role": "tool", "tool_call_id": "call_1", "content": '{"status": "ok"}'},
             {"role": "user", "content": "Thanks"},
@@ -98,9 +96,7 @@ class TestConvertMessagesForResponsesApi:
             {
                 "role": "assistant",
                 "content": "Let me check that.",
-                "tool_calls": [
-                    {"id": "c1", "function": {"name": "lookup", "arguments": "{}"}}
-                ],
+                "tool_calls": [{"id": "c1", "function": {"name": "lookup", "arguments": "{}"}}],
             },
             {"role": "tool", "tool_call_id": "c1", "content": "found"},
         ]
@@ -114,7 +110,8 @@ class TestConvertMessagesForResponsesApi:
 
     def test_responses_output_items_injected_directly(self):
         """When an assistant message has responses_output_items (current-turn loop),
-        those raw items are injected directly into input_items without reconstruction."""
+        those raw items are injected directly into input_items without reconstruction.
+        """
         raw_items = [
             {"type": "reasoning", "encrypted_content": "enc_abc"},
             {"type": "function_call", "call_id": "c1", "name": "lookup", "arguments": "{}"},
@@ -187,9 +184,7 @@ class TestCompleteViaResponsesApiReasoning:
             patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
             patch("litellm.aresponses", new_callable=AsyncMock, return_value=mock_response),
         ):
-            result, stats = await client.complete(
-                messages=[{"role": "user", "content": "Hello"}]
-            )
+            result, stats = await client.complete(messages=[{"role": "user", "content": "Hello"}])
 
         assert result == "Here is your answer."
         assert stats["reasoning"] == "enc_blob_xyz"
@@ -213,16 +208,15 @@ class TestCompleteViaResponsesApiReasoning:
             patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
             patch("litellm.aresponses", new_callable=AsyncMock, return_value=mock_response),
         ):
-            _, stats = await client.complete(
-                messages=[{"role": "user", "content": "Hi"}]
-            )
+            _, stats = await client.complete(messages=[{"role": "user", "content": "Hi"}])
 
         assert stats["reasoning"] == "I thought about this carefully."
 
     @pytest.mark.asyncio
     async def test_tool_call_response_includes_output_items(self):
         """Tool call responses return a SimpleNamespace with tool_calls, and
-        responses_output_items in stats contains all output items for the next turn."""
+        responses_output_items in stats contains all output items for the next turn.
+        """
         client = LiteLLMClient(model="gpt-5.2", use_responses_api=True)
 
         reasoning_item = _make_reasoning_item([], "enc_abc")
