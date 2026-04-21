@@ -828,17 +828,13 @@ class TestTurnStrategyConfig:
     def test_pipeline_config_turn_start_strategy_params_from_env(self):
         """EVA_MODEL__TURN_START_STRATEGY_PARAMS sets turn_start_strategy_params."""
         params = {"some_param": True}
-        config = _config(
-            env_vars=_BASE_ENV | {"EVA_MODEL__TURN_START_STRATEGY_PARAMS": json.dumps(params)}
-        )
+        config = _config(env_vars=_BASE_ENV | {"EVA_MODEL__TURN_START_STRATEGY_PARAMS": json.dumps(params)})
         assert config.model.turn_start_strategy_params == params
 
     def test_pipeline_config_turn_stop_strategy_params_from_env(self):
         """EVA_MODEL__TURN_STOP_STRATEGY_PARAMS sets turn_stop_strategy_params."""
         params = {"user_speech_timeout": 1.5}
-        config = _config(
-            env_vars=_BASE_ENV | {"EVA_MODEL__TURN_STOP_STRATEGY_PARAMS": json.dumps(params)}
-        )
+        config = _config(env_vars=_BASE_ENV | {"EVA_MODEL__TURN_STOP_STRATEGY_PARAMS": json.dumps(params)})
         assert config.model.turn_stop_strategy_params == params
 
     def test_pipeline_config_vad_from_env(self):

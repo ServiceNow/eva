@@ -20,7 +20,6 @@ from eva.assistant.pipeline.turn_config import (
     create_vad_analyzer,
 )
 
-
 # ---------------------------------------------------------------------------
 # create_vad_analyzer
 # ---------------------------------------------------------------------------
@@ -32,9 +31,7 @@ class TestCreateVadAnalyzer:
     def test_silero_no_params(self):
         """'silero' with empty params creates SileroVADAnalyzer with params=None."""
         mock_analyzer = MagicMock()
-        with patch(
-            "eva.assistant.pipeline.turn_config.SileroVADAnalyzer", return_value=mock_analyzer
-        ) as mock_cls:
+        with patch("eva.assistant.pipeline.turn_config.SileroVADAnalyzer", return_value=mock_analyzer) as mock_cls:
             result = create_vad_analyzer("silero", {})
 
         mock_cls.assert_called_once_with(params=None)
@@ -45,9 +42,7 @@ class TestCreateVadAnalyzer:
         from pipecat.audio.vad.vad_analyzer import VADParams
 
         mock_analyzer = MagicMock()
-        with patch(
-            "eva.assistant.pipeline.turn_config.SileroVADAnalyzer", return_value=mock_analyzer
-        ) as mock_cls:
+        with patch("eva.assistant.pipeline.turn_config.SileroVADAnalyzer", return_value=mock_analyzer) as mock_cls:
             result = create_vad_analyzer("silero", {"stop_secs": 0.8, "confidence": 0.7})
 
         call_args = mock_cls.call_args
@@ -60,9 +55,7 @@ class TestCreateVadAnalyzer:
     def test_silero_case_insensitive(self):
         """Silero type is matched case-insensitively."""
         mock_analyzer = MagicMock()
-        with patch(
-            "eva.assistant.pipeline.turn_config.SileroVADAnalyzer", return_value=mock_analyzer
-        ):
+        with patch("eva.assistant.pipeline.turn_config.SileroVADAnalyzer", return_value=mock_analyzer):
             for variant in ("SILERO", "Silero", "SiLeRo"):
                 result = create_vad_analyzer(variant, {})
                 assert result is mock_analyzer
@@ -152,12 +145,13 @@ class TestCreateTurnStopStrategy:
     def test_turn_analyzer_without_stop_secs_uses_default_smart_params(self):
         """When smart_turn_stop_secs is None, SmartTurnParams is not passed explicitly."""
         mock_analyzer = MagicMock()
-        with patch(
-            "eva.assistant.pipeline.turn_config.LocalSmartTurnAnalyzerV3",
-            return_value=mock_analyzer,
-        ) as mock_cls, patch(
-            "eva.assistant.pipeline.turn_config.SmartTurnParams"
-        ) as mock_smart_params:
+        with (
+            patch(
+                "eva.assistant.pipeline.turn_config.LocalSmartTurnAnalyzerV3",
+                return_value=mock_analyzer,
+            ) as mock_cls,
+            patch("eva.assistant.pipeline.turn_config.SmartTurnParams") as mock_smart_params,
+        ):
             create_turn_stop_strategy("turn_analyzer", {}, smart_turn_stop_secs=None)
 
         mock_smart_params.assert_not_called()
