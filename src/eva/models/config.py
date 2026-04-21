@@ -514,24 +514,6 @@ class RunConfig(BaseSettings):
         "user_speech_fidelity",
     }
 
-    _DEPRECATED_ENV_VARS: ClassVar[dict[str, str]] = {
-        "LLM_MODEL": "EVA_MODEL__LLM",
-        "STT_MODEL": "EVA_MODEL__STT",
-        "TTS_MODEL": "EVA_MODEL__TTS",
-        "REALTIME_MODEL": "EVA_MODEL__S2S",
-        "EVA_MODEL__REALTIME_MODEL": "EVA_MODEL__S2S",
-        "LLM_PARAMS": "litellm_params in EVA_MODEL_LIST",
-        "LLM_MAX_TOKENS": "litellm_params in EVA_MODEL_LIST",
-        "LLM_REASONING_EFFORT": "litellm_params in EVA_MODEL_LIST",
-        "STT_PARAMS": "EVA_MODEL__STT_PARAMS",
-        "TTS_PARAMS": "EVA_MODEL__TTS_PARAMS",
-        "REALTIME_MODEL_PARAMS": "EVA_MODEL__S2S_PARAMS",
-        "EVA_MODEL__REALTIME_MODEL_PARAMS": "EVA_MODEL__S2S_PARAMS",
-        "EVA_MAX_CONCURRENT": "EVA_MAX_CONCURRENT_CONVERSATIONS",
-        "EVA_CONVERSATION_TIMEOUT": "EVA_CONVERSATION_TIMEOUT_SECONDS",
-        "EVA_METRICS_TO_RUN": "EVA_METRICS",
-    }
-
     # Maps *_params field names to their provider field for env override logic
     _PARAMS_TO_PROVIDER: ClassVar[dict[str, str]] = {
         "stt_params": "stt",
@@ -696,13 +678,6 @@ class RunConfig(BaseSettings):
     )
     dry_run: bool = Field(False, description="Validate configuration without running")
 
-    # Deprecated env vars
-    deprecated: CliSuppress[str | None] = Field(
-        None,
-        validation_alias=AliasChoices(*_DEPRECATED_ENV_VARS.keys()),
-        exclude=True,
-    )
-
     @computed_field
     @property
     def dataset_path(self) -> Path:
@@ -724,9 +699,6 @@ class RunConfig(BaseSettings):
         """Error out if deprecated environment variables are detected."""
         if not isinstance(data, dict):
             return data
-        found = [f"  {old} -> use {new}" for old, new in cls._DEPRECATED_ENV_VARS.items() if old in data]
-        if found:
-            raise ValueError("Deprecated environment variables detected:\n" + "\n".join(found))
 
         # Strip env-var fields from other pipeline modes so extra="forbid" doesn't reject them.
         # For metrics-only re-runs, skip the strict conflict check — the model isn't used.
