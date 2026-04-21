@@ -133,7 +133,9 @@ class LiteLLMClient:
                 # reasoning_content: string containing reasoning (all providers)
                 # thinking_blocks: list of thinking blocks (Anthropic only)
                 reasoning_content = getattr(message, "reasoning_content", None)
-                thinking_blocks = getattr(message, "thinking_blocks", None) if hasattr(message, "thinking_blocks") else None
+                thinking_blocks = (
+                    getattr(message, "thinking_blocks", None) if hasattr(message, "thinking_blocks") else None
+                )
 
                 # For Anthropic models, extract human-readable reasoning from thinking blocks
                 if thinking_blocks and isinstance(thinking_blocks, list):
@@ -146,7 +148,9 @@ class LiteLLMClient:
                         # Override reasoning_content with extracted thinking text
                         reasoning_content = "\n\n".join(thinking_texts)
                         total_chars = sum(len(t) for t in thinking_texts)
-                        logger.info(f"💭 Extracted {len(thinking_texts)} thinking block(s) from Anthropic response ({total_chars} chars)")
+                        logger.info(
+                            f"💭 Extracted {len(thinking_texts)} thinking block(s) from Anthropic response ({total_chars} chars)"
+                        )
                         logger.debug(f"Thinking content preview: {reasoning_content[:200]}...")
                 elif reasoning_content:
                     # Non-Anthropic model with reasoning_content (e.g., Gemini)
@@ -209,12 +213,14 @@ class LiteLLMClient:
         for tool in tools:
             if tool.get("type") == "function" and "function" in tool:
                 fn = tool["function"]
-                result.append({
-                    "type": "function",
-                    "name": fn["name"],
-                    "description": fn.get("description", ""),
-                    "parameters": fn.get("parameters", {}),
-                })
+                result.append(
+                    {
+                        "type": "function",
+                        "name": fn["name"],
+                        "description": fn.get("description", ""),
+                        "parameters": fn.get("parameters", {}),
+                    }
+                )
         return result
 
     @staticmethod
@@ -252,21 +258,25 @@ class LiteLLMClient:
                     # Prior turn in conversation history: reconstruct function_call items
                     for tc in msg["tool_calls"]:
                         fn = tc.get("function", {})
-                        input_items.append({
-                            "type": "function_call",
-                            "call_id": tc["id"],
-                            "name": fn["name"],
-                            "arguments": fn.get("arguments", "{}"),
-                        })
+                        input_items.append(
+                            {
+                                "type": "function_call",
+                                "call_id": tc["id"],
+                                "name": fn["name"],
+                                "arguments": fn.get("arguments", "{}"),
+                            }
+                        )
                     # Consume the immediately following tool-result messages
                     j = i + 1
                     while j < len(messages) and messages[j].get("role") == "tool":
                         tool_msg = messages[j]
-                        input_items.append({
-                            "type": "function_call_output",
-                            "call_id": tool_msg["tool_call_id"],
-                            "output": tool_msg["content"],
-                        })
+                        input_items.append(
+                            {
+                                "type": "function_call_output",
+                                "call_id": tool_msg["tool_call_id"],
+                                "output": tool_msg["content"],
+                            }
+                        )
                         j += 1
                     i = j - 1  # will be incremented at end of loop
                     if content := msg.get("content"):
@@ -275,11 +285,13 @@ class LiteLLMClient:
                     input_items.append({"role": "assistant", "content": msg.get("content", "")})
             elif role == "tool":
                 # Orphaned tool message (normally consumed in the assistant look-ahead above)
-                input_items.append({
-                    "type": "function_call_output",
-                    "call_id": msg["tool_call_id"],
-                    "output": msg["content"],
-                })
+                input_items.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": msg["tool_call_id"],
+                        "output": msg["content"],
+                    }
+                )
             i += 1
         return instructions, input_items
 
@@ -361,9 +373,7 @@ class LiteLLMClient:
                         # reasoning-text equivalent (e.g. gpt-5.2 returns no readable summary)
                         summary_parts = getattr(item, "summary", []) or []
                         if summary_parts:
-                            reasoning_summary = " ".join(
-                                s.text for s in summary_parts if hasattr(s, "text")
-                            )
+                            reasoning_summary = " ".join(s.text for s in summary_parts if hasattr(s, "text"))
                         if not reasoning_summary:
                             reasoning_summary = getattr(item, "encrypted_content", None)
                         output_items_for_next_turn.append(item.model_dump(exclude_none=True))
@@ -390,9 +400,7 @@ class LiteLLMClient:
                         reasoning_tokens = getattr(details, "reasoning_tokens", 0) or 0
 
                 if reasoning_summary:
-                    logger.info(
-                        f"💭 Reasoning summary from Responses API ({len(reasoning_summary)} chars)"
-                    )
+                    logger.info(f"💭 Reasoning summary from Responses API ({len(reasoning_summary)} chars)")
 
                 stats = {
                     "prompt_tokens": getattr(usage, "input_tokens", 0) if usage else 0,

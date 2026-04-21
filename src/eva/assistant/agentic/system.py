@@ -185,7 +185,9 @@ class AgenticSystem:
                     if "provider_specific_fields" in tc_dict:
                         fields = tc_dict["provider_specific_fields"]
                         if "thought_signature" in fields:
-                            logger.info("🔮 Gemini thought signature present in tool call (will be preserved for next turn)")
+                            logger.info(
+                                "🔮 Gemini thought signature present in tool call (will be preserved for next turn)"
+                            )
 
                     tool_calls_dicts.append(tc_dict)
 
@@ -208,7 +210,9 @@ class AgenticSystem:
 
                 # Log if reasoning tokens are present but no reasoning content
                 if reasoning_tokens > 0 and not reasoning_content_for_csv:
-                    logger.debug(f"⚠️ Model used {reasoning_tokens} reasoning tokens but did not return thinking blocks.")
+                    logger.debug(
+                        f"⚠️ Model used {reasoning_tokens} reasoning tokens but did not return thinking blocks."
+                    )
 
                 perf_stat = {
                     "prompt": prompt_str,
@@ -295,7 +299,9 @@ class AgenticSystem:
                 yield response_content
 
             reasoning_content = llm_stats.get("reasoning_content") or llm_stats.get("reasoning")
-            self.audit_log.append_assistant_output(content=response_content, tool_calls=tool_calls_dicts or None, reasoning=reasoning_content)
+            self.audit_log.append_assistant_output(
+                content=response_content, tool_calls=tool_calls_dicts or None, reasoning=reasoning_content
+            )
 
             if not tool_calls_dicts:
                 # No tool calls, this is the final response
@@ -407,7 +413,7 @@ class AgenticSystem:
                     "tool_calls",
                     "latency",
                     "reasoning",
-                    "reasoning_tokens"
+                    "reasoning_tokens",
                 ]
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
