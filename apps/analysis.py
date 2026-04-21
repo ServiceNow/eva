@@ -568,6 +568,9 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
                         if metric_name in _NON_NORMALIZED_METRICS:
                             _NON_NORMALIZED_METRICS.add(col)
 
+            for comp_name, comp_value in metrics.aggregate_metrics.items():
+                row[comp_name] = comp_value
+
             rows.append(row)
 
     return rows, sorted(all_metric_names)
@@ -1294,8 +1297,9 @@ def render_run_overview(run_dir: Path):
     leading_cols = ["record"]
     if has_trials:
         leading_cols.append("trial")
+    composite_cols = [c for c in _EVA_BAR_COMPOSITES if c in table_df.columns]
     ordered_metrics = [m for m in metric_names if m in table_df.columns]
-    table_df = table_df[leading_cols + ordered_metrics]
+    table_df = table_df[leading_cols + composite_cols + ordered_metrics]
 
     # Add link column to navigate to Record Detail
     def _record_link(row):
@@ -1306,11 +1310,14 @@ def render_run_overview(run_dir: Path):
 
     table_df = table_df.copy()
     table_df.insert(0, "link", table_df.apply(_record_link, axis=1))
-    table_df = table_df.rename(columns=col_rename)
+    composite_rename = {c: _EVA_COMPOSITE_DISPLAY[c] for c in composite_cols}
+    table_df = table_df.rename(columns={**col_rename, **composite_rename})
 
+    renamed_composites = [composite_rename[c] for c in composite_cols]
     renamed_metrics = [col_rename[m] for m in ordered_metrics]
-    styled = table_df.style.map(_color_cell, subset=renamed_metrics)
-    styled = styled.format(dict.fromkeys(renamed_metrics, "{:.3f}"), na_rep="—")
+    score_cols = renamed_composites + renamed_metrics
+    styled = table_df.style.map(_color_cell, subset=score_cols)
+    styled = styled.format(dict.fromkeys(score_cols, "{:.3f}"), na_rep="—")
     st.dataframe(
         styled,
         hide_index=True,
@@ -1323,6 +1330,17 @@ def render_run_overview(run_dir: Path):
     st.download_button("Download CSV", csv, file_name=f"{run_dir.name}_metrics.csv", mime="text/csv")
 
 
+def _render_eva_composite_cards(metrics: RecordMetrics) -> None:
+    """Render EVA composite scores (EVA-A/EVA-X pass@1 and Mean) as st.metric cards."""
+    composites = [(c, metrics.aggregate_metrics.get(c)) for c in _EVA_BAR_COMPOSITES]
+    composites = [(c, v) for c, v in composites if v is not None]
+    if not composites:
+        return
+    cols = st.columns(len(composites))
+    for col, (name, value) in zip(cols, composites):
+        col.metric(_EVA_COMPOSITE_DISPLAY[name], f"{value:.3f}")
+
+
 def render_metrics_tab(metrics: RecordMetrics | None):
     """Render the metrics tab with judge ratings and scores."""
     if not metrics:
@@ -1330,6 +1348,7 @@ def render_metrics_tab(metrics: RecordMetrics | None):
         return
 
     st.markdown("### Metrics")
+    _render_eva_composite_cards(metrics)
 
     # Group metrics by category, preserving insertion order within each group
     grouped: dict[str, list[tuple[str, object]]] = {}
@@ -1546,6 +1565,7 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
             </style>"""
         )
         st.markdown("### Metrics Overview")
+        _render_eva_composite_cards(metrics)
 
         grouped: dict[str, list[str]] = {}
         for name in all_top_metrics:
