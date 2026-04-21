@@ -2,6 +2,7 @@
 
 import hashlib
 import importlib.util
+import os
 import platform
 import subprocess
 import sys
@@ -41,11 +42,11 @@ def _get_git_info() -> dict:
         "git_diff_hash": None,
     }
 
-    info["git_commit_sha"] = _run_git_command(["rev-parse", "HEAD"])
+    info["git_commit_sha"] = _run_git_command(["rev-parse", "HEAD"]) or os.environ.get("GIT_COMMIT_SHA")
     if info["git_commit_sha"] is None:
         return info
 
-    info["git_branch"] = _run_git_command(["branch", "--show-current"])
+    info["git_branch"] = _run_git_command(["branch", "--show-current"]) or os.environ.get("GIT_BRANCH")
 
     porcelain = _run_git_command(["status", "--porcelain"])
     if porcelain is not None:
@@ -54,6 +55,11 @@ def _get_git_info() -> dict:
             diff_output = _run_git_command(["diff"])
             if diff_output:
                 info["git_diff_hash"] = hashlib.sha256(diff_output.encode()).hexdigest()[:12]
+    else:
+        env_dirty = os.environ.get("GIT_DIRTY")
+        if env_dirty is not None:
+            info["git_dirty"] = env_dirty.lower() in ("1", "true", "yes")
+        info["git_diff_hash"] = os.environ.get("GIT_DIFF_HASH") or None
 
     return info
 

@@ -916,7 +916,16 @@ class BenchmarkRunner:
         if not config_path.exists():
             raise FileNotFoundError(f"config.json not found in {run_dir}")
 
-        config = RunConfig.model_validate_json(config_path.read_text())
+        # Load the saved config without reading from env vars or .env file.
+        # This prevents conflicts when the current environment has a different pipeline
+        # mode set (e.g. EVA_MODEL__LLM in env but the saved run used S2S).
+        class _StoredRunConfig(RunConfig):
+            @classmethod
+            def settings_customise_sources(cls, settings_cls, init_settings, **kwargs):
+                return (init_settings,)
+
+        config_data = json.loads(config_path.read_text())
+        config = _StoredRunConfig(**config_data)
         runner = cls(config)
         runner.output_dir = run_dir  # Use existing output dir, don't create new
         return runner

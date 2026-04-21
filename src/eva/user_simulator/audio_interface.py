@@ -22,6 +22,7 @@ except ImportError:
 
 from elevenlabs.conversational_ai.conversation import AudioInterface
 
+from eva.user_simulator.perturbation import AudioPerturbator
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -74,6 +75,7 @@ class BotToBotAudioInterface(AudioInterface):
         record_callback: Callable[[str, bytes], None] | None = None,
         event_logger=None,
         conversation_done_callback: Callable[[str], None] | None = None,
+        perturbator: AudioPerturbator | None = None,
     ):
         """Initialize the audio interface.
 
@@ -83,12 +85,14 @@ class BotToBotAudioInterface(AudioInterface):
             record_callback: Optional callback for recording audio (source, data)
             event_logger: Optional ElevenLabsEventLogger for logging audio timing
             conversation_done_callback: Optional callback for signaling conversation end
+            perturbator: Optional perturbator to apply to user audio before sending
         """
         self.websocket_uri = websocket_uri
         self.conversation_id = conversation_id
         self.record_callback = record_callback
         self.event_logger = event_logger
         self.conversation_done_callback = conversation_done_callback
+        self._perturbator = perturbator
 
         self.websocket = None
         self.running = False
@@ -231,6 +235,8 @@ class BotToBotAudioInterface(AudioInterface):
         """
         if self.running:
             try:
+                if self._perturbator is not None:
+                    audio = self._perturbator.apply(audio)
                 self.send_queue.put_nowait(audio)
                 # Record user audio
                 if self.record_callback:
@@ -305,6 +311,15 @@ class BotToBotAudioInterface(AudioInterface):
             return self._assistant_audio_ended_time > self._user_audio_ended_time
         return True
 
+    def _should_send_ambient_noise(self) -> bool:
+        """Return True when ambient noise should stream continuously (user is silent).
+
+        Unlike _should_send_user_silence(), this is not gated on assistant state —
+        ambient noise streams to the assistant at all times when the user is not
+        speaking, including during assistant speech, to simulate an always-open mic.
+        """
+        return not self._user_audio_active and self._perturbator is not None and self._perturbator.has_ambient_noise
+
     async def _send_audio_frame(self, mulaw_data: bytes) -> bool:
         """Send an audio frame to the websocket.
 
@@ -337,8 +352,10 @@ class BotToBotAudioInterface(AudioInterface):
         Returns:
             True if silence was sent, False otherwise
         """
-        # Create PCM silence and convert to μ-law
-        silence_pcm = b"\x00" * chunk_size
+        if self._perturbator is not None and self._perturbator.has_ambient_noise:
+            silence_pcm = self._perturbator.get_ambient_chunk(chunk_size)
+        else:
+            silence_pcm = b"\x00" * chunk_size
         silence_mulaw = self._convert_pcm_to_mulaw(silence_pcm)
 
         if not silence_mulaw:
@@ -650,16 +667,20 @@ class BotToBotAudioInterface(AudioInterface):
                                     stream_start_time = None
                                     next_send_time = current_time + send_interval
 
-                # Send user silence while waiting for user to respond
-                # Use absolute timing for silence too (separate from audio stream)
-                if self._should_send_user_silence():
+                # Send user silence/ambient noise while user is not speaking.
+                # Ambient noise streams continuously (including during assistant speech).
+                # Regular silence only sends when waiting for user to respond after assistant spoke.
+                if self._should_send_ambient_noise() or self._should_send_user_silence():
                     # Initialize silence timing baseline when starting a NEW silence period
                     if silence_start_time is None:
                         silence_start_time = current_time
                         silence_chunks_sent = 0
                         next_send_time = silence_start_time
 
-                    if current_time >= next_send_time and self._assistant_audio_ended_time is not None:
+                    # Ambient noise: send regardless of assistant state (always-open mic)
+                    # Regular silence: only send after assistant has spoken at least once
+                    can_send = self._should_send_ambient_noise() or self._assistant_audio_ended_time is not None
+                    if current_time >= next_send_time and can_send:
                         silence_pcm = b"\x00" * pcm_chunk_size
                         if await self._send_silence_frame():
                             silence_chunks_sent += 1
@@ -675,8 +696,7 @@ class BotToBotAudioInterface(AudioInterface):
                                     f"Sending silence user: chunks={silence_chunks_sent}, actual={actual_elapsed:.3f}s, expected={expected_elapsed:.3f}s, ratio={actual_elapsed / expected_elapsed:.2f}x"
                                 )
                 else:
-                    # Reset silence timing when not in silence-sending state
-                    # (e.g., assistant started speaking again)
+                    # Reset silence timing when user is speaking
                     if silence_start_time is not None:
                         silence_start_time = None
                         silence_chunks_sent = 0
@@ -686,6 +706,7 @@ class BotToBotAudioInterface(AudioInterface):
                     not pending_audio
                     and self._user_audio_ended_time is None
                     and self._assistant_audio_ended_time is None
+                    and not self._should_send_ambient_noise()
                 ):
                     await asyncio.sleep(NORMAL_POLL_TIMEOUT_S)
                 else:

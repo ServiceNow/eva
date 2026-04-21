@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from eva.metrics.processor import MetricsContextProcessor, _ProcessorContext
+from eva.models.config import PipelineType
 
 FIXTURES_PATH = Path(__file__).parent.parent.parent / "fixtures" / "processor_histories.json"
 
@@ -53,7 +54,8 @@ class TestExtractTurnsFromHistory:
         ctx = _ProcessorContext()
         ctx.record_id = case["id"]
         ctx.history = case["history"]
-        ctx.is_audio_native = case.get("is_audio_native", False)
+        pipeline_type_str = case.get("pipeline_type", "cascade")
+        ctx.pipeline_type = PipelineType(pipeline_type_str)
 
         MetricsContextProcessor._extract_turns_from_history(ctx)
         MetricsContextProcessor._reconcile_transcript_with_tools(ctx)

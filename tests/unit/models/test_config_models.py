@@ -312,7 +312,7 @@ class TestRunConfig:
         assert loaded.model.stt_params["url"] == "wss://new-host/stt"
 
     def test_apply_env_overrides_llm_deployment_mismatch(self):
-        """Restoring secrets fails if a saved LLM deployment is missing from the live model_list."""
+        """Restoring secrets fails if the active LLM deployment is missing from the live model_list."""
         config = _config(env_vars=_BASE_ENV)
         dumped_json = config.model_dump_json()
         loaded = _load_json_into_runconfig(dumped_json)
