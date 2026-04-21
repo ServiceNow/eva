@@ -68,8 +68,10 @@ class TurnTakingMetric(CodeMetric):
     YIELD_HARD_MS: float = 2000
 
     # --- Latency classification thresholds (early / on-time / late rates). ---
-    EARLY_THRESHOLD_MS: float = 200  # latency < this ⇒ "early"
-    LATE_THRESHOLD_MS: float = 4000  # latency >= this ⇒ "late"
+    EARLY_THRESHOLD_MS: float = 200        # latency < this ⇒ "early" (no tool call)
+    LATE_THRESHOLD_MS: float = 4000        # latency >= this ⇒ "late" (no tool call)
+    EARLY_THRESHOLD_MS_TOOL: float = 500   # latency < this ⇒ "early" (turn with tool call)
+    LATE_THRESHOLD_MS_TOOL: float = 8000   # latency >= this ⇒ "late" (turn with tool call)
 
     @staticmethod
     def _get_turn_ids_with_turn_taking(context: MetricContext) -> list[int]:
@@ -246,6 +248,7 @@ class TurnTakingMetric(CodeMetric):
         cls,
         context: MetricContext,
         turn_keys: list[int],
+        turns_with_tool_calls: set[int],
     ) -> dict[str, MetricScore]:
         """Compute the curated flat set of headline sub-metrics.
 
@@ -266,9 +269,12 @@ class TurnTakingMetric(CodeMetric):
             )
 
         # --- Latency ---
-        latencies_ms = [
-            context.latency_assistant_turns[t] * 1000 for t in turn_keys if t in context.latency_assistant_turns
+        latency_data = [
+            (t, context.latency_assistant_turns[t] * 1000)
+            for t in turn_keys
+            if t in context.latency_assistant_turns
         ]
+        latencies_ms = [ms for _, ms in latency_data]
         sub: dict[str, MetricScore] = {}
         if latencies_ms:
             sorted_lats = sorted(latencies_ms)
@@ -277,8 +283,14 @@ class TurnTakingMetric(CodeMetric):
             def _pct(p: float) -> float:
                 return sorted_lats[min(n - 1, int(p * n))]
 
-            early = sum(1 for ms in latencies_ms if ms < cls.EARLY_THRESHOLD_MS)
-            late = sum(1 for ms in latencies_ms if ms >= cls.LATE_THRESHOLD_MS)
+            early = sum(
+                1 for t, ms in latency_data
+                if ms < (cls.EARLY_THRESHOLD_MS_TOOL if t in turns_with_tool_calls else cls.EARLY_THRESHOLD_MS)
+            )
+            late = sum(
+                1 for t, ms in latency_data
+                if ms >= (cls.LATE_THRESHOLD_MS_TOOL if t in turns_with_tool_calls else cls.LATE_THRESHOLD_MS)
+            )
             on_time = n - early - late
 
             sub["mean_latency_ms"] = _wrap("mean_latency_ms", round(statistics.mean(latencies_ms), 3), False)
@@ -354,11 +366,18 @@ class TurnTakingMetric(CodeMetric):
         try:
             turn_keys = self._get_turn_ids_with_turn_taking(context)
 
+            turns_with_tool_calls: set[int] = {
+                entry["turn_id"]
+                for entry in context.conversation_trace
+                if entry.get("type") == "tool_call"
+            }
+
             per_turn_score: dict[int, float] = {}
             per_turn_reason: dict[int, str] = {}
             per_turn_evidence: dict[int, dict[str, Any]] = {}
             for t in turn_keys:
                 score, reason, evidence = self._per_turn_score_and_reason(context, t)
+                evidence["has_tool_call"] = t in turns_with_tool_calls
                 per_turn_score[t] = round(score, 4)
                 per_turn_reason[t] = reason
                 per_turn_evidence[t] = evidence
@@ -394,7 +413,7 @@ class TurnTakingMetric(CodeMetric):
                 score=round(mean_score, 4),
                 normalized_score=round(mean_score, 4),
                 details=details,
-                sub_metrics=self._build_flat_sub_metrics(context, turn_keys),
+                sub_metrics=self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls),
             )
 
         except Exception as e:

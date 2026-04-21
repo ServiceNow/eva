@@ -332,6 +332,9 @@ def _format_tt_for_turn(tid: int | None, tt_by_id: dict) -> str:
     if isinstance(score, (int, float)):
         lines.append(f"Score: {score:.2f}")
     lines.append(f"Reason: {reason_label}")
+    has_tool = evidence.get("has_tool_call")
+    if has_tool is not None:
+        lines.append(f"Tool call: {'yes ⚙' if has_tool else 'no'}")
     if "latency_ms" in evidence:
         lines.append(f"Latency: {evidence['latency_ms']:.0f}\u00a0ms")
     if "overlap_ms" in evidence:
@@ -588,6 +591,7 @@ def _prepare_data(record_dir: Path) -> dict:
     # Surfaced in the timeline hover so users can see why each transition was
     # scored a certain way without leaving the audio view.
     turn_taking_by_id: dict[int, dict] = {}
+    turns_with_tool_calls: set[int] = set()
     if metrics_data:
         tt = (metrics_data.get("metrics") or {}).get("turn_taking") or {}
         tt_details = tt.get("details") or {}
@@ -604,6 +608,15 @@ def _prepare_data(record_dir: Path) -> dict:
                 "reason": reasons.get(tid_str),
                 "evidence": evidence.get(tid_str) or {},
             }
+
+        # Derive turns with tool calls from conversation_trace — works even on old metrics.json
+        ctx = metrics_data.get("context") or {}
+        for entry in ctx.get("conversation_trace") or []:
+            if entry.get("type") == "tool_call":
+                try:
+                    turns_with_tool_calls.add(int(entry["turn_id"]))
+                except (KeyError, ValueError, TypeError):
+                    pass
 
     # --- Audio: mixed ---
     y_mixed, sr_mixed, duration, mixed_loaded = None, None, 0.0, False
@@ -713,6 +726,7 @@ def _prepare_data(record_dir: Path) -> dict:
         "pauses_rel": pauses_rel,
         "overlaps_rel": overlaps_rel,
         "turn_taking_by_id": turn_taking_by_id,
+        "turns_with_tool_calls": turns_with_tool_calls,
     }
 
 
@@ -1181,6 +1195,7 @@ def _build_figure(
     # ------------------------------------------------------------------ #
     tl_row = row_of["timeline"]
 
+    _tool_turns = data.get("turns_with_tool_calls") or set()
     for turn in turns_rel:
         is_asst = turn["speaker"] == "assistant"
         speaker = "Assistant" if is_asst else "User"
@@ -1193,10 +1208,14 @@ def _build_figure(
         if not is_asst and turn.get("latency_s") is not None:
             latency_line = f"<br>Response latency:\u00a0{turn['latency_s'] * 1000:.0f}\u00a0ms"
 
+        tool_call_line = ""
+        if _tool_turns:
+            tool_call_line = f"<br>Tool call: {'yes \u2699' if turn['turn_id'] in _tool_turns else 'no'}"
+
         hover = (
             f"<b>Turn\u00a0{turn['turn_id']}\u00a0\u2014\u00a0{speaker}</b><br>"
             f"t\u00a0=\u00a0{turn['start']:.2f}s\u2013{turn['end']:.2f}s "
-            f"({turn['duration']:.1f}s)" + latency_line + f"<br><br>{_wrap(transcript)}"
+            f"({turn['duration']:.1f}s)" + latency_line + tool_call_line + f"<br><br>{_wrap(transcript)}"
         )
 
         # Visual bars — one per segment (handles multi-segment interrupted turns)
