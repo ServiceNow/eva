@@ -699,7 +699,7 @@ judge:
       
       ### Corruption Type 5: User violated decision tree instructions causing a wrong modification
         The user explicitly violated a specific instruction in their decision tree (negotiation behavior, edge cases, escalation behavior, resolution condition, or failure condition) AND this violation directly caused a modification tool to be called with different parameters than it would have been if the user had followed their instructions correctly.
-      - Examples: the user accepted an option that did not meet their must-have criteria when they should have rejected it; the user ignored an edge case instruction (e.g., accepted a standby flight when told to reject standby) and this led to a modification; the user failed to follow their failure condition and instead accepted an unsuitable resolution.
+      - Examples: the user accepted an option that did not meet their must-have criteria when they should have rejected it; the user ignored an edge case instruction (e.g., accepted a standby flight when told to reject standby, agreed to a ticket priority lower than their goal required, or accepted a later appointment slot when told to require same-day) and this led to a modification; the user failed to follow their failure condition and instead accepted an unsuitable resolution.
       - Only flag this if the violation directly caused a modification tool to be called incorrectly. If the user deviated from instructions but no modification tool was affected, this is NOT corruption.
       - Do NOT flag this if the agent only presented options that failed to meet the user's must-have criteria AND the user had no correct option to choose — in that case the agent failed, not the user. Only flag this if the user had a correct action available (e.g., rejecting all options, asking for alternatives, triggering the failure condition) but chose incorrectly instead.
       
@@ -864,7 +864,7 @@ judge:
         - **Numeric values**: Dollar amounts, quantities, percentages (e.g., "$150" vs "$115")
         - **Addresses**: Street numbers, street names, cities (e.g., "123 Main Street" vs "124 Main Street")
         - **Contact information**: Phone numbers, email addresses (e.g., "tom_cobb@gmail.com")
-        - **Flight/route numbers**: "UA204" vs "UA240"
+        - **Domain-specific identifiers**: e.g., flight numbers ("UA204" vs "UA240"), ticket/incident numbers, medical record numbers, case IDs, order numbers, shift IDs
         - **Serial numbers and other identifiers**
 
         ### Error Types
@@ -921,17 +921,17 @@ judge:
       ## What Counts as an Entity
       An entity must have a **specific, concrete value** — something that could be passed as an input to a program or tool (not an AI, but a script or database lookup). Ask yourself: could this value be stored in a variable and used programmatically?
       
-      - Names (people, places, organizations): e.g. "John Smith", "Austin", "Delta Airlines"
+      - Names (people, places, organizations): e.g. "John Smith", "Austin", "Delta Airlines", "ServiceNow", "Mount Sinai Hospital"
       - Specific dates and times: e.g. "December 15th", "3:45 PM" — NOT vague references like "tomorrow morning" or "later today"
-      - Confirmation codes / reference numbers: e.g. "ABC123", "ZK3FFW"
-      - Flight numbers: e.g. "UA 204"
+      - Confirmation codes / reference numbers: e.g. "ABC123", "ZK3FFW", "INC0012345"
+      - Domain-specific identifiers: e.g. flight numbers like "UA 204", ticket/incident numbers, case IDs, order numbers, medical record numbers
       - Amounts and prices: use the specific value only, e.g. "$120" — for qualifier phrases like "under $120", only use the specific value
       - Addresses: e.g. "123 Main Street"
       - Phone numbers: e.g. "555-867-5309"
       - Email addresses: e.g. "john@example.com"
-      - Other specific identifiers: seat numbers, loyalty numbers, booking IDs, etc.
-      
-      **Not an entity:** vague temporal words ("tomorrow", "next week", "morning"), general descriptors ("the cheap flight", "a long trip"), or open-ended qualifiers ("less than an hour", "around noon").
+      - Other specific identifiers: e.g. seat numbers, room numbers, loyalty/member numbers, employee IDs, policy numbers, etc.
+
+      **Not an entity:** vague temporal words ("tomorrow", "next week", "morning"), general descriptors ("the cheap flight", "an earlier appointment", "a long outage"), or open-ended qualifiers ("less than an hour", "around noon").
       
       ## Understanding Tags in the Expected Text
       
