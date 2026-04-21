@@ -348,8 +348,7 @@ class UserSimulator:
                 audio_iter = self._client.conversational_ai.conversations.audio.get(conversation_id)
                 audio_path = self.output_dir / "elevenlabs_audio_recording.mp3"
                 with open(audio_path, "wb") as f:
-                    for chunk in audio_iter:
-                        f.write(chunk)
+                    f.writelines(audio_iter)
                 logger.info(f"Saved ElevenLabs server-side audio to {audio_path}")
                 return
             except Exception as e:
