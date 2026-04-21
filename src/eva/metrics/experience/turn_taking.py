@@ -280,9 +280,7 @@ class TurnTakingMetric(CodeMetric):
 
         # --- Latency ---
         latency_data = [
-            (t, context.latency_assistant_turns[t] * 1000)
-            for t in turn_keys
-            if t in context.latency_assistant_turns
+            (t, context.latency_assistant_turns[t] * 1000) for t in turn_keys if t in context.latency_assistant_turns
         ]
         latencies_ms = [ms for _, ms in latency_data]
         sub: dict[str, MetricScore] = {}
@@ -294,11 +292,13 @@ class TurnTakingMetric(CodeMetric):
                 return sorted_lats[min(n - 1, int(p * n))]
 
             early = sum(
-                1 for t, ms in latency_data
+                1
+                for t, ms in latency_data
                 if ms < (cls.EARLY_THRESHOLD_MS_TOOL if t in turns_with_tool_calls else cls.EARLY_THRESHOLD_MS)
             )
             late = sum(
-                1 for t, ms in latency_data
+                1
+                for t, ms in latency_data
                 if ms >= (cls.LATE_THRESHOLD_MS_TOOL if t in turns_with_tool_calls else cls.LATE_THRESHOLD_MS)
             )
             on_time = n - early - late
@@ -377,9 +377,7 @@ class TurnTakingMetric(CodeMetric):
             turn_keys = self._get_turn_ids_with_turn_taking(context)
 
             turns_with_tool_calls: set[int] = {
-                entry["turn_id"]
-                for entry in context.conversation_trace
-                if entry.get("type") == "tool_call"
+                entry["turn_id"] for entry in context.conversation_trace if entry.get("type") == "tool_call"
             }
 
             per_turn_score: dict[int, float] = {}
