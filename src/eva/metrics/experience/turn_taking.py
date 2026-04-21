@@ -293,11 +293,7 @@ class TurnTakingMetric(CodeMetric):
             def _pct(p: float) -> float:
                 return sorted_lats[min(n - 1, int(p * n))]
 
-            early = sum(
-                1
-                for t, ms in latency_data
-                if ms < cls.EARLY_THRESHOLD_MS
-            )
+            early = sum(1 for t, ms in latency_data if ms < cls.EARLY_THRESHOLD_MS)
             late = sum(
                 1
                 for t, ms in latency_data
