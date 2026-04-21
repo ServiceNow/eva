@@ -170,7 +170,7 @@ def create_twilio_start_response(stream_sid: str) -> str:
 
 
 class FrameworkLogWriter:
-    """Writes framework_logs.jsonl (replacement for pipecat_logs.jsonl).
+    """Write framework_logs.jsonl (replacement for pipecat_logs.jsonl).
 
     Captures turn boundaries, TTS text, and LLM responses with accurate
     wall-clock timestamps.
