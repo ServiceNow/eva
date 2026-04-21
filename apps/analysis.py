@@ -1094,6 +1094,20 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
             complete_runs = set(summary_df["run"])
             scatter_data = [d for d in scatter_data if d["run"] in complete_runs]
 
+    hide_incomplete = st.sidebar.toggle(
+        "Hide incomplete results", value=True, key="hide_incomplete", bind="query-params"
+    )
+    if hide_incomplete and not summary_df.empty:
+        eva_cols = [c for c in ["EVA-A_pass", "EVA-A_mean", "EVA-X_pass", "EVA-X_mean"] if c in summary_df.columns]
+        eva_cols += [
+            m for m in metric_names if _METRIC_GROUP.get(m) in {"Accuracy", "Experience"} and m in summary_df.columns
+        ]
+        if eva_cols:
+            mask = summary_df[eva_cols].notna().all(axis=1)
+            complete_runs = set(summary_df.loc[mask, "run"])
+            summary_df = summary_df[mask]
+            scatter_data = [d for d in scatter_data if d["run"] in complete_runs]
+
     ordered_metrics = [m for m in metric_names if m in summary_df.columns]
 
     # EVA-A vs EVA-X scatter plot
@@ -1927,7 +1941,7 @@ def _get_run_dirs():
     if latest_only:
         run_dirs = filter_latest_runs(run_dirs)
 
-    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics")
+    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics", bind="query-params")
 
     if not run_dirs:
         st.error(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
