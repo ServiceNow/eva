@@ -83,7 +83,7 @@ def eval_config(tmp_path):
         ),
         max_rerun_attempts=3,
         validation_thresholds={
-            "conversation_finished": 1.0,
+            "conversation_valid_end": 1.0,
             "user_behavioral_fidelity": 1.0,
         },
         max_concurrent_conversations=2,

@@ -25,7 +25,7 @@ class ValidationResult:
         modes (e.g. for ``rerun_history`` bookkeeping) check ``failed_metrics`` directly.
 
     Agent-timeout-on-user-turn records pass the gate with ``passed=True`` — the
-    agent-side failure is surfaced via the ``agent_turn_response`` diagnostic metric
+    agent-side failure is surfaced via the ``conversation_correctly_finished`` diagnostic metric
     in ``metrics.json``, not through this object.
     """
 
@@ -39,7 +39,7 @@ class ValidationRunner:
     """Runs the validation gate and validation metrics.
 
     The gate is a pure classifier over :class:`_ProcessorContext` objects:
-      - ``conversation_finished`` → gate passes, metrics run
+      - ``conversation_valid_end`` → gate passes, metrics run
       - ``agent_timeout_on_user_turn`` (property) → gate passes, metrics run; the
         record is treated as passed at the validation layer (the agent failure is
         surfaced in metrics.json, not as a validation failure)
@@ -51,7 +51,7 @@ class ValidationRunner:
     """
 
     VALIDATION_METRICS = [
-        "conversation_finished",
+        "conversation_valid_end",
         "user_behavioral_fidelity",
         "user_speech_fidelity",
     ]
@@ -128,7 +128,7 @@ class ValidationRunner:
         validation_results: dict[str, ValidationResult] = {}
         check_ids = self.output_ids if self.output_ids is not None else [r.id for r in self.dataset]
 
-        metrics_to_run = [m for m in self.VALIDATION_METRICS if m != "conversation_finished"]
+        metrics_to_run = [m for m in self.VALIDATION_METRICS if m != "conversation_valid_end"]
         logger.info(f"Validation: processing {len(check_ids)} records, metrics={metrics_to_run}")
         logger.info(f"Thresholds: {self.thresholds}")
 
@@ -160,9 +160,9 @@ class ValidationRunner:
 
             for record_id, record_metrics in metrics_run.all_metrics.items():
                 vr = self._evaluate_record(record_id, record_metrics, metrics_to_run)
-                vr.scores["conversation_finished"] = 1.0
+                vr.scores["conversation_valid_end"] = 1.0
                 if record_id in agent_timeout_ids:
-                    # Agent-side failure; surfaced via the agent_turn_response diagnostic
+                    # Agent-side failure; surfaced via the conversation_correctly_finished diagnostic
                     # metric in metrics.json. Validation produced usable data, so the
                     # record passes the gate — the agent bug is not a validation failure.
                     vr.passed = True

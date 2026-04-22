@@ -1,4 +1,4 @@
-"""Conversation finished validation metric."""
+"""Conversation-valid-end validation metric (previously ``conversation_finished``)."""
 
 import json
 from pathlib import Path
@@ -9,18 +9,17 @@ from eva.models.results import MetricScore
 
 
 @register_metric
-class ConversationFinishedMetric(CodeMetric):
-    """Conversation finished validation metric.
+class ConversationValidEndMetric(CodeMetric):
+    """Validation metric: conversation ended with the expected ``goodbye`` event.
 
-    Checks that the conversation properly ended with an end_call tool.
-    Reads the elevenlabs_events.jsonl file and verifies the last entry
-    is a tool_response with tool_name == "end_call".
+    Reads ``elevenlabs_events.jsonl`` and checks the last entry is a
+    ``connection_state`` event with ``details.reason == "goodbye"``.
 
-    Binary score: 1.0 (properly ended), 0.0 (did not end properly)
+    Binary score: 1.0 (ended with goodbye), 0.0 (did not).
     """
 
-    name = "conversation_finished"
-    description = "Validation metric for checking if conversation ended with end_call tool"
+    name = "conversation_valid_end"
+    description = "Validation metric: conversation ended with a goodbye connection_state event"
     category = "validation"
 
     async def compute(self, context: MetricContext) -> MetricScore:

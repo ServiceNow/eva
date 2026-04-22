@@ -1,4 +1,4 @@
-"""Agent turn response metric — diagnostic signal for agent-side conversation failures.
+"""Conversation-correctly-finished diagnostic metric (previously ``agent_turn_response``).
 
 Flags records where the conversation ended with ``inactivity_timeout`` and the user was
 the last speaker by audio timeline — i.e. the agent failed to respond to the user's
@@ -12,7 +12,7 @@ from eva.models.results import MetricScore
 
 
 @register_metric
-class AgentTurnResponseMetric(CodeMetric):
+class ConversationCorrectlyFinishedMetric(CodeMetric):
     """Scores whether the agent responded on every user turn.
 
     Score: 1.0 if the agent responded to every user turn (conversation ended normally
@@ -21,8 +21,8 @@ class AgentTurnResponseMetric(CodeMetric):
     to the user's final turn).
     """
 
-    name = "agent_turn_response"
-    description = "Debug metric: flags records where the agent failed to respond to the user's final turn"
+    name = "conversation_correctly_finished"
+    description = "Diagnostic metric: 0.0 when agent failed to respond to the user's final turn"
     category = "diagnostic"
     exclude_from_pass_at_k = True
 

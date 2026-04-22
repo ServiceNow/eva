@@ -125,7 +125,7 @@ The user violated a specific instruction in their decision tree (negotiation beh
 
 ## Related Metrics
 
-- [conversation_finished.md](conversation_finished.md) - Validates conversation completed
+- [conversation_valid_end.md](conversation_valid_end.md) - Validates conversation completed
 
 ## Implementation Details
 

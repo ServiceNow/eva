@@ -55,7 +55,7 @@ def validation_runner(temp_dir, sample_records):
     return ValidationRunner(
         run_dir=temp_dir,
         dataset=sample_records,
-        thresholds={"conversation_finished": 1.0, "user_behavioral_fidelity": 1.0},
+        thresholds={"conversation_valid_end": 1.0, "user_behavioral_fidelity": 1.0},
     )
 
 
@@ -156,8 +156,8 @@ class TestEvaluateRecord:
     def test_all_pass(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_finished=1.0, user_behavioral_fidelity=1.0),
-            ["conversation_finished", "user_behavioral_fidelity"],
+            self._metrics(conversation_valid_end=1.0, user_behavioral_fidelity=1.0),
+            ["conversation_valid_end", "user_behavioral_fidelity"],
         )
         assert result.passed is True
         assert result.failed_metrics == []
@@ -165,8 +165,8 @@ class TestEvaluateRecord:
     def test_one_below_threshold(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_finished=1.0, user_behavioral_fidelity=0.5),
-            ["conversation_finished", "user_behavioral_fidelity"],
+            self._metrics(conversation_valid_end=1.0, user_behavioral_fidelity=0.5),
+            ["conversation_valid_end", "user_behavioral_fidelity"],
         )
         assert result.passed is False
         assert "user_behavioral_fidelity" in result.failed_metrics
@@ -174,16 +174,16 @@ class TestEvaluateRecord:
     def test_at_threshold(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_finished=1.0, user_behavioral_fidelity=1.0),
-            ["conversation_finished", "user_behavioral_fidelity"],
+            self._metrics(conversation_valid_end=1.0, user_behavioral_fidelity=1.0),
+            ["conversation_valid_end", "user_behavioral_fidelity"],
         )
         assert result.passed is True
 
     def test_just_below_threshold(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_finished=1.0, user_behavioral_fidelity=0.99),
-            ["conversation_finished", "user_behavioral_fidelity"],
+            self._metrics(conversation_valid_end=1.0, user_behavioral_fidelity=0.99),
+            ["conversation_valid_end", "user_behavioral_fidelity"],
         )
         assert result.passed is False
         assert "user_behavioral_fidelity" in result.failed_metrics
@@ -191,25 +191,25 @@ class TestEvaluateRecord:
     def test_multiple_failures(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_finished=0.5, user_behavioral_fidelity=0.5),
-            ["conversation_finished", "user_behavioral_fidelity"],
+            self._metrics(conversation_valid_end=0.5, user_behavioral_fidelity=0.5),
+            ["conversation_valid_end", "user_behavioral_fidelity"],
         )
         assert result.passed is False
-        assert "conversation_finished" in result.failed_metrics
+        assert "conversation_valid_end" in result.failed_metrics
         assert "user_behavioral_fidelity" in result.failed_metrics
-        assert result.scores["conversation_finished"] == 0.5
+        assert result.scores["conversation_valid_end"] == 0.5
         assert result.scores["user_behavioral_fidelity"] == 0.5
 
     def test_metric_error_fails(self, validation_runner):
         record_metrics = RecordMetrics(
             record_id="record_1",
             metrics={
-                "conversation_finished": _make_score("conversation_finished", 1.0),
+                "conversation_valid_end": _make_score("conversation_valid_end", 1.0),
                 "user_behavioral_fidelity": _make_score("user_behavioral_fidelity", 0.0, error="Computation failed"),
             },
         )
         result = validation_runner._evaluate_record(
-            "record_1", record_metrics, ["conversation_finished", "user_behavioral_fidelity"]
+            "record_1", record_metrics, ["conversation_valid_end", "user_behavioral_fidelity"]
         )
         assert result.passed is False
         assert "user_behavioral_fidelity" in result.failed_metrics
@@ -217,10 +217,10 @@ class TestEvaluateRecord:
     def test_missing_metric_fails(self, validation_runner):
         record_metrics = RecordMetrics(
             record_id="record_1",
-            metrics={"conversation_finished": _make_score("conversation_finished", 1.0)},
+            metrics={"conversation_valid_end": _make_score("conversation_valid_end", 1.0)},
         )
         result = validation_runner._evaluate_record(
-            "record_1", record_metrics, ["conversation_finished", "user_behavioral_fidelity"]
+            "record_1", record_metrics, ["conversation_valid_end", "user_behavioral_fidelity"]
         )
         assert result.passed is False
         assert "user_behavioral_fidelity" in result.failed_metrics
@@ -290,7 +290,7 @@ class TestRunValidation:
         assert validation_runner.run_dir == temp_dir
         assert validation_runner.dataset == sample_records
         assert validation_runner.VALIDATION_METRICS == [
-            "conversation_finished",
+            "conversation_valid_end",
             "user_behavioral_fidelity",
             "user_speech_fidelity",
         ]
@@ -325,7 +325,7 @@ class TestRunValidation:
         assert results["record_1"].passed is True
         assert results["record_2"].passed is True
         assert results["record_1"].failed_metrics == []
-        assert "conversation_finished" not in Mock.call_args[1]["metric_names"]
+        assert "conversation_valid_end" not in Mock.call_args[1]["metric_names"]
 
     @pytest.mark.asyncio
     async def test_some_fail(self, validation_runner):

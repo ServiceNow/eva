@@ -1,15 +1,15 @@
-"""Tests for AgentTurnResponseMetric."""
+"""Tests for ConversationCorrectlyFinishedMetric."""
 
 import pytest
 
-from eva.metrics.diagnostic.agent_turn_response import AgentTurnResponseMetric
+from eva.metrics.diagnostic.conversation_correctly_finished import ConversationCorrectlyFinishedMetric
 
 from .conftest import make_metric_context
 
 
 @pytest.fixture
 def metric():
-    return AgentTurnResponseMetric()
+    return ConversationCorrectlyFinishedMetric()
 
 
 @pytest.mark.asyncio

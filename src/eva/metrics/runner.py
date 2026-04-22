@@ -275,13 +275,21 @@ class MetricsRunner:
                 all_metrics[record_id] = result
 
         # Include remaining records from disk for globally accurate aggregation.
+        from eva.metrics.legacy_aliases import rename_metric_keys
+
         for record_id, record_dir in all_record_dirs:
             if record_id in targeted_ids:
                 continue
             metrics_path = record_dir / "metrics.json"
             if metrics_path.exists():
                 try:
-                    all_metrics[record_id] = RecordMetrics.model_validate_json(metrics_path.read_text())
+                    raw = json.loads(metrics_path.read_text())
+                    if isinstance(raw.get("metrics"), dict):
+                        raw["metrics"] = rename_metric_keys(raw["metrics"])
+                        for k, v in raw["metrics"].items():
+                            if isinstance(v, dict) and v.get("name") and v["name"] != k:
+                                v["name"] = k
+                    all_metrics[record_id] = RecordMetrics.model_validate(raw)
                 except Exception as e:
                     logger.warning(f"Failed to read metrics for aggregation ({record_id}): {e}")
 
@@ -311,7 +319,17 @@ class MetricsRunner:
         if metrics_path.exists():
             try:
                 existing_data = json.loads(metrics_path.read_text())
-                existing_metrics = {k: MetricScore(**v) for k, v in existing_data.get("metrics", {}).items()}
+                # Backwards compat: remap legacy metric names saved by older runs.
+                from eva.metrics.legacy_aliases import rename_metric_keys
+
+                raw_metrics = rename_metric_keys(existing_data.get("metrics", {}))
+                existing_metrics = {}
+                for k, v in raw_metrics.items():
+                    # The ``name`` inside the stored MetricScore may still be the legacy
+                    # name; overwrite it so it round-trips cleanly.
+                    if isinstance(v, dict) and v.get("name") and v["name"] != k:
+                        v = {**v, "name": k}
+                    existing_metrics[k] = MetricScore(**v)
             except Exception as e:
                 logger.warning(f"Failed to read existing metrics for {record_id}: {e}")
 

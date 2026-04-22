@@ -932,6 +932,14 @@ class BenchmarkRunner:
                 return (init_settings,)
 
         config_data = json.loads(config_path.read_text())
+        # Backwards compat: remap any legacy metric names saved in an older config.json.
+        from eva.metrics.legacy_aliases import rename_metric_keys, rename_metric_list
+
+        if isinstance(config_data.get("metrics"), list):
+            config_data["metrics"] = rename_metric_list(config_data["metrics"])
+        if isinstance(config_data.get("validation_thresholds"), dict):
+            config_data["validation_thresholds"] = rename_metric_keys(config_data["validation_thresholds"])
+
         config = _StoredRunConfig(**config_data)
         runner = cls(config)
         runner.output_dir = run_dir  # Use existing output dir, don't create new
