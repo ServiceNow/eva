@@ -2,7 +2,7 @@
 
 Per-turn scores are continuous in [0, 1]. For each turn we use the signal that actually
 characterizes what happened on that turn:
-  - turn ∈ assistant_interrupted_turns → overlap-based score (capped)
+  - turn ∈ assistant_interrupted_turns → min(overlap_score, count_score, [post_interrupt_score])
   - turn ∈ user_interrupted_turns      → agent-yield-based score
   - turn ∈ both sets                   → min of the two above
   - otherwise                          → latency-based score
@@ -13,13 +13,15 @@ Flat headline sub-metrics (one number each — show up as columns in analysis vi
   Latency:              mean_latency_ms, p50_latency_ms, p90_latency_ms,
                         on_time_rate, early_rate, late_rate
   Agent interruptions:  agent_interruption.rate (always),
+                        agent_interruption.num_interruptions (None when rate = 0),
                         agent_interruption.mean_overlap_ms,
                         agent_interruption.mean_overlap_score,
+                        agent_interruption.mean_count_score,
                         agent_interruption.mean_post_interrupt_latency_ms,
                         agent_interruption.mean_post_interrupt_latency_score
-                        (all except rate only when rate > 0; the post_interrupt_*
-                        pair is additionally gated on at least one interrupt turn
-                        having a settled agent response afterward)
+                        (all except rate and num_interruptions only when rate > 0;
+                        the post_interrupt_* pair is additionally gated on at least
+                        one interrupt turn having a settled agent response afterward)
   User interruptions:   user_interruption.rate (always),
                         user_interruption.mean_yield_ms,
                         user_interruption.mean_yield_score
@@ -74,6 +76,9 @@ class TurnTakingMetric(CodeMetric):
     # --- User interruption (agent yield latency in ms). Score ramps down 1 → 0 over [0, YIELD_HARD_MS]. ---
     YIELD_HARD_MS: float = 2000
 
+    # --- Agent interrupt segment count. Score ramps 1 → 0 from 1 to INTERRUPT_COUNT_HARD distinct segments. ---
+    INTERRUPT_COUNT_HARD: int = 3  # ≥3 distinct barge-ins → count sub-score = 0
+
     # --- Latency classification thresholds (early / on-time / late rates). ---
     # EARLY_THRESHOLD_MS is shared across all turns — early-response behaviour is not
     # affected by whether a tool call occurred.
@@ -114,6 +119,16 @@ class TurnTakingMetric(CodeMetric):
     def _yield_score(cls, yield_ms: float) -> float:
         """Map agent yield latency (ms) after a user barge-in to a score in [0, 1]."""
         return max(0.0, 1.0 - yield_ms / cls.YIELD_HARD_MS)
+
+    @classmethod
+    def _count_score(cls, n_segments: int) -> float:
+        """Score ramps 1→0 as distinct agent interrupt segments go from 1 to INTERRUPT_COUNT_HARD.
+
+        n=1 (single barge-in) carries no additional penalty.
+        """
+        if n_segments <= 1:
+            return 1.0
+        return max(0.0, 1.0 - (n_segments - 1) / (cls.INTERRUPT_COUNT_HARD - 1))
 
     @staticmethod
     def _compute_overlap_ms(context: MetricContext, turn_id: int) -> float | None:
@@ -220,13 +235,16 @@ class TurnTakingMetric(CodeMetric):
             overlap_ms = cls._compute_overlap_ms(context, turn_id)
             if overlap_ms is not None:
                 agent_score = cls._overlap_score(overlap_ms)
+                n_segs = cls._count_agent_interrupt_segments(context, turn_id)
+                count_score = cls._count_score(n_segs)
                 evidence["overlap_ms"] = round(overlap_ms, 3)
                 evidence["overlap_score"] = round(agent_score, 4)
-                # Diagnostic: how many distinct agent segments overlapped the user's speech.
-                evidence["n_interrupt_segments"] = cls._count_agent_interrupt_segments(context, turn_id)
+                evidence["n_interrupt_segments"] = n_segs
+                evidence["interrupt_count_score"] = round(count_score, 4)
+                agent_score = min(agent_score, count_score)
                 # Fold in the latency from user-end to the agent's *settled* response (if any),
                 # so "interrupted briefly then silent for 10s" is also penalized. Turn score
-                # becomes the min of overlap_score and the settled-latency score.
+                # becomes the min of overlap_score, count_score, and the settled-latency score.
                 post_ms = cls._compute_post_interrupt_latency_ms(context, turn_id)
                 if post_ms is not None:
                     post_score = cls._latency_score(post_ms, has_tool_call=has_tool_call)
@@ -315,6 +333,7 @@ class TurnTakingMetric(CodeMetric):
         )
         overlap_ms_list: list[float] = []
         overlap_scores: list[float] = []
+        n_segs_list: list[int] = []
         post_ms_list: list[float] = []
         post_scores: list[float] = []
         for t in agent_turns:
@@ -323,10 +342,18 @@ class TurnTakingMetric(CodeMetric):
                 continue
             overlap_ms_list.append(overlap_ms)
             overlap_scores.append(cls._overlap_score(overlap_ms))
+            n_segs_list.append(cls._count_agent_interrupt_segments(context, t))
             post_ms = cls._compute_post_interrupt_latency_ms(context, t)
             if post_ms is not None:
                 post_ms_list.append(post_ms)
                 post_scores.append(cls._latency_score(post_ms, has_tool_call=t in turns_with_tool_calls))
+        # num_interruptions: total distinct interrupt segments across all agent-interrupted turns.
+        # None when there are no agent interruptions so cross-record aggregates exclude clean runs.
+        sub["agent_interruption.num_interruptions"] = MetricScore(
+            name=f"{cls.name}.agent_interruption.num_interruptions",
+            score=float(sum(n_segs_list)) if n_segs_list else None,
+            normalized_score=None,
+        )
         if overlap_ms_list:
             sub["agent_interruption.mean_overlap_ms"] = _wrap(
                 "agent_interruption.mean_overlap_ms", round(statistics.mean(overlap_ms_list), 3), False
@@ -335,6 +362,11 @@ class TurnTakingMetric(CodeMetric):
             # so downstream consumers see one number consistent with turn_taking.score itself.
             sub["agent_interruption.mean_overlap_score"] = _wrap(
                 "agent_interruption.mean_overlap_score", round(statistics.mean(overlap_scores), 4), True
+            )
+            sub["agent_interruption.mean_count_score"] = _wrap(
+                "agent_interruption.mean_count_score",
+                round(statistics.mean([cls._count_score(n) for n in n_segs_list]), 4),
+                True,
             )
         if post_ms_list:
             sub["agent_interruption.mean_post_interrupt_latency_ms"] = _wrap(

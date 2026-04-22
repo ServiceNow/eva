@@ -339,13 +339,16 @@ def _format_tt_for_turn(tid: int | None, tt_by_id: dict) -> str:
     if "post_interrupt_latency_ms" in evidence:
         post_ms = evidence["post_interrupt_latency_ms"]
         post_score = evidence.get("post_interrupt_latency_score")
-        score_part = f" (score {post_score:.2f})" if isinstance(post_score, (int, float)) else ""
-        lines.append(f"Post-interrupt latency: {post_ms:.0f}\u00a0ms{score_part}")
+        score_part = f" (recovery sub-score: {post_score:.2f})" if isinstance(post_score, (int, float)) else ""
+        lines.append(f"Post-interrupt recovery: {post_ms:.0f}\u00a0ms{score_part}")
     if "yield_ms" in evidence:
         lines.append(f"Yield: {evidence['yield_ms']:.0f}\u00a0ms")
 
     if "n_interrupt_segments" in evidence:
-        lines.append(f"Agent barge-ins in this turn: {evidence['n_interrupt_segments']}")
+        n_segs = evidence["n_interrupt_segments"]
+        count_score = evidence.get("interrupt_count_score")
+        count_part = f" (frequency sub-score: {count_score:.2f})" if isinstance(count_score, (int, float)) else ""
+        lines.append(f"Agent barge-in segments this turn: {n_segs}{count_part}")
 
     return "<br>".join(lines)
 
