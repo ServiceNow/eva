@@ -55,6 +55,8 @@ class _UserTurnRecord:
     speech_stopped_wall_ms: str = ""
     transcript: str = ""
     flushed: bool = False
+    turn_id: int = 0
+    placeholder_written: bool = False
 
 
 @dataclass
@@ -111,6 +113,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         # User speech start timestamp from audio_interface (source of truth)
         self._audio_interface_speech_start_ts: str | None = None
+
+        # Monotonically incrementing turn counter for audit log correlation
+        self._next_turn_id: int = 0
 
         self._model: str = self.pipeline_config.s2s_params.get("model")
 
@@ -437,13 +442,19 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 logger.warning(f"Transcription failed: {error_info}")
                 # Gracefully handle transcription failure (e.g. API key lacks
                 # whisper-1 access).  If a user turn was active but has no
-                # transcript yet, record a placeholder so the turn is not lost.
+                # transcript yet, update the placeholder so the turn is not lost.
                 if self._user_turn and not self._user_turn.flushed:
-                    timestamp_ms = self._user_turn.speech_started_wall_ms or None
-                    self.audit_log.append_user_input(
-                        "[user speech - transcription unavailable]",
-                        timestamp_ms=timestamp_ms,
-                    )
+                    if self._user_turn.placeholder_written:
+                        self.audit_log.update_user_input_by_turn_id(
+                            self._user_turn.turn_id,
+                            "[user speech - transcription unavailable]",
+                        )
+                    else:
+                        timestamp_ms = self._user_turn.speech_started_wall_ms or None
+                        self.audit_log.append_user_input(
+                            "[user speech - transcription unavailable]",
+                            timestamp_ms=timestamp_ms,
+                        )
                     self._user_turn.flushed = True
 
             case "response.output_audio.delta":
@@ -501,11 +512,24 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         if not self._user_turn or self._user_turn.flushed:
             # Use timestamp from audio_interface if available (source of truth)
             start_ts = self._audio_interface_speech_start_ts or wall
-            self._user_turn = _UserTurnRecord(speech_started_wall_ms=start_ts)
+            turn_id = self._next_turn_id
+            self._next_turn_id += 1
+            self._user_turn = _UserTurnRecord(
+                speech_started_wall_ms=start_ts,
+                turn_id=turn_id,
+            )
+            # Write a placeholder so update_user_input_by_turn_id can find the
+            # correct entry when transcription arrives after processing has started
+            self.audit_log.append_user_input(
+                "[transcribing...]",
+                turn_id=turn_id,
+                timestamp_ms=start_ts,
+            )
+            self._user_turn.placeholder_written = True
             if self._fw_log:
                 self._fw_log.turn_start(timestamp_ms=int(start_ts))
             logger.debug(
-                f"Speech started at {start_ts} (new turn, from_audio_interface={self._audio_interface_speech_start_ts is not None})"
+                f"Speech started at {start_ts} (new turn, turn_id={turn_id}, from_audio_interface={self._audio_interface_speech_start_ts is not None})"
             )
             self._audio_interface_speech_start_ts = None  # Reset for next turn
         else:
@@ -538,12 +562,16 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             logger.debug("Empty transcription, skipping")
             return
 
-        timestamp_ms = None
         if self._user_turn:
-            timestamp_ms = self._user_turn.speech_started_wall_ms or None
             self._user_turn.transcript = transcript
             self._user_turn.flushed = True
+            if self._user_turn.placeholder_written:
+                self.audit_log.update_user_input_by_turn_id(self._user_turn.turn_id, transcript)
+                logger.debug(f"User transcription (turn_id={self._user_turn.turn_id}): {transcript}...")
+                return
 
+        # Fallback: no placeholder was written, append directly
+        timestamp_ms = self._user_turn.speech_started_wall_ms if self._user_turn else None
         self.audit_log.append_user_input(transcript, timestamp_ms=timestamp_ms)
         logger.debug(f"User transcription: {transcript}...")
 

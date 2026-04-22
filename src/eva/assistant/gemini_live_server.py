@@ -356,6 +356,10 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         _user_speech_stop_ts: str | None = None  # Timestamp from audio_interface (speech end)
         _assistant_turn_start_ts: str | None = None  # Wall-clock ms when first audio chunk arrives
 
+        # Turn tracking for audit log correlation
+        _user_turn_id: int = 0
+        _user_placeholder_written: bool = False
+
         # Queue for outbound mulaw chunks; the pacer task drains it at real-time rate
         # so _process_gemini_events never sleeps and keeps reading Gemini events promptly.
         audio_output_queue: asyncio.Queue[bytes] = asyncio.Queue()
@@ -398,9 +402,18 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                 twilio_connected = False
                                 break
                             elif event == "user_speech_start":
-                                nonlocal _user_speech_start_ts
+                                nonlocal _user_speech_start_ts, _user_turn_id, _user_placeholder_written
                                 _user_speech_start_ts = msg.get("timestamp_ms")
                                 logger.info(f"User speech start timestamp received: {_user_speech_start_ts}")
+                                # Write a placeholder so update_user_input_by_turn_id can find the
+                                # correct entry when Gemini's input_transcription event arrives
+                                if not _user_placeholder_written:
+                                    self.audit_log.append_user_input(
+                                        "[transcribing...]",
+                                        turn_id=_user_turn_id,
+                                        timestamp_ms=_user_speech_start_ts,
+                                    )
+                                    _user_placeholder_written = True
                                 continue
                             elif event == "user_speech_stop":
                                 nonlocal _user_speech_stop_ts
@@ -478,7 +491,9 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                         _user_speaking, \
                         _user_speech_start_ts, \
                         _user_speech_stop_ts, \
-                        _assistant_turn_start_ts
+                        _assistant_turn_start_ts, \
+                        _user_turn_id, \
+                        _user_placeholder_written
                     nonlocal twilio_connected
 
                     logger.info("Gemini event processor started")
@@ -589,9 +604,14 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                     text = sc.input_transcription.text or ""
                                     if text.strip():
                                         logger.info(f"User transcription: {text.strip()}")
-                                        self.audit_log.append_user_input(
-                                            text.strip(), timestamp_ms=_user_speech_start_ts
-                                        )
+                                        if _user_placeholder_written:
+                                            self.audit_log.update_user_input_by_turn_id(_user_turn_id, text.strip())
+                                        else:
+                                            self.audit_log.append_user_input(
+                                                text.strip(), timestamp_ms=_user_speech_start_ts
+                                            )
+                                        _user_placeholder_written = False
+                                        _user_turn_id += 1
                                         _user_speech_start_ts = None  # Reset for next turn
 
                                 # Output transcription (model speech)

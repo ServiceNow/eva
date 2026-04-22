@@ -208,12 +208,18 @@ downstream metrics. Every server must write to it correctly.
 
 | Method | When to call |
 |---|---|
-| `self.audit_log.append_user_input(text, timestamp_ms=...)` | When a user turn is complete and transcribed |
-| `self.audit_log.append_assistant_output(text, timestamp_ms=...)` | When an assistant turn is complete |
+| `self.audit_log.append_user_input(text, timestamp_ms=..., turn_id=...)` | When a user turn is complete and transcribed |
+| `self.audit_log.append_assistant_output(text, tool_calls=..., timestamp_ms=...)` | When an assistant turn is complete |
+| `self.audit_log.update_last_user_input(text)` | Update the most recent user entry when transcription completes after processing has started |
+| `self.audit_log.update_user_input_by_turn_id(turn_id, text)` | Update a specific user entry by `turn_id` when transcription runs in parallel (preferred over `update_last_user_input` when `turn_id` is available) |
 
 Pass `timestamp_ms` as a string containing epoch milliseconds. Use the wall-clock
 time the speech *started* for user entries (from `user_speech_start`), and the
 wall-clock time of the first audio chunk for assistant entries. If server emits VAD events, may use those timestamps for user speech started, otherwise use the wall-clock time when the first audio chunk is received. Do not use transcription time as the timestamp as this may describe when transcription was received rather than when speech was emitted.
+
+Pass `turn_id` (an integer) to `append_user_input()` when transcription runs in
+parallel with processing — it lets `update_user_input_by_turn_id()` find and patch
+the correct entry even if a new turn has already started.
 
 Do not call `append_llm_call()` for s2s/realtime models. That method is for cascade
 pipelines where there is a separate LLM API call with a request/response pair to
@@ -263,10 +269,11 @@ as instance attributes. Both write to files inside `self.output_dir`.
 Record turn boundaries and assistant text for downstream processors:
 
 ```python
-self._fw_log.turn_start(timestamp_ms=...)     # when user turn begins
-self._fw_log.turn_end(was_interrupted=False)  # when assistant finishes speaking
-self._fw_log.llm_response(text)               # full assistant response text
-self._fw_log.tts_text(text)                   # text actually spoken (if interrupted, the partial text)
+self._fw_log.turn_start(timestamp_ms=...)                    # when user turn begins; timestamp_ms is int | None
+self._fw_log.turn_end(was_interrupted=False, timestamp_ms=...) # when assistant finishes; timestamp_ms is int | None
+self._fw_log.llm_response(text)                              # full assistant response text
+self._fw_log.tts_text(text)                                  # text actually spoken (if interrupted, the partial text)
+self._fw_log.s2s_transcript(text, timestamp_ms=...)          # S2S transcript (what was actually spoken for s2s models that were interrupted); timestamp_ms is int | None
 ```
 
 ### Metrics log (`pipecat_metrics.jsonl`)
@@ -352,9 +359,16 @@ async def save_outputs(self) -> None:
 will be `SpeechToSpeechConfig`, which exposes:
 
 ```python
-self.pipeline_config.s2s         # model identifier string
-self.pipeline_config.s2s_params  # dict of additional params (api_key, voice, model, etc.)
+self.pipeline_config.s2s            # model identifier string
+self.pipeline_config.s2s_params     # dict of additional params (api_key, voice, model, etc.)
+self.pipeline_config.turn_strategy  # "smart" (default) or "external" (for pipecat only)
 ```
+
+`turn_strategy` controls how user turn boundaries are detected:
+- `"smart"` — uses LocalSmartTurnAnalyzerV3 + SileroVAD (default)
+- `"external"` — defers to the service's own built-in turn detection (e.g. for services like Speechmatics)
+
+Set via `EVA_MODEL__TURN_STRATEGY=external` or in the config YAML.
 
 Assert the type in `__init__` so misconfiguration fails loudly:
 
