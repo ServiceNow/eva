@@ -98,7 +98,9 @@ class PipelineConfig(BaseModel):
     # VAD configuration
     vad: str = Field(
         "silero",
-        description=("VAD analyzer type: 'silero' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."),
+        description=(
+            "VAD analyzer type: 'silero' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."
+        ),
     )
     vad_params: dict[str, Any] = Field(
         {},
@@ -179,7 +181,9 @@ class SpeechToSpeechConfig(BaseModel):
     # VAD configuration
     vad: str = Field(
         "silero",
-        description=("VAD analyzer type: 'silero' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."),
+        description=(
+            "VAD analyzer type: 'silero' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."
+        ),
     )
     vad_params: dict[str, Any] = Field(
         {},
@@ -256,7 +260,9 @@ class AudioLLMConfig(BaseModel):
     # VAD configuration
     vad: str = Field(
         "silero",
-        description=("VAD analyzer type: 'silero' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."),
+        description=(
+            "VAD analyzer type: 'silero' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."
+        ),
     )
     vad_params: dict[str, Any] = Field(
         {},
