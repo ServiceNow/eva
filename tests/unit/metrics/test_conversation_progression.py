@@ -65,17 +65,24 @@ class TestConversationProgression:
 
         assert score.sub_metrics is not None
         assert set(score.sub_metrics.keys()) == {
-            "unnecessary_tool_calls",
-            "information_loss",
-            "redundant_statements",
-            "question_quality",
+            "unnecessary_tool_calls_rate",
+            "information_loss_rate",
+            "redundant_statements_rate",
+            "question_quality_rate",
         }
-        q_quality = score.sub_metrics["question_quality"]
-        assert q_quality.name == "conversation_progression.question_quality"
-        assert q_quality.score == 1.0
-        assert q_quality.normalized_score == 0.0
+        # Binary issue-flag: 1.0 when flagged, 0.0 when clean; lower is better.
+        q_quality = score.sub_metrics["question_quality_rate"]
+        assert q_quality.name == "conversation_progression.question_quality_rate"
+        assert q_quality.score == 1.0  # flagged
+        assert q_quality.normalized_score == 1.0
         assert q_quality.details["flagged"] is True
+        assert q_quality.details["rating"] == 1
         assert q_quality.details["evidence"] == "bad"
+        assert q_quality.higher_is_better is False
+
+        clean = score.sub_metrics["unnecessary_tool_calls_rate"]
+        assert clean.score == 0.0
+        assert clean.details["flagged"] is False
 
     @pytest.mark.asyncio
     async def test_compute_excellent(self):

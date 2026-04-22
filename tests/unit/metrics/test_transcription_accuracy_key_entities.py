@@ -197,15 +197,20 @@ class TestCompute:
 
         assert result.error is None
         assert result.sub_metrics is not None
-        assert set(result.sub_metrics.keys()) == {"name", "confirmation_code", "date"}
-        name_sub = result.sub_metrics["name"]
-        assert name_sub.name == "transcription_accuracy_key_entities.name"
+        assert set(result.sub_metrics.keys()) == {
+            "name_accuracy",
+            "confirmation_code_accuracy",
+            "date_accuracy",
+        }
+        name_sub = result.sub_metrics["name_accuracy"]
+        assert name_sub.name == "transcription_accuracy_key_entities.name_accuracy"
         assert name_sub.score == pytest.approx(0.5)
         assert name_sub.details == {"correct": 1, "total_non_skipped": 2, "skipped": 0}
-        code_sub = result.sub_metrics["confirmation_code"]
+        assert name_sub.higher_is_better is True
+        code_sub = result.sub_metrics["confirmation_code_accuracy"]
         assert code_sub.score == 1.0
         assert code_sub.details == {"correct": 1, "total_non_skipped": 1, "skipped": 0}
-        date_sub = result.sub_metrics["date"]
+        date_sub = result.sub_metrics["date_accuracy"]
         assert date_sub.score == 1.0
         assert date_sub.details == {"correct": 1, "total_non_skipped": 1, "skipped": 1}
 

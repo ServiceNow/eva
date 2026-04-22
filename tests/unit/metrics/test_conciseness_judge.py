@@ -74,22 +74,22 @@ async def test_surfaces_failure_mode_sub_metrics(metric):
     assert result.error is None
     assert result.sub_metrics is not None
     expected_keys = {
-        "verbosity_or_filler",
-        "excess_information_density",
-        "over_enumeration_or_list_exhaustion",
-        "contextually_disproportionate_detail",
+        "verbosity_or_filler_rate",
+        "excess_information_density_rate",
+        "over_enumeration_or_list_exhaustion_rate",
+        "contextually_disproportionate_detail_rate",
     }
     assert set(result.sub_metrics.keys()) == expected_keys
     # 2 out of 3 rated turns flagged verbosity_or_filler
-    verbosity = result.sub_metrics["verbosity_or_filler"]
-    assert verbosity.name == "conciseness.verbosity_or_filler"
+    verbosity = result.sub_metrics["verbosity_or_filler_rate"]
+    assert verbosity.name == "conciseness.verbosity_or_filler_rate"
     assert verbosity.score == pytest.approx(2 / 3, abs=0.001)
     assert verbosity.normalized_score == pytest.approx(2 / 3, abs=0.001)
     assert verbosity.details["count"] == 2
     assert verbosity.details["num_rated"] == 3
     assert set(verbosity.details["turn_ids"]) == {1, 2}
     # modes with zero occurrences still emitted at rate 0
-    over_enum = result.sub_metrics["over_enumeration_or_list_exhaustion"]
+    over_enum = result.sub_metrics["over_enumeration_or_list_exhaustion_rate"]
     assert over_enum.score == 0.0
     assert over_enum.details["count"] == 0
 

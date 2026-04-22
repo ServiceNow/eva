@@ -332,12 +332,17 @@ def make_rate_sub_metric(
     denominator: int,
     details: dict[str, Any],
     precision: int = 3,
+    higher_is_better: bool = False,
 ) -> MetricScore:
     """Build a rate-style sub-metric where ``score == normalized_score == numerator/denominator``.
 
     Returns a zero-rate sub-metric when ``denominator <= 0`` so callers never
     divide by zero. Callers are responsible for choosing the ``details`` shape
     (counts, turn IDs, reference counts, etc.) that makes sense for their metric.
+
+    Defaults to ``higher_is_better=False`` because most rate sub-metrics measure
+    error/failure frequency (lower is better). Callers building accuracy-style
+    rates (e.g. per-entity-type accuracy, on-time rate) should pass ``True``.
 
     Args:
         parent_name: Parent metric's name (used as prefix in sub-metric name).
@@ -346,6 +351,7 @@ def make_rate_sub_metric(
         denominator: Denominator (e.g., rated turns, reference words, total calls).
         details: Details dict attached to the sub-metric.
         precision: Number of decimal places to round the rate to.
+        higher_is_better: Direction flag passed through to the MetricScore.
 
     Returns:
         A MetricScore with equal ``score`` and ``normalized_score`` fields.
@@ -357,52 +363,63 @@ def make_rate_sub_metric(
         score=rounded,
         normalized_score=rounded,
         details=details,
+        higher_is_better=higher_is_better,
     )
 
 
-def build_dimension_sub_metrics(
+def build_binary_flag_sub_metrics(
     parent_name: str,
-    dimensions: dict[str, Any],
-    dimension_keys: tuple[str, ...],
-    rating_scale: tuple[int, int],
+    entries: dict[str, Any],
+    entry_keys: tuple[str, ...],
+    flag_field: str,
+    detail_fields: tuple[str, ...] = (),
+    key_suffix: str = "_rate",
 ) -> dict[str, MetricScore]:
-    """Build sub-metrics for judge dimensions rated on a scale (e.g., 1-3).
+    """Build binary "issue-occurrence" sub-metrics for a fixed set of judge dimensions.
 
-    Each dimension entry is expected to have at minimum a ``rating`` (int) and
-    optionally ``flagged`` (bool) and ``evidence`` (str). Only dimensions with
-    valid integer ratings in-range are surfaced.
+    Each entry is expected to carry a boolean flag under ``flag_field`` (e.g.,
+    ``flagged`` or ``detected``) indicating whether the dimension was triggered
+    for this record. Sub-metric convention: ``score = 1.0`` if the flag is true,
+    ``0.0`` otherwise. ``higher_is_better`` is set to ``False`` so aggregation
+    reads as "fraction of records where this issue occurred — lower is better".
+
+    The default ``key_suffix`` of ``"_rate"`` reflects that these sub-metrics
+    aggregate across records into an issue-frequency rate.
 
     Args:
-        parent_name: The parent metric's name (used as prefix in sub-metric name).
-        dimensions: Mapping of dimension key to its judge-response entry.
-        dimension_keys: Ordered tuple of expected dimension keys.
-        rating_scale: Tuple of (min, max) valid rating values.
+        parent_name: Parent metric name (prefix for the sub-metric name).
+        entries: Mapping of dimension key to its judge-response entry.
+        entry_keys: Ordered tuple of expected dimension keys.
+        flag_field: Name of the boolean field in each entry (e.g. ``"flagged"``,
+            ``"detected"``).
+        detail_fields: Additional fields from the entry to preserve in ``details``
+            (e.g. ``("rating", "evidence")`` or ``("analysis",)``).
+        key_suffix: Suffix appended to each dimension key in the returned dict
+            and in the sub-metric name (default ``"_rate"``).
 
     Returns:
-        Dict keyed by dimension name with a MetricScore per surfaceable dimension.
+        Dict keyed by ``f"{dimension_key}{key_suffix}"``. Entries whose
+        ``flag_field`` is missing or non-boolean are skipped.
     """
-    min_r, max_r = rating_scale
-    valid_range = set(range(min_r, max_r + 1))
     sub_metrics: dict[str, MetricScore] = {}
-
-    for dim_key in dimension_keys:
-        entry = dimensions.get(dim_key)
-        if not isinstance(entry, dict):
+    for key in entry_keys:
+        entry = entries.get(key)
+        if not isinstance(entry, dict) or flag_field not in entry:
             continue
-        rating = entry.get("rating")
-        if not isinstance(rating, int) or rating not in valid_range:
-            continue
-        sub_metrics[dim_key] = MetricScore(
-            name=f"{parent_name}.{dim_key}",
-            score=float(rating),
-            normalized_score=normalize_rating(rating, min_r, max_r),
-            details={
-                "rating": rating,
-                "flagged": entry.get("flagged"),
-                "evidence": entry.get("evidence", ""),
-            },
+        flagged = bool(entry.get(flag_field))
+        score = 1.0 if flagged else 0.0
+        details: dict[str, Any] = {flag_field: flagged}
+        for field in detail_fields:
+            if field in entry:
+                details[field] = entry[field]
+        sub_key = f"{key}{key_suffix}"
+        sub_metrics[sub_key] = MetricScore(
+            name=f"{parent_name}.{sub_key}",
+            score=score,
+            normalized_score=score,
+            details=details,
+            higher_is_better=False,
         )
-
     return sub_metrics
 
 

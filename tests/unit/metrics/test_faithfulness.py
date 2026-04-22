@@ -107,30 +107,35 @@ class TestFaithfulness:
 
         assert score.sub_metrics is not None
         assert set(score.sub_metrics.keys()) == {
-            "fabricating_tool_parameters",
-            "misrepresenting_tool_result",
-            "violating_policies",
-            "failing_to_disambiguate",
-            "hallucination",
+            "fabricating_tool_parameters_rate",
+            "misrepresenting_tool_result_rate",
+            "violating_policies_rate",
+            "failing_to_disambiguate_rate",
+            "hallucination_rate",
         }
-        fab = score.sub_metrics["fabricating_tool_parameters"]
-        assert fab.name == "faithfulness.fabricating_tool_parameters"
-        assert fab.score == 3.0
-        assert fab.normalized_score == 1.0
+        # Binary issue-flag semantics: 1.0 when flagged, 0.0 when clean.
+        fab = score.sub_metrics["fabricating_tool_parameters_rate"]
+        assert fab.name == "faithfulness.fabricating_tool_parameters_rate"
+        assert fab.score == 0.0  # clean
+        assert fab.normalized_score == 0.0
         assert fab.details["flagged"] is False
+        assert fab.details["rating"] == 3  # raw rating preserved for diagnostics
+        assert fab.higher_is_better is False
 
-        disamb = score.sub_metrics["failing_to_disambiguate"]
-        assert disamb.score == 1.0
-        assert disamb.normalized_score == 0.0
+        disamb = score.sub_metrics["failing_to_disambiguate_rate"]
+        assert disamb.score == 1.0  # flagged
+        assert disamb.normalized_score == 1.0
         assert disamb.details["flagged"] is True
+        assert disamb.details["rating"] == 1
         assert disamb.details["evidence"] == "bad"
+        assert disamb.higher_is_better is False
 
-    def test_build_metric_score_skips_missing_or_invalid_dimensions(self):
+    def test_build_metric_score_skips_dimensions_without_flag(self):
         ctx = make_metric_context(conversation_trace=[{"role": "user"}])
         response = {
             "rating": 3,
             "dimensions": {
-                "fabricating_tool_parameters": {"rating": "not-an-int"},
+                "fabricating_tool_parameters": {"rating": 3},  # no flagged field
                 "hallucination": {"rating": 3, "flagged": False},
             },
         }
@@ -145,7 +150,7 @@ class TestFaithfulness:
         )
 
         assert score.sub_metrics is not None
-        assert set(score.sub_metrics.keys()) == {"hallucination"}
+        assert set(score.sub_metrics.keys()) == {"hallucination_rate"}
 
     @pytest.mark.asyncio
     async def test_compute_unparseable_response(self):

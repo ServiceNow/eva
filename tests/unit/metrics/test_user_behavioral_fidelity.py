@@ -103,23 +103,26 @@ class TestUserBehavioralFidelity:
 
         assert score.sub_metrics is not None
         assert set(score.sub_metrics.keys()) == {
-            "extra_modifications",
-            "premature_ending",
-            "missing_information",
-            "duplicate_modifications",
-            "decision_tree_violation",
+            "extra_modifications_rate",
+            "premature_ending_rate",
+            "missing_information_rate",
+            "duplicate_modifications_rate",
+            "decision_tree_violation_rate",
         }
-        extra = score.sub_metrics["extra_modifications"]
-        assert extra.name == "user_behavioral_fidelity.extra_modifications"
-        assert extra.score == 1.0  # clean
-        assert extra.normalized_score == 1.0
+        # Binary detection: 1.0 when corruption detected, 0.0 when clean; lower is better.
+        extra = score.sub_metrics["extra_modifications_rate"]
+        assert extra.name == "user_behavioral_fidelity.extra_modifications_rate"
+        assert extra.score == 0.0  # clean
+        assert extra.normalized_score == 0.0
         assert extra.details["detected"] is False
+        assert extra.higher_is_better is False
 
-        premature = score.sub_metrics["premature_ending"]
-        assert premature.score == 0.0  # detected
-        assert premature.normalized_score == 0.0
+        premature = score.sub_metrics["premature_ending_rate"]
+        assert premature.score == 1.0  # detected
+        assert premature.normalized_score == 1.0
         assert premature.details["detected"] is True
         assert premature.details["analysis"] == "ended early"
+        assert premature.higher_is_better is False
 
     def test_build_metric_score_skips_malformed_corruption_entries(self):
         ctx = make_metric_context()
@@ -140,7 +143,7 @@ class TestUserBehavioralFidelity:
         )
 
         assert score.sub_metrics is not None
-        assert set(score.sub_metrics.keys()) == {"extra_modifications"}
+        assert set(score.sub_metrics.keys()) == {"extra_modifications_rate"}
 
     @pytest.mark.asyncio
     async def test_compute_not_corrupted(self):

@@ -78,9 +78,10 @@ class ConcisenessJudgeMetric(PerTurnConversationJudgeMetric):
             flagged_ids = [
                 tid for tid in rated_turn_ids if mode in (per_turn_extra.get(tid, {}).get("failure_modes") or [])
             ]
-            sub_metrics[mode] = make_rate_sub_metric(
+            sub_key = f"{mode}_rate"
+            sub_metrics[sub_key] = make_rate_sub_metric(
                 parent_name=self.name,
-                key=mode,
+                key=sub_key,
                 numerator=len(flagged_ids),
                 denominator=num_rated,
                 details={"count": len(flagged_ids), "num_rated": num_rated, "turn_ids": flagged_ids},

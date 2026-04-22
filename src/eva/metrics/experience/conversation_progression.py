@@ -4,7 +4,7 @@ from typing import Any
 
 from eva.metrics.base import ConversationTextJudgeMetric, MetricContext
 from eva.metrics.registry import register_metric
-from eva.metrics.utils import build_dimension_sub_metrics
+from eva.metrics.utils import build_binary_flag_sub_metrics
 from eva.models.results import MetricScore
 
 _CONVERSATION_PROGRESSION_DIMENSION_KEYS = (
@@ -44,10 +44,14 @@ class ConversationProgressionJudgeMetric(ConversationTextJudgeMetric):
         context: MetricContext,
         raw_response: str | None = None,
     ) -> MetricScore:
-        """Build MetricScore with analysis details and per-dimension sub-metrics."""
+        """Build MetricScore with analysis details and per-dimension issue-flag sub-metrics."""
         dimensions = response.get("dimensions", {}) or {}
-        sub_metrics = build_dimension_sub_metrics(
-            self.name, dimensions, _CONVERSATION_PROGRESSION_DIMENSION_KEYS, self.rating_scale
+        sub_metrics = build_binary_flag_sub_metrics(
+            parent_name=self.name,
+            entries=dimensions,
+            entry_keys=_CONVERSATION_PROGRESSION_DIMENSION_KEYS,
+            flag_field="flagged",
+            detail_fields=("rating", "evidence"),
         )
 
         analysis = {

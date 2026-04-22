@@ -68,6 +68,7 @@ class ResponseSpeedMetric(CodeMetric):
                     score=0.0,
                     normalized_score=None,
                     error="No response latencies available (missing audio timestamps)",
+                    higher_is_better=False,
                 )
 
             all_latencies = list(context.latency_assistant_turns.values())
@@ -79,6 +80,7 @@ class ResponseSpeedMetric(CodeMetric):
                     score=0.0,
                     normalized_score=None,
                     error="No valid response speeds computed",
+                    higher_is_better=False,
                 )
 
             dropped = [v for v in all_latencies if not (0 < v < 1000)]
@@ -98,6 +100,7 @@ class ResponseSpeedMetric(CodeMetric):
                         score=stats["mean_speed_seconds"],
                         normalized_score=None,
                         details=stats,
+                        higher_is_better=False,
                     )
 
             return MetricScore(
@@ -106,6 +109,7 @@ class ResponseSpeedMetric(CodeMetric):
                 normalized_score=None,
                 details=overall_stats,
                 sub_metrics=sub_metrics or None,
+                higher_is_better=False,
             )
 
         except Exception as e:
