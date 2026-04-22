@@ -192,7 +192,7 @@ class TestCompute:
         assert result.details["num_turns"] == 2
         assert result.details["num_evaluated"] == 2
         assert result.details["num_not_applicable"] == 0
-        assert result.details["skipped"] is False
+        assert result.skipped is False
         assert result.score == 1.0
         assert result.normalized_score == 1.0
 
@@ -225,7 +225,7 @@ class TestCompute:
         assert result.details["num_turns"] == 2
         assert result.details["num_evaluated"] == 2
         assert result.details["num_not_applicable"] == 1
-        assert result.details["skipped"] is False
+        assert result.skipped is False
         assert result.score == 1.0
 
     @pytest.mark.asyncio
@@ -248,7 +248,7 @@ class TestCompute:
         assert result.details["num_turns"] == 2
         assert result.details["num_evaluated"] == 2
         assert result.details["num_not_applicable"] == 2
-        assert result.details["skipped"] is True
+        assert result.skipped is True
         assert result.normalized_score is None
 
     @pytest.mark.asyncio

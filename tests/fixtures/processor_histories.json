@@ -1023,5 +1023,47 @@
       "assistant_interrupted_turns": [1],
       "user_interrupted_turns": []
     }
+  },
+  {
+    "id": "s2s_audit_user_cotimestamped_with_audio_start_after_interruption",
+    "description": "Based on record 1.1.2/trial_0. S2S pipeline with a short-overlap assistant interruption at turn 1 (sets hold_turn). The next user utterance's audit_log/user event is co-timestamped with audio_start(elevenlabs_user) and sorts first in the stable-sorted history. hold_turn is a cascade-pipeline concept (suppresses late STT chunks from the interrupted session) and must not cause audit_log/user in S2S to consume the turn advance. The 'Yeah, my confirmation is ZK3FFW.' utterance must land at turn 2, not turn 1.",
+    "pipeline_type": "s2s",
+    "history": [
+      {"timestamp_ms": 1000, "source": "elevenlabs", "event_type": "audio_start", "data": {"user": "framework_agent", "audio_timestamp": 1.0}},
+      {"timestamp_ms": 1500, "source": "elevenlabs", "event_type": "audio_end", "data": {"user": "framework_agent", "audio_timestamp": 1.5}},
+      {"timestamp_ms": 2000, "source": "elevenlabs", "event_type": "assistant_speech", "data": {"data": {"text": "Hello, how can I help you?"}}},
+      {"timestamp_ms": 2050, "source": "audit_log", "event_type": "assistant", "data": "Hello, how can I help you?"},
+      {"timestamp_ms": 2500, "source": "elevenlabs", "event_type": "audio_start", "data": {"user": "elevenlabs_user", "audio_timestamp": 2.5}},
+      {"timestamp_ms": 2600, "source": "elevenlabs", "event_type": "user_speech", "data": {"data": {"text": "Hi, I need to change my flight."}}},
+      {"timestamp_ms": 2700, "source": "audit_log", "event_type": "user", "data": "Hi, I need to change my flight."},
+      {"timestamp_ms": 3000, "source": "audit_log", "event_type": "assistant", "data": "Of course, what is your confirmation?"},
+      {"timestamp_ms": 3001, "source": "elevenlabs", "event_type": "audio_start", "data": {"user": "framework_agent", "audio_timestamp": 3.001}},
+      {"timestamp_ms": 3162, "source": "elevenlabs", "event_type": "audio_end", "data": {"user": "elevenlabs_user", "audio_timestamp": 3.162}},
+      {"timestamp_ms": 4800, "source": "elevenlabs", "event_type": "audio_end", "data": {"user": "framework_agent", "audio_timestamp": 4.8}},
+      {"timestamp_ms": 5500, "source": "elevenlabs", "event_type": "assistant_speech", "data": {"data": {"text": "Of course, what is your confirmation?"}}},
+      {"timestamp_ms": 5800, "source": "audit_log", "event_type": "user", "data": "Yeah, my confirmation is ZK3FFW."},
+      {"timestamp_ms": 5800, "source": "elevenlabs", "event_type": "audio_start", "data": {"user": "elevenlabs_user", "audio_timestamp": 5.8}},
+      {"timestamp_ms": 5900, "source": "elevenlabs", "event_type": "user_speech", "data": {"data": {"text": "Yeah, my confirmation is ZK3FFW."}}},
+      {"timestamp_ms": 6500, "source": "elevenlabs", "event_type": "audio_end", "data": {"user": "elevenlabs_user", "audio_timestamp": 6.5}},
+      {"timestamp_ms": 7000, "source": "elevenlabs", "event_type": "connection_state", "data": {"data": {"state": "session_ended"}}}
+    ],
+    "expected": {
+      "transcribed_assistant_turns": {"0": "Hello, how can I help you?", "1": "[assistant interrupts] Of course, what is your confirmation?"},
+      "transcribed_user_turns": {"1": "Hi, I need to change my flight.", "2": "Yeah, my confirmation is ZK3FFW."},
+      "intended_user_turns": {"1": "Hi, I need to change my flight.", "2": "Yeah, my confirmation is ZK3FFW."},
+      "audio_timestamps_assistant_turns": {"0": [[1.0, 1.5]], "1": [[3.001, 4.8]]},
+      "audio_timestamps_user_turns": {"1": [[2.5, 3.162]], "2": [[5.8, 6.5]]},
+      "num_assistant_turns": 2,
+      "num_user_turns": 2,
+      "num_tool_calls": 0,
+      "conversation_trace": [
+        {"role": "assistant", "content": "Hello, how can I help you?", "type": "transcribed", "turn_id": 0},
+        {"role": "user", "content": "Hi, I need to change my flight.", "type": "intended", "turn_id": 1},
+        {"role": "assistant", "content": "[assistant interrupts] Of course, what is your confirmation?", "type": "transcribed", "turn_id": 1},
+        {"role": "user", "content": "Yeah, my confirmation is ZK3FFW.", "type": "intended", "turn_id": 2}
+      ],
+      "assistant_interrupted_turns": [1],
+      "user_interrupted_turns": []
+    }
   }
 ]

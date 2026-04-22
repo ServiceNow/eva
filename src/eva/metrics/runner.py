@@ -9,6 +9,7 @@ from typing import Any
 
 import yaml
 
+from eva.metrics.accuracy.agent_speech_fidelity_s2s import AgentSpeechFidelityS2SMetric
 from eva.metrics.aggregation import compute_record_aggregates, compute_run_level_aggregates
 from eva.metrics.base import BaseMetric, MetricContext
 from eva.metrics.processor import MetricsContextProcessor
@@ -117,6 +118,13 @@ class MetricsRunner:
                 self.metrics.append(metric)
             else:
                 logger.warning(f"Metric '{name}' not found, skipping")
+
+        # For S2S pipelines, swap agent_speech_fidelity with entity-focused variant
+        if self._pipeline_type == PipelineType.S2S:
+            self.metrics = [
+                AgentSpeechFidelityS2SMetric(config=m.config) if m.name == "agent_speech_fidelity" else m
+                for m in self.metrics
+            ]
 
         logger.info(f"Metrics runner initialized with {len(self.metrics)} metrics")
 
@@ -388,12 +396,10 @@ class MetricsRunner:
                 )
 
         # Filter out metrics incompatible with the pipeline type
-        applicable_metrics = metrics_to_run
-        if context.is_audio_native:
-            skipped = [m.name for m in metrics_to_run if m.skip_audio_native]
-            if skipped:
-                logger.info(f"[{record_id}] Skipping metrics incompatible with audio-native pipeline: {skipped}")
-            applicable_metrics = [m for m in metrics_to_run if not m.skip_audio_native]
+        skipped = [m.name for m in metrics_to_run if context.pipeline_type not in m.supported_pipeline_types]
+        if skipped:
+            logger.info(f"[{record_id}] Skipping metrics incompatible with {context.pipeline_type} pipeline: {skipped}")
+        applicable_metrics = [m for m in metrics_to_run if context.pipeline_type in m.supported_pipeline_types]
 
         # Run all metrics in parallel
         tasks = [compute_metric(metric) for metric in applicable_metrics]

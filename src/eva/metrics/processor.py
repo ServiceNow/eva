@@ -106,15 +106,19 @@ class _TurnExtractionState:
     # user_speech lands at the same turn.
     rollback_advance_consumed_by_user: bool = False
 
-    def advance_turn_if_needed(self, from_audio_start: bool = False) -> None:
+    def advance_turn_if_needed(self, from_audio_start: bool = False, bypass_hold: bool = False) -> None:
         """Advance turn if the assistant responded since the last user event.
 
         Called on audio_start(elevenlabs_user) and audit_log/user events.
         After an interruption, hold_turn suppresses one advance from audit_log/user
         (late STT from the interrupted session) but never blocks audio_start
         (the user speaking again always starts a new turn).
+
+        bypass_hold=True is used by S2S pipelines, where audit_log/user carries the
+        S2S model's own transcription of the current utterance, not a late STT chunk
+        from the previous (interrupted) session.
         """
-        if self.hold_turn:
+        if self.hold_turn and not bypass_hold:
             if from_audio_start:
                 # New user speech — clear hold_turn but still advance
                 self.hold_turn = False
@@ -216,7 +220,7 @@ def _handle_audit_log_event(
         # advance so that hold_turn is consumed if set.
         if state.user_audio_open:
             state.assistant_spoke_in_turn = False
-        state.advance_turn_if_needed()
+        state.advance_turn_if_needed(bypass_hold=pipeline_type == PipelineType.S2S)
         turn = state.turn_num
         entry = get_entry_for_audit_log(event, turn)
         existing = context.transcribed_user_turns.get(turn, "")
