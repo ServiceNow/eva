@@ -535,6 +535,11 @@ class SubmitHardwareRequestParams(BaseModel):
                 raise ValueError("laptop_os is required when request_type is laptop_replacement")
             if self.laptop_size is None:
                 raise ValueError("laptop_size is required when request_type is laptop_replacement")
+            if self.monitor_size is not None:
+                raise ValueError(
+                    "monitor_size must be omitted when request_type is laptop_replacement; "
+                    "it is only valid for monitor_bundle"
+                )
             if self.justification != LaptopReplacementReason.lost_or_stolen.value and self.current_asset_tag is None:
                 raise ValueError(
                     "current_asset_tag is required when request_type is laptop_replacement (except when justification is lost_or_stolen)"
@@ -547,6 +552,16 @@ class SubmitHardwareRequestParams(BaseModel):
                 )
             if self.monitor_size is None:
                 raise ValueError("monitor_size is required when request_type is monitor_bundle")
+            if self.laptop_os is not None:
+                raise ValueError(
+                    "laptop_os must be omitted when request_type is monitor_bundle; "
+                    "it is only valid for laptop_replacement"
+                )
+            if self.laptop_size is not None:
+                raise ValueError(
+                    "laptop_size must be omitted when request_type is monitor_bundle; "
+                    "it is only valid for laptop_replacement"
+                )
         return self
 
 
