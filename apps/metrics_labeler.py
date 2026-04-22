@@ -233,7 +233,7 @@ def _metric_stats(metric: str) -> dict:
     records = load_dataset(str(cfg["dataset"]))
     labels = load_labels(cfg["labels"])
     total = len(records) * REVIEWS_PER_RECORD
-    done = sum(min(len(labels.get(r["original_id"], [])), REVIEWS_PER_RECORD) for r in records)
+    done = sum(min(len(labels.get(str(r["id"]), [])), REVIEWS_PER_RECORD) for r in records)
     per_labeler: Counter = Counter()
     for reviews in labels.values():
         for r in reviews:
@@ -317,7 +317,7 @@ def main() -> None:
         )
 
         completed = sum(
-            1 for r in records if len(labels.get(r["original_id"], [])) >= REVIEWS_PER_RECORD
+            1 for r in records if len(labels.get(str(r["id"]), [])) >= REVIEWS_PER_RECORD
         )
         st.caption(f"Metric: **{metric}**")
         st.caption(f"Dataset: `{cfg['dataset'].name}`")
@@ -325,7 +325,7 @@ def main() -> None:
         st.caption(f"Fully reviewed: {completed}/{len(records)}")
 
     record = records[idx]
-    rid = record["original_id"]
+    rid = str(record["id"])
     trace = record["conversation_trace"]
 
     st.title(f"EVA Labeler — {metric}")
