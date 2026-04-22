@@ -312,7 +312,7 @@ def main() -> None:
         idx = st.selectbox(
             "Select record",
             options=list(range(len(records))),
-            format_func=lambda i: f"{i:02d}",
+            format_func=lambda i: f"{records[i]['id']:02d}",
             key=f"record_idx_{metric}",
         )
 
@@ -324,12 +324,24 @@ def main() -> None:
         st.caption(f"Labels file: `{cfg['labels'].name}`")
         st.caption(f"Fully reviewed: {completed}/{len(records)}")
 
+        st.header("Layout")
+        conv_width = st.slider(
+            "Conversation width (%)",
+            min_value=20,
+            max_value=80,
+            value=st.session_state.get("conv_width_pct", 50),
+            step=5,
+            key="conv_width_pct",
+            help="Balance the width of the conversation column vs the judge column.",
+        )
+        st.session_state["_col_ratio"] = (conv_width, 100 - conv_width)
+
     record = records[idx]
     rid = str(record["id"])
     trace = record["conversation_trace"]
 
     st.title(f"EVA Labeler — {metric}")
-    st.caption(f"Domain: **{record.get('domain', 'airline')}** · Record: **{rid}** (#{idx:02d})")
+    st.caption(f"Domain: **{record.get('domain', 'airline')}** · Record: **{rid}** (original_id: {record.get('original_id')})")
 
     reviews = labels.get(rid, [])
     name_norm = labeler_name.strip().lower()
@@ -428,9 +440,10 @@ def _render_per_turn_mode(record, trace, rid, my_review, scope_changed) -> dict:
     st.subheader("Conversation & ratings")
     turns_box = st.container(height=700, border=True)
     with turns_box:
+        ratio = st.session_state.get("_col_ratio", (60, 40))
         for turn_id in ordered_turn_ids:
             st.subheader(f"Turn {turn_id}")
-            left, right = st.columns([3, 2])
+            left, right = st.columns(list(ratio))
 
             with left:
                 render_turn_block(trace, turn_id)
@@ -496,7 +509,8 @@ def _render_whole_trace_mode(metric, record, trace, rid, my_review, scope_change
     st.subheader("Conversation & judges")
 
     pane_height = 700
-    conv_col, judges_col = st.columns([3, 3])
+    ratio = st.session_state.get("_col_ratio", (50, 50))
+    conv_col, judges_col = st.columns(list(ratio))
 
     with conv_col:
         st.markdown("**Conversation**")
