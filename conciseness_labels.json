@@ -1,0 +1,152 @@
+{
+  "13": [
+    {
+      "labeler": "Nidhi",
+      "target": 1,
+      "per_turn": {
+        "1": {
+          "rating": 1,
+          "failure_modes": [
+            "verbosity_or_filler",
+            "contextually_disproportionate_detail"
+          ],
+          "explanation": "For intent confirmation the assistant's response is too long. The assistant harping on about the steps it will take after getting the reservation details is unnecessary."
+        },
+        "2": {
+          "rating": 1,
+          "failure_modes": [
+            "contextually_disproportionate_detail",
+            "excess_information_density",
+            "verbosity_or_filler"
+          ],
+          "explanation": "The assistant's response contains many reservation details, making it difficult for a listener to process in real time."
+        },
+        "3": {
+          "rating": 1,
+          "failure_modes": [
+            "verbosity_or_filler",
+            "over_enumeration_or_list_exhaustion"
+          ],
+          "explanation": "Not sure if the assistant should open with policy correction. Also the response narrates what the agent is going to do. The flight details are too many-difficult to follow in a voice context. "
+        },
+        "4": {
+          "rating": 1,
+          "failure_modes": [
+            "verbosity_or_filler",
+            "excess_information_density",
+            "contextually_disproportionate_detail"
+          ],
+          "explanation": "The turn should have ended after the assistant said no to the change fee waiver. The response is repetitive and puts the user in a choice overload situation."
+        },
+        "5": {
+          "rating": 1,
+          "failure_modes": [
+            "verbosity_or_filler",
+            "over_enumeration_or_list_exhaustion",
+            "excess_information_density"
+          ],
+          "explanation": "The assistant unnecessarily narrates what it is going to do. Flight details contains too much info when the focus should have been on getting the flight with the cheapest fare diff."
+        },
+        "6": {
+          "rating": 2,
+          "failure_modes": [
+            "verbosity_or_filler"
+          ],
+          "explanation": "There's a lot of repetition in confirmation of booking-- about fees details, confirmation code, flight details. Too much for a wrap-up turn."
+        }
+      },
+      "updated_at": "2026-04-22T10:42:45.758736Z"
+    }
+  ],
+  "14": [
+    {
+      "labeler": "Nidhi",
+      "target": 2,
+      "per_turn": {
+        "1": {
+          "rating": 2,
+          "failure_modes": [
+            "verbosity_or_filler"
+          ],
+          "explanation": "Response is brief just got duplicated by some error."
+        },
+        "2": {
+          "rating": 1,
+          "failure_modes": [
+            "contextually_disproportionate_detail",
+            "excess_information_density"
+          ],
+          "explanation": "The response contains extra info regarding the booking and focuses too much on 'fees'."
+        },
+        "3": {
+          "rating": 1,
+          "failure_modes": [
+            "excess_information_density",
+            "contextually_disproportionate_detail"
+          ],
+          "explanation": "The response contains a lot of irrelevant info such as details of the search the agent is making, flight info and flight change fees."
+        },
+        "4": {
+          "rating": 2,
+          "failure_modes": [
+            "verbosity_or_filler"
+          ],
+          "explanation": "The assistant has run two check and informed the user about it. "
+        },
+        "5": {
+          "rating": 3,
+          "failure_modes": [],
+          "explanation": "Good wrap up response."
+        }
+      },
+      "updated_at": "2026-04-22T10:42:11.366763Z"
+    }
+  ],
+  "12": [
+    {
+      "labeler": "Nidhi",
+      "target": 1,
+      "per_turn": {
+        "1": {
+          "rating": 1,
+          "failure_modes": [
+            "verbosity_or_filler",
+            "contextually_disproportionate_detail"
+          ],
+          "explanation": "Entire response is duplicated. Also it contains extra info about the steps the assiatant is going to undertake."
+        },
+        "2": {
+          "rating": 1,
+          "failure_modes": [
+            "verbosity_or_filler",
+            "contextually_disproportionate_detail",
+            "excess_information_density"
+          ],
+          "explanation": "Duplicated response. The assistant gives too much unrequested detail, narrates its next steps and asks a confusing multi-part question, making it hard for the user to follow."
+        },
+        "3": {
+          "rating": 2,
+          "failure_modes": [
+            "excess_information_density",
+            "over_enumeration_or_list_exhaustion"
+          ],
+          "explanation": "The flight options overload the user with detail instead of summarizing key points and inviting follow-up."
+        },
+        "4": {
+          "rating": 2,
+          "failure_modes": [
+            "excess_information_density",
+            "contextually_disproportionate_detail"
+          ],
+          "explanation": "Lot of info about fare fees and extra info about irrelevant flight."
+        },
+        "5": {
+          "rating": 3,
+          "failure_modes": [],
+          "explanation": "Works as a wrap up response."
+        }
+      },
+      "updated_at": "2026-04-22T11:01:35.623400Z"
+    }
+  ]
+}
