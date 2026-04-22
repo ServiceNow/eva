@@ -565,6 +565,17 @@ class RunConfig(BaseSettings):
         description="Pipeline (STT + LLM + TTS), speech-to-speech, or audio-LLM model configuration",
     )
 
+    # Framework selection
+    framework: Literal["pipecat", "openai_realtime", "gemini_live"] = Field(
+        "pipecat",
+        description=(
+            "Agent framework to use for the assistant server."
+            "'pipecat' (default): Pipecat pipeline."
+            "'openai_realtime': OpenAI Realtime API directly."
+            "'gemini_live': Gemini Live API via google-genai."
+        ),
+    )
+
     # Run identifier
     run_id: str = Field(
         "timestamp and model name(s)",  # Overwritten by _set_default_run_id()

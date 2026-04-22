@@ -1,4 +1,4 @@
-"""Tests for AssistantServer."""
+"""Tests for PipecatAssistantServer."""
 
 import asyncio
 import json
@@ -9,12 +9,12 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from eva.assistant.agentic.audit_log import AuditLog
-from eva.assistant.server import SAMPLE_RATE, AssistantServer
+from eva.assistant.pipecat_server import SAMPLE_RATE, PipecatAssistantServer
 
 
 def _make_server(tmp_path: Path):
-    """Build a lightweight AssistantServer without invoking __init__ (avoids Pipecat I/O)."""
-    srv = object.__new__(AssistantServer)
+    """Build a lightweight PipecatAssistantServer without invoking __init__ (avoids Pipecat I/O)."""
+    srv = object.__new__(PipecatAssistantServer)
     srv.output_dir = tmp_path
     srv.audit_log = AuditLog()
     srv.agentic_system = None
@@ -157,7 +157,7 @@ class TestSaveOutputs:
         # Add an entry so audit_log is non-trivial
         srv.audit_log.append_user_input("Hello")
 
-        await srv._save_outputs()
+        await srv.save_outputs()
 
         # Audit log contains our entry
         audit = json.loads((tmp_path / "audit_log.json").read_text())
@@ -181,7 +181,7 @@ class TestSaveOutputs:
         mock_system = MagicMock()
         srv.agentic_system = mock_system
 
-        await srv._save_outputs()
+        await srv.save_outputs()
 
         mock_system.save_agent_perf_stats.assert_called_once()
 

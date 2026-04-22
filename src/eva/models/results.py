@@ -47,8 +47,12 @@ class ConversationResult(BaseModel):
 
     # Latency statistics
     llm_latency: LatencyStats | None = Field(None, description="LLM latency statistics")
-    stt_latency: LatencyStats | None = Field(None, description="STT latency statistics")
-    tts_latency: LatencyStats | None = Field(None, description="TTS latency statistics")
+    stt_latency: LatencyStats | None = Field(None, description="STT latency statistics (cascade pipelines)")
+    tts_latency: LatencyStats | None = Field(None, description="TTS latency statistics (cascade pipelines)")
+    model_response_latency: LatencyStats | None = Field(
+        None,
+        description="Time from user speech end to first model audio (s2s/realtime frameworks)",
+    )
 
     # Timing
     started_at: datetime = Field(..., description="When the conversation started")
@@ -82,10 +86,14 @@ class MetricScore(BaseModel):
     """Score for a single metric."""
 
     name: str = Field(..., description="Metric name")
-    score: float = Field(..., description="Raw score value")
+    score: float | None = Field(None, description="Raw score value (None when the metric was skipped)")
     normalized_score: float | None = Field(None, description="Normalized score (0-1 scale)")
     details: dict[str, Any] = Field(default_factory=dict, description="Additional metric details")
     error: str | None = Field(None, description="Error message if metric computation failed")
+    skipped: bool = Field(
+        False,
+        description="True when the metric had no applicable data to score (distinct from errored)",
+    )
     sub_metrics: dict[str, "MetricScore"] | None = Field(
         None, description="Optional sub-metric breakdowns, aggregated generically by the runner"
     )

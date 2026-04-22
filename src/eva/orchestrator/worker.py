@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from eva.assistant.server import AssistantServer
+from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
 from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
@@ -18,6 +18,30 @@ from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import add_record_log_file, current_record_id, get_logger, remove_record_log_file
 
 logger = get_logger(__name__)
+
+
+def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
+    """Return the server class for the given framework name.
+
+    Uses lazy imports to avoid importing heavy dependencies (pipecat, openai, etc.)
+    unless the framework is actually selected.
+    """
+    if framework == "pipecat":
+        from eva.assistant.pipecat_server import PipecatAssistantServer
+
+        return PipecatAssistantServer
+    elif framework == "openai_realtime":
+        from eva.assistant.openai_realtime_server import OpenAIRealtimeAssistantServer
+
+        return OpenAIRealtimeAssistantServer
+    elif framework == "gemini_live":
+        from eva.assistant.gemini_live_server import GeminiLiveAssistantServer
+
+        return GeminiLiveAssistantServer
+    else:
+        raise ValueError(
+            f"Unknown framework: {framework!r}. Supported: pipecat, openai_realtime, gemini_live, elevenlabs, deepgram"
+        )
 
 
 def _percentile(sorted_data: list[float], p: float) -> float:
@@ -204,6 +228,7 @@ class ConversationWorker:
         llm_latency = self._calculate_llm_latency()
         stt_latency = self._calculate_stt_latency()
         tts_latency = self._calculate_tts_latency()
+        model_response_latency = self._calculate_model_response_latency()
 
         return ConversationResult(
             record_id=self.record.id,
@@ -213,6 +238,7 @@ class ConversationWorker:
             llm_latency=llm_latency,
             stt_latency=stt_latency,
             tts_latency=tts_latency,
+            model_response_latency=model_response_latency,
             started_at=started_at,
             ended_at=ended_at,
             duration_seconds=(ended_at - started_at).total_seconds(),
@@ -223,7 +249,7 @@ class ConversationWorker:
             transcript_path=str(self.output_dir / "transcript.jsonl"),
             audit_log_path=str(self.output_dir / "audit_log.json"),
             conversation_log_path=str(self.output_dir / "logs.log"),
-            pipecat_logs_path=str(self.output_dir / "pipecat_logs.jsonl"),
+            pipecat_logs_path=self._resolve_framework_logs_path(),
             elevenlabs_logs_path=str(self.output_dir / "elevenlabs_events.jsonl"),
             num_turns=self._conversation_stats.get("num_turns", 0),
             num_tool_calls=self._conversation_stats.get("num_tool_calls", 0),
@@ -234,8 +260,9 @@ class ConversationWorker:
         )
 
     async def _start_assistant(self) -> None:
-        """Start the assistant server."""
-        self._assistant_server = AssistantServer(
+        """Start the assistant server using the configured framework."""
+        server_cls = _get_server_class(self.config.framework)
+        self._assistant_server = server_cls(
             current_date_time=self.record.current_date_time,
             pipeline_config=self.config.model,
             agent=self.agent,
@@ -277,6 +304,14 @@ class ConversationWorker:
 
         return ended_reason
 
+    def _resolve_framework_logs_path(self) -> str:
+        """Resolve the framework/pipecat logs path, preferring framework_logs.jsonl."""
+        framework_path = self.output_dir / "framework_logs.jsonl"
+        pipecat_path = self.output_dir / "pipecat_logs.jsonl"
+        if framework_path.exists():
+            return str(framework_path)
+        return str(pipecat_path)
+
     async def _cleanup(self) -> None:
         """Clean up resources."""
         if self._assistant_server:
@@ -290,13 +325,11 @@ class ConversationWorker:
             self._user_simulator = None
 
     def _calculate_stt_latency(self) -> LatencyStats | None:
-        """Calculate STT latency statistics from Pipecat metrics.
+        """Calculate STT latency statistics from pipecat_metrics.jsonl.
 
-        Uses ProcessingMetricsData from pipecat_metrics.jsonl, which measures
-        actual STT processing time (more accurate than timestamp parsing).
-
-        Returns:
-            LatencyStats if pipecat metrics exist, None otherwise
+        Accepts both Pipecat-native ProcessingMetricsData entries (written by
+        MetricsFileObserver) and LatencyMetric entries with stage="stt" (written
+        by MetricsLogWriter for non-Pipecat cascade frameworks).
         """
         metrics_path = self.output_dir / "pipecat_metrics.jsonl"
         if not metrics_path.exists():
@@ -307,18 +340,19 @@ class ConversationWorker:
             with open(metrics_path) as f:
                 for line in f:
                     metric = json.loads(line)
-                    # Use ProcessingMetricsData for STT service
+                    value_sec = metric.get("value")
+                    if not value_sec or not (0 < value_sec < 30):
+                        continue
                     if metric.get("type") == "ProcessingMetricsData" and "STTService" in metric.get("processor", ""):
-                        value_sec = metric.get("value")
-                        if value_sec and 0 < value_sec < 30:
-                            latencies.append(value_sec * 1000)  # Convert to ms
+                        latencies.append(value_sec * 1000)
+                    elif metric.get("type") == "LatencyMetric" and metric.get("stage") == "stt":
+                        latencies.append(value_sec * 1000)
 
             if not latencies:
                 return None
 
             latencies.sort()
             n = len(latencies)
-
             return LatencyStats(
                 mean_ms=sum(latencies) / n,
                 p50_ms=_percentile(latencies, 50),
@@ -332,14 +366,10 @@ class ConversationWorker:
             return None
 
     def _calculate_tts_latency(self) -> LatencyStats | None:
-        """Calculate TTS latency statistics from Pipecat metrics.
+        """Calculate TTS latency statistics from pipecat_metrics.jsonl.
 
-        Uses TTFBMetricsData (Time To First Byte) from pipecat_metrics.jsonl,
-        which measures time until first audio chunk is available.
-        This is what users perceive as TTS latency.
-
-        Returns:
-            LatencyStats if pipecat metrics exist, None otherwise
+        Accepts both Pipecat-native TTFBMetricsData entries and LatencyMetric
+        entries with stage="tts".
         """
         metrics_path = self.output_dir / "pipecat_metrics.jsonl"
         if not metrics_path.exists():
@@ -350,20 +380,19 @@ class ConversationWorker:
             with open(metrics_path) as f:
                 for line in f:
                     metric = json.loads(line)
-                    # Use TTFBMetricsData for TTS service (time to first audio byte)
+                    value_sec = metric.get("value")
+                    if not value_sec or not (0 < value_sec < 10):
+                        continue
                     if metric.get("type") == "TTFBMetricsData" and "TTSService" in metric.get("processor", ""):
-                        value_sec = metric.get("value")
-                        # Filter out invalid/zero values and sanity check
-                        if value_sec and 0 < value_sec < 10:
-                            latencies.append(value_sec * 1000)  # Convert to ms
+                        latencies.append(value_sec * 1000)
+                    elif metric.get("type") == "LatencyMetric" and metric.get("stage") == "tts":
+                        latencies.append(value_sec * 1000)
 
             if not latencies:
                 return None
 
-            # Calculate statistics
             latencies.sort()
             n = len(latencies)
-
             return LatencyStats(
                 mean_ms=sum(latencies) / n,
                 p50_ms=_percentile(latencies, 50),
@@ -374,6 +403,45 @@ class ConversationWorker:
 
         except Exception as e:
             logger.warning(f"Failed to calculate TTS latency: {e}")
+            return None
+
+    def _calculate_model_response_latency(self) -> LatencyStats | None:
+        """Calculate model response latency for s2s/realtime frameworks.
+
+        Reads LatencyMetric entries with stage="model_response" from
+        pipecat_metrics.jsonl. These measure time from user speech end to
+        first audio chunk from the model — the end-to-end latency users perceive
+        for s2s models where STT and TTS are not separate stages.
+        """
+        metrics_path = self.output_dir / "pipecat_metrics.jsonl"
+        if not metrics_path.exists():
+            return None
+
+        try:
+            latencies = []
+            with open(metrics_path) as f:
+                for line in f:
+                    metric = json.loads(line)
+                    if metric.get("type") == "LatencyMetric" and metric.get("stage") == "model_response":
+                        value_sec = metric.get("value")
+                        if value_sec and 0 < value_sec < 30:
+                            latencies.append(value_sec * 1000)
+
+            if not latencies:
+                return None
+
+            latencies.sort()
+            n = len(latencies)
+            return LatencyStats(
+                mean_ms=sum(latencies) / n,
+                p50_ms=_percentile(latencies, 50),
+                p95_ms=_percentile(latencies, 95),
+                p99_ms=_percentile(latencies, 99),
+                total_calls=n,
+            )
+
+        except Exception as e:
+            logger.warning(f"Failed to calculate model response latency: {e}")
             return None
 
     def _calculate_llm_latency(self) -> LatencyStats | None:

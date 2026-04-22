@@ -1,61 +1,61 @@
 {"timestamp": 1772403723723, "sequence": 1, "type": "connection_state", "data": {"state": "connected", "details": {"server_url": "ws://localhost:10000/ws"}}}
 {"timestamp": 1772403724132, "sequence": 2, "type": "connection_state", "data": {"state": "session_started", "details": {}}}
-{"timestamp": 1772403724647, "sequence": 3, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772403724.647605}
-{"timestamp": 1772403727245, "sequence": 4, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772403727.245576}
+{"timestamp": 1772403724647, "sequence": 3, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772403724.647605}
+{"timestamp": 1772403727245, "sequence": 4, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772403727.245576}
 {"timestamp": 1772403727939, "sequence": 5, "type": "assistant_speech", "data": {"text": "Hello, how can I help you today?", "source": "pipecat_assistant"}}
 {"timestamp": 1772403727947, "sequence": 6, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772403727.94754}
 {"timestamp": 1772403728189, "sequence": 7, "type": "user_speech", "data": {"text": "Hi, I need to change my flight to March twenty fifth.", "source": "elevenlabs_agent"}}
 {"timestamp": 1772403731368, "sequence": 8, "event_type": "audio_end", "user": "elevenlabs_user", "audio_timestamp": 1772403731.368855}
-{"timestamp": 1772403733334, "sequence": 9, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772403733.3349462}
-{"timestamp": 1772403739691, "sequence": 10, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772403739.691956}
+{"timestamp": 1772403733334, "sequence": 9, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772403733.3349462}
+{"timestamp": 1772403739691, "sequence": 10, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772403739.691956}
 {"timestamp": 1772403742595, "sequence": 11, "type": "assistant_speech", "data": {"text": "Sure. First, I'll need to pull up your reservation. What's your six-character confirmation number and the last name on the booking?", "source": "pipecat_assistant"}}
 {"timestamp": 1772403742613, "sequence": 12, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772403742.613776}
 {"timestamp": 1772403743656, "sequence": 13, "type": "user_speech", "data": {"text": "The confirmation is Z K three F F W, and the last name is Rodriguez.", "source": "elevenlabs_agent"}}
 {"timestamp": 1772403749434, "sequence": 14, "event_type": "audio_end", "user": "elevenlabs_user", "audio_timestamp": 1772403749.434989}
-{"timestamp": 1772403751789, "sequence": 15, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772403751.7891579}
-{"timestamp": 1772403761402, "sequence": 16, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772403761.4023108}
+{"timestamp": 1772403751789, "sequence": 15, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772403751.7891579}
+{"timestamp": 1772403761402, "sequence": 16, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772403761.4023108}
 {"timestamp": 1772403763780, "sequence": 17, "type": "assistant_speech", "data": {"text": "Thanks, Rodriguez. I want to make sure I have the confirmation number exactly right. Could you please say the full code again, one character at a time? It should be six letters and numbers.", "source": "pipecat_assistant"}}
 {"timestamp": 1772403763783, "sequence": 18, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772403763.783529}
 {"timestamp": 1772403764544, "sequence": 19, "type": "user_speech", "data": {"text": "[slow] Zulu. Kilo. Three. Foxtrot. Foxtrot. Whiskey.  \nLast name Rodriguez.", "source": "elevenlabs_agent"}}
-{"timestamp": 1772403776159, "sequence": 20, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772403776.159976}
-{"timestamp": 1772403794620, "sequence": 21, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772403794.620748}
+{"timestamp": 1772403776159, "sequence": 20, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772403776.159976}
+{"timestamp": 1772403794620, "sequence": 21, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772403794.620748}
 {"timestamp": 1772403797398, "sequence": 22, "type": "assistant_speech", "data": {"text": "I've pulled up Samantha Rodriguez. Confirmation code Zulu Kilo three Foxtrot Foxtrot Whiskey. You're confirmed on Skyway Flight Sierra Kilo six twenty-one on March twentieth with C twenty-two A. To move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer? Morning, afternoon, or evening?", "source": "pipecat_assistant"}}
 {"timestamp": 1772403797447, "sequence": 23, "event_type": "audio_end", "user": "elevenlabs_user", "audio_timestamp": 1772403797.4478238}
 {"timestamp": 1772403797504, "sequence": 24, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772403797.504352}
 {"timestamp": 1772403799084, "sequence": 25, "type": "user_speech", "data": {"text": "Yeah, same route, Austin to L A X only.  \nAfternoon, as long as I arrive by four p m Pacific.", "source": "elevenlabs_agent"}}
 {"timestamp": 1772403804704, "sequence": 26, "event_type": "audio_end", "user": "elevenlabs_user", "audio_timestamp": 1772403804.7048872}
-{"timestamp": 1772403810133, "sequence": 27, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772403810.133575}
-{"timestamp": 1772403845347, "sequence": 28, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772403845.347048}
+{"timestamp": 1772403810133, "sequence": 27, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772403810.133575}
+{"timestamp": 1772403845347, "sequence": 28, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772403845.347048}
 {"timestamp": 1772403848829, "sequence": 29, "type": "assistant_speech", "data": {"text": "For Wednesday, March twenty-fifth, Austin to Los Angeles, arriving by four PM Pacific, I have two good nonstop afternoon options. Option one is Skyway Flight Sierra Kilo seven thirty-nine. Departs one forty-five PM Austin time, arrives three PM Los Angeles time. Main cabin fare is three hundred forty dollars. Option two is Skyway Flight Sierra Kilo seven eighty-one. Departs two thirty-five PM Austin time, arrives three fifty-five PM Los Angeles time. Main cabin fare is five hundred twenty dollars. Since this is a voluntary change in main cabin, there's a seventy-five dollar change fee, plus any fare difference. Which option would you like me to book?", "source": "pipecat_assistant"}}
 {"timestamp": 1772403848829, "sequence": 30, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772403848.829487}
 {"timestamp": 1772403850219, "sequence": 31, "type": "user_speech", "data": {"text": "Before I pick, I need the total cost to change each option, all in, including the change fee and fare difference.", "source": "elevenlabs_agent"}}
 {"timestamp": 1772403855549, "sequence": 32, "event_type": "audio_end", "user": "elevenlabs_user", "audio_timestamp": 1772403855.5498629}
-{"timestamp": 1772403860055, "sequence": 33, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772403860.0551932}
-{"timestamp": 1772403894073, "sequence": 34, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772403894.0739589}
+{"timestamp": 1772403860055, "sequence": 33, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772403860.0551932}
+{"timestamp": 1772403894073, "sequence": 34, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772403894.0739589}
 {"timestamp": 1772403897950, "sequence": 35, "type": "assistant_speech", "data": {"text": "For your current main cabin ticket, you paid two hundred and sixty dollars for flight Sierra Kilo seven thirty-nine at one forty-five PM. The new fare is three hundred and forty dollars. That's an eighty dollar fare difference, plus the seventy-five dollar change fee. So the total to change is one hundred and fifty-five dollars. For flight Sierra Kilo seven eighty-one at two thirty-five PM, the new fare is five hundred and twenty dollars. That's a two hundred and sixty dollar fare difference, plus the seventy-five dollar change fee. So the total to change is three hundred and thirty-five dollars. Those totals are based on the current available fares right now. Which one should I switch you to?[background noise]", "source": "pipecat_assistant"}}
 {"timestamp": 1772403897955, "sequence": 36, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772403897.955505}
 {"timestamp": 1772403901979, "sequence": 37, "type": "user_speech", "data": {"text": "Neither of those works; my max total to change is one hundred twenty dollars.  \nCan you look for any other Austin to L A X flight on March twenty-fifth that arrives by four p m Pacific, keeps it under one hundred twenty total, and has a window seat available?", "source": "elevenlabs_agent"}}
 {"timestamp": 1772403913317, "sequence": 38, "event_type": "audio_end", "user": "elevenlabs_user", "audio_timestamp": 1772403913.3170938}
-{"timestamp": 1772403930889, "sequence": 39, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772403930.889625}
-{"timestamp": 1772403962091, "sequence": 40, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772403962.091439}
+{"timestamp": 1772403930889, "sequence": 39, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772403930.889625}
+{"timestamp": 1772403962091, "sequence": 40, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772403962.091439}
 {"timestamp": 1772403964874, "sequence": 41, "type": "assistant_speech", "data": {"text": "On March twenty-fifth, to keep your total change cost at one hundred twenty dollars or less. The only option I can see is an earlier non-stop. Skyway flight Sierra Kilo seven zero three. Departs eight fifteen AM Austin time, arrives nine twenty-five AM Los Angeles time. In main cabin, the fare is three hundred dollars, so your total to change would be one hundred fifteen dollars, which is the seventy-five dollar change, fee plus a forty dollar fare difference. Window seats are showing as available. If that morning arrival works for you, I can switch you to that flight and request a window seat. Do you want me to book it?", "source": "pipecat_assistant"}}
 {"timestamp": 1772403964892, "sequence": 42, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772403964.8924348}
 {"timestamp": 1772403966378, "sequence": 43, "type": "user_speech", "data": {"text": "That works.  \nPlease move me to Sierra Kilo seven zero three on March twenty-fifth, and I need a confirmed window seat, not just a request.", "source": "elevenlabs_agent"}}
 {"timestamp": 1772403974693, "sequence": 44, "event_type": "audio_end", "user": "elevenlabs_user", "audio_timestamp": 1772403974.69313}
-{"timestamp": 1772403978431, "sequence": 45, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772403978.431253}
-{"timestamp": 1772403992311, "sequence": 46, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772403992.311546}
+{"timestamp": 1772403978431, "sequence": 45, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772403978.431253}
+{"timestamp": 1772403992311, "sequence": 46, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772403992.311546}
 {"timestamp": 1772403994920, "sequence": 47, "type": "assistant_speech", "data": {"text": "I can do that. The total to change to Skyway flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth is one hundred fifteen dollars, which is the seventy-five dollar change fee, plus a forty dollar fare difference. Do I have your okay to charge that one hundred fifteen dollars and rebook you now?", "source": "pipecat_assistant"}}
 {"timestamp": 1772403994942, "sequence": 48, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772403994.942067}
 {"timestamp": 1772403996248, "sequence": 49, "type": "user_speech", "data": {"text": "Yes, you have my okay to charge one hundred fifteen and rebook me on that flight, as long as you assign a specific window seat.", "source": "elevenlabs_agent"}}
 {"timestamp": 1772404001442, "sequence": 50, "event_type": "audio_end", "user": "elevenlabs_user", "audio_timestamp": 1772404001.442026}
-{"timestamp": 1772404008294, "sequence": 51, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772404008.294615}
-{"timestamp": 1772404031788, "sequence": 52, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772404031.788522}
+{"timestamp": 1772404008294, "sequence": 51, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772404008.294615}
+{"timestamp": 1772404031788, "sequence": 52, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772404031.788522}
 {"timestamp": 1772404034248, "sequence": 53, "type": "assistant_speech", "data": {"text": "Mm-hmm ... I rebooked you to Skyway Flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth, Austin to Los Angeles. It departs at eight fifteen AM Austin time and arrives at nine twenty-five AM Los Angeles time. I charged a total of one hundred fifteen dollars, made up of the seventy-five dollar change fee plus a forty dollar fare difference. And you now have a confirmed window seat, seat twenty-one A. Your confirmation number remains Zulu Kilo three Foxtrot Foxtrot Whiskey.", "source": "pipecat_assistant"}}
 {"timestamp": 1772404034250, "sequence": 54, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772404034.250272}
 {"timestamp": 1772404035171, "sequence": 55, "type": "user_speech", "data": {"text": "Perfect, thanks for getting that done.  \n\nCan you help me with anything else on this reservation today?", "source": "elevenlabs_agent"}}
 {"timestamp": 1772404039691, "sequence": 56, "event_type": "audio_end", "user": "elevenlabs_user", "audio_timestamp": 1772404039.691183}
-{"timestamp": 1772404042197, "sequence": 57, "event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1772404042.1977642}
-{"timestamp": 1772404052742, "sequence": 58, "event_type": "audio_end", "user": "pipecat_agent", "audio_timestamp": 1772404052.7429702}
+{"timestamp": 1772404042197, "sequence": 57, "event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1772404042.1977642}
+{"timestamp": 1772404052742, "sequence": 58, "event_type": "audio_end", "user": "framework_agent", "audio_timestamp": 1772404052.7429702}
 {"timestamp": 1772404056031, "sequence": 59, "type": "assistant_speech", "data": {"text": "You're welcome. Yes, I can help. Right now, you have seat twenty-one A and no checked bags or special meal on the reservation. Do you want to add a checked bag or request a special meal?", "source": "pipecat_assistant"}}
 {"timestamp": 1772404056046, "sequence": 60, "event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1772404056.046836}
 {"timestamp": 1772404056898, "sequence": 61, "type": "user_speech", "data": {"text": "No, I do not want to add anything else. Thanks for your help, bye.", "source": "elevenlabs_agent"}}

@@ -51,7 +51,7 @@ from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Pipeline sample rate (matches server.py SAMPLE_RATE)
+# Pipeline sample rate (matches pipecat_server.py SAMPLE_RATE)
 PIPELINE_SAMPLE_RATE = 24000
 
 # Minimum audio size to process (< 10ms of 24kHz 16-bit mono is noise/empty)
@@ -198,7 +198,7 @@ class AudioLLMProcessor(FrameProcessor):
         self._current_query_task: asyncio.Task | None = None
         self._interrupted = asyncio.Event()
 
-        # Optional callback for transcript saving (set by server.py)
+        # Optional callback for transcript saving (set by pipecat_server.py)
         self.on_assistant_response: Awaitable | None = None
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
@@ -233,7 +233,7 @@ class AudioLLMProcessor(FrameProcessor):
     async def process_complete_user_turn(self, text_from_aggregator: str) -> None:
         """Process a complete user turn with audio.
 
-        Called by the on_user_turn_stopped event handler in server.py.
+        Called by the on_user_turn_stopped event handler in pipecat_server.py.
         The text_from_aggregator is typically empty since there is no STT;
 
         Args:
@@ -425,7 +425,7 @@ Rules:
         base_url, _transcription_url_counter = _resolve_url(params, _transcription_url_counter)
         self._client: AsyncOpenAI = AsyncOpenAI(api_key=self._api_key, base_url=base_url)
 
-        # Callback for when transcription is ready (set by server.py)
+        # Callback for when transcription is ready (set by pipecat_server.py)
         self.on_transcription: Any | None = None
 
         # Track background transcription tasks so they can complete even during interruptions
