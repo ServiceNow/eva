@@ -112,9 +112,13 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         # User speech start timestamp from audio_interface (source of truth)
         self._audio_interface_speech_start_ts: str | None = None
 
-        self._model: str = self.pipeline_config.s2s_params.get("model")
+        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
+            s2s_params = self.pipeline_config.s2s_params
+        else:
+            logger.error("Pipeline config is not SpeechToSpeechConfig")
+            return
 
-        assert isinstance(self.pipeline_config, SpeechToSpeechConfig), "Pipeline config must be SpeechToSpeechConfig"
+        self._model: str = s2s_params["model"]
 
     async def start(self) -> None:
         """Start the FastAPI WebSocket server."""

@@ -63,11 +63,13 @@ After calling `super().__init__()`, narrow the config type and initialize state:
 ```python
 def __init__(self, **kwargs):
     super().__init__(**kwargs)
-    assert isinstance(self.pipeline_config, SpeechToSpeechConfig), (
-        "MyServer requires SpeechToSpeechConfig"
-    )
-    self._audio_sample_rate = 24000  # match  recording rate
-    self._model = self.pipeline_config.s2s_params["model"] # model is required in the s2s params config
+    if isinstance(self.pipeline_config, SpeechToSpeechConfig):
+        s2s_params = self.pipeline_config.s2s_params
+    else:
+        logger.error("Pipeline config is not SpeechToSpeechConfig")
+        return
+    self._model = s2s_params["model"] # model is required in the s2s params config
+    self._audio_sample_rate = SAMPLE_RATE  # match  recording rate
     self._fw_log: FrameworkLogWriter | None = None
     self._metrics_log: MetricsLogWriter | None = None
     # ... other setup
@@ -264,11 +266,11 @@ as instance attributes. Both write to files inside `self.output_dir`.
 Record turn boundaries and assistant text for downstream processors:
 
 ```python
-self._fw_log.turn_start(timestamp_ms=...)                    # when user turn begins; timestamp_ms is int | None
-self._fw_log.turn_end(was_interrupted=False, timestamp_ms=...) # when assistant finishes; timestamp_ms is int | None
+self._fw_log.turn_start(timestamp_ms=...)                    # when user turn begins; timestamp_ms is int | None (Optional - not used in processing)
+self._fw_log.turn_end(was_interrupted=False, timestamp_ms=...) # when assistant finishes; timestamp_ms is int | None (Optional - not used in processing)
 self._fw_log.llm_response(text)                              # full assistant response text
-self._fw_log.tts_text(text)                                  # text actually spoken (if interrupted, the partial text)
-self._fw_log.s2s_transcript(text, timestamp_ms=...)          # S2S transcript (what was actually spoken for s2s models that were interrupted); timestamp_ms is int | None
+self._fw_log.tts_text(text)                                  # text sent to TTS API
+self._fw_log.s2s_transcript(text, timestamp_ms=...)          # S2S transcript (what was actually spoken for s2s models that were interrupted); timestamp_ms is int | None (Optional - not used in processing)
 ```
 
 ### Metrics log (`pipecat_metrics.jsonl`)
@@ -358,11 +360,7 @@ self.pipeline_config.s2s            # model identifier string
 self.pipeline_config.s2s_params     # dict of additional params (api_key, voice, model, etc.)
 ```
 
-Assert the type in `__init__` so misconfiguration fails loudly:
-
-```python
-assert isinstance(self.pipeline_config, SpeechToSpeechConfig)
-```
+Return if the config is not `SpeechToSpeechConfig`.
 
 Server should be documented in the relevant `configs/` YAML with `framework:
 my_framework` and `model: {s2s: my-model-id, s2s_params: {...}}`.
@@ -411,8 +409,12 @@ class MyFrameworkAssistantServer(AbstractAssistantServer):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        assert isinstance(self.pipeline_config, SpeechToSpeechConfig)
-        self._model = self.pipeline_config.s2s_params.get("model", "my-default")
+        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
+            s2s_params = self.pipeline_config.s2s_params
+        else:
+            logger.error("Pipeline config is not SpeechToSpeechConfig")
+            return
+        self._model = s2s_params["model"]
         self._app: FastAPI | None = None
         self._server: uvicorn.Server | None = None
         self._server_task: asyncio.Task | None = None

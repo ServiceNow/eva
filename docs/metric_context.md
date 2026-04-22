@@ -314,9 +314,9 @@ Minor discrepancies are still possible (turn IDs off by one, audio timestamps no
 Benchmark Execution:
   ├─ EvaluationRecord (dataset.jsonl)
   │  ├─ user_goal, user_persona, scenario_db → MetricContext
-  │  └─ Feeds to PipecatAssistantServer + UserSimulator
+  │  └─ Feeds to AssistantServer + UserSimulator
   │
-  ├─ PipecatAssistantServer writes:
+  ├─ AssistantServer writes:
   │  ├─ audit_log.json (tool calls, user/assistant turns)
   │  ├─ pipecat_events.jsonl (TTS text, turn boundaries)
   │  ├─ response_latencies.json (response speed data)
