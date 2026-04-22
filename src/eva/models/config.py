@@ -347,15 +347,13 @@ class RunConfig(BaseSettings):
     )
 
     # Framework selection
-    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "deepgram"] = Field(
+    framework: Literal["pipecat", "openai_realtime", "gemini_live"] = Field(
         "pipecat",
         description=(
-            "Agent framework to use for the assistant server. "
-            "'pipecat' (default): Pipecat pipeline. "
-            "'openai_realtime': OpenAI Realtime API directly. "
-            "'gemini_live': Gemini Live API via google-genai. "
-            "'elevenlabs': ElevenLabs Conversational AI. "
-            "'deepgram': Deepgram Voice Agent API."
+            "Agent framework to use for the assistant server."
+            "'pipecat' (default): Pipecat pipeline."
+            "'openai_realtime': OpenAI Realtime API directly."
+            "'gemini_live': Gemini Live API via google-genai."
         ),
     )
 
