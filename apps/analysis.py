@@ -1168,7 +1168,8 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
         composite_rename = {c: f"[EVA] {_EVA_COMPOSITE_DISPLAY[c]}" for c in composites}
         cols = id_cols + composites + metrics
         sub_df = summary_df[cols].copy()
-        sub_df.insert(0, "link", link_series)
+        sub_df.insert(0, "#", range(1, len(sub_df) + 1))
+        sub_df.insert(1, "link", link_series)
         sub_df = sub_df.rename(columns={**id_rename, **composite_rename, **col_rename})
         score_cols = [composite_rename[c] for c in composites] + [col_rename[m] for m in metrics]
         styled = sub_df.style.map(_color_cell, subset=score_cols)
@@ -1176,7 +1177,11 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
         st.dataframe(
             styled,
             hide_index=True,
-            column_config={"link": st.column_config.LinkColumn(" ", display_text="🔍", width=40)},
+            column_config={
+                "#": st.column_config.NumberColumn("#", width=50, pinned=True),
+                "link": st.column_config.LinkColumn("Run", display_text="🔍", width=40, pinned=True),
+                "System": st.column_config.Column(pinned=True),
+            },
         )
 
     _show_subtable("Accuracy Metrics (EVA-A)", eva_a_composites, accuracy_metrics)
