@@ -62,7 +62,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             per_turn_explanations: dict[int, str] = {}
             per_turn_transcripts: dict[int, str] = {}
             per_turn_normalized: dict[int, float] = {}
-            tts_turn_ids = sorted(int(k) for k in intended_turns.keys())
+            tts_turn_ids = sorted(intended_turns.keys())
             min_rating, max_rating = self.rating_scale
             valid_ratings_range = list(range(min_rating, max_rating + 1))
 
