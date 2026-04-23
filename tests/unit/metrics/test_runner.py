@@ -706,6 +706,61 @@ class TestBuildPerMetricAggregates:
         assert result["m"]["none_count"] == 2
         assert result["m"]["mean"] is None
 
+    def test_higher_is_better_read_from_registered_metric(self):
+        """Parent direction is looked up on the metric class, not stored per-record."""
+        # response_speed is registered with higher_is_better=False on its class.
+        all_metrics = {
+            "r1": RecordMetrics(
+                record_id="r1",
+                metrics={"response_speed": MetricScore(name="response_speed", score=1.2, normalized_score=None)},
+            ),
+        }
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["response_speed"])
+        assert result["response_speed"]["higher_is_better"] is False
+
+    def test_higher_is_better_defaults_true_for_unknown_metric(self):
+        """An unregistered metric name defaults to higher_is_better=True."""
+        all_metrics = {
+            "r1": RecordMetrics(record_id="r1", metrics={"m": MetricScore(name="m", score=0.3)}),
+        }
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        assert result["m"]["higher_is_better"] is True
+
+    def test_sub_metric_direction_derived_from_suffix(self):
+        """Sub-metric direction is derived from the key suffix, not stored per-record.
+
+        ``_rate`` suffix → lower is better, ``_accuracy`` → higher is better,
+        otherwise the sub-metric inherits the parent direction.
+        """
+        rate_sub = MetricScore(name="faithfulness.hallucination_rate", score=1.0, normalized_score=1.0)
+        accuracy_sub = MetricScore(
+            name="transcription_accuracy_key_entities.name_accuracy", score=0.8, normalized_score=0.8
+        )
+        all_metrics = {
+            "r1": RecordMetrics(
+                record_id="r1",
+                metrics={
+                    "faithfulness": MetricScore(
+                        name="faithfulness",
+                        score=2.0,
+                        normalized_score=0.5,
+                        sub_metrics={"hallucination_rate": rate_sub},
+                    ),
+                    "transcription_accuracy_key_entities": MetricScore(
+                        name="transcription_accuracy_key_entities",
+                        score=0.8,
+                        normalized_score=0.8,
+                        sub_metrics={"name_accuracy": accuracy_sub},
+                    ),
+                },
+            ),
+        }
+        result = MetricsRunner._build_per_metric_aggregates(
+            all_metrics, ["faithfulness", "transcription_accuracy_key_entities"]
+        )
+        assert result["faithfulness"]["sub_metrics"]["hallucination_rate"]["higher_is_better"] is False
+        assert result["transcription_accuracy_key_entities"]["sub_metrics"]["name_accuracy"]["higher_is_better"] is True
+
 
 class TestBuildDataQuality:
     """Tests for MetricsRunner._build_data_quality splitting error vs missing records."""

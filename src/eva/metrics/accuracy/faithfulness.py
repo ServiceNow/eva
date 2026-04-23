@@ -118,7 +118,6 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
             name=self.name,
             score=float(rating),
             normalized_score=normalized,
-            error=None,
             details={
                 "rating": rating,
                 "explanation": analysis,

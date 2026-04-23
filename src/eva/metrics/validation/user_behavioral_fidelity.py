@@ -108,7 +108,6 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
             name=self.name,
             score=float(rating),
             normalized_score=normalized,
-            error=None,
             details={
                 "rating": rating,
                 "corrupted": rating == 0,

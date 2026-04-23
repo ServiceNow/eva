@@ -332,17 +332,12 @@ def make_rate_sub_metric(
     denominator: int,
     details: dict[str, Any],
     precision: int = 3,
-    higher_is_better: bool = False,
 ) -> MetricScore:
     """Build a rate-style sub-metric where ``score == normalized_score == numerator/denominator``.
 
     Returns a zero-rate sub-metric when ``denominator <= 0`` so callers never
     divide by zero. Callers are responsible for choosing the ``details`` shape
     (counts, turn IDs, reference counts, etc.) that makes sense for their metric.
-
-    Defaults to ``higher_is_better=False`` because most rate sub-metrics measure
-    error/failure frequency (lower is better). Callers building accuracy-style
-    rates (e.g. per-entity-type accuracy, on-time rate) should pass ``True``.
 
     Args:
         parent_name: Parent metric's name (used as prefix in sub-metric name).
@@ -351,7 +346,6 @@ def make_rate_sub_metric(
         denominator: Denominator (e.g., rated turns, reference words, total calls).
         details: Details dict attached to the sub-metric.
         precision: Number of decimal places to round the rate to.
-        higher_is_better: Direction flag passed through to the MetricScore.
 
     Returns:
         A MetricScore with equal ``score`` and ``normalized_score`` fields.
@@ -363,8 +357,21 @@ def make_rate_sub_metric(
         score=rounded,
         normalized_score=rounded,
         details=details,
-        higher_is_better=higher_is_better,
     )
+
+
+def direction_for_sub_metric(sub_key: str, parent_higher_is_better: bool) -> bool:
+    """Derive a sub-metric's direction from its key suffix.
+
+    The convention: ``_rate`` suffix means lower-is-better (issue-frequency);
+    ``_accuracy`` suffix means higher-is-better; otherwise the sub-metric
+    inherits the parent metric's direction.
+    """
+    if sub_key.endswith("_rate"):
+        return False
+    if sub_key.endswith("_accuracy"):
+        return True
+    return parent_higher_is_better
 
 
 def build_binary_flag_sub_metrics(
@@ -380,11 +387,12 @@ def build_binary_flag_sub_metrics(
     Each entry is expected to carry a boolean flag under ``flag_field`` (e.g.,
     ``flagged`` or ``detected``) indicating whether the dimension was triggered
     for this record. Sub-metric convention: ``score = 1.0`` if the flag is true,
-    ``0.0`` otherwise. ``higher_is_better`` is set to ``False`` so aggregation
-    reads as "fraction of records where this issue occurred — lower is better".
+    ``0.0`` otherwise. Aggregated across records, the mean reads as "fraction of
+    records where this issue occurred".
 
     The default ``key_suffix`` of ``"_rate"`` reflects that these sub-metrics
-    aggregate across records into an issue-frequency rate.
+    aggregate into an issue-frequency rate — the suffix is what signals to the
+    reader (and to ``direction_for_sub_metric``) that lower is better.
 
     Args:
         parent_name: Parent metric name (prefix for the sub-metric name).
@@ -418,7 +426,6 @@ def build_binary_flag_sub_metrics(
             score=score,
             normalized_score=score,
             details=details,
-            higher_is_better=False,
         )
     return sub_metrics
 

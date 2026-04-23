@@ -190,7 +190,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
             if non_skipped == 0:
                 continue
             correct = per_type_correct.get(entity_type, 0)
-            # Per-type score is accuracy (correct / non-skipped), so higher is better.
+            # Key suffix ``_accuracy`` signals higher-is-better at read time.
             sub_key = f"{entity_type}_accuracy"
             sub_metrics[sub_key] = make_rate_sub_metric(
                 parent_name=self.name,
@@ -202,7 +202,6 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
                     "total_non_skipped": non_skipped,
                     "skipped": per_type_skipped.get(entity_type, 0),
                 },
-                higher_is_better=True,
             )
         return sub_metrics
 

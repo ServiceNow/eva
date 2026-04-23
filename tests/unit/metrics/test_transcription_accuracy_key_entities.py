@@ -206,7 +206,6 @@ class TestCompute:
         assert name_sub.name == "transcription_accuracy_key_entities.name_accuracy"
         assert name_sub.score == pytest.approx(0.5)
         assert name_sub.details == {"correct": 1, "total_non_skipped": 2, "skipped": 0}
-        assert name_sub.higher_is_better is True
         code_sub = result.sub_metrics["confirmation_code_accuracy"]
         assert code_sub.score == 1.0
         assert code_sub.details == {"correct": 1, "total_non_skipped": 1, "skipped": 0}

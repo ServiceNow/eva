@@ -97,15 +97,6 @@ class MetricScore(BaseModel):
     sub_metrics: dict[str, "MetricScore"] | None = Field(
         None, description="Optional sub-metric breakdowns, aggregated generically by the runner"
     )
-    higher_is_better: bool = Field(
-        True,
-        description=(
-            "Direction of the displayed value (normalized_score if present, else score). "
-            "True means higher is better; False means lower is better. Used by the analysis "
-            "app for direction-aware colouring, sorting, and pass/fail semantics. "
-            "Aggregation in the runner is direction-agnostic."
-        ),
-    )
 
 
 class PassAtKResult(BaseModel):

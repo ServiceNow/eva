@@ -115,14 +115,12 @@ class TestUserBehavioralFidelity:
         assert extra.score == 0.0  # clean
         assert extra.normalized_score == 0.0
         assert extra.details["detected"] is False
-        assert extra.higher_is_better is False
 
         premature = score.sub_metrics["premature_ending_rate"]
         assert premature.score == 1.0  # detected
         assert premature.normalized_score == 1.0
         assert premature.details["detected"] is True
         assert premature.details["analysis"] == "ended early"
-        assert premature.higher_is_better is False
 
     def test_build_metric_score_skips_malformed_corruption_entries(self):
         ctx = make_metric_context()

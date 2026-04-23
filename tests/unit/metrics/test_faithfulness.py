@@ -120,7 +120,6 @@ class TestFaithfulness:
         assert fab.normalized_score == 0.0
         assert fab.details["flagged"] is False
         assert fab.details["rating"] == 3  # raw rating preserved for diagnostics
-        assert fab.higher_is_better is False
 
         disamb = score.sub_metrics["failing_to_disambiguate_rate"]
         assert disamb.score == 1.0  # flagged
@@ -128,7 +127,6 @@ class TestFaithfulness:
         assert disamb.details["flagged"] is True
         assert disamb.details["rating"] == 1
         assert disamb.details["evidence"] == "bad"
-        assert disamb.higher_is_better is False
 
     def test_build_metric_score_skips_dimensions_without_flag(self):
         ctx = make_metric_context(conversation_trace=[{"role": "user"}])

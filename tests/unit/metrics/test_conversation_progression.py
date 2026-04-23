@@ -78,7 +78,6 @@ class TestConversationProgression:
         assert q_quality.details["flagged"] is True
         assert q_quality.details["rating"] == 1
         assert q_quality.details["evidence"] == "bad"
-        assert q_quality.higher_is_better is False
 
         clean = score.sub_metrics["unnecessary_tool_calls_rate"]
         assert clean.score == 0.0

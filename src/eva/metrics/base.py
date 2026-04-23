@@ -160,6 +160,10 @@ class BaseMetric(ABC):
     pass_at_k_threshold: float = 0.5  # Normalized score threshold for pass@k pass/fail
     exclude_from_pass_at_k: bool = False  # Set True for metrics not suitable for pass@k
     supported_pipeline_types: frozenset[PipelineType] = frozenset(PipelineType)  # Pipeline types this metric supports
+    # Direction of the displayed value (normalized_score if present, else score).
+    # Override to False for lower-is-better parent metrics (e.g. latency). Sub-metric
+    # direction is derived from the key suffix (see eva.metrics.utils.direction_for_sub_metric).
+    higher_is_better: bool = True
 
     def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the metric.
