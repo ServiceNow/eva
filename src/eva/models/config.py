@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 def _param_alias(params: dict[str, Any]) -> str:
     """Return the display alias from a params dict."""
-    return params.get("alias") or params.get["model"]
+    return params.get("alias") or params["model"]
 
 
 class PipelineConfig(BaseModel):
