@@ -248,6 +248,18 @@ def _load_metrics_summary(run_dir: Path) -> dict:
     return {}
 
 
+def _load_evaluation_summary(run_dir: Path) -> dict:
+    """Load evaluation_summary.json for a run."""
+    path = run_dir / "evaluation_summary.json"
+    if path.exists():
+        try:
+            with open(path) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
 def format_transcript(transcript_path: Path) -> pd.DataFrame:
     """Load and format transcript.jsonl as a DataFrame."""
     if not transcript_path.exists():
@@ -1020,6 +1032,8 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         run_name = run_dir.name
         run_config = run_configs[run_name]
         metrics_summary = _load_metrics_summary(run_dir)
+        eval_summary = _load_evaluation_summary(run_dir)
+        simulation = eval_summary.get("simulation") or {}
 
         # Try metrics_summary.json first, fall back to per-record loading
         if metrics_summary and "per_metric" in metrics_summary:
@@ -1028,6 +1042,7 @@ def render_cross_run_comparison(run_dirs: list[Path]):
             all_metric_names.update(metric_names)
             model_details = _extract_model_details(run_config)
             system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
+            data_quality = metrics_summary.get("data_quality") or {}
             summary: dict = {
                 "run": run_name,
                 "run_output_dir": str(run_dir.parent),
@@ -1035,6 +1050,9 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 "system_name": system_name,
                 "run_timestamp": run_timestamp,
                 "records": metrics_summary.get("total_records", 0),
+                "conversation_failures": simulation.get("failed_records"),
+                "records_with_errors": data_quality.get("records_with_errors"),
+                "metrics_with_errors": data_quality.get("metrics_with_errors") or {},
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
             }
@@ -1072,6 +1090,9 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 "system_name": system_name,
                 "run_timestamp": run_timestamp,
                 "records": len(df),
+                "conversation_failures": simulation.get("failed_records"),
+                "records_with_errors": None,
+                "metrics_with_errors": {},
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
             }
@@ -1105,6 +1126,17 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         _render_eva_scatter_plot(scatter_data)
 
     st.markdown("#### Mean Metrics per Run")
+
+    def _safe_int(value: object) -> int:
+        if value is None or (isinstance(value, float) and pd.isna(value)):
+            return 0
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return 0
+
+    def _has_any_errors(row: pd.Series) -> bool:
+        return bool(_safe_int(row.get("records_with_errors")) or _safe_int(row.get("conversation_failures")))
 
     # Grouped bar chart: Accuracy/Experience metrics + EVA composites
     bar_metrics = [m for m in ordered_metrics if _METRIC_GROUP.get(m) in _BAR_CHART_CATEGORIES]
@@ -1147,6 +1179,10 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         "run_output_dir": "Output Dir",
         "records": "# Records",
     }
+    summary_df["system_name"] = [
+        f"{name} ⚠️" if _has_any_errors(row) else name
+        for name, (_, row) in zip(summary_df["system_name"], summary_df.iterrows())
+    ]
     link_series = "/run_overview?output_dir=" + summary_df["run_output_dir"] + "&run=" + summary_df["run"]
 
     def _show_subtable(heading: str, composites: list, metrics: list) -> None:
@@ -1170,6 +1206,38 @@ def render_cross_run_comparison(run_dirs: list[Path]):
     _show_subtable("Accuracy Metrics (EVA-A)", eva_a_composites, accuracy_metrics)
     _show_subtable("Experience Metrics (EVA-X)", eva_x_composites, experience_metrics)
     _show_subtable("Diagnostic & Other Metrics", [], other_metrics)
+
+    error_rows = []
+    for _, row in summary_df.iterrows():
+        total = _safe_int(row.get("records"))
+        conv_failures = _safe_int(row.get("conversation_failures"))
+        judge_errors = _safe_int(row.get("records_with_errors"))
+        if not (conv_failures or judge_errors) or not total:
+            continue
+        metric_errors = row.get("metrics_with_errors") or {}
+        if not isinstance(metric_errors, dict):
+            metric_errors = {}
+        metric_breakdown = ", ".join(f"{m} ({n})" for m, n in sorted(metric_errors.items())) or "—"
+        error_rows.append(
+            {
+                "System": row["system_name"],
+                "Timestamp": row["run_timestamp"],
+                "# Records": total,
+                "Conversation Failures": conv_failures,
+                "Judge Errors": judge_errors,
+                "Judge Error Rate": judge_errors / total,
+                "Metrics with Errors": metric_breakdown,
+            }
+        )
+    if error_rows:
+        st.markdown("#### Errors")
+        st.caption(
+            "**Conversation Failures**: records where conversation generation failed. "
+            "**Judge Errors**: records where one or more metrics failed to compute."
+        )
+        errors_df = pd.DataFrame(error_rows)
+        errors_styled = errors_df.style.format({"Judge Error Rate": "{:.1%}"})
+        st.dataframe(errors_styled, hide_index=True)
 
     csv = summary_df.drop(columns=["label"]).to_csv(index=False)
     st.download_button("Download CSV", csv, file_name="cross_run_comparison.csv", mime="text/csv")
@@ -1331,6 +1399,44 @@ def render_run_overview(run_dir: Path):
             st.plotly_chart(fig)
 
     st.divider()
+
+    # --- Errors ---
+    metrics_summary = _load_metrics_summary(run_dir)
+    data_quality = (metrics_summary or {}).get("data_quality") or {}
+    eval_summary = _load_evaluation_summary(run_dir)
+    simulation = eval_summary.get("simulation") or {}
+    judge_errors = data_quality.get("records_with_errors") or 0
+    conv_failures = simulation.get("failed_records") or 0
+    total_records = (
+        data_quality.get("total_records")
+        or (metrics_summary or {}).get("total_records")
+        or simulation.get("total_records")
+    )
+    metric_errors = data_quality.get("metrics_with_errors") or {}
+    if (judge_errors or conv_failures) and total_records:
+        st.markdown("### Errors")
+        summary_parts = []
+        if conv_failures:
+            summary_parts.append(f"**{conv_failures}** conversation failures ({conv_failures / total_records:.1%})")
+        if judge_errors:
+            summary_parts.append(f"**{judge_errors}** records with judge errors ({judge_errors / total_records:.1%})")
+        st.caption(f"Out of {total_records} records — " + " · ".join(summary_parts))
+        if metric_errors:
+            metric_error_df = pd.DataFrame(
+                [
+                    {
+                        "Metric": _format_metric_name(m),
+                        "# Errors": int(n),
+                        "Error Rate": int(n) / total_records,
+                    }
+                    for m, n in sorted(metric_errors.items(), key=lambda kv: kv[1], reverse=True)
+                ]
+            )
+            st.dataframe(
+                metric_error_df.style.format({"Error Rate": "{:.1%}"}),
+                hide_index=True,
+            )
+        st.divider()
 
     # --- Per-record table ---
     st.markdown("### Per-Record Metrics")
