@@ -160,6 +160,25 @@ class BenchmarkRunner:
         rerun_history: dict[str, list[dict]] = {}
         started_at = datetime.now()
 
+        # Pre-create MetricsRunner so metrics can start as soon as records pass validation,
+        # overlapping with reruns of failed records instead of waiting for ALL conversations.
+        metrics_runner: MetricsRunner | None = None
+        metrics_background_tasks: list[asyncio.Task] = []
+
+        if self.config.metrics:
+            all_unique_records = list({id(r): r for r in output_id_to_record.values()}.values())
+            try:
+                metrics_runner = MetricsRunner(
+                    run_dir=self.output_dir,
+                    dataset=all_unique_records,
+                    metric_names=self.config.metrics,
+                    num_draws=self.config.num_trials,
+                    force_rerun=self.config.force_rerun_metrics,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to pre-create MetricsRunner for overlapped execution: {e}")
+                metrics_runner = None
+
         # LOOP: Run and validate, up to max_attempts total
         for attempt_number in range(1, max_attempts + 1):
             if not pending_output_ids:
@@ -218,6 +237,17 @@ class BenchmarkRunner:
                     if not vr or not vr.passed:
                         failed_validation_ids.append(output_id)
 
+            # Start metrics for newly validated records immediately (overlapped with reruns).
+            # Each _run_and_save_record call writes metrics.json to disk, so the final
+            # MetricsRunner.run() will skip these records and only do summary aggregation.
+            newly_successful = set(finished_ids) - set(failed_validation_ids)
+            if metrics_runner and newly_successful:
+                logger.info(f"Starting background metrics for {len(newly_successful)} validated records")
+                for rid in newly_successful:
+                    rdir = self.output_dir / "records" / rid
+                    task = asyncio.create_task(metrics_runner._run_and_save_record(rid, rdir))
+                    metrics_background_tasks.append(task)
+
             # STEP 4: Determine which output_ids failed this attempt
             failed_this_attempt = not_finished_ids + failed_validation_ids
 
@@ -273,20 +303,34 @@ class BenchmarkRunner:
             else:
                 validation_failed_count += 1
 
-        # STEP 7: Run full metrics on successful records
+        # STEP 7: Await background metrics, then run final aggregation pass.
+        # Background tasks already wrote metrics.json for records validated during the loop.
+        # The final run() skips already-computed records and only does summary aggregation.
+        if metrics_background_tasks:
+            logger.info(f"Waiting for {len(metrics_background_tasks)} background metrics tasks...")
+            bg_results = await asyncio.gather(*metrics_background_tasks, return_exceptions=True)
+            for result in bg_results:
+                if isinstance(result, Exception):
+                    logger.error(f"Background metrics task failed: {result}", exc_info=True)
+
         if self.config.metrics and successful_ids:
-            logger.info(f"Running full metrics suite on {len(successful_ids)} successful tasks...")
-            successful_records = list(
-                {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in successful_ids}.values()
-            )
-            metrics_runner = MetricsRunner(
-                run_dir=self.output_dir,
-                dataset=successful_records,
-                metric_names=self.config.metrics,
-                record_ids=list(successful_ids),
-                num_draws=self.config.num_trials,
-                force_rerun=self.config.force_rerun_metrics,
-            )
+            logger.info(f"Running final metrics pass on {len(successful_ids)} successful tasks...")
+            if metrics_runner is not None:
+                # Reuse the pre-created runner; set record filter to successful-only.
+                metrics_runner.record_ids = successful_ids
+            else:
+                # Fallback: create runner now (e.g. if pre-creation failed earlier).
+                successful_records = list(
+                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in successful_ids}.values()
+                )
+                metrics_runner = MetricsRunner(
+                    run_dir=self.output_dir,
+                    dataset=successful_records,
+                    metric_names=self.config.metrics,
+                    record_ids=list(successful_ids),
+                    num_draws=self.config.num_trials,
+                    force_rerun=self.config.force_rerun_metrics,
+                )
             await metrics_runner.run()
         elif self.config.metrics and not successful_ids:
             logger.info("Skipping metrics: no records passed validation")

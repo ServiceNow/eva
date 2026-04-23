@@ -343,7 +343,7 @@ class MetricsRunner:
         logger.debug(f"Computing metrics for record: {record_id}")
 
         # Load conversation data
-        context = self._load_context(record_id, record_dir)
+        context = await self._load_context(record_id, record_dir)
 
         # Determine which metrics to run for this record
         metrics_to_run = self.metrics
@@ -405,7 +405,7 @@ class MetricsRunner:
 
         return RecordMetrics(record_id=record_id, context=context_dict, metrics=metric_scores)
 
-    def _load_context(self, record_id: str, record_dir: Path) -> MetricContext:
+    async def _load_context(self, record_id: str, record_dir: Path) -> MetricContext:
         """Load all data needed for metric computation."""
         # Strip _trial_N suffix to get base record ID for dataset lookup.
         base_record_id, _ = parse_trial_record_id(record_id)
@@ -417,29 +417,8 @@ class MetricsRunner:
 
         gt = record.ground_truth
 
-        # Load conversation result
+        # Load conversation result and scenario databases in parallel (non-blocking I/O)
         result_path = record_dir / "result.json"
-        result_data = {}
-        if result_path.exists():
-            result_data = json.loads(result_path.read_text())
-
-        # Create ConversationResult object
-        result = ConversationResult(**result_data)
-
-        # Use postprocessor to process logs and create enriched context
-        metrics_context = self.metrics_processor.process_record(result, record_dir, pipeline_type=self._pipeline_type)
-
-        # Get agent instructions and tools from config
-        agent_instructions = self._agent_config["instructions"]
-        agent_tools = self._agent_config["tools"]
-        agent_role = self._agent_config["role"]
-
-        if record.agent_override and record.agent_override.instructions:
-            agent_instructions = record.agent_override.instructions
-
-        user_persona = record.user_config["user_persona"]
-
-        # Load scenario database states (REQUIRED for deterministic metrics)
         initial_db_path = record_dir / "initial_scenario_db.json"
         final_db_path = record_dir / "final_scenario_db.json"
 
@@ -454,8 +433,38 @@ class MetricsRunner:
                 "This is required for deterministic task completion metrics."
             )
 
-        initial_scenario_db = json.loads(initial_db_path.read_text())
-        final_scenario_db = json.loads(final_db_path.read_text())
+        async def _read_optional(path: Path) -> str:
+            return await asyncio.to_thread(path.read_text) if path.exists() else "{}"
+
+        result_text, initial_db_text, final_db_text = await asyncio.gather(
+            _read_optional(result_path),
+            asyncio.to_thread(initial_db_path.read_text),
+            asyncio.to_thread(final_db_path.read_text),
+        )
+
+        result_data = json.loads(result_text)
+
+        # Create ConversationResult object
+        result = ConversationResult(**result_data)
+
+        # Use postprocessor to process logs and create enriched context.
+        # Runs in a thread to avoid blocking the event loop (synchronous I/O + CPU-bound parsing).
+        metrics_context = await asyncio.to_thread(
+            self.metrics_processor.process_record, result, record_dir, pipeline_type=self._pipeline_type
+        )
+
+        # Get agent instructions and tools from config
+        agent_instructions = self._agent_config["instructions"]
+        agent_tools = self._agent_config["tools"]
+        agent_role = self._agent_config["role"]
+
+        if record.agent_override and record.agent_override.instructions:
+            agent_instructions = record.agent_override.instructions
+
+        user_persona = record.user_config["user_persona"]
+
+        initial_scenario_db = json.loads(initial_db_text)
+        final_scenario_db = json.loads(final_db_text)
 
         # Get hashes from result or compute if needed
         initial_scenario_db_hash = getattr(result, "initial_scenario_db_hash", None) or get_dict_hash(
