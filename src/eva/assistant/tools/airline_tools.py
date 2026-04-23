@@ -27,6 +27,7 @@ from eva.assistant.tools.airline_params import (
     IssueTravelCreditParams,
     ProcessRefundParams,
     RebookFlightParams,
+    RebookingType,
     SearchRebookingOptionsParams,
     TransferToAgentParams,
     validation_error_response,
@@ -464,11 +465,19 @@ def rebook_flight(params: dict, db: dict, call_index: int) -> dict:
 
     # Computations
     is_irrops = "irrops" in rebooking_type
+    is_same_day = rebooking_type == RebookingType.same_day
 
-    # Fee calculation — based on ORIGINAL fare class (that's what the passenger paid for)
-    fee_map = {"basic_economy": 199, "main_cabin": 75, "premium_economy": 75, "business": 0, "first": 0}
-    base_fee = fee_map.get(original_fare_class, 75)
-    change_fee = 0 if (is_irrops or waive_change_fee) else base_fee
+    # Fee calculation — based on ORIGINAL fare class (that's what the passenger paid for).
+    # IRROPS and explicit waivers zero the fee. Same-day changes are flat $75 for every
+    # paid fare class, except Basic Economy which carries a $199 penalty. Voluntary
+    # (advance) changes are $75 for economy tiers and free for Business/First.
+    if is_irrops or waive_change_fee:
+        change_fee = 0
+    elif is_same_day:
+        change_fee = 199 if original_fare_class == "basic_economy" else 75
+    else:
+        voluntary_fees = {"basic_economy": 75, "main_cabin": 75, "premium_economy": 75, "business": 0, "first": 0}
+        change_fee = voluntary_fees.get(original_fare_class, 75)
 
     # Partial rebook: validate the specific flight segment exists
     if flight_number:

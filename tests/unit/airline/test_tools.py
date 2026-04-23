@@ -1248,6 +1248,109 @@ def test_rebook_flight_irrops_no_fees(sample_db):
     assert result["cost_summary"]["fee_waived"] is True
 
 
+def test_rebook_flight_voluntary_basic_economy_fee(sample_db):
+    """Voluntary rebook on a Basic Economy booking: flat $75 (not the same-day $199 penalty)."""
+    db = copy.deepcopy(sample_db)
+    # Flip the cancelled booking's fare_class to basic_economy for this test.
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "basic_economy"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "voluntary",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 75
+
+
+def test_rebook_flight_same_day_basic_economy_penalty_fee(sample_db):
+    """Same-day rebook on a Basic Economy booking: $199 penalty."""
+    db = copy.deepcopy(sample_db)
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "basic_economy"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "same_day",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 199
+
+
+def test_rebook_flight_same_day_main_cabin_standard_fee(sample_db):
+    """Same-day rebook on Main Cabin: standard $75 fee (no penalty)."""
+    db = copy.deepcopy(sample_db)
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "same_day",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 75
+
+
+def test_rebook_flight_same_day_business_class_fee(sample_db):
+    """Same-day rebook on Business Class: $75 (Business pays for same-day, unlike voluntary)."""
+    db = copy.deepcopy(sample_db)
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "business"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "same_day",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 75
+
+
+def test_rebook_flight_voluntary_business_class_no_fee(sample_db):
+    """Voluntary rebook on Business Class: $0 (free for Business/First in advance changes)."""
+    db = copy.deepcopy(sample_db)
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "business"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "voluntary",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 0
+
+
+def test_rebook_flight_same_day_basic_economy_waived_for_elite(sample_db):
+    """Gold/Platinum waiver zeros the same-day penalty for Basic Economy."""
+    db = copy.deepcopy(sample_db)
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "basic_economy"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "same_day",
+        "waive_change_fee": True,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 0
+    assert result["cost_summary"]["fee_waived"] is True
+
+
 def test_rebook_flight_reservation_not_found(sample_db):
     """Test rebooking with invalid reservation."""
     params = {

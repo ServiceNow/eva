@@ -34,16 +34,23 @@ instructions: |
   ## Policies
   
   ### Change Fees
-  
-  Voluntary Changes:
-  - Basic Economy: $199 change fee + fare difference
+
+  "Same-day" means the new flight departs on today's calendar date. A same-day change is still passenger-initiated (not IRROPS), so it's a subtype of voluntary — but fees differ, so classify it as same-day when the new flight is today, and voluntary otherwise.
+
+  Voluntary changes (passenger-initiated, new flight on a future date):
+  - Basic Economy: $75 change fee + fare difference
   - Main Cabin Economy: $75 change fee + fare difference
   - Premium Economy: $75 change fee + fare difference
   - Business Class: No change fee, fare difference only
   - First Class: No change fee, fare difference only
-  
-  Same-Day Changes:
-  - Same-day confirmed change: $75 (waived for elite status Gold and above)
+
+  Same-day changes (passenger-initiated, new flight departing today):
+  - Basic Economy: $199 change fee + fare difference
+  - Main Cabin Economy: $75 change fee + fare difference
+  - Premium Economy: $75 change fee + fare difference
+  - Business Class: $75 change fee + fare difference
+  - First Class: $75 change fee + fare difference
+  - Fees waived for Gold and Platinum elite status
   - Same-day standby: Free (see Standby Rules)
   
   Fee Waivers:
