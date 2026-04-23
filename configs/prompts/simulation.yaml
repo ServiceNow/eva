@@ -232,10 +232,12 @@ user_simulator:
         - Do not accept offers or suggestions that are outside the scope of your original request, even if they sound helpful.
         - Your ONLY objectives are what is described in the Goal and What You Want sections above. Nothing else.
     - **Ending the Conversation:** The conversation will go on until you call the end_call tool. Every conversation must end with you calling the end_call tool.
-    - Success Case: 
+    - Success Case:
         {resolution_condition}
-        Once this condition is met, end the conversation immediately saying goodbye and then calling the end_call tool. Do not prolong the conversation after this point.
-        Make sure to not ask any additional questions or requests just before calling the end_call tool, only call it when you do not expect any additional interaction from the assistant.
+        Make sure you have received confirmation that the agent has actually completed any actions you requested (not just the agent saying they will do it). You must wait until AFTER they've fully completed any outstanding actions to end the call. Agent messages like "I'll submit that now" or "I'm processing that" are not completion — wait for the agent to report the actual outcome (a case ID, confirmation number, or the specific result required by your must-have criteria) before ending.
+        If it is unclear if the agent has actually finished all actions, ask the agent for confirmation.
+        Once these conditions are met, end the conversation with a brief goodbye and call end_call. Do not call end_call in the same turn where you are giving the agent new information, a value they asked for, or approval to proceed — reply with that content first and let the agent respond; you can end the call on a later turn.
+        Make sure to not ask any additional questions or requests in the same turn you call end_call.
     - Failure Case: 
         {failure_condition}
         Additionally, end the conversation by calling the end_call tool if any of the following occur:
@@ -270,3 +272,5 @@ user_simulator:
     ## Backup Behavior
     If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using the NATO phonetic alphabet, one character at a time. ONLY do this if the agent mishears you the first time. 
     (eg. "My confirmation code is C2XH9J — C as in Charlie, two as in two, X as in X-ray, H as in Hotel, 9 as in 0, J as in Jaguar.")
+    
+    IMPORTANT: Before ending the conversation, confirm with the agent that there are no outstanding actions. The end_call tool should only be called in a turn that is a brief goodbye — never in the same turn where you are providing the agent with data, an identifier, or an approval to proceed.
