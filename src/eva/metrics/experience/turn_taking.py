@@ -244,7 +244,6 @@ class TurnTakingMetric(CodeMetric):
                 evidence["overlap_score"] = round(agent_score, 4)
                 n_segs = cls._count_agent_interrupt_segments(context, turn_id)
                 evidence["n_interrupt_segments"] = n_segs
-                # _count_score is only defined when a barge-in was detected; skip for n=0.
                 if n_segs >= 1:
                     count_score = cls._count_score(n_segs)
                     evidence["interrupt_count_score"] = round(count_score, 4)
@@ -286,8 +285,13 @@ class TurnTakingMetric(CodeMetric):
         context: MetricContext,
         turn_keys: list[int],
         turns_with_tool_calls: set[int],
+        per_turn_evidence: dict[int, dict[str, Any]],
     ) -> dict[str, MetricScore]:
         """Compute the curated flat set of headline sub-metrics.
+
+        Raw per-turn signals (overlap_ms, n_interrupt_segments, post_interrupt_latency_ms,
+        yield_ms) are pulled from ``per_turn_evidence`` to avoid recomputing them — they
+        were already produced by ``_per_turn_score_and_reason``.
 
         Rate-style sub-metrics are always emitted (including when the rate is zero — "0% of
         turns had user interruption" is a real signal). Conditional ones (mean_overlap_ms,
@@ -344,16 +348,15 @@ class TurnTakingMetric(CodeMetric):
         post_ms_list: list[float] = []
         post_scores: list[float] = []
         for t in agent_turns:
-            overlap_ms = cls._compute_overlap_ms(context, t)
-            if overlap_ms is None:
+            ev = per_turn_evidence.get(t) or {}
+            if "overlap_ms" not in ev:
                 continue
-            overlap_ms_list.append(overlap_ms)
-            overlap_scores.append(cls._overlap_score(overlap_ms))
-            n_segs_list.append(cls._count_agent_interrupt_segments(context, t))
-            post_ms = cls._compute_post_interrupt_latency_ms(context, t)
-            if post_ms is not None:
-                post_ms_list.append(post_ms)
-                post_scores.append(cls._latency_score(post_ms, has_tool_call=t in turns_with_tool_calls))
+            overlap_ms_list.append(ev["overlap_ms"])
+            overlap_scores.append(ev["overlap_score"])
+            n_segs_list.append(ev.get("n_interrupt_segments", 0))
+            if "post_interrupt_latency_ms" in ev:
+                post_ms_list.append(ev["post_interrupt_latency_ms"])
+                post_scores.append(ev["post_interrupt_latency_score"])
         # num_interruptions: total distinct interrupt segments across all agent-interrupted turns.
         # None when there are no agent interruptions so cross-record aggregates exclude clean runs.
         sub["agent_interruption.num_interruptions"] = MetricScore(
@@ -395,11 +398,11 @@ class TurnTakingMetric(CodeMetric):
         yield_ms_list: list[float] = []
         yield_scores: list[float] = []
         for t in user_turns:
-            yield_ms = cls._compute_yield_ms(context, t)
-            if yield_ms is None:
+            ev = per_turn_evidence.get(t) or {}
+            if "yield_ms" not in ev:
                 continue
-            yield_ms_list.append(yield_ms)
-            yield_scores.append(cls._yield_score(yield_ms))
+            yield_ms_list.append(ev["yield_ms"])
+            yield_scores.append(ev["yield_score"])
         if yield_ms_list:
             sub["user_interruption.mean_yield_ms"] = _wrap(
                 "user_interruption.mean_yield_ms", round(statistics.mean(yield_ms_list), 3), False
@@ -461,7 +464,7 @@ class TurnTakingMetric(CodeMetric):
                 score=round(mean_score, 4),
                 normalized_score=round(mean_score, 4),
                 details=details,
-                sub_metrics=self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls),
+                sub_metrics=self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence),
             )
 
         except Exception as e:
