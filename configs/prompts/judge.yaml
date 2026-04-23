@@ -974,6 +974,7 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Intended Turns>,
+              "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the intended turns>,
               "explanation": "<succinct analysis; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
               "rating": <1, 2, 3>
             }}
