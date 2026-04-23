@@ -184,6 +184,8 @@ class TestCompleteViaResponsesApiReasoning:
                 }
             ]
         )
+        yield
+        router.reset()
 
     @pytest.mark.asyncio
     async def test_encrypted_content_used_when_no_human_readable_summary(self):
