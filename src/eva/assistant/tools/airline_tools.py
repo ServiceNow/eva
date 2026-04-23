@@ -17,6 +17,7 @@ from eva.assistant.tools.airline_params import (
     AddMealRequestParams,
     AddToStandbyParams,
     AssignSeatParams,
+    CancellationReason,
     CancelReservationParams,
     GetDisruptionInfoParams,
     GetFlightStatusParams,
@@ -1152,21 +1153,9 @@ def cancel_reservation(params: dict, db: dict, call_index: int) -> dict:
     # Compute refund/credit for this booking journey's fare
     booking_fare = _get_booking_total_fare(booking)
 
-    is_refundable = (
-        "irrops_refund" in cancellation_reason
-        or "24_hour_rule" in cancellation_reason
-        or reservation.get("fare_type") == "refundable"
-    )
-
-    cancellation_fee = (
-        0
-        if (
-            "24_hour_rule" in cancellation_reason
-            or "irrops_refund" in cancellation_reason
-            or reservation.get("fare_type") == "refundable"
-        )
-        else 100
-    )
+    fee_waiving_reasons = {CancellationReason.irrops_refund, CancellationReason.rule_24_hour}
+    is_refundable = cancellation_reason in fee_waiving_reasons or reservation.get("fare_type") == "refundable"
+    cancellation_fee = 0 if is_refundable else 100
 
     refund_amount = max(0, booking_fare - cancellation_fee) if is_refundable else 0
     credit_amount = 0 if is_refundable else max(0, booking_fare - cancellation_fee)
