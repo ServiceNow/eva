@@ -7,6 +7,7 @@ import pytest
 import yaml
 
 from eva.metrics.runner import MetricsRunner
+from eva.models.config import PipelineType
 from eva.models.results import MetricScore, RecordMetrics
 from tests.unit.conftest import make_evaluation_record
 
@@ -14,11 +15,11 @@ from .conftest import make_metric_score
 
 
 class _FakeMetric:
-    """Minimal stand-in for BaseMetric — only ``name``, ``skip_audio_native``, and pass@k attrs are read."""
+    """Minimal stand-in for BaseMetric — only ``name``, ``supported_pipeline_types``, and pass@k attrs are read."""
 
     def __init__(self, name: str):
         self.name = name
-        self.skip_audio_native = False
+        self.supported_pipeline_types = frozenset(PipelineType)
         self.exclude_from_pass_at_k = False
         self.pass_at_k_threshold = 0.5
 

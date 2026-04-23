@@ -24,6 +24,26 @@ def _check_nvidia_available():
         )
 
 
+try:
+    import riva.client as riva_client  # type: ignore[import-untyped]
+    from pipecat.services.nvidia.stt import NvidiaSTTService
+    from pipecat.services.nvidia.tts import NvidiaTTSService
+
+    _NVIDIA_AVAILABLE = True
+except ImportError:
+    riva_client = None  # type: ignore[assignment]
+    _NVIDIA_AVAILABLE = False
+    NvidiaSTTService = object  # type: ignore[misc]
+    NvidiaTTSService = object  # type: ignore[misc]
+
+
+def _check_nvidia_available():
+    if not _NVIDIA_AVAILABLE:
+        raise ImportError(
+            "nvidia-riva-client is required for Baseten services. Install it with: pip install nvidia-riva-client"
+        )
+
+
 logger = get_logger(__name__)
 
 

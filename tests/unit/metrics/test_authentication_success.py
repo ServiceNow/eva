@@ -13,98 +13,82 @@ def metric():
 
 
 @pytest.mark.asyncio
-async def test_no_tool_calls(metric):
-    """No tool calls at all should return 0.0 with tool not found."""
-    context = make_metric_context(tool_params=[], tool_responses=[])
-    result = await metric.compute(context)
-
-    assert result.score == 0.0
-    assert result.normalized_score == 0.0
-    assert result.details["get_reservation_found"] is False
-    assert result.details["get_reservation_call_count"] == 0
-    assert result.details["get_reservation_success_count"] == 0
-
-
-@pytest.mark.asyncio
-async def test_successful_get_reservation(metric):
-    """A successful get_reservation call should return 1.0."""
-    context = make_metric_context(
-        tool_params=[],
-        tool_responses=[
-            {
-                "tool_name": "get_reservation",
-                "tool_response": {"status": "success", "reservation": {"confirmation_number": "ABC123"}},
-            },
-        ],
+async def test_session_matches_expected(metric):
+    """Final session matching expected session exactly should score 1.0."""
+    ctx = make_metric_context(
+        expected_scenario_db={"session": {"confirmation_number": "ABC123", "last_name": "Doe"}},
+        final_scenario_db={"session": {"confirmation_number": "ABC123", "last_name": "doe"}},
     )
-    result = await metric.compute(context)
+    result = await metric.compute(ctx)
 
     assert result.score == 1.0
     assert result.normalized_score == 1.0
-    assert result.details["get_reservation_found"] is True
-    assert result.details["get_reservation_call_count"] == 1
-    assert result.details["get_reservation_success_count"] == 1
+    assert result.details["mismatches"] == {}
 
 
 @pytest.mark.asyncio
-async def test_failed_get_reservation(metric):
-    """A get_reservation call with error status should return 0.0."""
-    context = make_metric_context(
-        tool_params=[],
-        tool_responses=[
-            {
-                "tool_name": "get_reservation",
-                "tool_response": {"status": "error", "error_type": "not_found", "message": "No reservation found"},
-            },
-        ],
+async def test_session_is_superset(metric):
+    """Final session with extra keys beyond expected should still score 1.0."""
+    ctx = make_metric_context(
+        expected_scenario_db={"session": {"confirmation_number": "ABC123", "last_name": "doe"}},
+        final_scenario_db={"session": {"confirmation_number": "ABC123", "last_name": "doe", "extra_key": "value"}},
     )
-    result = await metric.compute(context)
-
-    assert result.score == 0.0
-    assert result.details["get_reservation_found"] is True
-    assert result.details["get_reservation_call_count"] == 1
-    assert result.details["get_reservation_success_count"] == 0
-
-
-@pytest.mark.asyncio
-async def test_mixed_calls(metric):
-    """One failed and one successful get_reservation plus other tools should return 1.0."""
-    context = make_metric_context(
-        tool_params=[],
-        tool_responses=[
-            {
-                "tool_name": "get_reservation",
-                "tool_response": {"status": "error", "error_type": "verification_failed", "message": "Bad last name"},
-            },
-            {
-                "tool_name": "search_rebooking_options",
-                "tool_response": {"status": "success", "options": []},
-            },
-            {
-                "tool_name": "get_reservation",
-                "tool_response": {"status": "success", "reservation": {}},
-            },
-        ],
-    )
-    result = await metric.compute(context)
+    result = await metric.compute(ctx)
 
     assert result.score == 1.0
-    assert result.details["get_reservation_call_count"] == 2
-    assert result.details["get_reservation_success_count"] == 1
+    assert result.details["mismatches"] == {}
 
 
 @pytest.mark.asyncio
-async def test_other_tools_only(metric):
-    """Only non-get_reservation tools should return 0.0 with tool not found."""
-    context = make_metric_context(
-        tool_params=[],
-        tool_responses=[
-            {"tool_name": "search_rebooking_options", "tool_response": {"status": "success", "options": []}},
-            {"tool_name": "rebook_flight", "tool_response": {"status": "success"}},
-        ],
+async def test_wrong_confirmation_number(metric):
+    """Final session with wrong confirmation number should score 0.0."""
+    ctx = make_metric_context(
+        expected_scenario_db={"session": {"confirmation_number": "ABC123", "last_name": "doe"}},
+        final_scenario_db={"session": {"confirmation_number": "WRONG1", "last_name": "doe"}},
     )
-    result = await metric.compute(context)
+    result = await metric.compute(ctx)
 
     assert result.score == 0.0
-    assert result.details["get_reservation_found"] is False
-    assert result.details["get_reservation_call_count"] == 0
+    assert result.normalized_score == 0.0
+    assert "confirmation_number" in result.details["mismatches"]
+
+
+@pytest.mark.asyncio
+async def test_wrong_last_name(metric):
+    """Final session with wrong last name should score 0.0."""
+    ctx = make_metric_context(
+        expected_scenario_db={"session": {"confirmation_number": "ABC123", "last_name": "doe"}},
+        final_scenario_db={"session": {"confirmation_number": "ABC123", "last_name": "smith"}},
+    )
+    result = await metric.compute(ctx)
+
+    assert result.score == 0.0
+    assert "last_name" in result.details["mismatches"]
+
+
+@pytest.mark.asyncio
+async def test_empty_final_session(metric):
+    """No session written (agent never authenticated) should score 0.0."""
+    ctx = make_metric_context(
+        expected_scenario_db={"session": {"confirmation_number": "ABC123", "last_name": "doe"}},
+        final_scenario_db={},
+    )
+    result = await metric.compute(ctx)
+
+    assert result.score == 0.0
+    assert result.details["actual_session"] == {}
+    assert len(result.details["mismatches"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_no_expected_session(metric):
+    """Missing expected session key should skip auth check and score 1.0."""
+    ctx = make_metric_context(
+        expected_scenario_db={},
+        final_scenario_db={},
+    )
+    result = await metric.compute(ctx)
+
+    assert result.score is None
+    assert result.skipped is True
+    assert "skipping" in result.details["reason"]

@@ -31,7 +31,7 @@ Uses the following MetricContext fields:
 This metric has **pipeline-specific prompt text** and provides the judge with **two views** of the conversation:
 
 - **Cascade**: The judge sees the agent-side transcript (`conversation_trace`, where user turns are STT transcriptions) alongside the `intended_user_turns` (ground truth). The prompt explains that discrepancies between the two are transcription errors — the user should not be penalized for the agent mishearing.
-- **Audio-native (S2S, S2T+TTS):** The judge sees the conversation trace (where user turns are already intended text) alongside the `intended_user_turns`. The prompt explains this is an audio-native system and that discrepancies in agent behavior may be due to audio perception errors, not user corruption.
+- **Audio-native (AUDIO_LLM, S2S):** The judge sees the conversation trace (where user turns are already intended text) alongside the `intended_user_turns`. The prompt explains this is an audio-native system and that discrepancies in agent behavior may be due to audio perception errors, not user corruption.
 
 In both cases, `intended_user_turns` serves as ground truth for what the user actually said.
 

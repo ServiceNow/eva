@@ -102,6 +102,35 @@ class TestTaskCompletion:
         score = await self.metric.compute(ctx)
         assert score.score == 1.0
 
+    @pytest.mark.asyncio
+    async def test_auth_failure_returns_zero(self):
+        """If session auth fails, task_completion must return 0.0 regardless of DB state."""
+        db = {"reservations": {"ABC": {"status": "confirmed"}}}
+        ctx = make_metric_context(
+            expected_scenario_db={**db, "session": {"confirmation_number": "ABC", "last_name": "doe"}},
+            final_scenario_db={**db, "session": {"confirmation_number": "ABC", "last_name": "wrong"}},
+            final_scenario_db_hash=get_dict_hash(db),
+        )
+        score = await self.metric.compute(ctx)
+
+        assert score.score == 0.0
+        assert score.details["auth_success"] is False
+        assert "last_name" in score.details["auth_mismatches"]
+
+    @pytest.mark.asyncio
+    async def test_no_expected_session_does_not_block(self):
+        """Empty expected session means no auth requirement — DB hash comparison proceeds normally."""
+        db = {"reservations": {"ABC": {"status": "confirmed"}}}
+        ctx = make_metric_context(
+            expected_scenario_db={**db, "session": {}},
+            final_scenario_db=db,
+            final_scenario_db_hash=get_dict_hash(db),
+        )
+        score = await self.metric.compute(ctx)
+
+        assert score.score == 1.0
+        assert score.details.get("auth_failed") is not True
+
     def test_metric_attributes(self):
         assert self.metric.name == "task_completion"
         assert self.metric.category == "accuracy"
