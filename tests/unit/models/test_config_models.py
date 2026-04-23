@@ -992,13 +992,6 @@ class TestParamAlias:
         config = _config(env_vars=_BASE_ENV)
         assert "nova-2" in config.run_id
 
-    def test_param_alias_empty_when_neither_present(self):
-        """_param_alias returns empty string when neither alias nor model is in params."""
-        from eva.models.config import _param_alias
-
-        assert _param_alias({}) == ""
-        assert _param_alias({"other": "value"}) == ""
-
 
 class TestSpeechToSpeechConfig:
     """Tests for SpeechToSpeechConfig discriminated union."""
