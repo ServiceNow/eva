@@ -79,6 +79,30 @@ _CATEGORY_COLORS = {
 
 _NON_NORMALIZED_METRICS = {"response_speed"}
 
+# Prefix shown in front of metric labels when the metric is lower-is-better.
+_LOWER_IS_BETTER_PREFIX = "↓ "
+
+
+def _is_lower_is_better(name: str) -> bool:
+    """Return True if a metric or sub-metric reads lower-is-better.
+
+    Parent metric direction comes from the metric class (via the registry).
+    Sub-metric direction is derived from the key suffix: ``_rate`` → lower is
+    better, ``_accuracy`` → higher is better, otherwise inherit the parent.
+    Sub-metric keys are encoded as ``<parent>__<sub_key>`` in the analysis app.
+    """
+    parent, _, sub_key = name.partition("__")
+    metric_class = get_global_registry().get(parent)
+    parent_higher_is_better = True if metric_class is None else metric_class.higher_is_better
+    if not sub_key:
+        return not parent_higher_is_better
+    if sub_key.endswith("_rate"):
+        return True
+    if sub_key.endswith("_accuracy"):
+        return False
+    return not parent_higher_is_better
+
+
 # EVA composite scores to show in the bar chart
 _EVA_BAR_COMPOSITES = ["EVA-A_pass", "EVA-X_pass", "EVA-A_mean", "EVA-X_mean"]
 
@@ -248,15 +272,21 @@ def _sort_metrics_by_category(metric_names: list[str]) -> list[str]:
     return sorted(metric_names, key=_sort_key)
 
 
+def _direction_prefix(name: str) -> str:
+    """Return the lower-is-better prefix (e.g. ``"↓ "``) if applicable, else ``""``."""
+    return _LOWER_IS_BETTER_PREFIX if _is_lower_is_better(name) else ""
+
+
 def _make_category_header_rename(metric_names: list[str]) -> dict[str, str]:
     """Prefix metric names with their category for display."""
-    return {m: f"[{_METRIC_GROUP.get(m, 'Other')}] {m}" for m in metric_names}
+    return {m: f"[{_METRIC_GROUP.get(m, 'Other')}] {_direction_prefix(m)}{m}" for m in metric_names}
 
 
 def _format_metric_name(name: str) -> str:
     """Format a metric name for display, preserving acronyms."""
     parts = name.split("_")
-    return " ".join(p.upper() if p.lower() in _ACRONYMS else p.capitalize() for p in parts)
+    formatted = " ".join(p.upper() if p.lower() in _ACRONYMS else p.capitalize() for p in parts)
+    return f"{_direction_prefix(name)}{formatted}"
 
 
 def _score_color(score: float | None) -> str:
@@ -1183,6 +1213,7 @@ def render_run_overview(run_dir: Path):
         chart_rows = [
             {
                 "metric": _format_metric_name(m),
+                "raw_metric": m,
                 "mean": stats["mean"],
                 "std": stats["std"],
                 "min": stats["min"],
@@ -1196,10 +1227,12 @@ def render_run_overview(run_dir: Path):
         if chart_rows:
             chart_df = pd.DataFrame(chart_rows)
 
-            # Sort by category order then metric name within category
+            # Sort by category order, then raw metric name so sub-metrics stay next to their parent.
             cat_order = {c: i for i, c in enumerate(_CATEGORY_ORDER + ["Other"])}
             chart_df["_cat_sort"] = chart_df["category"].map(lambda c: cat_order.get(c, len(cat_order)))
-            chart_df = chart_df.sort_values(["_cat_sort", "metric"], ascending=[True, True]).drop(columns=["_cat_sort"])
+            chart_df = chart_df.sort_values(["_cat_sort", "raw_metric"], ascending=[True, True]).drop(
+                columns=["_cat_sort", "raw_metric"]
+            )
 
             fig = go.Figure()
             for cat in _CATEGORY_ORDER + ["Other"]:
@@ -1897,7 +1930,7 @@ def _get_run_dirs():
     if latest_only:
         run_dirs = filter_latest_runs(run_dirs)
 
-    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics")
+    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics", bind="query-params")
 
     if not run_dirs:
         st.error(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
