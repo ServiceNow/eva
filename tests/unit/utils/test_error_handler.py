@@ -1,7 +1,5 @@
 """Tests for eva.utils.error_handler module."""
 
-import asyncio
-
 import httpx
 import pytest
 from litellm.exceptions import (
@@ -137,7 +135,7 @@ class TestCategorizeError:
         assert info.is_retryable is True
 
     def test_asyncio_timeout(self):
-        err = asyncio.TimeoutError()
+        err = TimeoutError()
         info = categorize_error(err)
         assert info.error_type == "timeout_error"
         assert info.error_source == "system"
@@ -201,7 +199,7 @@ class TestGetErrorSource:
         assert get_error_source(err) == "openai"
 
     def test_asyncio_timeout(self):
-        assert get_error_source(asyncio.TimeoutError()) == "system"
+        assert get_error_source(TimeoutError()) == "system"
 
     def test_tts_providers(self):
         assert get_error_source(Exception("cartesia error")) == "cartesia"
@@ -229,7 +227,7 @@ class TestIsRetryableError:
         assert is_retryable_error(err) is True
 
     def test_asyncio_timeout_retryable(self):
-        assert is_retryable_error(asyncio.TimeoutError()) is True
+        assert is_retryable_error(TimeoutError()) is True
 
     def test_tts_stt_retryable(self):
         assert is_retryable_error(Exception("cartesia error")) is True

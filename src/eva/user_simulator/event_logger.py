@@ -100,14 +100,15 @@ class ElevenLabsEventLogger:
             },
         )
 
-    def log_audio_start(self, role: str) -> None:
+    def log_audio_start(self, role: str, timestamp: float | None = None) -> None:
         """Log when audio starts for a given role.
 
         Args:
-            role: Either 'elevenlabs_user' or 'pipecat_agent'
+            role: Either 'elevenlabs_user' or 'framework_agent'
+            timestamp: Timestamp in milliseconds when audio started
         """
         # Use Unix timestamp in seconds (as float)
-        audio_timestamp = time.time()
+        audio_timestamp = timestamp or time.time()
         # Note: For audio events, we need to store event_type and user at top level
         # not nested in data
         self._sequence += 1
@@ -125,7 +126,7 @@ class ElevenLabsEventLogger:
         """Log when audio ends for a given role.
 
         Args:
-            role: Either 'elevenlabs_user' or 'pipecat_agent'
+            role: Either 'elevenlabs_user' or 'framework_agent'
         """
         # Use Unix timestamp in seconds (as float)
         audio_timestamp = time.time()
@@ -147,8 +148,7 @@ class ElevenLabsEventLogger:
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(self.output_path, "w") as f:
-            for event in self._events:
-                f.write(json.dumps(event) + "\n")
+            f.writelines(json.dumps(event) + "\n" for event in self._events)
 
         logger.info(f"Saved {len(self._events)} ElevenLabs events to {self.output_path}")
 

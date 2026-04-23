@@ -87,13 +87,17 @@ def get_dict_hash(obj: dict) -> str:
     - Use default=str for non-JSON-serializable types
     - Compute SHA-256 hash of the serialized string
 
+    The 'session' key is always excluded from hashing — auth success is
+    tracked separately via the authentication_success metric.
+
     Args:
         obj: Dictionary to hash
 
     Returns:
         Hexadecimal SHA-256 hash string
     """
-    normalized = normalize_for_comparison(obj)
+    obj_for_hash = {k: v for k, v in obj.items() if k != "session"} if isinstance(obj, dict) else obj
+    normalized = normalize_for_comparison(obj_for_hash)
     serialized = json.dumps(normalized, sort_keys=True, default=str, separators=(",", ":"))
     return hashlib.sha256(serialized.encode()).hexdigest()
 

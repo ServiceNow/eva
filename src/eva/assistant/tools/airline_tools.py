@@ -173,6 +173,14 @@ def get_reservation(params: dict, db: dict, call_index: int) -> dict:
                 "message": f"Last name does not match reservation {confirmation_number}",
             }
 
+    # Write session data to mark successful authentication
+    db.setdefault("session", {}).update(
+        {
+            "confirmation_number": confirmation_number,
+            "last_name": last_name.lower() if last_name else "",
+        }
+    )
+
     # Return success — sort journeys by first segment's date, then journey_id for readability
     result_reservation = copy.deepcopy(reservation)
     result_reservation["bookings"].sort(
@@ -434,7 +442,7 @@ def rebook_flight(params: dict, db: dict, call_index: int) -> dict:
 
     # Determine fare classes
     original_fare_class = booking.get("fare_class", "main_cabin")
-    target_fare_class = new_fare_class if new_fare_class else original_fare_class
+    target_fare_class = new_fare_class or original_fare_class
 
     # Computations
     is_irrops = "irrops" in rebooking_type

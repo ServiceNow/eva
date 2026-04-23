@@ -16,8 +16,7 @@ class TestConversationFinished:
         """Write events to elevenlabs_events.jsonl and return output_dir."""
         events_file = tmp_path / "elevenlabs_events.jsonl"
         with open(events_file, "w") as f:
-            for event in events:
-                f.write(json.dumps(event) + "\n")
+            f.writelines(json.dumps(event) + "\n" for event in events)
         return str(tmp_path)
 
     @pytest.mark.asyncio

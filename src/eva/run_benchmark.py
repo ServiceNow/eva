@@ -42,6 +42,10 @@ async def run_benchmark(config: RunConfig) -> int:
             logger.error(str(e))
             return 1
 
+        # Apply env-dependent values (secrets, urls) from live env onto saved config.
+        # Skip strict LLM check when force-rerunning metrics only — the LLM is not needed.
+        runner.config.apply_env_overrides(config, strict_llm=not config.force_rerun_metrics)
+
         # Apply CLI overrides
         runner.config.max_rerun_attempts = config.max_rerun_attempts
         runner.config.force_rerun_metrics = config.force_rerun_metrics

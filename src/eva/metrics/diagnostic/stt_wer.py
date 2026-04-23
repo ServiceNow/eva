@@ -11,6 +11,7 @@ import jiwer
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import aggregate_wer_errors, extract_wer_errors, reverse_word_error_rate
+from eva.models.config import PipelineType
 from eva.models.results import MetricScore
 from eva.utils.wer_normalization import normalize_text
 
@@ -42,7 +43,7 @@ class STTWERMetric(CodeMetric):
     description = "Debug metric: Speech-to-Text transcription accuracy using Word Error Rate"
     category = "diagnostic"
     exclude_from_pass_at_k = True
-    skip_audio_native = True
+    supported_pipeline_types = frozenset({PipelineType.CASCADE})
 
     def __init__(self, config: dict | None = None):
         """Initialize the metric with language configuration."""

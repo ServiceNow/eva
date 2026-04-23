@@ -1,4 +1,4 @@
-"""Authentication success metric - checks if get_reservation was called successfully.
+"""Authentication success metric - checks if the session was authenticated correctly.
 
 Debug metric for diagnosing model performance issues, not directly used in
 final evaluation scores.
@@ -9,58 +9,75 @@ from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
 
 
+def _normalize_session_value(v: object) -> object:
+    """Normalize a session value for comparison — strings are lowercased."""
+    return v.lower() if isinstance(v, str) else v
+
+
+def compute_session_auth_mismatches(expected_scenario_db: dict, final_scenario_db: dict) -> dict:
+    """Check whether the final DB session satisfies the expected session.
+
+    String values are compared case-insensitively.
+    Returns a dict of mismatched keys (empty dict means auth succeeded or no auth expected).
+    """
+    expected_session = expected_scenario_db.get("session", {})
+    actual_session = final_scenario_db.get("session", {})
+    return {
+        k: {"expected": v, "actual": actual_session.get(k)}
+        for k, v in expected_session.items()
+        if _normalize_session_value(actual_session.get(k)) != _normalize_session_value(v)
+    }
+
+
 @register_metric
 class AuthenticationSuccessMetric(CodeMetric):
-    """Checks whether the agent successfully authenticated the user via get_reservation.
+    """Checks whether the agent successfully authenticated the user.
 
-    Looks at tool_responses for entries where tool_name == "get_reservation"
-    and checks if any had tool_response.status == "success".
+    Compares the 'session' key in the final scenario database against the
+    expected session in the ground truth. Authentication is successful if the
+    final session is a superset of the expected session — i.e., every key-value
+    pair in expected_session is present in the actual final session.
 
-    Score: 1.0 if at least one get_reservation call succeeded, 0.0 otherwise.
+    Score: 1.0 if final session is a superset of expected session, 0.0 otherwise.
 
     This is a diagnostic metric used for diagnosing model performance issues.
     It is not directly used in final evaluation scores.
     """
 
     name = "authentication_success"
-    description = "Debug metric: checks if get_reservation was called with a successful result"
+    description = "Checks if session state in final DB is a superset of expected session"
     category = "diagnostic"
     exclude_from_pass_at_k = True
 
     async def compute(self, context: MetricContext) -> MetricScore:
-        """Compute authentication success from tool responses."""
+        """Compute authentication success from final scenario database session state."""
         try:
-            tool_responses = context.tool_responses or []
+            expected_session = context.expected_scenario_db.get("session", {})
+            actual_session = context.final_scenario_db.get("session", {})
 
-            get_reservation_calls = [resp for resp in tool_responses if resp.get("tool_name") == "get_reservation"]
+            if not expected_session:
+                return MetricScore(
+                    name=self.name,
+                    score=None,
+                    normalized_score=None,
+                    skipped=True,
+                    details={"reason": "No expected session to verify — skipping auth check"},
+                )
 
-            found = len(get_reservation_calls) > 0
-
-            success_count = 0
-            for resp in get_reservation_calls:
-                tool_response = resp.get("tool_response", {})
-                if isinstance(tool_response, dict) and tool_response.get("status") == "success":
-                    success_count += 1
-
-            score = 1.0 if success_count > 0 else 0.0
-
-            # Determine reason for failure
-            if not found:
-                reason = "get_reservation tool was never called"
-            elif success_count == 0:
-                reason = "get_reservation was called but never returned status success"
-            else:
-                reason = "get_reservation called successfully"
+            mismatches = compute_session_auth_mismatches(context.expected_scenario_db, context.final_scenario_db)
+            success = len(mismatches) == 0
 
             return MetricScore(
                 name=self.name,
-                score=score,
-                normalized_score=score,
+                score=1.0 if success else 0.0,
+                normalized_score=1.0 if success else 0.0,
                 details={
-                    "get_reservation_found": found,
-                    "get_reservation_call_count": len(get_reservation_calls),
-                    "get_reservation_success_count": success_count,
-                    "reason": reason,
+                    "expected_session": expected_session,
+                    "actual_session": actual_session,
+                    "mismatches": mismatches,
+                    "reason": "Authentication successful"
+                    if success
+                    else f"Session mismatch on keys: {list(mismatches)}",
                 },
             )
 

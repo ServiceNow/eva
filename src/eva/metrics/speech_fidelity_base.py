@@ -86,6 +86,9 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             for response_item in turns:
                 turn_id = resolve_turn_id(response_item, tts_turn_ids, self.name)
                 if turn_id is None:
+                    self.logger.warning(
+                        f"[{context.record_id}] Could not resolve turn ID for {response_item} turn_ids {tts_turn_ids}"
+                    )
                     continue
                 rating = response_item.get("rating")
                 transcript = response_item.get("transcript")

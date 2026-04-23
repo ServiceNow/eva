@@ -10,7 +10,7 @@ Prompts are split across multiple files in configs/prompts/:
 """
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -36,7 +36,7 @@ class PromptManager:
         ... )
     """
 
-    def __init__(self, prompts_path: Optional[Path | str] = None):
+    def __init__(self, prompts_path: Path | str | None = None):
         """Initialize the prompt manager.
 
         Args:
@@ -63,7 +63,7 @@ class PromptManager:
     def _load_single_file(self, file_path: Path) -> None:
         """Load prompts from a single YAML file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
             self.prompts.update(data)
             self.loaded_files.append(file_path)
@@ -121,12 +121,12 @@ class PromptManager:
             return value.format(**formatted_vars)
         except KeyError as e:
             raise KeyError(
-                "Missing variable {e} for prompt '{path}'. Available variables: {sorted(formatted_vars.keys())}"
+                f"Missing variable {e} for prompt '{path}'. Available variables: {sorted(formatted_vars.keys())}"
             ) from e
 
 
 # Global singleton instance
-_prompt_manager: Optional[PromptManager] = None
+_prompt_manager: PromptManager | None = None
 
 
 def get_prompt_manager() -> PromptManager:

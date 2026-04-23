@@ -1,9 +1,48 @@
-import riva.client
+from __future__ import annotations
+
 from pipecat.frames.frames import CancelFrame, EndFrame
-from pipecat.services.nvidia.stt import NvidiaSTTService
-from pipecat.services.nvidia.tts import NvidiaTTSService
 
 from eva.utils.logging import get_logger
+
+try:
+    import riva.client as riva_client  # type: ignore[import-untyped]
+    from pipecat.services.nvidia.stt import NvidiaSTTService
+    from pipecat.services.nvidia.tts import NvidiaTTSService
+
+    _NVIDIA_AVAILABLE = True
+except ImportError:
+    riva_client = None  # type: ignore[assignment]
+    _NVIDIA_AVAILABLE = False
+    NvidiaSTTService = object  # type: ignore[misc]
+    NvidiaTTSService = object  # type: ignore[misc]
+
+
+def _check_nvidia_available():
+    if not _NVIDIA_AVAILABLE:
+        raise ImportError(
+            "nvidia-riva-client is required for Baseten services. Install it with: pip install nvidia-riva-client"
+        )
+
+
+try:
+    import riva.client as riva_client  # type: ignore[import-untyped]
+    from pipecat.services.nvidia.stt import NvidiaSTTService
+    from pipecat.services.nvidia.tts import NvidiaTTSService
+
+    _NVIDIA_AVAILABLE = True
+except ImportError:
+    riva_client = None  # type: ignore[assignment]
+    _NVIDIA_AVAILABLE = False
+    NvidiaSTTService = object  # type: ignore[misc]
+    NvidiaTTSService = object  # type: ignore[misc]
+
+
+def _check_nvidia_available():
+    if not _NVIDIA_AVAILABLE:
+        raise ImportError(
+            "nvidia-riva-client is required for Baseten services. Install it with: pip install nvidia-riva-client"
+        )
+
 
 logger = get_logger(__name__)
 
@@ -26,6 +65,7 @@ class BasetenSTTService(NvidiaSTTService):
     """NvidiaSTTService that authenticates against a Baseten-hosted Riva deployment."""
 
     def __init__(self, *, api_key: str, base_url: str, **kwargs):
+        _check_nvidia_available()
         # Extract "model-{id}" from "model-{id}.grpc.api.baseten.co:443"
         model_id_header = base_url.split(".")[0]
         super().__init__(
@@ -42,8 +82,8 @@ class BasetenSTTService(NvidiaSTTService):
             ("baseten-authorization", f"Api-Key {self._api_key}"),
             ("baseten-model-id", self._function_id),
         ]
-        self._auth = riva.client.Auth(None, self._use_ssl, self._server, metadata)
-        self._asr_service = riva.client.ASRService(self._auth)
+        self._auth = riva_client.Auth(None, self._use_ssl, self._server, metadata)
+        self._asr_service = riva_client.ASRService(self._auth)
 
     def _cleanup(self):
         _close_grpc_channel(self._auth, "STT")
@@ -65,6 +105,7 @@ class BasetenTTSService(NvidiaTTSService):
     """NvidiaTTSService that authenticates against a Baseten-hosted Riva deployment."""
 
     def __init__(self, *, api_key: str, base_url: str, **kwargs):
+        _check_nvidia_available()
         # Extract "model-{id}" from "model-{id}.grpc.api.baseten.co:443"
         model_id_header = base_url.split(".")[0]
         super().__init__(
@@ -83,8 +124,8 @@ class BasetenTTSService(NvidiaTTSService):
             ("baseten-authorization", f"Api-Key {self._api_key}"),
             ("baseten-model-id", self._function_id),
         ]
-        self._auth = riva.client.Auth(None, self._use_ssl, self._server, metadata)
-        self._service = riva.client.SpeechSynthesisService(self._auth)
+        self._auth = riva_client.Auth(None, self._use_ssl, self._server, metadata)
+        self._service = riva_client.SpeechSynthesisService(self._auth)
 
     def _cleanup(self):
         _close_grpc_channel(self._auth, "TTS")

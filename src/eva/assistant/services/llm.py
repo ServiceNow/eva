@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import Any, Optional
+from typing import Any
 
 import litellm
 from dotenv import load_dotenv
@@ -37,7 +37,7 @@ class LiteLLMClient:
     async def complete(
         self,
         messages: list[dict[str, Any]],
-        tools: Optional[list[dict]] = None,
+        tools: list[dict] | None = None,
         max_retries: int = 5,
         initial_delay: float = 1.0,
     ) -> tuple[Any, dict[str, Any]]:

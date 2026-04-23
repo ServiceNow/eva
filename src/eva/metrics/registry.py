@@ -1,6 +1,6 @@
 """Registry for managing available metrics."""
 
-from typing import Any, Type
+from typing import Any
 
 from eva.metrics.base import BaseMetric
 from eva.utils.logging import get_logger
@@ -15,9 +15,9 @@ class MetricRegistry:
     """
 
     def __init__(self):
-        self._metrics: dict[str, Type[BaseMetric]] = {}
+        self._metrics: dict[str, type[BaseMetric]] = {}
 
-    def register(self, metric_class: Type[BaseMetric]) -> Type[BaseMetric]:
+    def register(self, metric_class: type[BaseMetric]) -> type[BaseMetric]:
         """Register a metric class.
 
         Can be used as a decorator:
@@ -39,7 +39,7 @@ class MetricRegistry:
         logger.debug(f"Registered metric: {name}")
         return metric_class
 
-    def get(self, name: str) -> Type[BaseMetric] | None:
+    def get(self, name: str) -> type[BaseMetric] | None:
         """Get a metric class by name.
 
         Args:
@@ -74,7 +74,7 @@ class MetricRegistry:
         """Get list of all registered metric names."""
         return list(self._metrics.keys())
 
-    def get_all(self) -> dict[str, Type[BaseMetric]]:
+    def get_all(self) -> dict[str, type[BaseMetric]]:
         """Get all registered metrics."""
         return self._metrics.copy()
 
@@ -88,7 +88,7 @@ def get_global_registry() -> MetricRegistry:
     return _global_registry
 
 
-def register_metric(metric_class: Type[BaseMetric]) -> Type[BaseMetric]:
+def register_metric(metric_class: type[BaseMetric]) -> type[BaseMetric]:
     """Register a metric in the global registry.
 
     Decorator for metric classes.

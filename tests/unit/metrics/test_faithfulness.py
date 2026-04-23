@@ -23,7 +23,7 @@ class TestFaithfulness:
             agent_role="Assistant",
             agent_tools=[{"name": "search"}],
             current_date_time="2026-01-01",
-            is_audio_native=False,
+            pipeline_type="cascade",
         )
         variables = self.metric.get_prompt_variables(ctx, "User: hi\nBot: hello")
         assert variables["agent_instructions"] == "Be helpful"
@@ -33,7 +33,7 @@ class TestFaithfulness:
         assert "speech-to-text" in variables["disambiguation_context"]
 
     def test_get_prompt_variables_s2s(self):
-        ctx = make_metric_context(is_audio_native=True)
+        ctx = make_metric_context(pipeline_type="s2s")
         variables = self.metric.get_prompt_variables(ctx, "transcript")
         assert "speech-to-speech" in variables["user_turns_disclaimer"]
         assert "raw audio" in variables["disambiguation_context"]

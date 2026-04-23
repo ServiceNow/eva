@@ -9,6 +9,7 @@ from typing import Any
 from eva.metrics.base import MetricContext, TextJudgeMetric
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import aggregate_per_turn_scores, parse_judge_response_list, resolve_turn_id
+from eva.models.config import PipelineType
 from eva.models.results import MetricScore
 
 
@@ -45,7 +46,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     description = "Debug metric: LLM judge evaluation of STT key entity transcription accuracy for entire conversation"
     category = "diagnostic"
     exclude_from_pass_at_k = True
-    skip_audio_native = True
+    supported_pipeline_types = frozenset({PipelineType.CASCADE})
     rating_scale = None  # Custom scoring (not 1-3 scale)
     default_aggregation = "mean"
 
@@ -116,7 +117,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
             # Compute average raw score
             valid_ratings = [r for r in per_turn_ratings.values() if r is not None and r != -1.0]
             not_applicable = [r for r in per_turn_ratings.values() if r == -1.0]
-            avg_rating = sum(valid_ratings) / len(valid_ratings) if valid_ratings else 0.0
+            avg_rating = sum(valid_ratings) / len(valid_ratings) if valid_ratings else None
 
             # All turns had no entities to evaluate — not an error, just nothing to score
             skipped = not applicable_normalized
@@ -127,7 +128,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
 
             return MetricScore(
                 name=self.name,
-                score=round(avg_rating, 3),
+                score=round(avg_rating, 3) if avg_rating is not None else None,
                 normalized_score=round(aggregated_score, 3) if aggregated_score is not None else None,
                 details={
                     "judge_prompt": prompt,
@@ -135,7 +136,6 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
                     "num_turns": len(turns_to_evaluate),
                     "num_evaluated": num_evaluated,
                     "num_not_applicable": len(not_applicable),
-                    "skipped": skipped,
                     "skipped_reason": "No key entities found in any evaluated turn" if skipped else None,
                     "per_turn_ratings": per_turn_ratings,
                     "per_turn_normalized": per_turn_normalized,
@@ -143,6 +143,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
                     "per_turn_entity_details": per_turn_entity_details,
                     "judge_raw_response": response_text,
                 },
+                skipped=skipped,
             )
 
         except Exception as e:

@@ -2,11 +2,11 @@
 
 import hashlib
 import importlib.util
+import os
 import platform
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 import eva
 from eva.models.config import RunConfig
@@ -17,7 +17,7 @@ from eva.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-def _run_git_command(args: list[str]) -> Optional[str]:
+def _run_git_command(args: list[str]) -> str | None:
     """Run a git command and return stripped stdout, or None on failure."""
     try:
         result = subprocess.run(
@@ -35,18 +35,18 @@ def _run_git_command(args: list[str]) -> Optional[str]:
 
 def _get_git_info() -> dict:
     """Collect git state information."""
-    info: dict[str, Optional[str | bool]] = {
+    info: dict[str, str | bool | None] = {
         "git_commit_sha": None,
         "git_branch": None,
         "git_dirty": None,
         "git_diff_hash": None,
     }
 
-    info["git_commit_sha"] = _run_git_command(["rev-parse", "HEAD"])
+    info["git_commit_sha"] = _run_git_command(["rev-parse", "HEAD"]) or os.environ.get("GIT_COMMIT_SHA")
     if info["git_commit_sha"] is None:
         return info
 
-    info["git_branch"] = _run_git_command(["branch", "--show-current"])
+    info["git_branch"] = _run_git_command(["branch", "--show-current"]) or os.environ.get("GIT_BRANCH")
 
     porcelain = _run_git_command(["status", "--porcelain"])
     if porcelain is not None:
@@ -55,11 +55,16 @@ def _get_git_info() -> dict:
             diff_output = _run_git_command(["diff"])
             if diff_output:
                 info["git_diff_hash"] = hashlib.sha256(diff_output.encode()).hexdigest()[:12]
+    else:
+        env_dirty = os.environ.get("GIT_DIRTY")
+        if env_dirty is not None:
+            info["git_dirty"] = env_dirty.lower() in ("1", "true", "yes")
+        info["git_diff_hash"] = os.environ.get("GIT_DIFF_HASH") or None
 
     return info
 
 
-def _find_project_root() -> Optional[Path]:
+def _find_project_root() -> Path | None:
     """Find project root by searching up from this file for pyproject.toml."""
     current = Path(__file__).resolve().parent
     for parent in [current, *current.parents]:
@@ -68,7 +73,7 @@ def _find_project_root() -> Optional[Path]:
     return None
 
 
-def resolve_tool_module_file(tool_module_path: Optional[str]) -> Optional[Path]:
+def resolve_tool_module_file(tool_module_path: str | None) -> Path | None:
     """Resolve a Python module path to its filesystem path."""
     if not tool_module_path:
         return None
@@ -83,7 +88,7 @@ def resolve_tool_module_file(tool_module_path: Optional[str]) -> Optional[Path]:
 
 def capture_provenance(
     config: RunConfig,
-    tool_module_file: Optional[Path] = None,
+    tool_module_file: Path | None = None,
 ) -> RunProvenance:
     """Capture full provenance for a benchmark run.
 
@@ -130,7 +135,7 @@ def capture_provenance(
     else:
         logger.warning("Could not find configs/prompts/ directory for provenance")
 
-    tool_module_info: Optional[ArtifactInfo] = None
+    tool_module_info: ArtifactInfo | None = None
     if tool_module_file is None:
         tool_module_file = resolve_tool_module_file(config.tool_module_path)
     if tool_module_file and tool_module_file.exists():
@@ -173,7 +178,7 @@ def capture_provenance(
 
 def capture_metrics_provenance(
     metric_names: list[str],
-    run_config: Optional[dict] = None,
+    run_config: dict | None = None,
 ) -> MetricsProvenance:
     """Capture provenance for a metrics computation run.
 
@@ -188,7 +193,7 @@ def capture_metrics_provenance(
     git_info = _get_git_info()
     project_root = _find_project_root()
 
-    def _make_artifact(path_str: Optional[str], is_dir: bool = False) -> Optional[ArtifactInfo]:
+    def _make_artifact(path_str: str | None, is_dir: bool = False) -> ArtifactInfo | None:
         if not path_str:
             return None
         path = Path(path_str)
@@ -200,10 +205,10 @@ def capture_metrics_provenance(
         sha = hash_directory(path) if is_dir else hash_file(path)
         return ArtifactInfo(path=path_str, sha256=sha)
 
-    dataset_info: Optional[ArtifactInfo] = None
-    agent_config_info: Optional[ArtifactInfo] = None
-    tool_module_info: Optional[ArtifactInfo] = None
-    scenario_db_info: Optional[ArtifactInfo] = None
+    dataset_info: ArtifactInfo | None = None
+    agent_config_info: ArtifactInfo | None = None
+    tool_module_info: ArtifactInfo | None = None
+    scenario_db_info: ArtifactInfo | None = None
 
     if run_config:
         dataset_info = _make_artifact(run_config.get("dataset_path"))
