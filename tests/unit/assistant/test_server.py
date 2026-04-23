@@ -79,34 +79,31 @@ class TestSaveWavFile:
         assert not bad_path.exists()
 
 
-class TestSaveAudio:
-    def test_empty_audio_buffer_skips_all_saves(self, tmp_path):
-        """No audio accumulated → no files written."""
-        srv = _make_server(tmp_path)
-        srv._save_audio()
-        assert not (tmp_path / "audio_mixed.wav").exists()
-        assert not (tmp_path / "audio_user.wav").exists()
-        assert not (tmp_path / "audio_assistant.wav").exists()
-
+class TestSaveAudioDeferred:
     def test_writes_separate_channel_content(self, tmp_path):
         """Each channel's audio should end up in the correct file with distinct content."""
         srv = _make_server(tmp_path)
         mixed = b"\x01\x00" * 100
         user = b"\x02\x00" * 100
         assistant = b"\x03\x00" * 100
-        srv._audio_buffer = bytearray(mixed)
-        srv.user_audio_buffer = bytearray(user)
-        srv.assistant_audio_buffer = bytearray(assistant)
 
-        srv._save_audio()
+        srv._save_audio_deferred(mixed, user, assistant, SAMPLE_RATE)
 
-        # Verify content differs across channels
         with wave.open(str(tmp_path / "audio_mixed.wav"), "rb") as wf:
             assert wf.readframes(wf.getnframes()) == mixed
         with wave.open(str(tmp_path / "audio_user.wav"), "rb") as wf:
             assert wf.readframes(wf.getnframes()) == user
         with wave.open(str(tmp_path / "audio_assistant.wav"), "rb") as wf:
             assert wf.readframes(wf.getnframes()) == assistant
+
+    def test_stop_returns_none_when_no_audio(self, tmp_path):
+        """stop() returns None (no deferred task) when no audio was accumulated."""
+        srv = _make_server(tmp_path)
+        srv._running = True
+        # Buffers are empty (default) — stop() should return None, no WAV files written
+        result = asyncio.run(srv.stop())
+        assert result is None
+        assert not (tmp_path / "audio_mixed.wav").exists()
 
 
 class TestSaveTranscriptMessage:

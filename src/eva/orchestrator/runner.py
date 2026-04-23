@@ -13,7 +13,7 @@ from eva.models.config import PipelineConfig, RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RunResult
 from eva.orchestrator.port_pool import PortPool
-from eva.orchestrator.validation_runner import ValidationRunner
+from eva.orchestrator.validation_runner import ValidationResult, ValidationRunner
 from eva.orchestrator.worker import ConversationWorker
 from eva.utils.conversation_checks import check_conversation_finished, find_records_with_llm_generic_error
 from eva.utils.logging import get_logger
@@ -160,6 +160,23 @@ class BenchmarkRunner:
         rerun_history: dict[str, list[dict]] = {}
         started_at = datetime.now()
 
+        # Initialize port pool once before the attempt loop.
+        await self.port_pool.initialize()
+
+        # Semaphore limits concurrent conversations across all attempts.
+        # All slots are always released after asyncio.gather, so reusing it is safe.
+        semaphore = asyncio.Semaphore(self.config.max_concurrent_conversations)
+
+        # Pre-create ValidationRunner for per-record pipelining. Its shared MetricsRunner
+        # for validation metrics is lazily initialized on first use.
+        _all_unique_records = list({id(r): r for r in output_id_to_record.values()}.values())
+        pipeline_validation_runner = ValidationRunner(
+            run_dir=self.output_dir,
+            dataset=_all_unique_records,
+            thresholds=self.config.validation_thresholds,
+            skip_conversation_finished=True,
+        )
+
         # Pre-create MetricsRunner so metrics can start as soon as records pass validation,
         # overlapping with reruns of failed records instead of waiting for ALL conversations.
         metrics_runner: MetricsRunner | None = None
@@ -191,62 +208,85 @@ class BenchmarkRunner:
                 f"{'=' * 60}"
             )
 
-            # STEP 1: Run conversations for pending output_ids only
-            tasks = [(output_id_to_record[oid], oid) for oid in pending_output_ids]
-            run_results = await self._run_targeted(tasks)
+            # STEPS 1-3: Per-record pipeline — run, validate, and fire metrics as each
+            # conversation completes rather than waiting for the full batch.
+            # The semaphore slot is released before audio writes and before LLM validation
+            # calls, so the next conversation can start earlier.
 
-            # STEP 2: Check conversation_finished for each output_id
+            async def _run_and_pipeline(
+                record: EvaluationRecord, output_id: str
+            ) -> tuple[str, ConversationResult | Exception, bool, ValidationResult | None]:
+                try:
+                    # Phase 1: Run conversation (bounded by semaphore)
+                    async with semaphore:
+                        result, audio_task = await self._run_conversation(record, output_id)
+
+                    # Phase 2: Save result.json outside the semaphore
+                    if isinstance(result, ConversationResult):
+                        result_path = self.output_dir / "records" / output_id / "result.json"
+                        result_path.parent.mkdir(parents=True, exist_ok=True)
+                        await asyncio.to_thread(result_path.write_text, result.model_dump_json(indent=2))
+
+                    # Phase 3: Check conversation_finished (fast, no LLM)
+                    record_dir = self.output_dir / "records" / output_id
+                    is_finished = (
+                        isinstance(result, ConversationResult)
+                        and result.completed
+                        and check_conversation_finished(record_dir)
+                    )
+                    if not is_finished:
+                        return output_id, result, False, None
+
+                    # Phase 4: Await audio task (needed for audio-based validation metrics)
+                    if audio_task is not None:
+                        try:
+                            await audio_task
+                        except Exception as e:
+                            logger.warning(f"Audio save failed for {output_id}: {e}")
+
+                    # Phase 5: Validate this record
+                    vr = await pipeline_validation_runner.validate_one(output_id)
+
+                    # Phase 6: Fire metrics immediately if passed
+                    if vr.passed and metrics_runner is not None:
+                        rdir = self.output_dir / "records" / output_id
+                        task = asyncio.create_task(metrics_runner._run_and_save_record(output_id, rdir))
+                        metrics_background_tasks.append(task)
+
+                    return output_id, result, vr.passed, vr
+
+                except Exception as exc:
+                    logger.error(f"Pipeline error for {output_id}: {exc}", exc_info=True)
+                    return output_id, exc, False, None
+
+            pipeline_results = await asyncio.gather(
+                *[_run_and_pipeline(output_id_to_record[oid], oid) for oid in pending_output_ids],
+                return_exceptions=True,
+            )
+
+            # Collect per-record outcomes
             finished_ids: list[str] = []
             not_finished_ids: list[str] = []
+            failed_validation_ids: list[str] = []
+            validation_results: dict[str, ValidationResult] = {}
 
-            for output_id in pending_output_ids:
-                result = run_results.get(output_id)
-                record_dir = self.output_dir / "records" / output_id
-
-                # Treat exceptions and incomplete results as not finished
-                if isinstance(result, Exception) or (isinstance(result, ConversationResult) and not result.completed):
+            for item in pipeline_results:
+                if isinstance(item, Exception):
+                    logger.error(f"Unexpected pipeline coroutine exception: {item}")
+                    continue
+                output_id, _result, passed, vr = item
+                if vr is None:
                     not_finished_ids.append(output_id)
-                elif check_conversation_finished(record_dir):
-                    finished_ids.append(output_id)
                 else:
-                    not_finished_ids.append(output_id)
+                    finished_ids.append(output_id)
+                    if not passed:
+                        failed_validation_ids.append(output_id)
+                        validation_results[output_id] = vr
 
             if not_finished_ids:
                 logger.info(
                     f"{len(not_finished_ids)} tasks did not finish properly (attempt {attempt_number}/{max_attempts})"
                 )
-
-            # STEP 3: Run validation metrics on finished records only
-            failed_validation_ids: list[str] = []
-            if finished_ids:
-                finished_records = list(
-                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in finished_ids}.values()
-                )
-                logger.info(f"Running validation metrics on {len(finished_ids)} finished tasks...")
-                validation_runner = ValidationRunner(
-                    run_dir=self.output_dir,
-                    dataset=finished_records,
-                    thresholds=self.config.validation_thresholds,
-                    skip_conversation_finished=True,
-                    output_ids=finished_ids,
-                )
-                validation_results = await validation_runner.run_validation()
-
-                for output_id in finished_ids:
-                    vr = validation_results.get(output_id)
-                    if not vr or not vr.passed:
-                        failed_validation_ids.append(output_id)
-
-            # Start metrics for newly validated records immediately (overlapped with reruns).
-            # Each _run_and_save_record call writes metrics.json to disk, so the final
-            # MetricsRunner.run() will skip these records and only do summary aggregation.
-            newly_successful = set(finished_ids) - set(failed_validation_ids)
-            if metrics_runner and newly_successful:
-                logger.info(f"Starting background metrics for {len(newly_successful)} validated records")
-                for rid in newly_successful:
-                    rdir = self.output_dir / "records" / rid
-                    task = asyncio.create_task(metrics_runner._run_and_save_record(rid, rdir))
-                    metrics_background_tasks.append(task)
 
             # STEP 4: Determine which output_ids failed this attempt
             failed_this_attempt = not_finished_ids + failed_validation_ids
@@ -416,7 +456,9 @@ class BenchmarkRunner:
             duration_seconds=(ended_at - started_at).total_seconds(),
         )
 
-    async def _run_conversation(self, record: EvaluationRecord, output_id: str) -> ConversationResult:
+    async def _run_conversation(
+        self, record: EvaluationRecord, output_id: str
+    ) -> tuple[ConversationResult, asyncio.Task | None]:
         """Run a single conversation.
 
         Args:
@@ -424,7 +466,8 @@ class BenchmarkRunner:
             output_id: Directory name for output (may include _trial_N suffix)
 
         Returns:
-            ConversationResult
+            Tuple of (ConversationResult, deferred_audio_task). The audio task writes WAV
+            files in a thread pool and should be awaited before accessing audio outputs.
         """
         # Acquire port
         port = await self.port_pool.acquire()
@@ -447,7 +490,8 @@ class BenchmarkRunner:
             )
 
             # Run conversation
-            return await worker.run()
+            result = await worker.run()
+            return result, worker.deferred_audio_task
         finally:
             # Always release port
             await self.port_pool.release(port)
@@ -479,7 +523,14 @@ class BenchmarkRunner:
 
         async def run_with_semaphore(record: EvaluationRecord, output_id: str) -> ConversationResult:
             async with semaphore:
-                return await self._run_conversation(record, output_id)
+                result, audio_task = await self._run_conversation(record, output_id)
+            # Semaphore released; await audio task outside it so the slot is free sooner.
+            if audio_task is not None:
+                try:
+                    await audio_task
+                except Exception as e:
+                    logger.warning(f"Audio save failed for {output_id}: {e}")
+            return result
 
         coros = [run_with_semaphore(record, oid) for record, oid in tasks]
         results = await asyncio.gather(*coros, return_exceptions=True)

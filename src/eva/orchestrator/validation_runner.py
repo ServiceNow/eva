@@ -1,5 +1,6 @@
 """Validation metrics runner for benchmark validation mode."""
 
+import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -61,6 +62,11 @@ class ValidationRunner:
         self.metric_configs = metric_configs or {}
         self.skip_conversation_finished = skip_conversation_finished
         self.output_ids = output_ids
+
+        # Shared MetricsRunner for validate_one() — lazily initialized on first call.
+        # Safe for concurrent calls on different output_ids (asyncio single-threaded).
+        self._shared_validation_metrics_runner: MetricsRunner | None = None
+        self._validation_runner_lock = asyncio.Lock()
 
     async def run_validation(self) -> dict[str, ValidationResult]:
         """Run validation metrics and return results per record.
@@ -153,6 +159,50 @@ class ValidationRunner:
         logger.info(f"Validation complete: {passed_count}/{total_count} records passed ({pct:.1f}%)")
 
         return validation_results
+
+    async def validate_one(self, output_id: str) -> ValidationResult:
+        """Validate a single record for per-record pipelining.
+
+        Assumes the caller has already confirmed conversation_finished. Only runs
+        user_behavioral_fidelity and user_speech_fidelity.
+
+        The shared MetricsRunner is lazily initialized on first call and reused across
+        concurrent calls — safe because different output_ids never share state.
+
+        Args:
+            output_id: Record directory name (e.g. "1.2.1" or "1.2.1/trial_0").
+
+        Returns:
+            ValidationResult with pass/fail details.
+        """
+        metrics_to_run = [m for m in self.VALIDATION_METRICS if m != "conversation_finished"]
+
+        # Double-checked lazy init so the MetricsRunner is created only once.
+        if self._shared_validation_metrics_runner is None:
+            async with self._validation_runner_lock:
+                if self._shared_validation_metrics_runner is None:
+                    self._shared_validation_metrics_runner = MetricsRunner(
+                        run_dir=self.run_dir,
+                        dataset=self.dataset,
+                        metric_names=metrics_to_run,
+                        metric_configs=self.metric_configs,
+                    )
+
+        record_dir = self.run_dir / "records" / output_id
+        record_metrics = await self._shared_validation_metrics_runner._run_and_save_record(
+            output_id, record_dir
+        )
+
+        if record_metrics is None:
+            return ValidationResult(
+                passed=False,
+                failed_metrics=metrics_to_run,
+                failure_category="validation_failed",
+            )
+
+        vr = self._evaluate_record(output_id, record_metrics, metrics_to_run)
+        vr.scores["conversation_finished"] = 1.0  # checked by caller
+        return vr
 
     def _evaluate_record(
         self,

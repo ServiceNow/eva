@@ -198,8 +198,15 @@ class AssistantServer:
 
         logger.info(f"Assistant server started on ws://localhost:{self.port}")
 
-    async def stop(self) -> None:
-        """Stop the server and save outputs."""
+    async def stop(self) -> asyncio.Task | None:
+        """Stop the server and save outputs.
+
+        Returns:
+            An asyncio.Task that completes when audio files are written to disk,
+            or None if no audio was recorded. This task runs in a thread pool and
+            can be awaited outside the concurrency semaphore so the slot is freed
+            before audio hits disk.
+        """
         if not self._running:
             return
 
@@ -209,6 +216,17 @@ class AssistantServer:
         if self._task:
             await self._task.cancel()
             self._task = None
+
+        # Pipeline is stopped — no more audio data will arrive.
+        # Extract bytes now and clear in-memory buffers so the caller can release
+        # its concurrency slot while audio writes happen in a background thread.
+        mixed_audio = bytes(self._audio_buffer)
+        user_audio = bytes(self.user_audio_buffer)
+        assistant_audio = bytes(self.assistant_audio_buffer)
+        sample_rate = self._audio_sample_rate
+        self._audio_buffer.clear()
+        self.user_audio_buffer.clear()
+        self.assistant_audio_buffer.clear()
 
         # Stop the server gracefully
         if self._server:
@@ -229,10 +247,20 @@ class AssistantServer:
             self._server = None
             self._server_task = None
 
-        # Save outputs
+        # Save non-audio outputs (audit log, transcript, scenario DBs)
         await self._save_outputs()
 
         logger.info(f"Assistant server stopped on port {self.port}")
+
+        # Return deferred audio write task — runs in a thread pool, can be awaited
+        # outside the semaphore so the slot is free before audio hits disk.
+        if mixed_audio:
+            return asyncio.create_task(
+                asyncio.to_thread(
+                    self._save_audio_deferred, mixed_audio, user_audio, assistant_audio, sample_rate
+                )
+            )
+        return None
 
     async def _handle_session(self, websocket) -> None:
         """Handle a WebSocket session with the Pipecat pipeline."""
@@ -805,34 +833,18 @@ class AssistantServer:
         except Exception as e:
             logger.error(f"Error saving audio to {file_path}: {e}")
 
-    def _save_audio(self) -> None:
-        """Save accumulated audio to WAV file."""
-        if not self._audio_buffer:
-            logger.warning("No audio data to save")
-            return
-
-        audio_path = self.output_dir / "audio_mixed.wav"
-        self._save_wav_file(
-            bytes(self._audio_buffer),
-            audio_path,
-            self._audio_sample_rate,
-            1,  # Mono
-        )
-        user_audio_path = self.output_dir / "audio_user.wav"
-        self._save_wav_file(
-            bytes(self.user_audio_buffer),
-            user_audio_path,
-            self._audio_sample_rate,
-            1,  # Mono
-        )
-        assistant_audio_path = self.output_dir / "audio_assistant.wav"
-        self._save_wav_file(
-            bytes(self.assistant_audio_buffer),
-            assistant_audio_path,
-            self._audio_sample_rate,
-            1,  # Mono
-        )
-        logger.info(f"Saved {len(self._audio_buffer)} bytes of audio to {audio_path}")
+    def _save_audio_deferred(
+        self,
+        mixed_audio: bytes,
+        user_audio: bytes,
+        assistant_audio: bytes,
+        sample_rate: int,
+    ) -> None:
+        """Save extracted audio bytes to WAV files. Runs in a thread pool via asyncio.to_thread."""
+        self._save_wav_file(mixed_audio, self.output_dir / "audio_mixed.wav", sample_rate, 1)
+        self._save_wav_file(user_audio, self.output_dir / "audio_user.wav", sample_rate, 1)
+        self._save_wav_file(assistant_audio, self.output_dir / "audio_assistant.wav", sample_rate, 1)
+        logger.info(f"Saved audio files to {self.output_dir} ({len(mixed_audio)} bytes mixed)")
 
     async def _save_outputs(self) -> None:
         """Save all outputs (audit log, audio files, etc.)."""
@@ -858,8 +870,7 @@ class AssistantServer:
             except Exception as e:
                 logger.error(f"Error saving agent perf stats: {e}", exc_info=True)
 
-        # Save accumulated audio files
-        self._save_audio()
+        # Audio files are written via the deferred task returned by stop()
 
         # Save initial and final scenario database states (REQUIRED for deterministic metrics)
         try:
