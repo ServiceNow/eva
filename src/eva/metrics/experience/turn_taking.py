@@ -2,7 +2,7 @@
 
 Per-turn scores are continuous in [0, 1]. For each turn we use the signal that actually
 characterizes what happened on that turn:
-  - turn ∈ assistant_interrupted_turns → min(overlap_score, count_score, [post_interrupt_score])
+  - turn ∈ assistant_interrupted_turns → min(overlap_score, count_score, post_interrupt_score) (capped at 5)
   - turn ∈ user_interrupted_turns      → agent-yield-based score
   - turn ∈ both sets                   → min of the two above
   - otherwise                          → latency-based score
