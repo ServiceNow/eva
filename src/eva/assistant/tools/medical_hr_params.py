@@ -71,7 +71,7 @@ Tool sequences per flow:
 """
 
 from enum import StrEnum
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -478,7 +478,7 @@ class SubmitLicenseExtensionParams(BaseModel):
     state_license_number: StateLicenseStr
     extension_type: ExtensionType
     extension_days: Literal[30, 60, 90] = Field(description="Extension duration in days: exactly 30, 60, or 90")
-    supervising_physician_npi: Optional[NpiStr] = Field(
+    supervising_physician_npi: NpiStr | None = Field(
         default=None,
         description="NPI of the supervising physician. Required for supervised extensions, must be omitted for provisional.",
     )
