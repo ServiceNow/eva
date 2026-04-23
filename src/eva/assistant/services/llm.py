@@ -129,31 +129,15 @@ class LiteLLMClient:
                 response_cost = hidden_params.get("response_cost")
                 cost_source = "litellm"
 
-                # Extract reasoning content - LiteLLM provides unified interface
-                # reasoning_content: string containing reasoning (all providers)
-                # thinking_blocks: list of thinking blocks (Anthropic only)
+                # Extract reasoning content — LiteLLM provides a unified interface:
+                # reasoning_content: concatenated thinking text (all providers including Anthropic)
+                # thinking_blocks: raw thinking block objects (Anthropic only, needed for multi-turn threading)
                 reasoning_content = getattr(message, "reasoning_content", None)
                 thinking_blocks = (
                     getattr(message, "thinking_blocks", None) if hasattr(message, "thinking_blocks") else None
                 )
 
-                # For Anthropic models, extract human-readable reasoning from thinking blocks
-                if thinking_blocks and isinstance(thinking_blocks, list):
-                    # Thinking blocks are list of dicts with 'type' and 'thinking' (and optional 'signature')
-                    thinking_texts = []
-                    for block in thinking_blocks:
-                        if isinstance(block, dict) and block.get("type") == "thinking" and "thinking" in block:
-                            thinking_texts.append(block["thinking"])
-                    if thinking_texts:
-                        # Override reasoning_content with extracted thinking text
-                        reasoning_content = "\n\n".join(thinking_texts)
-                        total_chars = sum(len(t) for t in thinking_texts)
-                        logger.info(
-                            f"💭 Extracted {len(thinking_texts)} thinking block(s) from Anthropic response ({total_chars} chars)"
-                        )
-                        logger.debug(f"Thinking content preview: {reasoning_content[:200]}...")
-                elif reasoning_content:
-                    # Non-Anthropic model with reasoning_content (e.g., Gemini)
+                if reasoning_content:
                     logger.info(f"💭 Reasoning content from {model} ({len(reasoning_content)} chars)")
                     logger.debug(f"Reasoning content preview: {reasoning_content[:200]}...")
 
@@ -255,7 +239,10 @@ class LiteLLMClient:
                     # (includes the reasoning item with encrypted_content)
                     input_items.extend(msg["responses_output_items"])
                 elif msg.get("tool_calls"):
-                    # Prior turn in conversation history: reconstruct function_call items
+                    # Prior turn in conversation history: reconstruct function_call items.
+                    # Emit assistant content first (narration preceded tool execution).
+                    if content := msg.get("content"):
+                        input_items.append({"role": "assistant", "content": content})
                     for tc in msg["tool_calls"]:
                         fn = tc.get("function", {})
                         input_items.append(
@@ -279,8 +266,6 @@ class LiteLLMClient:
                         )
                         j += 1
                     i = j - 1  # will be incremented at end of loop
-                    if content := msg.get("content"):
-                        input_items.append({"role": "assistant", "content": content})
                 else:
                     input_items.append({"role": "assistant", "content": msg.get("content", "")})
             elif role == "tool":
@@ -296,10 +281,12 @@ class LiteLLMClient:
         return instructions, input_items
 
     def _get_router_litellm_params(self) -> dict[str, Any]:
-        """Look up the litellm_params for self.model from the router config."""
+        """Look up the litellm_params for self.model from the router config.
+
+        Assumes the router is initialized (only called from _complete_via_responses_api,
+        which requires use_responses_api=True read from the router at init time).
+        """
         r = router.get()
-        if r is None:
-            return {}
         for deployment in getattr(r, "model_list", []):
             if deployment.get("model_name") == self.model:
                 return deployment.get("litellm_params", {})
@@ -440,4 +427,4 @@ class LiteLLMClient:
                     logger.exception(f"Responses API call failed: {e}")
                     raise
 
-        raise last_exception  # type: ignore[misc]
+        raise last_exception

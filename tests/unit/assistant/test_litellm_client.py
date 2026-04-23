@@ -91,7 +91,7 @@ class TestConvertMessagesForResponsesApi:
         ]
 
     def test_assistant_tool_calls_with_text_content_preserved(self):
-        """When an assistant message has both content and tool_calls, content is appended after tool items."""
+        """When an assistant message has both content and tool_calls, content is emitted before tool items."""
         messages = [
             {"role": "user", "content": "Go"},
             {
@@ -104,9 +104,9 @@ class TestConvertMessagesForResponsesApi:
         _, items = LiteLLMClient._convert_messages_for_responses_api(messages)
         assert items == [
             {"role": "user", "content": "Go"},
+            {"role": "assistant", "content": "Let me check that."},
             {"type": "function_call", "call_id": "c1", "name": "lookup", "arguments": "{}"},
             {"type": "function_call_output", "call_id": "c1", "output": "found"},
-            {"role": "assistant", "content": "Let me check that."},
         ]
 
     def test_responses_output_items_injected_directly(self):
