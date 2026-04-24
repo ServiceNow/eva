@@ -238,12 +238,16 @@ def _is_sub_metric(name: str) -> bool:
 
 
 def _sort_metrics_by_category(metric_names: list[str]) -> list[str]:
-    """Sort metric names grouped by category."""
+    """Group metric names by category while preserving input order within each category.
 
-    def _sort_key(m: str) -> tuple[int, str]:
+    Python's ``sorted`` is stable, so keying on the category index only keeps the
+    relative order of items that share a category (e.g., the insertion order from
+    ``_collect_run_metrics``, which already matches each metric's ``sub_metrics`` order).
+    """
+
+    def _sort_key(m: str) -> int:
         cat = _METRIC_GROUP.get(m, "Other")
-        idx = _CATEGORY_ORDER.index(cat) if cat in _CATEGORY_ORDER else len(_CATEGORY_ORDER)
-        return (idx, m)
+        return _CATEGORY_ORDER.index(cat) if cat in _CATEGORY_ORDER else len(_CATEGORY_ORDER)
 
     return sorted(metric_names, key=_sort_key)
 
@@ -288,6 +292,7 @@ def _classify_metrics(
                 "score": metric_score.score,
                 "normalized_score": metric_score.normalized_score,
                 "details": details,
+                "sub_metrics": getattr(metric_score, "sub_metrics", None),
             }
             role = known_role or "user"
             if role == "assistant":
@@ -315,25 +320,34 @@ def _get_turn_metric_info(turn_id: int, per_turn_metrics: dict[str, dict]) -> li
         explanation = ""
 
         if metric_name == "turn_taking":
-            label = (details.get("per_turn_judge_timing_ratings") or {}).get(tid)
-            if label is None:
+            score = (details.get("per_turn_score") or {}).get(tid)
+            if score is None:
                 continue
-            label_lower = label.strip().lower()
-            if label_lower == "on-time":
-                rating = 1.0
-            elif label_lower == "late":
-                rating = 0.3
+            reason = (details.get("per_turn_reason") or {}).get(tid, "")
+            evidence = (details.get("per_turn_evidence") or {}).get(tid, {}) or {}
+            # Compose a short summary: reason + primary timing value.
+            if reason == "latency" and "latency_ms" in evidence:
+                short = f"latency {evidence['latency_ms']:.0f}ms"
+            elif reason == "agent_interrupt" and "overlap_ms" in evidence:
+                short = f"agent interrupt (overlap {evidence['overlap_ms']:.0f}ms)"
+            elif reason == "user_interrupt" and "yield_ms" in evidence:
+                short = f"user interrupt (yield {evidence['yield_ms']:.0f}ms)"
+            elif reason == "dual_interrupt":
+                o = evidence.get("overlap_ms")
+                y = evidence.get("yield_ms")
+                short = (
+                    f"dual interrupt (overlap {o:.0f}ms, yield {y:.0f}ms)"
+                    if o is not None and y is not None
+                    else "dual interrupt"
+                )
             else:
-                rating = 0.0
-            latency = (details.get("per_turn_latency") or {}).get(tid)
-            latency_str = f" ({latency:.3f}s)" if latency is not None else ""
-            explanation = (details.get("per_turn_judge_timing_explanations") or {}).get(tid, "")
+                short = reason or "turn"
             results.append(
                 {
                     "metric_name": metric_name,
-                    "short_name": f"{label}{latency_str}",
-                    "rating": rating,
-                    "explanation": explanation,
+                    "short_name": short,
+                    "rating": score,
+                    "explanation": "",
                 }
             )
             continue
@@ -520,12 +534,22 @@ def _color_cell(val):
 def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
     """Collect all metrics rows for a run. Returns (rows, metric_names).
 
+    Column order is preserved in first-seen insertion order so each metric's
+    ``sub_metrics`` dict drives the column layout (alphabetical sorting would
+    scramble logical groupings like `mean_latency_ms, p50, p90, on_time_rate, ...`).
+
     Rows for failed attempts (directories named *_failed_attempt_*) are marked
     with ``_is_failed_attempt=True`` so the caller can filter them.
     """
     record_dirs = get_record_directories(run_dir)
     rows: list[dict] = []
-    all_metric_names: set[str] = set()
+    ordered_names: list[str] = []
+    seen: set[str] = set()
+
+    def _add(name: str) -> None:
+        if name not in seen:
+            seen.add(name)
+            ordered_names.append(name)
 
     for record_dir in record_dirs:
         record_id = record_dir.name
@@ -542,7 +566,7 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
                 row["trial"] = trial_label
 
             for metric_name, metric_score in metrics.metrics.items():
-                all_metric_names.add(metric_name)
+                _add(metric_name)
                 row[metric_name] = (
                     None
                     if metric_score.error
@@ -562,7 +586,7 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
                             if sub_ms.normalized_score is not None
                             else sub_ms.score
                         )
-                        all_metric_names.add(col)
+                        _add(col)
                         if col not in _METRIC_GROUP:
                             _METRIC_GROUP[col] = _METRIC_GROUP.get(metric_name, "Other")
                         if metric_name in _NON_NORMALIZED_METRICS:
@@ -573,7 +597,7 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
 
             rows.append(row)
 
-    return rows, sorted(all_metric_names)
+    return rows, ordered_names
 
 
 def _extract_eva_scatter_point(
@@ -968,7 +992,14 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         return
 
     run_summaries: list[dict] = []
-    all_metric_names: set[str] = set()
+    ordered_metric_names: list[str] = []
+    seen_names: set[str] = set()
+
+    def _add_name(n: str) -> None:
+        if n not in seen_names:
+            seen_names.add(n)
+            ordered_metric_names.append(n)
+
     scatter_data: list[dict] = []
 
     for run_dir in filtered_dirs:
@@ -980,7 +1011,8 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         if metrics_summary and "per_metric" in metrics_summary:
             per_metric = metrics_summary["per_metric"]
             metric_names = list(per_metric.keys())
-            all_metric_names.update(metric_names)
+            for n in metric_names:
+                _add_name(n)
             model_details = _extract_model_details(run_config)
             system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
             summary: dict = {
@@ -1000,7 +1032,7 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                     if sub_stats.get("mean") is not None:
                         col = f"{m}__{sub_key}"
                         summary[col] = sub_stats["mean"]
-                        all_metric_names.add(col)
+                        _add_name(col)
                         if col not in _METRIC_GROUP:
                             _METRIC_GROUP[col] = _METRIC_GROUP.get(m, "Other")
                         if m in _NON_NORMALIZED_METRICS:
@@ -1016,7 +1048,8 @@ def render_cross_run_comparison(run_dirs: list[Path]):
             rows, metric_names = _collect_run_metrics(run_dir)
             if not rows:
                 continue
-            all_metric_names.update(metric_names)
+            for n in metric_names:
+                _add_name(n)
             df = pd.DataFrame(rows)
             model_details = _extract_model_details(run_config)
             system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
@@ -1046,7 +1079,7 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         st.warning("No runs with metrics data found")
         return
 
-    metric_names = _sort_metrics_by_category(sorted(all_metric_names))
+    metric_names = _sort_metrics_by_category(ordered_metric_names)
     if not st.session_state.get("show_sub_metrics"):
         metric_names = [m for m in metric_names if not _is_sub_metric(m)]
 
@@ -1647,6 +1680,18 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
             details = m.get("details", {})
             st.markdown(f"**{_format_metric_name(selected)}** — per-turn breakdown")
 
+            # Turn-taking: dump the flat sub-metric scores as a simple {key: score} dict.
+            if selected == "turn_taking":
+                sub_metrics = m.get("sub_metrics") or {}
+                sub_scores = {
+                    k: (getattr(sm, "score", None) if not isinstance(sm, dict) else sm.get("score"))
+                    for k, sm in sub_metrics.items()
+                }
+                if sub_scores:
+                    st.caption("Sub-metrics")
+                    st.json(sub_scores)
+                    st.divider()
+
             turn_ids: set[str] = set()
             for k, v in details.items():
                 if k.startswith("per_turn") and isinstance(v, dict):
@@ -1656,22 +1701,31 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
             if turn_ids_sorted:
                 for tid_str in turn_ids_sorted:
                     if selected == "turn_taking":
-                        label = (details.get("per_turn_judge_timing_ratings") or {}).get(tid_str, "")
-                        latency = (details.get("per_turn_latency") or {}).get(tid_str)
-                        explanation = (details.get("per_turn_judge_timing_explanations") or {}).get(tid_str, "")
-                        latency_str = f"{latency:.3f}s" if latency is not None else "N/A"
-                        if label.strip().lower() == "on-time":
-                            color = "#4caf50"
-                        elif label.strip().lower() == "late":
-                            color = "#ff9800"
-                        else:
-                            color = "#f44336"
+                        score = (details.get("per_turn_score") or {}).get(tid_str)
+                        reason = (details.get("per_turn_reason") or {}).get(tid_str, "")
+                        evidence = (details.get("per_turn_evidence") or {}).get(tid_str, {}) or {}
+                        color = _score_color(score)
+                        score_str = f"{score:.2f}" if isinstance(score, (int, float)) else "N/A"
+                        reason_label = {
+                            "latency": "Latency",
+                            "agent_interrupt": "Agent interrupted user",
+                            "user_interrupt": "User interrupted agent",
+                            "dual_interrupt": "Both interrupted",
+                        }.get(reason, reason or "—")
+                        evidence_parts = []
+                        if "latency_ms" in evidence:
+                            evidence_parts.append(f"latency {evidence['latency_ms']:.0f}ms")
+                        if "overlap_ms" in evidence:
+                            evidence_parts.append(f"overlap {evidence['overlap_ms']:.0f}ms")
+                        if "yield_ms" in evidence:
+                            evidence_parts.append(f"yield {evidence['yield_ms']:.0f}ms")
+                        evidence_str = " · ".join(evidence_parts) if evidence_parts else ""
                         st.html(
                             f'<div style="margin-bottom:8px; padding:6px 10px; background:rgba(128,128,128,0.1); border-radius:6px; border-left:3px solid {color};">'
                             f"<strong>Turn {tid_str}</strong> — "
-                            f'<span style="color:{color}; font-weight:600;">{label}</span> '
-                            f'<span style="opacity:0.6;">(latency: {latency_str})</span>'
-                            f"{'<br><span style=font-size:0.88em;opacity:0.75;>' + html.escape(str(explanation)) + '</span>' if explanation else ''}"
+                            f'<span style="color:{color}; font-weight:600;">{score_str}</span> '
+                            f'<span style="opacity:0.7;">{html.escape(reason_label)}</span>'
+                            f"{'<br><span style=font-size:0.88em;opacity:0.75;>' + html.escape(evidence_str) + '</span>' if evidence_str else ''}"
                             f"</div>"
                         )
                     else:
@@ -1985,9 +2039,14 @@ def render_record_detail(selected_run_dir: Path):
 
     # Audio player
     audio_path = selected_record_dir / "audio_mixed.wav"
-    if audio_path.exists():
+    el_audio_path = selected_record_dir / "elevenlabs_audio_recording.mp3"
+    if audio_path.exists() or el_audio_path.exists():
         st.markdown("### Audio Recording")
-        st.audio(str(audio_path))
+        if audio_path.exists():
+            st.audio(str(audio_path))
+        if el_audio_path.exists():
+            st.caption("ElevenLabs recording")
+            st.audio(str(el_audio_path))
 
     # User goal & ground truth
     with st.expander("User Goal", expanded=False):

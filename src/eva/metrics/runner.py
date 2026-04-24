@@ -635,19 +635,25 @@ class MetricsRunner:
                         "count": count,
                     }
 
-        # Generic sub-metric aggregation
+        # Generic sub-metric aggregation.
+        # Sub-keys are collected in first-seen insertion order so each metric controls
+        # its own column ordering (readers get them grouped logically rather than A-Z).
         for name in metric_aggregates:
-            all_sub_keys: set[str] = set()
+            all_sub_keys: list[str] = []
+            seen: set[str] = set()
             for record_metrics in all_metrics.values():
                 ms = record_metrics.metrics.get(name)
                 if ms and ms.sub_metrics:
-                    all_sub_keys.update(ms.sub_metrics.keys())
+                    for k in ms.sub_metrics.keys():
+                        if k not in seen:
+                            all_sub_keys.append(k)
+                            seen.add(k)
 
             if not all_sub_keys:
                 continue
 
             sub_aggs: dict[str, dict[str, Any]] = {}
-            for sub_key in sorted(all_sub_keys):
+            for sub_key in all_sub_keys:
                 sub_scores: list[float] = []
                 sub_missing = 0
                 for record_metrics in all_metrics.values():
