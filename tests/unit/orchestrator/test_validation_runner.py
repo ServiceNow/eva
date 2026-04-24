@@ -1,14 +1,13 @@
 """Tests for ValidationRunner."""
 
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from eva.metrics.runner import MetricsRunResult
 from eva.models.results import MetricScore, RecordMetrics
-from eva.orchestrator.validation_runner import ValidationResult, ValidationRunner
+from eva.orchestrator.validation_runner import GATE_METRIC, ValidationResult, ValidationRunner
 from tests.unit.conftest import make_evaluation_record
 from tests.unit.metrics.conftest import make_metric_score
 
@@ -21,34 +20,50 @@ def _make_score(name: str, score: float, error: str | None = None, details: dict
     return make_metric_score(name, score=score, error=error, details=details or {})
 
 
-def _ctx(
-    conversation_valid_end: bool = False,
-    conversation_ended_reason: str | None = None,
-    audio_timestamps_user_turns: dict | None = None,
-    audio_timestamps_assistant_turns: dict | None = None,
-):
-    """Duck-typed stand-in for _ProcessorContext exposing the fields the gate reads."""
-    return SimpleNamespace(
-        conversation_valid_end=conversation_valid_end,
-        conversation_ended_reason=conversation_ended_reason,
-        audio_timestamps_user_turns=audio_timestamps_user_turns or {},
-        audio_timestamps_assistant_turns=audio_timestamps_assistant_turns or {},
+def _gate_score(
+    score: float = 1.0,
+    *,
+    agent_timeout: bool = False,
+    error: str | None = None,
+) -> MetricScore:
+    details = {"reason": "agent_timeout_on_user_turn"} if agent_timeout else {}
+    return MetricScore(
+        name=GATE_METRIC,
+        score=score,
+        normalized_score=score,
+        details=details,
+        error=error,
     )
 
 
-def _ctx_agent_timeout():
-    """Duck-typed context matching what the processor produces for an agent-timeout record.
+def _gate_result(per_record: dict[str, MetricScore]) -> dict[str, RecordMetrics]:
+    """Build a ``MetricsRunResult.all_metrics``-shaped dict carrying only the gate metric."""
+    return {rid: RecordMetrics(record_id=rid, metrics={GATE_METRIC: ms}) for rid, ms in per_record.items()}
 
-    conversation_valid_end is True (it's a valid terminal state) AND the underlying
-    audio/reason fields satisfy is_agent_timeout_on_user_turn (so the runner can
-    separately flag it as terminal).
+
+def _mock_runner(contexts: dict, all_metrics: dict) -> MagicMock:
+    """MagicMock standing in for a MetricsRunner instance."""
+    instance = MagicMock()
+    instance.process_records.return_value = contexts
+    instance.run = AsyncMock(return_value=MetricsRunResult(all_metrics=all_metrics, total_records=len(all_metrics)))
+    return instance
+
+
+def _patch_runners(gate_all_metrics: dict, downstream_all_metrics: dict, gate_contexts: dict | None = None):
+    """Patch MetricsRunner so the two sequential instantiations return two distinct mocks.
+
+    Gate runner (first call) carries conversation_valid_end scores; downstream runner
+    (second call) carries the remaining validation metric scores.
     """
-    return _ctx(
-        conversation_valid_end=True,
-        conversation_ended_reason="inactivity_timeout",
-        audio_timestamps_user_turns={0: [(0.0, 5.0)]},
-        audio_timestamps_assistant_turns={0: [(1.0, 2.0)]},
-    )
+    gate_instance = _mock_runner(gate_contexts or {}, gate_all_metrics)
+    downstream_instance = _mock_runner({}, downstream_all_metrics)
+    captured_calls: list[dict] = []
+
+    def _ctor(**kwargs):
+        captured_calls.append(kwargs)
+        return gate_instance if len(captured_calls) == 1 else downstream_instance
+
+    return patch("eva.orchestrator.validation_runner.MetricsRunner", side_effect=_ctor), captured_calls
 
 
 @pytest.fixture
@@ -61,16 +76,8 @@ def validation_runner(temp_dir, sample_records):
     return ValidationRunner(
         run_dir=temp_dir,
         dataset=sample_records,
-        thresholds={"conversation_valid_end": 1.0, "user_behavioral_fidelity": 1.0},
+        thresholds={GATE_METRIC: 1.0, "user_behavioral_fidelity": 1.0},
     )
-
-
-def _mock_metrics_runner(contexts: dict, mock_results: dict) -> MagicMock:
-    """Build a MagicMock that matches MetricsRunner's shape: sync process_records + async run."""
-    instance = MagicMock()
-    instance.process_records.return_value = contexts
-    instance.run = AsyncMock(return_value=MetricsRunResult(all_metrics=mock_results, total_records=len(mock_results)))
-    return instance
 
 
 class TestValidationResult:
@@ -93,58 +100,51 @@ class TestValidationResult:
         assert vr.failed_metrics == ["user_behavioral_fidelity"]
 
 
-class TestClassify:
-    """Direct coverage of the gate's classification rule."""
+class TestPartition:
+    """Gate decision is driven entirely off the conversation_valid_end metric result."""
 
     def test_goodbye_passes(self):
-        contexts = {"r1": _ctx(conversation_valid_end=True)}
-        gp, nf, at = ValidationRunner._classify(contexts, ["r1"])
+        metrics = _gate_result({"r1": _gate_score(1.0)})
+        gp, nf, at = ValidationRunner._partition(["r1"], metrics)
         assert gp == ["r1"]
         assert nf == []
         assert at == set()
 
     def test_agent_timeout_passes_and_flagged(self):
-        contexts = {"r1": _ctx_agent_timeout()}
-        gp, nf, at = ValidationRunner._classify(contexts, ["r1"])
+        metrics = _gate_result({"r1": _gate_score(1.0, agent_timeout=True)})
+        gp, nf, at = ValidationRunner._partition(["r1"], metrics)
         assert gp == ["r1"]
         assert nf == []
         assert at == {"r1"}
 
-    def test_neither_is_not_finished(self):
-        contexts = {"r1": _ctx()}
-        gp, nf, at = ValidationRunner._classify(contexts, ["r1"])
+    def test_score_below_one_is_not_finished(self):
+        metrics = _gate_result({"r1": _gate_score(0.0)})
+        gp, nf, at = ValidationRunner._partition(["r1"], metrics)
         assert gp == []
         assert nf == ["r1"]
         assert at == set()
 
-    def test_missing_context_is_not_finished(self):
-        gp, nf, at = ValidationRunner._classify({}, ["r1"])
+    def test_metric_error_is_not_finished(self):
+        metrics = _gate_result({"r1": _gate_score(0.0, error="boom")})
+        gp, nf, at = ValidationRunner._partition(["r1"], metrics)
+        assert gp == []
+        assert nf == ["r1"]
+
+    def test_missing_metric_is_not_finished(self):
+        gp, nf, at = ValidationRunner._partition(["r1"], {})
         assert gp == []
         assert nf == ["r1"]
         assert at == set()
-
-    def test_valid_end_with_timeout_markers_flagged(self):
-        # valid_end=True and the audio/reason markers satisfy is_agent_timeout_on_user_turn:
-        # gate passes, AND the record is flagged as agent_timeout for terminal handling.
-        contexts = {
-            "r1": _ctx(
-                conversation_valid_end=True,
-                conversation_ended_reason="inactivity_timeout",
-                audio_timestamps_user_turns={0: [(0.0, 5.0)]},
-                audio_timestamps_assistant_turns={0: [(1.0, 2.0)]},
-            )
-        }
-        gp, nf, at = ValidationRunner._classify(contexts, ["r1"])
-        assert gp == ["r1"]
-        assert at == {"r1"}
 
     def test_mixed_set(self):
-        contexts = {
-            "a": _ctx(conversation_valid_end=True),
-            "b": _ctx_agent_timeout(),
-            "c": _ctx(),
-        }
-        gp, nf, at = ValidationRunner._classify(contexts, ["a", "b", "c", "d"])
+        metrics = _gate_result(
+            {
+                "a": _gate_score(1.0),
+                "b": _gate_score(1.0, agent_timeout=True),
+                "c": _gate_score(0.0),
+            }
+        )
+        gp, nf, at = ValidationRunner._partition(["a", "b", "c", "d"], metrics)
         assert set(gp) == {"a", "b"}
         assert set(nf) == {"c", "d"}
         assert at == {"b"}
@@ -163,8 +163,8 @@ class TestEvaluateRecord:
     def test_all_pass(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_valid_end=1.0, user_behavioral_fidelity=1.0),
-            ["conversation_valid_end", "user_behavioral_fidelity"],
+            self._metrics(user_behavioral_fidelity=1.0),
+            ["user_behavioral_fidelity"],
         )
         assert result.passed is True
         assert result.failed_metrics == []
@@ -172,8 +172,8 @@ class TestEvaluateRecord:
     def test_one_below_threshold(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_valid_end=1.0, user_behavioral_fidelity=0.5),
-            ["conversation_valid_end", "user_behavioral_fidelity"],
+            self._metrics(user_behavioral_fidelity=0.5),
+            ["user_behavioral_fidelity"],
         )
         assert result.passed is False
         assert "user_behavioral_fidelity" in result.failed_metrics
@@ -181,16 +181,16 @@ class TestEvaluateRecord:
     def test_at_threshold(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_valid_end=1.0, user_behavioral_fidelity=1.0),
-            ["conversation_valid_end", "user_behavioral_fidelity"],
+            self._metrics(user_behavioral_fidelity=1.0),
+            ["user_behavioral_fidelity"],
         )
         assert result.passed is True
 
     def test_just_below_threshold(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_valid_end=1.0, user_behavioral_fidelity=0.99),
-            ["conversation_valid_end", "user_behavioral_fidelity"],
+            self._metrics(user_behavioral_fidelity=0.99),
+            ["user_behavioral_fidelity"],
         )
         assert result.passed is False
         assert "user_behavioral_fidelity" in result.failed_metrics
@@ -198,37 +198,23 @@ class TestEvaluateRecord:
     def test_multiple_failures(self, validation_runner):
         result = validation_runner._evaluate_record(
             "record_1",
-            self._metrics(conversation_valid_end=0.5, user_behavioral_fidelity=0.5),
-            ["conversation_valid_end", "user_behavioral_fidelity"],
+            self._metrics(user_behavioral_fidelity=0.5),
+            ["user_behavioral_fidelity"],
         )
         assert result.passed is False
-        assert "conversation_valid_end" in result.failed_metrics
         assert "user_behavioral_fidelity" in result.failed_metrics
-        assert result.scores["conversation_valid_end"] == 0.5
-        assert result.scores["user_behavioral_fidelity"] == 0.5
 
-    def test_metric_error_fails(self, validation_runner):
+    def test_metric_not_in_thresholds_defaults_to_1(self, validation_runner):
         record_metrics = RecordMetrics(
-            record_id="record_1",
-            metrics={
-                "conversation_valid_end": _make_score("conversation_valid_end", 1.0),
-                "user_behavioral_fidelity": _make_score("user_behavioral_fidelity", 0.0, error="Computation failed"),
-            },
+            record_id="rec-0",
+            metrics={"user_speech_fidelity": _make_score("user_speech_fidelity", 1.0)},
         )
-        result = validation_runner._evaluate_record(
-            "record_1", record_metrics, ["conversation_valid_end", "user_behavioral_fidelity"]
-        )
-        assert result.passed is False
-        assert "user_behavioral_fidelity" in result.failed_metrics
+        result = validation_runner._evaluate_record("record_1", record_metrics, ["user_speech_fidelity"])
+        assert result.passed is True
 
     def test_missing_metric_fails(self, validation_runner):
-        record_metrics = RecordMetrics(
-            record_id="record_1",
-            metrics={"conversation_valid_end": _make_score("conversation_valid_end", 1.0)},
-        )
-        result = validation_runner._evaluate_record(
-            "record_1", record_metrics, ["conversation_valid_end", "user_behavioral_fidelity"]
-        )
+        record_metrics = RecordMetrics(record_id="rec-0", metrics={})
+        result = validation_runner._evaluate_record("record_1", record_metrics, ["user_behavioral_fidelity"])
         assert result.passed is False
         assert "user_behavioral_fidelity" in result.failed_metrics
 
@@ -297,7 +283,7 @@ class TestRunValidation:
         assert validation_runner.run_dir == temp_dir
         assert validation_runner.dataset == sample_records
         assert validation_runner.VALIDATION_METRICS == [
-            "conversation_valid_end",
+            GATE_METRIC,
             "user_behavioral_fidelity",
             "user_speech_fidelity",
         ]
@@ -305,11 +291,13 @@ class TestRunValidation:
     @pytest.mark.asyncio
     async def test_all_pass(self, validation_runner):
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
-        contexts = {
-            "record_1": _ctx(conversation_valid_end=True),
-            "record_2": _ctx(conversation_valid_end=True),
-        }
-        mock_results = {
+        gate_metrics = _gate_result(
+            {
+                "record_1": _gate_score(1.0),
+                "record_2": _gate_score(1.0),
+            }
+        )
+        downstream = {
             "record_1": RecordMetrics(
                 record_id="record_1",
                 metrics={
@@ -325,23 +313,27 @@ class TestRunValidation:
                 },
             ),
         }
-        with patch("eva.orchestrator.validation_runner.MetricsRunner") as Mock:
-            Mock.return_value = _mock_metrics_runner(contexts, mock_results)
+        patcher, calls = _patch_runners(gate_metrics, downstream)
+        with patcher:
             results = await validation_runner.run_validation()
 
         assert results["record_1"].passed is True
         assert results["record_2"].passed is True
         assert results["record_1"].failed_metrics == []
-        assert "conversation_valid_end" not in Mock.call_args[1]["metric_names"]
+        # First MetricsRunner instantiation runs only the gate metric; second runs the rest.
+        assert calls[0]["metric_names"] == [GATE_METRIC]
+        assert GATE_METRIC not in calls[1]["metric_names"]
 
     @pytest.mark.asyncio
     async def test_some_fail(self, validation_runner):
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
-        contexts = {
-            "record_1": _ctx(conversation_valid_end=True),
-            "record_2": _ctx(conversation_valid_end=True),
-        }
-        mock_results = {
+        gate_metrics = _gate_result(
+            {
+                "record_1": _gate_score(1.0),
+                "record_2": _gate_score(1.0),
+            }
+        )
+        downstream = {
             "record_1": RecordMetrics(
                 record_id="record_1",
                 metrics={
@@ -357,8 +349,8 @@ class TestRunValidation:
                 },
             ),
         }
-        with patch("eva.orchestrator.validation_runner.MetricsRunner") as Mock:
-            Mock.return_value = _mock_metrics_runner(contexts, mock_results)
+        patcher, _ = _patch_runners(gate_metrics, downstream)
+        with patcher:
             results = await validation_runner.run_validation()
 
         assert results["record_1"].passed is False
@@ -366,13 +358,16 @@ class TestRunValidation:
         assert results["record_2"].passed is True
 
     @pytest.mark.asyncio
-    async def test_not_finished_short_circuits(self, validation_runner):
-        """A record with no context is marked not_finished and metrics aren't run on it."""
+    async def test_gate_rejection_short_circuits_downstream(self, validation_runner):
+        """A record with a failing gate score is marked not_finished; downstream metrics skip it."""
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
-        contexts = {
-            "record_1": _ctx(conversation_valid_end=True),
-        }
-        mock_results = {
+        gate_metrics = _gate_result(
+            {
+                "record_1": _gate_score(1.0),
+                "record_2": _gate_score(0.0),  # gate-rejected
+            }
+        )
+        downstream = {
             "record_1": RecordMetrics(
                 record_id="record_1",
                 metrics={
@@ -381,34 +376,37 @@ class TestRunValidation:
                 },
             ),
         }
-        with patch("eva.orchestrator.validation_runner.MetricsRunner") as Mock:
-            Mock.return_value = _mock_metrics_runner(contexts, mock_results)
+        patcher, calls = _patch_runners(gate_metrics, downstream)
+        with patcher:
             results = await validation_runner.run_validation()
 
         assert results["record_2"].passed is False
-        # Gate rejected: no metrics ran → empty failed_metrics is the "not_finished" signal.
+        # Gate rejected: no downstream metrics ran → empty failed_metrics is the "not_finished" signal.
         assert results["record_2"].failed_metrics == []
         assert results["record_1"].passed is True
+        # Only the gate-passed record_1 was forwarded to the downstream runner.
+        assert calls[1]["record_ids"] == ["record_1"]
 
     @pytest.mark.asyncio
-    async def test_agent_timeout_passes_even_if_metric_scores_fail(self, validation_runner):
-        """Agent-timeout records always pass the validation layer.
+    async def test_agent_timeout_still_fails_on_bad_downstream_metrics(self, validation_runner):
+        """Agent-timeout records get no special treatment at the validation layer.
 
-        The agent failure is surfaced via the ``agent_turn_response`` diagnostic metric
-        in ``metrics.json``, not as a validation failure. Even when a validation metric
-        dropped below its threshold for this record, ``vr.passed`` is forced True and
-        ``failed_metrics`` is cleared — the metric signal is distorted by the agent's
-        missing final turn, not a true validation failure.
+        A truncated conversation can still have a genuinely misbehaving user simulator,
+        and that should surface as a validation failure like any other. The agent-side
+        failure is tracked separately via the ``conversation_correctly_finished``
+        diagnostic metric — not by forcing the validation result to pass.
         """
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
-        contexts = {
-            "record_1": _ctx_agent_timeout(),
-            "record_2": _ctx(conversation_valid_end=True),
-        }
-        mock_results = {
+        gate_metrics = _gate_result(
+            {
+                "record_1": _gate_score(1.0, agent_timeout=True),
+                "record_2": _gate_score(1.0),
+            }
+        )
+        downstream = {
             "record_1": RecordMetrics(
                 record_id="record_1",
-                # Below threshold — would fail validation normally.
+                # Below threshold — should fail validation even though record is agent_timeout.
                 metrics={
                     "user_behavioral_fidelity": _make_score("user_behavioral_fidelity", 0.5),
                     "user_speech_fidelity": _make_score("user_speech_fidelity", 0.8, details=tts_pass),
@@ -422,19 +420,19 @@ class TestRunValidation:
                 },
             ),
         }
-        with patch("eva.orchestrator.validation_runner.MetricsRunner") as Mock:
-            Mock.return_value = _mock_metrics_runner(contexts, mock_results)
+        patcher, _ = _patch_runners(gate_metrics, downstream)
+        with patcher:
             results = await validation_runner.run_validation()
 
-        assert results["record_1"].passed is True
-        assert results["record_1"].failed_metrics == []
+        assert results["record_1"].passed is False
+        assert "user_behavioral_fidelity" in results["record_1"].failed_metrics
         assert results["record_2"].passed is True
 
     @pytest.mark.asyncio
     async def test_metric_error(self, validation_runner):
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
-        contexts = {"record_1": _ctx(conversation_valid_end=True)}
-        mock_results = {
+        gate_metrics = _gate_result({"record_1": _gate_score(1.0)})
+        downstream = {
             "record_1": RecordMetrics(
                 record_id="record_1",
                 metrics={
@@ -443,8 +441,8 @@ class TestRunValidation:
                 },
             ),
         }
-        with patch("eva.orchestrator.validation_runner.MetricsRunner") as Mock:
-            Mock.return_value = _mock_metrics_runner(contexts, mock_results)
+        patcher, _ = _patch_runners(gate_metrics, downstream)
+        with patcher:
             results = await validation_runner.run_validation()
 
         assert results["record_1"].passed is False
@@ -453,8 +451,8 @@ class TestRunValidation:
     @pytest.mark.asyncio
     async def test_missing_metric(self, validation_runner):
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
-        contexts = {"record_1": _ctx(conversation_valid_end=True)}
-        mock_results = {
+        gate_metrics = _gate_result({"record_1": _gate_score(1.0)})
+        downstream = {
             "record_1": RecordMetrics(
                 record_id="record_1",
                 metrics={
@@ -462,8 +460,8 @@ class TestRunValidation:
                 },
             ),
         }
-        with patch("eva.orchestrator.validation_runner.MetricsRunner") as Mock:
-            Mock.return_value = _mock_metrics_runner(contexts, mock_results)
+        patcher, _ = _patch_runners(gate_metrics, downstream)
+        with patcher:
             results = await validation_runner.run_validation()
 
         assert results["record_1"].passed is False
@@ -471,23 +469,22 @@ class TestRunValidation:
 
     @pytest.mark.asyncio
     async def test_output_ids_passed_to_metrics_runner(self, temp_dir):
-        """output_ids are forwarded as record_ids to MetricsRunner."""
+        """output_ids are forwarded as record_ids to the gate MetricsRunner."""
         output_ids = ["rec-0/trial_0", "rec-0/trial_1"]
-        contexts = {
-            "rec-0/trial_0": _ctx(conversation_valid_end=True),
-            "rec-0/trial_1": _ctx(conversation_valid_end=True),
-        }
+        gate_metrics = _gate_result(
+            {
+                "rec-0/trial_0": _gate_score(1.0),
+                "rec-0/trial_1": _gate_score(1.0),
+            }
+        )
         runner = ValidationRunner(
             run_dir=temp_dir,
             dataset=[_make_record("rec-0")],
             thresholds={},
             output_ids=output_ids,
         )
-        captured = {}
-        with patch("eva.orchestrator.validation_runner.MetricsRunner") as Mock:
-            instance = _mock_metrics_runner(contexts, {})
-            Mock.side_effect = lambda **kwargs: (captured.update(kwargs), instance)[1]
-
+        patcher, calls = _patch_runners(gate_metrics, {})
+        with patcher:
             await runner.run_validation()
 
-        assert captured["record_ids"] == output_ids
+        assert calls[0]["record_ids"] == output_ids
