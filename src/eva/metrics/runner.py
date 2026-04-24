@@ -490,13 +490,9 @@ class MetricsRunner:
         # Create ConversationResult object
         result = ConversationResult(**result_data)
 
-        cached_context = self._context_cache.get(record_id)
-        if cached_context is not None:
-            metrics_context = cached_context
-        else:
-            metrics_context = self.metrics_processor.process_record(
-                result, record_dir, pipeline_type=self._pipeline_type
-            )
+        metrics_context = self._context_cache.get(record_id) or self.metrics_processor.process_record(
+            result, record_dir, pipeline_type=self._pipeline_type
+        )
 
         # Get agent instructions and tools from config
         agent_instructions = self._agent_config["instructions"]

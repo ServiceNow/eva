@@ -1,9 +1,4 @@
-"""Conversation-correctly-finished diagnostic metric (previously ``agent_turn_response``).
-
-Flags records where the conversation ended with ``inactivity_timeout`` and the user was
-the last speaker by audio timeline — i.e. the agent failed to respond to the user's
-final turn. Not directly used in final evaluation scores; excluded from pass@k.
-"""
+"""Conversation-correctly-finished diagnostic metric."""
 
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.processor import is_agent_timeout_on_user_turn, last_audio_speaker
@@ -13,13 +8,7 @@ from eva.models.results import MetricScore
 
 @register_metric
 class ConversationCorrectlyFinishedMetric(CodeMetric):
-    """Scores whether the agent responded on every user turn.
-
-    Score: 1.0 if the agent responded to every user turn (conversation ended normally
-    or the assistant spoke last); 0.0 if the conversation ended with
-    ``inactivity_timeout`` and the user was the last speaker (agent failed to respond
-    to the user's final turn).
-    """
+    """0.0 when the agent timed out on the user's final turn; 1.0 otherwise."""
 
     name = "conversation_correctly_finished"
     description = "Diagnostic metric: 0.0 when agent failed to respond to the user's final turn"
@@ -33,7 +22,6 @@ class ConversationCorrectlyFinishedMetric(CodeMetric):
                 context.audio_timestamps_user_turns,
                 context.audio_timestamps_assistant_turns,
             )
-
             missed_turn = is_agent_timeout_on_user_turn(
                 reason,
                 context.audio_timestamps_user_turns,

@@ -18,13 +18,9 @@ LLM_METRICS = ["user_behavioral_fidelity", "user_speech_fidelity"]
 class ValidationResult:
     """Result of validating a single record.
 
-    Semantics are encoded in two fields:
-
-      - ``passed``: True when the record should count as a benchmark success.
-      - ``failed_metrics``: empty when the gate rejected the record before metrics ran
-        (i.e. "not finished"); populated with the names of metrics below threshold when
-        metrics ran and some failed. Callers that need to distinguish the two failure
-        modes (e.g. for ``rerun_history`` bookkeeping) check ``failed_metrics`` directly.
+    Empty ``failed_metrics`` with ``passed=False`` means the gate rejected the
+    record before metrics ran (``not_finished``); a populated list means one or
+    more metrics fell below threshold.
     """
 
     passed: bool
@@ -34,24 +30,7 @@ class ValidationResult:
 
 
 class ValidationRunner:
-    """Runs the validation gate and validation metrics.
-
-    Two-phase flow — the gate IS a metric (``conversation_valid_end``), so the runner
-    does not duplicate its logic:
-
-      1. Gate pass: run ``conversation_valid_end`` on all records. A score of 1.0
-         means the conversation reached a terminal state worth scoring (goodbye OR
-         agent-timeout-on-user-turn). Anything else is ``not_finished``.
-      2. Metrics pass: run the LLM-based validation metrics on gate-passed records
-         only, avoiding LLM cost on records that can't be meaningfully scored.
-
-    Agent-timeout records gate-pass but are tallied separately (``agent_timeout_ids``)
-    via the gate metric's ``details.reason`` for operator visibility. They receive no
-    special treatment at the validation layer — the user simulator can still
-    genuinely misbehave on a truncated conversation, and that should surface as a
-    validation failure like any other. The agent-side failure is surfaced
-    independently by the diagnostic ``conversation_correctly_finished`` metric.
-    """
+    """Two-phase validation: gate-metric filter, then LLM metrics on gate-passed records."""
 
     VALIDATION_METRICS = [GATE_METRIC] + LLM_METRICS
 
@@ -63,17 +42,6 @@ class ValidationRunner:
         metric_configs: dict[str, dict] | None = None,
         output_ids: list[str] | None = None,
     ):
-        """Initialize the validation runner.
-
-        Args:
-            run_dir: Directory containing benchmark outputs
-            dataset: List of evaluation records (for ground truth)
-            thresholds: Validation metric thresholds for pass/fail decisions
-            metric_configs: Configuration for specific metrics
-            output_ids: If provided, use these as record directory names instead
-                of deriving from dataset record IDs. Needed for nested trial dirs
-                (e.g., "1.2.1/trial_0").
-        """
         self.run_dir = Path(run_dir)
         self.dataset = dataset
         self.thresholds = thresholds
@@ -81,7 +49,6 @@ class ValidationRunner:
         self.output_ids = output_ids
 
     async def run_validation(self) -> dict[str, ValidationResult]:
-        """Run the gate metric then validation metrics; return a result per record."""
         validation_results: dict[str, ValidationResult] = {}
         check_ids = self.output_ids if self.output_ids is not None else [r.id for r in self.dataset]
         logger.info(f"Validation: processing {len(check_ids)} records, metrics={self.VALIDATION_METRICS}")
@@ -119,7 +86,6 @@ class ValidationRunner:
 
             for record_id, record_metrics in metrics_run.all_metrics.items():
                 vr = self._evaluate_record(record_id, record_metrics, LLM_METRICS)
-                # The gate metric already scored 1.0, surface it
                 vr.scores[GATE_METRIC] = 1.0
                 validation_results[record_id] = vr
 
@@ -135,12 +101,6 @@ class ValidationRunner:
         check_ids: list[str],
         gate_metrics: dict[str, RecordMetrics],
     ) -> tuple[list[str], list[str], set[str]]:
-        """Partition records by the gate metric's score and details.
-
-        A record gate-passes if conversation_valid_end scored 1.0.
-        Agent-timeout records gate-pass but are additionally tallied via the metric's
-        ``details.reason`` so the caller can report them separately in logs.
-        """
         gate_passed: list[str] = []
         not_finished: list[str] = []
         agent_timeout: set[str] = set()
@@ -148,7 +108,7 @@ class ValidationRunner:
         for record_id in check_ids:
             rm = gate_metrics.get(record_id)
             ms = rm.metrics.get(GATE_METRIC) if rm else None
-            if ms is None or ms.error is not None:
+            if ms is None or ms.error:
                 not_finished.append(record_id)
                 continue
             score = ms.normalized_score if ms.normalized_score is not None else ms.score
@@ -156,7 +116,7 @@ class ValidationRunner:
                 not_finished.append(record_id)
                 continue
             gate_passed.append(record_id)
-            if (ms.details or {}).get("reason") == "agent_timeout_on_user_turn":
+            if ms.details.get("reason") == "agent_timeout_on_user_turn":
                 agent_timeout.add(record_id)
         return gate_passed, not_finished, agent_timeout
 
@@ -166,7 +126,6 @@ class ValidationRunner:
         record_metrics: RecordMetrics,
         metrics_to_check: list[str],
     ) -> ValidationResult:
-        """Evaluate a single record against thresholds."""
         failed_metrics: list[str] = []
         scores: dict[str, float] = {}
         details: dict[str, dict] = {}
@@ -186,7 +145,6 @@ class ValidationRunner:
                 failed_metrics.append(metric_name)
                 continue
 
-            # Skipped metric (no applicable data) — exclude from validation, not a failure.
             if metric_score.skipped:
                 logger.debug(f"Record {record_id}: Metric '{metric_name}' was skipped")
                 continue

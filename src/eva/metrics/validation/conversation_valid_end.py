@@ -1,4 +1,4 @@
-"""Conversation-valid-end validation metric (previously ``conversation_finished``)."""
+"""Conversation-valid-end validation metric."""
 
 import json
 from pathlib import Path
@@ -11,24 +11,13 @@ from eva.models.results import MetricScore
 
 @register_metric
 class ConversationValidEndMetric(CodeMetric):
-    """Validation metric: conversation reached a definitive end state.
-
-    Scores 1.0 when either:
-    - ``elevenlabs_events.jsonl`` ends with a ``connection_state`` event whose
-      ``details.reason == "goodbye"`` (agent hung up), OR
-    - the conversation ended on ``inactivity_timeout`` with the user as last
-      speaker (agent failed to respond to the user's final turn — still a
-      definitive, terminal outcome, just an agent-side failure).
-
-    Binary score: 1.0 (valid end), 0.0 (did not reach a valid end).
-    """
+    """Binary score: 1.0 when the conversation ended on goodbye OR agent-timeout-on-user-turn; 0.0 otherwise."""
 
     name = "conversation_valid_end"
-    description = "Validation metric: conversation ended with a goodbye connection_state event"
+    description = "Validation metric: conversation reached a definitive end state"
     category = "validation"
 
     async def compute(self, context: MetricContext) -> MetricScore:
-        """Check if conversation reached a definitive end state."""
         try:
             agent_timeout = is_agent_timeout_on_user_turn(
                 context.conversation_ended_reason,
@@ -91,7 +80,6 @@ class ConversationValidEndMetric(CodeMetric):
                     details={"file_path": str(elevenlabs_events_path), "last_line": last_line},
                 )
 
-            # Check if type is "tool_response"
             event_type = last_event.get("type")
             if event_type != "connection_state":
                 return MetricScore(

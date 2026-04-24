@@ -177,8 +177,6 @@ class BenchmarkRunner:
             tasks = [(output_id_to_record[oid], oid) for oid in pending_output_ids]
             run_results = await self._run_targeted(tasks)
 
-            # STEP 2: Segregate exception / not-completed results (never run metrics on
-            # these). Everything else is handed to ValidationRunner which owns the gate.
             not_finished_ids: list[str] = []
             to_validate_ids: list[str] = []
             for output_id in pending_output_ids:
@@ -188,14 +186,13 @@ class BenchmarkRunner:
                 else:
                     to_validate_ids.append(output_id)
 
-            # STEP 3: Run validation (includes gate) on everything that produced a result.
             validation_results: dict = {}
             failed_validation_ids: list[str] = []
             if to_validate_ids:
                 to_validate_records = list(
                     {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in to_validate_ids}.values()
                 )
-                logger.info(f"Running validation (gate + metrics) on {len(to_validate_ids)} tasks...")
+                logger.info(f"Running validation on {len(to_validate_ids)} tasks...")
                 validation_runner = ValidationRunner(
                     run_dir=self.output_dir,
                     dataset=to_validate_records,
@@ -206,16 +203,9 @@ class BenchmarkRunner:
 
                 for output_id in to_validate_ids:
                     vr = validation_results.get(output_id)
-                    if vr is None:
+                    if vr is None or (not vr.passed and not vr.failed_metrics):
                         not_finished_ids.append(output_id)
-                        continue
-                    if vr.passed:
-                        continue
-                    # No failed_metrics → gate rejected before metrics ran (not_finished).
-                    # Populated failed_metrics → metrics ran and some fell below threshold.
-                    if not vr.failed_metrics:
-                        not_finished_ids.append(output_id)
-                    else:
+                    elif not vr.passed:
                         failed_validation_ids.append(output_id)
 
             if not_finished_ids:
@@ -223,10 +213,8 @@ class BenchmarkRunner:
                     f"{len(not_finished_ids)} tasks did not finish properly (attempt {attempt_number}/{max_attempts})"
                 )
 
-            # STEP 4: Determine which output_ids failed this attempt AND should be retried.
             failed_this_attempt = not_finished_ids + failed_validation_ids
 
-            # Record failures in history with structured entries
             for oid in not_finished_ids:
                 rerun_history.setdefault(oid, []).append(
                     {
@@ -235,23 +223,19 @@ class BenchmarkRunner:
                     }
                 )
             for oid in failed_validation_ids:
-                vr = validation_results.get(oid)
+                vr = validation_results[oid]
                 entry: dict = {
                     "attempt": attempt_number,
                     "reason": "validation_failed",
-                    "failed_metrics": vr.failed_metrics if vr else [],
-                    "scores": vr.scores if vr else {},
+                    "failed_metrics": vr.failed_metrics,
+                    "scores": vr.scores,
                 }
-                if vr and vr.details:
-                    failure_details = {}
-                    for metric_name in vr.failed_metrics:
-                        if metric_name in vr.details:
-                            failure_details[metric_name] = vr.details[metric_name]
+                if vr.details:
+                    failure_details = {name: vr.details[name] for name in vr.failed_metrics if name in vr.details}
                     if failure_details:
                         entry["failure_details"] = failure_details
                 rerun_history.setdefault(oid, []).append(entry)
 
-            # STEP 5: Archive and prepare for next attempt
             pending_output_ids = failed_this_attempt
 
             if not pending_output_ids:
@@ -573,11 +557,9 @@ class BenchmarkRunner:
             for output_id in pending_ids:
                 self._archive_failed_attempt(output_id, attempt_number)
 
-            # Run conversations for failed output_ids only
             tasks = [(output_id_to_record[oid], oid) for oid in pending_ids]
             run_results = await self._run_targeted(tasks)
 
-            # Segregate exceptions/incomplete; hand everything else to ValidationRunner.
             still_not_finished: list[str] = []
             to_validate_ids: list[str] = []
             for output_id in pending_ids:
@@ -587,7 +569,6 @@ class BenchmarkRunner:
                 else:
                     to_validate_ids.append(output_id)
 
-            # Validate (gate + metrics)
             failed_validation: list[str] = []
             new_results: dict = {}
             if to_validate_ids:
@@ -603,14 +584,9 @@ class BenchmarkRunner:
                 new_results = await vr_runner.run_validation()
                 for output_id in to_validate_ids:
                     vr = new_results.get(output_id)
-                    if vr is None:
+                    if vr is None or (not vr.passed and not vr.failed_metrics):
                         still_not_finished.append(output_id)
-                        continue
-                    if vr.passed:
-                        continue
-                    if not vr.failed_metrics:
-                        still_not_finished.append(output_id)
-                    else:
+                    elif not vr.passed:
                         failed_validation.append(output_id)
 
             pending_ids = still_not_finished + failed_validation
@@ -622,18 +598,15 @@ class BenchmarkRunner:
                     }
                 )
             for oid in failed_validation:
-                vr = new_results.get(oid)
+                vr = new_results[oid]
                 entry: dict = {
                     "attempt": attempt_number,
                     "reason": "validation_failed",
-                    "failed_metrics": vr.failed_metrics if vr else [],
-                    "scores": vr.scores if vr else {},
+                    "failed_metrics": vr.failed_metrics,
+                    "scores": vr.scores,
                 }
-                if vr and vr.details:
-                    failure_details = {}
-                    for metric_name in vr.failed_metrics:
-                        if metric_name in vr.details:
-                            failure_details[metric_name] = vr.details[metric_name]
+                if vr.details:
+                    failure_details = {name: vr.details[name] for name in vr.failed_metrics if name in vr.details}
                     if failure_details:
                         entry["failure_details"] = failure_details
                 rerun_history.setdefault(oid, []).append(entry)
