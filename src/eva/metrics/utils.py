@@ -34,6 +34,18 @@ def parse_judge_response(response_text: str, record_id: str, metric_logger) -> d
         metric_logger.error(f"Response text: {response_text}")
         return None
 
+    if isinstance(response, list):
+        dicts = [item for item in response if isinstance(item, dict)]
+        if not dicts:
+            metric_logger.error(f"Judge response is a list with no dict elements for {record_id}")
+            metric_logger.error(f"Response text: {response_text}")
+            return None
+        if len(dicts) > 1:
+            metric_logger.warning(
+                f"Judge response is a list with {len(dicts)} dict elements for {record_id}; using the first."
+            )
+        response = dicts[0]
+
     return response
 
 

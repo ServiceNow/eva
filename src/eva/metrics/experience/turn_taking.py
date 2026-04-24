@@ -2,10 +2,19 @@
 
 Per-turn scores are continuous in [0, 1]. For each turn we use the signal that actually
 characterizes what happened on that turn:
-  - turn ∈ assistant_interrupted_turns → min(overlap_score, count_score, post_interrupt_score) (capped at 5)
+  - turn ∈ assistant_interrupted_turns → min(overlap_score, count_score, post_interrupt_score)
+                                         (bounded by AGENT_INTERRUPT_MAX_SCORE = 0.5 — the
+                                         overlap and count sub-scores are each capped at
+                                         0.5, so even a clean-looking interrupt lands at ≤ 0.5)
   - turn ∈ user_interrupted_turns      → agent-yield-based score
   - turn ∈ both sets                   → min of the two above
   - otherwise                          → latency-based score
+
+Tool-call-aware latency: turns where the agent issued a tool call (detected from
+``context.conversation_trace``) use a more lenient upper end of the latency curve
+(sweet-spot extends to 4000ms, hard-late at 7000ms) because tool execution adds inherent
+latency. The same flag loosens the ``late_rate`` classification threshold to 6000ms.
+Lower-end thresholds (early penalty and sweet-spot ramp-up) are unchanged.
 
 Main turn_taking.score = mean(per-turn scores).
 
@@ -27,13 +36,9 @@ Flat headline sub-metrics (one number each — show up as columns in analysis vi
                         user_interruption.mean_yield_score
                         (the latter two only when rate > 0)
 
-All reported sub-metrics are consistent with the main score: the ``mean_overlap_score``
-and ``mean_yield_score`` aggregate exactly the per-turn scores that feed into
-``turn_taking.score``. No separate binary "recovered" / "yielded" classifications are
-computed (the continuous curves already capture gradation).
-
-Per-turn context (overlap/yield/latency ms, derived scores, and diagnostic
-n_interrupt_segments) is preserved in the main metric's details.per_turn_evidence.
+All reported sub-metrics are consistent with the main score: ``mean_overlap_score``,
+``mean_count_score``, and ``mean_yield_score`` aggregate exactly the per-turn scores
+that feed into ``turn_taking.score``.
 """
 
 import statistics
@@ -92,9 +97,17 @@ class TurnTakingMetric(CodeMetric):
 
     @staticmethod
     def _get_turn_ids_with_turn_taking(context: MetricContext) -> list[int]:
-        """Return sorted turn IDs that have both user and assistant audio timestamps (excludes greeting)."""
+        """Return sorted turn IDs that have both user and assistant audio timestamps (excludes greeting).
+
+        Requires non-empty segment lists on both sides — a turn can be present as a key with a
+        ``None``/empty value when the session ended mid-turn (e.g., user spoke but the agent
+        never replied). Matches the filter used by ``_compute_per_turn_latency`` so downstream
+        ``latency_assistant_turns[turn_id]`` lookups don't KeyError.
+        """
         return sorted(
-            context.audio_timestamps_user_turns.keys() & context.audio_timestamps_assistant_turns.keys() - {0}
+            t
+            for t in context.audio_timestamps_user_turns.keys() & context.audio_timestamps_assistant_turns.keys()
+            if t != 0 and context.audio_timestamps_user_turns.get(t) and context.audio_timestamps_assistant_turns.get(t)
         )
 
     @classmethod
@@ -419,7 +432,9 @@ class TurnTakingMetric(CodeMetric):
             turn_keys = self._get_turn_ids_with_turn_taking(context)
 
             turns_with_tool_calls: set[int] = {
-                entry["turn_id"] for entry in context.conversation_trace if entry.get("type") == "tool_call"
+                entry["turn_id"]
+                for entry in context.conversation_trace
+                if entry.get("type") == "tool_call" and entry.get("turn_id") is not None
             }
 
             per_turn_score: dict[int, float] = {}
