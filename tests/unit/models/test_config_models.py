@@ -590,7 +590,7 @@ class TestExpandMetricsAll:
         all_metrics = [
             "task_completion",
             "conciseness",
-            "conversation_finished",
+            "conversation_valid_end",
             "user_behavioral_fidelity",
             "user_speech_fidelity",
             "stt_wer",
@@ -683,7 +683,7 @@ class TestExecutionSettings:
         assert c.num_trials == 10
 
     def test_validation_thresholds(self):
-        thresholds = {"conversation_finished": 0.9, "user_behavioral_fidelity": 0.8}
+        thresholds = {"conversation_valid_end": 0.9, "user_behavioral_fidelity": 0.8}
         c = _config(env_vars=_BASE_ENV | {"EVA_VALIDATION_THRESHOLDS": json.dumps(thresholds)})
         assert c.validation_thresholds == thresholds
 

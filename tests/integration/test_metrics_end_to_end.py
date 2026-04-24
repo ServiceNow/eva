@@ -175,14 +175,14 @@ async def test_validation_metrics(mock_run_dir, mock_dataset):
         runner = MetricsRunner(
             run_dir=mock_run_dir,
             dataset=mock_dataset,
-            metric_names=["conversation_finished"],
+            metric_names=["conversation_valid_end"],
             metric_configs={},
         )
 
         metrics = await runner.run()
         record_metrics = metrics.all_metrics[RECORD_ID]
 
-        assert "conversation_finished" in record_metrics.metrics
+        assert "conversation_valid_end" in record_metrics.metrics
 
 
 @pytest.mark.asyncio

@@ -68,7 +68,7 @@ Quality control metrics that identify problematic simulations. These evaluate th
 | Metric | Type | Description |
 |--------|------|-------------|
 | [`user_behavioral_fidelity`](user_behavioral_fidelity.md) | Judge | Whether simulated user corrupted agent evaluation (0-1) |
-| [`conversation_finished`](conversation_finished.md) | Deterministic | Whether conversation ended with proper end_call tool (0-1) |
+| [`conversation_valid_end`](conversation_valid_end.md) | Deterministic | Whether conversation ended with proper end_call tool (0-1) |
 | [`user_speech_fidelity`](user_speech_fidelity.md) | Audio (Gemini) | Whether user simulator speech audio matches intended text (1-3) |
 
 ## Metrics Pipeline
@@ -130,7 +130,7 @@ python main.py \
 # Run validation metrics
 python main.py \
     --run-id <existing_run_id> \
-    --metrics user_behavioral_fidelity,conversation_finished,user_speech_fidelity
+    --metrics user_behavioral_fidelity,conversation_valid_end,user_speech_fidelity
 ```
 
 ## Prompts and Customization

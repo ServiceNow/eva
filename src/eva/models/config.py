@@ -524,7 +524,7 @@ class RunConfig(BaseSettings):
     )
 
     _VALIDATION_METRIC_NAMES: ClassVar[set[str]] = {
-        "conversation_finished",
+        "conversation_valid_end",
         "user_behavioral_fidelity",
         "user_speech_fidelity",
     }
@@ -622,7 +622,7 @@ class RunConfig(BaseSettings):
 
     validation_thresholds: dict[str, float] = Field(
         {
-            "conversation_finished": 1.0,
+            "conversation_valid_end": 1.0,
             "user_behavioral_fidelity": 1.0,
         },
         description="Validation metric thresholds for rerun decisions (JSON)",

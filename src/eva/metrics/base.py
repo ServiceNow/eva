@@ -81,7 +81,6 @@ class MetricContext:
         tool_params: list[dict] | None = None,
         tool_responses: list[dict] | None = None,
         conversation_trace: list[dict] | None = None,
-        conversation_finished: bool | None = None,
         latency_assistant_turns: dict[int, float] | None = None,
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
@@ -131,7 +130,6 @@ class MetricContext:
         self.tool_params = tool_params or []
         self.tool_responses = tool_responses or []
         self.conversation_trace = conversation_trace or []
-        self.conversation_finished = conversation_finished or False
         self.latency_assistant_turns = latency_assistant_turns or {}
         self.assistant_interrupted_turns = assistant_interrupted_turns or set()
         self.user_interrupted_turns = user_interrupted_turns or set()

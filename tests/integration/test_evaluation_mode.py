@@ -83,7 +83,7 @@ def eval_config(tmp_path):
         ),
         max_rerun_attempts=3,
         validation_thresholds={
-            "conversation_finished": 1.0,
+            "conversation_valid_end": 1.0,
             "user_behavioral_fidelity": 1.0,
         },
         max_concurrent_conversations=2,
@@ -119,7 +119,6 @@ def create_mock_validation_results(pass_ids: list[str], fail_ids: list[str]) -> 
         results[record_id] = ValidationResult(
             passed=False,
             failed_metrics=["user_behavioral_fidelity"],
-            failure_category="validation_failed",
         )
     return results
 
@@ -339,40 +338,36 @@ async def test_archive_failed_failed_attempt_nested_output_id(eval_config):
 
 @pytest.mark.asyncio
 async def test_evaluation_mode_conversation_not_finished_retries(eval_config, mock_dataset):
-    """Test that conversation_finished failures trigger retries in the flat loop."""
+    """Test that not_finished failures from the gate trigger retries in the flat loop."""
     runner = BenchmarkRunner(eval_config)
 
     attempt_counter = {"count": 0}
 
-    # Conversation finished check: fail_record_1 not finished on attempt 1, finished on attempt 2
-    conversation_finished_calls = {"count": 0}
-
-    def mock_conversation_finished(record_dir):
-        conversation_finished_calls["count"] += 1
-        # pass_record_1 always finishes
-        if "pass_record_1" in str(record_dir):
-            return True
-        # fail_record_1 finishes on 2nd attempt
-        return attempt_counter["count"] >= 2
-
-    mock_validation_results = create_mock_validation_results(
-        pass_ids=["pass_record_1", "fail_record_1"],
+    # Attempt 1: fail_record_1 fails the gate (not_finished); pass_record_1 passes.
+    # Attempt 2: both pass. ValidationRunner owns the gate, so we emit not_finished
+    # directly in its results instead of patching check_conversation_finished.
+    attempt_1_results = {
+        "pass_record_1": ValidationResult(passed=True),
+        # not_finished: gate rejected, no metrics ran → empty failed_metrics.
+        "fail_record_1": ValidationResult(passed=False),
+    }
+    attempt_2_results = create_mock_validation_results(
+        pass_ids=["fail_record_1"],
         fail_ids=[],
     )
 
     with patch.object(runner, "_run_targeted", side_effect=_mock_run_targeted(runner, attempt_counter)):
-        with patch("eva.orchestrator.runner.check_conversation_finished", side_effect=mock_conversation_finished):
-            with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
-                mock_val_runner = AsyncMock()
-                mock_val_runner.run_validation.return_value = mock_validation_results
-                MockValidationRunner.return_value = mock_val_runner
+        with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
+            mock_val_runner = AsyncMock()
+            mock_val_runner.run_validation.side_effect = [attempt_1_results, attempt_2_results]
+            MockValidationRunner.return_value = mock_val_runner
 
-                summary = await runner.run(mock_dataset)
+            summary = await runner.run(mock_dataset)
 
-                assert summary.total_records == 2
-                assert summary.successful_records == 2
-                assert summary.failed_records == 0
-                assert attempt_counter["count"] == 2
+            assert summary.total_records == 2
+            assert summary.successful_records == 2
+            assert summary.failed_records == 0
+            assert attempt_counter["count"] == 2
 
 
 @pytest.mark.asyncio
