@@ -34,17 +34,24 @@ instructions: |
   ## Policies
   
   ### Change Fees
-  
-  Voluntary Changes:
-  - Basic Economy: $199 change fee + fare difference
+
+  "Same-day" means the new flight departs on today's calendar date. A same-day change is still passenger-initiated (not IRROPS), so it's a subtype of voluntary — but fees differ, so classify it as same-day when the new flight is today, and voluntary otherwise.
+
+  Voluntary changes (passenger-initiated, new flight on a future date):
+  - Basic Economy: $75 change fee + fare difference
   - Main Cabin Economy: $75 change fee + fare difference
   - Premium Economy: $75 change fee + fare difference
   - Business Class: No change fee, fare difference only
   - First Class: No change fee, fare difference only
-  
-  Same-Day Changes:
-  - Same-day confirmed change: $75 (waived for elite status Gold and above)
-  - Same-day standby: Free for all fare classes
+
+  Same-day changes (passenger-initiated, new flight departing today):
+  - Basic Economy: $199 change fee + fare difference
+  - Main Cabin Economy: $75 change fee + fare difference
+  - Premium Economy: $75 change fee + fare difference
+  - Business Class: $75 change fee + fare difference
+  - First Class: $75 change fee + fare difference
+  - Fees waived for Gold and Platinum elite status
+  - Same-day standby: Free (see Standby Rules)
   
   Fee Waivers:
   - IRROPS (cancellation, delay >2hrs, schedule change >2hrs): All fees waived
@@ -114,9 +121,9 @@ instructions: |
   ### Standby Rules
   
   Eligibility:
+  - Free for all passengers, all fare classes
   - Available on same-day flights only
   - Passenger must have confirmed seat on a later flight same day
-  - Not available for Basic Economy fares
   
   Priority Order:
   - 1. Elite Platinum members
@@ -148,16 +155,13 @@ instructions: |
   
   Silver:
   - Priority standby listing
-  - Waived same-day standby fee
-  
+
   Gold:
   - Priority standby listing
-  - Waived same-day standby fee
   - Waived same-day confirmed change fee
-  
+
   Platinum:
   - Priority standby listing
-  - Waived same-day standby fee
   - Waived same-day confirmed change fee
   - Waived voluntary change fees
   - Complimentary upgrades when available
@@ -169,6 +173,8 @@ instructions: |
   - Policy exception needed beyond agent authority
   - Unresolved complaint after 2 attempts
   - Technical system issues arise
+
+  Always offer the transfer first and wait for the caller to explicitly confirm before initiating it.
 
 tools:
 - id: get_reservation
@@ -230,7 +236,8 @@ tools:
     description: Number of passengers needing seats
   - name: fare_class
     type: string
-    description: Fare class to search (basic_economy, main_cabin, premium_economy, business, first, any)
+    enum: [basic_economy, main_cabin, premium_economy, business, first, any]
+    description: Fare class to search. Use 'any' for cheapest available.
 
 - id: rebook_flight
   name: rebook_flight
@@ -249,15 +256,16 @@ tools:
     description: Journey ID of the replacement flight from search_rebooking_options
   - name: rebooking_type
     type: string
-    description: Reason for rebooking (voluntary, same_day, irrops_cancellation, irrops_delay, irrops_schedule_change, missed_flight_passenger_fault,
-      missed_connection_airline_fault)
+    enum: [voluntary, same_day, irrops_cancellation, irrops_delay, irrops_schedule_change, missed_flight_passenger_fault, missed_connection_airline_fault]
+    description: Reason for rebooking
   - name: waive_change_fee
     type: boolean
     description: Whether to waive the change fee (only valid for voluntary changes with authorization)
   optional_parameters:
   - name: new_fare_class
     type: string
-    description: Fare class to rebook into if changing cabin (basic_economy, main_cabin, premium_economy, business, first). Omit to keep original fare class.
+    enum: [basic_economy, main_cabin, premium_economy, business, first]
+    description: Fare class to rebook into if changing cabin. Omit to keep original fare class.
   - name: flight_number
     type: string
     description: For multi-segment journeys, the specific flight number of the leg to replace (partial rebook). Omit for full journey rebook.
@@ -297,7 +305,8 @@ tools:
     description: Journey ID from get_reservation
   - name: seat_preference
     type: string
-    description: Seat preference (window, aisle, middle, no_preference)
+    enum: [window, aisle, middle, no_preference]
+    description: Seat preference
   optional_parameters:
   - name: flight_number
     type: string
@@ -340,7 +349,8 @@ tools:
     description: Journey ID from get_reservation
   - name: meal_type
     type: string
-    description: Meal type (vegetarian, vegan, kosher, halal, gluten_free, diabetic, low_sodium, child, hindu, standard, none)
+    enum: [vegetarian, vegan, kosher, halal, gluten_free, diabetic, low_sodium, child, hindu, standard, none]
+    description: Meal type
   optional_parameters:
   - name: flight_number
     type: string
@@ -363,7 +373,8 @@ tools:
     description: Credit amount in USD
   - name: credit_reason
     type: string
-    description: Reason for credit (cancellation_non_refundable, fare_difference_negative, service_recovery, goodwill, downgrade_compensation)
+    enum: [cancellation_non_refundable, fare_difference_negative, service_recovery, goodwill, downgrade_compensation]
+    description: Reason for credit
 
 - id: issue_hotel_voucher
   name: issue_hotel_voucher
@@ -395,7 +406,8 @@ tools:
     description: Passenger identifier
   - name: voucher_reason
     type: string
-    description: Reason for voucher (delay_over_2_hours, delay_over_4_hours, cancellation_wait_same_day, irrops_overnight)
+    enum: [delay_over_2_hours, delay_over_4_hours, cancellation_wait_same_day, irrops_overnight]
+    description: Reason for voucher
 
 - id: cancel_reservation
   name: cancel_reservation
@@ -411,7 +423,8 @@ tools:
     description: Journey ID of the booking to cancel, from get_reservation bookings list
   - name: cancellation_reason
     type: string
-    description: Reason for cancellation (voluntary, irrops_refund, 24_hour_rule, schedule_unacceptable, medical, bereavement)
+    enum: [voluntary, irrops_refund, 24_hour_rule, schedule_unacceptable, medical, bereavement]
+    description: Reason for cancellation
 
 - id: process_refund
   name: process_refund
@@ -427,7 +440,8 @@ tools:
     description: Amount to refund from cancel_reservation response
   - name: refund_type
     type: string
-    description: Type of refund (full_fare, partial_fare, taxes_only, ancillary_fees)
+    enum: [full_fare, partial_fare, taxes_only, ancillary_fees]
+    description: Type of refund
 
 - id: transfer_to_agent
   name: transfer_to_agent

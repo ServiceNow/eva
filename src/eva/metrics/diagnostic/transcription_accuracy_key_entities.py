@@ -9,6 +9,7 @@ from typing import Any
 from eva.metrics.base import MetricContext, TextJudgeMetric
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import aggregate_per_turn_scores, parse_judge_response_list, resolve_turn_id
+from eva.models.config import PipelineType
 from eva.models.results import MetricScore
 
 
@@ -45,7 +46,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     description = "Debug metric: LLM judge evaluation of STT key entity transcription accuracy for entire conversation"
     category = "diagnostic"
     exclude_from_pass_at_k = True
-    skip_audio_native = True
+    supported_pipeline_types = frozenset({PipelineType.CASCADE})
     rating_scale = None  # Custom scoring (not 1-3 scale)
     default_aggregation = "mean"
 

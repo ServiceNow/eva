@@ -802,6 +802,197 @@ class TestCliArgs:
         assert c.record_ids == ["1.2.1"]
 
 
+class TestTurnStrategyConfig:
+    """Tests for configurable turn start/stop strategy fields."""
+
+    def test_pipeline_config_turn_strategy_defaults(self):
+        """PipelineConfig has expected defaults for turn strategy fields."""
+        config = _config(env_vars=_BASE_ENV)
+        assert config.model.turn_start_strategy == "vad"
+        assert config.model.turn_start_strategy_params == {}
+        assert config.model.turn_stop_strategy == "turn_analyzer"
+        assert config.model.turn_stop_strategy_params == {}
+        assert config.model.vad == "silero"
+        assert config.model.vad_params == {}
+
+    def test_pipeline_config_turn_start_strategy_from_env(self):
+        """EVA_MODEL__TURN_START_STRATEGY sets turn_start_strategy."""
+        config = _config(env_vars=_BASE_ENV | {"EVA_MODEL__TURN_START_STRATEGY": "external"})
+        assert config.model.turn_start_strategy == "external"
+
+    def test_pipeline_config_turn_stop_strategy_from_env(self):
+        """EVA_MODEL__TURN_STOP_STRATEGY sets turn_stop_strategy."""
+        config = _config(env_vars=_BASE_ENV | {"EVA_MODEL__TURN_STOP_STRATEGY": "speech_timeout"})
+        assert config.model.turn_stop_strategy == "speech_timeout"
+
+    def test_pipeline_config_turn_start_strategy_params_from_env(self):
+        """EVA_MODEL__TURN_START_STRATEGY_PARAMS sets turn_start_strategy_params."""
+        params = {"some_param": True}
+        config = _config(env_vars=_BASE_ENV | {"EVA_MODEL__TURN_START_STRATEGY_PARAMS": json.dumps(params)})
+        assert config.model.turn_start_strategy_params == params
+
+    def test_pipeline_config_turn_stop_strategy_params_from_env(self):
+        """EVA_MODEL__TURN_STOP_STRATEGY_PARAMS sets turn_stop_strategy_params."""
+        params = {"user_speech_timeout": 1.5}
+        config = _config(env_vars=_BASE_ENV | {"EVA_MODEL__TURN_STOP_STRATEGY_PARAMS": json.dumps(params)})
+        assert config.model.turn_stop_strategy_params == params
+
+    def test_pipeline_config_vad_from_env(self):
+        """EVA_MODEL__VAD sets vad."""
+        config = _config(env_vars=_BASE_ENV | {"EVA_MODEL__VAD": "silero"})
+        assert config.model.vad == "silero"
+
+    def test_pipeline_config_vad_params_from_env(self):
+        """EVA_MODEL__VAD_PARAMS sets vad_params."""
+        params = {"stop_secs": 0.5, "confidence": 0.8}
+        config = _config(env_vars=_BASE_ENV | {"EVA_MODEL__VAD_PARAMS": json.dumps(params)})
+        assert config.model.vad_params == params
+
+    def test_s2s_config_turn_strategy_defaults(self):
+        """SpeechToSpeechConfig has expected defaults for turn strategy fields."""
+        config = _config(env_vars=_S2S_ENV)
+        assert config.model.turn_start_strategy == "vad"
+        assert config.model.turn_start_strategy_params == {}
+        assert config.model.turn_stop_strategy == "turn_analyzer"
+        assert config.model.turn_stop_strategy_params == {}
+        assert config.model.vad == "silero"
+        assert config.model.vad_params == {}
+
+    def test_s2s_config_turn_strategy_from_env(self):
+        """S2S turn strategies can be overridden via env."""
+        config = _config(
+            env_vars=_S2S_ENV
+            | {
+                "EVA_MODEL__TURN_START_STRATEGY": "transcription",
+                "EVA_MODEL__TURN_STOP_STRATEGY": "external",
+            }
+        )
+        assert config.model.turn_start_strategy == "transcription"
+        assert config.model.turn_stop_strategy == "external"
+
+    def test_audio_llm_config_turn_strategy_defaults(self):
+        """AudioLLMConfig has expected defaults for turn strategy fields."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__AUDIO_LLM": "vllm",
+                "EVA_MODEL__AUDIO_LLM_PARAMS": json.dumps(
+                    {"api_key": "k", "model": "ultravox", "base_url": "http://localhost:8000"}
+                ),
+                "EVA_MODEL__TTS": "cartesia",
+                "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic"}),
+            }
+        )
+        assert config.model.turn_start_strategy == "vad"
+        assert config.model.turn_stop_strategy == "turn_analyzer"
+        assert config.model.vad == "silero"
+        assert config.model.vad_params == {}
+
+
+class TestApiKeyRedactionInPipelineModels:
+    """api_key redaction works for all three pipeline config types."""
+
+    def test_pipeline_config_stt_tts_params_api_key_redacted(self):
+        """PipelineConfig redacts api_key in stt_params and tts_params on serialization."""
+        config = _config(env_vars=_BASE_ENV)
+        dumped = config.model.model_dump(mode="json")
+        assert dumped["stt_params"]["api_key"] == "***"
+        assert dumped["tts_params"]["api_key"] == "***"
+        # Non-secret fields survive
+        assert dumped["stt_params"]["model"] == "nova-2"
+        assert dumped["tts_params"]["model"] == "sonic"
+
+    def test_pipeline_config_redaction_does_not_mutate(self):
+        """Serializing PipelineConfig does not mutate live stt_params/tts_params."""
+        config = _config(env_vars=_BASE_ENV)
+        config.model.model_dump(mode="json")
+        assert config.model.stt_params["api_key"] == "test_key"
+        assert config.model.tts_params["api_key"] == "test_key"
+
+    def test_s2s_config_s2s_params_api_key_redacted(self):
+        """SpeechToSpeechConfig redacts api_key in s2s_params on serialization."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__S2S": "gpt-realtime-mini",
+                "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "secret", "model": "gpt-realtime-mini"}),
+            }
+        )
+        dumped = config.model.model_dump(mode="json")
+        assert dumped["s2s_params"]["api_key"] == "***"
+        # Non-secret fields survive
+        assert dumped["s2s_params"]["model"] == "gpt-realtime-mini"
+
+    def test_s2s_config_redaction_does_not_mutate(self):
+        """Serializing SpeechToSpeechConfig does not mutate live s2s_params."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__S2S": "gpt-realtime-mini",
+                "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "secret", "model": "gpt-realtime-mini"}),
+            }
+        )
+        config.model.model_dump(mode="json")
+        assert config.model.s2s_params["api_key"] == "secret"
+
+    def test_audio_llm_config_params_api_key_redacted(self):
+        """AudioLLMConfig redacts api_key in audio_llm_params and tts_params on serialization."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__AUDIO_LLM": "vllm",
+                "EVA_MODEL__AUDIO_LLM_PARAMS": json.dumps(
+                    {"api_key": "secret", "base_url": "http://localhost:8000", "model": "ultravox"}
+                ),
+                "EVA_MODEL__TTS": "cartesia",
+                "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "tts_secret", "model": "sonic"}),
+            }
+        )
+        dumped = config.model.model_dump(mode="json")
+        assert dumped["audio_llm_params"]["api_key"] == "***"
+        assert dumped["tts_params"]["api_key"] == "***"
+        # Non-secret fields survive
+        assert dumped["audio_llm_params"]["base_url"] == "http://localhost:8000"
+        assert dumped["tts_params"]["model"] == "sonic"
+
+    def test_non_secret_params_not_affected_by_redaction(self):
+        """Non-api_key fields in params pass through serialization unchanged."""
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2", "language": "en"}),
+                "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic", "speed": 1.0}),
+            }
+        )
+        dumped = config.model.model_dump(mode="json")
+        # api_key is redacted
+        assert dumped["stt_params"]["api_key"] == "***"
+        assert dumped["tts_params"]["api_key"] == "***"
+        # Extra non-secret fields survive unchanged
+        assert dumped["stt_params"]["language"] == "en"
+        assert dumped["tts_params"]["speed"] == 1.0
+
+
+class TestParamAlias:
+    """Tests for the _param_alias helper used to build run_id suffixes."""
+
+    def test_alias_takes_priority_over_model(self):
+        """When alias is present it is returned."""
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2", "alias": "my-stt"}),
+            }
+        )
+        # run_id suffix uses alias for STT component
+        assert "my-stt" in config.run_id
+
+    def test_model_used_when_no_alias(self):
+        """When no alias, model is used for the suffix."""
+        config = _config(env_vars=_BASE_ENV)
+        assert "nova-2" in config.run_id
+
+
 class TestSpeechToSpeechConfig:
     """Tests for SpeechToSpeechConfig discriminated union."""
 

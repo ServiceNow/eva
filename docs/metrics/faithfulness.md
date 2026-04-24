@@ -25,7 +25,7 @@ Uses the following MetricContext fields:
 - `conversation_trace`: Full conversation with tool calls (via `format_transcript`)
 - `agent_instructions`, `agent_role`, `agent_tools`: Agent configuration for policy evaluation
 - `current_date_time`: Simulated date/time for temporal reasoning
-- `is_audio_native` (audio-native): Architecture flag (controls which prompt variant is used)
+- `pipeline_type` / `is_audio_native`: Architecture flag (controls which prompt variant is used — cascade vs. audio-native)
 
 ### Audio-Native vs Cascade
 
@@ -35,7 +35,7 @@ This metric has **significantly different behavior** depending on the architectu
 - User turns in the trace are **STT transcripts** — the text the assistant's text LLM actually received.
 - The judge evaluates faithfulness against what the assistant saw (the transcript), not what the user actually said.
 - If STT transcribed "Kim" but the user said "Kin", using "Kim" is faithful (the assistant can only work with what it received). This issue would be captured by the transcription accuracy key entities metric.
-**Audio-native (S2S, S2T+TTS):**
+**Audio-native (AUDIO_LLM, S2S):**
 - User turns in the trace are **intended text** (what the user simulator was instructed to say), since audio-native models do not use transcriptions.
 - The judge evaluates whether the assistant **correctly understood the audio**. If the assistant misheard the user and used incorrect information, that IS a faithfulness violation — accurate audio understanding is part of the audio-native model's responsibility.
 

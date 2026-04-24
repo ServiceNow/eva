@@ -48,11 +48,18 @@ def _conv_to_dicts(messages) -> list[dict]:
 
 
 def _make_tool_call(call_id: str, name: str, arguments: str):
-    """Create a mock tool call object (mimics LiteLLM tool call)."""
-    return SimpleNamespace(
+    """Create a mock tool call object (mimics LiteLLM ChatCompletionMessageToolCall)."""
+    tc = SimpleNamespace(
         id=call_id,
+        type="function",
         function=SimpleNamespace(name=name, arguments=arguments),
     )
+    tc.model_dump = lambda exclude_none=False: {
+        "id": call_id,
+        "type": "function",
+        "function": {"name": name, "arguments": arguments},
+    }
+    return tc
 
 
 class TestProcessQueryNoTools:
@@ -347,6 +354,67 @@ class TestProcessQueryTransfer:
             },
             {"role": "assistant", "content": "Transferring you to a live agent. Please wait."},
         ]
+
+
+class TestResponsesOutputItemsThreading:
+    @pytest.mark.asyncio
+    async def test_responses_output_items_passed_to_next_llm_call(self):
+        """When stats includes responses_output_items (OpenAI Responses API encrypted reasoning).
+
+        They are attached to the assistant message and forwarded to the next LLM call.
+        """
+        tool = _make_tool("get_info")
+        agent = _make_agent(tools=[tool])
+        audit_log = AuditLog()
+
+        tool_call = _make_tool_call("call_1", "get_info", '{"id": "42"}')
+        output_items = [
+            {"type": "reasoning", "encrypted_content": "enc_abc"},
+            {"type": "function_call", "call_id": "call_1", "name": "get_info", "arguments": '{"id": "42"}'},
+        ]
+
+        llm_client = MagicMock()
+        llm_client.complete = AsyncMock(
+            side_effect=[
+                (
+                    _make_llm_response("", tool_calls=[tool_call]),
+                    {
+                        "prompt_tokens": 20,
+                        "completion_tokens": 10,
+                        "finish_reason": "tool_calls",
+                        "responses_output_items": output_items,
+                        "reasoning_content": "enc_abc",
+                    },
+                ),
+                (
+                    _make_llm_response("Here is the result."),
+                    {"prompt_tokens": 30, "completion_tokens": 10, "finish_reason": "stop"},
+                ),
+            ]
+        )
+
+        tool_handler = MagicMock()
+        tool_handler.execute = AsyncMock(return_value={"status": "success", "data": "some data"})
+
+        system = AgenticSystem(
+            current_date_time="2026-02-25 10:00:00",
+            agent=agent,
+            tool_handler=tool_handler,
+            audit_log=audit_log,
+            llm_client=llm_client,
+        )
+
+        responses = []
+        async for msg in system.process_query("Get info for 42"):
+            responses.append(msg)
+
+        assert responses == ["Here is the result."]
+
+        # Verify the second LLM call received the assistant message with responses_output_items
+        second_call_messages = llm_client.complete.call_args_list[1][0][0]
+        assistant_msgs = [m for m in second_call_messages if m.get("role") == "assistant"]
+        assert len(assistant_msgs) == 1
+        assert assistant_msgs[0]["responses_output_items"] == output_items
 
 
 class TestProcessQueryLLMError:

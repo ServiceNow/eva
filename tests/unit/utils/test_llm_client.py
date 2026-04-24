@@ -289,3 +289,5 @@ class TestLitellmParamsForwarding:
         assert call_kwargs.get("custom_param") == "must_be_preserved", (
             f"custom_param not found in litellm.acompletion kwargs: {call_kwargs}"
         )
+
+        router.reset()

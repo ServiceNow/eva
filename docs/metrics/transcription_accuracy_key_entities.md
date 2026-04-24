@@ -29,7 +29,7 @@ The judge receives both texts side by side and identifies key entities to compar
 ### Audio-Native vs Cascade
 
 - **Cascade**: Fully applicable — measures whether the assistant's STT correctly captured key entities, which directly affects downstream tool calls and responses.
-- **Audio-native (S2S, S2T+TTS):** **Skipped entirely** (`skip_s2s = True` (audio-native)). Audio-native models receive raw audio, not STT output, so entity-level STT accuracy is not meaningful. Entity perception issues in audio-native systems are captured instead by `faithfulness` (which treats mishearing as a faithfulness violation).
+- **Audio-native (AUDIO_LLM / S2S):** **Skipped entirely** (`supported_pipeline_types = {CASCADE}`). Audio-native models receive raw audio, not STT output, so entity-level STT accuracy is not meaningful. Entity perception issues in audio-native systems are captured instead by `faithfulness` (which treats mishearing as a faithfulness violation).
 
 ### Evaluation Methodology
 

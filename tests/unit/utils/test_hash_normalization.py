@@ -162,6 +162,18 @@ class TestGetDictHash:
         d2 = {"a": 2, "b": 1}
         assert get_dict_hash(d1) == get_dict_hash(d2)
 
+    def test_session_key_excluded_from_hash(self):
+        """Session key should not affect the hash."""
+        db_without_session = {"reservations": {"ABC": {"status": "confirmed"}}}
+        db_with_session = {**db_without_session, "session": {"confirmation_number": "ABC", "last_name": "doe"}}
+        assert get_dict_hash(db_without_session) == get_dict_hash(db_with_session)
+
+    def test_different_sessions_produce_same_hash(self):
+        """Two DBs identical except for session content should hash the same."""
+        db_session_a = {"reservations": {}, "session": {"confirmation_number": "AAA", "last_name": "smith"}}
+        db_session_b = {"reservations": {}, "session": {"confirmation_number": "BBB", "last_name": "jones"}}
+        assert get_dict_hash(db_session_a) == get_dict_hash(db_session_b)
+
 
 class TestComputeDbDiff:
     def test_no_diff_after_normalization(self):

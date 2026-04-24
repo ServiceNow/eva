@@ -92,10 +92,10 @@ class TestEventLogger:
         assert "data" not in event
 
     def test_log_audio_end_structure(self, logger):
-        logger.log_audio_end("pipecat_agent")
+        logger.log_audio_end("framework_agent")
         event = logger._events[0]
         assert event["event_type"] == "audio_end"
-        assert event["user"] == "pipecat_agent"
+        assert event["user"] == "framework_agent"
         assert isinstance(event["audio_timestamp"], float)
 
     def test_save_creates_jsonl(self, logger):
