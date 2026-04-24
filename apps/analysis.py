@@ -79,6 +79,9 @@ _CATEGORY_COLORS = {
 
 _NON_NORMALIZED_METRICS = {"response_speed"}
 
+# Metric name substrings that indicate lower values are better (e.g. error rates, latency)
+_LOWER_BETTER_KEYWORDS = {"latency", "error", "wer", "delay", "penalty"}
+
 # EVA composite scores to show in the bar chart
 _EVA_BAR_COMPOSITES = ["EVA-A_pass", "EVA-X_pass", "EVA-A_mean", "EVA-X_mean"]
 
@@ -245,6 +248,12 @@ def format_transcript(transcript_path: Path) -> pd.DataFrame:
 def _is_sub_metric(name: str) -> bool:
     """Return True if the metric name is a sub-metric (contains __ separator)."""
     return "__" in name
+
+
+def _is_lower_better(metric_name: str) -> bool:
+    """Return True if lower values are better for this metric (e.g. error rates, latency)."""
+    lower = metric_name.lower()
+    return any(kw in lower for kw in _LOWER_BETTER_KEYWORDS)
 
 
 def _sort_metrics_by_category(metric_names: list[str]) -> list[str]:
@@ -1190,6 +1199,91 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
 
     csv = summary_df.drop(columns=["label"]).to_csv(index=False)
     st.download_button("Download CSV", csv, file_name="cross_run_comparison.csv", mime="text/csv")
+
+    # === Per-Sample Heatmap ===
+    st.markdown("---")
+    st.markdown("#### Per-Sample Heatmap")
+
+    # Collect per-record rows for all runs present in summary_df
+    run_label_map = dict(zip(summary_df["run"], summary_df["label"]))
+    heatmap_rows: list[dict] = []
+    for run_dir in filtered_dirs:
+        run_name = run_dir.name
+        if run_name not in run_label_map:
+            continue
+        label = run_label_map[run_name]
+        per_record_rows, _ = _collect_run_metrics(run_dir)
+        for row in per_record_rows:
+            if row.get("_is_failed_attempt"):
+                continue
+            metric_vals = {k: v for k, v in row.items() if k not in ("record", "_is_failed_attempt", "trial")}
+            heatmap_rows.append({"system": label, "record": row["record"], **metric_vals})
+
+    if not heatmap_rows:
+        st.info("No per-record data available for heatmap.")
+    else:
+        heatmap_df = pd.DataFrame(heatmap_rows)
+
+        # Metric selector: use ordered_metrics filtered to those present in heatmap_df
+        available_heatmap_metrics = [m for m in ordered_metrics if m in heatmap_df.columns]
+        if not st.session_state.get("show_sub_metrics"):
+            available_heatmap_metrics = [m for m in available_heatmap_metrics if not _is_sub_metric(m)]
+
+        if available_heatmap_metrics:
+            ctrl_col, swap_col = st.columns([4, 1])
+            with ctrl_col:
+                selected_heatmap_metric = st.selectbox(
+                    "Metric",
+                    available_heatmap_metrics,
+                    format_func=_format_metric_name,
+                    key="heatmap_metric",
+                )
+            with swap_col:
+                st.markdown("<div style='padding-top:28px'></div>", unsafe_allow_html=True)
+                swap_axes = st.toggle("Swap axes", key="heatmap_swap_axes")
+
+            # Build pivot: rows=system, columns=record, values=selected metric
+            pivot = heatmap_df.pivot_table(
+                index="system",
+                columns="record",
+                values=selected_heatmap_metric,
+                aggfunc="mean",
+            )
+
+            colorscale = "RdYlGn_r" if _is_lower_better(selected_heatmap_metric) else "RdYlGn"
+            metric_display = _format_metric_name(selected_heatmap_metric)
+
+            if swap_axes:
+                z_data = pivot.T.values.tolist()[::-1]
+                x_labels = list(pivot.index)  # systems on x-axis
+                y_labels = list(pivot.columns)[::-1]  # samples on y-axis, reversed so first sample is at top
+                x_title, y_title = "System", "Sample"
+            else:
+                z_data = pivot.values.tolist()
+                x_labels = list(pivot.columns)  # samples on x-axis
+                y_labels = list(pivot.index)  # systems on y-axis
+                x_title, y_title = "Sample", "System"
+
+            heatmap_fig = go.Figure(
+                data=go.Heatmap(
+                    z=z_data,
+                    x=x_labels,
+                    y=y_labels,
+                    colorscale=colorscale,
+                    colorbar={"title": metric_display},
+                    hovertemplate=(
+                        f"{x_title}: %{{x}}<br>{y_title}: %{{y}}<br>{metric_display}: %{{z:.3f}}<extra></extra>"
+                    ),
+                )
+            )
+            heatmap_fig.update_layout(
+                title=f"Per-Sample Heatmap: {metric_display}",
+                xaxis={"title": x_title, "tickangle": -45},
+                yaxis={"title": y_title},
+                height=max(350, 80 + 40 * len(y_labels)),
+                margin={"l": 20, "r": 20, "t": 50, "b": 120},
+            )
+            st.plotly_chart(heatmap_fig, use_container_width=True)
 
 
 def render_run_overview(run_dir: Path):
