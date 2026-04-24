@@ -61,7 +61,7 @@ judge:
       - If the response enumerates options or items (e.g., "Option one is… Option two is…"), does the structure help the user? The volume should not be overwhelming.
       - Is the provided information justified by context (e.g., confirming a detail the user may have misheard)? Or is it inappropriate (e.g., excessive itemization or explanation when the user may only care about the end result)?
       - Within turns, is repetition avoided? Across turns there may be valid reasons for repetition, but it should usually not occur within a single turn.
-      - Essential information — such as confirmation codes, reference IDs, ticket numbers, or other specific details the user needs to take away — should never be penalized, regardless of length.
+      - Essential information — such as confirmation codes, reference IDs, ticket numbers, or other specific details the user needs to note down — should never be penalized, regardless of length.
 
       ## Allowed Exceptions (Voice Interaction Realities)
       The assistant may occasionally produce longer turns when the context requires precise information transfer. The following cases should NOT be penalized for verbosity or information density. The turn itself may still be penalized for other reasons.
@@ -69,7 +69,7 @@ judge:
       - When confirming a confirmation code, reference number, ticket number, or similar identifier, the assistant may spell characters using the NATO phonetic alphabet (e.g., "B as in Bravo, F as in Foxtrot").
       - This is especially appropriate when the user previously misheard or asked for clarification.
       2. **Reference or Identifier Delivery**
-      - When providing an identifier the user needs to take away (e.g., a ticket number, reference code, or voucher code), the assistant may read the whole code out loud.
+      - When providing an identifier the user needs to note down (e.g., a ticket number, reference code, or voucher code), the assistant may read the whole code out loud.
       - This information is essential and should not be penalized regardless of length.
       3. **End-of-Call Wrap-Up**
       - The final assistant turn in a conversation may include a slightly longer recap or confirmation of next steps (e.g., summarizing the action taken, confirming what will be sent or followed up on, thanking the user).
@@ -98,7 +98,7 @@ judge:
       If none of the above are present, return an empty list for failure_modes.
 
       ## Rating Scale For Each Turn With Assistant Content
-      - 3 (Highly Concise / No Cognitive Overload) – The response is clear, appropriately scoped for voice, and comfortably digestible in real time. No failure modes are present. A turn that delivers a few closely related facts as part of a single transactional step (e.g., confirming the key details of a booking or incident) still qualifies as 3 if the listener can comfortably absorb it in one pass.
+      - 3 (Highly Concise / No Cognitive Overload) – The response is clear, appropriately scoped for voice, and comfortably digestible in real time. No failure modes are present. A turn that delivers a few closely related facts as part of a single transactional step (e.g., confirming the key details of a request or incident) still qualifies as 3 if the listener can comfortably absorb it in one pass.
       - 2 (Adequate but Not Optimally Concise) – One minor failure mode is present, but the response remains reasonably processable in a voice setting and does not meaningfully overwhelm the listener. Reserve this rating for turns where you can identify specific content that should have been omitted or deferred to a later turn — not merely for turns that happen to contain several necessary details.
       - 1 (Not Concise / Causes Cognitive Overload) – One or more significant failure modes are present that materially increase cognitive load and would hinder comprehension in a voice conversation.
 
@@ -373,7 +373,7 @@ judge:
       - When a user explicitly requests a specific action AND the general cost structure has been communicated, proceeding without re-stating exact amounts (if not yet knowable) is not a clear violation
 
       **Evaluating "explain before acting":** This principle protects users from unexpected costs or negative consequences. Severity should be proportional to potential negative impact:
-      - **Clear violation:** Executing irreversible actions without disclosing known specific fees/costs/consequences, especially when a non-zero amount is being charged or when the action is hard to undo
+      - **Clear violation:** Executing irreversible actions without disclosing known specific fees/costs/consequences, especially when a non-zero amount is being charged or when the action cannot be undone
       - **Not a violation:** Issuing benefits the user explicitly requested or is entitled to with no negative consequence. Mentioning that an action should not have any financial consequence based on the policy before seeing it in the tool results is not a violation, as long as the assistant corrects itself after seeing the actual costs in the tool results (e.g., stating "there should be no fee based on policy" → proceeds to call tool → if the tool confirms the fee is waived, no violation).
 
       **Evaluating policy application:** When two policy paths could apply (e.g., same-day change vs. missed flight; in-warranty repair vs. out-of-warranty replacement), consider timeline and eligibility carefully. If the user is within the more favorable policy window (e.g., a flight hasn't departed yet, a request is within SLA, a return is within the return window), applying the more favorable applicable policy is not a violation. Also, if two policy paths produce the identical fee/outcome, choosing one over the other is not a material violation.
