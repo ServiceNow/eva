@@ -160,6 +160,10 @@ class BaseMetric(ABC):
     pass_at_k_threshold: float = 0.5  # Normalized score threshold for pass@k pass/fail
     exclude_from_pass_at_k: bool = False  # Set True for metrics not suitable for pass@k
     supported_pipeline_types: frozenset[PipelineType] = frozenset(PipelineType)  # Pipeline types this metric supports
+    # Direction of the displayed value (normalized_score if present, else score).
+    # Override to False for lower-is-better parent metrics (e.g. latency). Sub-metric
+    # direction is derived from the key suffix (see eva.metrics.utils.direction_for_sub_metric).
+    higher_is_better: bool = True
 
     def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the metric.
@@ -383,6 +387,19 @@ class PerTurnConversationJudgeMetric(TextJudgeMetric):
         """
         return {}
 
+    def build_sub_metrics(
+        self,
+        context: MetricContext,
+        per_turn_ratings: dict[int, int | None],
+        per_turn_extra: dict[int, dict[str, Any]],
+    ) -> dict[str, MetricScore] | None:
+        """Return sub-metrics derived from the per-turn data, or None.
+
+        Override in subclasses to surface breakdowns (e.g., per-failure-mode rates).
+        Default returns None so the parent metric has no sub-metrics.
+        """
+        return None
+
     async def compute(self, context: MetricContext) -> MetricScore:
         """Evaluate all turns in a single judge call and aggregate per-turn ratings."""
         try:
@@ -480,11 +497,14 @@ class PerTurnConversationJudgeMetric(TextJudgeMetric):
                     tid: normalize_rating(r, min_r, max_r) for tid, r in per_turn_ratings.items() if r is not None
                 }
 
+            sub_metrics = self.build_sub_metrics(context, per_turn_ratings, per_turn_extra)
+
             return MetricScore(
                 name=self.name,
                 score=round(mean_rating, 3),
                 normalized_score=round(normalized_score, 3),
                 details=details,
+                sub_metrics=sub_metrics or None,
             )
 
         except Exception as e:

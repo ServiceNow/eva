@@ -52,6 +52,49 @@ async def test_all_turns_rated(metric):
 
 
 @pytest.mark.asyncio
+async def test_surfaces_failure_mode_sub_metrics(metric):
+    """Sub-metrics surface per-failure-mode rates across rated turns."""
+    mock_response = json.dumps(
+        [
+            {"turn_id": 1, "rating": 1, "explanation": "verbose", "failure_modes": ["verbosity_or_filler"]},
+            {
+                "turn_id": 2,
+                "rating": 2,
+                "explanation": "dense",
+                "failure_modes": ["excess_information_density", "verbosity_or_filler"],
+            },
+            {"turn_id": 3, "rating": 3, "explanation": "clean", "failure_modes": []},
+            {"turn_id": 4, "rating": None, "explanation": "user only", "failure_modes": []},
+        ]
+    )
+    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    context = make_metric_context(conversation_trace=SAMPLE_TURNS)
+    result = await metric.compute(context)
+
+    assert result.error is None
+    assert result.sub_metrics is not None
+    expected_keys = {
+        "verbosity_or_filler_rate",
+        "excess_information_density_rate",
+        "over_enumeration_or_list_exhaustion_rate",
+        "contextually_disproportionate_detail_rate",
+    }
+    assert set(result.sub_metrics.keys()) == expected_keys
+    # 2 out of 3 rated turns flagged verbosity_or_filler
+    verbosity = result.sub_metrics["verbosity_or_filler_rate"]
+    assert verbosity.name == "conciseness.verbosity_or_filler_rate"
+    assert verbosity.score == pytest.approx(2 / 3, abs=0.001)
+    assert verbosity.normalized_score == pytest.approx(2 / 3, abs=0.001)
+    assert verbosity.details["count"] == 2
+    assert verbosity.details["num_rated"] == 3
+    assert set(verbosity.details["turn_ids"]) == {1, 2}
+    # modes with zero occurrences still emitted at rate 0
+    over_enum = result.sub_metrics["over_enumeration_or_list_exhaustion_rate"]
+    assert over_enum.score == 0.0
+    assert over_enum.details["count"] == 0
+
+
+@pytest.mark.asyncio
 async def test_null_rating_excluded_from_aggregation(metric):
     """Null ratings (not applicable) are stored but excluded from score."""
     mock_response = json.dumps(
