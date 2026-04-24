@@ -2102,7 +2102,7 @@ def _get_run_dirs():
 
     run_dirs = [rd for od in output_dirs for rd in get_run_directories(od)]
 
-    latest_only = st.sidebar.toggle("Latest run per system only", value=True)
+    latest_only = st.sidebar.toggle("Latest run per system only", value=True, key="latest_only", bind="query-params")
     if latest_only:
         run_dirs = filter_latest_runs(run_dirs)
 
