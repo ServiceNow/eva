@@ -22,14 +22,14 @@ def _make_score(name: str, score: float, error: str | None = None, details: dict
 
 
 def _ctx(
-    conversation_finished: bool = False,
+    conversation_valid_end: bool = False,
     conversation_ended_reason: str | None = None,
     audio_timestamps_user_turns: dict | None = None,
     audio_timestamps_assistant_turns: dict | None = None,
 ):
     """Duck-typed stand-in for _ProcessorContext exposing the fields the gate reads."""
     return SimpleNamespace(
-        conversation_finished=conversation_finished,
+        conversation_valid_end=conversation_valid_end,
         conversation_ended_reason=conversation_ended_reason,
         audio_timestamps_user_turns=audio_timestamps_user_turns or {},
         audio_timestamps_assistant_turns=audio_timestamps_assistant_turns or {},
@@ -37,8 +37,14 @@ def _ctx(
 
 
 def _ctx_agent_timeout():
-    """Duck-typed context that satisfies is_agent_timeout_on_user_turn."""
+    """Duck-typed context matching what the processor produces for an agent-timeout record.
+
+    conversation_valid_end is True (it's a valid terminal state) AND the underlying
+    audio/reason fields satisfy is_agent_timeout_on_user_turn (so the runner can
+    separately flag it as terminal).
+    """
     return _ctx(
+        conversation_valid_end=True,
         conversation_ended_reason="inactivity_timeout",
         audio_timestamps_user_turns={0: [(0.0, 5.0)]},
         audio_timestamps_assistant_turns={0: [(1.0, 2.0)]},
@@ -91,7 +97,7 @@ class TestClassify:
     """Direct coverage of the gate's classification rule."""
 
     def test_goodbye_passes(self):
-        contexts = {"r1": _ctx(conversation_finished=True)}
+        contexts = {"r1": _ctx(conversation_valid_end=True)}
         gp, nf, at = ValidationRunner._classify(contexts, ["r1"])
         assert gp == ["r1"]
         assert nf == []
@@ -117,11 +123,12 @@ class TestClassify:
         assert nf == ["r1"]
         assert at == set()
 
-    def test_goodbye_takes_precedence_over_flag(self):
-        # Conversation-finished + would-be agent-timeout markers: goodbye short-circuits.
+    def test_valid_end_with_timeout_markers_flagged(self):
+        # valid_end=True and the audio/reason markers satisfy is_agent_timeout_on_user_turn:
+        # gate passes, AND the record is flagged as agent_timeout for terminal handling.
         contexts = {
             "r1": _ctx(
-                conversation_finished=True,
+                conversation_valid_end=True,
                 conversation_ended_reason="inactivity_timeout",
                 audio_timestamps_user_turns={0: [(0.0, 5.0)]},
                 audio_timestamps_assistant_turns={0: [(1.0, 2.0)]},
@@ -129,11 +136,11 @@ class TestClassify:
         }
         gp, nf, at = ValidationRunner._classify(contexts, ["r1"])
         assert gp == ["r1"]
-        assert at == set()
+        assert at == {"r1"}
 
     def test_mixed_set(self):
         contexts = {
-            "a": _ctx(conversation_finished=True),
+            "a": _ctx(conversation_valid_end=True),
             "b": _ctx_agent_timeout(),
             "c": _ctx(),
         }
@@ -299,8 +306,8 @@ class TestRunValidation:
     async def test_all_pass(self, validation_runner):
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
         contexts = {
-            "record_1": _ctx(conversation_finished=True),
-            "record_2": _ctx(conversation_finished=True),
+            "record_1": _ctx(conversation_valid_end=True),
+            "record_2": _ctx(conversation_valid_end=True),
         }
         mock_results = {
             "record_1": RecordMetrics(
@@ -331,8 +338,8 @@ class TestRunValidation:
     async def test_some_fail(self, validation_runner):
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
         contexts = {
-            "record_1": _ctx(conversation_finished=True),
-            "record_2": _ctx(conversation_finished=True),
+            "record_1": _ctx(conversation_valid_end=True),
+            "record_2": _ctx(conversation_valid_end=True),
         }
         mock_results = {
             "record_1": RecordMetrics(
@@ -363,7 +370,7 @@ class TestRunValidation:
         """A record with no context is marked not_finished and metrics aren't run on it."""
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
         contexts = {
-            "record_1": _ctx(conversation_finished=True),
+            "record_1": _ctx(conversation_valid_end=True),
         }
         mock_results = {
             "record_1": RecordMetrics(
@@ -396,7 +403,7 @@ class TestRunValidation:
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
         contexts = {
             "record_1": _ctx_agent_timeout(),
-            "record_2": _ctx(conversation_finished=True),
+            "record_2": _ctx(conversation_valid_end=True),
         }
         mock_results = {
             "record_1": RecordMetrics(
@@ -426,7 +433,7 @@ class TestRunValidation:
     @pytest.mark.asyncio
     async def test_metric_error(self, validation_runner):
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
-        contexts = {"record_1": _ctx(conversation_finished=True)}
+        contexts = {"record_1": _ctx(conversation_valid_end=True)}
         mock_results = {
             "record_1": RecordMetrics(
                 record_id="record_1",
@@ -446,7 +453,7 @@ class TestRunValidation:
     @pytest.mark.asyncio
     async def test_missing_metric(self, validation_runner):
         tts_pass = {"per_turn_ratings": {"turn_0": 3, "turn_1": 2}}
-        contexts = {"record_1": _ctx(conversation_finished=True)}
+        contexts = {"record_1": _ctx(conversation_valid_end=True)}
         mock_results = {
             "record_1": RecordMetrics(
                 record_id="record_1",
@@ -467,8 +474,8 @@ class TestRunValidation:
         """output_ids are forwarded as record_ids to MetricsRunner."""
         output_ids = ["rec-0/trial_0", "rec-0/trial_1"]
         contexts = {
-            "rec-0/trial_0": _ctx(conversation_finished=True),
-            "rec-0/trial_1": _ctx(conversation_finished=True),
+            "rec-0/trial_0": _ctx(conversation_valid_end=True),
+            "rec-0/trial_1": _ctx(conversation_valid_end=True),
         }
         runner = ValidationRunner(
             run_dir=temp_dir,

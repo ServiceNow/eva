@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from eva.metrics.legacy_aliases import rename_metric_keys, rename_metric_list
 from eva.metrics.runner import MetricsRunner, MetricsRunResult
 from eva.models.agents import AgentConfig
 from eva.models.config import PipelineConfig, RunConfig
@@ -530,7 +531,7 @@ class BenchmarkRunner:
 
         needs_validation_ids = [oid for oid in all_output_ids if oid not in already_passed_ids]
 
-        # STEP 1: Full validation (including conversation_finished)
+        # STEP 1: Full validation (including conversation_valid_end)
         validation_results: dict = {}
         failed_ids: list[str] = []
         if needs_validation_ids:
@@ -933,8 +934,6 @@ class BenchmarkRunner:
 
         config_data = json.loads(config_path.read_text())
         # Backwards compat: remap any legacy metric names saved in an older config.json.
-        from eva.metrics.legacy_aliases import rename_metric_keys, rename_metric_list
-
         if isinstance(config_data.get("metrics"), list):
             config_data["metrics"] = rename_metric_list(config_data["metrics"])
         if isinstance(config_data.get("validation_thresholds"), dict):

@@ -27,7 +27,7 @@ Uses the following MetricContext fields:
 ### Evaluation Methodology
 
 1. Compute `last_audio_speaker` as whichever side (`"user"` or `"assistant"`) has the latest audio end-timestamp across all turns. Returns `None` if neither side recorded audio.
-2. Flag the record as a missed turn iff `conversation_ended_reason == "inactivity_timeout"` **and** `last_audio_speaker == "user"`.
+2. Flag the record as a missed turn if `conversation_ended_reason == "inactivity_timeout"` **and** `last_audio_speaker == "user"`.
 3. Score 0.0 if flagged, else 1.0.
 
 ### Scoring

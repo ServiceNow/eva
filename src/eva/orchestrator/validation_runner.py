@@ -95,10 +95,10 @@ class ValidationRunner:
         """Sort records into (gate_passed, not_finished, agent_timeout) buckets.
 
         Records missing from ``contexts`` (processor failure, missing result.json) are
-        treated as ``not_finished``. Records whose context has
-        ``agent_timeout_on_user_turn`` True also end up in ``gate_passed`` so metrics
-        run on them, and are additionally recorded in ``agent_timeout`` so callers can
-        flag them as terminal.
+        treated as ``not_finished``. The ``conversation_valid_end`` context attribute is
+        already the OR of "ended with goodbye" and "agent timed out on user turn", so
+        it alone decides gate-pass. ``agent_timeout`` is tracked separately so callers
+        can flag those records as terminal (no rerun) even though they gate-pass.
         """
         gate_passed: list[str] = []
         not_finished: list[str] = []
@@ -109,16 +109,14 @@ class ValidationRunner:
             if ctx is None:
                 not_finished.append(record_id)
                 continue
-            if ctx.conversation_finished:  # type: ignore[attr-defined]
+            if ctx.conversation_valid_end:  # type: ignore[attr-defined]
                 gate_passed.append(record_id)
-                continue
-            if is_agent_timeout_on_user_turn(
-                ctx.conversation_ended_reason,  # type: ignore[attr-defined]
-                ctx.audio_timestamps_user_turns,  # type: ignore[attr-defined]
-                ctx.audio_timestamps_assistant_turns,  # type: ignore[attr-defined]
-            ):
-                gate_passed.append(record_id)
-                agent_timeout.add(record_id)
+                if is_agent_timeout_on_user_turn(
+                    ctx.conversation_ended_reason,  # type: ignore[attr-defined]
+                    ctx.audio_timestamps_user_turns,  # type: ignore[attr-defined]
+                    ctx.audio_timestamps_assistant_turns,  # type: ignore[attr-defined]
+                ):
+                    agent_timeout.add(record_id)
                 continue
             not_finished.append(record_id)
         return gate_passed, not_finished, agent_timeout

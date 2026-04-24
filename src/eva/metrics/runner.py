@@ -11,6 +11,7 @@ import yaml
 
 from eva.metrics.aggregation import compute_record_aggregates, compute_run_level_aggregates
 from eva.metrics.base import BaseMetric, MetricContext
+from eva.metrics.legacy_aliases import rename_metric_keys
 from eva.metrics.processor import MetricsContextProcessor
 from eva.metrics.registry import MetricRegistry, get_global_registry
 from eva.models.config import PipelineType, get_pipeline_type
@@ -275,8 +276,6 @@ class MetricsRunner:
                 all_metrics[record_id] = result
 
         # Include remaining records from disk for globally accurate aggregation.
-        from eva.metrics.legacy_aliases import rename_metric_keys
-
         for record_id, record_dir in all_record_dirs:
             if record_id in targeted_ids:
                 continue
@@ -320,8 +319,6 @@ class MetricsRunner:
             try:
                 existing_data = json.loads(metrics_path.read_text())
                 # Backwards compat: remap legacy metric names saved by older runs.
-                from eva.metrics.legacy_aliases import rename_metric_keys
-
                 raw_metrics = rename_metric_keys(existing_data.get("metrics", {}))
                 existing_metrics = {}
                 for k, v in raw_metrics.items():

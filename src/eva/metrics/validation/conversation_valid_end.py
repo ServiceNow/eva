@@ -4,18 +4,23 @@ import json
 from pathlib import Path
 
 from eva.metrics.base import CodeMetric, MetricContext
+from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
 
 
 @register_metric
 class ConversationValidEndMetric(CodeMetric):
-    """Validation metric: conversation ended with the expected ``goodbye`` event.
+    """Validation metric: conversation reached a definitive end state.
 
-    Reads ``elevenlabs_events.jsonl`` and checks the last entry is a
-    ``connection_state`` event with ``details.reason == "goodbye"``.
+    Scores 1.0 when either:
+    - ``elevenlabs_events.jsonl`` ends with a ``connection_state`` event whose
+      ``details.reason == "goodbye"`` (agent hung up), OR
+    - the conversation ended on ``inactivity_timeout`` with the user as last
+      speaker (agent failed to respond to the user's final turn — still a
+      definitive, terminal outcome, just an agent-side failure).
 
-    Binary score: 1.0 (ended with goodbye), 0.0 (did not).
+    Binary score: 1.0 (valid end), 0.0 (did not reach a valid end).
     """
 
     name = "conversation_valid_end"
@@ -23,8 +28,24 @@ class ConversationValidEndMetric(CodeMetric):
     category = "validation"
 
     async def compute(self, context: MetricContext) -> MetricScore:
-        """Check if conversation properly ended with end_call."""
+        """Check if conversation reached a definitive end state."""
         try:
+            agent_timeout = is_agent_timeout_on_user_turn(
+                context.conversation_ended_reason,
+                context.audio_timestamps_user_turns,
+                context.audio_timestamps_assistant_turns,
+            )
+            if agent_timeout:
+                return MetricScore(
+                    name=self.name,
+                    score=1.0,
+                    normalized_score=1.0,
+                    details={
+                        "ended_properly": True,
+                        "reason": "agent_timeout_on_user_turn",
+                        "details": "agent timed out on the user's final turn (definitive terminal state)",
+                    },
+                )
             output_dir = Path(context.output_dir)
             elevenlabs_events_path = output_dir / "elevenlabs_events.jsonl"
 
