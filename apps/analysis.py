@@ -13,6 +13,7 @@ import html
 import json
 import os
 import re
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -155,7 +156,7 @@ def load_record_result(record_dir: Path) -> ConversationResult | None:
         with open(result_path) as f:
             return ConversationResult(**json.load(f))
     except Exception as e:
-        st.error(f"Failed to load result.json: {e}")
+        print(f"Failed to load result.json: {e}", file=sys.stderr)
         return None
 
 
@@ -168,7 +169,7 @@ def load_record_metrics(record_dir: Path) -> RecordMetrics | None:
         with open(metrics_path) as f:
             return RecordMetrics(**json.load(f))
     except Exception as e:
-        st.error(f"Failed to load metrics.json: {e}")
+        print(f"Failed to load metrics.json: {e}", file=sys.stderr)
         return None
 
 
@@ -194,7 +195,7 @@ def load_evaluation_record(run_dir: Path, record_id: str) -> EvaluationRecord | 
                 return record
         return None
     except Exception as e:
-        st.error(f"Failed to load dataset: {e}")
+        print(f"Failed to load dataset: {e}", file=sys.stderr)
         return None
 
 
@@ -236,7 +237,7 @@ def format_transcript(transcript_path: Path) -> pd.DataFrame:
         cols.extend(c for c in df.columns if c not in cols)
         return df[cols] if cols else df
     except Exception as e:
-        st.error(f"Failed to load transcript: {e}")
+        print(f"Failed to load transcript: {e}", file=sys.stderr)
         return pd.DataFrame()
 
 
@@ -1534,7 +1535,7 @@ def render_metrics_tab(metrics: RecordMetrics | None):
                         f"{metric_score.normalized_score:.3f}" if metric_score.normalized_score is not None else "N/A",
                     )
                     if metric_score.error:
-                        st.error(f"Error: {metric_score.error}")
+                        st.caption(f"⚠ {metric_score.error}")
 
                     # Dimension scores (e.g. faithfulness, conversation_progression)
                     explanation = metric_score.details.get("explanation") if metric_score.details else None
@@ -2063,7 +2064,7 @@ def _get_run_dirs():
     st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics", bind="query-params")
 
     if not run_dirs:
-        st.error(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
+        st.warning(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
         st.stop()
 
     return run_dirs, latest_only
@@ -2093,7 +2094,7 @@ def render_record_detail(selected_run_dir: Path):
     record_dirs = get_record_directories(selected_run_dir)
 
     if not record_dirs:
-        st.error(f"No records found in {selected_run_dir / 'records'}")
+        st.warning(f"No records found in {selected_run_dir / 'records'}")
         return
 
     # Sidebar: record selection
@@ -2140,7 +2141,7 @@ def render_record_detail(selected_run_dir: Path):
             if result.completed:
                 st.success(f"Completed ({result.conversation_ended_reason or 'ok'})")
             else:
-                st.error(f"Failed: {result.error or 'unknown'}")
+                st.warning(f"Failed: {result.error or 'unknown'}")
         with col2:
             st.metric("Duration", f"{result.duration_seconds:.1f}s")
         with col3:
