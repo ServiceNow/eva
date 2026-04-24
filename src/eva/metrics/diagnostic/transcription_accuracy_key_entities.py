@@ -8,7 +8,12 @@ from typing import Any
 
 from eva.metrics.base import MetricContext, TextJudgeMetric
 from eva.metrics.registry import register_metric
-from eva.metrics.utils import aggregate_per_turn_scores, parse_judge_response_list, resolve_turn_id
+from eva.metrics.utils import (
+    aggregate_per_turn_scores,
+    make_rate_sub_metric,
+    parse_judge_response_list,
+    resolve_turn_id,
+)
 from eva.models.config import PipelineType
 from eva.models.results import MetricScore
 
@@ -126,6 +131,8 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
             # (judge responded for all of them — -1 means no entities, not a failure)
             num_evaluated = len(valid_ratings) + len(not_applicable)
 
+            sub_metrics = self._build_per_entity_type_sub_metrics(per_turn_entity_details)
+
             return MetricScore(
                 name=self.name,
                 score=round(avg_rating, 3) if avg_rating is not None else None,
@@ -143,11 +150,60 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
                     "per_turn_entity_details": per_turn_entity_details,
                     "judge_raw_response": response_text,
                 },
+                sub_metrics=sub_metrics or None,
                 skipped=skipped,
             )
 
         except Exception as e:
             return self._handle_error(e, context)
+
+    def _build_per_entity_type_sub_metrics(
+        self,
+        per_turn_entity_details: dict[int, dict],
+    ) -> dict[str, MetricScore]:
+        """Aggregate entities by ``type`` across turns and build one sub-metric per type.
+
+        For each type: score = correct / non-skipped count across all turns.
+        Types with zero non-skipped entities are omitted.
+        """
+        per_type_correct: dict[str, int] = {}
+        per_type_non_skipped: dict[str, int] = {}
+        per_type_skipped: dict[str, int] = {}
+
+        for turn_eval in per_turn_entity_details.values():
+            entities = turn_eval.get("entities", []) if isinstance(turn_eval, dict) else []
+            for entity in entities:
+                if not isinstance(entity, dict):
+                    continue
+                entity_type = entity.get("type")
+                if not isinstance(entity_type, str) or not entity_type:
+                    continue
+                if entity.get("skipped", False):
+                    per_type_skipped[entity_type] = per_type_skipped.get(entity_type, 0) + 1
+                    continue
+                per_type_non_skipped[entity_type] = per_type_non_skipped.get(entity_type, 0) + 1
+                if entity.get("correct", False):
+                    per_type_correct[entity_type] = per_type_correct.get(entity_type, 0) + 1
+
+        sub_metrics: dict[str, MetricScore] = {}
+        for entity_type, non_skipped in per_type_non_skipped.items():
+            if non_skipped == 0:
+                continue
+            correct = per_type_correct.get(entity_type, 0)
+            # Key suffix ``_accuracy`` signals higher-is-better at read time.
+            sub_key = f"{entity_type}_accuracy"
+            sub_metrics[sub_key] = make_rate_sub_metric(
+                parent_name=self.name,
+                key=sub_key,
+                numerator=correct,
+                denominator=non_skipped,
+                details={
+                    "correct": correct,
+                    "total_non_skipped": non_skipped,
+                    "skipped": per_type_skipped.get(entity_type, 0),
+                },
+            )
+        return sub_metrics
 
     @staticmethod
     def _get_turns_to_evaluate(context: MetricContext) -> list[int]:

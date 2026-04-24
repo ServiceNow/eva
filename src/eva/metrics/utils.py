@@ -9,6 +9,7 @@ from typing import Any
 
 from pydub import AudioSegment
 
+from eva.models.results import MetricScore
 from eva.utils.json_utils import extract_and_load_json
 from eva.utils.logging import get_logger
 
@@ -322,6 +323,111 @@ def compute_aggregation(aggregation: str, scores: list[int | float | None]) -> f
 def reverse_word_error_rate(wer: float) -> float:
     """Convert WER to accuracy."""
     return 1 - min(1.0, wer)
+
+
+def make_rate_sub_metric(
+    parent_name: str,
+    key: str,
+    numerator: int,
+    denominator: int,
+    details: dict[str, Any],
+    precision: int = 3,
+) -> MetricScore:
+    """Build a rate-style sub-metric where ``score == normalized_score == numerator/denominator``.
+
+    Returns a zero-rate sub-metric when ``denominator <= 0`` so callers never
+    divide by zero. Callers are responsible for choosing the ``details`` shape
+    (counts, turn IDs, reference counts, etc.) that makes sense for their metric.
+
+    Args:
+        parent_name: Parent metric's name (used as prefix in sub-metric name).
+        key: Sub-metric key suffix (final name is ``f"{parent_name}.{key}"``).
+        numerator: Count (e.g., flagged turns, component errors, correct entities).
+        denominator: Denominator (e.g., rated turns, reference words, total calls).
+        details: Details dict attached to the sub-metric.
+        precision: Number of decimal places to round the rate to.
+
+    Returns:
+        A MetricScore with equal ``score`` and ``normalized_score`` fields.
+    """
+    rate = numerator / denominator if denominator > 0 else 0.0
+    rounded = round(rate, precision)
+    return MetricScore(
+        name=f"{parent_name}.{key}",
+        score=rounded,
+        normalized_score=rounded,
+        details=details,
+    )
+
+
+def direction_for_sub_metric(sub_key: str, parent_higher_is_better: bool) -> bool:
+    """Derive a sub-metric's direction from its key suffix.
+
+    The convention: ``_rate`` suffix means lower-is-better (issue-frequency);
+    ``_accuracy`` suffix means higher-is-better; otherwise the sub-metric
+    inherits the parent metric's direction.
+    """
+    if sub_key.endswith("_rate"):
+        return False
+    if sub_key.endswith("_accuracy"):
+        return True
+    return parent_higher_is_better
+
+
+def build_binary_flag_sub_metrics(
+    parent_name: str,
+    entries: dict[str, Any],
+    entry_keys: tuple[str, ...],
+    flag_field: str,
+    detail_fields: tuple[str, ...] = (),
+    key_suffix: str = "_rate",
+) -> dict[str, MetricScore]:
+    """Build binary "issue-occurrence" sub-metrics for a fixed set of judge dimensions.
+
+    Each entry is expected to carry a boolean flag under ``flag_field`` (e.g.,
+    ``flagged`` or ``detected``) indicating whether the dimension was triggered
+    for this record. Sub-metric convention: ``score = 1.0`` if the flag is true,
+    ``0.0`` otherwise. Aggregated across records, the mean reads as "fraction of
+    records where this issue occurred".
+
+    The default ``key_suffix`` of ``"_rate"`` reflects that these sub-metrics
+    aggregate into an issue-frequency rate — the suffix is what signals to the
+    reader (and to ``direction_for_sub_metric``) that lower is better.
+
+    Args:
+        parent_name: Parent metric name (prefix for the sub-metric name).
+        entries: Mapping of dimension key to its judge-response entry.
+        entry_keys: Ordered tuple of expected dimension keys.
+        flag_field: Name of the boolean field in each entry (e.g. ``"flagged"``,
+            ``"detected"``).
+        detail_fields: Additional fields from the entry to preserve in ``details``
+            (e.g. ``("rating", "evidence")`` or ``("analysis",)``).
+        key_suffix: Suffix appended to each dimension key in the returned dict
+            and in the sub-metric name (default ``"_rate"``).
+
+    Returns:
+        Dict keyed by ``f"{dimension_key}{key_suffix}"``. Entries whose
+        ``flag_field`` is missing or non-boolean are skipped.
+    """
+    sub_metrics: dict[str, MetricScore] = {}
+    for key in entry_keys:
+        entry = entries.get(key)
+        if not isinstance(entry, dict) or flag_field not in entry:
+            continue
+        flagged = bool(entry.get(flag_field))
+        score = 1.0 if flagged else 0.0
+        details: dict[str, Any] = {flag_field: flagged}
+        for field in detail_fields:
+            if field in entry:
+                details[field] = entry[field]
+        sub_key = f"{key}{key_suffix}"
+        sub_metrics[sub_key] = MetricScore(
+            name=f"{parent_name}.{sub_key}",
+            score=score,
+            normalized_score=score,
+            details=details,
+        )
+    return sub_metrics
 
 
 def aggregate_per_turn_scores(scores: list[float | None], aggregation: str) -> float | None:

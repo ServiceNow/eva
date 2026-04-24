@@ -14,6 +14,7 @@ from eva.metrics.aggregation import compute_record_aggregates, compute_run_level
 from eva.metrics.base import BaseMetric, MetricContext
 from eva.metrics.processor import MetricsContextProcessor
 from eva.metrics.registry import MetricRegistry, get_global_registry
+from eva.metrics.utils import direction_for_sub_metric
 from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
@@ -28,6 +29,16 @@ from eva.utils.pass_at_k import (
 from eva.utils.provenance import capture_metrics_provenance
 
 logger = get_logger(__name__)
+
+
+def _metric_higher_is_better(name: str) -> bool:
+    """Return ``higher_is_better`` for a registered metric, or ``True`` if unknown.
+
+    Direction lives on the metric class (static per metric), so the aggregator
+    reads it from the registry rather than fishing it out of per-record data.
+    """
+    metric_class = get_global_registry().get(name)
+    return True if metric_class is None else metric_class.higher_is_better
 
 
 @dataclass
@@ -605,6 +616,7 @@ class MetricsRunner:
                         coverage["not_applicable_turns"] = total_not_applicable_across_records
                     entry["per_turn_coverage"] = coverage
 
+                entry["higher_is_better"] = _metric_higher_is_better(name)
                 metric_aggregates[name] = entry
 
         # Add pass_k aggregates if available
@@ -652,6 +664,7 @@ class MetricsRunner:
             if not all_sub_keys:
                 continue
 
+            parent_direction = _metric_higher_is_better(name)
             sub_aggs: dict[str, dict[str, Any]] = {}
             for sub_key in all_sub_keys:
                 sub_scores: list[float] = []
@@ -662,15 +675,15 @@ class MetricsRunner:
                         sub_missing += 1
                         continue
                     sub_ms = (ms.sub_metrics or {}).get(sub_key)
-                    if sub_ms is not None and sub_ms.score is not None:
-                        sub_scores.append(
-                            sub_ms.normalized_score if sub_ms.normalized_score is not None else sub_ms.score
-                        )
-                    else:
+                    if sub_ms is None or sub_ms.score is None:
                         sub_missing += 1
+                        continue
+                    sub_scores.append(sub_ms.normalized_score if sub_ms.normalized_score is not None else sub_ms.score)
 
                 if sub_scores or sub_missing > 0:
-                    sub_aggs[sub_key] = MetricsRunner._aggregate_scores(sub_scores, total_records, 0, sub_missing)
+                    sub_entry = MetricsRunner._aggregate_scores(sub_scores, total_records, 0, sub_missing)
+                    sub_entry["higher_is_better"] = direction_for_sub_metric(sub_key, parent_direction)
+                    sub_aggs[sub_key] = sub_entry
 
             if sub_aggs:
                 metric_aggregates[name]["sub_metrics"] = sub_aggs

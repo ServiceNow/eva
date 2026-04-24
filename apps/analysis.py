@@ -77,7 +77,46 @@ _CATEGORY_COLORS = {
     "Other": "#AAAAAA",
 }
 
-_NON_NORMALIZED_METRICS = {"response_speed"}
+_NON_NORMALIZED_METRICS = {"response_speed", "tool_call_validity__num_tool_calls"}
+
+# Axis title + hover suffix for non-normalized metrics. Sub-metrics fall back to their parent's entry.
+_NON_NORMALIZED_UNITS: dict[str, tuple[str, str]] = {
+    "response_speed": ("Seconds", "s"),
+    "tool_call_validity__num_tool_calls": ("Count", ""),
+}
+
+
+def _non_normalized_unit(name: str) -> tuple[str, str]:
+    """Return (x-axis title, hover suffix) for a non-normalized metric."""
+    if name in _NON_NORMALIZED_UNITS:
+        return _NON_NORMALIZED_UNITS[name]
+    parent = name.split("__", 1)[0]
+    return _NON_NORMALIZED_UNITS.get(parent, ("Value", ""))
+
+
+# Prefix shown in front of metric labels when the metric is lower-is-better.
+_LOWER_IS_BETTER_PREFIX = "↓ "
+
+
+def _is_lower_is_better(name: str) -> bool:
+    """Return True if a metric or sub-metric reads lower-is-better.
+
+    Parent metric direction comes from the metric class (via the registry).
+    Sub-metric direction is derived from the key suffix: ``_rate`` → lower is
+    better, ``_accuracy`` → higher is better, otherwise inherit the parent.
+    Sub-metric keys are encoded as ``<parent>__<sub_key>`` in the analysis app.
+    """
+    parent, _, sub_key = name.partition("__")
+    metric_class = get_global_registry().get(parent)
+    parent_higher_is_better = True if metric_class is None else metric_class.higher_is_better
+    if not sub_key:
+        return not parent_higher_is_better
+    if sub_key.endswith("_rate"):
+        return True
+    if sub_key.endswith("_accuracy"):
+        return False
+    return not parent_higher_is_better
+
 
 # EVA composite scores to show in the bar chart
 _EVA_BAR_COMPOSITES = ["EVA-A_pass", "EVA-X_pass", "EVA-A_mean", "EVA-X_mean"]
@@ -209,6 +248,18 @@ def _load_metrics_summary(run_dir: Path) -> dict:
     return {}
 
 
+def _load_evaluation_summary(run_dir: Path) -> dict:
+    """Load evaluation_summary.json for a run."""
+    path = run_dir / "evaluation_summary.json"
+    if path.exists():
+        try:
+            with open(path) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
 def format_transcript(transcript_path: Path) -> pd.DataFrame:
     """Load and format transcript.jsonl as a DataFrame."""
     if not transcript_path.exists():
@@ -252,15 +303,21 @@ def _sort_metrics_by_category(metric_names: list[str]) -> list[str]:
     return sorted(metric_names, key=_sort_key)
 
 
+def _direction_prefix(name: str) -> str:
+    """Return the lower-is-better prefix (e.g. ``"↓ "``) if applicable, else ``""``."""
+    return _LOWER_IS_BETTER_PREFIX if _is_lower_is_better(name) else ""
+
+
 def _make_category_header_rename(metric_names: list[str]) -> dict[str, str]:
     """Prefix metric names with their category for display."""
-    return {m: f"[{_METRIC_GROUP.get(m, 'Other')}] {m}" for m in metric_names}
+    return {m: f"[{_METRIC_GROUP.get(m, 'Other')}] {_direction_prefix(m)}{m}" for m in metric_names}
 
 
 def _format_metric_name(name: str) -> str:
     """Format a metric name for display, preserving acronyms."""
     parts = name.split("_")
-    return " ".join(p.upper() if p.lower() in _ACRONYMS else p.capitalize() for p in parts)
+    formatted = " ".join(p.upper() if p.lower() in _ACRONYMS else p.capitalize() for p in parts)
+    return f"{_direction_prefix(name)}{formatted}"
 
 
 def _score_color(score: float | None) -> str:
@@ -1006,6 +1063,8 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         run_name = run_dir.name
         run_config = run_configs[run_name]
         metrics_summary = _load_metrics_summary(run_dir)
+        eval_summary = _load_evaluation_summary(run_dir)
+        simulation = eval_summary.get("simulation") or {}
 
         # Try metrics_summary.json first, fall back to per-record loading
         if metrics_summary and "per_metric" in metrics_summary:
@@ -1015,6 +1074,7 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 _add_name(n)
             model_details = _extract_model_details(run_config)
             system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
+            data_quality = metrics_summary.get("data_quality") or {}
             summary: dict = {
                 "run": run_name,
                 "run_output_dir": str(run_dir.parent),
@@ -1022,6 +1082,9 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 "system_name": system_name,
                 "run_timestamp": run_timestamp,
                 "records": metrics_summary.get("total_records", 0),
+                "conversation_failures": simulation.get("failed_records"),
+                "records_with_errors": data_quality.get("records_with_errors"),
+                "metrics_with_errors": data_quality.get("metrics_with_errors") or {},
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
             }
@@ -1060,6 +1123,9 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 "system_name": system_name,
                 "run_timestamp": run_timestamp,
                 "records": len(df),
+                "conversation_failures": simulation.get("failed_records"),
+                "records_with_errors": None,
+                "metrics_with_errors": {},
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
             }
@@ -1093,6 +1159,17 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         _render_eva_scatter_plot(scatter_data)
 
     st.markdown("#### Mean Metrics per Run")
+
+    def _safe_int(value: object) -> int:
+        if value is None or (isinstance(value, float) and pd.isna(value)):
+            return 0
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return 0
+
+    def _has_any_errors(row: pd.Series) -> bool:
+        return bool(_safe_int(row.get("records_with_errors")) or _safe_int(row.get("conversation_failures")))
 
     # Grouped bar chart: Accuracy/Experience metrics + EVA composites
     bar_metrics = [m for m in ordered_metrics if _METRIC_GROUP.get(m) in _BAR_CHART_CATEGORIES]
@@ -1135,6 +1212,10 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         "run_output_dir": "Output Dir",
         "records": "# Records",
     }
+    summary_df["system_name"] = [
+        f"{name} ⚠️" if _has_any_errors(row) else name
+        for name, (_, row) in zip(summary_df["system_name"], summary_df.iterrows())
+    ]
     link_series = "/run_overview?output_dir=" + summary_df["run_output_dir"] + "&run=" + summary_df["run"]
 
     def _show_subtable(heading: str, composites: list, metrics: list) -> None:
@@ -1158,6 +1239,38 @@ def render_cross_run_comparison(run_dirs: list[Path]):
     _show_subtable("Accuracy Metrics (EVA-A)", eva_a_composites, accuracy_metrics)
     _show_subtable("Experience Metrics (EVA-X)", eva_x_composites, experience_metrics)
     _show_subtable("Diagnostic & Other Metrics", [], other_metrics)
+
+    error_rows = []
+    for _, row in summary_df.iterrows():
+        total = _safe_int(row.get("records"))
+        conv_failures = _safe_int(row.get("conversation_failures"))
+        judge_errors = _safe_int(row.get("records_with_errors"))
+        if not (conv_failures or judge_errors) or not total:
+            continue
+        metric_errors = row.get("metrics_with_errors") or {}
+        if not isinstance(metric_errors, dict):
+            metric_errors = {}
+        metric_breakdown = ", ".join(f"{m} ({n})" for m, n in sorted(metric_errors.items())) or "—"
+        error_rows.append(
+            {
+                "System": row["system_name"],
+                "Timestamp": row["run_timestamp"],
+                "# Records": total,
+                "Conversation Failures": conv_failures,
+                "Judge Errors": judge_errors,
+                "Judge Error Rate": judge_errors / total,
+                "Metrics with Errors": metric_breakdown,
+            }
+        )
+    if error_rows:
+        st.markdown("#### Errors")
+        st.caption(
+            "**Conversation Failures**: records where conversation generation failed. "
+            "**Judge Errors**: records where one or more metrics failed to compute."
+        )
+        errors_df = pd.DataFrame(error_rows)
+        errors_styled = errors_df.style.format({"Judge Error Rate": "{:.1%}"})
+        st.dataframe(errors_styled, hide_index=True)
 
     csv = summary_df.drop(columns=["label"]).to_csv(index=False)
     st.download_button("Download CSV", csv, file_name="cross_run_comparison.csv", mime="text/csv")
@@ -1216,6 +1329,7 @@ def render_run_overview(run_dir: Path):
         chart_rows = [
             {
                 "metric": _format_metric_name(m),
+                "raw_metric": m,
                 "mean": stats["mean"],
                 "std": stats["std"],
                 "min": stats["min"],
@@ -1229,10 +1343,12 @@ def render_run_overview(run_dir: Path):
         if chart_rows:
             chart_df = pd.DataFrame(chart_rows)
 
-            # Sort by category order then metric name within category
+            # Sort by category order, then raw metric name so sub-metrics stay next to their parent.
             cat_order = {c: i for i, c in enumerate(_CATEGORY_ORDER + ["Other"])}
             chart_df["_cat_sort"] = chart_df["category"].map(lambda c: cat_order.get(c, len(cat_order)))
-            chart_df = chart_df.sort_values(["_cat_sort", "metric"], ascending=[True, True]).drop(columns=["_cat_sort"])
+            chart_df = chart_df.sort_values(["_cat_sort", "raw_metric"], ascending=[True, True]).drop(
+                columns=["_cat_sort", "raw_metric"]
+            )
 
             fig = go.Figure()
             for cat in _CATEGORY_ORDER + ["Other"]:
@@ -1280,6 +1396,7 @@ def render_run_overview(run_dir: Path):
         for m, stats in standalone_data.items():
             display_name = _format_metric_name(m)
             cat = _METRIC_GROUP.get(m, "Other")
+            axis_title, suffix = _non_normalized_unit(m)
             fig = go.Figure()
             fig.add_trace(
                 go.Bar(
@@ -1296,17 +1413,17 @@ def render_run_overview(run_dir: Path):
                     },
                     hovertemplate=(
                         f"<b>{display_name}</b><br>"
-                        "Mean: %{x:.3f}s<br>"
-                        f"Std: {stats['std']:.3f}s<br>"
-                        f"Min: {stats['min']:.3f}s<br>"
-                        f"Max: {stats['max']:.3f}s<br>"
+                        f"Mean: %{{x:.3f}}{suffix}<br>"
+                        f"Std: {stats['std']:.3f}{suffix}<br>"
+                        f"Min: {stats['min']:.3f}{suffix}<br>"
+                        f"Max: {stats['max']:.3f}{suffix}<br>"
                         f"n={stats['count']}"
                         "<extra></extra>"
                     ),
                 )
             )
             fig.update_layout(
-                xaxis_title="Seconds",
+                xaxis_title=axis_title,
                 yaxis={"categoryorder": "array", "categoryarray": [display_name]},
                 height=150,
                 margin={"l": 10, "r": 10, "t": 10, "b": 40},
@@ -1315,6 +1432,44 @@ def render_run_overview(run_dir: Path):
             st.plotly_chart(fig)
 
     st.divider()
+
+    # --- Errors ---
+    metrics_summary = _load_metrics_summary(run_dir)
+    data_quality = (metrics_summary or {}).get("data_quality") or {}
+    eval_summary = _load_evaluation_summary(run_dir)
+    simulation = eval_summary.get("simulation") or {}
+    judge_errors = data_quality.get("records_with_errors") or 0
+    conv_failures = simulation.get("failed_records") or 0
+    total_records = (
+        data_quality.get("total_records")
+        or (metrics_summary or {}).get("total_records")
+        or simulation.get("total_records")
+    )
+    metric_errors = data_quality.get("metrics_with_errors") or {}
+    if (judge_errors or conv_failures) and total_records:
+        st.markdown("### Errors")
+        summary_parts = []
+        if conv_failures:
+            summary_parts.append(f"**{conv_failures}** conversation failures ({conv_failures / total_records:.1%})")
+        if judge_errors:
+            summary_parts.append(f"**{judge_errors}** records with judge errors ({judge_errors / total_records:.1%})")
+        st.caption(f"Out of {total_records} records — " + " · ".join(summary_parts))
+        if metric_errors:
+            metric_error_df = pd.DataFrame(
+                [
+                    {
+                        "Metric": _format_metric_name(m),
+                        "# Errors": int(n),
+                        "Error Rate": int(n) / total_records,
+                    }
+                    for m, n in sorted(metric_errors.items(), key=lambda kv: kv[1], reverse=True)
+                ]
+            )
+            st.dataframe(
+                metric_error_df.style.format({"Error Rate": "{:.1%}"}),
+                hide_index=True,
+            )
+        st.divider()
 
     # --- Per-record table ---
     st.markdown("### Per-Record Metrics")
@@ -1951,7 +2106,7 @@ def _get_run_dirs():
     if latest_only:
         run_dirs = filter_latest_runs(run_dirs)
 
-    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics")
+    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics", bind="query-params")
 
     if not run_dirs:
         st.error(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
