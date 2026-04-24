@@ -8,7 +8,6 @@ from pathlib import Path
 from eva.assistant.agentic.system import GENERIC_ERROR
 from eva.models.config import PipelineType
 from eva.models.results import ConversationResult
-from eva.utils.conversation_checks import check_conversation_finished
 from eva.utils.log_processing import (
     AnnotationLabel,
     aggregate_pipecat_logs_by_type,
@@ -763,7 +762,6 @@ class _ProcessorContext:
         self.user_interrupted_turns: set[int] = set()
 
         # Conversation metadata
-        self.conversation_valid_end: bool = False
         self.conversation_ended_reason: str | None = None
         self.pipeline_type: PipelineType = PipelineType.CASCADE
 
@@ -825,15 +823,6 @@ class MetricsContextProcessor:
             self._extract_turns_from_history(context)
             self._compute_per_turn_latency(context)
             self._reconcile_transcript_with_tools(context)
-
-            # A conversation is a "valid end" when it either terminated on a goodbye
-            # event OR the agent timed out on the user's last turn (definitive
-            # agent-side failure, not a conversation-mid-flight abort).
-            context.conversation_valid_end = check_conversation_finished(output_dir) or is_agent_timeout_on_user_turn(
-                context.conversation_ended_reason,
-                context.audio_timestamps_user_turns,
-                context.audio_timestamps_assistant_turns,
-            )
 
             return context
 
