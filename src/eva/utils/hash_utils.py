@@ -3,7 +3,6 @@
 import hashlib
 import json
 import math
-import re
 from pathlib import Path
 from typing import Any
 
@@ -14,147 +13,6 @@ ORDER_INDEPENDENT_LIST_FIELDS: set[str] = {
     "group_memberships",
     "asset_recoveries",
 }
-
-# Counter-generated IDs follow one of a handful of prefixes:
-#   REQ-HW-048271, REQ-SW-…, REQ-FAC-…, REQ-ACCT-…
-#   INC0048271
-#   CASE-ACCT-048271
-#   SEC-048271
-#   CAL-048271
-# These differ across runs based on tool-call ordering. Scoring should treat
-# them as content-addressed identifiers, not counter-addressed.
-_COUNTER_ID_RE = re.compile(r"^(REQ-[A-Z]+-|INC|CASE-[A-Z]+-|SEC-|CAL-)\d{5,}$")
-
-_COUNTER_KEYS_EXCLUDED_FROM_HASH: set[str] = {
-    "_request_counter",
-    "_ticket_counter",
-    "_case_counter",
-    "_security_case_counter",
-}
-
-# Top-level tables whose dict keys are counter-generated identifiers.
-_ID_KEYED_TABLES: set[str] = {
-    "requests",
-    "tickets",
-    "cases",
-    "security_cases",
-    "calendar_events",
-}
-
-
-def _is_counter_id(value: Any) -> bool:
-    return isinstance(value, str) and _COUNTER_ID_RE.match(value) is not None
-
-
-def _counter_id_prefix(value: str) -> str:
-    m = _COUNTER_ID_RE.match(value)
-    return m.group(1) if m else ""
-
-
-def _strip_counter_ids(obj: Any) -> Any:
-    """Recursively replace counter-ID strings with None so they don't
-    contribute to content hashes."""
-    if isinstance(obj, dict):
-        return {k: _strip_counter_ids(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_strip_counter_ids(item) for item in obj]
-    if _is_counter_id(obj):
-        return None
-    return obj
-
-
-def _content_hash(record: Any) -> str:
-    """Compute a short content hash for a record, ignoring any counter-ID
-    fields it contains. This yields identical hashes for records that differ
-    only by counter-derived IDs."""
-    stripped = _strip_counter_ids(record)
-    serialized = json.dumps(stripped, sort_keys=True, default=str, separators=(",", ":"))
-    return hashlib.sha1(serialized.encode()).hexdigest()[:12]
-
-
-def canonicalize_counter_ids(obj: Any) -> Any:
-    """Replace counter-generated IDs with content-deterministic identifiers
-    and drop the corresponding counter keys.
-
-    Two-pass process:
-      1. Visit every identity-bearing record (keys of ID-keyed top-level
-         tables plus list entries that carry a counter-ID field) and build
-         a mapping from the old counter-ID to a new content-hash ID.
-      2. Rewrite every dict key and every string value in the DB that
-         matches a mapped old ID.
-
-    After rewriting, remove `_*_counter` top-level keys entirely — they
-    encode sequence information that the content-hash IDs already capture.
-
-    Input is deep-copied; the argument is not mutated.
-    """
-    if not isinstance(obj, dict):
-        return obj
-
-    # Deep copy via JSON round-trip to isolate from caller.
-    result: dict[str, Any] = json.loads(json.dumps(obj, default=str))
-
-    id_map: dict[str, str] = {}
-
-    # Pass 1a: identity-bearing records at well-known table paths.
-    for table_name in _ID_KEYED_TABLES:
-        table = result.get(table_name)
-        if not isinstance(table, dict):
-            continue
-        for old_id, record in table.items():
-            if _is_counter_id(old_id) and old_id not in id_map:
-                prefix = _counter_id_prefix(old_id)
-                id_map[old_id] = f"{prefix}<{_content_hash(record)}>"
-
-    # Pass 1b: list-of-records where each element carries a counter-ID field
-    # (e.g. facilities.conference_rooms.<r>.bookings[].booking_id,
-    # employees.<e>.system_accounts[].case_id, asset_recoveries[].recovery_id).
-    _id_fields = {
-        "request_id",
-        "ticket_number",
-        "case_id",
-        "security_case_id",
-        "calendar_event_id",
-        "booking_id",
-        "removal_case_id",
-        "pending_request_id",
-        "recovery_id",
-    }
-
-    def _scan(node: Any) -> None:
-        if isinstance(node, dict):
-            for v in node.values():
-                _scan(v)
-        elif isinstance(node, list):
-            for item in node:
-                if isinstance(item, dict):
-                    for fld in _id_fields:
-                        val = item.get(fld)
-                        if _is_counter_id(val) and val not in id_map:
-                            prefix = _counter_id_prefix(val)
-                            id_map[val] = f"{prefix}<{_content_hash(item)}>"
-                _scan(item)
-
-    _scan(result)
-
-    # Pass 2: rewrite the DB. Dict keys and string values matching an id_map
-    # entry are substituted; all other structure is preserved.
-    def _rewrite(node: Any) -> Any:
-        if isinstance(node, dict):
-            return {id_map.get(k, k): _rewrite(v) for k, v in node.items()}
-        if isinstance(node, list):
-            return [_rewrite(item) for item in node]
-        if isinstance(node, str) and node in id_map:
-            return id_map[node]
-        return node
-
-    rewritten = _rewrite(result)
-
-    # Drop counter keys — their values are order-artifacts, not content.
-    for k in _COUNTER_KEYS_EXCLUDED_FROM_HASH:
-        rewritten.pop(k, None)
-
-    return rewritten
 
 
 def hash_file(path: Path) -> str:
@@ -245,7 +103,6 @@ def get_dict_hash(obj: dict) -> str:
         Hexadecimal SHA-256 hash string
     """
     obj_for_hash = {k: v for k, v in obj.items() if k != "session"} if isinstance(obj, dict) else obj
-    obj_for_hash = canonicalize_counter_ids(obj_for_hash)
     normalized = normalize_for_comparison(obj_for_hash)
     serialized = json.dumps(normalized, sort_keys=True, default=str, separators=(",", ":"))
     return hashlib.sha256(serialized.encode()).hexdigest()
@@ -269,9 +126,6 @@ def compute_db_diff(expected_db: dict, actual_db: dict) -> dict:
           - records_modified: Records with field differences
           - For each modified record: field-level changes
     """
-    expected_db = canonicalize_counter_ids(expected_db)
-    actual_db = canonicalize_counter_ids(actual_db)
-
     diff: dict[str, Any] = {"tables_added": [], "tables_removed": [], "tables_modified": {}}
 
     expected_tables = set(expected_db.keys())

@@ -1,6 +1,8 @@
 """ITSM agent tool functions — see itsm_params.py for flow sequences."""
 
 import copy
+import hashlib
+import json as _json
 import re
 from datetime import datetime as _dt
 from datetime import timedelta
@@ -73,16 +75,84 @@ from eva.assistant.tools.itsm_params import (
 _DEFAULT_CURRENT_DATE = "2026-08-12"
 
 
-def _make_request_id(cat, db):
-    ctr = db.get("_request_counter", 48270) + 1
-    db["_request_counter"] = ctr
-    return f"REQ-{cat}-{str(ctr).zfill(6)}"
+# Content-hash IDs: every counter-derived identifier (REQ-/INC/CASE-/SEC-/CAL-)
+# is now derived from the SHA-1 of the record's content, so identical actions
+# produce identical IDs regardless of execution order. The strip regex matches
+# both legacy counter form (REQ-FAC-048271) and new content-hash form
+# (REQ-FAC-a3f8e1) so a record's hash doesn't depend on whether cross-references
+# inside it have already been migrated.
+_ID_STRIP_RE = re.compile(r"^(REQ-[A-Z]+-|INC|CASE-[A-Z]+-|SEC-|CAL-)[A-Za-z0-9]+$")
+
+# Fields that tools mutate AFTER the record is created. The ID is computed at
+# creation time; later mutations would shift the hash if these were included.
+# Excluding them here keeps the ID stable across a record's lifecycle and lets
+# the migration (which sees the final post-mutation state) produce the same
+# hash the tool produced at creation.
+_POST_CREATION_MUTABLE_FIELDS = frozenset({
+    # generic lifecycle
+    "status",
+    "resolved_date",
+    # tickets — assign_sla_tier
+    "sla_tier",
+    "sla_response_hours",
+    "sla_resolution_hours",
+    # tickets — link_known_error
+    "linked_known_error_id",
+    # tickets — schedule_field_dispatch
+    "dispatch_id",
+    "dispatch_date",
+    "dispatch_window",
+    # tickets — attach_diagnostic_log
+    "diagnostic_ref_code",
+    "diagnostic_attached",
+    # requests — route_approval_workflow
+    "approval_routed_to",
+    "approval_sla_deadline",
+    # requests — escalate_approval
+    "escalated_to",
+    "escalation_sla_deadline",
+    # security cases — initiate_remote_wipe
+    "remote_wipe_id",
+    # pending_role_change — schedule_access_review
+    "access_review_id",
+    "review_date",
+})
 
 
-def _make_case_id(cat, db):
-    ctr = db.get("_case_counter", 48270) + 1
-    db["_case_counter"] = ctr
-    return f"CASE-{cat}-{str(ctr).zfill(6)}"
+def _strip_ids_for_hash(obj):
+    if isinstance(obj, dict):
+        return {
+            k: _strip_ids_for_hash(v)
+            for k, v in obj.items()
+            if k not in _POST_CREATION_MUTABLE_FIELDS
+        }
+    if isinstance(obj, list):
+        return [_strip_ids_for_hash(item) for item in obj]
+    if isinstance(obj, str) and _ID_STRIP_RE.match(obj):
+        return None
+    return obj
+
+
+def _content_hash(record):
+    stripped = _strip_ids_for_hash(record)
+    serialized = _json.dumps(stripped, sort_keys=True, default=str, separators=(",", ":"))
+    return hashlib.sha1(serialized.encode()).hexdigest()[:12]
+
+
+def _make_request_id(record, cat):
+    return f"REQ-{cat}-{_content_hash(record)}"
+
+
+def _make_case_id(record, cat):
+    return f"CASE-{cat}-{_content_hash(record)}"
+
+
+def _make_ticket_number(record):
+    return f"INC{_content_hash(record)}"
+
+
+def _make_security_case_id(record):
+    return f"SEC-{_content_hash(record)}"
 
 
 def _enf(eid):
@@ -428,11 +498,8 @@ def create_incident_ticket(params, db, call_index):
             "error_type": "troubleshooting_required",
             "message": f"Complete troubleshooting before creating {p.category} ticket",
         }
-    ctr = db.get("_ticket_counter", 48270) + 1
-    db["_ticket_counter"] = ctr
-    tn = f"INC{str(ctr).zfill(7)}"
-    db.setdefault("tickets", {})[tn] = {
-        "ticket_number": tn,
+    record = {
+        "ticket_number": None,
         "employee_id": p.employee_id,
         "category": p.category,
         "urgency": p.urgency,
@@ -442,6 +509,9 @@ def create_incident_ticket(params, db, call_index):
         "sla_tier": None,
         "created_date": _current_date(db),
     }
+    tn = _make_ticket_number(record)
+    record["ticket_number"] = tn
+    db.setdefault("tickets", {})[tn] = record
     return {
         "status": "success",
         "ticket_number": tn,
@@ -721,9 +791,8 @@ def submit_hardware_request(params, db, call_index):
     bcode, err = _resolve_facility("building", p.delivery_building, db)
     if err:
         return err
-    rid = _make_request_id("HW", db)
     record = {
-        "request_id": rid,
+        "request_id": None,
         "employee_id": p.employee_id,
         "request_type": p.request_type,
         "justification": p.justification,
@@ -736,6 +805,8 @@ def submit_hardware_request(params, db, call_index):
         "status": "submitted",
         "created_date": _current_date(db),
     }
+    rid = _make_request_id(record, "HW")
+    record["request_id"] = rid
     db.setdefault("requests", {})[rid] = record
     ent = db.get("employees", {}).get(p.employee_id, {}).get("hardware_entitlements", {}).get(p.request_type)
     if ent:
@@ -874,9 +945,8 @@ def submit_access_request(params, db, call_index):
             "message": f"'{p.access_level}' not available. Options: {app['available_access_levels']}",
         }
     approval = app.get("requires_manager_approval", False)
-    rid = _make_request_id("SW", db)
-    db.setdefault("requests", {})[rid] = {
-        "request_id": rid,
+    record = {
+        "request_id": None,
         "employee_id": p.employee_id,
         "catalog_id": p.catalog_id,
         "application_name": app["name"],
@@ -885,6 +955,9 @@ def submit_access_request(params, db, call_index):
         "requires_manager_approval": approval,
         "created_date": _current_date(db),
     }
+    rid = _make_request_id(record, "SW")
+    record["request_id"] = rid
+    db.setdefault("requests", {})[rid] = record
     return {
         "status": "success",
         "request_id": rid,
@@ -985,9 +1058,8 @@ def submit_license_request(params, db, call_index):
         return validation_error_response(e, SubmitLicenseRequestParams)
     if not _ok(db, "employee_auth"):
         return _ar()
-    rid = _make_request_id("SW", db)
     record = {
-        "request_id": rid,
+        "request_id": None,
         "employee_id": p.employee_id,
         "catalog_id": p.catalog_id,
         "status": "submitted",
@@ -995,6 +1067,8 @@ def submit_license_request(params, db, call_index):
     }
     if p.duration_days is None:
         record["request_type"] = "license_request"
+        rid = _make_request_id(record, "SW")
+        record["request_id"] = rid
         db.setdefault("requests", {})[rid] = record
         return {
             "status": "success",
@@ -1005,6 +1079,8 @@ def submit_license_request(params, db, call_index):
         }
     exp = (_parse_date(_current_date(db)) + timedelta(days=p.duration_days)).strftime("%Y-%m-%d")
     record.update({"request_type": "temporary_license", "duration_days": p.duration_days, "expiration_date": exp})
+    rid = _make_request_id(record, "SW")
+    record["request_id"] = rid
     db.setdefault("requests", {})[rid] = record
     return {
         "status": "success",
@@ -1075,9 +1151,8 @@ def submit_license_renewal(params, db, call_index):
             }
     new_exp = (max(_parse_date(exp or cur), _parse_date(cur)) + timedelta(days=365)).strftime("%Y-%m-%d")
     lic.update({"expiration_date": new_exp, "status": "active"})
-    rid = _make_request_id("SW", db)
-    db.setdefault("requests", {})[rid] = {
-        "request_id": rid,
+    record = {
+        "request_id": None,
         "employee_id": p.employee_id,
         "license_assignment_id": p.license_assignment_id,
         "request_type": "license_renewal",
@@ -1085,6 +1160,9 @@ def submit_license_renewal(params, db, call_index):
         "status": "submitted",
         "created_date": _current_date(db),
     }
+    rid = _make_request_id(record, "SW")
+    record["request_id"] = rid
+    db.setdefault("requests", {})[rid] = record
     return {
         "status": "success",
         "request_id": rid,
@@ -1155,7 +1233,15 @@ def submit_desk_assignment(params, db, call_index):
         emp["last_desk_assignment_date"] = _current_date(db)
     return {
         "status": "success",
-        "request_id": _make_request_id("FAC", db),
+        "request_id": _make_request_id(
+            {
+                "employee_id": p.employee_id,
+                "desk_code": p.desk_code,
+                "request_type": "desk_assignment",
+                "created_date": _current_date(db),
+            },
+            "FAC",
+        ),
         "desk_code": p.desk_code,
         "message": f"Assigned {p.desk_code}",
     }
@@ -1230,7 +1316,15 @@ def submit_parking_assignment(params, db, call_index):
         emp["last_parking_assignment_date"] = _current_date(db)
     return {
         "status": "success",
-        "request_id": _make_request_id("FAC", db),
+        "request_id": _make_request_id(
+            {
+                "employee_id": p.employee_id,
+                "parking_space_id": p.parking_space_id,
+                "request_type": "parking_assignment",
+                "created_date": _current_date(db),
+            },
+            "FAC",
+        ),
         "parking_space_id": p.parking_space_id,
         "message": f"Assigned {p.parking_space_id}",
     }
@@ -1314,9 +1408,8 @@ def submit_equipment_request(params, db, call_index):
     bcode, err = _resolve_facility("building", p.delivery_building, db)
     if err:
         return err
-    rid = _make_request_id("FAC", db)
-    db.setdefault("requests", {})[rid] = {
-        "request_id": rid,
+    record = {
+        "request_id": None,
         "employee_id": p.employee_id,
         "equipment_type": p.equipment_type,
         "delivery_building": bcode,
@@ -1324,6 +1417,9 @@ def submit_equipment_request(params, db, call_index):
         "status": "submitted",
         "created_date": _current_date(db),
     }
+    rid = _make_request_id(record, "FAC")
+    record["request_id"] = rid
+    db.setdefault("requests", {})[rid] = record
     return {
         "status": "success",
         "request_id": rid,
@@ -1395,17 +1491,17 @@ def submit_room_booking(params, db, call_index):
                 "error_type": "room_conflict",
                 "message": f"Booked {p.date} {b['start_time']}-{b['end_time']}",
             }
-    rid = _make_request_id("FAC", db)
-    room.setdefault("bookings", []).append(
-        {
-            "booking_id": rid,
-            "date": p.date,
-            "start_time": p.start_time,
-            "end_time": p.end_time,
-            "employee_id": p.employee_id,
-            "attendee_count": p.attendee_count,
-        }
-    )
+    booking = {
+        "booking_id": None,
+        "date": p.date,
+        "start_time": p.start_time,
+        "end_time": p.end_time,
+        "employee_id": p.employee_id,
+        "attendee_count": p.attendee_count,
+    }
+    rid = _make_request_id(booking, "FAC")
+    booking["booking_id"] = rid
+    room.setdefault("bookings", []).append(booking)
     return {
         "status": "success",
         "request_id": rid,
@@ -1526,7 +1622,6 @@ def provision_new_account(params, db, call_index):
                 "group_code": gc,
                 "message": f"New hire {p.new_hire_employee_id} (department {nh.get('department_code')}, role {nh.get('role_code')}) is not eligible for {gc}. Use a permission template that matches the role.",
             }
-    cid = _make_case_id("ACCT", db)
     # C14: email dedup — suffix with a number if the base name collides with another employee's email
     base = f"{nh['first_name'].lower()}.{nh['last_name'].lower()}"
     existing_emails = {e.get("email") for e in db.get("employees", {}).values() if e.get("email")}
@@ -1536,14 +1631,15 @@ def provision_new_account(params, db, call_index):
         email = f"{base}{suffix}@company.com"
         suffix += 1
     nh["email"] = email
-    nh["system_accounts"] = [
-        {
-            "case_id": cid,
-            "status": "active",
-            "provisioned_date": _current_date(db),
-            "access_groups": list(p.access_groups),
-        }
-    ]
+    acct_entry = {
+        "case_id": None,
+        "status": "active",
+        "provisioned_date": _current_date(db),
+        "access_groups": list(p.access_groups),
+    }
+    cid = _make_case_id(acct_entry, "ACCT")
+    acct_entry["case_id"] = cid
+    nh["system_accounts"] = [acct_entry]
     nh["employment_status"] = "active"
     return {
         "status": "success",
@@ -1600,7 +1696,6 @@ def submit_group_membership_change(params, db, call_index):
         return {"status": "error", "error_type": "not_found", "message": f"Group {p.group_code} not found"}
     memberships = emp.get("group_memberships", [])
     codes = [m["group_code"] for m in memberships]
-    cid = _make_case_id("ACCT", db)
     if p.action == "add":
         if p.group_code in codes:
             return {"status": "error", "error_type": "already_member", "message": f"Already in {p.group_code}"}
@@ -1613,20 +1708,17 @@ def submit_group_membership_change(params, db, call_index):
         appr = group.get("requires_approval", False)
         if appr:
             # Record a pending_approval entry so task validation can see the state change (C2)
-            rid = _make_request_id("ACCT", db)
-            emp.setdefault("group_memberships", []).append(
-                {
-                    "group_code": p.group_code,
-                    "group_name": group["name"],
-                    "status": "pending_approval",
-                    "case_id": cid,
-                    "request_id": rid,
-                    "requested_date": _current_date(db),
-                }
-            )
-            # Write a request record so route_approval_workflow can look it up (X3-R3)
-            db.setdefault("requests", {})[rid] = {
-                "request_id": rid,
+            membership = {
+                "group_code": p.group_code,
+                "group_name": group["name"],
+                "status": "pending_approval",
+                "case_id": None,
+                "request_id": None,
+                "requested_date": _current_date(db),
+            }
+            cid = _make_case_id(membership, "ACCT")
+            req_record = {
+                "request_id": None,
                 "case_id": cid,
                 "employee_id": p.employee_id,
                 "group_code": p.group_code,
@@ -1635,6 +1727,12 @@ def submit_group_membership_change(params, db, call_index):
                 "requires_manager_approval": True,
                 "created_date": _current_date(db),
             }
+            rid = _make_request_id(req_record, "ACCT")
+            membership["case_id"] = cid
+            membership["request_id"] = rid
+            req_record["request_id"] = rid
+            emp.setdefault("group_memberships", []).append(membership)
+            db.setdefault("requests", {})[rid] = req_record
             return {
                 "status": "success",
                 "case_id": cid,
@@ -1653,6 +1751,16 @@ def submit_group_membership_change(params, db, call_index):
                     "added_date": _current_date(db),
                 }
             )
+            cid = _make_case_id(
+                {
+                    "employee_id": p.employee_id,
+                    "group_code": p.group_code,
+                    "action": "add",
+                    "auto_approved": True,
+                    "created_date": _current_date(db),
+                },
+                "ACCT",
+            )
             return {
                 "status": "success",
                 "case_id": cid,
@@ -1665,6 +1773,15 @@ def submit_group_membership_change(params, db, call_index):
         if p.group_code not in codes:
             return {"status": "error", "error_type": "not_member", "message": f"Not in {p.group_code}"}
         emp["group_memberships"] = [m for m in memberships if m["group_code"] != p.group_code]
+        cid = _make_case_id(
+            {
+                "employee_id": p.employee_id,
+                "group_code": p.group_code,
+                "action": "remove",
+                "created_date": _current_date(db),
+            },
+            "ACCT",
+        )
         return {
             "status": "success",
             "case_id": cid,
@@ -1760,14 +1877,16 @@ def submit_permission_change(params, db, call_index):
             "error_type": "template_role_mismatch",
             "message": f"Template for '{tmpl['role_code']}', not '{p.new_role_code}'",
         }
-    cid = _make_case_id("ACCT", db)
-    emp["pending_role_change"] = {
-        "case_id": cid,
+    role_change = {
+        "case_id": None,
         "new_role_code": p.new_role_code,
         "permission_template_id": p.permission_template_id,
         "effective_date": p.effective_date,
         "status": "pending",
     }
+    cid = _make_case_id(role_change, "ACCT")
+    role_change["case_id"] = cid
+    emp["pending_role_change"] = role_change
     return {
         "status": "success",
         "case_id": cid,
@@ -1860,11 +1979,16 @@ def submit_access_removal(params, db, call_index):
     ob = dep.get("offboarding_record")
     if not ob:
         return {"status": "error", "error_type": "no_offboarding_record", "message": "No off-boarding record"}
-    cid = _make_case_id("ACCT", db)
     dep.update({"employment_status": "terminated", "system_accounts": [], "group_memberships": []})
     if p.removal_scope == "staged":
         dep["email_preserved_until"] = (_parse_date(p.last_working_day) + timedelta(days=30)).strftime("%Y-%m-%d")
-    ob.update({"access_removed": True, "removal_case_id": cid, "removal_scope": p.removal_scope})
+    # Apply non-ID fields first, then hash the full offboarding record so the case_id
+    # is determined by the same content the migration sees on the migrated DB.
+    ob["access_removed"] = True
+    ob["removal_scope"] = p.removal_scope
+    ob["removal_case_id"] = None
+    cid = _make_case_id(ob, "ACCT")
+    ob["removal_case_id"] = cid
     return {
         "status": "success",
         "case_id": cid,
@@ -1926,17 +2050,17 @@ def report_security_incident(params, db, call_index):
             "error_type": "not_assigned_to_caller",
             "message": f"Asset {p.asset_tag} is not assigned to {p.employee_id}",
         }
-    ctr = db.get("_security_case_counter", 48270) + 1
-    db["_security_case_counter"] = ctr
-    sec_id = f"SEC-{str(ctr).zfill(6)}"
-    db.setdefault("security_cases", {})[sec_id] = {
-        "security_case_id": sec_id,
+    record = {
+        "security_case_id": None,
         "employee_id": p.employee_id,
         "asset_tag": p.asset_tag,
         "incident_type": p.incident_type.value,
         "status": "open",
         "opened_date": _current_date(db),
     }
+    sec_id = _make_security_case_id(record)
+    record["security_case_id"] = sec_id
+    db.setdefault("security_cases", {})[sec_id] = record
     if p.incident_type.value in ("lost", "stolen"):
         asset["lifecycle_status"] = "lost_or_stolen"
     return {
@@ -2000,16 +2124,17 @@ def submit_mfa_reset(params, db, call_index):
     emp = db.get("employees", {}).get(p.employee_id)
     if not emp:
         return _enf(p.employee_id)
-    sec_id = f"SEC-{str(db.get('_security_case_counter', 48270) + 1).zfill(6)}"
-    db["_security_case_counter"] = db.get("_security_case_counter", 48270) + 1
-    db.setdefault("security_cases", {})[sec_id] = {
-        "security_case_id": sec_id,
+    record = {
+        "security_case_id": None,
         "employee_id": p.employee_id,
         "incident_type": "mfa_reset_request",
         "requested_new_phone_last_four": p.new_phone_last_four,
         "status": "requires_in_person",
         "opened_date": _current_date(db),
     }
+    sec_id = _make_security_case_id(record)
+    record["security_case_id"] = sec_id
+    db.setdefault("security_cases", {})[sec_id] = record
     return {
         "status": "error",
         "error_type": "in_person_required",

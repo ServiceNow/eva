@@ -134,7 +134,12 @@ ManagerAuthCodeStr = Annotated[
     str, Field(pattern=r"^[A-Z0-9]{6}$", description="6-char alphanumeric manager auth code", examples=["K4M2P9"])
 ]
 TicketNumberStr = Annotated[
-    str, Field(pattern=r"^INC\d{7}$", description="INC followed by 7 digits", examples=["INC0048271"])
+    str,
+    Field(
+        pattern=r"^INC[a-f0-9]{12}$",
+        description="INC followed by 12 hex chars (content-hash)",
+        examples=["INCfa5e5b2062da"],
+    ),
 ]
 AssetTagStr = Annotated[
     str, Field(pattern=r"^AST-[A-Z]{3}-\d{6}$", description="AST-XXX-NNNNNN", examples=["AST-LPT-284719"])
@@ -204,12 +209,25 @@ PermissionTemplateIdStr = Annotated[
     str, Field(pattern=r"^PTPL-[A-Z]{2,5}-\d{2}$", description="PTPL-XXX-NN", examples=["PTPL-SWE-01"])
 ]
 RequestIdStr = Annotated[
-    str, Field(pattern=r"^REQ-[A-Z]{2,5}-\d{6}$", description="REQ-CAT-NNNNNN", examples=["REQ-HW-048271"])
+    str,
+    Field(
+        pattern=r"^REQ-[A-Z]{2,5}-[a-f0-9]{12}$",
+        description="REQ-CAT-XXXXXXXXXXXX (CAT plus 12-char content hash)",
+        examples=["REQ-HW-6d94147c44a3"],
+    ),
 ]
 CaseIdStr = Annotated[
-    str, Field(pattern=r"^CASE-[A-Z]{2,5}-\d{6}$", description="CASE-CAT-NNNNNN", examples=["CASE-ACCT-048271"])
+    str,
+    Field(
+        pattern=r"^CASE-[A-Z]{2,5}-[a-f0-9]{12}$",
+        description="CASE-CAT-XXXXXXXXXXXX",
+        examples=["CASE-ACCT-6b54dcee093d"],
+    ),
 ]
-SecurityCaseIdStr = Annotated[str, Field(pattern=r"^SEC-\d{6}$", description="SEC-NNNNNN", examples=["SEC-048271"])]
+SecurityCaseIdStr = Annotated[
+    str,
+    Field(pattern=r"^SEC-[a-f0-9]{12}$", description="SEC-XXXXXXXXXXXX", examples=["SEC-a3f8e1b2c4d5"]),
+]
 DateStr = Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}$", description="YYYY-MM-DD", examples=["2026-08-15"])]
 TimeStr = Annotated[str, Field(pattern=r"^\d{2}:\d{2}$", description="HH:MM", examples=["09:00"])]
 DiagnosticRefCodeStr = Annotated[

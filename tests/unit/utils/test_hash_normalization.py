@@ -277,115 +277,22 @@ class TestStandbyListOrderIndependence:
 
 
 # ---------------------------------------------------------------------------
-# Counter-generated ID canonicalization
+# Order-independent list semantics
 # ---------------------------------------------------------------------------
 
 
-class TestCounterIdCanonicalization:
-    """Counter-generated IDs (REQ-*, INC*, CASE-*, SEC-*, CAL-*) should be
-    replaced with content-deterministic identifiers at comparison time, so
-    scoring ignores tool-call order and counter values."""
-
-    def _itsm_db(self, req_hw_id: str, req_fac_id: str, cal_id: str, counter: int) -> dict:
-        return {
-            "_request_counter": counter,
-            "requests": {
-                req_hw_id: {
-                    "request_id": req_hw_id,
-                    "employee_id": "EMP001",
-                    "request_type": "laptop_replacement",
-                    "laptop_size": "14_inch",
-                },
-                req_fac_id: {
-                    "request_id": req_fac_id,
-                    "employee_id": "EMP001",
-                    "equipment_type": "ergonomic_chair",
-                },
-            },
-            "calendar_events": {
-                cal_id: {
-                    "calendar_event_id": cal_id,
-                    "request_id": req_fac_id,
-                    "date": "2026-07-06",
-                },
-            },
-        }
-
-    def test_hash_matches_when_counter_order_differs(self):
-        """Same content, different tool-call order → same hash."""
-        expected = self._itsm_db("REQ-HW-048271", "REQ-FAC-048272", "CAL-048272", 48272)
-        actual = self._itsm_db("REQ-HW-048272", "REQ-FAC-048271", "CAL-048271", 48272)
-        assert get_dict_hash(expected) == get_dict_hash(actual)
-
-    def test_hash_differs_when_content_differs(self):
-        """Different content → different hash, even after canonicalization."""
-        expected = self._itsm_db("REQ-HW-048271", "REQ-FAC-048272", "CAL-048272", 48272)
-        actual = self._itsm_db("REQ-HW-048271", "REQ-FAC-048272", "CAL-048272", 48272)
-        actual["requests"]["REQ-HW-048271"]["laptop_size"] = "16_inch"
-        assert get_dict_hash(expected) != get_dict_hash(actual)
-
-    def test_hash_differs_when_record_missing(self):
-        """A missing request → different hash (not collapsed to same content)."""
-        expected = self._itsm_db("REQ-HW-048271", "REQ-FAC-048272", "CAL-048272", 48272)
-        actual = self._itsm_db("REQ-HW-048271", "REQ-FAC-048272", "CAL-048272", 48272)
-        del actual["requests"]["REQ-FAC-048272"]
-        assert get_dict_hash(expected) != get_dict_hash(actual)
-
-    def test_diff_clean_when_only_counters_differ(self):
-        """compute_db_diff should be empty when only counter/ID values differ."""
-        expected = self._itsm_db("REQ-HW-048271", "REQ-FAC-048272", "CAL-048272", 48272)
-        actual = self._itsm_db("REQ-HW-048275", "REQ-FAC-048276", "CAL-048276", 48276)
-        diff = compute_db_diff(expected, actual)
-        assert diff["tables_modified"] == {}
-        assert diff["tables_added"] == []
-        assert diff["tables_removed"] == []
-
-    def test_cross_reference_preserved(self):
-        """calendar_events.*.request_id should still tie to the right request
-        after canonicalization — mis-wired references should be caught."""
-        expected = self._itsm_db("REQ-HW-048271", "REQ-FAC-048272", "CAL-048272", 48272)
-        # Point calendar at the HW request instead of the chair request.
-        actual = self._itsm_db("REQ-HW-048271", "REQ-FAC-048272", "CAL-048272", 48272)
-        actual["calendar_events"]["CAL-048272"]["request_id"] = "REQ-HW-048271"
-        assert get_dict_hash(expected) != get_dict_hash(actual)
-
+class TestOrderIndependentLists:
     def test_bookings_list_order_independent(self):
-        """Bookings list ordering should not affect the hash."""
-        db_a = {
-            "facilities": {
-                "conference_rooms": {
-                    "RM-1": {
-                        "bookings": [
-                            {"booking_id": "REQ-FAC-048271", "date": "2026-07-06", "start_time": "10:00"},
-                            {"booking_id": "REQ-FAC-048273", "date": "2026-07-07", "start_time": "14:00"},
-                        ]
-                    }
-                }
-            }
-        }
-        db_b = {
-            "facilities": {
-                "conference_rooms": {
-                    "RM-1": {
-                        "bookings": [
-                            {"booking_id": "REQ-FAC-999999", "date": "2026-07-07", "start_time": "14:00"},
-                            {"booking_id": "REQ-FAC-000001", "date": "2026-07-06", "start_time": "10:00"},
-                        ]
-                    }
-                }
-            }
-        }
+        """Bookings list ordering should not affect the hash — bookings is a
+        set, not a sequence."""
+        booking_a = {"booking_id": "B1", "date": "2026-07-06", "start_time": "10:00"}
+        booking_b = {"booking_id": "B2", "date": "2026-07-07", "start_time": "14:00"}
+        db_a = {"facilities": {"conference_rooms": {"RM-1": {"bookings": [booking_a, booking_b]}}}}
+        db_b = {"facilities": {"conference_rooms": {"RM-1": {"bookings": [booking_b, booking_a]}}}}
         assert get_dict_hash(db_a) == get_dict_hash(db_b)
 
-    def test_stable_ids_untouched(self):
-        """GRP-*, APP-*, EMP-* etc. should NOT be canonicalized — only
-        counter-generated prefixes (REQ/INC/CASE/SEC/CAL)."""
-        db_a = {"access_groups": {"GRP-ENGCORE": {"name": "Eng Core"}}}
-        db_b = {"access_groups": {"GRP-DIFFERENT": {"name": "Eng Core"}}}
-        assert get_dict_hash(db_a) != get_dict_hash(db_b)
-
     def test_session_still_excluded(self):
-        """session subtree must remain excluded from the hash (pre-existing behavior)."""
+        """session subtree must remain excluded from the hash."""
         a = {"session": {"otp_auth": True}, "requests": {}}
         b = {"session": {"otp_auth": False}, "requests": {}}
         assert get_dict_hash(a) == get_dict_hash(b)
