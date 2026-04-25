@@ -9,7 +9,7 @@ from typing import Any
 
 from pydub import AudioSegment
 
-from eva.utils.json_utils import extract_and_load_json
+from eva.utils.json_utils import extract_and_load_json, extract_and_load_json_iter
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -18,22 +18,35 @@ logger = get_logger(__name__)
 def parse_judge_response(response_text: str, record_id: str, metric_logger) -> dict | None:
     """Parse LLM judge response using robust JSON extraction.
 
+    Iterates through every JSON object/array found in the response and returns the
+    first dict. This guards against the case where the model emits a stray array
+    (e.g. an example block in its preamble) before the actual dict response —
+    extract_and_load_json would otherwise return that array and downstream
+    ``response.get(...)`` calls would crash with ``AttributeError``.
+
     Args:
         response_text: Raw response from LLM
         record_id: Record ID for logging
         metric_logger: Logger instance from the metric
 
     Returns:
-        Parsed response dict or None if parsing fails
+        Parsed response dict or None if no dict was found
     """
-    response = extract_and_load_json(response_text)
+    found_non_dict = False
+    for json_object, _ in extract_and_load_json_iter(response_text):
+        if isinstance(json_object, dict):
+            return json_object
+        found_non_dict = True
 
-    if response is None:
+    if found_non_dict:
+        metric_logger.error(
+            f"Judge response for {record_id} contained JSON but no top-level dict; "
+            f"response text: {response_text}"
+        )
+    else:
         metric_logger.error(f"Failed to extract JSON from judge response for {record_id}")
         metric_logger.error(f"Response text: {response_text}")
-        return None
-
-    return response
+    return None
 
 
 def parse_judge_response_list(response_text: str | None) -> list[dict] | None:

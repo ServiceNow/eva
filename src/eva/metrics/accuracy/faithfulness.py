@@ -95,8 +95,9 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
         raw_response: str | None = None,
     ) -> MetricScore:
         """Build MetricScore with analysis details."""
+        dimensions = response.get("dimensions", {}) if isinstance(response, dict) else {}
         analysis = {
-            "dimensions": response.get("dimensions", {}),
+            "dimensions": dimensions,
         }
         return MetricScore(
             name=self.name,

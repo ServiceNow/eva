@@ -36,6 +36,18 @@ class TestParseJudgeResponse:
         assert result is None
         mock_logger.error.assert_called()
 
+    def test_skips_leading_array_to_find_dict(self):
+        # If the model emits an array before the dict response, return the dict.
+        text = 'Examples: [{"turn_id": 1}] then result: {"rating": 3}'
+        result = parse_judge_response(text, "rec-1", MagicMock())
+        assert result == {"rating": 3}
+
+    def test_only_array_returns_none(self):
+        mock_logger = MagicMock()
+        result = parse_judge_response('[{"a": 1}]', "rec-1", mock_logger)
+        assert result is None
+        mock_logger.error.assert_called()
+
 
 class TestParseJudgeResponseList:
     def test_none_input(self):
