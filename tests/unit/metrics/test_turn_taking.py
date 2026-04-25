@@ -481,6 +481,35 @@ class TestToolAwareScoring:
         assert sub["on_time_rate"].score == pytest.approx(0.5, abs=1e-3)
 
     @pytest.mark.asyncio
+    async def test_tool_call_on_turn_id_greater_than_one(self, metric):
+        """Tool call on turn 2 (not turn 1) must apply the lenient curve to turn 2, not turn 1.
+
+        Exposes a walrus-operator precedence bug where `turn_id` is assigned the bool result of
+        `entry.get("turn_id") and entry.get("type") == "tool_call"` instead of the actual turn ID.
+        Because True == 1 in Python, the bug only manifests for turn_id != 1.
+        """
+        context = make_metric_context(
+            # Turn 1: 1s latency, no tool call → non-tool curve → score 1.0 (sweet spot)
+            # Turn 2: 5s latency, tool call   → tool curve    → score 0.6667 (ramp-down)
+            #                                   non-tool curve → score 0.0   (past hard_late=5000)
+            audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(20.0, 21.0)]},
+            audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(26.0, 27.0)]},  # 1s, 5s
+            conversation_trace=[
+                {"type": "tool_call", "turn_id": 2, "tool_name": "lookup"},
+            ],
+        )
+        result = await metric.compute(context)
+        ev1 = result.details["per_turn_evidence"][1]
+        ev2 = result.details["per_turn_evidence"][2]
+        assert ev1["has_tool_call"] is False
+        assert ev2["has_tool_call"] is True
+        # Turn 1: 1s latency, no tool → firmly inside sweet spot.
+        assert ev1["latency_score"] == pytest.approx(1.0, abs=1e-3)
+        # Turn 2: 5s latency with tool call → on ramp-down (7000-5000)/(7000-4000) = 0.6667.
+        # Without the fix this scores 0.0 (non-tool hard_late=5000 treats 5s as beyond the cliff).
+        assert ev2["latency_score"] == pytest.approx(0.6667, abs=1e-3)
+
+    @pytest.mark.asyncio
     async def test_post_interrupt_latency_honors_tool_curve(self, metric):
         """Settled response 5s after user_end on a tool turn → non-zero score via the tool curve."""
         context = make_metric_context(
@@ -594,3 +623,90 @@ class TestInterruptCountSubMetrics:
         assert sub["agent_interruption.num_interruptions"].score is None
         assert sub["agent_interruption.num_interruptions"].normalized_score is None
         assert "agent_interruption.mean_count_score" not in sub
+
+
+# ---------- Dual interrupt ----------
+
+
+class TestDualInterrupt:
+    """Turn present in both assistant_interrupted_turns and user_interrupted_turns.
+
+    Implementation path: both agent_score and user_score are computed; score = min of the two;
+    reason = "dual_interrupt"; per-turn evidence carries both overlap_* and yield_* keys.
+    Sub-metrics for both interrupt types are populated from the same turn's evidence.
+    """
+
+    @pytest.mark.asyncio
+    async def test_dual_interrupt_score_is_min_of_agent_and_user(self, metric):
+        """Turn 2 is in both interrupt sets → score = min(agent_score, user_score)."""
+        context = make_metric_context(
+            # Turn 1: user 0–1s, agent 1.5–3.0s (latency 500ms → sweet spot, score 1.0).
+            # Turn 2 (dual): user 2.5–5.0s, agent 4.0–6.0s.
+            #   Agent interrupt: overlap = max(0, min(5.0,6.0) – max(2.5,4.0)) = 1000ms
+            #     → overlap_score = 0.5*(1–1000/2000) = 0.25; n_segs=1 → count_score=0.5
+            #     → agent_score = min(0.25, 0.5) = 0.25
+            #   User interrupt: yield_ms = max(0, prev_agent_end 3.0 – user_start 2.5)*1000 = 500ms
+            #     → yield_score = 1.0 – 500/2000 = 0.75 → user_score = 0.75
+            #   dual_score = min(0.25, 0.75) = 0.25
+            # Turn 3: clean (latency 1s → score 1.0).
+            audio_timestamps_user_turns={
+                1: [(0.0, 1.0)],
+                2: [(2.5, 5.0)],
+                3: [(10.0, 11.0)],
+            },
+            audio_timestamps_assistant_turns={
+                1: [(1.5, 3.0)],
+                2: [(4.0, 6.0)],
+                3: [(12.0, 13.0)],
+            },
+            assistant_interrupted_turns={2},
+            user_interrupted_turns={2},
+        )
+        result = await metric.compute(context)
+        assert result.error is None
+
+        ev2 = result.details["per_turn_evidence"][2]
+        assert result.details["per_turn_reason"][2] == "dual_interrupt"
+        assert result.details["per_turn_score"][2] == pytest.approx(0.25, abs=1e-3)
+
+        # Agent-interrupt sub-evidence is populated.
+        assert ev2["overlap_ms"] == pytest.approx(1000, abs=1)
+        assert ev2["overlap_score"] == pytest.approx(0.25, abs=1e-3)
+        assert ev2["n_interrupt_segments"] == 1
+        assert ev2["interrupt_count_score"] == pytest.approx(0.5, abs=1e-3)
+        # Agent spans user_last_end (4.0 ≤ 5.0 < 6.0) → no settled response gap.
+        assert "post_interrupt_latency_ms" not in ev2
+
+        # User-interrupt sub-evidence is populated on the same turn.
+        assert ev2["yield_ms"] == pytest.approx(500, abs=1)
+        assert ev2["yield_score"] == pytest.approx(0.75, abs=1e-3)
+
+    @pytest.mark.asyncio
+    async def test_dual_interrupt_sub_metrics_populated_for_both_interrupt_types(self, metric):
+        """agent_interruption.* and user_interruption.* sub-metrics are both emitted."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={
+                1: [(0.0, 1.0)],
+                2: [(2.5, 5.0)],
+                3: [(10.0, 11.0)],
+            },
+            audio_timestamps_assistant_turns={
+                1: [(1.5, 3.0)],
+                2: [(4.0, 6.0)],
+                3: [(12.0, 13.0)],
+            },
+            assistant_interrupted_turns={2},
+            user_interrupted_turns={2},
+        )
+        result = await metric.compute(context)
+        sub = result.sub_metrics
+
+        # Agent-interruption sub-metrics: 1 of 3 turns is an agent interrupt.
+        assert sub["agent_interruption.rate"].score == pytest.approx(1 / 3, abs=1e-4)
+        assert sub["agent_interruption.mean_overlap_ms"].score == pytest.approx(1000, abs=1)
+        assert sub["agent_interruption.mean_overlap_score"].score == pytest.approx(0.25, abs=1e-3)
+
+        # User-interruption sub-metrics: 1 of 3 turns is a user interrupt.
+        assert sub["user_interruption.rate"].score == pytest.approx(1 / 3, abs=1e-4)
+        assert sub["user_interruption.mean_yield_ms"].score == pytest.approx(500, abs=1)
+        assert sub["user_interruption.mean_yield_score"].score == pytest.approx(0.75, abs=1e-3)
