@@ -162,8 +162,8 @@
       "employee_id": "EMP040001",
       "employment_status": "active",
       "ergonomic_assessment": {
-        "completion_date": null,
-        "status": "not_completed"
+        "status": "not_completed",
+        "completed_date": null
       },
       "first_name": "Priya",
       "floor_code": "FL4",
@@ -253,8 +253,8 @@
       "employee_id": "EMP041200",
       "employment_status": "active",
       "ergonomic_assessment": {
-        "completion_date": null,
-        "status": "not_completed"
+        "status": "not_completed",
+        "completed_date": null
       },
       "first_name": "Marcus",
       "floor_code": "FL3",
@@ -342,8 +342,8 @@
       "employee_id": "EMP046829",
       "employment_status": "active",
       "ergonomic_assessment": {
-        "completion_date": "2026-09-22",
-        "status": "completed"
+        "status": "completed",
+        "completed_date": "2026-09-22"
       },
       "first_name": "Ananya",
       "floor_code": "FL3",

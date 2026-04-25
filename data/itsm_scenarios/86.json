@@ -149,7 +149,6 @@
       "employment_status": "active",
       "ergonomic_assessment": {
         "completed_date": "2024-04-01",
-        "completion_date": "2024-04-01",
         "status": "completed"
       },
       "first_name": "Victor",
@@ -241,7 +240,6 @@
       "employment_status": "active",
       "ergonomic_assessment": {
         "completed_date": "2025-08-20",
-        "completion_date": "2025-08-20",
         "status": "completed"
       },
       "first_name": "Nadia",
@@ -331,7 +329,6 @@
       "employment_status": "active",
       "ergonomic_assessment": {
         "completed_date": null,
-        "completion_date": null,
         "status": "not_completed"
       },
       "first_name": "Omar",

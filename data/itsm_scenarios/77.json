@@ -135,7 +135,6 @@
       "employment_status": "active",
       "ergonomic_assessment": {
         "completed_date": null,
-        "completion_date": null,
         "status": "not_completed"
       },
       "first_name": "Priya",
@@ -227,7 +226,6 @@
       "employment_status": "active",
       "ergonomic_assessment": {
         "completed_date": "2025-10-01",
-        "completion_date": "2025-10-01",
         "status": "completed"
       },
       "first_name": "Dana",
@@ -317,7 +315,6 @@
       "employment_status": "active",
       "ergonomic_assessment": {
         "completed_date": "2026-03-18",
-        "completion_date": "2026-03-18",
         "status": "completed"
       },
       "first_name": "Yuki",
