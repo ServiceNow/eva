@@ -43,6 +43,8 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
                     error=f"No {self.role} audio file available",
                 )
 
+            audio_segment = self._trim_silence(audio_segment, context)
+
             redacted_trace = self._build_redacted_trace(context)
             assistant_turn_ids = self._get_assistant_turn_ids(redacted_trace)
 
