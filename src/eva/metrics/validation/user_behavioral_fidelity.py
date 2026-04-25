@@ -5,7 +5,16 @@ from typing import Any
 
 from eva.metrics.base import ConversationTextJudgeMetric, MetricContext
 from eva.metrics.registry import register_metric
+from eva.metrics.utils import build_binary_flag_sub_metrics
 from eva.models.results import MetricScore
+
+_USER_BEHAVIORAL_FIDELITY_CORRUPTION_KEYS = (
+    "extra_modifications",
+    "premature_ending",
+    "missing_information",
+    "duplicate_modifications",
+    "decision_tree_violation",
+)
 
 # --- Pipeline-specific prompt text for user behavioral fidelity ---
 
@@ -85,7 +94,16 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
         context: MetricContext,
         raw_response: str | None = None,
     ) -> MetricScore:
-        """Build MetricScore with corruption analysis details."""
+        """Build MetricScore with corruption analysis details and per-type detection sub-metrics."""
+        corruption_analysis = response.get("corruption_analysis", {}) or {}
+        sub_metrics = build_binary_flag_sub_metrics(
+            parent_name=self.name,
+            entries=corruption_analysis,
+            entry_keys=_USER_BEHAVIORAL_FIDELITY_CORRUPTION_KEYS,
+            flag_field="detected",
+            detail_fields=("analysis",),
+        )
+
         return MetricScore(
             name=self.name,
             score=float(rating),
@@ -93,8 +111,9 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
             details={
                 "rating": rating,
                 "corrupted": rating == 0,
-                "corruption_analysis": response.get("corruption_analysis", {}),
+                "corruption_analysis": corruption_analysis,
                 "judge_prompt": prompt,
                 "judge_raw_response": raw_response,
             },
+            sub_metrics=sub_metrics or None,
         )

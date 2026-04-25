@@ -10,12 +10,44 @@ import jiwer
 
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.registry import register_metric
-from eva.metrics.utils import aggregate_wer_errors, extract_wer_errors, reverse_word_error_rate
+from eva.metrics.utils import aggregate_wer_errors, extract_wer_errors, make_rate_sub_metric, reverse_word_error_rate
 from eva.models.config import PipelineType
 from eva.models.results import MetricScore
 from eva.utils.wer_normalization import normalize_text
 
 _BRACKET_PATTERN = re.compile(r"\[.*?\]")
+
+
+def _build_wer_component_sub_metrics(
+    parent_name: str,
+    substitutions: int,
+    deletions: int,
+    insertions: int,
+    reference_words: int,
+) -> dict[str, MetricScore]:
+    """Build sub-metrics for substitution, deletion, and insertion rates.
+
+    Each rate = component count / reference word count. Returns an empty dict
+    when there are no reference words (division by zero).
+    """
+    if reference_words <= 0:
+        return {}
+
+    components = {
+        "substitution_rate": substitutions,
+        "deletion_rate": deletions,
+        "insertion_rate": insertions,
+    }
+    return {
+        key: make_rate_sub_metric(
+            parent_name=parent_name,
+            key=key,
+            numerator=count,
+            denominator=reference_words,
+            details={"count": count, "reference_words": reference_words},
+        )
+        for key, count in components.items()
+    }
 
 
 @register_metric
@@ -104,6 +136,15 @@ class STTWERMetric(CodeMetric):
             # Aggregate error statistics across all turns
             error_summary = aggregate_wer_errors(output)
 
+            reference_word_count = sum(len(r.split()) for r in references_clean)
+            sub_metrics = _build_wer_component_sub_metrics(
+                parent_name=self.name,
+                substitutions=output.substitutions,
+                deletions=output.deletions,
+                insertions=output.insertions,
+                reference_words=reference_word_count,
+            )
+
             return MetricScore(
                 name=self.name,
                 score=round(wer, 3),  # Raw WER
@@ -120,7 +161,9 @@ class STTWERMetric(CodeMetric):
                     "total_substitutions": output.substitutions,
                     "total_deletions": output.deletions,
                     "total_insertions": output.insertions,
+                    "reference_words": reference_word_count,
                 },
+                sub_metrics=sub_metrics or None,
             )
 
         except Exception as e:

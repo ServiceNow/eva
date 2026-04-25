@@ -17,7 +17,7 @@
   "run_mode": "simulations",
   "max_rerun_attempts": 3,
   "validation_thresholds": {
-    "conversation_finished": 1.0,
+    "conversation_valid_end": 1.0,
     "user_behavioral_fidelity": 1.0,
     "user_speech_fidelity": 0.7
   },

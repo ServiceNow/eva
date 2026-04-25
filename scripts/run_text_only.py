@@ -595,9 +595,6 @@ async def run_record(
     if record.agent_override and record.agent_override.instructions:
         agent_instructions = record.agent_override.instructions
 
-    # In text-only mode there is no TTS/STT — intended text == transcribed text
-    conversation_finished = end_reason in ("goodbye", "transfer")
-
     metric_context = MetricContext(
         record_id=record.id,
         user_goal=record.user_goal,
@@ -626,7 +623,6 @@ async def run_record(
         num_user_turns=len(user_turns),
         tool_params=tool_params,
         tool_responses=tool_responses,
-        conversation_finished=conversation_finished,
     )
 
     # ---- Run metrics ----

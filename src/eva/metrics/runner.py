@@ -12,8 +12,10 @@ import yaml
 from eva.metrics.accuracy.agent_speech_fidelity_s2s import AgentSpeechFidelityS2SMetric
 from eva.metrics.aggregation import compute_record_aggregates, compute_run_level_aggregates
 from eva.metrics.base import BaseMetric, MetricContext
+from eva.metrics.legacy_aliases import rename_metric_keys
 from eva.metrics.processor import MetricsContextProcessor
 from eva.metrics.registry import MetricRegistry, get_global_registry
+from eva.metrics.utils import direction_for_sub_metric
 from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
@@ -28,6 +30,16 @@ from eva.utils.pass_at_k import (
 from eva.utils.provenance import capture_metrics_provenance
 
 logger = get_logger(__name__)
+
+
+def _metric_higher_is_better(name: str) -> bool:
+    """Return ``higher_is_better`` for a registered metric, or ``True`` if unknown.
+
+    Direction lives on the metric class (static per metric), so the aggregator
+    reads it from the registry rather than fishing it out of per-record data.
+    """
+    metric_class = get_global_registry().get(name)
+    return True if metric_class is None else metric_class.higher_is_better
 
 
 @dataclass
@@ -97,6 +109,7 @@ class MetricsRunner:
         self.force_rerun = force_rerun
         self.metric_configs = metric_configs or {}
         self.registry = registry or get_global_registry()
+        self._context_cache: dict[str, Any] = {}
 
         # pass@k configuration
         self.num_draws = num_draws
@@ -208,7 +221,38 @@ class MetricsRunner:
                 record_dirs.append((d.name, d))  # k=1 record
         return record_dirs
 
-    async def run(self) -> MetricsRunResult:
+    def process_records(self) -> dict[str, Any]:
+        """Run the metrics processor on each targeted record.
+
+        This is phase 1 of metric computation: load each record's ``result.json``
+        and invoke ``MetricsContextProcessor.process_record`` to produce a
+        ``_ProcessorContext``. No metric computation happens here. Callers that
+        need to classify records up front (e.g., the validation gate) use this
+        map to inspect processor-derived fields like
+        ``agent_timeout_on_user_turn``, then optionally pass the filtered map
+        back into :meth:`run` to avoid re-processing.
+
+        Per-record errors are logged and the record is omitted from the result.
+        """
+        contexts: dict[str, Any] = {}
+        for record_id, record_dir in self._discover_record_dirs(self.run_dir, self.record_ids):
+            result_path = record_dir / "result.json"
+            if not result_path.exists():
+                logger.info(f"process_records: {record_id} has no result.json, skipping")
+                continue
+            try:
+                result_data = json.loads(result_path.read_text())
+                result = ConversationResult(**result_data)
+                ctx = self.metrics_processor.process_record(result, record_dir, pipeline_type=self._pipeline_type)
+            except Exception as e:
+                logger.warning(f"process_records: {record_id} failed ({e})")
+                continue
+            if ctx is None:
+                continue
+            contexts[record_id] = ctx
+        return contexts
+
+    async def run(self, contexts: dict[str, Any] | None = None) -> MetricsRunResult:
         """Run all metrics on all records.
 
         All records and metrics run concurrently. The LiteLLM Router
@@ -218,9 +262,18 @@ class MetricsRunner:
         After computing per-record metrics, if multi-attempt records are detected,
         computes pass@k and pass^k aggregation across attempts.
 
+        Args:
+            contexts: Optional mapping of record_id to pre-computed
+                ``_ProcessorContext`` (from :meth:`process_records`). When
+                supplied, records present in the map reuse the provided context
+                instead of re-invoking the processor. Records missing from the
+                map fall back to on-demand processing inside ``_load_context``.
+
         Returns:
             MetricsRunResult with all metrics and error information
         """
+        if contexts:
+            self._context_cache = contexts
         all_metrics: dict[str, RecordMetrics] = {}
 
         # Discover ALL record dirs; split into targeted (to compute) and rest (read-only).
@@ -248,7 +301,13 @@ class MetricsRunner:
             metrics_path = record_dir / "metrics.json"
             if metrics_path.exists():
                 try:
-                    all_metrics[record_id] = RecordMetrics.model_validate_json(metrics_path.read_text())
+                    raw = json.loads(metrics_path.read_text())
+                    if isinstance(raw.get("metrics"), dict):
+                        raw["metrics"] = rename_metric_keys(raw["metrics"])
+                        for k, v in raw["metrics"].items():
+                            if isinstance(v, dict) and v.get("name") and v["name"] != k:
+                                v["name"] = k
+                    all_metrics[record_id] = RecordMetrics.model_validate(raw)
                 except Exception as e:
                     logger.warning(f"Failed to read metrics for aggregation ({record_id}): {e}")
 
@@ -278,7 +337,15 @@ class MetricsRunner:
         if metrics_path.exists():
             try:
                 existing_data = json.loads(metrics_path.read_text())
-                existing_metrics = {k: MetricScore(**v) for k, v in existing_data.get("metrics", {}).items()}
+                # Backwards compat: remap legacy metric names saved by older runs.
+                raw_metrics = rename_metric_keys(existing_data.get("metrics", {}))
+                existing_metrics = {}
+                for k, v in raw_metrics.items():
+                    # The ``name`` inside the stored MetricScore may still be the legacy
+                    # name; overwrite it so it round-trips cleanly.
+                    if isinstance(v, dict) and v.get("name") and v["name"] != k:
+                        v = {**v, "name": k}
+                    existing_metrics[k] = MetricScore(**v)
             except Exception as e:
                 logger.warning(f"Failed to read existing metrics for {record_id}: {e}")
 
@@ -434,8 +501,9 @@ class MetricsRunner:
         # Create ConversationResult object
         result = ConversationResult(**result_data)
 
-        # Use postprocessor to process logs and create enriched context
-        metrics_context = self.metrics_processor.process_record(result, record_dir, pipeline_type=self._pipeline_type)
+        metrics_context = self._context_cache.get(record_id) or self.metrics_processor.process_record(
+            result, record_dir, pipeline_type=self._pipeline_type
+        )
 
         # Get agent instructions and tools from config
         agent_instructions = self._agent_config["instructions"]
@@ -605,6 +673,7 @@ class MetricsRunner:
                         coverage["not_applicable_turns"] = total_not_applicable_across_records
                     entry["per_turn_coverage"] = coverage
 
+                entry["higher_is_better"] = _metric_higher_is_better(name)
                 metric_aggregates[name] = entry
 
         # Add pass_k aggregates if available
@@ -635,19 +704,26 @@ class MetricsRunner:
                         "count": count,
                     }
 
-        # Generic sub-metric aggregation
+        # Generic sub-metric aggregation.
+        # Sub-keys are collected in first-seen insertion order so each metric controls
+        # its own column ordering (readers get them grouped logically rather than A-Z).
         for name in metric_aggregates:
-            all_sub_keys: set[str] = set()
+            all_sub_keys: list[str] = []
+            seen: set[str] = set()
             for record_metrics in all_metrics.values():
                 ms = record_metrics.metrics.get(name)
                 if ms and ms.sub_metrics:
-                    all_sub_keys.update(ms.sub_metrics.keys())
+                    for k in ms.sub_metrics.keys():
+                        if k not in seen:
+                            all_sub_keys.append(k)
+                            seen.add(k)
 
             if not all_sub_keys:
                 continue
 
+            parent_direction = _metric_higher_is_better(name)
             sub_aggs: dict[str, dict[str, Any]] = {}
-            for sub_key in sorted(all_sub_keys):
+            for sub_key in all_sub_keys:
                 sub_scores: list[float] = []
                 sub_missing = 0
                 for record_metrics in all_metrics.values():
@@ -656,15 +732,15 @@ class MetricsRunner:
                         sub_missing += 1
                         continue
                     sub_ms = (ms.sub_metrics or {}).get(sub_key)
-                    if sub_ms is not None and sub_ms.score is not None:
-                        sub_scores.append(
-                            sub_ms.normalized_score if sub_ms.normalized_score is not None else sub_ms.score
-                        )
-                    else:
+                    if sub_ms is None or sub_ms.score is None:
                         sub_missing += 1
+                        continue
+                    sub_scores.append(sub_ms.normalized_score if sub_ms.normalized_score is not None else sub_ms.score)
 
                 if sub_scores or sub_missing > 0:
-                    sub_aggs[sub_key] = MetricsRunner._aggregate_scores(sub_scores, total_records, 0, sub_missing)
+                    sub_entry = MetricsRunner._aggregate_scores(sub_scores, total_records, 0, sub_missing)
+                    sub_entry["higher_is_better"] = direction_for_sub_metric(sub_key, parent_direction)
+                    sub_aggs[sub_key] = sub_entry
 
             if sub_aggs:
                 metric_aggregates[name]["sub_metrics"] = sub_aggs
