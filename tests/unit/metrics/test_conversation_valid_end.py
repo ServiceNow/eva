@@ -1,19 +1,18 @@
-"""Tests for ConversationFinishedMetric."""
+"""Tests for ConversationValidEndMetric."""
 
 import json
 
 import pytest
 
-from eva.metrics.validation.conversation_finished import ConversationFinishedMetric
+from eva.metrics.validation.conversation_valid_end import ConversationValidEndMetric
 from tests.unit.metrics.conftest import make_metric_context
 
 
-class TestConversationFinished:
+class TestConversationValidEnd:
     def setup_method(self):
-        self.metric = ConversationFinishedMetric()
+        self.metric = ConversationValidEndMetric()
 
     def _write_events(self, tmp_path, events: list[dict]) -> str:
-        """Write events to elevenlabs_events.jsonl and return output_dir."""
         events_file = tmp_path / "elevenlabs_events.jsonl"
         with open(events_file, "w") as f:
             f.writelines(json.dumps(event) + "\n" for event in events)
@@ -80,5 +79,5 @@ class TestConversationFinished:
         assert "Failed to parse" in score.error
 
     def test_metric_attributes(self):
-        assert self.metric.name == "conversation_finished"
+        assert self.metric.name == "conversation_valid_end"
         assert self.metric.category == "validation"

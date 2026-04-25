@@ -148,7 +148,7 @@ class TestMetricsRunner:
         runner = MetricsRunner(
             run_dir=run_dir,
             dataset=records,
-            metric_names=["conversation_finished"],
+            metric_names=["conversation_valid_end"],
         )
 
         async def mock_run_record(record_id, record_dir):
