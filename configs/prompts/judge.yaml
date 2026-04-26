@@ -137,6 +137,11 @@ judge:
 
       When evaluating, treat these tags as natural voice interaction phenomena. Do NOT penalize interruptions themselves. Only flag an issue if the interruption caused observable consequences (e.g., information loss because the agent's cut-off speech contained critical details that were never restated, or unnecessary repetition because the agent repeated already-heard information after being interrupted).
 
+      ## Understanding the Conversation Trace
+      {user_turns_disclaimer}
+
+      {assistant_turns_disclaimer}
+
       ## Full Conversation with Tools
       {conversation_trace}
 
@@ -215,6 +220,7 @@ judge:
       - Asking for required authentication or identification information required by the agent instructions (e.g., confirmation number, reference ID, user's name)
       - Asking a clarifying question when the user's intent is genuinely ambiguous
       - Asking a follow-up question based on new information from a tool response
+      - Asking the user to confirm an error-prone value (alphanumeric ID, code, date, dollar amount, spelled-out name) just provided — read-backs of error-prone values are standard voice-agent practice required by typical agent policies and are NOT a question quality issue. This holds even when the transcript shows the assistant's read-back as matching what the user said: STT may render different spoken audio as identical text, so the read-back can still be catching a real audio-level mismatch.
       - Not disclosing fees, costs, or other policy-required details before taking an action — policy compliance (e.g., whether the assistant explained consequences before an irreversible action) is a faithfulness concern, not a conversation progression issue. This dimension only evaluates whether the assistant's questions and information-sharing effectively moved the conversation forward.
       - Referencing information that exists in the agent instructions (e.g., standard fees, policies) without verifying it via a tool call — the agent is expected to know its own instructions. Only flag if the information was genuinely unknown and required a tool call or user input.
 
