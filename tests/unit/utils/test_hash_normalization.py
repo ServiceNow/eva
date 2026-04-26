@@ -283,9 +283,7 @@ class TestStandbyListOrderIndependence:
 
 class TestOrderIndependentLists:
     def test_bookings_list_order_independent(self):
-        """Bookings list ordering should not affect the hash — bookings is a
-        set, not a sequence.
-        """
+        """Bookings list ordering should not affect the hash — bookings is aset, not a sequence."""
         booking_a = {"booking_id": "B1", "date": "2026-07-06", "start_time": "10:00"}
         booking_b = {"booking_id": "B2", "date": "2026-07-07", "start_time": "14:00"}
         db_a = {"facilities": {"conference_rooms": {"RM-1": {"bookings": [booking_a, booking_b]}}}}

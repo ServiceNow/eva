@@ -186,9 +186,7 @@ _ZONE_CODE_RE = re.compile(r"^PZ[A-Z]$")
 
 
 def _resolve_facility(kind, value, db):
-    """X5-R2: resolve a caller-provided building or zone reference to its canonical code.
-    kind ∈ {'building','zone'}. Returns (code, None) on hit or (None, error_dict) on miss.
-    """
+    """X5-R2: resolve a caller-provided building or zone reference to its canonical code. kind ∈ {'building','zone'}. Returns (code, None) on hit or (None, error_dict) on miss."""
     if value is None:
         return None, None
     if kind == "building":
@@ -1125,7 +1123,8 @@ def submit_license_renewal(params, db, call_index):
     if not emp:
         return _enf(p.employee_id)
     lic = next(
-        (l for l in emp.get("software_licenses", []) if l["license_assignment_id"] == p.license_assignment_id), None
+        (lic for lic in emp.get("software_licenses", []) if lic["license_assignment_id"] == p.license_assignment_id),
+        None,
     )
     if not lic:
         return {"status": "error", "error_type": "not_found", "message": f"License {p.license_assignment_id} not found"}
