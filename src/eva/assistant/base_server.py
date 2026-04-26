@@ -7,7 +7,6 @@ See docs/assistant_server_contract.md for the full specification.
 """
 
 import json
-import wave
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -16,6 +15,7 @@ from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
 from eva.models.config import AudioLLMConfig, PipelineConfig, SpeechToSpeechConfig
+from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -195,38 +195,26 @@ class AbstractAssistantServer(ABC):
             self._audio_buffer = bytearray(self.assistant_audio_buffer)
 
         if self._audio_buffer:
-            self._save_wav_file(
+            save_pcm_as_wav(
                 bytes(self._audio_buffer),
                 self.output_dir / "audio_mixed.wav",
                 self._audio_sample_rate,
                 1,
             )
         if self.user_audio_buffer:
-            self._save_wav_file(
+            save_pcm_as_wav(
                 bytes(self.user_audio_buffer),
                 self.output_dir / "audio_user.wav",
                 self._audio_sample_rate,
                 1,
             )
         if self.assistant_audio_buffer:
-            self._save_wav_file(
+            save_pcm_as_wav(
                 bytes(self.assistant_audio_buffer),
                 self.output_dir / "audio_assistant.wav",
                 self._audio_sample_rate,
                 1,
             )
-
-    def _save_wav_file(self, audio_data: bytes, file_path: Path, sample_rate: int, num_channels: int) -> None:
-        """Save raw 16-bit PCM audio data to a WAV file."""
-        try:
-            with wave.open(str(file_path), "wb") as wav_file:
-                wav_file.setnchannels(num_channels)
-                wav_file.setsampwidth(2)  # 16-bit PCM
-                wav_file.setframerate(sample_rate)
-                wav_file.writeframes(audio_data)
-            logger.debug(f"Audio saved to {file_path} ({len(audio_data)} bytes)")
-        except Exception as e:
-            logger.error(f"Error saving audio to {file_path}: {e}")
 
     def _save_scenario_dbs(self) -> None:
         """Save initial and final scenario database states."""
