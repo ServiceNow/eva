@@ -20,7 +20,7 @@ DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 DOMAIN_CONFIGS = [
     ("airline_dataset.jsonl", "airline_scenarios"),
     ("medical_hr_dataset.jsonl", "medical_hr_scenarios"),
-    ("itsm_dataset.jsonl", "itsm_scenarios")
+    ("itsm_dataset.jsonl", "itsm_scenarios"),
 ]
 
 
