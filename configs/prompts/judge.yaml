@@ -660,8 +660,7 @@ judge:
               "explanation": "<string: 1-3 sentence analysis of fidelity for this turn, citing specific intended vs actual mismatches, noting any regions skipped due to interruption flags>",
               "rating": <0 or 1>
             }}
-          ],
-          "explanation": "<string: overall summary of fidelity assessment>"
+          ]
         }}
     s2s_user_prompt: |
         You are an expert evaluator checking the **speech clarity and articulation** of entities spoken by an AI voice agent.
@@ -735,10 +734,8 @@ judge:
               "explanation": "<string: 1-3 sentence analysis listing which trace entities were spoken and whether they are clearly articulated>",
               "rating": <0 or 1>
             }}
-          ],
-          "explanation": "<string: overall summary of speech fidelity assessment>"
+          ]
         }}
-
   user_speech_fidelity:
     user_prompt: |
         You are an expert evaluator judging the fidelity of text-to-speech (TTS) audio against the intended text. You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
@@ -812,8 +809,7 @@ judge:
               "explanation": "<succinct analysis; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
               "rating": <1, 2, 3>
             }}
-          ],
-          "explanation": "<string: overall summary of fidelity assessment>"
+          ]
         }}
 
   transcription_accuracy_key_entities:
