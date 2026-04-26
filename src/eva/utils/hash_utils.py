@@ -8,6 +8,7 @@ from typing import Any
 
 ORDER_INDEPENDENT_LIST_FIELDS: set[str] = {
     "standby_list",
+    "notifications",
     "bookings",
     "system_accounts",
     "group_memberships",

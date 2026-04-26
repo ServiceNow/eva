@@ -1,0 +1,368 @@
+{
+  "_current_date": "2026-06-03",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "ACLS",
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "9881824272": {
+      "npi": "9881824272",
+      "employee_id": "EMP723939",
+      "first_name": "Hana",
+      "last_name": "Yoshida",
+      "facility_code": "KY-82H",
+      "pin": "1651",
+      "phone_last_four": "3814",
+      "otp_code": "749468",
+      "role_code": "DO",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2018-07-16",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-350280",
+      "licenses": {
+        "NY-DO-88331132": {
+          "state_license_number": "NY-DO-88331132",
+          "license_type": "DO",
+          "state_code": "NY",
+          "expiration_date": "2026-06-20",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "KY-82H",
+        "state_code": "NY",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-08-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-SURG-007",
+            "description": "Cardiothoracic procedural sedation",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-ICU-005",
+            "description": "Cardiac ICU admitting and management",
+            "status": "suspended"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    },
+    "8370987661": {
+      "npi": "8370987661",
+      "employee_id": "EMP551204",
+      "first_name": "Elias",
+      "last_name": "Morgan",
+      "facility_code": "KY-82H",
+      "pin": "4827",
+      "phone_last_four": "4421",
+      "otp_code": "318552",
+      "role_code": "MD",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2014-09-08",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-221144",
+      "licenses": {
+        "NY-MD-55120488": {
+          "state_license_number": "NY-MD-55120488",
+          "license_type": "MD",
+          "state_code": "NY",
+          "expiration_date": "2027-11-30",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-CV5512",
+        "per_occurrence_limit_usd": 2000000,
+        "aggregate_limit_usd": 6000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BM5512048",
+        "facility_code": "KY-82H",
+        "state_code": "NY",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2028-03-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-CARD-001",
+            "description": "Interventional cardiology",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP723939": {
+      "employee_id": "EMP723939",
+      "first_name": "Hana",
+      "last_name": "Yoshida",
+      "date_of_birth": "1984-09-14",
+      "phone_last_four": "3814",
+      "otp_code": "749468",
+      "department_code": "CARDIOLOGY",
+      "role_code": "DO",
+      "unit_code": "4B-ICU",
+      "hire_date": "2018-07-16",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 94,
+        "hours_worked_past_year": 1760,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "medical",
+          "start_date": "2026-03-03",
+          "end_date": "2026-06-02",
+          "status": "completed",
+          "case_id": "CASE-MLV-723939"
+        }
+      ],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 5.0
+      },
+      "pto_requests": []
+    },
+    "EMP551204": {
+      "employee_id": "EMP551204",
+      "first_name": "Elias",
+      "last_name": "Morgan",
+      "date_of_birth": "1978-02-11",
+      "phone_last_four": "4421",
+      "otp_code": "318552",
+      "department_code": "CARDIOLOGY",
+      "role_code": "MD",
+      "unit_code": "2A-MED",
+      "hire_date": "2014-09-08",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 141,
+        "hours_worked_past_year": 1820,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 18.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260612-0700": {
+      "shift_id": "SHF-20260612-0700",
+      "employee_id": "EMP723939",
+      "unit_code": "4B-ICU",
+      "date": "2026-06-12",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-06-15",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "CARDIOLOGY": {
+        "2026-06-09": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-06-10": [
+          "13:00",
+          "15:00"
+        ],
+        "2026-06-11": [
+          "10:00",
+          "14:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "CARDIOLOGY": {
+        "2026-06-09": [
+          "09:00",
+          "10:00"
+        ],
+        "2026-06-10": [
+          "11:00",
+          "14:00"
+        ],
+        "2026-06-11": [
+          "09:00",
+          "13:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "CARDIOLOGY": {
+        "2026-06-10": [
+          "10:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-06-11": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-06-12": [
+          "08:00",
+          "10:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "CARDIOLOGY": [],
+    "EMERGENCY": [
+      "2026-07-04"
+    ],
+    "ONCOLOGY": [],
+    "SURGERY": [
+      "2026-06-30"
+    ],
+    "PEDIATRICS": [],
+    "RADIOLOGY": []
+  }
+}

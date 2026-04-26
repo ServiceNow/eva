@@ -1,0 +1,269 @@
+{
+  "_current_date": "2026-06-03",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP000001",
+      "first_name": "Asha",
+      "last_name": "Menon",
+      "facility_code": "MGH-04B",
+      "pin": "7291",
+      "phone_last_four": "1111",
+      "otp_code": "483920",
+      "role_code": "MD",
+      "department_code": "RADIOLOGY",
+      "hire_date": "2021-08-16",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {},
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2025-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2025-08-01",
+        "expiration_date": "2026-07-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-01-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP479580": {
+      "employee_id": "EMP479580",
+      "first_name": "Ravi",
+      "last_name": "Krishnamurthy",
+      "date_of_birth": "1997-09-14",
+      "phone_last_four": "4829",
+      "otp_code": "361204",
+      "department_code": "RADIOLOGY",
+      "role_code": "RN",
+      "unit_code": "2A-MED",
+      "hire_date": "2026-05-27",
+      "employment_status": "active",
+      "certifications": [
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": false,
+        "months_employed": 0,
+        "hours_worked_past_year": 24,
+        "fmla_weeks_remaining": 0,
+        "reason": "Employee has not yet met minimum tenure or hours requirement"
+      },
+      "onboarding_checklist": {
+        "tasks": {
+          "W4FN": {
+            "status": "complete"
+          },
+          "DIRP": {
+            "status": "complete"
+          },
+          "I9ID": {
+            "status": "pending",
+            "completion_code": "2DUW"
+          }
+        }
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "pending",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 15.0,
+        "sick": 5.0
+      },
+      "pto_requests": []
+    },
+    "EMP000001": {
+      "employee_id": "EMP000001",
+      "first_name": "Asha",
+      "last_name": "Menon",
+      "date_of_birth": "1984-02-21",
+      "phone_last_four": "1111",
+      "otp_code": "483920",
+      "department_code": "RADIOLOGY",
+      "role_code": "MD",
+      "unit_code": "2A-MED",
+      "hire_date": "2021-08-16",
+      "employment_status": "active",
+      "certifications": [
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 58,
+        "hours_worked_past_year": 1860,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 12.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260610-0700": {
+      "shift_id": "SHF-20260610-0700",
+      "employee_id": "EMP479580",
+      "unit_code": "2A-MED",
+      "date": "2026-06-10",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-06-15",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "RADIOLOGY": {
+        "2026-06-05": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-06-06": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ],
+        "2026-06-09": [
+          "09:30",
+          "12:30",
+          "16:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "RADIOLOGY": {
+        "2026-06-12": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-06-15": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-06-18": [
+          "09:30",
+          "13:30"
+        ]
+      }
+    },
+    "competency_review": {
+      "RADIOLOGY": {
+        "2026-06-08": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-06-11": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-06-16": [
+          "09:30",
+          "15:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "RADIOLOGY": []
+  }
+}

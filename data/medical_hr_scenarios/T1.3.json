@@ -1,0 +1,355 @@
+{
+  "_current_date": "2026-07-18",
+  "unit_cert_requirements": {
+    "5A-SURG": [
+      "ACLS",
+      "BLS"
+    ],
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ACLS",
+      "ONS"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "2591414076": {
+      "npi": "2591414076",
+      "employee_id": "EMP823811",
+      "first_name": "Rafael",
+      "last_name": "Cordova",
+      "facility_code": "LGJ-97L",
+      "pin": "9920",
+      "phone_last_four": "4821",
+      "otp_code": "776149",
+      "role_code": "MD",
+      "department_code": "SURGERY",
+      "hire_date": "2017-08-14",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-111111",
+      "licenses": {
+        "NC-MD-6888532": {
+          "state_license_number": "NC-MD-6888532",
+          "license_type": "MD",
+          "state_code": "NC",
+          "expiration_date": "2026-07-25",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2025-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2025-07-20",
+        "expiration_date": "2026-07-19",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "LGJ-97L",
+        "state_code": "NC",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-11-30",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-CARD-007",
+            "description": "Cardiothoracic operative privilege",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-SURG-004",
+            "description": "General surgery operative privilege",
+            "status": "suspended"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    },
+    "5246953455": {
+      "npi": "5246953455",
+      "employee_id": "EMP410522",
+      "first_name": "Elena",
+      "last_name": "Shaw",
+      "facility_code": "LGJ-97L",
+      "pin": "4412",
+      "phone_last_four": "1934",
+      "otp_code": "551208",
+      "role_code": "MD",
+      "department_code": "SURGERY",
+      "hire_date": "2014-03-10",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-410522",
+      "licenses": {
+        "NC-MD-5522101": {
+          "state_license_number": "NC-MD-5522101",
+          "license_type": "MD",
+          "state_code": "NC",
+          "expiration_date": "2027-10-31",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-BB2104",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BS5839201",
+        "facility_code": "LGJ-97L",
+        "state_code": "NC",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2028-01-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-SURG-010",
+            "description": "Advanced abdominal surgery",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP823811": {
+      "employee_id": "EMP823811",
+      "first_name": "Rafael",
+      "last_name": "Cordova",
+      "date_of_birth": "1981-09-14",
+      "phone_last_four": "4821",
+      "otp_code": "776149",
+      "department_code": "SURGERY",
+      "role_code": "MD",
+      "unit_code": "5A-SURG",
+      "hire_date": "2017-08-14",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 107,
+        "hours_worked_past_year": 1680,
+        "fmla_weeks_remaining": 0,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "fmla_leave",
+          "start_date": "2026-03-15",
+          "end_date": "2026-07-17",
+          "status": "completed",
+          "case_id": "CASE-LOA-823811"
+        }
+      ],
+      "pto_balances": {
+        "pto": 12.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    },
+    "EMP410522": {
+      "employee_id": "EMP410522",
+      "first_name": "Elena",
+      "last_name": "Shaw",
+      "date_of_birth": "1976-04-22",
+      "phone_last_four": "1934",
+      "otp_code": "551208",
+      "department_code": "SURGERY",
+      "role_code": "MD",
+      "unit_code": "5A-SURG",
+      "hire_date": "2014-03-10",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 148,
+        "hours_worked_past_year": 1820,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 18.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260721-0700": {
+      "shift_id": "SHF-20260721-0700",
+      "employee_id": "EMP823811",
+      "unit_code": "5A-SURG",
+      "date": "2026-07-21",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-07-31",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "SURGERY": {
+        "2026-07-22": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-23": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "SURGERY": {
+        "2026-07-22": [
+          "08:30",
+          "10:30"
+        ],
+        "2026-07-24": [
+          "09:30",
+          "14:30"
+        ]
+      }
+    },
+    "competency_review": {
+      "SURGERY": {
+        "2026-07-21": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-07-22": [
+          "10:00",
+          "15:00"
+        ],
+        "2026-07-24": [
+          "11:00",
+          "14:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "SURGERY": [],
+    "CARDIOLOGY": [],
+    "EMERGENCY": [],
+    "ONCOLOGY": [],
+    "PEDIATRICS": []
+  }
+}
