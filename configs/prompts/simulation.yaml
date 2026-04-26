@@ -241,7 +241,7 @@ user_simulator:
         Additionally, end the conversation by calling the end_call tool if any of the following occur:
         - The assistant says something along the lines of "I'm sorry I encountered an error processing your request."
         - The assistant has not been helpful for 5 consecutive turns (e.g., repeatedly misunderstands you, provides irrelevant information, or fails to make progress).
-        - The assistant confirms you are being transferred to a live agent. Do not stay on the call or attempt to speak to the live agent. The conversation is over at this point and you must call the end_call tool.
+        - The assistant confirms you have been transferred to a live agent. Do not stay on the call or attempt to speak to the live agent. The conversation is over at this point and you must call the end_call tool AFTER the transfer is initiated. You must make sure the transfer is initiated though, do not end the call if the transfer has not occurred yet.
     - Escalation:
         {escalation_behavior}
     - **Response Format:**
