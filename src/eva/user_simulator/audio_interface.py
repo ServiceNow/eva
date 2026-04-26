@@ -462,7 +462,7 @@ class BotToBotAudioInterface(AudioInterface):
             self.event_logger.log_audio_end("framework_agent")
         logger.info("🔊 Assistant audio END (silence detected)")
         # Send catch-up silence to cover the detection delay for ElevenLabs
-        if ASSISTANT_CATCHUP_SILENCE_CHUNKS > 0:
+        if ASSISTANT_CATCHUP_SILENCE_CHUNKS > 0 and not self._should_send_ambient_noise():
             await self._send_catchup_silence("user", ASSISTANT_CATCHUP_SILENCE_CHUNKS)
 
     async def _continuous_input_stream(self) -> None:
@@ -529,7 +529,7 @@ class BotToBotAudioInterface(AudioInterface):
 
             # Send assistant silence while waiting for assistant to respond
             # Send in 20ms chunks (same as user silence) for smoother timing
-            if assistant_silence and self._should_send_assistant_silence():
+            if assistant_silence and self._should_send_assistant_silence() and not self._should_send_ambient_noise():
                 # Calculate how many 20ms chunks fit in 250ms (round up to ensure we send enough)
                 # 250ms / 20ms = 12.5, round up to 18 to avoid falling behind real-time
                 chunks_to_send = 18
