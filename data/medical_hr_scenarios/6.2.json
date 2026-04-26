@@ -1,0 +1,291 @@
+{
+  "_current_date": "2026-06-16",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP201639",
+      "first_name": "Nkechi",
+      "last_name": "Eze",
+      "facility_code": "MGH-04B",
+      "pin": "4821",
+      "phone_last_four": "4829",
+      "otp_code": "531071",
+      "role_code": "RN",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2025-10-20",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {},
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-03-31",
+        "status": "inactive",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP201639": {
+      "employee_id": "EMP201639",
+      "first_name": "Nkechi",
+      "last_name": "Eze",
+      "date_of_birth": "1998-11-22",
+      "phone_last_four": "4829",
+      "otp_code": "531071",
+      "department_code": "CARDIOLOGY",
+      "role_code": "RN",
+      "unit_code": "4B-ICU",
+      "hire_date": "2025-10-20",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": false,
+        "months_employed": 8,
+        "hours_worked_past_year": 1042,
+        "fmla_weeks_remaining": 0,
+        "reason": "You are not eligible for FMLA leave because you have not yet been employed for 12 months and have not worked 1,250 hours in the past year."
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 8.0,
+        "sick": 3.5
+      },
+      "pto_requests": []
+    },
+    "EMP305410": {
+      "employee_id": "EMP305410",
+      "first_name": "Elena",
+      "last_name": "Marin",
+      "date_of_birth": "1991-04-13",
+      "phone_last_four": "1184",
+      "otp_code": "224680",
+      "department_code": "SURGERY",
+      "role_code": "RN",
+      "unit_code": "5A-SURG",
+      "hire_date": "2021-03-08",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS",
+        "TNCC"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 63,
+        "hours_worked_past_year": 1876,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 15.0,
+        "sick": 5.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260618-0700": {
+      "shift_id": "SHF-20260618-0700",
+      "employee_id": "EMP201639",
+      "unit_code": "4B-ICU",
+      "date": "2026-06-18",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-06-27",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260621-0700": {
+      "shift_id": "SHF-20260621-0700",
+      "employee_id": "EMP305410",
+      "unit_code": "5A-SURG",
+      "date": "2026-06-21",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-06-27",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "CARDIOLOGY": {
+        "2026-06-23": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-06-24": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ],
+        "2026-06-26": [
+          "09:30",
+          "12:30"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "CARDIOLOGY": {
+        "2026-08-11": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-08-12": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-08-13": [
+          "09:30",
+          "13:30"
+        ]
+      }
+    },
+    "competency_review": {
+      "CARDIOLOGY": {
+        "2026-06-22": [
+          "09:00",
+          "11:00",
+          "15:00"
+        ],
+        "2026-06-23": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-06-25": [
+          "09:30",
+          "13:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "CARDIOLOGY": [],
+    "SURGERY": [
+      "2026-07-04",
+      "2026-07-05"
+    ],
+    "ONCOLOGY": [],
+    "PEDIATRICS": [],
+    "EMERGENCY": [],
+    "RADIOLOGY": []
+  }
+}
