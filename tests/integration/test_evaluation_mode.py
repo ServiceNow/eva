@@ -40,8 +40,7 @@ def mock_dataset():
                 "user_persona": "You're direct and to the point.",
             },
             current_date_time="2024-01-15T10:00:00Z",
-            subflow_in_depth={},
-            expected_flow="test_flow",
+            scenario_context={},
             ground_truth=GroundTruth(
                 expected_scenario_db={},
             ),
@@ -57,8 +56,7 @@ def mock_dataset():
                 "user_persona": "You're direct and to the point.",
             },
             current_date_time="2024-01-15T10:00:00Z",
-            subflow_in_depth={},
-            expected_flow="test_flow",
+            scenario_context={},
             ground_truth=GroundTruth(
                 expected_scenario_db={},
             ),

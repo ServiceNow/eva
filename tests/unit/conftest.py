@@ -21,8 +21,7 @@ def make_evaluation_record(record_id: str = "test_record", **overrides) -> Evalu
             "user_persona": "You're direct and to the point.",
         },
         "current_date_time": "2026-01-01T00:00:00",
-        "subflow_in_depth": {},
-        "expected_flow": "Test flow",
+        "scenario_context": {},
         "ground_truth": GroundTruth(expected_scenario_db={}),
     }
     defaults.update(overrides)
@@ -79,8 +78,7 @@ def sample_record_data():
             "user_goal": "Check my PTO balance and request 3 days off",
             "user_persona": "Impatient Employee who wants to check PTO balance",
             "current_date_time": "2026-01-15T10:00:00Z",
-            "subflow_in_depth": {"steps": ["check_balance", "submit_request"]},
-            "expected_flow": "Check PTO balance then submit leave request",
+            "scenario_context": {"steps": ["check_balance", "submit_request"]},
             "ground_truth": {
                 "expected_scenario_db": {"pto_balance": {"remaining": "7 days"}},
             },
@@ -91,8 +89,7 @@ def sample_record_data():
             "user_goal": "Ask about sick leave policy",
             "user_persona": "New Employee who wants to learn about sick leave",
             "current_date_time": "2026-01-15T10:00:00Z",
-            "subflow_in_depth": {"steps": ["search_policy"]},
-            "expected_flow": "Search for sick leave policy",
+            "scenario_context": {"steps": ["search_policy"]},
             "ground_truth": {
                 "expected_scenario_db": {},
             },

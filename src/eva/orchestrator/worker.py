@@ -284,7 +284,7 @@ class ConversationWorker:
             goal=self.record.user_goal,
             server_url=f"ws://localhost:{self.port}/ws",
             output_dir=self.output_dir,
-            user_simulator_context=self.agent.user_simulator_context,
+            agent_id=self.agent.id,
             perturbation_config=self.config.perturbation,
         )
 

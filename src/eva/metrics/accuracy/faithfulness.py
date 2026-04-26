@@ -104,7 +104,7 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
         raw_response: str | None = None,
     ) -> MetricScore:
         """Build MetricScore with analysis details and per-dimension issue-flag sub-metrics."""
-        dimensions = response.get("dimensions", {}) or {}
+        dimensions = response.get("dimensions", {}) if isinstance(response, dict) else {}
         sub_metrics = build_binary_flag_sub_metrics(
             parent_name=self.name,
             entries=dimensions,

@@ -170,13 +170,13 @@ def resolve_paths(domain: str) -> tuple[Path, Path, Path]:
     return dataset, scenario_db_dir, agent_config
 
 
-def build_user_sim_prompt(record: EvaluationRecord, user_simulator_context: str) -> str:
+def build_user_sim_prompt(record: EvaluationRecord) -> str:
     """Build the user-simulator system prompt from the record's goal and persona."""
     pm = PromptManager()
     goal = record.user_goal
+    domain = os.getenv("EVA_DOMAIN")
     return pm.get_prompt(
-        "user_simulator.system_prompt",
-        user_simulator_context=user_simulator_context,
+        f"user_simulator.system_prompt_{domain}",
         high_level_user_goal=goal["high_level_user_goal"],
         must_have_criteria=goal["decision_tree"]["must_have_criteria"],
         escalation_behavior=goal["decision_tree"]["escalation_behavior"],
@@ -423,7 +423,6 @@ def write_trace(
     lines = [
         f"Record: {record.id}",
         f"Category: {record.category or 'N/A'}",
-        # f"Expected flow: {record.expected_flow}",
         f"User goal: {record.user_goal.get('high_level_user_goal', '')}",
         "=" * 60,
         "",
@@ -505,7 +504,7 @@ async def run_record(
         output_dir=record_output_dir,
     )
 
-    user_prompt = build_user_sim_prompt(record, user_simulator_context=agent.user_simulator_context)
+    user_prompt = build_user_sim_prompt(record)
 
     # ---- Conversation loop ----
     logger.info(f"Text-only test: record {record.id} | model={llm_model} | max_turns={max_turns}")

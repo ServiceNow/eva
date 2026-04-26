@@ -29,8 +29,7 @@ def mock_dataset():
             "user_persona": "Traveler rebooking a flight",
         },
         current_date_time="2026-03-01T22:22:03Z",
-        subflow_in_depth={"steps": ["get_reservation", "search_rebooking_options", "rebook_flight"]},
-        expected_flow="Look up reservation, search options, rebook",
+        scenario_context={"steps": ["get_reservation", "search_rebooking_options", "rebook_flight"]},
         ground_truth=GroundTruth(
             expected_scenario_db=json.loads((ARTIFACTS_DIR / "final_scenario_db.json").read_text()),
         ),
