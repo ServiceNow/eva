@@ -37,7 +37,7 @@ async def test_all_turns_rated(metric):
         ]
     )
 
-    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    metric.llm_client.generate_text = AsyncMock(return_value=(mock_response, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 
@@ -67,7 +67,7 @@ async def test_surfaces_failure_mode_sub_metrics(metric):
             {"turn_id": 4, "rating": None, "explanation": "user only", "failure_modes": []},
         ]
     )
-    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    metric.llm_client.generate_text = AsyncMock(return_value=(mock_response, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 
@@ -105,7 +105,7 @@ async def test_null_rating_excluded_from_aggregation(metric):
         ]
     )
 
-    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    metric.llm_client.generate_text = AsyncMock(return_value=(mock_response, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 
@@ -129,7 +129,7 @@ async def test_invalid_rating_treated_as_none(metric):
         ]
     )
 
-    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    metric.llm_client.generate_text = AsyncMock(return_value=(mock_response, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 
@@ -150,7 +150,7 @@ async def test_string_rating_coerced_to_int(metric):
         ]
     )
 
-    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    metric.llm_client.generate_text = AsyncMock(return_value=(mock_response, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 
@@ -169,7 +169,7 @@ async def test_failure_modes_cleared_for_rating_3(metric):
         ]
     )
 
-    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    metric.llm_client.generate_text = AsyncMock(return_value=(mock_response, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 
@@ -187,7 +187,7 @@ async def test_unknown_turn_id_skipped(metric):
         ]
     )
 
-    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    metric.llm_client.generate_text = AsyncMock(return_value=(mock_response, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 
@@ -199,7 +199,7 @@ async def test_unknown_turn_id_skipped(metric):
 @pytest.mark.asyncio
 async def test_no_response_from_judge(metric):
     """None response from LLM returns error."""
-    metric.llm_client.generate_text = AsyncMock(return_value=None)
+    metric.llm_client.generate_text = AsyncMock(return_value=(None, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 
@@ -218,7 +218,7 @@ async def test_all_null_ratings_returns_error(metric):
         ]
     )
 
-    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    metric.llm_client.generate_text = AsyncMock(return_value=(mock_response, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 
@@ -231,7 +231,7 @@ async def test_single_dict_response_wrapped(metric):
     """Single dict response (not array) should be wrapped in list."""
     mock_response = json.dumps({"turn_id": 1, "rating": 3, "explanation": "Good", "failure_modes": []})
 
-    metric.llm_client.generate_text = AsyncMock(return_value=mock_response)
+    metric.llm_client.generate_text = AsyncMock(return_value=(mock_response, None))
     context = make_metric_context(conversation_trace=SAMPLE_TURNS)
     result = await metric.compute(context)
 

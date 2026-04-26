@@ -122,7 +122,7 @@ async def test_judge_metrics_with_mock_llm(mock_run_dir, mock_dataset):
         mock_response = json.dumps(
             [{"turn_id": i, "rating": 3, "explanation": "Response was concise", "failure_modes": []} for i in range(10)]
         )
-        return mock_response
+        return mock_response, None
 
     with patch("eva.utils.llm_client.LLMClient.generate_text", side_effect=mock_generate_text):
         runner = MetricsRunner(
@@ -151,7 +151,7 @@ async def test_judge_metrics_with_mock_llm(mock_run_dir, mock_dataset):
 async def test_metrics_runner_aggregation(mock_run_dir, mock_dataset):
     """Test that MetricsRunner correctly computes and saves results."""
     with patch("eva.utils.llm_client.LLMClient.generate_text", new_callable=AsyncMock) as mock_llm:
-        mock_llm.return_value = json.dumps({"rating": 3, "explanation": "Good"})
+        mock_llm.return_value = (json.dumps({"rating": 3, "explanation": "Good"}), None)
 
         runner = MetricsRunner(
             run_dir=mock_run_dir,

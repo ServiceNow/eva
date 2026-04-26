@@ -60,11 +60,9 @@ class TestFaithfulness:
 
     @pytest.mark.asyncio
     async def test_compute_success(self):
-        self.metric.llm_client.generate_text.return_value = json.dumps(
-            {
-                "rating": 3,
-                "dimensions": {"hallucination": "none"},
-            }
+        self.metric.llm_client.generate_text.return_value = (
+            json.dumps({"rating": 3, "dimensions": {"hallucination": "none"}}),
+            None,
         )
         ctx = make_metric_context(
             conversation_trace=[
@@ -152,7 +150,7 @@ class TestFaithfulness:
 
     @pytest.mark.asyncio
     async def test_compute_unparseable_response(self):
-        self.metric.llm_client.generate_text.return_value = "not json at all ~~~"
+        self.metric.llm_client.generate_text.return_value = ("not json at all ~~~", None)
         ctx = make_metric_context(
             conversation_trace=[
                 {"role": "user", "content": "hi"},

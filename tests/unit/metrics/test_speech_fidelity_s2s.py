@@ -201,7 +201,7 @@ class TestNoAssistantTurns:
 class TestNoJudgeResponse:
     @pytest.mark.asyncio
     async def test_no_response_returns_error(self, s2s_metric):
-        s2s_metric.llm_client.generate_text.return_value = None
+        s2s_metric.llm_client.generate_text.return_value = (None, None)
         context = _default_context()
         with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
@@ -220,7 +220,7 @@ class TestS2SCompute:
                 {"turn_id": 3, "rating": 1, "explanation": "No entities to check"},
             ]
         )
-        s2s_metric.llm_client.generate_text.return_value = response
+        s2s_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -242,7 +242,7 @@ class TestS2SCompute:
                 {"turn_id": 3, "rating": 0, "explanation": "Wrong name"},
             ]
         )
-        s2s_metric.llm_client.generate_text.return_value = response
+        s2s_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -260,7 +260,7 @@ class TestS2SCompute:
                 {"turn_id": 3, "rating": 0, "explanation": "Wrong entity"},
             ]
         )
-        s2s_metric.llm_client.generate_text.return_value = response
+        s2s_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -278,7 +278,7 @@ class TestS2SCompute:
                 {"turn_id": 3, "rating": 5, "has_entities": True, "explanation": "Invalid"},
             ]
         )
-        s2s_metric.llm_client.generate_text.return_value = response
+        s2s_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -297,7 +297,7 @@ class TestS2SCompute:
                 {"turn_id": 3, "rating": 1, "has_entities": True, "explanation": "Flight number correct"},
             ]
         )
-        s2s_metric.llm_client.generate_text.return_value = response
+        s2s_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -318,7 +318,7 @@ class TestS2SCompute:
                 {"turn_id": 3, "rating": 1, "has_entities": False, "explanation": "No entities"},
             ]
         )
-        s2s_metric.llm_client.generate_text.return_value = response
+        s2s_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -340,7 +340,7 @@ class TestS2SCompute:
                 {"turn_id": 3, "rating": 0, "explanation": "Wrong entity"},
             ]
         )
-        s2s_metric.llm_client.generate_text.return_value = response
+        s2s_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -360,7 +360,7 @@ class TestTurnCountMismatch:
                 {"turn_id": 1, "rating": 1, "explanation": "Good"},
             ]
         )
-        s2s_metric.llm_client.generate_text.return_value = response
+        s2s_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
