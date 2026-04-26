@@ -53,8 +53,8 @@ class UserSimulator:
         goal: dict,
         server_url: str,
         output_dir: Path,
+        agent_id: str,
         timeout: int = 600,
-        user_simulator_context: str = "",
         perturbation_config: PerturbationConfig | None = None,
     ):
         """Initialize the user simulator.
@@ -66,7 +66,7 @@ class UserSimulator:
             server_url: WebSocket URL of the assistant server
             output_dir: Directory for output files
             timeout: Conversation timeout in seconds
-            user_simulator_context: Domain-specific context line from agent config
+            agent_id: Agent identifier used to select the domain-specific simulator prompt
             perturbation_config: Optional perturbation to apply to user audio
         """
         self.persona_config = persona_config
@@ -75,7 +75,7 @@ class UserSimulator:
         self.output_dir = Path(output_dir)
         self.timeout = timeout
         self.current_date_time = current_date_time
-        self.user_simulator_context = user_simulator_context
+        self.agent_id = agent_id
         self._perturbation_config = perturbation_config
         self._perturbator = (
             AudioPerturbator(perturbation_config)
@@ -178,9 +178,10 @@ class UserSimulator:
             else:
                 user_persona = behavior_prompts["default"]
 
+            # Derive domain from agent_id (e.g. "agent_airline" → "airline")
+            domain = self.agent_id.removeprefix("agent_")
             prompt = PromptManager().get_prompt(
-                "user_simulator.system_prompt",
-                user_simulator_context=self.user_simulator_context,
+                f"user_simulator.system_prompt_{domain}",
                 high_level_user_goal=self.goal["high_level_user_goal"],
                 must_have_criteria=self.goal["decision_tree"]["must_have_criteria"],
                 escalation_behavior=self.goal["decision_tree"]["escalation_behavior"],
