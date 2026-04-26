@@ -34,11 +34,17 @@ def _make_client(**kwargs) -> tuple[LLMClient, MagicMock]:
     return LLMClient(**defaults), mock_router
 
 
-def _mock_response(content: str) -> MagicMock:
+def _mock_response(content: str, prompt_tokens: int | None = None, completion_tokens: int | None = None) -> MagicMock:
     """Create a mock acompletion response."""
     response = MagicMock()
     response.choices = [MagicMock()]
     response.choices[0].message.content = content
+    if prompt_tokens is not None and completion_tokens is not None:
+        response.usage.prompt_tokens = prompt_tokens
+        response.usage.completion_tokens = completion_tokens
+        response.model = "test-model-id"
+    else:
+        response.usage = None
     return response
 
 
@@ -59,9 +65,10 @@ class TestGenerateText:
         caplog.set_level(logging.DEBUG, logger=LLM_LOGGER)
 
         mock_router.acompletion = AsyncMock(return_value=_mock_response("Hello world"))
-        result = await client.generate_text([{"role": "user", "content": "Hi"}])
+        text, usage = await client.generate_text([{"role": "user", "content": "Hi"}])
 
-        assert result == "Hello world"
+        assert text == "Hello world"
+        assert usage is None
 
         _assert_log_messages(
             caplog,
@@ -70,6 +77,26 @@ class TestGenerateText:
                 r"LLM call \1 \(attempt 1/3\) succeeded",
             ),
         )
+
+    @pytest.mark.asyncio
+    async def test_returns_usage_when_present(self):
+        """Returns token usage dict when response.usage is populated."""
+        client, mock_router = _make_client()
+        mock_router.acompletion = AsyncMock(return_value=_mock_response("Hi", prompt_tokens=100, completion_tokens=20))
+        text, usage = await client.generate_text([{"role": "user", "content": "Hi"}])
+
+        assert text == "Hi"
+        assert usage == {"prompt_tokens": 100, "completion_tokens": 20, "model_name": "test-model-id"}
+
+    @pytest.mark.asyncio
+    async def test_returns_none_usage_when_absent(self):
+        """Returns None for usage when response.usage is None."""
+        client, mock_router = _make_client()
+        mock_router.acompletion = AsyncMock(return_value=_mock_response("Hi"))
+        text, usage = await client.generate_text([{"role": "user", "content": "Hi"}])
+
+        assert text == "Hi"
+        assert usage is None
 
     @pytest.mark.asyncio
     async def test_passes_model(self):
@@ -113,9 +140,9 @@ class TestRetryLogic:
                 _mock_response("ok"),
             ]
         )
-        result = await client.generate_text([{"role": "user", "content": "Hi"}])
+        text, usage = await client.generate_text([{"role": "user", "content": "Hi"}])
 
-        assert result == "ok"
+        assert text == "ok"
         assert mock_router.acompletion.await_count == 2
 
         _assert_log_messages(

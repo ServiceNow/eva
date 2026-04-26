@@ -23,12 +23,15 @@ async def test_all_turns_speakable(metric):
     )
 
     metric.llm_client.generate_text = AsyncMock(
-        return_value=json.dumps(
-            [
-                {"turn_id": 1, "rating": 1, "explanation": "Natural speech"},
-                {"turn_id": 2, "rating": 1, "explanation": "Natural speech"},
-                {"turn_id": 3, "rating": 1, "explanation": "Natural speech"},
-            ]
+        return_value=(
+            json.dumps(
+                [
+                    {"turn_id": 1, "rating": 1, "explanation": "Natural speech"},
+                    {"turn_id": 2, "rating": 1, "explanation": "Natural speech"},
+                    {"turn_id": 3, "rating": 1, "explanation": "Natural speech"},
+                ]
+            ),
+            None,
         )
     )
 
@@ -48,12 +51,15 @@ async def test_mixed_ratings(metric):
     )
 
     metric.llm_client.generate_text = AsyncMock(
-        return_value=json.dumps(
-            [
-                {"turn_id": 1, "rating": 1, "explanation": "Good"},
-                {"turn_id": 2, "rating": 0, "explanation": "Contains table"},
-                {"turn_id": 3, "rating": 1, "explanation": "Good"},
-            ]
+        return_value=(
+            json.dumps(
+                [
+                    {"turn_id": 1, "rating": 1, "explanation": "Good"},
+                    {"turn_id": 2, "rating": 0, "explanation": "Contains table"},
+                    {"turn_id": 3, "rating": 1, "explanation": "Good"},
+                ]
+            ),
+            None,
         )
     )
 
@@ -74,11 +80,14 @@ async def test_empty_turns_skipped(metric):
     )
 
     metric.llm_client.generate_text = AsyncMock(
-        return_value=json.dumps(
-            [
-                {"turn_id": 1, "rating": 1, "explanation": "Good"},
-                {"turn_id": 3, "rating": 1, "explanation": "Good"},
-            ]
+        return_value=(
+            json.dumps(
+                [
+                    {"turn_id": 1, "rating": 1, "explanation": "Good"},
+                    {"turn_id": 3, "rating": 1, "explanation": "Good"},
+                ]
+            ),
+            None,
         )
     )
 
@@ -97,11 +106,14 @@ async def test_turn_ids_preserved(metric):
     )
 
     metric.llm_client.generate_text = AsyncMock(
-        return_value=json.dumps(
-            [
-                {"turn_id": 3, "rating": 1, "explanation": "Good"},
-                {"turn_id": 7, "rating": 0, "explanation": "Bad"},
-            ]
+        return_value=(
+            json.dumps(
+                [
+                    {"turn_id": 3, "rating": 1, "explanation": "Good"},
+                    {"turn_id": 7, "rating": 0, "explanation": "Bad"},
+                ]
+            ),
+            None,
         )
     )
 
@@ -119,12 +131,15 @@ async def test_null_rating_excluded(metric):
     )
 
     metric.llm_client.generate_text = AsyncMock(
-        return_value=json.dumps(
-            [
-                {"turn_id": 1, "rating": 1, "explanation": "Good"},
-                {"turn_id": 2, "rating": None, "explanation": "Not applicable"},
-                {"turn_id": 3, "rating": 1, "explanation": "Good"},
-            ]
+        return_value=(
+            json.dumps(
+                [
+                    {"turn_id": 1, "rating": 1, "explanation": "Good"},
+                    {"turn_id": 2, "rating": None, "explanation": "Not applicable"},
+                    {"turn_id": 3, "rating": 1, "explanation": "Good"},
+                ]
+            ),
+            None,
         )
     )
 
@@ -140,7 +155,7 @@ async def test_no_response_from_judge(metric):
     """None response from LLM returns error."""
     context = make_metric_context(intended_assistant_turns={1: "Hello!", 2: "Bye!"})
 
-    metric.llm_client.generate_text = AsyncMock(return_value=None)
+    metric.llm_client.generate_text = AsyncMock(return_value=(None, None))
 
     result = await metric.compute(context)
 
@@ -154,11 +169,14 @@ async def test_all_null_ratings(metric):
     context = make_metric_context(intended_assistant_turns={1: "Hello!", 2: "Bye!"})
 
     metric.llm_client.generate_text = AsyncMock(
-        return_value=json.dumps(
-            [
-                {"turn_id": 1, "rating": None, "explanation": ""},
-                {"turn_id": 2, "rating": None, "explanation": ""},
-            ]
+        return_value=(
+            json.dumps(
+                [
+                    {"turn_id": 1, "rating": None, "explanation": ""},
+                    {"turn_id": 2, "rating": None, "explanation": ""},
+                ]
+            ),
+            None,
         )
     )
 

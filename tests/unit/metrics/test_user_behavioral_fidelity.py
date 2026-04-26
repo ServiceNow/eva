@@ -145,11 +145,9 @@ class TestUserBehavioralFidelity:
 
     @pytest.mark.asyncio
     async def test_compute_not_corrupted(self):
-        self.metric.llm_client.generate_text.return_value = json.dumps(
-            {
-                "rating": 1,
-                "corruption_analysis": {},
-            }
+        self.metric.llm_client.generate_text.return_value = (
+            json.dumps({"rating": 1, "corruption_analysis": {}}),
+            None,
         )
         ctx = make_metric_context(
             conversation_trace=[
@@ -163,11 +161,9 @@ class TestUserBehavioralFidelity:
 
     @pytest.mark.asyncio
     async def test_compute_corrupted(self):
-        self.metric.llm_client.generate_text.return_value = json.dumps(
-            {
-                "rating": 0,
-                "corruption_analysis": {"goal_drift": True},
-            }
+        self.metric.llm_client.generate_text.return_value = (
+            json.dumps({"rating": 0, "corruption_analysis": {"goal_drift": True}}),
+            None,
         )
         ctx = make_metric_context(
             conversation_trace=[

@@ -1,7 +1,10 @@
 """Base metric class for defining evaluation metrics."""
 
+import csv
+import json
 import os
 from abc import ABC, abstractmethod
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -190,6 +193,77 @@ class BaseMetric(ABC):
         """
         pass
 
+    def _log_token_usage(
+        self, context: MetricContext, model_name: str, model_params: dict, prompt: str, usage: dict | None
+    ) -> None:
+        """Append one row of LLM judge token usage to a per-metric CSV and update the run-level JSON summary."""
+        if not context.output_dir:
+            return
+        # Walk up from output_dir to find the run root (directory containing config.json).
+        path = Path(context.output_dir)
+        run_dir = path
+        while path != path.parent:
+            if (path / "config.json").exists():
+                run_dir = path
+                break
+            path = path.parent
+
+        # Derive full record_id (including trial suffix) from path relative to records/.
+        try:
+            record_id = str(Path(context.output_dir).relative_to(run_dir / "records"))
+        except ValueError:
+            record_id = context.record_id
+
+        csv_dir = run_dir / "judge_token_usage"
+        csv_dir.mkdir(exist_ok=True)
+
+        input_tokens = usage.get("prompt_tokens") if usage else None
+        output_tokens = usage.get("completion_tokens") if usage else None
+        model_id = usage.get("model_name") if usage else None
+
+        csv_path = csv_dir / f"{self.name}.csv"
+        write_header = not csv_path.exists()
+        with open(csv_path, "a", newline="") as f:
+            writer = csv.writer(f)
+            if write_header:
+                writer.writerow(
+                    [
+                        "record_id",
+                        "model_name",
+                        "model_id",
+                        "input_tokens",
+                        "output_tokens",
+                        "timestamp",
+                        "model_params",
+                        "input_prompt",
+                    ]
+                )
+            writer.writerow(
+                [
+                    record_id,
+                    model_name,
+                    model_id,
+                    input_tokens,
+                    output_tokens,
+                    datetime.now(UTC).isoformat(),
+                    json.dumps(model_params) if model_params else None,
+                    prompt,
+                ]
+            )
+
+        # Update per-run JSON summary with running totals.
+        json_path = csv_dir / "judge_token_usage.json"
+        summary = json.loads(json_path.read_text()) if json_path.exists() else {}
+        entry = summary.setdefault(
+            self.name, {"model_id": None, "total_input_tokens": 0, "total_output_tokens": 0, "num_calls": 0}
+        )
+        if model_id is not None:
+            entry["model_id"] = model_id
+        entry["total_input_tokens"] += input_tokens or 0
+        entry["total_output_tokens"] += output_tokens or 0
+        entry["num_calls"] += 1
+        json_path.write_text(json.dumps(summary, indent=2))
+
     def _handle_error(self, error: Exception, context: MetricContext) -> MetricScore:
         """Standard error handling for all metrics."""
         self.logger.exception(f"{self.name} failed for {context.record_id}: {error}")
@@ -238,10 +312,8 @@ class TextJudgeMetric(BaseMetric):
     async def call_judge(self, prompt: str, context: MetricContext) -> tuple[dict | None, str | None]:
         """Call LLM judge and parse response. Returns (parsed_dict, raw_response_text)."""
         messages = [{"role": "user", "content": prompt}]
-        response_text = await self.llm_client.generate_text(
-            messages,
-        )
-
+        response_text, usage = await self.llm_client.generate_text(messages)
+        self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage)
         return parse_judge_response(response_text, context.record_id, self.logger), response_text
 
     def validate_and_normalize_rating(self, response: dict, context: MetricContext) -> tuple[int, float]:
@@ -406,7 +478,8 @@ class PerTurnConversationJudgeMetric(TextJudgeMetric):
                 return MetricScore(name=self.name, score=0.0, normalized_score=0.0, error="No turns to evaluate")
 
             prompt = self.get_judge_prompt(**self.get_prompt_variables(context, transcript_text))
-            response_text = await self.llm_client.generate_text([{"role": "user", "content": prompt}])
+            response_text, usage = await self.llm_client.generate_text([{"role": "user", "content": prompt}])
+            self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage)
             parsed = parse_judge_response_list(response_text)
 
             if parsed is None:

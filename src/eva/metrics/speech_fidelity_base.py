@@ -157,7 +157,8 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     # message transformation is broken for Gemini (INVALID_ARGUMENT).
                     response_text = await self._generate_with_file(uploaded_file, prompt, context)
                 else:
-                    response_text = await self.llm_client.generate_text(messages)
+                    response_text, usage = await self.llm_client.generate_text(messages)
+                    self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage)
                 if response_text is None:
                     return None, []
 

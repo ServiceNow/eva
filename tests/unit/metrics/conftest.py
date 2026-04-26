@@ -69,6 +69,7 @@ def make_judge_metric(metric_cls, *, mock_llm: bool = False, logger_name: str | 
     if mock_llm:
         m.llm_client = MagicMock()
         m.llm_client.generate_text = AsyncMock()
+        m.llm_client.params = {}
     return m
 
 

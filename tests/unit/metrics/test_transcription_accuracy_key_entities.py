@@ -191,7 +191,7 @@ class TestCompute:
                 },
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -234,7 +234,7 @@ class TestCompute:
                 },
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -267,7 +267,7 @@ class TestCompute:
                 },
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -291,7 +291,7 @@ class TestCompute:
                 {"turn_id": 1, "summary": "No entities", "entities": []},
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -320,7 +320,7 @@ class TestCompute:
                 },
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -352,7 +352,7 @@ class TestCompute:
                 },
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -369,7 +369,7 @@ class TestCompute:
             intended_user_turns={0: "Hello"},
             transcribed_user_turns={0: "Hello"},
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=None)
+        metric.llm_client.generate_text = AsyncMock(return_value=(None, None))
 
         result = await metric.compute(context)
 

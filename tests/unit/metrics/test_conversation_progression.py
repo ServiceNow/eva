@@ -85,11 +85,9 @@ class TestConversationProgression:
 
     @pytest.mark.asyncio
     async def test_compute_excellent(self):
-        self.metric.llm_client.generate_text.return_value = json.dumps(
-            {
-                "rating": 3,
-                "dimensions": {},
-            }
+        self.metric.llm_client.generate_text.return_value = (
+            json.dumps({"rating": 3, "dimensions": {}}),
+            None,
         )
         ctx = make_metric_context(
             conversation_trace=[
@@ -103,11 +101,9 @@ class TestConversationProgression:
 
     @pytest.mark.asyncio
     async def test_compute_poor(self):
-        self.metric.llm_client.generate_text.return_value = json.dumps(
-            {
-                "rating": 1,
-                "dimensions": {},
-            }
+        self.metric.llm_client.generate_text.return_value = (
+            json.dumps({"rating": 1, "dimensions": {}}),
+            None,
         )
         ctx = make_metric_context(
             conversation_trace=[
