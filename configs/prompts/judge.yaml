@@ -137,6 +137,11 @@ judge:
 
       When evaluating, treat these tags as natural voice interaction phenomena. Do NOT penalize interruptions themselves. Only flag an issue if the interruption caused observable consequences (e.g., information loss because the agent's cut-off speech contained critical details that were never restated, or unnecessary repetition because the agent repeated already-heard information after being interrupted).
 
+      ## Understanding the Conversation Trace
+      {user_turns_disclaimer}
+
+      {assistant_turns_disclaimer}
+
       ## Full Conversation with Tools
       {conversation_trace}
 
@@ -215,6 +220,7 @@ judge:
       - Asking for required authentication or identification information required by the agent instructions (e.g., confirmation number, reference ID, user's name)
       - Asking a clarifying question when the user's intent is genuinely ambiguous
       - Asking a follow-up question based on new information from a tool response
+      - Asking the user to confirm an error-prone value (alphanumeric ID, code, date, dollar amount, spelled-out name) just provided — read-backs of error-prone values are standard voice-agent practice required by typical agent policies and are NOT a question quality issue. This holds even when the transcript shows the assistant's read-back as matching what the user said: STT may render different spoken audio as identical text, so the read-back can still be catching a real audio-level mismatch.
       - Not disclosing fees, costs, or other policy-required details before taking an action — policy compliance (e.g., whether the assistant explained consequences before an irreversible action) is a faithfulness concern, not a conversation progression issue. This dimension only evaluates whether the assistant's questions and information-sharing effectively moved the conversation forward.
       - Referencing information that exists in the agent instructions (e.g., standard fees, policies) without verifying it via a tool call — the agent is expected to know its own instructions. Only flag if the information was genuinely unknown and required a tool call or user input.
 
@@ -328,10 +334,11 @@ judge:
       - Reasonable contextual inferences for categorical parameters, when the enum value's meaning is clearly supported by the user's stated intent
       - Numeric values derived from prior tool results through simple arithmetic (e.g., summing line items, subtracting used amounts from a balance, or computing a total from prior results)
       - System-level or framework-generated tool calls made before the assistant has any user input, if the assistant subsequently asks for proper information
+      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters like "v"/"z" or "b"/"d", reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance
 
       **Before flagging a parameter as fabricated:** Verify it cannot be traced to ANY source — user statements, prior tool results, policy entitlements, simple arithmetic from known values, or standard domain mappings. Also verify enum values against the actual tool specification before claiming a value is invalid.
 
-      **Mitigating factor:** If an ungrounded tool call fails harmlessly, the assistant immediately self-corrects, and no fabricated information reaches the user, this is still a flag but should be considered when computing the overall rating (see Rating Aggregation).
+      **Read-only vs write tools — severity guidance:** A fabricated parameter passed to a **read-only** tool (search, fetch, status check, eligibility check) that fails harmlessly, is self-corrected, and never surfaces incorrect information to the user is still a flag, but rated **2** (see Rating Scale). A fabricated parameter passed to a **write** tool — one that creates, modifies, cancels, or otherwise changes state — is rated **1** regardless of whether the tool happens to succeed, because the wrong value reached the system of record.
 
       ### 2. misrepresenting_tool_result
       **Scope: How the assistant reports tool results to the user.** Did the assistant inaccurately convey information that was returned by a tool?
@@ -361,9 +368,9 @@ judge:
       - Failing to follow explicit procedural steps outlined in agent instructions (e.g., skipping a required verification step)
       - Offering options or taking actions that the agent instructions explicitly prohibit
       - Not applying policies that are clearly applicable to the situation (e.g., not offering an entitled benefit, not following a required disclosure)
-      - Stating a policy incorrectly, fabricating a policy not present in the instructions, or significantly changing a policy's meaning
+      - Stating a policy incorrectly, or significantly changing a policy's meaning
       - **Temporal sequencing for consequential actions:** When instructions require "explain before acting" or "get explicit confirmation before proceeding," the assistant must pause for user confirmation BETWEEN read operations and write operations that have financial consequences or are irreversible. Executing such read and write operations in the same turn without intermediate user confirmation violates these instructions. Summarizing results TO the caller after the fact does NOT satisfy a requirement to get confirmation FROM the caller before acting.
-      - **Irreversible write operations** (e.g., cancellations, rebookings, refunds, account or record changes, ticket submissions, access grants, or any other action that creates/modifies state and is hard to undo) executed without required prior explanation of specific user-consequential implications (fees, fare differences, credit amounts, approvals needed, downstream effects) and explicit user confirmation. A generic mention of potential consequences without specifying knowable details is insufficient when those details are knowable.
+      - **Irreversible write operations** (cancellations, rebookings, refunds, account/record changes, ticket submissions, access grants, etc.) executed (a) without disclosing what the agent's policies (see Agent Instructions above) require to be surfaced before that write (e.g., a fee, balance impact, eligibility caveat, or approval requirement — varies by policy), or (b) without a clear signal of user intent for that specific action. Do not invent disclosure requirements the policy does not impose.
 
       **Is NOT a flag:**
       - Following reasonable interpretations of ambiguous instructions
@@ -371,10 +378,8 @@ judge:
       - Actions not covered by any explicit policy or instruction
       - Proactive issuance of no-cost benefits the user is clearly entitled to (e.g., goodwill compensation during a service disruption, waiving a fee the user is explicitly entitled to) without explicit confirmation — these are beneficial actions with no negative consequence, and the user's entitlement or explicit request serves as sufficient basis
       - When a user explicitly requests a specific action AND the general cost structure has been communicated, proceeding without re-stating exact amounts (if not yet knowable) is not a clear violation
-
-      **Evaluating "explain before acting":** This principle protects users from unexpected costs or negative consequences. Severity should be proportional to potential negative impact:
-      - **Clear violation:** Executing irreversible actions without disclosing known specific fees/costs/consequences, especially when a non-zero amount is being charged or when the action cannot be undone
-      - **Not a violation:** Issuing benefits the user explicitly requested or is entitled to with no negative consequence. Mentioning that an action should not have any financial consequence based on the policy before seeing it in the tool results is not a violation, as long as the assistant corrects itself after seeing the actual costs in the tool results (e.g., stating "there should be no fee based on policy" → proceeds to call tool → if the tool confirms the fee is waived, no violation).
+      - Proceeding with a write tool based on implicit intent (the user described the action they want and provided the necessary information, but did not give a verbatim "yes, do it now"), when the agent's policies do not require explicit confirmation for that action
+      - "Predict-then-correct": stating an action should have no fee/cost based on policy *before* calling the tool, then proceeding to call the tool — no violation **when the tool result confirms the prediction** (e.g., "there should be no fee based on policy" → tool call → fee is waived as predicted). If the tool result contradicts the prediction (e.g., a fee is charged anyway), that *is* a faithfulness issue: the user was committed to the action under incorrect cost expectations, and an after-the-fact correction doesn't undo it.
 
       **Evaluating policy application:** When two policy paths could apply (e.g., same-day change vs. missed flight; in-warranty repair vs. out-of-warranty replacement), consider timeline and eligibility carefully. If the user is within the more favorable policy window (e.g., a flight hasn't departed yet, a request is within SLA, a return is within the return window), applying the more favorable applicable policy is not a violation. Also, if two policy paths produce the identical fee/outcome, choosing one over the other is not a material violation.
 
@@ -434,6 +439,7 @@ judge:
           - A small hallucination or misstatement with no consequence inside the conversation and no downstream effect (e.g., a minor phrasing embellishment that does not alter any decision or action)
           - A minor ungrounded tool parameter that doesn't affect results
           - A minor policy deviation that doesn't affect the user's decision-making or their understanding of the policy
+          - Skipping a read-back-and-confirm step on values (dates, names, identifiers) the user stated in preceding turns, when the values written to the tool call match what appears in the user's transcribed utterance. **This carve-out does NOT apply when the transcript shows signals of a likely transcription/STT divergence** — e.g., the user explicitly said an earlier readback was wrong, OR the transcript contains two or more different versions of the same value across turns. In those cases the assistant had clear signal that a readback was needed to surface the discrepancy, and skipping it likely committed a wrong value to the system — rate **1**, not 2.
         - Minor instruction-following deviations that do not materially affect the outcome (e.g., slight formatting differences, omitting low-importance optional steps)
         - Borderline cases where it is unclear whether a faithfulness violation occurred due to ambiguous instructions, incomplete context, or reasonable interpretation differences
         - Adopting incorrect terminology from the user (e.g., wrong brand or product name) while processing the correct record, when it doesn't cause confusion or incorrect actions
@@ -441,8 +447,10 @@ judge:
 
       - **1** (Clear faithfulness violations — major user impact):
         - Any issue that materially affects the user, either during the conversation or afterward. Such as:
-          - Calling a **write** tool (one that creates, modifies, cancels, or otherwise changes state) with wrong or fabricated parameters — regardless of whether the tool call happens to succeed
-          - Executing an **irreversible action without explicit user consent** — especially without required prior explanation of specific implications and explicit user confirmation
+          - Calling a **write** tool with wrong or fabricated parameters — regardless of whether the call succeeds.
+          - Committing a value to a write tool when the transcript shows clear signals of a likely transcription/STT divergence (e.g., the user explicitly said an earlier readback was wrong, OR the transcript contains two or more different versions of the same value across turns) and the assistant did not resolve the ambiguity before committing — **rate 1 even if the written value happens to match the most recent transcribed utterance**, because the divergence signal made a readback necessary and the assistant likely committed a wrong value.
+          - Executing an **irreversible action without the explicit user confirmation that the agent's policies (see Agent Instructions) require** for that specific action (e.g., a "summarize and confirm before submitting" rule). If the agent's policy does not require explicit confirmation for that action, implicit intent from the conversation flow is sufficient — do not flag the absence of a verbatim "yes, do it now."
+          - Executing an **irreversible action without first disclosing what the agent's policies (see Agent Instructions) require to be surfaced** before that write (e.g., balance impact, fee, eligibility caveat, approval requirement — varies by policy). Do not invent disclosure requirements the policy does not impose.
           - **Financial or reputational impact** on the user or the company — e.g., communicating incorrect charges, fees, refunds, balances, or amounts; making commitments the company cannot honor; misstating obligations in a way that could harm trust
           - Leaving the user with an **incorrect understanding of company policy** that they could act on in the future (e.g., misstating eligibility rules, entitlement conditions, or process requirements), even if the current conversation ends up fine
           - Hallucinating information not present in tool results, especially consequential figures (costs, balances, dates, approvals) communicated to the user as fact
@@ -668,8 +676,7 @@ judge:
               "explanation": "<string: 1-3 sentence analysis of fidelity for this turn, citing specific intended vs actual mismatches, noting any regions skipped due to interruption flags>",
               "rating": <0 or 1>
             }}
-          ],
-          "explanation": "<string: overall summary of fidelity assessment>"
+          ]
         }}
     s2s_user_prompt: |
         You are an expert evaluator checking the **speech clarity and articulation** of entities spoken by an AI voice agent.
@@ -743,10 +750,8 @@ judge:
               "explanation": "<string: 1-3 sentence analysis listing which trace entities were spoken and whether they are clearly articulated>",
               "rating": <0 or 1>
             }}
-          ],
-          "explanation": "<string: overall summary of speech fidelity assessment>"
+          ]
         }}
-
   user_speech_fidelity:
     user_prompt: |
         You are an expert evaluator judging the fidelity of text-to-speech (TTS) audio against the intended text. You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
@@ -820,8 +825,7 @@ judge:
               "explanation": "<succinct analysis; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
               "rating": <1, 2, 3>
             }}
-          ],
-          "explanation": "<string: overall summary of fidelity assessment>"
+          ]
         }}
 
   transcription_accuracy_key_entities:
