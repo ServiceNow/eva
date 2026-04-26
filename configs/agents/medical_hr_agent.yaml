@@ -402,11 +402,11 @@ tools:
       - name: department_code
         type: string
         enum: ["CARDIOLOGY", "EMERGENCY", "ONCOLOGY", "SURGERY", "NEUROLOGY", "PEDIATRICS", "RADIOLOGY", "PATHOLOGY", "ORTHOPEDICS", "OBSTETRICS"]
-        description: "The department to check availability for. One of: CARDIOLOGY, EMERGENCY, ONCOLOGY, SURGERY, NEUROLOGY, PEDIATRICS, RADIOLOGY, PATHOLOGY, ORTHOPEDICS, or OBSTETRICS"
+        description: "The department to check availability for"
       - name: appointment_type
         type: string
         enum: ["orientation_followup", "return_to_work_checkin", "competency_review"]
-        description: "The type of appointment: orientation_followup, return_to_work_checkin, or competency_review"
+        description: "The type of appointment"
       - name: preferred_date
         type: string
         description: "The date to check in YYYY-MM-DD format. Example: 2026-05-01"
@@ -491,7 +491,7 @@ tools:
       - name: notification_type
         type: string
         enum: ["license_extension_submitted", "malpractice_updated", "privilege_reactivation"]
-        description: "The type of action being reported: license_extension_submitted, malpractice_updated, or privilege_reactivation"
+        description: "The type of action being reported"
 
   # ── FLOW 2: SHIFT SWAP ────────────────────────────────────────────────────────
 
@@ -583,7 +583,7 @@ tools:
       - name: notification_type
         type: string
         enum: ["shift_swap_confirmed", "fmla_opened", "payroll_correction_submitted", "pto_request_submitted"]
-        description: "The type of action being reported: shift_swap_confirmed, fmla_opened, payroll_correction_submitted, or pto_request_submitted"
+        description: "The type of action being reported"
 
   # ── FLOW 3: MALPRACTICE COVERAGE UPDATE ───────────────────────────────────────
 
@@ -614,7 +614,7 @@ tools:
       - name: new_carrier
         type: string
         enum: ["proassurance", "coverys", "the_doctors_company", "cna", "zurich", "mag_mutual"]
-        description: "The new malpractice insurance carrier. Must be one of: proassurance, coverys, the_doctors_company, cna, zurich, or mag_mutual. Match the caller's spoken carrier name to the closest value (e.g. 'ProAssurance' → proassurance, 'The Doctors Company' → the_doctors_company, 'MAG Mutual' → mag_mutual). Record the lowercase form exactly."
+        description: "The new malpractice insurance carrier. Match the caller's spoken carrier name to the closest value (e.g. 'ProAssurance' → proassurance, 'The Doctors Company' → the_doctors_company, 'MAG Mutual' → mag_mutual). Record the lowercase form exactly."
       - name: new_policy_number
         type: string
         description: "The new policy number. Format: POL-YYYY-XXXXXX (POL, dash, 4-digit year, dash, 6 alphanumeric characters). This is the new policy being filed, not the existing policy on record. Example: POL-2025-BK4420"
@@ -661,7 +661,7 @@ tools:
       - name: task_code
         type: string
         enum: ["BLS_UPLOAD", "I9_VERIFY", "BADGE_PICKUP", "OCC_HEALTH", "HIPAA_TRAIN", "DRUG_SCREEN", "TB_TEST", "ORIENTATION"]
-        description: "The onboarding task to mark complete. One of: BLS_UPLOAD, I9_VERIFY, BADGE_PICKUP, OCC_HEALTH, HIPAA_TRAIN, DRUG_SCREEN, TB_TEST, or ORIENTATION"
+        description: "The onboarding task to mark complete"
       - name: completion_code
         type: string
         description: "The 4-character alphanumeric code the employee received upon completing the task. Case-insensitive. Example: AB12"
@@ -681,7 +681,7 @@ tools:
       - name: department_code
         type: string
         enum: ["CARDIOLOGY", "EMERGENCY", "ONCOLOGY", "SURGERY", "NEUROLOGY", "PEDIATRICS", "RADIOLOGY", "PATHOLOGY", "ORTHOPEDICS", "OBSTETRICS"]
-        description: "The employee's department. One of: CARDIOLOGY, EMERGENCY, ONCOLOGY, SURGERY, NEUROLOGY, PEDIATRICS, RADIOLOGY, PATHOLOGY, ORTHOPEDICS, or OBSTETRICS"
+        description: "The employee's department"
       - name: appointment_datetime
         type: string
         description: "The appointment date and time in YYYY-MM-DD HH:MM format. Must be a slot confirmed as available. Example: 2026-05-05 09:00"
@@ -810,7 +810,7 @@ tools:
       - name: department_code
         type: string
         enum: ["CARDIOLOGY", "EMERGENCY", "ONCOLOGY", "SURGERY", "NEUROLOGY", "PEDIATRICS", "RADIOLOGY", "PATHOLOGY", "ORTHOPEDICS", "OBSTETRICS"]
-        description: "The employee's department. One of: CARDIOLOGY, EMERGENCY, ONCOLOGY, SURGERY, NEUROLOGY, PEDIATRICS, RADIOLOGY, PATHOLOGY, ORTHOPEDICS, or OBSTETRICS"
+        description: "The employee's department"
       - name: appointment_datetime
         type: string
         description: "The appointment date and time in YYYY-MM-DD HH:MM format. Must be on or after the leave end date, and must be a slot confirmed as available. Example: 2026-07-02 09:00"
@@ -915,7 +915,7 @@ tools:
       - name: department_code
         type: string
         enum: ["CARDIOLOGY", "EMERGENCY", "ONCOLOGY", "SURGERY", "NEUROLOGY", "PEDIATRICS", "RADIOLOGY", "PATHOLOGY", "ORTHOPEDICS", "OBSTETRICS"]
-        description: "The provider's department. One of: CARDIOLOGY, EMERGENCY, ONCOLOGY, SURGERY, NEUROLOGY, PEDIATRICS, RADIOLOGY, PATHOLOGY, ORTHOPEDICS, or OBSTETRICS"
+        description: "The provider's department"
       - name: appointment_datetime
         type: string
         description: "The appointment date and time in YYYY-MM-DD HH:MM format. Must be a slot confirmed as available. Example: 2026-05-01 09:00"
@@ -1137,7 +1137,7 @@ tools:
       - name: relationship
         type: string
         enum: ["spouse", "child", "domestic_partner"]
-        description: "The dependent's relationship to the employee: spouse, child, or domestic_partner"
+        description: "The dependent's relationship to the employee"
       - name: dependent_date_of_birth
         type: string
         description: "The dependent's date of birth in YYYY-MM-DD format. Example: 2024-03-15"
@@ -1164,7 +1164,7 @@ tools:
       - name: notification_type
         type: string
         enum: ["dependent_added"]
-        description: "The type of change: dependent_added"
+        description: "The type of change"
 
   # ── FLOW 12: PTO REQUEST ─────────────────────────────────────────────────────
 
@@ -1246,7 +1246,7 @@ tools:
       - name: transfer_reason
         type: string
         enum: ["caller_requested", "policy_exception_needed", "unable_to_resolve", "complaint_escalation", "technical_issue"]
-        description: "The reason for the transfer: caller_requested, policy_exception_needed, unable_to_resolve, complaint_escalation, or technical_issue"
+        description: "The reason for the transfer"
       - name: issue_summary
         type: string
         description: "A brief summary of the caller's request, what was attempted, and why the transfer is needed"
