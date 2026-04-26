@@ -112,9 +112,7 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
             flag_field="flagged",
             detail_fields=("rating", "evidence"),
         )
-        analysis = {
-            "dimensions": dimensions,
-        }
+        analysis = {"dimensions": dimensions}
         return MetricScore(
             name=self.name,
             score=float(rating),
