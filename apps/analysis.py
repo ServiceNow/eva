@@ -119,9 +119,6 @@ def _is_lower_is_better(name: str) -> bool:
     return not parent_higher_is_better
 
 
-# Metric names for which lower values are better
-_LOWER_BETTER_METRICS = {"response_speed", "stt_wer"}
-
 # EVA composite scores to show in the bar chart
 _EVA_BAR_COMPOSITES = ["EVA-A_pass", "EVA-X_pass", "EVA-A_mean", "EVA-X_mean"]
 
@@ -300,11 +297,6 @@ def format_transcript(transcript_path: Path) -> pd.DataFrame:
 def _is_sub_metric(name: str) -> bool:
     """Return True if the metric name is a sub-metric (contains __ separator)."""
     return "__" in name
-
-
-def _is_lower_better(metric_name: str) -> bool:
-    """Return True if lower values are better for this metric."""
-    return metric_name in _LOWER_BETTER_METRICS
 
 
 def _sort_metrics_by_category(metric_names: list[str]) -> list[str]:
@@ -1295,17 +1287,14 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
         composite_rename = {c: f"[EVA] {_EVA_COMPOSITE_DISPLAY[c]}" for c in composites}
         cols = id_cols + composites + metrics
         sub_df = summary_df[cols].copy()
-        sub_df.insert(0, "#", range(1, len(sub_df) + 1))
-        sub_df.insert(1, "link", link_series)
+        sub_df.insert(0, "link", link_series)
         sub_df = sub_df.rename(columns={**id_rename, **composite_rename, **col_rename})
         score_cols = [composite_rename[c] for c in composites] + [col_rename[m] for m in metrics]
         styled = sub_df.style.map(_color_cell, subset=score_cols)
         styled = styled.format(dict.fromkeys(score_cols, "{:.3f}"), na_rep="—")
         st.dataframe(
             styled,
-            hide_index=True,
             column_config={
-                "#": st.column_config.NumberColumn("#", width=50, pinned=True),
                 "link": st.column_config.LinkColumn("Run", display_text="🔍", width=40, pinned=True),
                 "System": st.column_config.Column(pinned=True),
             },
@@ -1380,17 +1369,16 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
             available_heatmap_metrics = [m for m in available_heatmap_metrics if not _is_sub_metric(m)]
 
         if available_heatmap_metrics:
-            ctrl_col, swap_col = st.columns([4, 1])
-            with ctrl_col:
+            with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
                 selected_heatmap_metric = st.selectbox(
                     "Metric",
                     available_heatmap_metrics,
                     format_func=_format_metric_name,
                     key="heatmap_metric",
                 )
-            with swap_col:
-                st.markdown("<div style='padding-top:28px'></div>", unsafe_allow_html=True)
-                swap_axes = st.toggle("Swap axes", key="heatmap_swap_axes")
+                with st.container(width="content", gap=None):
+                    st.space(28)  # Height of the selectbox's label.
+                    swap_axes = st.toggle("Swap axes", key="heatmap_swap_axes")
 
             # Build pivot: rows=system, columns=record, values=selected metric
             pivot = heatmap_df.pivot_table(
@@ -1400,7 +1388,7 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
                 aggfunc="mean",
             )
 
-            colorscale = "RdYlGn_r" if _is_lower_better(selected_heatmap_metric) else "RdYlGn"
+            colorscale = "RdYlGn_r" if _is_lower_is_better(selected_heatmap_metric) else "RdYlGn"
             metric_display = _format_metric_name(selected_heatmap_metric)
 
             if swap_axes:
