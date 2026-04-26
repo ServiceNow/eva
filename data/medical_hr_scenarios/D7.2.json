@@ -1,0 +1,286 @@
+{
+  "_current_date": "2026-08-01",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP560485",
+      "first_name": "Brahim",
+      "last_name": "Benali",
+      "facility_code": "MGH-04B",
+      "pin": "7291",
+      "phone_last_four": "2841",
+      "otp_code": "418862",
+      "role_code": "RN",
+      "department_code": "PATHOLOGY",
+      "hire_date": "2022-03-14",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {},
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-06-30",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP560485": {
+      "employee_id": "EMP560485",
+      "first_name": "Brahim",
+      "last_name": "Benali",
+      "date_of_birth": "1991-04-17",
+      "phone_last_four": "2841",
+      "otp_code": "418862",
+      "department_code": "PATHOLOGY",
+      "role_code": "RN",
+      "unit_code": "2A-MED",
+      "hire_date": "2022-03-14",
+      "employment_status": "active",
+      "certifications": [
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 52,
+        "hours_worked_past_year": 1876,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 1.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260810-0700": {
+      "shift_id": "SHF-20260810-0700",
+      "employee_id": "EMP560485",
+      "unit_code": "2A-MED",
+      "date": "2026-08-10",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-15",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260811-0700": {
+      "shift_id": "SHF-20260811-0700",
+      "employee_id": "EMP560485",
+      "unit_code": "2A-MED",
+      "date": "2026-08-11",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-15",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260812-0700": {
+      "shift_id": "SHF-20260812-0700",
+      "employee_id": "EMP560485",
+      "unit_code": "2A-MED",
+      "date": "2026-08-12",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-15",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260814-0700": {
+      "shift_id": "SHF-20260814-0700",
+      "employee_id": "EMP560485",
+      "unit_code": "2A-MED",
+      "date": "2026-08-14",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-15",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "PATHOLOGY": {
+        "2026-08-05": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-08-06": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ],
+        "2026-08-07": [
+          "09:00",
+          "12:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "PATHOLOGY": {
+        "2026-10-13": [
+          "10:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-10-14": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-10-15": [
+          "10:00",
+          "15:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "PATHOLOGY": {
+        "2026-08-20": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-08-21": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-08-24": [
+          "09:00",
+          "13:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-09-07",
+    "2026-11-26",
+    "2026-12-25"
+  ],
+  "department_blackout_dates": {
+    "PATHOLOGY": [],
+    "CARDIOLOGY": [
+      "2026-08-31"
+    ],
+    "EMERGENCY": [],
+    "ONCOLOGY": [
+      "2026-09-01"
+    ],
+    "SURGERY": [],
+    "PEDIATRICS": []
+  }
+}

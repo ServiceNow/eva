@@ -1,0 +1,378 @@
+{
+  "_current_date": "2026-06-27",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "ACLS",
+      "BLS"
+    ],
+    "3C-ONC": [
+      "ACLS",
+      "BLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "2472659626": {
+      "npi": "2472659626",
+      "employee_id": "EMP852470",
+      "first_name": "Aisling",
+      "last_name": "Murphy",
+      "facility_code": "QGMX-16C",
+      "pin": "7939",
+      "phone_last_four": "4821",
+      "otp_code": "969634",
+      "role_code": "MD",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2018-09-17",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-877999",
+      "licenses": {
+        "FL-MD-575894": {
+          "state_license_number": "FL-MD-575894",
+          "license_type": "MD",
+          "state_code": "FL",
+          "expiration_date": "2026-07-12",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": "pending",
+          "extension_type": "supervised",
+          "extension_days": 30,
+          "supervising_physician_npi": "2125089309",
+          "extension_case_id": "CASE-LIC-852470"
+        }
+      },
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "QGMX-16C",
+        "state_code": "FL",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-04-30",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-ECHO-009",
+            "description": "Transthoracic echocardiography interpretation",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-CARD-003",
+            "description": "General inpatient cardiology attending privileges",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-CARD-001",
+            "description": "Outpatient cardiology clinic privileges",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": [],
+      "operational_clearance_record": {
+        "issue_date": "2026-03-15",
+        "status": "outdated",
+        "expected_current_code": "CLR-OCC-877999",
+        "caller_provided_old_code_context": "CLR-OCC-877236"
+      }
+    },
+    "2125089309": {
+      "npi": "2125089309",
+      "employee_id": "EMP774221",
+      "first_name": "Daniel",
+      "last_name": "Foster",
+      "facility_code": "QGMX-16C",
+      "pin": "4412",
+      "phone_last_four": "1934",
+      "otp_code": "481205",
+      "role_code": "MD",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2014-02-10",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-551204",
+      "licenses": {
+        "FL-MD-442781": {
+          "state_license_number": "FL-MD-442781",
+          "license_type": "MD",
+          "state_code": "FL",
+          "expiration_date": "2027-11-30",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-BX1940",
+        "per_occurrence_limit_usd": 2000000,
+        "aggregate_limit_usd": 6000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BF3849201",
+        "facility_code": "QGMX-16C",
+        "state_code": "FL",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2028-01-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-CARD-010",
+            "description": "Interventional cardiology privileges",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP852470": {
+      "employee_id": "EMP852470",
+      "first_name": "Aisling",
+      "last_name": "Murphy",
+      "date_of_birth": "1984-11-08",
+      "phone_last_four": "4821",
+      "otp_code": "969634",
+      "department_code": "CARDIOLOGY",
+      "role_code": "MD",
+      "unit_code": "4B-ICU",
+      "hire_date": "2018-09-17",
+      "employment_status": "on_leave",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 93,
+        "hours_worked_past_year": 1680,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "medical_leave",
+          "start_date": "2026-03-29",
+          "end_date": "2026-06-29",
+          "status": "active",
+          "case_id": "CASE-MLV-852470"
+        }
+      ],
+      "pto_balances": {
+        "pto": 12.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    },
+    "EMP774221": {
+      "employee_id": "EMP774221",
+      "first_name": "Daniel",
+      "last_name": "Foster",
+      "date_of_birth": "1976-05-14",
+      "phone_last_four": "1934",
+      "otp_code": "481205",
+      "department_code": "CARDIOLOGY",
+      "role_code": "MD",
+      "unit_code": "2A-MED",
+      "hire_date": "2014-02-10",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 148,
+        "hours_worked_past_year": 1850,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 18.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260702-0700": {
+      "shift_id": "SHF-20260702-0700",
+      "employee_id": "EMP852470",
+      "unit_code": "4B-ICU",
+      "date": "2026-07-02",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-07-11",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "CARDIOLOGY": {
+        "2026-07-01": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-06": [
+          "10:00",
+          "13:00"
+        ],
+        "2026-07-08": [
+          "09:00",
+          "15:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "CARDIOLOGY": {
+        "2026-06-30": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-07-01": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-07-06": [
+          "09:00",
+          "10:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "CARDIOLOGY": {
+        "2026-07-06": [
+          "10:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-07": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-07-09": [
+          "10:00",
+          "15:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "CARDIOLOGY": [],
+    "EMERGENCY": [
+      "2026-07-04"
+    ],
+    "ONCOLOGY": [],
+    "SURGERY": [],
+    "PEDIATRICS": []
+  }
+}

@@ -1,0 +1,290 @@
+{
+  "_current_date": "2026-06-19",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP900001",
+      "first_name": "Dana",
+      "last_name": "Holm",
+      "facility_code": "MGH-04B",
+      "pin": "7291",
+      "phone_last_four": "2211",
+      "otp_code": "483920",
+      "role_code": "MD",
+      "department_code": "EMERGENCY",
+      "hire_date": "2018-09-10",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {},
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-08-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP522179": {
+      "employee_id": "EMP522179",
+      "first_name": "Erik",
+      "last_name": "Lindqvist",
+      "date_of_birth": "1989-02-14",
+      "phone_last_four": "4821",
+      "otp_code": "654321",
+      "department_code": "EMERGENCY",
+      "role_code": "RN",
+      "unit_code": "4B-ICU",
+      "hire_date": "2021-03-22",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS",
+        "CCRN"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 63,
+        "hours_worked_past_year": 1872,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 15.0,
+        "sick": 5.0
+      },
+      "pto_requests": []
+    },
+    "EMP900001": {
+      "employee_id": "EMP900001",
+      "first_name": "Dana",
+      "last_name": "Holm",
+      "date_of_birth": "1980-11-05",
+      "phone_last_four": "2211",
+      "otp_code": "483920",
+      "department_code": "EMERGENCY",
+      "role_code": "MD",
+      "unit_code": "2A-MED",
+      "hire_date": "2018-09-10",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 93,
+        "hours_worked_past_year": 2100,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 12.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260607-2300": {
+      "shift_id": "SHF-20260607-2300",
+      "employee_id": "EMP522179",
+      "unit_code": "4B-ICU",
+      "date": "2026-06-07",
+      "start_time": "23:00",
+      "end_time": "09:30",
+      "hours_scheduled": 8.0,
+      "hours_logged": 8.0,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "logged",
+      "swap_locked": false,
+      "pay_period_closed": true,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-06-14",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260618-0700": {
+      "shift_id": "SHF-20260618-0700",
+      "employee_id": "EMP522179",
+      "unit_code": "4B-ICU",
+      "date": "2026-06-18",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": 12.0,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "logged",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-06-28",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "EMERGENCY": {
+        "2026-06-22": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-06-23": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ],
+        "2026-06-24": [
+          "09:30",
+          "11:30",
+          "14:30"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "EMERGENCY": {
+        "2026-06-24": [
+          "09:00",
+          "11:00",
+          "15:00"
+        ],
+        "2026-06-25": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-06-26": [
+          "09:30",
+          "13:30"
+        ]
+      }
+    },
+    "competency_review": {
+      "EMERGENCY": {
+        "2026-06-23": [
+          "09:00",
+          "10:00",
+          "14:00"
+        ],
+        "2026-06-24": [
+          "11:00",
+          "15:00"
+        ],
+        "2026-06-25": [
+          "09:30",
+          "13:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "EMERGENCY": [],
+    "CARDIOLOGY": [],
+    "ONCOLOGY": [],
+    "SURGERY": [],
+    "PEDIATRICS": [],
+    "RADIOLOGY": []
+  }
+}

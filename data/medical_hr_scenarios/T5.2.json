@@ -1,0 +1,405 @@
+{
+  "_current_date": "2026-06-03",
+  "unit_cert_requirements": {
+    "1C-PEDS": [
+      "BLS",
+      "PALS"
+    ],
+    "4B-ICU": [
+      "BLS",
+      "ACLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS",
+      "ACLS"
+    ],
+    "5A-SURG": [
+      "BLS",
+      "ACLS",
+      "TNCC"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ACLS",
+      "ONC-CERT"
+    ]
+  },
+  "providers": {
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP900001",
+      "first_name": "Amina",
+      "last_name": "Rahman",
+      "facility_code": "MGH-04B",
+      "pin": "4821",
+      "phone_last_four": "7712",
+      "otp_code": "555882",
+      "role_code": "MD",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2018-09-10",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {},
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-05-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP155843": {
+      "employee_id": "EMP155843",
+      "first_name": "Kolade",
+      "last_name": "Adebayo",
+      "date_of_birth": "1991-11-18",
+      "phone_last_four": "4829",
+      "otp_code": "347231",
+      "department_code": "CARDIOLOGY",
+      "role_code": "RN",
+      "unit_code": "1C-PEDS",
+      "hire_date": "2021-02-15",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "PALS",
+        "ACLS"
+      ],
+      "schedule_type": "shift",
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 64,
+        "hours_worked_past_year": 1872,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    },
+    "EMP244283": {
+      "employee_id": "EMP244283",
+      "first_name": "Marisol",
+      "last_name": "Chen",
+      "date_of_birth": "1988-04-09",
+      "phone_last_four": "9014",
+      "otp_code": "112244",
+      "department_code": "CARDIOLOGY",
+      "role_code": "RN",
+      "unit_code": "1C-PEDS",
+      "hire_date": "2019-07-22",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "PALS",
+        "ACLS"
+      ],
+      "schedule_type": "shift",
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 83,
+        "hours_worked_past_year": 1800,
+        "fmla_weeks_remaining": 10,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 12.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    },
+    "EMP900001": {
+      "employee_id": "EMP900001",
+      "first_name": "Amina",
+      "last_name": "Rahman",
+      "date_of_birth": "1982-03-14",
+      "phone_last_four": "7712",
+      "otp_code": "555882",
+      "department_code": "CARDIOLOGY",
+      "role_code": "MD",
+      "unit_code": "2A-MED",
+      "hire_date": "2018-09-10",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 93,
+        "hours_worked_past_year": 1760,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 18.0,
+        "sick": 7.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260726-1500": {
+      "shift_id": "SHF-20260726-1500",
+      "employee_id": "EMP155843",
+      "unit_code": "1C-PEDS",
+      "date": "2026-07-26",
+      "start_time": "15:00",
+      "end_time": "23:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-01",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260729-0700": {
+      "shift_id": "SHF-20260729-0700",
+      "employee_id": "EMP155843",
+      "unit_code": "1C-PEDS",
+      "date": "2026-07-29",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-01",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260730-0700": {
+      "shift_id": "SHF-20260730-0700",
+      "employee_id": "EMP155843",
+      "unit_code": "1C-PEDS",
+      "date": "2026-07-30",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-01",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260731-0700": {
+      "shift_id": "SHF-20260731-0700",
+      "employee_id": "EMP155843",
+      "unit_code": "1C-PEDS",
+      "date": "2026-07-31",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-01",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260726-0700": {
+      "shift_id": "SHF-20260726-0700",
+      "employee_id": "EMP244283",
+      "unit_code": "1C-PEDS",
+      "date": "2026-07-26",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-01",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "CARDIOLOGY": {
+        "2026-06-10": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-06-12": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "CARDIOLOGY": {
+        "2026-08-28": [
+          "10:00",
+          "11:30",
+          "14:00"
+        ],
+        "2026-08-31": [
+          "09:00",
+          "10:30",
+          "15:00"
+        ],
+        "2026-09-01": [
+          "08:30",
+          "13:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "CARDIOLOGY": {
+        "2026-06-15": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-06-17": [
+          "10:00",
+          "14:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "CARDIOLOGY": [],
+    "PEDIATRICS": [
+      "2026-12-24"
+    ],
+    "EMERGENCY": [],
+    "ONCOLOGY": [],
+    "SURGERY": [
+      "2026-11-25",
+      "2026-11-27"
+    ],
+    "RADIOLOGY": []
+  }
+}
