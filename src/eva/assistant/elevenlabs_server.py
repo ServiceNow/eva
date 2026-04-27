@@ -3,10 +3,9 @@
 Bridges between Twilio-framed WebSocket (user simulator) and ElevenLabs
 Conversational AI via the elevenlabs Python SDK.  Audio flows:
 
-    User simulator (8 kHz mulaw)
-        -> 16 kHz PCM16 -> ElevenLabs input
-    ElevenLabs output (16 kHz PCM16)
-        -> 8 kHz mulaw -> User simulator
+    User simulator (8 kHz mulaw) -> ElevenLabs input
+    User simulator (8 kHz mulaw) -> 16 kHz PCM16 (local WAV recording only)
+    ElevenLabs output (16 kHz PCM16) -> 8 kHz mulaw -> User simulator
 
 All tool calls are executed locally via ToolExecutor (through ClientTools);
 transcription events from ElevenLabs populate the audit log.
@@ -52,7 +51,6 @@ from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
-# ElevenLabs operates at 16 kHz PCM
 _RECORDING_SAMPLE_RATE = 16000
 
 # Audio output pacing: send 160-byte mulaw chunks (20ms at 8kHz) at real-time
@@ -83,8 +81,8 @@ def _agent_tools_to_client_tools(
 ) -> ClientTools | None:
     """Convert EVA AgentConfig tools to ElevenLabs ClientTools.
 
-    Each AgentTool is registered as a client tool whose handler delegates
-    to the server's ``execute_tool()`` method (which handles audit logging).
+    Each AgentTool is registered as a client tool and sets the handler
+    as self.execute_tool
     """
     if not agent.tools:
         return None
@@ -230,7 +228,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
 
         # Per-turn state
         _in_model_turn = False
-        _is_first_turn = True  # prevents phantom turn from trailing greeting audio
+        _is_first_turn = True  # prevents timestamp issues on first turn
         _user_speaking = False
         _user_speech_start_ts: str | None = None
         _user_speech_stop_ts: str | None = None
@@ -280,10 +278,6 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
             _user_speaking = False
             self.audit_log.append_user_input(text, timestamp_ms=_user_speech_start_ts)
             _user_speech_start_ts = None
-
-        async def on_latency(latency_ms: int) -> None:
-            logger.info(f"Latency: {latency_ms}ms")
-            # self.audit_log.append_latency(latency_ms)
 
         async def _on_end_session() -> None:
             logger.info("ElevenLabs session ended")

@@ -507,7 +507,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._user_speaking = False
         diff = len(self.user_audio_buffer) - len(self.assistant_audio_buffer)
         diff_ms = diff / (OPENAI_SAMPLE_RATE * 2) * 1000
-        logger.info(
+        logger.debug(
             f"[ALIGN DEBUG] speech_stopped: user={len(self.user_audio_buffer)} "
             f"asst={len(self.assistant_audio_buffer)} diff={diff}({diff_ms:.0f}ms) "
             f"bot_spk={self._bot_speaking}"
