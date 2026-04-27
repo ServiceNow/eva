@@ -25,11 +25,7 @@ CSV_DIR = PROJECT_ROOT / "local" / "judge_variance_analysis" / "data"
 
 
 def _load_runs_config() -> tuple[dict, dict]:
-    """Load RUN_LABELS and RUN_METADATA from local/judge_variance_analysis/runs_config.py.
-
-    Returns empty dicts if the file does not exist — the app and data loader still work,
-    using raw run_id strings as fallback labels.
-    """
+    """Load RUN_LABELS and RUN_METADATA from local/judge_variance_analysis/runs_config.py, or ({}, {}) if absent."""
     config_path = PROJECT_ROOT / "local" / "judge_variance_analysis" / "runs_config.py"
     if not config_path.exists():
         return {}, {}

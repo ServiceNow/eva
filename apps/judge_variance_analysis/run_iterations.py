@@ -42,11 +42,7 @@ ARCHIVE_DIR = OUTPUT_DIR / "judge_variance_analysis"
 
 
 def _load_runs() -> list[str]:
-    """Load RUNS from local/judge_variance_analysis/runs_config.py.
-
-    Returns an empty list if the file does not exist. Create the file with:
-        RUNS: list[str] = ["your_run_id", ...]
-    """
+    """Load RUNS from local/judge_variance_analysis/runs_config.py, or [] if absent."""
     config_path = PROJECT_ROOT / "local" / "judge_variance_analysis" / "runs_config.py"
     if not config_path.exists():
         return []
@@ -84,19 +80,6 @@ def _is_iteration_done(run_id: str, iteration: int) -> bool:
     return len(files) > 0
 
 
-def _build_subprocess_env(run_id: str, log: logging.Logger) -> dict:
-    """Return a copy of the current environment for the subprocess.
-
-    No special patches needed: BenchmarkRunner.from_existing_run() uses _StoredRunConfig,
-    which ignores all env vars when loading the saved config, so pipeline-mode conflicts
-    (e.g. EVA_MODEL__LLM set locally but the saved run used S2S) cannot arise.
-    apply_env_overrides only raises for the active LLM with strict_llm=True; metrics-only
-    re-runs pass strict_llm=False, and S2S configs have no active LLM, so missing
-    deployments are warned about and skipped without raising.
-    """
-    return os.environ.copy()
-
-
 def _run_metrics(run_id: str, log: logging.Logger) -> bool:
     """Call --force-rerun-metrics for a single run. Returns True on success."""
     cmd = [
@@ -111,8 +94,7 @@ def _run_metrics(run_id: str, log: logging.Logger) -> bool:
         ",".join(METRICS),
     ]
     log.info(f"  Running: {' '.join(cmd)}")
-    env = _build_subprocess_env(run_id, log)
-    result = subprocess.run(cmd, cwd=PROJECT_ROOT, env=env)
+    result = subprocess.run(cmd, cwd=PROJECT_ROOT, env=os.environ.copy())
     if result.returncode != 0:
         log.error(f"  FAILED: command exited with code {result.returncode} for run {run_id}")
         return False
