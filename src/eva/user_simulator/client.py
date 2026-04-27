@@ -19,9 +19,10 @@ from elevenlabs.conversational_ai.conversation import (
 )
 
 from eva.models.config import PerturbationConfig
-from eva.user_simulator.audio_interface import BotToBotAudioInterface
+from eva.user_simulator.audio_interface import ELEVENLABS_OUTPUT_RATE, BotToBotAudioInterface
 from eva.user_simulator.event_logger import ElevenLabsEventLogger
 from eva.user_simulator.perturbation import AudioPerturbator
+from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -96,6 +97,7 @@ class UserSimulator:
         # Audio recording buffers
         self._user_audio_chunks: list[bytes] = []
         self._assistant_audio_chunks: list[bytes] = []
+        self._user_clean_audio_chunks: list[bytes] = []
 
         # Keep-alive inactivity detection
         self._consecutive_keepalive_count = 0
@@ -301,6 +303,16 @@ class UserSimulator:
                         )
                     logger.info(f"Saved {len(latencies)} response latencies to {latency_file}")
 
+            if self._user_clean_audio_chunks:
+                clean_audio_path = self.output_dir / "audio_user_clean.wav"
+                save_pcm_as_wav(
+                    b"".join(self._user_clean_audio_chunks),
+                    clean_audio_path,
+                    sample_rate=ELEVENLABS_OUTPUT_RATE,
+                    num_channels=1,
+                )
+                logger.info(f"Saved clean user audio to {clean_audio_path}")
+
             # Grace period: keep the WebSocket open so the assistant pipeline
             # (Pipecat STT) can finish processing the last user utterance.
             # Observed delay from "User audio END" to "UserStoppedSpeaking"
@@ -485,13 +497,15 @@ class UserSimulator:
         """Record audio for later analysis.
 
         Args:
-            source: "user" or "assistant"
+            source: "user", "assistant", or "user_clean"
             audio_data: Raw audio bytes
         """
         if source == "user":
             self._user_audio_chunks.append(audio_data)
         elif source == "assistant":
             self._assistant_audio_chunks.append(audio_data)
+        elif source == "user_clean":
+            self._user_clean_audio_chunks.append(audio_data)
 
     def get_recorded_audio(self) -> tuple[bytes, bytes]:
         """Get the recorded audio.

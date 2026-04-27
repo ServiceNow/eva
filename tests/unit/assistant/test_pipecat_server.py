@@ -10,6 +10,7 @@ import pytest
 
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.pipecat_server import SAMPLE_RATE, PipecatAssistantServer
+from eva.utils.audio_utils import save_pcm_as_wav
 
 
 def _make_server(tmp_path: Path):
@@ -41,30 +42,27 @@ def _make_server(tmp_path: Path):
     return srv
 
 
-class TestSaveWavFile:
+class TestSavePcmAsWav:
     def test_mono_wav_preserves_header_and_content(self, tmp_path):
         """WAV file should have correct headers and byte-exact audio content."""
-        srv = _make_server(tmp_path)
-        # 100 frames of 16-bit mono PCM
         audio_data = b"\x00\x01\xff\xfe" * 50
         file_path = tmp_path / "test.wav"
 
-        srv._save_wav_file(audio_data, file_path, 24000, 1)
+        save_pcm_as_wav(audio_data, file_path, 24000, 1)
 
         with wave.open(str(file_path), "rb") as wf:
             assert wf.getnchannels() == 1
             assert wf.getsampwidth() == 2
             assert wf.getframerate() == 24000
-            assert wf.getnframes() == len(audio_data) // 2  # 16-bit = 2 bytes/frame
+            assert wf.getnframes() == len(audio_data) // 2
             assert wf.readframes(wf.getnframes()) == audio_data
 
     def test_stereo_wav_frame_count(self, tmp_path):
         """Stereo WAV: frame count = total_bytes / (channels * sample_width)."""
-        srv = _make_server(tmp_path)
-        audio_data = b"\x00" * 800  # 200 stereo frames at 16-bit
+        audio_data = b"\x00" * 800
         file_path = tmp_path / "stereo.wav"
 
-        srv._save_wav_file(audio_data, file_path, 16000, 2)
+        save_pcm_as_wav(audio_data, file_path, 16000, 2)
 
         with wave.open(str(file_path), "rb") as wf:
             assert wf.getnchannels() == 2
@@ -73,9 +71,8 @@ class TestSaveWavFile:
 
     def test_bad_path_does_not_raise(self, tmp_path):
         """Error writing to non-existent directory should be swallowed (logged)."""
-        srv = _make_server(tmp_path)
         bad_path = tmp_path / "nonexistent_dir" / "test.wav"
-        srv._save_wav_file(b"\x00", bad_path, 24000, 1)
+        save_pcm_as_wav(b"\x00", bad_path, 24000, 1)
         assert not bad_path.exists()
 
 

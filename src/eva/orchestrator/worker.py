@@ -245,7 +245,7 @@ class ConversationWorker:
             duration_seconds=(ended_at - started_at).total_seconds(),
             output_dir=str(self.output_dir),
             audio_assistant_path=str(self.output_dir / "audio_assistant.wav"),
-            audio_user_path=str(self.output_dir / "audio_user.wav"),
+            audio_user_path=str(self.output_dir / "audio_user_clean.wav"),
             audio_mixed_path=str(self.output_dir / "audio_mixed.wav"),
             transcript_path=str(self.output_dir / "transcript.jsonl"),
             audit_log_path=str(self.output_dir / "audit_log.json"),
