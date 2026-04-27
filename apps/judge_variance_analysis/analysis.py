@@ -1,4 +1,4 @@
-# local/judge_variance_analysis/analysis.py
+# apps/judge_variance_analysis/analysis.py
 """Variance analysis computations for the judge variance study."""
 
 from itertools import combinations

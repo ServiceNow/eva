@@ -1,8 +1,8 @@
-# local/judge_variance_analysis/app.py
+# apps/judge_variance_analysis/app.py
 """Streamlit app for interactive judge variance analysis.
 
 Run from project root:
-    uv run streamlit run local/judge_variance_analysis/app.py
+    uv run streamlit run apps/judge_variance_analysis/app.py --server.port 8502 --theme.primaryColor "#6b7280"
 """
 
 import sys
@@ -38,6 +38,7 @@ try:
 except ImportError:
     _build_report = None
     _REPORT_AVAILABLE = False
+
 from judge_variance_analysis.load_data import (
     ARCHIVE_DIR,
     available_sources,
