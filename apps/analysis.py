@@ -1039,7 +1039,7 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
 # ============================================================================
 
 
-def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
+def render_cross_run_comparison(run_dirs: list[Path]):
     """Render a comparison view across multiple runs."""
     st.markdown("### Cross-Run Comparison")
     st.caption("Compare aggregate metrics across all runs that have metrics data.")
@@ -1277,8 +1277,10 @@ def render_cross_run_comparison(run_dirs: list[Path], latest_only: bool = True):
         for name, (_, row) in zip(summary_df["system_name"], summary_df.iterrows())
     ]
     link_series = "/run_overview?output_dir=" + summary_df["run_output_dir"] + "&run=" + summary_df["run"]
-    if not latest_only:
+    if not st.session_state.get("latest_only", True):
         link_series = link_series + "&latest_only=false"
+    if st.session_state.get("show_sub_metrics"):
+        link_series = link_series + "&show_sub_metrics=true"
 
     def _show_subtable(heading: str, composites: list, metrics: list) -> None:
         if not composites and not metrics:
@@ -1638,10 +1640,17 @@ def render_run_overview(run_dir: Path):
     table_df = table_df[leading_cols + composite_cols + ordered_metrics]
 
     # Add link column to navigate to Record Detail
+    latest_only = st.session_state.get("latest_only", True)
+    show_sub_metrics = bool(st.session_state.get("show_sub_metrics"))
+
     def _record_link(row):
         params = f"/record_detail?output_dir={run_dir.parent}&run={run_name}&record={row['record']}"
         if "trial" in row and pd.notna(row.get("trial")):
             params += f"&trial={row['trial']}"
+        if not latest_only:
+            params += "&latest_only=false"
+        if show_sub_metrics:
+            params += "&show_sub_metrics=true"
         return params
 
     table_df = table_df.copy()
@@ -2441,8 +2450,8 @@ def render_record_detail(selected_run_dir: Path):
 
 
 def cross_run_comparison():
-    run_dirs, latest_only = _get_run_dirs()
-    render_cross_run_comparison(run_dirs, latest_only)
+    run_dirs, _ = _get_run_dirs()
+    render_cross_run_comparison(run_dirs)
 
 
 def run_overview():
