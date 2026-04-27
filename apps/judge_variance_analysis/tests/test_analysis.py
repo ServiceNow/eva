@@ -146,8 +146,8 @@ class TestCompositeStability:
         df = make_agg_df(rows)
         result = compute_composite_stability(df)
         assert len(result) == 3  # 3 iterations
-        assert (result["EVA-overall_pass_pass_at_1"] == 1.0).all()
-        assert (result["EVA-overall_pass_pass_at_k"] == 1.0).all()
+        assert (result["EVA-overall_pass_at_1"] == 1.0).all()
+        assert (result["EVA-overall_pass_at_k"] == 1.0).all()
 
     def test_pass_at_k_1_if_any_trial_passes(self):
         from judge_variance_analysis.analysis import compute_composite_stability
@@ -171,11 +171,11 @@ class TestCompositeStability:
         df = make_agg_df(rows)
         result = compute_composite_stability(df)
         # pass@k = 1.0 (at least one trial passed)
-        assert (result["EVA-overall_pass_pass_at_k"] == 1.0).all()
+        assert (result["EVA-overall_pass_at_k"] == 1.0).all()
         # pass@1 = 1/3
-        assert result.iloc[0]["EVA-overall_pass_pass_at_1"] == pytest.approx(1 / 3)
+        assert result.iloc[0]["EVA-overall_pass_at_1"] == pytest.approx(1 / 3)
         # pass^k = (1/3)^3
-        assert result.iloc[0]["EVA-overall_pass_pass_power_k"] == pytest.approx((1 / 3) ** 3)
+        assert result.iloc[0]["EVA-overall_pass_power_k"] == pytest.approx((1 / 3) ** 3)
 
 
 class TestBorderlineScenarios:
