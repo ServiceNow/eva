@@ -82,14 +82,6 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         self._audio_sample_rate = OPENAI_SAMPLE_RATE
 
-        self._app: FastAPI | None = None
-        self._server: uvicorn.Server | None = None
-        self._server_task: asyncio.Task | None = None
-        self._running: bool = False
-
-        self._fw_log: FrameworkLogWriter | None = None
-        self._metrics_log: MetricsLogWriter | None = None
-
         prompt_manager = PromptManager()
         self._system_prompt: str = prompt_manager.get_prompt(
             "realtime_agent.system_prompt",

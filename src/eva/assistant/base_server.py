@@ -6,13 +6,18 @@ must inherit from AbstractAssistantServer and implement the required interface.
 See docs/assistant_server_contract.md for the full specification.
 """
 
+import asyncio
 import json
 import wave
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+import uvicorn
+from fastapi import FastAPI
+
 from eva.assistant.agentic.audit_log import AuditLog
+from eva.assistant.audio_bridge import FrameworkLogWriter, MetricsLogWriter
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
 from eva.models.config import AudioLLMConfig, PipelineConfig, SpeechToSpeechConfig
@@ -81,6 +86,16 @@ class AbstractAssistantServer(ABC):
         self.user_audio_buffer = bytearray()
         self.assistant_audio_buffer = bytearray()
         self._audio_sample_rate: int = SAMPLE_RATE  # Subclasses can override
+
+        # Framework log writers
+        self._fw_log: FrameworkLogWriter | None = None
+        self._metrics_log: MetricsLogWriter | None = None
+
+        # Server state
+        self._app: FastAPI | None = None
+        self._server: uvicorn.Server | None = None
+        self._server_task: asyncio.Task | None = None
+        self._running = False
 
     @abstractmethod
     async def start(self) -> None:

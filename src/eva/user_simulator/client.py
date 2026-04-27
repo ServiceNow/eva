@@ -164,7 +164,7 @@ class UserSimulator:
         try:
             # Create ElevenLabs client with custom httpx client (no SSL verification for local testing)
             http_client = httpx.Client(verify=False, timeout=30.0)
-            client = ElevenLabs(
+            self._client = ElevenLabs(
                 api_key=api_key,
                 timeout=30.0,
                 httpx_client=http_client,
@@ -216,10 +216,8 @@ class UserSimulator:
             if not ELEVENLABS_USER_AGENT_ID:
                 raise ValueError(f"Missing ElevenLabs agent ID environment variable: {env_var}")
 
-            self._client = client
-
             self._conversation = Conversation(
-                client,
+                self._client,
                 ELEVENLABS_USER_AGENT_ID,
                 config=config,
                 requires_auth=True,
