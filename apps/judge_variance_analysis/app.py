@@ -6,6 +6,7 @@ Run from project root:
 """
 
 import sys
+import warnings
 from itertools import combinations
 from pathlib import Path
 
@@ -49,16 +50,19 @@ from judge_variance_analysis.load_data import (
     load_scores,
     load_scores_from_csv,
 )
+from loguru import logger as _loguru_logger
 
 st.set_page_config(page_title="EVA Judge Variance Analysis", layout="wide")
 
-# Mirrors EVA_COMPOSITES thresholds in src/eva/metrics/aggregation.py — update there first if changing.
+# Derive pass thresholds live from EVA_COMPOSITES so this app always reflects the current
+# definition. Suppress startup noise from transitive pydub/pipecat imports.
+_loguru_logger.disable("pipecat")
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", RuntimeWarning)
+    from eva.metrics.aggregation import EVA_COMPOSITES
+
 PASS_THRESHOLDS: dict[str, float] = {
-    "faithfulness": 0.5,
-    "agent_speech_fidelity": 0.95,
-    "conversation_progression": 0.5,
-    "turn_taking": 0.5,
-    "conciseness": 0.5,
+    m: thresh for comp in EVA_COMPOSITES for m, (op, thresh) in comp.thresholds.items() if m in JUDGE_METRICS
 }
 
 
@@ -603,7 +607,9 @@ with tabs[0]:
 
     st.subheader("Metric reference")
     st.caption(
-        "Scoring details as of 2026-04-27. Verify against current prompt definitions if thresholds or rubrics have changed."
+        "Scoring details as of 2026-04-27. Pass thresholds are read live from EVA_COMPOSITES "
+        "(src/eva/metrics/aggregation.py) and update automatically. Verify metric descriptions "
+        "and normalization against current prompt definitions if rubrics have changed."
     )
     _metric_rows = [
         (
