@@ -982,6 +982,8 @@ def compute_q0_tests(
 
             # Pooled across all models
             all_vals = sub[std_col].values
+            if len(all_vals) == 0:
+                continue  # metric absent from this dataset (e.g. transcription for S2S-only view)
             W, p = _wilcoxon_vs_zero(all_vals)
             pooled_rows.append(
                 {
