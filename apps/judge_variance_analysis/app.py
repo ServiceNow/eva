@@ -298,6 +298,12 @@ def _fmt_p(p: float) -> str:
     return f"{p:.3f}"
 
 
+def _model_list(rows: list) -> str:
+    return " and ".join(
+        f"{_llm_name(r['model'])} (p={_fmt_p(r['p_bonferroni'])}, delta={r['median_delta']:+.4f})" for r in rows
+    )
+
+
 _COMPOSITE_GROUP_ORDER = {"EVA-A": 0, "EVA-X": 1, "EVA-overall": 2}
 _COMPOSITE_STAT_ORDER = {"pass@1": 0, "pass@k": 1, "pass^k": 2, "mean": 3}
 
@@ -536,10 +542,10 @@ _selected_run_type_map = {r: metadata.get(r, {}).get("type", "cascade") for r in
 _selected_types = set(_selected_run_type_map.values())
 within_type_results = (
     compute_within_type_tests(judge_var, traj_var, _selected_run_type_map, selected_metrics)
-    if len(_selected_types) >= 1
+    if len(_selected_types) >= 2
     else {}
 )
-icc_results = compute_icc(scores[scores["run_id"].isin(selected_runs)], selected_metrics)
+icc_results = compute_icc(scores, selected_metrics)
 
 if judge_var.empty:
     st.warning("No data matches the current filters. Select at least one run and one metric.")
@@ -974,12 +980,6 @@ with tabs[2]:
             if q1a_sub.empty:
                 st.markdown(f"- **{metric}**: insufficient data for test.")
                 continue
-
-            def _model_list(rows: list) -> str:
-                return " and ".join(
-                    f"{_llm_name(r['model'])} (p={_fmt_p(r['p_bonferroni'])}, delta={r['median_delta']:+.4f})"
-                    for r in rows
-                )
 
             sig_less = [r for _, r in q1a_sub.iterrows() if r["significant"] and r["direction"] == "judge < trial"]
             sig_more = [r for _, r in q1a_sub.iterrows() if r["significant"] and r["direction"] == "judge > trial"]

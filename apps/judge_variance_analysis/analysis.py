@@ -136,11 +136,11 @@ def _twoway_icc(Y: np.ndarray, alpha: float = 0.05) -> dict:
 
     # Satterthwaite CI for sigma2_s
     def _satterthwaite_ci(
-        sigma2_hat: float, ms_num: float, ms_den: float, df_num: int, df_den: int, divisor: float
+        sigma2_hat: float, icc_hat: float, ms_num: float, ms_den: float, df_num: int, df_den: int, divisor: float
     ) -> tuple[float, float]:
         """Satterthwaite CI for a variance component estimated as (ms_num - ms_den)/divisor."""
         if sigma2_hat <= 0 or divisor <= 0:
-            return 0.0, min(1.0, icc_s + 0.0)  # degenerate — return point estimate bounds
+            return 0.0, min(1.0, icc_hat)  # degenerate — return point estimate bounds
         L = ms_num - ms_den
         df_L = L**2 / (ms_num**2 / df_num + ms_den**2 / df_den)
         df_L = max(df_L, 1.0)
@@ -150,8 +150,8 @@ def _twoway_icc(Y: np.ndarray, alpha: float = 0.05) -> dict:
         ci_hi_icc = max(0.0, min(1.0, ci_hi_var / sigma2_tot))
         return ci_lo_icc, ci_hi_icc
 
-    ci_lo_s, ci_hi_s = _satterthwaite_ci(sigma2_s, ms_s, ms_sm, df_s, df_sm, n_t * n_m)
-    ci_lo_m, ci_hi_m = _satterthwaite_ci(sigma2_m, ms_m, ms_sm, df_m, df_sm, n_t * n_s)
+    ci_lo_s, ci_hi_s = _satterthwaite_ci(sigma2_s, icc_s, ms_s, ms_sm, df_s, df_sm, n_t * n_m)
+    ci_lo_m, ci_hi_m = _satterthwaite_ci(sigma2_m, icc_m, ms_m, ms_sm, df_m, df_sm, n_t * n_s)
 
     return {
         "icc_scenario": icc_s,

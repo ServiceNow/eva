@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -59,12 +60,9 @@ def _iter_metrics_files(archive_dir: Path):
             for record_dir in sorted(records_dir.iterdir()):
                 record_id = record_dir.name
                 for trial_dir in sorted(record_dir.iterdir()):
-                    if not trial_dir.is_dir() or not trial_dir.name.startswith("trial_"):
+                    if not trial_dir.is_dir() or not re.fullmatch(r"trial_\d+", trial_dir.name):
                         continue
-                    try:
-                        trial = int(trial_dir.name.split("_")[1])
-                    except (IndexError, ValueError):
-                        continue
+                    trial = int(trial_dir.name.split("_")[1])
                     metrics_path = trial_dir / "metrics.json"
                     if not metrics_path.exists():
                         continue
