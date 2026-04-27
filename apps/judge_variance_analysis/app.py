@@ -1672,8 +1672,9 @@ with tabs[6]:
 
     crossings = _threshold_crossings(scores)
 
-    # Fixed at 150 — the total number of (record, trial) pairs per model
-    _y_max_pairs = 150
+    _y_max_pairs = int(
+        scores.groupby("run_id")[["record_id", "trial"]].apply(lambda g: g.drop_duplicates().shape[0]).max()
+    )
 
     # ── Bar chart: flip count per metric per model ────────────────────────────
     if crossings.empty:
@@ -1896,7 +1897,7 @@ with tabs[7]:
         _fig_pc.update_layout(yaxis_range=[0, 1], height=350)
         _fig_pc.update_xaxes(**_axis_style)
         _fig_pc.update_yaxes(**_axis_style)
-        st.plotly_chart(_fig_pc, use_container_width=True)
+        st.plotly_chart(_fig_pc, width="stretch")
 
     st.markdown("**Option B — Two-way random effects with interaction**")
     st.caption(
@@ -1953,7 +1954,7 @@ with tabs[7]:
         _fig_tw.update_layout(yaxis_range=[0, 1], height=350)
         _fig_tw.update_xaxes(**_axis_style)
         _fig_tw.update_yaxes(**_axis_style)
-        st.plotly_chart(_fig_tw, use_container_width=True)
+        st.plotly_chart(_fig_tw, width="stretch")
 
         st.markdown("**Scenario × model interaction F-test**")
         st.caption(
@@ -1968,7 +1969,7 @@ with tabs[7]:
             (_int_disp["sigma2_interaction"] / _int_disp["sigma2_total"].replace(0, float("nan"))) * 100
         ).round(1)
         _int_disp = _int_disp.drop(columns=["sigma2_total"])
-        st.dataframe(_int_disp, hide_index=True, use_container_width=True)
+        st.dataframe(_int_disp, hide_index=True, width="stretch")
 
     # ── Section B: Per-model ICC ──────────────────────────────────────────────
     st.subheader("Per-model ICC")
@@ -1999,7 +2000,7 @@ with tabs[7]:
             margin={"l": 200, "r": 40, "t": 30, "b": 80},
         )
         _fig_hm.update_xaxes(tickangle=30)
-        st.plotly_chart(_fig_hm, use_container_width=True)
+        st.plotly_chart(_fig_hm, width="stretch")
 
         _pm_plot = _icc_pm.copy()
         _pm_plot["error_lower"] = _pm_plot["icc"] - _pm_plot["ci_lower"]
@@ -2028,7 +2029,7 @@ with tabs[7]:
         )
         _fig_pm.update_xaxes(**_axis_style)
         _fig_pm.update_yaxes(**_axis_style)
-        st.plotly_chart(_fig_pm, use_container_width=True)
+        st.plotly_chart(_fig_pm, width="stretch")
 
         with st.expander("Full per-model ICC table"):
             _pm_disp = _icc_pm[
@@ -2047,7 +2048,7 @@ with tabs[7]:
                 ]
             ].copy()
             _pm_disp["p_value"] = _pm_disp["p_value"].map(_fmt_p)
-            st.dataframe(_pm_disp.round(4), hide_index=True, use_container_width=True)
+            st.dataframe(_pm_disp.round(4), hide_index=True, width="stretch")
             download_button(_pm_disp, "icc_per_model.csv")
 
     # ── Key finding callout ───────────────────────────────────────────────────
@@ -2435,14 +2436,14 @@ smaller groups and is slightly less powerful for the same true effect size.
                 ["run_label", "metric", "icc", "ci_lower", "ci_upper", "f_stat", "p_value", "n_scenarios", "n_trials"]
             ].copy()
             _q4_pm["p_value"] = _q4_pm["p_value"].map(_fmt_p)
-            st.dataframe(_q4_pm.round(4), hide_index=True, use_container_width=True)
+            st.dataframe(_q4_pm.round(4), hide_index=True, width="stretch")
             download_button(_icc_pm, "stat_q4_icc_per_model.csv")
 
         st.markdown("**Pooled ICC — centered (Option A)**")
         if _icc_pc.empty:
             st.info("No results.")
         else:
-            st.dataframe(_icc_pc.round(4), hide_index=True, use_container_width=True)
+            st.dataframe(_icc_pc.round(4), hide_index=True, width="stretch")
             download_button(_icc_pc, "stat_q4_icc_pooled_centered.csv")
 
         st.markdown("**Pooled ICC — two-way random effects (Option B)**")
@@ -2452,7 +2453,7 @@ smaller groups and is slightly less powerful for the same true effect size.
             _q4_tw = _icc_tw.copy()
             for col in ["p_scenario", "p_model", "p_interaction"]:
                 _q4_tw[col] = _q4_tw[col].map(_fmt_p)
-            st.dataframe(_q4_tw.round(4), hide_index=True, use_container_width=True)
+            st.dataframe(_q4_tw.round(4), hide_index=True, width="stretch")
             download_button(_icc_tw, "stat_q4_icc_pooled_twoway.csv")
 
         with st.expander("Q4 full methodology"):
