@@ -701,6 +701,7 @@ def _extract_eva_scatter_point(
         "short_label": model_suffix or run_dir.name,
         "model_details": _extract_model_details(run_config),
         "pipeline_type": _classify_pipeline_type(run_config),
+        "domain": _domain_from_config(run_config),
     }
 
     # pass@1: mean of EVA-A_pass and EVA-X_pass
@@ -944,6 +945,7 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
                     "stt": details.get("STT", ""),
                     "tts": details.get("TTS", ""),
                     "pipeline_type": d.get("pipeline_type", _PIPELINE_UNKNOWN),
+                    "domain": d.get("domain", ""),
                 }
             )
 
@@ -995,6 +997,7 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
             f"EVA-A<sub>{subscript}</sub>: {p['x']:.3f}",
             f"EVA-X<sub>{subscript}</sub>: {p['y']:.3f}",
             f"Type: {ptype}",
+            *([f"Domain: {p['domain']}"] if p.get("domain") else []),
             *(f"{model.upper()}: {p[model]}" for model in ("llm", "stt", "tts") if p[model]),
         ]
 
@@ -1128,6 +1131,7 @@ def _aggregate_scatter_by_system(scatter_data: list[dict], run_to_system: dict[s
             "short_label": first.get("short_label") or sys,
             "model_details": first.get("model_details", {}),
             "pipeline_type": first.get("pipeline_type", _PIPELINE_UNKNOWN),
+            "domain": "(averaged)",
         }
         for key in score_keys:
             vals = [p[key] for p in points if isinstance(p.get(key), dict) and "eva_a" in p[key] and "eva_x" in p[key]]
@@ -1351,12 +1355,17 @@ def render_cross_run_comparison(run_dirs: list[Path]):
     if bar_keys and len(run_summaries) > 1:
         bar_fig = go.Figure()
         for i, (_, row) in enumerate(summary_df.iterrows()):
+            domain = row.get("domain", "") or ""
             bar_fig.add_trace(
                 go.Bar(
                     x=bar_labels,
                     y=[row.get(m) for m in bar_keys],
                     name=row["label"],
                     marker_color=_MODEL_COLORS[i % len(_MODEL_COLORS)],
+                    customdata=[[domain]] * len(bar_labels),
+                    hovertemplate=(
+                        "<b>%{fullData.name}</b><br>Domain: %{customdata[0]}<br>%{x}: %{y:.3f}<extra></extra>"
+                    ),
                 )
             )
         bar_fig.update_layout(
