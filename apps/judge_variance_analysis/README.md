@@ -6,15 +6,22 @@ across benchmark runs is real signal vs. noise?
 
 ## Sources of Variance
 
+**Experiment (judge and trajectory variance)** — isolated together from the same N × M data collection:
+
 | Source | Description | How isolated |
 |---|---|---|
 | **Judge variance** | LLM judge produces different outputs when re-evaluating the same conversation (non-deterministic text generation) | Std dev across N iterations on identical data |
 | **Trajectory variance** | Genuine differences in conversation trajectories across simulation trials | Std dev across M trials, averaged over iterations to remove judge noise |
-| **Scenario variance (ICC)** | How well metric scores differentiate between scenarios vs. within-scenario noise | Intraclass correlation coefficient |
+
+**ICC (separate calculation, same data)** — answers a related but distinct question:
+
+| Source | Description | How measured |
+|---|---|---|
+| **Scenario variance (ICC)** | What fraction of total score variance is explained by scenario identity vs. within-scenario noise | Intraclass correlation coefficient (σ²_scenario / σ²_total) |
 
 ## Metrics Analyzed
 
-The 6 LLM-judge metrics in EVA (this study adds no new metrics):
+The 6 LLM-judge metrics in EVA:
 
 | Metric | Judge type | Notes |
 |---|---|---|
@@ -29,12 +36,13 @@ Deterministic/code-based metrics are excluded — they produce identical results
 
 ## Study Design
 
-- **N iterations** per run: re-run `--force-rerun-metrics` N times on the same existing
-  conversation data (same audio, transcripts, tool calls). Isolates judge stochasticity.
-- **M trials** per scenario: each scenario has M simulation trials with different conversation
-  trajectories. Isolates real behavioral variance after averaging out judge noise.
-- **ICC**: intraclass correlation at the scenario level — what fraction of total score variance
-  is attributable to scenario identity (signal) vs. residual noise.
+**Experiment:** Re-run `--force-rerun-metrics` N times on each run (N iterations). Each run
+already has M simulation trials per scenario. The N × M design separates judge stochasticity
+(varies across iterations on identical data) from trajectory variance (varies across trials).
+
+**ICC:** Computed from the same archived data as a separate analysis. Partitions total score
+variance into scenario-level signal (σ²_scenario) and within-scenario noise, reporting the
+fraction attributable to scenario identity.
 
 ## Archive Structure
 

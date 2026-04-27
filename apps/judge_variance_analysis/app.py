@@ -50,16 +50,12 @@ from judge_variance_analysis.load_data import (
     load_scores_from_csv,
 )
 
+from eva.metrics.aggregation import EVA_COMPOSITES
+
 st.set_page_config(page_title="EVA Judge Variance Analysis", layout="wide")
 
-# Pass thresholds for EVA composite metrics (normalized_score scale)
 PASS_THRESHOLDS: dict[str, float] = {
-    "faithfulness": 0.5,  # EVA-A: faithfulness >= 0.5
-    "agent_speech_fidelity": 0.95,  # EVA-A: agent_speech_fidelity >= 0.95
-    "conversation_progression": 0.5,  # EVA-X: >= 0.5
-    "turn_taking": 0.5,  # EVA-X: >= 0.5
-    "conciseness": 0.5,  # EVA-X: >= 0.5
-    # transcription_accuracy_key_entities: not part of any composite pass condition
+    m: thresh for comp in EVA_COMPOSITES for m, (op, thresh) in comp.thresholds.items() if m in JUDGE_METRICS
 }
 
 
@@ -498,7 +494,7 @@ agg = agg_df[agg_df["run_id"].isin(selected_runs)]
 st.sidebar.divider()
 with st.sidebar.expander("Generate report"):
     if not _REPORT_AVAILABLE:
-        st.info("Report generation is not yet available in the shared version.")
+        st.info("Report generation is not yet available.")
     else:
         _SECTION_DESCS = {
             "A": "A · Judge Variance",
@@ -582,11 +578,17 @@ tabs = st.tabs(
 with tabs[0]:
     st.header("Overview")
     st.write("""
-    This study measures two sources of variance in EVA metric scores:
+    This study measures three sources of variance in EVA metric scores:
     - **Judge variance** (stochasticity): the LLM judge producing different outputs when
       re-evaluating the *same* conversation (same audio, transcript, tool calls).
     - **Trial variance**: genuine differences in how conversations unfold across trials
       (different simulations of the same scenario).
+    - **Scenario variance (ICC)**: how well scores differentiate between scenarios vs.
+      within-scenario noise.
+
+    Judge variance and trial variance are isolated together in one experiment (N iterations ×
+    M trials per run). ICC is a separate but related calculation derived from the same data —
+    it answers what fraction of the total variance is explained by scenario identity.
     """)
 
     meta_rows = []
@@ -597,6 +599,9 @@ with tabs[0]:
     st.dataframe(pd.DataFrame(meta_rows), width="stretch")
 
     st.subheader("Metric reference")
+    st.caption(
+        "Scoring details as of 2026-04-27. Verify against current prompt definitions if thresholds or rubrics have changed."
+    )
     _metric_rows = [
         (
             "faithfulness",
