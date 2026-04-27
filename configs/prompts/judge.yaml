@@ -504,18 +504,23 @@ judge:
       ## How the conversation ended
       The conversation ended due to: {conversation_end}
         
-      ## User's Goal
-      {user_goal}
-        
-      ## User Persona
-      {user_persona}
-        
+      ## User Simulator Instructions
+      The following is the full system prompt the user simulator was given for this conversation, including the user's persona, goal, decision tree, must-have criteria, and end-of-call rules. This is the source of truth for what the user-sim was told to do. Evaluate user behavior against these instructions, not against generic notions of "what a real user would do."
+      ```
+      {user_simulator_instructions}
+      ```
+
       ## Modification Tools
       The following are the tools that modify database state. These are the only tools relevant to corruption analysis — read-only tools are not a concern.
       {modification_tools}
       
       ## Evaluation Criteria
-      
+
+      ### Guiding principle: judge the user from the user's perspective
+      The user is a simulated caller who only hears the agent's spoken words. They cannot see tool calls, tool responses, or the agent's internal state. Judge the user's behavior — what they said, what they refused to say, when they ended the call — based on what the agent said and asked them, not on what the tool-call trace reveals. Use the tool-call trace asymmetrically:
+      - **To exonerate the user (always allowed):** confirm that an agent failure occurred that the user couldn't have known about — e.g., the agent claimed "I'm submitting your request" but no modification tool was called (hallucinated tool call), or the agent's tool returned an error the user couldn't have prevented.
+      - **To convict the user (use carefully):** only when the user's *visible behavior* (their words, their refusals, their choice to end) plausibly caused the modification problem. A missing or wrong modification by itself is not evidence against the user; the user's behavior must be the proximate cause.
+
       Analyze the conversation for the following corruption scenarios:
       
       ### Corruption Type 1: User invented requests that caused extra modifications
@@ -526,14 +531,25 @@ judge:
       ### Corruption Type 2: User ended the conversation prematurely
         The user ended the conversation before the agent had the opportunity to complete the necessary modification tools to fulfill the user's goal.
         Applicability:
-          - This type only applies when the conversation ended due to the user calling the end call tool. 
+          - This type only applies when the conversation ended due to the user calling the end call tool.
           - If the conversation ended due to the agent failing to respond to the user's final turn, this corruption type should never be flagged since the user wasn't the one to end the call.
-      - Only flag this if the user chose to end the call when the agent was still actively working toward resolution or had not yet completed the required actions.
-      - Do NOT flag this if the agent encountered an error, said they could not help, or was stuck/unhelpful for multiple consecutive turns — in those cases the user is correct to end the call per their failure condition.
-      - Do NOT flag this if the agent completed all necessary actions and the resolution condition was met.
-      - Special case: transferring to a live agent
+
+      Decision procedure: flag this ONLY if a reasonable user following their decision tree could have enabled the missing modification by staying on the call. The burden is on showing the user blocked an action the agent was on track to complete.
+
+      Do NOT flag (agent failures that exonerate the user, even if a required modification did not happen):
+      - **Agent error or retry offer.** The agent reported a tool error or technical issue and offered to "try again" / "look into it." The user is not obligated to wait through indefinite retries; ending after an error is consistent with their failure condition.
+      - **Hallucinated tool call.** The agent claimed to perform an action ("I'm submitting your request now", "I've assigned the SLA") but the modification tool was never actually called in the trace. Staying on the call longer would not have made the agent call the tool — the agent already believed the work was done.
+      - **Off-script demand.** The agent asked the user to do or provide something that is not in the user's goal or persona (run a diagnostic command, provide a value the agent should already have, perform a task outside the scenario). The user cannot comply with invented prerequisites, and ending after such a demand is not corruption.
+      - **Skipped wrap-up before the agent's own goodbye.** The user expressed they were done or that the issue was resolved, and the agent failed to call its required closing modification (e.g., mark_resolved, close_ticket) before the goodbye exchange. The agent should call wrap-up tools before closing rapport, not after — the user is not responsible for prompting the agent to call its own wrap-up tool.
+      - **Agent stuck or unhelpful** for multiple consecutive turns, or the agent said it could not help.
+      - **Resolution condition met.** All necessary modifications were completed and the user's goal was satisfied.
+
+      DO flag:
+      - The agent was actively and competently progressing (asking for a specific piece of information that exists in the user's goal, about to call a tool) and the user cut it off without cause.
+      - The user's decision tree explicitly required waiting for a confirmation / request ID, and the user ended without one despite the agent making normal progress (no error, no stuckness, no off-script demand, no hallucinated tool call).
+      - Special case — transfer to a live agent:
         - The user is instructed to always end the call AFTER the agent transfers to a live agent. This should not be penalized.
-        - However the user must give the agent the chance to call the tool to make the transfer. If the user says something like "Ok go ahead and transfer me. goodbye" and then ends the call before the agent is able to call the transfer to agent tool, this is a premature end and MUST be flagged.
+        - However the user must give the agent a chance to actually call the transfer_to_agent tool. If the user says "Ok go ahead and transfer me. Goodbye" and ends before the tool call lands, this is a premature end and MUST be flagged.
       
       ### Corruption Type 3: User failed to provide required information
         The user failed to provide information from their goal that the agent explicitly asked for, preventing the agent from completing a necessary modification tool call.
