@@ -1201,14 +1201,17 @@ def render_cross_run_comparison(run_dirs: list[Path]):
     summary_df = pd.DataFrame(run_summaries)
 
     complete_runs_only = st.sidebar.toggle(
-        "Complete runs only", value=True, key="complete_runs_only", bind="query-params"
+        "Complete runs only",
+        value=True,
+        key="complete_runs_only",
+        bind="query-params",
+        help="Hide runs that have any failed records (conversation generation failures).",
     )
     if complete_runs_only and not summary_df.empty:
-        max_records = summary_df["records"].max()
-        if max_records > 0:
-            summary_df = summary_df[summary_df["records"] == max_records]
-            complete_runs = set(summary_df["run"])
-            scatter_data = [d for d in scatter_data if d["run"] in complete_runs]
+        failures = pd.to_numeric(summary_df["conversation_failures"], errors="coerce").fillna(0)
+        summary_df = summary_df[failures == 0]
+        complete_runs = set(summary_df["run"])
+        scatter_data = [d for d in scatter_data if d["run"] in complete_runs]
 
     hide_incomplete = st.sidebar.toggle(
         "Hide incomplete results", value=True, key="hide_incomplete", bind="query-params"
