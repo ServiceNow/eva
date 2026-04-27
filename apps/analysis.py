@@ -613,10 +613,13 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
     ``sub_metrics`` dict drives the column layout (alphabetical sorting would
     scramble logical groupings like `mean_latency_ms, p50, p90, on_time_rate, ...`).
 
-    Rows for failed attempts (directories named *_failed_attempt_*) are marked
-    with ``_is_failed_attempt=True`` so the caller can filter them.
+    Rows are marked with ``_is_failed_attempt=True`` when either the directory
+    is named ``*_failed_attempt_*`` or the output_id appears in the run's
+    ``failed_record_ids`` (covers final failures the orchestrator may have left
+    at the original path).
     """
     record_dirs = get_record_directories(run_dir)
+    summary_failed_ids = set((_load_evaluation_summary(run_dir).get("simulation") or {}).get("failed_record_ids") or [])
     rows: list[dict] = []
     ordered_names: list[str] = []
     seen: set[str] = set()
@@ -635,7 +638,8 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
             if not metrics:
                 continue
 
-            is_failed_attempt = "_failed_attempt_" in trial_label
+            output_id = f"{record_id}/{trial_label}" if trial_label else record_id
+            is_failed_attempt = "_failed_attempt_" in trial_label or output_id in summary_failed_ids
             row: dict = {"record": record_id, "_is_failed_attempt": is_failed_attempt}
             if trial_label:
                 row["trial"] = trial_label
