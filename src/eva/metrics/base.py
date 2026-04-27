@@ -60,6 +60,7 @@ class MetricContext:
         agent_role: str,
         agent_instructions: str,
         agent_tools: list[dict],
+        agent_id: str,
         current_date_time: str,
         # Basic stats
         num_turns: int = 0,
@@ -119,6 +120,7 @@ class MetricContext:
         self.agent_role = agent_role
         self.agent_instructions = agent_instructions
         self.agent_tools = agent_tools
+        self.agent_id = agent_id
         self.current_date_time = current_date_time
 
         # Processed log data
@@ -194,7 +196,13 @@ class BaseMetric(ABC):
         pass
 
     def _log_token_usage(
-        self, context: MetricContext, model_name: str, model_params: dict, prompt: str, usage: dict | None
+        self,
+        context: MetricContext,
+        model_name: str,
+        model_params: dict,
+        prompt: str,
+        usage: dict | None,
+        response_text: str | None = None,
     ) -> None:
         """Append one row of LLM judge token usage to a per-metric CSV and update the run-level JSON summary."""
         if not context.output_dir:
@@ -222,22 +230,36 @@ class BaseMetric(ABC):
         model_id = usage.get("model_name") if usage else None
 
         csv_path = csv_dir / f"{self.name}.csv"
+        header = [
+            "record_id",
+            "model_name",
+            "model_id",
+            "input_tokens",
+            "output_tokens",
+            "timestamp",
+            "model_params",
+            "input_prompt",
+            "output_response",
+        ]
+
+        # If a CSV from a previous version is present, rotate it out so the new
+        # rows don't get mixed with rows missing the output_response column.
+        if csv_path.exists():
+            with open(csv_path, newline="") as f:
+                existing_header = next(csv.reader(f), None)
+            if existing_header != header:
+                legacy_path = csv_dir / f"{self.name}.legacy.csv"
+                i = 1
+                while legacy_path.exists():
+                    legacy_path = csv_dir / f"{self.name}.legacy.{i}.csv"
+                    i += 1
+                csv_path.rename(legacy_path)
+
         write_header = not csv_path.exists()
         with open(csv_path, "a", newline="") as f:
             writer = csv.writer(f)
             if write_header:
-                writer.writerow(
-                    [
-                        "record_id",
-                        "model_name",
-                        "model_id",
-                        "input_tokens",
-                        "output_tokens",
-                        "timestamp",
-                        "model_params",
-                        "input_prompt",
-                    ]
-                )
+                writer.writerow(header)
             writer.writerow(
                 [
                     record_id,
@@ -248,6 +270,7 @@ class BaseMetric(ABC):
                     datetime.now(UTC).isoformat(),
                     json.dumps(model_params) if model_params else None,
                     prompt,
+                    response_text,
                 ]
             )
 
@@ -313,7 +336,7 @@ class TextJudgeMetric(BaseMetric):
         """Call LLM judge and parse response. Returns (parsed_dict, raw_response_text)."""
         messages = [{"role": "user", "content": prompt}]
         response_text, usage = await self.llm_client.generate_text(messages)
-        self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage)
+        self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage, response_text)
         return parse_judge_response(response_text, context.record_id, self.logger), response_text
 
     def validate_and_normalize_rating(self, response: dict, context: MetricContext) -> tuple[int, float]:
@@ -362,6 +385,7 @@ class ConversationTextJudgeMetric(TextJudgeMetric):
                     score=0.0,
                     normalized_score=0.0,
                     error="Failed to parse judge response",
+                    details={"judge_prompt": prompt, "judge_raw_response": raw_response},
                 )
 
             # Validate and normalize
@@ -479,12 +503,16 @@ class PerTurnConversationJudgeMetric(TextJudgeMetric):
 
             prompt = self.get_judge_prompt(**self.get_prompt_variables(context, transcript_text))
             response_text, usage = await self.llm_client.generate_text([{"role": "user", "content": prompt}])
-            self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage)
+            self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage, response_text)
             parsed = parse_judge_response_list(response_text)
 
             if parsed is None:
                 return MetricScore(
-                    name=self.name, score=0.0, normalized_score=0.0, error="Failed to parse judge response"
+                    name=self.name,
+                    score=0.0,
+                    normalized_score=0.0,
+                    error="Failed to parse judge response",
+                    details={"judge_prompt": prompt, "judge_raw_response": response_text},
                 )
 
             turn_ids = self.get_expected_turn_ids(context)
