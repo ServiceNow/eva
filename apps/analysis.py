@@ -1323,6 +1323,7 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         bind="query-params",
         help="Collapse runs of the same system across domains into a single row (records summed, metrics averaged).",
     )
+    summary_df_by_domain = summary_df.copy()
     if avg_across_domains and not summary_df.empty:
         run_to_system = dict(zip(summary_df["run"], summary_df["system_name"]))
         summary_df = _aggregate_summary_by_system(summary_df)
@@ -1432,6 +1433,37 @@ def render_cross_run_comparison(run_dirs: list[Path]):
     _show_subtable("Accuracy Metrics (EVA-A)", eva_a_composites, accuracy_metrics)
     _show_subtable("Experience Metrics (EVA-X)", eva_x_composites, experience_metrics)
     _show_subtable("Diagnostic & Other Metrics", [], other_metrics)
+
+    # === Metric by Domain pivot ===
+    candidate_metrics = [c for c in _EVA_BAR_COMPOSITES if c in summary_df_by_domain.columns]
+    candidate_metrics += [m for m in ordered_metrics if m in summary_df_by_domain.columns]
+    if candidate_metrics and "domain" in summary_df_by_domain.columns:
+        st.markdown("#### Metric by Domain")
+
+        def _pivot_metric_label(m: str) -> str:
+            if m in _EVA_COMPOSITE_DISPLAY:
+                return f"[EVA] {_EVA_COMPOSITE_DISPLAY[m]}"
+            return _format_metric_name(m)
+
+        default_pivot_index = candidate_metrics.index("EVA-A_pass") if "EVA-A_pass" in candidate_metrics else 0
+        selected_pivot_metric = st.selectbox(
+            "Metric",
+            candidate_metrics,
+            index=default_pivot_index,
+            format_func=_pivot_metric_label,
+            key="domain_pivot_metric",
+        )
+        domain_pivot = summary_df_by_domain.pivot_table(
+            index="system_name",
+            columns="domain",
+            values=selected_pivot_metric,
+            aggfunc="mean",
+        )
+        if not domain_pivot.empty:
+            domain_pivot.index.name = "System"
+            domain_pivot.columns.name = "Domain"
+            pivot_styled = domain_pivot.style.map(_color_cell).format("{:.3f}", na_rep="—")
+            st.dataframe(pivot_styled)
 
     error_rows = []
     for _, row in summary_df.iterrows():
