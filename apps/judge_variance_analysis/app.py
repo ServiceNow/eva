@@ -50,12 +50,15 @@ from judge_variance_analysis.load_data import (
     load_scores_from_csv,
 )
 
-from eva.metrics.aggregation import EVA_COMPOSITES
-
 st.set_page_config(page_title="EVA Judge Variance Analysis", layout="wide")
 
+# Mirrors EVA_COMPOSITES thresholds in src/eva/metrics/aggregation.py — update there first if changing.
 PASS_THRESHOLDS: dict[str, float] = {
-    m: thresh for comp in EVA_COMPOSITES for m, (op, thresh) in comp.thresholds.items() if m in JUDGE_METRICS
+    "faithfulness": 0.5,
+    "agent_speech_fidelity": 0.95,
+    "conversation_progression": 0.5,
+    "turn_taking": 0.5,
+    "conciseness": 0.5,
 }
 
 
