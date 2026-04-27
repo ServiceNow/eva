@@ -19,6 +19,12 @@ def init(model_list: list) -> None:
     _router = Router(model_list=model_list, num_retries=0, default_max_parallel_requests=5, timeout=60)
 
 
+def reset() -> None:
+    """Reset the shared Router to None."""
+    global _router
+    _router = None
+
+
 def get() -> Router:
     """Return the shared Router. Raises if `init()` was not called."""
     if _router is None:

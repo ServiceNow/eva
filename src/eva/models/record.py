@@ -115,14 +115,10 @@ class EvaluationRecord(BaseModel):
 
     current_date_time: str = Field(..., description="Current date and time for the record")
 
-    subflow_in_depth: dict = Field(..., description="Subflow in depth for the record")
+    scenario_context: dict = Field(..., description="Scenario context for the record")
 
-    expected_flow: str = Field(..., description="Subflow description for the record")
-
-    # Expected outcomes
     ground_truth: GroundTruth = Field(default_factory=GroundTruth, description="Expected outcomes for evaluation")
 
-    # Optional overrides
     agent_override: AgentOverride | None = Field(None, description="Override agent configuration for this record")
 
     # Metadata

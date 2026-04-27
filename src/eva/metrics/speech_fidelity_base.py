@@ -4,12 +4,14 @@ import asyncio
 import os
 import random
 from io import BytesIO
+from pathlib import Path
 from typing import Any
 
 from google import genai
 from google.api_core import exceptions as google_exceptions
 from google.genai import types as genai_types
 from pydub import AudioSegment
+from pydub.silence import detect_nonsilent
 
 from eva.metrics.base import AudioJudgeMetric, MetricContext
 from eva.metrics.utils import aggregate_per_turn_scores, normalize_rating, resolve_turn_id
@@ -30,6 +32,15 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
     rating_scale: tuple[int, int]  # (min, max) valid ratings — set by subclass
     max_empty_retries: int = 6
 
+    # Silence trimming parameters — collapse long silences to reduce audio token cost.
+    silence_thresh_dbfs: int = -45
+    min_silence_len_ms: int = 3000
+    speech_padding_ms: int = 100
+    inter_segment_pause_ms: int = 3000
+    trailing_silence_ms: int = 500
+    silence_seek_step_ms: int = 50
+    save_trimmed_file: bool = False
+
     def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
         self.aggregation = self.config.get("aggregation", "mean")
@@ -45,6 +56,8 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     normalized_score=0.0,
                     error=f"No {self.role} audio file available",
                 )
+
+            audio_segment = self._trim_silence(audio_segment, context)
 
             intended_turns = self._get_intended_turns(context)
             num_turns = len(intended_turns)
@@ -86,6 +99,9 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             for response_item in turns:
                 turn_id = resolve_turn_id(response_item, tts_turn_ids, self.name)
                 if turn_id is None:
+                    self.logger.warning(
+                        f"[{context.record_id}] Could not resolve turn ID for {response_item} turn_ids {tts_turn_ids}"
+                    )
                     continue
                 rating = response_item.get("rating")
                 transcript = response_item.get("transcript")
@@ -154,7 +170,8 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     # message transformation is broken for Gemini (INVALID_ARGUMENT).
                     response_text = await self._generate_with_file(uploaded_file, prompt, context)
                 else:
-                    response_text = await self.llm_client.generate_text(messages)
+                    response_text, usage = await self.llm_client.generate_text(messages)
+                    self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage)
                 if response_text is None:
                     return None, []
 
@@ -203,6 +220,57 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
         finally:
             if uploaded_file is not None:
                 await self._delete_uploaded_file(uploaded_file, context)
+
+    def _trim_silence(self, audio_segment: AudioSegment, context: MetricContext) -> AudioSegment:
+        """Collapse long silences in the role audio to reduce Gemini audio token cost.
+
+        Single-channel role audio contains long stretches of silence while the other
+        speaker is talking. Gemini bills audio per second of duration (~32 tokens/s),
+        so trimming these silences directly cuts cost.
+
+        Preserves enough inter-segment pause for the judge to distinguish turn boundaries
+        and a tail of trailing silence so the prompt's end-of-audio cutoff leniency
+        remains correctly calibrated.
+        """
+        segments = detect_nonsilent(
+            audio_segment,
+            min_silence_len=self.min_silence_len_ms,
+            silence_thresh=self.silence_thresh_dbfs,
+            seek_step=self.silence_seek_step_ms,
+        )
+        if not segments:
+            self.logger.warning(f"[{context.record_id}] No speech detected in {self.role} audio — sending untrimmed.")
+            return audio_segment
+
+        pause = AudioSegment.silent(duration=self.inter_segment_pause_ms, frame_rate=audio_segment.frame_rate)
+        trailing = AudioSegment.silent(duration=self.trailing_silence_ms, frame_rate=audio_segment.frame_rate)
+
+        trimmed = AudioSegment.empty()
+        for i, (start, end) in enumerate(segments):
+            s = max(0, start - self.speech_padding_ms)
+            e = min(len(audio_segment), end + self.speech_padding_ms)
+            trimmed += audio_segment[s:e]
+            if i < len(segments) - 1:
+                trimmed += pause
+        trimmed += trailing
+
+        original_ms = len(audio_segment)
+        trimmed_ms = len(trimmed)
+        self.logger.info(
+            f"[{context.record_id}] Trimmed {self.role} audio: "
+            f"{original_ms / 1000:.1f}s → {trimmed_ms / 1000:.1f}s "
+            f"({100 * trimmed_ms / original_ms:.0f}% of original, {len(segments)} speech segments)"
+        )
+
+        if context.output_dir and self.save_trimmed_file:
+            try:
+                out_path = Path(context.output_dir) / f"audio_{self.role}_trimmed.wav"
+                trimmed.export(str(out_path), format="wav")
+                self.logger.info(f"[{context.record_id}] Saved trimmed audio for inspection: {out_path}")
+            except Exception as e:
+                self.logger.warning(f"[{context.record_id}] Failed to save trimmed audio: {e}")
+
+        return trimmed
 
     async def _upload_audio_file(self, audio_segment: AudioSegment, context: MetricContext):
         """Upload audio to Google's File API and poll until ACTIVE."""

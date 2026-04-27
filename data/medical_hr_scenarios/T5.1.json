@@ -1,0 +1,328 @@
+{
+  "_current_date": "2026-08-01",
+  "unit_cert_requirements": {
+    "8E-MED": [
+      "BLS",
+      "ACLS"
+    ],
+    "4B-ICU": [
+      "BLS",
+      "ACLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "5A-SURG": [
+      "BLS",
+      "ACLS",
+      "TNCC"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ACLS",
+      "ONC-CERT"
+    ]
+  },
+  "providers": {
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP940181",
+      "first_name": "Nadia",
+      "last_name": "Bouzid",
+      "facility_code": "MGH-04B",
+      "pin": "4821",
+      "phone_last_four": "8421",
+      "otp_code": "772324",
+      "role_code": "RN",
+      "department_code": "ORTHOPEDICS",
+      "hire_date": "2021-03-15",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {},
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-12-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP940181": {
+      "employee_id": "EMP940181",
+      "first_name": "Nadia",
+      "last_name": "Bouzid",
+      "date_of_birth": "1991-04-17",
+      "phone_last_four": "8421",
+      "otp_code": "772324",
+      "department_code": "ORTHOPEDICS",
+      "role_code": "RN",
+      "unit_code": "8E-MED",
+      "hire_date": "2021-03-15",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 65,
+        "hours_worked_past_year": 1872,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    },
+    "EMP386042": {
+      "employee_id": "EMP386042",
+      "first_name": "Julia",
+      "last_name": "Mercer",
+      "date_of_birth": "1988-11-09",
+      "phone_last_four": "1194",
+      "otp_code": "418522",
+      "department_code": "ORTHOPEDICS",
+      "role_code": "RN",
+      "unit_code": "8E-MED",
+      "hire_date": "2019-06-24",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 86,
+        "hours_worked_past_year": 1920,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 12.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260815-1500": {
+      "shift_id": "SHF-20260815-1500",
+      "employee_id": "EMP940181",
+      "unit_code": "8E-MED",
+      "date": "2026-08-15",
+      "start_time": "15:00",
+      "end_time": "23:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-22",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260820-0700": {
+      "shift_id": "SHF-20260820-0700",
+      "employee_id": "EMP940181",
+      "unit_code": "8E-MED",
+      "date": "2026-08-20",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-22",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260821-0700": {
+      "shift_id": "SHF-20260821-0700",
+      "employee_id": "EMP940181",
+      "unit_code": "8E-MED",
+      "date": "2026-08-21",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-22",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260818-0700": {
+      "shift_id": "SHF-20260818-0700",
+      "employee_id": "EMP386042",
+      "unit_code": "8E-MED",
+      "date": "2026-08-18",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-22",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "ORTHOPEDICS": {
+        "2026-08-05": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-08-12": [
+          "10:00",
+          "13:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "ORTHOPEDICS": {
+        "2026-10-06": [
+          "10:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-10-07": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-10-08": [
+          "10:00",
+          "15:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "ORTHOPEDICS": {
+        "2026-08-11": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-08-13": [
+          "10:00",
+          "14:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-09-07",
+    "2026-11-26",
+    "2026-12-25"
+  ],
+  "department_blackout_dates": {
+    "ORTHOPEDICS": [],
+    "CARDIOLOGY": [
+      "2026-11-27"
+    ],
+    "EMERGENCY": [],
+    "ONCOLOGY": [],
+    "SURGERY": [
+      "2026-12-24"
+    ],
+    "PEDIATRICS": [],
+    "RADIOLOGY": []
+  }
+}

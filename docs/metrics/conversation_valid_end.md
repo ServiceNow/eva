@@ -36,7 +36,7 @@ Uses `output_dir` from MetricContext to read `elevenlabs_events.jsonl`.
 
 ```json
 {
-  "name": "conversation_finished",
+  "name": "conversation_valid_end",
   "score": 1.0,
   "normalized_score": 1.0,
   "details": {
@@ -53,7 +53,7 @@ Uses `output_dir` from MetricContext to read `elevenlabs_events.jsonl`.
 
 ## Implementation Details
 
-- **File**: `src/eva/metrics/validation_metrics/conversation_finished.py`
+- **File**: `src/eva/metrics/validation_metrics/conversation_valid_end.py`
 - **Class**: `ConversationFinishedMetric`
 - **Base Class**: `CodeMetric`
 - **Configuration**: None (deterministic validation)

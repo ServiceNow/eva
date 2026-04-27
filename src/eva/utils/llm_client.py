@@ -88,7 +88,7 @@ class LLMClient:
         # Ensure delay is positive
         return max(0, delay)
 
-    async def generate_text(self, messages: list[dict], response_format: dict | None = None) -> str:
+    async def generate_text(self, messages: list[dict], response_format: dict | None = None) -> tuple[str, dict | None]:
         """Generate text completion with automatic retries.
 
         Args:
@@ -96,7 +96,7 @@ class LLMClient:
             response_format: Optional response format specification
 
         Returns:
-            Generated text content
+            Tuple of (generated text, usage dict with prompt_tokens/completion_tokens or None)
 
         Raises:
             Exception: If the LLM call fails after all retries
@@ -146,7 +146,15 @@ class LLMClient:
 
                 (logger.info if attempt > 0 else logger.debug)(f"{call_retry_id} succeeded for {self.model}")
 
-                return response.choices[0].message.content
+                text = response.choices[0].message.content
+                usage = None
+                if hasattr(response, "usage") and response.usage:
+                    usage = {
+                        "prompt_tokens": response.usage.prompt_tokens,
+                        "completion_tokens": response.usage.completion_tokens,
+                        "model_name": getattr(response, "model", None),
+                    }
+                return text, usage
 
             except Exception as e:
                 last_error = e

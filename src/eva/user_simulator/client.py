@@ -19,9 +19,10 @@ from elevenlabs.conversational_ai.conversation import (
 )
 
 from eva.models.config import PerturbationConfig
-from eva.user_simulator.audio_interface import BotToBotAudioInterface
+from eva.user_simulator.audio_interface import ELEVENLABS_OUTPUT_RATE, BotToBotAudioInterface
 from eva.user_simulator.event_logger import ElevenLabsEventLogger
 from eva.user_simulator.perturbation import AudioPerturbator
+from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -53,8 +54,8 @@ class UserSimulator:
         goal: dict,
         server_url: str,
         output_dir: Path,
+        agent_id: str,
         timeout: int = 600,
-        user_simulator_context: str = "",
         perturbation_config: PerturbationConfig | None = None,
     ):
         """Initialize the user simulator.
@@ -66,7 +67,7 @@ class UserSimulator:
             server_url: WebSocket URL of the assistant server
             output_dir: Directory for output files
             timeout: Conversation timeout in seconds
-            user_simulator_context: Domain-specific context line from agent config
+            agent_id: Agent identifier used to select the domain-specific simulator prompt
             perturbation_config: Optional perturbation to apply to user audio
         """
         self.persona_config = persona_config
@@ -75,7 +76,7 @@ class UserSimulator:
         self.output_dir = Path(output_dir)
         self.timeout = timeout
         self.current_date_time = current_date_time
-        self.user_simulator_context = user_simulator_context
+        self.agent_id = agent_id
         self._perturbation_config = perturbation_config
         self._perturbator = (
             AudioPerturbator(perturbation_config)
@@ -96,6 +97,7 @@ class UserSimulator:
         # Audio recording buffers
         self._user_audio_chunks: list[bytes] = []
         self._assistant_audio_chunks: list[bytes] = []
+        self._user_clean_audio_chunks: list[bytes] = []
 
         # Keep-alive inactivity detection
         self._consecutive_keepalive_count = 0
@@ -178,9 +180,10 @@ class UserSimulator:
             else:
                 user_persona = behavior_prompts["default"]
 
+            # Derive domain from agent_id (e.g. "agent_airline" → "airline")
+            domain = self.agent_id.removeprefix("agent_")
             prompt = PromptManager().get_prompt(
-                "user_simulator.system_prompt",
-                user_simulator_context=self.user_simulator_context,
+                f"user_simulator.system_prompt_{domain}",
                 high_level_user_goal=self.goal["high_level_user_goal"],
                 must_have_criteria=self.goal["decision_tree"]["must_have_criteria"],
                 escalation_behavior=self.goal["decision_tree"]["escalation_behavior"],
@@ -282,6 +285,34 @@ class UserSimulator:
             self._end_reason = "error"
             raise
         finally:
+            # Save response latencies from audio interface before cleanup
+            if self._audio_interface:
+                latencies = self._audio_interface.get_latencies()
+                if latencies:
+                    latency_file = self.output_dir / "response_latencies.json"
+                    with open(latency_file, "w") as f:
+                        json.dump(
+                            {
+                                "latencies": latencies,
+                                "mean": sum(latencies) / len(latencies),
+                                "max": max(latencies),
+                                "count": len(latencies),
+                            },
+                            f,
+                            indent=2,
+                        )
+                    logger.info(f"Saved {len(latencies)} response latencies to {latency_file}")
+
+            if self._user_clean_audio_chunks:
+                clean_audio_path = self.output_dir / "audio_user_clean.wav"
+                save_pcm_as_wav(
+                    b"".join(self._user_clean_audio_chunks),
+                    clean_audio_path,
+                    sample_rate=ELEVENLABS_OUTPUT_RATE,
+                    num_channels=1,
+                )
+                logger.info(f"Saved clean user audio to {clean_audio_path}")
+
             # Grace period: keep the WebSocket open so the assistant pipeline
             # (Pipecat STT) can finish processing the last user utterance.
             # Observed delay from "User audio END" to "UserStoppedSpeaking"
@@ -452,7 +483,7 @@ class UserSimulator:
             transcript: The text that the assistant said
         """
         self._reset_keepalive_counter()
-        logger.info(f"🤖 Assistant (Pipecat): {transcript}")
+        logger.info(f"🤖 Assistant: {transcript}")
 
         self.event_logger.log_event(
             "assistant_speech",
@@ -466,13 +497,15 @@ class UserSimulator:
         """Record audio for later analysis.
 
         Args:
-            source: "user" or "assistant"
+            source: "user", "assistant", or "user_clean"
             audio_data: Raw audio bytes
         """
         if source == "user":
             self._user_audio_chunks.append(audio_data)
         elif source == "assistant":
             self._assistant_audio_chunks.append(audio_data)
+        elif source == "user_clean":
+            self._user_clean_audio_chunks.append(audio_data)
 
     def get_recorded_audio(self) -> tuple[bytes, bytes]:
         """Get the recorded audio.

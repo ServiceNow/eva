@@ -92,7 +92,7 @@ class TestNoJudgeResponse:
 
     @pytest.mark.asyncio
     async def test_agent_no_response(self, agent_metric):
-        agent_metric.llm_client.generate_text.return_value = None
+        agent_metric.llm_client.generate_text.return_value = (None, None)
         with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -102,7 +102,7 @@ class TestNoJudgeResponse:
 
     @pytest.mark.asyncio
     async def test_user_no_response(self, user_metric):
-        user_metric.llm_client.generate_text.return_value = None
+        user_metric.llm_client.generate_text.return_value = (None, None)
         with patch.object(user_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(user_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -123,7 +123,7 @@ class TestAgentCompute:
                 {"turn_id": 1, "rating": 1, "explanation": "Accurate"},
             ]
         )
-        agent_metric.llm_client.generate_text.return_value = response
+        agent_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -144,7 +144,7 @@ class TestAgentCompute:
                 {"turn_id": 1, "rating": 0, "explanation": "Mismatch"},
             ]
         )
-        agent_metric.llm_client.generate_text.return_value = response
+        agent_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -162,7 +162,7 @@ class TestAgentCompute:
                 {"turn_id": 1, "rating": 0, "explanation": "Bad"},
             ]
         )
-        agent_metric.llm_client.generate_text.return_value = response
+        agent_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -180,7 +180,7 @@ class TestAgentCompute:
                 {"turn_id": 1, "rating": 5, "explanation": "Invalid"},
             ]
         )
-        agent_metric.llm_client.generate_text.return_value = response
+        agent_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -199,7 +199,7 @@ class TestAgentCompute:
                 {"turn_id": 1, "rating": 1, "explanation": "Good"},
             ]
         )
-        agent_metric.llm_client.generate_text.return_value = response
+        agent_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -220,7 +220,7 @@ class TestUserSpeechFidelityCompute:
                 {"turn_id": 1, "rating": 3, "explanation": "Excellent"},
             ]
         )
-        user_metric.llm_client.generate_text.return_value = response
+        user_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(user_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(user_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -240,7 +240,7 @@ class TestUserSpeechFidelityCompute:
                 {"turn_id": 1, "rating": 1, "explanation": "Poor"},
             ]
         )
-        user_metric.llm_client.generate_text.return_value = response
+        user_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(user_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(user_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -258,7 +258,7 @@ class TestUserSpeechFidelityCompute:
                 {"turn_id": 1, "rating": 2, "explanation": "Ok"},
             ]
         )
-        user_metric.llm_client.generate_text.return_value = response
+        user_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(user_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(user_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -276,7 +276,7 @@ class TestUserSpeechFidelityCompute:
                 {"turn_id": 1, "rating": 1, "explanation": "Bad"},
             ]
         )
-        user_metric.llm_client.generate_text.return_value = response
+        user_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(user_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(user_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -294,7 +294,7 @@ class TestUserSpeechFidelityCompute:
                 {"turn_id": 1, "rating": 0, "explanation": "Invalid"},
             ]
         )
-        user_metric.llm_client.generate_text.return_value = response
+        user_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(user_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(user_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -312,7 +312,7 @@ class TestUserSpeechFidelityCompute:
                 {"turn_id": 1, "rating": 2, "explanation": "Ok"},
             ]
         )
-        user_metric.llm_client.generate_text.return_value = response
+        user_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(user_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(user_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -334,7 +334,7 @@ class TestTurnCountMismatch:
                 {"turn_id": 0, "rating": 1, "explanation": "Good"},
             ]
         )
-        agent_metric.llm_client.generate_text.return_value = response
+        agent_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -355,7 +355,7 @@ class TestTurnCountMismatch:
                 {"turn_id": 99, "rating": 3, "explanation": "Extra"},
             ]
         )
-        user_metric.llm_client.generate_text.return_value = response
+        user_metric.llm_client.generate_text.return_value = (response, None)
         with patch.object(user_metric, "load_role_audio", return_value=MagicMock()):
             with patch.object(user_metric, "encode_audio_segment", return_value="base64audio"):
                 context = _default_context()
@@ -400,7 +400,7 @@ class TestCallAndParseRetry:
                 {"turn_id": 0, "rating": 1, "explanation": "Good"},
             ]
         )
-        agent_metric.llm_client.generate_text.side_effect = [empty_response, good_response]
+        agent_metric.llm_client.generate_text.side_effect = [(empty_response, None), (good_response, None)]
 
         context = _default_context()
         dummy_audio = MagicMock()
@@ -420,7 +420,7 @@ class TestCallAndParseRetry:
             ]
         )
         # First call (inline) returns no audio, second call goes through google.genai
-        agent_metric.llm_client.generate_text.return_value = no_audio_response
+        agent_metric.llm_client.generate_text.return_value = (no_audio_response, None)
 
         # Mock the uploaded file object returned by google.genai
         mock_uploaded_file = MagicMock()
@@ -456,7 +456,7 @@ class TestCallAndParseRetry:
     @pytest.mark.asyncio
     async def test_returns_none_on_null_response(self, agent_metric):
         """Returns (None, []) if LLM returns None."""
-        agent_metric.llm_client.generate_text.return_value = None
+        agent_metric.llm_client.generate_text.return_value = (None, None)
         context = _default_context()
         dummy_audio = MagicMock()
         response_text, turns = await agent_metric._call_and_parse([], context, dummy_audio, "prompt")

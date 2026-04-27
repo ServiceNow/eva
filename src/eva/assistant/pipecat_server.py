@@ -6,23 +6,16 @@ It handles audio streaming via WebSocket with Twilio-style frame serialization.
 
 import asyncio
 import json
-import wave
 from pathlib import Path
-from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
-from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
-from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
-from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.frames.frames import (
     CancelFrame,
     LLMRunFrame,
     TTSSpeakFrame,
 )
 from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
-from pipecat.observers.user_bot_latency_observer import UserBotLatencyObserver
 from pipecat.pipeline.parallel_pipeline import ParallelPipeline
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -40,12 +33,12 @@ from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
 )
-from pipecat.turns.user_start import VADUserTurnStartStrategy
 from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
-from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies, UserTurnStrategies
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
 
-from eva.assistant.agentic.audit_log import AuditLog, convert_to_epoch_ms, current_timestamp_ms
+from eva.assistant.agentic.audit_log import convert_to_epoch_ms, current_timestamp_ms
+from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
 from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor, UserAudioCollector, UserObserver
 from eva.assistant.pipeline.audio_llm_processor import (
     AudioLLMProcessor,
@@ -61,8 +54,12 @@ from eva.assistant.pipeline.services import (
     create_stt_service,
     create_tts_service,
 )
+from eva.assistant.pipeline.turn_config import (
+    create_turn_start_strategy,
+    create_turn_stop_strategy,
+    create_vad_analyzer,
+)
 from eva.assistant.services.llm import LiteLLMClient
-from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
 from eva.models.config import AudioLLMConfig, PipelineConfig, SpeechToSpeechConfig
 from eva.utils.logging import get_logger
@@ -77,10 +74,8 @@ SMART_TURN_STOP_SECS = 3  # Default from SmartTurnParams
 # Should be larger than pipecat's VAD start_secs (0.2s) to account for VAD latency.
 VAD_PRE_SPEECH_BUFFER_SECS = 0.5
 
-INITIAL_MESSAGE = "Hello! How can I help you today?"
 
-
-class AssistantServer:
+class PipecatAssistantServer(AbstractAssistantServer):
     """Pipecat-based WebSocket server for the assistant in voice conversations.
 
     This server:
@@ -113,35 +108,24 @@ class AssistantServer:
             port: Port to listen on
             conversation_id: Unique ID for this conversation
         """
-        self.pipeline_config = pipeline_config
-        self.agent: AgentConfig = agent
-        self.agent_config_path = agent_config_path
-        self.scenario_db_path = scenario_db_path
-        self.output_dir = Path(output_dir)
-        self.port = port
-        self.conversation_id = conversation_id
-        self.current_date_time = current_date_time
-
-        # Components (initialized on start)
-        self.audit_log = AuditLog()
-        self.agentic_system = None  # Will be set in _handle_session
-
-        # Initialize Python-based tool executor
-        self.tool_handler = ToolExecutor(
-            tool_config_path=agent_config_path,
+        super().__init__(
+            current_date_time=current_date_time,
+            pipeline_config=pipeline_config,
+            agent=agent,
+            agent_config_path=agent_config_path,
             scenario_db_path=scenario_db_path,
-            tool_module_path=self.agent.tool_module_path,
-            current_date_time=self.current_date_time,
+            output_dir=output_dir,
+            port=port,
+            conversation_id=conversation_id,
         )
+
+        self.agentic_system = None  # Will be set in _handle_session
 
         # Wall-clock captured at on_user_turn_started for non-instrumented S2S models
         self._user_turn_started_wall_ms: str | None = None
 
-        # Audio buffer for accumulating audio data
-        self._audio_buffer = bytearray()
+        # Override audio sample rate for pipecat
         self._audio_sample_rate = SAMPLE_RATE
-        self.user_audio_buffer = bytearray()
-        self.assistant_audio_buffer = bytearray()
 
         # Server state
         self._app = None
@@ -151,7 +135,6 @@ class AssistantServer:
         self._task: PipelineTask | None = None
         self._running = False
         self.num_seconds = 0
-        self._latency_measurements: list[float] = []
         self._metrics_observer: MetricsFileObserver | None = None
         self.non_instrumented_realtime_llm = False
 
@@ -198,27 +181,26 @@ class AssistantServer:
 
         logger.info(f"Assistant server started on ws://localhost:{self.port}")
 
-    async def stop(self) -> None:
-        """Stop the server and save outputs."""
+    async def _shutdown(self) -> None:
+        """Stop the Pipecat pipeline and uvicorn server."""
         if not self._running:
             return
 
         self._running = False
 
-        # Stop the pipeline task
+        # Cancel pipeline task first so no more audio arrives before base stop()
+        # extracts the buffers.
         if self._task:
             await self._task.cancel()
             self._task = None
 
-        # Stop the server gracefully
+        # Stop the uvicorn server gracefully.
         if self._server:
             self._server.should_exit = True
-            # Wait briefly for graceful shutdown, then cancel if needed
             if self._server_task:
                 try:
                     await asyncio.wait_for(self._server_task, timeout=5.0)
                 except TimeoutError:
-                    # Force cancellation if graceful shutdown times out
                     self._server_task.cancel()
                     try:
                         await self._server_task
@@ -228,9 +210,6 @@ class AssistantServer:
                     pass  # Expected during shutdown
             self._server = None
             self._server_task = None
-
-        # Save outputs
-        await self._save_outputs()
 
         logger.info(f"Assistant server stopped on port {self.port}")
 
@@ -271,12 +250,7 @@ class AssistantServer:
                     else:
                         arguments = {}
 
-                    # Record tool call synchronously (before any await)
-                    self.audit_log.append_realtime_tool_call(tool_name, arguments)
-
-                    result = await self.tool_handler.execute(tool_name, arguments)
-                    self.audit_log.append_tool_response(tool_name, result)
-
+                    result = await self.execute_tool(tool_name, arguments)
                     await params.result_callback(result)
 
                 realtime_llm.register_function(function_name=None, handler=_realtime_tool_handler)
@@ -326,26 +300,33 @@ class AssistantServer:
                     "smart_turn_stop_secs", 0.8
                 )  # Shorter silence so we don't have to wait 3s if smart turn marks audio as incomplete
 
-            if (
-                isinstance(self.pipeline_config, (PipelineConfig, SpeechToSpeechConfig))
-                and self.pipeline_config.turn_strategy == "external"
-            ):
-                logger.info("Using external user turn strategies")
-                user_turn_strategies = ExternalUserTurnStrategies()
-                vad_analyzer = None
-            else:
-                logger.info("Using local smart turn analyzer")
-                user_turn_strategies = UserTurnStrategies(
-                    start=[VADUserTurnStartStrategy()],
-                    stop=[
-                        TurnAnalyzerUserTurnStopStrategy(
-                            turn_analyzer=LocalSmartTurnAnalyzerV3(
-                                params=SmartTurnParams(stop_secs=smart_turn_stop_secs)
-                            )
-                        )
-                    ],
-                )
-                vad_analyzer = SileroVADAnalyzer(params=VADParams(stop_secs=vad_stop_secs))
+            turn_start_cfg = self.pipeline_config.turn_start_strategy
+            turn_start_params = self.pipeline_config.turn_start_strategy_params
+            turn_stop_cfg = self.pipeline_config.turn_stop_strategy
+            turn_stop_params = self.pipeline_config.turn_stop_strategy_params
+            vad_cfg = self.pipeline_config.vad
+            vad_cfg_params = self.pipeline_config.vad_params
+
+            # Create turn start strategy using factory function
+            turn_start_strategy = create_turn_start_strategy(turn_start_cfg, turn_start_params)
+            logger.info(f"Using turn start strategy: {turn_start_cfg}")
+
+            # Create turn stop strategy using factory function
+            turn_stop_strategy = create_turn_stop_strategy(turn_stop_cfg, turn_stop_params, smart_turn_stop_secs)
+            logger.info(f"Using turn stop strategy: {turn_stop_cfg}")
+
+            user_turn_strategies = UserTurnStrategies(
+                start=[turn_start_strategy],
+                stop=[turn_stop_strategy],
+            )
+
+            # Create VAD analyzer using factory function
+            # Merge user params with pipeline-specific stop_secs
+            vad_params_dict = {"stop_secs": vad_stop_secs}
+            if vad_cfg_params:
+                vad_params_dict.update(vad_cfg_params)
+            vad_analyzer = create_vad_analyzer(vad_cfg, vad_params_dict)
+            logger.info(f"Using VAD analyzer: {vad_cfg}")
             user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
                 context,
                 user_params=LLMUserAggregatorParams(
@@ -444,35 +425,6 @@ class AssistantServer:
             )
 
             metrics_log_path = self.output_dir / "pipecat_metrics.jsonl"
-            self._latency_measurements = []
-
-            async def on_latency_measured(observer, latency_seconds: float):
-                """Event handler for UserBotLatencyObserver - stores latency measurements.
-
-                For realtime LLM, adds VAD delay to get full user-perceived latency.
-                For pipecat VAD (non-realtime), uses the latency as-is.
-                """
-                adjusted_latency = latency_seconds
-
-                # Add VAD delay for realtime LLM to get full user-perceived latency
-                if isinstance(realtime_llm, InstrumentedRealtimeLLMService):
-                    vad_delay_ms = realtime_llm.last_vad_delay_ms
-                    if vad_delay_ms is not None:
-                        vad_delay_s = vad_delay_ms / 1000.0
-                        adjusted_latency = latency_seconds + vad_delay_s
-                        logger.debug(
-                            f"Response latency captured: {adjusted_latency:.3f}s "
-                            f"(VAD delay: {vad_delay_s:.3f}s + pipecat: {latency_seconds:.3f}s)"
-                        )
-                    else:
-                        logger.debug(f"Response latency captured: {latency_seconds:.3f}s (no VAD delay available)")
-                else:
-                    logger.debug(f"Response latency captured: {latency_seconds:.3f}s")
-
-                self._latency_measurements.append(adjusted_latency)
-
-            user_bot_observer = UserBotLatencyObserver()
-            user_bot_observer.add_event_handler("on_latency_measured", on_latency_measured)
 
             # Create wall clock for consistent timestamps across log sources
             wall_clock = WallClock()
@@ -481,7 +433,6 @@ class AssistantServer:
 
             observers = [
                 BenchmarkLogObserver(str(self.output_dir), self.conversation_id, clock=wall_clock),
-                user_bot_observer,  # Track end-to-end response latency
                 MetricsLogObserver(),  # Log all metrics to console
                 self._metrics_observer,  # Write metrics to JSONL file
             ]
@@ -529,28 +480,6 @@ class AssistantServer:
             if self._metrics_observer:
                 self._metrics_observer.close()
                 self._metrics_observer = None
-
-            # Save response latencies from UserBotLatencyObserver
-            try:
-                latencies = self._latency_measurements
-                latencies_file = self.output_dir / "response_latencies.json"
-                mean_latency = sum(latencies) / len(latencies) if latencies else 0.0
-                max_latency = max(latencies) if latencies else 0.0
-
-                with open(latencies_file, "w") as f:
-                    json.dump(
-                        {
-                            "latencies": latencies,
-                            "mean": mean_latency,
-                            "max": max_latency,
-                            "count": len(latencies),
-                        },
-                        f,
-                        indent=2,
-                    )
-                logger.info(f"Saved {len(latencies)} response latencies to {latencies_file}")
-            except Exception as e:
-                logger.error(f"Error saving response latencies: {e}", exc_info=True)
 
             logger.info("Client disconnected from assistant server")
 
@@ -786,112 +715,27 @@ class AssistantServer:
         """Return the current time as an ISO 8601 string with timezone."""
         return time_now_iso8601()
 
-    def _save_wav_file(self, audio_data: bytes, file_path: Path, sample_rate: int, num_channels: int) -> None:
-        """Save audio data to a WAV file.
+    def _save_transcript(self) -> None:
+        """Pipecat-specific transcript handling.
 
-        Args:
-            audio_data: Raw audio bytes (16-bit PCM)
-            file_path: Path to save the WAV file
-            sample_rate: Sample rate in Hz
-            num_channels: Number of channels (1=mono, 2=stereo)
+        For S2S mode, always rebuild from the audit log (correct ordering).
+        For pipeline mode, only write if not already written incrementally.
         """
-        try:
-            with wave.open(str(file_path), "wb") as wav_file:
-                wav_file.setnchannels(num_channels)
-                wav_file.setsampwidth(2)  # 16-bit PCM
-                wav_file.setframerate(sample_rate)
-                wav_file.writeframes(audio_data)
-            logger.debug(f"Audio saved to {file_path} ({len(audio_data)} bytes)")
-        except Exception as e:
-            logger.error(f"Error saving audio to {file_path}: {e}")
-
-    def _save_audio(self) -> None:
-        """Save accumulated audio to WAV file."""
-        if not self._audio_buffer:
-            logger.warning("No audio data to save")
-            return
-
-        audio_path = self.output_dir / "audio_mixed.wav"
-        self._save_wav_file(
-            bytes(self._audio_buffer),
-            audio_path,
-            self._audio_sample_rate,
-            1,  # Mono
-        )
-        user_audio_path = self.output_dir / "audio_user.wav"
-        self._save_wav_file(
-            bytes(self.user_audio_buffer),
-            user_audio_path,
-            self._audio_sample_rate,
-            1,  # Mono
-        )
-        assistant_audio_path = self.output_dir / "audio_assistant.wav"
-        self._save_wav_file(
-            bytes(self.assistant_audio_buffer),
-            assistant_audio_path,
-            self._audio_sample_rate,
-            1,  # Mono
-        )
-        logger.info(f"Saved {len(self._audio_buffer)} bytes of audio to {audio_path}")
-
-    async def _save_outputs(self) -> None:
-        """Save all outputs (audit log, audio files, etc.)."""
-        # Save audit log
-        audit_path = self.output_dir / "audit_log.json"
-        self.audit_log.save(audit_path)
-
-        # Save transcript from audit log.
-        # When using the instrumented realtime pipeline, always overwrite the
-        # eagerly-written transcript.jsonl with a version derived from the
-        # (correctly ordered) audit log.
         transcript_path = self.output_dir / "transcript.jsonl"
-        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-            self.audit_log.save_transcript_jsonl(transcript_path)
-        elif not transcript_path.exists():
+        if isinstance(self.pipeline_config, SpeechToSpeechConfig) or not transcript_path.exists():
             self.audit_log.save_transcript_jsonl(transcript_path)
 
-        # Save agent performance stats
+    async def save_outputs(self) -> None:
+        """Save all outputs, with pipecat-specific additions."""
+        await super().save_outputs()
+
+        # Save agent performance stats (pipecat-specific: AgenticSystem tracking)
         if self.agentic_system:
             try:
-                logger.info("Saving agent performance stats from _save_outputs()...")
+                logger.info("Saving agent performance stats from save_outputs()...")
                 self.agentic_system.save_agent_perf_stats()
             except Exception as e:
                 logger.error(f"Error saving agent perf stats: {e}", exc_info=True)
-
-        # Save accumulated audio files
-        self._save_audio()
-
-        # Save initial and final scenario database states (REQUIRED for deterministic metrics)
-        try:
-            initial_db = self.get_initial_scenario_db()
-            final_db = self.get_final_scenario_db()
-
-            initial_db_path = self.output_dir / "initial_scenario_db.json"
-            with open(initial_db_path, "w") as f:
-                json.dump(initial_db, f, indent=2, sort_keys=True, default=str)
-
-            final_db_path = self.output_dir / "final_scenario_db.json"
-            with open(final_db_path, "w") as f:
-                json.dump(final_db, f, indent=2, sort_keys=True, default=str)
-
-            logger.info(f"Saved scenario database states to {self.output_dir}")
-        except Exception as e:
-            logger.error(f"Error saving scenario database states: {e}", exc_info=True)
-            raise  # Re-raise since this is now required for deterministic metrics
-
-        logger.info(f"Outputs saved to {self.output_dir}")
-
-    def get_conversation_stats(self) -> dict[str, Any]:
-        """Get statistics about the conversation."""
-        return self.audit_log.get_stats()
-
-    def get_initial_scenario_db(self) -> dict[str, Any]:
-        """Get initial scenario database state."""
-        return self.tool_handler.original_db
-
-    def get_final_scenario_db(self) -> dict[str, Any]:
-        """Get final scenario database state."""
-        return self.tool_handler.db
 
 
 async def override__maybe_trigger_user_turn_stopped(self):

@@ -61,7 +61,7 @@ judge:
       - If the response enumerates options or items (e.g., "Option one is… Option two is…"), does the structure help the user? The volume should not be overwhelming.
       - Is the provided information justified by context (e.g., confirming a detail the user may have misheard)? Or is it inappropriate (e.g., excessive itemization or explanation when the user may only care about the end result)?
       - Within turns, is repetition avoided? Across turns there may be valid reasons for repetition, but it should usually not occur within a single turn.
-      - Essential information — such as confirmation codes, reference IDs, ticket numbers, or other specific details the user needs to take away — should never be penalized, regardless of length.
+      - Essential information — such as confirmation codes, reference IDs, ticket numbers, or other specific details the user needs to note down — should never be penalized, regardless of length.
 
       ## Allowed Exceptions (Voice Interaction Realities)
       The assistant may occasionally produce longer turns when the context requires precise information transfer. The following cases should NOT be penalized for verbosity or information density. The turn itself may still be penalized for other reasons.
@@ -69,7 +69,7 @@ judge:
       - When confirming a confirmation code, reference number, ticket number, or similar identifier, the assistant may spell characters using the NATO phonetic alphabet (e.g., "B as in Bravo, F as in Foxtrot").
       - This is especially appropriate when the user previously misheard or asked for clarification.
       2. **Reference or Identifier Delivery**
-      - When providing an identifier the user needs to take away (e.g., a ticket number, reference code, or voucher code), the assistant may read the whole code out loud.
+      - When providing an identifier the user needs to note down (e.g., a ticket number, reference code, or voucher code), the assistant may read the whole code out loud.
       - This information is essential and should not be penalized regardless of length.
       3. **End-of-Call Wrap-Up**
       - The final assistant turn in a conversation may include a slightly longer recap or confirmation of next steps (e.g., summarizing the action taken, confirming what will be sent or followed up on, thanking the user).
@@ -98,7 +98,7 @@ judge:
       If none of the above are present, return an empty list for failure_modes.
 
       ## Rating Scale For Each Turn With Assistant Content
-      - 3 (Highly Concise / No Cognitive Overload) – The response is clear, appropriately scoped for voice, and comfortably digestible in real time. No failure modes are present. A turn that delivers a few closely related facts as part of a single transactional step (e.g., confirming the key details of a booking or incident) still qualifies as 3 if the listener can comfortably absorb it in one pass.
+      - 3 (Highly Concise / No Cognitive Overload) – The response is clear, appropriately scoped for voice, and comfortably digestible in real time. No failure modes are present. A turn that delivers a few closely related facts as part of a single transactional step (e.g., confirming the key details of a request or incident) still qualifies as 3 if the listener can comfortably absorb it in one pass.
       - 2 (Adequate but Not Optimally Concise) – One minor failure mode is present, but the response remains reasonably processable in a voice setting and does not meaningfully overwhelm the listener. Reserve this rating for turns where you can identify specific content that should have been omitted or deferred to a later turn — not merely for turns that happen to contain several necessary details.
       - 1 (Not Concise / Causes Cognitive Overload) – One or more significant failure modes are present that materially increase cognitive load and would hinder comprehension in a voice conversation.
 
@@ -136,6 +136,11 @@ judge:
       {interruption_tags_reference}
 
       When evaluating, treat these tags as natural voice interaction phenomena. Do NOT penalize interruptions themselves. Only flag an issue if the interruption caused observable consequences (e.g., information loss because the agent's cut-off speech contained critical details that were never restated, or unnecessary repetition because the agent repeated already-heard information after being interrupted).
+
+      ## Understanding the Conversation Trace
+      {user_turns_disclaimer}
+
+      {assistant_turns_disclaimer}
 
       ## Full Conversation with Tools
       {conversation_trace}
@@ -215,6 +220,7 @@ judge:
       - Asking for required authentication or identification information required by the agent instructions (e.g., confirmation number, reference ID, user's name)
       - Asking a clarifying question when the user's intent is genuinely ambiguous
       - Asking a follow-up question based on new information from a tool response
+      - Asking the user to confirm an error-prone value (alphanumeric ID, code, date, dollar amount, spelled-out name) just provided — read-backs of error-prone values are standard voice-agent practice required by typical agent policies and are NOT a question quality issue. This holds even when the transcript shows the assistant's read-back as matching what the user said: STT may render different spoken audio as identical text, so the read-back can still be catching a real audio-level mismatch.
       - Not disclosing fees, costs, or other policy-required details before taking an action — policy compliance (e.g., whether the assistant explained consequences before an irreversible action) is a faithfulness concern, not a conversation progression issue. This dimension only evaluates whether the assistant's questions and information-sharing effectively moved the conversation forward.
       - Referencing information that exists in the agent instructions (e.g., standard fees, policies) without verifying it via a tool call — the agent is expected to know its own instructions. Only flag if the information was genuinely unknown and required a tool call or user input.
 
@@ -328,10 +334,11 @@ judge:
       - Reasonable contextual inferences for categorical parameters, when the enum value's meaning is clearly supported by the user's stated intent
       - Numeric values derived from prior tool results through simple arithmetic (e.g., summing line items, subtracting used amounts from a balance, or computing a total from prior results)
       - System-level or framework-generated tool calls made before the assistant has any user input, if the assistant subsequently asks for proper information
+      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters like "v"/"z" or "b"/"d", reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance
 
       **Before flagging a parameter as fabricated:** Verify it cannot be traced to ANY source — user statements, prior tool results, policy entitlements, simple arithmetic from known values, or standard domain mappings. Also verify enum values against the actual tool specification before claiming a value is invalid.
 
-      **Mitigating factor:** If an ungrounded tool call fails harmlessly, the assistant immediately self-corrects, and no fabricated information reaches the user, this is still a flag but should be considered when computing the overall rating (see Rating Aggregation).
+      **Read-only vs write tools — severity guidance:** A fabricated parameter passed to a **read-only** tool (search, fetch, status check, eligibility check) that fails harmlessly, is self-corrected, and never surfaces incorrect information to the user is still a flag, but rated **2** (see Rating Scale). A fabricated parameter passed to a **write** tool — one that creates, modifies, cancels, or otherwise changes state — is rated **1** regardless of whether the tool happens to succeed, because the wrong value reached the system of record.
 
       ### 2. misrepresenting_tool_result
       **Scope: How the assistant reports tool results to the user.** Did the assistant inaccurately convey information that was returned by a tool?
@@ -361,9 +368,9 @@ judge:
       - Failing to follow explicit procedural steps outlined in agent instructions (e.g., skipping a required verification step)
       - Offering options or taking actions that the agent instructions explicitly prohibit
       - Not applying policies that are clearly applicable to the situation (e.g., not offering an entitled benefit, not following a required disclosure)
-      - Stating a policy incorrectly, fabricating a policy not present in the instructions, or significantly changing a policy's meaning
+      - Stating a policy incorrectly, or significantly changing a policy's meaning
       - **Temporal sequencing for consequential actions:** When instructions require "explain before acting" or "get explicit confirmation before proceeding," the assistant must pause for user confirmation BETWEEN read operations and write operations that have financial consequences or are irreversible. Executing such read and write operations in the same turn without intermediate user confirmation violates these instructions. Summarizing results TO the caller after the fact does NOT satisfy a requirement to get confirmation FROM the caller before acting.
-      - **Irreversible write operations** (e.g., cancellations, rebookings, refunds, account or record changes, ticket submissions, access grants, or any other action that creates/modifies state and is hard to undo) executed without required prior explanation of specific user-consequential implications (fees, fare differences, credit amounts, approvals needed, downstream effects) and explicit user confirmation. A generic mention of potential consequences without specifying knowable details is insufficient when those details are knowable.
+      - **Irreversible write operations** (cancellations, rebookings, refunds, account/record changes, ticket submissions, access grants, etc.) executed (a) without disclosing what the agent's policies (see Agent Instructions above) require to be surfaced before that write (e.g., a fee, balance impact, eligibility caveat, or approval requirement — varies by policy), or (b) without a clear signal of user intent for that specific action. Do not invent disclosure requirements the policy does not impose.
 
       **Is NOT a flag:**
       - Following reasonable interpretations of ambiguous instructions
@@ -371,10 +378,8 @@ judge:
       - Actions not covered by any explicit policy or instruction
       - Proactive issuance of no-cost benefits the user is clearly entitled to (e.g., goodwill compensation during a service disruption, waiving a fee the user is explicitly entitled to) without explicit confirmation — these are beneficial actions with no negative consequence, and the user's entitlement or explicit request serves as sufficient basis
       - When a user explicitly requests a specific action AND the general cost structure has been communicated, proceeding without re-stating exact amounts (if not yet knowable) is not a clear violation
-
-      **Evaluating "explain before acting":** This principle protects users from unexpected costs or negative consequences. Severity should be proportional to potential negative impact:
-      - **Clear violation:** Executing irreversible actions without disclosing known specific fees/costs/consequences, especially when a non-zero amount is being charged or when the action is hard to undo
-      - **Not a violation:** Issuing benefits the user explicitly requested or is entitled to with no negative consequence. Mentioning that an action should not have any financial consequence based on the policy before seeing it in the tool results is not a violation, as long as the assistant corrects itself after seeing the actual costs in the tool results (e.g., stating "there should be no fee based on policy" → proceeds to call tool → if the tool confirms the fee is waived, no violation).
+      - Proceeding with a write tool based on implicit intent (the user described the action they want and provided the necessary information, but did not give a verbatim "yes, do it now"), when the agent's policies do not require explicit confirmation for that action
+      - "Predict-then-correct": stating an action should have no fee/cost based on policy *before* calling the tool, then proceeding to call the tool — no violation **when the tool result confirms the prediction** (e.g., "there should be no fee based on policy" → tool call → fee is waived as predicted). If the tool result contradicts the prediction (e.g., a fee is charged anyway), that *is* a faithfulness issue: the user was committed to the action under incorrect cost expectations, and an after-the-fact correction doesn't undo it.
 
       **Evaluating policy application:** When two policy paths could apply (e.g., same-day change vs. missed flight; in-warranty repair vs. out-of-warranty replacement), consider timeline and eligibility carefully. If the user is within the more favorable policy window (e.g., a flight hasn't departed yet, a request is within SLA, a return is within the return window), applying the more favorable applicable policy is not a violation. Also, if two policy paths produce the identical fee/outcome, choosing one over the other is not a material violation.
 
@@ -434,6 +439,7 @@ judge:
           - A small hallucination or misstatement with no consequence inside the conversation and no downstream effect (e.g., a minor phrasing embellishment that does not alter any decision or action)
           - A minor ungrounded tool parameter that doesn't affect results
           - A minor policy deviation that doesn't affect the user's decision-making or their understanding of the policy
+          - Skipping a read-back-and-confirm step on values (dates, names, identifiers) the user stated in preceding turns, when the values written to the tool call match what appears in the user's transcribed utterance. **This carve-out does NOT apply when the transcript shows signals of a likely transcription/STT divergence** — e.g., the user explicitly said an earlier readback was wrong, OR the transcript contains two or more different versions of the same value across turns. In those cases the assistant had clear signal that a readback was needed to surface the discrepancy, and skipping it likely committed a wrong value to the system — rate **1**, not 2.
         - Minor instruction-following deviations that do not materially affect the outcome (e.g., slight formatting differences, omitting low-importance optional steps)
         - Borderline cases where it is unclear whether a faithfulness violation occurred due to ambiguous instructions, incomplete context, or reasonable interpretation differences
         - Adopting incorrect terminology from the user (e.g., wrong brand or product name) while processing the correct record, when it doesn't cause confusion or incorrect actions
@@ -441,8 +447,10 @@ judge:
 
       - **1** (Clear faithfulness violations — major user impact):
         - Any issue that materially affects the user, either during the conversation or afterward. Such as:
-          - Calling a **write** tool (one that creates, modifies, cancels, or otherwise changes state) with wrong or fabricated parameters — regardless of whether the tool call happens to succeed
-          - Executing an **irreversible action without explicit user consent** — especially without required prior explanation of specific implications and explicit user confirmation
+          - Calling a **write** tool with wrong or fabricated parameters — regardless of whether the call succeeds.
+          - Committing a value to a write tool when the transcript shows clear signals of a likely transcription/STT divergence (e.g., the user explicitly said an earlier readback was wrong, OR the transcript contains two or more different versions of the same value across turns) and the assistant did not resolve the ambiguity before committing — **rate 1 even if the written value happens to match the most recent transcribed utterance**, because the divergence signal made a readback necessary and the assistant likely committed a wrong value.
+          - Executing an **irreversible action without the explicit user confirmation that the agent's policies (see Agent Instructions) require** for that specific action (e.g., a "summarize and confirm before submitting" rule). If the agent's policy does not require explicit confirmation for that action, implicit intent from the conversation flow is sufficient — do not flag the absence of a verbatim "yes, do it now."
+          - Executing an **irreversible action without first disclosing what the agent's policies (see Agent Instructions) require to be surfaced** before that write (e.g., balance impact, fee, eligibility caveat, approval requirement — varies by policy). Do not invent disclosure requirements the policy does not impose.
           - **Financial or reputational impact** on the user or the company — e.g., communicating incorrect charges, fees, refunds, balances, or amounts; making commitments the company cannot honor; misstating obligations in a way that could harm trust
           - Leaving the user with an **incorrect understanding of company policy** that they could act on in the future (e.g., misstating eligibility rules, entitlement conditions, or process requirements), even if the current conversation ends up fine
           - Hallucinating information not present in tool results, especially consequential figures (costs, balances, dates, approvals) communicated to the user as fact
@@ -482,174 +490,6 @@ judge:
           }},
           "rating": <int: 1, 2, or 3 - minimum rating across all dimensions>
       }}
-  turn_taking:
-    user_prompt: |
-      ROLE
-      You are a judge evaluating a voice agent conversation transcript for turn-taking accuracy: Did the agent take the floor at the correct time after the user finished?
-  
-      You will work from text transcripts, timestamps, and metadata tags — not audio.
-  
-      ─────────────────────────────────────────────
-      UNDERSTANDING YOUR INPUTS
-      ─────────────────────────────────────────────
-
-      For each [User Utterance → Agent Response] pair, you receive:
-  
-      1. Segment Transitions
-      Latencies between each speaker transition within the turn, derived from log timestamps.
-      When a turn has a single user segment and a single assistant segment, you see one transition (e.g., "user_end→assistant_start: 1.4s").
-      When interruptions/streaming cause multiple segments within a turn, you can see multiple transitions showing every speaker handoff (e.g., "user_end→assistant_start: 0.15s; assistant_end→user_start: -0.20s").
-      • Positive values (e.g., 1.4s) = gap between one speaker finishing and the next starting.
-      • Negative values (e.g., -0.5s) = the next speaker started before the previous finished (overlap).
-      • CAVEAT: Timestamps can be unreliable. Extreme or implausible values (e.g., -20s) should be treated with skepticism. Normal-range values are generally trustworthy.
-
-      2. Interruption Flags
-      Per-turn flags (⚠) and a global summary at the top indicate which turns had interruptions and who interrupted whom, detected from audio overlap analysis.
-      • "⚠ User interrupted the assistant" — The user spoke over the agent. This is NOT the agent's fault. Also treat this with skepticism if the latency or transcript indicates something different happened.
-      • "⚠ Assistant interrupted the user" — The agent spoke over the user. This IS the agent's fault. Also treat this with skepticism if the latency or transcript indicates something different happened.
-  
-      3. User Transcript
-      • Expected: What the user intended to say, including audio-direction tags (e.g., [slow], [firm], [annoyed]) describing how the words were spoken. Might contain interruption tags (see below).
-      • Heard: What the agent's speech-to-text system actually transcribed. Differences between Expected and Heard indicate transcription errors by the agent (more likely) or that the user speech was cutoff (less likely), as indicated by interruption tags (see below).
-      
-      4. Assistant Transcript
-      • Expected: What the agent intended to say. May contain more text than was actually spoken if the agent was interrupted or cut itself off, as indicated by interruption tags (see below).
-      • Heard: What was actually spoken aloud (transcribed by a high-quality user-side system). Use this as the main source of truth for what the agent said. Might contain interruption tags (see below).
-  
-      **Interruption Tags** (non-spoken metadata)
-      {interruption_tags_reference}
-
-      Example: If the segment transition shows 1.5s (normal range) but [assistant interrupts] is present, label Early / Interrupting. The tags and interruption flags override timing. If only the user is interrupting the agent (⚠ User interrupted), do not label Early / Interrupting — we care about the assistant's behavior, not the user's.
-
-      ADDITIONAL DIAGNOSTIC SIGNALS:
-      • Large differences between Expected and Heard on the assistant side often indicate overlapping speech or interruptions, even without explicit tags.
-      • Audio-direction tags on user text (e.g., [slow], [annoyed]) provide context about the user's manner but do not change turn-taking rules.
-  
-      ─────────────────────────────────────────────
-      TURN-TAKING EVALUATION
-      ─────────────────────────────────────────────
-  
-      For each turn, determine whether the agent took the floor at the right time.
-      
-      The user still holds the floor when:
-        • They are mid-sentence or mid-thought (non-final phrasing).
-        • Interruption tags indicate the user was still speaking.
-
-      The user has yielded the floor when:
-        • Their utterance is syntactically and pragmatically complete.
-        • No interruption tags indicate overlap.
-
-      TIMING THRESHOLDS (heuristic — tags override these when they conflict):
-  
-      | Label                  | Score | Condition |
-      |------------------------|-------|-----------|
-      | Early / Interrupting   | -1    | Agent begins before user completion, overlaps the user's speech, or begins <200 ms after completion. Interruption tags ([assistant interrupts], negative latency with tag confirmation) are the strongest signal. |
-      | On-Time                | 0     | Agent begins ~200–4000 ms after user completion; smooth transfer. |
-      | Late                   | +1    | Agent begins >4000 ms after user completion; noticeable awkward silence. |
-      | Other / Indeterminate  | null  | User trails off without clear completion; overlapping speech too tangled to assess; audio unclear. |
-
-      
-      ─────────────────────────────────────────────
-      OUTPUT FORMAT
-      ─────────────────────────────────────────────
-
-      For EACH [User Utterance → Agent Response] pair, provide:
-    
-      - turn: Turn number from the conversation context.
-      - explanation: 1–2 sentences justifying the label. Reference the key evidence: what the user said, the segment transition latencies, interruption flags, and any interruption tags or transcript discrepancies that informed your decision.
-      - label ∈ {{Early / Interrupting, On-Time, Late, Other / Indeterminate}}
-      - rating ∈ {{-1, 0, +1, null}}
-
-      CONVERSATION CONTEXT
-      {conversation_context}
-
-      ─────────────────────────────────────────────
-      EXAMPLES
-      ─────────────────────────────────────────────
-
-      Example 1 — On-Time:
-
-      Turn 1:
-        User: start=3.2s end=7.3s
-          Expected: "Hi, I need to change my flight to an earlier departure."
-          Heard: "Hi, I need to change my flight to an earlier departure."
-        Assistant: start=8.7s end=14.7s
-          Expected: "Sure. Let me pull up your booking. What's your confirmation number?"
-          Heard: "Sure. Let me pull up your booking. What's your confirmation number?"
-        Computed Latency: 1.4s
-      
-      Judgment:
-      {{
-          "turn_id": 1,
-          "explanation": "User's request 'I need to change my flight to an earlier departure' is syntactically complete. 1.4s gap with no interruption tags. Smooth floor transfer."
-          "label": "On-Time",
-          "rating": 0,
-      }}
-      
-      Example 2 — Early / Interrupting:
-      
-      Turn 2:
-        User: start=42.8s end=53.9s
-          Expected: "[slow] It is X X F six O H, with the letter O, not zero."
-          Heard: "It is... [assistant interrupts] X. F. 6. Oh. Oh. with the letter O. not zero."
-        Assistant: start=45.9s end=63.8s
-          Expected: "[assistant interrupts] I'm here. Take your time. Please say the six characters one at a time. [speaker likely cut itself off] Got it. So I have X, F, six, O, O, and I'm still missing the sixth character."
-          Heard: "[assistant interrupts] Mm-hmm. -in it. So I have X F six O O, and I'm still missing the sixth character. What's the very last character?"
-        Computed Latency: -8.0s
-      
-      Judgment:
-      {{
-          "turn_id": 2,
-          "explanation": "[assistant interrupts] tag present in both user and assistant transcripts. Negative latency (-8.0s) confirms agent started speaking while user was mid-utterance spelling the code. User was clearly not finished."
-          "label": "Early / Interrupting",
-          "rating": -1,
-      }}
-      
-      Example 3 — Late:
-      
-      Turn 4:
-        User: start=93.1s end=103.2s
-          Expected: "[slow] The code is X X F six O H, that is six characters, and yes, the last name is K I M."
-          Heard: "The code is... X, X, X. 6OH. That is six counts. And yes, The last name is K-I-M."
-        Assistant: start=108.8s end=122.8s
-          Expected: "Thank you. I tried confirmation code X X X six O H, last name Kim, and it's still not coming up."
-          Heard: "Thank you. I tried confirmation code X X X X O H, last name Kim, and it's still not coming up."
-        Computed Latency: 5.6s
-      
-      Judgment:
-      {{
-          "turn_id": 4,
-          "explanation": "User's utterance is clearly complete ('the last name is K-I-M'). No interruption tags. 5.6s gap exceeds the 4s threshold — noticeable awkward silence before the agent responded."
-          "label": "Late",
-          "rating": 1,  
-      }}
-      
-      Example 4 — Other / Indeterminate:
-      
-      Turn 7:
-        User: start=186.7s end=230.0s
-          Expected: "[annoyed] I am looking at it right now. [slow] The code is X X F six O H... [assistant starts replying - user interrupts] [slow] Fine. Here it is: X… X… F… six… O… H."
-          Heard: "I am looking at it right now. The code is X... [assistant starts replying - user interrupts] Fine, here it is."
-        Assistant: start=206.2s end=227.7s
-          Expected: "Thanks. I also heard a lot of extra characters in the middle, so let's reset. Please read the code six characters, one at a time. [likely cut off by user] Go ahead. I'm listening."
-          Heard: "I also heard a lot of extra characters in the middle, so let's reset and do it cleanly. Please read the confirmation code exactly six characters, one at a time, with a pause between each. For example, X, X, X."
-        Computed Latency: -23.8s
-      
-      Judgment:
-      {{
-          "turn_id": 7,
-          "explanation": "[assistant starts replying - user interrupts] tag shows tangled overlapping exchange — the agent began replying during the user's spelling, then the user interrupted back. Multiple floor transfers make it impossible to cleanly assess a single handoff. Highly negative latency (-23.8s) reflects the overlap."
-          "label": "Other / Indeterminate",
-          "rating": null,
-      }}
-
-      Return a JSON array with one object per turn:
-      [
-        {{"turn_id": 1, "explanation": "...", "label": "On-Time", "rating": 0,}},
-        {{"turn_id": 2, "explanation": "...", "label": "Early / Interrupting", "rating": -1}}
-      ]
-      Make sure to use the same turn ids as provided in the conversation context. It typically starts at 1.
-      The length of the array must equal the number of assistant turns in the conversation.
 
 
   user_behavioral_fidelity:
@@ -660,6 +500,9 @@ judge:
       
       ## Conversation Evidence
       {conversation_evidence}
+      
+      ## How the conversation ended
+      The conversation ended due to: {conversation_end}
         
       ## User's Goal
       {user_goal}
@@ -682,10 +525,15 @@ judge:
       
       ### Corruption Type 2: User ended the conversation prematurely
         The user ended the conversation before the agent had the opportunity to complete the necessary modification tools to fulfill the user's goal.
+        Applicability:
+          - This type only applies when the conversation ended due to the user calling the end call tool. 
+          - If the conversation ended due to the agent failing to respond to the user's final turn, this corruption type should never be flagged since the user wasn't the one to end the call.
       - Only flag this if the user chose to end the call when the agent was still actively working toward resolution or had not yet completed the required actions.
       - Do NOT flag this if the agent encountered an error, said they could not help, or was stuck/unhelpful for multiple consecutive turns — in those cases the user is correct to end the call per their failure condition.
       - Do NOT flag this if the agent completed all necessary actions and the resolution condition was met.
-      - NOTE: if the agent initiates a transfer_to_agent tool call or says they are transferring the user, the user is instructed to end the call immediately. DO NOT penalize the user for this.
+      - Special case: transferring to a live agent
+        - The user is instructed to always end the call AFTER the agent transfers to a live agent. This should not be penalized.
+        - However the user must give the agent the chance to call the tool to make the transfer. If the user says something like "Ok go ahead and transfer me. goodbye" and then ends the call before the agent is able to call the transfer to agent tool, this is a premature end and MUST be flagged.
       
       ### Corruption Type 3: User failed to provide required information
         The user failed to provide information from their goal that the agent explicitly asked for, preventing the agent from completing a necessary modification tool call.
@@ -828,8 +676,7 @@ judge:
               "explanation": "<string: 1-3 sentence analysis of fidelity for this turn, citing specific intended vs actual mismatches, noting any regions skipped due to interruption flags>",
               "rating": <0 or 1>
             }}
-          ],
-          "explanation": "<string: overall summary of fidelity assessment>"
+          ]
         }}
     s2s_user_prompt: |
         You are an expert evaluator checking the **speech clarity and articulation** of entities spoken by an AI voice agent.
@@ -903,10 +750,8 @@ judge:
               "explanation": "<string: 1-3 sentence analysis listing which trace entities were spoken and whether they are clearly articulated>",
               "rating": <0 or 1>
             }}
-          ],
-          "explanation": "<string: overall summary of speech fidelity assessment>"
+          ]
         }}
-
   user_speech_fidelity:
     user_prompt: |
         You are an expert evaluator judging the fidelity of text-to-speech (TTS) audio against the intended text. You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
@@ -976,11 +821,11 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Intended Turns>,
+              "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the intended turns>,
               "explanation": "<succinct analysis; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
               "rating": <1, 2, 3>
             }}
-          ],
-          "explanation": "<string: overall summary of fidelity assessment>"
+          ]
         }}
 
   transcription_accuracy_key_entities:

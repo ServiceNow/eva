@@ -1,0 +1,418 @@
+{
+  "_current_date": "2026-07-06",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ACLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "BLS",
+      "ACLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "5897045684": {
+      "npi": "5897045684",
+      "employee_id": "EMP292401",
+      "first_name": "Anh",
+      "last_name": "Nguyen",
+      "facility_code": "MGH-04B",
+      "pin": "4827",
+      "phone_last_four": "2481",
+      "otp_code": "179046",
+      "role_code": "MD",
+      "department_code": "EMERGENCY",
+      "hire_date": "2019-08-12",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-111222",
+      "licenses": {
+        "MA-MD-482193": {
+          "state_license_number": "MA-MD-482193",
+          "license_type": "MD",
+          "state_code": "MA",
+          "expiration_date": "2027-09-30",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-03-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-ICU-009",
+            "description": "Critical care and ICU admitting privileges",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-ER-001",
+            "description": "Emergency department attending privileges",
+            "status": "active"
+          },
+          {
+            "code": "PRV-TRM-004",
+            "description": "Trauma stabilization privileges",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    },
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP410552",
+      "first_name": "Maya",
+      "last_name": "Patel",
+      "facility_code": "BWH-02A",
+      "pin": "7314",
+      "phone_last_four": "6620",
+      "otp_code": "551208",
+      "role_code": "MD",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2017-05-01",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-998877",
+      "licenses": {
+        "MA-MD-775410": {
+          "state_license_number": "MA-MD-775410",
+          "license_type": "MD",
+          "state_code": "MA",
+          "expiration_date": "2028-01-31",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2026-BX5521",
+        "per_occurrence_limit_usd": 2000000,
+        "aggregate_limit_usd": 6000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK5512045",
+        "facility_code": "BWH-02A",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-08-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-CARD-001",
+            "description": "Cardiology inpatient consult privileges",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP292401": {
+      "employee_id": "EMP292401",
+      "first_name": "Anh",
+      "last_name": "Nguyen",
+      "date_of_birth": "1988-11-14",
+      "phone_last_four": "2481",
+      "otp_code": "179046",
+      "department_code": "EMERGENCY",
+      "role_code": "MD",
+      "unit_code": "4B-ICU",
+      "hire_date": "2019-08-12",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS",
+        "CCRN"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 83,
+        "hours_worked_past_year": 1860,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "personal_leave",
+          "start_date": "2026-05-01",
+          "end_date": "2026-06-30",
+          "status": "completed",
+          "case_id": "CASE-LOA-292401"
+        }
+      ],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 5.0
+      },
+      "pto_requests": []
+    },
+    "EMP410552": {
+      "employee_id": "EMP410552",
+      "first_name": "Maya",
+      "last_name": "Patel",
+      "date_of_birth": "1982-03-22",
+      "phone_last_four": "6620",
+      "otp_code": "551208",
+      "department_code": "CARDIOLOGY",
+      "role_code": "MD",
+      "unit_code": "2A-MED",
+      "hire_date": "2017-05-01",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 110,
+        "hours_worked_past_year": 1920,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 18.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260710-0700": {
+      "shift_id": "SHF-20260710-0700",
+      "employee_id": "EMP292401",
+      "unit_code": "4B-ICU",
+      "date": "2026-07-10",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-07-19",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260712-0800": {
+      "shift_id": "SHF-20260712-0800",
+      "employee_id": "EMP410552",
+      "unit_code": "2A-MED",
+      "date": "2026-07-12",
+      "start_time": "08:00",
+      "end_time": "16:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-07-19",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "EMERGENCY": {
+        "2026-07-08": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-09": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ]
+      },
+      "CARDIOLOGY": {
+        "2026-07-08": [
+          "09:30",
+          "11:30"
+        ],
+        "2026-07-10": [
+          "10:30",
+          "14:30"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "EMERGENCY": {
+        "2026-07-08": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-07-09": [
+          "10:00",
+          "14:00"
+        ]
+      },
+      "CARDIOLOGY": {
+        "2026-07-08": [
+          "09:30",
+          "13:30"
+        ],
+        "2026-07-10": [
+          "10:30",
+          "15:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "EMERGENCY": {
+        "2026-07-08": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-09": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ],
+        "2026-07-10": [
+          "09:00",
+          "12:00"
+        ]
+      },
+      "CARDIOLOGY": {
+        "2026-07-08": [
+          "09:30",
+          "11:30"
+        ],
+        "2026-07-10": [
+          "10:30",
+          "14:30"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "EMERGENCY": [],
+    "CARDIOLOGY": [
+      "2026-07-20"
+    ],
+    "ONCOLOGY": [],
+    "SURGERY": [],
+    "PEDIATRICS": []
+  }
+}
