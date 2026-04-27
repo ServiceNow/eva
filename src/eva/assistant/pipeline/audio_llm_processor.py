@@ -417,7 +417,7 @@ Rules:
         super().__init__(**kwargs)
         self._audio_collector = audio_collector
         params = params or {}
-        self._api_key = params.get["api_key"]
+        self._api_key = params["api_key"]
         self._model = model
         self._system_prompt = system_prompt or self.DEFAULT_SYSTEM_PROMPT
         self._sample_rate = sample_rate

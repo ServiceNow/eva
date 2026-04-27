@@ -33,6 +33,32 @@ class TestSTTWERMetricCompute:
         assert result.normalized_score == result.details["accuracy"]
 
     @pytest.mark.asyncio
+    async def test_surfaces_component_sub_metrics(self):
+        """Sub-metrics surface substitution, deletion, insertion rates over reference words."""
+        metric = STTWERMetric()
+        ctx = make_metric_context(
+            intended_user_turns={1: "the quick brown fox jumps"},
+            transcribed_user_turns={1: "the quick green fox"},
+        )
+        result = await metric.compute(ctx)
+
+        assert result.sub_metrics is not None
+        assert set(result.sub_metrics.keys()) == {"substitution_rate", "deletion_rate", "insertion_rate"}
+
+        sub_count = result.sub_metrics["substitution_rate"]
+        del_count = result.sub_metrics["deletion_rate"]
+        ins_count = result.sub_metrics["insertion_rate"]
+        ref_words = result.details["reference_words"]
+        assert ref_words == 5
+        assert sub_count.name == "stt_wer.substitution_rate"
+        assert sub_count.details["reference_words"] == 5
+        assert sub_count.details["count"] == result.details["total_substitutions"]
+        assert del_count.details["count"] == result.details["total_deletions"]
+        assert ins_count.details["count"] == result.details["total_insertions"]
+        assert sub_count.score == pytest.approx(sub_count.details["count"] / ref_words)
+        assert sub_count.normalized_score == sub_count.score
+
+    @pytest.mark.asyncio
     async def test_no_common_turns(self):
         metric = STTWERMetric()
         ctx = make_metric_context(

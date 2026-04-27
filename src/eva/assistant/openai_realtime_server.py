@@ -150,8 +150,8 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         logger.info(f"OpenAI Realtime server started on ws://localhost:{self.port}")
 
-    async def stop(self) -> None:
-        """Stop the server and save all outputs."""
+    async def _shutdown(self) -> None:
+        """Stop the OpenAI Realtime server."""
         if not self._running:
             return
 
@@ -173,12 +173,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             self._server = None
             self._server_task = None
 
-        await self.save_outputs()
         logger.info(f"OpenAI Realtime server stopped on port {self.port}")
-
-    async def save_outputs(self) -> None:
-        """Save all outputs including mixed audio."""
-        await super().save_outputs()
 
     async def _handle_session(self, websocket: WebSocket) -> None:
         """Handle a single WebSocket session.

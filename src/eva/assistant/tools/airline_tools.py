@@ -17,6 +17,7 @@ from eva.assistant.tools.airline_params import (
     AddMealRequestParams,
     AddToStandbyParams,
     AssignSeatParams,
+    CancellationReason,
     CancelReservationParams,
     GetDisruptionInfoParams,
     GetFlightStatusParams,
@@ -26,6 +27,7 @@ from eva.assistant.tools.airline_params import (
     IssueTravelCreditParams,
     ProcessRefundParams,
     RebookFlightParams,
+    RebookingType,
     SearchRebookingOptionsParams,
     TransferToAgentParams,
     validation_error_response,
@@ -138,6 +140,29 @@ def _journey_not_found(journey_id: str):
     }
 
 
+def _enrich_booking_with_flight_details(booking: dict, db: dict) -> None:
+    """Merge flight details from the journeys table into a booking in-place.
+
+    Merges per-segment origin/destination/scheduled_departure/scheduled_arrival
+    from the matching journey segment (keyed by flight_number). Leaves the
+    booking untouched if the journey can't be found.
+
+    Operational status (delayed/cancelled, delay_minutes, gate) is intentionally
+    NOT merged — that belongs to get_flight_status.
+    """
+    journey = db.get("journeys", {}).get(booking.get("journey_id"))
+    if not journey:
+        return
+    journey_segs_by_flight = {js.get("flight_number"): js for js in journey.get("segments", [])}
+    for bs in booking.get("segments", []):
+        jseg = journey_segs_by_flight.get(bs.get("flight_number"))
+        if not jseg:
+            continue
+        for field in ("origin", "destination", "scheduled_departure", "scheduled_arrival"):
+            if field in jseg:
+                bs[field] = jseg[field]
+
+
 def get_reservation(params: dict, db: dict, call_index: int) -> dict:
     """Retrieve flight reservation details using confirmation number and passenger last name.
 
@@ -183,6 +208,8 @@ def get_reservation(params: dict, db: dict, call_index: int) -> dict:
 
     # Return success — sort journeys by first segment's date, then journey_id for readability
     result_reservation = copy.deepcopy(reservation)
+    for booking in result_reservation["bookings"]:
+        _enrich_booking_with_flight_details(booking, db)
     result_reservation["bookings"].sort(
         key=lambda j: (
             j.get("segments", [{}])[0].get("date", ""),
@@ -446,11 +473,19 @@ def rebook_flight(params: dict, db: dict, call_index: int) -> dict:
 
     # Computations
     is_irrops = "irrops" in rebooking_type
+    is_same_day = rebooking_type == RebookingType.same_day
 
-    # Fee calculation — based on ORIGINAL fare class (that's what the passenger paid for)
-    fee_map = {"basic_economy": 199, "main_cabin": 75, "premium_economy": 75, "business": 0, "first": 0}
-    base_fee = fee_map.get(original_fare_class, 75)
-    change_fee = 0 if (is_irrops or waive_change_fee) else base_fee
+    # Fee calculation — based on ORIGINAL fare class (that's what the passenger paid for).
+    # IRROPS and explicit waivers zero the fee. Same-day changes are flat $75 for every
+    # paid fare class, except Basic Economy which carries a $199 penalty. Voluntary
+    # (advance) changes are $75 for economy tiers and free for Business/First.
+    if is_irrops or waive_change_fee:
+        change_fee = 0
+    elif is_same_day:
+        change_fee = 199 if original_fare_class == "basic_economy" else 75
+    else:
+        voluntary_fees = {"basic_economy": 75, "main_cabin": 75, "premium_economy": 75, "business": 0, "first": 0}
+        change_fee = voluntary_fees.get(original_fare_class, 75)
 
     # Partial rebook: validate the specific flight segment exists
     if flight_number:
@@ -1135,21 +1170,9 @@ def cancel_reservation(params: dict, db: dict, call_index: int) -> dict:
     # Compute refund/credit for this booking journey's fare
     booking_fare = _get_booking_total_fare(booking)
 
-    is_refundable = (
-        "irrops_refund" in cancellation_reason
-        or "24_hour_rule" in cancellation_reason
-        or reservation.get("fare_type") == "refundable"
-    )
-
-    cancellation_fee = (
-        0
-        if (
-            "24_hour_rule" in cancellation_reason
-            or "irrops_refund" in cancellation_reason
-            or reservation.get("fare_type") == "refundable"
-        )
-        else 100
-    )
+    fee_waiving_reasons = {CancellationReason.irrops_refund, CancellationReason.rule_24_hour}
+    is_refundable = cancellation_reason in fee_waiving_reasons or reservation.get("fare_type") == "refundable"
+    cancellation_fee = 0 if is_refundable else 100
 
     refund_amount = max(0, booking_fare - cancellation_fee) if is_refundable else 0
     credit_amount = 0 if is_refundable else max(0, booking_fare - cancellation_fee)

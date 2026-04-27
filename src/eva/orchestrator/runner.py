@@ -7,13 +7,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from eva.metrics.legacy_aliases import rename_metric_keys, rename_metric_list
 from eva.metrics.runner import MetricsRunner, MetricsRunResult
 from eva.models.agents import AgentConfig
 from eva.models.config import PipelineConfig, RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RunResult
 from eva.orchestrator.port_pool import PortPool
-from eva.orchestrator.validation_runner import ValidationRunner
+from eva.orchestrator.validation_runner import ValidationResult, ValidationRunner
 from eva.orchestrator.worker import ConversationWorker
 from eva.utils.conversation_checks import check_conversation_finished, find_records_with_llm_generic_error
 from eva.utils.logging import get_logger
@@ -160,6 +161,41 @@ class BenchmarkRunner:
         rerun_history: dict[str, list[dict]] = {}
         started_at = datetime.now()
 
+        # Initialize port pool once before the attempt loop.
+        await self.port_pool.initialize()
+
+        # Semaphore limits concurrent conversations across all attempts.
+        # All slots are always released after asyncio.gather, so reusing it is safe.
+        semaphore = asyncio.Semaphore(self.config.max_concurrent_conversations)
+
+        # Pre-create ValidationRunner for per-record pipelining. Its shared MetricsRunner
+        # for validation metrics is lazily initialized on first use.
+        _all_unique_records = list({id(r): r for r in output_id_to_record.values()}.values())
+        pipeline_validation_runner = ValidationRunner(
+            run_dir=self.output_dir,
+            dataset=_all_unique_records,
+            thresholds=self.config.validation_thresholds,
+        )
+
+        # Pre-create MetricsRunner so metrics can start as soon as records pass validation,
+        # overlapping with reruns of failed records instead of waiting for ALL conversations.
+        metrics_runner: MetricsRunner | None = None
+        metrics_background_tasks: list[asyncio.Task] = []
+
+        if self.config.metrics:
+            all_unique_records = list({id(r): r for r in output_id_to_record.values()}.values())
+            try:
+                metrics_runner = MetricsRunner(
+                    run_dir=self.output_dir,
+                    dataset=all_unique_records,
+                    metric_names=self.config.metrics,
+                    num_draws=self.config.num_trials,
+                    force_rerun=self.config.force_rerun_metrics,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to pre-create MetricsRunner for overlapped execution: {e}")
+                metrics_runner = None
+
         # LOOP: Run and validate, up to max_attempts total
         for attempt_number in range(1, max_attempts + 1):
             if not pending_output_ids:
@@ -172,56 +208,82 @@ class BenchmarkRunner:
                 f"{'=' * 60}"
             )
 
-            # STEP 1: Run conversations for pending output_ids only
-            tasks = [(output_id_to_record[oid], oid) for oid in pending_output_ids]
-            run_results = await self._run_targeted(tasks)
+            # STEPS 1-3: Per-record pipeline — run, validate, and fire metrics as each
+            # conversation completes rather than waiting for the full batch.
+            # The semaphore slot is released before audio writes and before LLM validation
+            # calls, so the next conversation can start earlier.
 
-            # STEP 2: Check conversation_finished for each output_id
+            async def _run_and_pipeline(
+                record: EvaluationRecord, output_id: str
+            ) -> tuple[str, ConversationResult | Exception, bool, ValidationResult | None]:
+                try:
+                    # Phase 1: Run conversation (bounded by semaphore)
+                    async with semaphore:
+                        result, audio_task = await self._run_conversation(record, output_id)
+
+                    # Phase 2: Save result.json outside the semaphore
+                    if isinstance(result, ConversationResult):
+                        result_path = self.output_dir / "records" / output_id / "result.json"
+                        result_path.parent.mkdir(parents=True, exist_ok=True)
+                        await asyncio.to_thread(result_path.write_text, result.model_dump_json(indent=2))
+
+                    # Phase 3: If the conversation didn't complete, skip validation.
+                    # validate_one() handles the gate (conversation_valid_end); returning
+                    # vr=None signals "not_finished" to the classification loop below.
+                    if not (isinstance(result, ConversationResult) and result.completed):
+                        return output_id, result, False, None
+
+                    # Phase 4: Await audio task (needed for audio-based validation metrics)
+                    if audio_task is not None:
+                        try:
+                            await audio_task
+                        except Exception as e:
+                            logger.warning(f"Audio save failed for {output_id}: {e}")
+
+                    # Phase 5: Validate this record (gate + LLM metrics)
+                    vr = await pipeline_validation_runner.validate_one(output_id)
+
+                    # Phase 6: Fire metrics immediately if passed
+                    if vr.passed and metrics_runner is not None:
+                        rdir = self.output_dir / "records" / output_id
+                        task = asyncio.create_task(metrics_runner.run_and_save_record(output_id, rdir))
+                        metrics_background_tasks.append(task)
+
+                    return output_id, result, vr.passed, vr
+
+                except Exception as exc:
+                    logger.error(f"Pipeline error for {output_id}: {exc}", exc_info=True)
+                    return output_id, exc, False, None
+
+            pipeline_results = await asyncio.gather(
+                *(_run_and_pipeline(output_id_to_record[oid], oid) for oid in pending_output_ids),
+            )
+
+            # Collect per-record outcomes.
+            # vr=None → crash/incomplete (not_finished).
+            # vr.passed=False + empty failed_metrics → gate rejected (not_finished).
+            # vr.passed=False + non-empty failed_metrics → LLM metrics failed (validation_failed).
             finished_ids: list[str] = []
             not_finished_ids: list[str] = []
+            failed_validation_ids: list[str] = []
+            validation_results: dict[str, ValidationResult] = {}
 
-            for output_id in pending_output_ids:
-                result = run_results.get(output_id)
-                record_dir = self.output_dir / "records" / output_id
-
-                # Treat exceptions and incomplete results as not finished
-                if isinstance(result, Exception) or (isinstance(result, ConversationResult) and not result.completed):
+            for output_id, _result, passed, vr in pipeline_results:
+                if vr is None or (not vr.passed and not vr.failed_metrics):
                     not_finished_ids.append(output_id)
-                elif check_conversation_finished(record_dir):
-                    finished_ids.append(output_id)
                 else:
-                    not_finished_ids.append(output_id)
+                    finished_ids.append(output_id)
+                    if not passed:
+                        failed_validation_ids.append(output_id)
+                        validation_results[output_id] = vr
 
             if not_finished_ids:
                 logger.info(
                     f"{len(not_finished_ids)} tasks did not finish properly (attempt {attempt_number}/{max_attempts})"
                 )
 
-            # STEP 3: Run validation metrics on finished records only
-            failed_validation_ids: list[str] = []
-            if finished_ids:
-                finished_records = list(
-                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in finished_ids}.values()
-                )
-                logger.info(f"Running validation metrics on {len(finished_ids)} finished tasks...")
-                validation_runner = ValidationRunner(
-                    run_dir=self.output_dir,
-                    dataset=finished_records,
-                    thresholds=self.config.validation_thresholds,
-                    skip_conversation_finished=True,
-                    output_ids=finished_ids,
-                )
-                validation_results = await validation_runner.run_validation()
-
-                for output_id in finished_ids:
-                    vr = validation_results.get(output_id)
-                    if not vr or not vr.passed:
-                        failed_validation_ids.append(output_id)
-
-            # STEP 4: Determine which output_ids failed this attempt
             failed_this_attempt = not_finished_ids + failed_validation_ids
 
-            # Record failures in history with structured entries
             for oid in not_finished_ids:
                 rerun_history.setdefault(oid, []).append(
                     {
@@ -230,23 +292,19 @@ class BenchmarkRunner:
                     }
                 )
             for oid in failed_validation_ids:
-                vr = validation_results.get(oid)
+                vr = validation_results[oid]
                 entry: dict = {
                     "attempt": attempt_number,
                     "reason": "validation_failed",
-                    "failed_metrics": vr.failed_metrics if vr else [],
-                    "scores": vr.scores if vr else {},
+                    "failed_metrics": vr.failed_metrics,
+                    "scores": vr.scores,
                 }
-                if vr and vr.details:
-                    failure_details = {}
-                    for metric_name in vr.failed_metrics:
-                        if metric_name in vr.details:
-                            failure_details[metric_name] = vr.details[metric_name]
+                if vr.details:
+                    failure_details = {name: vr.details[name] for name in vr.failed_metrics if name in vr.details}
                     if failure_details:
                         entry["failure_details"] = failure_details
                 rerun_history.setdefault(oid, []).append(entry)
 
-            # STEP 5: Archive and prepare for next attempt
             pending_output_ids = failed_this_attempt
 
             if not pending_output_ids:
@@ -273,20 +331,36 @@ class BenchmarkRunner:
             else:
                 validation_failed_count += 1
 
-        # STEP 7: Run full metrics on successful records
+        # STEP 7: Await background metrics, then run final aggregation pass.
+        # Background tasks already wrote metrics.json for records validated during the loop.
+        # IMPORTANT: Must await all background tasks BEFORE mutating metrics_runner.record_ids
+        # below — running tasks read record_ids to filter which records to process.
+        # The final run() skips already-computed records and only does summary aggregation.
+        if metrics_background_tasks:
+            logger.info(f"Waiting for {len(metrics_background_tasks)} background metrics tasks...")
+            bg_results = await asyncio.gather(*metrics_background_tasks, return_exceptions=True)
+            for result in bg_results:
+                if isinstance(result, Exception):
+                    logger.error(f"Background metrics task failed: {result}", exc_info=True)
+
         if self.config.metrics and successful_ids:
-            logger.info(f"Running full metrics suite on {len(successful_ids)} successful tasks...")
-            successful_records = list(
-                {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in successful_ids}.values()
-            )
-            metrics_runner = MetricsRunner(
-                run_dir=self.output_dir,
-                dataset=successful_records,
-                metric_names=self.config.metrics,
-                record_ids=list(successful_ids),
-                num_draws=self.config.num_trials,
-                force_rerun=self.config.force_rerun_metrics,
-            )
+            logger.info(f"Running final metrics pass on {len(successful_ids)} successful tasks...")
+            if metrics_runner is not None:
+                # Reuse the pre-created runner; set record filter to successful-only.
+                metrics_runner.record_ids = successful_ids
+            else:
+                # Fallback: create runner now (e.g. if pre-creation failed earlier).
+                successful_records = list(
+                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in successful_ids}.values()
+                )
+                metrics_runner = MetricsRunner(
+                    run_dir=self.output_dir,
+                    dataset=successful_records,
+                    metric_names=self.config.metrics,
+                    record_ids=list(successful_ids),
+                    num_draws=self.config.num_trials,
+                    force_rerun=self.config.force_rerun_metrics,
+                )
             await metrics_runner.run()
         elif self.config.metrics and not successful_ids:
             logger.info("Skipping metrics: no records passed validation")
@@ -372,7 +446,9 @@ class BenchmarkRunner:
             duration_seconds=(ended_at - started_at).total_seconds(),
         )
 
-    async def _run_conversation(self, record: EvaluationRecord, output_id: str) -> ConversationResult:
+    async def _run_conversation(
+        self, record: EvaluationRecord, output_id: str
+    ) -> tuple[ConversationResult, asyncio.Task | None]:
         """Run a single conversation.
 
         Args:
@@ -380,7 +456,8 @@ class BenchmarkRunner:
             output_id: Directory name for output (may include _trial_N suffix)
 
         Returns:
-            ConversationResult
+            Tuple of (ConversationResult, deferred_audio_task). The audio task writes WAV
+            files in a thread pool and should be awaited before accessing audio outputs.
         """
         # Acquire port
         port = await self.port_pool.acquire()
@@ -403,7 +480,8 @@ class BenchmarkRunner:
             )
 
             # Run conversation
-            return await worker.run()
+            result = await worker.run()
+            return result, worker.deferred_audio_task
         finally:
             # Always release port
             await self.port_pool.release(port)
@@ -435,7 +513,14 @@ class BenchmarkRunner:
 
         async def run_with_semaphore(record: EvaluationRecord, output_id: str) -> ConversationResult:
             async with semaphore:
-                return await self._run_conversation(record, output_id)
+                result, audio_task = await self._run_conversation(record, output_id)
+            # Semaphore released; await audio task outside it so the slot is free sooner.
+            if audio_task is not None:
+                try:
+                    await audio_task
+                except Exception as e:
+                    logger.warning(f"Audio save failed for {output_id}: {e}")
+            return result
 
         coros = [run_with_semaphore(record, oid) for record, oid in tasks]
         results = await asyncio.gather(*coros, return_exceptions=True)
@@ -526,7 +611,7 @@ class BenchmarkRunner:
 
         needs_validation_ids = [oid for oid in all_output_ids if oid not in already_passed_ids]
 
-        # STEP 1: Full validation (including conversation_finished)
+        # STEP 1: Full validation (including conversation_valid_end)
         validation_results: dict = {}
         failed_ids: list[str] = []
         if needs_validation_ids:
@@ -535,7 +620,6 @@ class BenchmarkRunner:
                 run_dir=self.output_dir,
                 dataset=filtered_records,
                 thresholds=self.config.validation_thresholds,
-                skip_conversation_finished=False,
                 output_ids=needs_validation_ids,
             )
             validation_results = await validation_runner.run_validation()
@@ -569,40 +653,36 @@ class BenchmarkRunner:
             for output_id in pending_ids:
                 self._archive_failed_attempt(output_id, attempt_number)
 
-            # Run conversations for failed output_ids only
             tasks = [(output_id_to_record[oid], oid) for oid in pending_ids]
             run_results = await self._run_targeted(tasks)
 
-            # Check conversation_finished
-            finished_ids: list[str] = []
             still_not_finished: list[str] = []
+            to_validate_ids: list[str] = []
             for output_id in pending_ids:
                 result = run_results.get(output_id)
-                record_dir = records_dir / output_id
                 if isinstance(result, Exception) or (isinstance(result, ConversationResult) and not result.completed):
                     still_not_finished.append(output_id)
-                elif check_conversation_finished(record_dir):
-                    finished_ids.append(output_id)
                 else:
-                    still_not_finished.append(output_id)
+                    to_validate_ids.append(output_id)
 
-            # Validate finished records
             failed_validation: list[str] = []
-            if finished_ids:
-                finished_records = list(
-                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in finished_ids}.values()
+            new_results: dict = {}
+            if to_validate_ids:
+                to_validate_records = list(
+                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in to_validate_ids}.values()
                 )
                 vr_runner = ValidationRunner(
                     run_dir=self.output_dir,
-                    dataset=finished_records,
+                    dataset=to_validate_records,
                     thresholds=self.config.validation_thresholds,
-                    skip_conversation_finished=True,
-                    output_ids=finished_ids,
+                    output_ids=to_validate_ids,
                 )
                 new_results = await vr_runner.run_validation()
-                for output_id in finished_ids:
+                for output_id in to_validate_ids:
                     vr = new_results.get(output_id)
-                    if not vr or not vr.passed:
+                    if vr is None or (not vr.passed and not vr.failed_metrics):
+                        still_not_finished.append(output_id)
+                    elif not vr.passed:
                         failed_validation.append(output_id)
 
             pending_ids = still_not_finished + failed_validation
@@ -614,18 +694,15 @@ class BenchmarkRunner:
                     }
                 )
             for oid in failed_validation:
-                vr = new_results.get(oid) if finished_ids else None
+                vr = new_results[oid]
                 entry: dict = {
                     "attempt": attempt_number,
                     "reason": "validation_failed",
-                    "failed_metrics": vr.failed_metrics if vr else [],
-                    "scores": vr.scores if vr else {},
+                    "failed_metrics": vr.failed_metrics,
+                    "scores": vr.scores,
                 }
-                if vr and vr.details:
-                    failure_details = {}
-                    for metric_name in vr.failed_metrics:
-                        if metric_name in vr.details:
-                            failure_details[metric_name] = vr.details[metric_name]
+                if vr.details:
+                    failure_details = {name: vr.details[name] for name in vr.failed_metrics if name in vr.details}
                     if failure_details:
                         entry["failure_details"] = failure_details
                 rerun_history.setdefault(oid, []).append(entry)
@@ -925,6 +1002,12 @@ class BenchmarkRunner:
                 return (init_settings,)
 
         config_data = json.loads(config_path.read_text())
+        # Backwards compat: remap any legacy metric names saved in an older config.json.
+        if isinstance(config_data.get("metrics"), list):
+            config_data["metrics"] = rename_metric_list(config_data["metrics"])
+        if isinstance(config_data.get("validation_thresholds"), dict):
+            config_data["validation_thresholds"] = rename_metric_keys(config_data["validation_thresholds"])
+
         config = _StoredRunConfig(**config_data)
         runner = cls(config)
         runner.output_dir = run_dir  # Use existing output dir, don't create new

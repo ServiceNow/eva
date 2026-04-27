@@ -10,6 +10,7 @@ import pytest
 
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.pipecat_server import SAMPLE_RATE, PipecatAssistantServer
+from eva.utils.audio_utils import save_pcm_as_wav
 
 
 def _make_server(tmp_path: Path):
@@ -41,30 +42,27 @@ def _make_server(tmp_path: Path):
     return srv
 
 
-class TestSaveWavFile:
+class TestSavePcmAsWav:
     def test_mono_wav_preserves_header_and_content(self, tmp_path):
         """WAV file should have correct headers and byte-exact audio content."""
-        srv = _make_server(tmp_path)
-        # 100 frames of 16-bit mono PCM
         audio_data = b"\x00\x01\xff\xfe" * 50
         file_path = tmp_path / "test.wav"
 
-        srv._save_wav_file(audio_data, file_path, 24000, 1)
+        save_pcm_as_wav(audio_data, file_path, 24000, 1)
 
         with wave.open(str(file_path), "rb") as wf:
             assert wf.getnchannels() == 1
             assert wf.getsampwidth() == 2
             assert wf.getframerate() == 24000
-            assert wf.getnframes() == len(audio_data) // 2  # 16-bit = 2 bytes/frame
+            assert wf.getnframes() == len(audio_data) // 2
             assert wf.readframes(wf.getnframes()) == audio_data
 
     def test_stereo_wav_frame_count(self, tmp_path):
         """Stereo WAV: frame count = total_bytes / (channels * sample_width)."""
-        srv = _make_server(tmp_path)
-        audio_data = b"\x00" * 800  # 200 stereo frames at 16-bit
+        audio_data = b"\x00" * 800
         file_path = tmp_path / "stereo.wav"
 
-        srv._save_wav_file(audio_data, file_path, 16000, 2)
+        save_pcm_as_wav(audio_data, file_path, 16000, 2)
 
         with wave.open(str(file_path), "rb") as wf:
             assert wf.getnchannels() == 2
@@ -73,40 +71,36 @@ class TestSaveWavFile:
 
     def test_bad_path_does_not_raise(self, tmp_path):
         """Error writing to non-existent directory should be swallowed (logged)."""
-        srv = _make_server(tmp_path)
         bad_path = tmp_path / "nonexistent_dir" / "test.wav"
-        srv._save_wav_file(b"\x00", bad_path, 24000, 1)
+        save_pcm_as_wav(b"\x00", bad_path, 24000, 1)
         assert not bad_path.exists()
 
 
-class TestSaveAudio:
-    def test_empty_audio_buffer_skips_all_saves(self, tmp_path):
-        """No audio accumulated → no files written."""
-        srv = _make_server(tmp_path)
-        srv._save_audio()
-        assert not (tmp_path / "audio_mixed.wav").exists()
-        assert not (tmp_path / "audio_user.wav").exists()
-        assert not (tmp_path / "audio_assistant.wav").exists()
-
+class TestSaveAudioDeferred:
     def test_writes_separate_channel_content(self, tmp_path):
         """Each channel's audio should end up in the correct file with distinct content."""
         srv = _make_server(tmp_path)
         mixed = b"\x01\x00" * 100
         user = b"\x02\x00" * 100
         assistant = b"\x03\x00" * 100
-        srv._audio_buffer = bytearray(mixed)
-        srv.user_audio_buffer = bytearray(user)
-        srv.assistant_audio_buffer = bytearray(assistant)
 
-        srv._save_audio()
+        srv._save_audio_deferred(mixed, user, assistant, SAMPLE_RATE)
 
-        # Verify content differs across channels
         with wave.open(str(tmp_path / "audio_mixed.wav"), "rb") as wf:
             assert wf.readframes(wf.getnframes()) == mixed
         with wave.open(str(tmp_path / "audio_user.wav"), "rb") as wf:
             assert wf.readframes(wf.getnframes()) == user
         with wave.open(str(tmp_path / "audio_assistant.wav"), "rb") as wf:
             assert wf.readframes(wf.getnframes()) == assistant
+
+    def test_stop_returns_none_when_no_audio(self, tmp_path):
+        """stop() returns None (no deferred task) when no audio was accumulated."""
+        srv = _make_server(tmp_path)
+        srv._running = True
+        # Buffers are empty (default) — stop() should return None, no WAV files written
+        result = asyncio.run(srv.stop())
+        assert result is None
+        assert not (tmp_path / "audio_mixed.wav").exists()
 
 
 class TestSaveTranscriptMessage:

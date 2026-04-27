@@ -29,8 +29,7 @@ def mock_dataset():
             "user_persona": "Traveler rebooking a flight",
         },
         current_date_time="2026-03-01T22:22:03Z",
-        subflow_in_depth={"steps": ["get_reservation", "search_rebooking_options", "rebook_flight"]},
-        expected_flow="Look up reservation, search options, rebook",
+        scenario_context={"steps": ["get_reservation", "search_rebooking_options", "rebook_flight"]},
         ground_truth=GroundTruth(
             expected_scenario_db=json.loads((ARTIFACTS_DIR / "final_scenario_db.json").read_text()),
         ),
@@ -122,7 +121,7 @@ async def test_judge_metrics_with_mock_llm(mock_run_dir, mock_dataset):
         mock_response = json.dumps(
             [{"turn_id": i, "rating": 3, "explanation": "Response was concise", "failure_modes": []} for i in range(10)]
         )
-        return mock_response
+        return mock_response, None
 
     with patch("eva.utils.llm_client.LLMClient.generate_text", side_effect=mock_generate_text):
         runner = MetricsRunner(
@@ -151,7 +150,7 @@ async def test_judge_metrics_with_mock_llm(mock_run_dir, mock_dataset):
 async def test_metrics_runner_aggregation(mock_run_dir, mock_dataset):
     """Test that MetricsRunner correctly computes and saves results."""
     with patch("eva.utils.llm_client.LLMClient.generate_text", new_callable=AsyncMock) as mock_llm:
-        mock_llm.return_value = json.dumps({"rating": 3, "explanation": "Good"})
+        mock_llm.return_value = (json.dumps({"rating": 3, "explanation": "Good"}), None)
 
         runner = MetricsRunner(
             run_dir=mock_run_dir,
@@ -175,14 +174,14 @@ async def test_validation_metrics(mock_run_dir, mock_dataset):
         runner = MetricsRunner(
             run_dir=mock_run_dir,
             dataset=mock_dataset,
-            metric_names=["conversation_finished"],
+            metric_names=["conversation_valid_end"],
             metric_configs={},
         )
 
         metrics = await runner.run()
         record_metrics = metrics.all_metrics[RECORD_ID]
 
-        assert "conversation_finished" in record_metrics.metrics
+        assert "conversation_valid_end" in record_metrics.metrics
 
 
 @pytest.mark.asyncio

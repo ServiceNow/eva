@@ -113,6 +113,7 @@ class ConversationWorker:
         self._user_simulator = None
         self._conversation_stats: dict[str, Any] = {}
         self._log_file_handler = None
+        self.deferred_audio_task: asyncio.Task | None = None
 
     async def run(self) -> ConversationResult:
         """Execute one complete conversation.
@@ -248,7 +249,7 @@ class ConversationWorker:
             duration_seconds=(ended_at - started_at).total_seconds(),
             output_dir=str(self.output_dir),
             audio_assistant_path=str(self.output_dir / "audio_assistant.wav"),
-            audio_user_path=str(self.output_dir / "audio_user.wav"),
+            audio_user_path=str(self.output_dir / "audio_user_clean.wav"),
             audio_mixed_path=str(self.output_dir / "audio_mixed.wav"),
             transcript_path=str(self.output_dir / "transcript.jsonl"),
             audit_log_path=str(self.output_dir / "audit_log.json"),
@@ -287,7 +288,7 @@ class ConversationWorker:
             goal=self.record.user_goal,
             server_url=f"ws://localhost:{self.port}/ws",
             output_dir=self.output_dir,
-            user_simulator_context=self.agent.user_simulator_context,
+            agent_id=self.agent.id,
             perturbation_config=self.config.perturbation,
         )
 
@@ -320,7 +321,7 @@ class ConversationWorker:
         """Clean up resources."""
         if self._assistant_server:
             try:
-                await self._assistant_server.stop()
+                self.deferred_audio_task = await self._assistant_server.stop()
             except Exception as e:
                 logger.warning(f"Error stopping assistant server: {e}")
             self._assistant_server = None
@@ -342,15 +343,28 @@ class ConversationWorker:
         try:
             latencies = []
             with open(metrics_path) as f:
-                for line in f:
-                    metric = json.loads(line)
-                    value_sec = metric.get("value")
-                    if not value_sec or not (0 < value_sec < 30):
+                for line_num, line in enumerate(f, start=1):
+                    try:
+                        metric = json.loads(line)
+                        metric_type = metric.get("type")
+                        is_stt_processing = metric_type == "ProcessingMetricsData" and "STTService" in metric.get(
+                            "processor", ""
+                        )
+                        is_stt_latency = metric_type == "LatencyMetric" and metric.get("stage") == "stt"
+                        if not (is_stt_processing or is_stt_latency):
+                            continue
+                        value_sec = metric.get("value")
+                        if not isinstance(value_sec, (int, float)) or not (0 < value_sec < 30):
+                            continue
+                        latencies.append(value_sec * 1000)
+                    except Exception as line_err:
+                        logger.warning(
+                            f"STT latency: skipping malformed entry at line {line_num} "
+                            f"({type(line_err).__name__}: {line_err}); "
+                            f"value={metric.get('value')!r} (type={type(metric.get('value')).__name__}), "
+                            f"metric_type={metric.get('type')!r}, raw={line.strip()[:500]}"
+                        )
                         continue
-                    if metric.get("type") == "ProcessingMetricsData" and "STTService" in metric.get("processor", ""):
-                        latencies.append(value_sec * 1000)
-                    elif metric.get("type") == "LatencyMetric" and metric.get("stage") == "stt":
-                        latencies.append(value_sec * 1000)
 
             if not latencies:
                 return None
@@ -365,8 +379,8 @@ class ConversationWorker:
                 total_calls=n,
             )
 
-        except Exception as e:
-            logger.warning(f"Failed to calculate STT latency: {e}")
+        except Exception:
+            logger.exception("Failed to calculate STT latency")
             return None
 
     def _calculate_tts_latency(self) -> LatencyStats | None:
@@ -382,15 +396,26 @@ class ConversationWorker:
         try:
             latencies = []
             with open(metrics_path) as f:
-                for line in f:
-                    metric = json.loads(line)
-                    value_sec = metric.get("value")
-                    if not value_sec or not (0 < value_sec < 10):
+                for line_num, line in enumerate(f, start=1):
+                    try:
+                        metric = json.loads(line)
+                        metric_type = metric.get("type")
+                        is_tts_ttfb = metric_type == "TTFBMetricsData" and "TTSService" in metric.get("processor", "")
+                        is_tts_latency = metric_type == "LatencyMetric" and metric.get("stage") == "tts"
+                        if not (is_tts_ttfb or is_tts_latency):
+                            continue
+                        value_sec = metric.get("value")
+                        if not isinstance(value_sec, (int, float)) or not (0 < value_sec < 10):
+                            continue
+                        latencies.append(value_sec * 1000)
+                    except Exception as line_err:
+                        logger.warning(
+                            f"TTS latency: skipping malformed entry at line {line_num} "
+                            f"({type(line_err).__name__}: {line_err}); "
+                            f"value={metric.get('value')!r} (type={type(metric.get('value')).__name__}), "
+                            f"metric_type={metric.get('type')!r}, raw={line.strip()[:500]}"
+                        )
                         continue
-                    if metric.get("type") == "TTFBMetricsData" and "TTSService" in metric.get("processor", ""):
-                        latencies.append(value_sec * 1000)
-                    elif metric.get("type") == "LatencyMetric" and metric.get("stage") == "tts":
-                        latencies.append(value_sec * 1000)
 
             if not latencies:
                 return None
@@ -405,8 +430,8 @@ class ConversationWorker:
                 total_calls=n,
             )
 
-        except Exception as e:
-            logger.warning(f"Failed to calculate TTS latency: {e}")
+        except Exception:
+            logger.exception("Failed to calculate TTS latency")
             return None
 
     def _calculate_model_response_latency(self) -> LatencyStats | None:

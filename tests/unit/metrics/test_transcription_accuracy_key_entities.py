@@ -164,6 +164,56 @@ def metric():
 
 class TestCompute:
     @pytest.mark.asyncio
+    async def test_surfaces_per_entity_type_sub_metrics(self, metric):
+        """Sub-metrics aggregate accuracy per entity type across turns."""
+        context = make_metric_context(
+            intended_user_turns={0: "My name is John Smith", 1: "Confirmation ABC123 on Dec 15"},
+            transcribed_user_turns={0: "My name is John Smith", 1: "Confirmation ABC123 on Dec 15"},
+        )
+        response = _make_judge_response(
+            [
+                {
+                    "turn_id": 0,
+                    "summary": "mostly correct",
+                    "entities": [
+                        {"type": "name", "correct": True, "skipped": False},
+                        {"type": "name", "correct": False, "skipped": False},
+                    ],
+                },
+                {
+                    "turn_id": 1,
+                    "summary": "one skipped",
+                    "entities": [
+                        {"type": "confirmation_code", "correct": True, "skipped": False},
+                        {"type": "date", "correct": True, "skipped": False},
+                        {"type": "date", "correct": False, "skipped": True},
+                    ],
+                },
+            ]
+        )
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
+
+        result = await metric.compute(context)
+
+        assert result.error is None
+        assert result.sub_metrics is not None
+        assert set(result.sub_metrics.keys()) == {
+            "name_accuracy",
+            "confirmation_code_accuracy",
+            "date_accuracy",
+        }
+        name_sub = result.sub_metrics["name_accuracy"]
+        assert name_sub.name == "transcription_accuracy_key_entities.name_accuracy"
+        assert name_sub.score == pytest.approx(0.5)
+        assert name_sub.details == {"correct": 1, "total_non_skipped": 2, "skipped": 0}
+        code_sub = result.sub_metrics["confirmation_code_accuracy"]
+        assert code_sub.score == 1.0
+        assert code_sub.details == {"correct": 1, "total_non_skipped": 1, "skipped": 0}
+        date_sub = result.sub_metrics["date_accuracy"]
+        assert date_sub.score == 1.0
+        assert date_sub.details == {"correct": 1, "total_non_skipped": 1, "skipped": 1}
+
+    @pytest.mark.asyncio
     async def test_all_turns_have_entities(self, metric):
         """All turns have entities -> num_evaluated == num_turns, num_not_applicable == 0."""
         context = make_metric_context(
@@ -184,7 +234,7 @@ class TestCompute:
                 },
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -217,7 +267,7 @@ class TestCompute:
                 },
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -241,7 +291,7 @@ class TestCompute:
                 {"turn_id": 1, "summary": "No entities", "entities": []},
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -270,7 +320,7 @@ class TestCompute:
                 },
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -302,7 +352,7 @@ class TestCompute:
                 },
             ]
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=response)
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
 
         result = await metric.compute(context)
 
@@ -319,7 +369,7 @@ class TestCompute:
             intended_user_turns={0: "Hello"},
             transcribed_user_turns={0: "Hello"},
         )
-        metric.llm_client.generate_text = AsyncMock(return_value=None)
+        metric.llm_client.generate_text = AsyncMock(return_value=(None, None))
 
         result = await metric.compute(context)
 

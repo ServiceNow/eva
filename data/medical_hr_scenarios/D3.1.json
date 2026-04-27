@@ -1,0 +1,260 @@
+{
+  "_current_date": "2026-08-08",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ACLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "BLS",
+      "ACLS"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ],
+    "ER-1": [
+      "BLS",
+      "ACLS",
+      "TNCC"
+    ]
+  },
+  "providers": {
+    "7049001493": {
+      "npi": "7049001493",
+      "employee_id": "EMP799287",
+      "first_name": "Nalini",
+      "last_name": "Patel",
+      "facility_code": "SOE-95M",
+      "pin": "3851",
+      "phone_last_four": "0184",
+      "otp_code": "745414",
+      "role_code": "MD",
+      "department_code": "EMERGENCY",
+      "hire_date": "2018-07-16",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-324082",
+      "licenses": {
+        "OH-MD-324082": {
+          "state_license_number": "OH-MD-324082",
+          "license_type": "MD",
+          "state_code": "OH",
+          "expiration_date": "2027-05-31",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-EM4421",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "OK1006810",
+        "facility_code": "SOE-95M",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-11-30",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-ECHO-003",
+            "description": "Emergency focused echocardiography",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-CARD-005",
+            "description": "Emergency cardiac care procedures",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-ER-001",
+            "description": "General emergency medicine coverage",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP799287": {
+      "employee_id": "EMP799287",
+      "first_name": "Nalini",
+      "last_name": "Patel",
+      "date_of_birth": "1984-11-22",
+      "phone_last_four": "0184",
+      "otp_code": "745414",
+      "department_code": "EMERGENCY",
+      "role_code": "MD",
+      "unit_code": "ER-1",
+      "hire_date": "2018-07-16",
+      "employment_status": "on_leave",
+      "certifications": [
+        "BLS",
+        "ACLS",
+        "TNCC"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 96,
+        "hours_worked_past_year": 1840,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "personal",
+          "start_date": "2026-05-15",
+          "end_date": "2026-08-23",
+          "status": "approved",
+          "case_id": "CASE-LOA-799287"
+        }
+      ],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260826-0700": {
+      "shift_id": "SHF-20260826-0700",
+      "employee_id": "EMP799287",
+      "unit_code": "ER-1",
+      "date": "2026-08-26",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-31",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "EMERGENCY": {
+        "2026-08-19": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-08-21": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-08-25": [
+          "10:00",
+          "15:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "EMERGENCY": {
+        "2026-08-24": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-08-25": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-08-27": [
+          "09:00",
+          "13:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "EMERGENCY": {
+        "2026-08-21": [
+          "09:00",
+          "10:00",
+          "13:00"
+        ],
+        "2026-08-22": [
+          "08:30",
+          "11:00"
+        ],
+        "2026-08-24": [
+          "09:00",
+          "15:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-09-07",
+    "2026-11-26",
+    "2026-12-25"
+  ],
+  "department_blackout_dates": {
+    "EMERGENCY": [],
+    "CARDIOLOGY": [],
+    "ONCOLOGY": [],
+    "SURGERY": [],
+    "PEDIATRICS": [],
+    "RADIOLOGY": []
+  }
+}

@@ -1,9 +1,9 @@
 """Integration test for validation mode.
 
 Tests the complete evaluation pipeline:
-1. Run targeted conversations
+1. Run conversations per-record (pipelined)
 2. Check conversation_finished
-3. Run validation metrics
+3. Run validation metrics per-record
 4. Archive and rerun failures (single flat loop)
 5. Generate final summary
 """
@@ -40,8 +40,7 @@ def mock_dataset():
                 "user_persona": "You're direct and to the point.",
             },
             current_date_time="2024-01-15T10:00:00Z",
-            subflow_in_depth={},
-            expected_flow="test_flow",
+            scenario_context={},
             ground_truth=GroundTruth(
                 expected_scenario_db={},
             ),
@@ -57,8 +56,7 @@ def mock_dataset():
                 "user_persona": "You're direct and to the point.",
             },
             current_date_time="2024-01-15T10:00:00Z",
-            subflow_in_depth={},
-            expected_flow="test_flow",
+            scenario_context={},
             ground_truth=GroundTruth(
                 expected_scenario_db={},
             ),
@@ -83,7 +81,7 @@ def eval_config(tmp_path):
         ),
         max_rerun_attempts=3,
         validation_thresholds={
-            "conversation_finished": 1.0,
+            "conversation_valid_end": 1.0,
             "user_behavioral_fidelity": 1.0,
         },
         max_concurrent_conversations=2,
@@ -111,7 +109,7 @@ def create_mock_conversation_result(record_id: str, completed: bool = True, outp
 
 
 def create_mock_validation_results(pass_ids: list[str], fail_ids: list[str]) -> dict[str, ValidationResult]:
-    """Helper to create mock validation results."""
+    """Helper to create mock validation results keyed by output_id."""
     results = {}
     for record_id in pass_ids:
         results[record_id] = ValidationResult(passed=True)
@@ -119,44 +117,65 @@ def create_mock_validation_results(pass_ids: list[str], fail_ids: list[str]) -> 
         results[record_id] = ValidationResult(
             passed=False,
             failed_metrics=["user_behavioral_fidelity"],
-            failure_category="validation_failed",
         )
     return results
 
 
-def _mock_run_targeted(runner, attempt_counter=None, completed_fn=None):
-    """Create a mock _run_targeted that creates result files and returns results.
+def _mock_run_conversation_helper(runner, call_counts=None, completed_fn=None):
+    """Create a mock for _run_conversation that creates result dirs and returns (result, None).
 
     Args:
-        runner: The BenchmarkRunner instance.
-        attempt_counter: Optional dict with "count" key to track attempts.
-        completed_fn: Optional function(record_id, attempt) -> bool to control completion.
+        runner: The BenchmarkRunner instance (for output_dir).
+        call_counts: Optional dict tracking per-output_id call counts (updated in-place).
+        completed_fn: Optional function(record_id, per_record_attempt) -> bool.
+
+    Returns:
+        Async function matching the _run_conversation(record, output_id) signature.
     """
 
-    async def mock_targeted(tasks):
-        if attempt_counter is not None:
-            attempt_counter["count"] += 1
+    async def mock_conversation(record, output_id):
+        if call_counts is not None:
+            call_counts[output_id] = call_counts.get(output_id, 0) + 1
+            per_record_attempt = call_counts[output_id]
+        else:
+            per_record_attempt = 1
 
-        results = {}
-        for record, output_id in tasks:
-            record_dir = runner.output_dir / "records" / output_id
-            record_dir.mkdir(parents=True, exist_ok=True)
+        record_dir = runner.output_dir / "records" / output_id
+        record_dir.mkdir(parents=True, exist_ok=True)
 
-            completed = True
-            if completed_fn is not None:
-                completed = completed_fn(record.id, attempt_counter["count"] if attempt_counter else 1)
+        completed = True
+        if completed_fn is not None:
+            completed = completed_fn(record.id, per_record_attempt)
 
-            result = create_mock_conversation_result(
-                record_id=record.id,
-                completed=completed,
-                output_dir=str(record_dir),
-            )
-            (record_dir / "result.json").write_text(result.model_dump_json(indent=2))
-            results[output_id] = result
+        result = create_mock_conversation_result(
+            record_id=record.id,
+            completed=completed,
+            output_dir=str(record_dir),
+        )
+        return result, None  # (ConversationResult, deferred_audio_task=None)
 
-        return results
+    return mock_conversation
 
-    return mock_targeted
+
+def _make_validate_one_side_effect(validation_results_list: list[dict[str, ValidationResult]]):
+    """Create a validate_one side_effect that returns results per per-record attempt.
+
+    Args:
+        validation_results_list: List of result dicts, one per attempt. The first dict
+            is used on the first call for each output_id, the second on the second call, etc.
+
+    Returns:
+        Async callable suitable for AsyncMock.side_effect.
+    """
+    call_counts: dict[str, int] = {}
+
+    async def side_effect(output_id: str) -> ValidationResult:
+        call_counts[output_id] = call_counts.get(output_id, 0) + 1
+        attempt_idx = call_counts[output_id] - 1  # 0-indexed
+        attempt_idx = min(attempt_idx, len(validation_results_list) - 1)
+        return validation_results_list[attempt_idx].get(output_id, ValidationResult(passed=True))
+
+    return side_effect
 
 
 @pytest.mark.asyncio
@@ -164,37 +183,36 @@ async def test_evaluation_mode_all_pass_first_attempt(eval_config, mock_dataset)
     """Test validation mode when all records pass validation on first attempt."""
     runner = BenchmarkRunner(eval_config)
 
-    attempt_counter = {"count": 0}
-
-    mock_validation_results = create_mock_validation_results(
+    call_counts: dict[str, int] = {}
+    validation_results = create_mock_validation_results(
         pass_ids=["pass_record_1", "fail_record_1"],
         fail_ids=[],
     )
 
-    with patch.object(runner, "_run_targeted", side_effect=_mock_run_targeted(runner, attempt_counter)):
-        with patch("eva.orchestrator.runner.check_conversation_finished", return_value=True):
-            with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
-                mock_val_runner = AsyncMock()
-                mock_val_runner.run_validation.return_value = mock_validation_results
-                MockValidationRunner.return_value = mock_val_runner
+    with patch.object(runner, "_run_conversation", side_effect=_mock_run_conversation_helper(runner, call_counts)):
+        with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
+            mock_val_runner = AsyncMock()
+            MockValidationRunner.return_value = mock_val_runner
+            mock_val_runner.validate_one = AsyncMock(side_effect=_make_validate_one_side_effect([validation_results]))
 
-                summary = await runner.run(mock_dataset)
+            summary = await runner.run(mock_dataset)
 
-                assert summary.total_records == 2
-                assert summary.successful_records == 2
-                assert summary.failed_records == 0
-                assert attempt_counter["count"] == 1
+            assert summary.total_records == 2
+            assert summary.successful_records == 2
+            assert summary.failed_records == 0
+            # Each record run exactly once (one loop iteration)
+            assert call_counts == {"pass_record_1": 1, "fail_record_1": 1}
 
-                eval_summary_path = runner.output_dir / "evaluation_summary.json"
-                assert eval_summary_path.exists()
+            eval_summary_path = runner.output_dir / "evaluation_summary.json"
+            assert eval_summary_path.exists()
 
-                with open(eval_summary_path) as f:
-                    eval_summary = json.load(f)
-                    sim = eval_summary["simulation"]
-                    assert sim["total_records"] == 2
-                    assert sim["successful_records"] == 2
-                    assert sim["failed_records"] == 0
-                    assert sim["total_attempts"] == 1
+            with open(eval_summary_path) as f:
+                eval_summary = json.load(f)
+                sim = eval_summary["simulation"]
+                assert sim["total_records"] == 2
+                assert sim["successful_records"] == 2
+                assert sim["failed_records"] == 0
+                assert sim["total_attempts"] == 1
 
 
 @pytest.mark.asyncio
@@ -202,7 +220,7 @@ async def test_evaluation_mode_rerun_failures(eval_config, mock_dataset):
     """Test validation mode with reruns for failed records."""
     runner = BenchmarkRunner(eval_config)
 
-    attempt_counter = {"count": 0}
+    call_counts: dict[str, int] = {}
 
     # Attempt 1: fail_record_1 fails validation
     # Attempt 2: fail_record_1 passes validation
@@ -217,30 +235,31 @@ async def test_evaluation_mode_rerun_failures(eval_config, mock_dataset):
         ),
     ]
 
-    with patch.object(runner, "_run_targeted", side_effect=_mock_run_targeted(runner, attempt_counter)):
-        with patch("eva.orchestrator.runner.check_conversation_finished", return_value=True):
-            with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
-                mock_val_runner = AsyncMock()
-                mock_val_runner.run_validation.side_effect = validation_attempts
-                MockValidationRunner.return_value = mock_val_runner
+    with patch.object(runner, "_run_conversation", side_effect=_mock_run_conversation_helper(runner, call_counts)):
+        with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
+            mock_val_runner = AsyncMock()
+            MockValidationRunner.return_value = mock_val_runner
+            mock_val_runner.validate_one = AsyncMock(side_effect=_make_validate_one_side_effect(validation_attempts))
 
-                summary = await runner.run(mock_dataset)
+            summary = await runner.run(mock_dataset)
 
-                assert summary.total_records == 2
-                assert summary.successful_records == 2
-                assert summary.failed_records == 0
-                assert attempt_counter["count"] == 2
+            assert summary.total_records == 2
+            assert summary.successful_records == 2
+            assert summary.failed_records == 0
+            # pass_record_1 ran once, fail_record_1 ran twice
+            assert call_counts.get("pass_record_1") == 1
+            assert call_counts.get("fail_record_1") == 2
 
-                eval_summary_path = runner.output_dir / "evaluation_summary.json"
-                with open(eval_summary_path) as f:
-                    eval_summary = json.load(f)
-                    sim = eval_summary["simulation"]
-                    assert sim["total_attempts"] == 2
-                    assert sim["successful_records"] == 2
+            eval_summary_path = runner.output_dir / "evaluation_summary.json"
+            with open(eval_summary_path) as f:
+                eval_summary = json.load(f)
+                sim = eval_summary["simulation"]
+                assert sim["total_attempts"] == 2
+                assert sim["successful_records"] == 2
 
-                # Check that failed attempt was archived
-                archive_dir = runner.output_dir / "records" / "fail_record_1_failed_attempt_1"
-                assert archive_dir.exists()
+            # Check that failed attempt was archived
+            archive_dir = runner.output_dir / "records" / "fail_record_1_failed_attempt_1"
+            assert archive_dir.exists()
 
 
 @pytest.mark.asyncio
@@ -248,55 +267,58 @@ async def test_evaluation_mode_max_reruns_reached(eval_config, mock_dataset):
     """Test validation mode when max reruns is reached with persistent failures."""
     runner = BenchmarkRunner(eval_config)
 
-    attempt_counter = {"count": 0}
+    call_counts: dict[str, int] = {}
 
-    # Validation always fails for fail_record_1
-    def mock_validation_results_always_fail(*args, **kwargs):
-        return create_mock_validation_results(
-            pass_ids=["pass_record_1"],
-            fail_ids=["fail_record_1"],
-        )
+    # pass_record_1 always passes, fail_record_1 always fails
+    always_fail_results = {
+        "pass_record_1": ValidationResult(passed=True),
+        "fail_record_1": ValidationResult(
+            passed=False,
+            failed_metrics=["user_behavioral_fidelity"],
+        ),
+    }
 
-    with patch.object(runner, "_run_targeted", side_effect=_mock_run_targeted(runner, attempt_counter)):
-        with patch("eva.orchestrator.runner.check_conversation_finished", return_value=True):
-            with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
-                mock_val_runner = AsyncMock()
-                mock_val_runner.run_validation.side_effect = mock_validation_results_always_fail
-                MockValidationRunner.return_value = mock_val_runner
+    with patch.object(runner, "_run_conversation", side_effect=_mock_run_conversation_helper(runner, call_counts)):
+        with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
+            mock_val_runner = AsyncMock()
+            MockValidationRunner.return_value = mock_val_runner
+            mock_val_runner.validate_one = AsyncMock(
+                side_effect=lambda oid: always_fail_results.get(oid, ValidationResult(passed=True))
+            )
 
-                summary = await runner.run(mock_dataset)
+            summary = await runner.run(mock_dataset)
 
-                assert summary.total_records == 2
-                assert summary.successful_records == 1  # Only pass_record_1
-                assert summary.failed_records == 1  # fail_record_1 never passed
+            assert summary.total_records == 2
+            assert summary.successful_records == 1  # Only pass_record_1
+            assert summary.failed_records == 1  # fail_record_1 never passed
 
-                # Should have run max_rerun_attempts times (3)
-                assert attempt_counter["count"] == 3
+            # fail_record_1 ran max_rerun_attempts times (3)
+            assert call_counts.get("fail_record_1") == 3
 
-                eval_summary_path = runner.output_dir / "evaluation_summary.json"
-                with open(eval_summary_path) as f:
-                    eval_summary = json.load(f)
-                    sim = eval_summary["simulation"]
-                    assert sim["total_attempts"] == 3
-                    assert sim["successful_records"] == 1
-                    assert sim["failed_records"] == 1
-                    assert "fail_record_1" in sim["failed_record_ids"]
-                    assert len(eval_summary["rerun_history"]["fail_record_1"]) == 3
-                    # Each entry is a dict with structured failure info
-                    for entry in eval_summary["rerun_history"]["fail_record_1"]:
-                        assert "attempt" in entry
-                        assert "reason" in entry
+            eval_summary_path = runner.output_dir / "evaluation_summary.json"
+            with open(eval_summary_path) as f:
+                eval_summary = json.load(f)
+                sim = eval_summary["simulation"]
+                assert sim["total_attempts"] == 3
+                assert sim["successful_records"] == 1
+                assert sim["failed_records"] == 1
+                assert "fail_record_1" in sim["failed_record_ids"]
+                assert len(eval_summary["rerun_history"]["fail_record_1"]) == 3
+                # Each entry is a dict with structured failure info
+                for entry in eval_summary["rerun_history"]["fail_record_1"]:
+                    assert "attempt" in entry
+                    assert "reason" in entry
 
-                # Archiving happens for attempts 1 and 2, not 3 (final stays)
-                for attempt in [1, 2]:
-                    archive_dir = runner.output_dir / "records" / f"fail_record_1_failed_attempt_{attempt}"
-                    assert archive_dir.exists()
+            # Archiving happens for attempts 1 and 2, not 3 (final stays)
+            for attempt in [1, 2]:
+                archive_dir = runner.output_dir / "records" / f"fail_record_1_failed_attempt_{attempt}"
+                assert archive_dir.exists()
 
-                final_failed_attempt_archive = runner.output_dir / "records" / "fail_record_1_failed_attempt_3"
-                assert not final_failed_attempt_archive.exists()
+            final_failed_attempt_archive = runner.output_dir / "records" / "fail_record_1_failed_attempt_3"
+            assert not final_failed_attempt_archive.exists()
 
-                final_record_dir = runner.output_dir / "records" / "fail_record_1"
-                assert final_record_dir.exists()
+            final_record_dir = runner.output_dir / "records" / "fail_record_1"
+            assert final_record_dir.exists()
 
 
 @pytest.mark.asyncio
@@ -339,40 +361,35 @@ async def test_archive_failed_failed_attempt_nested_output_id(eval_config):
 
 @pytest.mark.asyncio
 async def test_evaluation_mode_conversation_not_finished_retries(eval_config, mock_dataset):
-    """Test that conversation_finished failures trigger retries in the flat loop."""
+    """Test that not_finished failures from the gate trigger retries in the flat loop."""
     runner = BenchmarkRunner(eval_config)
 
-    attempt_counter = {"count": 0}
+    call_counts: dict[str, int] = {}
 
-    # Conversation finished check: fail_record_1 not finished on attempt 1, finished on attempt 2
-    conversation_finished_calls = {"count": 0}
+    # Attempt 1: fail_record_1 fails the gate (not_finished) — validate_one returns
+    # ValidationResult(passed=False) with empty failed_metrics (gate-rejection convention).
+    # Attempt 2: both pass.
+    validation_attempts = [
+        {
+            "pass_record_1": ValidationResult(passed=True),
+            "fail_record_1": ValidationResult(passed=False),  # empty failed_metrics = not_finished
+        },
+        create_mock_validation_results(pass_ids=["fail_record_1"], fail_ids=[]),
+    ]
 
-    def mock_conversation_finished(record_dir):
-        conversation_finished_calls["count"] += 1
-        # pass_record_1 always finishes
-        if "pass_record_1" in str(record_dir):
-            return True
-        # fail_record_1 finishes on 2nd attempt
-        return attempt_counter["count"] >= 2
+    with patch.object(runner, "_run_conversation", side_effect=_mock_run_conversation_helper(runner, call_counts)):
+        with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
+            mock_val_runner = AsyncMock()
+            MockValidationRunner.return_value = mock_val_runner
+            mock_val_runner.validate_one = AsyncMock(side_effect=_make_validate_one_side_effect(validation_attempts))
 
-    mock_validation_results = create_mock_validation_results(
-        pass_ids=["pass_record_1", "fail_record_1"],
-        fail_ids=[],
-    )
+            summary = await runner.run(mock_dataset)
 
-    with patch.object(runner, "_run_targeted", side_effect=_mock_run_targeted(runner, attempt_counter)):
-        with patch("eva.orchestrator.runner.check_conversation_finished", side_effect=mock_conversation_finished):
-            with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
-                mock_val_runner = AsyncMock()
-                mock_val_runner.run_validation.return_value = mock_validation_results
-                MockValidationRunner.return_value = mock_val_runner
-
-                summary = await runner.run(mock_dataset)
-
-                assert summary.total_records == 2
-                assert summary.successful_records == 2
-                assert summary.failed_records == 0
-                assert attempt_counter["count"] == 2
+            assert summary.total_records == 2
+            assert summary.successful_records == 2
+            assert summary.failed_records == 0
+            # fail_record_1 ran twice (once gate-rejected, once passed)
+            assert call_counts.get("fail_record_1") == 2
 
 
 @pytest.mark.asyncio
@@ -380,29 +397,30 @@ async def test_evaluation_mode_with_unresolved_errors(eval_config, mock_dataset)
     """Test validation mode with records that have unresolved errors (completed=False)."""
     runner = BenchmarkRunner(eval_config)
 
-    attempt_counter = {"count": 0}
+    call_counts: dict[str, int] = {}
 
     # fail_record_1 always fails to complete
-    def completed_fn(record_id, attempt):
+    def completed_fn(record_id, per_record_attempt):
         return record_id != "fail_record_1"
 
-    mock_validation_results = create_mock_validation_results(
+    validation_results = create_mock_validation_results(
         pass_ids=["pass_record_1"],
         fail_ids=[],
     )
 
-    with patch.object(runner, "_run_targeted", side_effect=_mock_run_targeted(runner, attempt_counter, completed_fn)):
-        with patch("eva.orchestrator.runner.check_conversation_finished", return_value=True):
-            with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
-                mock_val_runner = AsyncMock()
-                mock_val_runner.run_validation.return_value = mock_validation_results
-                MockValidationRunner.return_value = mock_val_runner
+    with patch.object(
+        runner, "_run_conversation", side_effect=_mock_run_conversation_helper(runner, call_counts, completed_fn)
+    ):
+        with patch("eva.orchestrator.runner.ValidationRunner") as MockValidationRunner:
+            mock_val_runner = AsyncMock()
+            MockValidationRunner.return_value = mock_val_runner
+            mock_val_runner.validate_one = AsyncMock(side_effect=_make_validate_one_side_effect([validation_results]))
 
-                summary = await runner.run(mock_dataset)
+            summary = await runner.run(mock_dataset)
 
-                # fail_record_1 should fail due to completed=False
-                assert summary.successful_records == 1
-                assert summary.failed_records == 1
+            # fail_record_1 should fail due to completed=False
+            assert summary.successful_records == 1
+            assert summary.failed_records == 1
 
-                # Should reach max attempts
-                assert attempt_counter["count"] == 3
+            # Should reach max attempts
+            assert call_counts.get("fail_record_1") == 3

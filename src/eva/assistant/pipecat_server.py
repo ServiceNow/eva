@@ -10,10 +10,6 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
-from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
-from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
-from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.frames.frames import (
     CancelFrame,
     LLMRunFrame,
@@ -37,9 +33,8 @@ from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
 )
-from pipecat.turns.user_start import VADUserTurnStartStrategy
 from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
-from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies, UserTurnStrategies
+from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
 
 from eva.assistant.agentic.audit_log import convert_to_epoch_ms, current_timestamp_ms
@@ -58,6 +53,11 @@ from eva.assistant.pipeline.services import (
     create_realtime_llm_service,
     create_stt_service,
     create_tts_service,
+)
+from eva.assistant.pipeline.turn_config import (
+    create_turn_start_strategy,
+    create_turn_stop_strategy,
+    create_vad_analyzer,
 )
 from eva.assistant.services.llm import LiteLLMClient
 from eva.models.agents import AgentConfig
@@ -181,27 +181,26 @@ class PipecatAssistantServer(AbstractAssistantServer):
 
         logger.info(f"Assistant server started on ws://localhost:{self.port}")
 
-    async def stop(self) -> None:
-        """Stop the server and save outputs."""
+    async def _shutdown(self) -> None:
+        """Stop the Pipecat pipeline and uvicorn server."""
         if not self._running:
             return
 
         self._running = False
 
-        # Stop the pipeline task
+        # Cancel pipeline task first so no more audio arrives before base stop()
+        # extracts the buffers.
         if self._task:
             await self._task.cancel()
             self._task = None
 
-        # Stop the server gracefully
+        # Stop the uvicorn server gracefully.
         if self._server:
             self._server.should_exit = True
-            # Wait briefly for graceful shutdown, then cancel if needed
             if self._server_task:
                 try:
                     await asyncio.wait_for(self._server_task, timeout=5.0)
                 except TimeoutError:
-                    # Force cancellation if graceful shutdown times out
                     self._server_task.cancel()
                     try:
                         await self._server_task
@@ -211,9 +210,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     pass  # Expected during shutdown
             self._server = None
             self._server_task = None
-
-        # Save outputs
-        await self.save_outputs()
 
         logger.info(f"Assistant server stopped on port {self.port}")
 
@@ -304,26 +300,33 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     "smart_turn_stop_secs", 0.8
                 )  # Shorter silence so we don't have to wait 3s if smart turn marks audio as incomplete
 
-            if (
-                isinstance(self.pipeline_config, (PipelineConfig, SpeechToSpeechConfig))
-                and self.pipeline_config.turn_strategy == "external"
-            ):
-                logger.info("Using external user turn strategies")
-                user_turn_strategies = ExternalUserTurnStrategies()
-                vad_analyzer = None
-            else:
-                logger.info("Using local smart turn analyzer")
-                user_turn_strategies = UserTurnStrategies(
-                    start=[VADUserTurnStartStrategy()],
-                    stop=[
-                        TurnAnalyzerUserTurnStopStrategy(
-                            turn_analyzer=LocalSmartTurnAnalyzerV3(
-                                params=SmartTurnParams(stop_secs=smart_turn_stop_secs)
-                            )
-                        )
-                    ],
-                )
-                vad_analyzer = SileroVADAnalyzer(params=VADParams(stop_secs=vad_stop_secs))
+            turn_start_cfg = self.pipeline_config.turn_start_strategy
+            turn_start_params = self.pipeline_config.turn_start_strategy_params
+            turn_stop_cfg = self.pipeline_config.turn_stop_strategy
+            turn_stop_params = self.pipeline_config.turn_stop_strategy_params
+            vad_cfg = self.pipeline_config.vad
+            vad_cfg_params = self.pipeline_config.vad_params
+
+            # Create turn start strategy using factory function
+            turn_start_strategy = create_turn_start_strategy(turn_start_cfg, turn_start_params)
+            logger.info(f"Using turn start strategy: {turn_start_cfg}")
+
+            # Create turn stop strategy using factory function
+            turn_stop_strategy = create_turn_stop_strategy(turn_stop_cfg, turn_stop_params, smart_turn_stop_secs)
+            logger.info(f"Using turn stop strategy: {turn_stop_cfg}")
+
+            user_turn_strategies = UserTurnStrategies(
+                start=[turn_start_strategy],
+                stop=[turn_stop_strategy],
+            )
+
+            # Create VAD analyzer using factory function
+            # Merge user params with pipeline-specific stop_secs
+            vad_params_dict = {"stop_secs": vad_stop_secs}
+            if vad_cfg_params:
+                vad_params_dict.update(vad_cfg_params)
+            vad_analyzer = create_vad_analyzer(vad_cfg, vad_params_dict)
+            logger.info(f"Using VAD analyzer: {vad_cfg}")
             user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
                 context,
                 user_params=LLMUserAggregatorParams(
@@ -712,8 +715,20 @@ class PipecatAssistantServer(AbstractAssistantServer):
         """Return the current time as an ISO 8601 string with timezone."""
         return time_now_iso8601()
 
+    def _save_transcript(self) -> None:
+        """Pipecat-specific transcript handling.
+
+        For S2S mode, always rebuild from the audit log (correct ordering).
+        For pipeline mode, only write if not already written incrementally.
+        """
+        transcript_path = self.output_dir / "transcript.jsonl"
+        if isinstance(self.pipeline_config, SpeechToSpeechConfig) or not transcript_path.exists():
+            self.audit_log.save_transcript_jsonl(transcript_path)
+
     async def save_outputs(self) -> None:
         """Save all outputs, with pipecat-specific additions."""
+        await super().save_outputs()
+
         # Save agent performance stats (pipecat-specific: AgenticSystem tracking)
         if self.agentic_system:
             try:
@@ -721,9 +736,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 self.agentic_system.save_agent_perf_stats()
             except Exception as e:
                 logger.error(f"Error saving agent perf stats: {e}", exc_info=True)
-
-        # Call base class to save audit_log, audio, scenario DBs, latencies
-        await super().save_outputs()
 
 
 async def override__maybe_trigger_user_turn_stopped(self):

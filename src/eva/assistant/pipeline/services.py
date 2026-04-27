@@ -37,7 +37,7 @@ from pipecat.services.openai.realtime.events import (
 )
 from pipecat.services.openai.realtime.llm import OpenAIRealtimeLLMService
 from pipecat.services.openai.stt import OpenAISTTService
-from pipecat.services.openai.tts import VALID_VOICES, OpenAITTSService
+from pipecat.services.openai.tts import OpenAITTSService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 from pipecat.transcriptions.language import Language
@@ -137,6 +137,16 @@ def create_stt_service(
             ),
         )
 
+    elif model_lower == "cohere":
+        logger.info(f"Using Cohere STT: {params['model']}")
+        return OpenAISTTService(
+            api_key=api_key,
+            base_url=url,
+            model=params["model"],
+            language=Language.EN,
+            sample_rate=SAMPLE_RATE,
+        )
+
     elif model_lower.startswith("deepgram"):
         # Check if using Flux model
         if "flux" in model_lower:
@@ -208,7 +218,7 @@ def create_stt_service(
 
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai"
+            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai"
         )
 
 
@@ -341,6 +351,18 @@ def create_tts_service(
             return openai_tts
 
         return openai_tts
+
+    elif model_lower == "voxtral":
+        logger.info(f"Using Voxtral TTS: {params['model']}")
+        voxtral_tts = OpenAITTSService(
+            api_key=api_key,
+            model=params["model"],
+            voice=params.get("voice", "neutral_female"),
+            base_url=url,
+        )
+        OpenAITTSService.run_tts = override_run_tts
+        voxtral_tts._settings.language = language_code
+        return voxtral_tts
 
     elif model_lower == "xtts":
         logger.info(f"Using XTTS TTS: {params['model']}")
@@ -587,7 +609,7 @@ async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[F
         create_params = {
             "input": text,
             "model": self._settings.model,
-            "voice": VALID_VOICES[self._settings.voice],
+            "voice": self._settings.voice,
             "response_format": "pcm",
             "extra_body": {
                 "streaming_quality": "fast",

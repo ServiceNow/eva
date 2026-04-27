@@ -1,0 +1,614 @@
+{
+  "_current_date": "2026-04-21",
+  "access_groups": {
+    "GRP-MKTCOR": {
+      "description": "Baseline file share and collaboration access for Marketing.",
+      "eligible_departments": [
+        "MKT"
+      ],
+      "eligible_roles": [],
+      "group_code": "GRP-MKTCOR",
+      "member_count": 42,
+      "name": "Marketing Core Access",
+      "requires_approval": false
+    },
+    "GRP-VPNSTD": {
+      "description": "Standard VPN access for employees.",
+      "eligible_departments": [],
+      "eligible_roles": [],
+      "group_code": "GRP-VPNSTD",
+      "member_count": 380,
+      "name": "VPN Standard Users",
+      "requires_approval": false
+    }
+  },
+  "active_outages": {},
+  "asset_recoveries": {},
+  "assets": {
+    "AST-LPT-500301": {
+      "asset_tag": "AST-LPT-500301",
+      "asset_type": "laptop",
+      "assigned_employee_id": "EMP050001",
+      "lifecycle_status": "current",
+      "manufacturer": "Lenovo",
+      "model": "ThinkPad X1 Carbon",
+      "os": "windows",
+      "purchase_date": "2022-10-02",
+      "serial_number": "TPX1-500301",
+      "size": "14-inch",
+      "status": "active",
+      "warranty_expiration": "2025-10-02"
+    },
+    "AST-LPT-552184": {
+      "asset_tag": "AST-LPT-552184",
+      "asset_type": "laptop",
+      "assigned_employee_id": "EMP073291",
+      "lifecycle_status": "current",
+      "manufacturer": "Dell",
+      "model": "Latitude 7440",
+      "os": "windows",
+      "purchase_date": "2024-02-13",
+      "serial_number": "DL7440-552184",
+      "size": "14-inch",
+      "status": "active",
+      "warranty_expiration": "2027-02-13"
+    },
+    "AST-LPT-661205": {
+      "asset_tag": "AST-LPT-661205",
+      "asset_type": "laptop",
+      "assigned_employee_id": "EMP062110",
+      "lifecycle_status": "current",
+      "manufacturer": "Apple",
+      "model": "MacBook Pro",
+      "os": "macos",
+      "purchase_date": "2023-05-11",
+      "serial_number": "MBP14-661205",
+      "size": "14-inch",
+      "status": "active",
+      "warranty_expiration": "2026-05-11"
+    },
+    "AST-MON-500302": {
+      "asset_tag": "AST-MON-500302",
+      "asset_type": "monitor",
+      "assigned_employee_id": "EMP050001",
+      "lifecycle_status": "current",
+      "manufacturer": "Dell",
+      "model": "U2722D",
+      "os": null,
+      "purchase_date": "2022-10-02",
+      "serial_number": "DU27-500302",
+      "size": "27-inch",
+      "status": "active",
+      "warranty_expiration": "2025-10-02"
+    },
+    "AST-MON-661206": {
+      "asset_tag": "AST-MON-661206",
+      "asset_type": "monitor",
+      "assigned_employee_id": "EMP062110",
+      "lifecycle_status": "current",
+      "manufacturer": "LG",
+      "model": "27UP850",
+      "os": null,
+      "purchase_date": "2023-05-11",
+      "serial_number": "LG27-661206",
+      "size": "27-inch",
+      "status": "active",
+      "warranty_expiration": "2026-05-11"
+    },
+    "AST-MON-884201": {
+      "asset_tag": "AST-MON-884201",
+      "asset_type": "monitor",
+      "assigned_employee_id": "EMP073291",
+      "lifecycle_status": "current",
+      "manufacturer": "Dell",
+      "model": "P2422H",
+      "os": null,
+      "purchase_date": "2023-09-18",
+      "serial_number": "DP24-884201",
+      "size": "24-inch",
+      "status": "active",
+      "warranty_expiration": "2026-09-18"
+    }
+  },
+  "calendar_events": {},
+  "cases": {},
+  "cost_centers": {
+    "CC-2001": {
+      "cost_center_code": "CC-2001",
+      "department_code": "IT",
+      "description": "IT Shared Services",
+      "has_budget": true,
+      "remaining_budget_usd": 92500
+    },
+    "CC-3104": {
+      "cost_center_code": "CC-3104",
+      "department_code": "MKT",
+      "description": "Marketing Operations",
+      "has_budget": true,
+      "remaining_budget_usd": 18450
+    }
+  },
+  "employees": {
+    "EMP050001": {
+      "account_status": {
+        "active_directory": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "email": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "erp": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "sso": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "vpn": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        }
+      },
+      "assigned_desk": "BLD4-FL3-D301",
+      "assigned_parking": "PZD-003",
+      "building_code": "BLD4",
+      "cost_center_code": "CC-3104",
+      "date_of_birth": "1978-12-01",
+      "department_code": "MKT",
+      "direct_reports": [
+        "EMP062110"
+      ],
+      "employee_id": "EMP050001",
+      "employment_status": "active",
+      "ergonomic_assessment": {
+        "completed_date": "2023-11-10",
+        "status": "completed"
+      },
+      "first_name": "Nina",
+      "floor_code": "FL3",
+      "group_memberships": [
+        {
+          "added_date": "2015-09-14",
+          "group_code": "GRP-MKTCOR",
+          "group_name": "Marketing Core Access",
+          "status": "active"
+        }
+      ],
+      "hardware_entitlements": {
+        "laptop_replacement": {
+          "current_asset_tag": "AST-LPT-500301",
+          "pending_request": false,
+          "pending_request_id": null
+        },
+        "monitor_bundle": {
+          "current_asset_tag": "AST-MON-500302",
+          "pending_request": false,
+          "pending_request_id": null
+        }
+      },
+      "hire_date": "2015-09-14",
+      "is_manager": true,
+      "last_desk_assignment_date": "2024-01-08",
+      "last_name": "Cole",
+      "last_parking_assignment_date": "2024-01-08",
+      "manager_auth_code": "D7K4P1",
+      "manager_employee_id": null,
+      "offboarding_record": {
+        "access_removed": false,
+        "initiated_by": null,
+        "initiated_date": null,
+        "last_working_day": null,
+        "removal_case_id": null,
+        "removal_scope": null,
+        "status": null
+      },
+      "otp_code": "155802",
+      "pending_role_change": {
+        "effective_date": null,
+        "hr_case_id": null,
+        "new_role_code": null
+      },
+      "phone_last_four": "2234",
+      "role_code": "DIRECTOR",
+      "software_licenses": []
+    },
+    "EMP062110": {
+      "account_status": {
+        "active_directory": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "email": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "erp": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "sso": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "vpn": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        }
+      },
+      "assigned_desk": "BLD4-FL2-D201",
+      "assigned_parking": "PZD-014",
+      "building_code": "BLD4",
+      "cost_center_code": "CC-3104",
+      "date_of_birth": "1984-02-26",
+      "department_code": "MKT",
+      "direct_reports": [
+        "EMP073291"
+      ],
+      "employee_id": "EMP062110",
+      "employment_status": "active",
+      "ergonomic_assessment": {
+        "completed_date": "2024-04-02",
+        "status": "completed"
+      },
+      "first_name": "Darren",
+      "floor_code": "FL2",
+      "group_memberships": [
+        {
+          "added_date": "2018-03-19",
+          "group_code": "GRP-MKTCOR",
+          "group_name": "Marketing Core Access",
+          "status": "active"
+        },
+        {
+          "added_date": "2018-03-19",
+          "group_code": "GRP-VPNSTD",
+          "group_name": "VPN Standard Users",
+          "status": "active"
+        }
+      ],
+      "hardware_entitlements": {
+        "laptop_replacement": {
+          "current_asset_tag": "AST-LPT-661205",
+          "pending_request": false,
+          "pending_request_id": null
+        },
+        "monitor_bundle": {
+          "current_asset_tag": "AST-MON-661206",
+          "pending_request": false,
+          "pending_request_id": null
+        }
+      },
+      "hire_date": "2018-03-19",
+      "is_manager": true,
+      "last_desk_assignment_date": "2024-08-12",
+      "last_name": "Price",
+      "last_parking_assignment_date": "2024-08-12",
+      "manager_auth_code": "M9Q2L7",
+      "manager_employee_id": "EMP050001",
+      "offboarding_record": {
+        "access_removed": false,
+        "initiated_by": null,
+        "initiated_date": null,
+        "last_working_day": null,
+        "removal_case_id": null,
+        "removal_scope": null,
+        "status": null
+      },
+      "otp_code": "319442",
+      "pending_role_change": {
+        "effective_date": null,
+        "hr_case_id": null,
+        "new_role_code": null
+      },
+      "phone_last_four": "7718",
+      "role_code": "MANAGER",
+      "software_licenses": []
+    },
+    "EMP073291": {
+      "account_status": {
+        "active_directory": {
+          "lock_reason": "too_many_attempts",
+          "locked": true,
+          "requires_in_person_reset": false
+        },
+        "email": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "erp": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "sso": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        },
+        "vpn": {
+          "lock_reason": null,
+          "locked": false,
+          "requires_in_person_reset": false
+        }
+      },
+      "assigned_desk": "BLD4-FL1-D112",
+      "assigned_parking": null,
+      "building_code": "BLD4",
+      "cost_center_code": "CC-3104",
+      "date_of_birth": "1991-09-14",
+      "department_code": "MKT",
+      "direct_reports": [],
+      "employee_id": "EMP073291",
+      "employment_status": "active",
+      "ergonomic_assessment": {
+        "completed_date": null,
+        "status": "not_completed"
+      },
+      "first_name": "Isabel",
+      "floor_code": "FL1",
+      "group_memberships": [
+        {
+          "added_date": "2021-06-07",
+          "group_code": "GRP-MKTCOR",
+          "group_name": "Marketing Core Access",
+          "status": "active"
+        },
+        {
+          "added_date": "2021-06-07",
+          "group_code": "GRP-VPNSTD",
+          "group_name": "VPN Standard Users",
+          "status": "active"
+        }
+      ],
+      "hardware_entitlements": {
+        "laptop_replacement": {
+          "current_asset_tag": "AST-LPT-552184",
+          "pending_request": false,
+          "pending_request_id": null
+        },
+        "monitor_bundle": {
+          "current_asset_tag": "AST-MON-884201",
+          "pending_request": false,
+          "pending_request_id": null
+        }
+      },
+      "hire_date": "2021-06-07",
+      "is_manager": false,
+      "last_desk_assignment_date": "2025-11-03",
+      "last_name": "Santos",
+      "last_parking_assignment_date": null,
+      "manager_auth_code": null,
+      "manager_employee_id": "EMP062110",
+      "offboarding_record": {
+        "access_removed": false,
+        "initiated_by": null,
+        "initiated_date": null,
+        "last_working_day": null,
+        "removal_case_id": null,
+        "removal_scope": null,
+        "status": null
+      },
+      "otp_code": "482913",
+      "pending_role_change": {
+        "effective_date": null,
+        "hr_case_id": null,
+        "new_role_code": null
+      },
+      "phone_last_four": "4106",
+      "role_code": "ANALYST",
+      "software_licenses": []
+    }
+  },
+  "facilities": {
+    "buildings": {
+      "BLD4": {
+        "building_code": "BLD4",
+        "name": "East Campus",
+        "name_aliases": [
+          "East Campus"
+        ]
+      }
+    },
+    "conference_rooms": {
+      "BLD4-FL1-RM101": {
+        "bookings": [],
+        "building_code": "BLD4",
+        "capacity": 6,
+        "equipment": [
+          "video_conferencing",
+          "display"
+        ],
+        "floor_code": "FL1",
+        "room_code": "BLD4-FL1-RM101"
+      }
+    },
+    "desks": {
+      "BLD4-FL1-D112": {
+        "assigned_employee_id": "EMP073291",
+        "building_code": "BLD4",
+        "desk_code": "BLD4-FL1-D112",
+        "floor_code": "FL1",
+        "near_window": false,
+        "status": "assigned",
+        "zone": "A"
+      },
+      "BLD4-FL2-D201": {
+        "assigned_employee_id": "EMP062110",
+        "building_code": "BLD4",
+        "desk_code": "BLD4-FL2-D201",
+        "floor_code": "FL2",
+        "near_window": true,
+        "status": "assigned",
+        "zone": "B"
+      },
+      "BLD4-FL3-D301": {
+        "assigned_employee_id": "EMP050001",
+        "building_code": "BLD4",
+        "desk_code": "BLD4-FL3-D301",
+        "floor_code": "FL3",
+        "near_window": true,
+        "status": "assigned",
+        "zone": "C"
+      }
+    },
+    "parking": {
+      "PZD-003": {
+        "assigned_employee_id": "EMP050001",
+        "covered": true,
+        "level": "L1",
+        "parking_space_id": "PZD-003",
+        "status": "assigned",
+        "zone_code": "PZD"
+      },
+      "PZD-014": {
+        "assigned_employee_id": "EMP062110",
+        "covered": true,
+        "level": "L1",
+        "parking_space_id": "PZD-014",
+        "status": "assigned",
+        "zone_code": "PZD"
+      },
+      "PZD-021": {
+        "assigned_employee_id": null,
+        "covered": false,
+        "level": "L2",
+        "parking_space_id": "PZD-021",
+        "status": "available",
+        "zone_code": "PZD"
+      }
+    },
+    "zones": {
+      "PZD": {
+        "name": "East Campus Garage",
+        "name_aliases": [
+          "East Garage"
+        ],
+        "zone_code": "PZD"
+      }
+    }
+  },
+  "field_dispatch_availability": {
+    "BLD4": {
+      "2026-04-22": {
+        "afternoon": {
+          "available": true,
+          "technician_id": "T-118",
+          "technician_name": "Mara Singh"
+        },
+        "morning": {
+          "available": true,
+          "technician_id": "T-104",
+          "technician_name": "Luis Harper"
+        }
+      }
+    }
+  },
+  "interactions": {},
+  "known_errors": {},
+  "permission_templates": {},
+  "requests": {},
+  "security_cases": {},
+  "session": {},
+  "software_catalog": {
+    "applications": {
+      "APP-1001": {
+        "available_access_levels": [
+          "standard",
+          "admin"
+        ],
+        "catalog_id": "APP-1001",
+        "department_restrictions": [],
+        "name": "Slack",
+        "name_aliases": [
+          "slack"
+        ],
+        "requires_manager_approval": false,
+        "vendor": "Slack Technologies"
+      },
+      "APP-1002": {
+        "available_access_levels": [
+          "read_only",
+          "standard",
+          "admin"
+        ],
+        "catalog_id": "APP-1002",
+        "department_restrictions": [],
+        "name": "Confluence",
+        "name_aliases": [
+          "confluence"
+        ],
+        "requires_manager_approval": false,
+        "vendor": "Atlassian"
+      }
+    },
+    "licenses": {
+      "LIC-2207": {
+        "catalog_id": "LIC-2207",
+        "license_cost_usd": 720,
+        "license_types_supported": [
+          "permanent",
+          "temporary"
+        ],
+        "name": "Adobe Creative Cloud",
+        "name_aliases": [
+          "Adobe CC"
+        ],
+        "vendor": "Adobe"
+      },
+      "LIC-2215": {
+        "catalog_id": "LIC-2215",
+        "license_cost_usd": 180,
+        "license_types_supported": [
+          "permanent",
+          "temporary"
+        ],
+        "name": "Microsoft Visio",
+        "name_aliases": [
+          "Visio"
+        ],
+        "vendor": "Microsoft"
+      }
+    }
+  },
+  "tickets": {},
+  "troubleshooting_guides": {
+    "hardware_malfunction": {
+      "steps": [
+        "Inspect the device for visible damage or loose cables.",
+        "Power cycle the device completely.",
+        "Reconnect power and peripheral cables and test again.",
+        "Try a known-good peripheral or power source if available."
+      ]
+    },
+    "login_issue": {
+      "steps": [
+        "Confirm whether the message says the account is locked or the password is expired.",
+        "Ask the caller to verify they are using their company employee ID and correct sign-in format.",
+        "If the account is locked, proceed with an account unlock attempt; if the password is expired, proceed with a password reset attempt."
+      ]
+    },
+    "network_connectivity": {
+      "steps": [
+        "Confirm whether other websites or internal apps are reachable.",
+        "Toggle Wi-Fi or reconnect the network cable.",
+        "Disconnect and reconnect VPN if in use.",
+        "Restart the device and test the connection again."
+      ]
+    }
+  },
+  "waitlists": {}
+}
