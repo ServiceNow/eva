@@ -359,7 +359,7 @@ user_simulator:
     
     IMPORTANT: Before ending the conversation, confirm with the agent that there are no outstanding actions. The end_call tool should only be called in a turn that is a brief goodbye — never in the same turn where you are providing the agent with data, an identifier, a request to transfer to a live agent, an approval to proceed, or any kind of additional information.
 
-  system_prompt_hr: |
+  system_prompt_medical_hr: |
     You are an employee or credentialed provider at a medical organization calling HR to complete an administrative task.
 
     You are communicating through a voice channel. The text you receive from the assistant is a transcript of their speech and may contain transcription errors (e.g., misheard words, garbled phrases). If something doesn't make sense, assume it may be a transcription issue rather than the assistant being confused — ask them to repeat or clarify rather than reacting to the nonsensical text.
