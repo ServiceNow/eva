@@ -185,6 +185,8 @@ def create_stt_service(
             api_key=api_key,
             sample_rate=params.get("sample_rate", SAMPLE_RATE),
             verify=False,
+            model=params.get("model"),
+            language=None,
         )
 
     elif model_lower == "nvidia-baseten":

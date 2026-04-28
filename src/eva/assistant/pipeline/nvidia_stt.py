@@ -7,11 +7,14 @@ WebsocketSTTService base class.
 """
 
 import asyncio
+import base64
 import json
 import ssl
 import time
 from collections.abc import AsyncGenerator
+from urllib.parse import urlparse
 
+import httpx
 import websockets
 from loguru import logger
 from pipecat.frames.frames import (
@@ -37,11 +40,11 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
     Provides real-time speech recognition using NVIDIA's Parakeet ASR model
     via WebSocket.
 
-    Server protocol:
-    - Audio in:  16-bit PCM, 16kHz, mono (raw bytes)
-    - Reset in:  {"type": "reset", "finalize": true}  (triggers final transcript)
-    - Ready out: {"type": "ready"}
-    - Transcript out: {"type": "transcript", "text": "...", "is_final": true/false}
+    Server protocol (OpenAI Realtime API):
+    - Audio in:  {"type": "input_audio_buffer.append", "audio": "<base64 PCM16 16kHz>"}
+    - Commit in: {"type": "input_audio_buffer.commit"}  (triggers final transcript)
+    - Ready out: {"type": "conversation.created"}
+    - Transcript out: {"type": "conversation.item.input_audio_transcription.completed", ...}
     """
 
     def __init__(
@@ -51,15 +54,19 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         api_key: str | None = None,
         sample_rate: int = 16000,
         verify: bool = True,
+        model: str | None = None,
         **kwargs,
     ):
         super().__init__(sample_rate=sample_rate, **kwargs)
         self._url = url
         self._api_key = api_key
         self._verify = verify
+        self._asr_model = None
         self._websocket = None
         self._receive_task: asyncio.Task | None = None
         self._ready = False
+        self._finalize_requested = False
+        self._transcript_parts: list[str] = []
 
     def can_generate_metrics(self) -> bool:
         return True
@@ -80,26 +87,44 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
 
     # -- Audio sending --
 
+    _audio_chunk_count: int = 0
+
     async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame, None]:
         if self._websocket and self._ready:
             try:
-                await self._websocket.send(audio)
+                # Send audio chunk then commit, matching the reference client pattern
+                await self._websocket.send(
+                    json.dumps(
+                        {
+                            "type": "input_audio_buffer.append",
+                            "audio": base64.b64encode(audio).decode("ascii"),
+                        }
+                    )
+                )
+                await self._websocket.send(
+                    json.dumps(
+                        {
+                            "type": "input_audio_buffer.commit",
+                        }
+                    )
+                )
+                self._audio_chunk_count += 1
+                if self._audio_chunk_count % 50 == 1:
+                    logger.debug(f"{self} sent audio chunk #{self._audio_chunk_count} ({len(audio)} bytes)")
             except Exception as e:
                 logger.error(f"{self} failed to send audio: {e}")
+        elif not self._ready:
+            logger.warning(f"{self} audio dropped — not ready")
         yield None
 
-    # -- VAD handling (send reset on speech end, like AssemblyAI's ForceEndpoint) --
+    # -- VAD handling --
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
 
         if isinstance(frame, VADUserStoppedSpeakingFrame):
-            if self._websocket and self._ready:
-                self.request_finalize()
-                try:
-                    await self._websocket.send(json.dumps({"type": "reset", "finalize": True}))
-                except Exception as e:
-                    logger.error(f"{self} failed to send reset: {e}")
+            self._finalize_requested = True
+            self.request_finalize()
             await self.start_processing_metrics()
 
     # -- Connection management --
@@ -141,11 +166,16 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
 
             # Wait for ready message from server
             try:
+                logger.info(f"Connecting to {self._url}")
                 ready_msg = await asyncio.wait_for(self._websocket.recv(), timeout=5.0)
                 data = json.loads(ready_msg)
                 if data.get("type") == "ready":
                     self._ready = True
                     logger.info(f"{self} connected and ready")
+                elif data.get("type") == "conversation.created":
+                    logger.info("Conversation created successfully")
+                    await self._configure_session()
+                    self._ready = True
                 else:
                     logger.warning(f"{self} unexpected initial message: {data}")
                     self._ready = True
@@ -158,6 +188,62 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         except Exception as e:
             logger.error(f"{self} connection failed: {e}")
             raise
+
+    async def _initialize_http_session(self) -> dict:
+        """Initialize session via HTTP POST to get server defaults (model, sample rate, etc.)."""
+        parsed = urlparse(self._url)
+        scheme = "https" if parsed.scheme == "wss" else "http"
+        http_url = f"{scheme}://{parsed.hostname}"
+        if parsed.port:
+            http_url += f":{parsed.port}"
+        http_url += "/v1/realtime/transcription_sessions"
+
+        headers = {"Content-Type": "application/json"}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+
+        async with httpx.AsyncClient(verify=self._verify) as client:
+            response = await client.post(http_url, headers=headers, json={})
+            response.raise_for_status()
+            session_data = response.json()
+            logger.info(f"{self} HTTP session initialized: {session_data}")
+            return session_data
+
+    async def _configure_session(self):
+        """Get server defaults via HTTP, then send transcription_session.update over WS."""
+        # Step 1: Get server defaults (includes correct model name, sample rate, etc.)
+        try:
+            session_config = await self._initialize_http_session()
+        except Exception as e:
+            logger.warning(f"{self} HTTP session init failed ({e}), using minimal config")
+            session_config = {}
+
+        # Step 2: Override only audio format for streaming PCM input.
+        # Keep server defaults for sample_rate (48kHz) and model — the server
+        # resamples internally if needed.
+        session_config["input_audio_format"] = "pcm16"
+
+        if self._asr_model:
+            session_config.setdefault("input_audio_transcription", {})
+            session_config["input_audio_transcription"]["model"] = self._asr_model
+
+        session_update = {
+            "type": "transcription_session.update",
+            "session": session_config,
+        }
+        logger.info(f"{self} sending session update")
+        await self._websocket.send(json.dumps(session_update))
+
+        # Wait for transcription_session.updated confirmation
+        try:
+            response = await asyncio.wait_for(self._websocket.recv(), timeout=5.0)
+            data = json.loads(response)
+            if data.get("type") == "transcription_session.updated":
+                logger.info(f"{self} session configured: {data.get('session', {})}")
+            else:
+                logger.warning(f"{self} unexpected session update response: {data}")
+        except TimeoutError:
+            logger.warning(f"{self} timeout waiting for session update confirmation")
 
     async def _disconnect_websocket(self):
         self._ready = False
@@ -186,7 +272,61 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
                 elif msg_type == "ready":
                     self._ready = True
                 elif msg_type == "error":
-                    logger.error(f"{self} server error: {data.get('message')}")
+                    logger.error(f"{self} server error: {data}")
+                elif msg_type == "conversation.item.input_audio_transcription.delta":
+                    delta = data.get("delta", "")
+                    if delta:
+                        logger.info(f"{self} interim delta: {delta}")
+                        await self.push_frame(
+                            InterimTranscriptionFrame(delta, self._user_id, current_time_ms(), language=None)
+                        )
+
+                elif msg_type == "conversation.item.input_audio_transcription.completed":
+                    transcript = data.get("transcript", "").strip()
+                    # Ignore is_last_result: the server fires it on its own sentence-
+                    # boundary VAD, which can trigger mid-utterance from pipecat's
+                    # perspective. Only finalize when pipecat VAD has fired.
+                    if transcript:
+                        if self._finalize_requested:
+                            # VAD fired — combine accumulated parts with this sentence.
+                            self._transcript_parts.append(transcript)
+                            full_transcript = " ".join(self._transcript_parts)
+                            self._transcript_parts = []
+                            self._finalize_requested = False
+                            logger.info(f"{self} final transcript: {full_transcript}")
+                            self.confirm_finalize()
+                            await self.push_frame(
+                                TranscriptionFrame(
+                                    full_transcript, self._user_id, current_time_ms(), language=None, finalized=True
+                                )
+                            )
+                            await self.stop_processing_metrics()
+                        else:
+                            # VAD hasn't fired yet — accumulate server sentence chunks.
+                            logger.debug(f"{self} interim completed (buffered): {transcript}")
+                            self._transcript_parts.append(transcript)
+                            await self.push_frame(
+                                InterimTranscriptionFrame(transcript, self._user_id, current_time_ms(), language=None)
+                            )
+                    elif self._finalize_requested:
+                        # Empty completed after VAD fired.
+                        if self._transcript_parts:
+                            # Server sent silence audio; finalize with accumulated text.
+                            full_transcript = " ".join(self._transcript_parts)
+                            self._transcript_parts = []
+                            self._finalize_requested = False
+                            logger.info(f"{self} final transcript (from buffer): {full_transcript}")
+                            self.confirm_finalize()
+                            await self.push_frame(
+                                TranscriptionFrame(
+                                    full_transcript, self._user_id, current_time_ms(), language=None, finalized=True
+                                )
+                            )
+                            await self.stop_processing_metrics()
+                        else:
+                            logger.debug(f"{self} empty completed transcript (ghost turn)")
+                            self._finalize_requested = False
+                            self.confirm_finalize()
 
             except json.JSONDecodeError:
                 logger.warning(f"{self} non-JSON message received")
@@ -207,7 +347,9 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
 
         if is_final:
             self.confirm_finalize()
-            await self.push_frame(TranscriptionFrame(text, self._user_id, current_time_ms(), language=None))
+            await self.push_frame(
+                TranscriptionFrame(text, self._user_id, current_time_ms(), language=None, finalized=True)
+            )
             await self.stop_processing_metrics()
         else:
             await self.push_frame(InterimTranscriptionFrame(text, self._user_id, current_time_ms(), language=None))
