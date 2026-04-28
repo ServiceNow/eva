@@ -2628,7 +2628,8 @@ def record_detail():
 
 
 def ai_review():
-    render_ai_review(_get_run_dirs())
+    run_dirs, _ = _get_run_dirs()
+    render_ai_review(run_dirs)
 
 
 def main():
