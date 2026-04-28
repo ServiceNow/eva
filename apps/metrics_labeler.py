@@ -23,6 +23,7 @@ from pathlib import Path
 import streamlit as st
 
 REPO = Path(__file__).resolve().parents[1]
+AUDIO_DIR = REPO / "agent_speech_fidelity_audios"
 
 METRICS = {
     "conciseness": {
@@ -39,6 +40,11 @@ METRICS = {
         "dataset": REPO / "eva_faithfulness_test_set.jsonl",
         "labels": REPO / "faithfulness_labels.json",
         "granularity": "whole",
+    },
+    "agent_speech_fidelity": {
+        "dataset": REPO / "agent_speech_fidelity_test_set.jsonl",
+        "labels": REPO / "agent_speech_fidelity_labels.json",
+        "granularity": "speech_fidelity",
     },
 }
 
@@ -324,21 +330,39 @@ def main() -> None:
         st.caption(f"Labels file: `{cfg['labels'].name}`")
         st.caption(f"Fully reviewed: {completed}/{len(records)}")
 
-        st.header("Layout")
-        conv_width = st.slider(
-            "Conversation width (%)",
-            min_value=20,
-            max_value=80,
-            value=st.session_state.get("conv_width_pct", 50),
-            step=5,
-            key="conv_width_pct",
-            help="Balance the width of the conversation column vs the judge column.",
-        )
-        st.session_state["_col_ratio"] = (conv_width, 100 - conv_width)
+        if cfg["granularity"] != "speech_fidelity":
+            st.header("Layout")
+            conv_width = st.slider(
+                "Conversation width (%)",
+                min_value=20,
+                max_value=80,
+                value=st.session_state.get("conv_width_pct", 50),
+                step=5,
+                key="conv_width_pct",
+                help="Balance the width of the conversation column vs the judge column.",
+            )
+            st.session_state["_col_ratio"] = (conv_width, 100 - conv_width)
+
+        if cfg["granularity"] == "speech_fidelity":
+            record = records[idx]
+            audio_base = record["audio_id"].replace(".wav", "")
+            trimmed_path = AUDIO_DIR / f"{audio_base}_trimmed.wav"
+            full_path    = AUDIO_DIR / record["audio_id"]
+            st.header("Audio")
+            st.caption("Trimmed (silence removed)")
+            if trimmed_path.exists():
+                st.audio(str(trimmed_path), format="audio/wav")
+            else:
+                st.warning("Trimmed audio not found.")
+            st.caption("Full recording")
+            if full_path.exists():
+                st.audio(str(full_path), format="audio/wav")
+            else:
+                st.warning("Full audio not found.")
 
     record = records[idx]
     rid = str(record["id"])
-    trace = record["conversation_trace"]
+    trace = record.get("conversation_trace", [])
 
     st.title(f"EVA Labeler — {metric}")
     st.caption(f"Domain: **{record.get('domain', 'airline')}** · Record: **{rid}** (original_id: {record.get('original_id')})")
@@ -372,8 +396,9 @@ def main() -> None:
             f"(by {names}). You'll add the next one."
         )
 
-    # Judge prompts
-    render_judge_prompts(record)
+    # Judge prompts (not applicable for speech_fidelity)
+    if cfg["granularity"] != "speech_fidelity":
+        render_judge_prompts(record)
 
     st.divider()
 
@@ -388,6 +413,9 @@ def main() -> None:
         new_per_turn = _render_per_turn_mode(
             record, trace, rid, my_review, scope_changed
         )
+        payload_builder = lambda: {"per_turn": new_per_turn}
+    elif cfg["granularity"] == "speech_fidelity":
+        new_per_turn = _render_speech_fidelity_mode(record, rid, my_review, scope_changed)
         payload_builder = lambda: {"per_turn": new_per_turn}
     else:
         payload_builder = _render_whole_trace_mode(
@@ -584,6 +612,89 @@ def _render_whole_trace_mode(metric, record, trace, rid, my_review, scope_change
         }
 
     return build_payload
+
+
+_JUDGE_PROMPT_CACHE: str | None = None
+
+def _load_judge_prompt() -> str:
+    global _JUDGE_PROMPT_CACHE
+    if _JUDGE_PROMPT_CACHE is None:
+        try:
+            import yaml
+            with open(REPO / "configs/prompts/judge.yaml") as f:
+                d = yaml.safe_load(f)
+            _JUDGE_PROMPT_CACHE = d["judge"]["agent_speech_fidelity"]["user_prompt"]
+        except Exception:
+            _JUDGE_PROMPT_CACHE = ""
+    return _JUDGE_PROMPT_CACHE
+
+
+def _render_speech_fidelity_mode(record: dict, rid: str, my_review, scope_changed: bool) -> dict:
+    """Render per-turn speech fidelity labeling (binary rating + justification)."""
+    turns: dict[str, str] = record["intended_assistant_turns"]
+    ordered_keys = sorted(turns.keys(), key=lambda k: int(k))
+    source_per_turn = (my_review or {}).get("per_turn", {})
+    new_per_turn: dict[str, dict] = {}
+
+    expected = record.get("expected_rating")
+
+    prompt_text = _load_judge_prompt()
+    if prompt_text:
+        with st.expander("📜 Full judge prompt", expanded=True):
+            box = st.container(height=320, border=True)
+            with box:
+                st.text(prompt_text)
+
+    st.caption(
+        f"Listen to the audio in the sidebar. For each turn, rate whether the spoken "
+        f"audio faithfully reproduces the intended text. "
+        f"**Expected overall rating: {expected}**"
+    )
+
+    turns_box = st.container(height=720, border=True)
+    with turns_box:
+        for tk in ordered_keys:
+            intended_text = turns[tk]
+            st.subheader(f"Turn {tk}")
+            left, right = st.columns([3, 2])
+
+            with left:
+                st.markdown("**Intended text**")
+                st.markdown(
+                    f"<div style='background:#0e1117;border:1px solid #2d3148;border-radius:6px;"
+                    f"padding:10px 14px;font-size:.9rem;line-height:1.6;color:#cbd5e1;"
+                    f"white-space:pre-wrap'>{intended_text}</div>",
+                    unsafe_allow_html=True,
+                )
+            with right:
+                rating_key = f"sf_rating_{rid}_{tk}"
+                expl_key   = f"sf_expl_{rid}_{tk}"
+                existing   = source_per_turn.get(str(tk), {})
+
+                if scope_changed:
+                    st.session_state[rating_key] = existing.get("rating")
+                    st.session_state[expl_key]   = existing.get("explanation", "")
+
+                current_rating = st.session_state.get(rating_key)
+                rating_value = st.radio(
+                    "Rating",
+                    options=[0, 1],
+                    index=[0, 1].index(current_rating) if current_rating in [0, 1] else None,
+                    horizontal=True,
+                    format_func=lambda x: str(x),
+                    key=rating_key,
+                )
+                expl_value = st.text_area(
+                    "Justification",
+                    key=expl_key,
+                    height=100,
+                    placeholder="Brief notes only — e.g. 'wrong date' or 'correct'",
+                )
+                new_per_turn[tk] = {"rating": rating_value, "explanation": expl_value}
+
+            st.divider()
+
+    return new_per_turn
 
 
 if __name__ == "__main__":
