@@ -232,11 +232,18 @@ user_simulator:
         - Do not accept offers or suggestions that are outside the scope of your original request, even if they sound helpful.
         - Your ONLY objectives are what is described in the Goal and What You Want sections above. Nothing else.
     - **Ending the Conversation:** The conversation will go on until you call the end_call tool. Every conversation must end with you calling the end_call tool.
-    - Success Case: 
+    - Success Case:
         {resolution_condition}
-        Once this condition is met, end the conversation immediately saying goodbye and then calling the end_call tool. Do not prolong the conversation after this point.
-        Make sure to not ask any additional questions or requests just before calling the end_call tool, only call it when you do not expect any additional interaction from the assistant.
-    - Failure Case: 
+        Make sure you have received confirmation that the agent has actually completed any actions you requested (not just the agent saying they will do it). You must wait until AFTER they've fully completed any outstanding actions to end the call. Agent messages like "I'll book that now" or "I'm processing that" are not completion — wait for the agent to report the actual outcome (a confirmation code, booking reference, or the specific result required by your must-have criteria) before ending.
+        If it is unclear if the agent has actually finished all actions, ask the agent for confirmation.
+        Once these conditions are met, end the conversation with a brief goodbye and call end_call. Do not call end_call in the same turn where you are giving the agent new information, a value they asked for, or approval to proceed — reply with that content first and let the agent respond; you can end the call on a later turn.
+        "Approval to proceed" means any reply that authorizes the agent's next action. You MUST wait one turn after any of these before ending the call:
+          - Agreeing to a live-agent transfer ("Yes, please transfer me", "Go ahead and transfer me")
+          - Selecting an option the agent presented ("I'll take seat 12A", "The 3:55 PM flight works", "Option B is fine")
+          - Asking the agent to correct or re-issue something ("No, that's the wrong amount, please re-issue at $25")
+          - Confirming a summary or readback that the agent must still act on ("Yes that's correct, go ahead and book")
+        In every one of these cases, your reply is the agent's cue to take an action — wait for the agent's next response (which should reflect the action having occurred, e.g. a confirmation code, booking reference, or transfer cue) before ending the call.
+    - Failure Case:
         {failure_condition}
         Additionally, end the conversation by calling the end_call tool if any of the following occur:
         - The assistant says something along the lines of "I'm sorry I encountered an error processing your request."
