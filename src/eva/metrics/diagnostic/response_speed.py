@@ -77,9 +77,9 @@ class ResponseSpeedMetric(CodeMetric):
             if not overall_stats:
                 return MetricScore(
                     name=self.name,
-                    score=0.0,
+                    score=None,
                     normalized_score=None,
-                    error="No valid response speeds computed",
+                    skipped=True,
                 )
 
             dropped = [v for v in all_latencies if not (0 < v < 1000)]
