@@ -45,6 +45,7 @@ apps/analysis.py/toolkit-data-push: %/toolkit-data-push:  # Push app code to Too
 	for path in \
 		.env \
 		$* \
+		apps/audio_plots.py \
 		internal/ \
 		src/eva/ \
 		pyproject.toml \
