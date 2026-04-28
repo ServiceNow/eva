@@ -32,6 +32,7 @@ def make_metric_context(**overrides) -> MetricContext:
         "agent_role": "Test role",
         "agent_instructions": "Test instructions",
         "agent_tools": [],
+        "agent_id": "agent_test",
         "current_date_time": "2026-01-01T00:00:00Z",
     }
     defaults.update(overrides)

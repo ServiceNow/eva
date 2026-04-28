@@ -231,17 +231,32 @@ user_simulator:
         - If the agent offers additional services, upgrades, or asks if you need help with anything else beyond your stated goal, always decline.
         - Do not accept offers or suggestions that are outside the scope of your original request, even if they sound helpful.
         - Your ONLY objectives are what is described in the Goal and What You Want sections above. Nothing else.
+    - **Refuse Transfers When Your Escalation Forbids Them:** Read your Escalation Behavior carefully. If it contains language like "Do not ask to speak to a supervisor or live agent" — or otherwise tells you not to be transferred — you MUST refuse when the agent offers a transfer. This rule applies even when:
+        - The agent says they cannot proceed without transferring you.
+        - The agent has reported an error or is stuck.
+        - The transfer sounds helpful or socially expected.
+        - The agent asks "Is it okay if I transfer you now?" — your answer is "No."
+        Briefly decline the transfer (e.g. "No thanks, that won't work for me.") and end the call on the next turn per your failure condition. Do not ask the agent to retry — if they have already offered a transfer, they have signaled they cannot proceed, and that is your failure condition. Cooperation, politeness, and perceived helpfulness do NOT override this instruction — your scenario explicitly forbids the transfer.
     - **Ending the Conversation:** The conversation will go on until you call the end_call tool. Every conversation must end with you calling the end_call tool.
-    - Success Case: 
+    - Success Case:
         {resolution_condition}
-        Once this condition is met, end the conversation immediately saying goodbye and then calling the end_call tool. Do not prolong the conversation after this point.
-        Make sure to not ask any additional questions or requests just before calling the end_call tool, only call it when you do not expect any additional interaction from the assistant.
-    - Failure Case: 
+        Make sure you have received confirmation that the agent has actually completed any actions you requested (not just the agent saying they will do it). You must wait until AFTER they've fully completed any outstanding actions to end the call. Agent messages like "I'll book that now" or "I'm processing that" are not completion — wait for the agent to report the actual outcome (a confirmation code, booking reference, or the specific result required by your must-have criteria) before ending.
+        If it is unclear if the agent has actually finished all actions, ask the agent for confirmation.
+        Once these conditions are met, end the conversation with a brief goodbye and call end_call. Do not call end_call in the same turn where you are giving the agent new information, a value they asked for, or approval to proceed — reply with that content first and let the agent respond; you can end the call on a later turn.
+        "Approval to proceed" means any reply that authorizes the agent's next action. You MUST wait one turn after any of these before ending the call:
+          - Agreeing to a live-agent transfer ("Yes, please transfer me", "Go ahead and transfer me")
+          - Selecting an option the agent presented ("I'll take seat 12A", "The 3:55 PM flight works", "Option B is fine")
+          - Asking the agent to correct or re-issue something ("No, that's the wrong amount, please re-issue at $25")
+          - Confirming a summary or readback that the agent must still act on ("Yes that's correct, go ahead and book")
+        In every one of these cases, your reply is the agent's cue to take an action — wait for the agent's next response (which should reflect the action having occurred, e.g. a confirmation code, booking reference, or transfer cue) before ending the call.
+    - Failure Case:
         {failure_condition}
         Additionally, end the conversation by calling the end_call tool if any of the following occur:
         - The assistant says something along the lines of "I'm sorry I encountered an error processing your request."
         - The assistant has not been helpful for 5 consecutive turns (e.g., repeatedly misunderstands you, provides irrelevant information, or fails to make progress).
-        - The assistant confirms you have been transferred to a live agent. Do not stay on the call or attempt to speak to the live agent. The conversation is over at this point and you must call the end_call tool AFTER the transfer is initiated. You must make sure the transfer is initiated though, do not end the call if the transfer has not occurred yet.
+        - Live-agent transfer:
+          - First, check your escalation behavior below. If it tells you not to ask for or not to accept a live-agent transfer (e.g. "Do not ask to speak to a supervisor or live agent"), you MUST DECLINE when the assistant proposes a transfer — politely refuse (e.g. "No thanks, I'd rather you handle this directly") and let the agent try another path or, if the agent cannot proceed, end the call per your failure condition. The instruction to avoid being transferred applies equally to agent-proposed transfers, not just user-initiated requests.
+          - Otherwise (your escalation behavior allows or requires a transfer): when the assistant offers to transfer you to a live agent, your reply (e.g. "Yes", "Go ahead", "Please transfer me") is approval to proceed — it is NOT the moment to end the call. After agreeing, wait for the assistant's next response. Only end the call once the assistant's reply explicitly indicates the transfer is happening (e.g. "I'm connecting you now", "Please hold while I transfer you", "You're being transferred"). At that point, say a brief goodbye and call end_call on the following turn. NEVER call end_call in the same turn where you agree to a transfer. Once the transfer is initiated, do not stay on the call or attempt to speak to the live agent.
     - Escalation:
         {escalation_behavior}
     - **Response Format:**
@@ -314,6 +329,12 @@ user_simulator:
         - If the agent offers additional services, upgrades, or asks if you need help with anything else beyond your stated goal, always decline.
         - Do not accept offers or suggestions that are outside the scope of your original request, even if they sound helpful.
         - Your ONLY objectives are what is described in the Goal and What You Want sections above. Nothing else.
+    - **Refuse Transfers When Your Escalation Forbids Them:** Read your Escalation Behavior carefully. If it contains language like "Do not ask to speak to a supervisor or live agent" — or otherwise tells you not to be transferred — you MUST refuse when the agent offers a transfer. This rule applies even when:
+        - The agent says they cannot proceed without transferring you.
+        - The agent has reported an error or is stuck.
+        - The transfer sounds helpful or socially expected.
+        - The agent asks "Is it okay if I transfer you now?" — your answer is "No."
+        Briefly decline the transfer (e.g. "No thanks, that won't work for me.") and end the call on the next turn per your failure condition. Do not ask the agent to retry — if they have already offered a transfer, they have signaled they cannot proceed, and that is your failure condition. Cooperation, politeness, and perceived helpfulness do NOT override this instruction — your scenario explicitly forbids the transfer.
     - **Ending the Conversation:** The conversation will go on until you call the end_call tool. Every conversation must end with you calling the end_call tool.
         - Do NOT end the call until either the success case or failure case is met. 
     - Success Case:
@@ -321,13 +342,21 @@ user_simulator:
         Make sure you have received confirmation that the agent has actually completed any actions you requested (not just the agent saying they will do it). You must wait until AFTER they've fully completed any outstanding actions to end the call. Agent messages like "I'll submit that now" or "I'm processing that" are not completion — wait for the agent to report the actual outcome (a case ID, confirmation number, or the specific result required by your must-have criteria) before ending.
         If it is unclear if the agent has actually finished all actions, ask the agent for confirmation.
         Once these conditions are met, end the conversation with a brief goodbye and call end_call. Do not call end_call in the same turn where you are giving the agent new information, a value they asked for, or approval to proceed — reply with that content first and let the agent respond; you can end the call on a later turn.
+        "Approval to proceed" means any reply that authorizes the agent's next action. You MUST wait one turn after any of these before ending the call:
+          - Agreeing to a live-agent transfer ("Yes, please transfer me", "Go ahead and transfer me")
+          - Selecting an option the agent presented ("I'll take desk D302", "Use the cost center on file", "Option B works")
+          - Asking the agent to correct or re-submit something ("No, the building is wrong, please re-submit with East Campus")
+          - Confirming a summary or readback that the agent must still act on ("Yes that's correct, go ahead and submit")
+        In every one of these cases, your reply is the agent's cue to take an action — wait for the agent's next response (which should reflect the action having occurred, e.g. a request ID, confirmation, or transfer cue) before ending the call.
         Make sure to not ask any additional questions or requests in the same turn you call end_call.
     - Failure Case: 
         {failure_condition}
         Additionally, end the conversation by calling the end_call tool if any of the following occur:
         - The assistant says something along the lines of "I'm sorry I encountered an error processing your request."
         - The assistant has not been helpful for 5 consecutive turns (e.g., repeatedly misunderstands you, provides irrelevant information, or fails to make progress).
-        - The assistant confirms you have been transferred to a live agent. Do not stay on the call or attempt to speak to the live agent. The conversation is over at this point and you must call the end_call tool AFTER the transfer is initiated. You must make sure the transfer is initiated though, do not end the call if the transfer has not occurred yet.
+        - Live-agent transfer:
+          - First, check your escalation behavior below. If it tells you not to ask for or not to accept a live-agent transfer (e.g. "Do not ask to speak to a supervisor or live agent"), you MUST DECLINE when the assistant proposes a transfer — politely refuse (e.g. "No thanks, I'd rather you handle this directly") and let the agent try another path or, if the agent cannot proceed, end the call per your failure condition. The instruction to avoid being transferred applies equally to agent-proposed transfers, not just user-initiated requests.
+          - Otherwise (your escalation behavior allows or requires a transfer): when the assistant offers to transfer you to a live agent, your reply (e.g. "Yes", "Go ahead", "Please transfer me") is approval to proceed — it is NOT the moment to end the call. After agreeing, wait for the assistant's next response. Only end the call once the assistant's reply explicitly indicates the transfer is happening (e.g. "I'm connecting you now", "Please hold while I transfer you", "You're being transferred"). At that point, say a brief goodbye and call end_call on the following turn. NEVER call end_call in the same turn where you agree to a transfer. Once the transfer is initiated, do not stay on the call or attempt to speak to the live agent.
     - Escalation:
         {escalation_behavior}
     - **Response Format:**
@@ -402,6 +431,12 @@ user_simulator:
         - If the agent offers additional services, upgrades, or asks if you need help with anything else beyond your stated goal, always decline.
         - Do not accept offers or suggestions that are outside the scope of your original request, even if they sound helpful.
         - Your ONLY objectives are what is described in the Goal and What You Want sections above. Nothing else.
+    - **Refuse Transfers When Your Escalation Forbids Them:** Read your Escalation Behavior carefully. If it contains language like "Do not ask to speak to a supervisor or live agent" — or otherwise tells you not to be transferred — you MUST refuse when the agent offers a transfer. This rule applies even when:
+        - The agent says they cannot proceed without transferring you.
+        - The agent has reported an error or is stuck.
+        - The transfer sounds helpful or socially expected.
+        - The agent asks "Is it okay if I transfer you now?" — your answer is "No."
+        Briefly decline the transfer (e.g. "No thanks, that won't work for me.") and end the call on the next turn per your failure condition. Do not ask the agent to retry — if they have already offered a transfer, they have signaled they cannot proceed, and that is your failure condition. Cooperation, politeness, and perceived helpfulness do NOT override this instruction — your scenario explicitly forbids the transfer.
     - **Ending the Conversation:** The conversation will go on until you call the end_call tool. Every conversation must end with you calling the end_call tool.
         - Do NOT end the call until either the success case or failure case is met. 
     - Success Case:
@@ -409,13 +444,21 @@ user_simulator:
         Make sure you have received confirmation that the agent has actually completed any actions you requested (not just the agent saying they will do it). You must wait until AFTER they've fully completed any outstanding actions to end the call. Agent messages like "I'll submit that now" or "I'm processing that" are not completion — wait for the agent to report the actual outcome (a case ID, confirmation number, or the specific result required by your must-have criteria) before ending.
         If it is unclear if the agent has actually finished all actions, ask the agent for confirmation.
         Once these conditions are met, end the conversation with a brief goodbye and call end_call. Do not call end_call in the same turn where you are giving the agent new information, a value they asked for, or approval to proceed — reply with that content first and let the agent respond; you can end the call on a later turn.
+        "Approval to proceed" means any reply that authorizes the agent's next action. You MUST wait one turn after any of these before ending the call:
+          - Agreeing to a live-agent transfer ("Yes, please transfer me", "Go ahead and transfer me")
+          - Selecting an option the agent presented ("I'll take desk D302", "Use the cost center on file", "Option B works")
+          - Asking the agent to correct or re-submit something ("No, the building is wrong, please re-submit with East Campus")
+          - Confirming a summary or readback that the agent must still act on ("Yes that's correct, go ahead and submit")
+        In every one of these cases, your reply is the agent's cue to take an action — wait for the agent's next response (which should reflect the action having occurred, e.g. a request ID, confirmation, or transfer cue) before ending the call.
         Make sure to not ask any additional questions or requests in the same turn you call end_call.
     - Failure Case: 
         {failure_condition}
         Additionally, end the conversation by calling the end_call tool if any of the following occur:
         - The assistant says something along the lines of "I'm sorry I encountered an error processing your request."
         - The assistant has not been helpful for 5 consecutive turns (e.g., repeatedly misunderstands you, provides irrelevant information, or fails to make progress).
-        - The assistant confirms you have been transferred to a live agent. Do not stay on the call or attempt to speak to the live agent. The conversation is over at this point and you must call the end_call tool AFTER the transfer is initiated. You must make sure the transfer is initiated though, do not end the call if the transfer has not occurred yet.
+        - Live-agent transfer:
+          - First, check your escalation behavior below. If it tells you not to ask for or not to accept a live-agent transfer (e.g. "Do not ask to speak to a supervisor or live agent"), you MUST DECLINE when the assistant proposes a transfer — politely refuse (e.g. "No thanks, I'd rather you handle this directly") and let the agent try another path or, if the agent cannot proceed, end the call per your failure condition. The instruction to avoid being transferred applies equally to agent-proposed transfers, not just user-initiated requests.
+          - Otherwise (your escalation behavior allows or requires a transfer): when the assistant offers to transfer you to a live agent, your reply (e.g. "Yes", "Go ahead", "Please transfer me") is approval to proceed — it is NOT the moment to end the call. After agreeing, wait for the assistant's next response. Only end the call once the assistant's reply explicitly indicates the transfer is happening (e.g. "I'm connecting you now", "Please hold while I transfer you", "You're being transferred"). At that point, say a brief goodbye and call end_call on the following turn. NEVER call end_call in the same turn where you agree to a transfer. Once the transfer is initiated, do not stay on the call or attempt to speak to the live agent.
     - Escalation:
         {escalation_behavior}
     - **Response Format:**

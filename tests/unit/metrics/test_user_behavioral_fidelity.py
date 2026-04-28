@@ -7,6 +7,21 @@ import pytest
 from eva.metrics.validation.user_behavioral_fidelity import UserBehavioralFidelityMetric
 from tests.unit.metrics.conftest import make_judge_metric, make_metric_context
 
+_USER_GOAL = {
+    "high_level_user_goal": "Book a flight",
+    "starting_utterance": "Hi, I need to book a flight",
+    "information_required": "confirmation number ABC123",
+    "decision_tree": {
+        "must_have_criteria": "Same destination",
+        "nice_to_have_criteria": "Window seat",
+        "negotiation_behavior": "Accept first offer",
+        "resolution_condition": "Flight booked",
+        "failure_condition": "No availability",
+        "escalation_behavior": "Ask for supervisor",
+        "edge_cases": "None",
+    },
+}
+
 
 class TestUserBehavioralFidelity:
     def setup_method(self):
@@ -19,8 +34,9 @@ class TestUserBehavioralFidelity:
 
     def test_get_prompt_variables_cascade(self):
         ctx = make_metric_context(
-            user_goal="Book a flight",
+            user_goal=_USER_GOAL,
             user_persona="Friendly traveler",
+            agent_id="agent_airline",
             agent_tools=[
                 {"name": "search_flights", "tool_type": "read"},
                 {"name": "book_flight", "tool_type": "write"},
@@ -30,8 +46,10 @@ class TestUserBehavioralFidelity:
         )
         variables = self.metric.get_prompt_variables(ctx, "User: hi\nBot: hello")
 
-        assert variables["user_goal"] == "Book a flight"
-        assert variables["user_persona"] == "Friendly traveler"
+        # user_simulator_instructions renders the domain prompt with substituted vars
+        instructions = variables["user_simulator_instructions"]
+        assert "Friendly traveler" in instructions
+        assert "Book a flight" in instructions
         # Only write tools should be in modification_tools
         mod_tools = json.loads(variables["modification_tools"])
         assert len(mod_tools) == 1
@@ -41,8 +59,9 @@ class TestUserBehavioralFidelity:
 
     def test_get_prompt_variables_s2s(self):
         ctx = make_metric_context(
-            user_goal="Book a flight",
+            user_goal=_USER_GOAL,
             user_persona="Friendly traveler",
+            agent_id="agent_airline",
             agent_tools=[],
             pipeline_type="s2s",
             intended_user_turns={0: "Hi"},
@@ -150,12 +169,15 @@ class TestUserBehavioralFidelity:
             None,
         )
         ctx = make_metric_context(
+            user_goal=_USER_GOAL,
+            agent_id="agent_airline",
             conversation_trace=[
                 {"role": "user", "content": "book flight"},
                 {"role": "assistant", "content": "sure"},
             ],
         )
         score = await self.metric.compute(ctx)
+        assert score.error is None
         assert score.score == 1.0
         assert score.normalized_score == 1.0
 
@@ -166,11 +188,14 @@ class TestUserBehavioralFidelity:
             None,
         )
         ctx = make_metric_context(
+            user_goal=_USER_GOAL,
+            agent_id="agent_airline",
             conversation_trace=[
                 {"role": "user", "content": "actually never mind"},
                 {"role": "assistant", "content": "ok"},
             ],
         )
         score = await self.metric.compute(ctx)
+        assert score.error is None
         assert score.score == 0.0
         assert score.normalized_score == 0.0

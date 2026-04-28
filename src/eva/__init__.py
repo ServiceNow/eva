@@ -7,8 +7,8 @@ __version__ = "0.1.3"
 
 # Bump simulation_version when changes affect benchmark outputs (agent code,
 # user simulator, orchestrator, simulation prompts, agent configs, tool mocks).
-simulation_version = "0.1.4"
+simulation_version = "0.1.5"
 
 # Bump metrics_version when changes affect metric computation (metrics code,
 # judge prompts, pricing tables, postprocessor).
-metrics_version = "0.1.4"
+metrics_version = "0.1.5"

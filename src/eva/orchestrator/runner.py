@@ -253,7 +253,7 @@ class BenchmarkRunner:
 
                 except Exception as exc:
                     logger.error(f"Pipeline error for {output_id}: {exc}", exc_info=True)
-                    return output_id, exc, False, None
+                    raise
 
             pipeline_results = await asyncio.gather(
                 *(_run_and_pipeline(output_id_to_record[oid], oid) for oid in pending_output_ids),

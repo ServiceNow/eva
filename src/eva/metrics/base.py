@@ -60,6 +60,7 @@ class MetricContext:
         agent_role: str,
         agent_instructions: str,
         agent_tools: list[dict],
+        agent_id: str,
         current_date_time: str,
         # Basic stats
         num_turns: int = 0,
@@ -119,6 +120,7 @@ class MetricContext:
         self.agent_role = agent_role
         self.agent_instructions = agent_instructions
         self.agent_tools = agent_tools
+        self.agent_id = agent_id
         self.current_date_time = current_date_time
 
         # Processed log data
