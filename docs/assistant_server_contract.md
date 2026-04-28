@@ -415,12 +415,7 @@ class MyFrameworkAssistantServer(AbstractAssistantServer):
             logger.error("Pipeline config is not SpeechToSpeechConfig")
             return
         self._model = s2s_params["model"]
-        self._app: FastAPI | None = None
-        self._server: uvicorn.Server | None = None
-        self._server_task: asyncio.Task | None = None
-        self._running = False
-        self._fw_log: FrameworkLogWriter | None = None
-        self._metrics_log: MetricsLogWriter | None = None
+
 
     async def start(self) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
