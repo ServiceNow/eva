@@ -462,14 +462,14 @@ class TurnTakingMetric(CodeMetric):
 
             if not per_turn_score:
                 self.logger.info(
-                    f"[{context.record_id}] No turns with both user and assistant audio timestamps; skipping metric."
+                    f"[{context.record_id}] No turns with both user and assistant audio timestamps; "
+                    "scoring 0 (turn-taking failed)."
                 )
                 return MetricScore(
                     name=self.name,
                     score=0.0,
-                    normalized_score=None,
+                    normalized_score=0.0,
                     details=details,
-                    error="No turns with both user and assistant audio timestamps",
                 )
 
             mean_score = statistics.mean(per_turn_score.values())

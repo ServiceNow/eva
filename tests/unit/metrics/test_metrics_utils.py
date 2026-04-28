@@ -36,6 +36,24 @@ class TestParseJudgeResponse:
         assert result is None
         mock_logger.error.assert_called()
 
+    def test_skips_inline_empty_array_in_prose(self):
+        text = (
+            "The assistant called check_room_availability with equipment_required: [] and "
+            "floor_code: ''. Final answer:\n"
+            '```json\n{"rating": 1, "dimensions": {"x": 1}}\n```'
+        )
+        result = parse_judge_response(text, "rec-1", MagicMock())
+        assert result == {"rating": 1, "dimensions": {"x": 1}}
+
+    def test_picks_largest_dict_when_multiple(self):
+        text = '{"a": 1} and later the real one: {"rating": 2, "dimensions": {"k": "v"}}'
+        result = parse_judge_response(text, "rec-1", MagicMock())
+        assert result == {"rating": 2, "dimensions": {"k": "v"}}
+
+    def test_single_dict_in_list_still_returned(self):
+        result = parse_judge_response('[{"rating": 3}]', "rec-1", MagicMock())
+        assert result == {"rating": 3}
+
 
 class TestParseJudgeResponseList:
     def test_none_input(self):

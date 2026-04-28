@@ -10,7 +10,7 @@ from typing import Any
 from pydub import AudioSegment
 
 from eva.models.results import MetricScore
-from eva.utils.json_utils import extract_and_load_json
+from eva.utils.json_utils import extract_and_load_json, extract_and_load_json_iter
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -18,6 +18,11 @@ logger = get_logger(__name__)
 
 def parse_judge_response(response_text: str, record_id: str, metric_logger) -> dict | None:
     """Parse LLM judge response using robust JSON extraction.
+
+    Iterates over every JSON value found in the response (prose can contain
+    incidental JSON-like fragments such as `[]` from inline tool-arg references)
+    and returns the largest dict, preferring ones that carry a top-level
+    ``rating`` field — the structured judge answer is by far the biggest object.
 
     Args:
         response_text: Raw response from LLM
@@ -27,26 +32,27 @@ def parse_judge_response(response_text: str, record_id: str, metric_logger) -> d
     Returns:
         Parsed response dict or None if parsing fails
     """
-    response = extract_and_load_json(response_text)
+    candidates: list[dict] = []
+    for obj, _ in extract_and_load_json_iter(response_text):
+        if isinstance(obj, dict):
+            candidates.append(obj)
+        elif isinstance(obj, list):
+            candidates.extend(item for item in obj if isinstance(item, dict))
 
-    if response is None:
-        metric_logger.error(f"Failed to extract JSON from judge response for {record_id}")
+    if not candidates:
+        metric_logger.error(f"Failed to extract JSON dict from judge response for {record_id}")
         metric_logger.error(f"Response text: {response_text}")
         return None
 
-    if isinstance(response, list):
-        dicts = [item for item in response if isinstance(item, dict)]
-        if not dicts:
-            metric_logger.error(f"Judge response is a list with no dict elements for {record_id}")
-            metric_logger.error(f"Response text: {response_text}")
-            return None
-        if len(dicts) > 1:
-            metric_logger.warning(
-                f"Judge response is a list with {len(dicts)} dict elements for {record_id}; using the first."
-            )
-        response = dicts[0]
+    if len(candidates) == 1:
+        return candidates[0]
 
-    return response
+    rated = [d for d in candidates if "rating" in d]
+    if len(rated) == 1:
+        return rated[0]
+    pool = rated or candidates
+    metric_logger.warning(f"Judge response contained {len(pool)} candidate dicts for {record_id}; using the largest.")
+    return max(pool, key=lambda d: len(str(d)))
 
 
 def parse_judge_response_list(response_text: str | None) -> list[dict] | None:

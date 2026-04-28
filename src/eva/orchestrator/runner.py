@@ -251,7 +251,14 @@ class BenchmarkRunner:
 
                     return output_id, result, vr.passed, vr
 
+                except (FileNotFoundError, json.JSONDecodeError) as exc:
+                    # Sample-data problems (missing/corrupt artifacts) — mark as invalid
+                    # and move on. The orchestrator treats vr=None as "not_finished".
+                    logger.warning(f"Skipping {output_id} as invalid: {exc}")
+                    return output_id, exc, False, None
                 except Exception as exc:
+                    # Anything else (KeyError, TypeError, programming bugs, etc.) is
+                    # surfaced loudly so it doesn't get silently swallowed.
                     logger.error(f"Pipeline error for {output_id}: {exc}", exc_info=True)
                     raise
 

@@ -498,6 +498,12 @@ class MetricsRunner:
         initial_db_path = record_dir / "initial_scenario_db.json"
         final_db_path = record_dir / "final_scenario_db.json"
 
+        if not result_path.exists():
+            raise FileNotFoundError(
+                f"Conversation result not found at {result_path}. "
+                "The conversation worker did not produce a result.json — the run likely "
+                "failed before completion."
+            )
         if not initial_db_path.exists():
             raise FileNotFoundError(
                 f"Initial scenario database not found at {initial_db_path}. "
@@ -509,11 +515,8 @@ class MetricsRunner:
                 "This is required for deterministic task completion metrics."
             )
 
-        async def _read_optional(path: Path) -> str:
-            return await asyncio.to_thread(path.read_text) if path.exists() else "{}"
-
         result_text, initial_db_text, final_db_text = await asyncio.gather(
-            _read_optional(result_path),
+            asyncio.to_thread(result_path.read_text),
             asyncio.to_thread(initial_db_path.read_text),
             asyncio.to_thread(final_db_path.read_text),
         )
