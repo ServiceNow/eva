@@ -171,6 +171,8 @@ judge:
 
       This dimension is about the assistant **forgetting or ignoring known facts**, regardless of how that failure manifests (re-asking, wrong assumptions, ignoring constraints).
 
+      {information_loss_pipeline_note}
+
       **IS a flag:**
       - Re-asking the user for information they already provided (e.g., asking for the confirmation number or reference ID after the user stated it and it was used successfully).
       - Ignoring a constraint the user explicitly stated (e.g., the user ruled out a particular action but the assistant still asks about it or asks for the details that would only be needed to take that action)

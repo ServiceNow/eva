@@ -3,7 +3,11 @@
 from typing import Any
 
 from eva.metrics.base import ConversationTextJudgeMetric, MetricContext
-from eva.metrics.pipeline_prompts import get_assistant_turns_disclaimer, get_user_turns_disclaimer
+from eva.metrics.pipeline_prompts import (
+    get_assistant_turns_disclaimer,
+    get_information_loss_pipeline_note,
+    get_user_turns_disclaimer,
+)
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import build_binary_flag_sub_metrics
 from eva.models.results import MetricScore
@@ -38,6 +42,7 @@ class ConversationProgressionJudgeMetric(ConversationTextJudgeMetric):
             "conversation_trace": transcript_text,
             "user_turns_disclaimer": get_user_turns_disclaimer(context.is_audio_native),
             "assistant_turns_disclaimer": get_assistant_turns_disclaimer(context.is_audio_native),
+            "information_loss_pipeline_note": get_information_loss_pipeline_note(context.is_audio_native),
         }
 
     def build_metric_score(

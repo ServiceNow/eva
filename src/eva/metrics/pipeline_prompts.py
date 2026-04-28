@@ -65,6 +65,21 @@ S2S_MISREPRESENTATION_NOTE = (
     "follow-up actions, user objections — show the agent was internally operating on a wrong value."
 )
 
+S2S_INFORMATION_LOSS_NOTE = (
+    "**Speech-to-speech scoping for this dimension.** Because assistant turns in the trace are "
+    "STT-transcribed audio (see *About assistant turns* above), variant token-level readings of the "
+    "same alphanumeric identifier across nearby assistant turns — dropped/added dashes, single-character "
+    "substitutions, missing or extra digits within long IDs, altered spacing or capitalization — typically "
+    "reflect TTS-rendering or STT-transcription artifacts on a value the agent is reading consistently in "
+    "audio. These are scored by `agent_speech_fidelity`, not here. "
+    "Only flag `information_loss` when the discrepancy is structural/semantic (different entity, wrong "
+    "field, wrong category — e.g., addressing the user by an entirely different first name, or referencing "
+    "a different person/record than the tool returned), or when downstream signals — subsequent tool calls "
+    "made with a wrong value, follow-up actions taken on stale data, user objections that the agent then "
+    "fails to incorporate — show the agent was internally operating on a wrong value or had genuinely lost "
+    "track of the established fact."
+)
+
 
 def get_user_turns_disclaimer(is_audio_native: bool) -> str:
     """Return the user-turns disclaimer matching the pipeline type."""
@@ -79,3 +94,8 @@ def get_assistant_turns_disclaimer(is_audio_native: bool) -> str:
 def get_misrepresentation_pipeline_note(is_audio_native: bool) -> str:
     """Return the pipeline-specific scoping note for the misrepresenting_tool_result dimension."""
     return S2S_MISREPRESENTATION_NOTE if is_audio_native else ""
+
+
+def get_information_loss_pipeline_note(is_audio_native: bool) -> str:
+    """Return the pipeline-specific scoping note for the information_loss dimension."""
+    return S2S_INFORMATION_LOSS_NOTE if is_audio_native else ""
