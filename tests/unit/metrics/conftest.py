@@ -32,6 +32,7 @@ def make_metric_context(**overrides) -> MetricContext:
         "agent_role": "Test role",
         "agent_instructions": "Test instructions",
         "agent_tools": [],
+        "agent_id": "agent_test",
         "current_date_time": "2026-01-01T00:00:00Z",
     }
     defaults.update(overrides)
@@ -69,6 +70,9 @@ def make_judge_metric(metric_cls, *, mock_llm: bool = False, logger_name: str | 
     if mock_llm:
         m.llm_client = MagicMock()
         m.llm_client.generate_text = AsyncMock()
+        m.llm_client.params = {}
+    if hasattr(m, "_trim_silence"):
+        m._trim_silence = lambda audio, _ctx: audio
     return m
 
 

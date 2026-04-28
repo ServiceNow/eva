@@ -162,6 +162,9 @@ def compute_pass_at_k_for_scores(
     for ms in per_trial_scores:
         if ms.error is not None:
             continue
+        # Skipped trials contribute no pass/fail signal to pass@k — exclude them.
+        if ms.skipped:
+            continue
         val = ms.normalized_score if ms.normalized_score is not None else ms.score
         valid_scores.append(val)
         valid_passed.append(val >= threshold)

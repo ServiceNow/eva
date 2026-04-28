@@ -193,40 +193,72 @@ These are absolute paths to output files saved during benchmark execution.
 - **`audio_user_path: Optional[str]`** - Path to the user simulator's audio channel (mono WAV file).
 - **`audio_mixed_path: Optional[str]`** - Path to the mixed stereo audio (left=assistant, right=user).
 
-## Audio-Native (S2S, S2T+TTS) vs Cascade Architecture
+## Audio-Native (S2S, AUDIO_LLM) vs Cascade Architecture
 
 This section explains the architectural differences that affect which variables are reliable. For a quick summary, see [Why Multiple Representations?](#why-multiple-representations-of-the-same-conversation).
 
-"Audio-native" is an umbrella term for architectures where the model processes raw audio input directly, as opposed to cascade where the model receives STT text. This includes Speech-to-Speech (S2S) and Speech-to-Text + TTS (S2T+TTS) architectures.
+"Audio-native" is an umbrella term for architectures where the model processes raw audio input directly, as opposed to cascade where the model receives STT text. There are three pipeline types (`PipelineType` enum):
+
+- **`CASCADE`** — separate STT → LLM → TTS steps
+- **`AUDIO_LLM`** — audio input to LLM + separate TTS (S2T+TTS)
+- **`S2S`** — end-to-end speech-to-speech model (no separate TTS)
 
 ### Pipelines
 
-**Cascade:**
+**CASCADE:**
 `User audio → Agent STT → Text → LLM → Text → TTS → Assistant audio`
 
 The LLM processes **transcribed text**, so `transcribed_user_turns` reflects what the assistant actually saw.
 
-**Audio-native:**
-`User audio → Raw audio directly to model → Assistant audio (S2S)` or
-`User audio → Raw audio directly to model → Text → TTS → Assistant audio (S2T+TTS)`
+**AUDIO_LLM:**
+`User audio → Raw audio directly to model → Text → TTS → Assistant audio`
 
-The model processes **raw audio**. The audit log may contain a transcript from the service's own secondary STT, but this is **not what the model used** — it's just for reference. This is why `transcribed_user_turns` is unreliable for audio-native models and `intended_user_turns` should be used instead.
+**S2S:**
+`User audio → Raw audio directly to model → Assistant audio`
 
-Check `context.pipeline_type` to determine which mode was used, or `context.is_audio_native` for a boolean grouping of `S2S` and `AUDIO_LLM`.
+For both AUDIO_LLM and S2S, the model processes **raw audio**. The audit log may contain a transcript from the service's own secondary STT, but this is **not what the model used** — it's just for reference. This is why `transcribed_user_turns` is unreliable for audio-native models and `intended_user_turns` should be used instead.
 
-### Writing Audio-Native-Aware Metrics
+Check `context.pipeline_type` to determine which mode was used, or `context.is_audio_native` for a boolean grouping of `AUDIO_LLM` and `S2S`.
 
-If your metric needs user text directly (rather than via `conversation_trace`, which handles this automatically), branch on `context.is_audio_native`:
+### Writing Pipeline-Aware Metrics
+
+**Controlling which pipelines a metric runs on:**
+
+Set `supported_pipeline_types` on your metric class. The runner will skip the metric automatically for unsupported pipelines. The default is all three types.
+
+```python
+from eva.models.config import PipelineType
+
+class MyMetric(BaseMetric):
+    # Only run on cascade (e.g. STT/transcription metrics)
+    supported_pipeline_types = frozenset({PipelineType.CASCADE})
+
+    # Run on cascade and audio LLM but not S2S (e.g. metrics that require a TTS step)
+    supported_pipeline_types = frozenset({PipelineType.CASCADE, PipelineType.AUDIO_LLM})
+
+    # Run on all pipelines (default — no declaration needed)
+    supported_pipeline_types = frozenset(PipelineType)
+```
+
+**Branching on pipeline type within `compute()`:**
+
+If your metric runs on multiple pipelines but needs different behavior per type, branch on `context.pipeline_type` or use `context.is_audio_native`:
 
 ```python
 async def compute(self, context: MetricContext) -> MetricScore:
-    # Option 1: manual branching
+    # Branch by exact pipeline type
+    if context.pipeline_type == PipelineType.CASCADE:
+        user_turns = context.transcribed_user_turns
+    else:
+        user_turns = context.intended_user_turns
+
+    # Or use is_audio_native (True for both AUDIO_LLM and S2S)
     user_turns = context.intended_user_turns if context.is_audio_native else context.transcribed_user_turns
 
-    # Option 2: use conversation_trace (handles S2S vs Cascade automatically)
+    # Or use conversation_trace (handles S2S vs Cascade automatically)
     for entry in context.conversation_trace:
         if entry["role"] == "user":
-            # "intended" for S2S, "transcribed" for Cascade
+            # "intended" for audio-native, "transcribed" for cascade
             user_text = entry["content"]
 ```
 

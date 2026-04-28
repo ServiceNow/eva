@@ -1,0 +1,313 @@
+{
+  "_current_date": "2026-07-10",
+  "unit_cert_requirements": {
+    "9E-SURG": [
+      "BLS",
+      "ACLS",
+      "TNCC"
+    ],
+    "4B-ICU": [
+      "BLS",
+      "ACLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS",
+      "ACLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ACLS",
+      "ONS"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ],
+    "5A-SURG": [
+      "BLS",
+      "ACLS"
+    ]
+  },
+  "providers": {
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP358607",
+      "first_name": "Amara",
+      "last_name": "Okafor",
+      "facility_code": "MGH-04B",
+      "pin": "7291",
+      "phone_last_four": "4821",
+      "otp_code": "483920",
+      "role_code": "RN",
+      "department_code": "SURGERY",
+      "hire_date": "2021-03-15",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {
+        "MA-RN-358607": {
+          "state_license_number": "MA-RN-358607",
+          "license_type": "RN",
+          "state_code": "MA",
+          "expiration_date": "2027-05-31",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-11-30",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP358607": {
+      "employee_id": "EMP358607",
+      "first_name": "Amara",
+      "last_name": "Okafor",
+      "date_of_birth": "1991-02-14",
+      "phone_last_four": "4821",
+      "otp_code": "483920",
+      "department_code": "SURGERY",
+      "role_code": "RN",
+      "unit_code": "9E-SURG",
+      "hire_date": "2021-03-15",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS",
+        "TNCC"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 64,
+        "hours_worked_past_year": 1872,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 5.0
+      },
+      "pto_requests": []
+    },
+    "EMP410225": {
+      "employee_id": "EMP410225",
+      "first_name": "Lena",
+      "last_name": "Martinez",
+      "date_of_birth": "1988-09-09",
+      "phone_last_four": "2254",
+      "otp_code": "551204",
+      "department_code": "SURGERY",
+      "role_code": "RN",
+      "unit_code": "5A-SURG",
+      "hire_date": "2019-08-12",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 83,
+        "hours_worked_past_year": 1920,
+        "fmla_weeks_remaining": 10,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": [
+          {
+            "date": "2026-07-18",
+            "tier": "backup",
+            "unit_code": "5A-SURG",
+            "registration_id": "CASE-ONC-410225"
+          }
+        ]
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 11.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260714-0700": {
+      "shift_id": "SHF-20260714-0700",
+      "employee_id": "EMP358607",
+      "unit_code": "9E-SURG",
+      "date": "2026-07-14",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-07-25",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260722-1900": {
+      "shift_id": "SHF-20260722-1900",
+      "employee_id": "EMP410225",
+      "unit_code": "5A-SURG",
+      "date": "2026-07-22",
+      "start_time": "19:00",
+      "end_time": "07:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-07-25",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "SURGERY": {
+        "2026-07-15": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-16": [
+          "10:00",
+          "13:00"
+        ],
+        "2026-07-20": [
+          "09:30",
+          "15:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "SURGERY": {
+        "2026-08-10": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-08-11": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-08-12": [
+          "09:30",
+          "13:30"
+        ]
+      }
+    },
+    "competency_review": {
+      "SURGERY": {
+        "2026-07-21": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-07-23": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-07-28": [
+          "08:30",
+          "13:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-04",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "SURGERY": [],
+    "EMERGENCY": [
+      "2026-07-24"
+    ],
+    "ONCOLOGY": [],
+    "PEDIATRICS": []
+  }
+}

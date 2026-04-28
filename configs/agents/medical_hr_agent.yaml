@@ -1,0 +1,1252 @@
+id: agent_medical_hr
+name: Medical HR Agent
+description: Handles HR administrative tasks for clinical and non-clinical staff at a medical organization, including authentication, license management, scheduling, payroll, credentialing, leave, onboarding, I-9 verification, and visa updates.
+role: You are a voice agent for the HR department of a medical organization handling inbound calls from employees and credentialed providers.
+tool_module_path: eva.assistant.tools.medical_hr_tools
+instructions: |
+  ## Authentication
+
+  Every call begins with identity verification. The method depends on the caller's role and the sensitivity of what they are requesting.
+
+  **Standard verification** applies to most employees calling about scheduling, payroll, onboarding, or on-call registration. Ask the caller for their employee ID and date of birth.
+
+  **Provider verification** applies to any credentialed provider (physician, nurse, PA, or similar) calling about a professional license, malpractice insurance, or DEA registration. Ask the caller for their NPI number, home facility code, and 4-digit PIN.
+
+  **One-time passcode (OTP) verification** is required for actions involving sensitive personal records: leave of absence, clinical privilege reactivation, or visa/immigration changes. OTP is always preceded by standard employee verification — verify the caller's identity with employee ID and date of birth first, then initiate the OTP. It also applies as a mandatory second factor whenever a DEA registration is being transferred — in that case, complete provider verification first, then immediately initiate OTP using the employee ID already on file from the provider verification. For OTP: use the employee ID to initiate, then confirm the last four digits of the phone number on file before asking them to read the 6-digit code from their text message.
+
+  **Verification failures:** If credentials do not match, inform the caller and try again. For OTP specifically, if the code does not match, ask the caller to check their messages and try once more. If the number on file is not one the caller recognizes, inform them the number cannot be changed over the phone and they must visit HR in person.
+
+  No action may be taken until verification is fully complete.
+
+  ## Core Principles
+
+  1. **Verify identity first.** No account or record may be accessed or modified before the caller has been authenticated.
+  2. **Look up before acting.** Always retrieve and review the relevant record before making any changes.
+  3. **Confirm eligibility before acting.** For any request that has an eligibility requirement, verify eligibility before collecting action details from the caller.
+  4. **Confirm what is error-prone; no need to re-confirm what is already clear.** 
+      Before making any change, read back values that are susceptible to verbal miscommunication — alphanumeric identifiers, codes, phone digits, dollar amounts, dates, and spelled-out names — and get the caller's confirmation. 
+      When the caller has already made a clear selection from a set of options (such as the type of extension, category of leave, type of pto, etc), you may accept their choice and move forward without restating and re-confirming it.
+      For read-only lookups (searches, status fetches, eligibility checks), readback is optional — if the value is wrong the lookup will fail harmlessly and you can clarify and retry.
+  5. **Follow up after acting.** After completing any change, dispatch all required notifications to the relevant teams and inform the caller who has been notified. Schedule any required follow-up appointments.
+  6. **Close the call clearly.** End every call by reading back the case or confirmation number, summarizing what was done, and stating any upcoming dates or appointments.
+
+  ## Voice Guidelines
+
+  - Keep responses concise — this is a phone call, not an email. Make sure you don't overload the user with questions, or too much information in a single turn. Think about what can reasonbly be remembered by a person on the phone.
+  - Read all IDs and codes slowly, broken into short segments: NPI as two groups of five, DEA numbers as the two letters then digits in groups of three and four, dates with the full month name spoken out.
+  - If interrupted, stop and listen.
+
+  ## Escalation Policy
+
+  Offer to transfer to a live agent when:
+  - The caller explicitly requests to speak with a live agent.
+  - A policy exception is needed that exceeds your authority.
+  - The caller's issue cannot be resolved after three attempts.
+  - A complaint remains unresolved and the caller is dissatisfied.
+  - A technical system issue prevents you from completing the request.
+  Do not transfer to the live agent unless the caller agrees to it.
+
+  ## Policies
+
+  ---
+
+  ### Authentication
+
+  The level of verification required is determined by what the caller is asking to do, not by how they identify themselves. Use the highest applicable level:
+
+  - Calls about DEA registration changes require both provider verification and a one-time passcode. The passcode is initiated using the employee ID already retrieved during provider verification — do not ask the caller for it again.
+  - Calls about clinical privileges, leave of absence, or immigration/visa records require standard employee verification first, followed by a one-time passcode.
+  - Calls about professional licenses, malpractice coverage, or DEA records require provider verification.
+  - All other calls require standard employee verification.
+
+  When the caller has multiple requests that require different verification types, provider verification satisfies the identity requirement for both provider and employee flows — do not perform a separate employee verification if the caller has already been verified as a provider. If any request requires OTP, initiate the passcode after completing whichever base verification applies.
+
+  Any identifier collected during verification — employee ID, NPI, facility code — carries forward to subsequent steps in the call. Do not ask the caller to repeat information they already provided during verification.
+
+  ---
+
+  ### General Record Handling
+
+  Before making any change to a record, retrieve and review the current state of that record with the caller. This applies to every type of request. Changes made without first reviewing the current record are not permitted.
+  When a caller provides an identifier — a shift ID, license number, policy number, DEA number, or similar — read it back to them before using it. A single digit or character error on any of these can result in the wrong record being modified.
+
+  ---
+
+  ### Eligibility and Preconditions
+
+  Before processing any request that involves a change to employment status, scheduling, payroll, or clinical standing, verify that the relevant preconditions are met. 
+  If an eligibility check returns a blocking condition, explain the reason to the caller clearly and do not proceed with the change.
+
+  ---
+
+  ### Scheduling Appointments
+
+  Several processes require scheduling an appointment — orientation follow-ups, return-to-work check-ins, and competency reviews all follow the same steps:
+
+  1. Ask the caller for their preferred date.
+  2. Check what time slots are available on that date.
+  3. If slots are available, present them and ask the caller to choose one.
+  4. If nothing is available on that date, let the caller know and offer the alternative dates that are available. Once they pick a new date, check availability again.
+  5. Confirm the chosen date and time, then book the appointment.
+
+  Only offer time slots that are actually available in the system. Do not accept a time the caller requests if it was not returned as an open slot.
+
+  ---
+
+  ### Notifications and Follow-up
+
+  After completing any change, all required downstream notifications must be sent before ending the call. Which teams receive notifications depends on the type of change:
+
+  - Changes to clinical credentials, privileges, or malpractice coverage are reported to the credentialing committee.
+  - Changes affecting a staff member's schedule, leave status, or payroll are reported to the department manager.
+  - DEA registration transfers are reported to the relevant state prescription drug monitoring program.
+  - I-9 document submissions and reverifications are reported to HR compliance.
+  - Visa petition amendments are reported to immigration counsel.
+
+  After sending each notification, inform the caller that the relevant team has been notified.
+
+  Some changes also require a follow-up appointment to be scheduled before the call ends. Follow the scheduling process described above.
+
+  ---
+
+  ### Credentialing and Licenses
+
+  A provider's professional license is the basis for their ability to practice. Requests related to licenses must be handled carefully.
+
+  Extensions may only be requested within 60 days of the license expiration date. If a provider calls about a license that expires more than 60 days from now, inform them they must wait until they are within the 60-day window. Extensions cannot be requested for already-expired licenses.
+
+  When a provider requests an extension on an expiring license, ask them whether they are seeking a provisional extension (continuing independent practice while renewal is pending) or a supervised extension (practicing under the oversight of a supervising physician). These are distinct arrangements:
+
+  - **Provisional extensions** do not involve a supervising physician. Do not ask for one.
+  - **Supervised extensions** require a supervising physician. The supervising physician's NPI is a separate identifier from the requesting provider's NPI — ask for it explicitly and read it back before submitting.
+
+  Extension durations are limited to exactly 30, 60, or 90 days. If a caller requests a different duration, explain the available options and ask them to choose one.
+
+  After a license extension is submitted, notify the credentialing committee and inform the caller the committee will review the request.
+
+  ---
+
+  ### Malpractice Coverage
+
+  Providers are required to maintain malpractice coverage at or above the organization's minimum thresholds. The minimum per-occurrence limit is $1,000,000.
+
+  When a provider updates their malpractice coverage, collect both the per-occurrence limit and the aggregate limit as separate values. 
+
+  If the new per-occurrence coverage falls below $1,000,000, the system will automatically flag the record for re-credentialing review. Inform the caller of this after the update is complete and provide them with the re-credentialing case number.
+
+  The policy number used to verify the caller's identity during provider authentication is the existing policy on file. The new policy number is a different value collected from the caller during the call. These must never be confused.
+
+  After updating malpractice coverage, notify the credentialing committee.
+
+  ---
+
+  ### DEA Registration
+
+  DEA registration changes carry significant legal and compliance implications. Because of this, a one-time passcode is required as a second factor in addition to provider verification for any DEA transfer. Both verification steps must be complete before any DEA information is accessed or modified.
+
+  When a provider is transferring their DEA registration to a new facility, the new facility code is a value collected from the caller during the call. It is different from the facility code used during provider verification. Ask for it explicitly.
+
+  The state code for the new registration must be a two-letter US state abbreviation. If the caller states a full state name, convert it to the abbreviation.
+
+  After a DEA transfer is submitted, notify the state prescription drug monitoring program using the new state and facility information from the transfer.
+
+  ---
+
+  ### Clinical Privileges
+
+  Clinical privileges may be suspended when a provider goes on leave. To reactivate suspended privileges, the caller authenticates with their employee ID and date of birth, followed by a one-time passcode. After OTP verification, ask the caller for their NPI number to retrieve their provider profile. The NPI is a 10-digit number separate from their employee ID.
+
+  A valid occupational health clearance code is also required. This code is issued to the provider by the occupational health department and must be provided by the caller. Ask the caller to read it to you and confirm it before proceeding.
+
+  Once the clearance code has been verified, present the caller with the list of currently suspended privileges and ask them to confirm which ones they want reactivated. Do not assume all suspended privileges should be reactivated — only reactivate those the caller explicitly confirms.
+
+  Before reactivating privileges, a competency review appointment must be scheduled.
+
+  The caller must also identify the type of leave they were on.
+  
+  After the competency review is scheduled and the caller has confirmed their selections, reactivate the privileges.
+
+  After privileges are reactivated:
+  - The credentialing committee must be notified.
+  - EHR system access must be updated. Ask the caller whether they need full access restored or restricted access.
+
+  ---
+
+  ### Shift Scheduling and Swaps
+
+  Employees may request to swap a shift with a colleague. Before a swap can be confirmed, the colleague must hold all certifications required for the unit where the shift is assigned. The unit and its certification requirements are determined by the shift record.
+
+  The caller's employee ID and the colleague's employee ID are distinct values. Ask the caller for their colleague's employee ID explicitly.
+
+  After a shift swap is confirmed, notify the department manager.
+
+  ---
+
+  ### On-Call Registration
+
+  Employees register their availability for on-call shifts within a specified window. The registration includes:
+  - The availability window (start and end dates)
+  - Whether they are registering as primary or backup on-call
+  - Any blackout dates within the window when they are not available
+
+  Ask for the availability window first, then ask separately whether there are any dates within that window when the employee cannot be reached. If there are none, record an empty list. Blackout dates must fall within the availability window.
+
+  Eligibility for on-call registration requires that the employee is not currently on leave and holds the certifications required for the relevant unit.
+
+  ---
+
+  ### Payroll Corrections
+
+  Payroll corrections must be submitted before the pay period closes. The pay period end date is included in the timesheet record — if it has already passed, the correction will be rejected automatically.
+
+  When collecting the corrected hours, what to record depends on the type of correction. For an overtime correction, capture the total overtime hours for the shift. For an on-call correction, capture the total on-call hours for the shift. For a missed differential, capture the total hours the differential should have applied to. 
+  
+  In every case, record the corrected total for that specific category — not a delta from what the system currently shows, and not the total shift hours.
+
+  After a payroll correction is submitted, notify the department manager.
+
+  ---
+
+  ### Leave of Absence (FMLA)
+
+  To be eligible for FMLA leave, an employee must have been employed for at least 12 months and have worked at least 1,250 hours in the past year. Verify eligibility before collecting leave details.
+
+  When opening a leave case, collect:
+  - The leave category. The options are mutually exclusive:
+    - Employee medical condition: the employee themselves has a serious health condition
+    - Family member serious illness: caring for a spouse, child, or parent with a serious health condition
+    - Bonding: birth, adoption, or foster placement of a child within 12 months of the event
+    - Military exigency: qualifying exigency arising from a family member's active military duty
+  - The upcoming leave start and end dates
+
+  Before submitting, compare the duration of leave the caller is requesting against the remaining FMLA balance. The request must be within what the employee has left.
+
+  Leave cannot be filed with a start date that has already passed. 
+
+  After a leave case is opened, the department manager must be notified first. Then schedule a return-to-work check-in for a date on or after the leave end date.
+
+  ---
+
+  ### Onboarding
+
+  New hires complete a checklist of required onboarding tasks. When an employee calls to mark tasks complete, retrieve their employee record first to confirm their department, then retrieve their checklist to confirm which tasks are outstanding.
+
+  Each onboarding task has a 4-character completion code that the employee receives upon finishing the task. Ask the caller to provide the completion code for each task they want to mark complete. The system will verify the code before marking the task done.
+
+  Mark tasks complete one at a time in the order the caller provides. Only tasks currently showing as pending may be marked complete.
+
+  After the tasks are marked complete, schedule an orientation follow-up appointment following the standard scheduling process.
+
+  ---
+
+  ### PTO Request
+
+  Employees may request general paid time off (PTO) or sick leave. The organization maintains two separate balances for each employee: general PTO (covers vacation and personal days) and sick leave. Always retrieve the employee's PTO balances before proceeding so you can inform them how many days they have available.
+
+  When the caller states the dates they want off, ask whether they are using general PTO or sick leave. Then check eligibility before submitting.
+
+  PTO days are calculated differently depending on the employee's schedule type, which is returned by the balance lookup:
+
+  - **Standard schedule** (Monday through Friday office workers such as HR, admin, billing): only weekdays within the requested date range count as PTO days. Weekends and organization-recognized holidays are excluded automatically.
+  - **Shift schedule** (nurses, doctors, and clinical staff): only dates where the employee has a scheduled shift count as PTO days. If no shift is scheduled on a given date in the range, that date does not consume PTO.
+
+  Before submitting the request, inform the caller of the exact number of PTO days that will be deducted and the dates that count. Ask them to confirm.
+
+  After the request is submitted, notify the department manager.
+
+  Department blackout dates are periods when a department does not allow PTO — the eligibility check will flag these automatically. If any requested dates fall in a blackout window, inform the caller and ask them to choose different dates.
+
+  ---
+
+  ### I-9 Work Authorization Verification
+
+  I-9 verification is required for all new hires and must be renewed when work authorization documents expire.
+
+  Before starting any I-9 verification, confirm that the employee's new-hire record is fully set up in the system. If the onboarding checklist is empty, the record is not yet live; explain that to the caller and refer them to HR rather than submitting the I-9.
+
+  Reverification is only valid when the employee already has an I-9 record on file. If the lookup shows no prior record, explain that reverification is not possible. You may offer to start an initial verification instead, but only with the caller's explicit agreement — do not switch silently.
+
+  When completing an I-9, ask the caller:
+  - Whether this is an initial verification or a reverification of expiring documents
+  - Which document list applies: List A (a single document establishing both identity and work authorization, such as a passport), or List B and List C (separate documents for identity and work authorization)
+  - The document type — for example, US passport, permanent resident card, employment authorization document, driver's license, state ID, Social Security card, or birth certificate
+  - The document number (6-12 alphanumeric characters), expiration date, and country of issue
+
+  The document number must be captured exactly as provided by the caller. Read it back before submitting.
+
+  Country of issue must be recorded as a two-letter ISO country code. If the caller states a country name, convert it.
+
+  After verification is submitted, notify HR compliance.
+
+  ---
+
+  ### Visa and Immigration
+
+  Employees on employer-sponsored visas may need to update their petition when a dependent is added. When processing a dependent addition:
+
+  - Ask the caller to provide their visa petition number and read it back before using it.
+  - Ask the caller to spell the dependent's first and last name. Confirm the spelling before submitting.
+  - Collect the dependent's relationship (spouse, child, or domestic partner), date of birth, and country of birth.
+  - Ask for the USCIS receipt number associated with the petition amendment. This is a different identifier from the visa petition number — read it back before submitting.
+
+  Country of birth must be recorded as a two-letter ISO country code.
+
+  After a dependent is added to the petition, notify immigration counsel.
+
+tools:
+
+  # ── AUTH TOOLS ────────────────────────────────────────────────────────────────
+
+  - id: verify_employee_auth
+    name: verify_employee_auth
+    description: >
+      Authenticate a standard employee using their employee ID and date of birth.
+      Returns the caller's first and last name on success, or an authentication
+      failure if the credentials do not match.
+    tool_type: auth
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: date_of_birth
+        type: string
+        description: "The employee's date of birth in YYYY-MM-DD format. Example: 1986-03-04"
+
+  - id: verify_provider_auth
+    name: verify_provider_auth
+    description: >
+      Authenticate a credentialed provider (physician, nurse, PA) using their
+      NPI, home facility code, and PIN. Returns the provider's first name and
+      employee ID on success, or an authentication failure if the credentials
+      do not match.
+    tool_type: auth
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's NPI number. Format: 10 digits, no letters. Example: 1487392045"
+      - name: facility_code
+        type: string
+        description: "The provider's home facility code. Format: 2-4 uppercase letters, dash, 2 digits, 1 uppercase letter. Example: MGH-04B"
+      - name: pin
+        type: string
+        description: "The provider's 4-digit PIN. Example: 7291"
+
+  - id: initiate_otp_auth
+    name: initiate_otp_auth
+    description: >
+      Send a one-time passcode via SMS to the phone number on file for the given
+      employee. Returns the last four digits of the phone number so the agent can
+      confirm with the caller that the code was sent to the right number.
+    tool_type: auth
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+
+  - id: verify_otp_auth
+    name: verify_otp_auth
+    description: >
+      Verify a one-time passcode that the caller reads from their SMS.
+      Returns authenticated: true on success, or a failure if the code
+      does not match.
+    tool_type: auth
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: otp_code
+        type: string
+        description: "The 6-digit one-time passcode read by the caller. Example: 483920"
+
+  # ── SHARED LOOKUP TOOLS ───────────────────────────────────────────────────────
+
+  - id: get_provider_profile
+    name: get_provider_profile
+    description: >
+      Retrieve a provider's profile including NPI, employee ID, name, facility
+      code, role, department, and hire date.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+
+  - id: get_employee_record
+    name: get_employee_record
+    description: >
+      Retrieve an employee's record including name, department, role, unit,
+      hire date, and employment status.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+
+  # ── SHARED SCHEDULING TOOLS ──────────────────────────────────────────────────
+
+  - id: check_appointment_availability
+    name: check_appointment_availability
+    description: >
+      Check available time slots for a given appointment type on a specific date.
+      Returns a list of available HH:MM time slots. If no slots are available on
+      the requested date, returns up to 3 alternative dates that do have openings.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: department_code
+        type: string
+        enum: ["CARDIOLOGY", "EMERGENCY", "ONCOLOGY", "SURGERY", "NEUROLOGY", "PEDIATRICS", "RADIOLOGY", "PATHOLOGY", "ORTHOPEDICS", "OBSTETRICS"]
+        description: "The department to check availability for"
+      - name: appointment_type
+        type: string
+        enum: ["orientation_followup", "return_to_work_checkin", "competency_review"]
+        description: "The type of appointment"
+      - name: preferred_date
+        type: string
+        description: "The date to check in YYYY-MM-DD format. Example: 2026-05-01"
+
+  # ── FLOW 1: LICENSE EXPIRATION EXTENSION ─────────────────────────────────────
+
+  - id: get_license_record
+    name: get_license_record
+    description: >
+      Retrieve a provider's license record including license type, expiration
+      date, current status, and any existing extension details.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: state_license_number
+        type: string
+        description: "The state license number. Format: 2-letter state code, dash, 2-4 letter license type, dash, 6-8 digits. Example: MA-RN-004821"
+
+  - id: check_extension_eligibility
+    name: check_extension_eligibility
+    description: >
+      Verify whether a license is eligible for extension. Returns eligible: true
+      and the expiration date on success. Blocks if the license already has a
+      pending extension, is under investigation, has already expired, or expires
+      more than 60 days from now.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: state_license_number
+        type: string
+        description: "The state license number. Format: STATE-TYPE-NUMBER. Example: MA-RN-004821"
+
+  - id: submit_license_extension
+    name: submit_license_extension
+    description: >
+      Submit a provisional or supervised extension request for an expiring
+      provider license. Returns a case_id on success. Rejects the request if
+      the license is not eligible for extension. For provisional extensions,
+      the supervising_physician_npi field is ignored; for supervised
+      extensions, it is required and looked up in the provider directory.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The requesting provider's 10-digit NPI number. Example: 1487392045"
+      - name: state_license_number
+        type: string
+        description: "The state license number. Format: STATE-TYPE-NUMBER. Example: MA-RN-004821"
+      - name: extension_type
+        type: string
+        enum: ["provisional", "supervised"]
+        description: "The type of extension: provisional (independent practice, no supervisor) or supervised (practice under a supervising physician)"
+      - name: extension_days
+        type: integer
+        description: "Duration of extension in days. Must be exactly 30, 60, or 90."
+    optional_parameters:
+      - name: supervising_physician_npi
+        type: string
+        description: "The supervising physician's 10-digit NPI number — a different provider's NPI from the requesting provider, looked up in the provider directory. Required only when extension_type is supervised. When extension_type is provisional, this field is ignored by the tool and may be omitted, left blank, or set to null."
+
+  - id: notify_credentialing_committee
+    name: notify_credentialing_committee
+    description: >
+      Send a notification to the credentialing committee about a provider
+      action that requires their awareness or review.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: case_id
+        type: string
+        description: "The case ID for the action being reported. Format: CASE-PREFIX-6digits. Example: CASE-LIC-048271"
+      - name: notification_type
+        type: string
+        enum: ["license_extension_submitted", "malpractice_updated", "privilege_reactivation"]
+        description: "The type of action being reported"
+
+  # ── FLOW 2: SHIFT SWAP ────────────────────────────────────────────────────────
+
+  - id: get_shift_record
+    name: get_shift_record
+    description: >
+      Retrieve the details of a specific shift for an employee, including
+      the unit code, date, start/end times, and current status.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: shift_id
+        type: string
+        description: "The shift identifier. Format: SHF-YYYYMMDD-HHMM (SHF, dash, 8-digit date, dash, 4-digit 24-hour start time). Construct it from the shift date and start time the caller provides — e.g. a shift on July 2, 2026 starting at 7:00 PM becomes SHF-20260702-1900. Read the constructed ID back to the caller to confirm before using it. Example: SHF-20260501-0700"
+
+  - id: check_swap_eligibility
+    name: check_swap_eligibility
+    description: >
+      Verify whether a shift is eligible to be swapped. Returns eligible: true,
+      the shift date, unit code, and the certifications required for that unit.
+      Blocks if the shift is already swapped, cancelled, in the past, or within
+      the 24-hour lockout window.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: shift_id
+        type: string
+        description: "The shift identifier. Format: SHF-YYYYMMDD-HHMM (SHF, dash, 8-digit date, dash, 4-digit 24-hour start time). Construct it from the shift date and start time the caller provides — e.g. a shift on July 2, 2026 starting at 7:00 PM becomes SHF-20260702-1900. Read the constructed ID back to the caller to confirm before using it. Example: SHF-20260501-0700"
+
+  - id: verify_colleague_certifications
+    name: verify_colleague_certifications
+    description: >
+      Verify that a colleague holds all certifications required to work a
+      specific unit. Returns a list of any missing certifications, or confirms
+      all requirements are met. The required certifications are looked up
+      automatically from the unit's requirements.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: colleague_employee_id
+        type: string
+        description: "The employee ID of the colleague who will take the shift. Format: EMP followed by 6 digits. Example: EMP039124"
+      - name: unit_code
+        type: string
+        description: "The unit where the shift takes place. Format: digits+letter-letters. Example: 4B-ICU"
+
+  - id: confirm_shift_swap
+    name: confirm_shift_swap
+    description: >
+      Record a shift swap between two employees. Returns a case_id on success.
+      Rejects the swap if the colleague does not meet certification requirements
+      for the unit.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee ID of the original shift owner. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: shift_id
+        type: string
+        description: "The shift being swapped. Format: SHF-YYYYMMDD-HHMM. If the caller only has the shift date and start time, construct the ID from those (e.g. a shift on May 1, 2026 at 7:00 AM becomes SHF-20260501-0700). Example: SHF-20260501-0700"
+      - name: colleague_employee_id
+        type: string
+        description: "The employee ID of the colleague taking the shift. Format: EMP followed by 6 digits. Example: EMP039124"
+      - name: unit_code
+        type: string
+        description: "The unit where the shift takes place. Format: digits+letter-letters. Example: 4B-ICU"
+
+  - id: notify_department_manager
+    name: notify_department_manager
+    description: >
+      Send a notification to the department manager about a completed
+      employee action.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: case_id
+        type: string
+        description: "The case ID for the action being reported. Format: CASE-PREFIX-6digits. Example: CASE-SWP-048271"
+      - name: notification_type
+        type: string
+        enum: ["shift_swap_confirmed", "fmla_opened", "payroll_correction_submitted", "pto_request_submitted"]
+        description: "The type of action being reported"
+
+  # ── FLOW 3: MALPRACTICE COVERAGE UPDATE ───────────────────────────────────────
+
+  - id: get_malpractice_record
+    name: get_malpractice_record
+    description: >
+      Retrieve a provider's current malpractice insurance record, including
+      carrier, policy number, coverage limits, and effective/expiration dates.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+
+  - id: update_malpractice_coverage
+    name: update_malpractice_coverage
+    description: >
+      Update the malpractice insurance details for a provider. If the new
+      per-occurrence limit is below $1,000,000, the system automatically flags
+      the record for re-credentialing and opens a review case. Returns a case_id.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: new_carrier
+        type: string
+        enum: ["proassurance", "coverys", "the_doctors_company", "cna", "zurich", "mag_mutual"]
+        description: "The new malpractice insurance carrier. Match the caller's spoken carrier name to the closest value (e.g. 'ProAssurance' → proassurance, 'The Doctors Company' → the_doctors_company, 'MAG Mutual' → mag_mutual). Record the lowercase form exactly."
+      - name: new_policy_number
+        type: string
+        description: "The new policy number. Format: POL-YYYY-XXXXXX (POL, dash, 4-digit year, dash, 6 alphanumeric characters). This is the new policy being filed, not the existing policy on record. Example: POL-2025-BK4420"
+      - name: per_occurrence_limit_usd
+        type: integer
+        description: "Per-occurrence coverage limit in whole USD. Example: 1000000 for one million dollars"
+      - name: aggregate_limit_usd
+        type: integer
+        description: "Aggregate coverage limit in whole USD. Example: 3000000 for three million dollars"
+      - name: effective_date
+        type: string
+        description: "New policy effective date in YYYY-MM-DD format. Example: 2026-07-01"
+      - name: expiration_date
+        type: string
+        description: "New policy expiration date in YYYY-MM-DD format. Example: 2027-07-01"
+
+  # ── FLOW 4: ONBOARDING TASK COMPLETION ───────────────────────────────────────
+
+  - id: get_onboarding_checklist
+    name: get_onboarding_checklist
+    description: >
+      Retrieve the onboarding task checklist for an employee. Returns all
+      tasks with their current status (pending or complete).
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP072948"
+
+  - id: complete_onboarding_task
+    name: complete_onboarding_task
+    description: >
+      Mark a single onboarding task as complete using the completion code the
+      employee received upon finishing the task. The code is validated before
+      the task is marked done. Returns the list of remaining incomplete tasks.
+      Only one task can be marked per call.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP072948"
+      - name: task_code
+        type: string
+        enum: ["BLS_UPLOAD", "I9_VERIFY", "BADGE_PICKUP", "OCC_HEALTH", "HIPAA_TRAIN", "DRUG_SCREEN", "TB_TEST", "ORIENTATION"]
+        description: "The onboarding task to mark complete"
+      - name: completion_code
+        type: string
+        description: "The 4-character alphanumeric code the employee received upon completing the task. Case-insensitive. Example: AB12"
+
+  - id: schedule_orientation_followup
+    name: schedule_orientation_followup
+    description: >
+      Schedule an orientation follow-up appointment for a new hire after
+      onboarding tasks have been completed. The appointment must be at a
+      time slot that has been confirmed as available.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP072948"
+      - name: department_code
+        type: string
+        enum: ["CARDIOLOGY", "EMERGENCY", "ONCOLOGY", "SURGERY", "NEUROLOGY", "PEDIATRICS", "RADIOLOGY", "PATHOLOGY", "ORTHOPEDICS", "OBSTETRICS"]
+        description: "The employee's department"
+      - name: appointment_datetime
+        type: string
+        description: "The appointment date and time in YYYY-MM-DD HH:MM format. Must be a slot confirmed as available. Example: 2026-05-05 09:00"
+
+  # ── FLOW 5: DEA REGISTRATION TRANSFER ────────────────────────────────────────
+
+  - id: get_dea_record
+    name: get_dea_record
+    description: >
+      Retrieve a provider's DEA registration record, including DEA number,
+      current facility, state, schedule codes, and expiration date.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: dea_number
+        type: string
+        description: "The provider's DEA number. Format: 2 uppercase letters followed by 7 digits. Example: BK4729183"
+
+  - id: transfer_dea_registration
+    name: transfer_dea_registration
+    description: >
+      Transfer a DEA registration to a new facility and state. The current
+      registration remains active until the effective date, at which point the
+      new facility and state take effect. Returns a case_id on success.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: dea_number
+        type: string
+        description: "The provider's DEA number. Format: 2 uppercase letters followed by 7 digits. Example: BK4729183"
+      - name: new_facility_code
+        type: string
+        description: "The facility the DEA registration is being transferred to. This is the new facility, not the provider's current home facility. Format: 2-4 uppercase letters, dash, 2 digits, 1 letter. Example: BWH-02A"
+      - name: new_state_code
+        type: string
+        description: "The 2-letter US state abbreviation for the new facility's location. Example: CA, NY, TX"
+      - name: transfer_reason
+        type: string
+        enum: ["facility_relocation", "role_change", "additional_practice_site"]
+        description: "The reason for the transfer: facility_relocation (same role, moving to a different facility), role_change (new clinical role at a different facility), or additional_practice_site (adding a second location while keeping the original)"
+      - name: effective_date
+        type: string
+        description: "The date the transfer takes effect in YYYY-MM-DD format. Example: 2026-06-01"
+
+  - id: notify_pdmp
+    name: notify_pdmp
+    description: >
+      Notify the state Prescription Drug Monitoring Program of a DEA
+      registration transfer.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: dea_number
+        type: string
+        description: "The provider's DEA number. Format: 2 uppercase letters followed by 7 digits. Example: BK4729183"
+      - name: state_code
+        type: string
+        description: "The 2-letter US state abbreviation for the new registration state. Example: CA"
+      - name: facility_code
+        type: string
+        description: "The facility code for the new registration location. Format: 2-4 uppercase letters, dash, 2 digits, 1 letter. Example: BWH-02A"
+
+  # ── FLOW 6: FMLA / LEAVE OF ABSENCE FILING ───────────────────────────────────
+
+  - id: check_leave_eligibility
+    name: check_leave_eligibility
+    description: >
+      Verify whether an employee meets FMLA eligibility requirements (12 months
+      of employment, 1,250+ hours in the past year). Returns eligible: true,
+      months employed, hours worked, and remaining FMLA weeks on success.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+
+  - id: submit_fmla_case
+    name: submit_fmla_case
+    description: >
+      Open an FMLA leave case. Returns a case_id on success. Rejects the
+      request if the employee is not eligible or if the requested leave
+      duration exceeds the remaining FMLA balance.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: leave_category
+        type: string
+        enum: ["employee_medical_condition", "family_member_serious_illness", "bonding", "military_exigency"]
+        description: "The FMLA leave category (mutually exclusive): employee_medical_condition (employee's own serious health condition), family_member_serious_illness (caring for ill spouse, child, or parent), bonding (birth, adoption, or foster placement within 12 months), or military_exigency (family member's active duty)"
+      - name: leave_start_date
+        type: string
+        description: "The first day of leave in YYYY-MM-DD format. Must be today or a future date. Example: 2026-05-01"
+      - name: leave_end_date
+        type: string
+        description: "The last day of leave in YYYY-MM-DD format. The total duration must not exceed the employee's remaining FMLA weeks. Example: 2026-07-01"
+
+  - id: schedule_return_to_work_checkin
+    name: schedule_return_to_work_checkin
+    description: >
+      Schedule a return-to-work check-in appointment tied to an FMLA case.
+      The appointment must fall on or after the leave end date. Rejects
+      appointments scheduled before the leave ends. The time slot must have
+      been confirmed as available.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: case_id
+        type: string
+        description: "The FMLA case ID. Format: CASE-FMLA-6digits. Example: CASE-FMLA-048271"
+      - name: department_code
+        type: string
+        enum: ["CARDIOLOGY", "EMERGENCY", "ONCOLOGY", "SURGERY", "NEUROLOGY", "PEDIATRICS", "RADIOLOGY", "PATHOLOGY", "ORTHOPEDICS", "OBSTETRICS"]
+        description: "The employee's department"
+      - name: appointment_datetime
+        type: string
+        description: "The appointment date and time in YYYY-MM-DD HH:MM format. Must be on or after the leave end date, and must be a slot confirmed as available. Example: 2026-07-02 09:00"
+
+  # ── FLOW 7: PAYROLL CORRECTION ───────────────────────────────────────────────
+
+  - id: get_timesheet_record
+    name: get_timesheet_record
+    description: >
+      Retrieve a timesheet entry for a specific shift, including logged hours,
+      shift status, and the pay period end date.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: shift_id
+        type: string
+        description: "The shift identifier. Format: SHF-YYYYMMDD-HHMM (SHF, dash, 8-digit date, dash, 4-digit 24-hour start time). Construct it from the shift date and start time the caller provides — e.g. a shift on July 2, 2026 starting at 7:00 PM becomes SHF-20260702-1900. Read the constructed ID back to the caller to confirm before using it. Example: SHF-20260501-0700"
+
+  - id: check_correction_eligibility
+    name: check_correction_eligibility
+    description: >
+      Verify whether a payroll correction can be submitted for a shift. Returns
+      eligible: true and the currently logged hours on success. Blocks if a
+      correction is already pending, the pay period is closed, or the shift
+      has not been logged yet.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: shift_id
+        type: string
+        description: "The shift identifier. Format: SHF-YYYYMMDD-HHMM (SHF, dash, 8-digit date, dash, 4-digit 24-hour start time). Construct it from the shift date and start time the caller provides — e.g. a shift on July 2, 2026 starting at 7:00 PM becomes SHF-20260702-1900. Read the constructed ID back to the caller to confirm before using it. Example: SHF-20260501-0700"
+
+  - id: submit_payroll_correction
+    name: submit_payroll_correction
+    description: >
+      Submit a payroll correction for a specific shift. Returns a case_id on
+      success. Rejects the correction if the pay period has already closed.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: shift_id
+        type: string
+        description: "The shift being corrected. Format: SHF-YYYYMMDD-HHMM. If the caller only has the shift date and start time, construct the ID from those (e.g. a shift on May 1, 2026 at 7:00 AM becomes SHF-20260501-0700). Example: SHF-20260501-0700"
+      - name: correction_type
+        type: string
+        enum: ["on_call_hours", "overtime_hours", "differential_missed"]
+        description: "The type of correction. on_call_hours (on-call time was logged incorrectly or not at all). overtime_hours (overtime beyond scheduled hours was not captured). differential_missed (shift differential pay was not applied to eligible hours)."
+      - name: corrected_hours
+        type: float
+        description: "The corrected total hours for the chosen correction type — not a delta from the current value and not the total shift hours. For overtime_hours: total overtime hours worked. For on_call_hours: total on-call hours. For differential_missed: total hours the differential should have applied to. Must be greater than 0 and at most 24. Example: 8.0"
+
+  # ── FLOW 8: PRIVILEGE REACTIVATION ───────────────────────────────────────────
+
+  - id: get_privilege_record
+    name: get_privilege_record
+    description: >
+      Retrieve a provider's clinical privilege record, listing all privileges
+      and their current status (active or suspended).
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+
+  - id: check_reactivation_eligibility
+    name: check_reactivation_eligibility
+    description: >
+      Validate an occupational health clearance code and determine which
+      suspended privileges are available for reactivation. Returns eligible: true
+      and the list of suspended privilege codes on success.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: clearance_code
+        type: string
+        description: "The occupational health clearance code issued to the provider. Format: CLR-2-4 uppercase letters-6 digits. Example: CLR-OCC-048271"
+
+  - id: schedule_competency_review
+    name: schedule_competency_review
+    description: >
+      Schedule a competency review appointment for a provider returning from
+      leave. The time slot must have been confirmed as available.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: department_code
+        type: string
+        enum: ["CARDIOLOGY", "EMERGENCY", "ONCOLOGY", "SURGERY", "NEUROLOGY", "PEDIATRICS", "RADIOLOGY", "PATHOLOGY", "ORTHOPEDICS", "OBSTETRICS"]
+        description: "The provider's department"
+      - name: appointment_datetime
+        type: string
+        description: "The appointment date and time in YYYY-MM-DD HH:MM format. Must be a slot confirmed as available. Example: 2026-05-01 09:00"
+
+  - id: reactivate_privileges
+    name: reactivate_privileges
+    description: >
+      Reactivate one or more suspended clinical privileges for a provider.
+      Returns a case_id on success. Only privileges that are currently suspended
+      can be reactivated.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: privilege_codes
+        type: array
+        items:
+          type: string
+        description: "The privilege codes to reactivate. Format per code: PRV-CATEGORY-3digits. Only include codes the caller explicitly confirmed. Example: [PRV-CARD-001, PRV-ICU-003]"
+      - name: clearance_code
+        type: string
+        description: "The occupational health clearance code. Format: CLR-LETTERS-6digits. Example: CLR-OCC-048271"
+      - name: leave_type_on_record
+        type: string
+        enum: ["medical_leave", "personal_leave", "fmla_leave"]
+        description: "The type of leave the provider was on (mutually exclusive): medical_leave (employer-approved medical, not FMLA), personal_leave (approved personal/unpaid, not medical or FMLA), or fmla_leave (FMLA-protected leave)"
+
+  - id: update_ehr_access
+    name: update_ehr_access
+    description: >
+      Update a provider's EHR system access permissions following privilege
+      reactivation.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: npi
+        type: string
+        description: "The provider's 10-digit NPI number. Example: 1487392045"
+      - name: case_id
+        type: string
+        description: "The privilege reactivation case ID. Format: CASE-PRV-6digits. Example: CASE-PRV-048271"
+      - name: access_change_type
+        type: string
+        enum: ["reactivate_full", "reactivate_restricted"]
+        description: "The EHR access level to restore: reactivate_full (all modules and patient records) or reactivate_restricted (limited read-only access)"
+
+  # ── FLOW 9: ON-CALL SCHEDULE REGISTRATION ────────────────────────────────────
+
+  - id: get_oncall_schedule
+    name: get_oncall_schedule
+    description: >
+      Retrieve an employee's current on-call registrations for a given unit.
+      Returns existing registrations so any scheduling conflicts can be
+      identified.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: unit_code
+        type: string
+        description: "The unit to check. Format: digits+letter-letters. Example: 4B-ICU"
+
+  - id: check_oncall_eligibility
+    name: check_oncall_eligibility
+    description: >
+      Verify whether an employee is eligible to register for on-call duty
+      on a given unit. Blocks if the employee is currently on leave or is
+      missing required certifications for the unit.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: unit_code
+        type: string
+        description: "The unit to check eligibility for. Format: digits+letter-letters. Example: 4B-ICU"
+
+  - id: register_oncall_availability
+    name: register_oncall_availability
+    description: >
+      Register an employee's on-call availability for a date window, including
+      any blackout dates within the window when they are unavailable. Returns
+      a registration_id on success. Blackout dates must fall within the
+      availability window or the request is rejected.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: unit_code
+        type: string
+        description: "The unit for the on-call registration. Format: digits+letter-letters. Example: 4B-ICU"
+      - name: availability_start_date
+        type: string
+        description: "The first day of the availability window in YYYY-MM-DD format. Example: 2026-06-01"
+      - name: availability_end_date
+        type: string
+        description: "The last day of the availability window in YYYY-MM-DD format. Example: 2026-06-30"
+      - name: oncall_tier
+        type: string
+        enum: ["primary", "backup"]
+        description: "The on-call tier: primary (first to be called) or backup (called if primary is unavailable)"
+      - name: blackout_dates
+        type: array
+        items:
+          type: string
+        description: "Dates within the availability window when the employee is unavailable, each in YYYY-MM-DD format. Pass an empty list [] if there are none."
+
+  # ── FLOW 10: I-9 VERIFICATION ─────────────────────────────────────────────────
+
+  - id: get_i9_record
+    name: get_i9_record
+    description: >
+      Retrieve the current I-9 verification record for an employee, including
+      verification status and any previously submitted document details.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP072948"
+
+  - id: submit_i9_verification
+    name: submit_i9_verification
+    description: >
+      Submit or update I-9 work authorization verification for an employee.
+      For initial verification, the employee must have a populated onboarding
+      checklist in the system. For reverification, a prior I-9 record must
+      already exist. Returns a case_id on success.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP072948"
+      - name: verification_action
+        type: string
+        enum: ["initial_verification", "reverification"]
+        description: "The action type: initial_verification (first-time I-9) or reverification (updating expiring documents)"
+      - name: document_list_type
+        type: string
+        enum: ["LIST_A", "LIST_B", "LIST_C"]
+        description: "The I-9 document list: LIST_A (single document proving both identity and work authorization), LIST_B (identity only), or LIST_C (work authorization only)"
+      - name: document_type_code
+        type: string
+        enum: ["US_PASSPORT", "PERM_RESIDENT_CARD", "EAD", "DRIVERS_LICENSE", "STATE_ID", "SSN_CARD", "BIRTH_CERT"]
+        description: "The document type. US_PASSPORT (U.S. passport or passport card, LIST_A). PERM_RESIDENT_CARD (Permanent Resident / green card, LIST_A). EAD (Employment Authorization Document, LIST_A). DRIVERS_LICENSE (state-issued driver's license, LIST_B identity). STATE_ID (state-issued non-driver ID, LIST_B identity). SSN_CARD (unrestricted Social Security card, LIST_C work auth). BIRTH_CERT (U.S. birth certificate, LIST_C work auth)."
+      - name: document_number
+        type: string
+        description: "The document's ID number, 6-12 uppercase alphanumeric characters. Must be captured exactly as provided by the caller. Example: A12345678"
+      - name: document_expiration_date
+        type: string
+        description: "The document's expiration date in YYYY-MM-DD format. Example: 2030-08-14"
+      - name: issuing_country_code
+        type: string
+        description: "The 2-letter ISO country code of the issuing country. Convert country names to codes. Example: US, IN, MX"
+
+  - id: notify_hr_compliance
+    name: notify_hr_compliance
+    description: >
+      Notify HR compliance that an I-9 verification has been completed.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP072948"
+      - name: case_id
+        type: string
+        description: "The I-9 case ID. Format: CASE-I9-6digits. Example: CASE-I9-072948"
+      - name: notification_type
+        type: string
+        enum: ["i9_verified", "i9_reverified"]
+        description: "The verification type completed: i9_verified (for initial verification) or i9_reverified (for reverification)"
+
+  # ── FLOW 11: VISA DEPENDENT ADDITION ─────────────────────────────────────────
+
+  - id: get_visa_record
+    name: get_visa_record
+    description: >
+      Retrieve a visa sponsorship record for an employee using their visa
+      petition number.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP081034"
+      - name: visa_petition_number
+        type: string
+        description: "The visa petition number. Format: 3 uppercase letters followed by 10 digits. Example: WAC2512045678"
+
+  - id: add_visa_dependent
+    name: add_visa_dependent
+    description: >
+      Add a dependent to an existing visa petition. Returns an amendment_id
+      on success.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP081034"
+      - name: visa_petition_number
+        type: string
+        description: "The visa petition number. Format: 3 uppercase letters followed by 10 digits. Example: WAC2512045678"
+      - name: dependent_first_name
+        type: string
+        description: "The dependent's first name, 2-30 characters, letters and hyphens only. Example: Priya, Jean-Luc"
+      - name: dependent_last_name
+        type: string
+        description: "The dependent's last name, 2-30 characters, letters and hyphens only. Example: Sharma, Dupont"
+      - name: relationship
+        type: string
+        enum: ["spouse", "child", "domestic_partner"]
+        description: "The dependent's relationship to the employee"
+      - name: dependent_date_of_birth
+        type: string
+        description: "The dependent's date of birth in YYYY-MM-DD format. Example: 2024-03-15"
+      - name: dependent_country_of_birth
+        type: string
+        description: "The 2-letter ISO country code for the dependent's country of birth. Convert country names to codes. Example: IN, US, MX"
+      - name: uscis_receipt_number
+        type: string
+        description: "The USCIS receipt number for the petition amendment. Format: 3 uppercase letters followed by 10 digits. This is a different identifier from the visa petition number. Example: IOE0912345678"
+
+  - id: notify_immigration_counsel
+    name: notify_immigration_counsel
+    description: >
+      Notify immigration counsel of a change to a visa petition.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP081034"
+      - name: visa_petition_number
+        type: string
+        description: "The visa petition number. Format: 3 uppercase letters followed by 10 digits. Example: WAC2512045678"
+      - name: notification_type
+        type: string
+        enum: ["dependent_added"]
+        description: "The type of change"
+
+  # ── FLOW 12: PTO REQUEST ─────────────────────────────────────────────────────
+
+  - id: get_pto_balance
+    name: get_pto_balance
+    description: >
+      Retrieve an employee's PTO balances by type (general PTO and sick leave).
+      Also returns the employee's schedule type (standard or shift), which
+      determines how PTO days are calculated.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+
+  - id: check_pto_eligibility
+    name: check_pto_eligibility
+    description: >
+      Check whether an employee can take PTO for a given date range. Validates
+      sufficient balance, checks for department blackout conflicts, and confirms
+      no overlap with existing PTO requests. Returns the exact working days that
+      count as PTO and the number of days to be deducted. For standard (M-F)
+      employees, only weekdays minus org holidays count. For shift employees,
+      only scheduled shifts in the range count.
+    tool_type: read
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: pto_type
+        type: string
+        enum: ["pto", "sick"]
+        description: "The type of PTO: pto (general paid time off for vacation/personal) or sick (sick leave)"
+      - name: start_date
+        type: string
+        description: "The first day of requested time off in YYYY-MM-DD format. Example: 2026-05-07"
+      - name: end_date
+        type: string
+        description: "The last day of requested time off in YYYY-MM-DD format. Example: 2026-05-13"
+
+  - id: submit_pto_request
+    name: submit_pto_request
+    description: >
+      Submit a PTO request for a date range. Deducts the appropriate number of
+      days from the employee's balance. Returns a case_id and the exact days
+      deducted.
+    tool_type: write
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. Example: EMP048271"
+      - name: pto_type
+        type: string
+        enum: ["pto", "sick"]
+        description: "The type of PTO: pto (general paid time off) or sick (sick leave)"
+      - name: start_date
+        type: string
+        description: "The first day of requested time off in YYYY-MM-DD format. Example: 2026-05-07"
+      - name: end_date
+        type: string
+        description: "The last day of requested time off in YYYY-MM-DD format. Example: 2026-05-13"
+
+  # ── SYSTEM: TRANSFER TO LIVE AGENT ──────────────────────────────────────────
+
+  - id: transfer_to_agent
+    name: transfer_to_agent
+    description: >
+      Transfer the call to a live human agent. Provide context so the live
+      agent can pick up the conversation seamlessly.
+    tool_type: system
+    domain: hr
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's ID. Format: EMP followed by 6 digits. If the caller has not been authenticated, use the ID they provided. Example: EMP048271"
+      - name: transfer_reason
+        type: string
+        enum: ["caller_requested", "policy_exception_needed", "unable_to_resolve", "complaint_escalation", "technical_issue"]
+        description: "The reason for the transfer"
+      - name: issue_summary
+        type: string
+        description: "A brief summary of the caller's request, what was attempted, and why the transfer is needed"

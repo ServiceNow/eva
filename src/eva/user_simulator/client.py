@@ -7,21 +7,35 @@ using ElevenLabs Conversational AI as the user simulation engine.
 import asyncio
 import json
 import os
+from functools import lru_cache
 from pathlib import Path
 
 import httpx
+import yaml
 from elevenlabs.client import ElevenLabs
 from elevenlabs.conversational_ai.conversation import (
     Conversation,
     ConversationInitiationData,
 )
 
-from eva.user_simulator.audio_interface import BotToBotAudioInterface
+from eva.models.config import PerturbationConfig
+from eva.user_simulator.audio_interface import ELEVENLABS_OUTPUT_RATE, BotToBotAudioInterface
 from eva.user_simulator.event_logger import ElevenLabsEventLogger
+from eva.user_simulator.perturbation import AudioPerturbator
+from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
+
+_BEHAVIORS_PATH = Path(__file__).parent.parent.parent.parent / "configs" / "user_behaviors.yaml"
+_PERSONA_GENDER = {1: "F", 2: "M"}
+
+
+@lru_cache(maxsize=1)
+def _load_behavior_prompts() -> dict:
+    with open(_BEHAVIORS_PATH) as f:
+        return yaml.safe_load(f)
 
 
 class UserSimulator:
@@ -40,8 +54,9 @@ class UserSimulator:
         goal: dict,
         server_url: str,
         output_dir: Path,
+        agent_id: str,
         timeout: int = 600,
-        user_simulator_context: str = "",
+        perturbation_config: PerturbationConfig | None = None,
     ):
         """Initialize the user simulator.
 
@@ -52,7 +67,8 @@ class UserSimulator:
             server_url: WebSocket URL of the assistant server
             output_dir: Directory for output files
             timeout: Conversation timeout in seconds
-            user_simulator_context: Domain-specific context line from agent config
+            agent_id: Agent identifier used to select the domain-specific simulator prompt
+            perturbation_config: Optional perturbation to apply to user audio
         """
         self.persona_config = persona_config
         self.goal = goal
@@ -60,7 +76,14 @@ class UserSimulator:
         self.output_dir = Path(output_dir)
         self.timeout = timeout
         self.current_date_time = current_date_time
-        self.user_simulator_context = user_simulator_context
+        self.agent_id = agent_id
+        self._perturbation_config = perturbation_config
+        self._perturbator = (
+            AudioPerturbator(perturbation_config)
+            if perturbation_config is not None
+            and (perturbation_config.background_noise is not None or perturbation_config.connection_degradation)
+            else None
+        )
 
         # State
         self._conversation = None
@@ -74,6 +97,7 @@ class UserSimulator:
         # Audio recording buffers
         self._user_audio_chunks: list[bytes] = []
         self._assistant_audio_chunks: list[bytes] = []
+        self._user_clean_audio_chunks: list[bytes] = []
 
         # Keep-alive inactivity detection
         self._consecutive_keepalive_count = 0
@@ -132,6 +156,7 @@ class UserSimulator:
             record_callback=self._record_audio,
             event_logger=self.event_logger,
             conversation_done_callback=self._on_conversation_end,
+            perturbator=self._perturbator,
         )
 
         # Start the audio interface WebSocket connection
@@ -141,16 +166,24 @@ class UserSimulator:
         try:
             # Create ElevenLabs client with custom httpx client (no SSL verification for local testing)
             http_client = httpx.Client(verify=False, timeout=30.0)
-            client = ElevenLabs(
+            self._client = ElevenLabs(
                 api_key=api_key,
                 timeout=30.0,
                 httpx_client=http_client,
             )
 
-            # Build the user simulation prompt
+            # TODO: test and improve behavior prompts to more closely match desired user behavior
+            behavior_prompts = _load_behavior_prompts()
+            if self._perturbation_config and self._perturbation_config.behavior:
+                behavior_key = self._perturbation_config.behavior.value
+                user_persona = behavior_prompts[behavior_key]
+            else:
+                user_persona = behavior_prompts["default"]
+
+            # Derive domain from agent_id (e.g. "agent_airline" → "airline")
+            domain = self.agent_id.removeprefix("agent_")
             prompt = PromptManager().get_prompt(
-                "user_simulator.system_prompt",
-                user_simulator_context=self.user_simulator_context,
+                f"user_simulator.system_prompt_{domain}",
                 high_level_user_goal=self.goal["high_level_user_goal"],
                 must_have_criteria=self.goal["decision_tree"]["must_have_criteria"],
                 escalation_behavior=self.goal["decision_tree"]["escalation_behavior"],
@@ -160,7 +193,7 @@ class UserSimulator:
                 failure_condition=self.goal["decision_tree"]["failure_condition"],
                 edge_cases=self.goal["decision_tree"]["edge_cases"],
                 information_required=self.goal["information_required"],
-                user_persona=self.persona_config["user_persona"],
+                user_persona=user_persona,
                 starting_utterance=self.goal["starting_utterance"],
                 current_date_time=self.current_date_time,
             )
@@ -170,16 +203,24 @@ class UserSimulator:
 
             # ElevenLabs user simulator agent ID
             persona_id = self.persona_config["user_persona_id"]
-            ELEVENLABS_USER_AGENT_ID = os.getenv(f"ELEVENLABS_USER_AGENT_ID_USER_PERSONA_{persona_id}")
+            gender = _PERSONA_GENDER[persona_id]
+            if self._perturbation_config and self._perturbation_config.accent:
+                key = self._perturbation_config.accent.value.upper()
+                env_var = f"EVA_{key}_ACCENT_USER_{gender}"
+            elif self._perturbation_config and self._perturbation_config.behavior:
+                key = self._perturbation_config.behavior.value.upper()
+                env_var = f"EVA_{key}_USER_{gender}"
+            else:
+                env_var = f"EVA_DEFAULT_USER_{gender}"
+            ELEVENLABS_USER_AGENT_ID = os.getenv(env_var)
+            logger.info(f"Using agent ID from env var: {env_var}")
 
             # Create the conversation
             if not ELEVENLABS_USER_AGENT_ID:
-                raise ValueError(f"Missing elevenlabs agent ID environment variable for user persona {persona_id}")
-
-            self._client = client
+                raise ValueError(f"Missing ElevenLabs agent ID environment variable: {env_var}")
 
             self._conversation = Conversation(
-                client,
+                self._client,
                 ELEVENLABS_USER_AGENT_ID,
                 config=config,
                 requires_auth=True,
@@ -230,6 +271,11 @@ class UserSimulator:
                 except Exception as e:
                     logger.warning(f"Failed to check conversation history for end_call: {e}")
 
+                try:
+                    await self._fetch_elevenlabs_audio(conversation_id)
+                except Exception as e:
+                    logger.warning(f"Failed to fetch ElevenLabs server audio: {e}")
+
             self.event_logger.log_connection_state("session_ended", {"reason": self._end_reason})
 
         except Exception as e:
@@ -237,6 +283,34 @@ class UserSimulator:
             self._end_reason = "error"
             raise
         finally:
+            # Save response latencies from audio interface before cleanup
+            if self._audio_interface:
+                latencies = self._audio_interface.get_latencies()
+                if latencies:
+                    latency_file = self.output_dir / "response_latencies.json"
+                    with open(latency_file, "w") as f:
+                        json.dump(
+                            {
+                                "latencies": latencies,
+                                "mean": sum(latencies) / len(latencies),
+                                "max": max(latencies),
+                                "count": len(latencies),
+                            },
+                            f,
+                            indent=2,
+                        )
+                    logger.info(f"Saved {len(latencies)} response latencies to {latency_file}")
+
+            if self._user_clean_audio_chunks:
+                clean_audio_path = self.output_dir / "audio_user_clean.wav"
+                save_pcm_as_wav(
+                    b"".join(self._user_clean_audio_chunks),
+                    clean_audio_path,
+                    sample_rate=ELEVENLABS_OUTPUT_RATE,
+                    num_channels=1,
+                )
+                logger.info(f"Saved clean user audio to {clean_audio_path}")
+
             # Grace period: keep the WebSocket open so the assistant pipeline
             # (Pipecat STT) can finish processing the last user utterance.
             # Observed delay from "User audio END" to "UserStoppedSpeaking"
@@ -293,6 +367,26 @@ class UserSimulator:
 
         logger.warning(f"Conversation transcript still empty after {max_attempts} attempts")
         return False
+
+    async def _fetch_elevenlabs_audio(self, conversation_id: str) -> None:
+        max_attempts = 5
+        delay = 2.0
+
+        for attempt in range(max_attempts):
+            try:
+                audio_iter = self._client.conversational_ai.conversations.audio.get(conversation_id)
+                audio_path = self.output_dir / "elevenlabs_audio_recording.mp3"
+                with open(audio_path, "wb") as f:
+                    f.writelines(audio_iter)
+                logger.info(f"Saved ElevenLabs server-side audio to {audio_path}")
+                return
+            except Exception as e:
+                if attempt < max_attempts - 1:
+                    logger.debug(f"Audio not yet available (attempt {attempt + 1}/{max_attempts}): {e}")
+                    await asyncio.sleep(delay)
+                    delay = min(delay * 2, 10.0)
+                else:
+                    logger.warning(f"Failed to fetch ElevenLabs server audio after {max_attempts} attempts: {e}")
 
     def _reset_keepalive_counter(self) -> None:
         """Reset the consecutive keep-alive counter on user/agent activity."""
@@ -387,7 +481,7 @@ class UserSimulator:
             transcript: The text that the assistant said
         """
         self._reset_keepalive_counter()
-        logger.info(f"🤖 Assistant (Pipecat): {transcript}")
+        logger.info(f"🤖 Assistant: {transcript}")
 
         self.event_logger.log_event(
             "assistant_speech",
@@ -401,13 +495,15 @@ class UserSimulator:
         """Record audio for later analysis.
 
         Args:
-            source: "user" or "assistant"
+            source: "user", "assistant", or "user_clean"
             audio_data: Raw audio bytes
         """
         if source == "user":
             self._user_audio_chunks.append(audio_data)
         elif source == "assistant":
             self._assistant_audio_chunks.append(audio_data)
+        elif source == "user_clean":
+            self._user_clean_audio_chunks.append(audio_data)
 
     def get_recorded_audio(self) -> tuple[bytes, bytes]:
         """Get the recorded audio.

@@ -1,0 +1,249 @@
+{
+  "_current_date": "2026-08-12",
+  "unit_cert_requirements": {
+    "3C-ONC": [
+      "BLS",
+      "ACLS",
+      "CHEMO"
+    ],
+    "4B-ICU": [
+      "BLS",
+      "ACLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "5A-SURG": [
+      "BLS",
+      "ACLS"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP908977",
+      "first_name": "Soraya",
+      "last_name": "Khoury",
+      "facility_code": "MGH-04B",
+      "pin": "4827",
+      "phone_last_four": "0148",
+      "otp_code": "482913",
+      "role_code": "RN",
+      "department_code": "ONCOLOGY",
+      "hire_date": "2026-08-10",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {},
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-12-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP908977": {
+      "employee_id": "EMP908977",
+      "first_name": "Soraya",
+      "last_name": "Khoury",
+      "date_of_birth": "1991-02-14",
+      "phone_last_four": "0148",
+      "otp_code": "482913",
+      "department_code": "ONCOLOGY",
+      "role_code": "RN",
+      "unit_code": "3C-ONC",
+      "hire_date": "2026-08-10",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS",
+        "CHEMO"
+      ],
+      "schedule_type": "shift",
+      "fmla_eligibility": {
+        "eligible": false,
+        "months_employed": 0,
+        "hours_worked_past_year": 0,
+        "fmla_weeks_remaining": 0,
+        "reason": "Rehired employee has not yet met FMLA tenure or hours requirements"
+      },
+      "onboarding_checklist": {
+        "tasks": {
+          "DRUG_SCREEN": {
+            "status": "pending",
+            "completion_code": "A7K2"
+          },
+          "TB_TEST": {
+            "status": "pending",
+            "completion_code": "M4Q9"
+          },
+          "BADGE_PHOTO": {
+            "status": "complete",
+            "completion_code": "Z1P8"
+          }
+        }
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "expired",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 12.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260820-0700": {
+      "shift_id": "SHF-20260820-0700",
+      "employee_id": "EMP908977",
+      "unit_code": "3C-ONC",
+      "date": "2026-08-20",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-22",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    },
+    "SHF-20260821-0700": {
+      "shift_id": "SHF-20260821-0700",
+      "employee_id": "EMP908977",
+      "unit_code": "3C-ONC",
+      "date": "2026-08-21",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-22",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "ONCOLOGY": {
+        "2026-08-26": [
+          "09:00",
+          "10:00",
+          "11:00"
+        ],
+        "2026-08-27": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-08-28": [
+          "09:00",
+          "13:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "ONCOLOGY": {
+        "2026-08-26": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-08-27": [
+          "10:00",
+          "15:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "ONCOLOGY": {
+        "2026-08-25": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-08-26": [
+          "14:00",
+          "15:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-09-07",
+    "2026-11-26",
+    "2026-12-25"
+  ],
+  "department_blackout_dates": {
+    "ONCOLOGY": [],
+    "CARDIOLOGY": [
+      "2026-08-31"
+    ],
+    "EMERGENCY": [
+      "2026-08-29",
+      "2026-08-30"
+    ],
+    "SURGERY": [],
+    "PEDIATRICS": [],
+    "RADIOLOGY": []
+  }
+}

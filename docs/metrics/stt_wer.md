@@ -26,7 +26,7 @@ Uses the following MetricContext fields:
 ### Audio-Native vs Cascade
 
 - **Cascade**: Fully applicable — measures the quality of the assistant's STT pipeline, which directly affects the LLM's input.
-- **Audio-native (S2S, S2T+TTS):** **Skipped entirely** (`skip_s2s = True` (audio-native)). Audio-native models receive raw audio, not STT transcripts, so measuring STT accuracy is not meaningful. The `transcribed_user_turns` field in audio-native systems comes from a secondary transcription service, not the model's actual input.
+- **Audio-native (AUDIO_LLM / S2S):** **Skipped entirely** (`supported_pipeline_types = {CASCADE}`). Audio-native models receive raw audio, not STT transcripts, so measuring STT accuracy is not meaningful. The `transcribed_user_turns` field in audio-native systems comes from a secondary transcription service, not the model's actual input.
 
 ### Evaluation Methodology
 

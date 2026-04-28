@@ -304,3 +304,29 @@ class TestComputePassAtKForScores:
         result = compute_pass_at_k_for_scores("test", [score], threshold=0.5, k=1)
         assert result.per_trial_scores == [0.7]
         assert result.per_trial_passed == [True]
+
+    def test_skipped_trials_excluded_but_others_still_counted(self):
+        """Skipped trials excluded while others still count.
+
+        Verifies pass@k is still computed from the remaining valid trials.
+        """
+        scores = [
+            self._make_score(0.8),  # pass
+            MetricScore(name="test_metric", score=None, normalized_score=None, skipped=True),
+            self._make_score(0.3),  # fail
+        ]
+        result = compute_pass_at_k_for_scores("test", scores, threshold=0.5, k=1)
+
+        assert result is not None
+        assert result.n == 2
+        assert result.c == 1
+        assert result.per_trial_passed == [True, False]
+
+    def test_all_trials_skipped_returns_none(self):
+        """If every trial was skipped (no valid scores), the metric contributes no pass@k."""
+        scores = [
+            MetricScore(name="test_metric", score=None, normalized_score=None, skipped=True),
+            MetricScore(name="test_metric", score=None, normalized_score=None, skipped=True),
+        ]
+        result = compute_pass_at_k_for_scores("test", scores, threshold=0.5, k=1)
+        assert result is None

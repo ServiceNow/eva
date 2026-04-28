@@ -16,6 +16,7 @@ from litellm.exceptions import (
     APIError,
     # 4xx Client Errors
     AuthenticationError,
+    BadGatewayError,
     BadRequestError,
     # Other
     BudgetExceededError,
@@ -98,7 +99,7 @@ def categorize_error(error: Exception) -> ErrorInfo:
         )
 
     # Server errors (5xx) - retryable
-    if isinstance(error, (ServiceUnavailableError, InternalServerError)):
+    if isinstance(error, (ServiceUnavailableError, InternalServerError, BadGatewayError)):
         return ErrorInfo(
             error_type="llm_error",
             error_source=error_source,
@@ -307,6 +308,7 @@ def is_retryable_error(error: Exception) -> bool:
         RateLimitError,
         ServiceUnavailableError,
         InternalServerError,
+        BadGatewayError,
         APIError,  # Generic API errors are retryable
     )
 

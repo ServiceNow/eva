@@ -1,0 +1,240 @@
+{
+  "_current_date": "2026-06-09",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "8115628227": {
+      "npi": "8115628227",
+      "employee_id": "EMP262246",
+      "first_name": "Xiomara",
+      "last_name": "Villanueva",
+      "facility_code": "WJ-81L",
+      "pin": "2882",
+      "phone_last_four": "4821",
+      "otp_code": "899649",
+      "role_code": "MD",
+      "department_code": "NEUROLOGY",
+      "hire_date": "2019-08-12",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-392099",
+      "licenses": {
+        "GA-MD-482193": {
+          "state_license_number": "GA-MD-482193",
+          "license_type": "MD",
+          "state_code": "GA",
+          "expiration_date": "2027-10-31",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {},
+      "dea_registration": {
+        "dea_number": "JE3403361",
+        "facility_code": "WJ-81L",
+        "state_code": "FL",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2028-03-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-ICU-007",
+            "description": "Neurocritical ICU admitting and management",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-CARD-005",
+            "description": "Inpatient cardiovascular consult co-management",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-NEURO-002",
+            "description": "General neurology inpatient consults",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP262246": {
+      "employee_id": "EMP262246",
+      "first_name": "Xiomara",
+      "last_name": "Villanueva",
+      "date_of_birth": "1989-11-24",
+      "phone_last_four": "4821",
+      "otp_code": "899649",
+      "department_code": "NEUROLOGY",
+      "role_code": "MD",
+      "unit_code": "4B-ICU",
+      "hire_date": "2019-08-12",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS",
+        "CCRN"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 82,
+        "hours_worked_past_year": 1680,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "medical",
+          "start_date": "2026-03-01",
+          "end_date": "2026-06-16",
+          "status": "completed",
+          "case_id": "CASE-MLV-262246"
+        }
+      ],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260624-0700": {
+      "shift_id": "SHF-20260624-0700",
+      "employee_id": "EMP262246",
+      "unit_code": "4B-ICU",
+      "date": "2026-06-24",
+      "start_time": "07:00",
+      "end_time": "19:00",
+      "hours_scheduled": 12.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-06-27",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "NEUROLOGY": {
+        "2026-06-17": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-06-18": [
+          "13:00",
+          "15:00"
+        ],
+        "2026-06-19": [
+          "10:00",
+          "14:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "NEUROLOGY": {
+        "2026-06-17": [
+          "09:00",
+          "10:00"
+        ],
+        "2026-06-18": [
+          "11:00",
+          "14:00"
+        ],
+        "2026-06-23": [
+          "09:00",
+          "13:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "NEUROLOGY": {
+        "2026-06-18": [
+          "10:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-06-19": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-06-22": [
+          "08:30",
+          "10:30"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "NEUROLOGY": []
+  }
+}

@@ -7,6 +7,21 @@ import pytest
 from eva.metrics.validation.user_behavioral_fidelity import UserBehavioralFidelityMetric
 from tests.unit.metrics.conftest import make_judge_metric, make_metric_context
 
+_USER_GOAL = {
+    "high_level_user_goal": "Book a flight",
+    "starting_utterance": "Hi, I need to book a flight",
+    "information_required": "confirmation number ABC123",
+    "decision_tree": {
+        "must_have_criteria": "Same destination",
+        "nice_to_have_criteria": "Window seat",
+        "negotiation_behavior": "Accept first offer",
+        "resolution_condition": "Flight booked",
+        "failure_condition": "No availability",
+        "escalation_behavior": "Ask for supervisor",
+        "edge_cases": "None",
+    },
+}
+
 
 class TestUserBehavioralFidelity:
     def setup_method(self):
@@ -19,8 +34,9 @@ class TestUserBehavioralFidelity:
 
     def test_get_prompt_variables_cascade(self):
         ctx = make_metric_context(
-            user_goal="Book a flight",
+            user_goal=_USER_GOAL,
             user_persona="Friendly traveler",
+            agent_id="agent_airline",
             agent_tools=[
                 {"name": "search_flights", "tool_type": "read"},
                 {"name": "book_flight", "tool_type": "write"},
@@ -30,8 +46,10 @@ class TestUserBehavioralFidelity:
         )
         variables = self.metric.get_prompt_variables(ctx, "User: hi\nBot: hello")
 
-        assert variables["user_goal"] == "Book a flight"
-        assert variables["user_persona"] == "Friendly traveler"
+        # user_simulator_instructions renders the domain prompt with substituted vars
+        instructions = variables["user_simulator_instructions"]
+        assert "Friendly traveler" in instructions
+        assert "Book a flight" in instructions
         # Only write tools should be in modification_tools
         mod_tools = json.loads(variables["modification_tools"])
         assert len(mod_tools) == 1
@@ -41,8 +59,9 @@ class TestUserBehavioralFidelity:
 
     def test_get_prompt_variables_s2s(self):
         ctx = make_metric_context(
-            user_goal="Book a flight",
+            user_goal=_USER_GOAL,
             user_persona="Friendly traveler",
+            agent_id="agent_airline",
             agent_tools=[],
             pipeline_type="s2s",
             intended_user_turns={0: "Hi"},
@@ -81,38 +100,102 @@ class TestUserBehavioralFidelity:
         assert score.score == 0.0
         assert score.details["corrupted"] is True
 
+    def test_build_metric_score_surfaces_corruption_sub_metrics(self):
+        ctx = make_metric_context()
+        response = {
+            "corruption_analysis": {
+                "extra_modifications": {"detected": False, "analysis": "none"},
+                "premature_ending": {"detected": True, "analysis": "ended early"},
+                "missing_information": {"detected": False, "analysis": ""},
+                "duplicate_modifications": {"detected": False, "analysis": ""},
+                "decision_tree_violation": {"detected": False, "analysis": ""},
+            }
+        }
+
+        score = self.metric.build_metric_score(
+            rating=0,
+            normalized=0.0,
+            response=response,
+            prompt="test",
+            context=ctx,
+        )
+
+        assert score.sub_metrics is not None
+        assert set(score.sub_metrics.keys()) == {
+            "extra_modifications_rate",
+            "premature_ending_rate",
+            "missing_information_rate",
+            "duplicate_modifications_rate",
+            "decision_tree_violation_rate",
+        }
+        # Binary detection: 1.0 when corruption detected, 0.0 when clean; lower is better.
+        extra = score.sub_metrics["extra_modifications_rate"]
+        assert extra.name == "user_behavioral_fidelity.extra_modifications_rate"
+        assert extra.score == 0.0  # clean
+        assert extra.normalized_score == 0.0
+        assert extra.details["detected"] is False
+
+        premature = score.sub_metrics["premature_ending_rate"]
+        assert premature.score == 1.0  # detected
+        assert premature.normalized_score == 1.0
+        assert premature.details["detected"] is True
+        assert premature.details["analysis"] == "ended early"
+
+    def test_build_metric_score_skips_malformed_corruption_entries(self):
+        ctx = make_metric_context()
+        response = {
+            "corruption_analysis": {
+                "extra_modifications": {"detected": False},
+                "premature_ending": "not-a-dict",  # malformed
+                "missing_information": {},  # no detected key
+            }
+        }
+
+        score = self.metric.build_metric_score(
+            rating=1,
+            normalized=1.0,
+            response=response,
+            prompt="test",
+            context=ctx,
+        )
+
+        assert score.sub_metrics is not None
+        assert set(score.sub_metrics.keys()) == {"extra_modifications_rate"}
+
     @pytest.mark.asyncio
     async def test_compute_not_corrupted(self):
-        self.metric.llm_client.generate_text.return_value = json.dumps(
-            {
-                "rating": 1,
-                "corruption_analysis": {},
-            }
+        self.metric.llm_client.generate_text.return_value = (
+            json.dumps({"rating": 1, "corruption_analysis": {}}),
+            None,
         )
         ctx = make_metric_context(
+            user_goal=_USER_GOAL,
+            agent_id="agent_airline",
             conversation_trace=[
                 {"role": "user", "content": "book flight"},
                 {"role": "assistant", "content": "sure"},
             ],
         )
         score = await self.metric.compute(ctx)
+        assert score.error is None
         assert score.score == 1.0
         assert score.normalized_score == 1.0
 
     @pytest.mark.asyncio
     async def test_compute_corrupted(self):
-        self.metric.llm_client.generate_text.return_value = json.dumps(
-            {
-                "rating": 0,
-                "corruption_analysis": {"goal_drift": True},
-            }
+        self.metric.llm_client.generate_text.return_value = (
+            json.dumps({"rating": 0, "corruption_analysis": {"goal_drift": True}}),
+            None,
         )
         ctx = make_metric_context(
+            user_goal=_USER_GOAL,
+            agent_id="agent_airline",
             conversation_trace=[
                 {"role": "user", "content": "actually never mind"},
                 {"role": "assistant", "content": "ok"},
             ],
         )
         score = await self.metric.compute(ctx)
+        assert score.error is None
         assert score.score == 0.0
         assert score.normalized_score == 0.0

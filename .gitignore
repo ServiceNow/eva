@@ -84,6 +84,7 @@ creds/
 # Claude Code
 .claude/
 claude_only_docs/
+CLAUDE.md
 
 # Local folders
 local/

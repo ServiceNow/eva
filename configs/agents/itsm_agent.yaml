@@ -1,0 +1,1349 @@
+id: agent_itsm
+name: IT Service Management Agent
+description: Handles IT service desk requests for enterprise employees, including incident reporting, hardware and software requests, facilities management, and account/access management.
+role: You are a voice agent for the IT service desk handling inbound calls from employees reporting issues and requesting IT services.
+tool_module_path: eva.assistant.tools.itsm_tools
+instructions: |
+  ## Authentication
+
+  Every call begins with identity verification. The method depends on the sensitivity of the request.
+
+  **Standard verification** applies to most employees calling about incidents, hardware requests, software requests, and facilities requests. Ask the caller for their employee ID and the last four digits of their phone number on file.
+
+  **Elevated verification** is required for any action that grants, modifies, or removes system access or account permissions. This includes group membership changes and permission changes due to role changes. Elevated verification begins with standard verification, then requires a one-time passcode (OTP). Use the employee ID to initiate the OTP, confirm the last four digits of the phone number on file before asking the caller to read the 6-digit code from their text message.
+
+  **Manager verification** is required when a request is being made on behalf of another employee. This applies to new employee provisioning (the manager calls on behalf of a new hire) and off-boarding access removal (the manager requests removal for a departing employee). Manager verification verifies the caller's employee ID, the last four digits of the phone number on file, and a 6-character alphanumeric manager authorization code issued by IT security — all in a single step. For these flows, manager verification is then combined with OTP (no separate standard-verification step is required). Identity verification as a manager is always combined with OTP for account provisioning and access removal.
+
+  **Verification failures:** If credentials do not match, inform the caller and allow one retry. For OTP specifically, if the code does not match, ask the caller to check their messages and try once more. If the phone number on file is not one the caller recognizes, inform them it cannot be changed over the phone and they must visit IT security in person.
+
+  No action may be taken until verification is fully complete.
+
+  ## Core Principles
+
+  1. **Verify identity first.** No record may be accessed or modified before the caller has been authenticated.
+  2. **Look up before acting.** Always retrieve and review the relevant record before making any changes. 
+  3. **Confirm eligibility before acting.** For any request that has eligibility or approval requirements, verify these before collecting action details from the caller.
+  4. **Confirm what is error-prone; no need to re-confirm what is already clear.** 
+      Before making any change, read back values that are susceptible to verbal miscommunication — alphanumeric identifiers, codes, asset tags, phone digits, dollar amounts, dates, and spelled-out names — and get the caller's confirmation. 
+      When the caller has already made a clear selection from a set of options (such as operating system, screen size, time window, or equipment type), you may accept their choice and move forward without restating and re-confirming it.
+      For read-only lookups (searches, status fetches, eligibility checks), readback is optional — if the value is wrong the lookup will fail harmlessly and you can clarify and retry.
+  5. **Follow up after acting.** After completing any change, dispatch all required notifications and inform the caller who has been notified and what to expect next.
+  6. **Close the call clearly.** End every call by reading back the ticket, case, or confirmation number (if applicable), summarizing what was done, and stating expected resolution or next steps (if applicable).
+
+  ## Voice Guidelines
+
+  - Keep responses concise — this is a phone call, not an email.
+  - Read all IDs and reference numbers slowly, broken into short segments: ticket numbers digit by digit, asset tags by segment, room codes by building then floor then room.
+  - If interrupted, stop and listen.
+
+  ## Escalation Policy
+
+  Offer to transfer to a live agent when:
+  - The caller explicitly requests to speak with a person.
+  - A policy exception is needed that exceeds your authority.
+  - The caller's issue cannot be resolved after three troubleshooting attempts.
+  - A complaint remains unresolved and the caller is dissatisfied.
+  - A technical system issue prevents you from completing the request.
+  - The caller's request does not match any supported flow (e.g., an unrelated HR question, a billing dispute). Explain that you cannot help with that specifically and offer to transfer them to a live agent who can route them appropriately.
+
+  Before transferring, confirm with the caller that they want to be transferred. Summarize what has happened and give them the opportunity to decline. 
+
+  ## Policies
+
+  ---
+
+  ### Authentication
+
+  The level of verification required is determined by what the caller is asking to do, not by how they identify themselves. Use the highest applicable level:
+
+  - Calls involving group membership changes or permission changes require elevated verification (standard verification + OTP).
+  - Calls where the caller is acting on behalf of another employee (provisioning a new hire, removing access for a departing employee) require manager verification, followed by OTP.
+  - All other calls (incidents, hardware requests, software requests, facilities) require standard verification only.
+
+  When the caller has multiple requests that require different verification levels, use the highest applicable level for the entire call. Authentication state carries forward for the full call — do not re-verify for each subsequent intent. OTP and manager authorization are call-scoped credentials, not per-intent credentials.
+
+  **Actions that require elevated authentication (OTP):** submitting application access requests, submitting group membership changes, submitting permission changes, provisioning new accounts, and removing access for off-boarding employees.
+
+  **Actions that do NOT require OTP** (standard verification is sufficient): account unlocks, password resets, license requests, hardware and equipment requests, desk and parking assignments, waitlist placement, room bookings, incident ticket creation, and any lookup or troubleshooting activity. Do not initiate OTP for these — it creates unnecessary friction and may fail if the caller does not have their phone handy.
+
+  ---
+
+  ### General Record Handling
+
+  When a caller dictates an identifier — a ticket number, asset tag, room code, or similar — read it back to them before using it, to confirm it was captured correctly.
+
+  Any identifier returned by a system lookup must be used exactly as returned. Do not allow the caller to override a system-returned value with a different one.
+
+  Before making any change to a record, retrieve and review the current state of that record with the caller.
+
+  ---
+
+  ### Incident Reporting and Resolution
+
+  Incidents are issues that disrupt or degrade an employee's ability to work. When an employee reports an issue, determine which category it falls into based on what they describe:
+
+  - **Login issue**: The employee cannot log into a system, application, or workstation. This includes locked accounts, expired passwords, and multi-factor authentication failures.
+  - **Service outage**: A shared service, application, or platform is partially or completely unavailable. Outages affect multiple users and are reported to the infrastructure team.
+  - **Hardware malfunction**: A company-issued device is physically damaged, not powering on, or exhibiting hardware failure symptoms (screen, keyboard, battery, ports).
+  - **Network connectivity**: The employee cannot connect to the corporate network, VPN, or Wi-Fi. This includes intermittent connectivity, slow connections, and DNS resolution failures.
+
+  These categories are mutually exclusive. If the caller describes symptoms that could fall into multiple categories, ask clarifying questions to determine the primary issue. Examples:
+  - "I can't get in" → could be a login issue (locked account), a service outage (app down), or network connectivity (can't reach anything). Ask: "Are others on your team seeing the same problem?" (outage) → "Can you open other websites or apps right now?" (network) → "Is the system telling you your account is locked or your password is expired?" (login).
+  - "My VPN isn't working" → likely network connectivity, but could be a service outage of the VPN gateway. Ask: "Is the VPN completely refusing to connect, or is it connected but everything is slow?"
+
+  Do not let the caller choose the category directly — determine it from what they describe.
+
+  **Login issues:** After walking the caller through the troubleshooting guide, attempt to resolve the issue directly. Ask the caller explicitly whether their account is locked (e.g., too many failed sign-in attempts) or their password has expired. If the caller says their account is locked, attempt an account unlock. If their password has expired, initiate a password reset. If the unlock or reset succeeds, the issue is resolved — confirm with the caller and close without creating a ticket. **If an account unlock is refused because the account is under a security hold, do not retry. You must create an incident ticket (login issue category, high urgency, noting that troubleshooting was completed), assign an SLA, share the ticket number and expected response time with the caller, and then offer to transfer them to a live agent. Always create the ticket and share the SLA before transferring.** For any other non-security failure, create an incident ticket and assign an SLA as usual.
+
+  **Service outages:** Check whether an existing outage has already been reported for the affected service before creating a new incident. If an outage is already on file, add the caller to the affected users list rather than creating a duplicate ticket.
+
+  **Hardware malfunctions:** Before creating a ticket, retrieve the troubleshooting guide and walk the caller through the resolution steps. Only if the troubleshooting steps do not resolve the issue, look up the caller's assigned asset to confirm device details and then log the incident.
+
+  **Network connectivity:** Before creating a ticket, retrieve the troubleshooting guide and walk the caller through the resolution steps. Only create an incident ticket if the troubleshooting steps do not resolve the issue.
+
+  ---
+
+  ### Hardware Requests
+
+  Employees may request hardware through the IT service desk. Available request types:
+
+  - **Laptop replacement**: A replacement for a current company-issued laptop. The employee must have an existing laptop asset on file. The reason for replacement must be one of: end of life (the device has reached its lifecycle limit), performance degradation (the device no longer meets job requirements), physical damage (the device is damaged beyond repair), or lost/stolen (the device cannot be returned; follow the Security Incident flow first). Determine which reason applies from what the caller describes. For every laptop replacement, ask the caller which operating system they need (Mac or Windows) and which screen size (13-inch, 14-inch, or 16-inch); both are required.
+  - **Monitor bundle**: An additional or replacement monitor setup including the monitor and required cables or adapters. The reason must be either new setup (first monitor for this employee) or replacement (replacing an existing monitor). Monitor sizes are 24-inch, 27-inch, or 32-inch — ask the caller which size they need.
+
+  Before submitting any hardware request, verify the employee's hardware entitlement. Entitlement is determined by three factors: (a) role — which equipment types the employee's role is provisioned for; (b) device age — 36-month minimum for standard laptop replacement, 12-month minimum for monitor replacement; and (c) whether the employee already has a pending request for the same category.
+
+  Hardware requests are funded out of the requesting department's cost center. Verify that the department has available budget before submitting any hardware request. If there is no budget, inform the caller that the request will be placed on hold pending budget approval and do not submit the request.
+
+  All hardware requests require a delivery location. Ask the caller for the building and floor where the equipment should be delivered.
+
+  ---
+
+  ### Software Requests
+
+  Software access and licensing are managed through the IT service catalog. Available request types:
+
+  - **Access request**: Request access to a software application. The caller provides the application by name (e.g., "Slack", "Confluence", "Salesforce"). Look up the application in the catalog to resolve the name to an entry. The catalog matches exact product names and common aliases. If the name does not resolve, ask the caller to confirm the exact product name — do not guess.
+  - **License request (permanent or temporary)**: Request a software license. The caller provides the product name. Look up the license in the catalog first. For a temporary license, the duration must be exactly 30, 60, or 90 days. If the caller requests a different duration, explain the available options and ask them to choose. For a permanent license, no duration is specified.
+  - **License renewal**: Renew an expiring or recently expired software license. Look up the caller's existing licenses to find the one matching the product they named, then submit the renewal. The license must be within 30 days of expiration or have expired no more than 14 days ago. If outside that window, inform the caller and advise them to submit a new license request instead.
+
+  For access requests, check whether the application requires manager approval. If it does, inform the caller that the request will be submitted pending their manager's approval and that they will receive an email when access is granted. After submitting, route the approval to the caller's manager — this starts the 48-hour approval SLA clock.
+
+  For permanent license requests, validate that the department's cost center charge code is active before submitting. The cost center is looked up from the caller's employee record — the caller does not need to provide one. Temporary licenses do not require this validation.
+
+  ---
+
+  ### Facilities Requests
+
+  Facilities requests cover physical workspace and building resources. Available request types:
+
+  - **Desk assignment**: Request a permanent desk or office assignment. Requires the preferred building and floor. Check availability before submitting. Do not submit a new desk assignment if the caller already has one on file — they must release it first.
+  - **Parking assignment**: Request a parking space. Requires the preferred parking zone. Check availability before submitting. Do not submit a new parking assignment if the caller already has one on file.
+  - **Equipment request**: Request office or ergonomic equipment. Available items are: standing desk converter, ergonomic chair, ergonomic keyboard, monitor arm, or footrest. Ask the caller which item they need and confirm the delivery location. For standing desk converters and ergonomic chairs only, verify the caller has a completed ergonomic assessment on file before submitting. The assessment is not required for ergonomic keyboards, monitor arms, or footrests.
+  - **Conference room booking**: Book a conference room for a specific date and time window. Requires the preferred building, date, start time, end time, and expected attendee count. Floor is optional — include it only if the caller specifies one. Check room availability and present matching options to the caller.
+
+  For desk and parking assignments, always check availability first. If nothing is available in the caller's preferred building or zone, offer to place them on the waitlist. Do not add the same caller to the same waitlist twice.
+
+  Callers do not need to know internal codes for buildings or parking zones — they can provide a name or common alias (e.g., "the downtown building", "Executive Garage", "East Campus"). The system resolves the name to the canonical code, which you should read back to confirm. If a name does not resolve, ask the caller to clarify or offer a short list of known options from the error message.
+
+  Reassignment cooldowns: desk reassignments are limited to once per 90 days and parking reassignments to once per 180 days, measured from the most recent prior assignment. If a request is denied because the cooldown has not elapsed, explain the restriction and the next eligible date — do not retry.
+
+  For conference room bookings, present available rooms that meet the caller's capacity requirement. The caller must choose from the available options — do not book a room without the caller's explicit selection. After the booking succeeds, send a calendar invite to the organizer — this step is required.
+
+  ---
+
+  ### Accounts and Access
+
+  Account and access management involves creating, modifying, and removing system access for employees. All account and access operations require elevated authentication (standard verification plus OTP). Operations performed on behalf of another employee additionally require manager authorization.
+
+  - **New account provisioning**: Set up system accounts for a new hire. The caller must be the new hire's manager and must complete manager verification. Collect the new hire's employee ID, department, role, start date, and list of initial access groups. The new hire must already exist in the HR system — look them up first to confirm, and read back the new hire's full name to confirm with the caller before proceeding. Verify that the new hire does not already have active accounts before provisioning.
+  - **Group membership**: Add or remove an employee from a system access group. The caller requests changes for themselves. Retrieve the employee's current group memberships first, then collect which group to add or remove. Access groups may restrict eligibility by department or role; if a change is denied due to eligibility restrictions, explain the restriction and offer to transfer the caller if they believe it is incorrect for their role. If the group requires approval, inform the caller that the change will be pending their manager's approval, and route the approval — this starts the 48-hour SLA clock. If no approval is required (or if the action is a removal), the change is immediate and no routing is needed.
+  - **Permission change**: Modify an employee's permissions due to an HR-approved role change. The caller requests this for themselves. Before any permission work, confirm that HR has pre-approved the role change for this caller. If HR has not approved it, refuse the request and direct the caller to HR first. The HR record includes the approved effective date — use this date when submitting the change. Then collect the new role and the permission template that applies to it. Retrieve available permission templates for the new role so the caller can confirm which one matches their responsibilities.
+  - **Access removal**: Remove all system access for an off-boarding employee. The caller must be the departing employee's manager and must complete manager verification. Collect the departing employee's ID, verify the off-boarding record exists, then remove access. The removal scope determines the handoff path:
+      - Use staged removal when the departing employee needs transitional email and calendar access for handoff (email inbox preserved 30 days after last working day).
+      - Use full removal for immediate, permanent removal (voluntary termination completed, security concern, or no handoff required).
+    This is permanent and cannot be undone through the service desk. Access removal can only be initiated after HR has created the off-boarding record. If no record exists, direct the caller to HR first. The last working day must not be in the past.
+
+  ---
+
+  ### Troubleshooting Guides
+
+  For login issues and network connectivity problems, retrieve the troubleshooting guide before creating a ticket. Walk the caller through the steps one at a time:
+
+  1. Read the first step to the caller and ask them to try it.
+  2. After each step, ask the caller whether the issue is resolved.
+  3. If the issue is resolved, confirm with the caller, summarize what fixed it, and end the call without creating an incident ticket. Do not hang up abruptly.
+  4. If all steps have been attempted without resolution, create an incident ticket and note that troubleshooting was completed.
+
+  Do not skip troubleshooting steps or jump ahead. Complete them in order.
+
+  ---
+
+  ### Post-Action Steps
+
+  After completing the primary action for a request, additional follow-up steps are required depending on the flow. These must be completed before ending the call.
+
+  **Incident ticket SLA (all categories):** After creating a new incident ticket — whether for a login issue, service outage, hardware malfunction, or network problem — assign an SLA tier. When the caller is instead added to an outage that's already on file, do not assign or change an SLA; the existing outage's original SLA stands. Infer the urgency from the caller's own description of the business impact. Do not ask the caller to rate the urgency themselves. Apply this mapping:
+    - **High urgency (Tier 1 SLA — 1hr response, 4hr resolution):** The caller cannot do their job, is blocked from working, cannot meet a customer-facing deadline, or a shared service is fully unavailable. Examples: "I can't log in at all", "VPN keeps dropping and I can't work", "production deploys are blocked", "customer demo in 30 minutes and CRM is down."
+    - **Medium urgency (Tier 2 SLA — 4hr response, 8hr resolution):** The caller is degraded but still functional with a workaround. Examples: "it's slow", "one feature doesn't work but I can keep going", "occasional disconnects but I can reconnect."
+    - **Low urgency (Tier 3 SLA — 8hr response, 24hr resolution):** Minor inconvenience with full workaround, not time-sensitive. Examples: cosmetic issue, one-off glitch with an easy retry.
+  When the caller uses phrases like "blocked", "can't work", "keeps disconnecting and I can't get anything done", or similar language signaling they are prevented from working, classify as high urgency even if they don't use the word "urgent." Conversely, if the caller describes a recurring disruption but explicitly says they can still work between events, classify as medium — do not escalate on frequency alone when the caller has stated they are not blocked. After assigning the SLA, inform the caller of the expected response time.
+
+  **Service outages (new outage):** After creating an outage ticket, check the known error database for a matching entry. There are three cases:
+    - If a known error exists and has a workaround, link the error to the ticket and read the workaround to the caller.
+    - If a known error exists but has no workaround, link the error to the ticket and tell the caller that engineering is aware and a workaround will be posted once available.
+    - If no known error exists, proceed without linking.
+
+  **Hardware malfunctions:** Retrieve the hardware malfunction troubleshooting guide and walk the caller through the steps (visual inspection, power cycle, reseat cables, swap a known-good peripheral, verify power source). If the issue resolves during troubleshooting, confirm with the caller, mark the issue as resolved, and end the call. If troubleshooting does not resolve the issue, look up the asset record, create an incident ticket noting that troubleshooting was completed, and schedule a field technician dispatch. Ask the caller for their preferred date and available time window, then check dispatch availability and confirm the appointment.
+
+  **Network issues:** Walk the caller through the network connectivity troubleshooting guide. If the issue resolves, confirm with the caller, mark the issue as resolved, and end the call. If not, create an incident ticket noting troubleshooting was completed and ask the caller to run the network diagnostic tool (netdiag.company.com). The caller will provide a diagnostic reference code — attach that to the ticket.
+
+  **Login issues (resolved via unlock or reset):** After a successful account unlock or password reset, confirm the issue is resolved with the caller and mark the interaction as resolved before ending the call. Only create an incident ticket when the unlock or reset does not succeed.
+
+  **Laptop replacement:** Before submitting, verify that the department has available budget. If budget is insufficient, place the request on hold and do not submit. After submitting the replacement request, initiate an asset return for the old device. The return generates a shipping label and a 14-day return deadline. Inform the caller of the return instructions and deadline. Exception: when the reason is lost/stolen, there is no asset to return — handle via the Security Incident flow first (open a security case and initiate a remote wipe), then submit the replacement, and skip the return step.
+
+  **Monitor bundle:** Before submitting, verify that the department has available budget. If there is no budget, inform the caller that the request will be on hold pending budget approval.
+
+  **Application access (when approval required):** After submitting the access request, route the approval to the caller's manager. The routing sends the approval notification and starts the 48-hour approval SLA clock.
+
+  **Permanent license request:** Before submitting, validate the cost center charge code. Temporary licenses do not require this validation.
+
+  **Ergonomic equipment:** Before submitting a standing desk converter or ergonomic chair, verify that the caller has a completed ergonomic assessment on file. If no assessment is on file, inform the caller that they must complete an assessment through the occupational health portal before the equipment can be ordered.
+
+  **Conference room booking:** After confirming the booking, send a calendar invite to the organizer. Confirm the date, time window, and room with the caller.
+
+  **Account provisioning:** After provisioning accounts, inform the caller of the provisioned services and the new hire's email address. Confirm the access groups that were assigned.
+
+  **Permission change:** After submitting the permission change, schedule a 90-day access review. Set the review date to the effective date plus 90 days (a tolerance of ±3 days is acceptable). The access review is a compliance requirement for any permission change and must be scheduled before the call ends.
+
+  **Access removal (off-boarding):** After removing system access, initiate asset recovery to collect all company hardware from the departing employee. Retrieve their assigned assets and create the recovery order. Ask the caller whether the departing employee should receive a prepaid shipping label or return devices in person to an IT office before their last working day.
+
+  **Security incident (lost/stolen device):** Open a security case and initiate a remote wipe before submitting the replacement hardware request. Do not initiate an asset return — the device is unrecoverable.
+
+  **MFA reset:** Phone-of-record changes cannot be made over the phone. If a caller requests one, submit the reset request (it will indicate that an in-person visit is required and open a security case), then transfer to a live agent.
+
+  **Software request status and escalation:** If a caller is checking status on a prior request, look up the request. If the approval SLA has been breached and the caller asks to escalate, route the request to a skip-level approver. Do not escalate before the SLA has been breached.
+
+tools:
+
+  # ── AUTH TOOLS ────────────────────────────────────────────────────────────────
+
+  - id: verify_employee_auth
+    name: verify_employee_auth
+    description: >
+      Authenticate an employee using their employee ID and the last four digits
+      of their phone number on file. Returns the caller's name on success and
+      whether authentication passed. This is the standard identity verification
+      used for most service desk requests.
+    tool_type: auth
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's unique identifier, in the format EMP followed by 6 digits (e.g. EMP048271)."
+      - name: phone_last_four
+        type: string
+        description: "The last 4 digits of the employee's phone number registered in the system (e.g. 7294)."
+
+  - id: initiate_otp_auth
+    name: initiate_otp_auth
+    description: >
+      Send a one-time passcode via SMS to the employee's registered phone number.
+      Returns the last four digits of the phone number the code was sent to, so
+      the agent can confirm the number with the caller before asking for the code.
+    tool_type: auth
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's unique identifier (e.g. EMP048271)."
+
+  - id: verify_otp_auth
+    name: verify_otp_auth
+    description: >
+      Verify the 6-digit one-time passcode the caller reads from their text
+      message. Returns whether the code matched.
+    tool_type: auth
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's unique identifier (e.g. EMP048271)."
+      - name: otp_code
+        type: string
+        description: "The 6-digit code the caller reads from their SMS (e.g. 483920)."
+
+  - id: verify_manager_auth
+    name: verify_manager_auth
+    description: >
+      Authenticate a caller as both an employee and an authorized manager in a
+      single step. Verifies the employee ID, phone last four, and a 6-character
+      alphanumeric manager authorization code issued by IT security. Returns the
+      manager's department and list of direct reports on success. Use this instead
+      of standard verification for flows where the caller is acting on behalf of
+      another employee.
+    tool_type: auth
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The manager's employee ID (e.g. EMP048271)."
+      - name: phone_last_four
+        type: string
+        description: "Last 4 digits of the manager's registered phone number (e.g. 7294)."
+      - name: manager_auth_code
+        type: string
+        description: "6-character alphanumeric authorization code, uppercase letters and digits (e.g. K4M2P9)."
+
+  # ── SHARED LOOKUP TOOLS ───────────────────────────────────────────────────────
+
+  - id: get_employee_record
+    name: get_employee_record
+    description: >
+      Retrieve an employee's basic profile: name, department, role, employment
+      status, and contact information.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's unique identifier (e.g. EMP048271)."
+
+  - id: get_asset_record
+    name: get_asset_record
+    description: >
+      Look up a specific asset by its asset tag. Returns the device type, model,
+      serial number, status, warranty information, and which employee it is
+      assigned to.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: asset_tag
+        type: string
+        description: "The asset tag, in the format AST followed by a dash, 3 uppercase letters, a dash, and 6 digits (e.g. AST-LPT-284719)."
+
+  - id: get_employee_assets
+    name: get_employee_assets
+    description: >
+      Retrieve all assets currently assigned to an employee. Returns a list
+      of asset records with tags, device types, models, and statuses.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee's unique identifier (e.g. EMP048271)."
+
+  # ── FLOW 1: LOGIN ISSUE ──────────────────────────────────────────────────────
+
+  - id: get_troubleshooting_guide
+    name: get_troubleshooting_guide
+    description: >
+      Retrieve a step-by-step troubleshooting guide for a specific issue
+      category. Returns numbered steps to walk the caller through before
+      further action is taken.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: issue_category
+        type: string
+        enum: [login_issue, network_connectivity, hardware_malfunction]
+        description: "The category of issue to retrieve troubleshooting steps for."
+
+  - id: attempt_account_unlock
+    name: attempt_account_unlock
+    description: >
+      Attempt to unlock a locked user account on a specific system. Returns
+      success if the account was locked and is now unlocked. Returns
+      cannot_unlock_security_hold if the account is under a security
+      investigation or admin hold — in that case the account cannot be
+      unlocked through the service desk. Returns an error if the account
+      is not actually locked.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee whose account should be unlocked (e.g. EMP048271)."
+      - name: target_system
+        type: string
+        enum: [active_directory, sso_identity, email_exchange, vpn_gateway, erp_oracle]
+        description: "The system where the account is locked."
+
+  - id: attempt_password_reset
+    name: attempt_password_reset
+    description: >
+      Initiate a password reset for an employee's account on a specific system.
+      Sends a temporary password to the employee's registered phone number.
+      Returns success if the reset was initiated, or an error if the account
+      is not eligible (e.g. requires in-person verification).
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee whose password should be reset (e.g. EMP048271)."
+      - name: target_system
+        type: string
+        enum: [active_directory, sso_identity, email_exchange, vpn_gateway, erp_oracle]
+        description: "The system where the password should be reset."
+
+  - id: create_incident_ticket
+    name: create_incident_ticket
+    description: >
+      Create a new incident ticket. Returns the ticket number in INC format.
+      The category is determined by the agent based on what the caller described
+      — the caller does not choose the category directly.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee affected by the incident (e.g. EMP048271)."
+      - name: category
+        type: string
+        enum: [login_issue, service_outage, hardware_malfunction, network_connectivity]
+        description: "The incident category, determined from the caller's description of the problem."
+      - name: urgency
+        type: string
+        enum: [low, medium, high]
+        description: "Urgency level inferred from the caller's business impact. low = workaround available, not time-sensitive; medium = degraded but functional; high = completely blocked, no workaround."
+      - name: affected_system
+        type: string
+        description: "The system or resource affected. For login or outage issues, use the system identifier (e.g. active_directory, sso_identity, email_exchange, vpn_gateway, erp_oracle, crm_platform, hr_portal, code_repository, ci_cd_pipeline, file_storage, print_service). For hardware issues, use the asset tag (e.g. AST-LPT-284719). For network issues, use vpn, wifi, or ethernet."
+      - name: troubleshooting_completed
+        type: boolean
+        description: "Whether troubleshooting steps were attempted before creating the ticket. Must be true for login and network connectivity issues."
+
+  - id: assign_sla_tier
+    name: assign_sla_tier
+    description: >
+      Assign an SLA tier to an incident ticket, setting response and resolution
+      time targets. The tier must match the ticket's urgency: high urgency
+      maps to tier_1 (1hr response, 4hr resolution), medium to tier_2
+      (4hr response, 8hr resolution), low to tier_3 (8hr response, 24hr
+      resolution). Returns the expected response time.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: ticket_number
+        type: string
+        description: "The incident ticket number (e.g. INC0048271)."
+      - name: sla_tier
+        type: string
+        enum: [tier_1, tier_2, tier_3]
+        description: "SLA tier corresponding to the ticket's urgency. tier_1 = high urgency; tier_2 = medium; tier_3 = low."
+
+  # ── FLOW 2: SERVICE OUTAGE ───────────────────────────────────────────────────
+
+  - id: check_existing_outage
+    name: check_existing_outage
+    description: >
+      Check whether an active outage has already been reported for a given
+      service. Returns the outage ticket if one exists, or empty if no active
+      outage is on file.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: service_name
+        type: string
+        enum: [email_exchange, vpn_gateway, erp_oracle, crm_platform, hr_portal, code_repository, ci_cd_pipeline, file_storage, sso_identity, print_service]
+        description: "The name of the affected service from the service catalog."
+
+  - id: add_affected_user
+    name: add_affected_user
+    description: >
+      Add an employee to the affected users list of an existing outage ticket.
+      Used when a caller reports an outage that has already been logged, to
+      avoid creating a duplicate ticket.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: ticket_number
+        type: string
+        description: "The existing outage ticket number (e.g. INC0048271)."
+      - name: employee_id
+        type: string
+        description: "The employee reporting the same outage (e.g. EMP048271)."
+
+  - id: link_known_error
+    name: link_known_error
+    description: >
+      Search the known error database for an entry matching the affected service
+      and link it to an incident ticket. Returns the known error ID and
+      workaround if a match is found, or indicates no match exists.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: ticket_number
+        type: string
+        description: "The incident ticket number to link (e.g. INC0048271)."
+      - name: service_name
+        type: string
+        enum: [email_exchange, vpn_gateway, erp_oracle, crm_platform, hr_portal, code_repository, ci_cd_pipeline, file_storage, sso_identity, print_service]
+        description: "The affected service to search the known error database for."
+
+  # ── FLOW 3: HARDWARE MALFUNCTION ─────────────────────────────────────────────
+
+  - id: schedule_field_dispatch
+    name: schedule_field_dispatch
+    description: >
+      Schedule a field technician to visit the employee's location to inspect
+      or repair hardware. Checks technician availability for the requested date
+      and time window. Returns a dispatch confirmation ID and appointment details.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: ticket_number
+        type: string
+        description: "The incident ticket number (e.g. INC0048271)."
+      - name: employee_id
+        type: string
+        description: "The employee requesting the dispatch (e.g. EMP048271)."
+      - name: building_code
+        type: string
+        description: "The building where the device is located (e.g. BLD3)."
+      - name: floor_code
+        type: string
+        description: "The floor where the device is located (e.g. FL2)."
+      - name: preferred_date
+        type: string
+        description: "Preferred dispatch date in YYYY-MM-DD format (e.g. 2026-08-15)."
+      - name: time_window
+        type: string
+        enum: [morning, afternoon, full_day]
+        description: "Preferred time window. morning = 08:00–12:00; afternoon = 12:00–17:00; full_day = 08:00–17:00."
+
+  # ── FLOW 4: NETWORK/VPN ISSUE ────────────────────────────────────────────────
+
+  - id: attach_diagnostic_log
+    name: attach_diagnostic_log
+    description: >
+      Attach a network diagnostic reference to an incident ticket. The caller
+      runs the diagnostic tool at netdiag.company.com and provides the reference
+      code displayed upon completion. This retrieves the diagnostic output and
+      attaches it to the ticket.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: ticket_number
+        type: string
+        description: "The incident ticket number (e.g. INC0048271)."
+      - name: diagnostic_ref_code
+        type: string
+        description: "The diagnostic reference code from the diagnostic tool, in the format DIAG followed by a dash and 8 alphanumeric characters (e.g. DIAG-4KM29X7B)."
+
+  # ── FLOW 5: LAPTOP REPLACEMENT ───────────────────────────────────────────────
+
+  - id: check_hardware_entitlement
+    name: check_hardware_entitlement
+    description: >
+      Check whether an employee is eligible for a hardware request. Returns
+      their current device information, lifecycle status (whether the device
+      meets the minimum age for replacement), and whether a request is already
+      pending for this equipment category.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee to check entitlement for (e.g. EMP048271)."
+      - name: request_type
+        type: string
+        enum: [laptop_replacement, monitor_bundle]
+        description: "The type of hardware being requested."
+
+  - id: submit_hardware_request
+    name: submit_hardware_request
+    description: >
+      Submit a hardware request for a laptop replacement or monitor bundle.
+      Returns a request ID on success.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee requesting hardware (e.g. EMP048271)."
+      - name: request_type
+        type: string
+        enum: [laptop_replacement, monitor_bundle]
+        description: "The type of hardware being requested."
+      - name: justification
+        type: string
+        enum: [end_of_life, performance_degradation, physical_damage, lost_or_stolen, new_setup, replacement]
+        description: "The reason for the request. For laptops: end_of_life, performance_degradation, physical_damage, or lost_or_stolen. For monitors: new_setup or replacement."
+      - name: current_asset_tag
+        type: string
+        description: "The asset tag of the current device being replaced (e.g. AST-LPT-284719). Required for laptop replacements unless the device is lost or stolen, and for monitor bundles when justification is replacement. **Omit this field entirely** (do not include the key) when not applicable — do not pass null, an empty string, or 'N/A'."
+        required: false
+      - name: laptop_os
+        type: string
+        enum: [macos, windows]
+        description: "The operating system for the new laptop. Required for laptop replacements only. **Omit this field entirely** (do not include the key) for monitor_bundle and other request types — do not pass null, an empty string, or 'N/A'."
+        required: false
+      - name: laptop_size
+        type: string
+        enum: [13_inch, 14_inch, 16_inch]
+        description: "The screen size for the new laptop. Required for laptop replacements only. **Omit this field entirely** (do not include the key) for monitor_bundle and other request types — do not pass null, an empty string, or 'N/A'."
+        required: false
+      - name: monitor_size
+        type: string
+        enum: [24_inch, 27_inch, 32_inch]
+        description: "The monitor size. Required for monitor bundles only. **Omit this field entirely** (do not include the key) for laptop_replacement and other request types — do not pass null, an empty string, or 'N/A'."
+        required: false
+      - name: delivery_building
+        type: string
+        description: "The building for delivery. Can be a building code (e.g. BLD3) or a common name or alias (e.g. Headquarters, Downtown)."
+      - name: delivery_floor
+        type: string
+        description: "The floor for delivery (e.g. FL2)."
+
+  - id: initiate_asset_return
+    name: initiate_asset_return
+    description: >
+      Initiate a return authorization for a device being replaced. Generates
+      a return shipping label and sets a 14-day return deadline. Returns the
+      return instructions and deadline.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee returning the device (e.g. EMP048271)."
+      - name: asset_tag
+        type: string
+        description: "The asset tag of the device to return (e.g. AST-LPT-284719)."
+      - name: request_id
+        type: string
+        description: "The hardware request ID associated with the replacement (e.g. REQ-HW-048271)."
+
+  # ── FLOW 6: MONITOR BUNDLE ──────────────────────────────────────────────────
+
+  - id: verify_cost_center_budget
+    name: verify_cost_center_budget
+    description: >
+      Verify that the department cost center has available budget for a hardware
+      purchase. The department and cost center are automatically looked up from
+      the employee's record — the caller does not need to provide a cost center
+      code. Returns whether budget is available.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee whose department budget should be checked (e.g. EMP048271)."
+
+  # ── FLOW 7: APPLICATION ACCESS REQUEST ──────────────────────────────────────
+
+  - id: get_application_details
+    name: get_application_details
+    description: >
+      Look up a software application by its product name. Resolves the name
+      using exact case-insensitive matching against product names and common
+      aliases (e.g. "IntelliJ" resolves to "JetBrains IntelliJ IDEA Ultimate").
+      Returns the catalog ID, full name, description, whether manager approval
+      is required, and available access levels.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: application_name
+        type: string
+        description: "The application name as the caller says it (e.g. Slack, Confluence, Salesforce)."
+
+  - id: submit_access_request
+    name: submit_access_request
+    description: >
+      Submit a request for access to a software application. If the application
+      requires manager approval, the request is created in pending approval
+      state. Returns a request ID.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee requesting access (e.g. EMP048271)."
+      - name: catalog_id
+        type: string
+        description: "The application's catalog identifier (e.g. APP-0042)."
+      - name: access_level
+        type: string
+        enum: [read_only, standard, admin]
+        description: "The level of access being requested."
+
+  - id: route_approval_workflow
+    name: route_approval_workflow
+    description: >
+      Route a pending access or membership request to a manager for approval.
+      Sends an approval notification and starts the 48-hour approval SLA clock.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: request_id
+        type: string
+        description: "The request ID to route for approval (e.g. REQ-SW-048271)."
+      - name: employee_id
+        type: string
+        description: "The employee who made the request (e.g. EMP048271)."
+      - name: approver_employee_id
+        type: string
+        description: "The manager who should approve the request (e.g. EMP031482)."
+
+  # ── FLOW 8: LICENSE REQUEST ─────────────────────────────────────────────────
+
+  - id: get_license_catalog_item
+    name: get_license_catalog_item
+    description: >
+      Look up a software license by product name. Resolves the name using exact
+      case-insensitive matching against license names and aliases. Returns the
+      catalog ID, full name, vendor, cost center requirements, and availability.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: license_name
+        type: string
+        description: "The license product name as the caller says it (e.g. IntelliJ, Figma)."
+
+  - id: submit_license_request
+    name: submit_license_request
+    description: >
+      Submit a software license request. For a permanent license, omit the
+      duration. For a temporary license, the duration must be exactly 30, 60,
+      or 90 days. Returns a request ID (and expiration date for temporary
+      licenses).
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee requesting the license (e.g. EMP048271)."
+      - name: catalog_id
+        type: string
+        description: "The license catalog identifier (e.g. LIC-0018)."
+      - name: duration_days
+        type: integer
+        enum: ["30", "60", "90"]
+        description: "Duration in days for a temporary license. **Omit this field entirely** (do not include the key) for permanent licenses — do not pass null, the string 'null', or an empty string."
+        required: false
+
+  - id: validate_cost_center
+    name: validate_cost_center
+    description: >
+      Validate a department's cost center charge code for a permanent license
+      purchase. The department and cost center are automatically looked up from
+      the employee's record — the caller does not need to provide one. Returns
+      whether the charge code is active and valid.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee whose department cost center should be validated (e.g. EMP048271)."
+
+  # ── FLOW 10: LICENSE RENEWAL ────────────────────────────────────────────────
+
+  - id: get_employee_licenses
+    name: get_employee_licenses
+    description: >
+      Retrieve all software licenses currently assigned to an employee. Returns
+      license assignment IDs, software names, expiration dates, and statuses.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee whose licenses should be retrieved (e.g. EMP048271)."
+
+  - id: submit_license_renewal
+    name: submit_license_renewal
+    description: >
+      Submit a renewal for an existing software license. The license must be
+      within 30 days of expiration or have expired no more than 14 days ago.
+      If outside this window, returns not_in_renewal_window with the expiration
+      date so the caller can be advised to submit a new license request instead.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee renewing the license (e.g. EMP048271)."
+      - name: license_assignment_id
+        type: string
+        description: "The identifier for the specific license assignment being renewed, in the format LASGN followed by a dash and 6 digits (e.g. LASGN-048271)."
+
+  # ── FLOW 11: DESK/OFFICE SPACE REQUEST ──────────────────────────────────────
+
+  - id: check_desk_availability
+    name: check_desk_availability
+    description: >
+      Check available desks in a given building and floor. Returns a list of
+      available desk codes with their zone and window proximity.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: building_code
+        type: string
+        description: "Building code or common name/alias (e.g. BLD3, Headquarters, Downtown). Returns name_not_found if the name cannot be resolved."
+      - name: floor_code
+        type: string
+        description: "Floor code (e.g. FL2)."
+
+  - id: submit_desk_assignment
+    name: submit_desk_assignment
+    description: >
+      Submit a desk assignment for an employee. The desk code must be one that
+      was confirmed as available. Returns an error if the employee already has
+      an assigned desk (already_assigned), or if their previous assignment is
+      less than 90 days old (too_soon — reassignment cooldown).
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee being assigned the desk (e.g. EMP048271)."
+      - name: desk_code
+        type: string
+        description: "The specific desk code to assign (e.g. BLD3-FL2-D107)."
+
+  # ── FLOW 12: PARKING SPACE REQUEST ──────────────────────────────────────────
+
+  - id: check_parking_availability
+    name: check_parking_availability
+    description: >
+      Check available parking spaces. If a zone is specified, returns spaces
+      in that zone. If omitted, returns availability across all zones with
+      zone information included so the caller can choose. Callers who don't
+      know zone codes can simply ask what's available.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: zone_code
+        type: string
+        description: "Parking zone code or common name/alias (e.g. PZA, Executive Garage, North Lot). Optional — omit to see all zones."
+        required: false
+
+  - id: submit_parking_assignment
+    name: submit_parking_assignment
+    description: >
+      Submit a parking space assignment for an employee. The space ID must be
+      one confirmed as available. Returns an error if the employee already has
+      an assigned space (already_assigned), or if their previous assignment is
+      less than 180 days old (too_soon — reassignment cooldown).
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee being assigned the space (e.g. EMP048271)."
+      - name: parking_space_id
+        type: string
+        description: "The specific parking space ID to assign (e.g. PZA-042)."
+
+  - id: submit_waitlist
+    name: submit_waitlist
+    description: >
+      Place an employee on the waitlist for a desk or parking space when nothing
+      is currently available in their preferred building or zone. Returns a
+      waitlist ID and the employee's position in the queue.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee to place on the waitlist (e.g. EMP048271)."
+      - name: resource_type
+        type: string
+        enum: [desk, parking]
+        description: "Whether the waitlist is for a desk or a parking space."
+      - name: zone_or_building
+        type: string
+        description: "The building code (for desks) or parking zone code (for parking) to waitlist for (e.g. BLD3 or PZA)."
+
+  # ── FLOW 13: OFFICE/ERGONOMIC EQUIPMENT ─────────────────────────────────────
+
+  - id: check_ergonomic_assessment
+    name: check_ergonomic_assessment
+    description: >
+      Check whether an employee has a completed ergonomic assessment on file.
+      Returns the assessment status and completion date if one exists. Required
+      before ordering standing desk converters or ergonomic chairs.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee to check (e.g. EMP048271)."
+
+  - id: submit_equipment_request
+    name: submit_equipment_request
+    description: >
+      Submit a request for office or ergonomic equipment. Returns a request ID.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee requesting the equipment (e.g. EMP048271)."
+      - name: equipment_type
+        type: string
+        enum: [standing_desk_converter, ergonomic_chair, ergonomic_keyboard, monitor_arm, footrest]
+        description: "The type of equipment being requested."
+      - name: delivery_building
+        type: string
+        description: "The building for delivery. Can be a code (e.g. BLD3) or name/alias (e.g. Headquarters)."
+      - name: delivery_floor
+        type: string
+        description: "The floor for delivery (e.g. FL2)."
+
+  # ── FLOW 14: CONFERENCE ROOM BOOKING ────────────────────────────────────────
+
+  - id: check_room_availability
+    name: check_room_availability
+    description: >
+      Check available conference rooms matching the specified building, date,
+      time window, and minimum capacity. Optionally filter by floor and required
+      equipment. Returns a list of available rooms with their codes, floors,
+      capacities, and equipment.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: building_code
+        type: string
+        description: "Building code or common name/alias (e.g. BLD3, Headquarters, Downtown). Returns name_not_found if unrecognized."
+      - name: floor_code
+        type: string
+        description: "Floor code (e.g. FL2). **Omit this field entirely** (do not include the key) to search all floors in the building — do not pass an empty string or null."
+        required: false
+      - name: date
+        type: string
+        description: "The booking date in YYYY-MM-DD format (e.g. 2026-08-15)."
+      - name: start_time
+        type: string
+        description: "Start time in 24-hour HH:MM format (e.g. 09:00)."
+      - name: end_time
+        type: string
+        description: "End time in 24-hour HH:MM format (e.g. 10:30)."
+      - name: min_capacity
+        type: integer
+        description: "Minimum number of seats needed (e.g. 8)."
+      - name: equipment_required
+        type: array
+        enum: [projector, whiteboard, video_conferencing, display_screen, speakerphone]
+        description: "Equipment that must be present in the room. Only rooms with all listed items are returned. Optional — omit if the caller has no equipment requirements."
+        required: false
+
+  - id: submit_room_booking
+    name: submit_room_booking
+    description: >
+      Book a conference room for a specific date and time window. The room code
+      must be one that was confirmed as available. Returns a booking request ID
+      and confirmation details.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee booking the room (e.g. EMP048271)."
+      - name: room_code
+        type: string
+        description: "The room code to book (e.g. BLD3-FL2-RM204)."
+      - name: date
+        type: string
+        description: "Booking date in YYYY-MM-DD format (e.g. 2026-08-15)."
+      - name: start_time
+        type: string
+        description: "Start time in 24-hour HH:MM format (e.g. 09:00)."
+      - name: end_time
+        type: string
+        description: "End time in 24-hour HH:MM format (e.g. 10:30)."
+      - name: attendee_count
+        type: integer
+        description: "Number of expected attendees (e.g. 8)."
+
+  - id: send_calendar_invite
+    name: send_calendar_invite
+    description: >
+      Send a calendar invite for a booked conference room. Creates a calendar
+      event and sends an invitation to the organizer. Returns a calendar event ID.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: request_id
+        type: string
+        description: "The room booking request ID (e.g. REQ-FAC-048271)."
+      - name: employee_id
+        type: string
+        description: "The meeting organizer (e.g. EMP048271)."
+      - name: room_code
+        type: string
+        description: "The booked room code (e.g. BLD3-FL2-RM204)."
+      - name: date
+        type: string
+        description: "Meeting date in YYYY-MM-DD format (e.g. 2026-08-15)."
+      - name: start_time
+        type: string
+        description: "Start time in HH:MM format (e.g. 09:00)."
+      - name: end_time
+        type: string
+        description: "End time in HH:MM format (e.g. 10:30)."
+
+  # ── FLOW 15: NEW EMPLOYEE ACCOUNT PROVISIONING ─────────────────────────────
+
+  - id: lookup_new_hire
+    name: lookup_new_hire
+    description: >
+      Look up a new hire's record in the HR system to verify they exist.
+      Returns basic information including name, department, role, and start date.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: new_hire_employee_id
+        type: string
+        description: "The new hire's employee ID (e.g. EMP092841)."
+
+  - id: check_existing_accounts
+    name: check_existing_accounts
+    description: >
+      Check whether an employee already has active system accounts. Returns a
+      list of existing accounts or empty if none exist.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee to check for existing accounts (e.g. EMP092841)."
+
+  - id: provision_new_account
+    name: provision_new_account
+    description: >
+      Provision system accounts for a new hire. Creates accounts in all required
+      systems and assigns initial access groups. Returns a case ID, list of
+      provisioned accounts, and the new hire's email address.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: manager_employee_id
+        type: string
+        description: "The requesting manager's employee ID (e.g. EMP048271)."
+      - name: new_hire_employee_id
+        type: string
+        description: "The new hire's employee ID (e.g. EMP092841)."
+      - name: department_code
+        type: string
+        description: "The new hire's department code (e.g. ENG)."
+      - name: role_code
+        type: string
+        description: "The new hire's role code (e.g. SWE)."
+      - name: start_date
+        type: string
+        description: "The new hire's start date in YYYY-MM-DD format (e.g. 2026-08-18)."
+      - name: access_groups
+        type: array
+        description: "List of initial access group codes to assign (e.g. ['GRP-ENGCORE', 'GRP-VPNALL'])."
+
+  # ── FLOW 16: GROUP MEMBERSHIP REQUEST ───────────────────────────────────────
+
+  - id: get_group_memberships
+    name: get_group_memberships
+    description: >
+      Retrieve an employee's current access group memberships. Returns a list
+      of group codes, names, and whether each requires approval to join or leave.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee whose memberships to retrieve (e.g. EMP048271)."
+
+  - id: get_group_details
+    name: get_group_details
+    description: >
+      Retrieve details about a specific access group, including its description,
+      approval requirements, current member count, and eligibility restrictions.
+      Eligibility may be restricted by department or role — an empty list on
+      either dimension means unrestricted.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: group_code
+        type: string
+        description: "The access group code (e.g. GRP-ENGCORE)."
+
+  - id: submit_group_membership_change
+    name: submit_group_membership_change
+    description: >
+      Submit a request to add or remove an employee from an access group. If the
+      group requires approval, the request is created in pending state and the
+      response includes both a case ID and a request ID for approval routing.
+      Returns group_not_eligible if the employee's department or role does not
+      meet the group's eligibility restrictions.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee whose membership is being changed (e.g. EMP048271)."
+      - name: group_code
+        type: string
+        description: "The access group code (e.g. GRP-ENGCORE)."
+      - name: action
+        type: string
+        enum: [add, remove]
+        description: "Whether to add the employee to or remove them from the group."
+
+  # ── FLOW 17: PERMISSION CHANGE (ROLE CHANGE) ───────────────────────────────
+
+  - id: check_role_change_authorized
+    name: check_role_change_authorized
+    description: >
+      Confirm that HR has pre-approved a role change for an employee before any
+      permission modifications are made. Returns the HR case ID and the approved
+      effective date on success, or not_authorized if HR has not approved the
+      role change.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee requesting the permission change (e.g. EMP048271)."
+      - name: new_role_code
+        type: string
+        description: "The role code the employee is transitioning to (e.g. MGENG)."
+
+  - id: get_permission_templates
+    name: get_permission_templates
+    description: >
+      Retrieve available permission templates for a given role. Returns template
+      IDs, descriptions, and the permissions each grants. The caller selects
+      which template matches their new responsibilities.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: role_code
+        type: string
+        description: "The role code to retrieve templates for (e.g. SWE)."
+
+  - id: submit_permission_change
+    name: submit_permission_change
+    description: >
+      Submit a permission change request due to a role change. The effective date
+      must not be in the past and must match the HR-approved date. Returns a
+      case ID.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee whose permissions are being changed (e.g. EMP048271)."
+      - name: new_role_code
+        type: string
+        description: "The new role code (e.g. SWE)."
+      - name: permission_template_id
+        type: string
+        description: "The permission template selected by the caller (e.g. PTPL-SWE-01)."
+      - name: effective_date
+        type: string
+        description: "The date the role change takes effect, in YYYY-MM-DD format. Must match the HR-approved effective date (e.g. 2026-09-01)."
+
+  - id: schedule_access_review
+    name: schedule_access_review
+    description: >
+      Schedule a 90-day access review for compliance after a permission change.
+      Creates a review task assigned to the employee's manager.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: case_id
+        type: string
+        description: "The permission change case ID (e.g. CASE-ACCT-048271)."
+      - name: employee_id
+        type: string
+        description: "The employee whose access will be reviewed (e.g. EMP048271)."
+      - name: review_date
+        type: string
+        description: "The review date in YYYY-MM-DD format, 90 days after the permission change effective date (±3 days tolerance is acceptable). Example: 2026-11-30."
+
+  # ── FLOW 18: ACCESS REMOVAL (OFF-BOARDING) ─────────────────────────────────
+
+  - id: get_offboarding_record
+    name: get_offboarding_record
+    description: >
+      Look up an off-boarding record for an employee. Returns the off-boarding
+      status, last working day, and whether access removal has already been
+      initiated. Returns no_offboarding_record if HR has not yet filed one.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The departing employee's ID (e.g. EMP072948)."
+
+  - id: submit_access_removal
+    name: submit_access_removal
+    description: >
+      Remove all system access for a departing employee. This is permanent and
+      cannot be undone through the service desk.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: manager_employee_id
+        type: string
+        description: "The requesting manager's employee ID (e.g. EMP048271)."
+      - name: departing_employee_id
+        type: string
+        description: "The departing employee's ID (e.g. EMP072948)."
+      - name: last_working_day
+        type: string
+        description: "The employee's last working day from the off-boarding record, in YYYY-MM-DD format (e.g. 2026-08-29)."
+      - name: removal_scope
+        type: string
+        enum: [full, staged]
+        description: "Scope of removal. full = all systems and groups immediately removed; staged = email and calendar preserved for 30 days for handoff, all other access removed immediately."
+
+  - id: initiate_asset_recovery
+    name: initiate_asset_recovery
+    description: >
+      Initiate recovery of company hardware from a departing employee after their
+      access has been removed. Retrieves the employee's assigned assets and
+      creates a recovery order with pickup or shipping instructions.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: departing_employee_id
+        type: string
+        description: "The departing employee's ID (e.g. EMP072948)."
+      - name: case_id
+        type: string
+        description: "The access removal case ID (e.g. CASE-ACCT-072948)."
+      - name: recovery_method
+        type: string
+        enum: [shipping_label, drop_off]
+        description: "How equipment will be recovered. shipping_label = a prepaid label is mailed and the employee ships devices back; drop_off = the employee returns devices in person to an IT office."
+
+  # ── FLOW 19: SECURITY INCIDENT / STOLEN DEVICE ─────────────────────────────
+
+  - id: report_security_incident
+    name: report_security_incident
+    description: >
+      Open a security case for a lost, stolen, or potentially compromised
+      company device. Returns a security case ID.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee reporting the incident (e.g. EMP048271)."
+      - name: asset_tag
+        type: string
+        description: "The asset tag of the affected device, which must be assigned to the caller (e.g. AST-LPT-284719)."
+      - name: incident_type
+        type: string
+        enum: [lost, stolen, suspected_compromise]
+        description: "The type of security incident."
+
+  - id: initiate_remote_wipe
+    name: initiate_remote_wipe
+    description: >
+      Dispatch a remote wipe command to a compromised device. Links the wipe
+      to an existing security case.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: asset_tag
+        type: string
+        description: "The asset tag of the device to wipe (e.g. AST-LPT-284719)."
+      - name: security_case_id
+        type: string
+        description: "The security case ID to link the wipe to (e.g. SEC-048271)."
+
+  # ── FLOW 20: MFA RESET (refusal + escalation) ──────────────────────────────
+
+  - id: submit_mfa_reset
+    name: submit_mfa_reset
+    description: >
+      Submit a request to change the phone-of-record for MFA. This always
+      returns in_person_required because phone-of-record changes cannot be
+      completed over the phone. A security case is opened to track the
+      required in-person visit.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The employee requesting the change (e.g. EMP048271)."
+      - name: new_phone_last_four
+        type: string
+        description: "Last 4 digits of the new phone number the caller wants on file (e.g. 9912)."
+
+  # ── FLOW 21: SOFTWARE REQUEST STATUS / ESCALATION ──────────────────────────
+
+  - id: get_request_status
+    name: get_request_status
+    description: >
+      Look up the current status of a prior software or hardware request,
+      including approval routing, SLA deadline, and whether the SLA has been
+      breached.
+    tool_type: read
+    domain: itsm
+    required_parameters:
+      - name: request_id
+        type: string
+        description: "The request ID to look up (e.g. REQ-SW-048271)."
+
+  - id: escalate_approval
+    name: escalate_approval
+    description: >
+      Escalate a pending approval to a skip-level approver. Only succeeds if
+      the original SLA has been breached — returns an error if the SLA has not
+      yet been breached. Sets a new 48-hour SLA window on the escalation.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: request_id
+        type: string
+        description: "The request ID to escalate (e.g. REQ-SW-048271)."
+      - name: escalate_to_employee_id
+        type: string
+        description: "The skip-level approver's employee ID (e.g. EMP031482)."
+
+  # ── SYSTEM: TRANSFER TO LIVE AGENT ──────────────────────────────────────────
+
+  - id: transfer_to_agent
+    name: transfer_to_agent
+    description: >
+      Transfer the call to a live human agent. Use when the caller explicitly
+      requests a live agent, when the issue cannot be resolved, or when a
+      situation exceeds the automated agent's authority.
+    tool_type: system
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The caller's employee ID (e.g. EMP048271)."
+      - name: transfer_reason
+        type: string
+        enum: [caller_requested, policy_exception_needed, unable_to_resolve, complaint_escalation, technical_issue]
+        description: "The reason for transferring the call."
+      - name: issue_summary
+        type: string
+        description: "A brief summary of the request, what was attempted, and why transfer is needed, so the live agent has full context."
+
+  - id: mark_resolved
+    name: mark_resolved
+    description: >
+      Record that a call was resolved without creating a ticket. Used when
+      troubleshooting, an account unlock, or a password reset resolved the
+      caller's issue directly. Writes an interaction record so the call has
+      a concrete state change even when no ticket was created.
+    tool_type: write
+    domain: itsm
+    required_parameters:
+      - name: employee_id
+        type: string
+        description: "The caller's employee ID (e.g. EMP048271)."
+      - name: flow_id
+        type: string
+        enum: [login_issue, network_connectivity, hardware_malfunction]
+        description: "The type of issue that was resolved."
+      - name: resolution_type
+        type: string
+        enum: [resolved_via_troubleshooting, transferred]
+        description: "How the issue was resolved. resolved_via_troubleshooting covers all cases where the issue was fixed during the call (including successful unlocks and password resets)."

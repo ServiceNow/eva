@@ -1,0 +1,365 @@
+{
+  "_current_date": "2026-09-13",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ACLS"
+    ],
+    "5A-SURG": [
+      "BLS",
+      "ACLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ],
+    "6R-RAD": [
+      "BLS",
+      "ACLS"
+    ]
+  },
+  "providers": {
+    "8995059760": {
+      "npi": "8995059760",
+      "employee_id": "EMP742412",
+      "first_name": "Brigitte",
+      "last_name": "Fontaine",
+      "facility_code": "GGQ-76P",
+      "pin": "4919",
+      "phone_last_four": "8421",
+      "otp_code": "387936",
+      "role_code": "MD",
+      "department_code": "RADIOLOGY",
+      "hire_date": "2018-07-16",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-OLD999",
+      "licenses": {
+        "PA-MD-482193": {
+          "state_license_number": "PA-MD-482193",
+          "license_type": "MD",
+          "state_code": "PA",
+          "expiration_date": "2027-06-30",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-RT4821",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "LS4934150",
+        "facility_code": "GGQ-76P",
+        "state_code": "PA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-11-30",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-CARD-007",
+            "description": "Cardiac imaging interpretation",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-ECHO-006",
+            "description": "Echocardiography supervision",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-RAD-003",
+            "description": "General diagnostic radiology",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    },
+    "1776543210": {
+      "npi": "1776543210",
+      "employee_id": "EMP551100",
+      "first_name": "Alan",
+      "last_name": "Mercer",
+      "facility_code": "IXA-11C",
+      "pin": "2284",
+      "phone_last_four": "1100",
+      "otp_code": "224488",
+      "role_code": "MD",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2016-03-09",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-551100",
+      "licenses": {
+        "PA-MD-771245": {
+          "state_license_number": "PA-MD-771245",
+          "license_type": "MD",
+          "state_code": "PA",
+          "expiration_date": "2027-09-30",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2026-AL1100",
+        "per_occurrence_limit_usd": 2000000,
+        "aggregate_limit_usd": 6000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BM4729183",
+        "facility_code": "IXA-11C",
+        "state_code": "PA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2028-01-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-CARD-002",
+            "description": "Cardiology consults",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP742412": {
+      "employee_id": "EMP742412",
+      "first_name": "Brigitte",
+      "last_name": "Fontaine",
+      "date_of_birth": "1984-02-19",
+      "phone_last_four": "8421",
+      "otp_code": "387936",
+      "department_code": "RADIOLOGY",
+      "role_code": "MD",
+      "unit_code": "6R-RAD",
+      "hire_date": "2018-07-16",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 98,
+        "hours_worked_past_year": 1680,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "personal",
+          "start_date": "2026-06-01",
+          "end_date": "2026-10-04",
+          "status": "approved",
+          "case_id": "CASE-LOA-742412"
+        }
+      ],
+      "pto_balances": {
+        "pto": 14.5,
+        "sick": 5.0
+      },
+      "pto_requests": []
+    },
+    "EMP551100": {
+      "employee_id": "EMP551100",
+      "first_name": "Alan",
+      "last_name": "Mercer",
+      "date_of_birth": "1977-11-03",
+      "phone_last_four": "1100",
+      "otp_code": "224488",
+      "department_code": "CARDIOLOGY",
+      "role_code": "MD",
+      "unit_code": "4B-ICU",
+      "hire_date": "2016-03-09",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS",
+        "CCRN"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 126,
+        "hours_worked_past_year": 1900,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 18.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260920-0800": {
+      "shift_id": "SHF-20260920-0800",
+      "employee_id": "EMP742412",
+      "unit_code": "6R-RAD",
+      "date": "2026-09-20",
+      "start_time": "08:00",
+      "end_time": "16:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-09-26",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "RADIOLOGY": {
+        "2026-09-18": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-09-22": [
+          "10:00",
+          "14:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "RADIOLOGY": {
+        "2026-10-05": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-10-06": [
+          "10:00",
+          "15:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "RADIOLOGY": {
+        "2026-10-01": [
+          "09:00",
+          "10:00",
+          "14:00"
+        ],
+        "2026-10-02": [
+          "08:00",
+          "11:00"
+        ],
+        "2026-10-06": [
+          "09:00",
+          "13:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-09-07",
+    "2026-11-26",
+    "2026-12-25"
+  ],
+  "department_blackout_dates": {
+    "RADIOLOGY": [],
+    "CARDIOLOGY": [],
+    "EMERGENCY": [],
+    "ONCOLOGY": [],
+    "SURGERY": [],
+    "PEDIATRICS": []
+  }
+}

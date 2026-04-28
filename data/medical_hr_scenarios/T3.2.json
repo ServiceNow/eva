@@ -1,0 +1,236 @@
+{
+  "_current_date": "2026-06-06",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "7767834064": {
+      "npi": "7767834064",
+      "employee_id": "EMP428267",
+      "first_name": "Mira",
+      "last_name": "Jovanovic",
+      "facility_code": "KQHK-51F",
+      "pin": "8538",
+      "phone_last_four": "4821",
+      "otp_code": "972442",
+      "role_code": "MD",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2019-08-12",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {
+        "FL-MD-23386644": {
+          "state_license_number": "FL-MD-23386644",
+          "license_type": "MD",
+          "state_code": "FL",
+          "expiration_date": "2026-06-28",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2025-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2025-06-24",
+        "expiration_date": "2026-06-23",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "RJ8326807",
+        "facility_code": "KQHK-51F",
+        "state_code": "FL",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-11-30",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-CARD-001",
+            "description": "General cardiology consults",
+            "status": "active"
+          },
+          {
+            "code": "PRV-CARD-002",
+            "description": "Stress test interpretation",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP428267": {
+      "employee_id": "EMP428267",
+      "first_name": "Mira",
+      "last_name": "Jovanovic",
+      "date_of_birth": "1987-09-14",
+      "phone_last_four": "4821",
+      "otp_code": "972442",
+      "department_code": "CARDIOLOGY",
+      "role_code": "MD",
+      "unit_code": "4B-ICU",
+      "hire_date": "2019-08-12",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 82,
+        "hours_worked_past_year": 1840,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 15.0,
+        "sick": 5.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260610-0700": {
+      "shift_id": "SHF-20260610-0700",
+      "employee_id": "EMP428267",
+      "unit_code": "4B-ICU",
+      "date": "2026-06-10",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": 8.0,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "logged",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-06-14",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "CARDIOLOGY": {
+        "2026-06-16": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-06-18": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ],
+        "2026-06-22": [
+          "09:30",
+          "12:30"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "CARDIOLOGY": {
+        "2026-06-16": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-06-18": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-06-22": [
+          "09:30",
+          "15:30"
+        ]
+      }
+    },
+    "competency_review": {
+      "CARDIOLOGY": {
+        "2026-06-16": [
+          "08:00",
+          "10:00"
+        ],
+        "2026-06-18": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-06-22": [
+          "11:00",
+          "15:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "CARDIOLOGY": []
+  }
+}

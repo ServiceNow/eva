@@ -1,0 +1,311 @@
+{
+  "_current_date": "2026-08-13",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONS"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "1749459431": {
+      "npi": "1749459431",
+      "employee_id": "EMP937302",
+      "first_name": "Adaeze",
+      "last_name": "Obi",
+      "facility_code": "WDJU-85K",
+      "pin": "1258",
+      "phone_last_four": "4821",
+      "otp_code": "282710",
+      "role_code": "MD",
+      "department_code": "PATHOLOGY",
+      "hire_date": "2020-07-06",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-378258",
+      "licenses": {
+        "MA-MD-384275": {
+          "state_license_number": "MA-MD-384275",
+          "license_type": "MD",
+          "state_code": "MA",
+          "expiration_date": "2027-06-30",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        },
+        "FL-MD-592184": {
+          "state_license_number": "FL-MD-592184",
+          "license_type": "MD",
+          "state_code": "FL",
+          "expiration_date": "2028-03-31",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2025-QM7L2A",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2025-09-01",
+        "expiration_date": "2026-09-01",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "JP8583392",
+        "facility_code": "WDJU-85K",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-12-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-CARD-003",
+            "description": "Cardiac consultation privileges",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-ECHO-009",
+            "description": "Echocardiography interpretation privileges",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-PATH-011",
+            "description": "General pathology review",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP937302": {
+      "employee_id": "EMP937302",
+      "first_name": "Adaeze",
+      "last_name": "Obi",
+      "date_of_birth": "1988-11-04",
+      "phone_last_four": "4821",
+      "otp_code": "282710",
+      "department_code": "PATHOLOGY",
+      "role_code": "MD",
+      "unit_code": "2A-MED",
+      "hire_date": "2020-07-06",
+      "employment_status": "on_leave",
+      "certifications": [
+        "BLS",
+        "ACLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 73,
+        "hours_worked_past_year": 1760,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "medical",
+          "start_date": "2026-05-15",
+          "end_date": "2026-08-20",
+          "status": "approved",
+          "case_id": "CASE-MLV-937302"
+        }
+      ],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    },
+    "EMP441208": {
+      "employee_id": "EMP441208",
+      "first_name": "Jordan",
+      "last_name": "Lee",
+      "date_of_birth": "1990-02-17",
+      "phone_last_four": "1168",
+      "otp_code": "551904",
+      "department_code": "SURGERY",
+      "role_code": "RN",
+      "unit_code": "4B-ICU",
+      "hire_date": "2021-03-22",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS",
+        "CCRN"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 64,
+        "hours_worked_past_year": 1872,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 12.0,
+        "sick": 4.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260820-0700": {
+      "shift_id": "SHF-20260820-0700",
+      "employee_id": "EMP937302",
+      "unit_code": "2A-MED",
+      "date": "2026-08-20",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-29",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "PATHOLOGY": {
+        "2026-08-21": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-08-25": [
+          "10:00",
+          "13:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "PATHOLOGY": {
+        "2026-08-21": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-08-24": [
+          "10:00",
+          "15:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "PATHOLOGY": {
+        "2026-08-28": [
+          "10:00",
+          "11:30",
+          "14:00"
+        ],
+        "2026-08-29": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-09-02": [
+          "08:30",
+          "10:30"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-09-07",
+    "2026-11-26",
+    "2026-12-25"
+  ],
+  "department_blackout_dates": {
+    "PATHOLOGY": [],
+    "SURGERY": [
+      "2026-11-27"
+    ],
+    "CARDIOLOGY": [],
+    "EMERGENCY": [],
+    "ONCOLOGY": [],
+    "PEDIATRICS": [],
+    "RADIOLOGY": []
+  }
+}

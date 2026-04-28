@@ -1,0 +1,231 @@
+{
+  "_current_date": "2026-08-17",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "ACLS",
+      "BLS"
+    ],
+    "3C-ONC": [
+      "ACLS",
+      "BLS",
+      "ONC"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "7161404428": {
+      "npi": "7161404428",
+      "employee_id": "EMP725550",
+      "first_name": "Aleksandr",
+      "last_name": "Petrov",
+      "facility_code": "ULZD-83G",
+      "pin": "5173",
+      "phone_last_four": "2841",
+      "otp_code": "482731",
+      "role_code": "PA",
+      "department_code": "SURGERY",
+      "hire_date": "2026-05-12",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {
+        "NC-PA-89138359": {
+          "state_license_number": "NC-PA-89138359",
+          "license_type": "PA",
+          "state_code": "NC",
+          "expiration_date": "2026-09-15",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": "pending",
+          "extension_type": "provisional",
+          "extension_days": 90,
+          "supervising_physician_npi": null,
+          "extension_case_id": "CASE-LIC-725550"
+        }
+      },
+      "malpractice": null,
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "ULZD-83G",
+        "state_code": "NC",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2028-03-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-SURG-101",
+            "description": "First assist in general surgery",
+            "status": "active"
+          },
+          {
+            "code": "PRV-SURG-205",
+            "description": "Minor bedside procedures",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP725550": {
+      "employee_id": "EMP725550",
+      "first_name": "Aleksandr",
+      "last_name": "Petrov",
+      "date_of_birth": "1988-04-22",
+      "phone_last_four": "2841",
+      "otp_code": "482731",
+      "department_code": "SURGERY",
+      "role_code": "PA",
+      "unit_code": "5A-SURG",
+      "hire_date": "2026-05-12",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS",
+        "TNCC"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 15,
+        "hours_worked_past_year": 1560,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 15.0,
+        "sick": 5.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260821-0700": {
+      "shift_id": "SHF-20260821-0700",
+      "employee_id": "EMP725550",
+      "unit_code": "5A-SURG",
+      "date": "2026-08-21",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-08-29",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "SURGERY": {
+        "2026-08-19": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-08-21": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ],
+        "2026-08-24": [
+          "09:30",
+          "12:00",
+          "16:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "SURGERY": {
+        "2026-08-20": [
+          "09:00",
+          "11:30"
+        ],
+        "2026-08-25": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-08-28": [
+          "08:30",
+          "13:30"
+        ]
+      }
+    },
+    "competency_review": {
+      "SURGERY": {
+        "2026-08-22": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-08-26": [
+          "10:00",
+          "15:00"
+        ],
+        "2026-08-29": [
+          "11:00",
+          "14:30"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-09-07",
+    "2026-11-26",
+    "2026-12-25"
+  ],
+  "department_blackout_dates": {
+    "SURGERY": []
+  }
+}

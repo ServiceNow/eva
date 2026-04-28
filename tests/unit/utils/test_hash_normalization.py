@@ -162,6 +162,18 @@ class TestGetDictHash:
         d2 = {"a": 2, "b": 1}
         assert get_dict_hash(d1) == get_dict_hash(d2)
 
+    def test_session_key_excluded_from_hash(self):
+        """Session key should not affect the hash."""
+        db_without_session = {"reservations": {"ABC": {"status": "confirmed"}}}
+        db_with_session = {**db_without_session, "session": {"confirmation_number": "ABC", "last_name": "doe"}}
+        assert get_dict_hash(db_without_session) == get_dict_hash(db_with_session)
+
+    def test_different_sessions_produce_same_hash(self):
+        """Two DBs identical except for session content should hash the same."""
+        db_session_a = {"reservations": {}, "session": {"confirmation_number": "AAA", "last_name": "smith"}}
+        db_session_b = {"reservations": {}, "session": {"confirmation_number": "BBB", "last_name": "jones"}}
+        assert get_dict_hash(db_session_a) == get_dict_hash(db_session_b)
+
 
 class TestComputeDbDiff:
     def test_no_diff_after_normalization(self):
@@ -262,3 +274,24 @@ class TestStandbyListOrderIndependence:
         """Segments reordering should produce a diff."""
         diff = compute_db_diff(DB_DIFFERENT_SEGMENTS, DB_DIFFERENT_SEGMENTS_REVERSED)
         assert diff["tables_modified"] != {}
+
+
+# ---------------------------------------------------------------------------
+# Order-independent list semantics
+# ---------------------------------------------------------------------------
+
+
+class TestOrderIndependentLists:
+    def test_bookings_list_order_independent(self):
+        """Bookings list ordering should not affect the hash — bookings is aset, not a sequence."""
+        booking_a = {"booking_id": "B1", "date": "2026-07-06", "start_time": "10:00"}
+        booking_b = {"booking_id": "B2", "date": "2026-07-07", "start_time": "14:00"}
+        db_a = {"facilities": {"conference_rooms": {"RM-1": {"bookings": [booking_a, booking_b]}}}}
+        db_b = {"facilities": {"conference_rooms": {"RM-1": {"bookings": [booking_b, booking_a]}}}}
+        assert get_dict_hash(db_a) == get_dict_hash(db_b)
+
+    def test_session_still_excluded(self):
+        """Session subtree must remain excluded from the hash."""
+        a = {"session": {"otp_auth": True}, "requests": {}}
+        b = {"session": {"otp_auth": False}, "requests": {}}
+        assert get_dict_hash(a) == get_dict_hash(b)

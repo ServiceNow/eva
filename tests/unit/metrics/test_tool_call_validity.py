@@ -21,6 +21,65 @@ async def test_no_tool_calls(metric):
     assert result.score == 1.0
     assert result.normalized_score == 1.0
     assert result.details["total_tool_calls"] == 0
+    assert result.sub_metrics is not None
+    assert "num_tool_calls" in result.sub_metrics
+    assert result.sub_metrics["num_tool_calls"].score == 0.0
+    assert result.sub_metrics["num_tool_calls"].normalized_score is None
+
+
+@pytest.mark.asyncio
+async def test_sub_metrics_num_tool_calls_and_error_rates(metric):
+    """Sub-metrics surface num_tool_calls count and per-error-type rates."""
+    tool_params = [
+        {"tool_name": "get_reservation", "tool_parameters": {}},
+        {"tool_name": "get_reservation", "tool_parameters": {}},
+        {"tool_name": "rebook_flight", "tool_parameters": {}},
+        {"tool_name": "search_rebooking_options", "tool_parameters": {}},
+    ]
+    tool_responses = [
+        {
+            "tool_name": "get_reservation",
+            "tool_response": {"status": "error", "error_type": "invalid_parameter", "message": "bad"},
+        },
+        {
+            "tool_name": "get_reservation",
+            "tool_response": {"status": "error", "error_type": "invalid_parameter", "message": "bad"},
+        },
+        {
+            "tool_name": "rebook_flight",
+            "tool_response": {"status": "error", "error_type": "execution_error", "message": "boom"},
+        },
+        {
+            "tool_name": "search_rebooking_options",
+            "tool_response": {"status": "success"},
+        },
+    ]
+    context = make_metric_context(tool_params=tool_params, tool_responses=tool_responses)
+    result = await metric.compute(context)
+
+    assert result.sub_metrics is not None
+    count_sub = result.sub_metrics["num_tool_calls"]
+    assert count_sub.name == "tool_call_validity.num_tool_calls"
+    assert count_sub.score == 4.0
+    assert count_sub.normalized_score is None
+
+    # Every known error type has a sub-metric (rate = 0 when absent).
+    for error_type in CALL_ERROR_TYPES:
+        key = f"{error_type}_rate"
+        assert key in result.sub_metrics
+
+    inv = result.sub_metrics["invalid_parameter_rate"]
+    assert inv.score == pytest.approx(0.5)
+    assert inv.normalized_score == pytest.approx(0.5)
+    assert inv.details == {"count": 2, "total_tool_calls": 4}
+
+    exec_err = result.sub_metrics["execution_error_rate"]
+    assert exec_err.score == pytest.approx(0.25)
+    assert exec_err.details == {"count": 1, "total_tool_calls": 4}
+
+    tool_not_found = result.sub_metrics["tool_not_found_rate"]
+    assert tool_not_found.score == 0.0
+    assert tool_not_found.details == {"count": 0, "total_tool_calls": 4}
 
 
 @pytest.mark.asyncio

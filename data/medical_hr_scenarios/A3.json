@@ -1,0 +1,257 @@
+{
+  "_current_date": "2026-07-17",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONC-CERT"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "8598503901": {
+      "npi": "8598503901",
+      "employee_id": "EMP963333",
+      "first_name": "Amina",
+      "last_name": "Diagne",
+      "facility_code": "MGH-04B",
+      "pin": "4821",
+      "phone_last_four": "4829",
+      "otp_code": "773540",
+      "role_code": "MD",
+      "department_code": "ORTHOPEDICS",
+      "hire_date": "2019-03-11",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-177767",
+      "licenses": {
+        "MA-MD-177767": {
+          "state_license_number": "MA-MD-177767",
+          "license_type": "MD",
+          "state_code": "MA",
+          "expiration_date": "2027-06-30",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-AM1777",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-08-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-SURG-008",
+            "description": "Orthopedic surgical privileges",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-ICU-008",
+            "description": "ICU admitting and management privileges",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-CLIN-002",
+            "description": "General outpatient clinical privileges",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP963333": {
+      "employee_id": "EMP963333",
+      "first_name": "Amina",
+      "last_name": "Diagne",
+      "date_of_birth": "1988-11-24",
+      "phone_last_four": "4829",
+      "otp_code": "773540",
+      "department_code": "ORTHOPEDICS",
+      "role_code": "MD",
+      "unit_code": "5A-SURG",
+      "hire_date": "2019-03-11",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS",
+        "TNCC"
+      ],
+      "schedule_type": "shift",
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 88,
+        "hours_worked_past_year": 1760,
+        "fmla_weeks_remaining": 8,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "fmla_leave",
+          "start_date": "2026-05-18",
+          "end_date": "2026-07-16",
+          "status": "completed",
+          "case_id": "CASE-FMLA-963333"
+        }
+      ],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260720-0700": {
+      "shift_id": "SHF-20260720-0700",
+      "employee_id": "EMP963333",
+      "unit_code": "5A-SURG",
+      "date": "2026-07-20",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-07-31",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "ORTHOPEDICS": {
+        "2026-07-24": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-27": [
+          "09:00",
+          "10:00",
+          "13:00"
+        ],
+        "2026-07-29": [
+          "08:30",
+          "10:30"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "ORTHOPEDICS": {
+        "2026-07-20": [
+          "09:00",
+          "10:00"
+        ],
+        "2026-07-22": [
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-27": [
+          "09:00",
+          "15:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "ORTHOPEDICS": {
+        "2026-07-24": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-07-27": [
+          "10:00",
+          "14:00"
+        ],
+        "2026-07-29": [
+          "08:30",
+          "13:30"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "ORTHOPEDICS": [],
+    "CARDIOLOGY": [],
+    "EMERGENCY": [],
+    "ONCOLOGY": [],
+    "SURGERY": [],
+    "PEDIATRICS": [],
+    "RADIOLOGY": []
+  }
+}

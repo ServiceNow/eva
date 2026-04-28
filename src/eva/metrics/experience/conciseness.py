@@ -4,6 +4,15 @@ from typing import Any
 
 from eva.metrics.base import MetricContext, PerTurnConversationJudgeMetric
 from eva.metrics.registry import register_metric
+from eva.metrics.utils import make_rate_sub_metric
+from eva.models.results import MetricScore
+
+_CONCISENESS_FAILURE_MODES = (
+    "verbosity_or_filler",
+    "excess_information_density",
+    "over_enumeration_or_list_exhaustion",
+    "contextually_disproportionate_detail",
+)
 
 
 @register_metric
@@ -51,3 +60,30 @@ class ConcisenessJudgeMetric(PerTurnConversationJudgeMetric):
             failure_modes = []
 
         return {"failure_modes": failure_modes}
+
+    def build_sub_metrics(
+        self,
+        context: MetricContext,
+        per_turn_ratings: dict[int, int | None],
+        per_turn_extra: dict[int, dict[str, Any]],
+    ) -> dict[str, MetricScore] | None:
+        """Surface one sub-metric per failure mode, rate = flagged turns / rated turns."""
+        rated_turn_ids = [tid for tid, r in per_turn_ratings.items() if r is not None]
+        num_rated = len(rated_turn_ids)
+        if num_rated == 0:
+            return None
+
+        sub_metrics: dict[str, MetricScore] = {}
+        for mode in _CONCISENESS_FAILURE_MODES:
+            flagged_ids = [
+                tid for tid in rated_turn_ids if mode in (per_turn_extra.get(tid, {}).get("failure_modes") or [])
+            ]
+            sub_key = f"{mode}_rate"
+            sub_metrics[sub_key] = make_rate_sub_metric(
+                parent_name=self.name,
+                key=sub_key,
+                numerator=len(flagged_ids),
+                denominator=num_rated,
+                details={"count": len(flagged_ids), "num_rated": num_rated, "turn_ids": flagged_ids},
+            )
+        return sub_metrics

@@ -38,6 +38,7 @@ def _make_simulator(tmp_path: Path, **overrides) -> UserSimulator:
         },
         "server_url": "ws://localhost:9999",
         "output_dir": tmp_path,
+        "agent_id": "agent_airline",
         "timeout": 60,
     }
     defaults.update(overrides)

@@ -1,37 +1,39 @@
 """Validation metrics runner for benchmark validation mode."""
 
+import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from eva.metrics.runner import MetricsRunner
 from eva.models.record import EvaluationRecord
 from eva.models.results import RecordMetrics
-from eva.utils.conversation_checks import check_conversation_finished
 from eva.utils.logging import get_logger
-from eva.utils.pass_at_k import parse_trial_record_id
 
 logger = get_logger(__name__)
+
+GATE_METRIC = "conversation_valid_end"
+LLM_METRICS = ["user_behavioral_fidelity", "user_speech_fidelity"]
 
 
 @dataclass
 class ValidationResult:
-    """Result of validating a single record."""
+    """Result of validating a single record.
+
+    Empty ``failed_metrics`` with ``passed=False`` means the gate rejected the
+    record before metrics ran (``not_finished``); a populated list means one or
+    more metrics fell below threshold.
+    """
 
     passed: bool
     failed_metrics: list[str] = field(default_factory=list)
-    failure_category: str = "passed"  # "not_finished" | "validation_failed" | "passed"
     scores: dict[str, float] = field(default_factory=dict)
-    details: dict[str, dict] = field(default_factory=dict)  # {metric_name: metric_score.details}
+    details: dict[str, dict] = field(default_factory=dict)
 
 
 class ValidationRunner:
-    """Runs validation metrics to identify failed records."""
+    """Two-phase validation: gate-metric filter, then LLM metrics on gate-passed records."""
 
-    VALIDATION_METRICS = [
-        "conversation_finished",
-        "user_behavioral_fidelity",
-        "user_speech_fidelity",
-    ]
+    VALIDATION_METRICS = [GATE_METRIC] + LLM_METRICS
 
     def __init__(
         self,
@@ -39,113 +41,60 @@ class ValidationRunner:
         dataset: list[EvaluationRecord],
         thresholds: dict[str, float],
         metric_configs: dict[str, dict] | None = None,
-        skip_conversation_finished: bool = False,
         output_ids: list[str] | None = None,
     ):
-        """Initialize the validation runner.
-
-        Args:
-            run_dir: Directory containing benchmark outputs
-            dataset: List of evaluation records (for ground truth)
-            thresholds: Validation metric thresholds for pass/fail decisions
-            metric_configs: Configuration for specific metrics
-            skip_conversation_finished: If True, skip conversation_finished metric
-                (used when inline gate already guarantees it passed)
-            output_ids: If provided, use these as record directory names instead
-                of deriving from dataset record IDs. Needed for nested trial dirs
-                (e.g., "1.2.1/trial_0").
-        """
         self.run_dir = Path(run_dir)
         self.dataset = dataset
         self.thresholds = thresholds
         self.metric_configs = metric_configs or {}
-        self.skip_conversation_finished = skip_conversation_finished
         self.output_ids = output_ids
 
+        # Shared MetricsRunners for validate_one() — lazily initialized on first call.
+        # Safe for concurrent calls on different output_ids (asyncio single-threaded).
+        self._shared_gate_runner: MetricsRunner | None = None
+        self._shared_llm_runner: MetricsRunner | None = None
+        self._runner_init_lock = asyncio.Lock()
+
     async def run_validation(self) -> dict[str, ValidationResult]:
-        """Run validation metrics and return results per record.
-
-        When skip_conversation_finished is False (existing output), runs
-        conversation_finished first on all records as a fast gate, then only
-        runs remaining metrics on records that pass.
-
-        Returns:
-            Dict mapping record_id -> ValidationResult
-        """
         validation_results: dict[str, ValidationResult] = {}
+        check_ids = self.output_ids if self.output_ids is not None else [r.id for r in self.dataset]
+        logger.info(f"Validation: processing {len(check_ids)} records, metrics={self.VALIDATION_METRICS}")
+        logger.info(f"Thresholds: {self.thresholds}")
 
-        if self.skip_conversation_finished:
-            # Inline gate already handled conversation_finished.
-            # Only run the remaining validation metrics.
-            metrics_to_run = [m for m in self.VALIDATION_METRICS if m != "conversation_finished"]
-            logger.info(f"Running validation metrics (conversation_finished skipped): {', '.join(metrics_to_run)}")
-            logger.info(f"Thresholds: {self.thresholds}")
+        gate_runner = MetricsRunner(
+            run_dir=self.run_dir,
+            dataset=self.dataset,
+            metric_names=[GATE_METRIC],
+            metric_configs=self.metric_configs,
+            record_ids=check_ids,
+        )
+        contexts = gate_runner.process_records()
+        gate_run = await gate_runner.run(contexts=contexts)
 
-            record_ids = self.output_ids if self.output_ids is not None else [r.id for r in self.dataset]
+        gate_passed, not_finished, agent_timeout_ids = self._partition(check_ids, gate_run.all_metrics)
+        logger.info(
+            f"Gate: {len(gate_passed)} passed ({len(agent_timeout_ids)} agent_timeout_on_user_turn), "
+            f"{len(not_finished)} not_finished"
+        )
+
+        for record_id in not_finished:
+            validation_results[record_id] = ValidationResult(passed=False)
+
+        if gate_passed:
             metrics_runner = MetricsRunner(
                 run_dir=self.run_dir,
                 dataset=self.dataset,
-                metric_names=metrics_to_run,
+                metric_names=LLM_METRICS,
                 metric_configs=self.metric_configs,
-                record_ids=record_ids,
+                record_ids=gate_passed,
             )
-            metrics_run = await metrics_runner.run()
+            passed_contexts = {rid: contexts[rid] for rid in gate_passed if rid in contexts}
+            metrics_run = await metrics_runner.run(contexts=passed_contexts)
 
             for record_id, record_metrics in metrics_run.all_metrics.items():
-                vr = self._evaluate_record(record_id, record_metrics, metrics_to_run)
+                vr = self._evaluate_record(record_id, record_metrics, LLM_METRICS)
+                vr.scores[GATE_METRIC] = 1.0
                 validation_results[record_id] = vr
-                if not vr.passed:
-                    logger.info(f"Record {record_id} failed validation: {', '.join(vr.failed_metrics)}")
-        else:
-            # Full validation: check conversation_finished first as a fast gate
-            logger.info(f"Running validation metrics: {', '.join(self.VALIDATION_METRICS)}")
-            logger.info(f"Thresholds: {self.thresholds}")
-
-            # Stage 1: Fast conversation_finished check on all records
-            records_dir = self.run_dir / "records"
-            finished_record_ids: list[str] = []
-            not_finished_records: list[str] = []
-
-            check_ids = self.output_ids if self.output_ids is not None else [r.id for r in self.dataset]
-            for record_id in check_ids:
-                record_dir = records_dir / record_id
-                if check_conversation_finished(record_dir):
-                    finished_record_ids.append(record_id)
-                else:
-                    not_finished_records.append(record_id)
-                    validation_results[record_id] = ValidationResult(
-                        passed=False,
-                        failed_metrics=["conversation_finished"],
-                        failure_category="not_finished",
-                        scores={"conversation_finished": 0.0},
-                    )
-
-            if not_finished_records:
-                logger.info(
-                    f"Short-circuit: {len(not_finished_records)} records failed "
-                    f"conversation_finished check, skipping other metrics for them"
-                )
-
-            # Stage 2: Run remaining metrics only on records that passed stage 1
-            if finished_record_ids:
-                remaining_metrics = [m for m in self.VALIDATION_METRICS if m != "conversation_finished"]
-                finished_base_ids = {parse_trial_record_id(rid)[0] for rid in finished_record_ids}
-                finished_dataset = [r for r in self.dataset if r.id in finished_base_ids]
-
-                metrics_runner = MetricsRunner(
-                    run_dir=self.run_dir,
-                    dataset=finished_dataset,
-                    metric_names=remaining_metrics,
-                    metric_configs=self.metric_configs,
-                    record_ids=finished_record_ids,
-                )
-                metrics_run = await metrics_runner.run()
-
-                for record_id, record_metrics in metrics_run.all_metrics.items():
-                    vr = self._evaluate_record(record_id, record_metrics, remaining_metrics)
-                    # Add conversation_finished score since we know it passed
-                    vr.scores["conversation_finished"] = 1.0
-                    validation_results[record_id] = vr
 
         passed_count = sum(1 for vr in validation_results.values() if vr.passed)
         total_count = len(validation_results)
@@ -154,22 +103,93 @@ class ValidationRunner:
 
         return validation_results
 
+    async def validate_one(self, output_id: str) -> ValidationResult:
+        """Validate a single record inline for per-record pipelining.
+
+        Runs a two-phase check matching run_validation():
+        1. Gate metric (conversation_valid_end) — fast fail if the conversation didn't
+           end properly. Returns ValidationResult(passed=False, failed_metrics=[]) which
+           signals "not_finished" to the caller (empty failed_metrics convention).
+        2. LLM metrics (user_behavioral_fidelity, user_speech_fidelity) — only run if
+           the gate passed.
+
+        Both MetricsRunners are lazily initialized on first call and shared across
+        concurrent calls — safe because asyncio is single-threaded.
+
+        Args:
+            output_id: Record directory name (e.g. "1.2.1" or "1.2.1/trial_0").
+
+        Returns:
+            ValidationResult with pass/fail details.
+        """
+        # Double-checked lazy init for both shared runners.
+        if self._shared_gate_runner is None:
+            async with self._runner_init_lock:
+                if self._shared_gate_runner is None:
+                    self._shared_gate_runner = MetricsRunner(
+                        run_dir=self.run_dir,
+                        dataset=self.dataset,
+                        metric_names=[GATE_METRIC],
+                        metric_configs=self.metric_configs,
+                    )
+                    self._shared_llm_runner = MetricsRunner(
+                        run_dir=self.run_dir,
+                        dataset=self.dataset,
+                        metric_names=LLM_METRICS,
+                        metric_configs=self.metric_configs,
+                    )
+
+        record_dir = self.run_dir / "records" / output_id
+
+        # Phase 1: gate metric
+        gate_metrics = await self._shared_gate_runner.run_and_save_record(output_id, record_dir)
+        rm = gate_metrics
+        ms = rm.metrics.get(GATE_METRIC) if rm else None
+        if ms is None or ms.error:
+            return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
+        score = ms.normalized_score if ms.normalized_score is not None else ms.score
+        if score != 1.0:
+            return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
+
+        # Phase 2: LLM metrics (gate passed)
+        llm_metrics = await self._shared_llm_runner.run_and_save_record(output_id, record_dir)
+        if llm_metrics is None:
+            return ValidationResult(passed=False, failed_metrics=list(LLM_METRICS))
+
+        vr = self._evaluate_record(output_id, llm_metrics, LLM_METRICS)
+        vr.scores[GATE_METRIC] = 1.0
+        return vr
+
+    @staticmethod
+    def _partition(
+        check_ids: list[str],
+        gate_metrics: dict[str, RecordMetrics],
+    ) -> tuple[list[str], list[str], set[str]]:
+        gate_passed: list[str] = []
+        not_finished: list[str] = []
+        agent_timeout: set[str] = set()
+
+        for record_id in check_ids:
+            rm = gate_metrics.get(record_id)
+            ms = rm.metrics.get(GATE_METRIC) if rm else None
+            if ms is None or ms.error:
+                not_finished.append(record_id)
+                continue
+            score = ms.normalized_score if ms.normalized_score is not None else ms.score
+            if score != 1.0:
+                not_finished.append(record_id)
+                continue
+            gate_passed.append(record_id)
+            if ms.details.get("reason") == "agent_timeout_on_user_turn":
+                agent_timeout.add(record_id)
+        return gate_passed, not_finished, agent_timeout
+
     def _evaluate_record(
         self,
         record_id: str,
         record_metrics: RecordMetrics,
         metrics_to_check: list[str],
     ) -> ValidationResult:
-        """Evaluate a single record against thresholds.
-
-        Args:
-            record_id: ID of the record being validated
-            record_metrics: Metrics computed for this record
-            metrics_to_check: Which metrics to check
-
-        Returns:
-            ValidationResult with pass/fail details
-        """
         failed_metrics: list[str] = []
         scores: dict[str, float] = {}
         details: dict[str, dict] = {}
@@ -189,11 +209,13 @@ class ValidationRunner:
                 failed_metrics.append(metric_name)
                 continue
 
+            if metric_score.skipped:
+                logger.debug(f"Record {record_id}: Metric '{metric_name}' was skipped")
+                continue
+
             score = metric_score.normalized_score if metric_score.normalized_score is not None else metric_score.score
             scores[metric_name] = score
 
-            # Special case: user_speech_fidelity uses per-turn ratings instead of threshold.
-            # If any per-turn rating is 1 → fail. Otherwise → pass (skip threshold check).
             if metric_name == "user_speech_fidelity" and metric_score.details:
                 per_turn_ratings = metric_score.details.get("per_turn_ratings", {})
                 has_low_fidelity = any(r == 1 for r in per_turn_ratings.values() if r is not None)
@@ -217,14 +239,8 @@ class ValidationRunner:
             return ValidationResult(
                 passed=False,
                 failed_metrics=failed_metrics,
-                failure_category="validation_failed",
                 scores=scores,
                 details=details,
             )
 
-        return ValidationResult(
-            passed=True,
-            failed_metrics=[],
-            failure_category="passed",
-            scores=scores,
-        )
+        return ValidationResult(passed=True, scores=scores)

@@ -7,6 +7,7 @@ import pytest
 import yaml
 
 from eva.metrics.runner import MetricsRunner
+from eva.models.config import PipelineType
 from eva.models.results import MetricScore, RecordMetrics
 from tests.unit.conftest import make_evaluation_record
 
@@ -14,11 +15,11 @@ from .conftest import make_metric_score
 
 
 class _FakeMetric:
-    """Minimal stand-in for BaseMetric — only ``name``, ``skip_audio_native``, and pass@k attrs are read."""
+    """Minimal stand-in for BaseMetric — only ``name``, ``supported_pipeline_types``, and pass@k attrs are read."""
 
     def __init__(self, name: str):
         self.name = name
-        self.skip_audio_native = False
+        self.supported_pipeline_types = frozenset(PipelineType)
         self.exclude_from_pass_at_k = False
         self.pass_at_k_threshold = 0.5
 
@@ -147,7 +148,7 @@ class TestMetricsRunner:
         runner = MetricsRunner(
             run_dir=run_dir,
             dataset=records,
-            metric_names=["conversation_finished"],
+            metric_names=["conversation_valid_end"],
         )
 
         async def mock_run_record(record_id, record_dir):
@@ -196,9 +197,9 @@ class TestMetricsRunner:
             captured_ids.append(record_id)
             return _make_record_metrics(record_id)
 
-        # Mock _run_and_save_record (not _run_record) to bypass caching logic —
+        # Mock run_and_save_record (not _run_record) to bypass caching logic —
         # this test is about directory discovery, not per-record computation.
-        runner._run_and_save_record = mock_run_and_save
+        runner.run_and_save_record = mock_run_and_save
 
         await runner.run()
 
@@ -231,7 +232,7 @@ class TestMetricsRunner:
             },
         )
 
-        result = await runner._run_and_save_record("rec-0", record_dir)
+        result = await runner.run_and_save_record("rec-0", record_dir)
 
         # _run_record was called (new_metric is missing)
         assert len(calls) == 1
@@ -268,7 +269,7 @@ class TestNormalModeCaching:
         runner = _make_runner(run_dir, records, ["m_a", "m_b"])
         calls = _install_mock(runner, {"rec-0": {"m_a": _ms("m_a", 0.99), "m_b": _ms("m_b", 0.99)}})
 
-        result = await runner._run_and_save_record("rec-0", record_dir)
+        result = await runner.run_and_save_record("rec-0", record_dir)
 
         assert len(calls) == 0, "_run_record should not be called"
         assert result.metrics["m_a"].score == 0.8  # original value
@@ -289,7 +290,7 @@ class TestNormalModeCaching:
             },
         )
 
-        result = await runner._run_and_save_record("rec-0", record_dir)
+        result = await runner.run_and_save_record("rec-0", record_dir)
 
         assert len(calls) == 1
         assert calls[0]["metrics_requested"] == {"m_a", "m_b"}
@@ -325,7 +326,7 @@ class TestNormalModeCaching:
             },
         )
 
-        result = await runner._run_and_save_record("rec-0", record_dir)
+        result = await runner.run_and_save_record("rec-0", record_dir)
 
         assert len(calls) == 1
         assert calls[0]["metrics_requested"] == {"m_b"}
@@ -351,7 +352,7 @@ class TestNormalModeCaching:
         runner = _make_runner(run_dir, records, ["m_a"])
         calls = _install_mock(runner, {"rec-0": {"m_a": _ms("m_a", 0.9)}})
 
-        result = await runner._run_and_save_record("rec-0", record_dir)
+        result = await runner.run_and_save_record("rec-0", record_dir)
 
         assert len(calls) == 0, "failed metric should not be rerun in normal mode"
         assert result.metrics["m_a"].error == "judge timeout"  # preserved
@@ -381,7 +382,7 @@ class TestNormalModeCaching:
             },
         )
 
-        result = await runner._run_and_save_record("rec-0", record_dir)
+        result = await runner.run_and_save_record("rec-0", record_dir)
 
         assert len(calls) == 1
         # m_a preserved, m_b written with error
@@ -434,8 +435,8 @@ class TestRerunMode:
         )
 
         # Process both records
-        r0 = await runner._run_and_save_record("rec-0", rec0_dir)
-        r1 = await runner._run_and_save_record("rec-1", rec1_dir)
+        r0 = await runner.run_and_save_record("rec-0", rec0_dir)
+        r1 = await runner.run_and_save_record("rec-1", rec1_dir)
 
         # rec-0: m_b was rerun
         assert len(calls) == 1
@@ -488,8 +489,8 @@ class TestRerunMode:
             },
         )
 
-        r0 = await runner._run_and_save_record("rec-0", rec0_dir)
-        r1 = await runner._run_and_save_record("rec-1", rec1_dir)
+        r0 = await runner.run_and_save_record("rec-0", rec0_dir)
+        r1 = await runner.run_and_save_record("rec-1", rec1_dir)
 
         # rec-0: only m_a rerun
         assert calls[0] == {"record_id": "rec-0", "metrics_requested": {"m_a"}}
@@ -527,7 +528,7 @@ class TestRerunMode:
         )
         calls = _install_mock(runner, {"rec-0": {"m_a": _ms("m_a", 0.5)}})
 
-        result = await runner._run_and_save_record("rec-0", record_dir)
+        result = await runner.run_and_save_record("rec-0", record_dir)
 
         assert len(calls) == 0, "already-succeeded metric should not be rerun"
         assert result.metrics["m_a"].score == 0.9  # disk value preserved
@@ -565,7 +566,7 @@ class TestRerunMode:
             },
         )
 
-        result = await runner._run_and_save_record("rec-0", record_dir)
+        result = await runner.run_and_save_record("rec-0", record_dir)
 
         assert len(calls) == 1
         assert calls[0]["metrics_requested"] == {"m_a", "m_b"}
@@ -608,7 +609,7 @@ class TestRerunMode:
             },
         )
 
-        result = await runner._run_and_save_record("rec-0", record_dir)
+        result = await runner.run_and_save_record("rec-0", record_dir)
         assert len(calls) == 1
         assert result.metrics["m_a"].score == 0.85
         assert result.metrics["m_a"].error is None
@@ -651,8 +652,8 @@ class TestRerunMode:
             },
         )
 
-        r0 = await runner._run_and_save_record("rec-0", rec0_dir)
-        r1 = await runner._run_and_save_record("rec-1", rec1_dir)
+        r0 = await runner.run_and_save_record("rec-0", rec0_dir)
+        r1 = await runner.run_and_save_record("rec-1", rec1_dir)
 
         assert len(calls) == 2
         assert r0.metrics["m_a"].score == 0.7
@@ -704,6 +705,61 @@ class TestBuildPerMetricAggregates:
         assert result["m"]["missing_count"] == 0
         assert result["m"]["none_count"] == 2
         assert result["m"]["mean"] is None
+
+    def test_higher_is_better_read_from_registered_metric(self):
+        """Parent direction is looked up on the metric class, not stored per-record."""
+        # response_speed is registered with higher_is_better=False on its class.
+        all_metrics = {
+            "r1": RecordMetrics(
+                record_id="r1",
+                metrics={"response_speed": MetricScore(name="response_speed", score=1.2, normalized_score=None)},
+            ),
+        }
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["response_speed"])
+        assert result["response_speed"]["higher_is_better"] is False
+
+    def test_higher_is_better_defaults_true_for_unknown_metric(self):
+        """An unregistered metric name defaults to higher_is_better=True."""
+        all_metrics = {
+            "r1": RecordMetrics(record_id="r1", metrics={"m": MetricScore(name="m", score=0.3)}),
+        }
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        assert result["m"]["higher_is_better"] is True
+
+    def test_sub_metric_direction_derived_from_suffix(self):
+        """Sub-metric direction is derived from the key suffix, not stored per-record.
+
+        ``_rate`` suffix → lower is better, ``_accuracy`` → higher is better,
+        otherwise the sub-metric inherits the parent direction.
+        """
+        rate_sub = MetricScore(name="faithfulness.hallucination_rate", score=1.0, normalized_score=1.0)
+        accuracy_sub = MetricScore(
+            name="transcription_accuracy_key_entities.name_accuracy", score=0.8, normalized_score=0.8
+        )
+        all_metrics = {
+            "r1": RecordMetrics(
+                record_id="r1",
+                metrics={
+                    "faithfulness": MetricScore(
+                        name="faithfulness",
+                        score=2.0,
+                        normalized_score=0.5,
+                        sub_metrics={"hallucination_rate": rate_sub},
+                    ),
+                    "transcription_accuracy_key_entities": MetricScore(
+                        name="transcription_accuracy_key_entities",
+                        score=0.8,
+                        normalized_score=0.8,
+                        sub_metrics={"name_accuracy": accuracy_sub},
+                    ),
+                },
+            ),
+        }
+        result = MetricsRunner._build_per_metric_aggregates(
+            all_metrics, ["faithfulness", "transcription_accuracy_key_entities"]
+        )
+        assert result["faithfulness"]["sub_metrics"]["hallucination_rate"]["higher_is_better"] is False
+        assert result["transcription_accuracy_key_entities"]["sub_metrics"]["name_accuracy"]["higher_is_better"] is True
 
 
 class TestBuildDataQuality:

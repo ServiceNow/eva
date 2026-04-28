@@ -1,0 +1,297 @@
+{
+  "_current_date": "2026-06-25",
+  "unit_cert_requirements": {
+    "4B-ICU": [
+      "ACLS",
+      "BLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ONC"
+    ],
+    "5A-SURG": [
+      "ACLS",
+      "BLS",
+      "TNCC"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "1487392045": {
+      "npi": "1487392045",
+      "employee_id": "EMP900111",
+      "first_name": "Avery",
+      "last_name": "Cole",
+      "facility_code": "MGH-04B",
+      "pin": "7291",
+      "phone_last_four": "1188",
+      "otp_code": "483920",
+      "role_code": "MD",
+      "department_code": "CARDIOLOGY",
+      "hire_date": "2018-03-12",
+      "ehr_access_status": "active",
+      "ehr_access_case_id": null,
+      "clearance_code": null,
+      "licenses": {},
+      "malpractice": {
+        "carrier": "medpro",
+        "policy_number": "POL-2025-AX7731",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2025-07-01",
+        "expiration_date": "2026-06-30",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BK4729183",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-04-30",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP624902": {
+      "employee_id": "EMP624902",
+      "first_name": "Catalina",
+      "last_name": "Reyes",
+      "date_of_birth": "1991-08-14",
+      "phone_last_four": "4829",
+      "otp_code": "731204",
+      "department_code": "RADIOLOGY",
+      "role_code": "NP",
+      "unit_code": "2A-MED",
+      "hire_date": "2021-02-08",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 64,
+        "hours_worked_past_year": 1880,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 12.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    },
+    "EMP900111": {
+      "employee_id": "EMP900111",
+      "first_name": "Avery",
+      "last_name": "Cole",
+      "date_of_birth": "1980-11-03",
+      "phone_last_four": "1188",
+      "otp_code": "483920",
+      "department_code": "CARDIOLOGY",
+      "role_code": "MD",
+      "unit_code": "4B-ICU",
+      "hire_date": "2018-03-12",
+      "employment_status": "active",
+      "certifications": [
+        "ACLS",
+        "BLS",
+        "CCRN"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 99,
+        "hours_worked_past_year": 2012,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [],
+      "pto_balances": {
+        "pto": 18.0,
+        "sick": 7.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260630-0900": {
+      "shift_id": "SHF-20260630-0900",
+      "employee_id": "EMP624902",
+      "unit_code": "2A-MED",
+      "date": "2026-06-30",
+      "start_time": "09:00",
+      "end_time": "17:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-07-12",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "RADIOLOGY": {
+        "2026-07-01": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-02": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ],
+        "2026-07-06": [
+          "09:30",
+          "11:30"
+        ]
+      },
+      "CARDIOLOGY": {
+        "2026-07-01": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-07-03": [
+          "10:00",
+          "14:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "RADIOLOGY": {
+        "2026-07-20": [
+          "09:00",
+          "11:00",
+          "14:00"
+        ],
+        "2026-07-21": [
+          "10:00",
+          "13:00"
+        ],
+        "2026-07-22": [
+          "09:30",
+          "15:30"
+        ]
+      },
+      "CARDIOLOGY": {
+        "2026-07-20": [
+          "09:00",
+          "10:30"
+        ],
+        "2026-07-23": [
+          "13:00",
+          "15:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "RADIOLOGY": {
+        "2026-07-08": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-07-09": [
+          "10:00",
+          "14:00"
+        ]
+      },
+      "CARDIOLOGY": {
+        "2026-07-08": [
+          "09:00",
+          "13:00"
+        ],
+        "2026-07-10": [
+          "10:00",
+          "15:00"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "RADIOLOGY": [
+      "2026-06-29",
+      "2026-07-27"
+    ],
+    "CARDIOLOGY": [
+      "2026-07-06"
+    ],
+    "EMERGENCY": [],
+    "ONCOLOGY": [],
+    "SURGERY": [],
+    "PEDIATRICS": []
+  }
+}

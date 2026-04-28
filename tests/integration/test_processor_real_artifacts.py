@@ -79,7 +79,6 @@ class TestProcessorRealArtifacts:
         assert processor_context.tool_called == expected_context["tool_called"]
 
     def test_conversation_metadata(self, processor_context, expected_context):
-        assert processor_context.conversation_finished == expected_context["conversation_finished"]
         assert processor_context.conversation_ended_reason == expected_context["conversation_ended_reason"]
         assert processor_context.pipeline_type.value == expected_context.get("pipeline_type", "cascade")
 

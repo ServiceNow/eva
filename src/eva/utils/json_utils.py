@@ -43,11 +43,6 @@ def extract_and_load_json(text: str) -> dict | list | None:
     Args:
     ----
         text: str: The text
-        ignore_backslashes: bool: Whether to remove backslashes. Both options are available so
-            we can compare the results with and without removing backslashes.
-        strict: Whether to use strict JSON decoding
-        return_all: bool | None: If True, return all matching JSON objects as a list.
-            If False or None, return the first match.
 
     Returns:
     -------

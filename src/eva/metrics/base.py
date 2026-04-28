@@ -1,7 +1,10 @@
 """Base metric class for defining evaluation metrics."""
 
+import csv
+import json
 import os
 from abc import ABC, abstractmethod
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -57,6 +60,7 @@ class MetricContext:
         agent_role: str,
         agent_instructions: str,
         agent_tools: list[dict],
+        agent_id: str,
         current_date_time: str,
         # Basic stats
         num_turns: int = 0,
@@ -81,7 +85,6 @@ class MetricContext:
         tool_params: list[dict] | None = None,
         tool_responses: list[dict] | None = None,
         conversation_trace: list[dict] | None = None,
-        conversation_finished: bool | None = None,
         latency_assistant_turns: dict[int, float] | None = None,
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
@@ -117,6 +120,7 @@ class MetricContext:
         self.agent_role = agent_role
         self.agent_instructions = agent_instructions
         self.agent_tools = agent_tools
+        self.agent_id = agent_id
         self.current_date_time = current_date_time
 
         # Processed log data
@@ -131,7 +135,6 @@ class MetricContext:
         self.tool_params = tool_params or []
         self.tool_responses = tool_responses or []
         self.conversation_trace = conversation_trace or []
-        self.conversation_finished = conversation_finished or False
         self.latency_assistant_turns = latency_assistant_turns or {}
         self.assistant_interrupted_turns = assistant_interrupted_turns or set()
         self.user_interrupted_turns = user_interrupted_turns or set()
@@ -159,7 +162,11 @@ class BaseMetric(ABC):
     metric_type: MetricType = MetricType.CODE  # Override in subclasses
     pass_at_k_threshold: float = 0.5  # Normalized score threshold for pass@k pass/fail
     exclude_from_pass_at_k: bool = False  # Set True for metrics not suitable for pass@k
-    skip_audio_native: bool = False  # Set True for metrics that should not run on audio-native records (S2S, AudioLLM)
+    supported_pipeline_types: frozenset[PipelineType] = frozenset(PipelineType)  # Pipeline types this metric supports
+    # Direction of the displayed value (normalized_score if present, else score).
+    # Override to False for lower-is-better parent metrics (e.g. latency). Sub-metric
+    # direction is derived from the key suffix (see eva.metrics.utils.direction_for_sub_metric).
+    higher_is_better: bool = True
 
     def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the metric.
@@ -187,6 +194,98 @@ class BaseMetric(ABC):
             MetricScore with the computed score and details
         """
         pass
+
+    def _log_token_usage(
+        self,
+        context: MetricContext,
+        model_name: str,
+        model_params: dict,
+        prompt: str,
+        usage: dict | None,
+        response_text: str | None = None,
+    ) -> None:
+        """Append one row of LLM judge token usage to a per-metric CSV and update the run-level JSON summary."""
+        if not context.output_dir:
+            return
+        # Walk up from output_dir to find the run root (directory containing config.json).
+        path = Path(context.output_dir)
+        run_dir = path
+        while path != path.parent:
+            if (path / "config.json").exists():
+                run_dir = path
+                break
+            path = path.parent
+
+        # Derive full record_id (including trial suffix) from path relative to records/.
+        try:
+            record_id = str(Path(context.output_dir).relative_to(run_dir / "records"))
+        except ValueError:
+            record_id = context.record_id
+
+        csv_dir = run_dir / "judge_token_usage"
+        csv_dir.mkdir(exist_ok=True)
+
+        input_tokens = usage.get("prompt_tokens") if usage else None
+        output_tokens = usage.get("completion_tokens") if usage else None
+        model_id = usage.get("model_name") if usage else None
+
+        csv_path = csv_dir / f"{self.name}.csv"
+        header = [
+            "record_id",
+            "model_name",
+            "model_id",
+            "input_tokens",
+            "output_tokens",
+            "timestamp",
+            "model_params",
+            "input_prompt",
+            "output_response",
+        ]
+
+        # If a CSV from a previous version is present, rotate it out so the new
+        # rows don't get mixed with rows missing the output_response column.
+        if csv_path.exists():
+            with open(csv_path, newline="") as f:
+                existing_header = next(csv.reader(f), None)
+            if existing_header != header:
+                legacy_path = csv_dir / f"{self.name}.legacy.csv"
+                i = 1
+                while legacy_path.exists():
+                    legacy_path = csv_dir / f"{self.name}.legacy.{i}.csv"
+                    i += 1
+                csv_path.rename(legacy_path)
+
+        write_header = not csv_path.exists()
+        with open(csv_path, "a", newline="") as f:
+            writer = csv.writer(f)
+            if write_header:
+                writer.writerow(header)
+            writer.writerow(
+                [
+                    record_id,
+                    model_name,
+                    model_id,
+                    input_tokens,
+                    output_tokens,
+                    datetime.now(UTC).isoformat(),
+                    json.dumps(model_params) if model_params else None,
+                    prompt,
+                    response_text,
+                ]
+            )
+
+        # Update per-run JSON summary with running totals.
+        json_path = csv_dir / "judge_token_usage.json"
+        summary = json.loads(json_path.read_text()) if json_path.exists() else {}
+        entry = summary.setdefault(
+            self.name, {"model_id": None, "total_input_tokens": 0, "total_output_tokens": 0, "num_calls": 0}
+        )
+        if model_id is not None:
+            entry["model_id"] = model_id
+        entry["total_input_tokens"] += input_tokens or 0
+        entry["total_output_tokens"] += output_tokens or 0
+        entry["num_calls"] += 1
+        json_path.write_text(json.dumps(summary, indent=2))
 
     def _handle_error(self, error: Exception, context: MetricContext) -> MetricScore:
         """Standard error handling for all metrics."""
@@ -236,10 +335,8 @@ class TextJudgeMetric(BaseMetric):
     async def call_judge(self, prompt: str, context: MetricContext) -> tuple[dict | None, str | None]:
         """Call LLM judge and parse response. Returns (parsed_dict, raw_response_text)."""
         messages = [{"role": "user", "content": prompt}]
-        response_text = await self.llm_client.generate_text(
-            messages,
-        )
-
+        response_text, usage = await self.llm_client.generate_text(messages)
+        self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage, response_text)
         return parse_judge_response(response_text, context.record_id, self.logger), response_text
 
     def validate_and_normalize_rating(self, response: dict, context: MetricContext) -> tuple[int, float]:
@@ -288,6 +385,7 @@ class ConversationTextJudgeMetric(TextJudgeMetric):
                     score=0.0,
                     normalized_score=0.0,
                     error="Failed to parse judge response",
+                    details={"judge_prompt": prompt, "judge_raw_response": raw_response},
                 )
 
             # Validate and normalize
@@ -383,6 +481,19 @@ class PerTurnConversationJudgeMetric(TextJudgeMetric):
         """
         return {}
 
+    def build_sub_metrics(
+        self,
+        context: MetricContext,
+        per_turn_ratings: dict[int, int | None],
+        per_turn_extra: dict[int, dict[str, Any]],
+    ) -> dict[str, MetricScore] | None:
+        """Return sub-metrics derived from the per-turn data, or None.
+
+        Override in subclasses to surface breakdowns (e.g., per-failure-mode rates).
+        Default returns None so the parent metric has no sub-metrics.
+        """
+        return None
+
     async def compute(self, context: MetricContext) -> MetricScore:
         """Evaluate all turns in a single judge call and aggregate per-turn ratings."""
         try:
@@ -391,12 +502,17 @@ class PerTurnConversationJudgeMetric(TextJudgeMetric):
                 return MetricScore(name=self.name, score=0.0, normalized_score=0.0, error="No turns to evaluate")
 
             prompt = self.get_judge_prompt(**self.get_prompt_variables(context, transcript_text))
-            response_text = await self.llm_client.generate_text([{"role": "user", "content": prompt}])
+            response_text, usage = await self.llm_client.generate_text([{"role": "user", "content": prompt}])
+            self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage, response_text)
             parsed = parse_judge_response_list(response_text)
 
             if parsed is None:
                 return MetricScore(
-                    name=self.name, score=0.0, normalized_score=0.0, error="Failed to parse judge response"
+                    name=self.name,
+                    score=0.0,
+                    normalized_score=0.0,
+                    error="Failed to parse judge response",
+                    details={"judge_prompt": prompt, "judge_raw_response": response_text},
                 )
 
             turn_ids = self.get_expected_turn_ids(context)
@@ -480,11 +596,14 @@ class PerTurnConversationJudgeMetric(TextJudgeMetric):
                     tid: normalize_rating(r, min_r, max_r) for tid, r in per_turn_ratings.items() if r is not None
                 }
 
+            sub_metrics = self.build_sub_metrics(context, per_turn_ratings, per_turn_extra)
+
             return MetricScore(
                 name=self.name,
                 score=round(mean_rating, 3),
                 normalized_score=round(normalized_score, 3),
                 details=details,
+                sub_metrics=sub_metrics or None,
             )
 
         except Exception as e:
@@ -497,8 +616,8 @@ class AudioJudgeMetric(BaseMetric):
     metric_type = MetricType.AUDIO_JUDGE
 
     # Subclasses can override
-    default_model = "gemini-3.1-pro-preview"
-    default_params: dict[str, Any] = {"temperature": 0.0, "max_tokens": 30000}
+    default_model = "gemini-3-flash-preview"
+    default_params: dict[str, Any] = {"temperature": 0.0, "max_tokens": 40000, "reasoning_effort": "minimal"}
     rating_scale: tuple[int, int] = (-2, 2)  # Can vary by metric
 
     def __init__(self, config: dict[str, Any] | None = None):

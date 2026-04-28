@@ -63,7 +63,9 @@ def find_records_with_llm_generic_error(output_dir: Path, record_ids: set[str] |
     """Find records that have the LLM generic error message in pipecat_logs.jsonl."""
     affected = []
     for record_id in record_ids:
-        pipecat_logs_path = output_dir / "records" / record_id / "pipecat_logs.jsonl"
+        pipecat_logs_path = output_dir / "records" / record_id / "framework_logs.jsonl"
+        if not pipecat_logs_path.exists():
+            pipecat_logs_path = output_dir / "records" / record_id / "pipecat_logs.jsonl"
         if not pipecat_logs_path.exists():
             continue
         with open(pipecat_logs_path) as f:

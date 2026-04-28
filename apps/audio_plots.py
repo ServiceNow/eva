@@ -37,6 +37,7 @@ Spectrograms use a 4 kHz intermediate sample rate (_SPEC_SR) via librosa.resampl
     (np.linspace(0, duration, n_samples), also t=0 origin)
 """
 
+import base64
 import json
 import struct
 import warnings
@@ -46,8 +47,13 @@ import librosa
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 from plotly.subplots import make_subplots
 from pydub import AudioSegment
+
+# Cap on embedded audio size: base64 inflates ~33%, so 30MB raw → 40MB payload,
+# which is comfortable for modern browsers but large enough to hold typical runs.
+_MAX_EMBED_AUDIO_BYTES = 30_000_000
 
 # =============================================================================
 # Colours — visible in both Streamlit light and dark mode
@@ -274,6 +280,90 @@ def _compute_and_patch_latencies(turns: list[dict]) -> None:
                 break
 
 
+def _calculate_overlaps(turns_rel: list[dict]) -> list[dict]:
+    """Return regions where a user segment and an assistant segment overlap in time.
+
+    These are the actual simultaneous-speech intervals — the same quantity
+    turn_taking.py uses for its overlap_ms signal. Each entry carries the
+    intersection bounds, duration, and the two turn_ids involved.
+    """
+    user_segs = [
+        (s, e, turn["turn_id"]) for turn in turns_rel if turn["speaker"] == "user" for s, e in turn["segments"]
+    ]
+    asst_segs = [
+        (s, e, turn["turn_id"]) for turn in turns_rel if turn["speaker"] == "assistant" for s, e in turn["segments"]
+    ]
+    overlaps = []
+    for u_s, u_e, u_tid in user_segs:
+        for a_s, a_e, a_tid in asst_segs:
+            start = max(u_s, a_s)
+            end = min(u_e, a_e)
+            if end - start > 0.001:
+                overlaps.append(
+                    {
+                        "start": start,
+                        "end": end,
+                        "duration_seconds": end - start,
+                        "user_turn_id": u_tid,
+                        "assistant_turn_id": a_tid,
+                    }
+                )
+    overlaps.sort(key=lambda o: o["start"])
+    return overlaps
+
+
+def _format_tt_for_turn(tid: int | None, tt_by_id: dict) -> str:
+    """Return an HTML block summarizing turn_taking output for a turn_id, or '' when N/A."""
+    info = tt_by_id.get(tid) if tid is not None else None
+    if not info:
+        return ""
+
+    score = info.get("score")
+    reason = info.get("reason") or "—"
+    evidence = info.get("evidence") or {}
+    reason_label = {
+        "latency": "Latency",
+        "agent_interrupt": "Agent interrupted user",
+        "user_interrupt": "User interrupted agent",
+        "dual_interrupt": "Both interrupted",
+    }.get(reason, reason)
+
+    lines = [f"<b>Turn taking \u2014 turn {tid}</b>"]
+    if isinstance(score, (int, float)):
+        lines.append(f"Score: {score:.2f}")
+    lines.append(f"Reason: {reason_label}")
+    if "latency_ms" in evidence:
+        lines.append(f"Latency: {evidence['latency_ms']:.0f}\u00a0ms")
+    if "overlap_ms" in evidence:
+        lines.append(f"Overlap: {evidence['overlap_ms']:.0f}\u00a0ms")
+    if "post_interrupt_latency_ms" in evidence:
+        post_ms = evidence["post_interrupt_latency_ms"]
+        post_score = evidence.get("post_interrupt_latency_score")
+        score_part = f" (recovery sub-score: {post_score:.2f})" if isinstance(post_score, (int, float)) else ""
+        lines.append(f"Post-interrupt recovery: {post_ms:.0f}\u00a0ms{score_part}")
+    if "yield_ms" in evidence:
+        lines.append(f"Yield: {evidence['yield_ms']:.0f}\u00a0ms")
+
+    if "n_interrupt_segments" in evidence:
+        n_segs = evidence["n_interrupt_segments"]
+        count_score = evidence.get("interrupt_count_score")
+        count_part = f" (frequency sub-score: {count_score:.2f})" if isinstance(count_score, (int, float)) else ""
+        lines.append(f"Agent barge-in segments this turn: {n_segs}{count_part}")
+
+    return "<br>".join(lines)
+
+
+def _format_turn_taking_hover(pause: dict, tt_by_id: dict) -> str:
+    """Return an HTML block summarizing turn_taking output for a pause, or '' when N/A.
+
+    Only user→assistant pauses map cleanly to a turn_taking score (the score applies
+    to the assistant's response turn). Other transitions don't have a direct score.
+    """
+    if pause["from_speaker"] != "user" or pause["to_speaker"] != "assistant":
+        return ""
+    return _format_tt_for_turn(pause.get("to_turn_id"), tt_by_id)
+
+
 def _calculate_pauses(turns_rel: list[dict]) -> list[dict]:
     """Compute speaker-transition gaps, consistent with turn_taking.py.
 
@@ -283,9 +373,12 @@ def _calculate_pauses(turns_rel: list[dict]) -> list[dict]:
 
     Same-speaker consecutive segments (e.g. two user audio sessions back to
     back) are ignored, as turn_taking.py does not treat these as pauses.
+
+    Each pause carries ``to_turn_id`` — the turn_id of the segment following
+    the gap. For user→assistant pauses this is the turn scored by turn_taking.
     """
     all_segs = sorted(
-        [(s, e, turn["speaker"]) for turn in turns_rel for s, e in turn["segments"]],
+        [(s, e, turn["speaker"], turn["turn_id"]) for turn in turns_rel for s, e in turn["segments"]],
         key=lambda x: x[0],
     )
     pauses = []
@@ -302,6 +395,8 @@ def _calculate_pauses(turns_rel: list[dict]) -> list[dict]:
                 {
                     "from_speaker": from_spk,
                     "to_speaker": to_spk,
+                    "from_turn_id": all_segs[i][3],
+                    "to_turn_id": all_segs[i + 1][3],
                     "start": cur_end,
                     "end": nxt_start,
                     "duration_seconds": gap,
@@ -466,6 +561,8 @@ _SPEC_HOP = 512  # → ~0.128 s/frame at 4 kHz
 
 def _prepare_data(record_dir: Path) -> dict:
     audio_mixed = next(record_dir.glob("audio_mixed*.wav"), record_dir / "audio_mixed.wav")
+    audio_user = record_dir / "audio_user.wav"
+    audio_asst = record_dir / "audio_assistant.wav"
     audio_el = record_dir / "elevenlabs_audio_recording.mp3"
     events_file = record_dir / "elevenlabs_events.jsonl"
     transcript = record_dir / "transcript.jsonl"
@@ -488,6 +585,38 @@ def _prepare_data(record_dir: Path) -> dict:
         _compute_and_patch_latencies(turns_rel)
 
     pauses_rel = _calculate_pauses(turns_rel)
+    overlaps_rel = _calculate_overlaps(turns_rel)
+
+    # --- Turn-taking per-turn output (keyed by turn_id as int) ---
+    # Surfaced in the timeline hover so users can see why each transition was
+    # scored a certain way without leaving the audio view.
+    turn_taking_by_id: dict[int, dict] = {}
+    turns_with_tool_calls: set[int] = set()
+    if metrics_data:
+        tt = (metrics_data.get("metrics") or {}).get("turn_taking") or {}
+        tt_details = tt.get("details") or {}
+        scores = tt_details.get("per_turn_score") or {}
+        reasons = tt_details.get("per_turn_reason") or {}
+        evidence = tt_details.get("per_turn_evidence") or {}
+        for tid_str in set(scores.keys()) | set(reasons.keys()) | set(evidence.keys()):
+            try:
+                tid = int(tid_str)
+            except ValueError:
+                continue
+            turn_taking_by_id[tid] = {
+                "score": scores.get(tid_str),
+                "reason": reasons.get(tid_str),
+                "evidence": evidence.get(tid_str) or {},
+            }
+
+        # Derive turns with tool calls from conversation_trace — works even on old metrics.json
+        ctx = metrics_data.get("context") or {}
+        for entry in ctx.get("conversation_trace") or []:
+            if entry.get("type") == "tool_call":
+                try:
+                    turns_with_tool_calls.add(int(entry["turn_id"]))
+                except (KeyError, ValueError, TypeError):
+                    pass
 
     # --- Audio: mixed ---
     y_mixed, sr_mixed, duration, mixed_loaded = None, None, 0.0, False
@@ -505,6 +634,25 @@ def _prepare_data(record_dir: Path) -> dict:
     else:
         y_ds = np.array([])
         t_mixed = np.array([])
+
+    # --- Per-channel audio: user and assistant ---
+    # Preferred source for the "audio_mixed" waveform row. Turn timestamps can disagree
+    # with what's actually audible in each channel, so we show the raw channels overlaid
+    # instead of colour-coding a single mixed waveform by turns.
+    def _load_channel(path: Path) -> tuple[np.ndarray, np.ndarray, float, bool]:
+        if not path.exists():
+            return np.array([]), np.array([]), 0.0, False
+        try:
+            y, sr = _load_pydub(path)
+        except Exception:
+            return np.array([]), np.array([]), 0.0, False
+        dur = len(y) / sr
+        y_down, _ = _downsample(y, sr)
+        t = np.linspace(0, dur, len(y_down))
+        return y_down, t, dur, True
+
+    y_user_ds, t_user, user_duration, user_loaded = _load_channel(audio_user)
+    y_asst_ds, t_asst, asst_duration, asst_loaded = _load_channel(audio_asst)
 
     # --- Audio: ElevenLabs ---
     el_y_ds, el_t, el_spec = np.array([]), np.array([]), None
@@ -535,7 +683,10 @@ def _prepare_data(record_dir: Path) -> dict:
     # x-axis: audio file durations only.
     # turns_end is excluded — turn timestamps can exceed the recording length
     # and would push the axis beyond the actual audio.
-    plot_xlim = [0, max(duration if mixed_loaded else 0.0, el_duration, 1.0)]
+    plot_xlim = [
+        0,
+        max(duration if mixed_loaded else 0.0, user_duration, asst_duration, el_duration, 1.0),
+    ]
 
     # --- Spectrogram: mixed ---
     # x axis pinned to `duration` via np.linspace so it aligns exactly with
@@ -560,6 +711,12 @@ def _prepare_data(record_dir: Path) -> dict:
         "mixed_loaded": mixed_loaded,
         "y_ds": y_ds,
         "t_mixed": t_mixed,
+        "user_loaded": user_loaded,
+        "y_user_ds": y_user_ds,
+        "t_user": t_user,
+        "asst_loaded": asst_loaded,
+        "y_asst_ds": y_asst_ds,
+        "t_asst": t_asst,
         "el_loaded": el_loaded,
         "el_y_ds": el_y_ds,
         "el_t": el_t,
@@ -567,6 +724,9 @@ def _prepare_data(record_dir: Path) -> dict:
         "el_spec": el_spec,
         "turns_rel": turns_rel,
         "pauses_rel": pauses_rel,
+        "overlaps_rel": overlaps_rel,
+        "turn_taking_by_id": turn_taking_by_id,
+        "turns_with_tool_calls": turns_with_tool_calls,
     }
 
 
@@ -581,6 +741,7 @@ def _build_figure(
 
     turns_rel = data["turns_rel"]
     pauses_rel = data["pauses_rel"]
+    overlaps_rel = data.get("overlaps_rel") or []
     plot_xlim = data["plot_xlim"]
 
     # ------------------------------------------------------------------ #
@@ -596,7 +757,7 @@ def _build_figure(
     row_keys.append("timeline")
 
     _titles = {
-        "mixed_waveform": "Waveform \u2014 audio_mixed.wav",
+        "mixed_waveform": "Waveform \u2014 audio_mixed (user vs assistant channels)",
         "mixed_spec": "Spectrogram \u2014 audio_mixed.wav",
         "el_waveform": "Waveform \u2014 elevenlabs_audio_recording.mp3",
         "el_spec": "Spectrogram \u2014 elevenlabs_audio_recording.mp3",
@@ -649,6 +810,7 @@ def _build_figure(
         ("User", USER_COLOR, "square"),
         ("Assistant", ASST_COLOR, "square"),
         ("Pause", "rgba(140,140,140,0.40)", "square"),
+        ("Overlap", "rgba(220,50,60,0.80)", "square"),
     ]:
         fig.add_trace(
             go.Scatter(
@@ -726,7 +888,70 @@ def _build_figure(
             fig.update_yaxes(title_text="Amplitude", range=[-1.0, 1.0], row=row, col=1)
             return
 
-        # Flat list of speaker audio segments, sorted by start time.
+        # Layer order: pause bands (background) → full gray baseline → coloured speaker
+        # segments (foreground). This keeps the waveform visible everywhere while still
+        # highlighting speaker-attributed regions. Regions outside any known turn remain
+        # gray — "we don't know who this is".
+
+        # 1. Pause + overlap shaded bands — drawn first so they sit below the waveform.
+        # User→assistant pauses get the amber highlight that matches the timeline
+        # (these are the ones turn_taking scores); other gaps stay neutral gray.
+        # Overlaps (both speakers talking) are highlighted in red.
+        y0, y1 = y_range[0], y_range[1]
+        for pause in pauses_rel:
+            is_scored = pause["from_speaker"] == "user" and pause["to_speaker"] == "assistant"
+            fill = "rgba(255,193,7,0.30)" if is_scored else PAUSE_FILL
+            fig.add_trace(
+                go.Scatter(
+                    x=[pause["start"], pause["end"], pause["end"], pause["start"], pause["start"]],
+                    y=[y1, y1, y0, y0, y1],
+                    fill="toself",
+                    fillcolor=fill,
+                    line={"width": 0},
+                    mode="lines",
+                    name="Pause",
+                    legendgroup="Pause",
+                    showlegend=False,
+                    hoverinfo="skip",
+                ),
+                row=row,
+                col=1,
+            )
+        for ov in overlaps_rel:
+            fig.add_trace(
+                go.Scatter(
+                    x=[ov["start"], ov["end"], ov["end"], ov["start"], ov["start"]],
+                    y=[y1, y1, y0, y0, y1],
+                    fill="toself",
+                    fillcolor="rgba(220,50,60,0.30)",
+                    line={"width": 0},
+                    mode="lines",
+                    name="Overlap",
+                    legendgroup="Overlap",
+                    showlegend=False,
+                    hoverinfo="skip",
+                ),
+                row=row,
+                col=1,
+            )
+
+        # 2. Full waveform in neutral gray — always visible as a baseline.
+        fig.add_trace(
+            go.Scatter(
+                x=t.tolist(),
+                y=y.tolist(),
+                mode="lines",
+                line={"width": 0.8, "color": "rgba(128,128,128,0.55)"},
+                name="Unattributed",
+                showlegend=False,
+                hoverinfo="skip",
+            ),
+            row=row,
+            col=1,
+        )
+
+        # 3. Coloured speaker segments — drawn on top, fully opaque so they clearly
+        # override the gray baseline in attributed regions.
         visible_turns = [turn for turn in turns_rel if speaker_filter is None or turn["speaker"] in speaker_filter]
         all_segs = sorted(
             [
@@ -750,32 +975,12 @@ def _build_figure(
                     y=y[mask].tolist(),
                     mode="lines",
                     line={"width": 1.0, "color": _color_map[spk]},
-                    opacity=0.85,
+                    opacity=1.0,
                     name=_name_map[spk],
                     legendgroup=_name_map[spk],
                     showlegend=False,
                     text=_hover_texts(t[mask]),
                     hovertemplate="%{text}<extra></extra>",
-                ),
-                row=row,
-                col=1,
-            )
-
-        # Pause shaded bands — Scatter traces so they toggle with the legend.
-        y0, y1 = y_range[0], y_range[1]
-        for pause in pauses_rel:
-            fig.add_trace(
-                go.Scatter(
-                    x=[pause["start"], pause["end"], pause["end"], pause["start"], pause["start"]],
-                    y=[y1, y1, y0, y0, y1],
-                    fill="toself",
-                    fillcolor=PAUSE_FILL,
-                    line={"width": 0},
-                    mode="lines",
-                    name="Pause",
-                    legendgroup="Pause",
-                    showlegend=False,
-                    hoverinfo="skip",
                 ),
                 row=row,
                 col=1,
@@ -827,19 +1032,40 @@ def _build_figure(
             col=1,
         )
 
-        # Pause shaded bands — Scatter traces so they toggle with the legend.
+        # Pause + overlap shaded bands — Scatter traces so they toggle with the legend.
+        # User→assistant pauses use the same amber highlight as the timeline.
+        # Overlaps appear as red bands.
         f0, f1 = float(freqs[0]), float(freqs[-1])
         for pause in pauses_rel:
+            is_scored = pause["from_speaker"] == "user" and pause["to_speaker"] == "assistant"
+            fill = "rgba(255,193,7,0.30)" if is_scored else PAUSE_FILL
             fig.add_trace(
                 go.Scatter(
                     x=[pause["start"], pause["end"], pause["end"], pause["start"], pause["start"]],
                     y=[f1, f1, f0, f0, f1],
                     fill="toself",
-                    fillcolor=PAUSE_FILL,
+                    fillcolor=fill,
                     line={"width": 0},
                     mode="lines",
                     name="Pause",
                     legendgroup="Pause",
+                    showlegend=False,
+                    hoverinfo="skip",
+                ),
+                row=row,
+                col=1,
+            )
+        for ov in overlaps_rel:
+            fig.add_trace(
+                go.Scatter(
+                    x=[ov["start"], ov["end"], ov["end"], ov["start"], ov["start"]],
+                    y=[f1, f1, f0, f0, f1],
+                    fill="toself",
+                    fillcolor="rgba(220,50,60,0.30)",
+                    line={"width": 0},
+                    mode="lines",
+                    name="Overlap",
+                    legendgroup="Overlap",
                     showlegend=False,
                     hoverinfo="skip",
                 ),
@@ -862,13 +1088,78 @@ def _build_figure(
             col=1,
         )
 
-    # ---- Mixed waveform ----
-    if data["mixed_loaded"] and len(data["y_ds"]) > 0:
+    # ---- Mixed waveform: user + assistant channels overlaid ----
+    # We deliberately skip turn-based colouring here so the visual faithfully
+    # reflects what's actually audible on each side. Overlaps appear where both
+    # traces are simultaneously non-silent.
+    _mixed_row = row_of["mixed_waveform"]
+    if data["user_loaded"] or data["asst_loaded"]:
+        amps = []
+        if data["user_loaded"]:
+            amps.extend([float(data["y_user_ds"].min()), float(data["y_user_ds"].max())])
+        if data["asst_loaded"]:
+            amps.extend([float(data["y_asst_ds"].min()), float(data["y_asst_ds"].max())])
+        lo, hi = min(amps), max(amps)
+        y_range = [lo * 1.1, hi * 1.1]
+        # Red overlap bands — drawn first so the waveform traces sit on top.
+        for ov in overlaps_rel:
+            fig.add_trace(
+                go.Scatter(
+                    x=[ov["start"], ov["end"], ov["end"], ov["start"], ov["start"]],
+                    y=[y_range[1], y_range[1], y_range[0], y_range[0], y_range[1]],
+                    fill="toself",
+                    fillcolor="rgba(220,50,60,0.30)",
+                    line={"width": 0},
+                    mode="lines",
+                    name="Overlap",
+                    legendgroup="Overlap",
+                    showlegend=False,
+                    hoverinfo="skip",
+                ),
+                row=_mixed_row,
+                col=1,
+            )
+        if data["asst_loaded"] and len(data["y_asst_ds"]) > 0:
+            fig.add_trace(
+                go.Scatter(
+                    x=data["t_asst"].tolist(),
+                    y=data["y_asst_ds"].tolist(),
+                    mode="lines",
+                    line={"width": 1.0, "color": ASST_COLOR},
+                    opacity=0.7,
+                    name="Assistant",
+                    legendgroup="Assistant",
+                    showlegend=False,
+                    hovertemplate="Assistant<br>t=%{x:.2f}s<br>amp=%{y:.3f}<extra></extra>",
+                ),
+                row=_mixed_row,
+                col=1,
+            )
+        if data["user_loaded"] and len(data["y_user_ds"]) > 0:
+            fig.add_trace(
+                go.Scatter(
+                    x=data["t_user"].tolist(),
+                    y=data["y_user_ds"].tolist(),
+                    mode="lines",
+                    line={"width": 1.0, "color": USER_COLOR},
+                    opacity=0.7,
+                    name="User",
+                    legendgroup="User",
+                    showlegend=False,
+                    hovertemplate="User<br>t=%{x:.2f}s<br>amp=%{y:.3f}<extra></extra>",
+                ),
+                row=_mixed_row,
+                col=1,
+            )
+        fig.update_yaxes(title_text="Amplitude", range=y_range, row=_mixed_row, col=1)
+    elif data["mixed_loaded"] and len(data["y_ds"]) > 0:
+        # Fallback: neither per-channel file exists — show the mixed waveform
+        # colour-coded by turns (legacy behaviour).
         y_range = [float(data["y_ds"].min() * 1.1), float(data["y_ds"].max() * 1.1)]
-        _colored_waveform(row_of["mixed_waveform"], data["y_ds"], data["t_mixed"], y_range)
+        _colored_waveform(_mixed_row, data["y_ds"], data["t_mixed"], y_range)
     else:
-        _no_file(row_of["mixed_waveform"])
-        fig.update_yaxes(title_text="Amplitude", range=[-1.0, 1.0], row=row_of["mixed_waveform"], col=1)
+        _no_file(_mixed_row)
+        fig.update_yaxes(title_text="Amplitude", range=[-1.0, 1.0], row=_mixed_row, col=1)
 
     # ---- Mixed spectrogram (optional) ----
     if "mixed_spec" in row_of:
@@ -904,6 +1195,7 @@ def _build_figure(
     # ------------------------------------------------------------------ #
     tl_row = row_of["timeline"]
 
+    _tool_turns = data.get("turns_with_tool_calls") or set()
     for turn in turns_rel:
         is_asst = turn["speaker"] == "assistant"
         speaker = "Assistant" if is_asst else "User"
@@ -987,7 +1279,7 @@ def _build_figure(
         fig.add_annotation(
             x=(user_end + asst_start) / 2,
             y=1.5,
-            text=f"\u2194\u00a0{user_turn['latency_s'] * 1000:.0f}ms",
+            text=f"{user_turn['latency_s'] * 1000:.0f}ms",
             showarrow=False,
             font={"size": 7, "color": "dimgray"},
             bgcolor="rgba(255,255,255,0.7)",
@@ -995,21 +1287,105 @@ def _build_figure(
             yref=f"y{tl_row}",
         )
 
-    # Pause boxes on timeline
+    # Overlap boxes on the timeline — span the full height between the User and
+    # Assistant rows so simultaneous speech is unmistakable. Solid red border.
+    # Hover shows the turn_taking output for whichever of the two involved turn_ids
+    # has per-turn data (typically the assistant turn that interrupted).
+    tt_by_id_ov = data.get("turn_taking_by_id") or {}
+    for ov in overlaps_rel:
+        ov_hover = (
+            f"<b>Overlap</b><br>"
+            f"t\u00a0=\u00a0{ov['start']:.2f}s\u2013{ov['end']:.2f}s<br>"
+            f"Duration:\u00a0{ov['duration_seconds'] * 1000:.0f}\u00a0ms<br>"
+            f"User turn {ov['user_turn_id']} + Assistant turn {ov['assistant_turn_id']}"
+        )
+        tt_tid = (
+            ov["assistant_turn_id"]
+            if ov["assistant_turn_id"] in tt_by_id_ov
+            else ov["user_turn_id"]
+            if ov["user_turn_id"] in tt_by_id_ov
+            else None
+        )
+        tt_block = _format_tt_for_turn(tt_tid, tt_by_id_ov)
+        if tt_block:
+            ov_hover = ov_hover + "<br><br>" + tt_block
+        fig.add_trace(
+            go.Scatter(
+                x=[ov["start"], ov["end"], ov["end"], ov["start"], ov["start"]],
+                y=[0.55, 0.55, 2.45, 2.45, 0.55],
+                fill="toself",
+                fillcolor="rgba(220,50,60,0.40)",
+                line={"color": "rgba(180,30,40,1)", "width": 1.5},
+                mode="lines",
+                hoverinfo="skip",
+                name="Overlap",
+                legendgroup="Overlap",
+                showlegend=False,
+            ),
+            row=tl_row,
+            col=1,
+        )
+        n_pts = max(5, int(ov["duration_seconds"] * 2))
+        x_strip = np.linspace(ov["start"], ov["end"], n_pts).tolist()
+        fig.add_trace(
+            go.Scatter(
+                x=x_strip,
+                y=[1.5] * n_pts,
+                mode="markers",
+                marker={"opacity": 0, "size": 10},
+                hovertext=ov_hover,
+                hoverinfo="text",
+                showlegend=False,
+                name="",
+            ),
+            row=tl_row,
+            col=1,
+        )
+        fig.add_annotation(
+            x=ov["start"] + ov["duration_seconds"] / 2,
+            y=0.55,
+            text=f"↯{ov['duration_seconds'] * 1000:.0f}ms",
+            showarrow=False,
+            font={"size": 7, "color": "rgba(180,30,40,1)"},
+            bgcolor="rgba(255,255,255,0.7)",
+            xref=f"x{tl_row}",
+            yref=f"y{tl_row}",
+        )
+
+    # Pause boxes on timeline.
+    # For user→assistant pauses the duration label would land at the exact same
+    # (x, y) as the latency arrow rendered above — same number, identical center —
+    # so we skip the pause label and let the latency arrow own that spot.
+    tt_by_id = data.get("turn_taking_by_id") or {}
     for pause in pauses_rel:
+        skip_label = pause["from_speaker"] == "user" and pause["to_speaker"] == "assistant"
         hover = (
             f"<b>Pause</b><br>"
             f"t\u00a0=\u00a0{pause['start']:.2f}s\u2013{pause['end']:.2f}s<br>"
             f"Duration:\u00a0{pause['duration_seconds'] * 1000:.0f}\u00a0ms<br>"
             f"{pause['from_speaker']}\u00a0\u2192\u00a0{pause['to_speaker']}"
         )
+        tt_block = _format_turn_taking_hover(pause, tt_by_id)
+        if tt_block:
+            hover = hover + "<br><br>" + tt_block
+        if _tool_turns and pause["from_speaker"] == "user" and pause["to_speaker"] == "assistant":
+            to_tid = pause.get("to_turn_id")
+            tool_label = "yes ⚙" if to_tid in _tool_turns else "no"
+            hover = hover + f"<br>Tool call: {tool_label}"
+        # Highlight user→assistant pauses — these are the ones turn_taking scores.
+        # Assistant→user gaps use the original muted style so the scored ones pop.
+        is_scored = pause["from_speaker"] == "user" and pause["to_speaker"] == "assistant"
+        fill = "rgba(255,193,7,0.55)" if is_scored else "rgba(140,140,140,0.30)"
+        border = "rgba(200,130,0,1)" if is_scored else "rgba(140,140,140,0.7)"
+        border_width = 1.8 if is_scored else 1
+        border_dash = "solid" if is_scored else "dash"
         fig.add_trace(
             go.Scatter(
                 x=[pause["start"], pause["end"], pause["end"], pause["start"], pause["start"]],
                 y=[1.15, 1.15, 1.85, 1.85, 1.15],
                 fill="toself",
-                fillcolor="rgba(140,140,140,0.40)",
-                line={"color": "rgba(180,60,60,0.8)", "width": 1, "dash": "dash"},
+                fillcolor=fill,
+                line={"color": border, "width": border_width, "dash": border_dash},
                 mode="lines",
                 hoverinfo="skip",
                 name="Pause",
@@ -1037,16 +1413,17 @@ def _build_figure(
             col=1,
         )
 
-        fig.add_annotation(
-            x=pause["start"] + pause["duration_seconds"] / 2,
-            y=1.5,
-            text=f"{pause['duration_seconds'] * 1000:.0f}ms",
-            showarrow=False,
-            font={"size": 7, "color": "dimgray"},
-            bgcolor="rgba(255,255,255,0.7)",
-            xref=f"x{tl_row}",
-            yref=f"y{tl_row}",
-        )
+        if not skip_label:
+            fig.add_annotation(
+                x=pause["start"] + pause["duration_seconds"] / 2,
+                y=1.5,
+                text=f"{pause['duration_seconds'] * 1000:.0f}ms",
+                showarrow=False,
+                font={"size": 7, "color": "dimgray"},
+                bgcolor="rgba(255,255,255,0.7)",
+                xref=f"x{tl_row}",
+                yref=f"y{tl_row}",
+            )
 
     fig.update_yaxes(
         tickvals=[1, 2],
@@ -1158,6 +1535,178 @@ def render_audio_analysis_tab(record_dir: Path) -> None:
 
     try:
         fig = _build_figure(data, show_mixed_spec=show_mixed_spec, show_el_spec=show_el_spec)
+        el_audio = record_dir / "elevenlabs_audio_recording.mp3"
+        sources = _collect_synced_audio_sources(audio_mixed, el_audio)
+        if sources:
+            _render_synced_audio_plot(fig, sources)
+            return
+        # Large-file / missing-file fallback: non-synced stacked players + plain chart.
+        if audio_mixed.exists():
+            st.audio(str(audio_mixed))
+        if el_audio.exists():
+            st.caption("ElevenLabs recording")
+            st.audio(str(el_audio))
         st.plotly_chart(fig, width="stretch", theme="streamlit")
     except Exception as exc:
         st.error(f"Could not render audio plot: {exc}")
+
+
+def _detect_streamlit_theme() -> str:
+    """Return 'dark' or 'light' — Streamlit's current theme (with sensible fallback).
+
+    Prefers ``st.context.theme.type`` (Streamlit ≥1.42; reflects the user's runtime toggle).
+    Falls back to ``theme.base`` from the config, and ultimately to 'light'.
+    """
+    try:
+        runtime = st.context.theme.type
+        if runtime in ("dark", "light"):
+            return runtime
+    except (AttributeError, TypeError):
+        pass
+    base = st.get_option("theme.base")
+    return base if base in ("dark", "light") else "light"
+
+
+def _collect_synced_audio_sources(audio_mixed: Path, el_audio: Path) -> list[dict]:
+    """Return one entry per audio file that fits under the embed size cap.
+
+    Each entry has ``label`` (UI caption), ``mime``, and ``bytes`` (raw file contents).
+    If any file is over the cap, the whole list is returned empty so callers can
+    fall back to non-synced players — mixing synced and non-synced would confuse users.
+    """
+    candidates = []
+    if audio_mixed.exists():
+        candidates.append(("Mixed audio", "audio/wav", audio_mixed))
+    if el_audio.exists():
+        candidates.append(("ElevenLabs recording", "audio/mpeg", el_audio))
+
+    sources = []
+    for label, mime, path in candidates:
+        raw = path.read_bytes()
+        if len(raw) > _MAX_EMBED_AUDIO_BYTES:
+            st.warning(
+                f"{label} too large for embedded sync ({len(raw) / 1e6:.1f}MB) — "
+                "falling back to non-synced players for this record."
+            )
+            return []
+        sources.append({"label": label, "mime": mime, "bytes": raw})
+    return sources
+
+
+def _render_synced_audio_plot(fig: go.Figure, sources: list[dict]) -> None:
+    """Render *fig* alongside one or more audio players that share a synced playhead.
+
+    Each audio element drives the same red vertical line via Plotly.relayout on ``timeupdate``.
+    Playing one audio pauses any others. Click anywhere on the chart to seek every player
+    (so whichever one you resume picks up at the clicked position).
+    """
+    theme = _detect_streamlit_theme()
+    # Streamlit dark page bg is #0E1117 / text #FAFAFA; light is #FFFFFF / #262730.
+    bg = "#0E1117" if theme == "dark" else "#FFFFFF"
+    text_color = "#FAFAFA" if theme == "dark" else "#262730"
+    fig.update_layout(
+        template="plotly_dark" if theme == "dark" else "plotly_white",
+        paper_bgcolor=bg,
+        plot_bgcolor=bg,
+        font={"color": text_color},
+    )
+
+    fig.add_shape(
+        type="line",
+        xref="x",
+        yref="paper",
+        x0=0,
+        x1=0,
+        y0=0,
+        y1=1,
+        line={"color": "#e63946", "width": 2},
+        layer="above",
+    )
+    shape_idx = len(fig.layout.shapes) - 1
+    fig_height = fig.layout.height or 700
+
+    # Build the audio elements server-side so each has a unique id.
+    audio_html_parts = []
+    audio_ids_json_parts = []
+    for i, src in enumerate(sources):
+        b64 = base64.b64encode(src["bytes"]).decode("ascii")
+        aid = f"audio_{i}"
+        audio_html_parts.append(
+            f'<div style="margin-bottom:6px;">'
+            f'<div style="font-size:0.85em; opacity:0.75; margin-bottom:2px;">{src["label"]}</div>'
+            f'<audio id="{aid}" controls preload="auto" src="data:{src["mime"]};base64,{b64}"></audio>'
+            f"</div>"
+        )
+        audio_ids_json_parts.append(f'"{aid}"')
+    audio_block = "\n".join(audio_html_parts)
+    audio_ids_js = "[" + ", ".join(audio_ids_json_parts) + "]"
+
+    # Extra height per audio element (~60px includes label + native controls).
+    audio_stack_height = 60 * len(sources) + 10
+    fig_json = fig.to_json()
+
+    # Native <audio> controls are browser-rendered; in dark mode browsers using a
+    # white iframe bg would show jarring contrast. Inverting the controls visually
+    # matches the dark surface without fighting the default audio UI.
+    audio_filter = "filter: invert(0.9) hue-rotate(180deg);" if theme == "dark" else ""
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  body {{
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, system-ui, sans-serif;
+    background: {bg};
+    color: {text_color};
+  }}
+  audio {{ width: 100%; {audio_filter} }}
+  #chart {{ width: 100%; cursor: crosshair; }}
+</style>
+</head>
+<body>
+  {audio_block}
+  <div id="chart"></div>
+  <script>
+    const fig = {fig_json};
+    const chart = document.getElementById('chart');
+    const audioEls = {audio_ids_js}.map(id => document.getElementById(id));
+    const SHAPE_IDX = {shape_idx};
+
+    function setPlayhead(t) {{
+      const update = {{}};
+      update['shapes[' + SHAPE_IDX + '].x0'] = t;
+      update['shapes[' + SHAPE_IDX + '].x1'] = t;
+      Plotly.relayout(chart, update);
+    }}
+
+    Plotly.newPlot(chart, fig.data, fig.layout, {{responsive: true}}).then(() => {{
+      audioEls.forEach(el => {{
+        el.addEventListener('timeupdate', () => setPlayhead(el.currentTime));
+        // Pause the others when this one starts, so we never hear both at once.
+        el.addEventListener('play', () => {{
+          audioEls.forEach(other => {{ if (other !== el) other.pause(); }});
+        }});
+      }});
+
+      chart.addEventListener('click', (evt) => {{
+        const xaxis = chart._fullLayout && chart._fullLayout.xaxis;
+        if (!xaxis || typeof xaxis.p2d !== 'function') return;
+        const rect = chart.getBoundingClientRect();
+        const xPixel = evt.clientX - rect.left - xaxis._offset;
+        const xData = xaxis.p2d(xPixel);
+        if (!isFinite(xData) || xData < 0) return;
+        audioEls.forEach(el => {{
+          const dur = isFinite(el.duration) ? el.duration : Infinity;
+          if (xData <= dur) el.currentTime = xData;
+        }});
+        setPlayhead(xData);
+      }});
+    }});
+  </script>
+</body>
+</html>"""
+
+    components.html(html, height=fig_height + audio_stack_height + 20)

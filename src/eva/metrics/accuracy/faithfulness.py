@@ -4,29 +4,20 @@ import json
 from typing import Any
 
 from eva.metrics.base import ConversationTextJudgeMetric, MetricContext
+from eva.metrics.pipeline_prompts import get_user_turns_disclaimer
 from eva.metrics.registry import register_metric
+from eva.metrics.utils import build_binary_flag_sub_metrics
 from eva.models.results import MetricScore
 
+_FAITHFULNESS_DIMENSION_KEYS = (
+    "fabricating_tool_parameters",
+    "misrepresenting_tool_result",
+    "violating_policies",
+    "failing_to_disambiguate",
+    "hallucination",
+)
+
 # --- Pipeline-specific prompt text for faithfulness evaluation ---
-
-_CASCADE_USER_TURNS_DISCLAIMER = (
-    "**About user turns:** User turns are **transcripts** produced by the assistant's speech-to-text (STT) "
-    "system. The assistant receives these transcripts as text input — this is the only representation of "
-    "user speech available to the assistant. STT transcripts may contain errors (misheard words, garbled "
-    "names, dropped syllables), but the assistant cannot know what the user actually said beyond what the "
-    "transcript shows. Therefore, judge faithfulness against the transcript: if the transcript says "
-    '"Kim" (even if the user actually said "Kin"), the assistant is faithful when it uses "Kim".'
-)
-
-_S2S_USER_TURNS_DISCLAIMER = (
-    "**About user turns:** This is a **speech-to-speech** system — the assistant receives raw audio "
-    "directly, not a text transcript. The user turns shown here are the **intended text** (what the user "
-    "simulator was instructed to say), not what the assistant heard. The assistant is responsible for its "
-    "own audio understanding. If the assistant misheard the user and used incorrect information in a tool "
-    "call or response, that IS a faithfulness issue — accurate audio understanding is part of the "
-    "assistant's responsibility. The only mitigation is proper disambiguation: if the assistant was unsure "
-    "about what it heard, it should have asked the user to confirm or clarify."
-)
 
 _CASCADE_DISAMBIGUATION_CONTEXT = (
     "Since the assistant is working from a speech-to-text transcript, it should account for potential "
@@ -68,11 +59,10 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
 
     def get_prompt_variables(self, context: MetricContext, transcript_text: str) -> dict[str, Any]:
         """Return variables for prompt formatting."""
+        user_turns_disclaimer = get_user_turns_disclaimer(context.is_audio_native)
         if context.is_audio_native:
-            user_turns_disclaimer = _S2S_USER_TURNS_DISCLAIMER
             disambiguation_context = _S2S_DISAMBIGUATION_CONTEXT
         else:
-            user_turns_disclaimer = _CASCADE_USER_TURNS_DISCLAIMER
             disambiguation_context = _CASCADE_DISAMBIGUATION_CONTEXT
 
         return {
@@ -94,10 +84,17 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
         context: MetricContext,
         raw_response: str | None = None,
     ) -> MetricScore:
-        """Build MetricScore with analysis details."""
-        analysis = {
-            "dimensions": response.get("dimensions", {}),
-        }
+        """Build MetricScore with analysis details and per-dimension issue-flag sub-metrics."""
+        dimensions = response.get("dimensions", {}) if isinstance(response, dict) else {}
+        sub_metrics = build_binary_flag_sub_metrics(
+            parent_name=self.name,
+            entries=dimensions,
+            entry_keys=_FAITHFULNESS_DIMENSION_KEYS,
+            flag_field="flagged",
+            detail_fields=("rating", "evidence"),
+        )
+
+        analysis = {"dimensions": dimensions}
         return MetricScore(
             name=self.name,
             score=float(rating),
@@ -109,4 +106,5 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
                 "judge_prompt": prompt,
                 "judge_raw_response": raw_response,
             },
+            sub_metrics=sub_metrics or None,
         )

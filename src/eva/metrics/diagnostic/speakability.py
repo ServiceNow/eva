@@ -8,6 +8,7 @@ from typing import Any
 
 from eva.metrics.base import MetricContext, PerTurnConversationJudgeMetric
 from eva.metrics.registry import register_metric
+from eva.models.config import PipelineType
 
 
 @register_metric
@@ -32,7 +33,7 @@ class SpeakabilityJudgeMetric(PerTurnConversationJudgeMetric):
     description = "Debug metric: LLM judge evaluation of text voice-friendliness per turn"
     category = "diagnostic"
     exclude_from_pass_at_k = True
-    skip_audio_native = True
+    supported_pipeline_types = frozenset({PipelineType.CASCADE, PipelineType.AUDIO_LLM})
     rating_scale = (0, 1)
 
     def get_expected_turn_ids(self, context: MetricContext) -> list[int]:

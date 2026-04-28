@@ -108,16 +108,6 @@ class AgentConfig(BaseModel):
     tool_module_path: str = Field(
         description="Python module path for tool implementations (e.g., 'eva.assistant.tools.airline_tools')",
     )
-    user_simulator_context: str = Field(
-        "",
-        description=(
-            "Domain-specific context line prepended to the user simulator system prompt. "
-            "Describes who the user is in this domain, e.g. "
-            "'You are a passenger of SkyWay Airlines calling customer service.' "
-            "Required when adding a new domain."
-        ),
-    )
-
     model_config = ConfigDict(extra="allow")
 
     @classmethod

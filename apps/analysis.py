@@ -13,6 +13,7 @@ import html
 import json
 import os
 import re
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -78,7 +79,46 @@ _CATEGORY_COLORS = {
     "Other": "#AAAAAA",
 }
 
-_NON_NORMALIZED_METRICS = {"response_speed"}
+_NON_NORMALIZED_METRICS = {"response_speed", "tool_call_validity__num_tool_calls"}
+
+# Axis title + hover suffix for non-normalized metrics. Sub-metrics fall back to their parent's entry.
+_NON_NORMALIZED_UNITS: dict[str, tuple[str, str]] = {
+    "response_speed": ("Seconds", "s"),
+    "tool_call_validity__num_tool_calls": ("Count", ""),
+}
+
+
+def _non_normalized_unit(name: str) -> tuple[str, str]:
+    """Return (x-axis title, hover suffix) for a non-normalized metric."""
+    if name in _NON_NORMALIZED_UNITS:
+        return _NON_NORMALIZED_UNITS[name]
+    parent = name.split("__", 1)[0]
+    return _NON_NORMALIZED_UNITS.get(parent, ("Value", ""))
+
+
+# Prefix shown in front of metric labels when the metric is lower-is-better.
+_LOWER_IS_BETTER_PREFIX = "↓ "
+
+
+def _is_lower_is_better(name: str) -> bool:
+    """Return True if a metric or sub-metric reads lower-is-better.
+
+    Parent metric direction comes from the metric class (via the registry).
+    Sub-metric direction is derived from the key suffix: ``_rate`` → lower is
+    better, ``_accuracy`` → higher is better, otherwise inherit the parent.
+    Sub-metric keys are encoded as ``<parent>__<sub_key>`` in the analysis app.
+    """
+    parent, _, sub_key = name.partition("__")
+    metric_class = get_global_registry().get(parent)
+    parent_higher_is_better = True if metric_class is None else metric_class.higher_is_better
+    if not sub_key:
+        return not parent_higher_is_better
+    if sub_key.endswith("_rate"):
+        return True
+    if sub_key.endswith("_accuracy"):
+        return False
+    return not parent_higher_is_better
+
 
 # EVA composite scores to show in the bar chart
 _EVA_BAR_COMPOSITES = ["EVA-A_pass", "EVA-X_pass", "EVA-A_mean", "EVA-X_mean"]
@@ -105,23 +145,35 @@ def get_run_directories(output_dir: Path) -> list[Path]:
 
 
 def _system_name_from_run(run_dir: Path) -> str:
-    """Extract the system name from a run folder name (<timestamp>_<system_name>)."""
+    """Extract the system name used to deduplicate runs in filter_latest_runs.
+
+    For suffixed folders (<timestamp>_<system>) returns the suffix directly.
+    For timestamp-only folders, derives the system name from config.json so
+    that two runs with different LLMs (e.g. claude-haiku-4-5 vs
+    claude-haiku-4-5-no-reasoning) are treated as distinct systems, and
+    multiple runs of the same model are deduplicated to the latest.
+    """
     m = re.match(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d+_(.+)$", run_dir.name)
-    return m.group(1) if m else run_dir.name
+    if m:
+        return m.group(1)
+    config = _load_run_config(run_dir)
+    return _model_suffix_from_config(config) or run_dir.name
 
 
 def filter_latest_runs(run_dirs: list[Path]) -> list[Path]:
-    """Keep only the most recent run per system name.
+    """Keep only the most recent run per (system name, domain) combination.
 
     Assumes run_dirs is already sorted newest-first (as returned by
-    get_run_directories), so the first occurrence of each system name wins.
+    get_run_directories), so the first occurrence of each (system, domain) wins.
+    Including domain in the key prevents collapsing runs of the same system on
+    different datasets (e.g., airline vs medical_hr).
     """
-    seen: set[str] = set()
+    seen: set[tuple[str, str]] = set()
     result = []
     for d in run_dirs:
-        system = _system_name_from_run(d)
-        if system not in seen:
-            seen.add(system)
+        key = (_system_name_from_run(d), _domain_from_config(_load_run_config(d)))
+        if key not in seen:
+            seen.add(key)
             result.append(d)
     return result
 
@@ -143,7 +195,7 @@ def load_record_result(record_dir: Path) -> ConversationResult | None:
         with open(result_path) as f:
             return ConversationResult(**json.load(f))
     except Exception as e:
-        st.error(f"Failed to load result.json: {e}")
+        print(f"Failed to load result.json: {e}", file=sys.stderr)
         return None
 
 
@@ -156,7 +208,7 @@ def load_record_metrics(record_dir: Path) -> RecordMetrics | None:
         with open(metrics_path) as f:
             return RecordMetrics(**json.load(f))
     except Exception as e:
-        st.error(f"Failed to load metrics.json: {e}")
+        print(f"Failed to load metrics.json: {e}", file=sys.stderr)
         return None
 
 
@@ -182,7 +234,7 @@ def load_evaluation_record(run_dir: Path, record_id: str) -> EvaluationRecord | 
                 return record
         return None
     except Exception as e:
-        st.error(f"Failed to load dataset: {e}")
+        print(f"Failed to load dataset: {e}", file=sys.stderr)
         return None
 
 
@@ -198,9 +250,26 @@ def _load_run_config(run_dir: Path) -> dict:
     return {}
 
 
+def _domain_from_config(run_config: dict) -> str:
+    """Return the dataset domain for a run, defaulting to 'airline' when absent."""
+    return run_config.get("domain") or "airline"
+
+
 def _load_metrics_summary(run_dir: Path) -> dict:
     """Load metrics_summary.json for a run."""
     path = run_dir / "metrics_summary.json"
+    if path.exists():
+        try:
+            with open(path) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def _load_evaluation_summary(run_dir: Path) -> dict:
+    """Load evaluation_summary.json for a run."""
+    path = run_dir / "evaluation_summary.json"
     if path.exists():
         try:
             with open(path) as f:
@@ -224,7 +293,7 @@ def format_transcript(transcript_path: Path) -> pd.DataFrame:
         cols.extend(c for c in df.columns if c not in cols)
         return df[cols] if cols else df
     except Exception as e:
-        st.error(f"Failed to load transcript: {e}")
+        print(f"Failed to load transcript: {e}", file=sys.stderr)
         return pd.DataFrame()
 
 
@@ -239,25 +308,35 @@ def _is_sub_metric(name: str) -> bool:
 
 
 def _sort_metrics_by_category(metric_names: list[str]) -> list[str]:
-    """Sort metric names grouped by category."""
+    """Group metric names by category while preserving input order within each category.
 
-    def _sort_key(m: str) -> tuple[int, str]:
+    Python's ``sorted`` is stable, so keying on the category index only keeps the
+    relative order of items that share a category (e.g., the insertion order from
+    ``_collect_run_metrics``, which already matches each metric's ``sub_metrics`` order).
+    """
+
+    def _sort_key(m: str) -> int:
         cat = _METRIC_GROUP.get(m, "Other")
-        idx = _CATEGORY_ORDER.index(cat) if cat in _CATEGORY_ORDER else len(_CATEGORY_ORDER)
-        return (idx, m)
+        return _CATEGORY_ORDER.index(cat) if cat in _CATEGORY_ORDER else len(_CATEGORY_ORDER)
 
     return sorted(metric_names, key=_sort_key)
 
 
+def _direction_prefix(name: str) -> str:
+    """Return the lower-is-better prefix (e.g. ``"↓ "``) if applicable, else ``""``."""
+    return _LOWER_IS_BETTER_PREFIX if _is_lower_is_better(name) else ""
+
+
 def _make_category_header_rename(metric_names: list[str]) -> dict[str, str]:
     """Prefix metric names with their category for display."""
-    return {m: f"[{_METRIC_GROUP.get(m, 'Other')}] {m}" for m in metric_names}
+    return {m: f"[{_METRIC_GROUP.get(m, 'Other')}] {_direction_prefix(m)}{m}" for m in metric_names}
 
 
 def _format_metric_name(name: str) -> str:
     """Format a metric name for display, preserving acronyms."""
     parts = name.split("_")
-    return " ".join(p.upper() if p.lower() in _ACRONYMS else p.capitalize() for p in parts)
+    formatted = " ".join(p.upper() if p.lower() in _ACRONYMS else p.capitalize() for p in parts)
+    return f"{_direction_prefix(name)}{formatted}"
 
 
 def _score_color(score: float | None) -> str:
@@ -289,6 +368,7 @@ def _classify_metrics(
                 "score": metric_score.score,
                 "normalized_score": metric_score.normalized_score,
                 "details": details,
+                "sub_metrics": getattr(metric_score, "sub_metrics", None),
             }
             role = known_role or "user"
             if role == "assistant":
@@ -316,25 +396,34 @@ def _get_turn_metric_info(turn_id: int, per_turn_metrics: dict[str, dict]) -> li
         explanation = ""
 
         if metric_name == "turn_taking":
-            label = (details.get("per_turn_judge_timing_ratings") or {}).get(tid)
-            if label is None:
+            score = (details.get("per_turn_score") or {}).get(tid)
+            if score is None:
                 continue
-            label_lower = label.strip().lower()
-            if label_lower == "on-time":
-                rating = 1.0
-            elif label_lower == "late":
-                rating = 0.3
+            reason = (details.get("per_turn_reason") or {}).get(tid, "")
+            evidence = (details.get("per_turn_evidence") or {}).get(tid, {}) or {}
+            # Compose a short summary: reason + primary timing value.
+            if reason == "latency" and "latency_ms" in evidence:
+                short = f"latency {evidence['latency_ms']:.0f}ms"
+            elif reason == "agent_interrupt" and "overlap_ms" in evidence:
+                short = f"agent interrupt (overlap {evidence['overlap_ms']:.0f}ms)"
+            elif reason == "user_interrupt" and "yield_ms" in evidence:
+                short = f"user interrupt (yield {evidence['yield_ms']:.0f}ms)"
+            elif reason == "dual_interrupt":
+                o = evidence.get("overlap_ms")
+                y = evidence.get("yield_ms")
+                short = (
+                    f"dual interrupt (overlap {o:.0f}ms, yield {y:.0f}ms)"
+                    if o is not None and y is not None
+                    else "dual interrupt"
+                )
             else:
-                rating = 0.0
-            latency = (details.get("per_turn_latency") or {}).get(tid)
-            latency_str = f" ({latency:.3f}s)" if latency is not None else ""
-            explanation = (details.get("per_turn_judge_timing_explanations") or {}).get(tid, "")
+                short = reason or "turn"
             results.append(
                 {
                     "metric_name": metric_name,
-                    "short_name": f"{label}{latency_str}",
-                    "rating": rating,
-                    "explanation": explanation,
+                    "short_name": short,
+                    "rating": score,
+                    "explanation": "",
                 }
             )
             continue
@@ -521,12 +610,25 @@ def _color_cell(val):
 def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
     """Collect all metrics rows for a run. Returns (rows, metric_names).
 
-    Rows for failed attempts (directories named *_failed_attempt_*) are marked
-    with ``_is_failed_attempt=True`` so the caller can filter them.
+    Column order is preserved in first-seen insertion order so each metric's
+    ``sub_metrics`` dict drives the column layout (alphabetical sorting would
+    scramble logical groupings like `mean_latency_ms, p50, p90, on_time_rate, ...`).
+
+    Rows are marked with ``_is_failed_attempt=True`` when either the directory
+    is named ``*_failed_attempt_*`` or the output_id appears in the run's
+    ``failed_record_ids`` (covers final failures the orchestrator may have left
+    at the original path).
     """
     record_dirs = get_record_directories(run_dir)
+    summary_failed_ids = set((_load_evaluation_summary(run_dir).get("simulation") or {}).get("failed_record_ids") or [])
     rows: list[dict] = []
-    all_metric_names: set[str] = set()
+    ordered_names: list[str] = []
+    seen: set[str] = set()
+
+    def _add(name: str) -> None:
+        if name not in seen:
+            seen.add(name)
+            ordered_names.append(name)
 
     for record_dir in record_dirs:
         record_id = record_dir.name
@@ -537,13 +639,14 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
             if not metrics:
                 continue
 
-            is_failed_attempt = "_failed_attempt_" in trial_label
+            output_id = f"{record_id}/{trial_label}" if trial_label else record_id
+            is_failed_attempt = "_failed_attempt_" in trial_label or output_id in summary_failed_ids
             row: dict = {"record": record_id, "_is_failed_attempt": is_failed_attempt}
             if trial_label:
                 row["trial"] = trial_label
 
             for metric_name, metric_score in metrics.metrics.items():
-                all_metric_names.add(metric_name)
+                _add(metric_name)
                 row[metric_name] = (
                     None
                     if metric_score.error
@@ -563,15 +666,18 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
                             if sub_ms.normalized_score is not None
                             else sub_ms.score
                         )
-                        all_metric_names.add(col)
+                        _add(col)
                         if col not in _METRIC_GROUP:
                             _METRIC_GROUP[col] = _METRIC_GROUP.get(metric_name, "Other")
                         if metric_name in _NON_NORMALIZED_METRICS:
                             _NON_NORMALIZED_METRICS.add(col)
 
+            for comp_name, comp_value in metrics.aggregate_metrics.items():
+                row[comp_name] = comp_value
+
             rows.append(row)
 
-    return rows, sorted(all_metric_names)
+    return rows, ordered_names
 
 
 def _extract_eva_scatter_point(
@@ -596,6 +702,7 @@ def _extract_eva_scatter_point(
         "short_label": model_suffix or run_dir.name,
         "model_details": _extract_model_details(run_config),
         "pipeline_type": _classify_pipeline_type(run_config),
+        "domain": _domain_from_config(run_config),
     }
 
     # pass@1: mean of EVA-A_pass and EVA-X_pass
@@ -720,6 +827,23 @@ def _extract_all_models(run_config: dict) -> set[str]:
     return models or {"unknown"}
 
 
+def _extract_system_label(run_config: dict) -> str:
+    """Build a human-readable system label like 'nova-3 + gpt-4.1-mini + sonic-3'."""
+    details = _extract_model_details(run_config)
+    if "S2S" in details:
+        return details["S2S"]
+    parts = []
+    if "STT" in details:
+        parts.append(details["STT"])
+    if "Audio LLM" in details:
+        parts.append(details["Audio LLM"])
+    elif "LLM" in details:
+        parts.append(details["LLM"])
+    if "TTS" in details:
+        parts.append(details["TTS"])
+    return " + ".join(parts) if parts else "unknown"
+
+
 def _extract_providers(run_config: dict) -> set[str]:
     """Extract all providers (LLM, STT, TTS) from config."""
     model_list = run_config.get("model_list") or []
@@ -822,6 +946,7 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
                     "stt": details.get("STT", ""),
                     "tts": details.get("TTS", ""),
                     "pipeline_type": d.get("pipeline_type", _PIPELINE_UNKNOWN),
+                    "domain": d.get("domain", ""),
                 }
             )
 
@@ -873,6 +998,7 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
             f"EVA-A<sub>{subscript}</sub>: {p['x']:.3f}",
             f"EVA-X<sub>{subscript}</sub>: {p['y']:.3f}",
             f"Type: {ptype}",
+            *([f"Domain: {p['domain']}"] if p.get("domain") else []),
             *(f"{model.upper()}: {p[model]}" for model in ("llm", "stt", "tts") if p[model]),
         ]
 
@@ -923,6 +1049,102 @@ def _render_eva_scatter_plot(scatter_data: list[dict]):
     st.plotly_chart(fig)
 
 
+def _aggregate_summary_by_system(summary_df: pd.DataFrame) -> pd.DataFrame:
+    """Collapse cross-run summary rows of the same system across domains.
+
+    Numeric metric/composite columns are averaged; record/error counts are
+    summed; ``metrics_with_errors`` dicts are merged (per-metric counts summed);
+    other identity columns take the first value within each system group.
+    """
+    if summary_df.empty or "system_name" not in summary_df.columns:
+        return summary_df
+
+    sum_cols = [c for c in ("records", "conversation_failures", "records_with_errors") if c in summary_df.columns]
+    identity_cols = {
+        "system_name",
+        "domain",
+        "run",
+        "label",
+        "run_output_dir",
+        "run_timestamp",
+        "pipeline_type",
+        "metrics_with_errors",
+    }
+    metric_cols = [
+        c
+        for c in summary_df.columns
+        if c not in identity_cols and c not in sum_cols and pd.api.types.is_numeric_dtype(summary_df[c])
+    ]
+
+    summary_df = summary_df.copy()
+    for c in sum_cols:
+        summary_df[c] = pd.to_numeric(summary_df[c], errors="coerce").fillna(0)
+
+    def _merge_metric_errors(series: pd.Series) -> dict:
+        merged: dict = {}
+        for d in series:
+            if isinstance(d, dict):
+                for k, v in d.items():
+                    try:
+                        merged[k] = merged.get(k, 0) + int(v)
+                    except (TypeError, ValueError):
+                        continue
+        return merged
+
+    agg_map: dict = dict.fromkeys(metric_cols, "mean")
+    for c in sum_cols:
+        agg_map[c] = "sum"
+    if "metrics_with_errors" in summary_df.columns:
+        agg_map["metrics_with_errors"] = _merge_metric_errors
+    if "run_timestamp" in summary_df.columns:
+        agg_map["run_timestamp"] = "max"
+    for c in summary_df.columns:
+        if c == "system_name" or c in agg_map:
+            continue
+        agg_map[c] = "first"
+
+    aggregated = summary_df.groupby("system_name", as_index=False, sort=False).agg(agg_map)
+    if "domain" in aggregated.columns:
+        aggregated["domain"] = "(averaged)"
+    if "run" in aggregated.columns:
+        aggregated["run"] = ""
+    if "label" in aggregated.columns:
+        aggregated["label"] = aggregated["system_name"]
+    return aggregated
+
+
+def _aggregate_scatter_by_system(scatter_data: list[dict], run_to_system: dict[str, str]) -> list[dict]:
+    """Average EVA scatter points across runs sharing the same system."""
+    score_keys = ("pass_at_1", "pass_at_k", "pass_power_k", "mean")
+    by_system: dict[str, list[dict]] = {}
+    for d in scatter_data:
+        sys = run_to_system.get(d.get("run", ""))
+        if not sys:
+            continue
+        by_system.setdefault(sys, []).append(d)
+
+    aggregated: list[dict] = []
+    for sys, points in by_system.items():
+        first = points[0]
+        merged: dict = {
+            "run": "",
+            "label": sys,
+            "short_label": first.get("short_label") or sys,
+            "model_details": first.get("model_details", {}),
+            "pipeline_type": first.get("pipeline_type", _PIPELINE_UNKNOWN),
+            "domain": "(averaged)",
+        }
+        for key in score_keys:
+            vals = [p[key] for p in points if isinstance(p.get(key), dict) and "eva_a" in p[key] and "eva_x" in p[key]]
+            if vals:
+                merged[key] = {
+                    "eva_a": sum(v["eva_a"] for v in vals) / len(vals),
+                    "eva_x": sum(v["eva_x"] for v in vals) / len(vals),
+                }
+        aggregated.append(merged)
+    return aggregated
+
+
 # ============================================================================
 # Views
 # ============================================================================
@@ -937,28 +1159,36 @@ def render_cross_run_comparison(run_dirs: list[Path]):
     run_configs = {d.name: _load_run_config(d) for d in run_dirs}
 
     # Collect filter options
-    all_models: set[str] = set()
     all_providers: set[str] = set()
     all_types: set[str] = set()
-    for cfg in run_configs.values():
-        all_models.update(_extract_all_models(cfg))
-        all_providers.update(_extract_providers(cfg))
+    providers_by_run: dict[str, set[str]] = {}
+    system_by_run: dict[str, str] = {}
+    for run_name, cfg in run_configs.items():
+        providers_by_run[run_name] = _extract_providers(cfg)
+        system_by_run[run_name] = _extract_system_label(cfg)
+        all_providers.update(providers_by_run[run_name])
         all_types.add(_classify_pipeline_type(cfg))
 
-    # Render filters
+    # Render filters — Provider is rendered before System so its selection can
+    # constrain which systems are shown (cascading filter).
     sel_types = st.multiselect("Pipeline Type", sorted(all_types), default=all_types, key="type", bind="query-params")
     sel_providers = st.multiselect(
         "Provider", sorted(all_providers), default=all_providers, key="provider", bind="query-params"
     )
-    sel_models = st.multiselect("Model", sorted(all_models), default=all_models, key="model", bind="query-params")
+
+    # Only show systems that contain at least one model from a selected provider.
+    available_systems = sorted(
+        {system_by_run[run_name] for run_name, providers in providers_by_run.items() if providers & set(sel_providers)}
+    )
+    sel_systems = st.multiselect(
+        "System", available_systems, default=available_systems, key="model", bind="query-params"
+    )
 
     # Apply filters
     filtered_dirs = [
         d
         for d in run_dirs
-        if _extract_all_models(run_configs[d.name]) & set(sel_models)
-        and _extract_providers(run_configs[d.name]) & set(sel_providers)
-        and _classify_pipeline_type(run_configs[d.name]) in sel_types
+        if system_by_run[d.name] in sel_systems and _classify_pipeline_type(run_configs[d.name]) in sel_types
     ]
 
     if not filtered_dirs:
@@ -966,28 +1196,46 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         return
 
     run_summaries: list[dict] = []
-    all_metric_names: set[str] = set()
+    ordered_metric_names: list[str] = []
+    seen_names: set[str] = set()
+
+    def _add_name(n: str) -> None:
+        if n not in seen_names:
+            seen_names.add(n)
+            ordered_metric_names.append(n)
+
     scatter_data: list[dict] = []
 
     for run_dir in filtered_dirs:
         run_name = run_dir.name
         run_config = run_configs[run_name]
         metrics_summary = _load_metrics_summary(run_dir)
+        eval_summary = _load_evaluation_summary(run_dir)
+        simulation = eval_summary.get("simulation") or {}
+        records_count = simulation.get("successful_records")
+        if records_count is None:
+            records_count = (metrics_summary or {}).get("total_records", 0)
 
         # Try metrics_summary.json first, fall back to per-record loading
         if metrics_summary and "per_metric" in metrics_summary:
             per_metric = metrics_summary["per_metric"]
             metric_names = list(per_metric.keys())
-            all_metric_names.update(metric_names)
+            for n in metric_names:
+                _add_name(n)
             model_details = _extract_model_details(run_config)
             system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
+            data_quality = metrics_summary.get("data_quality") or {}
             summary: dict = {
                 "run": run_name,
                 "run_output_dir": str(run_dir.parent),
                 "label": _get_run_label(run_name, run_config),
                 "system_name": system_name,
+                "domain": _domain_from_config(run_config),
                 "run_timestamp": run_timestamp,
-                "records": metrics_summary.get("total_records", 0),
+                "records": records_count,
+                "conversation_failures": simulation.get("failed_records"),
+                "records_with_errors": data_quality.get("records_with_errors"),
+                "metrics_with_errors": data_quality.get("metrics_with_errors") or {},
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
             }
@@ -998,7 +1246,7 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                     if sub_stats.get("mean") is not None:
                         col = f"{m}__{sub_key}"
                         summary[col] = sub_stats["mean"]
-                        all_metric_names.add(col)
+                        _add_name(col)
                         if col not in _METRIC_GROUP:
                             _METRIC_GROUP[col] = _METRIC_GROUP.get(m, "Other")
                         if m in _NON_NORMALIZED_METRICS:
@@ -1014,7 +1262,8 @@ def render_cross_run_comparison(run_dirs: list[Path]):
             rows, metric_names = _collect_run_metrics(run_dir)
             if not rows:
                 continue
-            all_metric_names.update(metric_names)
+            for n in metric_names:
+                _add_name(n)
             df = pd.DataFrame(rows)
             model_details = _extract_model_details(run_config)
             system_name, run_timestamp = _get_system_and_timestamp(run_name, run_config)
@@ -1023,8 +1272,12 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 "run_output_dir": str(run_dir.parent),
                 "label": _get_run_label(run_name, run_config),
                 "system_name": system_name,
+                "domain": _domain_from_config(run_config),
                 "run_timestamp": run_timestamp,
-                "records": len(df),
+                "records": records_count,
+                "conversation_failures": simulation.get("failed_records"),
+                "records_with_errors": None,
+                "metrics_with_errors": {},
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
             }
@@ -1044,12 +1297,38 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         st.warning("No runs with metrics data found")
         return
 
-    metric_names = _sort_metrics_by_category(sorted(all_metric_names))
+    metric_names = _sort_metrics_by_category(ordered_metric_names)
     if not st.session_state.get("show_sub_metrics"):
         metric_names = [m for m in metric_names if not _is_sub_metric(m)]
 
     col_rename = _make_category_header_rename(metric_names)
     summary_df = pd.DataFrame(run_summaries)
+
+    complete_runs_only = st.sidebar.toggle(
+        "Complete runs only",
+        value=True,
+        key="complete_runs_only",
+        bind="query-params",
+        help="Hide runs that have any failed records (conversation generation failures).",
+    )
+    if complete_runs_only and not summary_df.empty:
+        failures = pd.to_numeric(summary_df["conversation_failures"], errors="coerce").fillna(0)
+        summary_df = summary_df[failures == 0]
+        complete_runs = set(summary_df["run"])
+        scatter_data = [d for d in scatter_data if d["run"] in complete_runs]
+
+    avg_across_domains = st.sidebar.toggle(
+        "Average across domains",
+        value=False,
+        key="avg_across_domains",
+        bind="query-params",
+        help="Collapse runs of the same system across domains into a single row (records summed, metrics averaged).",
+    )
+    summary_df_by_domain = summary_df.copy()
+    if avg_across_domains and not summary_df.empty:
+        run_to_system = dict(zip(summary_df["run"], summary_df["system_name"]))
+        summary_df = _aggregate_summary_by_system(summary_df)
+        scatter_data = _aggregate_scatter_by_system(scatter_data, run_to_system)
 
     ordered_metrics = [m for m in metric_names if m in summary_df.columns]
 
@@ -1059,6 +1338,17 @@ def render_cross_run_comparison(run_dirs: list[Path]):
 
     st.markdown("#### Mean Metrics per Run")
 
+    def _safe_int(value: object) -> int:
+        if value is None or (isinstance(value, float) and pd.isna(value)):
+            return 0
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return 0
+
+    def _has_any_errors(row: pd.Series) -> bool:
+        return bool(_safe_int(row.get("records_with_errors")) or _safe_int(row.get("conversation_failures")))
+
     # Grouped bar chart: Accuracy/Experience metrics + EVA composites
     bar_metrics = [m for m in ordered_metrics if _METRIC_GROUP.get(m) in _BAR_CHART_CATEGORIES]
     bar_composites = [c for c in _EVA_BAR_COMPOSITES if c in summary_df.columns]
@@ -1067,12 +1357,17 @@ def render_cross_run_comparison(run_dirs: list[Path]):
     if bar_keys and len(run_summaries) > 1:
         bar_fig = go.Figure()
         for i, (_, row) in enumerate(summary_df.iterrows()):
+            domain = row.get("domain", "") or ""
             bar_fig.add_trace(
                 go.Bar(
                     x=bar_labels,
                     y=[row.get(m) for m in bar_keys],
                     name=row["label"],
                     marker_color=_MODEL_COLORS[i % len(_MODEL_COLORS)],
+                    customdata=[[domain]] * len(bar_labels),
+                    hovertemplate=(
+                        "<b>%{fullData.name}</b><br>Domain: %{customdata[0]}<br>%{x}: %{y:.3f}<extra></extra>"
+                    ),
                 )
             )
         bar_fig.update_layout(
@@ -1093,14 +1388,30 @@ def render_cross_run_comparison(run_dirs: list[Path]):
     other_metrics = [m for m in ordered_metrics if _METRIC_GROUP.get(m) not in {"Accuracy", "Experience"}]
 
     multiple_output_dirs = summary_df["run_output_dir"].nunique() > 1
-    id_cols = ["system_name", "run_timestamp"] + (["run_output_dir"] if multiple_output_dirs else []) + ["records"]
+    multiple_domains = (not avg_across_domains) and summary_df["domain"].nunique() > 1
+    id_cols = (
+        ["system_name"]
+        + (["domain"] if multiple_domains else [])
+        + ["run_timestamp"]
+        + (["run_output_dir"] if multiple_output_dirs else [])
+        + ["records"]
+    )
     id_rename = {
         "system_name": "System",
+        "domain": "Domain",
         "run_timestamp": "Timestamp",
         "run_output_dir": "Output Dir",
         "records": "# Records",
     }
+    summary_df["system_name"] = [
+        f"{name} ⚠️" if _has_any_errors(row) else name
+        for name, (_, row) in zip(summary_df["system_name"], summary_df.iterrows())
+    ]
     link_series = "/run_overview?output_dir=" + summary_df["run_output_dir"] + "&run=" + summary_df["run"]
+    if not st.session_state.get("latest_only", True):
+        link_series = link_series + "&latest_only=false"
+    if st.session_state.get("show_sub_metrics"):
+        link_series = link_series + "&show_sub_metrics=true"
 
     def _show_subtable(heading: str, composites: list, metrics: list) -> None:
         if not composites and not metrics:
@@ -1109,23 +1420,173 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         composite_rename = {c: f"[EVA] {_EVA_COMPOSITE_DISPLAY[c]}" for c in composites}
         cols = id_cols + composites + metrics
         sub_df = summary_df[cols].copy()
-        sub_df.insert(0, "link", link_series)
+        if not avg_across_domains:
+            sub_df.insert(0, "link", link_series)
         sub_df = sub_df.rename(columns={**id_rename, **composite_rename, **col_rename})
         score_cols = [composite_rename[c] for c in composites] + [col_rename[m] for m in metrics]
         styled = sub_df.style.map(_color_cell, subset=score_cols)
         styled = styled.format(dict.fromkeys(score_cols, "{:.3f}"), na_rep="—")
-        st.dataframe(
-            styled,
-            hide_index=True,
-            column_config={"link": st.column_config.LinkColumn(" ", display_text="🔍", width=40)},
-        )
+        column_config: dict = {"System": st.column_config.Column(pinned=True)}
+        if not avg_across_domains:
+            column_config["link"] = st.column_config.LinkColumn("Run", display_text="🔍", width=40, pinned=True)
+        st.dataframe(styled, column_config=column_config)
 
     _show_subtable("Accuracy Metrics (EVA-A)", eva_a_composites, accuracy_metrics)
     _show_subtable("Experience Metrics (EVA-X)", eva_x_composites, experience_metrics)
     _show_subtable("Diagnostic & Other Metrics", [], other_metrics)
 
+    # === Metric by Domain pivot ===
+    candidate_metrics = [c for c in _EVA_BAR_COMPOSITES if c in summary_df_by_domain.columns]
+    candidate_metrics += [m for m in ordered_metrics if m in summary_df_by_domain.columns]
+    if candidate_metrics and "domain" in summary_df_by_domain.columns:
+        st.markdown("#### Metric by Domain")
+
+        def _pivot_metric_label(m: str) -> str:
+            if m in _EVA_COMPOSITE_DISPLAY:
+                return f"[EVA] {_EVA_COMPOSITE_DISPLAY[m]}"
+            return _format_metric_name(m)
+
+        default_pivot_index = candidate_metrics.index("EVA-A_pass") if "EVA-A_pass" in candidate_metrics else 0
+        selected_pivot_metric = st.selectbox(
+            "Metric",
+            candidate_metrics,
+            index=default_pivot_index,
+            format_func=_pivot_metric_label,
+            key="domain_pivot_metric",
+        )
+        domain_pivot = summary_df_by_domain.pivot_table(
+            index="system_name",
+            columns="domain",
+            values=selected_pivot_metric,
+            aggfunc="mean",
+        )
+        if not domain_pivot.empty:
+            domain_pivot.index.name = "System"
+            domain_pivot.columns.name = "Domain"
+            pivot_styled = domain_pivot.style.map(_color_cell).format("{:.3f}", na_rep="—")
+            st.dataframe(pivot_styled)
+
+    error_rows = []
+    for _, row in summary_df.iterrows():
+        total = _safe_int(row.get("records"))
+        conv_failures = _safe_int(row.get("conversation_failures"))
+        judge_errors = _safe_int(row.get("records_with_errors"))
+        if not (conv_failures or judge_errors) or not total:
+            continue
+        metric_errors = row.get("metrics_with_errors") or {}
+        if not isinstance(metric_errors, dict):
+            metric_errors = {}
+        metric_breakdown = ", ".join(f"{m} ({n})" for m, n in sorted(metric_errors.items())) or "—"
+        error_rows.append(
+            {
+                "System": row["system_name"],
+                "Timestamp": row["run_timestamp"],
+                "# Records": total,
+                "Conversation Failures": conv_failures,
+                "Judge Errors": judge_errors,
+                "Judge Error Rate": judge_errors / total,
+                "Metrics with Errors": metric_breakdown,
+            }
+        )
+    if error_rows:
+        st.markdown("#### Errors")
+        st.caption(
+            "**Conversation Failures**: records where conversation generation failed. "
+            "**Judge Errors**: records where one or more metrics failed to compute."
+        )
+        errors_df = pd.DataFrame(error_rows)
+        errors_styled = errors_df.style.format({"Judge Error Rate": "{:.1%}"})
+        st.dataframe(errors_styled, hide_index=True)
+
     csv = summary_df.drop(columns=["label"]).to_csv(index=False)
     st.download_button("Download CSV", csv, file_name="cross_run_comparison.csv", mime="text/csv")
+
+    # === Per-Sample Heatmap ===
+    if avg_across_domains:
+        return
+
+    st.markdown("---")
+    st.markdown("#### Per-Sample Heatmap")
+
+    # Collect per-record rows for all runs present in summary_df
+    run_label_map = dict(zip(summary_df["run"], summary_df["label"]))
+    heatmap_rows: list[dict] = []
+    for run_dir in filtered_dirs:
+        run_name = run_dir.name
+        if run_name not in run_label_map:
+            continue
+        label = run_label_map[run_name]
+        per_record_rows, _ = _collect_run_metrics(run_dir)
+        for row in per_record_rows:
+            if row.get("_is_failed_attempt"):
+                continue
+            metric_vals = {k: v for k, v in row.items() if k not in ("record", "_is_failed_attempt", "trial")}
+            heatmap_rows.append({"system": label, "record": row["record"], **metric_vals})
+
+    if not heatmap_rows:
+        st.info("No per-record data available for heatmap.")
+    else:
+        heatmap_df = pd.DataFrame(heatmap_rows)
+
+        # Metric selector: use ordered_metrics filtered to those present in heatmap_df
+        available_heatmap_metrics = [m for m in ordered_metrics if m in heatmap_df.columns]
+        if not st.session_state.get("show_sub_metrics"):
+            available_heatmap_metrics = [m for m in available_heatmap_metrics if not _is_sub_metric(m)]
+
+        if available_heatmap_metrics:
+            with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
+                selected_heatmap_metric = st.selectbox(
+                    "Metric",
+                    available_heatmap_metrics,
+                    format_func=_format_metric_name,
+                    key="heatmap_metric",
+                )
+                with st.container(width="content", gap=None):
+                    st.space(28)  # Height of the selectbox's label.
+                    swap_axes = st.toggle("Swap axes", key="heatmap_swap_axes")
+
+            # Build pivot: rows=system, columns=record, values=selected metric
+            pivot = heatmap_df.pivot_table(
+                index="system",
+                columns="record",
+                values=selected_heatmap_metric,
+                aggfunc="mean",
+            )
+
+            colorscale = "RdYlGn_r" if _is_lower_is_better(selected_heatmap_metric) else "RdYlGn"
+            metric_display = _format_metric_name(selected_heatmap_metric)
+
+            if swap_axes:
+                z_data = pivot.T.values.tolist()[::-1]
+                x_labels = list(pivot.index)  # systems on x-axis
+                y_labels = list(pivot.columns)[::-1]  # samples on y-axis, reversed so first sample is at top
+                x_title, y_title = "System", "Sample"
+            else:
+                z_data = pivot.values.tolist()
+                x_labels = list(pivot.columns)  # samples on x-axis
+                y_labels = list(pivot.index)  # systems on y-axis
+                x_title, y_title = "Sample", "System"
+
+            heatmap_fig = go.Figure(
+                data=go.Heatmap(
+                    z=z_data,
+                    x=x_labels,
+                    y=y_labels,
+                    colorscale=colorscale,
+                    colorbar={"title": metric_display},
+                    hovertemplate=(
+                        f"{x_title}: %{{x}}<br>{y_title}: %{{y}}<br>{metric_display}: %{{z:.3f}}<extra></extra>"
+                    ),
+                )
+            )
+            heatmap_fig.update_layout(
+                title=f"Per-Sample Heatmap: {metric_display}",
+                xaxis={"title": x_title, "tickangle": -45},
+                yaxis={"title": y_title},
+                height=max(350, 80 + 40 * len(y_labels)),
+                margin={"l": 20, "r": 20, "t": 50, "b": 120},
+            )
+            st.plotly_chart(heatmap_fig, use_container_width=True)
 
 
 def render_run_overview(run_dir: Path):
@@ -1181,6 +1642,7 @@ def render_run_overview(run_dir: Path):
         chart_rows = [
             {
                 "metric": _format_metric_name(m),
+                "raw_metric": m,
                 "mean": stats["mean"],
                 "std": stats["std"],
                 "min": stats["min"],
@@ -1194,10 +1656,12 @@ def render_run_overview(run_dir: Path):
         if chart_rows:
             chart_df = pd.DataFrame(chart_rows)
 
-            # Sort by category order then metric name within category
+            # Sort by category order, then raw metric name so sub-metrics stay next to their parent.
             cat_order = {c: i for i, c in enumerate(_CATEGORY_ORDER + ["Other"])}
             chart_df["_cat_sort"] = chart_df["category"].map(lambda c: cat_order.get(c, len(cat_order)))
-            chart_df = chart_df.sort_values(["_cat_sort", "metric"], ascending=[True, True]).drop(columns=["_cat_sort"])
+            chart_df = chart_df.sort_values(["_cat_sort", "raw_metric"], ascending=[True, True]).drop(
+                columns=["_cat_sort", "raw_metric"]
+            )
 
             fig = go.Figure()
             for cat in _CATEGORY_ORDER + ["Other"]:
@@ -1245,6 +1709,7 @@ def render_run_overview(run_dir: Path):
         for m, stats in standalone_data.items():
             display_name = _format_metric_name(m)
             cat = _METRIC_GROUP.get(m, "Other")
+            axis_title, suffix = _non_normalized_unit(m)
             fig = go.Figure()
             fig.add_trace(
                 go.Bar(
@@ -1261,17 +1726,17 @@ def render_run_overview(run_dir: Path):
                     },
                     hovertemplate=(
                         f"<b>{display_name}</b><br>"
-                        "Mean: %{x:.3f}s<br>"
-                        f"Std: {stats['std']:.3f}s<br>"
-                        f"Min: {stats['min']:.3f}s<br>"
-                        f"Max: {stats['max']:.3f}s<br>"
+                        f"Mean: %{{x:.3f}}{suffix}<br>"
+                        f"Std: {stats['std']:.3f}{suffix}<br>"
+                        f"Min: {stats['min']:.3f}{suffix}<br>"
+                        f"Max: {stats['max']:.3f}{suffix}<br>"
                         f"n={stats['count']}"
                         "<extra></extra>"
                     ),
                 )
             )
             fig.update_layout(
-                xaxis_title="Seconds",
+                xaxis_title=axis_title,
                 yaxis={"categoryorder": "array", "categoryarray": [display_name]},
                 height=150,
                 margin={"l": 10, "r": 10, "t": 10, "b": 40},
@@ -1280,6 +1745,44 @@ def render_run_overview(run_dir: Path):
             st.plotly_chart(fig)
 
     st.divider()
+
+    # --- Errors ---
+    metrics_summary = _load_metrics_summary(run_dir)
+    data_quality = (metrics_summary or {}).get("data_quality") or {}
+    eval_summary = _load_evaluation_summary(run_dir)
+    simulation = eval_summary.get("simulation") or {}
+    judge_errors = data_quality.get("records_with_errors") or 0
+    conv_failures = simulation.get("failed_records") or 0
+    total_records = (
+        data_quality.get("total_records")
+        or (metrics_summary or {}).get("total_records")
+        or simulation.get("total_records")
+    )
+    metric_errors = data_quality.get("metrics_with_errors") or {}
+    if (judge_errors or conv_failures) and total_records:
+        st.markdown("### Errors")
+        summary_parts = []
+        if conv_failures:
+            summary_parts.append(f"**{conv_failures}** conversation failures ({conv_failures / total_records:.1%})")
+        if judge_errors:
+            summary_parts.append(f"**{judge_errors}** records with judge errors ({judge_errors / total_records:.1%})")
+        st.caption(f"Out of {total_records} records — " + " · ".join(summary_parts))
+        if metric_errors:
+            metric_error_df = pd.DataFrame(
+                [
+                    {
+                        "Metric": _format_metric_name(m),
+                        "# Errors": int(n),
+                        "Error Rate": int(n) / total_records,
+                    }
+                    for m, n in sorted(metric_errors.items(), key=lambda kv: kv[1], reverse=True)
+                ]
+            )
+            st.dataframe(
+                metric_error_df.style.format({"Error Rate": "{:.1%}"}),
+                hide_index=True,
+            )
+        st.divider()
 
     # --- Per-record table ---
     st.markdown("### Per-Record Metrics")
@@ -1295,23 +1798,34 @@ def render_run_overview(run_dir: Path):
     leading_cols = ["record"]
     if has_trials:
         leading_cols.append("trial")
+    composite_cols = [c for c in _EVA_BAR_COMPOSITES if c in table_df.columns]
     ordered_metrics = [m for m in metric_names if m in table_df.columns]
-    table_df = table_df[leading_cols + ordered_metrics]
+    table_df = table_df[leading_cols + composite_cols + ordered_metrics]
 
     # Add link column to navigate to Record Detail
+    latest_only = st.session_state.get("latest_only", True)
+    show_sub_metrics = bool(st.session_state.get("show_sub_metrics"))
+
     def _record_link(row):
         params = f"/record_detail?output_dir={run_dir.parent}&run={run_name}&record={row['record']}"
         if "trial" in row and pd.notna(row.get("trial")):
             params += f"&trial={row['trial']}"
+        if not latest_only:
+            params += "&latest_only=false"
+        if show_sub_metrics:
+            params += "&show_sub_metrics=true"
         return params
 
     table_df = table_df.copy()
     table_df.insert(0, "link", table_df.apply(_record_link, axis=1))
-    table_df = table_df.rename(columns=col_rename)
+    composite_rename = {c: _EVA_COMPOSITE_DISPLAY[c] for c in composite_cols}
+    table_df = table_df.rename(columns={**col_rename, **composite_rename})
 
+    renamed_composites = [composite_rename[c] for c in composite_cols]
     renamed_metrics = [col_rename[m] for m in ordered_metrics]
-    styled = table_df.style.map(_color_cell, subset=renamed_metrics)
-    styled = styled.format(dict.fromkeys(renamed_metrics, "{:.3f}"), na_rep="—")
+    score_cols = renamed_composites + renamed_metrics
+    styled = table_df.style.map(_color_cell, subset=score_cols)
+    styled = styled.format(dict.fromkeys(score_cols, "{:.3f}"), na_rep="—")
     st.dataframe(
         styled,
         hide_index=True,
@@ -1324,6 +1838,17 @@ def render_run_overview(run_dir: Path):
     st.download_button("Download CSV", csv, file_name=f"{run_dir.name}_metrics.csv", mime="text/csv")
 
 
+def _render_eva_composite_cards(metrics: RecordMetrics) -> None:
+    """Render EVA composite scores (EVA-A/EVA-X pass@1 and Mean) as st.metric cards."""
+    composites = [(c, metrics.aggregate_metrics.get(c)) for c in _EVA_BAR_COMPOSITES]
+    composites = [(c, v) for c, v in composites if v is not None]
+    if not composites:
+        return
+    cols = st.columns(len(composites))
+    for col, (name, value) in zip(cols, composites):
+        col.metric(_EVA_COMPOSITE_DISPLAY[name], f"{value:.3f}")
+
+
 def render_metrics_tab(metrics: RecordMetrics | None):
     """Render the metrics tab with judge ratings and scores."""
     if not metrics:
@@ -1331,6 +1856,7 @@ def render_metrics_tab(metrics: RecordMetrics | None):
         return
 
     st.markdown("### Metrics")
+    _render_eva_composite_cards(metrics)
 
     # Group metrics by category, preserving insertion order within each group
     grouped: dict[str, list[tuple[str, object]]] = {}
@@ -1357,7 +1883,7 @@ def render_metrics_tab(metrics: RecordMetrics | None):
                         f"{metric_score.normalized_score:.3f}" if metric_score.normalized_score is not None else "N/A",
                     )
                     if metric_score.error:
-                        st.error(f"Error: {metric_score.error}")
+                        st.caption(f"⚠ {metric_score.error}")
 
                     # Dimension scores (e.g. faithfulness, conversation_progression)
                     explanation = metric_score.details.get("explanation") if metric_score.details else None
@@ -1547,6 +2073,7 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
             </style>"""
         )
         st.markdown("### Metrics Overview")
+        _render_eva_composite_cards(metrics)
 
         grouped: dict[str, list[str]] = {}
         for name in all_top_metrics:
@@ -1628,6 +2155,18 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
             details = m.get("details", {})
             st.markdown(f"**{_format_metric_name(selected)}** — per-turn breakdown")
 
+            # Turn-taking: dump the flat sub-metric scores as a simple {key: score} dict.
+            if selected == "turn_taking":
+                sub_metrics = m.get("sub_metrics") or {}
+                sub_scores = {
+                    k: (getattr(sm, "score", None) if not isinstance(sm, dict) else sm.get("score"))
+                    for k, sm in sub_metrics.items()
+                }
+                if sub_scores:
+                    st.caption("Sub-metrics")
+                    st.json(sub_scores)
+                    st.divider()
+
             turn_ids: set[str] = set()
             for k, v in details.items():
                 if k.startswith("per_turn") and isinstance(v, dict):
@@ -1637,22 +2176,31 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
             if turn_ids_sorted:
                 for tid_str in turn_ids_sorted:
                     if selected == "turn_taking":
-                        label = (details.get("per_turn_judge_timing_ratings") or {}).get(tid_str, "")
-                        latency = (details.get("per_turn_latency") or {}).get(tid_str)
-                        explanation = (details.get("per_turn_judge_timing_explanations") or {}).get(tid_str, "")
-                        latency_str = f"{latency:.3f}s" if latency is not None else "N/A"
-                        if label.strip().lower() == "on-time":
-                            color = "#4caf50"
-                        elif label.strip().lower() == "late":
-                            color = "#ff9800"
-                        else:
-                            color = "#f44336"
+                        score = (details.get("per_turn_score") or {}).get(tid_str)
+                        reason = (details.get("per_turn_reason") or {}).get(tid_str, "")
+                        evidence = (details.get("per_turn_evidence") or {}).get(tid_str, {}) or {}
+                        color = _score_color(score)
+                        score_str = f"{score:.2f}" if isinstance(score, (int, float)) else "N/A"
+                        reason_label = {
+                            "latency": "Latency",
+                            "agent_interrupt": "Agent interrupted user",
+                            "user_interrupt": "User interrupted agent",
+                            "dual_interrupt": "Both interrupted",
+                        }.get(reason, reason or "—")
+                        evidence_parts = []
+                        if "latency_ms" in evidence:
+                            evidence_parts.append(f"latency {evidence['latency_ms']:.0f}ms")
+                        if "overlap_ms" in evidence:
+                            evidence_parts.append(f"overlap {evidence['overlap_ms']:.0f}ms")
+                        if "yield_ms" in evidence:
+                            evidence_parts.append(f"yield {evidence['yield_ms']:.0f}ms")
+                        evidence_str = " · ".join(evidence_parts) if evidence_parts else ""
                         st.html(
                             f'<div style="margin-bottom:8px; padding:6px 10px; background:rgba(128,128,128,0.1); border-radius:6px; border-left:3px solid {color};">'
                             f"<strong>Turn {tid_str}</strong> — "
-                            f'<span style="color:{color}; font-weight:600;">{label}</span> '
-                            f'<span style="opacity:0.6;">(latency: {latency_str})</span>'
-                            f"{'<br><span style=font-size:0.88em;opacity:0.75;>' + html.escape(str(explanation)) + '</span>' if explanation else ''}"
+                            f'<span style="color:{color}; font-weight:600;">{score_str}</span> '
+                            f'<span style="opacity:0.7;">{html.escape(reason_label)}</span>'
+                            f"{'<br><span style=font-size:0.88em;opacity:0.75;>' + html.escape(evidence_str) + '</span>' if evidence_str else ''}"
                             f"</div>"
                         )
                     else:
@@ -1854,7 +2402,7 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
 
 def _render_sidebar_run_metadata(run_name: str, run_config: dict):
     """Render run metadata in the sidebar."""
-    metadata_parts = [f"**Run:** {run_name}"]
+    metadata_parts = [f"**Run:** {run_name}", f"**Domain:** {_domain_from_config(run_config)}"]
     for label, value in _extract_model_details(run_config).items():
         metadata_parts.append(f"**{label}:** {value}")
     if run_config.get("num_trials"):
@@ -1872,19 +2420,23 @@ def _get_run_dirs():
     )
     output_dirs = [Path(stripped) for p in output_dirs_input.splitlines() if (stripped := p.strip())]
 
-    run_dirs = [rd for od in output_dirs for rd in get_run_directories(od)]
+    run_dirs = sorted(
+        [rd for od in output_dirs for rd in get_run_directories(od)],
+        key=lambda d: d.name,
+        reverse=True,
+    )
 
-    latest_only = st.sidebar.toggle("Latest run per system only", value=True)
+    latest_only = st.sidebar.toggle("Latest run per system only", value=True, key="latest_only", bind="query-params")
     if latest_only:
         run_dirs = filter_latest_runs(run_dirs)
 
-    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics")
+    st.sidebar.toggle("Show sub-metrics", value=False, key="show_sub_metrics", bind="query-params")
 
     if not run_dirs:
-        st.error(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
+        st.warning(f"No run directories found in: {', '.join(str(d) for d in output_dirs)}")
         st.stop()
 
-    return run_dirs
+    return run_dirs, latest_only
 
 
 def _select_run(run_dirs: list[Path]):
@@ -1911,7 +2463,7 @@ def render_record_detail(selected_run_dir: Path):
     record_dirs = get_record_directories(selected_run_dir)
 
     if not record_dirs:
-        st.error(f"No records found in {selected_run_dir / 'records'}")
+        st.warning(f"No records found in {selected_run_dir / 'records'}")
         return
 
     # Sidebar: record selection
@@ -1958,7 +2510,7 @@ def render_record_detail(selected_run_dir: Path):
             if result.completed:
                 st.success(f"Completed ({result.conversation_ended_reason or 'ok'})")
             else:
-                st.error(f"Failed: {result.error or 'unknown'}")
+                st.warning(f"Failed: {result.error or 'unknown'}")
         with col2:
             st.metric("Duration", f"{result.duration_seconds:.1f}s")
         with col3:
@@ -1966,9 +2518,14 @@ def render_record_detail(selected_run_dir: Path):
 
     # Audio player
     audio_path = selected_record_dir / "audio_mixed.wav"
-    if audio_path.exists():
+    el_audio_path = selected_record_dir / "elevenlabs_audio_recording.mp3"
+    if audio_path.exists() or el_audio_path.exists():
         st.markdown("### Audio Recording")
-        st.audio(str(audio_path))
+        if audio_path.exists():
+            st.audio(str(audio_path))
+        if el_audio_path.exists():
+            st.caption("ElevenLabs recording")
+            st.audio(str(el_audio_path))
 
     # User goal & ground truth
     with st.expander("User Goal", expanded=False):
@@ -2056,15 +2613,18 @@ def render_record_detail(selected_run_dir: Path):
 
 
 def cross_run_comparison():
-    render_cross_run_comparison(_get_run_dirs())
+    run_dirs, _ = _get_run_dirs()
+    render_cross_run_comparison(run_dirs)
 
 
 def run_overview():
-    render_run_overview(_select_run(_get_run_dirs()))
+    run_dirs, _ = _get_run_dirs()
+    render_run_overview(_select_run(run_dirs))
 
 
 def record_detail():
-    render_record_detail(_select_run(_get_run_dirs()))
+    run_dirs, _ = _get_run_dirs()
+    render_record_detail(_select_run(run_dirs))
 
 
 def ai_review():

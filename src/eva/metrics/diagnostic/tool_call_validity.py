@@ -11,6 +11,7 @@ final evaluation scores.
 from eva.assistant.tools.airline_params import FIELD_ERROR_TYPES
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.registry import register_metric
+from eva.metrics.utils import make_rate_sub_metric
 from eva.models.results import MetricScore
 
 # Infrastructure errors from ToolExecutor + generic Pydantic fallback.
@@ -49,6 +50,14 @@ class ToolCallValidity(CodeMetric):
                 score=1.0,
                 normalized_score=1.0,
                 details={"total_tool_calls": 0, "note": "No tool calls to evaluate"},
+                sub_metrics={
+                    "num_tool_calls": MetricScore(
+                        name=f"{self.name}.num_tool_calls",
+                        score=0.0,
+                        normalized_score=None,
+                        details={},
+                    )
+                },
             )
 
         format_errors = []
@@ -73,6 +82,8 @@ class ToolCallValidity(CodeMetric):
         correct = total - len(format_errors)
         score = correct / total
 
+        sub_metrics = _build_tool_call_validity_sub_metrics(self.name, total, format_errors)
+
         return MetricScore(
             name=self.name,
             score=round(score, 4),
@@ -83,4 +94,46 @@ class ToolCallValidity(CodeMetric):
                 "invalid_tool_calls": len(format_errors),
                 "errors": format_errors,
             },
+            sub_metrics=sub_metrics or None,
         )
+
+
+def _build_tool_call_validity_sub_metrics(
+    parent_name: str,
+    total_tool_calls: int,
+    format_errors: list[dict],
+) -> dict[str, MetricScore]:
+    """Build sub-metrics for total tool call count and per-error-type rates.
+
+    ``num_tool_calls`` is a count (normalized_score=None). Per-error-type rates
+    are emitted for every known error type so keys are stable across records.
+    """
+    sub_metrics: dict[str, MetricScore] = {
+        "num_tool_calls": MetricScore(
+            name=f"{parent_name}.num_tool_calls",
+            score=float(total_tool_calls),
+            normalized_score=None,
+            details={},
+        )
+    }
+
+    if total_tool_calls == 0:
+        return sub_metrics
+
+    error_counts: dict[str, int] = dict.fromkeys(CALL_ERROR_TYPES, 0)
+    for error in format_errors:
+        error_type = error.get("error_type")
+        if error_type in error_counts:
+            error_counts[error_type] += 1
+
+    for error_type, count in error_counts.items():
+        sub_metrics[f"{error_type}_rate"] = make_rate_sub_metric(
+            parent_name=parent_name,
+            key=f"{error_type}_rate",
+            numerator=count,
+            denominator=total_tool_calls,
+            details={"count": count, "total_tool_calls": total_tool_calls},
+            precision=4,
+        )
+
+    return sub_metrics

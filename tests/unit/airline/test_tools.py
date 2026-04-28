@@ -1068,14 +1068,68 @@ def test_get_reservation_success(sample_db):
     assert result["reservation"]["bookings"][1]["status"] == "confirmed"
 
 
-def test_get_reservation_not_found(sample_db):
-    """Test reservation not found."""
+def test_get_reservation_writes_session(sample_db):
+    """Successful get_reservation should write confirmation_number and last_name to db session."""
+    params = {"confirmation_number": "abc123", "last_name": "Doe"}
+    get_reservation(params, sample_db, call_index=1)
+
+    assert sample_db["session"]["confirmation_number"] == "ABC123"
+    assert sample_db["session"]["last_name"] == "doe"
+
+
+def test_get_reservation_session_last_name_lowercased(sample_db):
+    """Session last_name should be stored lowercase regardless of input case."""
+    params = {"confirmation_number": "ABC123", "last_name": "DOE"}
+    get_reservation(params, sample_db, call_index=1)
+
+    assert sample_db["session"]["last_name"] == "doe"
+
+
+def test_get_reservation_failed_auth_does_not_write_session(sample_db):
+    """Failed authentication (bad last name) should not write to db session."""
+    params = {"confirmation_number": "ABC123", "last_name": "Wrong"}
+    result = get_reservation(params, sample_db, call_index=1)
+
+    assert result["status"] == "error"
+    assert "session" not in sample_db
+
+
+def test_get_reservation_not_found_does_not_write_session(sample_db):
+    """Reservation not found should not write to db session."""
     params = {"confirmation_number": "XXXXXX", "last_name": "Smith"}
     result = get_reservation(params, sample_db, call_index=1)
 
     assert result["status"] == "error"
     assert result["error_type"] == "not_found"
     assert "XXXXXX" in result["message"]
+    assert "session" not in sample_db
+
+
+def test_get_reservation_enriches_with_flight_details(sample_db):
+    """Bookings returned from get_reservation are enriched with flight details from the journeys table."""
+    params = {"confirmation_number": "ABC123", "last_name": "Doe"}
+    result = get_reservation(params, sample_db, call_index=1)
+
+    assert result["status"] == "success"
+    bookings_by_journey = {b["journey_id"]: b for b in result["reservation"]["bookings"]}
+
+    cancelled = bookings_by_journey["FL_SW100_20260320"]
+    cancelled_seg = cancelled["segments"][0]
+    assert cancelled_seg["origin"] == "LAX"
+    assert cancelled_seg["destination"] == "JFK"
+    assert cancelled_seg["scheduled_departure"] == "10:00"
+    assert cancelled_seg["scheduled_arrival"] == "18:00"
+
+    confirmed = bookings_by_journey["FL_SW200_20260320"]
+    confirmed_seg = confirmed["segments"][0]
+    assert confirmed_seg["origin"] == "LAX"
+    assert confirmed_seg["destination"] == "JFK"
+    assert confirmed_seg["scheduled_departure"] == "14:00"
+    assert confirmed_seg["scheduled_arrival"] == "22:00"
+
+    # Enrichment must not mutate the underlying DB
+    db_seg = sample_db["reservations"]["ABC123"]["bookings"][1]["segments"][0]
+    assert "scheduled_departure" not in db_seg
 
 
 def test_get_flight_status_success(sample_db):
@@ -1218,6 +1272,109 @@ def test_rebook_flight_irrops_no_fees(sample_db):
     assert result["status"] == "success"
     assert result["cost_summary"]["change_fee"] == 0
     assert result["cost_summary"]["total_collected"] == 0
+    assert result["cost_summary"]["fee_waived"] is True
+
+
+def test_rebook_flight_voluntary_basic_economy_fee(sample_db):
+    """Voluntary rebook on a Basic Economy booking: flat $75 (not the same-day $199 penalty)."""
+    db = copy.deepcopy(sample_db)
+    # Flip the cancelled booking's fare_class to basic_economy for this test.
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "basic_economy"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "voluntary",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 75
+
+
+def test_rebook_flight_same_day_basic_economy_penalty_fee(sample_db):
+    """Same-day rebook on a Basic Economy booking: $199 penalty."""
+    db = copy.deepcopy(sample_db)
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "basic_economy"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "same_day",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 199
+
+
+def test_rebook_flight_same_day_main_cabin_standard_fee(sample_db):
+    """Same-day rebook on Main Cabin: standard $75 fee (no penalty)."""
+    db = copy.deepcopy(sample_db)
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "same_day",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 75
+
+
+def test_rebook_flight_same_day_business_class_fee(sample_db):
+    """Same-day rebook on Business Class: $75 (Business pays for same-day, unlike voluntary)."""
+    db = copy.deepcopy(sample_db)
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "business"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "same_day",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 75
+
+
+def test_rebook_flight_voluntary_business_class_no_fee(sample_db):
+    """Voluntary rebook on Business Class: $0 (free for Business/First in advance changes)."""
+    db = copy.deepcopy(sample_db)
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "business"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "voluntary",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 0
+
+
+def test_rebook_flight_same_day_basic_economy_waived_for_elite(sample_db):
+    """Gold/Platinum waiver zeros the same-day penalty for Basic Economy."""
+    db = copy.deepcopy(sample_db)
+    db["reservations"]["ABC123"]["bookings"][0]["fare_class"] = "basic_economy"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "same_day",
+        "waive_change_fee": True,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    assert result["cost_summary"]["change_fee"] == 0
     assert result["cost_summary"]["fee_waived"] is True
 
 

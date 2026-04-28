@@ -1,0 +1,242 @@
+{
+  "_current_date": "2026-07-05",
+  "unit_cert_requirements": {
+    "5A-SURG": [
+      "BLS",
+      "ACLS"
+    ],
+    "4B-ICU": [
+      "BLS",
+      "ACLS",
+      "CCRN"
+    ],
+    "2A-MED": [
+      "BLS"
+    ],
+    "3C-ONC": [
+      "BLS",
+      "ACLS"
+    ],
+    "1D-PEDS": [
+      "BLS",
+      "PALS"
+    ]
+  },
+  "providers": {
+    "6649827836": {
+      "npi": "6649827836",
+      "employee_id": "EMP380746",
+      "first_name": "Carlos",
+      "last_name": "Mendes",
+      "facility_code": "MGH-04B",
+      "pin": "4821",
+      "phone_last_four": "1842",
+      "otp_code": "246413",
+      "role_code": "MD",
+      "department_code": "SURGERY",
+      "hire_date": "2018-09-17",
+      "ehr_access_status": "suspended",
+      "ehr_access_case_id": null,
+      "clearance_code": "CLR-OCC-169403",
+      "licenses": {
+        "MA-MD-380746": {
+          "state_license_number": "MA-MD-380746",
+          "license_type": "MD",
+          "state_code": "MA",
+          "expiration_date": "2027-03-31",
+          "status": "active",
+          "investigation_hold": false,
+          "extension_status": null,
+          "extension_type": null,
+          "extension_days": null,
+          "supervising_physician_npi": null,
+          "extension_case_id": null
+        }
+      },
+      "malpractice": {
+        "carrier": "coverys",
+        "policy_number": "POL-2026-CM3807",
+        "per_occurrence_limit_usd": 1000000,
+        "aggregate_limit_usd": 3000000,
+        "effective_date": "2026-01-01",
+        "expiration_date": "2026-12-31",
+        "recredential_required": false,
+        "update_case_id": null
+      },
+      "dea_registration": {
+        "dea_number": "BM3807461",
+        "facility_code": "MGH-04B",
+        "state_code": "MA",
+        "schedule_codes": [
+          "CII",
+          "CIII",
+          "CIV",
+          "CV"
+        ],
+        "expiration_date": "2027-08-31",
+        "status": "active",
+        "transfer_reason": null,
+        "transfer_case_id": null
+      },
+      "privileges": {
+        "privilege_list": [
+          {
+            "code": "PRV-SURG-004",
+            "description": "General surgery operative privileges",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-ECHO-007",
+            "description": "Perioperative echocardiography interpretation",
+            "status": "suspended"
+          },
+          {
+            "code": "PRV-SURG-010",
+            "description": "Minor bedside procedures",
+            "status": "active"
+          }
+        ],
+        "reactivation_case_id": null
+      },
+      "scheduled_appointments": []
+    }
+  },
+  "employees": {
+    "EMP380746": {
+      "employee_id": "EMP380746",
+      "first_name": "Carlos",
+      "last_name": "Mendes",
+      "date_of_birth": "1984-11-22",
+      "phone_last_four": "1842",
+      "otp_code": "246413",
+      "department_code": "SURGERY",
+      "role_code": "MD",
+      "unit_code": "5A-SURG",
+      "hire_date": "2018-09-17",
+      "employment_status": "active",
+      "certifications": [
+        "BLS",
+        "ACLS"
+      ],
+      "fmla_eligibility": {
+        "eligible": true,
+        "months_employed": 94,
+        "hours_worked_past_year": 1680,
+        "fmla_weeks_remaining": 12,
+        "reason": null
+      },
+      "onboarding_checklist": {
+        "tasks": {}
+      },
+      "oncall_schedule": {
+        "registrations": []
+      },
+      "scheduled_appointments": [],
+      "i9_record": {
+        "verification_action": null,
+        "document_list_type": null,
+        "document_type_code": null,
+        "document_number": null,
+        "document_expiration_date": null,
+        "issuing_country_code": null,
+        "verification_status": "verified",
+        "case_id": null
+      },
+      "visa_record": null,
+      "leave_records": [
+        {
+          "leave_type": "medical",
+          "start_date": "2026-05-10",
+          "end_date": "2026-07-04",
+          "status": "completed",
+          "case_id": "CASE-MLV-380746"
+        }
+      ],
+      "pto_balances": {
+        "pto": 14.0,
+        "sick": 6.0
+      },
+      "pto_requests": []
+    }
+  },
+  "shifts": {
+    "SHF-20260720-0700": {
+      "shift_id": "SHF-20260720-0700",
+      "employee_id": "EMP380746",
+      "unit_code": "5A-SURG",
+      "date": "2026-07-20",
+      "start_time": "07:00",
+      "end_time": "15:00",
+      "hours_scheduled": 8.0,
+      "hours_logged": null,
+      "on_call": false,
+      "on_call_tier": null,
+      "status": "scheduled",
+      "swap_locked": false,
+      "pay_period_closed": false,
+      "corrected_hours": null,
+      "correction_type": null,
+      "correction_case_id": null,
+      "correction_status": null,
+      "pay_period_end_date": "2026-07-25",
+      "swapped_to_employee_id": null,
+      "swap_confirmation_id": null
+    }
+  },
+  "notifications": [],
+  "session": {},
+  "appointment_availability": {
+    "orientation_followup": {
+      "SURGERY": {
+        "2026-07-14": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-07-15": [
+          "10:00",
+          "14:00"
+        ]
+      }
+    },
+    "return_to_work_checkin": {
+      "SURGERY": {
+        "2026-07-14": [
+          "09:00"
+        ],
+        "2026-07-16": [
+          "13:00",
+          "15:00"
+        ]
+      }
+    },
+    "competency_review": {
+      "SURGERY": {
+        "2026-07-14": [
+          "10:00",
+          "13:00",
+          "15:00"
+        ],
+        "2026-07-15": [
+          "09:00",
+          "11:00"
+        ],
+        "2026-07-16": [
+          "08:30",
+          "10:30"
+        ]
+      }
+    }
+  },
+  "org_holidays": [
+    "2026-07-03",
+    "2026-09-07",
+    "2026-11-26"
+  ],
+  "department_blackout_dates": {
+    "SURGERY": [],
+    "CARDIOLOGY": [],
+    "EMERGENCY": [],
+    "ONCOLOGY": [],
+    "PEDIATRICS": []
+  }
+}

@@ -25,6 +25,38 @@ from eva.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
+def last_audio_speaker(
+    audio_timestamps_user_turns: dict[int, list[tuple[float, float]]],
+    audio_timestamps_assistant_turns: dict[int, list[tuple[float, float]]],
+) -> str | None:
+    """Return the role whose audio ended latest, or None if neither recorded audio."""
+
+    def _latest_end(intervals_by_turn: dict[int, list[tuple[float, float]]]) -> float | None:
+        ends = [iv[1] for intervals in intervals_by_turn.values() if intervals for iv in intervals]
+        return max(ends) if ends else None
+
+    user_end = _latest_end(audio_timestamps_user_turns)
+    asst_end = _latest_end(audio_timestamps_assistant_turns)
+    if user_end is None and asst_end is None:
+        return None
+    if user_end is None:
+        return "assistant"
+    if asst_end is None:
+        return "user"
+    return "user" if user_end > asst_end else "assistant"
+
+
+def is_agent_timeout_on_user_turn(
+    conversation_ended_reason: str | None,
+    audio_timestamps_user_turns: dict[int, list[tuple[float, float]]],
+    audio_timestamps_assistant_turns: dict[int, list[tuple[float, float]]],
+) -> bool:
+    """True if conversation ended with inactivity_timeout and the user spoke last."""
+    if conversation_ended_reason != "inactivity_timeout":
+        return False
+    return last_audio_speaker(audio_timestamps_user_turns, audio_timestamps_assistant_turns) == "user"
+
+
 def _resolve_path(stored: str | None, output_dir: Path) -> str | None:
     """Return *stored* if it exists on disk, otherwise ``output_dir / basename(stored)``.
 
@@ -106,15 +138,19 @@ class _TurnExtractionState:
     # user_speech lands at the same turn.
     rollback_advance_consumed_by_user: bool = False
 
-    def advance_turn_if_needed(self, from_audio_start: bool = False) -> None:
+    def advance_turn_if_needed(self, from_audio_start: bool = False, bypass_hold: bool = False) -> None:
         """Advance turn if the assistant responded since the last user event.
 
         Called on audio_start(elevenlabs_user) and audit_log/user events.
         After an interruption, hold_turn suppresses one advance from audit_log/user
         (late STT from the interrupted session) but never blocks audio_start
         (the user speaking again always starts a new turn).
+
+        bypass_hold=True is used by S2S pipelines, where audit_log/user carries the
+        S2S model's own transcription of the current utterance, not a late STT chunk
+        from the previous (interrupted) session.
         """
-        if self.hold_turn:
+        if self.hold_turn and not bypass_hold:
             if from_audio_start:
                 # New user speech — clear hold_turn but still advance
                 self.hold_turn = False
@@ -216,7 +252,7 @@ def _handle_audit_log_event(
         # advance so that hold_turn is consumed if set.
         if state.user_audio_open:
             state.assistant_spoke_in_turn = False
-        state.advance_turn_if_needed()
+        state.advance_turn_if_needed(bypass_hold=pipeline_type == PipelineType.S2S)
         turn = state.turn_num
         entry = get_entry_for_audit_log(event, turn)
         existing = context.transcribed_user_turns.get(turn, "")
@@ -726,7 +762,6 @@ class _ProcessorContext:
         self.user_interrupted_turns: set[int] = set()
 
         # Conversation metadata
-        self.conversation_finished: bool = False
         self.conversation_ended_reason: str | None = None
         self.pipeline_type: PipelineType = PipelineType.CASCADE
 
@@ -778,6 +813,7 @@ class MetricsContextProcessor:
         context.audio_user_path = _resolve_path(result.audio_user_path, output_dir)
         context.audio_mixed_path = _resolve_path(result.audio_mixed_path, output_dir)
         context.pipeline_type = pipeline_type
+        context.conversation_ended_reason = result.conversation_ended_reason
 
         pipecat_path = _resolve_path(result.pipecat_logs_path, output_dir)
         elevenlabs_path = _resolve_path(result.elevenlabs_logs_path, output_dir)
