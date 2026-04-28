@@ -268,14 +268,17 @@ class TestComputeScenarios:
         assert ev["yield_score"] == pytest.approx(0.95, abs=1e-3)
 
     @pytest.mark.asyncio
-    async def test_no_timestamps_returns_skipped(self, metric):
+    async def test_no_timestamps_scores_zero(self, metric):
+        """No usable turns means turn-taking failed → score 0, not skipped."""
         context = make_metric_context(
             audio_timestamps_user_turns={},
             audio_timestamps_assistant_turns={},
         )
         result = await metric.compute(context)
-        assert result.normalized_score is None
-        assert result.error
+        assert result.score == 0.0
+        assert result.normalized_score == 0.0
+        assert result.error is None
+        assert result.skipped is False
 
 
 # ---------- Sub-metric structure ----------
