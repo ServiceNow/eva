@@ -360,7 +360,7 @@ def create_tts_service(
             voice=params.get("voice", "neutral_female"),
             base_url=url,
         )
-        OpenAITTSService.run_tts = override_run_tts
+        OpenAITTSService.run_tts = override_run_tts_voxtral
         voxtral_tts._settings.language = language_code
         return voxtral_tts
 
@@ -624,6 +624,52 @@ async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[F
 
         if self._settings.speed:
             create_params["speed"] = self._settings.speed
+
+        async with self._client.audio.speech.with_streaming_response.create(**create_params) as r:
+            if r.status_code != 200:
+                error = await r.text()
+                logger.error(f"{self} error getting audio (status: {r.status_code}, error: {error})")
+                yield ErrorFrame(error=f"Error getting audio (status: {r.status_code}, error: {error})")
+                return
+
+            await self.start_tts_usage_metrics(text)
+
+            CHUNK_SIZE = self.chunk_size
+
+            yield TTSStartedFrame(context_id=context_id)
+            async for chunk in r.iter_bytes(CHUNK_SIZE):
+                if len(chunk) > 0:
+                    await self.stop_ttfb_metrics()
+                    frame = TTSAudioRawFrame(chunk, self.sample_rate, 1, context_id=context_id)
+                    yield frame
+            yield TTSStoppedFrame(context_id=context_id)
+    except BadRequestError as e:
+        yield ErrorFrame(error=f"Unknown error occurred: {e}")
+
+
+async def override_run_tts_voxtral(self, text: str, context_id: str) -> AsyncGenerator[Frame, None]:
+    """Override OpenAITTSService.run_tts for Voxtral served via vLLM-omni.
+
+    vLLM-omni's /v1/audio/speech ignores Chatterbox-style streaming knobs and
+    instead uses a top-level ``stream: true`` flag (with response_format pcm/wav)
+    to emit PCM chunks as they are decoded. ``speed`` is rejected when streaming.
+    """
+    logger.debug(f"{self}: Generating TTS [{text}], model {self._settings.model}")
+    try:
+        await self.start_ttfb_metrics()
+
+        create_params = {
+            "input": text,
+            "model": self._settings.model,
+            "voice": self._settings.voice,
+            "response_format": "pcm",
+            "extra_body": {
+                "stream": True,
+            },
+        }
+
+        if self._settings.instructions:
+            create_params["instructions"] = self._settings.instructions
 
         async with self._client.audio.speech.with_streaming_response.create(**create_params) as r:
             if r.status_code != 200:

@@ -181,6 +181,7 @@ class MetricsRunner:
             raise ValueError(f"Agent config missing 'role' field: {agent_config_path}")
 
         return {
+            "id": agent_config.get("id"),
             "role": agent_config["role"],
             "instructions": agent_config["instructions"],
             "tools": agent_config["tools"],
@@ -580,6 +581,7 @@ class MetricsRunner:
             agent_role=agent_role,
             agent_instructions=agent_instructions,
             agent_tools=agent_tools,
+            agent_id=self._agent_config["id"],
             current_date_time=record.current_date_time,
             # Basic stats from result
             num_turns=result.num_turns,

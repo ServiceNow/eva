@@ -171,7 +171,9 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     response_text = await self._generate_with_file(uploaded_file, prompt, context)
                 else:
                     response_text, usage = await self.llm_client.generate_text(messages)
-                    self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage)
+                    self._log_token_usage(
+                        context, self.llm_client.model, self.llm_client.params, prompt, usage, response_text
+                    )
                 if response_text is None:
                     return None, []
 

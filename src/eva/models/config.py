@@ -572,13 +572,14 @@ class RunConfig(BaseSettings):
     )
 
     # Framework selection
-    framework: Literal["pipecat", "openai_realtime", "gemini_live"] = Field(
+    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs"] = Field(
         "pipecat",
         description=(
             "Agent framework to use for the assistant server."
             "'pipecat' (default): Pipecat pipeline."
             "'openai_realtime': OpenAI Realtime API directly."
             "'gemini_live': Gemini Live API via google-genai."
+            "'elevenlabs': ElevenLabs Conversational AI API."
         ),
     )
 
@@ -790,9 +791,13 @@ class RunConfig(BaseSettings):
     @classmethod
     def _parse_comma_separated(cls, v: Any) -> list[str] | None:
         """Accept comma-separated strings from env vars."""
+        if isinstance(v, (int, float)):
+            return [str(v)]
         if isinstance(v, str):
             items = [s.strip() for s in v.split(",") if s.strip()]
             return items or None
+        if isinstance(v, list):
+            return [str(i) for i in v] or None
         return v
 
     @field_validator("metrics", mode="after")

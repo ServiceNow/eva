@@ -309,16 +309,15 @@ async def test_evaluation_mode_max_reruns_reached(eval_config, mock_dataset):
                     assert "attempt" in entry
                     assert "reason" in entry
 
-            # Archiving happens for attempts 1 and 2, not 3 (final stays)
-            for attempt in [1, 2]:
+            # All attempts are archived, including the final one — the original
+            # record dir is moved into _failed_attempt_3 so downstream tools see
+            # the failure via the directory suffix.
+            for attempt in [1, 2, 3]:
                 archive_dir = runner.output_dir / "records" / f"fail_record_1_failed_attempt_{attempt}"
                 assert archive_dir.exists()
 
-            final_failed_attempt_archive = runner.output_dir / "records" / "fail_record_1_failed_attempt_3"
-            assert not final_failed_attempt_archive.exists()
-
             final_record_dir = runner.output_dir / "records" / "fail_record_1"
-            assert final_record_dir.exists()
+            assert not final_record_dir.exists()
 
 
 @pytest.mark.asyncio

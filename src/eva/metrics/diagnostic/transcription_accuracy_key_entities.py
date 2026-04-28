@@ -233,7 +233,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
         try:
             messages = [{"role": "user", "content": prompt}]
             response_text, usage = await self.llm_client.generate_text(messages)
-            self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage)
+            self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage, response_text)
             return response_text
         except Exception as e:
             self.logger.error(f"Judge call failed for {context.record_id}: {e}")
