@@ -597,7 +597,7 @@ class RunConfig(BaseSettings):
 
     metrics: list[str] | None = Field(
         default_factory=_get_all_metrics,
-        description="Metrics to run. Skip all metrics with `EVA_METRICS=`.",
+        description="Metrics to run. Skip all metrics with `EVA_METRICS=` or `--metrics=`.",
     )
 
     # Aggregate-only mode
@@ -748,10 +748,10 @@ class RunConfig(BaseSettings):
         if isinstance(v, (int, float)):
             return [str(v)]
         if isinstance(v, str):
-            items = [s.strip() for s in v.split(",") if s.strip()]
+            items = [s for item in v.split(",") if (s := item.strip())]
             return items or None
         if isinstance(v, list):
-            return [str(i) for i in v] or None
+            return [s for item in v if (s := str(item).strip())] or None
         return v
 
     @classmethod

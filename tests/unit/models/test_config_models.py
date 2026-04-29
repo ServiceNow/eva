@@ -575,6 +575,9 @@ class TestCommaSeparatedFields:
         (
             pytest.param({"EVA_METRICS": ""}, [], id="EVA_METRICS"),
             pytest.param({"EVA_METRICS": "[]"}, [], id="EVA_METRICS"),
+            pytest.param({}, ["--metrics", ""], id='--metrics ""'),
+            pytest.param({}, ["--metrics="], id="--metrics="),
+            pytest.param({}, ["--metrics", "[]"], id="--metrics []"),
         ),
     )
     def test_empty_string_becomes_none(self, env_vars, cli_args):
