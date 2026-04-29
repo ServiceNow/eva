@@ -12,8 +12,8 @@ characterizes what happened on that turn:
 
 Tool-call-aware latency: turns where the agent issued a tool call (detected from
 ``context.conversation_trace``) use a more lenient upper end of the latency curve
-(sweet-spot extends to 4000ms, hard-late at 7000ms) because tool execution adds inherent
-latency. The same flag loosens the ``late_rate`` classification threshold to 6000ms.
+(sweet-spot extends to 3000ms, hard-late at 5000ms) because tool execution adds inherent
+latency. The same flag loosens the ``late_rate`` classification threshold to 4000ms.
 Lower-end thresholds (early penalty and sweet-spot ramp-up) are unchanged.
 
 Main turn_taking.score = mean(per-turn scores).
@@ -45,6 +45,7 @@ import statistics
 from typing import Any
 
 from eva.metrics.base import CodeMetric, MetricContext
+from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
 
@@ -56,6 +57,7 @@ class TurnTakingMetric(CodeMetric):
     name = "turn_taking"
     description = "Turn-taking evaluation based on per-turn latency and interruption behavior"
     category = "experience"
+    pass_at_k_threshold = 0.8
 
     # --- Latency curve (piecewise linear). 0 outside [LATENCY_HARD_EARLY_MS, LATENCY_HARD_LATE_MS]. ---
     # Ramp up 0 → 1 from LATENCY_HARD_EARLY_MS to LATENCY_SWEET_SPOT_LOW_MS.
@@ -67,11 +69,11 @@ class TurnTakingMetric(CodeMetric):
     LATENCY_HARD_EARLY_MS: float = -500
     LATENCY_SWEET_SPOT_LOW_MS: float = 500
     LATENCY_SWEET_SPOT_HIGH_MS: float = 2000
-    LATENCY_HARD_LATE_MS: float = 5000
+    LATENCY_HARD_LATE_MS: float = 3500
 
     # Tool-call turn variants — more lenient on the upper end since tool execution adds inherent latency.
-    LATENCY_SWEET_SPOT_HIGH_MS_TOOL: float = 4000
-    LATENCY_HARD_LATE_MS_TOOL: float = 7000
+    LATENCY_SWEET_SPOT_HIGH_MS_TOOL: float = 3000
+    LATENCY_HARD_LATE_MS_TOOL: float = 5000
 
     # --- Agent interruption sub-scores. Each agent-interrupt sub-dimension (overlap, count) is
     # computed directly in [0, AGENT_INTERRUPT_MAX_SCORE] so even a best-case barge-in lands
@@ -92,8 +94,10 @@ class TurnTakingMetric(CodeMetric):
     # EARLY_THRESHOLD_MS is shared across all turns — early-response behaviour is not
     # affected by whether a tool call occurred.
     EARLY_THRESHOLD_MS: float = 200  # latency < this ⇒ "early"
-    LATE_THRESHOLD_MS: float = 4000  # latency >= this ⇒ "late" (no tool call)
-    LATE_THRESHOLD_MS_TOOL: float = 6000  # latency >= this ⇒ "late" (turn with tool call)
+    # Late thresholds sit roughly halfway between sweet-spot-high and hard-late on each curve,
+    # so a turn classifies as "late" when its score has dropped past ~0.5 down the ramp.
+    LATE_THRESHOLD_MS: float = 2750  # latency >= this ⇒ "late" (no tool call)
+    LATE_THRESHOLD_MS_TOOL: float = 4000  # latency >= this ⇒ "late" (turn with tool call)
 
     @staticmethod
     def _get_turn_ids_with_turn_taking(context: MetricContext) -> list[int]:
@@ -452,12 +456,19 @@ class TurnTakingMetric(CodeMetric):
                 max(context.audio_timestamps_user_turns, default=0),
                 max(context.audio_timestamps_assistant_turns, default=0),
             )
+            missed_turn = is_agent_timeout_on_user_turn(
+                context.conversation_ended_reason,
+                context.audio_timestamps_user_turns,
+                context.audio_timestamps_assistant_turns,
+            )
+
             details: dict[str, Any] = {
                 "per_turn_score": per_turn_score,
                 "per_turn_reason": per_turn_reason,
                 "per_turn_evidence": per_turn_evidence,
                 "num_turns": total_turns,
                 "num_evaluated": len(per_turn_score),
+                "missed_turn": missed_turn,
             }
 
             if not per_turn_score:
@@ -472,14 +483,15 @@ class TurnTakingMetric(CodeMetric):
                     details=details,
                 )
 
-            mean_score = statistics.mean(per_turn_score.values())
+            score = 0.0 if missed_turn else round(statistics.mean(per_turn_score.values()), 4)
+            sub_metrics = self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence)
 
             return MetricScore(
                 name=self.name,
-                score=round(mean_score, 4),
-                normalized_score=round(mean_score, 4),
+                score=score,
+                normalized_score=score,
                 details=details,
-                sub_metrics=self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence),
+                sub_metrics=sub_metrics,
             )
 
         except Exception as e:

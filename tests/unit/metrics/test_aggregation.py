@@ -54,7 +54,7 @@ class TestComputeRecordAggregates:
                 "faithfulness": 0.5,
                 "agent_speech_fidelity": 0.95,
                 "conversation_progression": 0.5,
-                "turn_taking": 0.5,
+                "turn_taking": 0.8,
                 "conciseness": 0.5,
             }
         )
@@ -64,8 +64,8 @@ class TestComputeRecordAggregates:
         assert agg["EVA-X_pass"] == 1.0
         assert agg["EVA-overall_pass"] == 1.0
         assert agg["EVA-A_mean"] == pytest.approx((1.0 + 0.5 + 0.95) / 3)
-        assert agg["EVA-X_mean"] == pytest.approx((0.5 + 0.5 + 0.5) / 3)
-        assert agg["EVA-overall_mean"] == pytest.approx((1.0 + 0.5 + 0.95 + 0.5 + 0.5 + 0.5) / 6)
+        assert agg["EVA-X_mean"] == pytest.approx((0.5 + 0.8 + 0.5) / 3)
+        assert agg["EVA-overall_mean"] == pytest.approx((1.0 + 0.5 + 0.95 + 0.5 + 0.8 + 0.5) / 6)
 
     def test_eva_a_fails(self):
         """task_completion < 1.0 causes EVA-A_pass to fail."""
@@ -75,7 +75,7 @@ class TestComputeRecordAggregates:
                 "faithfulness": 0.5,
                 "agent_speech_fidelity": 0.95,
                 "conversation_progression": 0.5,
-                "turn_taking": 0.5,
+                "turn_taking": 0.8,
                 "conciseness": 0.5,
             }
         )
@@ -93,7 +93,7 @@ class TestComputeRecordAggregates:
                 "faithfulness": 0.5,
                 "agent_speech_fidelity": 0.95,
                 "conversation_progression": 0.5,
-                "turn_taking": 0.5,
+                "turn_taking": 0.8,
                 "conciseness": 0.3,
             }
         )
@@ -235,7 +235,7 @@ class TestComputeRunLevelAggregates:
                 "faithfulness": 0.5,
                 "agent_speech_fidelity": 0.95,
                 "conversation_progression": 0.5,
-                "turn_taking": 0.5,
+                "turn_taking": 0.8,
                 "conciseness": 0.5,
             },
             record_id="1.1.1",
@@ -262,7 +262,7 @@ class TestComputeRunLevelAggregates:
         assert result["EVA-A_pass"]["count"] == 2
         assert result["EVA-A_pass"]["success_rate"] == 0.5
 
-        # EVA-X_pass: r1=1.0, r2=0.0 (turn_taking < 0.5) -> mean=0.5
+        # EVA-X_pass: r1=1.0, r2=0.0 (turn_taking < 0.8) -> mean=0.5
         assert result["EVA-X_pass"]["mean"] == 0.5
 
     def test_mean_success_rate(self):
@@ -323,7 +323,7 @@ class TestComputeRunLevelAggregates:
                     "faithfulness": 0.5,
                     "agent_speech_fidelity": 0.95,
                     "conversation_progression": 0.5,
-                    "turn_taking": 0.5,
+                    "turn_taking": 0.8,
                     "conciseness": 0.5,
                 },
                 record_id=f"1.1.1/trial_{trial_idx}",
@@ -355,7 +355,7 @@ class TestComputeRunLevelAggregates:
                 "faithfulness": 0.5,
                 "agent_speech_fidelity": 0.95,
                 "conversation_progression": 0.5,
-                "turn_taking": 0.5,
+                "turn_taking": 0.8,
                 "conciseness": 0.5,
             }
             # Make trial_2 have an error in task_completion → EVA-A_pass becomes None
