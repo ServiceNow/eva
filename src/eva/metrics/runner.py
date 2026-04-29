@@ -589,7 +589,6 @@ class MetricsRunner:
             # Basic stats from result
             num_turns=result.num_turns,
             tools_called=result.tools_called,
-            completed=result.completed,
             duration_seconds=result.duration_seconds,
             # Paths
             output_dir=str(record_dir),

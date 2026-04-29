@@ -12,8 +12,8 @@ characterizes what happened on that turn:
 
 Tool-call-aware latency: turns where the agent issued a tool call (detected from
 ``context.conversation_trace``) use a more lenient upper end of the latency curve
-(sweet-spot extends to 4000ms, hard-late at 7000ms) because tool execution adds inherent
-latency. The same flag loosens the ``late_rate`` classification threshold to 6000ms.
+(sweet-spot extends to 3000ms, hard-late at 5000ms) because tool execution adds inherent
+latency. The same flag loosens the ``late_rate`` classification threshold to 5000ms.
 Lower-end thresholds (early penalty and sweet-spot ramp-up) are unchanged.
 
 Main turn_taking.score = mean(per-turn scores).
@@ -45,6 +45,7 @@ import statistics
 from typing import Any
 
 from eva.metrics.base import CodeMetric, MetricContext
+from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
 
@@ -452,13 +453,29 @@ class TurnTakingMetric(CodeMetric):
                 max(context.audio_timestamps_user_turns, default=0),
                 max(context.audio_timestamps_assistant_turns, default=0),
             )
+            missed_turn = is_agent_timeout_on_user_turn(
+                context.conversation_ended_reason,
+                context.audio_timestamps_user_turns,
+                context.audio_timestamps_assistant_turns,
+            )
+            conversation_completed = context.conversation_ended_reason != "error" and not missed_turn
+            incomplete_error = (
+                (
+                    "Agent failed to respond to last user turn — score zeroed"
+                    if missed_turn
+                    else "Agent failed to respond (conversation ended with error) — score zeroed"
+                )
+                if not conversation_completed
+                else None
+            )
+
             details: dict[str, Any] = {
                 "per_turn_score": per_turn_score,
                 "per_turn_reason": per_turn_reason,
                 "per_turn_evidence": per_turn_evidence,
                 "num_turns": total_turns,
                 "num_evaluated": len(per_turn_score),
-                "conversation_completed": context.completed,
+                "conversation_completed": conversation_completed,
             }
 
             if not per_turn_score:
@@ -474,17 +491,16 @@ class TurnTakingMetric(CodeMetric):
                 )
 
             mean_score = round(statistics.mean(per_turn_score.values()), 4)
+            sub_metrics = self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence)
 
-            if not context.completed:
+            if not conversation_completed:
                 return MetricScore(
                     name=self.name,
                     score=0.0,
                     normalized_score=0.0,
                     details=details,
-                    sub_metrics=self._build_flat_sub_metrics(
-                        context, turn_keys, turns_with_tool_calls, per_turn_evidence
-                    ),
-                    error="Conversation not completed — score zeroed",
+                    sub_metrics=sub_metrics,
+                    error=incomplete_error,
                 )
 
             return MetricScore(
@@ -492,7 +508,7 @@ class TurnTakingMetric(CodeMetric):
                 score=mean_score,
                 normalized_score=mean_score,
                 details=details,
-                sub_metrics=self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence),
+                sub_metrics=sub_metrics,
             )
 
         except Exception as e:

@@ -647,17 +647,17 @@ class TestConversationCompleted:
 
     @pytest.mark.asyncio
     async def test_incomplete_conversation_zeros_score(self, metric):
-        """context.completed=False → score 0.0, normalized_score 0.0, error message set."""
+        """conversation_ended_reason='error' → score 0.0, normalized_score 0.0, error message set."""
         context = make_metric_context(
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)]},
             audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(7.0, 8.0)]},
-            completed=False,
+            conversation_ended_reason="error",
         )
         result = await metric.compute(context)
         assert result.score == pytest.approx(0.0)
         assert result.normalized_score == pytest.approx(0.0)
         assert result.error is not None
-        assert "not completed" in result.error.lower()
+        assert "agent failed to respond" in result.error.lower()
 
     @pytest.mark.asyncio
     async def test_incomplete_conversation_preserves_per_turn_data(self, metric):
@@ -665,7 +665,7 @@ class TestConversationCompleted:
         context = make_metric_context(
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)]},
             audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(7.0, 8.0)]},
-            completed=False,
+            conversation_ended_reason="error",
         )
         result = await metric.compute(context)
         # Per-turn scores are computed and stored even though the final score is zeroed.
@@ -675,11 +675,11 @@ class TestConversationCompleted:
 
     @pytest.mark.asyncio
     async def test_completed_conversation_uses_mean_score(self, metric):
-        """context.completed=True (default) → score equals mean of per-turn scores, no error."""
+        """Normal goodbye end → score equals mean of per-turn scores, no error."""
         context = make_metric_context(
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)]},
             audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(7.0, 8.0)]},
-            completed=True,
+            conversation_ended_reason="goodbye",
         )
         result = await metric.compute(context)
         assert result.error is None
@@ -692,11 +692,49 @@ class TestConversationCompleted:
         context = make_metric_context(
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)]},
             audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(7.0, 8.0)]},
-            completed=False,
+            conversation_ended_reason="error",
         )
         result = await metric.compute(context)
         assert "on_time_rate" in result.sub_metrics
         assert "late_rate" in result.sub_metrics
+
+    @pytest.mark.asyncio
+    async def test_inactivity_timeout_user_last_speaker_zeros_score(self, metric):
+        """inactivity_timeout where user spoke last → agent missed the turn → score zeroed.
+
+        Mirrors conversation_correctly_finished logic: is_agent_timeout_on_user_turn=True
+        means the session ended without the agent responding to the user's final turn.
+        Turn 1 is evaluable (both sides have audio) but the overall score is zeroed.
+        """
+        context = make_metric_context(
+            # Turn 1: agent responds normally (1s latency).
+            # Turn 2: user speaks (5–6s) but agent never responds → session times out.
+            # User's last audio end (6.0) > agent's last audio end (3.0) → user was last speaker.
+            audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)]},
+            audio_timestamps_assistant_turns={1: [(2.0, 3.0)]},
+            conversation_ended_reason="inactivity_timeout",
+        )
+        result = await metric.compute(context)
+        assert result.score == pytest.approx(0.0)
+        assert result.details["conversation_completed"] is False
+        assert result.error is not None
+
+    @pytest.mark.asyncio
+    async def test_inactivity_timeout_agent_last_speaker_keeps_score(self, metric):
+        """inactivity_timeout where agent spoke last → agent did respond → score not zeroed.
+
+        Consistent with conversation_correctly_finished: is_agent_timeout_on_user_turn=False
+        when the agent was the last speaker, even if the session ended via timeout.
+        """
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)]},
+            audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(7.0, 8.0)]},  # agent ends last at 8.0
+            conversation_ended_reason="inactivity_timeout",
+        )
+        result = await metric.compute(context)
+        assert result.error is None
+        assert result.score > 0.0
+        assert result.details["conversation_completed"] is True
 
 
 # ---------- Dual interrupt ----------
