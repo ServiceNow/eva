@@ -111,10 +111,12 @@ def create_turn_stop_strategy(
         return SpeechTimeoutUserTurnStopStrategy(**strategy_params)
     elif strategy_type_lower == "turn_analyzer":
         # TurnAnalyzerUserTurnStopStrategy requires a turn_analyzer instance
-        # If smart_turn_stop_secs is provided, use it; otherwise let SmartTurnParams use its default
-        smart_params = SmartTurnParams(stop_secs=smart_turn_stop_secs) if smart_turn_stop_secs is not None else None
+        # smart_turn_stop_secs can be passed via strategy_params (takes precedence) or the explicit argument
+        params = dict(strategy_params)
+        stop_secs = params.pop("smart_turn_stop_secs", smart_turn_stop_secs)
+        smart_params = SmartTurnParams(stop_secs=stop_secs) if stop_secs is not None else None
         turn_analyzer = LocalSmartTurnAnalyzerV3(params=smart_params)
-        return TurnAnalyzerUserTurnStopStrategy(turn_analyzer=turn_analyzer, **strategy_params)
+        return TurnAnalyzerUserTurnStopStrategy(turn_analyzer=turn_analyzer, **params)
     elif strategy_type_lower == "external":
         # ExternalUserTurnStopStrategy has no required parameters
         return ExternalUserTurnStopStrategy(**strategy_params)
