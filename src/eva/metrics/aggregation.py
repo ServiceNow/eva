@@ -48,7 +48,7 @@ EVA_COMPOSITES: list[EVACompositeDefinition] = [
         aggregation_type="pass",
         thresholds={
             "conversation_progression": (">=", 0.5),
-            "turn_taking": (">=", 0.5),
+            "turn_taking": (">=", 0.8),
             "conciseness": (">=", 0.5),
         },
     ),

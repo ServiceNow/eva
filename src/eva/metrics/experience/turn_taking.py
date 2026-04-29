@@ -57,6 +57,7 @@ class TurnTakingMetric(CodeMetric):
     name = "turn_taking"
     description = "Turn-taking evaluation based on per-turn latency and interruption behavior"
     category = "experience"
+    pass_at_k_threshold = 0.8
 
     # --- Latency curve (piecewise linear). 0 outside [LATENCY_HARD_EARLY_MS, LATENCY_HARD_LATE_MS]. ---
     # Ramp up 0 → 1 from LATENCY_HARD_EARLY_MS to LATENCY_SWEET_SPOT_LOW_MS.
