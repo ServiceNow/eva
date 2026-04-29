@@ -648,7 +648,7 @@ class TestMissedTurnZeroing:
 
     @pytest.mark.asyncio
     async def test_incomplete_conversation_zeros_score(self, metric):
-        """missed_turn=True (inactivity_timeout, user spoke last) → score 0.0, normalized_score 0.0, error message set."""
+        """missed_turn=True (inactivity_timeout, user spoke last) → score 0.0, normalized_score 0.0, no error."""
         context = make_metric_context(
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)], 3: [(10.0, 11.0)]},
             audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(7.0, 8.0)]},
@@ -657,8 +657,7 @@ class TestMissedTurnZeroing:
         result = await metric.compute(context)
         assert result.score == pytest.approx(0.0)
         assert result.normalized_score == pytest.approx(0.0)
-        assert result.error is not None
-        assert "agent failed to respond" in result.error.lower()
+        assert result.error is None
 
     @pytest.mark.asyncio
     async def test_incomplete_conversation_preserves_per_turn_data(self, metric):
@@ -718,7 +717,7 @@ class TestMissedTurnZeroing:
         result = await metric.compute(context)
         assert result.score == pytest.approx(0.0)
         assert result.details["missed_turn"] is True
-        assert result.error is not None
+        assert result.error is None
 
     @pytest.mark.asyncio
     async def test_inactivity_timeout_agent_last_speaker_keeps_score(self, metric):

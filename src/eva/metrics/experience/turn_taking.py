@@ -461,7 +461,6 @@ class TurnTakingMetric(CodeMetric):
                 context.audio_timestamps_user_turns,
                 context.audio_timestamps_assistant_turns,
             )
-            incomplete_error = "Agent failed to respond to last user turn — score zeroed" if missed_turn else None
 
             details: dict[str, Any] = {
                 "per_turn_score": per_turn_score,
@@ -484,23 +483,13 @@ class TurnTakingMetric(CodeMetric):
                     details=details,
                 )
 
-            mean_score = round(statistics.mean(per_turn_score.values()), 4)
+            score = 0.0 if missed_turn else round(statistics.mean(per_turn_score.values()), 4)
             sub_metrics = self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence)
-
-            if missed_turn:
-                return MetricScore(
-                    name=self.name,
-                    score=0.0,
-                    normalized_score=0.0,
-                    details=details,
-                    sub_metrics=sub_metrics,
-                    error=incomplete_error,
-                )
 
             return MetricScore(
                 name=self.name,
-                score=mean_score,
-                normalized_score=mean_score,
+                score=score,
+                normalized_score=score,
                 details=details,
                 sub_metrics=sub_metrics,
             )
