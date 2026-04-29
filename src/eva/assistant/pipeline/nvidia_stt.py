@@ -22,6 +22,8 @@ import httpx
 import websockets
 from loguru import logger
 from pipecat.frames.frames import (
+    BotStartedSpeakingFrame,
+    BotStoppedSpeakingFrame,
     CancelFrame,
     EndFrame,
     Frame,
@@ -74,6 +76,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         self._websocket = None
         self._receive_task: asyncio.Task | None = None
         self._ready = False
+        self._bot_speaking = False
         self._finalize_requested = False
         self._transcript_parts: list[str] = []
 
@@ -99,7 +102,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
     _audio_chunk_count: int = 0
 
     async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame, None]:
-        if self._websocket and self._ready:
+        if self._websocket and self._ready and not self._bot_speaking:
             try:
                 await self._websocket.send(
                     json.dumps({"type": "input_audio_buffer.append", "audio": base64.b64encode(audio).decode("ascii")})
@@ -119,7 +122,11 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
 
-        if isinstance(frame, VADUserStoppedSpeakingFrame):
+        if isinstance(frame, BotStartedSpeakingFrame):
+            self._bot_speaking = True
+        elif isinstance(frame, BotStoppedSpeakingFrame):
+            self._bot_speaking = False
+        elif isinstance(frame, VADUserStoppedSpeakingFrame):
             self._finalize_requested = True
             self.request_finalize()
             await self.start_processing_metrics()
@@ -169,16 +176,12 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
                 logger.info(f"Connecting to {self._url}")
                 ready_msg = await asyncio.wait_for(self._websocket.recv(), timeout=5.0)
                 data = json.loads(ready_msg)
-                if data.get("type") == "ready":
-                    self._ready = True
-                    logger.info(f"{self} connected and ready")
-                elif data.get("type") == "conversation.created":
+                if data.get("type") == "conversation.created":
                     logger.info("Conversation created successfully")
                     await self._configure_session()
-                    self._ready = True
                 else:
                     logger.warning(f"{self} unexpected initial message: {data}")
-                    self._ready = True
+                self._ready = True
             except TimeoutError:
                 logger.warning(f"{self} timeout waiting for ready, proceeding")
                 self._ready = True
@@ -256,11 +259,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
                 data = json.loads(message)
                 msg_type = data.get("type")
 
-                if msg_type == "transcript":
-                    await self._handle_transcript(data)
-                elif msg_type == "ready":
-                    self._ready = True
-                elif msg_type == "error":
+                if msg_type == "error":
                     logger.error(f"{self} server error: {data}")
                 elif msg_type == "conversation.item.input_audio_transcription.delta":
                     delta = data.get("delta", "")
@@ -309,23 +308,3 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
             TranscriptionFrame(full_transcript, self._user_id, current_time_ms(), language=None, finalized=True)
         )
         await self.stop_processing_metrics()
-
-    async def _handle_transcript(self, data: dict):
-        """Handle legacy transcript protocol ({"type": "transcript", "is_final": bool})."""
-        text = data.get("text", "")
-        is_final = data.get("is_final", False)
-
-        if not text:
-            if is_final:
-                logger.debug(f"{self} empty final transcript (ghost turn)")
-                self.confirm_finalize()
-            return
-
-        if is_final:
-            self.confirm_finalize()
-            await self.push_frame(
-                TranscriptionFrame(text, self._user_id, current_time_ms(), language=None, finalized=True)
-            )
-            await self.stop_processing_metrics()
-        else:
-            await self.push_frame(InterimTranscriptionFrame(text, self._user_id, current_time_ms(), language=None))
