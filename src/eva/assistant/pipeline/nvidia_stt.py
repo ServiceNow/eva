@@ -31,6 +31,7 @@ from pipecat.frames.frames import (
     VADUserStoppedSpeakingFrame,
 )
 from pipecat.processors.frame_processor import FrameDirection
+from pipecat.services.settings import STTSettings
 from pipecat.services.stt_service import WebsocketSTTService
 
 
@@ -61,7 +62,11 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         model: str | None = None,
         **kwargs,
     ):
-        super().__init__(sample_rate=sample_rate, **kwargs)
+        super().__init__(
+            sample_rate=sample_rate,
+            settings=STTSettings(model=None, language=None),
+            **kwargs,
+        )
         self._url = url
         self._api_key = api_key
         self._verify = verify
@@ -201,7 +206,6 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
             response = await client.post(http_url, headers=headers, json={})
             response.raise_for_status()
             session_data = response.json()
-            logger.info(f"{self} HTTP session initialized: {session_data}")
             return session_data
 
     async def _configure_session(self):
@@ -218,7 +222,6 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
             session_config.setdefault("input_audio_transcription", {})
             session_config["input_audio_transcription"]["model"] = self._asr_model
 
-        logger.info(f"{self} sending session update")
         await self._websocket.send(json.dumps({"type": "transcription_session.update", "session": session_config}))
 
         try:
@@ -262,7 +265,6 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
                 elif msg_type == "conversation.item.input_audio_transcription.delta":
                     delta = data.get("delta", "")
                     if delta:
-                        logger.debug(f"{self} interim delta: {delta}")
                         await self.push_frame(
                             InterimTranscriptionFrame(delta, self._user_id, current_time_ms(), language=None)
                         )
