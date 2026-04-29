@@ -272,6 +272,12 @@ def create_tts_service(
             voice=params.get("voice", "alloy"),
             base_url=url,
         )
+        chatterbox_tts._eva_extra_body = {
+            "streaming_quality": "fast",
+            "streaming_strategy": "word",
+            "streaming_chunk_size": 80,
+            "streaming_buffer_size": 1,
+        }
         OpenAITTSService.run_tts = override_run_tts
         chatterbox_tts._settings.language = language_code
         return chatterbox_tts
@@ -316,6 +322,13 @@ def create_tts_service(
             voice=params.get("voice", "alloy"),
             base_url=url,
         )
+        kokoro_tts._eva_extra_body = {
+            "stream": True,
+            "streaming_quality": "fast",
+            "streaming_strategy": "word",
+            "streaming_chunk_size": 80,
+            "streaming_buffer_size": 1,
+        }
         OpenAITTSService.run_tts = override_run_tts
         kokoro_tts._settings.language = language_code
         return kokoro_tts
@@ -372,6 +385,12 @@ def create_tts_service(
             voice=params.get("voice", "alloy"),
             base_url=url,
         )
+        xtts_tts._eva_extra_body = {
+            "streaming_quality": "fast",
+            "streaming_strategy": "word",
+            "streaming_chunk_size": 80,
+            "streaming_buffer_size": 1,
+        }
         OpenAITTSService.run_tts = override_run_tts
         xtts_tts._settings.language = language_code
         return xtts_tts
@@ -604,20 +623,18 @@ async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[F
     try:
         await self.start_ttfb_metrics()
 
-        # add chatterbox streaming params to `create_params``
-        # Setup API parameters
+        # Per-backend streaming knobs are attached to the service instance as
+        # `_eva_extra_body` by the factory in this module (e.g. kokoro sets
+        # "stream": True; chatterbox/xtts omit it).
         create_params = {
             "input": text,
             "model": self._settings.model,
             "voice": self._settings.voice,
             "response_format": "pcm",
-            "extra_body": {
-                "streaming_quality": "fast",
-                "streaming_strategy": "word",
-                "streaming_chunk_size": 80,
-                "streaming_buffer_size": 1,
-            },
         }
+        extra_body = getattr(self, "_eva_extra_body", None)
+        if extra_body:
+            create_params["extra_body"] = extra_body
 
         if self._settings.instructions:
             create_params["instructions"] = self._settings.instructions

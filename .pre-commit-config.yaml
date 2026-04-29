@@ -21,6 +21,12 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: uv-lock
+        name: uv lock
+        entry: uv lock
+        language: system
+        pass_filenames: false
+        files: ^pyproject\.toml$
       - id: forbid-yml-file-extension
         name: forbid .yml file extension in favor of .yaml
         entry: bash -c 'printf "%s\n" "$@"; exit 1' --

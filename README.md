@@ -127,7 +127,7 @@ EVA_DOMAIN=airline python main.py
 #   data/airline_scenarios/
 
 # Run with CLI overrides
-python main.py --llm-model gpt-5-mini --max-concurrent 10
+python main.py --model.llm gpt-5-mini --max-concurrent-conversations 10
 ```
 
 ### Running Metrics
