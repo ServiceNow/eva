@@ -13,7 +13,7 @@ characterizes what happened on that turn:
 Tool-call-aware latency: turns where the agent issued a tool call (detected from
 ``context.conversation_trace``) use a more lenient upper end of the latency curve
 (sweet-spot extends to 3000ms, hard-late at 5000ms) because tool execution adds inherent
-latency. The same flag loosens the ``late_rate`` classification threshold to 5000ms.
+latency. The same flag loosens the ``late_rate`` classification threshold to 4000ms.
 Lower-end thresholds (early penalty and sweet-spot ramp-up) are unchanged.
 
 Main turn_taking.score = mean(per-turn scores).
@@ -94,8 +94,10 @@ class TurnTakingMetric(CodeMetric):
     # EARLY_THRESHOLD_MS is shared across all turns — early-response behaviour is not
     # affected by whether a tool call occurred.
     EARLY_THRESHOLD_MS: float = 200  # latency < this ⇒ "early"
-    LATE_THRESHOLD_MS: float = 3500  # latency >= this ⇒ "late" (no tool call)
-    LATE_THRESHOLD_MS_TOOL: float = 5000  # latency >= this ⇒ "late" (turn with tool call)
+    # Late thresholds sit roughly halfway between sweet-spot-high and hard-late on each curve,
+    # so a turn classifies as "late" when its score has dropped past ~0.5 down the ramp.
+    LATE_THRESHOLD_MS: float = 2750  # latency >= this ⇒ "late" (no tool call)
+    LATE_THRESHOLD_MS_TOOL: float = 4000  # latency >= this ⇒ "late" (turn with tool call)
 
     @staticmethod
     def _get_turn_ids_with_turn_taking(context: MetricContext) -> list[int]:

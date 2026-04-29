@@ -13,7 +13,7 @@ Latency thresholds:
   LATENCY_HARD_EARLY_MS = -500, LATENCY_SWEET_SPOT_LOW_MS = 500
   LATENCY_SWEET_SPOT_HIGH_MS = 2000, LATENCY_HARD_LATE_MS = 3500
   LATENCY_SWEET_SPOT_HIGH_MS_TOOL = 3000, LATENCY_HARD_LATE_MS_TOOL = 5000
-  LATE_THRESHOLD_MS = 3500, LATE_THRESHOLD_MS_TOOL = 5000
+  LATE_THRESHOLD_MS = 2750, LATE_THRESHOLD_MS_TOOL = 4000
 
 Sub-metrics (flat, one number each):
   Latency:              mean_latency_ms, p50_latency_ms, p90_latency_ms,
@@ -299,7 +299,8 @@ class TestFlatSubMetrics:
     @pytest.mark.asyncio
     async def test_latency_headlines_populated(self, metric):
         """5 turns, mix of latencies → 6 latency sub-metrics present with expected values."""
-        # Latencies: 100ms (early), 300ms, 1000ms, 3000ms, 5000ms (late)
+        # Latencies: 100ms (early), 300ms (on-time), 1000ms (on-time),
+        #            3000ms (late, ≥ LATE_THRESHOLD_MS=2750), 5000ms (late).
         context = make_metric_context(
             audio_timestamps_user_turns={i: [(i * 10.0, i * 10.0 + 1.0)] for i in range(1, 6)},
             audio_timestamps_assistant_turns={
@@ -314,15 +315,15 @@ class TestFlatSubMetrics:
         sub = result.sub_metrics
         for k in ("mean_latency_ms", "p50_latency_ms", "p90_latency_ms", "on_time_rate", "early_rate", "late_rate"):
             assert k in sub
-        assert sub["on_time_rate"].score == pytest.approx(0.6)
+        assert sub["on_time_rate"].score == pytest.approx(0.4)
         assert sub["early_rate"].score == pytest.approx(0.2)
-        assert sub["late_rate"].score == pytest.approx(0.2)
+        assert sub["late_rate"].score == pytest.approx(0.4)
         assert sub["p50_latency_ms"].score == pytest.approx(1000, abs=1)
         # Raw-ms sub-metrics are not normalized
         assert sub["mean_latency_ms"].normalized_score is None
         assert sub["p50_latency_ms"].normalized_score is None
         # Rate sub-metrics are normalized
-        assert sub["on_time_rate"].normalized_score == pytest.approx(0.6)
+        assert sub["on_time_rate"].normalized_score == pytest.approx(0.4)
 
     @pytest.mark.asyncio
     async def test_no_agent_interruptions_omits_conditional_subs(self, metric):
@@ -480,16 +481,16 @@ class TestToolAwareScoring:
 
     @pytest.mark.asyncio
     async def test_late_rate_uses_tool_threshold(self, metric):
-        """A 4s latency is 'late' on a non-tool turn but 'on time' on a tool turn."""
+        """A 3s latency is 'late' on a non-tool turn but 'on time' on a tool turn."""
         context = make_metric_context(
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(20.0, 21.0)]},
-            audio_timestamps_assistant_turns={1: [(5.0, 6.0)], 2: [(25.0, 26.0)]},  # 4s tool, 4s no-tool
+            audio_timestamps_assistant_turns={1: [(4.0, 5.0)], 2: [(24.0, 25.0)]},  # 3s tool, 3s no-tool
             conversation_trace=[{"type": "tool_call", "turn_id": 1, "tool_name": "lookup"}],
         )
         result = await metric.compute(context)
         sub = result.sub_metrics
-        # Turn 1 (tool, 4s < LATE_THRESHOLD_MS_TOOL=5000) → on_time.
-        # Turn 2 (no tool, 4s >= LATE_THRESHOLD_MS=3500) → late.
+        # Turn 1 (tool, 3s < LATE_THRESHOLD_MS_TOOL=4000) → on_time.
+        # Turn 2 (no tool, 3s >= LATE_THRESHOLD_MS=2750) → late.
         assert sub["late_rate"].score == pytest.approx(0.5, abs=1e-3)
         assert sub["on_time_rate"].score == pytest.approx(0.5, abs=1e-3)
 
