@@ -27,6 +27,7 @@ from apps.audio_plots import preload_audio_data, render_audio_analysis_tab
 from eva.metrics.registry import get_global_registry
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RecordMetrics
+from eva.utils.pass_at_k import ATTEMPT_SUFFIX_PATTERN
 
 # ============================================================================
 # Configuration
@@ -639,7 +640,9 @@ def _collect_run_metrics(run_dir: Path) -> tuple[list[dict], list[str]]:
                 continue
 
             output_id = f"{record_id}/{trial_label}" if trial_label else record_id
-            is_failed_attempt = "_failed_attempt_" in trial_label or output_id in summary_failed_ids
+            # Treat folders with non-canonical suffixes (failed_attempt, extra, unvalidated)
+            # as non-canonical trials — same exclusion behavior the metric runner already uses.
+            is_failed_attempt = bool(ATTEMPT_SUFFIX_PATTERN.search(trial_label)) or output_id in summary_failed_ids
             row: dict = {"record": record_id, "_is_failed_attempt": is_failed_attempt}
             if trial_label:
                 row["trial"] = trial_label
@@ -1052,8 +1055,9 @@ def _aggregate_summary_by_system(summary_df: pd.DataFrame) -> pd.DataFrame:
     """Collapse cross-run summary rows of the same system across domains.
 
     Numeric metric/composite columns are averaged; record/error counts are
-    summed; ``metrics_with_errors`` dicts are merged (per-metric counts summed);
-    other identity columns take the first value within each system group.
+    summed; ``metrics_with_errors`` and ``metrics_with_missing`` dicts are
+    merged (per-metric counts summed); other identity columns take the first
+    value within each system group.
     """
     if summary_df.empty or "system_name" not in summary_df.columns:
         return summary_df
@@ -1068,6 +1072,7 @@ def _aggregate_summary_by_system(summary_df: pd.DataFrame) -> pd.DataFrame:
         "run_timestamp",
         "pipeline_type",
         "metrics_with_errors",
+        "metrics_with_missing",
     }
     metric_cols = [
         c
@@ -1079,7 +1084,7 @@ def _aggregate_summary_by_system(summary_df: pd.DataFrame) -> pd.DataFrame:
     for c in sum_cols:
         summary_df[c] = pd.to_numeric(summary_df[c], errors="coerce").fillna(0)
 
-    def _merge_metric_errors(series: pd.Series) -> dict:
+    def _merge_metric_counts(series: pd.Series) -> dict:
         merged: dict = {}
         for d in series:
             if isinstance(d, dict):
@@ -1094,7 +1099,9 @@ def _aggregate_summary_by_system(summary_df: pd.DataFrame) -> pd.DataFrame:
     for c in sum_cols:
         agg_map[c] = "sum"
     if "metrics_with_errors" in summary_df.columns:
-        agg_map["metrics_with_errors"] = _merge_metric_errors
+        agg_map["metrics_with_errors"] = _merge_metric_counts
+    if "metrics_with_missing" in summary_df.columns:
+        agg_map["metrics_with_missing"] = _merge_metric_counts
     if "run_timestamp" in summary_df.columns:
         agg_map["run_timestamp"] = "max"
     for c in summary_df.columns:
@@ -1235,6 +1242,7 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 "conversation_failures": simulation.get("failed_records"),
                 "records_with_errors": data_quality.get("records_with_errors"),
                 "metrics_with_errors": data_quality.get("metrics_with_errors") or {},
+                "metrics_with_missing": data_quality.get("metrics_with_missing") or {},
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
             }
@@ -1277,6 +1285,7 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 "conversation_failures": simulation.get("failed_records"),
                 "records_with_errors": None,
                 "metrics_with_errors": {},
+                "metrics_with_missing": {},
                 "pipeline_type": _classify_pipeline_type(run_config),
                 **model_details,
             }
@@ -1470,12 +1479,16 @@ def render_cross_run_comparison(run_dirs: list[Path]):
         total = _safe_int(row.get("records"))
         conv_failures = _safe_int(row.get("conversation_failures"))
         judge_errors = _safe_int(row.get("records_with_errors"))
-        if not (conv_failures or judge_errors) or not total:
-            continue
         metric_errors = row.get("metrics_with_errors") or {}
         if not isinstance(metric_errors, dict):
             metric_errors = {}
+        metric_missing = row.get("metrics_with_missing") or {}
+        if not isinstance(metric_missing, dict):
+            metric_missing = {}
+        if not (conv_failures or judge_errors or metric_missing) or not total:
+            continue
         metric_breakdown = ", ".join(f"{m} ({n})" for m, n in sorted(metric_errors.items())) or "—"
+        missing_breakdown = ", ".join(f"{m} ({n})" for m, n in sorted(metric_missing.items())) or "—"
         error_rows.append(
             {
                 "System": row["system_name"],
@@ -1485,13 +1498,15 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 "Judge Errors": judge_errors,
                 "Judge Error Rate": judge_errors / total,
                 "Metrics with Errors": metric_breakdown,
+                "Metrics with Missing": missing_breakdown,
             }
         )
     if error_rows:
         st.markdown("#### Errors")
         st.caption(
             "**Conversation Failures**: records where conversation generation failed. "
-            "**Judge Errors**: records where one or more metrics failed to compute."
+            "**Judge Errors**: records where one or more metrics failed to compute. "
+            "**Metrics with Missing**: per-metric count of records where the metric was absent or returned a null score (no error raised)."
         )
         errors_df = pd.DataFrame(error_rows)
         errors_styled = errors_df.style.format({"Judge Error Rate": "{:.1%}"})
@@ -1612,6 +1627,23 @@ def render_run_overview(run_dir: Path):
         metric_names = [m for m in metric_names if not _is_sub_metric(m)]
 
     col_rename = _make_category_header_rename(metric_names)
+
+    # --- Failed-attempt filter (applies to aggregates and per-record table) ---
+    has_failed_attempts = df["_is_failed_attempt"].any()
+    show_failed = False
+    if has_failed_attempts:
+        n_failed = int(df["_is_failed_attempt"].sum())
+        show_failed = st.toggle(
+            f"Include failed attempts in aggregates ({n_failed} failed)",
+            value=False,
+            key="run_overview_show_failed",
+            help="When off, failed attempts are excluded from the aggregate metrics chart and the per-record table.",
+        )
+    df = df if show_failed else df[~df["_is_failed_attempt"]].reset_index(drop=True)
+
+    if df.empty:
+        st.warning("No successful records to display.")
+        return
 
     # --- Aggregate summary ---
     st.markdown("### Aggregate Metrics")
@@ -1786,12 +1818,7 @@ def render_run_overview(run_dir: Path):
     # --- Per-record table ---
     st.markdown("### Per-Record Metrics")
 
-    has_failed_attempts = df["_is_failed_attempt"].any()
-    show_failed = False
-    if has_failed_attempts:
-        show_failed = st.toggle("Show failed attempts", value=False)
-
-    table_df = df if show_failed else df[~df["_is_failed_attempt"]]
+    table_df = df
 
     run_name = run_dir.name
     leading_cols = ["record"]
