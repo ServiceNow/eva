@@ -221,18 +221,10 @@ class BenchmarkRunner:
                     async with semaphore:
                         result, audio_task = await self._run_conversation(record, output_id)
 
-                    # Phase 2: Save result.json outside the semaphore
-                    if isinstance(result, ConversationResult):
-                        result_path = self.output_dir / "records" / output_id / "result.json"
-                        result_path.parent.mkdir(parents=True, exist_ok=True)
-                        await asyncio.to_thread(result_path.write_text, result.model_dump_json(indent=2))
-                    else:
-                        logger.error(
-                            f"result.json NOT saved for {output_id}: expected ConversationResult, "
-                            f"got {type(result).__name__} (module: {type(result).__module__}): {result!r}"
-                        )
+                    # result.json is now written by the worker itself (inside the
+                    # semaphore) so it survives task cancellation and process signals.
 
-                    # Phase 3: If the conversation didn't complete, skip validation.
+                    # Phase 2: If the conversation didn't complete, skip validation.
                     # validate_one() handles the gate (conversation_valid_end); returning
                     # vr=None signals "not_finished" to the classification loop below.
                     if not (isinstance(result, ConversationResult) and result.completed):

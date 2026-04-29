@@ -233,7 +233,7 @@ class ConversationWorker:
             tts_latency = self._calculate_tts_latency()
             model_response_latency = self._calculate_model_response_latency()
 
-            return ConversationResult(
+            result = ConversationResult(
                 record_id=self.record.id,
                 completed=error is None and conversation_ended_reason != "error",
                 error=error,
@@ -261,6 +261,15 @@ class ConversationWorker:
                 initial_scenario_db_hash=initial_scenario_db_hash,
                 final_scenario_db_hash=final_scenario_db_hash,
             )
+
+            # Write result.json here (inside Phase 1 / semaphore) so it lands on
+            # disk alongside audit_log and scenario DBs.  Previously this was done
+            # in the runner's Phase 2 *after* the semaphore release, where it was
+            # vulnerable to task cancellation from process signals or gather crashes.
+            result_path = self.output_dir / "result.json"
+            result_path.write_text(result.model_dump_json(indent=2))
+
+            return result
 
         except Exception as e:
             # Post-conversation processing failed (hash computation, latency stats, etc.)
