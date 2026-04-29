@@ -18,8 +18,14 @@ NESTED_TRIAL_PATTERN = re.compile(r"/trial_(\d+)$")
 # Regex pattern to extract trial index from flat directory names like "record_id_trial_0" (backward compat)
 TRIAL_SUFFIX_PATTERN = re.compile(r"_trial_(\d+)$")
 
-# Regex pattern to strip attempt suffix from directory names like "record_id_attempt_1"
-ATTEMPT_SUFFIX_PATTERN = re.compile(r"_attempt_(\d+)$")
+# Regex pattern to strip non-canonical trial suffixes from directory names. Matches:
+#   _attempt_M           (legacy, pre-multi-trial)
+#   _failed_attempt_M    (validation-failed retries)
+#   _extra_K             (passing trials demoted by revalidate_and_promote)
+#   _unvalidated_K       (early-exit-skipped failed_attempts)
+# Folders matching this suffix are excluded from pass@k aggregation and analysis-app
+# canonical-trial counting.
+ATTEMPT_SUFFIX_PATTERN = re.compile(r"_(failed_attempt|extra|unvalidated|attempt)_(\d+)$")
 
 
 def compute_pass_at_k(n: int, c: int, k: int) -> float:
@@ -85,10 +91,10 @@ def parse_trial_record_id(dir_name: str) -> tuple[str, int | None]:
 
     Handles the naming conventions:
     - "{record_id}/trial_{N}" (nested, preferred)
-    - "{record_id}/trial_{N}_attempt_{M}" (nested with attempt suffix)
+    - "{record_id}/trial_{N}_(failed_attempt|extra|unvalidated|attempt)_{M}" (nested w/ suffix)
     - "{record_id}_trial_{N}" (flat, backward compat)
-    - "{record_id}_trial_{N}_attempt_{M}" (flat with attempt suffix)
-    - "{record_id}_attempt_{M}" (strips attempt suffix, no trial)
+    - "{record_id}_trial_{N}_(failed_attempt|extra|unvalidated|attempt)_{M}" (flat w/ suffix)
+    - "{record_id}_(failed_attempt|extra|unvalidated|attempt)_{M}" (strips suffix, no trial)
 
     Args:
         dir_name: Directory name, e.g. "1.2.1/trial_0", "1.2.1_trial_0", or "1.2.1".
