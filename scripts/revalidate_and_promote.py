@@ -603,8 +603,39 @@ async def main() -> None:
         if eval_summary_path.exists():
             eval_summary = json.loads(eval_summary_path.read_text())
             eval_summary["validation_aggregates"] = compute_validation_aggregates(run_dir, thresholds)
+
+            # Move promoted output_ids from failed → successful in the simulation summary,
+            # so the analysis app's secondary signal (output_id in failed_record_ids) stays
+            # consistent with the new folder layout.
+            sim = eval_summary.get("simulation") or {}
+            successful_ids: list[str] = list(sim.get("successful_record_ids") or [])
+            failed_ids: list[str] = list(sim.get("failed_record_ids") or [])
+            successful_set = set(successful_ids)
+            failed_set = set(failed_ids)
+            promoted_output_ids = [f"{p['record_id']}/trial_{p['trial']}" for p in promotions]
+            for oid in promoted_output_ids:
+                if oid in failed_set:
+                    failed_ids.remove(oid)
+                    failed_set.remove(oid)
+                if oid not in successful_set:
+                    successful_ids.append(oid)
+                    successful_set.add(oid)
+            sim["successful_record_ids"] = sorted(successful_ids)
+            sim["failed_record_ids"] = sorted(failed_ids)
+            sim["successful_records"] = len(successful_ids)
+            sim["failed_records"] = len(failed_ids)
+            total = sim.get("total_records") or (len(successful_ids) + len(failed_ids))
+            if total:
+                sim["success_rate"] = len(successful_ids) / total
+                sim["failure_rate"] = len(failed_ids) / total
+            eval_summary["simulation"] = sim
+
             eval_summary_path.write_text(json.dumps(eval_summary, indent=2))
-            logger.info(f"Updated validation_aggregates in {eval_summary_path.name}")
+            logger.info(
+                f"Updated {eval_summary_path.name}: "
+                f"validation_aggregates + {len(promoted_output_ids)} promoted output_ids "
+                f"moved failed→successful"
+            )
 
 
 if __name__ == "__main__":
