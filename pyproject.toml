@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "eva"
-version = "0.1.4"
+dynamic = ["version"]
 description = "A New End-to-end Framework for Evaluating Voice Agents (EVA)"
 authors = [
     { name = "Tara Bogavelli" },
@@ -76,6 +76,9 @@ apps = [
 
 [project.scripts]
 eva = "eva.cli:main"
+
+[tool.hatch.version]
+path = "src/eva/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/eva"]
