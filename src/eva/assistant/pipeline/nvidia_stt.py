@@ -1,28 +1,23 @@
 """NVIDIA Parakeet streaming speech-to-text service implementation.
 
-The server streams sentence-level `completed` transcription events as the user
-speaks.  Finalization is driven by Pipecat VAD:
+Audio gating strategy — bot-speaking gate with buffer clearing:
+  - The audio gate is OPEN by default.  Audio flows to Parakeet whenever the
+    bot is not speaking.
+  - The gate CLOSES on BotStartedSpeakingFrame.  At the same time we send
+    ``input_audio_buffer.clear`` to Parakeet and discard any buffered
+    transcript parts so that stale audio from the previous inter-turn gap
+    does not bleed into the next user turn.
+  - The gate OPENS on BotStoppedSpeakingFrame, resuming normal audio flow.
+  - A keepalive sends silent audio during long bot-speech turns to prevent
+    the Parakeet WebSocket from closing.
 
-Audio gating strategy — bot-speaking gate:
-  - The audio gate is OPEN by default.  All audio (speech + inter-turn silence)
-    flows to Parakeet so that VAD misses on short utterances don't cause stalls.
-  - The gate CLOSES when BotStartedSpeakingFrame arrives (no point sending bot
-    TTS audio or echo to an STT service).
-  - The gate OPENS when BotStoppedSpeakingFrame arrives, resuming normal flow.
-  - A keepalive sends silent audio during long bot-speech turns to prevent the
-    Parakeet WebSocket from closing.
-  - The keepalive timer is only reset when audio is actually sent to Parakeet
-    (gate open), not when gated frames arrive — this is achieved by overriding
-    ``process_audio_frame`` so that gated frames skip the base-class timer
-    update.
-
-Finalization:
-  - Incoming `completed` events are accumulated in ``_transcript_parts`` and
-    forwarded as InterimTranscriptionFrame.
-  - When VAD fires (VADUserStoppedSpeakingFrame), we finalize immediately:
-    - If the buffer is already non-empty (server was ahead of VAD), flush now.
-    - Otherwise set ``_finalize_requested`` and emit on the next ``completed``.
-  - A safety timeout force-finalizes if ``completed`` never arrives.
+Finalization (VAD-primary, Parakeet-fallback):
+  - When VAD fires stop, finalize immediately or wait for the next
+    ``completed`` event (primary path).
+  - If Parakeet emits a non-empty ``completed`` and VAD has NOT fired, a
+    fallback timer starts.  If VAD still hasn't fired when the timer
+    expires, we auto-finalize using Parakeet's transcript — this handles
+    the case where Silero VAD misses a short utterance.
 """
 
 import asyncio
@@ -55,9 +50,14 @@ from pipecat.services.stt_service import WebsocketSTTService
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
-# Maximum seconds of trailing silence sent to Parakeet after VAD fires stop,
-# waiting for a `completed` event before force-finalizing.
+
+# Seconds after VAD stop to wait for a `completed` before force-finalizing.
 _FINALIZE_TIMEOUT_SECS = 3.0
+
+# Seconds after a Parakeet `completed` (with no VAD) before auto-finalizing.
+# Gives VAD a chance to catch up; if it doesn't, Parakeet's own sentence
+# detection serves as the fallback signal.
+_FALLBACK_FINALIZE_SECS = 1.5
 
 
 def current_time_ms():
@@ -108,6 +108,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         self._audio_gate_open = True
         self._finalize_requested = False
         self._finalize_timeout_task: asyncio.Task | None = None
+        self._fallback_finalize_task: asyncio.Task | None = None
         self._transcript_parts: list[str] = []
 
     def can_generate_metrics(self) -> bool:
@@ -182,6 +183,21 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         logger.debug(f"{self} sending keepalive silence ({len(silence)} bytes)")
         await self._send_audio(silence)
 
+    # -- Parakeet buffer management --
+
+    async def _clear_parakeet_buffer(self):
+        """Send input_audio_buffer.clear to flush stale audio in Parakeet.
+
+        Called when the bot starts speaking so that any accumulated inter-turn
+        silence doesn't produce stale ``completed`` events on the next turn.
+        """
+        if self._websocket and self._ready:
+            try:
+                await self._websocket.send(json.dumps({"type": "input_audio_buffer.clear"}))
+                logger.debug(f"{self} cleared Parakeet audio buffer")
+            except Exception as e:
+                logger.error(f"{self} failed to clear audio buffer: {e}")
+
     # -- Frame handling (bot-speaking gate + VAD finalization) --
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
@@ -190,15 +206,23 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         # --- Bot-speaking gate ---
         if isinstance(frame, BotStartedSpeakingFrame):
             self._audio_gate_open = False
+            # Flush stale audio from Parakeet so old transcripts don't bleed
+            # into the next user turn.
+            await self._clear_parakeet_buffer()
+            self._transcript_parts.clear()
+            await self._cancel_fallback_finalize()
             logger.debug(f"{self} audio gate CLOSED (bot speaking)")
         elif isinstance(frame, BotStoppedSpeakingFrame):
             self._audio_gate_open = True
             logger.debug(f"{self} audio gate OPEN (bot stopped)")
 
-        # --- VAD-based finalization ---
+        # --- VAD-based finalization (primary path) ---
         elif isinstance(frame, VADUserStartedSpeakingFrame):
-            pass  # Gate is already open; nothing extra needed.
+            # VAD detected speech — cancel any fallback timer since VAD is
+            # now in control of finalization.
+            await self._cancel_fallback_finalize()
         elif isinstance(frame, VADUserStoppedSpeakingFrame):
+            await self._cancel_fallback_finalize()
             self._finalize_requested = True
             self.request_finalize()
             await self.start_processing_metrics()
@@ -208,6 +232,8 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
                 # Start a safety timeout — if Parakeet doesn't send `completed`
                 # within a few seconds, force-finalize.
                 self._start_finalize_timeout()
+
+    # -- Finalize timeout (VAD fired but no completed from Parakeet) --
 
     def _start_finalize_timeout(self):
         """Start (or restart) the finalize safety timeout."""
@@ -233,6 +259,32 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
                 self._finalize_requested = False
                 self.confirm_finalize()
 
+    # -- Fallback finalize (Parakeet completed but VAD never fired) --
+
+    def _start_fallback_finalize(self):
+        """Start a fallback timer to auto-finalize if VAD doesn't fire."""
+        if self._fallback_finalize_task:
+            self._fallback_finalize_task.cancel()
+        self._fallback_finalize_task = self.create_task(self._fallback_finalize_handler())
+
+    async def _cancel_fallback_finalize(self):
+        """Cancel the fallback finalize timer."""
+        if self._fallback_finalize_task:
+            await self.cancel_task(self._fallback_finalize_task)
+            self._fallback_finalize_task = None
+
+    async def _fallback_finalize_handler(self):
+        """Auto-finalize using Parakeet's transcript when VAD missed the speech."""
+        await asyncio.sleep(_FALLBACK_FINALIZE_SECS)
+        if self._transcript_parts and not self._finalize_requested:
+            logger.warning(
+                f"{self} VAD miss — fallback finalizing with Parakeet transcript after {_FALLBACK_FINALIZE_SECS}s"
+            )
+            self._finalize_requested = True
+            self.request_finalize()
+            await self.start_processing_metrics()
+            await self._emit_final_transcript()
+
     # -- Connection management --
 
     async def _connect(self):
@@ -245,6 +297,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
     async def _disconnect(self):
         await super()._disconnect()
         await self._cancel_finalize_timeout()
+        await self._cancel_fallback_finalize()
 
         if self._receive_task:
             await self.cancel_task(self._receive_task)
@@ -381,12 +434,16 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         if transcript:
             self._transcript_parts.append(transcript)
             if self._finalize_requested:
+                # VAD already fired — finalize immediately.
                 await self._emit_final_transcript()
             else:
-                logger.debug(f"{self} buffered: {transcript}")
+                # VAD hasn't fired yet.  Push as interim and start the
+                # fallback timer so we auto-finalize if VAD never fires.
+                logger.debug(f"{self} buffered (no VAD yet): {transcript}")
                 await self.push_frame(
                     InterimTranscriptionFrame(transcript, self._user_id, current_time_ms(), language=None)
                 )
+                self._start_fallback_finalize()
         elif self._finalize_requested:
             # Empty completed after VAD fired (silence audio).
             if self._transcript_parts:
@@ -403,6 +460,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         self._transcript_parts = []
         self._finalize_requested = False
         await self._cancel_finalize_timeout()
+        await self._cancel_fallback_finalize()
         logger.info(f"{self} final transcript: {full_transcript}")
         self.confirm_finalize()
         await self.push_frame(
