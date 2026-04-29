@@ -719,7 +719,7 @@ tools:
         type: string
         description: "The license catalog identifier (e.g. LIC-0018)."
       - name: duration_days
-        type: integer
+        type: string
         enum: ["30", "60", "90"]
         description: "Duration in days for a temporary license. **Omit this field entirely** (do not include the key) for permanent licenses — do not pass null, the string 'null', or an empty string."
         required: false
@@ -926,8 +926,7 @@ tools:
         description: "Minimum number of seats needed (e.g. 8)."
       - name: equipment_required
         type: array
-        enum: [projector, whiteboard, video_conferencing, display_screen, speakerphone]
-        description: "Equipment that must be present in the room. Only rooms with all listed items are returned. Optional — omit if the caller has no equipment requirements."
+        description: "Equipment that must be present in the room. Allowed values: projector, whiteboard, video_conferencing, display_screen, speakerphone. Only rooms with all listed items are returned. Optional — omit if the caller has no equipment requirements."
         required: false
 
   - id: submit_room_booking
