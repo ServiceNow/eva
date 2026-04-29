@@ -1,12 +1,11 @@
 """NVIDIA Parakeet streaming speech-to-text service implementation.
 
-Audio gating strategy — bot-speaking gate with buffer clearing:
+Audio gating strategy — bot-speaking gate:
   - The audio gate is OPEN by default.  Audio flows to Parakeet whenever the
     bot is not speaking.
-  - The gate CLOSES on BotStartedSpeakingFrame.  At the same time we send
-    ``input_audio_buffer.clear`` to Parakeet and discard any buffered
-    transcript parts so that stale audio from the previous inter-turn gap
-    does not bleed into the next user turn.
+  - The gate CLOSES on BotStartedSpeakingFrame.  Any buffered transcript
+    parts are discarded so that stale Parakeet completions from the
+    inter-turn silence period do not bleed into the next user turn.
   - The gate OPENS on BotStoppedSpeakingFrame, resuming normal audio flow.
   - A keepalive sends silent audio during long bot-speech turns to prevent
     the Parakeet WebSocket from closing.
@@ -183,21 +182,6 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         logger.debug(f"{self} sending keepalive silence ({len(silence)} bytes)")
         await self._send_audio(silence)
 
-    # -- Parakeet buffer management --
-
-    async def _clear_parakeet_buffer(self):
-        """Send input_audio_buffer.clear to flush stale audio in Parakeet.
-
-        Called when the bot starts speaking so that any accumulated inter-turn
-        silence doesn't produce stale ``completed`` events on the next turn.
-        """
-        if self._websocket and self._ready:
-            try:
-                await self._websocket.send(json.dumps({"type": "input_audio_buffer.clear"}))
-                logger.debug(f"{self} cleared Parakeet audio buffer")
-            except Exception as e:
-                logger.error(f"{self} failed to clear audio buffer: {e}")
-
     # -- Frame handling (bot-speaking gate + VAD finalization) --
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
@@ -206,9 +190,8 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         # --- Bot-speaking gate ---
         if isinstance(frame, BotStartedSpeakingFrame):
             self._audio_gate_open = False
-            # Flush stale audio from Parakeet so old transcripts don't bleed
-            # into the next user turn.
-            await self._clear_parakeet_buffer()
+            # Discard any stale transcript parts so old Parakeet completions
+            # from the inter-turn silence period don't bleed into the next turn.
             self._transcript_parts.clear()
             await self._cancel_fallback_finalize()
             logger.debug(f"{self} audio gate CLOSED (bot speaking)")
@@ -274,16 +257,28 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
             self._fallback_finalize_task = None
 
     async def _fallback_finalize_handler(self):
-        """Auto-finalize using Parakeet's transcript when VAD missed the speech."""
+        """Auto-finalize using Parakeet's transcript when VAD missed the speech.
+
+        Because VAD never fired, the downstream LLMUserAggregator has no
+        active user turn.  We push synthetic VAD start/stop frames so the
+        aggregator sees a proper turn lifecycle and triggers the LLM.
+        """
         await asyncio.sleep(_FALLBACK_FINALIZE_SECS)
         if self._transcript_parts and not self._finalize_requested:
             logger.warning(
                 f"{self} VAD miss — fallback finalizing with Parakeet transcript after {_FALLBACK_FINALIZE_SECS}s"
             )
+            # Push synthetic VAD start so the aggregator opens a user turn.
+            await self.push_frame(VADUserStartedSpeakingFrame())
+
             self._finalize_requested = True
             self.request_finalize()
             await self.start_processing_metrics()
             await self._emit_final_transcript()
+
+            # Push synthetic VAD stop so the aggregator closes the turn
+            # and triggers the LLM.
+            await self.push_frame(VADUserStoppedSpeakingFrame())
 
     # -- Connection management --
 
