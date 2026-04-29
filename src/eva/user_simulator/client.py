@@ -23,7 +23,7 @@ from eva.user_simulator.audio_interface import ELEVENLABS_OUTPUT_RATE, BotToBotA
 from eva.user_simulator.event_logger import ElevenLabsEventLogger
 from eva.user_simulator.perturbation import AudioPerturbator
 from eva.utils.audio_utils import save_pcm_as_wav
-from eva.utils.logging import get_logger
+from eva.utils.logging import current_record_id, get_logger
 from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
@@ -102,6 +102,10 @@ class UserSimulator:
         # Keep-alive inactivity detection
         self._consecutive_keepalive_count = 0
         self._max_consecutive_keepalives = 12  # End call after this many pings without activity (2 minutes)
+
+        # Capture the worker's record ID so ElevenLabs callbacks (which run in
+        # a different thread) can restore it for per-record log routing.
+        self._record_id = current_record_id.get()
 
     def _on_conversation_end(self, reason: str = "goodbye") -> None:
         """Signal conversation completion.
@@ -444,6 +448,7 @@ class UserSimulator:
         Args:
             response: The text that the simulated user said
         """
+        current_record_id.set(self._record_id)
         self._reset_keepalive_counter()
         logger.info(f"🎭 User (ElevenLabs): {response}")
 
@@ -462,6 +467,7 @@ class UserSimulator:
             original: Original response
             corrected: Corrected response
         """
+        current_record_id.set(self._record_id)
         logger.debug(f"User response corrected: {original} -> {corrected}")
 
         self.event_logger.log_event(
@@ -480,6 +486,7 @@ class UserSimulator:
         Args:
             transcript: The text that the assistant said
         """
+        current_record_id.set(self._record_id)
         self._reset_keepalive_counter()
         logger.info(f"🤖 Assistant: {transcript}")
 
