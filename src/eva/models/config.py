@@ -22,7 +22,6 @@ from typing import Annotated, Any, ClassVar, Literal
 import yaml
 from litellm.types.router import DeploymentTypedDict
 from pydantic import (
-    AliasChoices,
     BaseModel,
     ConfigDict,
     Discriminator,
@@ -38,6 +37,15 @@ from pydantic_settings import BaseSettings, CliSuppress, SettingsConfigDict
 from eva.models.provenance import RunProvenance
 
 logger = logging.getLogger(__name__)
+
+
+_VALIDATION_METRIC_NAMES = frozenset(("conversation_valid_end", "user_behavioral_fidelity", "user_speech_fidelity"))
+
+
+def _get_all_metrics() -> list[str]:
+    from eva.metrics.registry import get_global_registry
+
+    return [m for m in get_global_registry().list_metrics() if m not in _VALIDATION_METRIC_NAMES]
 
 
 def _param_alias(params: dict[str, Any]) -> str:
@@ -133,15 +141,6 @@ class PipelineConfig(BaseModel):
             data.pop(key, None)
         return data
 
-    @field_serializer("stt_params", "tts_params")
-    @classmethod
-    def _redact_api_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
-        """Redact API keys when serializing."""
-        redacted = params.copy()
-        if "api_key" in redacted:
-            redacted["api_key"] = "***"
-        return redacted
-
 
 class SpeechToSpeechConfig(BaseModel):
     """Configuration for a speech-to-speech model."""
@@ -195,16 +194,15 @@ class SpeechToSpeechConfig(BaseModel):
     @property
     def pipeline_parts(self) -> dict[str, str]:
         """Component names for this pipeline."""
-        return {"s2s": _param_alias(self.s2s_params) or self.s2s}
-
-    @field_serializer("s2s_params")
-    @classmethod
-    def _redact_api_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
-        """Redact API keys when serializing."""
-        redacted = params.copy()
-        if "api_key" in redacted:
-            redacted["api_key"] = "***"
-        return redacted
+        if self.s2s == "elevenlabs":
+            # hardcoded for now. Models are set on the agent UI
+            return {
+                "s2s": _param_alias(self.s2s_params),
+                "stt": "scribe_v2.2_realtime",
+                "llm": "gemini-3-flash-preview",
+                "tts": "v3-conversational",
+            }
+        return {"s2s": _param_alias(self.s2s_params)}
 
 
 class AudioLLMConfig(BaseModel):
@@ -275,18 +273,9 @@ class AudioLLMConfig(BaseModel):
     def pipeline_parts(self) -> dict[str, str]:
         """Component names for this pipeline."""
         return {
-            "audio_llm": _param_alias(self.audio_llm_params) or self.audio_llm,
-            "tts": _param_alias(self.tts_params) or self.tts,
+            "audio_llm": _param_alias(self.audio_llm_params),
+            "tts": _param_alias(self.tts_params),
         }
-
-    @field_serializer("audio_llm_params", "tts_params")
-    @classmethod
-    def _redact_api_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
-        """Redact API keys when serializing."""
-        redacted = params.copy()
-        if "api_key" in redacted:
-            redacted["api_key"] = "***"
-        return redacted
 
 
 _PIPELINE_FIELDS = {
@@ -360,6 +349,10 @@ def get_pipeline_type(model_data: dict | Any) -> PipelineType:
     """
     mode = _model_config_discriminator(model_data)
     if mode == "s2s":
+        # ElevenLabs uses s2s_params for configuration but is a cascade pipeline internally
+        s2s_value = model_data.get("s2s")
+        if s2s_value == "elevenlabs":
+            return PipelineType.CASCADE
         return PipelineType.S2S
     if mode == "audio_llm":
         return PipelineType.AUDIO_LLM
@@ -504,48 +497,11 @@ class RunConfig(BaseSettings):
         cli_hide_none_type=True,
         cli_implicit_flags="toggle",
         cli_kebab_case=True,
-        cli_shortcuts={
-            # TODO: Remove deprecated aliases after a little while.
-            "model.llm": "llm-model",
-            "model.stt": "stt-model",
-            "model.tts": "tts-model",
-            "model.s2s": "realtime-model",
-            "model.audio_llm": "audio-llm-model",
-            "max-rerun-attempts": "max-reruns",
-            "record-ids": "ids",
-            "max-concurrent-conversations": ["max-concurrent", "n"],
-            "conversation-timeout-seconds": "timeout",
-            "output-dir": ["output", "o"],
-        },
         env_nested_delimiter="__",
         env_prefix="EVA_",
         extra="ignore",
         populate_by_name=True,
     )
-
-    _VALIDATION_METRIC_NAMES: ClassVar[set[str]] = {
-        "conversation_valid_end",
-        "user_behavioral_fidelity",
-        "user_speech_fidelity",
-    }
-
-    _DEPRECATED_ENV_VARS: ClassVar[dict[str, str]] = {
-        "LLM_MODEL": "EVA_MODEL__LLM",
-        "STT_MODEL": "EVA_MODEL__STT",
-        "TTS_MODEL": "EVA_MODEL__TTS",
-        "REALTIME_MODEL": "EVA_MODEL__S2S",
-        "EVA_MODEL__REALTIME_MODEL": "EVA_MODEL__S2S",
-        "LLM_PARAMS": "litellm_params in EVA_MODEL_LIST",
-        "LLM_MAX_TOKENS": "litellm_params in EVA_MODEL_LIST",
-        "LLM_REASONING_EFFORT": "litellm_params in EVA_MODEL_LIST",
-        "STT_PARAMS": "EVA_MODEL__STT_PARAMS",
-        "TTS_PARAMS": "EVA_MODEL__TTS_PARAMS",
-        "REALTIME_MODEL_PARAMS": "EVA_MODEL__S2S_PARAMS",
-        "EVA_MODEL__REALTIME_MODEL_PARAMS": "EVA_MODEL__S2S_PARAMS",
-        "EVA_MAX_CONCURRENT": "EVA_MAX_CONCURRENT_CONVERSATIONS",
-        "EVA_CONVERSATION_TIMEOUT": "EVA_CONVERSATION_TIMEOUT_SECONDS",
-        "EVA_METRICS_TO_RUN": "EVA_METRICS",
-    }
 
     # Maps *_params field names to their provider field for env override logic
     _PARAMS_TO_PROVIDER: ClassVar[dict[str, str]] = {
@@ -572,13 +528,14 @@ class RunConfig(BaseSettings):
     )
 
     # Framework selection
-    framework: Literal["pipecat", "openai_realtime", "gemini_live"] = Field(
+    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs"] = Field(
         "pipecat",
         description=(
             "Agent framework to use for the assistant server."
             "'pipecat' (default): Pipecat pipeline."
             "'openai_realtime': OpenAI Realtime API directly."
             "'gemini_live': Gemini Live API via google-genai."
+            "'elevenlabs': ElevenLabs Conversational AI API."
         ),
     )
 
@@ -639,9 +596,8 @@ class RunConfig(BaseSettings):
     )
 
     metrics: list[str] | None = Field(
-        None,
-        description="Metrics to run with benchmark",
-        validation_alias=AliasChoices("metrics", "metrics_to_run"),
+        default_factory=_get_all_metrics,
+        description="Metrics to run. Skip all metrics with `EVA_METRICS=` or `--metrics=`.",
     )
 
     # Aggregate-only mode
@@ -710,13 +666,6 @@ class RunConfig(BaseSettings):
     )
     dry_run: bool = Field(False, description="Validate configuration without running")
 
-    # Deprecated env vars
-    deprecated: CliSuppress[str | None] = Field(
-        None,
-        validation_alias=AliasChoices(*_DEPRECATED_ENV_VARS.keys()),
-        exclude=True,
-    )
-
     @computed_field
     @property
     def dataset_path(self) -> Path:
@@ -738,9 +687,6 @@ class RunConfig(BaseSettings):
         """Error out if deprecated environment variables are detected."""
         if not isinstance(data, dict):
             return data
-        found = [f"  {old} -> use {new}" for old, new in cls._DEPRECATED_ENV_VARS.items() if old in data]
-        if found:
-            raise ValueError("Deprecated environment variables detected:\n" + "\n".join(found))
 
         # Strip env-var fields from other pipeline modes so extra="forbid" doesn't reject them.
         # For metrics-only re-runs, skip the strict conflict check — the model isn't used.
@@ -786,24 +732,26 @@ class RunConfig(BaseSettings):
                 f'Example: {env_var}=\'{{"api_key": "your_key", "model": "your_model"}}\''
             )
 
+    @model_validator(mode="before")
+    @classmethod
+    def _handle_all_keyword(cls, data: Any):
+        """Catch EVA_METRICS=all for backward compatibility and delegate to the default_factory."""
+        match data:
+            case {"metrics": str() as value, **rest} | {"metrics": [str() as value], **rest} if value.lower() == "all":
+                return rest
+        return data
+
     @field_validator("metrics", "record_ids", mode="before")
     @classmethod
     def _parse_comma_separated(cls, v: Any) -> list[str] | None:
         """Accept comma-separated strings from env vars."""
+        if isinstance(v, (int, float)):
+            return [str(v)]
         if isinstance(v, str):
-            items = [s.strip() for s in v.split(",") if s.strip()]
+            items = [s for item in v.split(",") if (s := item.strip())]
             return items or None
-        return v
-
-    @field_validator("metrics", mode="after")
-    @classmethod
-    def _expand_metrics_all(cls, v: list[str] | None) -> list[str] | None:
-        """Expand the 'all' keyword to all non-validation metrics."""
-        if v and len(v) == 1 and v[0].lower() == "all":
-            # Lazy import to avoid circular: models.__init__ → config → metrics.registry → metrics.base → models
-            from eva.metrics.registry import get_global_registry
-
-            return [m for m in get_global_registry().list_metrics() if m not in cls._VALIDATION_METRIC_NAMES]
+        if isinstance(v, list):
+            return [s for item in v if (s := str(item).strip())] or None
         return v
 
     @classmethod

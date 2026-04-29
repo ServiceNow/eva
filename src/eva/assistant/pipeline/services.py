@@ -272,6 +272,12 @@ def create_tts_service(
             voice=params.get("voice", "alloy"),
             base_url=url,
         )
+        chatterbox_tts._eva_extra_body = {
+            "streaming_quality": "fast",
+            "streaming_strategy": "word",
+            "streaming_chunk_size": 80,
+            "streaming_buffer_size": 1,
+        }
         OpenAITTSService.run_tts = override_run_tts
         chatterbox_tts._settings.language = language_code
         return chatterbox_tts
@@ -316,6 +322,13 @@ def create_tts_service(
             voice=params.get("voice", "alloy"),
             base_url=url,
         )
+        kokoro_tts._eva_extra_body = {
+            "stream": True,
+            "streaming_quality": "fast",
+            "streaming_strategy": "word",
+            "streaming_chunk_size": 80,
+            "streaming_buffer_size": 1,
+        }
         OpenAITTSService.run_tts = override_run_tts
         kokoro_tts._settings.language = language_code
         return kokoro_tts
@@ -360,7 +373,7 @@ def create_tts_service(
             voice=params.get("voice", "neutral_female"),
             base_url=url,
         )
-        OpenAITTSService.run_tts = override_run_tts
+        OpenAITTSService.run_tts = override_run_tts_voxtral
         voxtral_tts._settings.language = language_code
         return voxtral_tts
 
@@ -372,6 +385,12 @@ def create_tts_service(
             voice=params.get("voice", "alloy"),
             base_url=url,
         )
+        xtts_tts._eva_extra_body = {
+            "streaming_quality": "fast",
+            "streaming_strategy": "word",
+            "streaming_chunk_size": 80,
+            "streaming_buffer_size": 1,
+        }
         OpenAITTSService.run_tts = override_run_tts
         xtts_tts._settings.language = language_code
         return xtts_tts
@@ -604,26 +623,70 @@ async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[F
     try:
         await self.start_ttfb_metrics()
 
-        # add chatterbox streaming params to `create_params``
-        # Setup API parameters
+        # Per-backend streaming knobs are attached to the service instance as
+        # `_eva_extra_body` by the factory in this module (e.g. kokoro sets
+        # "stream": True; chatterbox/xtts omit it).
         create_params = {
             "input": text,
             "model": self._settings.model,
             "voice": self._settings.voice,
             "response_format": "pcm",
-            "extra_body": {
-                "streaming_quality": "fast",
-                "streaming_strategy": "word",
-                "streaming_chunk_size": 80,
-                "streaming_buffer_size": 1,
-            },
         }
+        extra_body = getattr(self, "_eva_extra_body", None)
+        if extra_body:
+            create_params["extra_body"] = extra_body
 
         if self._settings.instructions:
             create_params["instructions"] = self._settings.instructions
 
         if self._settings.speed:
             create_params["speed"] = self._settings.speed
+
+        async with self._client.audio.speech.with_streaming_response.create(**create_params) as r:
+            if r.status_code != 200:
+                error = await r.text()
+                logger.error(f"{self} error getting audio (status: {r.status_code}, error: {error})")
+                yield ErrorFrame(error=f"Error getting audio (status: {r.status_code}, error: {error})")
+                return
+
+            await self.start_tts_usage_metrics(text)
+
+            CHUNK_SIZE = self.chunk_size
+
+            yield TTSStartedFrame(context_id=context_id)
+            async for chunk in r.iter_bytes(CHUNK_SIZE):
+                if len(chunk) > 0:
+                    await self.stop_ttfb_metrics()
+                    frame = TTSAudioRawFrame(chunk, self.sample_rate, 1, context_id=context_id)
+                    yield frame
+            yield TTSStoppedFrame(context_id=context_id)
+    except BadRequestError as e:
+        yield ErrorFrame(error=f"Unknown error occurred: {e}")
+
+
+async def override_run_tts_voxtral(self, text: str, context_id: str) -> AsyncGenerator[Frame, None]:
+    """Override OpenAITTSService.run_tts for Voxtral served via vLLM-omni.
+
+    vLLM-omni's /v1/audio/speech ignores Chatterbox-style streaming knobs and
+    instead uses a top-level ``stream: true`` flag (with response_format pcm/wav)
+    to emit PCM chunks as they are decoded. ``speed`` is rejected when streaming.
+    """
+    logger.debug(f"{self}: Generating TTS [{text}], model {self._settings.model}")
+    try:
+        await self.start_ttfb_metrics()
+
+        create_params = {
+            "input": text,
+            "model": self._settings.model,
+            "voice": self._settings.voice,
+            "response_format": "pcm",
+            "extra_body": {
+                "stream": True,
+            },
+        }
+
+        if self._settings.instructions:
+            create_params["instructions"] = self._settings.instructions
 
         async with self._client.audio.speech.with_streaming_response.create(**create_params) as r:
             if r.status_code != 200:

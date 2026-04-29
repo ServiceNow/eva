@@ -38,9 +38,13 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
         from eva.assistant.gemini_live_server import GeminiLiveAssistantServer
 
         return GeminiLiveAssistantServer
+    elif framework == "elevenlabs":
+        from eva.assistant.elevenlabs_server import ElevenLabsAssistantServer
+
+        return ElevenLabsAssistantServer
     else:
         raise ValueError(
-            f"Unknown framework: {framework!r}. Supported: pipecat, openai_realtime, gemini_live, elevenlabs, deepgram"
+            f"Unknown framework: {framework!r}. Supported: pipecat, openai_realtime, gemini_live, elevenlabs"
         )
 
 

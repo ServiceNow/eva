@@ -176,12 +176,6 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         # Recording sample rate (Gemini outputs 24 kHz)
         self._audio_sample_rate = _RECORDING_SAMPLE_RATE
 
-        # Server state
-        self._app: FastAPI | None = None
-        self._server: uvicorn.Server | None = None
-        self._server_task: asyncio.Task | None = None
-        self._running = False
-
         # Gemini model name from s2s_params or default
         s2s_params: dict[str, Any] = {}
         if isinstance(self.pipeline_config, SpeechToSpeechConfig):
@@ -205,10 +199,6 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
 
         # Build Gemini tools
         self._gemini_tools = _agent_tools_to_gemini(agent)
-
-        # Framework log writers
-        self._fw_log: FrameworkLogWriter | None = None
-        self._metrics_log: MetricsLogWriter | None = None
 
     # ------------------------------------------------------------------
     # Server lifecycle

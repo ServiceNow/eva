@@ -82,14 +82,6 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         self._audio_sample_rate = OPENAI_SAMPLE_RATE
 
-        self._app: FastAPI | None = None
-        self._server: uvicorn.Server | None = None
-        self._server_task: asyncio.Task | None = None
-        self._running: bool = False
-
-        self._fw_log: FrameworkLogWriter | None = None
-        self._metrics_log: MetricsLogWriter | None = None
-
         prompt_manager = PromptManager()
         self._system_prompt: str = prompt_manager.get_prompt(
             "realtime_agent.system_prompt",
@@ -515,7 +507,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._user_speaking = False
         diff = len(self.user_audio_buffer) - len(self.assistant_audio_buffer)
         diff_ms = diff / (OPENAI_SAMPLE_RATE * 2) * 1000
-        logger.info(
+        logger.debug(
             f"[ALIGN DEBUG] speech_stopped: user={len(self.user_audio_buffer)} "
             f"asst={len(self.assistant_audio_buffer)} diff={diff}({diff_ms:.0f}ms) "
             f"bot_spk={self._bot_speaking}"
