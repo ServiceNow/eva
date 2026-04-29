@@ -195,6 +195,14 @@ class SpeechToSpeechConfig(BaseModel):
     @property
     def pipeline_parts(self) -> dict[str, str]:
         """Component names for this pipeline."""
+        if self.s2s == "elevenlabs":
+            # hardcoded for now. Models are set on the agent UI
+            return {
+                "s2s": _param_alias(self.s2s_params) or self.s2s,
+                "stt": "scribe_v2.2_realtime",
+                "llm": "gemini-3-flash-preview",
+                "tts": "v3-conversational",
+            }
         return {"s2s": _param_alias(self.s2s_params) or self.s2s}
 
     @field_serializer("s2s_params")
@@ -360,6 +368,10 @@ def get_pipeline_type(model_data: dict | Any) -> PipelineType:
     """
     mode = _model_config_discriminator(model_data)
     if mode == "s2s":
+        # ElevenLabs uses s2s_params for configuration but is a cascade pipeline internally
+        s2s_value = model_data.get("s2s")
+        if s2s_value == "elevenlabs":
+            return PipelineType.CASCADE
         return PipelineType.S2S
     if mode == "audio_llm":
         return PipelineType.AUDIO_LLM
