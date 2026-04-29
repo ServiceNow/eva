@@ -22,7 +22,6 @@ from typing import Annotated, Any, ClassVar, Literal
 import yaml
 from litellm.types.router import DeploymentTypedDict
 from pydantic import (
-    AliasChoices,
     BaseModel,
     ConfigDict,
     Discriminator,
@@ -489,19 +488,6 @@ class RunConfig(BaseSettings):
         cli_hide_none_type=True,
         cli_implicit_flags="toggle",
         cli_kebab_case=True,
-        cli_shortcuts={
-            # TODO: Remove deprecated aliases after a little while.
-            "model.llm": "llm-model",
-            "model.stt": "stt-model",
-            "model.tts": "tts-model",
-            "model.s2s": "realtime-model",
-            "model.audio_llm": "audio-llm-model",
-            "max-rerun-attempts": "max-reruns",
-            "record-ids": "ids",
-            "max-concurrent-conversations": ["max-concurrent", "n"],
-            "conversation-timeout-seconds": "timeout",
-            "output-dir": ["output", "o"],
-        },
         env_nested_delimiter="__",
         env_prefix="EVA_",
         extra="ignore",
@@ -609,7 +595,6 @@ class RunConfig(BaseSettings):
     metrics: list[str] | None = Field(
         None,
         description="Metrics to run with benchmark",
-        validation_alias=AliasChoices("metrics", "metrics_to_run"),
     )
 
     # Aggregate-only mode
