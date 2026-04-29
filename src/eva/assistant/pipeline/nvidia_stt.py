@@ -29,6 +29,7 @@ from urllib.parse import urlparse
 import httpx
 import websockets
 from pipecat.frames.frames import (
+    AudioRawFrame,
     CancelFrame,
     EndFrame,
     Frame,
@@ -117,9 +118,34 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         await super().cancel(frame)
         await self._disconnect()
 
-    # -- Audio sending --
+    # -- Audio processing --
 
     _audio_chunk_count: int = 0
+
+    async def process_audio_frame(self, frame: AudioRawFrame, direction: FrameDirection):
+        """Override base class to only reset keepalive timer when actually sending.
+
+        The base STTService.process_audio_frame unconditionally resets
+        ``_last_audio_time`` on every audio frame — including silence during
+        bot speech.  This prevents the keepalive from ever firing, so the
+        Parakeet WebSocket dies during long bot turns.
+
+        We skip the ``_last_audio_time`` update when the gate is closed and
+        instead just buffer audio into the pre-speech deque via run_stt.
+        """
+        if self._muted:
+            return
+
+        if self._audio_gate_open:
+            # Real user audio — let the base class update _last_audio_time
+            # and call run_stt normally.
+            await super().process_audio_frame(frame, direction)
+        else:
+            # Gate closed (bot speaking / inter-turn gap).
+            # Do NOT touch _last_audio_time so the keepalive timer keeps
+            # ticking.  Just buffer into the pre-speech deque.
+            if frame.audio:
+                self._pre_speech_buffer.append(frame.audio)
 
     async def _send_audio(self, audio: bytes):
         """Send a single audio chunk to Parakeet (append + commit)."""
@@ -141,12 +167,6 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
             yield None
             return
 
-        if not self._audio_gate_open:
-            # Buffer into rolling pre-speech window; do not send to Parakeet.
-            self._pre_speech_buffer.append(audio)
-            yield None
-            return
-
         await self._send_audio(audio)
         yield None
 
@@ -154,6 +174,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
 
     async def _send_keepalive(self, silence: bytes):
         """Wrap silent PCM in Parakeet's append+commit protocol."""
+        logger.debug(f"{self} sending keepalive silence ({len(silence)} bytes)")
         await self._send_audio(silence)
 
     # -- VAD handling --
