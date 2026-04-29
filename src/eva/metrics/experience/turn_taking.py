@@ -458,6 +458,7 @@ class TurnTakingMetric(CodeMetric):
                 "per_turn_evidence": per_turn_evidence,
                 "num_turns": total_turns,
                 "num_evaluated": len(per_turn_score),
+                "conversation_completed": context.completed,
             }
 
             if not per_turn_score:
@@ -472,12 +473,22 @@ class TurnTakingMetric(CodeMetric):
                     details=details,
                 )
 
-            mean_score = statistics.mean(per_turn_score.values())
+            mean_score = round(statistics.mean(per_turn_score.values()), 4)
+
+            if not context.completed:
+                return MetricScore(
+                    name=self.name,
+                    score=0.0,
+                    normalized_score=0.0,
+                    details=details,
+                    sub_metrics=self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence),
+                    error="Conversation not completed — score zeroed",
+                )
 
             return MetricScore(
                 name=self.name,
-                score=round(mean_score, 4),
-                normalized_score=round(mean_score, 4),
+                score=mean_score,
+                normalized_score=mean_score,
                 details=details,
                 sub_metrics=self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence),
             )

@@ -67,6 +67,7 @@ class MetricContext:
         num_tool_calls: int = 0,
         tools_called: list[str] = None,
         conversation_ended_reason: str | None = None,
+        completed: bool = False,
         duration_seconds: float = 0.0,
         # Paths to files
         output_dir: str = "",
@@ -108,6 +109,7 @@ class MetricContext:
         self.num_tool_calls = num_tool_calls
         self.tools_called = tools_called or []
         self.conversation_ended_reason = conversation_ended_reason
+        self.completed = completed
         self.duration_seconds = duration_seconds
 
         # Paths
