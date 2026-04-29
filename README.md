@@ -94,13 +94,13 @@ pip install -e ".[dev]"
 **Key Environment Variables:**
 ```bash
 # Framework Configuration
-EVA_DOMAIN=airline           # Domain-based path conventions
-EVA_MAX_CONCURRENT_CONVERSATIONS=5   # Max parallel conversations
+EVA_DOMAIN=airline
+EVA_MAX_CONCURRENT_CONVERSATIONS=5
 EVA_DEBUG=false                       # Run only 1 record for testing when enabled
 EVA_RECORD_IDS=1.2.1,1.2.2            # Run specific records only (remove to run all records)
 
 # Pipeline Model Configuration (nested under EVA_MODEL__)
-EVA_MODEL__LLM=gpt-5-mini                # LLM model name (must match EVA_MODEL_LIST)
+EVA_MODEL__LLM=gpt-5-mini             # LLM model name (must match EVA_MODEL_LIST)
 EVA_MODEL__STT=deepgram               # deepgram | openai_whisper
 EVA_MODEL__TTS=cartesia               # cartesia | elevenlabs
 
@@ -116,25 +116,40 @@ EVA_LOG_LEVEL=INFO                    # DEBUG | INFO | WARNING | ERROR
 
 See `.env.example` for the complete list of configuration options.
 
-### Running the framework
+### Running EVA
+
+#### Running with CLI Arguments
+
+The CLI arguments take precedence over environment variables, which in turn take precedence over the `.env` file.
 
 ```bash
-# Run with domain-based conventions (easiest):
-EVA_DOMAIN=airline python main.py
-# Automatically uses:
-#   data/airline_dataset.jsonl
-#   configs/agents/airline_agent.yaml
-#   data/airline_scenarios/
-
-# Run with CLI overrides
-python main.py --model.llm gpt-5-mini --max-concurrent-conversations 10
+eva --domain airline --model.llm gpt-5-mini --max-concurrent-conversations 10
 ```
 
-### Running Metrics
+#### Running Multiple Configurations
+
+Here is an example of shell loop to sweep over domains, models, or any combination of parameters.
+Each iteration is an independent `eva` run. The loop continues on failure and exits with the last non-zero exit code.
 
 ```bash
-# Re-run specific metrics on an existing run
-python main.py \
+exit_code=0;
+for domain in airline itsm medical_hr; do
+    for llm in gpt-5-mini gpt-5; do
+        eva --domain "$domain" --model.llm "$llm" || exit_code=$?;
+    done;
+done;
+exit $exit_code
+```
+
+> [!TIP]
+> If you need a single command, like in Docker, you can wrap the above script with `sh -c '...'`.
+
+#### Running Specific Metrics
+
+Re-run specific metrics on an existing run.
+
+```bash
+eva \
     --run-id <existing_run_id> \
     --metrics task_completion,faithfulness,conciseness
 ```
