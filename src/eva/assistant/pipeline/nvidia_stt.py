@@ -3,8 +3,15 @@
 The server streams sentence-level `completed` transcription events as the user
 speaks. Finalization is driven entirely by Pipecat VAD:
 
-- While VAD is active, incoming `completed` events are accumulated in
-  `_transcript_parts` and forwarded as InterimTranscriptionFrame.
+- Audio is only sent to Parakeet while the audio gate is open.  The gate opens
+  on VADUserStartedSpeakingFrame (flushing a rolling pre-speech buffer) and
+  stays open through VADUserStoppedSpeakingFrame so Parakeet receives the
+  trailing silence it needs to emit a `completed` event.  The gate closes once
+  the transcript is finalized (or after a safety timeout).
+- A keepalive sends silent audio during long idle periods (e.g. bot speaking)
+  to prevent the Parakeet WebSocket from closing.
+- Incoming `completed` events are accumulated in `_transcript_parts` and
+  forwarded as InterimTranscriptionFrame.
 - When VAD fires (VADUserStoppedSpeakingFrame), we finalize immediately:
   - If the buffer is already non-empty (server was ahead of VAD), flush now.
   - Otherwise set `_finalize_requested` and emit on the next `completed`.
@@ -15,26 +22,32 @@ import base64
 import json
 import ssl
 import time
+from collections import deque
 from collections.abc import AsyncGenerator
 from urllib.parse import urlparse
 
 import httpx
 import websockets
-from loguru import logger
 from pipecat.frames.frames import (
-    BotStartedSpeakingFrame,
-    BotStoppedSpeakingFrame,
     CancelFrame,
     EndFrame,
     Frame,
     InterimTranscriptionFrame,
     StartFrame,
     TranscriptionFrame,
+    VADUserStartedSpeakingFrame,
     VADUserStoppedSpeakingFrame,
 )
 from pipecat.processors.frame_processor import FrameDirection
 from pipecat.services.settings import STTSettings
 from pipecat.services.stt_service import WebsocketSTTService
+
+from eva.utils.logging import get_logger
+
+logger = get_logger(__name__)
+# Maximum seconds of trailing silence sent to Parakeet after VAD fires stop,
+# waiting for a `completed` event before force-finalizing.
+_FINALIZE_TIMEOUT_SECS = 3.0
 
 
 def current_time_ms():
@@ -67,6 +80,10 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         super().__init__(
             sample_rate=sample_rate,
             settings=STTSettings(model=None, language=None),
+            # Send a silent keepalive every 10s after 15s of no audio, so the
+            # Parakeet WebSocket doesn't close during long bot-speech turns.
+            keepalive_timeout=15.0,
+            keepalive_interval=10.0,
             **kwargs,
         )
         self._url = url
@@ -76,8 +93,11 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         self._websocket = None
         self._receive_task: asyncio.Task | None = None
         self._ready = False
-        self._bot_speaking = False
+        self._audio_gate_open = False
+        # Rolling pre-speech buffer: ~400ms at 20ms/chunk
+        self._pre_speech_buffer: deque[bytes] = deque(maxlen=20)
         self._finalize_requested = False
+        self._finalize_timeout_task: asyncio.Task | None = None
         self._transcript_parts: list[str] = []
 
     def can_generate_metrics(self) -> bool:
@@ -101,39 +121,96 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
 
     _audio_chunk_count: int = 0
 
+    async def _send_audio(self, audio: bytes):
+        """Send a single audio chunk to Parakeet (append + commit)."""
+        try:
+            await self._websocket.send(
+                json.dumps({"type": "input_audio_buffer.append", "audio": base64.b64encode(audio).decode("ascii")})
+            )
+            await self._websocket.send(json.dumps({"type": "input_audio_buffer.commit"}))
+            self._audio_chunk_count += 1
+            if self._audio_chunk_count % 50 == 1:
+                logger.debug(f"{self} sent audio chunk #{self._audio_chunk_count} ({len(audio)} bytes)")
+        except Exception as e:
+            logger.error(f"{self} failed to send audio: {e}")
+
     async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame, None]:
-        if self._websocket and self._ready and not self._bot_speaking:
-            try:
-                await self._websocket.send(
-                    json.dumps({"type": "input_audio_buffer.append", "audio": base64.b64encode(audio).decode("ascii")})
-                )
-                await self._websocket.send(json.dumps({"type": "input_audio_buffer.commit"}))
-                self._audio_chunk_count += 1
-                if self._audio_chunk_count % 50 == 1:
-                    logger.debug(f"{self} sent audio chunk #{self._audio_chunk_count} ({len(audio)} bytes)")
-            except Exception as e:
-                logger.error(f"{self} failed to send audio: {e}")
-        elif not self._ready:
-            logger.warning(f"{self} audio dropped — not ready")
+        if not self._websocket or not self._ready:
+            if not self._ready:
+                logger.warning(f"{self} audio dropped — not ready")
+            yield None
+            return
+
+        if not self._audio_gate_open:
+            # Buffer into rolling pre-speech window; do not send to Parakeet.
+            self._pre_speech_buffer.append(audio)
+            yield None
+            return
+
+        await self._send_audio(audio)
         yield None
+
+    # -- Keepalive --
+
+    async def _send_keepalive(self, silence: bytes):
+        """Wrap silent PCM in Parakeet's append+commit protocol."""
+        await self._send_audio(silence)
 
     # -- VAD handling --
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
 
-        if isinstance(frame, BotStartedSpeakingFrame):
-            self._bot_speaking = True
-        elif isinstance(frame, BotStoppedSpeakingFrame):
-            self._bot_speaking = False
+        if isinstance(frame, VADUserStartedSpeakingFrame):
+            self._audio_gate_open = True
+            # Replay pre-speech buffer so Parakeet gets audio just before VAD fired.
+            if self._pre_speech_buffer:
+                logger.debug(f"{self} flushing {len(self._pre_speech_buffer)} pre-speech chunks")
+                for chunk in list(self._pre_speech_buffer):
+                    await self._send_audio(chunk)
+            self._pre_speech_buffer.clear()
         elif isinstance(frame, VADUserStoppedSpeakingFrame):
+            # Keep the audio gate OPEN so Parakeet receives trailing silence
+            # needed to trigger its sentence-completion (`completed`) event.
+            # The gate is closed in _close_audio_gate() once we finalize.
             self._finalize_requested = True
             self.request_finalize()
             await self.start_processing_metrics()
-            # Flush immediately if the server already sent completed chunks
-            # before VAD fired — no further completed message will arrive.
             if self._transcript_parts:
                 await self._emit_final_transcript()
+            else:
+                # Start a safety timeout — if Parakeet doesn't send `completed`
+                # within a few seconds, force-finalize to stop silence flooding.
+                self._start_finalize_timeout()
+
+    def _start_finalize_timeout(self):
+        """Start (or restart) the finalize safety timeout."""
+        if self._finalize_timeout_task:
+            self._finalize_timeout_task.cancel()
+        self._finalize_timeout_task = self.create_task(self._finalize_timeout_handler())
+
+    async def _cancel_finalize_timeout(self):
+        """Cancel any pending finalize timeout."""
+        if self._finalize_timeout_task:
+            await self.cancel_task(self._finalize_timeout_task)
+            self._finalize_timeout_task = None
+
+    async def _finalize_timeout_handler(self):
+        """Force-finalize after trailing silence timeout."""
+        await asyncio.sleep(_FINALIZE_TIMEOUT_SECS)
+        if self._finalize_requested:
+            logger.warning(f"{self} finalize timeout after {_FINALIZE_TIMEOUT_SECS}s — force-finalizing")
+            if self._transcript_parts:
+                await self._emit_final_transcript()
+            else:
+                # Ghost turn — no transcript arrived.
+                self._finalize_requested = False
+                self._close_audio_gate()
+                self.confirm_finalize()
+
+    def _close_audio_gate(self):
+        """Close the audio gate so subsequent silence goes to the pre-speech buffer."""
+        self._audio_gate_open = False
 
     # -- Connection management --
 
@@ -146,6 +223,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
 
     async def _disconnect(self):
         await super()._disconnect()
+        await self._cancel_finalize_timeout()
 
         if self._receive_task:
             await self.cancel_task(self._receive_task)
@@ -295,6 +373,8 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
             else:
                 logger.debug(f"{self} ghost turn (empty completed)")
                 self._finalize_requested = False
+                self._close_audio_gate()
+                await self._cancel_finalize_timeout()
                 self.confirm_finalize()
 
     async def _emit_final_transcript(self):
@@ -302,6 +382,8 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         full_transcript = " ".join(self._transcript_parts)
         self._transcript_parts = []
         self._finalize_requested = False
+        self._close_audio_gate()
+        await self._cancel_finalize_timeout()
         logger.info(f"{self} final transcript: {full_transcript}")
         self.confirm_finalize()
         await self.push_frame(
