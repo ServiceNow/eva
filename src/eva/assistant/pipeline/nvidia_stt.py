@@ -1,9 +1,13 @@
 """NVIDIA Parakeet streaming speech-to-text service implementation.
 
-Follows the same pattern as Pipecat's built-in AssemblyAI STT service.
-The subclass only handles server-specific protocol (connection, audio format,
-message parsing). All VAD, TTFB metrics, and finalization are handled by the
-WebsocketSTTService base class.
+The server streams sentence-level `completed` transcription events as the user
+speaks. Finalization is driven entirely by Pipecat VAD:
+
+- While VAD is active, incoming `completed` events are accumulated in
+  `_transcript_parts` and forwarded as InterimTranscriptionFrame.
+- When VAD fires (VADUserStoppedSpeakingFrame), we finalize immediately:
+  - If the buffer is already non-empty (server was ahead of VAD), flush now.
+  - Otherwise set `_finalize_requested` and emit on the next `completed`.
 """
 
 import asyncio
@@ -42,7 +46,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
 
     Server protocol (OpenAI Realtime API):
     - Audio in:  {"type": "input_audio_buffer.append", "audio": "<base64 PCM16 16kHz>"}
-    - Commit in: {"type": "input_audio_buffer.commit"}  (triggers final transcript)
+    - Commit in: {"type": "input_audio_buffer.commit"}
     - Ready out: {"type": "conversation.created"}
     - Transcript out: {"type": "conversation.item.input_audio_transcription.completed", ...}
     """
@@ -71,7 +75,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
     def can_generate_metrics(self) -> bool:
         return True
 
-    # -- Lifecycle (matches AssemblyAI pattern exactly) --
+    # -- Lifecycle --
 
     async def start(self, frame: StartFrame):
         await super().start(frame)
@@ -92,22 +96,10 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
     async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame, None]:
         if self._websocket and self._ready:
             try:
-                # Send audio chunk then commit, matching the reference client pattern
                 await self._websocket.send(
-                    json.dumps(
-                        {
-                            "type": "input_audio_buffer.append",
-                            "audio": base64.b64encode(audio).decode("ascii"),
-                        }
-                    )
+                    json.dumps({"type": "input_audio_buffer.append", "audio": base64.b64encode(audio).decode("ascii")})
                 )
-                await self._websocket.send(
-                    json.dumps(
-                        {
-                            "type": "input_audio_buffer.commit",
-                        }
-                    )
-                )
+                await self._websocket.send(json.dumps({"type": "input_audio_buffer.commit"}))
                 self._audio_chunk_count += 1
                 if self._audio_chunk_count % 50 == 1:
                     logger.debug(f"{self} sent audio chunk #{self._audio_chunk_count} ({len(audio)} bytes)")
@@ -126,6 +118,10 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
             self._finalize_requested = True
             self.request_finalize()
             await self.start_processing_metrics()
+            # Flush immediately if the server already sent completed chunks
+            # before VAD fired — no further completed message will arrive.
+            if self._transcript_parts:
+                await self._emit_final_transcript()
 
     # -- Connection management --
 
@@ -164,7 +160,6 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
             )
             self._ready = False
 
-            # Wait for ready message from server
             try:
                 logger.info(f"Connecting to {self._url}")
                 ready_msg = await asyncio.wait_for(self._websocket.recv(), timeout=5.0)
@@ -211,30 +206,21 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
 
     async def _configure_session(self):
         """Get server defaults via HTTP, then send transcription_session.update over WS."""
-        # Step 1: Get server defaults (includes correct model name, sample rate, etc.)
         try:
             session_config = await self._initialize_http_session()
         except Exception as e:
             logger.warning(f"{self} HTTP session init failed ({e}), using minimal config")
             session_config = {}
 
-        # Step 2: Override only audio format for streaming PCM input.
-        # Keep server defaults for sample_rate (48kHz) and model — the server
-        # resamples internally if needed.
         session_config["input_audio_format"] = "pcm16"
 
         if self._asr_model:
             session_config.setdefault("input_audio_transcription", {})
             session_config["input_audio_transcription"]["model"] = self._asr_model
 
-        session_update = {
-            "type": "transcription_session.update",
-            "session": session_config,
-        }
         logger.info(f"{self} sending session update")
-        await self._websocket.send(json.dumps(session_update))
+        await self._websocket.send(json.dumps({"type": "transcription_session.update", "session": session_config}))
 
-        # Wait for transcription_session.updated confirmation
         try:
             response = await asyncio.wait_for(self._websocket.recv(), timeout=5.0)
             data = json.loads(response)
@@ -276,70 +262,58 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
                 elif msg_type == "conversation.item.input_audio_transcription.delta":
                     delta = data.get("delta", "")
                     if delta:
-                        logger.info(f"{self} interim delta: {delta}")
+                        logger.debug(f"{self} interim delta: {delta}")
                         await self.push_frame(
                             InterimTranscriptionFrame(delta, self._user_id, current_time_ms(), language=None)
                         )
-
                 elif msg_type == "conversation.item.input_audio_transcription.completed":
-                    transcript = data.get("transcript", "").strip()
-                    # Ignore is_last_result: the server fires it on its own sentence-
-                    # boundary VAD, which can trigger mid-utterance from pipecat's
-                    # perspective. Only finalize when pipecat VAD has fired.
-                    if transcript:
-                        if self._finalize_requested:
-                            # VAD fired — combine accumulated parts with this sentence.
-                            self._transcript_parts.append(transcript)
-                            full_transcript = " ".join(self._transcript_parts)
-                            self._transcript_parts = []
-                            self._finalize_requested = False
-                            logger.info(f"{self} final transcript: {full_transcript}")
-                            self.confirm_finalize()
-                            await self.push_frame(
-                                TranscriptionFrame(
-                                    full_transcript, self._user_id, current_time_ms(), language=None, finalized=True
-                                )
-                            )
-                            await self.stop_processing_metrics()
-                        else:
-                            # VAD hasn't fired yet — accumulate server sentence chunks.
-                            logger.debug(f"{self} interim completed (buffered): {transcript}")
-                            self._transcript_parts.append(transcript)
-                            await self.push_frame(
-                                InterimTranscriptionFrame(transcript, self._user_id, current_time_ms(), language=None)
-                            )
-                    elif self._finalize_requested:
-                        # Empty completed after VAD fired.
-                        if self._transcript_parts:
-                            # Server sent silence audio; finalize with accumulated text.
-                            full_transcript = " ".join(self._transcript_parts)
-                            self._transcript_parts = []
-                            self._finalize_requested = False
-                            logger.info(f"{self} final transcript (from buffer): {full_transcript}")
-                            self.confirm_finalize()
-                            await self.push_frame(
-                                TranscriptionFrame(
-                                    full_transcript, self._user_id, current_time_ms(), language=None, finalized=True
-                                )
-                            )
-                            await self.stop_processing_metrics()
-                        else:
-                            logger.debug(f"{self} empty completed transcript (ghost turn)")
-                            self._finalize_requested = False
-                            self.confirm_finalize()
+                    await self._handle_completed(data)
 
             except json.JSONDecodeError:
                 logger.warning(f"{self} non-JSON message received")
             except Exception as e:
                 logger.error(f"{self} error processing message: {e}")
 
+    async def _handle_completed(self, data: dict):
+        """Handle a server-side sentence completion event."""
+        transcript = data.get("transcript", "").strip()
+
+        if transcript:
+            self._transcript_parts.append(transcript)
+            if self._finalize_requested:
+                await self._emit_final_transcript()
+            else:
+                logger.debug(f"{self} buffered: {transcript}")
+                await self.push_frame(
+                    InterimTranscriptionFrame(transcript, self._user_id, current_time_ms(), language=None)
+                )
+        elif self._finalize_requested:
+            # Empty completed after VAD fired (silence audio).
+            if self._transcript_parts:
+                await self._emit_final_transcript()
+            else:
+                logger.debug(f"{self} ghost turn (empty completed)")
+                self._finalize_requested = False
+                self.confirm_finalize()
+
+    async def _emit_final_transcript(self):
+        """Flush accumulated transcript parts and emit a finalized TranscriptionFrame."""
+        full_transcript = " ".join(self._transcript_parts)
+        self._transcript_parts = []
+        self._finalize_requested = False
+        logger.info(f"{self} final transcript: {full_transcript}")
+        self.confirm_finalize()
+        await self.push_frame(
+            TranscriptionFrame(full_transcript, self._user_id, current_time_ms(), language=None, finalized=True)
+        )
+        await self.stop_processing_metrics()
+
     async def _handle_transcript(self, data: dict):
+        """Handle legacy transcript protocol ({"type": "transcript", "is_final": bool})."""
         text = data.get("text", "")
         is_final = data.get("is_final", False)
 
         if not text:
-            # Empty reset response (ghost turn). Push empty finalized
-            # TranscriptionFrame so the aggregator resolves immediately.
             if is_final:
                 logger.debug(f"{self} empty final transcript (ghost turn)")
                 self.confirm_finalize()
