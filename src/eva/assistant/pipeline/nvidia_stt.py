@@ -3,11 +3,8 @@
 The server streams sentence-level `completed` transcription events as the user
 speaks. Finalization is driven entirely by Pipecat VAD:
 
-- Audio is only sent to Parakeet while VAD is active (`_user_vad_active=True`).
-  A rolling pre-speech buffer (~400ms) is replayed when VAD fires so that the
-  audio captured just before the VAD threshold is not lost.
-- Incoming `completed` events are accumulated in `_transcript_parts` and
-  forwarded as InterimTranscriptionFrame.
+- While VAD is active, incoming `completed` events are accumulated in
+  `_transcript_parts` and forwarded as InterimTranscriptionFrame.
 - When VAD fires (VADUserStoppedSpeakingFrame), we finalize immediately:
   - If the buffer is already non-empty (server was ahead of VAD), flush now.
   - Otherwise set `_finalize_requested` and emit on the next `completed`.
@@ -18,7 +15,6 @@ import base64
 import json
 import ssl
 import time
-from collections import deque
 from collections.abc import AsyncGenerator
 from urllib.parse import urlparse
 
@@ -26,13 +22,14 @@ import httpx
 import websockets
 from loguru import logger
 from pipecat.frames.frames import (
+    BotStartedSpeakingFrame,
+    BotStoppedSpeakingFrame,
     CancelFrame,
     EndFrame,
     Frame,
     InterimTranscriptionFrame,
     StartFrame,
     TranscriptionFrame,
-    VADUserStartedSpeakingFrame,
     VADUserStoppedSpeakingFrame,
 )
 from pipecat.processors.frame_processor import FrameDirection
@@ -79,9 +76,7 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         self._websocket = None
         self._receive_task: asyncio.Task | None = None
         self._ready = False
-        self._user_vad_active = False
-        # Rolling pre-speech buffer: ~400ms at 20ms/chunk
-        self._pre_speech_buffer: deque[bytes] = deque(maxlen=20)
+        self._bot_speaking = False
         self._finalize_requested = False
         self._transcript_parts: list[str] = []
 
@@ -106,33 +101,20 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
 
     _audio_chunk_count: int = 0
 
-    async def _send_audio(self, audio: bytes):
-        """Send a single audio chunk to Parakeet (append + commit)."""
-        try:
-            await self._websocket.send(
-                json.dumps({"type": "input_audio_buffer.append", "audio": base64.b64encode(audio).decode("ascii")})
-            )
-            await self._websocket.send(json.dumps({"type": "input_audio_buffer.commit"}))
-            self._audio_chunk_count += 1
-            if self._audio_chunk_count % 50 == 1:
-                logger.debug(f"{self} sent audio chunk #{self._audio_chunk_count} ({len(audio)} bytes)")
-        except Exception as e:
-            logger.error(f"{self} failed to send audio: {e}")
-
     async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame, None]:
-        if not self._websocket or not self._ready:
-            if not self._ready:
-                logger.warning(f"{self} audio dropped — not ready")
-            yield None
-            return
-
-        if not self._user_vad_active:
-            # Buffer into rolling pre-speech window; do not send silence to Parakeet
-            self._pre_speech_buffer.append(audio)
-            yield None
-            return
-
-        await self._send_audio(audio)
+        if self._websocket and self._ready and not self._bot_speaking:
+            try:
+                await self._websocket.send(
+                    json.dumps({"type": "input_audio_buffer.append", "audio": base64.b64encode(audio).decode("ascii")})
+                )
+                await self._websocket.send(json.dumps({"type": "input_audio_buffer.commit"}))
+                self._audio_chunk_count += 1
+                if self._audio_chunk_count % 50 == 1:
+                    logger.debug(f"{self} sent audio chunk #{self._audio_chunk_count} ({len(audio)} bytes)")
+            except Exception as e:
+                logger.error(f"{self} failed to send audio: {e}")
+        elif not self._ready:
+            logger.warning(f"{self} audio dropped — not ready")
         yield None
 
     # -- VAD handling --
@@ -140,16 +122,11 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
 
-        if isinstance(frame, VADUserStartedSpeakingFrame):
-            self._user_vad_active = True
-            # Replay pre-speech buffer so Parakeet gets the audio just before VAD fired
-            if self._pre_speech_buffer:
-                logger.debug(f"{self} flushing {len(self._pre_speech_buffer)} pre-speech chunks")
-                for chunk in list(self._pre_speech_buffer):
-                    await self._send_audio(chunk)
-            self._pre_speech_buffer.clear()
+        if isinstance(frame, BotStartedSpeakingFrame):
+            self._bot_speaking = True
+        elif isinstance(frame, BotStoppedSpeakingFrame):
+            self._bot_speaking = False
         elif isinstance(frame, VADUserStoppedSpeakingFrame):
-            self._user_vad_active = False
             self._finalize_requested = True
             self.request_finalize()
             await self.start_processing_metrics()
