@@ -189,12 +189,12 @@ class SpeechToSpeechConfig(BaseModel):
         if self.s2s == "elevenlabs":
             # hardcoded for now. Models are set on the agent UI
             return {
-                "s2s": _param_alias(self.s2s_params) or self.s2s,
+                "s2s": _param_alias(self.s2s_params),
                 "stt": "scribe_v2.2_realtime",
                 "llm": "gemini-3-flash-preview",
                 "tts": "v3-conversational",
             }
-        return {"s2s": _param_alias(self.s2s_params) or self.s2s}
+        return {"s2s": _param_alias(self.s2s_params)}
 
 
 class AudioLLMConfig(BaseModel):
@@ -265,8 +265,8 @@ class AudioLLMConfig(BaseModel):
     def pipeline_parts(self) -> dict[str, str]:
         """Component names for this pipeline."""
         return {
-            "audio_llm": _param_alias(self.audio_llm_params) or self.audio_llm,
-            "tts": _param_alias(self.tts_params) or self.tts,
+            "audio_llm": _param_alias(self.audio_llm_params),
+            "tts": _param_alias(self.tts_params),
         }
 
 
