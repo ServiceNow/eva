@@ -133,15 +133,6 @@ class PipelineConfig(BaseModel):
             data.pop(key, None)
         return data
 
-    @field_serializer("stt_params", "tts_params")
-    @classmethod
-    def _redact_api_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
-        """Redact API keys when serializing."""
-        redacted = params.copy()
-        if "api_key" in redacted:
-            redacted["api_key"] = "***"
-        return redacted
-
 
 class SpeechToSpeechConfig(BaseModel):
     """Configuration for a speech-to-speech model."""
@@ -204,15 +195,6 @@ class SpeechToSpeechConfig(BaseModel):
                 "tts": "v3-conversational",
             }
         return {"s2s": _param_alias(self.s2s_params) or self.s2s}
-
-    @field_serializer("s2s_params")
-    @classmethod
-    def _redact_api_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
-        """Redact API keys when serializing."""
-        redacted = params.copy()
-        if "api_key" in redacted:
-            redacted["api_key"] = "***"
-        return redacted
 
 
 class AudioLLMConfig(BaseModel):
@@ -286,15 +268,6 @@ class AudioLLMConfig(BaseModel):
             "audio_llm": _param_alias(self.audio_llm_params) or self.audio_llm,
             "tts": _param_alias(self.tts_params) or self.tts,
         }
-
-    @field_serializer("audio_llm_params", "tts_params")
-    @classmethod
-    def _redact_api_keys(cls, params: dict[str, Any]) -> dict[str, Any]:
-        """Redact API keys when serializing."""
-        redacted = params.copy()
-        if "api_key" in redacted:
-            redacted["api_key"] = "***"
-        return redacted
 
 
 _PIPELINE_FIELDS = {

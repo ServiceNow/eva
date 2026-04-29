@@ -890,12 +890,12 @@ class TestTurnStrategyConfig:
 
 
 class TestApiKeyRedactionInPipelineModels:
-    """api_key redaction works for all three pipeline config types."""
+    """api_key redaction works for all three pipeline config types via RunConfig serialization."""
 
     def test_pipeline_config_stt_tts_params_api_key_redacted(self):
-        """PipelineConfig redacts api_key in stt_params and tts_params on serialization."""
+        """RunConfig redacts api_key in stt_params and tts_params on serialization."""
         config = _config(env_vars=_BASE_ENV)
-        dumped = config.model.model_dump(mode="json")
+        dumped = config.model_dump(mode="json")["model"]
         assert dumped["stt_params"]["api_key"] == "***"
         assert dumped["tts_params"]["api_key"] == "***"
         # Non-secret fields survive
@@ -903,14 +903,14 @@ class TestApiKeyRedactionInPipelineModels:
         assert dumped["tts_params"]["model"] == "sonic"
 
     def test_pipeline_config_redaction_does_not_mutate(self):
-        """Serializing PipelineConfig does not mutate live stt_params/tts_params."""
+        """Serializing RunConfig does not mutate live stt_params/tts_params."""
         config = _config(env_vars=_BASE_ENV)
-        config.model.model_dump(mode="json")
+        config.model_dump(mode="json")
         assert config.model.stt_params["api_key"] == "test_key"
         assert config.model.tts_params["api_key"] == "test_key"
 
     def test_s2s_config_s2s_params_api_key_redacted(self):
-        """SpeechToSpeechConfig redacts api_key in s2s_params on serialization."""
+        """RunConfig redacts api_key in s2s_params on serialization."""
         config = _config(
             env_vars=_EVA_MODEL_LIST_ENV
             | {
@@ -918,13 +918,13 @@ class TestApiKeyRedactionInPipelineModels:
                 "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "secret", "model": "gpt-realtime-mini"}),
             }
         )
-        dumped = config.model.model_dump(mode="json")
+        dumped = config.model_dump(mode="json")["model"]
         assert dumped["s2s_params"]["api_key"] == "***"
         # Non-secret fields survive
         assert dumped["s2s_params"]["model"] == "gpt-realtime-mini"
 
     def test_s2s_config_redaction_does_not_mutate(self):
-        """Serializing SpeechToSpeechConfig does not mutate live s2s_params."""
+        """Serializing RunConfig does not mutate live s2s_params."""
         config = _config(
             env_vars=_EVA_MODEL_LIST_ENV
             | {
@@ -932,11 +932,11 @@ class TestApiKeyRedactionInPipelineModels:
                 "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "secret", "model": "gpt-realtime-mini"}),
             }
         )
-        config.model.model_dump(mode="json")
+        config.model_dump(mode="json")
         assert config.model.s2s_params["api_key"] == "secret"
 
     def test_audio_llm_config_params_api_key_redacted(self):
-        """AudioLLMConfig redacts api_key in audio_llm_params and tts_params on serialization."""
+        """RunConfig redacts api_key in audio_llm_params and tts_params on serialization."""
         config = _config(
             env_vars=_EVA_MODEL_LIST_ENV
             | {
@@ -948,7 +948,7 @@ class TestApiKeyRedactionInPipelineModels:
                 "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "tts_secret", "model": "sonic"}),
             }
         )
-        dumped = config.model.model_dump(mode="json")
+        dumped = config.model_dump(mode="json")["model"]
         assert dumped["audio_llm_params"]["api_key"] == "***"
         assert dumped["tts_params"]["api_key"] == "***"
         # Non-secret fields survive
@@ -964,7 +964,7 @@ class TestApiKeyRedactionInPipelineModels:
                 "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic", "speed": 1.0}),
             }
         )
-        dumped = config.model.model_dump(mode="json")
+        dumped = config.model_dump(mode="json")["model"]
         # api_key is redacted
         assert dumped["stt_params"]["api_key"] == "***"
         assert dumped["tts_params"]["api_key"] == "***"
