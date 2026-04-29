@@ -590,7 +590,6 @@ class MetricsRunner:
             num_turns=result.num_turns,
             tools_called=result.tools_called,
             completed=result.completed,
-            conversation_ended_reason=result.conversation_ended_reason,
             duration_seconds=result.duration_seconds,
             # Paths
             output_dir=str(record_dir),
