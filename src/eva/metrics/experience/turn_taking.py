@@ -481,7 +481,9 @@ class TurnTakingMetric(CodeMetric):
                     score=0.0,
                     normalized_score=0.0,
                     details=details,
-                    sub_metrics=self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence),
+                    sub_metrics=self._build_flat_sub_metrics(
+                        context, turn_keys, turns_with_tool_calls, per_turn_evidence
+                    ),
                     error="Conversation not completed — score zeroed",
                 )
 
