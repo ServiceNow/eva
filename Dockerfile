@@ -57,6 +57,7 @@ COPY src/ ./src/
 COPY scripts/ ./scripts/
 COPY configs/ ./configs/
 COPY data/ ./data/
+COPY assets/ ./assets/
 
 # Create non-root user for runtime security
 RUN groupadd --gid 1000 eva && \
