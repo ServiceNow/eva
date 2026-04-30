@@ -66,7 +66,7 @@ RUN groupadd --gid 1000 eva && \
 RUN mkdir -p /app/output && chown eva:eva /app/output
 
 # Python runtime settings
-ENV PYTHONPATH="/app/src:$PYTHONPATH"
+ENV PYTHONPATH="/app/src"
 ENV PYTHONUNBUFFERED=1
 
 # Health check
