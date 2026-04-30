@@ -197,7 +197,8 @@ class ALMGeminiClient(BaseALMClient):
                         "completion_tokens": usage.completion_tokens if usage else 0,
                         "reasoning_tokens": getattr(
                             getattr(usage, "completion_tokens_details", None), "reasoning_tokens", 0
-                        ) or 0,
+                        )
+                        or 0,
                         "finish_reason": finish_reason,
                         "model": response.model or self.model,
                         "cost": 0.0,
