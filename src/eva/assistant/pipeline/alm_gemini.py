@@ -65,7 +65,12 @@ class ALMGeminiClient(BaseALMClient):
         sample_width: int = DEFAULT_SAMPLE_WIDTH,
         project: str | None = None,
         location: str | None = None,
+        thinking_level: str | None = "minimal",
     ):
+        # thinking_level controls Gemini 3 reasoning depth: minimal | low | medium | high.
+        # "minimal" is only supported on Flash / Flash-Lite / Flash-Image variants.
+        # Pass None to omit the field and let the model use its default.
+        self.thinking_level = thinking_level
         super().__init__(
             model=model,
             temperature=temperature,
@@ -121,6 +126,12 @@ class ALMGeminiClient(BaseALMClient):
             "input_audio": {"data": audio_b64, "format": "wav"},
         }
 
+    def _gemini_extra_body(self) -> dict[str, Any]:
+        """Build the `extra_body` payload with Gemini-specific config (thinking, etc.)."""
+        if self.thinking_level is None:
+            return {}
+        return {"google": {"thinking_config": {"thinking_level": self.thinking_level}}}
+
     def _refresh_adc_token(self) -> str:
         """Mint a fresh OAuth access token from the cached ADC credentials."""
         if self._adc_credentials is None:
@@ -155,6 +166,9 @@ class ALMGeminiClient(BaseALMClient):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
+        extra_body = self._gemini_extra_body()
+        if extra_body:
+            kwargs["extra_body"] = extra_body
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
@@ -167,8 +181,31 @@ class ALMGeminiClient(BaseALMClient):
                 response = await self._client.chat.completions.create(**kwargs)
                 elapsed = time.time() - start_time
 
-                message = response.choices[0].message
+                choice = response.choices[0] if response.choices else None
+                message = choice.message if choice else None
                 usage = response.usage
+                finish_reason = choice.finish_reason if choice else "unknown"
+                if message is None:
+                    # Happens when Gemini's thinking budget consumes all max_tokens
+                    # (finish_reason='length') and no visible message is produced.
+                    logger.warning(
+                        f"Gemini returned no message (finish_reason={finish_reason}). "
+                        f"Consider raising max_tokens or lowering thinking_level."
+                    )
+                    return "", {
+                        "prompt_tokens": usage.prompt_tokens if usage else 0,
+                        "completion_tokens": usage.completion_tokens if usage else 0,
+                        "reasoning_tokens": getattr(
+                            getattr(usage, "completion_tokens_details", None), "reasoning_tokens", 0
+                        ) or 0,
+                        "finish_reason": finish_reason,
+                        "model": response.model or self.model,
+                        "cost": 0.0,
+                        "cost_source": "gemini_openai_compat",
+                        "latency": round(elapsed, 3),
+                        "reasoning": None,
+                        "reasoning_content": None,
+                    }
 
                 reasoning_tokens = 0
                 if usage and hasattr(usage, "completion_tokens_details"):
@@ -180,7 +217,7 @@ class ALMGeminiClient(BaseALMClient):
                     "prompt_tokens": usage.prompt_tokens if usage else 0,
                     "completion_tokens": usage.completion_tokens if usage else 0,
                     "reasoning_tokens": reasoning_tokens,
-                    "finish_reason": response.choices[0].finish_reason or "unknown",
+                    "finish_reason": finish_reason or "unknown",
                     "model": response.model or self.model,
                     "cost": 0.0,
                     "cost_source": "gemini_openai_compat",
@@ -224,12 +261,16 @@ class ALMGeminiClient(BaseALMClient):
 
         try:
             self._maybe_refresh_token()
-            response = await self._client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=0.0,
-                max_tokens=self.max_tokens,
-            )
+            transcribe_kwargs: dict[str, Any] = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": 0.0,
+                "max_tokens": self.max_tokens,
+            }
+            extra_body = self._gemini_extra_body()
+            if extra_body:
+                transcribe_kwargs["extra_body"] = extra_body
+            response = await self._client.chat.completions.create(**transcribe_kwargs)
             text = response.choices[0].message.content if response.choices else None
             return text.strip() if text else None
         except Exception as e:

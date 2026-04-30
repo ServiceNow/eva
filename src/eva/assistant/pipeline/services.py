@@ -593,7 +593,7 @@ def create_audio_llm_client(
     base_url, _audio_llm_url_counter = _resolve_url(params, _audio_llm_url_counter)
 
     if "gemini" in model_lower:
-        gemini_model = params.get("model", "gemini-3-flash-preview")
+        gemini_model = params["model"]
         project = params.get("project")
         location = params.get("location")
         api_key = params.get("api_key")
@@ -606,13 +606,14 @@ def create_audio_llm_client(
             api_key=api_key,
             base_url=base_url or None,
             model=gemini_model,
-            temperature=params.get("temperature", 0.0),
+            temperature=params.get("temperature", 1.0),
             max_tokens=params.get("max_tokens", 1024),
             sample_rate=params.get("sample_rate", 16000),
             num_channels=params.get("num_channels", 1),
             sample_width=params.get("sample_width", 2),
             project=project,
             location=location,
+            thinking_level=params.get("thinking_level", "minimal"),
         )
         logger.info(f"Using Gemini audio-LLM: {gemini_model} ({'vertex' if project and location else 'api_key'})")
         return client
