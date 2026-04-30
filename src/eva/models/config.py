@@ -349,10 +349,13 @@ def get_pipeline_type(model_data: dict | Any) -> PipelineType:
     """
     mode = _model_config_discriminator(model_data)
     if mode == "s2s":
-        # ElevenLabs uses s2s_params for configuration but is a cascade pipeline internally
         s2s_value = model_data.get("s2s")
+        # ElevenLabs uses s2s_params for configuration but is a cascade pipeline internally
         if s2s_value == "elevenlabs":
             return PipelineType.CASCADE
+        # Ultravox uses s2s_params for plumbing but is an audio-LLM (audio in, text out, separate TTS)
+        if s2s_value == "ultravox":
+            return PipelineType.AUDIO_LLM
         return PipelineType.S2S
     if mode == "audio_llm":
         return PipelineType.AUDIO_LLM
