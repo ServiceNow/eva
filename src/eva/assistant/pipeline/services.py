@@ -44,6 +44,7 @@ from pipecat.transcriptions.language import Language
 from pipecat.utils.text.base_text_filter import BaseTextFilter
 from websockets.asyncio.client import connect as websocket_connect
 
+from eva.assistant.pipeline.alm_base import BaseALMClient
 from eva.assistant.pipeline.alm_gemini import ALMGeminiClient
 from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
 from eva.assistant.pipeline.nvidia_baseten import BasetenSTTService, BasetenTTSService
@@ -569,7 +570,7 @@ def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tool
 def create_audio_llm_client(
     model: str,
     params: dict[str, Any],
-) -> ALMvLLMClient | ALMGeminiClient:
+) -> BaseALMClient:
     """Create an audio-LLM API client.
 
     Audio-LLM models accept audio input + text context and return text output.
