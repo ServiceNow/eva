@@ -88,6 +88,7 @@ CLAUDE.md
 
 # Local folders
 local/
+output_processed/
 
 # Leaderboard generation (local only)
 scripts/leaderboard_runs.json
@@ -95,3 +96,6 @@ scripts/extract_and_generate_leaderboard.py
 
 # Website data generation scripts (local only)
 website/scripts/
+
+# Git worktrees
+.worktrees/
