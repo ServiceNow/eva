@@ -44,6 +44,7 @@ from pipecat.transcriptions.language import Language
 from pipecat.utils.text.base_text_filter import BaseTextFilter
 from websockets.asyncio.client import connect as websocket_connect
 
+from eva.assistant.pipeline.alm_gemini import ALMGeminiClient
 from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
 from eva.assistant.pipeline.nvidia_baseten import BasetenSTTService, BasetenTTSService
 from eva.assistant.pipeline.realtime_llm import InstrumentedRealtimeLLMService
@@ -310,10 +311,12 @@ def create_tts_service(
             )
 
         logger.info(f"Using Gemini TTS: {params['model']}")
+        # Supports gemini-2.5-flash-tts, gemini-3.1-flash-tts-preview, etc.
         return GeminiTTSService(
             api_key=api_key,
             model=params["model"],
-            voice_name=params.get("voice_name", "Puck"),
+            voice_id=params.get("voice_id", params.get("voice_name", "Kore")),
+            sample_rate=SAMPLE_RATE,
         )
 
     elif model_lower == "kokoro":
@@ -566,26 +569,55 @@ def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tool
 def create_audio_llm_client(
     model: str,
     params: dict[str, Any],
-) -> ALMvLLMClient:
+) -> ALMvLLMClient | ALMGeminiClient:
     """Create an audio-LLM API client.
 
     Audio-LLM models accept audio input + text context and return text output.
-    Currently supports self-hosted models via vLLM's OpenAI-compatible API.
+    Supports self-hosted models via vLLM's OpenAI-compatible API and Gemini
+    via its OpenAI-compatibility endpoint (e.g. gemini-3-flash-preview).
 
     Args:
-        model: Audio-LLM model identifier (e.g. "vllm").
-        params: Model-specific parameters. Required: url (or urls for round-robin).
-                Optional: api_key, model, temperature, max_tokens,
-                sample_rate, num_channels, sample_width.
+        model: Audio-LLM model identifier (e.g. "vllm", "gemini").
+        params: Model-specific parameters. Required for vLLM: url (or urls).
+                Required for Gemini: api_key, model.
+                Optional: temperature, max_tokens, sample_rate, num_channels, sample_width.
 
     Returns:
-        Configured ALMvLLMClient.
+        Configured audio-LLM client.
     """
     model_lower = model.lower()
 
     # Resolve URL once (supports round-robin via "base_urls" list)
     global _audio_llm_url_counter
     base_url, _audio_llm_url_counter = _resolve_url(params, _audio_llm_url_counter)
+
+    if "gemini" in model_lower:
+        gemini_model = params.get("model", "gemini-3-flash-preview")
+        project = params.get("project")
+        location = params.get("location")
+        api_key = params.get("api_key")
+        if not (project and location) and not api_key:
+            raise ValueError(
+                "Gemini audio-LLM requires either api_key (Developer API) "
+                "or project+location (Vertex AI via GOOGLE_APPLICATION_CREDENTIALS)."
+            )
+        client = ALMGeminiClient(
+            api_key=api_key,
+            base_url=base_url or None,
+            model=gemini_model,
+            temperature=params.get("temperature", 0.0),
+            max_tokens=params.get("max_tokens", 1024),
+            sample_rate=params.get("sample_rate", 16000),
+            num_channels=params.get("num_channels", 1),
+            sample_width=params.get("sample_width", 2),
+            project=project,
+            location=location,
+        )
+        logger.info(
+            f"Using Gemini audio-LLM: {gemini_model} "
+            f"({'vertex' if project and location else 'api_key'})"
+        )
+        return client
 
     if "vllm" in model_lower:
         if not base_url:
@@ -604,7 +636,7 @@ def create_audio_llm_client(
         logger.info(f"Using {model} vLLM audio-LLM: {base_url}")
         return client
 
-    raise ValueError(f"Unknown audio-LLM model: {model}. Available: vllm")
+    raise ValueError(f"Unknown audio-LLM model: {model}. Available: vllm, gemini")
 
 
 async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[Frame, None]:
