@@ -98,7 +98,7 @@ def main():
                 continue
 
             if explicit_run_id:
-                config.run_id = f"{config.run_id}_{domain}"
+                raise ValueError("Cannot specify multiple domains when running existing run-id.")
 
             print(f"\n=== Running domain: {domain} ===\n", file=sys.stderr)
             exit_code = asyncio.run(run_benchmark(config))
