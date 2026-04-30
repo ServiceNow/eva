@@ -124,8 +124,10 @@ class BaseALMClient(ABC):
         source_sample_rate: int,
         text_hint: str = "",
     ) -> dict[str, Any]:
-        """Build a user message with audio content. Provider-specific shape comes
-        from the subclass _audio_content_part hook."""
+        """Build a user message with audio content.
+
+        Provider-specific shape comes from the subclass _audio_content_part hook.
+        """
         audio_b64 = self._audio_to_b64_wav(audio_bytes, source_sample_rate)
         content: list[dict[str, Any]] = []
         if text_hint:

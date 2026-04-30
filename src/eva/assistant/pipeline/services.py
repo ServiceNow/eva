@@ -614,10 +614,7 @@ def create_audio_llm_client(
             project=project,
             location=location,
         )
-        logger.info(
-            f"Using Gemini audio-LLM: {gemini_model} "
-            f"({'vertex' if project and location else 'api_key'})"
-        )
+        logger.info(f"Using Gemini audio-LLM: {gemini_model} ({'vertex' if project and location else 'api_key'})")
         return client
 
     if "vllm" in model_lower:
