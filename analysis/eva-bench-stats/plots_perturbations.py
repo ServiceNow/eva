@@ -10,6 +10,8 @@ column names suitable for rendering).
 
 import pandas as pd
 import plotly.graph_objects as go
+from plots_utils import empty_fig as _empty_fig
+from plots_utils import fmt_p as _fmt_p
 
 _CONDITION_DISPLAY = {
     "A": "Accent",
@@ -385,7 +387,7 @@ def perturbation_results_table(
 
 _CONDITION_ABBREV = {
     "Accent": "Accent",
-    "Background noise": "BG noise",
+    "Background noise": "Background noise",
     "Accent + Background noise": "Both",
 }
 
@@ -416,9 +418,6 @@ def perturbation_pvalue_table(
         abbrev = _CONDITION_ABBREV.get(cond, cond)
         tuples.extend([(abbrev, "p"), (abbrev, "✓")])
     col_index = pd.MultiIndex.from_tuples(tuples)
-
-    def _fmt_p(p: float) -> str:
-        return "<0.001" if p < 0.001 else f"{p:.3f}"
 
     records = []
     for model in models:
@@ -496,18 +495,3 @@ def data_coverage_table(completeness_df: pd.DataFrame) -> pd.DataFrame:
 
 def perturbation_placeholder_fig() -> go.Figure:
     return _empty_fig("Perturbations — run data_perturbations.py to populate")
-
-
-def _empty_fig(message: str) -> go.Figure:
-    fig = go.Figure()
-    fig.add_annotation(
-        text=message,
-        x=0.5,
-        y=0.5,
-        xref="paper",
-        yref="paper",
-        showarrow=False,
-        font={"size": 16, "color": "#888"},
-    )
-    fig.update_layout(xaxis_visible=False, yaxis_visible=False, height=300)
-    return fig
