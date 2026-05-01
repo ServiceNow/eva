@@ -455,7 +455,6 @@ def variance_page():
         icc_bar_twoway_fig,
         icc_heatmap_fig,
         llm_name,
-        threshold_crossings_instability_fig,
         variance_bar_fig,
         variance_histogram,
     )
@@ -580,7 +579,6 @@ def variance_page():
     if not borderlines_df.empty:
         for _, row in borderlines_df.drop_duplicates("metric").iterrows():
             _pass_thresholds[row["metric"]] = float(row["threshold"])
-    n_active_runs = len(runs)
 
     def download_button(df: pd.DataFrame, filename: str) -> None:
         st.download_button("Download CSV", df.to_csv(index=False).encode(), filename, "text/csv")
@@ -614,7 +612,7 @@ def variance_page():
           within-scenario noise.
 
         Judge variance and trial variance are isolated together in one experiment (N iterations ×
-        M trials per run). ICC is a separate but related calculation derived from the same data.
+        M trials per run). ICC is a separate but related calculation derived from the same data — it answers what fraction of the total variance is explained by scenario identity.
         """)
 
         meta_rows = []
@@ -623,8 +621,70 @@ def variance_page():
         st.subheader("Runs in this analysis")
         st.dataframe(pd.DataFrame(meta_rows), width="stretch")
 
-        st.subheader("Metrics")
-        st.dataframe(pd.DataFrame({"metric": metrics}), hide_index=True, width="stretch")
+        st.subheader("Metric reference")
+        st.caption(
+            "Scoring details as of 2026-04-27. Pass thresholds are read live from EVA_COMPOSITES "
+            "(src/eva/metrics/aggregation.py) and update automatically. Verify metric descriptions "
+            "and normalization against current prompt definitions if rubrics have changed."
+        )
+        _metric_rows = [
+            (
+                "faithfulness",
+                "1, 2, or 3 per conversation",
+                "5 faithfulness dimensions: fabricating tool parameters, misrepresenting tool results, "
+                "violating policies, failing to disambiguate, hallucination",
+                "1→0.0, 2→0.5, 3→1.0",
+                "Mean of per-conversation normalized scores across all record × trial pairs",
+            ),
+            (
+                "agent_speech_fidelity",
+                "0 or 1 per turn",
+                "Whether TTS output faithfully reproduced intended text, especially key entities (codes, amounts, names)",
+                "fraction of turns scored 1 (0 to 1)",
+                "Mean of per-conversation normalized scores across all record × trial pairs",
+            ),
+            (
+                "conversation_progression",
+                "1, 2, or 3 per conversation",
+                "4 progression dimensions: unnecessary tool calls, information loss, "
+                "redundant statements, question quality",
+                "1→0.0, 2→0.5, 3→1.0",
+                "Mean of per-conversation normalized scores across all record × trial pairs",
+            ),
+            (
+                "conciseness",
+                "1, 2, or 3 per turn, then averaged",
+                "Whether assistant responses were voice-appropriately brief and easy to digest",
+                "mean of (1→0.0, 2→0.5, 3→1.0) across all turns",
+                "Mean of per-conversation normalized scores across all record × trial pairs",
+            ),
+        ]
+        _th = "text-align:left;padding:7px 14px;border-bottom:2px solid rgba(128,128,128,0.35);white-space:nowrap;font-weight:600"
+        _td_base = "padding:7px 14px;vertical-align:top;border-bottom:1px solid rgba(128,128,128,0.15)"
+        _td_nowrap = f"{_td_base};white-space:nowrap"
+        _td_wrap = f"{_td_base};min-width:220px"
+        _rows_html = "".join(
+            f"<tr>"
+            f"<td style='{_td_nowrap}'>{r[0]}</td>"
+            f"<td style='{_td_nowrap}'>{r[1]}</td>"
+            f"<td style='{_td_wrap}'>{r[2]}</td>"
+            f"<td style='{_td_nowrap}'>{r[3]}</td>"
+            f"<td style='{_td_wrap}'>{r[4]}</td>"
+            f"</tr>"
+            for r in _metric_rows
+        )
+        st.html(f"""
+        <table style="width:100%;border-collapse:collapse;font-size:14px;font-family:inherit">
+          <thead><tr>
+            <th style="{_th}">metric</th>
+            <th style="{_th}">raw score values</th>
+            <th style="{_th}">what it measures</th>
+            <th style="{_th}">normalization</th>
+            <th style="{_th}">model-level aggregation</th>
+          </tr></thead>
+          <tbody>{_rows_html}</tbody>
+        </table>
+        """)
 
         st.subheader("Sample sizes")
         st.caption(
@@ -738,6 +798,24 @@ def variance_page():
                 hide_index=True,
                 width="stretch",
             )
+
+        with st.expander("Methodology"):
+            st.markdown("""
+**Why one-sample Wilcoxon against 0?**
+Std devs are bounded at zero and right-skewed, so a t-test against 0 is inappropriate.
+The Wilcoxon signed-rank test is a non-parametric alternative that ranks the absolute
+values of the non-zero observations and tests whether they tend to be positive.
+
+**Calculation steps:**
+1. For each metric, collect all per-(record,trial) judge std devs (or per-record trial std devs)
+   across all selected models.
+2. Remove exact zeros (zero_method equivalent: only non-zero values are ranked).
+3. Run `scipy.stats.wilcoxon(vals, alternative="greater")` — tests H₁: median > 0.
+4. A significant result (p < 0.05) means variance is reliably above zero for that metric.
+
+**Note:** This is not corrected for multiple comparisons across metrics, as each metric is
+treated as a separate analysis question.
+""")
 
     # ── Tab 2: Judge vs. trial variance ──────────────────────────────────────
     with tabs[2]:
@@ -882,6 +960,75 @@ def variance_page():
                 q1b_disp["p"] = q1b_disp["p"].map(fmt_p)
                 st.dataframe(q1b_disp, width="stretch")
 
+            def _model_list(rows):
+                return ", ".join(f"{llm_name(r['run_label'])} (p={fmt_p(r['p_bonferroni'])})" for r in rows)
+
+            st.markdown("**Plain-English interpretation:**")
+            for metric in sorted(metrics):
+                q1a_sub = q1a[q1a["metric"] == metric] if not q1a.empty else pd.DataFrame()
+                q1b_row = (
+                    q1b[q1b["metric"] == metric].iloc[0]
+                    if (not q1b.empty and (q1b["metric"] == metric).any())
+                    else None
+                )
+
+                if q1a_sub.empty:
+                    st.markdown(f"- **{metric}**: insufficient data for test.")
+                    continue
+
+                sig_less = [r for _, r in q1a_sub.iterrows() if r["significant"] and r["direction"] == "judge < trial"]
+                sig_more = [r for _, r in q1a_sub.iterrows() if r["significant"] and r["direction"] == "judge > trial"]
+                not_sig = [r for _, r in q1a_sub.iterrows() if not r["significant"]]
+
+                sentences = []
+                if sig_less:
+                    sentences.append(
+                        f"Judge variance is significantly less than trial variance for {_model_list(sig_less)}"
+                    )
+                if sig_more:
+                    sentences.append(
+                        f"Judge variance is significantly greater than trial variance for {_model_list(sig_more)}"
+                    )
+                if not_sig:
+                    sentences.append(
+                        f"Judge variance is not significantly different from trial variance for {_model_list(not_sig)}"
+                    )
+
+                q1b_txt = ""
+                if q1b_row is not None:
+                    if q1b_row["significant"]:
+                        q1b_txt = (
+                            f" The size of the gap varies significantly across models (K-W p={fmt_p(q1b_row['p'])})."
+                        )
+                    else:
+                        q1b_txt = f" The gap is consistent across models (K-W p={fmt_p(q1b_row['p'])})."
+
+                st.markdown(f"- **{metric}**: " + ". ".join(sentences) + "." + q1b_txt)
+
+            with st.expander("Methodology"):
+                st.markdown("""
+**Why paired Wilcoxon signed-rank (Q1a)?**
+We're comparing two variance estimates for the same set of records. Using the same records in
+both groups removes the scenario-difficulty confound — a hard scenario would inflate both judge
+and trial variance. Wilcoxon signed-rank is the non-parametric equivalent of a paired t-test;
+it doesn't assume normality of the differences.
+
+**Calculation steps (Q1a):**
+1. For each (record, trial, metric, model): compute judge std dev across the 3 judge iterations.
+2. Average those judge std devs over trials → one judge-variance estimate per (record, model, metric).
+3. Trial variance per record is from `compute_trajectory_variance()` — std dev of the mean score
+   across 3 trials (after averaging over iterations to remove judge noise).
+4. Pair the two estimates by `record_id` and run a Wilcoxon signed-rank test
+   (scipy.stats.wilcoxon, two-sided, zero_method="wilcox").
+5. Bonferroni correction: multiply each p-value by the number of models being tested.
+
+**Why Kruskal-Wallis on deltas (Q1b)?**
+Q1b asks whether the *gap* between judge and trial variance is consistent across models or
+model-dependent. We compute delta = mean_judge_std − traj_std for each record in each model,
+then run Kruskal-Wallis across models. If significant, the judge-vs-trial relationship differs
+by model — i.e., some models have noisier judges relative to their trial variance than others.
+""")
+
         st.subheader("Is variance significantly greater than zero? (per model)")
         if q0_judge_per_model.empty or q0_trial_per_model.empty:
             st.info("Not enough data to run Q0 tests.")
@@ -967,6 +1114,17 @@ def variance_page():
 
         download_button(judge_summary, "judge_variance_overview.csv")
 
+        st.plotly_chart(
+            variance_histogram(
+                judge_var,
+                x_label="Std dev (judge)",
+                title="Distribution of per-(record,trial) judge std dev",
+                color_map=RUN_COLOR_MAP,
+                label_order=RUN_LABEL_ORDER,
+            ),
+            width="stretch",
+        )
+
         if not scores_df.empty:
             fig_iter = px.box(
                 scores_df[scores_df["metric"].isin(metrics)],
@@ -987,24 +1145,44 @@ def variance_page():
             fig_iter.update_yaxes(**_axis_style)
             st.plotly_chart(fig_iter, width="stretch")
 
-        st.plotly_chart(
-            variance_histogram(
-                judge_var,
-                x_label="Std dev (judge)",
-                title="Distribution of per-(record,trial) judge std dev",
-                color_map=RUN_COLOR_MAP,
-                label_order=RUN_LABEL_ORDER,
-            ),
-            width="stretch",
-        )
-
         st.subheader("Summary statistics")
+
+        # Mean std dev per metric, averaged across all selected models
+        _cross_model_mean = (
+            judge_summary.groupby("metric")["mean_std"]
+            .mean()
+            .reset_index()
+            .rename(columns={"mean_std": "mean_std (across models)"})
+            .set_index("metric")
+            .T.reindex(columns=sorted(judge_summary["metric"].unique()))
+        )
+        _cross_model_mean.index = ["mean judge std dev (all models)"]
+        _cross_model_mean.index.name = None
+        st.dataframe(_cross_model_mean.round(4), width="stretch")
+
         st.caption(
-            "**Column guide:** `mean_std` = mean std dev across (record, trial) pairs; "
-            "`std_of_std` = spread; `pct_changed` = fraction of pairs where score differed; `n` = n pairs."
+            "**Column guide for per-model table:** `mean_std` = mean std dev across (record, trial) pairs; "
+            "`std_of_std` = spread of those std devs; "
+            "`std_min` / `std_max` = observed min and max std dev; "
+            "`mean_range` = mean of (max score − min score) across pairs — a simpler spread "
+            "measure than std dev; "
+            "`pct_changed` = fraction of pairs where the score differed across iterations; "
+            "`n` = number of (record, trial) pairs."
         )
         st.dataframe(judge_summary.round(4), width="stretch")
         download_button(judge_summary, "judge_variance_summary.csv")
+
+        st.subheader("Std dev range per model (max − min)")
+        st.caption(
+            "How much do per-(record, trial) std devs vary within each model × metric? "
+            "High delta = some pairs are very consistent, others very noisy."
+        )
+        _jdelta = judge_summary.assign(std_delta=judge_summary["std_max"] - judge_summary["std_min"]).pivot(
+            index="run_label", columns="metric", values="std_delta"
+        )
+        _jdelta.columns.name = None
+        _jdelta.index.name = "model"
+        st.dataframe(_jdelta.round(4), width="stretch")
 
         if not judge_summary.empty:
             worst = judge_summary.loc[judge_summary["mean_std"].idxmax()]
@@ -1049,6 +1227,57 @@ def variance_page():
                 _wt_disp["p"] = _wt_disp["p"].map(fmt_p)
                 _wt_disp["significant pairs"] = _wt_disp["metric"].map(lambda m: _wt_sig.get(m, "—"))  # noqa: B023
                 st.dataframe(_wt_disp, width="stretch")
+
+            st.markdown("**Plain-English interpretation:**")
+            for _, row in q2_kw.iterrows():
+                metric = row["metric"]
+                pw_rows = q2_pw[q2_pw["metric"] == metric] if not q2_pw.empty else pd.DataFrame()
+                sig_pw = pw_rows[pw_rows["significant"]] if not pw_rows.empty else pd.DataFrame()
+                hstr = f"H={row['H']:.2f}, p={fmt_p(row['p'])}"
+                if row["significant"] and not sig_pw.empty:
+                    pairs_txt = ", ".join(
+                        f"{llm_name(r['model_1'])} vs {llm_name(r['model_2'])}" for _, r in sig_pw.iterrows()
+                    )
+                    st.markdown(
+                        f"- **{metric}**: Judge variance differs significantly across models "
+                        f"({hstr}). Significant pairs (Bonferroni-corrected): {pairs_txt}."
+                    )
+                elif row["significant"]:
+                    st.markdown(
+                        f"- **{metric}**: Judge variance differs significantly across models "
+                        f"({hstr}), but no individual pair survives Bonferroni correction."
+                    )
+                else:
+                    st.markdown(f"- **{metric}**: No significant difference in judge variance across models ({hstr}).")
+
+            if len(_TYPE_LABELS_ALL) > 1 and len(within_type_results) > 1:
+                st.markdown(
+                    "> **Note:** The table above pools cascade and S2S models together. "
+                    "A significant result may simply reflect the type difference rather than "
+                    "within-type variation. Results within each type are shown below."
+                )
+
+            with st.expander("Methodology"):
+                st.markdown("""
+**Why Kruskal-Wallis?**
+Per-(record,trial) judge std devs are not normally distributed — they are right-skewed with
+many zeros. Kruskal-Wallis is a non-parametric one-way ANOVA on ranks; it tests whether the
+distributions of judge std devs differ across models without assuming normality.
+
+**Calculation steps:**
+1. For each metric, collect all per-(record,trial) judge std devs grouped by model.
+   (These come from `compute_judge_variance()`: std dev of the 3 iteration scores for each pair.)
+2. Run Kruskal-Wallis H test (scipy.stats.kruskal) across the groups.
+3. If the overall test is significant (p < 0.05): run pairwise Mann-Whitney U tests
+   for all pairs of models (scipy.stats.mannwhitneyu, two-sided).
+4. Apply Bonferroni correction: multiply each p-value by the number of pairs
+   (e.g., 3 pairs for 3 models).
+5. Report rank-biserial correlation as effect size: r = 1 − 2U/(n₁·n₂).
+   Values near ±1 = large effect; near 0 = negligible. Positive r means model 1 has
+   higher std devs than model 2.
+6. When both cascade and S2S models are selected, tests are also run within each type
+   separately so that cross-type differences don't dominate the signal.
+""")
 
     # ── Tab 4: Trial variance ─────────────────────────────────────────────────
     with tabs[4]:
@@ -1114,8 +1343,25 @@ def variance_page():
         )
 
         st.subheader("Summary statistics")
+        st.caption(
+            "**Column guide:** `mean_std` = mean std dev across records; "
+            "`std_of_std` = spread of those std devs; "
+            "`std_min` / `std_max` = observed min and max std dev; "
+            "`mean_range` = mean of (max score − min score) across records — a simpler spread "
+            "measure than std dev; "
+            "`n` = number of records."
+        )
         st.dataframe(trial_summary.round(4), width="stretch")
         download_button(trial_summary, "trial_variance_summary.csv")
+
+        st.subheader("Std dev range per model (max − min)")
+        st.caption("How much do per-record std devs vary within each model × metric?")
+        _tdelta = trial_summary.assign(std_delta=trial_summary["std_max"] - trial_summary["std_min"]).pivot(
+            index="run_label", columns="metric", values="std_delta"
+        )
+        _tdelta.columns.name = None
+        _tdelta.index.name = "model"
+        st.dataframe(_tdelta.round(4), width="stretch")
 
         if not trial_summary.empty:
             worst_t = trial_summary.loc[trial_summary["mean_std"].idxmax()]
@@ -1159,6 +1405,59 @@ def variance_page():
                 _wt_disp2["p"] = _wt_disp2["p"].map(fmt_p)
                 _wt_disp2["significant pairs"] = _wt_disp2["metric"].map(lambda m: _wt_sig2.get(m, "—"))  # noqa: B023
                 st.dataframe(_wt_disp2, width="stretch")
+
+            st.markdown("**Plain-English interpretation:**")
+            for _, row in q3_kw.iterrows():
+                metric = row["metric"]
+                pw_rows = q3_pw[q3_pw["metric"] == metric] if not q3_pw.empty else pd.DataFrame()
+                sig_pw = pw_rows[pw_rows["significant"]] if not pw_rows.empty else pd.DataFrame()
+                hstr = f"H={row['H']:.2f}, p={fmt_p(row['p'])}"
+                if row["significant"] and not sig_pw.empty:
+                    pairs_txt = ", ".join(
+                        f"{llm_name(r['model_1'])} vs {llm_name(r['model_2'])}" for _, r in sig_pw.iterrows()
+                    )
+                    st.markdown(
+                        f"- **{metric}**: Trial variance differs significantly across models "
+                        f"({hstr}). Significant pairs (Bonferroni-corrected): {pairs_txt}."
+                    )
+                elif row["significant"]:
+                    st.markdown(
+                        f"- **{metric}**: Trial variance differs significantly across models "
+                        f"({hstr}), but no individual pair survives Bonferroni correction."
+                    )
+                else:
+                    st.markdown(f"- **{metric}**: No significant difference in trial variance across models ({hstr}).")
+
+            if len(_TYPE_LABELS_ALL) > 1 and len(within_type_results) > 1:
+                st.markdown(
+                    "> **Note:** The table above pools cascade and S2S models together. "
+                    "A significant result may simply reflect the type difference rather than "
+                    "within-type variation. Results within each type are shown below."
+                )
+
+            with st.expander("Methodology"):
+                st.markdown("""
+**Same approach as Q2 (judge variance), applied to trial variance.**
+
+Trial variance is measured as the std dev of a scenario's score across 3 simulation trials,
+after averaging over judge iterations to remove judge noise. The resulting per-record std dev
+is the unit of analysis here — one value per (record, model, metric).
+
+**Why the same test (Kruskal-Wallis + Mann-Whitney U)?**
+The question is structurally identical to Q2: does this variance measure differ across models?
+The data have the same properties — bounded at zero, right-skewed — so the same non-parametric
+approach applies. The one practical difference is that Q3 groups contain N records per model
+(not N×K (record,trial) pairs as in Q2), so the groups are smaller and the test is slightly
+less powerful for the same true effect size.
+
+**Calculation steps:**
+1. For each metric: group per-record trial std devs by model (from compute_trajectory_variance()).
+2. Run Kruskal-Wallis H test (scipy.stats.kruskal) across the groups.
+3. If significant: run pairwise Mann-Whitney U for all model pairs, Bonferroni-corrected.
+4. Report rank-biserial correlation r = 1 − 2U/(n₁·n₂) as effect size.
+5. When both cascade and S2S models are selected, tests are also run within each type
+   separately so that cross-type differences don't dominate the signal.
+""")
 
     # ── Tab 5: EVA score stability ────────────────────────────────────────────
     with tabs[5]:
@@ -1231,28 +1530,196 @@ def variance_page():
     # ── Tab 6: Borderline scenarios ───────────────────────────────────────────
     with tabs[6]:
         st.header("Borderline scenarios")
-        st.write("""
-        **What this shows:** Scenarios where judge stochasticity flipped a score across a pass/fail threshold.
-        For each (run, metric, record, trial): if the min score across iterations is below the threshold
-        AND the max is at or above it, that trial had a pass/fail flip due to judge noise.
-        """)
+        st.write(
+            "**What this measures:** (Record, trial) pairs where judge stochasticity flipped the score "
+            "across an EVA composite pass/fail threshold — meaning one judge iteration scored the metric "
+            "as passing and another as failing on identical conversation data.\n\n"
+            "**Why it matters:** These are the scenarios where judge noise directly affects benchmark "
+            "conclusions. Only metrics that feed into EVA-A or EVA-X pass conditions are included."
+        )
 
         if borderlines_df.empty:
-            st.info("No borderline scenarios found — judge was stable across all iterations.")
+            st.info("No pass/fail threshold crossings found in the selected data.")
         else:
-            st.subheader("Borderline scenario table")
-            st.dataframe(borderlines_df.round(4), width="stretch")
+            flip_counts_bar = borderlines_df.groupby(["run_label", "metric"]).size().reset_index(name="flip_count")
+            # Ensure all (run_label, metric) combinations appear even if count is 0
+            _all_combos = pd.MultiIndex.from_product(
+                [flip_counts_bar["run_label"].unique(), list(_pass_thresholds.keys())],
+                names=["run_label", "metric"],
+            )
+            flip_counts_bar = (
+                flip_counts_bar.set_index(["run_label", "metric"]).reindex(_all_combos, fill_value=0).reset_index()
+            )
+            _y_max_pairs = (
+                int(
+                    borderlines_df.groupby("run_label")[["record_id", "trial"]]
+                    .apply(lambda g: g.drop_duplicates().shape[0])
+                    .max()
+                )
+                if not borderlines_df.empty
+                else 1
+            )
+            fig_bc = px.bar(
+                flip_counts_bar,
+                x="metric",
+                y="flip_count",
+                color="run_label",
+                barmode="group",
+                labels={"flip_count": "Pass/fail flips (record×trial pairs)", "metric": "Metric"},
+                title="Judge-stochasticity pass/fail flips per metric",
+                color_discrete_map=RUN_COLOR_MAP,
+                category_orders={"run_label": RUN_LABEL_ORDER},
+            )
+            fig_bc.update_layout(yaxis_range=[0, _y_max_pairs], legend_title_text="Model(s)")
+            fig_bc.update_xaxes(**_axis_style)
+            fig_bc.update_yaxes(**_axis_style)
+            st.plotly_chart(fig_bc, width="stretch")
+
+            # ── Heatmap: one subplot per metric, x = model, y = record ──────────
+            st.subheader("Scenario instability heatmap")
+            st.write(
+                "Each cell shows how many trials (out of 3) had a pass/fail flip for that "
+                "scenario and model. A cell of 3 means the score crossed the threshold on "
+                "every trial — maximum judge instability for that scenario."
+            )
+
+            threshold_metrics = list(_pass_thresholds.keys())
+            active_run_labels = list(borderlines_df["run_label"].unique())
+            short_labels = [llm_name(lbl) for lbl in active_run_labels]
+            all_records = sorted(borderlines_df["record_id"].unique())
+
+            import plotly.colors as pc
+
+            _viridis_4_rev = pc.sample_colorscale("Viridis", [1, 2 / 3, 1 / 3, 0])
+            _disc_viridis = [
+                [0.00, _viridis_4_rev[0]],
+                [0.25, _viridis_4_rev[0]],
+                [0.25, _viridis_4_rev[1]],
+                [0.50, _viridis_4_rev[1]],
+                [0.50, _viridis_4_rev[2]],
+                [0.75, _viridis_4_rev[2]],
+                [0.75, _viridis_4_rev[3]],
+                [1.00, _viridis_4_rev[3]],
+            ]
+
+            n_metrics = len(threshold_metrics)
+            if n_metrics > 0 and active_run_labels:
+                fig_heat = make_subplots(
+                    rows=1,
+                    cols=n_metrics,
+                    subplot_titles=[m.replace("_", " ") for m in threshold_metrics],
+                    shared_yaxes=True,
+                    horizontal_spacing=0.04,
+                )
+                for col_idx, metric in enumerate(threshold_metrics, start=1):
+                    metric_crossings = borderlines_df[borderlines_df["metric"] == metric]
+                    # Count flips per (run_label, record_id)
+                    flip_per = (
+                        metric_crossings.groupby(["run_label", "record_id"]).size().reset_index(name="flip_count")
+                    )
+                    # Build pivot: y=record_id, x=model (short label)
+                    pivot_rows = []
+                    for run_lbl, short in zip(active_run_labels, short_labels):
+                        sub = flip_per[flip_per["run_label"] == run_lbl].set_index("record_id")["flip_count"]
+                        col_vals = [float(sub.get(rec, 0)) for rec in all_records]
+                        pivot_rows.append((short, col_vals))
+                    # z shape: (n_records, n_models) — rows=records, cols=models
+                    z_vals = [[row[1][i] for row in pivot_rows] for i in range(len(all_records))]
+                    x_labels = [row[0] for row in pivot_rows]
+
+                    fig_heat.add_trace(
+                        go.Heatmap(
+                            z=z_vals,
+                            x=x_labels,
+                            y=all_records,
+                            colorscale=_disc_viridis,
+                            zmin=0,
+                            zmax=3,
+                            showscale=(col_idx == n_metrics),
+                            colorbar={
+                                "title": "# trials<br>flipped",
+                                "tickvals": [0, 1, 2, 3],
+                                "ticktext": ["0", "1", "2", "3"],
+                                "len": 0.5,
+                            },
+                            hovertemplate=("record: %{y}<br>model: %{x}<br>trials flipped: %{z:.0f}<extra></extra>"),
+                            customdata=[
+                                [active_run_labels[j] for j in range(len(active_run_labels))] for _ in all_records
+                            ],
+                        ),
+                        row=1,
+                        col=col_idx,
+                    )
+                    fig_heat.update_xaxes(tickangle=30, row=1, col=col_idx)
+                    fig_heat.update_yaxes(autorange="reversed", row=1, col=col_idx)
+
+                _heat_height = max(600, len(all_records) * 22 + 160)
+                fig_heat.update_layout(
+                    height=_heat_height,
+                    margin={"l": 140, "r": 120, "b": 140},
+                )
+                fig_heat.update_annotations(font_size=11)
+                st.plotly_chart(fig_heat, width="stretch")
+
             download_button(borderlines_df, "borderline_scenarios.csv")
 
+            # ── Scenario instability ranking ──────────────────────────────────
             st.subheader("Scenario instability ranking")
             st.write(
                 "Total flip count per scenario across all metrics and models. "
-                "Scenarios with flips across multiple models are universally sensitive."
+                "Scenarios with flips across multiple models are universally sensitive; "
+                "those concentrated in one model are model-specific."
             )
-            st.plotly_chart(
-                threshold_crossings_instability_fig(borderlines_df, n_active_runs, _pass_thresholds, RUN_COLOR_MAP),
-                width="stretch",
+            _ranked = (
+                borderlines_df.groupby("record_id")
+                .size()
+                .reset_index(name="total_flips")
+                .sort_values("total_flips", ascending=True)
             )
+            _max_flips = int(_ranked["total_flips"].max()) if not _ranked.empty else 1
+            _flip_ceiling = len(_pass_thresholds) * len(active_run_labels) * 3
+
+            fig_rank = px.bar(
+                _ranked,
+                x="total_flips",
+                y="record_id",
+                orientation="h",
+                labels={
+                    "total_flips": "Total pass/fail flips (all metrics × models × trials)",
+                    "record_id": "Scenario",
+                },
+                color="total_flips",
+                color_continuous_scale=_disc_viridis,
+                range_color=[0, _flip_ceiling],
+            )
+            fig_rank.update_layout(
+                yaxis={"autorange": "reversed"},
+                xaxis_range=[0, _flip_ceiling],
+                coloraxis_showscale=False,
+                height=max(400, len(_ranked) * 18 + 100),
+                margin={"l": 140, "r": 40, "b": 60},
+            )
+            fig_rank.update_xaxes(**_axis_style)
+            fig_rank.update_yaxes(**_axis_style)
+            st.plotly_chart(fig_rank, width="stretch")
+
+            # Breakdown: how many models contributed flips per scenario
+            _model_flip_counts = (
+                borderlines_df.groupby(["record_id", "run_label"])
+                .size()
+                .reset_index(name="n")
+                .groupby("record_id")["run_label"]
+                .count()
+                .reset_index(name="n_models_with_flips")
+            )
+            _ranked_detail = (
+                _ranked.merge(_model_flip_counts, on="record_id", how="left")
+                .sort_values("total_flips", ascending=False)
+                .reset_index(drop=True)
+            )
+            _ranked_detail.index += 1
+            _ranked_detail.index.name = "rank"
+            st.dataframe(_ranked_detail, width="stretch")
 
     # ── Tab 7: Intraclass correlation ─────────────────────────────────────────
     with tabs[7]:
@@ -1263,23 +1730,36 @@ def variance_page():
         the spread in scores comes from some scenarios being consistently harder or
         easier, vs. noise from trial-to-trial conversation differences.
 
-        **High ICC** → scores primarily reflect genuine scenario difficulty differences.
-        **Low ICC** → scores are dominated by within-scenario noise.
+        **High ICC** → scores primarily reflect genuine scenario difficulty differences;
+        the benchmark discriminates well across scenarios.
+        **Low ICC** → scores are dominated by within-scenario noise; scenario identity
+        explains little of the variance.
+
+        Two pooled estimates and one per-model breakdown are shown.
         """)
 
-        st.subheader("Pooled ICC — Option A (centered)")
+        st.subheader("Pooled ICC")
+        st.markdown("**Option A — Centered (within-model variance explained by scenario)**")
         st.caption(
             "Each model's mean score is subtracted before pooling. ICC answers: "
             "what fraction of within-model score variance is explained by scenario identity?"
         )
         st.plotly_chart(icc_bar_centered_fig(icc_pc), width="stretch")
 
-        st.subheader("Pooled ICC — Option B (two-way random effects with interaction)")
-        st.caption("ICC_scenario = σ²_scenario / σ²_total. ICC_model = σ²_model / σ²_total.")
+        st.markdown("**Option B — Two-way random effects with interaction**")
+        st.caption(
+            "ICC_scenario = σ²_scenario / σ²_total. ICC_model = σ²_model / σ²_total. "
+            "Both are fractions of total variance (scenario + model + interaction + residual). "
+            "F-tests use MS_interaction as denominator (Cornfield-Tukey rule for random effects)."
+        )
         st.plotly_chart(icc_bar_twoway_fig(icc_tw), width="stretch")
 
         if not icc_tw.empty:
             st.markdown("**Scenario × model interaction F-test**")
+            st.caption(
+                "A significant interaction means models do not rank scenarios consistently "
+                "— some scenarios are disproportionately harder/easier for specific models."
+            )
             _int_disp = icc_tw[
                 ["metric", "f_interaction", "p_interaction", "sigma2_interaction", "sigma2_total"]
             ].copy()
@@ -1293,9 +1773,33 @@ def variance_page():
             st.dataframe(_int_disp, hide_index=True, width="stretch")
 
         st.subheader("Per-model ICC")
-        st.caption("One-way ANOVA per (model, metric): ICC = σ²_scenario / (σ²_scenario + σ²_residual).")
+        st.caption(
+            "One-way ANOVA per (model, metric): ICC = σ²_scenario / (σ²_scenario + σ²_residual). "
+            "How much of this model's score variance is explained by which scenario it is?"
+        )
         st.plotly_chart(icc_heatmap_fig(icc_pm, RUN_LABEL_ORDER), width="stretch")
         st.plotly_chart(icc_bar_per_model_fig(icc_pm, RUN_COLOR_MAP, RUN_LABEL_ORDER), width="stretch")
+
+        if not icc_pm.empty:
+            with st.expander("Full per-model ICC table"):
+                _pm_disp = icc_pm[
+                    [
+                        "run_label",
+                        "metric",
+                        "icc",
+                        "ci_lower",
+                        "ci_upper",
+                        "sigma2_scenario",
+                        "sigma2_residual",
+                        "n_scenarios",
+                        "n_trials",
+                        "f_stat",
+                        "p_value",
+                    ]
+                ].copy()
+                _pm_disp["p_value"] = _pm_disp["p_value"].map(fmt_p)
+                st.dataframe(_pm_disp.round(4), hide_index=True, width="stretch")
+                download_button(_pm_disp, "icc_per_model.csv")
 
         if not icc_pc.empty:
             _icc_max = icc_pc.loc[icc_pc["icc"].idxmax()]
