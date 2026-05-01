@@ -400,7 +400,7 @@ def perturbation_pvalue_table(
     """P-value table: model × (corrected p-value, significance) for each condition.
 
     Columns are a MultiIndex: (condition_abbrev, "p") and (condition_abbrev, "✓").
-    p-values < 0.001 display as "<0.001"; significance is "✓" or "".
+    p-values < 0.001 display as "< 0.001"; significance is "✓" or "".
     """
     df = _prettify_conditions(results_df[results_df["metric"] == metric])
     if df.empty:
