@@ -10,9 +10,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from plots_utils import empty_fig, fmt_p
-
-__all__ = ["fmt_p"]
+from plots_utils import empty_fig
 
 _axis_style = {"title_font": {"color": "#222"}, "tickfont": {"color": "#222"}}
 _disc_viridis = px.colors.sequential.Viridis
@@ -211,7 +209,7 @@ def threshold_crossings_instability_fig(
         .reset_index(name="total_flips")
         .sort_values("total_flips", ascending=True)
     )
-    flip_ceiling = len(pass_thresholds) * n_runs * 3
+    flip_ceiling = len(pass_thresholds) * n_runs * 3  # 3 trials per run
     fig = px.bar(
         ranked,
         x="total_flips",
