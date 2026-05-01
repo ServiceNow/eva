@@ -10,11 +10,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from data_perturbations import main as _perturbations_data
+from data_variance import main as _variance_data
 
 
 def main() -> None:
     print("=== Perturbations: data ===")
     _perturbations_data()
+    print()
+
+    print("=== Variance: data ===")
+    _variance_data()
     print()
 
 

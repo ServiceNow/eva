@@ -21,10 +21,12 @@ Pipeline:
   threshold_crossings           → borderline_scenarios.csv
 """
 
+import warnings
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import yaml
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONFIG_PATH = PROJECT_ROOT / "local" / "eva-bench-stats" / "variance_config.yaml"
@@ -173,7 +175,59 @@ def threshold_crossings(scores_df: pd.DataFrame, pass_thresholds: dict[str, floa
 
 
 def main(config_path: Path = CONFIG_PATH) -> None:
-    raise NotImplementedError("Implemented in Task 4.")
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+
+    project_root = config_path.parent.parent.parent
+    output_dir = project_root / config["output_dir"] / "data"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    metrics: list[str] = config["metrics"]
+    runs: dict = config["runs"]
+    archive_root = project_root / "output" / "judge_variance_analysis"
+
+    from load_data import load_aggregate_scores_iter, load_scores_iter
+
+    all_scores: list[pd.DataFrame] = []
+    all_agg: list[pd.DataFrame] = []
+    for run_label, run_cfg in runs.items():
+        run_id = run_cfg["run_id"]
+        print(f"  Loading {run_label} ({run_id}) ...")
+        all_scores.append(load_scores_iter(run_id, run_label, archive_root))
+        all_agg.append(load_aggregate_scores_iter(run_id, run_label, archive_root))
+
+    scores_df = pd.concat(all_scores, ignore_index=True)
+    agg_df = pd.concat(all_agg, ignore_index=True)
+    print(f"  {len(scores_df):,} score rows, {len(agg_df):,} aggregate rows loaded")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from eva.metrics.aggregation import EVA_COMPOSITES
+    pass_thresholds: dict[str, float] = {
+        m: thresh for comp in EVA_COMPOSITES for m, (op, thresh) in comp.thresholds.items() if m in metrics
+    }
+
+    print("Computing judge variance ...")
+    judge_var = compute_judge_variance(scores_df, metrics)
+    print("Computing trial variance ...")
+    trial_var = compute_trial_variance(scores_df, metrics)
+    print("Computing summaries ...")
+    judge_summary = compute_judge_variance_summary(judge_var)
+    trial_summary = compute_trial_variance_summary(trial_var)
+    print("Computing composite stability ...")
+    stability = compute_composite_stability(agg_df)
+    print("Computing borderline scenarios ...")
+    borderlines = threshold_crossings(scores_df, pass_thresholds)
+
+    scores_df.to_csv(output_dir / "scores.csv", index=False)
+    judge_var.to_csv(output_dir / "judge_var.csv", index=False)
+    trial_var.to_csv(output_dir / "trial_var.csv", index=False)
+    judge_summary.to_csv(output_dir / "judge_summary.csv", index=False)
+    trial_summary.to_csv(output_dir / "trial_summary.csv", index=False)
+    stability.to_csv(output_dir / "composite_stability.csv", index=False)
+    borderlines.to_csv(output_dir / "borderline_scenarios.csv", index=False)
+
+    print(f"Wrote 7 CSVs to {output_dir}")
 
 
 if __name__ == "__main__":
