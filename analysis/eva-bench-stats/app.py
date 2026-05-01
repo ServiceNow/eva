@@ -961,7 +961,7 @@ treated as a separate analysis question.
                 st.dataframe(q1b_disp, width="stretch")
 
             def _model_list(rows):
-                return ", ".join(f"{llm_name(r['run_label'])} (p={fmt_p(r['p_bonferroni'])})" for r in rows)
+                return ", ".join(f"{llm_name(r['model'])} (p={fmt_p(r['p_bonferroni'])})" for r in rows)
 
             st.markdown("**Plain-English interpretation:**")
             for metric in sorted(metrics):
