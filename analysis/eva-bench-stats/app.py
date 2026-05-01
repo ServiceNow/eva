@@ -5,6 +5,7 @@ Run from project root:
     uv run streamlit run analysis/eva-bench-stats/app.py
 """
 
+import math
 import sys
 from pathlib import Path
 
@@ -161,8 +162,7 @@ def perturbations_page():
         )
         y_min = min(metric_results["ci_lower"].min(), metric_results["observed_mean_delta"].min())
         y_max = max(metric_results["ci_upper"].max(), metric_results["observed_mean_delta"].max())
-        pad = (y_max - y_min) * 0.20
-        y_range = (y_min - pad, y_max + pad)
+        y_range = (math.floor(y_min * 10) / 10, math.ceil(y_max * 10) / 10)
 
         # ── Pooled ────────────────────────────────────────────────────
         st.subheader("Pooled (all domains, 90 scenarios)")
@@ -242,8 +242,7 @@ def perturbations_page():
             )
             y_min = min(metric_results["ci_lower"].min(), metric_results["observed_mean_delta"].min())
             y_max = max(metric_results["ci_upper"].max(), metric_results["observed_mean_delta"].max())
-            pad = (y_max - y_min) * 0.20
-            y_range = (y_min - pad, y_max + pad)
+            y_range = (math.floor(y_min * 10) / 10, math.ceil(y_max * 10) / 10)
             st.plotly_chart(
                 perturbation_delta_plot(
                     results_pooled,
@@ -272,8 +271,7 @@ def perturbations_page():
         overview_df = results_pooled[results_pooled["metric"].isin(main_metrics)]
         overview_y_min = min(overview_df["observed_mean_delta"].min(), overview_df["ci_lower"].min())
         overview_y_max = max(overview_df["observed_mean_delta"].max(), overview_df["ci_upper"].max())
-        overview_pad = (overview_y_max - overview_y_min) * 0.15
-        overview_y_range = (overview_y_min - overview_pad, overview_y_max + overview_pad)
+        overview_y_range = (math.floor(overview_y_min * 10) / 10, math.ceil(overview_y_max * 10) / 10)
 
         layout = st.radio(
             "Group bars by",
@@ -441,7 +439,6 @@ def CIs_page():
 
 def variance_page():
     import subprocess
-    import sys
 
     import pandas as pd
     import plotly.express as px
@@ -487,7 +484,6 @@ def variance_page():
         RUN_SYMBOL_MAP[lbl] = "star"
         RUN_GROUP_MAP[lbl] = "s2s"
     RUN_LABEL_ORDER: list[str] = cascade_labels + s2s_labels
-    _TYPE_LABELS = {"cascade": "Cascade", "s2s": "S2S / audio-native"}
 
     # ── Output paths ──────────────────────────────────────────────────────────
     variance_dir = PROCESSED_DIR / "variance"
