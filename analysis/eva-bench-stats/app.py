@@ -162,7 +162,7 @@ def perturbations_page():
         )
         y_min = min(metric_results["ci_lower"].min(), metric_results["observed_mean_delta"].min())
         y_max = max(metric_results["ci_upper"].max(), metric_results["observed_mean_delta"].max())
-        y_range = (math.floor(y_min * 10) / 10, math.ceil(y_max * 10) / 10)
+        y_range = (math.floor(y_min * 10) / 10 - 0.05, math.ceil(y_max * 10) / 10 + 0.05)
 
         # ── Pooled ────────────────────────────────────────────────────
         st.subheader("Pooled (all domains, 90 scenarios)")
@@ -242,7 +242,7 @@ def perturbations_page():
             )
             y_min = min(metric_results["ci_lower"].min(), metric_results["observed_mean_delta"].min())
             y_max = max(metric_results["ci_upper"].max(), metric_results["observed_mean_delta"].max())
-            y_range = (math.floor(y_min * 10) / 10, math.ceil(y_max * 10) / 10)
+            y_range = (math.floor(y_min * 10) / 10 - 0.05, math.ceil(y_max * 10) / 10 + 0.05)
             st.plotly_chart(
                 perturbation_delta_plot(
                     results_pooled,
@@ -271,7 +271,7 @@ def perturbations_page():
         overview_df = results_pooled[results_pooled["metric"].isin(main_metrics)]
         overview_y_min = min(overview_df["observed_mean_delta"].min(), overview_df["ci_lower"].min())
         overview_y_max = max(overview_df["observed_mean_delta"].max(), overview_df["ci_upper"].max())
-        overview_y_range = (math.floor(overview_y_min * 10) / 10, math.ceil(overview_y_max * 10) / 10)
+        overview_y_range = (math.floor(overview_y_min * 10) / 10 - 0.05, math.ceil(overview_y_max * 10) / 10 + 0.05)
 
         layout = st.radio(
             "Group bars by",
@@ -502,52 +502,33 @@ def variance_page():
         output = result.stdout + ("\n" + result.stderr if result.stderr else "")
         return result.returncode == 0, output
 
-    # ── Run buttons ───────────────────────────────────────────────────────────
+    # ── Sidebar pipeline buttons (always visible) ─────────────────────────────
     data_ready = (data_dir / "scores.csv").exists() and (data_dir / "judge_var.csv").exists()
     stats_ready = (stats_dir / "q2_kw.csv").exists()
 
-    if not data_ready or not stats_ready:
-        st.warning("Processed data not found. Run the pipeline to get started.")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Process data", disabled=data_ready):
-                with st.spinner("Running run_data.py…"):
-                    ok, out = _run_script(run_data_script)
-                with st.expander("Output", expanded=not ok):
-                    st.text(out)
-                if ok:
-                    st.rerun()
-                else:
-                    st.error("run_data.py failed. See output above.")
-        with col2:
-            if st.button("Run statistical tests", disabled=not data_ready or stats_ready):
-                with st.spinner("Running run_stats.py…"):
-                    ok, out = _run_script(run_stats_script)
-                with st.expander("Output", expanded=not ok):
-                    st.text(out)
-                if ok:
-                    st.rerun()
-                else:
-                    st.error("run_stats.py failed. See output above.")
-        if not data_ready:
-            return
-
-    # ── Sidebar rebuild expander ──────────────────────────────────────────────
-    with st.sidebar.expander("Rebuild data"):
-        if st.button("Re-run data processing"):
+    with st.sidebar.expander("Run pipeline", expanded=not data_ready):
+        if st.button("Process data", disabled=data_ready):
             with st.spinner("Running run_data.py…"):
                 ok, out = _run_script(run_data_script)
-            with st.expander("Output"):
+            with st.expander("Output", expanded=not ok):
                 st.text(out)
             if ok:
                 st.rerun()
-        if st.button("Re-run statistical tests"):
+            else:
+                st.error("run_data.py failed.")
+        if st.button("Run statistical tests", disabled=not data_ready or stats_ready):
             with st.spinner("Running run_stats.py…"):
                 ok, out = _run_script(run_stats_script)
-            with st.expander("Output"):
+            with st.expander("Output", expanded=not ok):
                 st.text(out)
             if ok:
                 st.rerun()
+            else:
+                st.error("run_stats.py failed.")
+
+    if not data_ready:
+        st.warning("Processed data not found. Use **Run pipeline** in the sidebar to get started.")
+        return
 
     # ── Load all CSVs ─────────────────────────────────────────────────────────
     scores_df = pd.read_csv(data_dir / "scores.csv")
