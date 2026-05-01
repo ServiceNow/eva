@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+
 import streamlit as st
 import yaml
 
@@ -553,6 +554,7 @@ def variance_page():
                 st.rerun()
 
     # ── Load all CSVs ─────────────────────────────────────────────────────────
+    scores_df = pd.read_csv(data_dir / "scores.csv")
     judge_var = pd.read_csv(data_dir / "judge_var.csv")
     trial_var = pd.read_csv(data_dir / "trial_var.csv")
     judge_summary = pd.read_csv(data_dir / "judge_summary.csv")
@@ -986,6 +988,26 @@ def variance_page():
         st.plotly_chart(fig_box, width="stretch")
 
         download_button(judge_summary, "judge_variance_overview.csv")
+
+        if not scores_df.empty:
+            fig_iter = px.box(
+                scores_df[scores_df["metric"].isin(metrics)],
+                x="iteration",
+                y="normalized_score",
+                color="run_label",
+                facet_col="metric",
+                facet_col_wrap=3,
+                labels={"normalized_score": "Score", "iteration": "Iteration", "run_label": "Model(s)"},
+                title="Score distributions across iterations",
+                facet_row_spacing=0.15,
+                height=500,
+                color_discrete_map=RUN_COLOR_MAP,
+                category_orders={"run_label": RUN_LABEL_ORDER},
+            )
+            fig_iter.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+            fig_iter.update_xaxes(**_axis_style)
+            fig_iter.update_yaxes(**_axis_style)
+            st.plotly_chart(fig_iter, width="stretch")
 
         st.plotly_chart(
             variance_histogram(
