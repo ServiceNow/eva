@@ -10,7 +10,9 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from plots_utils import empty_fig
+from plots_utils import empty_fig, fmt_p
+
+__all__ = ["fmt_p"]
 
 _axis_style = {"title_font": {"color": "#222"}, "tickfont": {"color": "#222"}}
 _disc_viridis = px.colors.sequential.Viridis
@@ -479,6 +481,8 @@ def deep_dive_scatter_fig(
     label_order: list[str] | None = None,
 ) -> go.Figure:
     """Scatter plot: judge std dev vs. trial std dev per (record, trial) for one metric."""
+    if judge_var_df.empty or trial_var_df.empty:
+        return empty_fig(f"No data for metric: {metric}")
     jv = judge_var_df[judge_var_df["metric"] == metric][["run_id", "run_label", "record_id", "trial", "std"]].rename(
         columns={"std": "judge_std"}
     )
