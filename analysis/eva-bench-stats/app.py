@@ -446,6 +446,8 @@ def variance_page():
     from plotly.subplots import make_subplots
     from plots_utils import fmt_p
     from plots_variance import (
+        clean_composite_label,
+        composite_sort_key,
         composite_stability_fig,
         deep_dive_scatter_fig,
         icc_bar_centered_fig,
@@ -504,10 +506,9 @@ def variance_page():
 
     # ── Sidebar pipeline buttons (always visible) ─────────────────────────────
     data_ready = (data_dir / "scores.csv").exists() and (data_dir / "judge_var.csv").exists()
-    stats_ready = (stats_dir / "q2_kw.csv").exists()
 
     with st.sidebar.expander("Run pipeline", expanded=not data_ready):
-        if st.button("Process data", disabled=data_ready):
+        if st.button("Process data"):
             with st.spinner("Running run_data.py…"):
                 ok, out = _run_script(run_data_script)
             with st.expander("Output", expanded=not ok):
@@ -516,7 +517,7 @@ def variance_page():
                 st.rerun()
             else:
                 st.error("run_data.py failed.")
-        if st.button("Run statistical tests", disabled=not data_ready or stats_ready):
+        if st.button("Run statistical tests", disabled=not data_ready):
             with st.spinner("Running run_stats.py…"):
                 ok, out = _run_script(run_stats_script)
             with st.expander("Output", expanded=not ok):
@@ -1163,14 +1164,69 @@ def variance_page():
     with tabs[5]:
         st.header("EVA score stability")
         st.write("""
-        How stable are composite EVA scores (pass@1, pass@k, pass^k, mean) across judge iterations?
-        Each point is the composite value for one iteration; spread across iterations = judge noise on composites.
+        **What this measures:** For each iteration, the headline EVA composite metrics are
+        recomputed from scratch using that iteration's judge scores. If judge stochasticity
+        is low, these numbers should be nearly identical across iterations.
+
+        **Why it matters:** Even if individual metric std dev is small, it could systematically
+        flip borderline scenarios, shifting the headline numbers that teams use to compare models.
         """)
-        st.plotly_chart(
-            composite_stability_fig(stability_df, RUN_COLOR_MAP, RUN_LABEL_ORDER),
-            width="stretch",
-        )
-        download_button(stability_df, "composite_stability.csv")
+
+        with st.expander("Composite metric definitions"):
+            st.markdown("""
+| Composite | Components | Pass condition |
+|---|---|---|
+| **EVA-A** | task_completion, faithfulness, agent_speech_fidelity | task_completion == 1.0 AND faithfulness >= 0.5 AND agent_speech_fidelity >= 0.95 |
+| **EVA-X** | conversation_progression, turn_taking, conciseness | all >= 0.5 |
+| **EVA-overall** | — | EVA-A pass AND EVA-X pass (derived) |
+| **_mean variants** | same components as _pass | simple mean of normalized scores |
+
+**Statistics computed per composite, per iteration:**
+- **pass@1**: average fraction of trials that pass per scenario — expected pass rate for a single-trial benchmark
+- **pass@k (k=3)**: fraction of scenarios where at least one trial passes — probability of seeing a passing result if you run once
+- **pass^k (k=3)**: average (c/n)³ per scenario — theoretical probability all 3 draws pass (conservative lower bound)
+- **mean**: mean of the composite value across all (record, trial) rows
+            """)
+
+        if stability_df.empty:
+            st.warning("No composite stability data available.")
+        else:
+            composite_cols = [
+                c
+                for c in stability_df.columns
+                if c not in ("run_id", "run_label", "iteration")
+                and any(c.endswith(s) for s in ("_pass_at_1", "_pass_at_k", "_pass_power_k", "_mean"))
+            ]
+            eva_ax_cols = sorted(
+                [c for c in composite_cols if not clean_composite_label(c).startswith("EVA-overall")],
+                key=lambda c: composite_sort_key(clean_composite_label(c)),
+            )
+
+            st.plotly_chart(
+                composite_stability_fig(stability_df, RUN_COLOR_MAP, RUN_LABEL_ORDER),
+                width="stretch",
+            )
+
+            st.subheader("Delta (max − min) across iterations, per model")
+            delta_df = stability_df.groupby("run_label")[eva_ax_cols].agg(lambda x: x.max() - x.min())
+            delta_df.columns = [clean_composite_label(c) for c in delta_df.columns]
+            delta_df = delta_df.reset_index()
+            _num_cols = delta_df.select_dtypes("number").columns
+            delta_df[_num_cols] = delta_df[_num_cols].apply(lambda s: s.map(lambda v: float(f"{v:.2g}")))
+            st.dataframe(delta_df, width="stretch")
+
+            st.subheader("Values per iteration")
+            _vpi = stability_df[["run_id", "run_label", "iteration"] + eva_ax_cols].copy()
+            _vpi = _vpi.rename(columns={c: clean_composite_label(c) for c in eva_ax_cols})
+            st.dataframe(_vpi.round(4), width="stretch")
+            download_button(stability_df, "composite_stability.csv")
+
+            ranges = stability_df.groupby("run_label")[eva_ax_cols].agg(lambda x: x.max() - x.min())
+            max_range = ranges.max().max()
+            max_metric = clean_composite_label(ranges.max().idxmax())
+            st.info(
+                f"**Key finding:** Largest composite shift across iterations is {max_range:.4f} for **{max_metric}**."
+            )
 
     # ── Tab 6: Borderline scenarios ───────────────────────────────────────────
     with tabs[6]:

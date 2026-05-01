@@ -34,7 +34,7 @@ def clean_composite_label(col: str) -> str:
     return col
 
 
-def _composite_sort_key(label: str) -> tuple:
+def composite_sort_key(label: str) -> tuple:
     for g, go_idx in _COMPOSITE_GROUP_ORDER.items():
         if label.startswith(g):
             stat = label[len(g) + 1 :]
@@ -255,7 +255,7 @@ def composite_stability_fig(
 
     eva_ax_cols = sorted(
         [c for c in composite_cols if not clean_composite_label(c).startswith("EVA-overall")],
-        key=lambda c: _composite_sort_key(clean_composite_label(c)),
+        key=lambda c: composite_sort_key(clean_composite_label(c)),
     )
     if not eva_ax_cols:
         eva_ax_cols = composite_cols
@@ -267,22 +267,25 @@ def composite_stability_fig(
         value_name="value",
     ).dropna(subset=["value"])
     melt_df["label"] = melt_df["composite_col"].map(clean_composite_label)
+    melt_df["x_label"] = melt_df["label"].str.split(" ", n=1).str[-1]
 
     _color_map = color_map or {}
 
     eva_a_labels = sorted(
         [lb for lb in melt_df["label"].unique() if lb.startswith("EVA-A")],
-        key=_composite_sort_key,
+        key=composite_sort_key,
     )
     eva_x_labels = sorted(
         [lb for lb in melt_df["label"].unique() if lb.startswith("EVA-X")],
-        key=_composite_sort_key,
+        key=composite_sort_key,
     )
     eva_a_short = [lb.split(" ", 1)[-1] for lb in eva_a_labels]
     eva_x_short = [lb.split(" ", 1)[-1] for lb in eva_x_labels]
 
     summary_df = (
-        melt_df.groupby(["run_label", "label", "composite_col"])["value"].agg(mean="mean", std="std").reset_index()
+        melt_df.groupby(["run_label", "label", "x_label", "composite_col"])["value"]
+        .agg(mean="mean", std="std")
+        .reset_index()
     )
 
     fig = make_subplots(
@@ -298,11 +301,11 @@ def composite_stability_fig(
         sum_sub = summary_df[summary_df["label"].isin(full_labels)]
         tmp = px.scatter(
             sum_sub,
-            x="label",
+            x="x_label",
             y="mean",
             error_y="std",
             color="run_label",
-            category_orders={"label": full_labels, "run_label": label_order or []},
+            category_orders={"x_label": short_labels, "run_label": label_order or []},
             color_discrete_map=_color_map,
         )
         for trace in tmp.data:
