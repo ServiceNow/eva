@@ -36,9 +36,15 @@ Pipeline:
                          within each model × metric combination
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
+import yaml
 from statsmodels.stats.multitest import multipletests
+
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+CONFIG_PATH = PROJECT_ROOT / "local" / "eva-bench-stats" / "perturbations_config.yaml"
 
 
 def permutation_test(
@@ -213,21 +219,38 @@ def run_analysis(
     )
 
 
-if __name__ == "__main__":
-    from pathlib import Path
-
-    import yaml
-
-    PROJECT_ROOT = Path(__file__).parent.parent.parent
-    config_path = PROJECT_ROOT / "local" / "eva-bench-stats" / "perturbations_config.yaml"
+def main(config_path: Path = CONFIG_PATH) -> None:
     with open(config_path) as f:
         config = yaml.safe_load(f)
 
-    deltas_path = PROJECT_ROOT / config["output_dir"] / "scenario_deltas.csv"
-    deltas_df = pd.read_csv(deltas_path)
+    project_root = config_path.parent.parent.parent
+    output_dir = project_root / config["output_dir"]
 
-    # Pooled analysis
-    pooled = deltas_df.copy()
-    pooled["domain"] = "pooled"
-    results = run_analysis(pooled, config)
-    print(results.to_string())
+    deltas_path = output_dir / "scenario_deltas.csv"
+    if not deltas_path.exists():
+        raise FileNotFoundError(f"scenario_deltas.csv not found at {deltas_path}. Run run_data.py first.")
+
+    print(f"Loading deltas from {deltas_path} ...")
+    deltas_df = pd.read_csv(deltas_path)
+    print(f"  {len(deltas_df):,} rows loaded")
+
+    print("Running per-domain analysis ...")
+    results_per_domain = run_analysis(deltas_df, config, correction_groupby=["model_label", "metric"])
+
+    print("Running pooled analysis ...")
+    pooled_df = deltas_df.copy()
+    pooled_df["domain"] = "pooled"
+    results_pooled = run_analysis(pooled_df, config)
+
+    per_domain_path = output_dir / "results_per_domain.csv"
+    pooled_path = output_dir / "results_pooled.csv"
+
+    results_per_domain.to_csv(per_domain_path, index=False)
+    results_pooled.to_csv(pooled_path, index=False)
+
+    print(f"Wrote {len(results_per_domain):,} per-domain rows → {per_domain_path}")
+    print(f"Wrote {len(results_pooled):,} pooled rows → {pooled_path}")
+
+
+if __name__ == "__main__":
+    main()

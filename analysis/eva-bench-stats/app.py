@@ -53,7 +53,6 @@ def perturbations_page():
         perturbation_results_table,
         perturbation_summary_table,
     )
-    from stats_perturbations import run_analysis
 
     st.header("Perturbation Tests")
     config = _load_config("perturbations")
@@ -73,25 +72,19 @@ def perturbations_page():
             if not cov_tbl.empty:
                 st.dataframe(cov_tbl, width="stretch")
 
-    deltas_path = PROCESSED_DIR / "perturbations" / "scenario_deltas.csv"
-    if not deltas_path.exists():
-        st.info(
-            f"Processed data not found at `{deltas_path.relative_to(PROJECT_ROOT)}`.\n\n"
-            "Run `uv run python analysis/eva-bench-stats/data_perturbations.py` first."
-        )
+    pooled_path = PROCESSED_DIR / "perturbations" / "results_pooled.csv"
+    per_domain_path = PROCESSED_DIR / "perturbations" / "results_per_domain.csv"
+    if not pooled_path.exists() or not per_domain_path.exists():
+        st.info("Statistical results not found.\n\nRun `uv run python analysis/eva-bench-stats/run_stats.py` first.")
         return
 
-    deltas_df = pd.read_csv(deltas_path)
+    results_pooled = pd.read_csv(pooled_path)
+    results_per_domain = pd.read_csv(per_domain_path)
+    results_pooled["reject"] = results_pooled["reject"].astype(bool)
+    results_per_domain["reject"] = results_per_domain["reject"].astype(bool)
+
     metrics: list[str] = config.get("metrics", [])
     alpha: float = config.get("alpha", 0.05)
-
-    # Per-domain analysis (Holm correction across 9 tests per model×metric)
-    results_per_domain = run_analysis(deltas_df, config, correction_groupby=["model_label", "metric"])
-
-    # Pooled analysis (domain relabeled to "pooled", Holm across 3 tests)
-    pooled_df = deltas_df.copy()
-    pooled_df["domain"] = "pooled"
-    results_pooled = run_analysis(pooled_df, config)
 
     domains = sorted(results_per_domain["domain"].unique())
 
@@ -277,6 +270,7 @@ def perturbations_page():
                 model,
                 group_by=group_by,
                 y_range=overview_y_range,
+                metric_order=main_metrics,
             )
             st.plotly_chart(fig, width="stretch")
 

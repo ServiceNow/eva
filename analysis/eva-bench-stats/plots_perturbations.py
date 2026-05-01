@@ -33,6 +33,7 @@ _DOMAIN_DISPLAY = {
     "pooled": "Pooled (all domains)",
 }
 # 11-color qualitative palette for per-metric coloring in overview plots
+# Fallback palette for metrics not in _METRIC_COLOR_MAP (e.g. aggregate EVA scores)
 _METRIC_COLORS = [
     "#4477AA",
     "#EE6677",
@@ -46,6 +47,21 @@ _METRIC_COLORS = [
     "#77AADD",
     "#99DDFF",
 ]
+# Semantic color families for the per-model overview "group by condition" view.
+# Warm (reds/oranges/pinks): EVA-A + its individual metrics.
+# Cool (blues/greens/yellows): EVA-X + its individual metrics.
+_METRIC_COLOR_MAP = {
+    # Warm family: reds, dark → light
+    "EVA-A_pass": "#881111",
+    "task_completion": "#BB3322",
+    "agent_speech_fidelity": "#DD6655",
+    "faithfulness": "#FFAA99",
+    # Cool family: blues, dark → light
+    "EVA-X_pass": "#003388",
+    "turn_taking": "#2266BB",
+    "conciseness": "#5599CC",
+    "conversation_progression": "#99CCEE",
+}
 
 
 def _prettify_conditions(df: pd.DataFrame) -> pd.DataFrame:
@@ -211,6 +227,7 @@ def perturbation_overview_plot(
     model: str,
     group_by: str = "metric",
     y_range: tuple[float, float] | None = None,
+    metric_order: list[str] | None = None,
 ) -> go.Figure:
     """Per-model overview: mean deltas across all metrics × conditions (pooled data).
 
@@ -220,13 +237,18 @@ def perturbation_overview_plot(
         group_by: "metric" → x=metrics, one bar per condition (3 colors).
                   "condition" → x=conditions, one bar per metric (many colors).
         y_range: Shared y-axis range. Pass the same value across model plots.
+        metric_order: If provided, sets the metric display order (metrics absent from df are skipped).
     """
     df = _prettify_conditions(results_df[results_df["model_label"] == model])
     if df.empty:
         return _empty_fig(f"No data for model: {model}")
 
     conditions = [c for c in _CONDITION_ORDER if c in df["perturbation_condition"].unique()]
-    metrics = sorted(df["metric"].unique())
+    available = df["metric"].unique()
+    if metric_order is not None:
+        metrics = [m for m in metric_order if m in available]
+    else:
+        metrics = sorted(available)
 
     fig = go.Figure()
 
@@ -294,7 +316,7 @@ def perturbation_overview_plot(
                         "thickness": 1.5,
                         "width": 3,
                     },
-                    marker_color=_METRIC_COLORS[k % len(_METRIC_COLORS)],
+                    marker_color=_METRIC_COLOR_MAP.get(metric, _METRIC_COLORS[k % len(_METRIC_COLORS)]),
                 )
             )
 
