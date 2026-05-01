@@ -4,31 +4,222 @@ Statistical analyses for EVA-Bench.
 
 ## Purpose
 
-Produces confidence intervals, variance analyses, frontier analyses, and perturbation
-tests from EVA-Bench evaluation runs. Results are explored interactively in a Streamlit
-app and exported as a single HTML file.
+Produces variance analyses, perturbation tests, and confidence intervals from EVA-Bench
+evaluation runs. Results are explored interactively in a Streamlit app and exported as
+a single HTML file.
+
+---
+
+## Quick start (new machine)
+
+### 1. Install dependencies
+
+```bash
+uv sync
+```
+
+### 2. Get config files
+
+Config files live in `local/eva-bench-stats/` (gitignored — get them from a teammate):
+
+| File | Used by |
+|------|---------|
+| `local/eva-bench-stats/variance_config.yaml` | Variance analysis |
+| `local/eva-bench-stats/perturbations_config.yaml` | Perturbation analysis |
+
+See [Config format](#config-format) below for the full schema.
+
+### 3. Ensure run archives are present
+
+**Variance analysis** reads from `output/judge_variance_analysis/<run_id>/`:
+
+```
+output/judge_variance_analysis/
+  <run_id>/
+    iter_1/
+      records/
+        <record_id>/
+          trial_1/
+            metrics.json
+          trial_2/
+            metrics.json
+          trial_3/
+            metrics.json
+    iter_2/
+      ...
+    iter_3/
+      ...
+```
+
+The `run_id` values come from your `variance_config.yaml`. Variance archives must follow
+the iteration-archive layout above; standard single-run output directories are not supported.
+
+**Perturbation analysis** reads trial-score CSVs — see your `perturbations_config.yaml`
+for the expected path.
+
+### 4. Run the pipeline
+
+The easiest way is through the Streamlit app's **Run pipeline** sidebar (see step 5). To
+run from the command line instead:
+
+```bash
+# Step 1: process raw runs → CSVs
+uv run python analysis/eva-bench-stats/run_data.py
+
+# Step 2: compute statistics
+uv run python analysis/eva-bench-stats/run_stats.py
+```
+
+Both scripts process all configured analyses (perturbations + variance). You must run
+`run_data.py` before `run_stats.py`.
+
+### 5. Launch the app
+
+```bash
+uv run streamlit run analysis/eva-bench-stats/app.py
+```
+
+The **Run pipeline** expander in the sidebar lets you trigger `run_data.py` and
+`run_stats.py` without leaving the browser. It auto-expands when data is missing.
+
+---
+
+## Output layout
+
+All processed outputs go under `output_processed/eva-bench-stats/` (gitignored):
+
+```
+output_processed/eva-bench-stats/
+  variance/
+    data/                        ← written by run_data.py
+      scores.csv                 (per-iteration scores for all runs × metrics)
+      judge_var.csv              (per-(record,trial) judge std dev)
+      trial_var.csv              (per-record trial std dev)
+      judge_summary.csv          (per-(run,metric) judge variance summary)
+      trial_summary.csv          (per-(run,metric) trial variance summary)
+      composite_stability.csv    (per-iteration EVA composite values)
+      borderline_scenarios.csv   (pass/fail flips from judge stochasticity)
+    stats/                       ← written by run_stats.py
+      icc_per_model.csv
+      icc_pooled_centered.csv
+      icc_pooled_twoway.csv
+      q0_judge_pooled.csv
+      q0_judge_per_model.csv
+      q0_trial_pooled.csv
+      q0_trial_per_model.csv
+      q1a.csv
+      q1b.csv
+      q2_kw.csv
+      q2_pairwise.csv
+      q3_kw.csv
+      q3_pairwise.csv
+      within_type_*.csv          (within-type KW/pairwise results, one per run type × test)
+  perturbations/
+    results_pooled.csv
+    results_per_domain.csv
+    completeness_report.csv
+```
+
+---
+
+## Config format
+
+### `variance_config.yaml`
+
+```yaml
+output_dir: output_processed/eva-bench-stats/variance
+alpha: 0.05
+n_bootstrap: 1000
+
+metrics:
+  - faithfulness
+  - agent_speech_fidelity
+  - conversation_progression
+  - conciseness
+
+runs:
+  "display label for this run":
+    run_id: "2026-03-09_06-30-04.153584"
+    type: cascade          # "cascade" or "s2s"
+    stt: elevenlabs (scribe_v2)
+    llm: sonnet-4-6
+    tts: elevenlabs (turbo)
+
+  "another run (s2s example)":
+    run_id: "2026-04-15_22-21-54.234893_gemini-3.1-flash-live-preview"
+    type: s2s
+    s2s: gemini-3.1-flash-live-preview
+    voice: Leda
+```
+
+The display label (the top-level key under `runs`) is how the run appears in all charts
+and tables. `run_id` must match the directory name under `output/judge_variance_analysis/`.
+
+### `perturbations_config.yaml`
+
+See the file itself for the full schema — it includes model definitions, condition names,
+domain names, and paths to trial-score CSVs.
+
+---
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `load_data.py` | Shared: read raw `output/<run_id>/` run directories into DataFrames |
+| `load_data.py` | Read raw `output/<run_id>/` and iteration-archive run directories into DataFrames |
+| `plots_utils.py` | Shared plot helpers (`empty_fig`, `fmt_p`, `download_button`) used across all analysis modules |
+| `run_data.py` | Entry point: run all data preprocessing (perturbations + variance) |
+| `run_stats.py` | Entry point: run all statistical analyses (perturbations + variance) |
 | `data_perturbations.py` | Process perturbation run dirs → `output_processed/eva-bench-stats/perturbations/` |
 | `stats_perturbations.py` | Perturbation statistical tests (paired permutation, Holm-Bonferroni, bootstrap CIs) |
 | `plots_perturbations.py` | Perturbation figures and display tables |
+| `data_variance.py` | Process variance iteration archives → `output_processed/eva-bench-stats/variance/data/` |
+| `stats_variance.py` | Variance stats: judge/trial variance, ICC, Q0/Q1/Q2/Q3 tests |
+| `plots_variance.py` | Variance figures and display tables |
 | `data_CIs.py` | Process runs for CI analysis (placeholder) |
 | `stats_CIs.py` | Cluster bootstrap CI computation (placeholder) |
 | `plots_CIs.py` | CI figures and tables (placeholder) |
-| `data_variance.py` | Process runs for variance analysis (placeholder) |
-| `stats_variance.py` | Variance stats: distributions, ICC, judge/trial variance, LME (placeholder) |
-| `plots_variance.py` | Variance figures and tables (placeholder) |
 | `data_frontier.py` | Process runs for frontier analysis (placeholder) |
-| `stats_frontier.py` | Frontier stats: quantile regression, SFA/DEA (placeholder) |
+| `stats_frontier.py` | Frontier stats (placeholder) |
 | `plots_frontier.py` | Frontier figures and tables (placeholder) |
-| `app.py` | Multi-page Streamlit app — run with `uv run streamlit run analysis/eva-bench-stats/app.py` |
-| `generate_report.py` | HTML export — run with `uv run python analysis/eva-bench-stats/generate_report.py` |
+| `app.py` | Multi-page Streamlit app |
+| `generate_report.py` | HTML export |
+
+---
 
 ## Statistical tests
+
+### Variance analysis (`stats_variance.py`)
+
+The variance study measures three sources of variance in EVA metric scores. Each run must
+have been evaluated N times by the same judge on the same conversations (iteration archives),
+with M simulation trials per scenario.
+
+**Q0 — Is variance significantly greater than zero?**
+One-sample Wilcoxon signed-rank test against 0 (H₁: median > 0), run separately for judge
+variance and trial variance, pooled across models and per model × metric. A significant result
+means variance is reliably non-zero for that metric.
+
+**Q1a — Is judge variance significantly different from trial variance?**
+Paired Wilcoxon signed-rank test per model × metric (Bonferroni-corrected). Paired on
+record_id to remove scenario-difficulty confound.
+
+**Q1b — Does the judge-vs-trial gap vary by model?**
+Kruskal-Wallis on per-record deltas (judge_std − trial_std) across models.
+
+**Q2 — Does judge variance differ across models?**
+Kruskal-Wallis H test on per-(record,trial) judge std devs. If significant: pairwise
+Mann-Whitney U (Bonferroni-corrected) with rank-biserial correlation as effect size.
+Run both pooled and within each model type (cascade / S2S) separately.
+
+**Q3 — Does trial variance differ across models?**
+Same approach as Q2, applied to per-record trial std devs.
+
+**ICC — What fraction of variance is explained by scenario identity?**
+Three estimates: pooled centered (within-model), pooled two-way random effects with
+interaction F-test, and per-model one-way ANOVA.
+
+---
 
 ### Perturbation robustness (`stats_perturbations.py`)
 
@@ -39,59 +230,25 @@ accent, in background noise, or both?
 score under a perturbation condition and its mean score on the clean baseline for the
 same scenario. 30 paired deltas per (model, condition, domain).
 
----
-
-#### Sign-flip permutation test (`permutation_test`, lines 44–75)
+#### Sign-flip permutation test
 
 - **H₀:** Mean perturbation effect (delta) = 0
 - **H₁:** Mean perturbation effect ≠ 0 (two-sided)
 - **Test statistic:** Mean of the 30 scenario-level deltas
 - **Procedure:** For each of 10,000 permutations, independently flip each delta's sign with
   p = 0.5; p-value = fraction of permuted means where |permuted mean| ≥ |observed mean|
-- **Assumptions:** None beyond exchangeability under H₀ — the sign of any delta is equally
-  likely to be positive or negative, which holds under the null
-- **Why this test:** Score distributions are bounded and skewed; parametric tests (t-test)
-  are inappropriate. The sign-flip permutation test is the natural paired test for this setting
+- **Why this test:** Score distributions are bounded and skewed; the sign-flip permutation
+  test is the natural paired test for this setting
 
----
-
-#### Bootstrap confidence intervals (`bootstrap_ci`, lines 78–105)
+#### Bootstrap confidence intervals
 
 - **Method:** Percentile bootstrap, resampling scenarios with replacement
 - **Resamples:** 1,000
-- **CI:** 2.5th–97.5th percentile of bootstrap means → 95% CI on mean delta
-- **Interpretation:** Sampling variability of the mean effect across the scenario sample.
-  The CI excludes 0 if and only if the effect is of consistent sign, but statistical
-  significance is determined by the corrected permutation p-value, not the CI alone
+- **CI:** 2.5th–97.5th percentile → 95% CI on mean delta
 
----
-
-#### Multiple testing correction: Holm-Bonferroni (`run_analysis`, lines 108–202)
+#### Multiple testing correction: Holm-Bonferroni
 
 - **Method:** Holm-Bonferroni step-down FWER control at α = 0.05
-  (`statsmodels.stats.multitest.multipletests`, `method='holm'`)
-- **Correction families:** Defined per (model, metric). Two analysis modes:
-  - *Pooled* — 3 tests per family (one per condition: Accent, Background noise, Both);
-    call `run_analysis(df, config)` (default `correction_groupby`)
-  - *Per-domain* — 9 tests per family (3 conditions × 3 domains);
-    call `run_analysis(df, config, correction_groupby=["model_label", "metric"])`
-- **Why Holm over Bonferroni:** Uniformly more powerful while maintaining the same FWER
-  guarantee; appropriate when tests are not independent across conditions
-
----
-
-#### Seed strategy
-
-Per-cell seed = global seed + `hash(f"{group_meta}:{cond}:{domain}") % (2**31)`.
-Each cell gets a distinct, deterministic seed so permutation draws are not correlated
-across cells (`run_analysis`, line 171).
-
-## Running
-
-```bash
-# Interactive app
-uv run streamlit run analysis/eva-bench-stats/app.py
-
-# HTML export
-uv run python analysis/eva-bench-stats/generate_report.py
-```
+- **Correction families:** Defined per (model, metric)
+  - *Pooled* — 3 tests per family (one per condition)
+  - *Per-domain* — 9 tests per family (3 conditions × 3 domains)
