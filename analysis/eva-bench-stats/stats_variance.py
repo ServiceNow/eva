@@ -19,6 +19,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import yaml
 from scipy import stats as scipy_stats
 from scipy.stats import chi2
 from scipy.stats import f as f_dist
@@ -862,7 +863,58 @@ def compute_q0_tests(
 
 
 def main(config_path: Path = CONFIG_PATH) -> None:
-    raise NotImplementedError("Implemented in Task 6.")
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+
+    project_root = config_path.parent.parent.parent
+    base_dir = project_root / config["output_dir"]
+    data_dir = base_dir / "data"
+    stats_dir = base_dir / "stats"
+    stats_dir.mkdir(parents=True, exist_ok=True)
+
+    metrics: list[str] = config["metrics"]
+    runs: dict = config["runs"]
+    run_type_map: dict[str, str] = {cfg["run_id"]: cfg.get("type", "cascade") for cfg in runs.values()}
+
+    for name in ("scores.csv", "judge_var.csv", "trial_var.csv"):
+        if not (data_dir / name).exists():
+            raise FileNotFoundError(f"{name} not found in {data_dir}. Run run_data.py first.")
+
+    print(f"Loading data CSVs from {data_dir} ...")
+    scores_df = pd.read_csv(data_dir / "scores.csv")
+    judge_var = pd.read_csv(data_dir / "judge_var.csv")
+    trial_var = pd.read_csv(data_dir / "trial_var.csv")
+    print(f"  {len(scores_df):,} score rows loaded")
+
+    print("Computing ICC ...")
+    icc_results = compute_icc(scores_df, metrics)
+    icc_results["per_model"].to_csv(stats_dir / "icc_per_model.csv", index=False)
+    icc_results["pooled_centered"].to_csv(stats_dir / "icc_pooled_centered.csv", index=False)
+    icc_results["pooled_twoway"].to_csv(stats_dir / "icc_pooled_twoway.csv", index=False)
+
+    print("Computing statistical tests (Q0–Q3) ...")
+    stat_results = compute_statistical_tests(judge_var, trial_var, metrics)
+    q0_results = compute_q0_tests(judge_var, trial_var, metrics)
+
+    q0_results["q0_judge_pooled"].to_csv(stats_dir / "q0_judge_pooled.csv", index=False)
+    q0_results["q0_judge_per_model"].to_csv(stats_dir / "q0_judge_per_model.csv", index=False)
+    q0_results["q0_trial_pooled"].to_csv(stats_dir / "q0_trial_pooled.csv", index=False)
+    q0_results["q0_trial_per_model"].to_csv(stats_dir / "q0_trial_per_model.csv", index=False)
+    stat_results["q1a"].to_csv(stats_dir / "q1a.csv", index=False)
+    stat_results["q1b"].to_csv(stats_dir / "q1b.csv", index=False)
+    stat_results["q2_kw"].to_csv(stats_dir / "q2_kw.csv", index=False)
+    stat_results["q2_pairwise"].to_csv(stats_dir / "q2_pairwise.csv", index=False)
+    stat_results["q3_kw"].to_csv(stats_dir / "q3_kw.csv", index=False)
+    stat_results["q3_pairwise"].to_csv(stats_dir / "q3_pairwise.csv", index=False)
+
+    print("Computing within-type tests ...")
+    within_type = compute_within_type_tests(judge_var, trial_var, run_type_map, metrics)
+    for rtype, type_results in within_type.items():
+        for key, df in type_results.items():
+            df.to_csv(stats_dir / f"within_type_{rtype}_{key}.csv", index=False)
+
+    n_files = 10 + sum(len(v) for v in within_type.values())
+    print(f"Wrote {n_files} CSV files to {stats_dir}")
 
 
 if __name__ == "__main__":
