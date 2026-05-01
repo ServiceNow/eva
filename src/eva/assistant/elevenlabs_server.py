@@ -195,7 +195,11 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         logger.info(f"Elevenlabs server started on ws://localhost:{self.port}")
 
     async def _shutdown(self) -> None:
-        """Stop the server, save outputs."""
+        """Stop the server (framework-specific teardown).
+
+        Note: save_outputs() is called by the base class stop() after _shutdown()
+        returns — do NOT call it here to avoid writing outputs twice.
+        """
         if not self._running:
             return
         self._running = False
@@ -216,7 +220,6 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
             self._server = None
             self._server_task = None
 
-        await self.save_outputs()
         logger.info(f"ElevenLabs server stopped on port {self.port}")
 
     async def _handle_session(self, websocket: WebSocket) -> None:  # noqa: C901
