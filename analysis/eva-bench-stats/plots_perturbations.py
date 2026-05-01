@@ -78,6 +78,8 @@ def perturbation_delta_plot(
     title: str | None = None,
     y_range: tuple[float, float] | None = None,
     model_order: list[str] | None = None,
+    group_boundary: int | None = None,
+    group_labels: tuple[str, str] | None = None,
 ) -> go.Figure:
     """Bar chart of mean deltas per model per perturbation condition with 95% CI error bars.
 
@@ -90,6 +92,10 @@ def perturbation_delta_plot(
         title: Plot title. Defaults to the metric name.
         y_range: (min, max) for the y-axis. Pass the same value across plots for comparability.
         model_order: If provided, sets x-axis order (models absent from df are skipped).
+        group_boundary: If provided, draws a dashed vertical line after this many models
+            (e.g. pass the number of cascade models to separate cascade from s2s).
+        group_labels: If provided alongside group_boundary, small labels shown at the top-left
+            of each section, e.g. ("Cascade", "S2S").
     """
     df = _prettify_conditions(results_df[results_df["metric"] == metric])
     if df.empty:
@@ -195,11 +201,39 @@ def perturbation_delta_plot(
             )
         )
 
+    if group_boundary is not None and 0 < group_boundary < n_models:
+        fig.add_shape(
+            type="line",
+            x0=group_boundary - 0.5,
+            x1=group_boundary - 0.5,
+            y0=0,
+            y1=1,
+            yref="paper",
+            line={"color": "#aaa", "width": 1.5, "dash": "dash"},
+        )
+        if group_labels is not None:
+            # Use data coordinates when y_range is explicit so the label is pinned to the
+            # actual top of the axis, independent of where Plotly places tick marks.
+            ann_y = y_range[1] if y_range is not None else 0.97
+            ann_yref = "y" if y_range is not None else "paper"
+            label_style = {
+                "xref": "x",
+                "yref": ann_yref,
+                "y": ann_y,
+                "yanchor": "top",
+                "showarrow": False,
+                "font": {"size": 12, "color": "#888"},
+            }
+            fig.add_annotation(x=-0.5, xanchor="left", text=group_labels[0], **label_style)
+            fig.add_annotation(x=group_boundary - 0.45, xanchor="left", text=group_labels[1], **label_style)
+
     yaxis: dict = {
         "zeroline": True,
         "zerolinecolor": "#bbb",
         "zerolinewidth": 1.5,
         "gridcolor": "#ececec",
+        "dtick": 0.1,
+        "tick0": 0,
     }
     if y_range is not None:
         yaxis["range"] = y_range

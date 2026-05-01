@@ -1,6 +1,7 @@
 # Config: local/eva-bench-stats/perturbations_config.yaml
 #
-# trial_scores_path: output/eva-bench-stats/trial_scores.csv
+# trial_scores_dir: output/eva-bench-stats        # picks most recent timestamped subfolder
+# trial_scores_path: output/eva-bench-stats/trial_scores.csv  # alternative: explicit path
 # output_dir: output_processed/eva-bench-stats/perturbations
 # random_seed: 42
 # metrics:
@@ -341,7 +342,15 @@ def main(config_path: Path = CONFIG_PATH) -> None:
         config = yaml.safe_load(f)
 
     project_root = config_path.parent.parent.parent
-    trial_scores_path = project_root / config["trial_scores_path"]
+    if "trial_scores_dir" in config:
+        data_dir = project_root / config["trial_scores_dir"]
+        subdirs = sorted(p for p in data_dir.iterdir() if p.is_dir())
+        if not subdirs:
+            raise FileNotFoundError(f"No subdirectories found in {data_dir}")
+        trial_scores_path = subdirs[-1] / "trial_scores.csv"
+        print(f"Auto-selected most recent data folder: {subdirs[-1].name}")
+    else:
+        trial_scores_path = project_root / config["trial_scores_path"]
     output_dir = project_root / config["output_dir"]
     output_dir.mkdir(parents=True, exist_ok=True)
 
