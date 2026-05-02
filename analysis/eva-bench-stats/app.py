@@ -446,7 +446,9 @@ def CIs_page():
         order_metrics,
         paper_summary_table,
     )
-    from plots_utils import download_button
+
+    def download_button(df: pd.DataFrame, filename: str) -> None:
+        st.download_button("Download CSV", df.to_csv(index=False).encode(), filename, "text/csv")
 
     st.header("Confidence Intervals")
     st.caption(
