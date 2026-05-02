@@ -176,9 +176,9 @@ domain names, and paths to trial-score CSVs.
 | `data_variance.py` | Process variance iteration archives → `output_processed/eva-bench-stats/variance/data/` |
 | `stats_variance.py` | Variance stats: judge/trial variance, ICC, Q0/Q1/Q2/Q3 tests |
 | `plots_variance.py` | Variance figures and display tables |
-| `data_CIs.py` | Process runs for CI analysis (placeholder) |
-| `stats_CIs.py` | Cluster bootstrap CI computation (placeholder) |
-| `plots_CIs.py` | CI figures and tables (placeholder) |
+| `data_CIs.py` | Process clean trial scores → scenario-level means for CI analysis |
+| `stats_CIs.py` | Bootstrap stability check, per-domain, and equal-weighted pooled CIs |
+| `plots_CIs.py` | CI forest plots and paper-ready summary table |
 | `data_frontier.py` | Process runs for frontier analysis (placeholder) |
 | `stats_frontier.py` | Frontier stats (placeholder) |
 | `plots_frontier.py` | Frontier figures and tables (placeholder) |

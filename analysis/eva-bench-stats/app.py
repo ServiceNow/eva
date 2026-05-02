@@ -439,8 +439,102 @@ cell_seed = seed + hash(f"{{group_meta}}:{{cond}}:{{domain}}") % (2**31)
 
 
 def CIs_page():
+    import pandas as pd
+    from plots_CIs import (
+        forest_plot,
+        metric_label,
+        order_metrics,
+        paper_summary_table,
+    )
+    from plots_utils import download_button
+
     st.header("Confidence Intervals")
-    st.info("Coming soon.")
+    st.caption(
+        "95% percentile bootstrap CIs over scenario-level means. "
+        "Pooled estimates use equal weighting across the 3 domains. "
+        "Bootstrap resample count is selected by a 1k-vs-2k stability check (threshold 0.002 on the metric scale)."
+    )
+
+    config = _load_config("CIs")
+    if config is None:
+        st.warning(f"Config not found: `{CONFIG_DIR / 'CIs_config.yaml'}`. Create it to get started.")
+        return
+
+    output_dir = PROJECT_ROOT / config["output_dir"]
+    stats_dir = output_dir / "stats"
+    data_dir = output_dir / "data"
+
+    per_domain_path = stats_dir / "results_per_domain.csv"
+    pooled_path = stats_dir / "results_pooled.csv"
+    stability_path = stats_dir / "stability_log.csv"
+    completeness_path = data_dir / "completeness_report.csv"
+
+    if not per_domain_path.exists() or not pooled_path.exists():
+        st.warning(
+            f"CI outputs not found in `{stats_dir}`. "
+            f"Run the pipeline (Run pipeline expander in the sidebar) or "
+            f"`uv run python analysis/eva-bench-stats/run_stats.py`."
+        )
+        return
+
+    per_domain_df = pd.read_csv(per_domain_path)
+    pooled_df = pd.read_csv(pooled_path)
+    stability_df = pd.read_csv(stability_path) if stability_path.exists() else pd.DataFrame()
+    completeness_df = pd.read_csv(completeness_path) if completeness_path.exists() else pd.DataFrame()
+
+    # Color map by system_type
+    type_colors = {"cascade": "#3B82F6", "s2s": "#CC61B0", "hybrid": "#A855F7"}
+    model_to_color: dict[str, str] = {}
+    for label, model_cfg in (config.get("models") or {}).items():
+        model_to_color[label] = type_colors.get(model_cfg.get("type", "cascade"), "#3B82F6")
+
+    with st.expander("Stability check", expanded=False):
+        if stability_df.empty:
+            st.info("No stability log available.")
+        else:
+            st.dataframe(stability_df, use_container_width=True)
+            download_button(stability_df, "stability_log.csv")
+
+    with st.expander("Paper-ready summary (EVA-A & EVA-X means)", expanded=False):
+        summary = paper_summary_table(
+            per_domain_df, pooled_df,
+            metrics=("EVA-A_mean", "EVA-X_mean"),
+            domains=tuple(config["expected_domains"]),
+        )
+        st.dataframe(summary, use_container_width=True)
+        download_button(summary, "ci_summary_paper.csv")
+
+    with st.expander("Completeness report", expanded=False):
+        if completeness_df.empty:
+            st.info("No completeness report available.")
+        else:
+            st.dataframe(completeness_df, use_container_width=True)
+            download_button(completeness_df, "completeness_report.csv")
+
+    metrics_present = sorted(set(per_domain_df["metric"]) | set(pooled_df["metric"]))
+    metrics_ordered = order_metrics(metrics_present)
+    if not metrics_ordered:
+        st.info("No metrics to display.")
+        return
+
+    tabs = st.tabs([metric_label(m) for m in metrics_ordered])
+    for tab, metric in zip(tabs, metrics_ordered):
+        with tab:
+            st.plotly_chart(
+                forest_plot(
+                    per_domain_df, pooled_df,
+                    metric=metric,
+                    domains=config["expected_domains"],
+                    color_map=model_to_color,
+                ),
+                use_container_width=True,
+            )
+            combined = pd.concat([
+                per_domain_df[per_domain_df["metric"] == metric],
+                pooled_df[pooled_df["metric"] == metric],
+            ], ignore_index=True)[["model_label", "domain", "n", "point_estimate", "ci_lower", "ci_upper"]]
+            st.dataframe(combined, use_container_width=True)
+            download_button(combined, f"ci_{metric}.csv")
 
 
 def variance_page():
