@@ -150,6 +150,7 @@ def check_model_completeness(
     expected_domains: list[str],
     expected_scenarios: int = 30,
     expected_pert_trials: int = 3,
+    sentinel: str | None = None,
 ) -> tuple[bool, dict]:
     """Check whether a model's data is complete enough to include in the analysis.
 
@@ -174,7 +175,9 @@ def check_model_completeness(
             is_complete (bool), issues (list[str]),
             condition_coverage (dict: condition_label → domain → {n_scenarios, n_expected, complete})
     """
-    sentinel = "EVA-A_mean"
+    if sentinel is None:
+        available = df["metric"].unique() if not df.empty else []
+        sentinel = available[0] if len(available) > 0 else "EVA-A_mean"
     probe = df[df["metric"] == sentinel]
 
     issues: list[str] = []
@@ -378,6 +381,15 @@ def main(config_path: Path = CONFIG_PATH) -> None:
         condition_map: dict[str, str] = model_cfg["conditions"]
 
         model_df = trial_scores[trial_scores["system_alias"] == alias]
+        present_metrics = set(model_df["metric"].unique())
+        # Prefer deterministic metrics that are always present when a trial ran;
+        # judge-composite metrics like EVA-A_pass can be missing for individual
+        # trials when a single judge call errors out, which would falsely flag
+        # the trial as missing.
+        preferred = ["task_completion", "faithfulness", "conciseness"]
+        sentinel = next((m for m in preferred if m in present_metrics), None) or next(
+            (m for m in metrics if m in present_metrics), None
+        )
         is_complete, report = check_model_completeness(
             model_df,
             alias,
@@ -385,6 +397,7 @@ def main(config_path: Path = CONFIG_PATH) -> None:
             expected_domains=expected_domains,
             expected_scenarios=expected_scenarios,
             expected_pert_trials=expected_pert_trials,
+            sentinel=sentinel,
         )
 
         # Flatten coverage into one report row per (model, condition, domain)
