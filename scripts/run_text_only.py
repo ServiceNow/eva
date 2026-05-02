@@ -606,6 +606,7 @@ async def run_record(
         agent_role=raw_agent_config.get("role", ""),
         agent_instructions=agent_instructions,
         agent_tools=raw_agent_config.get("tools", []),
+        agent_id=raw_agent_config.get("id", ""),
         current_date_time=record.current_date_time,
         num_turns=stats["num_turns"],
         num_tool_calls=stats["num_tool_calls"],
