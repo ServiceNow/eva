@@ -29,7 +29,6 @@ METRICS = [
     "faithfulness",
     "agent_speech_fidelity",
     "conversation_progression",
-    "turn_taking",
     "conciseness",
     "transcription_accuracy_key_entities",  # cascade only; silently skipped for audio-native
 ]
