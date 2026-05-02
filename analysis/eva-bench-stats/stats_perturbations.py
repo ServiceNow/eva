@@ -43,6 +43,8 @@ import pandas as pd
 import yaml
 from statsmodels.stats.multitest import multipletests
 
+from stats_utils import bootstrap_ci  # noqa: F401 (re-exported for backward compatibility)
+
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONFIG_PATH = PROJECT_ROOT / "local" / "eva-bench-stats" / "perturbations_config.yaml"
 
@@ -79,36 +81,6 @@ def permutation_test(
 
     p = np.mean(np.abs(permuted_means) >= np.abs(observed))
     return float(p)
-
-
-def bootstrap_ci(
-    deltas: np.ndarray,
-    n_boot: int = 1000,
-    seed: int = 42,
-    alpha: float = 0.05,
-) -> tuple[float, float]:
-    """Bootstrapped confidence interval on the mean delta.
-
-    Resamples scenario-level deltas with replacement (scenarios are the
-    independent unit). CI is the (alpha/2, 1 - alpha/2) percentiles.
-
-    Args:
-        deltas: 1-D array of scenario-level deltas.
-        n_boot: Number of bootstrap resamples.
-        seed: RNG seed for reproducibility.
-        alpha: Significance level; CI covers 1 - alpha probability.
-
-    Returns:
-        (lower, upper) CI bounds.
-    """
-    deltas = np.asarray(deltas, dtype=float)
-    n = len(deltas)
-    rng = np.random.default_rng(seed)
-    indices = rng.integers(0, n, size=(n_boot, n))
-    boot_means = deltas[indices].mean(axis=1)
-    lower = float(np.percentile(boot_means, 100 * alpha / 2))
-    upper = float(np.percentile(boot_means, 100 * (1 - alpha / 2)))
-    return lower, upper
 
 
 def run_analysis(
