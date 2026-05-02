@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from data_perturbations import main as _perturbations_data
 from data_variance import main as _variance_data
+from data_CIs import main as _CIs_data
 
 
 def main() -> None:
@@ -20,6 +21,13 @@ def main() -> None:
 
     print("=== Variance: data ===")
     _variance_data()
+    print()
+
+    print("=== CIs: data ===")
+    try:
+        _CIs_data()
+    except FileNotFoundError as e:
+        print(f"  [CIs] skipped: {e}")
     print()
 
 
