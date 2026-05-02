@@ -160,8 +160,14 @@ def perturbations_page():
                 results_pooled[results_pooled["metric"] == metric],
             ]
         )
+        if metric_results.empty or metric_results[["ci_lower", "ci_upper", "observed_mean_delta"]].dropna(how="all").empty:
+            st.info(f"No results for metric '{metric}'.")
+            return
         y_min = min(metric_results["ci_lower"].min(), metric_results["observed_mean_delta"].min())
         y_max = max(metric_results["ci_upper"].max(), metric_results["observed_mean_delta"].max())
+        if pd.isna(y_min) or pd.isna(y_max):
+            st.info(f"No results for metric '{metric}'.")
+            return
         y_range = (math.floor(y_min * 10) / 10 - 0.05, math.ceil(y_max * 10) / 10 + 0.05)
 
         # ── Pooled ────────────────────────────────────────────────────
