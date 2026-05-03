@@ -5,7 +5,8 @@ import sys
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "analysis" / "eva-bench-stats"))
-from paper_tables import format_cell, shade_index, lookup_pooled
+from paper_config import ModelEntry, PaperConfig
+from paper_tables import format_cell, shade_index, lookup_pooled, write_accuracy_table, write_experience_table
 
 
 def test_format_cell_symmetric() -> None:
@@ -54,3 +55,74 @@ def test_lookup_pooled_misses_returns_nones() -> None:
     df = _pooled_df()
     assert lookup_pooled(df, "M1", "EVA-A_pass_at_k") == (None, None, None)
     assert lookup_pooled(df, "Ghost", "EVA-A_pass") == (None, None, None)
+
+
+def _cfg() -> PaperConfig:
+    return PaperConfig(
+        output_dir="ignored",
+        accuracy_aggregate={
+            "pass_at_1": "EVA-A_pass",
+            "pass_at_k": "EVA-A_pass_at_k",
+            "pass_power_k": "EVA-A_pass_power_k",
+        },
+        accuracy_submetrics={
+            "task_completion": "Task Completion",
+            "faithfulness": "Faithfulness",
+            "agent_speech_fidelity": "Agent Speech Fidelity",
+        },
+        experience_aggregate={
+            "pass_at_1": "EVA-X_pass",
+            "pass_at_k": "EVA-X_pass_at_k",
+            "pass_power_k": "EVA-X_pass_power_k",
+        },
+        experience_submetrics={
+            "turn_taking": "Turn-Taking",
+            "conciseness": "Conciseness",
+            "conversation_progression": "Conv. Progression",
+        },
+        scatter={},
+        models={
+            "Sys A": ModelEntry(label="Sys A", alias="a", arch="cascade"),
+            "Sys B": ModelEntry(label="Sys B", alias="b", arch="s2s"),
+        },
+    )
+
+
+def _pooled_with_pass1_only() -> pd.DataFrame:
+    rows = []
+    for m, p in [("Sys A", 0.42), ("Sys B", 0.61)]:
+        for metric, val in [
+            ("EVA-A_pass", p), ("EVA-X_pass", p + 0.05),
+            ("task_completion", p), ("faithfulness", p),
+            ("agent_speech_fidelity", p), ("turn_taking", p),
+            ("conciseness", p), ("conversation_progression", p),
+        ]:
+            rows.append({
+                "model_label": m, "metric": metric, "domain": "pooled",
+                "point_estimate": val, "ci_lower": val - 0.04, "ci_upper": val + 0.04,
+            })
+    return pd.DataFrame(rows)
+
+
+def test_write_accuracy_table_emits_expected_structure(tmp_path: Path) -> None:
+    out = tmp_path / "accuracy_table.tex"
+    write_accuracy_table(_pooled_with_pass1_only(), _cfg(), out)
+    text = out.read_text()
+    assert "\\begin{table}" in text
+    assert "EVA-A" in text
+    assert "Task Completion" in text
+    # pass_at_1 present, pass_at_k missing → "--" appears in pass_at_k cells
+    assert "0.420 $\\pm$0.040" in text
+    assert "--" in text
+    # arch grouping
+    assert "Cascade" in text
+    assert "S2S" in text
+
+
+def test_write_experience_table_uses_eva_x(tmp_path: Path) -> None:
+    out = tmp_path / "experience_table.tex"
+    write_experience_table(_pooled_with_pass1_only(), _cfg(), out)
+    text = out.read_text()
+    assert "EVA-X" in text
+    assert "Turn-Taking" in text
+    assert "0.470 $\\pm$0.040" in text  # 0.42 + 0.05
