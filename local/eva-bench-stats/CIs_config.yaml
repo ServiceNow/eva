@@ -84,7 +84,7 @@ paper:
     submetrics:
       task_completion:       Task Completion
       faithfulness:          Faithfulness
-      agent_speech_fidelity: Agent Speech Fidelity
+      agent_speech_fidelity: Speech Fidelity
   experience:
     aggregate:
       pass_at_1:    EVA-X_pass

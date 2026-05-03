@@ -79,12 +79,17 @@ AGG_KEY_MACROS = {
 _METRIC_COL = ">{\\centering\\arraybackslash}p{1.6cm}"
 _SEP_OUTER = "@{\\hskip 8pt}"
 _SEP_BETWEEN = "@{\\hskip 8pt}!{\\color{black!25}\\vrule}@{\\hskip 8pt}"
+# Small breathing room between the pass-rate sub-columns inside the aggregate group.
+_SEP_INTRA_AGG = "@{\\hskip 4pt}"
 
 
 def _build_col_spec(n_agg: int, n_sub: int) -> str:
     """Identity (ll), then one aggregate group of n_agg cols, then n_sub one-col groups,
     with rule+spacing between groups and equal-width centered metric columns."""
-    parts = ["ll", _SEP_OUTER, _METRIC_COL * n_agg]
+    parts = ["ll", _SEP_OUTER]
+    # Aggregate cols joined by a small hskip so the three pass-rate columns aren't
+    # crammed together visually.
+    parts.append(_SEP_INTRA_AGG.join([_METRIC_COL] * n_agg))
     for _ in range(n_sub):
         parts.append(_SEP_BETWEEN)
         parts.append(_METRIC_COL)
@@ -181,11 +186,13 @@ def _write_table(
         top_cells.append(f"\\textbf{{{_latex_escape(name)}}}")
     lines.append(" & ".join(top_cells) + " \\\\")
 
-    # cmidrules: one for the aggregate group, one per submetric column.
-    cmid_parts = [f"\\cmidrule(lr){{3-{2 + n_agg}}}"]
+    # cmidrules: one for the aggregate group, one per submetric column. No (lr) trim
+    # so each bar spans the natural column width and lines up with the cell shading
+    # underneath.
+    cmid_parts = [f"\\cmidrule{{3-{2 + n_agg}}}"]
     for i in range(n_sub):
         col = 3 + n_agg + i
-        cmid_parts.append(f"\\cmidrule(lr){{{col}-{col}}}")
+        cmid_parts.append(f"\\cmidrule{{{col}-{col}}}")
     lines.append(" ".join(cmid_parts))
 
     # Header row 2: arch/system labels, the three pass-rate macros under EVA-{A,X},
