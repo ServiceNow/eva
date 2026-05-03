@@ -80,9 +80,11 @@ _METRIC_COL = ">{\\centering\\arraybackslash}p{1.8cm}"
 _SEP_OUTER = "@{\\hskip 8pt}"
 _SEP_BETWEEN = "@{\\hskip 8pt}!{\\color{black!25}\\vrule}@{\\hskip 8pt}"
 # Breathing room between the pass-rate sub-columns inside the aggregate group.
-# Matches the outer 8pt spacing so cell-color blocks don't visually overlap after
-# resizebox scales the table down to textwidth.
-_SEP_INTRA_AGG = "@{\\hskip 8pt}"
+# 4pt + zero-width !{} marker + 4pt = 8pt total visible gap. The !{} marker is
+# essential: \cellcolor bleeds through @{} separators, so without an !{} break
+# adjacent cellcolored cells merge into one continuous color block (which is what
+# made the aggregate cols look like they had no whitespace between them).
+_SEP_INTRA_AGG = "@{\\hskip 4pt}!{\\color{white}\\vrule width 0pt}@{\\hskip 4pt}"
 
 
 def _build_col_spec(n_agg: int, n_sub: int) -> str:
