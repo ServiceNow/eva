@@ -10,6 +10,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -39,6 +43,109 @@ def pearson(x: np.ndarray, y: np.ndarray) -> tuple[float, float, int]:
 
 def _fmt_p(p: float) -> str:
     return f"{p:.2e}" if p < 1e-3 else f"{p:.3f}"
+
+
+def _short_label(alias: str) -> str:
+    """Compact display label for the long cascade aliases."""
+    rules = [
+        ("cohere_transcribe", "Cohere"),
+        ("elevenlabs", "ElevenAgent"),
+        ("ink-whisper", "InkWhisper"),
+        ("nova-3 + gpt-5.4 + sonic-3", "Nova3+GPT5.4"),
+        ("nova-3 + gpt-5.4-mini", "Nova3+GPT5.4-mini"),
+        ("parakeet", "Parakeet+Gemma"),
+        ("whisper-large-v3", "Whisper+Qwen"),
+    ]
+    for needle, short in rules:
+        if needle in alias:
+            return short
+    return alias[:18]
+
+
+def _plot_pooled_scatter(sys_means: pd.DataFrame, r: float, p: float, out_path: Path) -> None:
+    fig, ax = plt.subplots(figsize=(6.5, 5.5))
+    xs = sys_means[X_METRIC].to_numpy()
+    ys = sys_means[Y_METRIC].to_numpy()
+    ax.scatter(xs, ys, s=80, color="#3a86ff", edgecolor="white", linewidth=1.0, zorder=3)
+    for _, row in sys_means.iterrows():
+        ax.annotate(_short_label(row["system_alias"]),
+                    (row[X_METRIC], row[Y_METRIC]),
+                    xytext=(6, 4), textcoords="offset points", fontsize=8)
+    # Regression line
+    if len(xs) >= 2:
+        slope, intercept = np.polyfit(xs, ys, 1)
+        x_line = np.array([xs.min() - 0.02, xs.max() + 0.02])
+        ax.plot(x_line, slope * x_line + intercept,
+                linestyle="--", color="grey", alpha=0.7, zorder=1, label="OLS fit")
+    ax.set_xlim(min(xs.min() - 0.05, 0.5), 1.0)
+    ax.set_ylim(0, max(ys.max() + 0.1, 1.0))
+    ax.set_xlabel("Mean transcription accuracy on key entities")
+    ax.set_ylabel("Mean task completion")
+    ax.set_title(f"Cascade systems: transcription vs task completion\n"
+                 f"Pearson r = {r:.3f}, p = {_fmt_p(p)}, n = {len(sys_means)} systems")
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    fig.savefig(out_path, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _plot_per_domain(wide: pd.DataFrame, per_domain: list[dict], out_path: Path) -> None:
+    domains = [d["domain"] for d in per_domain]
+    fig, axes = plt.subplots(1, len(domains), figsize=(5 * len(domains), 4.5), sharey=True)
+    if len(domains) == 1:
+        axes = [axes]
+    for ax, dom_info in zip(axes, per_domain):
+        domain = dom_info["domain"]
+        dg = wide[wide["domain"] == domain]
+        sm = dg.groupby("system_alias")[[X_METRIC, Y_METRIC]].mean().reset_index()
+        xs = sm[X_METRIC].to_numpy()
+        ys = sm[Y_METRIC].to_numpy()
+        ax.scatter(xs, ys, s=60, color="#3a86ff", edgecolor="white", linewidth=1.0, zorder=3)
+        if len(xs) >= 2:
+            slope, intercept = np.polyfit(xs, ys, 1)
+            x_line = np.array([xs.min() - 0.02, xs.max() + 0.02])
+            ax.plot(x_line, slope * x_line + intercept,
+                    linestyle="--", color="grey", alpha=0.7, zorder=1)
+        ax.set_xlim(min(xs.min() - 0.05, 0.5), 1.0)
+        ax.set_ylim(0, 1.0)
+        ax.set_xlabel("Mean transcription accuracy")
+        ax.set_title(f"{domain}\nr = {dom_info['r']:.3f}, p = {_fmt_p(dom_info['p'])}")
+        ax.grid(True, alpha=0.3)
+    axes[0].set_ylabel("Mean task completion")
+    fig.suptitle("Cascade-system correlation by domain", y=1.02)
+    fig.tight_layout()
+    fig.savefig(out_path, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _plot_threshold_split(threshold_df: pd.DataFrame, threshold: float, out_path: Path) -> None:
+    if threshold_df.empty:
+        return
+    df = threshold_df.copy()
+    scopes = df["scope"].tolist()
+    x = np.arange(len(scopes))
+    width = 0.38
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    bars_above = ax.bar(x - width / 2, df["tc_above"], width,
+                        label=f"trans ≥ {threshold:.0%} (n={int(df['n_above'].iloc[0])})",
+                        color="#2a9d8f")
+    bars_below = ax.bar(x + width / 2, df["tc_below"], width,
+                        label=f"trans < {threshold:.0%} (n={int(df['n_below'].iloc[0])})",
+                        color="#e76f51")
+    for b in list(bars_above) + list(bars_below):
+        ax.text(b.get_x() + b.get_width() / 2, b.get_height() + 0.01,
+                f"{b.get_height():.2f}", ha="center", va="bottom", fontsize=8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(scopes)
+    ax.set_ylabel("Mean task completion")
+    ax.set_ylim(0, 1.0)
+    ax.set_title(f"Task completion by transcription-accuracy threshold ({threshold:.0%})")
+    ax.legend(loc="upper right")
+    ax.grid(True, axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out_path, bbox_inches="tight")
+    plt.close(fig)
 
 
 def run(trial_scores_path: Path, output_dir: Path) -> None:
@@ -156,6 +263,19 @@ def run(trial_scores_path: Path, output_dir: Path) -> None:
     print(f"\nWrote {out_csv}")
     print(f"Wrote {domain_csv}")
     print(f"Wrote {threshold_csv}")
+
+    # Plots
+    pooled_pdf = output_dir / "transcription_vs_task_completion.pdf"
+    _plot_pooled_scatter(sys_means, r_sys, p_sys, pooled_pdf)
+    print(f"Wrote {pooled_pdf}")
+
+    domain_pdf = output_dir / "transcription_vs_task_completion_by_domain.pdf"
+    _plot_per_domain(wide, per_domain, domain_pdf)
+    print(f"Wrote {domain_pdf}")
+
+    threshold_pdf = output_dir / "transcription_threshold_split.pdf"
+    _plot_threshold_split(threshold_df, THRESHOLD, threshold_pdf)
+    print(f"Wrote {threshold_pdf}")
 
     print("\nPaper-ready:")
     print(
