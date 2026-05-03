@@ -61,6 +61,13 @@ def run(trial_scores_path: Path, output_dir: Path) -> None:
     sys_means = wide.groupby("system_alias")[[X_METRIC, Y_METRIC]].mean().reset_index()
     r_sys, p_sys, n_sys = pearson(sys_means[X_METRIC].to_numpy(), sys_means[Y_METRIC].to_numpy())
 
+    # Same between-system computation but restricted to each domain.
+    per_domain: list[dict] = []
+    for domain, dg in wide.groupby("domain", sort=True):
+        sm = dg.groupby("system_alias")[[X_METRIC, Y_METRIC]].mean()
+        r_d, p_d, n_d = pearson(sm[X_METRIC].to_numpy(), sm[Y_METRIC].to_numpy())
+        per_domain.append({"domain": domain, "n_systems": n_d, "r": r_d, "p": p_d})
+
     # Trial-level pooled, plus per-system breakdown — supporting context.
     r_pool, p_pool, n_pool = pearson(wide[X_METRIC].to_numpy(), wide[Y_METRIC].to_numpy())
     per_system: list[dict] = []
@@ -95,10 +102,17 @@ def run(trial_scores_path: Path, output_dir: Path) -> None:
     print("\nPer-system means and within-system Pearson:")
     print(summary.to_string(index=False, float_format=lambda x: f"{x:.4g}"))
 
+    domain_df = pd.DataFrame(per_domain)
+    print("\nBetween-system correlation by domain:")
+    print(domain_df.to_string(index=False, float_format=lambda x: f"{x:.4g}"))
+
     output_dir.mkdir(parents=True, exist_ok=True)
     out_csv = output_dir / "transcription_vs_task_completion.csv"
     summary.to_csv(out_csv, index=False)
+    domain_csv = output_dir / "transcription_vs_task_completion_by_domain.csv"
+    domain_df.to_csv(domain_csv, index=False)
     print(f"\nWrote {out_csv}")
+    print(f"Wrote {domain_csv}")
 
     print("\nPaper-ready:")
     print(
