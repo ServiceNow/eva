@@ -694,14 +694,18 @@ class RunConfig(BaseSettings):
         # Strip env-var fields from other pipeline modes so extra="forbid" doesn't reject them.
         # For metrics-only re-runs, skip the strict conflict check — the model isn't used.
         if isinstance(data.get("model"), dict):
-            force_rerun = bool(data.get("force_rerun_metrics"))
-            data["model"] = _strip_other_mode_fields(data["model"], strict=not force_rerun)
+            metrics_only = bool(
+                data.get("force_rerun_metrics") or data.get("rerun_failed_metrics") or data.get("aggregate_only")
+            )
+            data["model"] = _strip_other_mode_fields(data["model"], strict=not metrics_only)
 
         return data
 
     @model_validator(mode="after")
     def _check_companion_services(self) -> "RunConfig":
         """Ensure required companion services are set for each pipeline mode."""
+        if self.rerun_failed_metrics or self.force_rerun_metrics or self.aggregate_only:
+            return self
         required_keys = ["api_key", "model"]
         if isinstance(self.model, PipelineConfig):
             self._validate_service_params("STT", self.model.stt, required_keys, self.model.stt_params)
