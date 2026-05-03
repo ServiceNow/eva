@@ -73,10 +73,20 @@ def load_aggregate_scores(run_dir: Path) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=_AGG_COLS) if rows else pd.DataFrame(columns=_AGG_COLS)
 
 
-_ITER_SCORES_COLS = ["run_id", "run_label", "record_id", "trial", "iteration", "metric", "normalized_score"]
+_ITER_SCORES_COLS = [
+    "run_id",
+    "run_label",
+    "domain",
+    "record_id",
+    "trial",
+    "iteration",
+    "metric",
+    "normalized_score",
+]
 _ITER_AGG_COLS = [
     "run_id",
     "run_label",
+    "domain",
     "record_id",
     "trial",
     "iteration",
@@ -101,7 +111,7 @@ def _iter_iterations(run_dir: Path):
             yield iteration, record_id, trial, data
 
 
-def load_scores_iter(run_id: str, run_label: str, archive_root: Path) -> pd.DataFrame:
+def load_scores_iter(run_id: str, run_label: str, archive_root: Path, domain: str | None = None) -> pd.DataFrame:
     """Load per-(iteration, record, trial, metric) scores from an iteration-archive run.
 
     Archive layout: <archive_root>/<run_id>/iter_<N>/records/<record_id>/trial_<N>/metrics.json
@@ -122,6 +132,7 @@ def load_scores_iter(run_id: str, run_label: str, archive_root: Path) -> pd.Data
                 {
                     "run_id": run_id,
                     "run_label": run_label,
+                    "domain": domain,
                     "record_id": record_id,
                     "trial": trial,
                     "iteration": iteration,
@@ -132,7 +143,9 @@ def load_scores_iter(run_id: str, run_label: str, archive_root: Path) -> pd.Data
     return pd.DataFrame(rows, columns=_ITER_SCORES_COLS) if rows else pd.DataFrame(columns=_ITER_SCORES_COLS)
 
 
-def load_aggregate_scores_iter(run_id: str, run_label: str, archive_root: Path) -> pd.DataFrame:
+def load_aggregate_scores_iter(
+    run_id: str, run_label: str, archive_root: Path, domain: str | None = None
+) -> pd.DataFrame:
     """Load per-(iteration, record, trial) composite scores from an iteration-archive run.
 
     Returns DataFrame with columns:
@@ -149,6 +162,7 @@ def load_aggregate_scores_iter(run_id: str, run_label: str, archive_root: Path) 
             {
                 "run_id": run_id,
                 "run_label": run_label,
+                "domain": domain,
                 "record_id": record_id,
                 "trial": trial,
                 "iteration": iteration,

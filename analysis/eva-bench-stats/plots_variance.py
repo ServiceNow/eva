@@ -18,6 +18,128 @@ _COMPOSITE_GROUP_ORDER = {"EVA-A": 0, "EVA-X": 1, "EVA-overall": 2}
 _COMPOSITE_STAT_ORDER = {"pass@1": 0, "pass@k": 1, "pass^k": 2, "mean": 3}
 
 
+_VARIANCE_BUDGET_COLORS = {
+    "Domain": "#1f77b4",
+    "Scenario": "#2ca02c",
+    "Trial": "#ff7f0e",
+    "Judge": "#d62728",
+}
+
+
+def variance_budget_stacked_bar(budget_df: pd.DataFrame, model_id: str) -> go.Figure:
+    """Stacked bar (% of total): one bar per metric, segmented into the variance pots.
+
+    σ_total (the standard deviation, sqrt of σ²_total) is shown as an annotation
+    on top of each bar so absolute magnitude and breakdown are both visible.
+    """
+    import math
+
+    sub = budget_df[budget_df["model_id"] == model_id]
+    if sub.empty:
+        return empty_fig(f"No variance budget rows for {model_id!r}.")
+
+    metrics = sub["metric"].tolist()
+    fig = go.Figure()
+    pot_cols = [
+        ("Domain", "pct_domain"),
+        ("Scenario", "pct_scenario"),
+        ("Trial", "pct_trial"),
+        ("Judge", "pct_judge"),
+    ]
+    for label, col in pot_cols:
+        if col not in sub.columns:
+            continue
+        y_vals = (sub[col] * 100).tolist()
+        fig.add_trace(
+            go.Bar(
+                name=label,
+                x=metrics,
+                y=y_vals,
+                marker_color=_VARIANCE_BUDGET_COLORS[label],
+                hovertemplate="<b>%{x}</b><br>" + label + ": %{y:.1f}%<extra></extra>",
+            )
+        )
+
+    annotations = []
+    if "sigma2_total" in sub.columns:
+        for metric, total in zip(sub["metric"], sub["sigma2_total"]):
+            if pd.isna(total) or total <= 0:
+                continue
+            sigma_total = math.sqrt(float(total))
+            annotations.append(
+                dict(
+                    x=metric,
+                    y=102,
+                    text=f"σ={sigma_total:.3f}",
+                    showarrow=False,
+                    font=dict(size=11, color="#222"),
+                    yanchor="bottom",
+                )
+            )
+
+    fig.update_layout(
+        barmode="stack",
+        title=f"Variance breakdown (% of total) — {model_id}",
+        xaxis_title="Metric",
+        yaxis_title="% of total variance",
+        yaxis=dict(range=[0, 115], ticksuffix="%"),
+        legend_title="Source",
+        height=520,
+        margin={"r": 40, "t": 80},
+        annotations=annotations,
+    )
+    fig.update_xaxes(**_axis_style)
+    fig.update_yaxes(**_axis_style)
+    return fig
+
+
+def variance_budget_absolute_bar(budget_df: pd.DataFrame, model_id: str) -> go.Figure:
+    """Stacked bar (absolute σ²): one bar per metric, height = total variance.
+
+    Variances are additive, so stacking σ² values is mathematically correct.
+    Bar height instantly conveys whether a metric has a large or small
+    absolute variance — i.e., whether the % breakdown is worth attention.
+    """
+    sub = budget_df[budget_df["model_id"] == model_id]
+    if sub.empty:
+        return empty_fig(f"No variance budget rows for {model_id!r}.")
+
+    metrics = sub["metric"].tolist()
+    fig = go.Figure()
+    pot_cols = [
+        ("Domain", "sigma2_domain"),
+        ("Scenario", "sigma2_scenario"),
+        ("Trial", "sigma2_trial"),
+        ("Judge", "sigma2_judge"),
+    ]
+    for label, col in pot_cols:
+        if col not in sub.columns:
+            continue
+        y_vals = sub[col].tolist()
+        fig.add_trace(
+            go.Bar(
+                name=label,
+                x=metrics,
+                y=y_vals,
+                marker_color=_VARIANCE_BUDGET_COLORS[label],
+                hovertemplate="<b>%{x}</b><br>" + label + ": σ²=%{y:.5f}<extra></extra>",
+            )
+        )
+
+    fig.update_layout(
+        barmode="stack",
+        title=f"Absolute variance (σ²) — {model_id}",
+        xaxis_title="Metric",
+        yaxis_title="σ² (variance)",
+        legend_title="Source",
+        height=480,
+        margin={"r": 40},
+    )
+    fig.update_xaxes(**_axis_style)
+    fig.update_yaxes(**_axis_style)
+    return fig
+
+
 def llm_name(run_label: str) -> str:
     """Extract the LLM name from a run label 'stt / llm / tts'."""
     parts = run_label.split(" / ")
@@ -77,6 +199,11 @@ def variance_histogram(
     """Faceted histogram with one row per model and one column per metric."""
     if df.empty:
         return empty_fig("No data available.")
+    n_rows = df["run_label"].nunique()
+    # Plotly requires vertical_spacing <= 1/(rows-1). Cap to 0.5/(rows-1) so each
+    # facet row keeps a usable plotting band, with a minimum floor for small N.
+    row_spacing = min(0.15, 0.5 / max(n_rows - 1, 1)) if n_rows > 1 else 0.15
+    height = max(650, 80 * n_rows + 200)
     fig = px.histogram(
         df,
         x="std",
@@ -86,8 +213,8 @@ def variance_histogram(
         opacity=0.85,
         labels={"std": x_label, "run_label": "Model(s)"},
         title=title,
-        facet_row_spacing=0.15,
-        height=650,
+        facet_row_spacing=row_spacing,
+        height=height,
         color_discrete_map=color_map or {},
         category_orders={"run_label": label_order} if label_order else {},
     )

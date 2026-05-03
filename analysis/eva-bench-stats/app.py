@@ -588,6 +588,27 @@ def variance_page():
         RUN_GROUP_MAP[lbl] = "s2s"
     RUN_LABEL_ORDER: list[str] = cascade_labels + s2s_labels
 
+    # Model-id-keyed views (run_label minus the trailing ' — domain' suffix).
+    # Used for plots/tables that consume the per-domain stats CSVs, where the
+    # `model` column is a model_id rather than a (model × domain) compound.
+    def _strip_domain(lbl: str) -> str:
+        return lbl.split(" — ")[0].strip()
+
+    MODEL_COLOR_MAP: dict[str, str] = {}
+    cascade_models: list[str] = []
+    s2s_models: list[str] = []
+    for lbl in cascade_labels:
+        mid = _strip_domain(lbl)
+        if mid not in MODEL_COLOR_MAP:
+            MODEL_COLOR_MAP[mid] = RUN_COLOR_MAP[lbl]
+            cascade_models.append(mid)
+    for lbl in s2s_labels:
+        mid = _strip_domain(lbl)
+        if mid not in MODEL_COLOR_MAP:
+            MODEL_COLOR_MAP[mid] = RUN_COLOR_MAP[lbl]
+            s2s_models.append(mid)
+    MODEL_LABEL_ORDER: list[str] = cascade_models + s2s_models
+
     # ── Output paths ──────────────────────────────────────────────────────────
     variance_dir = PROCESSED_DIR / "variance"
     data_dir = variance_dir / "data"
@@ -643,21 +664,21 @@ def variance_page():
 
     def _read_stat(name: str) -> pd.DataFrame:
         p = stats_dir / name
-        return pd.read_csv(p) if p.exists() else pd.DataFrame()
+        if not p.exists():
+            return pd.DataFrame()
+        try:
+            return pd.read_csv(p)
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame()
 
-    icc_pm = _read_stat("icc_per_model.csv")
-    icc_pc = _read_stat("icc_pooled_centered.csv")
+    # Pooled-across-domains stats (Q0, Q1a, Q1b primary, ICC pooled_twoway)
     icc_tw = _read_stat("icc_pooled_twoway.csv")
     q0_judge_pooled = _read_stat("q0_judge_pooled.csv")
     q0_judge_per_model = _read_stat("q0_judge_per_model.csv")
     q0_trial_pooled = _read_stat("q0_trial_pooled.csv")
     q0_trial_per_model = _read_stat("q0_trial_per_model.csv")
-    q1a = _read_stat("q1a.csv")
-    q1b = _read_stat("q1b.csv")
-    q2_kw = _read_stat("q2_kw.csv")
-    q2_pw = _read_stat("q2_pairwise.csv")
-    q3_kw = _read_stat("q3_kw.csv")
-    q3_pw = _read_stat("q3_pairwise.csv")
+    q1a_pooled = _read_stat("q1a.csv")
+    q1b_pooled = _read_stat("q1b.csv")
 
     _TYPE_LABELS_ALL = {"cascade": "Cascade", "s2s": "S2S / audio-native"}
     within_type_results: dict[str, dict[str, pd.DataFrame]] = {}
@@ -685,7 +706,60 @@ def variance_page():
     def download_button(df: pd.DataFrame, filename: str) -> None:
         st.download_button("Download CSV", df.to_csv(index=False).encode(), filename, "text/csv")
 
-    # ── 10 Tabs ───────────────────────────────────────────────────────────────
+    # ── Domain selector ───────────────────────────────────────────────────────
+    # Single-choice radio. Drives which within-domain CSV is loaded for
+    # Q2/Q3/ICC views and which slice of the data CSVs is shown. Pooled stats
+    # (Q0, Q1a, Q1b primary) are computed across all domains and don't move
+    # with this selector.
+    all_domains = sorted({cfg.get("domain") for cfg in runs.values() if cfg.get("domain")})
+    selected_domain: str | None = None
+    if all_domains:
+        selected_domain = st.sidebar.radio(
+            "Domain",
+            options=all_domains,
+            index=0,
+            help=(
+                "Selects which domain's within-domain stats and data slices are displayed. "
+                "Pooled-across-domains stats (Q0, Q1a, Q1b primary) ignore this and always "
+                "show the all-domains answer."
+            ),
+        )
+
+        def _filter_domain(df: pd.DataFrame) -> pd.DataFrame:
+            return df[df["domain"] == selected_domain] if "domain" in df.columns else df
+
+        scores_df = _filter_domain(scores_df)
+        judge_var = _filter_domain(judge_var)
+        trial_var = _filter_domain(trial_var)
+        judge_summary = _filter_domain(judge_summary)
+        trial_summary = _filter_domain(trial_summary)
+        stability_df = _filter_domain(stability_df)
+        borderlines_df = _filter_domain(borderlines_df)
+
+        # Within a single domain, the run_label is uniquely identified by its
+        # model prefix. Strip the trailing ' — domain' so the run_label column
+        # equals the model_id used in the per-domain stats CSVs.
+        for _df in (judge_var, trial_var, judge_summary, trial_summary, stability_df, borderlines_df):
+            if "run_label" in _df.columns and not _df.empty:
+                _df["run_label"] = _df["run_label"].map(_strip_domain)
+
+    # Load within-domain stats for the selected domain.
+    _d_suffix = f"_{selected_domain}" if selected_domain else ""
+    icc_pm = _read_stat(f"icc_per_model{_d_suffix}.csv")
+    icc_pc = _read_stat(f"icc_pooled_centered{_d_suffix}.csv")
+    q1a_within = _read_stat(f"q1a{_d_suffix}.csv") if selected_domain else pd.DataFrame()
+    q1b_within = _read_stat(f"q1b{_d_suffix}.csv") if selected_domain else pd.DataFrame()
+    q2_kw = _read_stat(f"q2_kw{_d_suffix}.csv")
+    q2_pw = _read_stat(f"q2_pairwise{_d_suffix}.csv")
+    q3_kw = _read_stat(f"q3_kw{_d_suffix}.csv")
+    q3_pw = _read_stat(f"q3_pairwise{_d_suffix}.csv")
+    # Q1a/Q1b pooled remain the primary view even when a domain is selected.
+    q1a = q1a_pooled
+    q1b = q1b_pooled
+    _domain_label = f"Domain: **{selected_domain}**" if selected_domain else "All data"
+    _pooled_label = "Pooled across all 3 domains"
+
+    # ── 11 Tabs ───────────────────────────────────────────────────────────────
     tabs = st.tabs(
         [
             "Overview",
@@ -696,6 +770,7 @@ def variance_page():
             "EVA score stability",
             "Borderline scenarios",
             "Intraclass correlation",
+            "Variance budget",
             "Per-metric deep dive",
             "Statistical tests",
         ]
@@ -811,6 +886,8 @@ def variance_page():
     # ── Tab 1: Variance overview ──────────────────────────────────────────────
     with tabs[1]:
         st.header("Variance overview")
+        if selected_domain:
+            st.caption(f"Plots show {_domain_label}; statistical tests below are {_pooled_label}.")
         st.write("""
         High-level view of how much variance exists in each metric, and whether it is
         statistically distinguishable from zero. Judge variance (stochasticity) and trial
@@ -922,6 +999,11 @@ treated as a separate analysis question.
     # ── Tab 2: Judge vs. trial variance ──────────────────────────────────────
     with tabs[2]:
         st.header("Judge vs. trial variance")
+        if selected_domain:
+            st.caption(
+                f"Plots show {_domain_label}. Q1a/Q1b shown below are **{_pooled_label}** "
+                "(per model, pooling its data across all 3 domains)."
+            )
         st.write("""
         **What this measures:** Side-by-side comparison of judge variance (stochasticity from
         re-running the same judge) vs. trial variance (differences across simulation trials).
@@ -984,7 +1066,9 @@ treated as a separate analysis question.
             run_data = combined[combined["run_label"] == run_label]
             xref_str = "x" if row_idx == 1 else f"x{row_idx}"
             yref_str = "y" if row_idx == 1 else f"y{row_idx}"
-            model_sig = q1a_sig[q1a_sig["model"] == run_label] if not q1a_sig.empty else pd.DataFrame()
+            # q1a's `model` is the model_id (run_label minus trailing ' — domain').
+            model_id = run_label.split(" — ")[0].strip()
+            model_sig = q1a_sig[q1a_sig["model"] == model_id] if not q1a_sig.empty else pd.DataFrame()
             for _, qrow in model_sig.iterrows():
                 metric = qrow["metric"]
                 mdata = run_data[run_data["metric"] == metric]
@@ -1032,6 +1116,7 @@ treated as a separate analysis question.
             st.info("**Key finding:** Trial variance exceeds judge variance for all metric/run combinations.")
 
         st.subheader("Statistical test: Is judge variance significantly different from trial variance?")
+        st.caption(f"**Primary view: {_pooled_label}** — each model's data is pooled across all 3 task domains.")
         if q1a.empty:
             st.info("Not enough data to run statistical tests (need ≥ 5 paired records per model × metric).")
         else:
@@ -1061,6 +1146,31 @@ treated as a separate analysis question.
                 q1b_disp["H"] = q1b_disp["H"].round(2)
                 q1b_disp["p"] = q1b_disp["p"].map(fmt_p)
                 st.dataframe(q1b_disp, width="stretch")
+
+            if selected_domain and (not q1a_within.empty or not q1b_within.empty):
+                with st.expander(f"Within-domain drill-down ({_domain_label})"):
+                    st.caption(
+                        "Same Q1a and Q1b tests, but restricted to the selected domain only. "
+                        "Use this to check whether the pooled conclusion holds inside this domain."
+                    )
+                    if not q1a_within.empty:
+                        st.markdown("**Q1a — within-domain**")
+                        q1a_w_disp = q1a_within[
+                            ["metric", "model", "n_records", "median_judge_std", "median_trial_std",
+                             "median_delta", "p_bonferroni", "significant", "direction"]
+                        ].copy()
+                        q1a_w_disp["model"] = q1a_w_disp["model"].apply(llm_name)
+                        q1a_w_disp["p_bonferroni"] = q1a_w_disp["p_bonferroni"].map(fmt_p)
+                        st.dataframe(
+                            q1a_w_disp.round({"median_judge_std": 4, "median_trial_std": 4, "median_delta": 4}),
+                            width="stretch",
+                        )
+                    if not q1b_within.empty:
+                        st.markdown("**Q1b — within-domain**")
+                        q1b_w_disp = q1b_within[["metric", "H", "p", "significant"]].copy()
+                        q1b_w_disp["H"] = q1b_w_disp["H"].round(2)
+                        q1b_w_disp["p"] = q1b_w_disp["p"].map(fmt_p)
+                        st.dataframe(q1b_w_disp, width="stretch")
 
             def _model_list(rows):
                 return ", ".join(f"{llm_name(r['model'])} (p={fmt_p(r['p_bonferroni'])})" for r in rows)
@@ -1136,7 +1246,7 @@ by model — i.e., some models have noisier judges relative to their trial varia
             st.info("Not enough data to run Q0 tests.")
         else:
             _sig_map_jt = {True: "✓ yes", False: "✗ no"}
-            for run_label in RUN_LABEL_ORDER:
+            for run_label in MODEL_LABEL_ORDER:
                 if run_label not in combined["run_label"].values:
                     continue
                 st.markdown(f"**{llm_name(run_label)}** — {run_label}")
@@ -1167,6 +1277,11 @@ by model — i.e., some models have noisier judges relative to their trial varia
     # ── Tab 3: Judge variance ─────────────────────────────────────────────────
     with tabs[3]:
         st.header("Judge variance (stochasticity)")
+        if selected_domain:
+            st.caption(
+                f"All views on this tab are **within-domain** ({_domain_label}). "
+                "Use the sidebar radio to switch domains."
+            )
         st.write("""
         **What this measures:** For each (record, trial) pair, how much does the metric score vary
         across the judge re-runs on identical conversation data?
@@ -1190,8 +1305,8 @@ by model — i.e., some models have noisier judges relative to their trial varia
                 q2_pw,
                 "Mean std dev (judge)",
                 y_max=global_var_ymax,
-                color_map=RUN_COLOR_MAP,
-                label_order=RUN_LABEL_ORDER,
+                color_map=MODEL_COLOR_MAP,
+                label_order=MODEL_LABEL_ORDER,
             ),
             width="stretch",
         )
@@ -1205,8 +1320,8 @@ by model — i.e., some models have noisier judges relative to their trial varia
             hover_data=["record_id", "trial"],
             labels={"std": "Std dev (judge)", "metric": "Metric", "run_label": "Model(s)"},
             title="Distribution (median, IQR, all points)",
-            color_discrete_map=RUN_COLOR_MAP,
-            category_orders={"run_label": RUN_LABEL_ORDER},
+            color_discrete_map=MODEL_COLOR_MAP,
+            category_orders={"run_label": MODEL_LABEL_ORDER},
         )
         fig_box.update_traces(jitter=0.4, pointpos=0)
         fig_box.update_layout(yaxis_range=[0, global_var_ymax], legend_title_text="Model(s)")
@@ -1221,8 +1336,8 @@ by model — i.e., some models have noisier judges relative to their trial varia
                 judge_var,
                 x_label="Std dev (judge)",
                 title="Distribution of per-(record,trial) judge std dev",
-                color_map=RUN_COLOR_MAP,
-                label_order=RUN_LABEL_ORDER,
+                color_map=MODEL_COLOR_MAP,
+                label_order=MODEL_LABEL_ORDER,
             ),
             width="stretch",
         )
@@ -1239,8 +1354,8 @@ by model — i.e., some models have noisier judges relative to their trial varia
                 title="Score distributions across iterations",
                 facet_row_spacing=0.15,
                 height=500,
-                color_discrete_map=RUN_COLOR_MAP,
-                category_orders={"run_label": RUN_LABEL_ORDER},
+                color_discrete_map=MODEL_COLOR_MAP,
+                category_orders={"run_label": MODEL_LABEL_ORDER},
             )
             fig_iter.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
             fig_iter.update_xaxes(**_axis_style)
@@ -1384,6 +1499,11 @@ distributions of judge std devs differ across models without assuming normality.
     # ── Tab 4: Trial variance ─────────────────────────────────────────────────
     with tabs[4]:
         st.header("Trial variance (conversation-to-conversation)")
+        if selected_domain:
+            st.caption(
+                f"All views on this tab are **within-domain** ({_domain_label}). "
+                "Use the sidebar radio to switch domains."
+            )
         st.write("""
         **What this measures:** For each scenario (record), how much does the metric score vary
         across the simulation trials (different conversations of the same scenario)?
@@ -1407,8 +1527,8 @@ distributions of judge std devs differ across models without assuming normality.
                 q3_pw,
                 "Mean std dev (trial)",
                 y_max=global_var_ymax,
-                color_map=RUN_COLOR_MAP,
-                label_order=RUN_LABEL_ORDER,
+                color_map=MODEL_COLOR_MAP,
+                label_order=MODEL_LABEL_ORDER,
             ),
             width="stretch",
         )
@@ -1422,8 +1542,8 @@ distributions of judge std devs differ across models without assuming normality.
             hover_data=["record_id"],
             labels={"std": "Std dev (trial)", "metric": "Metric", "run_label": "Model(s)"},
             title="Distribution (median, IQR, all points)",
-            color_discrete_map=RUN_COLOR_MAP,
-            category_orders={"run_label": RUN_LABEL_ORDER},
+            color_discrete_map=MODEL_COLOR_MAP,
+            category_orders={"run_label": MODEL_LABEL_ORDER},
         )
         fig_box_t.update_traces(jitter=0.4, pointpos=0)
         fig_box_t.update_layout(yaxis_range=[0, global_var_ymax], legend_title_text="Model(s)")
@@ -1438,8 +1558,8 @@ distributions of judge std devs differ across models without assuming normality.
                 trial_var,
                 x_label="Std dev (trial)",
                 title="Distribution of per-scenario trial std dev",
-                color_map=RUN_COLOR_MAP,
-                label_order=RUN_LABEL_ORDER,
+                color_map=MODEL_COLOR_MAP,
+                label_order=MODEL_LABEL_ORDER,
             ),
             width="stretch",
         )
@@ -1604,7 +1724,7 @@ less powerful for the same true effect size.
             )
 
             st.plotly_chart(
-                composite_stability_fig(stability_df, RUN_COLOR_MAP, RUN_LABEL_ORDER),
+                composite_stability_fig(stability_df, MODEL_COLOR_MAP, MODEL_LABEL_ORDER),
                 width="stretch",
             )
 
@@ -1669,8 +1789,8 @@ less powerful for the same true effect size.
                 barmode="group",
                 labels={"flip_count": "Pass/fail flips (record×trial pairs)", "metric": "Metric"},
                 title="Judge-stochasticity pass/fail flips per metric",
-                color_discrete_map=RUN_COLOR_MAP,
-                category_orders={"run_label": RUN_LABEL_ORDER},
+                color_discrete_map=MODEL_COLOR_MAP,
+                category_orders={"run_label": MODEL_LABEL_ORDER},
             )
             fig_bc.update_layout(yaxis_range=[0, _y_max_pairs], legend_title_text="Model(s)")
             fig_bc.update_xaxes(**_axis_style)
@@ -1826,6 +1946,11 @@ less powerful for the same true effect size.
     # ── Tab 7: Intraclass correlation ─────────────────────────────────────────
     with tabs[7]:
         st.header("Intraclass correlation (ICC)")
+        if selected_domain:
+            st.caption(
+                f"Per-model and pooled-centered ICCs are **within-domain** ({_domain_label}). "
+                "Two-way ICC (Option B) below also uses the selected domain."
+            )
         st.write("""
         **What this measures:** ICC = σ²_scenario / σ²_total quantifies what fraction
         of score variance is attributable to *scenario identity* — i.e., how much of
@@ -1852,17 +1977,23 @@ less powerful for the same true effect size.
         st.caption(
             "ICC_scenario = σ²_scenario / σ²_total. ICC_model = σ²_model / σ²_total. "
             "Both are fractions of total variance (scenario + model + interaction + residual). "
-            "F-tests use MS_interaction as denominator (Cornfield-Tukey rule for random effects)."
+            "F-tests use MS_interaction as denominator (Cornfield-Tukey rule for random effects). "
+            "Computed per task domain (record_ids do not overlap across domains)."
         )
-        st.plotly_chart(icc_bar_twoway_fig(icc_tw), width="stretch")
+        if not icc_tw.empty and "domain" in icc_tw.columns and selected_domain:
+            icc_tw_view = icc_tw[icc_tw["domain"] == selected_domain]
+            st.caption(f"Showing {_domain_label} (use the sidebar to change).")
+        else:
+            icc_tw_view = icc_tw
+        st.plotly_chart(icc_bar_twoway_fig(icc_tw_view), width="stretch")
 
-        if not icc_tw.empty:
+        if not icc_tw_view.empty:
             st.markdown("**Scenario × model interaction F-test**")
             st.caption(
                 "A significant interaction means models do not rank scenarios consistently "
                 "— some scenarios are disproportionately harder/easier for specific models."
             )
-            _int_disp = icc_tw[
+            _int_disp = icc_tw_view[
                 ["metric", "f_interaction", "p_interaction", "sigma2_interaction", "sigma2_total"]
             ].copy()
             _int_disp["f_interaction"] = _int_disp["f_interaction"].round(2)
@@ -1879,12 +2010,15 @@ less powerful for the same true effect size.
             "One-way ANOVA per (model, metric): ICC = σ²_scenario / (σ²_scenario + σ²_residual). "
             "How much of this model's score variance is explained by which scenario it is?"
         )
-        st.plotly_chart(icc_heatmap_fig(icc_pm, RUN_LABEL_ORDER), width="stretch")
-        st.plotly_chart(icc_bar_per_model_fig(icc_pm, RUN_COLOR_MAP, RUN_LABEL_ORDER), width="stretch")
+        # icc_pm has a `model_id` column from the new per-domain pipeline; the
+        # legacy plotters expect run_label, so rename for the call site.
+        icc_pm_view = icc_pm.rename(columns={"model_id": "run_label"}) if "model_id" in icc_pm.columns else icc_pm
+        st.plotly_chart(icc_heatmap_fig(icc_pm_view, MODEL_LABEL_ORDER), width="stretch")
+        st.plotly_chart(icc_bar_per_model_fig(icc_pm_view, MODEL_COLOR_MAP, MODEL_LABEL_ORDER), width="stretch")
 
-        if not icc_pm.empty:
+        if not icc_pm_view.empty:
             with st.expander("Full per-model ICC table"):
-                _pm_disp = icc_pm[
+                _pm_disp = icc_pm_view[
                     [
                         "run_label",
                         "metric",
@@ -1913,8 +2047,104 @@ less powerful for the same true effect size.
                 f"({_icc_min['icc']:.2f}, 95% CI [{_icc_min['ci_lower']:.2f}–{_icc_min['ci_upper']:.2f}])."
             )
 
-    # ── Tab 8: Per-metric deep dive ───────────────────────────────────────────
+    # ── Tab 8: Variance budget ────────────────────────────────────────────────
     with tabs[8]:
+        st.header("Variance budget")
+        st.write("""
+        **What this measures:** A decomposition of total score variance into the sources
+        that produced it. For a given (model, metric), how much of the score wobble comes
+        from:
+        - **Domain** — which task domain (itsm / medical_hr / airline) the scenario belongs to
+        - **Scenario** — which scenario *within* a domain was graded
+        - **Trial** — which of the 5 conversation simulations of that scenario
+        - **Judge** — leftover stochasticity in the LLM judge re-grading the same trial
+
+        Judge-graded metrics get all 4 pots; deterministic metrics (e.g., `task_completion`,
+        `tool_call_validity`, `turn_taking`) get 3 pots — there is no judge stochasticity to
+        measure since the same conversation always produces the same score. This generalises
+        the ICC tab (which compares one source — scenario — against everything lumped
+        together) into a full budget that sums to 100%.
+        """)
+
+        budget_df = _read_stat("variance_budget.csv")
+        if budget_df.empty:
+            st.warning(
+                "`variance_budget.csv` is empty or missing. Run the statistical tests step "
+                "in the sidebar to populate it."
+            )
+        else:
+            if selected_domain:
+                st.info(
+                    "The sidebar Domain selector does not apply to this tab — the variance "
+                    "budget computation pools data from all domains to estimate σ²_domain."
+                )
+            from plots_variance import variance_budget_absolute_bar, variance_budget_stacked_bar
+
+            model_ids = sorted(budget_df["model_id"].dropna().unique().tolist())
+            selected_model = st.selectbox("Model", model_ids, index=0, key="variance_budget_model")
+
+            sub = budget_df[budget_df["model_id"] == selected_model].copy()
+            non_converged = sub[~sub["converged"].fillna(False)]
+            if not non_converged.empty:
+                st.warning(
+                    "Some metrics did not produce a usable variance budget for this model:\n\n"
+                    + "\n".join(
+                        f"- **{r['metric']}**: {r.get('fit_error') or 'fit did not converge'}"
+                        for _, r in non_converged.iterrows()
+                    )
+                )
+
+            converged = sub[sub["converged"].fillna(False)]
+            if not converged.empty:
+                st.subheader("Absolute variance (σ²)")
+                st.caption(
+                    "Bar height = total variance. Use this to gauge **how much** there is to "
+                    "explain. A metric with very low total variance means scores are nearly "
+                    "constant across the whole study — the % breakdown below is informative but "
+                    "the magnitude is small, so the practical impact may be limited."
+                )
+                st.plotly_chart(
+                    variance_budget_absolute_bar(converged, selected_model), width="stretch"
+                )
+
+                st.subheader("Variance breakdown (% of total)")
+                st.caption(
+                    "Same data, normalized so each bar reaches 100%. The σ value above each "
+                    "bar is the standard deviation (sqrt of σ²_total): for a metric scored 0–1, "
+                    "**σ = 0.05 means scores typically wobble ±5 percentage points** around the "
+                    "mean. σ = 0.20 means ±20 pp, etc."
+                )
+                fig = variance_budget_stacked_bar(converged, selected_model)
+                st.plotly_chart(fig, width="stretch")
+
+                st.subheader("Detail")
+                display_cols = [
+                    "metric",
+                    "metric_type",
+                    "pct_domain",
+                    "pct_scenario",
+                    "pct_trial",
+                    "pct_judge",
+                    "sigma2_domain",
+                    "sigma2_scenario",
+                    "sigma2_trial",
+                    "sigma2_judge",
+                    "sigma2_total",
+                    "n_obs",
+                    "converged",
+                ]
+                display_cols = [c for c in display_cols if c in converged.columns]
+                pct_cols = [c for c in display_cols if c.startswith("pct_")]
+                sigma_cols = [c for c in display_cols if c.startswith("sigma2_")]
+                styled = converged[display_cols].style.format(
+                    {**{c: "{:.1%}" for c in pct_cols}, **{c: "{:.5f}" for c in sigma_cols}},
+                    na_rep="—",
+                )
+                st.dataframe(styled, width="stretch")
+                download_button(converged[display_cols], f"variance_budget_{selected_model}.csv")
+
+    # ── Tab 9: Per-metric deep dive ───────────────────────────────────────────
+    with tabs[9]:
         st.header("Per-metric deep dive")
         st.write("""
         **What this measures:** For each metric, how does judge variance relate to trial
@@ -1925,7 +2155,7 @@ less powerful for the same true effect size.
         if metrics:
             selected_metric = st.selectbox("Metric", metrics, index=0)
             st.plotly_chart(
-                deep_dive_scatter_fig(judge_var, trial_var, selected_metric, RUN_COLOR_MAP, RUN_LABEL_ORDER),
+                deep_dive_scatter_fig(judge_var, trial_var, selected_metric, MODEL_COLOR_MAP, MODEL_LABEL_ORDER),
                 width="stretch",
             )
 
@@ -1948,8 +2178,8 @@ less powerful for the same true effect size.
                     f"Variance is primarily driven by **{dominant}**."
                 )
 
-    # ── Tab 9: Statistical tests ──────────────────────────────────────────────
-    with tabs[9]:
+    # ── Tab 10: Statistical tests ─────────────────────────────────────────────
+    with tabs[10]:
         st.header("Statistical tests")
         st.write("Full results for all statistical tests.")
 

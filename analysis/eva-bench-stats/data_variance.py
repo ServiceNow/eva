@@ -192,9 +192,10 @@ def main(config_path: Path = CONFIG_PATH) -> None:
     all_agg: list[pd.DataFrame] = []
     for run_label, run_cfg in runs.items():
         run_id = run_cfg["run_id"]
-        print(f"  Loading {run_label} ({run_id}) ...")
-        all_scores.append(load_scores_iter(run_id, run_label, archive_root))
-        all_agg.append(load_aggregate_scores_iter(run_id, run_label, archive_root))
+        domain = run_cfg.get("domain")
+        print(f"  Loading {run_label} ({run_id}, domain={domain}) ...")
+        all_scores.append(load_scores_iter(run_id, run_label, archive_root, domain=domain))
+        all_agg.append(load_aggregate_scores_iter(run_id, run_label, archive_root, domain=domain))
 
     scores_df = pd.concat(all_scores, ignore_index=True)
     agg_df = pd.concat(all_agg, ignore_index=True)
@@ -218,6 +219,16 @@ def main(config_path: Path = CONFIG_PATH) -> None:
     stability = compute_composite_stability(agg_df)
     print("Computing borderline scenarios ...")
     borderlines = threshold_crossings(scores_df, pass_thresholds)
+
+    # Attach domain to every output by joining on run_label.
+    label_to_domain = {label: cfg.get("domain") for label, cfg in runs.items()}
+    for out_df in (judge_var, trial_var, judge_summary, trial_summary, stability, borderlines):
+        if "run_label" in out_df.columns:
+            out_df.insert(
+                out_df.columns.get_loc("run_label") + 1,
+                "domain",
+                out_df["run_label"].map(label_to_domain),
+            )
 
     scores_df.to_csv(output_dir / "scores.csv", index=False)
     judge_var.to_csv(output_dir / "judge_var.csv", index=False)

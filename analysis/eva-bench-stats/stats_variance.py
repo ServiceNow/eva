@@ -197,47 +197,75 @@ def _twoway_icc(Y: np.ndarray, alpha: float = 0.05) -> dict:
 def compute_icc(
     df: pd.DataFrame,
     metrics: list[str],
+    domain: str | None = None,
 ) -> dict[str, pd.DataFrame]:
     """Intraclass correlation at the scenario level for each metric.
 
     ICC = σ²_scenario / σ²_total quantifies what fraction of score variance
     is attributable to scenario identity (i.e. which scenario is being evaluated).
 
+    `per_model` and `pooled_centered` are computed within the selected domain
+    when `domain` is given, or across all data when `domain` is None.
+    `pooled_twoway` is always computed per domain because record_ids don't
+    overlap across domains.
+
     Args:
         df: Flat scores DataFrame from load_data.load_scores().
         metrics: Metric names to include.
+        domain: Optional domain to restrict to.
 
     Returns:
         Dict with keys:
-          "per_model"       – one row per (run_id, metric)
+          "per_model"       – one row per (model_id, metric)
           "pooled_centered" – one row per metric (Option A: model-mean-centered)
-          "pooled_twoway"   – one row per metric (Option B: two-way random effects)
+          "pooled_twoway"   – one row per (domain, metric) (Option B)
     """
     # ── Average over iterations to remove judge noise ─────────────────────────
+    has_domain_col = "domain" in df.columns
+    df_filtered = df[df["metric"].isin(metrics)]
+    if domain is not None and has_domain_col:
+        df_filtered = df_filtered[df_filtered["domain"] == domain]
+    group_cols = ["run_id", "run_label"] + (["domain"] if has_domain_col else []) + [
+        "metric",
+        "record_id",
+        "trial",
+    ]
     mean_by_trial = (
-        df[df["metric"].isin(metrics)]
-        .groupby(["run_id", "run_label", "metric", "record_id", "trial"])["normalized_score"]
+        df_filtered.groupby(group_cols, dropna=False)["normalized_score"]
         .mean()
         .reset_index()
         .rename(columns={"normalized_score": "mean_score"})
     )
+    if not mean_by_trial.empty:
+        mean_by_trial["model_id"] = mean_by_trial["run_label"].map(_model_id_from_label)
+    else:
+        mean_by_trial["model_id"] = pd.Series(dtype=object)
 
     # ── per_model ─────────────────────────────────────────────────────────────
+    # Group by model_id (actual model identity). When a model has multiple
+    # (model × domain) cells (i.e. domain is None and we're pooling), all of
+    # them feed the one ICC fit for that model.
     pm_rows: list[dict] = []
-    for (run_id, run_label, metric), grp in mean_by_trial.groupby(["run_id", "run_label", "metric"]):
-        # Build list of arrays, one per scenario, containing trial scores
-        scenario_groups = [sub["mean_score"].values for _, sub in grp.groupby("record_id") if len(sub) >= 2]
+    for (model_id, metric), grp in mean_by_trial.groupby(["model_id", "metric"]):
+        # When pooling across domains, scenarios from different domains share
+        # different record_id namespaces — give them globally-unique ids so
+        # the per-scenario groupby doesn't accidentally merge cross-domain.
+        if has_domain_col:
+            grp = grp.assign(_scen=grp["domain"].astype(str) + "::" + grp["record_id"].astype(str))
+            scen_col = "_scen"
+        else:
+            scen_col = "record_id"
+
+        scenario_groups = [sub["mean_score"].values for _, sub in grp.groupby(scen_col) if len(sub) >= 2]
         if len(scenario_groups) < 2:
             continue
-        # All groups must have same length for balanced ANOVA; use min length
         min_k = min(len(g) for g in scenario_groups)
         scenario_groups = [g[:min_k] for g in scenario_groups]
 
         r = _oneway_icc(scenario_groups)
         pm_rows.append(
             {
-                "run_id": run_id,
-                "run_label": run_label,
+                "model_id": model_id,
                 "metric": metric,
                 "icc": r["icc"],
                 "ci_lower": r["ci_lower"],
@@ -256,19 +284,25 @@ def compute_icc(
     per_model = pd.DataFrame(pm_rows)
 
     # ── pooled_centered (Option A) ────────────────────────────────────────────
+    # Center each model_id's data (across whatever cells survived the domain
+    # filter) by its own mean, then run ICC over the centered pool.
     pc_rows: list[dict] = []
     for metric, grp in mean_by_trial.groupby("metric"):
-        # Center each model's scores by its own mean
-        model_means = grp.groupby("run_id")["mean_score"].transform("mean")
+        if has_domain_col:
+            grp = grp.assign(_scen=grp["domain"].astype(str) + "::" + grp["record_id"].astype(str))
+            scen_col = "_scen"
+        else:
+            scen_col = "record_id"
+        model_means = grp.groupby("model_id")["mean_score"].transform("mean")
         centered = grp.assign(mean_score=grp["mean_score"] - model_means)
 
-        scenario_groups = [sub["mean_score"].values for _, sub in centered.groupby("record_id") if len(sub) >= 2]
+        scenario_groups = [sub["mean_score"].values for _, sub in centered.groupby(scen_col) if len(sub) >= 2]
         if len(scenario_groups) < 2:
             continue
         min_k = min(len(g) for g in scenario_groups)
         scenario_groups = [g[:min_k] for g in scenario_groups]
 
-        n_models = grp["run_id"].nunique()
+        n_models = grp["model_id"].nunique()
         r = _oneway_icc(scenario_groups)
         pc_rows.append(
             {
@@ -287,8 +321,17 @@ def compute_icc(
     pooled_centered = pd.DataFrame(pc_rows)
 
     # ── pooled_twoway (Option B: two-way random effects with interaction) ──────
+    # Stratified by domain when present: each domain has its own (scenario × model)
+    # balanced array, since record_ids are domain-specific.
     tw_rows: list[dict] = []
-    for metric, grp in mean_by_trial.groupby("metric"):
+    has_domain = "domain" in mean_by_trial.columns and mean_by_trial["domain"].notna().any()
+    group_keys = ["domain", "metric"] if has_domain else ["metric"]
+    for keys, grp in mean_by_trial.groupby(group_keys):
+        if has_domain:
+            domain, metric = keys
+        else:
+            domain, metric = None, keys
+
         # Build balanced 3-D array Y[scenario, model, trial]
         scenarios = sorted(grp["record_id"].unique())
         models = sorted(grp["run_id"].unique())
@@ -312,12 +355,14 @@ def compute_icc(
             continue  # skip if any cell is missing
 
         r = _twoway_icc(Y)
-        tw_rows.append(
-            {
-                "metric": metric,
-                **{k: v for k, v in r.items() if k not in ("ss_scenario", "ss_model", "ss_interaction", "ss_residual")},
-            }
-        )
+        row_out = {
+            "domain": domain,
+            "metric": metric,
+            **{k: v for k, v in r.items() if k not in ("ss_scenario", "ss_model", "ss_interaction", "ss_residual")},
+        }
+        if not has_domain:
+            row_out.pop("domain")
+        tw_rows.append(row_out)
 
     pooled_twoway = pd.DataFrame(tw_rows)
 
@@ -328,12 +373,170 @@ def compute_icc(
     }
 
 
+def _model_id_from_label(run_label: str) -> str:
+    """Strip the trailing ' — <domain>' from a per-domain run_label."""
+    return run_label.split(" — ")[0].strip()
+
+
+def _filter_and_relabel(df: pd.DataFrame, domain: str | None) -> pd.DataFrame:
+    """Filter rows to a single domain (or pass through if None) and add `model_id`.
+
+    `model_id` is the actual model identity — i.e. run_label minus the trailing
+    domain suffix. When `domain` is None, rows from all domains are kept and
+    per-model tests pool across domains. When `domain` is set, only that
+    domain's rows survive.
+    """
+    out = df.copy()
+    if domain is not None and "domain" in out.columns:
+        out = out[out["domain"] == domain]
+    if not out.empty:
+        out["model_id"] = out["run_label"].map(_model_id_from_label)
+    else:
+        out["model_id"] = pd.Series(dtype=object)
+    return out
+
+
+def _filter_and_relabel(df: pd.DataFrame, domain: str | None) -> pd.DataFrame:
+    """Filter rows to a single domain (or pass through if None) and add `model_id`.
+
+    `model_id` is the actual model identity — i.e. run_label minus the trailing
+    domain suffix. When `domain` is None, rows from all domains are kept and
+    per-model tests pool across domains. When `domain` is set, only that
+    domain's rows survive.
+    """
+    if df.empty:
+        out = df.copy()
+        out["model_id"] = pd.Series(dtype=object)
+        return out
+    out = df.copy()
+    if domain is not None and "domain" in out.columns:
+        out = out[out["domain"] == domain]
+    out["model_id"] = out["run_label"].map(_model_id_from_label)
+    return out
+
+
+def compute_variance_budget(df: pd.DataFrame, metrics: list[str]) -> pd.DataFrame:
+    """Per (model × metric) variance decomposition via classical sum-of-squares.
+
+    Partitions the total observed variance into nested levels:
+
+        SS_total = SS_domain + SS_scenario + SS_trial + SS_judge   (judge-graded)
+        SS_total = SS_domain + SS_scenario + SS_trial              (deterministic)
+
+    where each SS_X measures the spread of group means at level X around their
+    parent group's mean (Pythagorean identity for orthogonal nested factors).
+    σ²_X = SS_X / N. Descriptive only — no inference, no confidence intervals.
+
+    Why not REML: with only 3 domain levels, REML's variance estimator is
+    unreliable and can report nonsensical values (see
+    lindsay_files/2026-05-02-variance-budget-reml-vs-ss.md).
+
+    Deterministic metrics — where scores are constant across iterations within
+    each (record, trial) — get a 3-pot decomposition with sigma2_judge / pct_judge
+    set to NaN. Iterations are deduped to one before computing so duplicates
+    don't inflate N.
+    """
+    if "domain" not in df.columns:
+        raise ValueError("compute_variance_budget requires a 'domain' column on df")
+
+    work = df[df["metric"].isin(metrics)].copy()
+    work["model_id"] = work["run_label"].map(_model_id_from_label)
+    work["scenario_uid"] = work["domain"].astype(str) + "::" + work["record_id"].astype(str)
+    work["trial_uid"] = work["scenario_uid"] + "::t" + work["trial"].astype(str)
+
+    rows: list[dict] = []
+    for (model_id, metric), grp in work.groupby(["model_id", "metric"]):
+        per_trial_unique = grp.groupby(["record_id", "trial"])["normalized_score"].nunique()
+        is_deterministic = bool((per_trial_unique <= 1).all()) if not per_trial_unique.empty else False
+        metric_type = "deterministic" if is_deterministic else "judge_graded"
+
+        if is_deterministic:
+            min_iter = grp["iteration"].min()
+            grp = grp[grp["iteration"] == min_iter]
+
+        n_obs = len(grp)
+        n_domains = grp["domain"].nunique()
+        n_scenarios = grp["scenario_uid"].nunique()
+        n_trials = grp["trial_uid"].nunique()
+
+        base_row = {
+            "model_id": model_id,
+            "metric": metric,
+            "metric_type": metric_type,
+            "n_obs": n_obs,
+            "n_domains": n_domains,
+            "n_scenarios": n_scenarios,
+            "n_trials": n_trials,
+        }
+
+        if n_domains < 2 or n_scenarios < 2 or n_trials < 2 or n_obs < 10:
+            rows.append({**base_row, "converged": False, "fit_error": "insufficient data"})
+            continue
+
+        y = grp["normalized_score"].astype(float).to_numpy()
+        grand_mean = float(y.mean())
+
+        # Per-row level means. Using transform() so each row has its parent
+        # group's mean — this lets SS terms be computed as elementwise diffs.
+        domain_mean = grp.groupby("domain")["normalized_score"].transform("mean").to_numpy()
+        scenario_mean = grp.groupby(["domain", "scenario_uid"])["normalized_score"].transform("mean").to_numpy()
+        trial_mean = grp.groupby(["domain", "scenario_uid", "trial_uid"])["normalized_score"].transform("mean").to_numpy()
+
+        ss_domain = float(((domain_mean - grand_mean) ** 2).sum())
+        ss_scenario = float(((scenario_mean - domain_mean) ** 2).sum())
+        if is_deterministic:
+            # No iteration replication; trial is the residual.
+            ss_trial = float(((y - scenario_mean) ** 2).sum())
+            ss_judge = None
+            ss_total = ss_domain + ss_scenario + ss_trial
+        else:
+            ss_trial = float(((trial_mean - scenario_mean) ** 2).sum())
+            ss_judge = float(((y - trial_mean) ** 2).sum())
+            ss_total = ss_domain + ss_scenario + ss_trial + ss_judge
+
+        if ss_total <= 0:
+            rows.append({**base_row, "converged": False, "fit_error": "zero total variance"})
+            continue
+
+        sigma2_domain = ss_domain / n_obs
+        sigma2_scenario = ss_scenario / n_obs
+        sigma2_trial = ss_trial / n_obs
+        sigma2_total = ss_total / n_obs
+        sigma2_judge = (ss_judge / n_obs) if ss_judge is not None else float("nan")
+
+        rows.append(
+            {
+                **base_row,
+                "sigma2_domain": sigma2_domain,
+                "sigma2_scenario": sigma2_scenario,
+                "sigma2_trial": sigma2_trial,
+                "sigma2_judge": sigma2_judge,
+                "sigma2_total": sigma2_total,
+                "pct_domain": ss_domain / ss_total,
+                "pct_scenario": ss_scenario / ss_total,
+                "pct_trial": ss_trial / ss_total,
+                "pct_judge": (ss_judge / ss_total) if ss_judge is not None else float("nan"),
+                "converged": True,
+                "fit_error": "",
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
 def compute_statistical_tests(
     judge_var: pd.DataFrame,
     trial_var: pd.DataFrame,
     metrics: list[str],
+    domain: str | None = None,
 ) -> dict[str, pd.DataFrame]:
     """Run statistical tests comparing judge and trial variance.
+
+    When `domain` is None, rows from all domains are pooled and per-model tests
+    treat each `model_id` (model name minus trailing domain suffix) as the unit
+    of analysis. When `domain` is set, only that domain's rows are used. In
+    both cases, comparisons across "models" use the actual model identity, not
+    the (model × domain) compound run_label.
 
     Q1a: Is judge variance different from trial variance (per model × metric)?
         Aggregate judge stds to record level (mean over trials) to match
@@ -363,20 +566,23 @@ def compute_statistical_tests(
     """
     alpha = 0.05
 
+    judge_var = _filter_and_relabel(judge_var, domain)
+    trial_var = _filter_and_relabel(trial_var, domain)
+
     # ── Q2: Kruskal-Wallis + pairwise Mann-Whitney U across models ────────────
     q2_kw_rows: list[dict] = []
     q2_pw_rows: list[dict] = []
 
     for metric in metrics:
         sub = judge_var[judge_var["metric"] == metric]
-        run_ids = sub["run_id"].unique()
+        model_ids = sub["model_id"].unique()
 
         groups: dict[str, np.ndarray] = {}
         labels: dict[str, str] = {}
-        for r in run_ids:
-            mask = sub["run_id"] == r
+        for r in model_ids:
+            mask = sub["model_id"] == r
             groups[r] = sub.loc[mask, "std"].dropna().values  # drop NaN (e.g. skipped metrics)
-            labels[r] = sub.loc[mask, "run_label"].iloc[0]
+            labels[r] = r
 
         valid = {r: g for r, g in groups.items() if len(g) >= 2}
         if len(valid) < 2:
@@ -424,10 +630,15 @@ def compute_statistical_tests(
             )
 
     # ── Q1a: Paired Wilcoxon (per model × metric) ─────────────────────────────
-    # Aggregate judge std devs to record level (mean over trials)
+    # Aggregate judge std devs to record level (mean over trials).
+    # When pooling across domains, we key the merge on (domain, record_id) so we
+    # don't accidentally cross-domain-merge records that share the same id.
+    j_by_record_keys = ["model_id", "metric", "record_id"]
+    if "domain" in judge_var.columns:
+        j_by_record_keys.append("domain")
     judge_by_record = (
         judge_var[judge_var["metric"].isin(metrics)]
-        .groupby(["run_id", "run_label", "metric", "record_id"])["std"]
+        .groupby(j_by_record_keys, dropna=False)["std"]
         .mean()
         .reset_index()
         .rename(columns={"std": "mean_judge_std"})
@@ -437,21 +648,20 @@ def compute_statistical_tests(
 
     for metric in metrics:
         sub_j = judge_by_record[judge_by_record["metric"] == metric]
-        sub_t = trial_var[trial_var["metric"] == metric][["run_id", "run_label", "record_id", "std"]].rename(
-            columns={"std": "trial_std"}
-        )
-        run_ids = sub_j["run_id"].unique()
-        bonf_factor = max(len(run_ids), 1)
+        trial_cols = ["model_id", "record_id", "std"] + (["domain"] if "domain" in trial_var.columns else [])
+        sub_t = trial_var[trial_var["metric"] == metric][trial_cols].rename(columns={"std": "trial_std"})
+        model_ids = sub_j["model_id"].unique()
+        bonf_factor = max(len(model_ids), 1)
+        merge_keys = ["record_id"] + (["domain"] if "domain" in sub_j.columns and "domain" in sub_t.columns else [])
 
-        for run_id in run_ids:
-            j_sub = sub_j[sub_j["run_id"] == run_id]
-            t_sub = sub_t[sub_t["run_id"] == run_id]
-            run_label = j_sub["run_label"].iloc[0]
+        for model_id in model_ids:
+            j_sub = sub_j[sub_j["model_id"] == model_id]
+            t_sub = sub_t[sub_t["model_id"] == model_id]
 
             merged = pd.merge(
-                j_sub[["record_id", "mean_judge_std"]],
-                t_sub[["record_id", "trial_std"]],
-                on="record_id",
+                j_sub[merge_keys + ["mean_judge_std"]],
+                t_sub[merge_keys + ["trial_std"]],
+                on=merge_keys,
             ).dropna()
 
             if len(merged) < 5:
@@ -473,7 +683,7 @@ def compute_statistical_tests(
                 q1a_rows.append(
                     {
                         "metric": metric,
-                        "model": run_label,
+                        "model": model_id,
                         "n_records": int(len(merged)),
                         "median_judge_std": float(merged["mean_judge_std"].median()),
                         "median_trial_std": float(merged["trial_std"].median()),
@@ -489,7 +699,7 @@ def compute_statistical_tests(
                 q1a_rows.append(
                     {
                         "metric": metric,
-                        "model": run_label,
+                        "model": model_id,
                         "n_records": int(len(merged)),
                         "median_judge_std": float(merged["mean_judge_std"].median()),
                         "median_trial_std": float(merged["trial_std"].median()),
@@ -503,20 +713,24 @@ def compute_statistical_tests(
                 )
 
     # ── Q1b: K-W on per-record deltas across models ───────────────────────────
+    q1b_merge_keys = ["model_id", "metric", "record_id"] + (
+        ["domain"] if "domain" in judge_var.columns and "domain" in trial_var.columns else []
+    )
+    trial_cols = ["model_id", "metric", "record_id", "std"] + (
+        ["domain"] if "domain" in trial_var.columns else []
+    )
     merged_all = pd.merge(
         judge_by_record[judge_by_record["metric"].isin(metrics)],
-        trial_var[trial_var["metric"].isin(metrics)][["run_id", "metric", "record_id", "std"]].rename(
-            columns={"std": "trial_std"}
-        ),
-        on=["run_id", "metric", "record_id"],
+        trial_var[trial_var["metric"].isin(metrics)][trial_cols].rename(columns={"std": "trial_std"}),
+        on=q1b_merge_keys,
     ).dropna(subset=["mean_judge_std", "trial_std"])
     merged_all["delta"] = merged_all["mean_judge_std"] - merged_all["trial_std"]
 
     q1b_rows: list[dict] = []
     for metric in metrics:
         sub = merged_all[merged_all["metric"] == metric]
-        run_ids = sub["run_id"].unique()
-        groups_delta = [sub[sub["run_id"] == r]["delta"].values for r in run_ids]
+        model_ids = sub["model_id"].unique()
+        groups_delta = [sub[sub["model_id"] == m]["delta"].values for m in model_ids]
         groups_delta = [g for g in groups_delta if len(g) >= 2]
         if len(groups_delta) < 2:
             continue
@@ -541,14 +755,14 @@ def compute_statistical_tests(
 
     for metric in metrics:
         sub = trial_var[trial_var["metric"] == metric]
-        run_ids_t = sub["run_id"].unique()
+        model_ids_t = sub["model_id"].unique()
 
         t_groups: dict[str, np.ndarray] = {}
         t_labels: dict[str, str] = {}
-        for r in run_ids_t:
-            mask = sub["run_id"] == r
+        for r in model_ids_t:
+            mask = sub["model_id"] == r
             t_groups[r] = sub.loc[mask, "std"].dropna().values
-            t_labels[r] = sub.loc[mask, "run_label"].iloc[0]
+            t_labels[r] = r
 
         t_valid = {r: g for r, g in t_groups.items() if len(g) >= 2}
         if len(t_valid) < 2:
@@ -773,6 +987,7 @@ def compute_q0_tests(
     judge_var: pd.DataFrame,
     trial_var: pd.DataFrame,
     metrics: list[str],
+    domain: str | None = None,
 ) -> dict[str, pd.DataFrame]:
     """Q0: Is variance significantly greater than zero?
 
@@ -830,16 +1045,15 @@ def compute_q0_tests(
                 }
             )
 
-            # Per model
-            for run_id in sub["run_id"].unique():
-                run_sub = sub[sub["run_id"] == run_id]
-                run_label = run_sub["run_label"].iloc[0]
-                vals = run_sub[std_col].values
+            # Per model — pool across run_ids that share the same model_id
+            for model_id in sub["model_id"].unique():
+                model_sub = sub[sub["model_id"] == model_id]
+                vals = model_sub[std_col].values
                 W_m, p_m = _wilcoxon_vs_zero(vals)
                 per_model_rows.append(
                     {
                         "metric": metric,
-                        "model": run_label,
+                        "model": model_id,
                         "n": int(len(vals)),
                         "median_std": float(np.median(vals)),
                         "mean_std": float(np.mean(vals)),
@@ -851,8 +1065,10 @@ def compute_q0_tests(
 
         return pooled_rows, per_model_rows
 
-    j_pooled, j_per_model = _run_q0(judge_var[judge_var["metric"].isin(metrics)])
-    t_pooled, t_per_model = _run_q0(trial_var[trial_var["metric"].isin(metrics)])
+    j = _filter_and_relabel(judge_var[judge_var["metric"].isin(metrics)], domain)
+    t = _filter_and_relabel(trial_var[trial_var["metric"].isin(metrics)], domain)
+    j_pooled, j_per_model = _run_q0(j)
+    t_pooled, t_per_model = _run_q0(t)
 
     return {
         "q0_judge_pooled": pd.DataFrame(j_pooled),
@@ -886,26 +1102,65 @@ def main(config_path: Path = CONFIG_PATH) -> None:
     trial_var = pd.read_csv(data_dir / "trial_var.csv")
     print(f"  {len(scores_df):,} score rows loaded")
 
-    print("Computing ICC ...")
-    icc_results = compute_icc(scores_df, metrics)
-    icc_results["per_model"].to_csv(stats_dir / "icc_per_model.csv", index=False)
-    icc_results["pooled_centered"].to_csv(stats_dir / "icc_pooled_centered.csv", index=False)
-    icc_results["pooled_twoway"].to_csv(stats_dir / "icc_pooled_twoway.csv", index=False)
+    domains_present: list[str] = []
+    if "domain" in scores_df.columns:
+        domains_present = sorted(scores_df["domain"].dropna().unique().tolist())
 
-    print("Computing statistical tests (Q0–Q3) ...")
-    stat_results = compute_statistical_tests(judge_var, trial_var, metrics)
-    q0_results = compute_q0_tests(judge_var, trial_var, metrics)
+    print("Computing variance budget (4-level decomposition) ...")
+    variance_budget = compute_variance_budget(scores_df, metrics)
+    variance_budget.to_csv(stats_dir / "variance_budget.csv", index=False)
 
-    q0_results["q0_judge_pooled"].to_csv(stats_dir / "q0_judge_pooled.csv", index=False)
-    q0_results["q0_judge_per_model"].to_csv(stats_dir / "q0_judge_per_model.csv", index=False)
-    q0_results["q0_trial_pooled"].to_csv(stats_dir / "q0_trial_pooled.csv", index=False)
-    q0_results["q0_trial_per_model"].to_csv(stats_dir / "q0_trial_per_model.csv", index=False)
-    stat_results["q1a"].to_csv(stats_dir / "q1a.csv", index=False)
-    stat_results["q1b"].to_csv(stats_dir / "q1b.csv", index=False)
-    stat_results["q2_kw"].to_csv(stats_dir / "q2_kw.csv", index=False)
-    stat_results["q2_pairwise"].to_csv(stats_dir / "q2_pairwise.csv", index=False)
-    stat_results["q3_kw"].to_csv(stats_dir / "q3_kw.csv", index=False)
-    stat_results["q3_pairwise"].to_csv(stats_dir / "q3_pairwise.csv", index=False)
+    # ── ICC: per-domain only for per_model and pooled_centered (residual
+    # inflation when pooling across domains makes the cross-domain view
+    # misleading); pooled_twoway is already domain-stratified internally.
+    print("Computing ICC (per-domain + cross-domain twoway) ...")
+    if domains_present:
+        for d in domains_present:
+            icc_d = compute_icc(scores_df, metrics, domain=d)
+            icc_d["per_model"].to_csv(stats_dir / f"icc_per_model_{d}.csv", index=False)
+            icc_d["pooled_centered"].to_csv(stats_dir / f"icc_pooled_centered_{d}.csv", index=False)
+        # pooled_twoway uses ALL domain data (it stratifies internally)
+        icc_all = compute_icc(scores_df, metrics, domain=None)
+        icc_all["pooled_twoway"].to_csv(stats_dir / "icc_pooled_twoway.csv", index=False)
+    else:
+        icc_all = compute_icc(scores_df, metrics, domain=None)
+        icc_all["per_model"].to_csv(stats_dir / "icc_per_model.csv", index=False)
+        icc_all["pooled_centered"].to_csv(stats_dir / "icc_pooled_centered.csv", index=False)
+        icc_all["pooled_twoway"].to_csv(stats_dir / "icc_pooled_twoway.csv", index=False)
+
+    # ── Q0: pooled view (single answer per metric, all domains pooled). The
+    # per_model output groups by actual model_id and pools across domains.
+    print("Computing Q0 (pooled across domains) ...")
+    q0_pooled = compute_q0_tests(judge_var, trial_var, metrics, domain=None)
+    q0_pooled["q0_judge_pooled"].to_csv(stats_dir / "q0_judge_pooled.csv", index=False)
+    q0_pooled["q0_judge_per_model"].to_csv(stats_dir / "q0_judge_per_model.csv", index=False)
+    q0_pooled["q0_trial_pooled"].to_csv(stats_dir / "q0_trial_pooled.csv", index=False)
+    q0_pooled["q0_trial_per_model"].to_csv(stats_dir / "q0_trial_per_model.csv", index=False)
+
+    # ── Q1a, Q1b: pooled (primary) + per-domain (drill-down).
+    # Q2, Q3: per-domain only (within-domain comparisons; the pooled-12-cell
+    # version was confounded and is no longer written).
+    print("Computing Q1 pooled + Q1/Q2/Q3 per-domain ...")
+    pooled_tests = compute_statistical_tests(judge_var, trial_var, metrics, domain=None)
+    pooled_tests["q1a"].to_csv(stats_dir / "q1a.csv", index=False)
+    pooled_tests["q1b"].to_csv(stats_dir / "q1b.csv", index=False)
+    # Note: q2_kw / q3_kw / q2_pairwise / q3_pairwise from pooled_tests are
+    # intentionally NOT written — they conflate model and domain.
+
+    if domains_present:
+        for d in domains_present:
+            d_tests = compute_statistical_tests(judge_var, trial_var, metrics, domain=d)
+            d_tests["q1a"].to_csv(stats_dir / f"q1a_{d}.csv", index=False)
+            d_tests["q1b"].to_csv(stats_dir / f"q1b_{d}.csv", index=False)
+            d_tests["q2_kw"].to_csv(stats_dir / f"q2_kw_{d}.csv", index=False)
+            d_tests["q2_pairwise"].to_csv(stats_dir / f"q2_pairwise_{d}.csv", index=False)
+            d_tests["q3_kw"].to_csv(stats_dir / f"q3_kw_{d}.csv", index=False)
+            d_tests["q3_pairwise"].to_csv(stats_dir / f"q3_pairwise_{d}.csv", index=False)
+    else:
+        pooled_tests["q2_kw"].to_csv(stats_dir / "q2_kw.csv", index=False)
+        pooled_tests["q2_pairwise"].to_csv(stats_dir / "q2_pairwise.csv", index=False)
+        pooled_tests["q3_kw"].to_csv(stats_dir / "q3_kw.csv", index=False)
+        pooled_tests["q3_pairwise"].to_csv(stats_dir / "q3_pairwise.csv", index=False)
 
     print("Computing within-type tests ...")
     within_type = compute_within_type_tests(judge_var, trial_var, run_type_map, metrics)
