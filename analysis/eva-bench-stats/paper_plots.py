@@ -65,3 +65,20 @@ def build_scatter_points(
             y=y, y_lo=y_lo, y_hi=y_hi,
         ))
     return out
+
+
+def pareto_frontier_indices(points: list[tuple[float, float]]) -> list[int]:
+    """Return indices of points on the upper-right (higher-is-better) Pareto frontier."""
+    n = len(points)
+    keep: list[int] = []
+    for i, (xi, yi) in enumerate(points):
+        dominated = False
+        for j, (xj, yj) in enumerate(points):
+            if i == j:
+                continue
+            if (xj >= xi and yj >= yi) and (xj > xi or yj > yi):
+                dominated = True
+                break
+        if not dominated:
+            keep.append(i)
+    return keep

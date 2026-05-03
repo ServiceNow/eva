@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "analysis" / "eva-bench-stats"))
-from paper_plots import asymmetric_err, build_scatter_points
+from paper_plots import asymmetric_err, build_scatter_points, pareto_frontier_indices
 from paper_config import ModelEntry, PaperConfig
 
 
@@ -60,3 +60,14 @@ def test_build_scatter_points_drops_missing() -> None:
     df = _pooled_full().drop(_pooled_full().index[0])  # drop Sys A x-row
     pts = build_scatter_points(df, _cfg_two_models(), "EVA-A_pass", "EVA-X_pass")
     assert {p.label for p in pts} == {"Sys B"}
+
+
+def test_pareto_frontier_indices_simple() -> None:
+    # Points: (x, y). Higher-better on both. Frontier = {(0.6, 0.5), (0.4, 0.7), (0.5, 0.55)}.
+    pts = [(0.6, 0.5), (0.4, 0.7), (0.3, 0.4), (0.5, 0.55)]
+    idx = pareto_frontier_indices(pts)
+    assert sorted(idx) == [0, 1, 3]
+
+
+def test_pareto_frontier_indices_empty() -> None:
+    assert pareto_frontier_indices([]) == []
