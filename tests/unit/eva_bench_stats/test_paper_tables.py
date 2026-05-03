@@ -10,12 +10,12 @@ from paper_tables import format_cell, shade_index, lookup_pooled, write_accuracy
 
 
 def test_format_cell_symmetric() -> None:
-    assert format_cell(0.428, 0.393, 0.463) == "0.428 $\\pm$0.035"
+    assert format_cell(0.428, 0.393, 0.463) == "0.428 {\\scriptsize $\\pm$0.035}"
 
 
 def test_format_cell_asymmetric_uses_max_halfwidth() -> None:
     # point - lo = 0.080, hi - point = 0.020 → max = 0.080
-    assert format_cell(0.500, 0.420, 0.520) == "0.500 $\\pm$0.080"
+    assert format_cell(0.500, 0.420, 0.520) == "0.500 {\\scriptsize $\\pm$0.080}"
 
 
 def test_format_cell_missing() -> None:
@@ -112,7 +112,7 @@ def test_write_accuracy_table_emits_expected_structure(tmp_path: Path) -> None:
     assert "EVA-A" in text
     assert "Task Completion" in text
     # pass_at_1 present, pass_at_k missing → "--" appears in pass_at_k cells
-    assert "0.420 $\\pm$0.040" in text
+    assert "0.420 {\\scriptsize $\\pm$0.040}" in text
     assert "--" in text
     # arch grouping
     assert "Cascade" in text
@@ -125,4 +125,4 @@ def test_write_experience_table_uses_eva_x(tmp_path: Path) -> None:
     text = out.read_text()
     assert "EVA-X" in text
     assert "Turn-Taking" in text
-    assert "0.470 $\\pm$0.040" in text  # 0.42 + 0.05
+    assert "0.470 {\\scriptsize $\\pm$0.040}" in text  # 0.42 + 0.05

@@ -29,7 +29,7 @@ def format_cell(point: Optional[float], ci_lower: Optional[float], ci_upper: Opt
     if _is_missing(point) or _is_missing(ci_lower) or _is_missing(ci_upper):
         return MISSING_CELL
     half = max(point - ci_lower, ci_upper - point)
-    return f"{point:.3f} $\\pm${half:.3f}"
+    return f"{point:.3f} {{\\scriptsize $\\pm${half:.3f}}}"
 
 
 def shade_index(value: float, lo: float, hi: float, n_steps: int) -> int:
@@ -66,6 +66,29 @@ def lookup_pooled(
 
 
 ARCH_DISPLAY = {"cascade": "Cascade", "hybrid": "Hybrid", "s2s": "S2S"}
+
+# Sub-header macros for the aggregate sub-columns. Defined in the paper preamble.
+AGG_KEY_MACROS = {
+    "pass_at_1":    "\\passatone",
+    "pass_at_k":    "\\passatk",
+    "pass_power_k": "\\passpowerk",
+}
+
+# Equal-width centered column for every metric cell, with consistent inter-group
+# spacing and a faint vrule between groups (matches the original aggregate tables).
+_METRIC_COL = ">{\\centering\\arraybackslash}p{1.6cm}"
+_SEP_OUTER = "@{\\hskip 8pt}"
+_SEP_BETWEEN = "@{\\hskip 8pt}!{\\color{black!25}\\vrule}@{\\hskip 8pt}"
+
+
+def _build_col_spec(n_agg: int, n_sub: int) -> str:
+    """Identity (ll), then one aggregate group of n_agg cols, then n_sub one-col groups,
+    with rule+spacing between groups and equal-width centered metric columns."""
+    parts = ["ll", _SEP_OUTER, _METRIC_COL * n_agg]
+    for _ in range(n_sub):
+        parts.append(_SEP_BETWEEN)
+        parts.append(_METRIC_COL)
+    return "".join(parts)
 
 
 def _latex_escape(s: str) -> str:
@@ -133,8 +156,7 @@ def _write_table(
 
     n_agg = len(agg_keys)
     n_sub = len(sub_keys)
-    n_metric_cols = n_agg + n_sub
-    col_spec = "ll" + "c" * n_metric_cols
+    col_spec = _build_col_spec(n_agg, n_sub)
 
     sorted_models = sort_models(cfg.models)
 
@@ -153,17 +175,28 @@ def _write_table(
     lines.append("\\resizebox{\\textwidth}{!}{%")
     lines.append(f"\\begin{{tabular}}{{{col_spec}}}")
     lines.append("\\toprule")
-    # Two-row header: aggregate group label spans agg cols; per-submetric labels each get one col.
-    spanner = " & " * 2 + f"\\multicolumn{{{n_agg}}}{{c}}{{\\textbf{{{aggregate_header}}}}}"
-    spanner += "".join(f" & \\textbf{{{_latex_escape(name)}}}" for name in sub_display)
-    lines.append(spanner + " \\\\")
-    lines.append(f"\\cmidrule(lr){{3-{2 + n_agg}}}")
-    sub_label_row = "\\textbf{Arch.} & \\textbf{System}"
+    # Header row 1: aggregate group label spans n_agg cols; each submetric gets its own header.
+    top_cells = ["", "", f"\\multicolumn{{{n_agg}}}{{c}}{{\\textbf{{{aggregate_header}}}}}"]
+    for name in sub_display:
+        top_cells.append(f"\\textbf{{{_latex_escape(name)}}}")
+    lines.append(" & ".join(top_cells) + " \\\\")
+
+    # cmidrules: one for the aggregate group, one per submetric column.
+    cmid_parts = [f"\\cmidrule(lr){{3-{2 + n_agg}}}"]
+    for i in range(n_sub):
+        col = 3 + n_agg + i
+        cmid_parts.append(f"\\cmidrule(lr){{{col}-{col}}}")
+    lines.append(" ".join(cmid_parts))
+
+    # Header row 2: arch/system labels, the three pass-rate macros under EVA-{A,X},
+    # and "Mean" under each submetric so the per-cell semantics are explicit.
+    sub_label_cells = ["\\textbf{Arch.}", "\\textbf{System}"]
     for k in agg_keys:
-        sub_label_row += f" & \\textbf{{{_latex_escape(k.replace('_', '\\_'))}}}"
+        macro = AGG_KEY_MACROS.get(k, _latex_escape(k))
+        sub_label_cells.append(f"\\textbf{{{macro}}}")
     for _ in sub_keys:
-        sub_label_row += " &"
-    lines.append(sub_label_row + " \\\\")
+        sub_label_cells.append("\\textbf{Mean}")
+    lines.append(" & ".join(sub_label_cells) + " \\\\")
     lines.append("\\midrule")
 
     for arch in ARCH_ORDER:
