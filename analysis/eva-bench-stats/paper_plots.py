@@ -17,7 +17,11 @@ from paper_tables import lookup_pooled, _is_missing
 
 ARCH_MARKER = {"cascade": "o", "hybrid": "D", "s2s": "s"}
 ARCH_COLOR = {"cascade": "#3a86ff", "hybrid": "#2a9d8f", "s2s": "#7b2cbf"}
-ARCH_DISPLAY = {"cascade": "Cascade", "hybrid": "Hybrid (AudioLLM + TTS)", "s2s": "S2S"}
+ARCH_DISPLAY = {
+    "cascade": "Cascade (STT + LLM + TTS)",
+    "hybrid": "Hybrid (AudioLLM + TTS)",
+    "s2s": "Speech-to-speech (S2S)",
+}
 
 
 @dataclass(frozen=True)
@@ -115,21 +119,25 @@ def write_scatter(
     # Pareto frontier on point estimates
     xy = [(p.x, p.y) for p in points]
     frontier_idx = pareto_frontier_indices(xy)
+    frontier_drawn = False
     if len(frontier_idx) >= 2:
         frontier_pts = sorted([(points[i].x, points[i].y) for i in frontier_idx])
         ax.plot(
             [fx for fx, _ in frontier_pts],
             [fy for _, fy in frontier_pts],
             linestyle="--", color="grey", alpha=0.7, zorder=1,
-            label="Pareto frontier",
         )
+        frontier_drawn = True
 
-    seen_archs: set[str] = set()
+    # errorbar plotting; do NOT pass label=, so the legend is built manually below
+    # using marker-only proxies (otherwise legend entries include the cross-shaped
+    # error bars and all archs look visually identical at small size).
+    seen_archs: list[str] = []
     for arch in ARCH_ORDER:
         arch_points = [p for p in points if p.arch == arch]
         if not arch_points:
             continue
-        seen_archs.add(arch)
+        seen_archs.append(arch)
         xs = [p.x for p in arch_points]
         ys = [p.y for p in arch_points]
         x_err = asymmetric_err(xs, [p.x_lo for p in arch_points], [p.x_hi for p in arch_points])
@@ -139,10 +147,17 @@ def write_scatter(
             fmt=ARCH_MARKER[arch], color=ARCH_COLOR[arch],
             ecolor=ARCH_COLOR[arch], elinewidth=1.0, capsize=2,
             markersize=8, alpha=0.9, zorder=3,
-            label=ARCH_DISPLAY[arch],
         )
 
-    ax.legend(loc="lower right")
+    from matplotlib.lines import Line2D
+    handles: list[Line2D] = []
+    if frontier_drawn:
+        handles.append(Line2D([0], [0], linestyle="--", color="grey", alpha=0.7,
+                              label="Pareto frontier"))
+    for arch in seen_archs:
+        handles.append(Line2D([0], [0], marker=ARCH_MARKER[arch], color=ARCH_COLOR[arch],
+                              linestyle="", markersize=8, label=ARCH_DISPLAY[arch]))
+    ax.legend(handles=handles, loc="lower right")
     fig.tight_layout()
     fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
