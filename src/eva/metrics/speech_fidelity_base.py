@@ -57,7 +57,8 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     error=f"No {self.role} audio file available",
                 )
 
-            audio_segment = self._trim_silence(audio_segment, context)
+            # TEMP: silence trimming disabled
+            # audio_segment = self._trim_silence(audio_segment, context)
 
             intended_turns = self._get_intended_turns(context)
             num_turns = len(intended_turns)
