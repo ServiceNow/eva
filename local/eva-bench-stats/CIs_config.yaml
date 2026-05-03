@@ -1,0 +1,96 @@
+# Confidence Interval analysis config.
+# Reads clean trial scores produced by local/eva-bench-stats/pull_clean_data.py.
+
+trial_scores_dir: output/eva-bench-stats     # auto-pick latest "eva_clean_data_*" subfolder
+# trial_scores_path: output/eva-bench-stats/eva_clean_data_YYYYMMDD_HHMMSS/trial_scores.csv  # alt
+output_dir: output_processed/eva-bench-stats/CIs
+
+random_seed: 42
+n_bootstrap: 1000           # may be raised to 2000 from stability check
+alpha: 0.05
+stability_threshold: 0.002
+# stability_check_model: ""   # optional; defaults to first model in models:
+
+expected_domains: [airline, itsm, medical_hr]
+expected_scenarios:
+  airline: 50
+  itsm: 80
+  medical_hr: 83
+expected_k: 5
+
+metrics:
+  - task_completion
+  - faithfulness
+  - agent_speech_fidelity
+  - conversation_progression
+  - turn_taking
+  - conciseness
+  - EVA-A_mean
+  - EVA-X_mean
+  - EVA-A_pass        # pass@1 for EVA-A
+  - EVA-X_pass        # pass@1 for EVA-X
+
+models:
+  Cohere + Gemma-4-26B + Voxtral:
+    alias: "cohere_transcribe_032026 + gemma-4-26B-A4B-it-no-reasoning + voxtral_4b_tts"
+    type: cascade
+  ElevenAgent:
+    alias: "elevenlabs"
+    type: cascade
+  Ink Whisper + Haiku 4.5 + Sonic 3:
+    alias: "ink-whisper + haiku-4.5 + sonic-3"
+    type: cascade
+  Nova 3 + GPT-5.4 + Sonic 3:
+    alias: "nova-3 + gpt-5.4 + sonic-3"
+    type: cascade
+  Nova 3 + GPT-5.4-mini + Aura 2:
+    alias: "nova-3 + gpt-5.4-mini + aura-2"
+    type: cascade
+  Parakeet 1.1 + Gemma 31B + Kokoro:
+    alias: "parakeet-1-1-ctc + gemma-31b + kokoro"
+    type: cascade
+  Whisper Large v3 + Qwen35-27B + Voxtral:
+    alias: "whisper-large-v3 + qwen35-27B + voxtral_4b_tts"
+    type: cascade
+  Gemini 3 Flash + Gemini 3.1 Flash TTS:
+    alias: "gemini-3-flash-preview + gemini-3.1-flash-tts-preview"
+    type: hybrid
+  Gemini 3.1 Flash Live:
+    alias: "gemini-3.1-flash-live-preview"
+    type: s2s
+  GPT Realtime 1.5:
+    alias: "gpt-realtime-1.5"
+    type: s2s
+  GPT Realtime Mini:
+    alias: "gpt-realtime-mini"
+    type: s2s
+  Ultravox:
+    alias: "ultravox"
+    type: hybrid
+
+paper:
+  output_dir: output_processed/eva-bench-stats/CIs/paper
+  # Metric names are resolved against results_pooled.csv. pass_at_k / pass_power_k
+  # placeholders will fill in once trial data is re-pulled with those metrics.
+  accuracy:
+    aggregate:
+      pass_at_1:    EVA-A_pass
+      pass_at_k:    EVA-A_pass_at_k
+      pass_power_k: EVA-A_pass_power_k
+    submetrics:
+      task_completion:       Task Completion
+      faithfulness:          Faithfulness
+      agent_speech_fidelity: Agent Speech Fidelity
+  experience:
+    aggregate:
+      pass_at_1:    EVA-X_pass
+      pass_at_k:    EVA-X_pass_at_k
+      pass_power_k: EVA-X_pass_power_k
+    submetrics:
+      turn_taking:             Turn-Taking
+      conciseness:             Conciseness
+      conversation_progression: Conv. Progression
+  scatter:
+    pass_at_1:    {x: EVA-A_pass,         y: EVA-X_pass}
+    pass_at_k:    {x: EVA-A_pass_at_k,    y: EVA-X_pass_at_k}
+    pass_power_k: {x: EVA-A_pass_power_k, y: EVA-X_pass_power_k}
