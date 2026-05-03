@@ -18,6 +18,17 @@ import yaml
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONFIG_PATH = PROJECT_ROOT / "local" / "eva-bench-stats" / "CIs_config.yaml"
 
+# Derived per-scenario metrics computed from binary trial pass values.
+# mean over trials gives pass@1 (already produced by compute_scenario_means).
+# max over trials gives pass@k for k = expected_k (== 5).
+# (mean ** k) gives the plug-in pass^k estimator.
+DERIVED_PASS_METRICS: dict[str, tuple[str, str]] = {
+    "EVA-A_pass_at_k":    ("EVA-A_pass", "max"),
+    "EVA-A_pass_power_k": ("EVA-A_pass", "mean_pow_k"),
+    "EVA-X_pass_at_k":    ("EVA-X_pass", "max"),
+    "EVA-X_pass_power_k": ("EVA-X_pass", "mean_pow_k"),
+}
+
 
 def load_trial_scores(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -52,13 +63,16 @@ def check_completeness(
         else:
             bad_trials = 0
 
-        # Count metric coverage gaps among the configured metrics
+        # Count metric coverage gaps among the configured metrics.
+        # Derived metrics aren't in trial_scores.csv — they're computed downstream.
+        # Only check coverage for metrics that are actually expected in trial data.
+        source_metrics = [m for m in metrics if m not in DERIVED_PASS_METRICS]
         configured_present = (
-            model_df[(model_df["domain"] == domain) & (model_df["metric"].isin(metrics))]
+            model_df[(model_df["domain"] == domain) & (model_df["metric"].isin(source_metrics))]
             .groupby("metric")["scenario_id"]
             .nunique()
         )
-        n_missing_metrics = sum(1 for m in metrics if configured_present.get(m, 0) == 0)
+        n_missing_metrics = sum(1 for m in source_metrics if configured_present.get(m, 0) == 0)
 
         ok = (n_scenarios == n_expected) and (bad_trials == 0) and (n_missing_metrics == 0)
         issues_parts: list[str] = []
@@ -99,6 +113,46 @@ def compute_scenario_means(
         return pd.DataFrame(columns=["system_alias", "domain", "scenario_id", "metric", "scenario_mean"])
     keys = ["system_alias", "domain", "scenario_id", "metric"]
     return sub.groupby(keys, sort=False)["value"].mean().reset_index().rename(columns={"value": "scenario_mean"})
+
+
+def compute_derived_pass_metrics(
+    df: pd.DataFrame,
+    alias: str,
+    derived_metrics: list[str],
+    expected_k: int,
+) -> pd.DataFrame:
+    """Per-scenario pass@k (max over trials) and pass^k (mean^k) for binary pass metrics.
+
+    `derived_metrics` is the subset of the configured metrics list that appears in
+    DERIVED_PASS_METRICS. For each derived metric, the source binary pass metric
+    (`EVA-A_pass` or `EVA-X_pass`) is read from `df` and reduced per scenario.
+    Returns a frame with the same columns as `compute_scenario_means`:
+    `system_alias, domain, scenario_id, metric, scenario_mean`.
+    """
+    out_rows: list[pd.DataFrame] = []
+    sub = df[df["system_alias"] == alias]
+    keys = ["system_alias", "domain", "scenario_id"]
+    for derived_name in derived_metrics:
+        if derived_name not in DERIVED_PASS_METRICS:
+            continue
+        source_metric, reduction = DERIVED_PASS_METRICS[derived_name]
+        source = sub[sub["metric"] == source_metric]
+        if source.empty:
+            continue
+        if reduction == "max":
+            agg = source.groupby(keys, sort=False)["value"].max().reset_index()
+        elif reduction == "mean_pow_k":
+            agg = source.groupby(keys, sort=False)["value"].mean().reset_index()
+            agg["value"] = agg["value"] ** expected_k
+        else:
+            raise ValueError(f"Unknown reduction '{reduction}' for {derived_name}")
+        agg = agg.rename(columns={"value": "scenario_mean"})
+        agg["metric"] = derived_name
+        agg = agg[["system_alias", "domain", "scenario_id", "metric", "scenario_mean"]]
+        out_rows.append(agg)
+    if not out_rows:
+        return pd.DataFrame(columns=["system_alias", "domain", "scenario_id", "metric", "scenario_mean"])
+    return pd.concat(out_rows, ignore_index=True)
 
 
 def _resolve_trial_scores_path(config: dict, project_root: Path) -> Path:
@@ -151,8 +205,15 @@ def main(config_path: Path = CONFIG_PATH) -> None:
                 if not r["complete"]:
                     print(f"    - {r['domain']}: {r['issues']}")
 
+        derived_metric_names = [m for m in metrics if m in DERIVED_PASS_METRICS]
+
         if complete:
             means = compute_scenario_means(trial_scores, alias, metrics)
+            if derived_metric_names:
+                derived = compute_derived_pass_metrics(
+                    trial_scores, alias, derived_metric_names, expected_k
+                )
+                means = pd.concat([means, derived], ignore_index=True)
             means.insert(0, "model_label", model_label)
             all_means.append(means)
         else:
@@ -162,6 +223,11 @@ def main(config_path: Path = CONFIG_PATH) -> None:
             if complete_domains:
                 partial = partial_alias_df[partial_alias_df["domain"].isin(complete_domains)]
                 means = compute_scenario_means(partial, alias, metrics)
+                if derived_metric_names:
+                    derived = compute_derived_pass_metrics(
+                        partial, alias, derived_metric_names, expected_k
+                    )
+                    means = pd.concat([means, derived], ignore_index=True)
                 if not means.empty:
                     means.insert(0, "model_label", model_label)
                     all_means.append(means)

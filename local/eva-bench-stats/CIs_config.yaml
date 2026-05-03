@@ -29,6 +29,10 @@ metrics:
   - EVA-X_mean
   - EVA-A_pass        # pass@1 for EVA-A
   - EVA-X_pass        # pass@1 for EVA-X
+  - EVA-A_pass_at_k
+  - EVA-A_pass_power_k
+  - EVA-X_pass_at_k
+  - EVA-X_pass_power_k
 
 models:
   Cohere + Gemma-4-26B + Voxtral:
