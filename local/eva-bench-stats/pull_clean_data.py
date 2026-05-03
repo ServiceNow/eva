@@ -40,6 +40,10 @@ INDIVIDUAL_METRICS = [
     "conversation_progression",
     "turn_taking",
     "conciseness",
+    # Diagnostic metric, only present for cascade runs (no STT step in S2S).
+    # Used for the cascade-only transcription-vs-task-completion correlation analysis;
+    # extract_trial_scores skips it cleanly when it's absent on non-cascade runs.
+    "transcription_accuracy_key_entities",
 ]
 COMPOSITE_METRICS = [
     "EVA-A_mean",
