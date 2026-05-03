@@ -44,3 +44,24 @@ def asymmetric_err(
     if np.any(lo > p) or np.any(hi < p):
         raise ValueError("ci_lower must be <= point <= ci_upper for every point")
     return p - lo, hi - p
+
+
+def build_scatter_points(
+    pooled_df: pd.DataFrame,
+    cfg: PaperConfig,
+    x_metric: str,
+    y_metric: str,
+) -> list[ScatterPoint]:
+    """One ScatterPoint per system that has pooled CIs for both axes."""
+    out: list[ScatterPoint] = []
+    for m in sort_models(cfg.models):
+        x, x_lo, x_hi = lookup_pooled(pooled_df, m.label, x_metric)
+        y, y_lo, y_hi = lookup_pooled(pooled_df, m.label, y_metric)
+        if any(_is_missing(v) for v in (x, x_lo, x_hi, y, y_lo, y_hi)):
+            continue
+        out.append(ScatterPoint(
+            label=m.label, arch=m.arch,
+            x=x, x_lo=x_lo, x_hi=x_hi,
+            y=y, y_lo=y_lo, y_hi=y_hi,
+        ))
+    return out
