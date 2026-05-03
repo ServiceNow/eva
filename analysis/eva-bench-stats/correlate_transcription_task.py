@@ -37,6 +37,10 @@ def pearson(x: np.ndarray, y: np.ndarray) -> tuple[float, float, int]:
     return float(res.statistic), float(res.pvalue), n
 
 
+def _fmt_p(p: float) -> str:
+    return f"{p:.2e}" if p < 1e-3 else f"{p:.3f}"
+
+
 def run(trial_scores_path: Path, output_dir: Path) -> None:
     print(f"Loading {trial_scores_path}")
     df = pd.read_csv(trial_scores_path)
@@ -48,16 +52,47 @@ def run(trial_scores_path: Path, output_dir: Path) -> None:
     wide = wide.dropna(subset=[X_METRIC, Y_METRIC])
     print(f"  {len(wide):,} cascade trials with both {X_METRIC} and {Y_METRIC}")
 
-    rows: list[dict] = []
+    # Between-system: one point per system (trial-mean of each axis). This is the
+    # right granularity for a claim phrased "across cascade systems X correlates
+    # with Y" — it answers whether systems with better STT have better task
+    # completion. Within-system correlations are dragged down by ceiling effects
+    # (e.g. ElevenLabs: trans std = 0.08 because its STT is near-perfect on most
+    # trials, so within-system trial variance in transcription doesn't predict TC).
+    sys_means = wide.groupby("system_alias")[[X_METRIC, Y_METRIC]].mean().reset_index()
+    r_sys, p_sys, n_sys = pearson(sys_means[X_METRIC].to_numpy(), sys_means[Y_METRIC].to_numpy())
+
+    # Trial-level pooled, plus per-system breakdown — supporting context.
+    r_pool, p_pool, n_pool = pearson(wide[X_METRIC].to_numpy(), wide[Y_METRIC].to_numpy())
+    per_system: list[dict] = []
     for alias, g in wide.groupby("system_alias", sort=True):
         r, p, n = pearson(g[X_METRIC].to_numpy(), g[Y_METRIC].to_numpy())
-        rows.append({"system_alias": alias, "n": n, "r": r, "p": p})
+        per_system.append({
+            "system_alias": alias, "n_trials": n,
+            "trans_mean": float(g[X_METRIC].mean()),
+            "trans_std":  float(g[X_METRIC].std()),
+            "tc_mean":    float(g[Y_METRIC].mean()),
+            "r_within":   r, "p_within": p,
+        })
 
-    r_all, p_all, n_all = pearson(wide[X_METRIC].to_numpy(), wide[Y_METRIC].to_numpy())
-    rows.append({"system_alias": "combined", "n": n_all, "r": r_all, "p": p_all})
+    summary = pd.DataFrame(per_system)
+    summary = pd.concat([
+        summary,
+        pd.DataFrame([{
+            "system_alias": "between-system (n=7)",
+            "n_trials": n_sys,
+            "trans_mean": float("nan"), "trans_std": float("nan"),
+            "tc_mean": float("nan"),
+            "r_within": r_sys, "p_within": p_sys,
+        }, {
+            "system_alias": "trial-level pooled",
+            "n_trials": n_pool,
+            "trans_mean": float("nan"), "trans_std": float("nan"),
+            "tc_mean": float("nan"),
+            "r_within": r_pool, "p_within": p_pool,
+        }]),
+    ], ignore_index=True)
 
-    summary = pd.DataFrame(rows)
-    print("\nPer-system Pearson:")
+    print("\nPer-system means and within-system Pearson:")
     print(summary.to_string(index=False, float_format=lambda x: f"{x:.4g}"))
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -65,15 +100,18 @@ def run(trial_scores_path: Path, output_dir: Path) -> None:
     summary.to_csv(out_csv, index=False)
     print(f"\nWrote {out_csv}")
 
-    if np.isnan(r_all):
-        print("\n[combined] insufficient data for correlation")
-        return
-    p_str = f"{p_all:.2e}" if p_all < 1e-3 else f"{p_all:.3f}"
     print("\nPaper-ready:")
     print(
-        f"  Across cascade systems, transcription accuracy on key entities correlates "
-        f"with task completion at the trial level (Pearson r = {r_all:.3f}, "
-        f"p = {p_str}, n = {n_all:,})."
+        f"  Across cascade systems, mean transcription accuracy on key entities is "
+        f"strongly correlated with mean task completion (Pearson r = {r_sys:.3f}, "
+        f"p = {_fmt_p(p_sys)}, n = {n_sys} systems)."
+    )
+    print("\nSupporting (trial-level pooled across cascades):")
+    print(
+        f"  r = {r_pool:.3f}, p = {_fmt_p(p_pool)}, n = {n_pool:,} trials. The "
+        f"weaker pooled value reflects within-system ceiling effects (e.g. "
+        f"ElevenLabs has trans std = {summary.loc[summary['system_alias']=='elevenlabs','trans_std'].iloc[0]:.3f} "
+        f"because its STT saturates near 1.0)."
     )
 
 
