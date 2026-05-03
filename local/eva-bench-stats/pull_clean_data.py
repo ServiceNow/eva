@@ -55,6 +55,9 @@ RUN_DIR_REGEX = re.compile(r"^(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2}\.\d+)_(.+)$
 PERT_SUFFIX_TOKENS = ("-accent", "-background-noise", "-background_noise", "-both")
 ALIAS_REMAP: dict[str, str] = {
     "gemini-live": "gemini-3.1-flash-live-preview",
+    # ITSM ultravox run is wrapped in fixie-ai/ so derive_alias picks up the path;
+    # collapse it back to plain "ultravox" so it joins the rest of the model's runs.
+    "fixie-ai/ultravox": "ultravox",
 }
 SYSTEM_TYPE_OVERRIDES: dict[str, str] = {
     "ultravox": "hybrid",
