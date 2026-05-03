@@ -82,3 +82,68 @@ def pareto_frontier_indices(points: list[tuple[float, float]]) -> list[int]:
         if not dominated:
             keep.append(i)
     return keep
+
+
+def write_scatter(
+    pooled_df: pd.DataFrame,
+    cfg: PaperConfig,
+    x_metric: str,
+    y_metric: str,
+    x_label: str,
+    y_label: str,
+    title: str,
+    out_path: Path,
+) -> int:
+    """Write a 1-pt-per-system scatter PDF with asymmetric CI error bars.
+
+    Returns the number of points drawn. If zero, no file is written.
+    """
+    points = build_scatter_points(pooled_df, cfg, x_metric, y_metric)
+    if not points:
+        return 0
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(7, 7))
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+
+    # Pareto frontier on point estimates
+    xy = [(p.x, p.y) for p in points]
+    frontier_idx = pareto_frontier_indices(xy)
+    if len(frontier_idx) >= 2:
+        frontier_pts = sorted([(points[i].x, points[i].y) for i in frontier_idx])
+        ax.plot(
+            [fx for fx, _ in frontier_pts],
+            [fy for _, fy in frontier_pts],
+            linestyle="--", color="grey", alpha=0.7, zorder=1,
+            label="Pareto frontier",
+        )
+
+    seen_archs: set[str] = set()
+    for arch in ARCH_ORDER:
+        arch_points = [p for p in points if p.arch == arch]
+        if not arch_points:
+            continue
+        seen_archs.add(arch)
+        xs = [p.x for p in arch_points]
+        ys = [p.y for p in arch_points]
+        x_err = asymmetric_err(xs, [p.x_lo for p in arch_points], [p.x_hi for p in arch_points])
+        y_err = asymmetric_err(ys, [p.y_lo for p in arch_points], [p.y_hi for p in arch_points])
+        ax.errorbar(
+            xs, ys, xerr=x_err, yerr=y_err,
+            fmt=ARCH_MARKER[arch], color=ARCH_COLOR[arch],
+            ecolor=ARCH_COLOR[arch], elinewidth=1.0, capsize=2,
+            markersize=8, alpha=0.9, zorder=3,
+            label=ARCH_DISPLAY[arch],
+        )
+
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    fig.savefig(out_path, bbox_inches="tight")
+    plt.close(fig)
+    return len(points)

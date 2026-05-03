@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "analysis" / "eva-bench-stats"))
-from paper_plots import asymmetric_err, build_scatter_points, pareto_frontier_indices
+from paper_plots import asymmetric_err, build_scatter_points, pareto_frontier_indices, write_scatter
 from paper_config import ModelEntry, PaperConfig
 
 
@@ -71,3 +71,30 @@ def test_pareto_frontier_indices_simple() -> None:
 
 def test_pareto_frontier_indices_empty() -> None:
     assert pareto_frontier_indices([]) == []
+
+
+def test_write_scatter_creates_pdf(tmp_path: Path) -> None:
+    out = tmp_path / "scatter.pdf"
+    n_drawn = write_scatter(
+        _pooled_full(), _cfg_two_models(),
+        x_metric="EVA-A_pass", y_metric="EVA-X_pass",
+        x_label="Accuracy (EVA-A pass@1)",
+        y_label="Experience (EVA-X pass@1)",
+        title="Accuracy vs Experience pass@1",
+        out_path=out,
+    )
+    assert n_drawn == 2
+    assert out.exists() and out.stat().st_size > 0
+
+
+def test_write_scatter_returns_zero_when_no_points(tmp_path: Path) -> None:
+    out = tmp_path / "skip.pdf"
+    df = pd.DataFrame(columns=["model_label", "metric", "domain",
+                               "point_estimate", "ci_lower", "ci_upper"])
+    n_drawn = write_scatter(
+        df, _cfg_two_models(),
+        x_metric="EVA-A_pass_at_k", y_metric="EVA-X_pass_at_k",
+        x_label="x", y_label="y", title="t", out_path=out,
+    )
+    assert n_drawn == 0
+    assert not out.exists()
