@@ -60,6 +60,12 @@ SYSTEM_TYPE_OVERRIDES: dict[str, str] = {
     "ultravox": "hybrid",
     "gemini-3-flash-preview + gemini-3.1-flash-tts-preview": "hybrid",
 }
+# One-off overrides for runs whose config.json lives one level deeper than the
+# usual layout. Map run-dir name -> relative subdir containing config.json,
+# evaluation_summary.json, and records/.
+RUN_PATH_OVERRIDES: dict[str, str] = {
+    "2026-04-27_04-53-11.007976_fixie-ai": "ultravox",
+}
 EXPECTED_K_CLEAN = 5
 
 
@@ -142,8 +148,12 @@ def discover_runs(runs_dir: Path) -> tuple[list[dict], list[dict]]:
     for entry in sorted(runs_dir.iterdir()):
         if not entry.is_dir() or not RUN_DIR_REGEX.match(entry.name):
             continue
-        cfg_path = entry / "config.json"
-        eval_path = entry / "evaluation_summary.json"
+        # Some runs nest the actual run files inside a subdir (see RUN_PATH_OVERRIDES).
+        # The run_id stays as the outer dated dir, but the file paths and the dir
+        # used for downstream record walking come from the override target.
+        run_root = entry / RUN_PATH_OVERRIDES[entry.name] if entry.name in RUN_PATH_OVERRIDES else entry
+        cfg_path = run_root / "config.json"
+        eval_path = run_root / "evaluation_summary.json"
         if not cfg_path.exists():
             excluded.append({"run_id": entry.name, "reason": "missing config.json"})
             continue
@@ -187,7 +197,7 @@ def discover_runs(runs_dir: Path) -> tuple[list[dict], list[dict]]:
 
         included.append({
             "run_id": entry.name,
-            "dir": entry,
+            "dir": run_root,
             "canonical_alias": canon,
             "system_type": sys_type,
             "domain": domain,
