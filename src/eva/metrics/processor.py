@@ -24,6 +24,12 @@ from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+# TEMPORARY: when True (default), use the old `not assistant_processed_in_turn` guard for BOTH
+# flag and hold_turn (legacy/main behavior — kept as default so other experiments on this branch
+# stay consistent with main). When False, use option-1: flag any overlap, only set hold_turn when
+# no tool call has fired yet. Toggle is for one-shot diff analysis — remove once locked in.
+_INTERRUPT_GUARD_OLD = True
+
 
 def last_audio_speaker(
     audio_timestamps_user_turns: dict[int, list[tuple[float, float]]],
@@ -413,13 +419,19 @@ def _handle_audio_start(
             # the next user's audio_start) and can't be relied on for turn boundary detection.
             if pipeline_type == PipelineType.S2S:
                 state.assistant_spoke_in_turn = True
-        # Interruption: assistant starts speaking while user is still speaking. Only count if (a) user
-        # audio started in the current turn (not lingering from a previous turn's delayed delivery) and
-        # (b) no tool calls happened yet — tool calls mean the assistant is responding to the user's
-        # input, not barging in.
-        if state.user_audio_open and state.user_audio_started_in_turn and not state.assistant_processed_in_turn:
-            state.assistant_interrupted_turns.add(state.turn_num)
-            state.hold_turn = True
+        # Interruption: assistant audio_start overlaps an open user audio session. Flag the turn
+        # whenever there's overlap (this catches barge-ins after a tool call that the previous
+        # `not assistant_processed_in_turn` guard was discarding).
+        #
+        # `hold_turn` is still gated on no-tool-call-yet: setting it after a tool call suppresses
+        # the next turn advance and cascades into incorrect turn boundaries, which empirically
+        # drops other legitimate interruption flags later in the conversation.
+        if state.user_audio_open and state.user_audio_started_in_turn:
+            no_tool_yet = not state.assistant_processed_in_turn
+            if no_tool_yet or not _INTERRUPT_GUARD_OLD:
+                state.assistant_interrupted_turns.add(state.turn_num)
+            if no_tool_yet:
+                state.hold_turn = True
 
     turn_idx = state.turn_num
     key = (role, turn_idx)
