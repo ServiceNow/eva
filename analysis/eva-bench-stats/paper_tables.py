@@ -135,6 +135,28 @@ def _column_shading_bounds(
     return (min(vals), max(vals))
 
 
+def _shared_shading_bounds(
+    pooled_df: pd.DataFrame,
+    models: list[ModelEntry],
+    metrics: list[str],
+) -> tuple[float, float]:
+    """Min/max across the union of point estimates from multiple metrics.
+
+    Used so the pass-rate sub-columns under EVA-{A,X} share one shading scale
+    (pass^k values are typically much smaller than pass@k, so independent
+    per-column scales make their gradients incomparable).
+    """
+    vals: list[float] = []
+    for metric in metrics:
+        for m in models:
+            p, _, _ = lookup_pooled(pooled_df, m.label, metric)
+            if not _is_missing(p):
+                vals.append(p)
+    if not vals:
+        return (0.0, 0.0)
+    return (min(vals), max(vals))
+
+
 def _write_table(
     pooled_df: pd.DataFrame,
     cfg: PaperConfig,
@@ -154,9 +176,13 @@ def _write_table(
     sub_keys = list(submetrics.keys())
     sub_display = [submetrics[k] for k in sub_keys]
 
-    # Per-column shading bounds (one set per metric column)
-    bounds = {m: _column_shading_bounds(pooled_df, list(cfg.models.values()), m)
-              for m in agg_metrics + sub_keys}
+    # Shading bounds: aggregate pass-rate columns share one scale across the three
+    # variants; submetric columns each get their own scale.
+    models_list = list(cfg.models.values())
+    agg_bounds = _shared_shading_bounds(pooled_df, models_list, agg_metrics)
+    bounds: dict[str, tuple[float, float]] = {m: agg_bounds for m in agg_metrics}
+    for m in sub_keys:
+        bounds[m] = _column_shading_bounds(pooled_df, models_list, m)
 
     # Color macro definitions for the preamble
     palette_defs = []
@@ -273,8 +299,7 @@ def write_accuracy_table(pooled_df: pd.DataFrame, cfg: PaperConfig, out_path: Pa
             "Accuracy metrics for all evaluated systems under clean-audio conditions, "
             "pooled equal-weighted across the three EVA domains. Each cell shows the "
             "pooled point estimate $\\pm$ the percentile bootstrap CI half-width "
-            "($\\alpha = 0.05$). Cell shading is scaled per metric column from min to "
-            "max of the point estimate (darker = higher)."
+            "($\\alpha = 0.05$). The three pass-rate columns share a single shading scale (so pass@1 vs.\\ pass@k vs.\\ pass$^{k}$ are visually comparable); each submetric column is scaled independently. Darker = higher point estimate."
         ),
     )
 
@@ -292,7 +317,6 @@ def write_experience_table(pooled_df: pd.DataFrame, cfg: PaperConfig, out_path: 
             "Experience metrics for all evaluated systems under clean-audio conditions, "
             "pooled equal-weighted across the three EVA domains. Each cell shows the "
             "pooled point estimate $\\pm$ the percentile bootstrap CI half-width "
-            "($\\alpha = 0.05$). Cell shading is scaled per metric column from min to "
-            "max of the point estimate (darker = higher)."
+            "($\\alpha = 0.05$). The three pass-rate columns share a single shading scale (so pass@1 vs.\\ pass@k vs.\\ pass$^{k}$ are visually comparable); each submetric column is scaled independently. Darker = higher point estimate."
         ),
     )
