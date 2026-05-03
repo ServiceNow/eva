@@ -68,6 +68,42 @@ def run(trial_scores_path: Path, output_dir: Path) -> None:
         r_d, p_d, n_d = pearson(sm[X_METRIC].to_numpy(), sm[Y_METRIC].to_numpy())
         per_domain.append({"domain": domain, "n_systems": n_d, "r": r_d, "p": p_d})
 
+    # Threshold split: group cascade systems by mean transcription accuracy at a
+    # natural break, compare mean task_completion across the two groups.
+    THRESHOLD = 0.70
+    above = sys_means[sys_means[X_METRIC] >= THRESHOLD]
+    below = sys_means[sys_means[X_METRIC] <  THRESHOLD]
+    threshold_summary: list[dict] = []
+    if len(above) and len(below):
+        tc_a = float(above[Y_METRIC].mean())
+        tc_b = float(below[Y_METRIC].mean())
+        threshold_summary.append({
+            "scope": "all_domains",
+            "threshold": THRESHOLD,
+            "n_above": len(above),
+            "n_below": len(below),
+            "tc_above": tc_a,
+            "tc_below": tc_b,
+            "abs_drop": tc_a - tc_b,
+            "rel_drop_pct": (1 - tc_b / tc_a) * 100 if tc_a > 0 else float("nan"),
+        })
+        # Per-domain version using the same above/below grouping (system identity).
+        above_aliases = set(above["system_alias"])
+        for domain, dg in wide.groupby("domain", sort=True):
+            dom_means = dg.groupby("system_alias")[Y_METRIC].mean()
+            ta = float(dom_means.loc[dom_means.index.isin(above_aliases)].mean())
+            tb = float(dom_means.loc[~dom_means.index.isin(above_aliases)].mean())
+            threshold_summary.append({
+                "scope": domain,
+                "threshold": THRESHOLD,
+                "n_above": len(above),
+                "n_below": len(below),
+                "tc_above": ta,
+                "tc_below": tb,
+                "abs_drop": ta - tb,
+                "rel_drop_pct": (1 - tb / ta) * 100 if ta > 0 else float("nan"),
+            })
+
     # Trial-level pooled, plus per-system breakdown — supporting context.
     r_pool, p_pool, n_pool = pearson(wide[X_METRIC].to_numpy(), wide[Y_METRIC].to_numpy())
     per_system: list[dict] = []
@@ -106,13 +142,20 @@ def run(trial_scores_path: Path, output_dir: Path) -> None:
     print("\nBetween-system correlation by domain:")
     print(domain_df.to_string(index=False, float_format=lambda x: f"{x:.4g}"))
 
+    threshold_df = pd.DataFrame(threshold_summary)
+    print(f"\nThreshold split @ transcription accuracy = {THRESHOLD}:")
+    print(threshold_df.to_string(index=False, float_format=lambda x: f"{x:.4g}"))
+
     output_dir.mkdir(parents=True, exist_ok=True)
     out_csv = output_dir / "transcription_vs_task_completion.csv"
     summary.to_csv(out_csv, index=False)
     domain_csv = output_dir / "transcription_vs_task_completion_by_domain.csv"
     domain_df.to_csv(domain_csv, index=False)
+    threshold_csv = output_dir / "transcription_threshold_split.csv"
+    threshold_df.to_csv(threshold_csv, index=False)
     print(f"\nWrote {out_csv}")
     print(f"Wrote {domain_csv}")
+    print(f"Wrote {threshold_csv}")
 
     print("\nPaper-ready:")
     print(
