@@ -299,7 +299,7 @@ def write_accuracy_table(pooled_df: pd.DataFrame, cfg: PaperConfig, out_path: Pa
             "Accuracy metrics for all evaluated systems under clean-audio conditions, "
             "pooled equal-weighted across the three EVA domains. Each cell shows the "
             "pooled point estimate $\\pm$ the percentile bootstrap CI half-width "
-            "($\\alpha = 0.05$). The three pass-rate columns share a single shading scale (so \\passatone vs.\\ \\passatk vs.\\ \\passpowerk are visually comparable); each submetric column is scaled independently. Darker = higher point estimate."
+            "($\\alpha = 0.05$). The three pass-rate columns share a single shading scale (so \\passatone~vs.\\ \\passatk~vs.\\ \\passpowerk~are visually comparable); each submetric column is scaled independently. Darker = higher point estimate."
         ),
     )
 
@@ -317,6 +317,6 @@ def write_experience_table(pooled_df: pd.DataFrame, cfg: PaperConfig, out_path: 
             "Experience metrics for all evaluated systems under clean-audio conditions, "
             "pooled equal-weighted across the three EVA domains. Each cell shows the "
             "pooled point estimate $\\pm$ the percentile bootstrap CI half-width "
-            "($\\alpha = 0.05$). The three pass-rate columns share a single shading scale (so \\passatone vs.\\ \\passatk vs.\\ \\passpowerk are visually comparable); each submetric column is scaled independently. Darker = higher point estimate."
+            "($\\alpha = 0.05$). The three pass-rate columns share a single shading scale (so \\passatone~vs.\\ \\passatk~vs.\\ \\passpowerk~are visually comparable); each submetric column is scaled independently. Darker = higher point estimate."
         ),
     )
