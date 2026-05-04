@@ -982,8 +982,10 @@ def variance_page():
 
         st.subheader("Sample sizes")
         st.caption(
-            "Judge variance n = number of (record, trial) pairs per model. "
-            "Trial variance n = number of records per model."
+            "Judge variance n = number of (record, trial) pairs per model "
+            "(each pair contributes one std dev across the 3 judge iterations). "
+            "Trial variance n = number of records per model "
+            "(each record contributes one std dev across the 3 simulation trials)."
         )
         if not judge_summary.empty and not trial_summary.empty:
             _n_judge = (
@@ -2298,9 +2300,14 @@ less powerful for the same true effect size.
     # ── Tab 10: Statistical tests ─────────────────────────────────────────────
     with tabs[10]:
         st.header("Statistical tests")
-        st.write("Full results for all statistical tests.")
+        st.write("""
+        Full results for all statistical tests. High-level summaries with plain-English
+        interpretations appear inline on the **Judge vs. trial variance**, **Judge variance**,
+        and **Trial variance** tabs.
+        """)
 
-        with st.expander("Q0 — Is variance significantly greater than zero?"):
+        # ── Q0 ────────────────────────────────────────────────────────────────────
+        with st.expander("Q0 — Is variance significantly greater than zero? (→ Variance overview tab)"):
             st.markdown("One-sample Wilcoxon signed-rank (H₁: median > 0). Non-zero std devs only.")
 
             st.markdown("**Judge variance — pooled across models**")
@@ -2313,6 +2320,17 @@ less powerful for the same true effect size.
                 st.dataframe(_q0jp_disp.round({"median_std": 4, "mean_std": 4}), hide_index=True, width="stretch")
                 download_button(q0_judge_pooled, "stat_q0_judge_pooled.csv")
 
+            st.markdown("**Judge variance — per model**")
+            if q0_judge_per_model.empty:
+                st.info("No results.")
+            else:
+                _q0jm_disp = q0_judge_per_model.copy()
+                _q0jm_disp["p"] = _q0jm_disp["p"].map(fmt_p)
+                _q0jm_disp["W"] = _q0jm_disp["W"].round(1)
+                _q0jm_disp["model"] = _q0jm_disp["model"].apply(llm_name)
+                st.dataframe(_q0jm_disp.round({"median_std": 4, "mean_std": 4}), hide_index=True, width="stretch")
+                download_button(q0_judge_per_model, "stat_q0_judge_per_model.csv")
+
             st.markdown("**Trial variance — pooled across models**")
             if q0_trial_pooled.empty:
                 st.info("No results.")
@@ -2323,53 +2341,370 @@ less powerful for the same true effect size.
                 st.dataframe(_q0tp_disp.round({"median_std": 4, "mean_std": 4}), hide_index=True, width="stretch")
                 download_button(q0_trial_pooled, "stat_q0_trial_pooled.csv")
 
-        with st.expander("Q1a — Paired Wilcoxon: judge vs. trial per model × metric"):
-            if q1a.empty:
+            st.markdown("**Trial variance — per model**")
+            if q0_trial_per_model.empty:
                 st.info("No results.")
             else:
-                _q1a_disp = q1a.copy()
-                _q1a_disp["p_bonferroni"] = _q1a_disp["p_bonferroni"].map(fmt_p)
-                st.dataframe(_q1a_disp.round(4), hide_index=True, width="stretch")
-                download_button(q1a, "stat_q1a.csv")
+                _q0tm_disp = q0_trial_per_model.copy()
+                _q0tm_disp["p"] = _q0tm_disp["p"].map(fmt_p)
+                _q0tm_disp["W"] = _q0tm_disp["W"].round(1)
+                _q0tm_disp["model"] = _q0tm_disp["model"].apply(llm_name)
+                st.dataframe(_q0tm_disp.round({"median_std": 4, "mean_std": 4}), hide_index=True, width="stretch")
+                download_button(q0_trial_per_model, "stat_q0_trial_per_model.csv")
 
-        with st.expander("Q1b — KW: does judge-vs-trial gap vary by model?"):
+            with st.expander("Q0 full methodology"):
+                st.markdown("""
+**Test choice:** One-sample Wilcoxon signed-rank test (scipy.stats.wilcoxon, alternative="greater").
+
+**Why non-parametric?** Std devs are bounded at zero and right-skewed; a one-sample t-test
+against 0 would violate normality assumptions. The Wilcoxon test ranks the absolute values
+of the non-zero observations and tests whether they are systematically positive.
+
+**Calculation steps:**
+1. For each metric (and optionally each model): collect the relevant std devs.
+   - Judge: per-(record,trial) std devs across 3 judge iterations.
+   - Trial: per-record std devs across 3 trials (judge-noise-removed).
+2. Remove exact zeros before ranking (equivalent to zero_method="wilcox").
+3. Run scipy.stats.wilcoxon(nonzero_vals, alternative="greater").
+4. p < 0.05 → variance is significantly greater than zero for this metric/model.
+
+**Pooled vs. per-model:** Pooled analysis combines all models' std devs, giving higher power
+to detect small but consistent variance. Per-model analysis can reveal if a specific model's
+judge is unusually deterministic (e.g., always returns the same score for a metric).
+""")
+
+        # ── Q1a ───────────────────────────────────────────────────────────────────
+        with st.expander("Q1a — Paired Wilcoxon: judge vs. trial variance (→ Judge vs. trial variance tab)"):
+            if q1a.empty:
+                st.info("No results (need ≥ 5 paired records per model × metric).")
+            else:
+                _q1a_disp = q1a.copy()
+                _q1a_disp["p_raw"] = _q1a_disp["p_raw"].map(fmt_p)
+                _q1a_disp["p_bonferroni"] = _q1a_disp["p_bonferroni"].map(fmt_p)
+                _q1a_disp["W"] = _q1a_disp["W"].round(1)
+                _q1a_disp["model"] = _q1a_disp["model"].apply(llm_name)
+                st.dataframe(
+                    _q1a_disp.round({"median_judge_std": 4, "median_traj_std": 4, "median_delta": 4}),
+                    width="stretch",
+                )
+                download_button(q1a, "stat_q1a_wilcoxon.csv")
+
+            with st.expander("Q1a full methodology"):
+                st.markdown("""
+**Test choice:** Wilcoxon signed-rank test (non-parametric paired t-test).
+
+**Why paired?** Both judge std dev and trial std dev are computed from the same set of records.
+Pairing by record_id removes the scenario-difficulty confound — a hard scenario would inflate
+both variance measures, making an unpaired comparison misleading.
+
+**Why non-parametric?** The differences between paired judge/trial std devs are not normally
+distributed (bounded at zero, right-skewed). The Wilcoxon test ranks the *absolute values* of
+the differences and tests whether positive and negative ranks are symmetric around zero.
+
+**Calculation steps:**
+1. For each (record, trial, metric, model): judge std dev = std dev of scores across 3 iterations.
+2. Average judge std devs over trials per record →
+   one judge-variance estimate per (record, model, metric).
+   (This matches the granularity of trial variance, which is computed per record.)
+3. Trial variance per record = std dev of the iteration-averaged scores across 3 trials
+   (from compute_trajectory_variance()).
+4. Merge on record_id. For each model × metric pair:
+   run scipy.stats.wilcoxon(judge_stds, traj_stds, alternative="two-sided", zero_method="wilcox").
+   zero_method="wilcox" excludes tied pairs (where judge_std == traj_std) — conservative choice.
+5. Bonferroni correction: multiply p_raw by the number of models tested per metric.
+6. Direction is determined by the sign of the median delta (judge_std − traj_std).
+""")
+
+        # ── Q1b ───────────────────────────────────────────────────────────────────
+        with st.expander(
+            "Q1b — Kruskal-Wallis: does the judge-vs-trial gap vary across models? (→ Judge vs. trial variance tab)"
+        ):
             if q1b.empty:
                 st.info("No results.")
             else:
                 _q1b_disp = q1b.copy()
+                _q1b_disp["H"] = _q1b_disp["H"].round(3)
                 _q1b_disp["p"] = _q1b_disp["p"].map(fmt_p)
-                st.dataframe(_q1b_disp.round(4), hide_index=True, width="stretch")
-                download_button(q1b, "stat_q1b.csv")
+                st.dataframe(_q1b_disp, width="stretch")
+                download_button(q1b, "stat_q1b_delta_kruskal_wallis.csv")
 
-        with st.expander("Q2 — Judge variance across models (KW + pairwise MWU)"):
+            with st.expander("Q1b full methodology"):
+                st.markdown("""
+**What this tests:** Whether the *gap* between judge and trial variance differs across models.
+
+**Why a separate test?** Q1a answers "is judge variance different from trial variance for each
+model?" but doesn't say whether that relationship is model-dependent. Q1b tests the interaction:
+do different models have different judge-vs-trial variance ratios?
+
+**Calculation steps:**
+1. For each (record, model, metric): compute delta = mean_judge_std − traj_std.
+   (Using the same per-record aggregation as Q1a.)
+2. Group the deltas by model.
+3. Run Kruskal-Wallis across groups (same rationale as Q2: non-parametric, right-skewed data).
+4. A significant result means the gap is not uniform across models — some models may have
+   judge variance that dominates more (or less) than trial variance compared to others.
+
+**No Bonferroni correction here:** Q1b is one test per metric (not a family of pairwise tests),
+so no correction is needed within this test. The 0.05 threshold is applied per metric.
+""")
+
+        # ── Q2 ────────────────────────────────────────────────────────────────────
+        with st.expander("Q2 — Does judge variance differ across models? (→ Judge variance tab)"):
+            st.markdown("**Kruskal-Wallis (overall test, per metric)**")
             if q2_kw.empty:
-                st.info("No results.")
+                st.info("No results (need ≥ 2 models).")
             else:
-                _q2_disp = q2_kw.copy()
-                _q2_disp["p"] = _q2_disp["p"].map(fmt_p)
-                st.dataframe(_q2_disp.round(4), hide_index=True, width="stretch")
-                download_button(q2_kw, "stat_q2_kw.csv")
-                if not q2_pw.empty:
-                    _q2pw_disp = q2_pw.copy()
-                    _q2pw_disp["p_raw"] = _q2pw_disp["p_raw"].map(fmt_p)
-                    _q2pw_disp["p_bonferroni"] = _q2pw_disp["p_bonferroni"].map(fmt_p)
-                    st.dataframe(_q2pw_disp.round(4), hide_index=True, width="stretch")
-                    download_button(q2_pw, "stat_q2_pairwise.csv")
+                _q2_kw_disp = q2_kw.copy()
+                _q2_kw_disp["H"] = _q2_kw_disp["H"].round(3)
+                _q2_kw_disp["p"] = _q2_kw_disp["p"].map(fmt_p)
+                st.dataframe(_q2_kw_disp, width="stretch")
+                download_button(q2_kw, "stat_q2_kruskal_wallis.csv")
 
-        with st.expander("Q3 — Trial variance across models (KW + pairwise MWU)"):
+            st.markdown("**Pairwise Mann-Whitney U (Bonferroni-corrected)**")
+            if q2_pw.empty:
+                st.info("No pairwise results.")
+            else:
+                _q2_pw_disp = q2_pw.copy()
+                _q2_pw_disp["p_raw"] = _q2_pw_disp["p_raw"].map(fmt_p)
+                _q2_pw_disp["p_bonferroni"] = _q2_pw_disp["p_bonferroni"].map(fmt_p)
+                _q2_pw_disp["U"] = _q2_pw_disp["U"].round(1)
+                _q2_pw_disp["effect_r"] = _q2_pw_disp["effect_r"].round(3)
+                st.dataframe(_q2_pw_disp, width="stretch")
+                download_button(q2_pw, "stat_q2_pairwise.csv")
+
+            if len(within_type_results) > 1:
+                st.markdown(
+                    "> **Note:** Tables above pool all models. Within-type results (cascade / S2S "
+                    "separately) are shown below to isolate within-group variation."
+                )
+            for _rtype in ("cascade", "s2s"):
+                _wt = within_type_results.get(_rtype, {})
+                _wt_kw2 = _wt.get("q2_kw", pd.DataFrame())
+                _wt_pw2 = _wt.get("q2_pairwise", pd.DataFrame())
+                if _wt_kw2.empty:
+                    continue
+                st.markdown(f"**Within {_TYPE_LABELS_ALL.get(_rtype, _rtype)} — K-W**")
+                _d = _wt_kw2.copy()
+                _d["H"] = _d["H"].round(3)
+                _d["p"] = _d["p"].map(fmt_p)
+                st.dataframe(_d, width="stretch")
+                if not _wt_pw2.empty:
+                    st.markdown(f"**Within {_TYPE_LABELS_ALL.get(_rtype, _rtype)} — pairwise MWU**")
+                    _dp = _wt_pw2.copy()
+                    _dp["p_raw"] = _dp["p_raw"].map(fmt_p)
+                    _dp["p_bonferroni"] = _dp["p_bonferroni"].map(fmt_p)
+                    _dp["U"] = _dp["U"].round(1)
+                    _dp["effect_r"] = _dp["effect_r"].round(3)
+                    st.dataframe(_dp, width="stretch")
+
+            with st.expander("Q2 full methodology"):
+                st.markdown("""
+**Test choice:** Kruskal-Wallis (non-parametric one-way ANOVA on ranks).
+
+**Why non-parametric?** Per-(record,trial) judge std devs are right-skewed with many zeros —
+they do not satisfy the normality assumption required for a one-way ANOVA.
+
+**Why ranks?** Kruskal-Wallis converts all observations to ranks across all groups combined,
+then tests whether the average rank differs across groups. This is robust to skew and outliers.
+
+**Calculation steps:**
+1. For each metric: group per-(record,trial) judge std devs by model.
+2. Run scipy.stats.kruskal(*groups). The H statistic approximates a χ² distribution
+   with df = n_models − 1 under the null that all groups have the same distribution.
+3. If p < 0.05: run pairwise Mann-Whitney U (scipy.stats.mannwhitneyu, two-sided) for
+   all pairs of models.
+4. Bonferroni correction: multiply each p_raw by the number of pairs
+   (3 pairs for 3 models, capped at 1.0).
+5. Effect size: rank-biserial correlation r = 1 − 2U/(n₁·n₂).
+   Ranges from −1 to +1. Positive means model_1 tends to have larger std devs.
+   Convention: |r| < 0.1 negligible, 0.1–0.3 small, 0.3–0.5 medium, > 0.5 large.
+
+**Family-wise error:** The 0.05 threshold is applied per metric independently.
+No cross-metric correction is applied, consistent with treating each metric as a
+separate analysis question.
+""")
+
+        # ── Q3 ────────────────────────────────────────────────────────────────────
+        with st.expander("Q3 — Does trial variance differ across models? (→ Trial variance tab)"):
+            st.markdown("**Kruskal-Wallis (overall test, per metric)**")
             if q3_kw.empty:
+                st.info("No results (need ≥ 2 models).")
+            else:
+                _q3_kw_disp = q3_kw.copy()
+                _q3_kw_disp["H"] = _q3_kw_disp["H"].round(3)
+                _q3_kw_disp["p"] = _q3_kw_disp["p"].map(fmt_p)
+                st.dataframe(_q3_kw_disp, width="stretch")
+                download_button(q3_kw, "stat_q3_kruskal_wallis.csv")
+
+            st.markdown("**Pairwise Mann-Whitney U (Bonferroni-corrected)**")
+            if q3_pw.empty:
+                st.info("No pairwise results.")
+            else:
+                _q3_pw_disp = q3_pw.copy()
+                _q3_pw_disp["p_raw"] = _q3_pw_disp["p_raw"].map(fmt_p)
+                _q3_pw_disp["p_bonferroni"] = _q3_pw_disp["p_bonferroni"].map(fmt_p)
+                _q3_pw_disp["U"] = _q3_pw_disp["U"].round(1)
+                _q3_pw_disp["effect_r"] = _q3_pw_disp["effect_r"].round(3)
+                st.dataframe(_q3_pw_disp, width="stretch")
+                download_button(q3_pw, "stat_q3_pairwise.csv")
+
+            for _rtype in ("cascade", "s2s"):
+                _wt = within_type_results.get(_rtype, {})
+                _wt_kw3 = _wt.get("q3_kw", pd.DataFrame())
+                _wt_pw3 = _wt.get("q3_pairwise", pd.DataFrame())
+                if _wt_kw3.empty:
+                    continue
+                st.markdown(f"**Within {_TYPE_LABELS_ALL.get(_rtype, _rtype)} — K-W**")
+                _d3 = _wt_kw3.copy()
+                _d3["H"] = _d3["H"].round(3)
+                _d3["p"] = _d3["p"].map(fmt_p)
+                st.dataframe(_d3, width="stretch")
+                if not _wt_pw3.empty:
+                    st.markdown(f"**Within {_TYPE_LABELS_ALL.get(_rtype, _rtype)} — pairwise MWU**")
+                    _dp3 = _wt_pw3.copy()
+                    _dp3["p_raw"] = _dp3["p_raw"].map(fmt_p)
+                    _dp3["p_bonferroni"] = _dp3["p_bonferroni"].map(fmt_p)
+                    _dp3["U"] = _dp3["U"].round(1)
+                    _dp3["effect_r"] = _dp3["effect_r"].round(3)
+                    st.dataframe(_dp3, width="stretch")
+
+            with st.expander("Q3 full methodology"):
+                st.markdown("""
+**Test choice:** Same as Q2 — Kruskal-Wallis + pairwise Mann-Whitney U with Bonferroni correction.
+
+**Why the same test?** The question is structurally identical to Q2: does this variance measure
+differ across models? Trial std devs have the same distributional properties as judge std devs
+(bounded at zero, right-skewed), so the same non-parametric approach is appropriate.
+
+**Key difference from Q2:** Trial variance is at the per-record level (one std dev per record,
+computed across 3 trials after averaging over judge iterations). Q2's groups contained N×K
+(record,trial) observations; Q3's groups contain only N records per model. This means Q3 has
+smaller groups and is slightly less powerful for the same true effect size.
+
+**Calculation steps:**
+1. For each metric: group per-record trial std devs by model (from compute_trajectory_variance()).
+2. Run scipy.stats.kruskal(*groups).
+3. If significant: pairwise Mann-Whitney U, Bonferroni-corrected.
+4. Effect size: rank-biserial correlation r = 1 − 2U/(n₁·n₂).
+""")
+
+        # ── Q4 ────────────────────────────────────────────────────────────────────
+        with st.expander("Q4 — Intraclass correlation (→ Intraclass correlation tab)"):
+            st.markdown("**Per-model ICC (one-way ANOVA)**")
+            if icc_pm.empty:
                 st.info("No results.")
             else:
-                _q3_disp = q3_kw.copy()
-                _q3_disp["p"] = _q3_disp["p"].map(fmt_p)
-                st.dataframe(_q3_disp.round(4), hide_index=True, width="stretch")
-                download_button(q3_kw, "stat_q3_kw.csv")
-                if not q3_pw.empty:
-                    _q3pw_disp = q3_pw.copy()
-                    _q3pw_disp["p_raw"] = _q3pw_disp["p_raw"].map(fmt_p)
-                    _q3pw_disp["p_bonferroni"] = _q3pw_disp["p_bonferroni"].map(fmt_p)
-                    st.dataframe(_q3pw_disp.round(4), hide_index=True, width="stretch")
-                    download_button(q3_pw, "stat_q3_pairwise.csv")
+                _q4_pm = icc_pm[
+                    [
+                        "run_label",
+                        "metric",
+                        "icc",
+                        "ci_lower",
+                        "ci_upper",
+                        "f_stat",
+                        "p_value",
+                        "n_scenarios",
+                        "n_trials",
+                    ]
+                ].copy()
+                _q4_pm["p_value"] = _q4_pm["p_value"].map(fmt_p)
+                st.dataframe(_q4_pm.round(4), hide_index=True, width="stretch")
+                download_button(icc_pm, "stat_q4_icc_per_model.csv")
+
+            st.markdown("**Pooled ICC — centered (Option A)**")
+            if icc_pc.empty:
+                st.info("No results.")
+            else:
+                st.dataframe(icc_pc.round(4), hide_index=True, width="stretch")
+                download_button(icc_pc, "stat_q4_icc_pooled_centered.csv")
+
+            st.markdown("**Pooled ICC — two-way random effects (Option B)**")
+            if icc_tw.empty:
+                st.info("No results.")
+            else:
+                _q4_tw = icc_tw.copy()
+                for col in ["p_scenario", "p_model", "p_interaction"]:
+                    _q4_tw[col] = _q4_tw[col].map(fmt_p)
+                st.dataframe(_q4_tw.round(4), hide_index=True, width="stretch")
+                download_button(icc_tw, "stat_q4_icc_pooled_twoway.csv")
+
+            with st.expander("Q4 full methodology"):
+                st.markdown("""
+**What ICC measures here**
+
+ICC = σ²_scenario / σ²_total. Scores are first averaged over judge iterations (removing
+judge noise), giving one score per (model, scenario, trial). ICC then asks: of all the
+variance in those scores, what fraction is attributable to which scenario it is?
+
+**Per-model: one-way ANOVA ICC(1,1)**
+
+For each (model, metric): one-way ANOVA with n = 50 scenario groups, k = 3 trials per group.
+
+Variance components:
+- σ²_scenario = max(0, (MS_between − MS_within) / k)
+- σ²_residual = MS_within
+
+ICC = σ²_scenario / (σ²_scenario + σ²_residual)
+
+Confidence intervals: Shrout & Fleiss (1979) exact CI using the F distribution:
+- ci_lower = max(0, (F_obs/F_upper − 1) / (F_obs/F_upper + k − 1))
+- ci_upper = min(1, (F_obs/F_lower − 1) / (F_obs/F_lower + k − 1))
+
+where F_lower, F_upper are the α/2 and 1−α/2 critical values of F(df_between, df_within).
+
+**Pooled centered (Option A)**
+
+Each model's mean score is subtracted before pooling. The one-way ANOVA is then run with
+k = n_models × n_trials observations per scenario group. This answers: what fraction of
+within-model score variance is explained by scenario identity, pooled across models?
+The centering removes model-level mean differences so they do not inflate σ²_residual.
+
+**Pooled two-way (Option B)**
+
+Model: Y_ijk = μ + α_i (scenario) + β_j (model) + (αβ)_ij (interaction) + ε_ijk (residual/trial)
+
+All four terms are treated as random effects. Variance components from expected mean squares
+(Cornfield-Tukey rule): the correct denominator for testing scenario and model main effects
+is MS_interaction, not MS_residual, because the interaction term inflates the expected value
+of MS_scenario and MS_model.
+
+Variance components:
+- σ²_residual    = MS_residual
+- σ²_interaction = max(0, (MS_interaction − MS_residual) / n_trials)
+- σ²_scenario    = max(0, (MS_scenario − MS_interaction) / (n_trials × n_models))
+- σ²_model       = max(0, (MS_model − MS_interaction)    / (n_trials × n_scenarios))
+- σ²_total       = σ²_scenario + σ²_model + σ²_interaction + σ²_residual
+
+ICC_scenario = σ²_scenario / σ²_total
+ICC_model    = σ²_model    / σ²_total
+
+F-tests (random-effects Cornfield-Tukey denominators):
+- F_scenario    = MS_scenario    / MS_interaction  (df = df_s, df_sm)
+- F_model       = MS_model       / MS_interaction  (df = df_m, df_sm)
+- F_interaction = MS_interaction / MS_residual     (df = df_sm, df_e)
+
+Degrees of freedom (n_s=50, n_m=6, n_t=3 for most metrics):
+- df_scenario = 49, df_model = 5, df_interaction = 245, df_residual = 600
+
+Confidence intervals: Satterthwaite approximation for σ²_scenario:
+- L = MS_scenario − MS_interaction (linear combination)
+- Effective df: df_L = L² / (MS_scenario²/df_scenario + MS_interaction²/df_interaction)
+- 95% CI on σ²_scenario: [df_L × σ²_scenario / χ²(df_L, 0.975),  df_L × σ²_scenario / χ²(df_L, 0.025)]
+- CI on ICC_scenario: divide bounds by σ²_total (σ²_total treated as fixed — standard approximation)
+
+**Interpreting negative variance components**
+
+Variance component estimates can be slightly negative due to sampling variability when the
+true value is near zero. These are clipped to 0. A clipped estimate means the factor explains
+essentially none of the variance; no strong conclusion can be drawn about the sign.
+
+**Interpreting the scenario × model interaction**
+
+A significant interaction F-test (F_interaction, df_interaction = 245, df_residual = 600)
+means models do not rank scenarios consistently — some scenarios are disproportionately
+harder or easier for specific models. A non-significant interaction supports the additivity
+assumption and means the benchmark discriminates scenarios consistently across models.
+""")
 
 
 def frontier_page():
