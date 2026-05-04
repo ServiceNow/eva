@@ -5,6 +5,7 @@ Pure NumPy. No file I/O, no plotting. Consumed by stats_perturbations and stats_
 from __future__ import annotations
 
 import numpy as np
+from statsmodels.regression.quantile_regression import QuantReg
 
 
 def bootstrap_resample(values: np.ndarray, n_boot: int, seed: int) -> np.ndarray:
@@ -50,4 +51,51 @@ def bootstrap_ci(
     boot_means = bootstrap_resample(values, n_boot=n_boot, seed=seed)
     lower = float(np.percentile(boot_means, 100 * alpha / 2))
     upper = float(np.percentile(boot_means, 100 * (1 - alpha / 2)))
+    return lower, upper
+
+
+def bootstrap_slope_ci(
+    x: np.ndarray,
+    y: np.ndarray,
+    quantile: float,
+    n_boot: int = 1000,
+    seed: int = 42,
+    alpha: float = 0.05,
+) -> tuple[float, float]:
+    """Bootstrapped CI on the quantile regression slope.
+
+    Resamples rows (models) with replacement and refits QuantReg on each
+    resample. CI is the (alpha/2, 1-alpha/2) percentile of the slope
+    distribution across successful resamples.
+
+    Bootstrapped CIs are preferred over analytical SEs for quantile regression
+    at small n: analytical SEs assume n >> n_models (here n_models = 11), and
+    the bootstrap distribution of the slope is often non-normal at small n.
+
+    Returns (nan, nan) if fewer than 10 resamples converge — signals the fit
+    is unreliable.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    n = len(x)
+    rng = np.random.default_rng(seed)
+    slopes: list[float] = []
+
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        x_boot, y_boot = x[idx], y[idx]
+        if np.ptp(x_boot) < 1e-10:
+            continue
+        X_boot = np.column_stack([np.ones(n), x_boot])
+        try:
+            result = QuantReg(y_boot, X_boot).fit(q=quantile, max_iter=2000)
+            slopes.append(float(result.params[1]))
+        except Exception:
+            continue
+
+    if len(slopes) < 10:
+        return float("nan"), float("nan")
+
+    lower = float(np.percentile(slopes, 100 * alpha / 2))
+    upper = float(np.percentile(slopes, 100 * (1 - alpha / 2)))
     return lower, upper

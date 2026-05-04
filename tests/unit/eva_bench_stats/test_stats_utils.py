@@ -10,7 +10,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "analysis" / "eva-bench-stats"))
 
-from stats_utils import bootstrap_ci, bootstrap_resample  # noqa: E402
+from stats_utils import bootstrap_ci, bootstrap_resample, bootstrap_slope_ci  # noqa: E402
 
 
 def test_bootstrap_resample_shape_and_determinism():
@@ -48,3 +48,29 @@ def test_bootstrap_ci_alpha_widens_to_narrows():
     lo90, hi90 = bootstrap_ci(values, n_boot=2000, seed=42, alpha=0.10)
     lo95, hi95 = bootstrap_ci(values, n_boot=2000, seed=42, alpha=0.05)
     assert (hi95 - lo95) > (hi90 - lo90)
+
+
+def test_bootstrap_slope_ci_returns_floats():
+    rng = np.random.default_rng(0)
+    x = rng.uniform(0, 1, 11)
+    y = 0.5 - 0.3 * x + rng.normal(0, 0.05, 11)
+    lo, hi = bootstrap_slope_ci(x, y, quantile=0.75, n_boot=100, seed=0)
+    assert isinstance(lo, float)
+    assert isinstance(hi, float)
+
+
+def test_bootstrap_slope_ci_lower_le_upper():
+    rng = np.random.default_rng(1)
+    x = rng.uniform(0, 1, 11)
+    y = 0.8 - 0.5 * x + rng.normal(0, 0.03, 11)
+    lo, hi = bootstrap_slope_ci(x, y, quantile=0.75, n_boot=200, seed=1)
+    assert lo <= hi
+
+
+def test_bootstrap_slope_ci_negative_slope():
+    """For strongly negatively-related data, CI upper bound should be negative."""
+    rng = np.random.default_rng(2)
+    x = np.linspace(0.1, 0.9, 11)
+    y = 1.0 - 0.9 * x + rng.normal(0, 0.01, 11)
+    lo, hi = bootstrap_slope_ci(x, y, quantile=0.75, n_boot=500, seed=2)
+    assert hi < 0, f"Expected negative CI upper bound for strong negative slope, got hi={hi}"
