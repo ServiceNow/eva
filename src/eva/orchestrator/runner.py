@@ -648,8 +648,15 @@ class BenchmarkRunner:
         total_passed = newly_passed_count + len(already_passed_ids)
         logger.info(f"Validation results: {total_passed} passed, {len(failed_ids)} failed")
 
-        # STEP 3: Rerun failures using the same flat loop as _run_with_validation
-        max_attempts = self.config.max_rerun_attempts
+        # STEP 3: Rerun failures using the same flat loop as _run_with_validation.
+        # Skip conversation reruns entirely in metrics-only flows — the user only
+        # wants to recompute metrics on whatever records already exist.
+        metrics_only = (
+            self.config.force_rerun_metrics or self.config.rerun_failed_metrics or self.config.fix_false_positives
+        )
+        if metrics_only and failed_ids:
+            logger.info(f"Metrics-only flow: skipping conversation rerun for {len(failed_ids)} failed record(s)")
+        max_attempts = 0 if metrics_only else self.config.max_rerun_attempts
         rerun_history: dict[str, list[dict]] = {}
         pending_ids = list(failed_ids)
 
