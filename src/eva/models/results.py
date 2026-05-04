@@ -94,6 +94,11 @@ class MetricScore(BaseModel):
         False,
         description="True when the metric had no applicable data to score (distinct from errored)",
     )
+    version: str | None = Field(
+        None,
+        description="Metric implementation version (set by the metric class) for tracking which "
+        "computation logic produced this score across partial reruns",
+    )
     sub_metrics: dict[str, "MetricScore"] | None = Field(
         None, description="Optional sub-metric breakdowns, aggregated generically by the runner"
     )

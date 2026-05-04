@@ -58,6 +58,7 @@ class TurnTakingMetric(CodeMetric):
     description = "Turn-taking evaluation based on per-turn latency and interruption behavior"
     category = "experience"
     pass_at_k_threshold = 0.8
+    version = "v0.1"
 
     # --- Latency curve (piecewise linear). 0 outside [LATENCY_HARD_EARLY_MS, LATENCY_HARD_LATE_MS]. ---
     # Ramp up 0 → 1 from LATENCY_HARD_EARLY_MS to LATENCY_SWEET_SPOT_LOW_MS.
@@ -324,6 +325,7 @@ class TurnTakingMetric(CodeMetric):
                 name=f"{cls.name}.{key}",
                 score=value,
                 normalized_score=value if normalized else None,
+                version=cls.version,
             )
 
         # --- Latency ---
@@ -380,6 +382,7 @@ class TurnTakingMetric(CodeMetric):
             name=f"{cls.name}.agent_interruption.num_interruptions",
             score=float(sum(n_segs_list)) if n_segs_list else None,
             normalized_score=None,
+            version=cls.version,
         )
         if overlap_ms_list:
             sub["agent_interruption.mean_overlap_ms"] = _wrap(
@@ -481,6 +484,7 @@ class TurnTakingMetric(CodeMetric):
                     score=0.0,
                     normalized_score=0.0,
                     details=details,
+                    version=self.version,
                 )
 
             score = 0.0 if missed_turn else round(statistics.mean(per_turn_score.values()), 4)
@@ -492,6 +496,7 @@ class TurnTakingMetric(CodeMetric):
                 normalized_score=score,
                 details=details,
                 sub_metrics=sub_metrics,
+                version=self.version,
             )
 
         except Exception as e:
