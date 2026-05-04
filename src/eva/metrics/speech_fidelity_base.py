@@ -33,7 +33,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
     max_empty_retries: int = 6
 
     # Silence trimming parameters — collapse long silences to reduce audio token cost.
-    trim_silence: bool = False
+    trim_silence: bool = True
     silence_thresh_dbfs: int = -45
     min_silence_len_ms: int = 3000
     speech_padding_ms: int = 100
