@@ -2,12 +2,6 @@
 
 > *Most voice agent benchmarks evaluate either what the agent **does** or how it **sounds** — EVA evaluates both.*
 
-[![Blog Post](https://img.shields.io/badge/Blog-Post-blue?style=flat-square&logo=huggingface)](https://huggingface.co/blog/ServiceNow-AI/eva)
-[![Website](https://img.shields.io/badge/Website-EVA-green?style=flat-square&logo=googlechrome)](https://servicenow.github.io/eva/)
-[![Leaderboard](https://img.shields.io/badge/Leaderboard-Rankings-orange?style=flat-square&logo=trophy)](https://servicenow.github.io/eva/#early-results)
-[![Dataset](https://img.shields.io/badge/Dataset-HuggingFace-yellow?style=flat-square&logo=huggingface)](https://huggingface.co/datasets/ServiceNow-AI/eva)
-[![Demo](https://img.shields.io/badge/Demo-See%20It-purple?style=flat-square&logo=rocket)](https://servicenow.github.io/eva/#demo)
-
 **EVA** is an open-source evaluation framework for conversational voice agents that scores complete, multi-turn spoken conversations across two fundamental dimensions:
 
 - 🎯 **EVA-A (Accuracy)** — Did the agent complete the task correctly and faithfully?
@@ -25,18 +19,6 @@ Agents that score well on task completion tend to score worse on conversational 
 
 <details>
 <summary><h2>Quick Start</h2></summary>
-
-### Cloning the Repository
-
-If you're only interested in running the latest stable version of EVA, you can clone with `--branch latest`, and optionally speed things up with `--depth 1 --no-tags --single-branch`.
-```bash
-git clone https://github.com/ServiceNow/eva.git --branch latest --depth 1 --no-tags --single-branch
-```
-
-Otherwise, for development, you can clone the default branch, `main`.
-```bash
-git clone https://github.com/ServiceNow/eva.git
-```
 
 ### Installation
 

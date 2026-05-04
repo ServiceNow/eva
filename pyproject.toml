@@ -6,15 +6,6 @@ build-backend = "hatchling.build"
 name = "eva"
 dynamic = ["version"]
 description = "A New End-to-end Framework for Evaluating Voice Agents (EVA)"
-authors = [
-    { name = "Tara Bogavelli" },
-    { name = "Gabrielle Gauthier Melançon" },
-    { name = "Katrina Stankiewicz" },
-    { name = "Oluwanifemi Bamgbose" },
-    { name = "Hoang Nguyen" },
-    { name = "Raghav Mehndiratta" },
-    { name = "Hari Subramani" },
-]
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = "MIT"
