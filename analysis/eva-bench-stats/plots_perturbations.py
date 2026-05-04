@@ -14,9 +14,6 @@ from plots_utils import empty_fig as _empty_fig
 from plots_utils import fmt_p as _fmt_p
 
 _CONDITION_DISPLAY = {
-    "A": "Accent",
-    "B": "Background noise",
-    "A+B": "Accent + Background noise",
     "accent": "Accent",
     "background_noise": "Background noise",
     "both": "Accent + Background noise",
@@ -66,6 +63,15 @@ _METRIC_COLOR_MAP = {
 }
 
 
+def _ast_tier(corrected_p: float) -> str:
+    """Return asterisk tier string for a corrected p-value. Only call when reject=True."""
+    if corrected_p < 0.001:
+        return "***"
+    if corrected_p < 0.01:
+        return "**"
+    return "*"
+
+
 def _prettify_conditions(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["perturbation_condition"] = df["perturbation_condition"].map(lambda x: _CONDITION_DISPLAY.get(x, x))
@@ -78,8 +84,9 @@ def perturbation_delta_plot(
     title: str | None = None,
     y_range: tuple[float, float] | None = None,
     model_order: list[str] | None = None,
-    group_boundary: int | None = None,
-    group_labels: tuple[str, str] | None = None,
+    group_boundary: int | list[int] | None = None,
+    group_labels: tuple[str, ...] | list[str] | None = None,
+    cld_df: pd.DataFrame | None = None,
 ) -> go.Figure:
     """Bar chart of mean deltas per model per perturbation condition with 95% CI error bars.
 
@@ -171,7 +178,7 @@ def perturbation_delta_plot(
         y_span = max(all_ci.max() - all_ci.min(), 0.05)
     ast_clearance = y_span * 0.06
 
-    sig_x, sig_y, sig_textpos = [], [], []
+    sig_x, sig_y, sig_textpos, sig_text = [], [], [], []
     for j, cond in enumerate(conditions):
         by_model = cond_data[cond]
         offset = (j - (n_conds - 1) / 2) * bar_w
@@ -180,6 +187,7 @@ def perturbation_delta_plot(
             if row is not None and row["reject"]:
                 delta = row["observed_mean_delta"]
                 sig_x.append(i + offset)
+                sig_text.append(_ast_tier(row["corrected_p"]))
                 if delta < 0:
                     sig_y.append(row["ci_lower"] - ast_clearance)
                     sig_textpos.append("middle center")
@@ -193,7 +201,7 @@ def perturbation_delta_plot(
                 x=sig_x,
                 y=sig_y,
                 mode="text",
-                text=["*"] * len(sig_x),
+                text=sig_text,
                 textposition=sig_textpos,
                 textfont={"size": 20, "color": "#111"},
                 showlegend=False,
@@ -201,31 +209,74 @@ def perturbation_delta_plot(
             )
         )
 
-    if group_boundary is not None and 0 < group_boundary < n_models:
+    if cld_df is not None and not cld_df.empty:
+        cld_pretty = _prettify_conditions(cld_df)
+        cld_lookup = {
+            (row["model_label"], row["perturbation_condition"]): row["cld_letter"]
+            for _, row in cld_pretty.iterrows()
+        }
+        cld_clearance = y_span * 0.04
+        cld_x, cld_y, cld_text = [], [], []
+        for j, cond in enumerate(conditions):
+            by_model = cond_data[cond]
+            offset = (j - (n_conds - 1) / 2) * bar_w
+            for i, model in enumerate(models):
+                row = by_model.get(model)
+                letter = cld_lookup.get((model, cond), "")
+                if row is not None and letter:
+                    delta = row["observed_mean_delta"]
+                    if delta < 0:
+                        y_ast = row["ci_lower"] - ast_clearance
+                        cld_y.append(y_ast - cld_clearance)
+                    else:
+                        y_ast = row["ci_upper"] + ast_clearance
+                        cld_y.append(y_ast + cld_clearance)
+                    cld_x.append(i + offset)
+                    cld_text.append(letter)
+        if cld_x:
+            fig.add_trace(
+                go.Scatter(
+                    x=cld_x,
+                    y=cld_y,
+                    mode="text",
+                    text=cld_text,
+                    textposition="middle center",
+                    textfont={"size": 11, "color": "#666"},
+                    showlegend=False,
+                    hoverinfo="skip",
+                )
+            )
+
+    boundaries = (
+        [group_boundary] if isinstance(group_boundary, int)
+        else (list(group_boundary) if group_boundary is not None else [])
+    )
+    boundaries = [b for b in boundaries if 0 < b < n_models]
+    for b in boundaries:
         fig.add_shape(
             type="line",
-            x0=group_boundary - 0.5,
-            x1=group_boundary - 0.5,
+            x0=b - 0.5,
+            x1=b - 0.5,
             y0=0,
             y1=1,
             yref="paper",
             line={"color": "#aaa", "width": 1.5, "dash": "dash"},
         )
-        if group_labels is not None:
-            # Use data coordinates when y_range is explicit so the label is pinned to the
-            # actual top of the axis, independent of where Plotly places tick marks.
-            ann_y = y_range[1] if y_range is not None else 0.97
-            ann_yref = "y" if y_range is not None else "paper"
-            label_style = {
-                "xref": "x",
-                "yref": ann_yref,
-                "y": ann_y,
-                "yanchor": "top",
-                "showarrow": False,
-                "font": {"size": 12, "color": "#888"},
-            }
-            fig.add_annotation(x=-0.5, xanchor="left", text=group_labels[0], **label_style)
-            fig.add_annotation(x=group_boundary - 0.45, xanchor="left", text=group_labels[1], **label_style)
+    if boundaries and group_labels is not None:
+        # Place one label per region. label_xs gives the left edge of each region.
+        ann_y = y_range[1] if y_range is not None else 0.97
+        ann_yref = "y" if y_range is not None else "paper"
+        label_style = {
+            "xref": "x",
+            "yref": ann_yref,
+            "y": ann_y,
+            "yanchor": "top",
+            "showarrow": False,
+            "font": {"size": 12, "color": "#888"},
+        }
+        label_xs = [-0.5] + [b - 0.45 for b in boundaries]
+        for x, label in zip(label_xs, group_labels):
+            fig.add_annotation(x=x, xanchor="left", text=label, **label_style)
 
     yaxis: dict = {
         "zeroline": True,
@@ -425,6 +476,22 @@ _CONDITION_ABBREV = {
     "Accent + Background noise": "Both",
 }
 
+_PAIRWISE_DISPLAY = {
+    "accent_vs_background_noise": "Accent vs Background noise",
+    "accent_vs_both": "Accent vs Both",
+    "background_noise_vs_both": "Background noise vs Both",
+}
+_PAIRWISE_COLORS = {
+    "Accent vs Background noise": "#882255",
+    "Accent vs Both": "#CC6677",
+    "Background noise vs Both": "#DDCC77",
+}
+_PAIRWISE_ORDER = [
+    "Accent vs Background noise",
+    "Accent vs Both",
+    "Background noise vs Both",
+]
+
 
 def perturbation_pvalue_table(
     results_df: pd.DataFrame,
@@ -523,6 +590,127 @@ def data_coverage_table(completeness_df: pd.DataFrame) -> pd.DataFrame:
         records.append(row)
 
     result = pd.DataFrame(records, index=models)
+    result.index.name = "Model"
+    return result
+
+
+def perturbation_pairwise_pvalue_table(
+    pairwise_df: pd.DataFrame,
+    metric: str,
+    model_order: list[str] | None = None,
+) -> pd.DataFrame:
+    """P-value table for pairwise comparisons (secondary H-B family)."""
+    df = pairwise_df[pairwise_df["metric"] == metric].copy()
+    if df.empty:
+        return pd.DataFrame()
+
+    df["comparison_display"] = df["comparison"].map(
+        lambda x: _PAIRWISE_DISPLAY.get(x, x)
+    )
+
+    present = set(df["model_label"].unique())
+    models = [m for m in model_order if m in present] if model_order else sorted(present)
+    comparisons = [c for c in _PAIRWISE_ORDER if c in df["comparison_display"].unique()]
+
+    tuples = []
+    for comp in comparisons:
+        tuples.extend([(comp, "p"), (comp, "✓")])
+    col_index = pd.MultiIndex.from_tuples(tuples)
+
+    records = {}
+    for model in models:
+        row_data = {}
+        for comp in comparisons:
+            cell = df[(df["model_label"] == model) & (df["comparison_display"] == comp)]
+            if cell.empty:
+                row_data[(comp, "p")] = ""
+                row_data[(comp, "✓")] = ""
+            else:
+                r = cell.iloc[0]
+                row_data[(comp, "p")] = _fmt_p(r["corrected_p"])
+                row_data[(comp, "✓")] = "✓" if r["reject"] else ""
+        records[model] = row_data
+
+    result = pd.DataFrame.from_dict(records, orient="index")
+    result.columns = col_index
+    result.index.name = "Model"
+    return result
+
+
+def perturbation_pairwise_results_table(
+    pairwise_df: pd.DataFrame,
+    metric: str,
+    model_order: list[str] | None = None,
+) -> pd.DataFrame:
+    """Mean delta [95% CI] table for pairwise comparisons."""
+    df = pairwise_df[pairwise_df["metric"] == metric].copy()
+    if df.empty:
+        return pd.DataFrame()
+
+    df["comparison_display"] = df["comparison"].map(
+        lambda x: _PAIRWISE_DISPLAY.get(x, x)
+    )
+
+    present = set(df["model_label"].unique())
+    models = [m for m in model_order if m in present] if model_order else sorted(present)
+    comparisons = [c for c in _PAIRWISE_ORDER if c in df["comparison_display"].unique()]
+
+    def _fmt_cell(row) -> str:
+        d = f"{row['observed_mean_delta']:+.3f}"
+        lo = f"{row['ci_lower']:+.3f}"
+        hi = f"{row['ci_upper']:+.3f}"
+        ast = _ast_tier(row["corrected_p"]) if row["reject"] else ""
+        return f"{d} [{lo}, {hi}]{ast}"
+
+    records: dict[str, dict] = {}
+    for model in models:
+        row_data = {}
+        for comp in comparisons:
+            cell = df[(df["model_label"] == model) & (df["comparison_display"] == comp)]
+            row_data[comp] = _fmt_cell(cell.iloc[0]) if not cell.empty else ""
+        records[model] = row_data
+
+    result = pd.DataFrame.from_dict(records, orient="index")
+    result.columns = comparisons
+    result.index.name = "Model"
+    return result
+
+
+def perturbation_additivity_table(
+    additivity_df: pd.DataFrame,
+    metric: str,
+    model_order: list[str] | None = None,
+) -> pd.DataFrame:
+    """Summary table for the additivity residual test."""
+    df = additivity_df[additivity_df["metric"] == metric]
+    if df.empty:
+        return pd.DataFrame()
+
+    present = set(df["model_label"].unique())
+    models = [m for m in model_order if m in present] if model_order else sorted(present)
+
+    rows = {}
+    for model in models:
+        cell = df[df["model_label"] == model]
+        if cell.empty:
+            continue
+        r = cell.iloc[0]
+        d = f"{r['observed_mean_delta']:+.3f}"
+        lo = f"{r['ci_lower']:+.3f}"
+        hi = f"{r['ci_upper']:+.3f}"
+        if r["reject"] and r["observed_mean_delta"] > 0:
+            direction = "synergistic (+)"
+        elif r["reject"] and r["observed_mean_delta"] < 0:
+            direction = "sub-additive (−)"
+        else:
+            direction = "—"
+        rows[model] = {
+            "Mean residual [95% CI]": f"{d} [{lo}, {hi}]",
+            "p (uncorrected)": _fmt_p(r["raw_p"]),
+            "Direction": direction,
+        }
+
+    result = pd.DataFrame.from_dict(rows, orient="index")
     result.index.name = "Model"
     return result
 

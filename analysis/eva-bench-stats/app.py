@@ -49,8 +49,11 @@ def perturbations_page():
     from plots_perturbations import (
         _DOMAIN_DISPLAY,
         data_coverage_table,
+        perturbation_additivity_table,
         perturbation_delta_plot,
         perturbation_overview_plot,
+        perturbation_pairwise_pvalue_table,
+        perturbation_pairwise_results_table,
         perturbation_pvalue_table,
         perturbation_results_table,
         perturbation_summary_table,
@@ -85,22 +88,65 @@ def perturbations_page():
     results_pooled["reject"] = results_pooled["reject"].astype(bool)
     results_per_domain["reject"] = results_per_domain["reject"].astype(bool)
 
+    pairwise_pooled = pairwise_per_domain = None
+    additivity_pooled = additivity_per_domain = None
+    cld_pooled_df = cld_per_domain_df = None
+
+    _pw_pooled_path = PROCESSED_DIR / "perturbations" / "results_pairwise_pooled.csv"
+    _pw_domain_path = PROCESSED_DIR / "perturbations" / "results_pairwise_per_domain.csv"
+    _add_pooled_path = PROCESSED_DIR / "perturbations" / "results_additivity_pooled.csv"
+    _add_domain_path = PROCESSED_DIR / "perturbations" / "results_additivity_per_domain.csv"
+    _cld_pooled_path = PROCESSED_DIR / "perturbations" / "cld_pooled.csv"
+    _cld_domain_path = PROCESSED_DIR / "perturbations" / "cld_per_domain.csv"
+
+    _pairwise_available = _pw_pooled_path.exists() and _pw_domain_path.exists()
+    _additivity_available = _add_pooled_path.exists() and _add_domain_path.exists()
+    _cld_available = _cld_pooled_path.exists() and _cld_domain_path.exists()
+
+    if _pairwise_available:
+        pairwise_pooled = pd.read_csv(_pw_pooled_path)
+        pairwise_per_domain = pd.read_csv(_pw_domain_path)
+        pairwise_pooled["reject"] = pairwise_pooled["reject"].astype(bool)
+        pairwise_per_domain["reject"] = pairwise_per_domain["reject"].astype(bool)
+
+    if _additivity_available:
+        additivity_pooled = pd.read_csv(_add_pooled_path)
+        additivity_per_domain = pd.read_csv(_add_domain_path)
+        additivity_pooled["reject"] = additivity_pooled["reject"].astype(bool)
+        additivity_per_domain["reject"] = additivity_per_domain["reject"].astype(bool)
+
+    if _cld_available:
+        cld_pooled_df = pd.read_csv(_cld_pooled_path)
+        cld_per_domain_df = pd.read_csv(_cld_domain_path)
+
     metrics: list[str] = config.get("metrics", [])
     alpha: float = config.get("alpha", 0.05)
 
     domains = sorted(results_per_domain["domain"].unique())
 
-    # Sort models: cascade first, then s2s, unknown types last, alphabetical within each group.
-    # Ordering is fully driven by the config — add `type: cascade` or `type: s2s` when adding models.
-    _TYPE_ORDER = {"cascade": 0, "s2s": 1}
+    # Sort models: cascade first, then hybrid, then s2s, unknown types last, alphabetical within each group.
+    # Ordering is fully driven by the config — set `type:` to cascade / hybrid / s2s when adding models.
+    _TYPE_ORDER = {"cascade": 0, "hybrid": 1, "s2s": 2}
+    _TYPE_LABEL = {"cascade": "Cascade", "hybrid": "Hybrid", "s2s": "S2S"}
     _model_type = {label: cfg.get("type", "") for label, cfg in config["models"].items()}
     models = sorted(
         results_pooled["model_label"].unique(),
-        key=lambda m: (_TYPE_ORDER.get(_model_type.get(m, ""), 2), m),
+        key=lambda m: (_TYPE_ORDER.get(_model_type.get(m, ""), 99), m),
     )
-    n_cascade = sum(1 for m in models if _model_type.get(m) == "cascade")
-    group_boundary = n_cascade if 0 < n_cascade < len(models) else None
-    group_labels = ("Cascade", "S2S") if group_boundary is not None else None
+    # Build boundaries (cumulative counts of present types) and per-region labels.
+    _present_types = [t for t in ("cascade", "hybrid", "s2s") if any(_model_type.get(m) == t for m in models)]
+    _counts = [sum(1 for m in models if _model_type.get(m) == t) for t in _present_types]
+    if len(_present_types) > 1:
+        cumulative = []
+        running = 0
+        for c in _counts[:-1]:
+            running += c
+            cumulative.append(running)
+        group_boundary = cumulative
+        group_labels = tuple(_TYPE_LABEL[t] for t in _present_types)
+    else:
+        group_boundary = None
+        group_labels = None
 
     _METRIC_TAB_LABELS = {
         "EVA-A_pass": "EVA-A (pass@1)",
@@ -170,6 +216,11 @@ def perturbations_page():
             return
         y_range = (math.floor(y_min * 10) / 10 - 0.05, math.ceil(y_max * 10) / 10 + 0.05)
 
+        _cld_pooled_metric = (
+            cld_pooled_df[cld_pooled_df["metric"] == metric]
+            if cld_pooled_df is not None else None
+        )
+
         # ── Pooled ────────────────────────────────────────────────────
         st.subheader("Pooled (all domains, 90 scenarios)")
         st.caption(f"{sig_note} across 3 conditions per model.")
@@ -182,6 +233,7 @@ def perturbations_page():
                 model_order=models,
                 group_boundary=group_boundary,
                 group_labels=group_labels,
+                cld_df=_cld_pooled_metric,
             ),
             width="stretch",
         )
@@ -197,6 +249,13 @@ def perturbations_page():
         st.caption(f"{sig_note} across 9 tests (3 conditions × 3 domains) per model.")
         for domain in domains:
             domain_results = results_per_domain[results_per_domain["domain"] == domain]
+            _cld_domain_metric = (
+                cld_per_domain_df[
+                    (cld_per_domain_df["metric"] == metric)
+                    & (cld_per_domain_df["domain"] == domain)
+                ]
+                if cld_per_domain_df is not None else None
+            )
             st.plotly_chart(
                 perturbation_delta_plot(
                     domain_results,
@@ -206,6 +265,7 @@ def perturbations_page():
                     model_order=models,
                     group_boundary=group_boundary,
                     group_labels=group_labels,
+                    cld_df=_cld_domain_metric,
                 ),
                 width="stretch",
             )
@@ -234,6 +294,59 @@ def perturbations_page():
                 if not tbl.empty:
                     st.dataframe(tbl, width="stretch")
 
+        # ── Pairwise comparisons (secondary family) ───────────────────────────
+        st.divider()
+        st.subheader("Pairwise comparisons (secondary family)")
+        st.caption(
+            "Holm-Bonferroni corrected across 3 pairwise comparisons per model. "
+            "CLD letters on the delta plots above identify groups not significantly different from each other."
+        )
+        if not _pairwise_available:
+            st.info("Run `uv run python analysis/eva-bench-stats/run_stats.py` to generate pairwise results.")
+        else:
+            pw_metric = pairwise_pooled[pairwise_pooled["metric"] == metric]
+            tbl_pw = perturbation_pairwise_pvalue_table(pw_metric, metric=metric, model_order=models)
+            if not tbl_pw.empty:
+                st.markdown("**Pooled**")
+                st.dataframe(tbl_pw, width="stretch")
+            with st.expander("Mean deltas and 95% CIs — pairwise (pooled)", expanded=False):
+                tbl_pw_res = perturbation_pairwise_results_table(pw_metric, metric=metric, model_order=models)
+                if not tbl_pw_res.empty:
+                    st.dataframe(tbl_pw_res, width="stretch")
+            with st.expander("Per-domain pairwise p-values", expanded=False):
+                for domain in domains:
+                    st.markdown(f"**{_DOMAIN_DISPLAY.get(domain, domain)}**")
+                    domain_pw = pairwise_per_domain[
+                        (pairwise_per_domain["metric"] == metric)
+                        & (pairwise_per_domain["domain"] == domain)
+                    ]
+                    tbl = perturbation_pairwise_pvalue_table(domain_pw, metric=metric, model_order=models)
+                    if not tbl.empty:
+                        st.dataframe(tbl, width="stretch")
+
+        # ── Additivity test ────────────────────────────────────────────────────
+        st.divider()
+        st.subheader("Additivity test (both vs expected sum of accent + background noise)")
+        st.caption("Raw p-value, uncorrected — one test per model per metric.")
+        if not _additivity_available:
+            st.info("Run `uv run python analysis/eva-bench-stats/run_stats.py` to generate additivity results.")
+        else:
+            add_metric = additivity_pooled[additivity_pooled["metric"] == metric]
+            tbl_add = perturbation_additivity_table(add_metric, metric=metric, model_order=models)
+            if not tbl_add.empty:
+                st.markdown("**Pooled**")
+                st.dataframe(tbl_add, width="stretch")
+            with st.expander("Per-domain additivity results", expanded=False):
+                for domain in domains:
+                    st.markdown(f"**{_DOMAIN_DISPLAY.get(domain, domain)}**")
+                    domain_add = additivity_per_domain[
+                        (additivity_per_domain["metric"] == metric)
+                        & (additivity_per_domain["domain"] == domain)
+                    ]
+                    tbl = perturbation_additivity_table(domain_add, metric=metric, model_order=models)
+                    if not tbl.empty:
+                        st.dataframe(tbl, width="stretch")
+
     # ── Summary tab ────────────────────────────────────────────────────
     with tabs[0]:
         st.subheader("Effect of perturbations — pooled (all domains, 90 scenarios)")
@@ -258,6 +371,10 @@ def perturbations_page():
                     model_order=models,
                     group_boundary=group_boundary,
                     group_labels=group_labels,
+                    cld_df=(
+                        cld_pooled_df[cld_pooled_df["metric"] == metric]
+                        if cld_pooled_df is not None else None
+                    ),
                 ),
                 width="stretch",
             )
@@ -2256,8 +2373,70 @@ less powerful for the same true effect size.
 
 
 def frontier_page():
+    import pandas as pd
+    from plots_frontier import frontier_placeholder_fig, frontier_scatter_plot, qr_results_table
+
     st.header("Frontier Analysis")
-    st.info("Coming soon.")
+
+    config = _load_config("frontier")
+    if config is None:
+        st.warning(
+            f"Config not found: `{CONFIG_DIR / 'frontier_config.yaml'}`. "
+            "Create it using the template in the spec."
+        )
+        return
+
+    alpha: float = config.get("alpha", 0.05)
+    scores_path = PROCESSED_DIR / "frontier" / "model_scores.csv"
+    qr_path = PROCESSED_DIR / "frontier" / "qr_results.csv"
+
+    if not scores_path.exists() or not qr_path.exists():
+        st.info(
+            "Results not found. Run:\n"
+            "```\n"
+            "uv run python analysis/eva-bench-stats/run_data.py\n"
+            "uv run python analysis/eva-bench-stats/run_stats.py\n"
+            "```"
+        )
+        st.plotly_chart(frontier_placeholder_fig(), use_container_width=True)
+        return
+
+    scores_df = pd.read_csv(scores_path)
+    qr_results_df = pd.read_csv(qr_path)
+
+    fig = frontier_scatter_plot(scores_df, qr_results_df, alpha=alpha)
+    st.plotly_chart(fig, use_container_width=True)
+
+    with st.expander("Quantile regression results", expanded=False):
+        tbl = qr_results_table(qr_results_df, alpha=alpha)
+        if not tbl.empty:
+            st.dataframe(tbl, use_container_width=True)
+        st.caption(f"n={len(scores_df)} models. Results are exploratory — see methods below.")
+
+    with st.expander("Statistical methods", expanded=False):
+        st.markdown(f"""
+**Quantile regression** models the upper boundary of the EVA-X pass@1 distribution
+given EVA-A pass@1 (and vice versa). A negative slope at the q-th percentile means
+models with higher EVA-A tend to have a lower ceiling on EVA-X — a frontier trade-off.
+
+**Two directions** are run because the trade-off may be asymmetric. *EVA-X \\~ EVA-A*
+asks whether EVA-A constrains the ceiling on EVA-X; *EVA-A \\~ EVA-X* asks the reverse.
+The reverse-direction lines on the plot are shown inverted onto the same axes
+(y = (x − intercept) / slope).
+
+**Two quantiles (q=0.75 and q=0.90)** serve as a sensitivity check. At n=11, the
+90th percentile is driven by ~1–2 observations near the boundary; the 75th percentile
+(~3 observations) is more stable. Convergence of direction and significance across
+both quantiles strengthens conclusions.
+
+**Bootstrapped 95% CIs** on the slope are computed by resampling models with replacement
+{config.get("n_bootstrap", 1000):,} times and refitting QR on each resample. Analytical
+standard errors are not used because they assume n >> 11.
+
+**⚠️ Standing caution:** n=11 models severely limits statistical power. All results should
+be treated as hypothesis-generating and exploratory, not confirmatory. Statistical
+significance at α = {alpha} does not imply a robust finding at this sample size.
+""")
 
 
 with st.sidebar:

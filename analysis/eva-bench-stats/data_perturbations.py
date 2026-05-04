@@ -59,11 +59,20 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONFIG_PATH = PROJECT_ROOT / "local" / "eva-bench-stats" / "perturbations_config.yaml"
 
 
+ALIAS_REMAP: dict[str, str] = {
+    # ITSM ultravox runs land under "fixie-ai/ultravox" because the run dir is
+    # nested one level deeper than usual; collapse to plain "ultravox" so all
+    # three domains share one alias.
+    "fixie-ai/ultravox": "ultravox",
+}
+
+
 def load_trial_scores(path: Path) -> pd.DataFrame:
     """Load trial_scores.csv and return it with expected column types."""
     df = pd.read_csv(path)
     df["trial"] = df["trial"].astype(int)
     df["value"] = df["value"].astype(float)
+    df["system_alias"] = df["system_alias"].replace(ALIAS_REMAP)
     return df
 
 
@@ -110,7 +119,7 @@ def compute_deltas(
         ].rename(columns={"mean_value": "perturb_mean"})
 
         merged = baseline.merge(perturb, on=join_keys, how="inner")
-        merged["perturbation_condition"] = label
+        merged["perturbation_condition"] = pert_cat
         merged["delta"] = merged["perturb_mean"] - merged["baseline_mean"]
         rows.append(merged)
 
@@ -340,6 +349,50 @@ def build_scenario_deltas(
     return deltas
 
 
+def compute_pairwise_deltas(scenario_deltas: pd.DataFrame) -> pd.DataFrame:
+    """Compute pairwise condition deltas and additivity residual per scenario.
+
+    Expects perturbation_condition values "accent", "background_noise", "both".
+    Scenarios where any of the three conditions is missing are dropped silently.
+
+    Returns DataFrame with columns:
+        model_label, domain, scenario_id, metric, comparison, delta
+    """
+    conditions = ["accent", "background_noise", "both"]
+    group_keys = ["model_label", "domain", "scenario_id", "metric"]
+
+    if scenario_deltas.empty:
+        return pd.DataFrame(columns=group_keys + ["comparison", "delta"])
+
+    pivoted = (
+        scenario_deltas[scenario_deltas["perturbation_condition"].isin(conditions)]
+        .pivot_table(
+            index=group_keys,
+            columns="perturbation_condition",
+            values="delta",
+            aggfunc="first",
+        )
+        .dropna(subset=conditions)
+        .reset_index()
+    )
+    pivoted.columns.name = None
+
+    rows = []
+    for _, row in pivoted.iterrows():
+        base = {k: row[k] for k in group_keys}
+        a, b, ab = row["accent"], row["background_noise"], row["both"]
+        rows.extend([
+            {**base, "comparison": "accent_vs_background_noise", "delta": a - b},
+            {**base, "comparison": "accent_vs_both", "delta": a - ab},
+            {**base, "comparison": "background_noise_vs_both", "delta": b - ab},
+            {**base, "comparison": "additivity", "delta": ab - (a + b)},
+        ])
+
+    return pd.DataFrame(rows) if rows else pd.DataFrame(
+        columns=group_keys + ["comparison", "delta"]
+    )
+
+
 def main(config_path: Path = CONFIG_PATH) -> None:
     with open(config_path) as f:
         config = yaml.safe_load(f)
@@ -444,6 +497,13 @@ def main(config_path: Path = CONFIG_PATH) -> None:
 
     combined.to_csv(deltas_path, index=False)
     completeness_df.to_csv(report_path, index=False)
+
+    pairwise_deltas = compute_pairwise_deltas(combined) if not combined.empty else pd.DataFrame(
+        columns=["model_label", "domain", "scenario_id", "metric", "comparison", "delta"]
+    )
+    pairwise_deltas_path = output_dir / "scenario_pairwise_deltas.csv"
+    pairwise_deltas.to_csv(pairwise_deltas_path, index=False)
+    print(f"Wrote {len(pairwise_deltas):,} pairwise delta rows → {pairwise_deltas_path}")
 
     n_complete = (
         completeness_df["model_complete"].any()

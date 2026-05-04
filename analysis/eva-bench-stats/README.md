@@ -252,3 +252,36 @@ same scenario. 30 paired deltas per (model, condition, domain).
 - **Correction families:** Defined per (model, metric)
   - *Pooled* — 3 tests per family (one per condition)
   - *Per-domain* — 9 tests per family (3 conditions × 3 domains)
+
+---
+
+#### Pairwise comparisons — secondary family (`run_pairwise_analysis`, line 194)
+
+- **H₀:** Mean delta for condition A equals mean delta for condition B (one H₀ per pair)
+- **Pairs tested:** accent vs background noise, accent vs both, background noise vs both
+- **Correction family:** Holm-Bonferroni across the 3 pairwise tests per (model, metric).
+  Applied separately from the primary vs-baseline family.
+- **Why separate families:** The primary question ("does perturbation affect performance?")
+  and the secondary question ("which conditions differ from each other?") are distinct
+  inferential goals. Pooling would dilute power for each independently.
+
+---
+
+#### Compact letter display (`compute_cld`, line 328)
+
+- **Input:** 3×3 boolean significance matrix from secondary-family reject flags
+- **Algorithm:** Insert-absorption maximal-clique: find all maximal subsets of conditions
+  where no pair is significantly different; assign letters a, b, c ... to subsets; each
+  condition receives all letters of subsets it belongs to.
+- **Interpretation:** Conditions sharing a letter are not significantly different from each
+  other. Conditions with no shared letter are significantly different.
+
+---
+
+#### Additivity test (`run_additivity_analysis`, line 276)
+
+- **H₀:** The combined (both) perturbation effect equals the sum of the individual effects
+- **Statistic:** Mean of `delta_both − (delta_accent + delta_background_noise)` across scenarios
+- **Correction:** None — one test per (model, metric, domain). Raw p-value reported directly.
+- **Interpretation:** Positive residual = synergistic (combined effect exceeds sum of parts);
+  negative residual = sub-additive (combined effect less than sum of parts).
