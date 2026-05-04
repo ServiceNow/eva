@@ -43,8 +43,8 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
                     error=f"No {self.role} audio file available",
                 )
 
-            # TEMP: silence trimming disabled
-            # audio_segment = self._trim_silence(audio_segment, context)
+            if self.trim_silence:
+                audio_segment = self._trim_silence(audio_segment, context)
 
             redacted_trace = self._build_redacted_trace(context)
             assistant_turn_ids = self._get_assistant_turn_ids(redacted_trace)
@@ -142,6 +142,7 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
                 "aggregation": self.aggregation,
                 "num_turns": num_turns,
                 "num_evaluated": len(valid_ratings),
+                "audio_trimmed": self.trim_silence,
                 "num_skipped_no_entities": num_skipped_no_entities,
                 "skipped_reason": "No valid ratings to aggregate" if skipped else None,
                 "per_turn_ratings": per_turn_ratings,
