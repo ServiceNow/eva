@@ -130,7 +130,7 @@ Then, use the following configuration:
 | First message                        | None (remove the default first message, as the agent speaks first)                |
 | Interruptible                        | Disabled                                                                          |
 | Advanced > Input audio               | μ-law telephony, 8000 Hz                                                          |
-| Advanced > Take turn after silence   | 15ms                                                                              |
+| Advanced > Take turn after silence   | 15s                                                                              |
 | Advanced > Max conversation duration | 600s                                                                              |
 | Tools > System tools                 | Enable "End conversation" (Name is `end_call`, and Description is provided below) |
 
