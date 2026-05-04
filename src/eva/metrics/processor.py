@@ -24,12 +24,6 @@ from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# TEMPORARY: when True (default), use the old `not assistant_processed_in_turn` guard for BOTH
-# flag and hold_turn (legacy/main behavior — kept as default so other experiments on this branch
-# stay consistent with main). When False, use option-1: flag any overlap, only set hold_turn when
-# no tool call has fired yet. Toggle is for one-shot diff analysis — remove once locked in.
-_INTERRUPT_GUARD_OLD = True
-
 
 def last_audio_speaker(
     audio_timestamps_user_turns: dict[int, list[tuple[float, float]]],
@@ -420,17 +414,14 @@ def _handle_audio_start(
             if pipeline_type == PipelineType.S2S:
                 state.assistant_spoke_in_turn = True
         # Interruption: assistant audio_start overlaps an open user audio session. Flag the turn
-        # whenever there's overlap (this catches barge-ins after a tool call that the previous
-        # `not assistant_processed_in_turn` guard was discarding).
+        # whenever there's overlap (validated against audio: real barge-ins occur even when a
+        # tool call has already fired this turn).
         #
-        # `hold_turn` is still gated on no-tool-call-yet: setting it after a tool call suppresses
-        # the next turn advance and cascades into incorrect turn boundaries, which empirically
-        # drops other legitimate interruption flags later in the conversation.
+        # `hold_turn` is gated on no-tool-call-yet: setting it after a tool call suppresses the
+        # next turn advance and cascades into incorrect turn boundaries downstream.
         if state.user_audio_open and state.user_audio_started_in_turn:
-            no_tool_yet = not state.assistant_processed_in_turn
-            if no_tool_yet or not _INTERRUPT_GUARD_OLD:
-                state.assistant_interrupted_turns.add(state.turn_num)
-            if no_tool_yet:
+            state.assistant_interrupted_turns.add(state.turn_num)
+            if not state.assistant_processed_in_turn:
                 state.hold_turn = True
 
     turn_idx = state.turn_num
