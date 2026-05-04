@@ -30,10 +30,19 @@ DERIVED_PASS_METRICS: dict[str, tuple[str, str]] = {
 }
 
 
+ALIAS_REMAP: dict[str, str] = {
+    # ITSM ultravox runs land under "fixie-ai/ultravox" because the run dir is
+    # nested one level deeper than usual; collapse to plain "ultravox" so all
+    # three domains share one alias.
+    "fixie-ai/ultravox": "ultravox",
+}
+
+
 def load_trial_scores(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
     df["trial"] = df["trial"].astype(int)
     df["value"] = df["value"].astype(float)
+    df["system_alias"] = df["system_alias"].replace(ALIAS_REMAP)
     return df
 
 
