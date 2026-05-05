@@ -41,9 +41,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-from statsmodels.stats.multitest import multipletests
-
 from stats_utils import bootstrap_ci  # noqa: F401 (re-exported for backward compatibility)
+from statsmodels.stats.multitest import multipletests
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONFIG_PATH = PROJECT_ROOT / "local" / "eva-bench-stats" / "perturbations_config.yaml"
@@ -211,9 +210,7 @@ def run_pairwise_analysis(
     n_boot: int = config["n_bootstrap"]
     seed: int = config["random_seed"]
 
-    pairwise_comparisons = {
-        "accent_vs_background_noise", "accent_vs_both", "background_noise_vs_both"
-    }
+    pairwise_comparisons = {"accent_vs_background_noise", "accent_vs_both", "background_noise_vs_both"}
     df = pairwise_deltas_df[pairwise_deltas_df["comparison"].isin(pairwise_comparisons)]
 
     result_rows: list[dict] = []
@@ -243,15 +240,17 @@ def run_pairwise_analysis(
             p_val = permutation_test(d, n_perm=n_perm, seed=cell_seed)
             ci_lower, ci_upper = bootstrap_ci(d, n_boot=n_boot, seed=cell_seed, alpha=alpha)
 
-            cell_results.append({
-                **group_meta,
-                "domain": domain,
-                "comparison": comp,
-                "observed_mean_delta": observed_mean,
-                "ci_lower": ci_lower,
-                "ci_upper": ci_upper,
-                "raw_p": p_val,
-            })
+            cell_results.append(
+                {
+                    **group_meta,
+                    "domain": domain,
+                    "comparison": comp,
+                    "observed_mean_delta": observed_mean,
+                    "ci_lower": ci_lower,
+                    "ci_upper": ci_upper,
+                    "raw_p": p_val,
+                }
+            )
 
         raw_ps = [r["raw_p"] for r in cell_results]
         if len(raw_ps) > 1:
@@ -266,9 +265,16 @@ def run_pairwise_analysis(
     return pd.DataFrame(
         result_rows,
         columns=[
-            "model_label", "metric", "domain", "comparison",
-            "observed_mean_delta", "ci_lower", "ci_upper",
-            "raw_p", "corrected_p", "reject",
+            "model_label",
+            "metric",
+            "domain",
+            "comparison",
+            "observed_mean_delta",
+            "ci_lower",
+            "ci_upper",
+            "raw_p",
+            "corrected_p",
+            "reject",
         ],
     )
 
@@ -307,20 +313,28 @@ def run_additivity_analysis(
         p_val = permutation_test(d, n_perm=n_perm, seed=cell_seed)
         ci_lower, ci_upper = bootstrap_ci(d, n_boot=n_boot, seed=cell_seed, alpha=alpha)
 
-        result_rows.append({
-            **group_meta,
-            "observed_mean_delta": observed_mean,
-            "ci_lower": ci_lower,
-            "ci_upper": ci_upper,
-            "raw_p": p_val,
-            "reject": p_val < alpha,
-        })
+        result_rows.append(
+            {
+                **group_meta,
+                "observed_mean_delta": observed_mean,
+                "ci_lower": ci_lower,
+                "ci_upper": ci_upper,
+                "raw_p": p_val,
+                "reject": p_val < alpha,
+            }
+        )
 
     return pd.DataFrame(
         result_rows,
         columns=[
-            "model_label", "metric", "domain",
-            "observed_mean_delta", "ci_lower", "ci_upper", "raw_p", "reject",
+            "model_label",
+            "metric",
+            "domain",
+            "observed_mean_delta",
+            "ci_lower",
+            "ci_upper",
+            "raw_p",
+            "reject",
         ],
     )
 
@@ -341,6 +355,9 @@ def compute_cld(
 
     n = len(condition_names)
     sig = np.asarray(sig_matrix, dtype=bool)
+
+    if not sig.any():
+        return {}
 
     valid: list[frozenset] = []
     for size in range(1, n + 1):
@@ -394,18 +411,14 @@ def main(config_path: Path = CONFIG_PATH) -> None:
     # ── Pairwise analysis ─────────────────────────────────────────────────
     pairwise_path = output_dir / "scenario_pairwise_deltas.csv"
     if not pairwise_path.exists():
-        raise FileNotFoundError(
-            f"scenario_pairwise_deltas.csv not found at {pairwise_path}. Run run_data.py first."
-        )
+        raise FileNotFoundError(f"scenario_pairwise_deltas.csv not found at {pairwise_path}. Run run_data.py first.")
 
     print(f"Loading pairwise deltas from {pairwise_path} ...")
     pairwise_df = pd.read_csv(pairwise_path)
     print(f"  {len(pairwise_df):,} rows loaded")
 
     print("Running pairwise per-domain analysis ...")
-    pairwise_per_domain = run_pairwise_analysis(
-        pairwise_df, config, correction_groupby=["model_label", "metric"]
-    )
+    pairwise_per_domain = run_pairwise_analysis(pairwise_df, config, correction_groupby=["model_label", "metric"])
 
     print("Running pairwise pooled analysis ...")
     pairwise_pooled_input = pairwise_df.copy()
@@ -422,9 +435,7 @@ def main(config_path: Path = CONFIG_PATH) -> None:
 
     def _build_cld_lookup(pairwise_results: pd.DataFrame) -> pd.DataFrame:
         cld_rows: list[dict] = []
-        for group_vals, group_df in pairwise_results.groupby(
-            ["model_label", "metric", "domain"], sort=False
-        ):
+        for group_vals, group_df in pairwise_results.groupby(["model_label", "metric", "domain"], sort=False):
             model, metric, domain = group_vals
             sig = np.zeros((3, 3), dtype=bool)
             for _, row in group_df.iterrows():
@@ -434,10 +445,15 @@ def main(config_path: Path = CONFIG_PATH) -> None:
                     sig[i, j] = sig[j, i] = True
             cld = compute_cld(sig, _COND_NAMES)
             for cond, letter in cld.items():
-                cld_rows.append({
-                    "model_label": model, "metric": metric, "domain": domain,
-                    "perturbation_condition": cond, "cld_letter": letter,
-                })
+                cld_rows.append(
+                    {
+                        "model_label": model,
+                        "metric": metric,
+                        "domain": domain,
+                        "perturbation_condition": cond,
+                        "cld_letter": letter,
+                    }
+                )
         return pd.DataFrame(cld_rows)
 
     cld_pooled = _build_cld_lookup(pairwise_pooled)

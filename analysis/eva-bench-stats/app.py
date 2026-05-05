@@ -2603,7 +2603,7 @@ smaller groups and is slightly less powerful for the same true effect size.
             if icc_pm.empty:
                 st.info("No results.")
             else:
-                _q4_pm = icc_pm[
+                _q4_pm = icc_pm_view[
                     [
                         "run_label",
                         "metric",

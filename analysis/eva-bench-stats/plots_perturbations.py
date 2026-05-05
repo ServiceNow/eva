@@ -103,6 +103,8 @@ def perturbation_delta_plot(
             (e.g. pass the number of cascade models to separate cascade from s2s).
         group_labels: If provided alongside group_boundary, small labels shown at the top-left
             of each section, e.g. ("Cascade", "S2S").
+        cld_df: Optional CLD lookup DataFrame (output of stats_perturbations._build_cld_lookup).
+            If provided, compact letter display annotations are added to the plot.
     """
     df = _prettify_conditions(results_df[results_df["metric"] == metric])
     if df.empty:
@@ -196,6 +198,11 @@ def perturbation_delta_plot(
                     sig_textpos.append("middle center")
 
     if sig_x:
+        # Size to fit "***" (worst case) within the bar.
+        # Estimate: figure plot area ≈ 830px (900px figure minus l=60, r=10 margins).
+        # Each asterisk is ~0.55 × font_size px wide; cap between 8 and 13.
+        pixel_bar_w = 830 / n_models * bar_w
+        ast_font_size = max(8, min(13, int(pixel_bar_w / (3 * 0.55))))
         fig.add_trace(
             go.Scatter(
                 x=sig_x,
@@ -203,7 +210,7 @@ def perturbation_delta_plot(
                 mode="text",
                 text=sig_text,
                 textposition=sig_textpos,
-                textfont={"size": 20, "color": "#111"},
+                textfont={"size": ast_font_size, "color": "#111"},
                 showlegend=False,
                 hoverinfo="skip",
             )
@@ -212,8 +219,7 @@ def perturbation_delta_plot(
     if cld_df is not None and not cld_df.empty:
         cld_pretty = _prettify_conditions(cld_df)
         cld_lookup = {
-            (row["model_label"], row["perturbation_condition"]): row["cld_letter"]
-            for _, row in cld_pretty.iterrows()
+            (row["model_label"], row["perturbation_condition"]): row["cld_letter"] for _, row in cld_pretty.iterrows()
         }
         cld_clearance = y_span * 0.04
         cld_x, cld_y, cld_text = [], [], []
@@ -248,7 +254,8 @@ def perturbation_delta_plot(
             )
 
     boundaries = (
-        [group_boundary] if isinstance(group_boundary, int)
+        [group_boundary]
+        if isinstance(group_boundary, int)
         else (list(group_boundary) if group_boundary is not None else [])
     )
     boundaries = [b for b in boundaries if 0 < b < n_models]
@@ -604,9 +611,7 @@ def perturbation_pairwise_pvalue_table(
     if df.empty:
         return pd.DataFrame()
 
-    df["comparison_display"] = df["comparison"].map(
-        lambda x: _PAIRWISE_DISPLAY.get(x, x)
-    )
+    df["comparison_display"] = df["comparison"].map(lambda x: _PAIRWISE_DISPLAY.get(x, x))
 
     present = set(df["model_label"].unique())
     models = [m for m in model_order if m in present] if model_order else sorted(present)
@@ -647,9 +652,7 @@ def perturbation_pairwise_results_table(
     if df.empty:
         return pd.DataFrame()
 
-    df["comparison_display"] = df["comparison"].map(
-        lambda x: _PAIRWISE_DISPLAY.get(x, x)
-    )
+    df["comparison_display"] = df["comparison"].map(lambda x: _PAIRWISE_DISPLAY.get(x, x))
 
     present = set(df["model_label"].unique())
     models = [m for m in model_order if m in present] if model_order else sorted(present)
