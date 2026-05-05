@@ -9,10 +9,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from stats_perturbations import main as _perturbations_stats
-from stats_variance import main as _variance_stats
 from stats_CIs import main as _CIs_stats
 from stats_frontier import main as _frontier_stats
+from stats_perturbations import main as _perturbations_stats
+from stats_variance import main as _variance_stats
 
 
 def main() -> None:
@@ -21,7 +21,10 @@ def main() -> None:
     print()
 
     print("=== Variance: statistics ===")
-    _variance_stats()
+    try:
+        _variance_stats()
+    except FileNotFoundError as e:
+        print(f"  [Variance] skipped: {e}")
     print()
 
     print("=== CIs: statistics ===")

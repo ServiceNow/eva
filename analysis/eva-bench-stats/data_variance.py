@@ -180,11 +180,25 @@ def main(config_path: Path = CONFIG_PATH) -> None:
 
     project_root = config_path.parent.parent.parent
     output_dir = project_root / config["output_dir"] / "data"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
     metrics: list[str] = config["metrics"]
     runs: dict = config["runs"]
     archive_root = project_root / "output" / "judge_variance_analysis"
+
+    configured_runs_present = any((archive_root / run_cfg["run_id"]).is_dir() for run_cfg in runs.values())
+    if not configured_runs_present:
+        processed_present = (output_dir / "scores.csv").exists() and (output_dir / "judge_var.csv").exists()
+        if processed_present:
+            print(
+                f"  No run data for configured run IDs in {archive_root}; processed data already present in {output_dir} — skipping."
+            )
+            return
+        raise FileNotFoundError(
+            f"None of the configured run IDs found in {archive_root}.\n"
+            "Either pull the original judge iteration experiment data into output/judge_variance_analysis/,\n"
+            "or copy output_processed/eva-bench-stats/variance/data/ from a colleague."
+        )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     from load_data import load_aggregate_scores_iter, load_scores_iter
 

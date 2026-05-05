@@ -225,11 +225,15 @@ def compute_icc(
     df_filtered = df[df["metric"].isin(metrics)]
     if domain is not None and has_domain_col:
         df_filtered = df_filtered[df_filtered["domain"] == domain]
-    group_cols = ["run_id", "run_label"] + (["domain"] if has_domain_col else []) + [
-        "metric",
-        "record_id",
-        "trial",
-    ]
+    group_cols = (
+        ["run_id", "run_label"]
+        + (["domain"] if has_domain_col else [])
+        + [
+            "metric",
+            "record_id",
+            "trial",
+        ]
+    )
     mean_by_trial = (
         df_filtered.groupby(group_cols, dropna=False)["normalized_score"]
         .mean()
@@ -480,7 +484,9 @@ def compute_variance_budget(df: pd.DataFrame, metrics: list[str]) -> pd.DataFram
         # group's mean — this lets SS terms be computed as elementwise diffs.
         domain_mean = grp.groupby("domain")["normalized_score"].transform("mean").to_numpy()
         scenario_mean = grp.groupby(["domain", "scenario_uid"])["normalized_score"].transform("mean").to_numpy()
-        trial_mean = grp.groupby(["domain", "scenario_uid", "trial_uid"])["normalized_score"].transform("mean").to_numpy()
+        trial_mean = (
+            grp.groupby(["domain", "scenario_uid", "trial_uid"])["normalized_score"].transform("mean").to_numpy()
+        )
 
         ss_domain = float(((domain_mean - grand_mean) ** 2).sum())
         ss_scenario = float(((scenario_mean - domain_mean) ** 2).sum())
@@ -559,6 +565,7 @@ def compute_statistical_tests(
         judge_var: Output of compute_judge_variance()
         trial_var: Output of compute_trial_variance()
         metrics: List of metric names to test
+        domain: If set, filter to this domain; if None, pool across all domains.
 
     Returns:
         Dict with DataFrames keyed by "q1a", "q1b", "q2_kw", "q2_pairwise",
@@ -716,9 +723,7 @@ def compute_statistical_tests(
     q1b_merge_keys = ["model_id", "metric", "record_id"] + (
         ["domain"] if "domain" in judge_var.columns and "domain" in trial_var.columns else []
     )
-    trial_cols = ["model_id", "metric", "record_id", "std"] + (
-        ["domain"] if "domain" in trial_var.columns else []
-    )
+    trial_cols = ["model_id", "metric", "record_id", "std"] + (["domain"] if "domain" in trial_var.columns else [])
     merged_all = pd.merge(
         judge_by_record[judge_by_record["metric"].isin(metrics)],
         trial_var[trial_var["metric"].isin(metrics)][trial_cols].rename(columns={"std": "trial_std"}),
@@ -1002,6 +1007,7 @@ def compute_q0_tests(
         judge_var: Output of compute_judge_variance() — per (run, metric, record, trial) std devs
         trial_var: Output of compute_trial_variance() — per (run, metric, record) std devs
         metrics: Metrics to test
+        domain: If set, filter to this domain; if None, pool across all domains.
 
     Returns:
         Dict with DataFrames:
@@ -1093,8 +1099,9 @@ def main(config_path: Path = CONFIG_PATH) -> None:
     run_type_map: dict[str, str] = {cfg["run_id"]: cfg.get("type", "cascade") for cfg in runs.values()}
 
     for name in ("scores.csv", "judge_var.csv", "trial_var.csv"):
-        if not (data_dir / name).exists():
-            raise FileNotFoundError(f"{name} not found in {data_dir}. Run run_data.py first.")
+        p = data_dir / name
+        if not p.exists() or p.stat().st_size <= 1:
+            raise FileNotFoundError(f"{name} not found or empty in {data_dir}. Run run_data.py first.")
 
     print(f"Loading data CSVs from {data_dir} ...")
     scores_df = pd.read_csv(data_dir / "scores.csv")

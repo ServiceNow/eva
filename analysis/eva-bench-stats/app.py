@@ -6,6 +6,7 @@ Run from project root:
 """
 
 import math
+import subprocess
 import sys
 from pathlib import Path
 
@@ -28,6 +29,47 @@ def _load_config(area: str) -> dict | None:
         return None
     with open(path) as f:
         return yaml.safe_load(f)
+
+
+_VARIANCE_DATA_DIR = PROCESSED_DIR / "variance" / "data"
+_VARIANCE_STATS_DIR = PROCESSED_DIR / "variance" / "stats"
+_RUN_DATA_SCRIPT = PROJECT_ROOT / "analysis" / "eva-bench-stats" / "run_data.py"
+_RUN_STATS_SCRIPT = PROJECT_ROOT / "analysis" / "eva-bench-stats" / "run_stats.py"
+_VARIANCE_DATA_FILES = [
+    "scores.csv",
+    "judge_var.csv",
+    "trial_var.csv",
+    "judge_summary.csv",
+    "trial_summary.csv",
+    "composite_stability.csv",
+    "borderline_scenarios.csv",
+]
+
+
+def _variance_data_ready() -> bool:
+    import pandas as pd
+
+    for f in _VARIANCE_DATA_FILES:
+        p = _VARIANCE_DATA_DIR / f
+        if not p.exists():
+            return False
+        try:
+            if pd.read_csv(p, nrows=1).empty:
+                return False
+        except Exception:
+            return False
+    return True
+
+
+def _run_script(script_path: Path) -> tuple[bool, str]:
+    result = subprocess.run(
+        [sys.executable, str(script_path)],
+        capture_output=True,
+        text=True,
+        cwd=str(PROJECT_ROOT),
+    )
+    output = result.stdout + ("\n" + result.stderr if result.stderr else "")
+    return result.returncode == 0, output
 
 
 def overview_page():
@@ -206,7 +248,10 @@ def perturbations_page():
                 results_pooled[results_pooled["metric"] == metric],
             ]
         )
-        if metric_results.empty or metric_results[["ci_lower", "ci_upper", "observed_mean_delta"]].dropna(how="all").empty:
+        if (
+            metric_results.empty
+            or metric_results[["ci_lower", "ci_upper", "observed_mean_delta"]].dropna(how="all").empty
+        ):
             st.info(f"No results for metric '{metric}'.")
             return
         y_min = min(metric_results["ci_lower"].min(), metric_results["observed_mean_delta"].min())
@@ -216,10 +261,7 @@ def perturbations_page():
             return
         y_range = (math.floor(y_min * 10) / 10 - 0.05, math.ceil(y_max * 10) / 10 + 0.05)
 
-        _cld_pooled_metric = (
-            cld_pooled_df[cld_pooled_df["metric"] == metric]
-            if cld_pooled_df is not None else None
-        )
+        _cld_pooled_metric = cld_pooled_df[cld_pooled_df["metric"] == metric] if cld_pooled_df is not None else None
 
         # ── Pooled ────────────────────────────────────────────────────
         st.subheader("Pooled (all domains, 90 scenarios)")
@@ -250,11 +292,9 @@ def perturbations_page():
         for domain in domains:
             domain_results = results_per_domain[results_per_domain["domain"] == domain]
             _cld_domain_metric = (
-                cld_per_domain_df[
-                    (cld_per_domain_df["metric"] == metric)
-                    & (cld_per_domain_df["domain"] == domain)
-                ]
-                if cld_per_domain_df is not None else None
+                cld_per_domain_df[(cld_per_domain_df["metric"] == metric) & (cld_per_domain_df["domain"] == domain)]
+                if cld_per_domain_df is not None
+                else None
             )
             st.plotly_chart(
                 perturbation_delta_plot(
@@ -317,8 +357,7 @@ def perturbations_page():
                 for domain in domains:
                     st.markdown(f"**{_DOMAIN_DISPLAY.get(domain, domain)}**")
                     domain_pw = pairwise_per_domain[
-                        (pairwise_per_domain["metric"] == metric)
-                        & (pairwise_per_domain["domain"] == domain)
+                        (pairwise_per_domain["metric"] == metric) & (pairwise_per_domain["domain"] == domain)
                     ]
                     tbl = perturbation_pairwise_pvalue_table(domain_pw, metric=metric, model_order=models)
                     if not tbl.empty:
@@ -340,8 +379,7 @@ def perturbations_page():
                 for domain in domains:
                     st.markdown(f"**{_DOMAIN_DISPLAY.get(domain, domain)}**")
                     domain_add = additivity_per_domain[
-                        (additivity_per_domain["metric"] == metric)
-                        & (additivity_per_domain["domain"] == domain)
+                        (additivity_per_domain["metric"] == metric) & (additivity_per_domain["domain"] == domain)
                     ]
                     tbl = perturbation_additivity_table(domain_add, metric=metric, model_order=models)
                     if not tbl.empty:
@@ -371,10 +409,7 @@ def perturbations_page():
                     model_order=models,
                     group_boundary=group_boundary,
                     group_labels=group_labels,
-                    cld_df=(
-                        cld_pooled_df[cld_pooled_df["metric"] == metric]
-                        if cld_pooled_df is not None else None
-                    ),
+                    cld_df=(cld_pooled_df[cld_pooled_df["metric"] == metric] if cld_pooled_df is not None else None),
                 ),
                 width="stretch",
             )
@@ -616,7 +651,8 @@ def CIs_page():
 
     with st.expander("Paper-ready summary (EVA-A & EVA-X means)", expanded=False):
         summary = paper_summary_table(
-            per_domain_df, pooled_df,
+            per_domain_df,
+            pooled_df,
             metrics=("EVA-A_mean", "EVA-X_mean"),
             domains=tuple(config["expected_domains"]),
         )
@@ -641,24 +677,26 @@ def CIs_page():
         with tab:
             st.plotly_chart(
                 forest_plot(
-                    per_domain_df, pooled_df,
+                    per_domain_df,
+                    pooled_df,
                     metric=metric,
                     domains=config["expected_domains"],
                     color_map=model_to_color,
                 ),
                 use_container_width=True,
             )
-            combined = pd.concat([
-                per_domain_df[per_domain_df["metric"] == metric],
-                pooled_df[pooled_df["metric"] == metric],
-            ], ignore_index=True)[["model_label", "domain", "n", "point_estimate", "ci_lower", "ci_upper"]]
+            combined = pd.concat(
+                [
+                    per_domain_df[per_domain_df["metric"] == metric],
+                    pooled_df[pooled_df["metric"] == metric],
+                ],
+                ignore_index=True,
+            )[["model_label", "domain", "n", "point_estimate", "ci_lower", "ci_upper"]]
             st.dataframe(combined, use_container_width=True)
             download_button(combined, f"ci_{metric}.csv")
 
 
 def variance_page():
-    import subprocess
-
     import pandas as pd
     import plotly.express as px
     import plotly.graph_objects as go
@@ -703,7 +741,6 @@ def variance_page():
         RUN_COLOR_MAP[lbl] = _S2S_COLORS[i % len(_S2S_COLORS)]
         RUN_SYMBOL_MAP[lbl] = "star"
         RUN_GROUP_MAP[lbl] = "s2s"
-    RUN_LABEL_ORDER: list[str] = cascade_labels + s2s_labels
 
     # Model-id-keyed views (run_label minus the trailing ' — domain' suffix).
     # Used for plots/tables that consume the per-domain stats CSVs, where the
@@ -727,44 +764,9 @@ def variance_page():
     MODEL_LABEL_ORDER: list[str] = cascade_models + s2s_models
 
     # ── Output paths ──────────────────────────────────────────────────────────
-    variance_dir = PROCESSED_DIR / "variance"
-    data_dir = variance_dir / "data"
-    stats_dir = variance_dir / "stats"
-    run_data_script = PROJECT_ROOT / "analysis" / "eva-bench-stats" / "run_data.py"
-    run_stats_script = PROJECT_ROOT / "analysis" / "eva-bench-stats" / "run_stats.py"
-
-    def _run_script(script_path: Path) -> tuple[bool, str]:
-        result = subprocess.run(
-            [sys.executable, str(script_path)],
-            capture_output=True,
-            text=True,
-            cwd=str(PROJECT_ROOT),
-        )
-        output = result.stdout + ("\n" + result.stderr if result.stderr else "")
-        return result.returncode == 0, output
-
-    # ── Sidebar pipeline buttons (always visible) ─────────────────────────────
-    data_ready = (data_dir / "scores.csv").exists() and (data_dir / "judge_var.csv").exists()
-
-    with st.sidebar.expander("Run pipeline", expanded=not data_ready):
-        if st.button("Process data"):
-            with st.spinner("Running run_data.py…"):
-                ok, out = _run_script(run_data_script)
-            with st.expander("Output", expanded=not ok):
-                st.text(out)
-            if ok:
-                st.rerun()
-            else:
-                st.error("run_data.py failed.")
-        if st.button("Run statistical tests", disabled=not data_ready):
-            with st.spinner("Running run_stats.py…"):
-                ok, out = _run_script(run_stats_script)
-            with st.expander("Output", expanded=not ok):
-                st.text(out)
-            if ok:
-                st.rerun()
-            else:
-                st.error("run_stats.py failed.")
+    data_dir = _VARIANCE_DATA_DIR
+    stats_dir = _VARIANCE_STATS_DIR
+    data_ready = _variance_data_ready()
 
     if not data_ready:
         st.warning("Processed data not found. Use **Run pipeline** in the sidebar to get started.")
@@ -1275,8 +1277,17 @@ treated as a separate analysis question.
                     if not q1a_within.empty:
                         st.markdown("**Q1a — within-domain**")
                         q1a_w_disp = q1a_within[
-                            ["metric", "model", "n_records", "median_judge_std", "median_trial_std",
-                             "median_delta", "p_bonferroni", "significant", "direction"]
+                            [
+                                "metric",
+                                "model",
+                                "n_records",
+                                "median_judge_std",
+                                "median_trial_std",
+                                "median_delta",
+                                "p_bonferroni",
+                                "significant",
+                                "direction",
+                            ]
                         ].copy()
                         q1a_w_disp["model"] = q1a_w_disp["model"].apply(llm_name)
                         q1a_w_disp["p_bonferroni"] = q1a_w_disp["p_bonferroni"].map(fmt_p)
@@ -2222,9 +2233,7 @@ less powerful for the same true effect size.
                     "constant across the whole study — the % breakdown below is informative but "
                     "the magnitude is small, so the practical impact may be limited."
                 )
-                st.plotly_chart(
-                    variance_budget_absolute_bar(converged, selected_model), width="stretch"
-                )
+                st.plotly_chart(variance_budget_absolute_bar(converged, selected_model), width="stretch")
 
                 st.subheader("Variance breakdown (% of total)")
                 st.caption(
@@ -2256,7 +2265,7 @@ less powerful for the same true effect size.
                 pct_cols = [c for c in display_cols if c.startswith("pct_")]
                 sigma_cols = [c for c in display_cols if c.startswith("sigma2_")]
                 styled = converged[display_cols].style.format(
-                    {**{c: "{:.1%}" for c in pct_cols}, **{c: "{:.5f}" for c in sigma_cols}},
+                    {**dict.fromkeys(pct_cols, "{:.1%}"), **dict.fromkeys(sigma_cols, "{:.5f}")},
                     na_rep="—",
                 )
                 st.dataframe(styled, width="stretch")
@@ -2716,8 +2725,7 @@ def frontier_page():
     config = _load_config("frontier")
     if config is None:
         st.warning(
-            f"Config not found: `{CONFIG_DIR / 'frontier_config.yaml'}`. "
-            "Create it using the template in the spec."
+            f"Config not found: `{CONFIG_DIR / 'frontier_config.yaml'}`. Create it using the template in the spec."
         )
         return
 
@@ -2775,6 +2783,27 @@ significance at α = {alpha} does not imply a robust finding at this sample size
 
 
 with st.sidebar:
+    _data_ready = _variance_data_ready()
+    with st.expander("Run pipeline", expanded=not _data_ready):
+        if st.button("Process data"):
+            with st.spinner("Running run_data.py…"):
+                ok, out = _run_script(_RUN_DATA_SCRIPT)
+            with st.expander("Output", expanded=not ok):
+                st.text(out)
+            if ok:
+                st.rerun()
+            else:
+                st.error("run_data.py failed.")
+        if st.button("Run statistical tests"):
+            with st.spinner("Running run_stats.py…"):
+                ok, out = _run_script(_RUN_STATS_SCRIPT)
+            with st.expander("Output", expanded=not ok):
+                st.text(out)
+            if ok:
+                st.rerun()
+            else:
+                st.error("run_stats.py failed.")
+
     st.markdown("### Export")
     if st.button("Export HTML Report"):
         from generate_report import build_report
