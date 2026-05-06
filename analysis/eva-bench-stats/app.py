@@ -602,7 +602,7 @@ def CIs_page():
     )
 
     def download_button(df: pd.DataFrame, filename: str) -> None:
-        st.download_button("Download CSV", df.to_csv(index=False).encode(), filename, "text/csv")
+        st.download_button("Download CSV", df.to_csv(index=False).encode(), filename, "text/csv", key=filename)
 
     st.header("Confidence Intervals")
     st.caption(
@@ -827,7 +827,7 @@ def variance_page():
             _pass_thresholds[row["metric"]] = float(row["threshold"])
 
     def download_button(df: pd.DataFrame, filename: str) -> None:
-        st.download_button("Download CSV", df.to_csv(index=False).encode(), filename, "text/csv")
+        st.download_button("Download CSV", df.to_csv(index=False).encode(), filename, "text/csv", key=filename)
 
     # ── Domain selector ───────────────────────────────────────────────────────
     # Single-choice radio. Drives which within-domain CSV is loaded for
@@ -883,21 +883,22 @@ def variance_page():
     _domain_label = f"Domain: **{selected_domain}**" if selected_domain else "All data"
     _pooled_label = "Pooled across all 3 domains"
 
-    # ── 12 Tabs ───────────────────────────────────────────────────────────────
+    # ── 13 Tabs ───────────────────────────────────────────────────────────────
     tabs = st.tabs(
         [
             "Overview",  # 0
             "Variance overview",  # 1
             "Judge vs. trial variance",  # 2
-            "Judge variance",  # 3
-            "Trial variance",  # 4
-            "EVA score stability",  # 5
-            "Borderline scenarios",  # 6
-            "Intraclass correlation",  # 7
-            "Variance decomp (LMM)",  # 8
-            "Variance budget",  # 9
-            "Per-metric deep dive",  # 10
-            "Statistical tests",  # 11
+            "Judge vs. trial variance (b)",  # 3
+            "Judge variance",  # 4
+            "Trial variance",  # 5
+            "EVA score stability",  # 6
+            "Borderline scenarios",  # 7
+            "Intraclass correlation",  # 8
+            "Variance decomp (LMM)",  # 9
+            "Variance budget",  # 10
+            "Per-metric deep dive",  # 11
+            "Statistical tests",  # 12
         ]
     )
 
@@ -1185,7 +1186,11 @@ treated as a separate analysis question.
                         y=run_data["judge_std"] if is_judge else run_data["trial_std"],
                         error_y={
                             "type": "data",
-                            "array": (run_data["judge_std_err"] if is_judge else run_data["trial_std_err"]).fillna(0),
+                            "array": (
+                                run_data["judge_std_err"].where(run_data["judge_std"] != 0)
+                                if is_judge
+                                else run_data["trial_std_err"].fillna(0)
+                            ),
                         },
                         marker_color=color,
                         legendgroup=source,
@@ -1419,8 +1424,287 @@ by model — i.e., some models have noisier judges relative to their trial varia
                     width="stretch",
                 )
 
-    # ── Tab 3: Judge variance ─────────────────────────────────────────────────
+    # ── Tab 3: Judge vs. trial variance (b) ──────────────────────────────────
     with tabs[3]:
+        st.header("Judge vs. trial variance (b)")
+        if selected_domain:
+            st.caption(
+                f"Plots show {_domain_label}. Permutation tests shown below are **{_pooled_label}** "
+                "(per model, pooling its data across all 3 domains)."
+            )
+        st.write("""
+        **What this measures:** Same comparison as the **(a)** tab, using a sign-flip permutation
+        test instead of Wilcoxon signed-rank.
+
+        **Why the updated approach?** Standard deviations are non-negative and bounded at zero,
+        which can violate the symmetry assumption of the Wilcoxon signed-rank test. The sign-flip
+        permutation test is distribution-free and requires no such assumption.
+
+        **H₁ (one-sided):** Mean trial SD > mean judge SD (i.e., trial variance dominates).
+        """)
+
+        st.subheader("Judge vs. trial variance across models")
+        st.caption(
+            "Error bars = std dev of per-(record,trial) std devs across the group. "
+            "Asterisks indicate a significant difference (sign-flip permutation test, one-sided): "
+            "\\* p < 0.05, \\*\\* p < 0.01, \\*\\*\\* p < 0.001."
+        )
+
+        run_labels_cmp_b = list(combined["run_label"].unique())
+        fig_b = make_subplots(rows=len(run_labels_cmp_b), cols=1, subplot_titles=run_labels_cmp_b, shared_xaxes=True)
+        for row_idx, run_label in enumerate(run_labels_cmp_b, start=1):
+            run_data = combined[combined["run_label"] == run_label]
+            for source, color in COLORS.items():
+                is_judge = source == "Judge (stochasticity)"
+                fig_b.add_trace(
+                    go.Bar(
+                        name=source,
+                        x=run_data["metric"],
+                        y=run_data["judge_std"] if is_judge else run_data["trial_std"],
+                        error_y={
+                            "type": "data",
+                            "array": (
+                                run_data["judge_std_err"].where(run_data["judge_std"] != 0)
+                                if is_judge
+                                else run_data["trial_std_err"].fillna(0)
+                            ),
+                        },
+                        marker_color=color,
+                        legendgroup=source,
+                        showlegend=(row_idx == 1),
+                    ),
+                    row=row_idx,
+                    col=1,
+                )
+            fig_b.update_yaxes(range=[0, global_var_ymax], row=row_idx, col=1)
+
+        q1a_perm_sig = (
+            q1a_perm_pooled_df[q1a_perm_pooled_df["permutation_significant"]]
+            if not q1a_perm_pooled_df.empty
+            else pd.DataFrame()
+        )
+        y_pad_b = global_var_ymax * 0.04
+        for row_idx, run_label in enumerate(run_labels_cmp_b, start=1):
+            run_data = combined[combined["run_label"] == run_label]
+            xref_str = "x" if row_idx == 1 else f"x{row_idx}"
+            yref_str = "y" if row_idx == 1 else f"y{row_idx}"
+            model_id = run_label.split(" — ")[0].strip()
+            model_sig_b = q1a_perm_sig[q1a_perm_sig["model"] == model_id] if not q1a_perm_sig.empty else pd.DataFrame()
+            for _, qrow in model_sig_b.iterrows():
+                metric = qrow["metric"]
+                mdata = run_data[run_data["metric"] == metric]
+                if mdata.empty:
+                    continue
+                y_top = max(
+                    mdata["judge_std"].iloc[0] + mdata["judge_std_err"].fillna(0).iloc[0],
+                    mdata["trial_std"].iloc[0] + mdata["trial_std_err"].fillna(0).iloc[0],
+                )
+                p_val = qrow["permutation_p_value"]
+                stars = "***" if p_val < 0.001 else "**" if p_val < 0.01 else "*"
+                fig_b.add_annotation(
+                    x=metric,
+                    y=y_top + y_pad_b,
+                    text=f"<b>{stars}</b>",
+                    showarrow=False,
+                    xref=xref_str,
+                    yref=yref_str,
+                    font={"size": 14, "color": "#444"},
+                )
+
+        fig_b.update_layout(
+            barmode="group",
+            height=200 * max(len(run_labels_cmp_b), 1),
+            legend={"orientation": "v", "yanchor": "middle", "y": 0.5, "xanchor": "left", "x": 1.02},
+            margin={"t": 40, "r": 160},
+        )
+        for ann in fig_b.layout.annotations:
+            if ann.yref == "paper":
+                ann.font.size = 12
+        st.plotly_chart(fig_b, width="stretch")
+
+        st.dataframe(display_combined.round(4), width="stretch")
+        download_button(display_combined, "variance_comparison_b.csv")
+
+        if not judge_dom.empty:
+            st.warning(
+                f"**Key finding:** Judge variance exceeds trial variance for "
+                f"{len(judge_dom)} metric/run combinations: "
+                f"{', '.join(judge_dom['metric'].unique())}."
+            )
+        else:
+            st.info("**Key finding:** Trial variance exceeds judge variance for all metric/run combinations.")
+
+        st.subheader("Statistical test: Is trial variance significantly greater than judge variance?")
+        st.caption(f"**Primary view: {_pooled_label}** — each model's data is pooled across all 3 task domains.")
+        if q1a_perm_pooled_df.empty:
+            st.info(
+                "Not enough data to run permutation tests (need ≥ 5 paired records per model × metric). "
+                "Run the stats pipeline first."
+            )
+        else:
+            st.markdown("**Q1a — Sign-flip permutation test (per model × metric, one-sided, H₁: trial SD > judge SD)**")
+            q1a_perm_disp = q1a_perm_pooled_df[
+                [
+                    "metric",
+                    "model",
+                    "n_scenarios",
+                    "permutation_mean_delta",
+                    "permutation_p_value",
+                    "permutation_significant",
+                    "n_positive_deltas",
+                    "sign_test_p_value",
+                    "sign_test_significant",
+                ]
+            ].copy()
+            q1a_perm_disp["model"] = q1a_perm_disp["model"].apply(llm_name)
+            q1a_perm_disp["permutation_p_value"] = q1a_perm_disp["permutation_p_value"].map(fmt_p)
+            q1a_perm_disp["sign_test_p_value"] = q1a_perm_disp["sign_test_p_value"].map(fmt_p)
+            st.dataframe(
+                q1a_perm_disp.round({"permutation_mean_delta": 4}),
+                width="stretch",
+            )
+            download_button(q1a_perm_pooled_df, "stat_q1a_perm.csv")
+
+            if not q1a_perm_pooled_scenarios.empty:
+                st.markdown("**Q1a pooled — Permutation test on scenario-averaged deltas (across models)**")
+                st.caption(
+                    "Deltas averaged per (domain, scenario) across all 4 models → 213 independent observations. "
+                    "Avoids pseudo-replication from the same scenarios appearing in all models."
+                )
+                pooled_scen_disp = q1a_perm_pooled_scenarios[
+                    [
+                        "metric",
+                        "n_scenarios",
+                        "permutation_mean_delta",
+                        "permutation_p_value",
+                        "permutation_significant",
+                        "sign_test_p_value",
+                        "sign_test_significant",
+                    ]
+                ].copy()
+                pooled_scen_disp["permutation_p_value"] = pooled_scen_disp["permutation_p_value"].map(fmt_p)
+                pooled_scen_disp["sign_test_p_value"] = pooled_scen_disp["sign_test_p_value"].map(fmt_p)
+                st.dataframe(
+                    pooled_scen_disp.round({"permutation_mean_delta": 4}),
+                    width="stretch",
+                )
+                download_button(q1a_perm_pooled_scenarios, "stat_q1a_perm_pooled.csv")
+
+            if not q1b.empty:
+                st.markdown("**Q1b — Does the gap vary by model? (Kruskal-Wallis on per-record deltas)**")
+                q1b_disp_b = q1b[["metric", "H", "p", "significant"]].copy()
+                q1b_disp_b["H"] = q1b_disp_b["H"].round(2)
+                q1b_disp_b["p"] = q1b_disp_b["p"].map(fmt_p)
+                st.dataframe(q1b_disp_b, width="stretch")
+
+            if selected_domain and not q1a_perm_within.empty:
+                with st.expander(f"Within-domain drill-down ({_domain_label})"):
+                    st.caption(
+                        "Same permutation test, restricted to the selected domain only. "
+                        "Use this to check whether the pooled conclusion holds inside this domain."
+                    )
+                    st.markdown("**Q1a (permutation) — within-domain**")
+                    q1a_pw_disp = q1a_perm_within[
+                        [
+                            "metric",
+                            "model",
+                            "n_scenarios",
+                            "permutation_mean_delta",
+                            "permutation_p_value",
+                            "permutation_significant",
+                            "n_positive_deltas",
+                            "sign_test_p_value",
+                            "sign_test_significant",
+                        ]
+                    ].copy()
+                    q1a_pw_disp["model"] = q1a_pw_disp["model"].apply(llm_name)
+                    q1a_pw_disp["permutation_p_value"] = q1a_pw_disp["permutation_p_value"].map(fmt_p)
+                    q1a_pw_disp["sign_test_p_value"] = q1a_pw_disp["sign_test_p_value"].map(fmt_p)
+                    st.dataframe(
+                        q1a_pw_disp.round({"permutation_mean_delta": 4}),
+                        width="stretch",
+                    )
+
+            st.markdown("**Plain-English interpretation:**")
+            _perm_metrics = sorted(q1a_perm_pooled_df["metric"].unique()) if not q1a_perm_pooled_df.empty else []
+
+            def _perm_model_list(rows):
+                return ", ".join(f"{llm_name(r['model'])} (p={fmt_p(r['permutation_p_value'])})" for r in rows)
+
+            for metric in _perm_metrics:
+                q1a_perm_sub = q1a_perm_pooled_df[q1a_perm_pooled_df["metric"] == metric]
+                q1b_row = (
+                    q1b[q1b["metric"] == metric].iloc[0]
+                    if (not q1b.empty and (q1b["metric"] == metric).any())
+                    else None
+                )
+
+                sig_rows = [r for _, r in q1a_perm_sub.iterrows() if r["permutation_significant"]]
+                not_sig_rows = [r for _, r in q1a_perm_sub.iterrows() if not r["permutation_significant"]]
+
+                sentences = []
+                if sig_rows:
+                    sentences.append(
+                        f"Trial variance significantly exceeds judge variance for {_perm_model_list(sig_rows)}"
+                    )
+                if not_sig_rows:
+                    sentences.append(
+                        f"No significant evidence that trial variance exceeds judge variance for "
+                        f"{_perm_model_list(not_sig_rows)}"
+                    )
+
+                q1b_txt = ""
+                if q1b_row is not None:
+                    if q1b_row["significant"]:
+                        q1b_txt = (
+                            f" The size of the gap varies significantly across models (K-W p={fmt_p(q1b_row['p'])})."
+                        )
+                    else:
+                        q1b_txt = f" The gap is consistent across models (K-W p={fmt_p(q1b_row['p'])})."
+
+                st.markdown(f"- **{metric}**: " + ". ".join(sentences) + "." + q1b_txt)
+
+            with st.expander("Methodology"):
+                st.markdown("""
+**Why sign-flip permutation (Q1a)?**
+Standard deviations are non-negative and bounded at zero. Pairing by record removes the
+scenario-difficulty confound (same as the Wilcoxon approach), but the Wilcoxon requires
+the *differences* to be symmetrically distributed around zero — an assumption that can be
+violated when values are bounded. The sign-flip permutation test has no such requirement.
+
+**Calculation steps (Q1a — permutation):**
+1. For each (record, trial, metric, model): compute judge std dev across the 3 judge iterations.
+2. Average those judge std devs over trials → one judge-variance estimate per (record, model, metric).
+3. delta = trial_SD − judge_SD per record.
+4. Observed test statistic = mean(delta).
+5. Permutation null: independently flip each delta's sign with p=0.5, repeat 10,000 times,
+   compute permuted mean each time.
+6. Two-sided p = fraction of |permuted means| ≥ |observed mean|.
+7. One-sided p (H₁: mean delta > 0):
+   - If observed mean ≥ 0: p_one = p_two / 2
+   - If observed mean < 0: p_one = 1 − p_two / 2
+   (When mean delta < 0, p_one > 0.5 — no evidence for H₁.)
+8. No Bonferroni correction across models — each model is an independent reporting unit.
+
+**Sign test (complementary):**
+Tests directional consistency: does P(delta > 0) > 0.5?
+scipy.stats.binomtest(n_positive_deltas, n=n, p=0.5, alternative='greater').
+Robust to noisy SD estimates; makes no symmetry assumption.
+
+**Pooled-across-models test:**
+To avoid pseudo-replication (same scenarios appear in all 4 models), deltas are averaged
+per (domain, scenario) across models first → 213 independent observations — then the
+permutation and sign tests are applied to those averages.
+
+**Why Kruskal-Wallis for Q1b (unchanged)?**
+Q1b tests whether the *gap* between judge and trial variance is consistent across models.
+Deltas (trial_SD − judge_SD) are unbounded and can be negative, so the Kruskal-Wallis
+test is valid here (no bounded-at-zero concern). No correction is applied: Q1b is one
+test per metric.
+""")
+
+    # ── Tab 4: Judge variance ─────────────────────────────────────────────────
+    with tabs[4]:
         st.header("Judge variance (stochasticity)")
         if selected_domain:
             st.caption(
@@ -1641,8 +1925,8 @@ distributions of judge std devs differ across models without assuming normality.
    separately so that cross-type differences don't dominate the signal.
 """)
 
-    # ── Tab 4: Trial variance ─────────────────────────────────────────────────
-    with tabs[4]:
+    # ── Tab 5: Trial variance ─────────────────────────────────────────────────
+    with tabs[5]:
         st.header("Trial variance (conversation-to-conversation)")
         if selected_domain:
             st.caption(
@@ -1826,8 +2110,8 @@ less powerful for the same true effect size.
    separately so that cross-type differences don't dominate the signal.
 """)
 
-    # ── Tab 5: EVA score stability ────────────────────────────────────────────
-    with tabs[5]:
+    # ── Tab 6: EVA score stability ────────────────────────────────────────────
+    with tabs[6]:
         st.header("EVA score stability")
         st.write("""
         **What this measures:** For each iteration, the headline EVA composite metrics are
@@ -1894,8 +2178,8 @@ less powerful for the same true effect size.
                 f"**Key finding:** Largest composite shift across iterations is {max_range:.4f} for **{max_metric}**."
             )
 
-    # ── Tab 6: Borderline scenarios ───────────────────────────────────────────
-    with tabs[6]:
+    # ── Tab 7: Borderline scenarios ───────────────────────────────────────────
+    with tabs[7]:
         st.header("Borderline scenarios")
         st.write(
             "**What this measures:** (Record, trial) pairs where judge stochasticity flipped the score "
@@ -2088,8 +2372,8 @@ less powerful for the same true effect size.
             _ranked_detail.index.name = "rank"
             st.dataframe(_ranked_detail, width="stretch")
 
-    # ── Tab 7: Intraclass correlation ─────────────────────────────────────────
-    with tabs[7]:
+    # ── Tab 8: Intraclass correlation ─────────────────────────────────────────
+    with tabs[8]:
         st.header("Intraclass correlation (ICC)")
         if selected_domain:
             st.caption(
@@ -2192,12 +2476,15 @@ less powerful for the same true effect size.
                 f"({_icc_min['icc']:.2f}, 95% CI [{_icc_min['ci_lower']:.2f}–{_icc_min['ci_upper']:.2f}])."
             )
 
-    # ── Tab 8: Variance decomp (LMM) ─────────────────────────────────────────
-    with tabs[8]:
+    # ── Tab 9: Variance decomp (LMM) ─────────────────────────────────────────
+    with tabs[9]:
         import pandas as pd
         from plots_variance import (
+            lmm_component_boxplot,
             lmm_forest_plot,
+            lmm_per_model_absolute_bar_rows,
             lmm_per_model_stacked_bar_rows,
+            lmm_variance_absolute_bar_all,
             lmm_variance_stacked_bar_all,
         )
 
@@ -2264,6 +2551,20 @@ less powerful for the same true effect size.
                     "`transcription_accuracy_key_entities` is fitted on cascade models only."
                 )
 
+            # ── Shared y-axis max for all absolute variance plots ─────────
+            _abs_y_max: float | None = None
+            _totals_pooled = (
+                lmm_vc["total_variance"].dropna() if "total_variance" in lmm_vc.columns else pd.Series(dtype=float)
+            )
+            _totals_pm = (
+                lmm_pm_vc["total_variance"].dropna()
+                if not lmm_pm_vc.empty and "total_variance" in lmm_pm_vc.columns
+                else pd.Series(dtype=float)
+            )
+            _all_totals = pd.concat([_totals_pooled, _totals_pm])
+            if not _all_totals.empty and _all_totals.max() > 0:
+                _abs_y_max = float(_all_totals.max()) * 1.15
+
             st.divider()
 
             # ── Section 1: Pooled variance decomposition ──────────────────
@@ -2276,7 +2577,7 @@ less powerful for the same true effect size.
             stochastic across conversation simulations. **High judge variance** (judge-graded
             metrics) is measurement noise from the LLM evaluator.
             """)
-            st.caption(
+            st.write(
                 "The residual captures everything not accounted for by the other components — "
                 "in the pooled analysis, this unavoidably mixes judge stochasticity with "
                 "model × scenario interactions."
@@ -2288,10 +2589,26 @@ less powerful for the same true effect size.
             st.plotly_chart(
                 lmm_variance_stacked_bar_all(
                     lmm_vc,
-                    "Pooled variance decomposition — all metrics",
-                    residual_label="Judge + interactions",
+                    "Pooled variance decomposition — all metrics (% of total)",
+                    residual_label="Judge + model × scenario interaction",
                     metric_order=_lmm_ordered_metrics,
                     judge_count=_lmm_judge_count,
+                ),
+                use_container_width=True,
+            )
+            st.caption(
+                "Absolute σ² below. Bar height shows how much variance there is to explain — "
+                "a metric with very low total variance means scores are nearly constant across "
+                "all runs, so even a large percentage from one source has small practical impact."
+            )
+            st.plotly_chart(
+                lmm_variance_absolute_bar_all(
+                    lmm_vc,
+                    "Pooled variance decomposition — all metrics (absolute σ²)",
+                    residual_label="Judge + model × scenario interaction",
+                    metric_order=_lmm_ordered_metrics,
+                    judge_count=_lmm_judge_count,
+                    y_max=_abs_y_max,
                 ),
                 use_container_width=True,
             )
@@ -2299,7 +2616,7 @@ less powerful for the same true effect size.
                 _sub_vc = lmm_vc[lmm_vc["component"] != "judge"][
                     ["metric", "component", "sigma2", "proportion", "ci_lower", "ci_upper"]
                 ].copy()
-                _sub_vc["component"] = _sub_vc["component"].replace("residual", "judge + interactions")
+                _sub_vc["component"] = _sub_vc["component"].replace("residual", "judge + model × scenario interaction")
                 _sub_vc["proportion"] = _sub_vc["proportion"].map("{:.1%}".format)
                 _sub_vc = _sub_vc.rename(
                     columns={
@@ -2331,13 +2648,61 @@ less powerful for the same true effect size.
                     lmm_per_model_stacked_bar_rows(
                         lmm_pm_vc,
                         lmm_model_ids,
+                        title="Per-model variance decomposition — all metrics (% of total)",
                         residual_label="Judge stochasticity",
                         metric_order=_lmm_ordered_metrics,
                         judge_count=_lmm_judge_count,
                     ),
                     use_container_width=True,
                 )
-                with st.expander("Detail table + download", expanded=False):
+                st.caption(
+                    "Absolute σ² below. Residual = judge stochasticity: within-(model, scenario, trial) "
+                    "variation across judge iterations."
+                )
+                st.plotly_chart(
+                    lmm_per_model_absolute_bar_rows(
+                        lmm_pm_vc,
+                        lmm_model_ids,
+                        title="Per-model variance decomposition — all metrics (absolute σ²)",
+                        residual_label="Judge stochasticity",
+                        metric_order=_lmm_ordered_metrics,
+                        judge_count=_lmm_judge_count,
+                        y_max=_abs_y_max,
+                    ),
+                    use_container_width=True,
+                )
+
+                # ── Summary table: Metric × Model with σ² and % breakdown ─
+                st.subheader("Summary table — variance components by model")
+                _pm_comps = ["scenario", "trial", "residual"]
+                _pm_comp_labels = {
+                    "scenario": "% Scenario",
+                    "trial": "% Trial",
+                    "residual": "% Judge stochasticity",
+                }
+                _pm_rows = []
+                for _met in _lmm_ordered_metrics:
+                    for _mid in lmm_model_ids:
+                        _cell = lmm_pm_vc[(lmm_pm_vc["model_id"] == _mid) & (lmm_pm_vc["metric"] == _met)]
+                        if _cell.empty:
+                            continue
+                        _total = _cell["total_variance"].iloc[0] if "total_variance" in _cell.columns else float("nan")
+                        _row = {
+                            "Metric": _met,
+                            "Model": _mid,
+                            "Total σ²": round(float(_total), 5) if not pd.isna(_total) else "—",
+                        }
+                        for comp in _pm_comps:
+                            _comp_cell = _cell[_cell["component"] == comp]
+                            if _comp_cell.empty:
+                                _row[_pm_comp_labels[comp]] = "—"
+                            else:
+                                _row[_pm_comp_labels[comp]] = "{:.1%}".format(float(_comp_cell["proportion"].iloc[0]))
+                        _pm_rows.append(_row)
+                if _pm_rows:
+                    st.dataframe(pd.DataFrame(_pm_rows), hide_index=True, use_container_width=True)
+
+                with st.expander("Long-format detail + download", expanded=False):
                     _pm_display = lmm_pm_vc[
                         ["model_id", "metric", "component", "sigma2", "proportion", "ci_lower", "ci_upper"]
                     ].copy()
@@ -2355,6 +2720,22 @@ less powerful for the same true effect size.
                     )
                     st.dataframe(_pm_display, hide_index=True, use_container_width=True)
                     download_button(lmm_pm_vc, "lmm_vc_per_model.csv")
+
+            if not lmm_pm_vc.empty:
+                st.subheader("Cross-metric overview — all components")
+                st.caption(
+                    "Each point is one model. Boxes show median and range. "
+                    "Judge stochasticity (residual) only appears for judge-graded metrics; "
+                    "for deterministic metrics, trial variance is the residual."
+                )
+                st.plotly_chart(
+                    lmm_component_boxplot(
+                        lmm_pm_vc,
+                        metric_order=_lmm_ordered_metrics,
+                        residual_label="Judge stochasticity",
+                    ),
+                    use_container_width=True,
+                )
 
             st.divider()
 
@@ -2388,6 +2769,26 @@ less powerful for the same true effect size.
                     with st.expander("Detail table + download", expanded=False):
                         st.dataframe(_display_fe.round(4), hide_index=True, use_container_width=True)
                         download_button(_fe_sub, f"lmm_fe_domain_{_metric}.csv")
+
+            # Paper-ready wide table: domains × metrics with coef [lo, hi]
+            with st.expander("Paper-ready table: domain fixed effects (all metrics)", expanded=False):
+                st.caption(
+                    "Coefficients are deviations from the grand mean (sum-to-zero coding). "
+                    "Format: coef [95% CI lower, upper]. Rounded to 3 decimal places."
+                )
+                _dom_fe = lmm_fe[lmm_fe["term"].str.startswith("C(domain, Sum)[S.")].copy()
+                _dom_fe["domain"] = _dom_fe["term"].str.extract(r"\[S\.(.+)\]$")
+                _dom_fe["formatted"] = _dom_fe.apply(
+                    lambda r: f"{r['coef']:.3f} [{r['ci_lower']:.3f}, {r['ci_upper']:.3f}]", axis=1
+                )
+                _dom_wide = _dom_fe.pivot(index="domain", columns="metric", values="formatted")
+                _dom_wide = _dom_wide.reindex(columns=_lmm_ordered_metrics, fill_value="—")
+                _dom_wide.index.name = "Domain"
+                _dom_wide.columns.name = None
+                st.dataframe(_dom_wide, use_container_width=True)
+                download_button(
+                    _dom_fe[["domain", "metric", "coef", "ci_lower", "ci_upper"]], "lmm_fe_domain_paper.csv"
+                )
 
             st.divider()
 
@@ -2425,49 +2826,93 @@ less powerful for the same true effect size.
 
             # ── Section 5: Statistical methods ────────────────────────────
             st.subheader("Section 5 — Statistical methods")
-            st.markdown("""
-**Model specification**
+            with st.expander("Model specification and methodology", expanded=False):
+                st.markdown("""
+Three distinct model variants are used, depending on whether the metric is judge-graded
+and whether we are fitting the pooled or per-model analysis.
 
-For judge-graded metrics (`faithfulness`, `agent_speech_fidelity`, `conversation_progression`,
-`conciseness`, `transcription_accuracy_key_entities`):
+---
+
+**Pooled analysis — judge-graded metrics**
+
+All models' data are fitted together. Model and domain are fixed effects with sum-to-zero
+coding; scenario, trial, and judge are nested random intercepts.
+
 ```
 score ~ C(model_id, Sum) + C(domain, Sum)
-      + (1 | domain:scenario)
-      + (1 | domain:scenario:trial)
-      + (1 | domain:scenario:trial:judge)
+      + (1 | scenario_uid)
+      + Trial:  0 + C(trial_uid)   [vc_formula]
+      + Judge:  0 + C(judge_uid)   [vc_formula]
 ```
 
-For deterministic metrics (`task_completion`, `authentication_success`,
-`conversation_correctly_finished`, `turn_taking`):
+The residual is labelled **"Judge + model × scenario interaction"** because `judge_uid` is shared across all
+models (the same judge call evaluates all models' responses for a given iteration). The judge
+random effect captures only cross-model co-variation in iteration scores, which is near zero.
+Judge stochasticity and model × scenario interactions are therefore both absorbed into the
+residual and cannot be separated in the pooled model.
+
+---
+
+**Pooled analysis — deterministic metrics**
+
+Same as the judge-graded pooled model but without the Judge vc_formula term:
+
 ```
 score ~ C(model_id, Sum) + C(domain, Sum)
-      + (1 | domain:scenario)
-      + (1 | domain:scenario:trial)
+      + (1 | scenario_uid)
+      + Trial:  0 + C(trial_uid)   [vc_formula]
 ```
 
-The per-model analysis (Section 2) uses the same formulas with `C(model_id, Sum)` removed.
-`transcription_accuracy_key_entities` is fitted on cascade models only.
+---
 
-**Why REML?** Restricted maximum likelihood (REML) provides unbiased estimates of variance
-components, unlike standard MLE which underestimates them in small samples.
+**Per-model analysis — judge-graded metrics**
 
-**Fixed effect coding:** Sum-to-zero (effects) coding means each coefficient is a deviation
-from the grand mean. The last level's coefficient is the negative sum of all others.
+Each model is fitted separately (domain as the only fixed effect, no model fixed effect).
+The Judge vc_formula is omitted because `judge_uid` has exactly one observation per level
+in a single-model fit — one observation per level makes judge variance and residual
+unidentifiable. Dropping Judge lets the Trial term (three iterations per trial = three obs
+per level) be cleanly identified. The residual is then pure judge stochasticity.
 
-**Variance component CIs:** Approximate Wald (likelihood-based) intervals from the REML
-Hessian, clipped to zero. Bootstrap CIs may be added in a future revision.
+```
+score ~ C(domain, Sum)
+      + (1 | scenario_uid)
+      + Trial:  0 + C(trial_uid)   [vc_formula]
+```
 
-**Convergence:** Models are fitted with the Powell optimizer. Convergence failures are
-reported in Section 6 and shown as missing bars/points.
+Residual = **Judge stochasticity** (within-scenario, within-trial variation across iterations).
 
-**Relationship to other tabs:** The Variance Budget tab uses a classical sum-of-squares
-decomposition (no CIs, per-model, includes domain as a random-effect-like pot). This tab
-uses a proper mixed model (CIs, pooled and per-model, domain as a fixed effect). They are
-complementary, not redundant. The Variance page tabs (Judge vs. trial variance, ICC) address
-related but distinct questions about variance structure.
+---
 
-**Future:** A model × scenario random interaction term (requiring pymer4 / lme4 via rpy2)
-is planned as a follow-on tab "Variance decomp (interaction)".
+**Per-model analysis — deterministic metrics**
+
+Deterministic metrics produce identical scores across iterations, so the three-level model
+with a Trial vc_formula produces a singular Hessian (zero within-trial residual). Iterations
+are collapsed to one row per (scenario, trial) and a two-level model is fitted:
+
+```
+score ~ C(domain, Sum)  +  (1 | scenario_uid)
+```
+
+In this model the residual = **σ²_trial** (within-scenario variation across trials).
+Only two components are reported: Scenario and Trial.
+
+---
+
+**Implementation notes**
+
+- Estimator: REML (restricted maximum likelihood) via `statsmodels.MixedLM`, Powell optimizer.
+  REML gives unbiased variance component estimates; standard MLE underestimates them.
+- Fixed effect coding: `C(x, Sum)` (patsy) = sum-to-zero / effects coding.
+  Each coefficient is a deviation from the grand mean; no reference level is arbitrarily excluded.
+- Variance component CIs: Wald intervals from the REML Hessian, clipped to zero.
+- `transcription_accuracy_key_entities` is fitted on cascade models only.
+- Convergence failures appear in Section 6 and as missing bars/points in the plots.
+
+**Relationship to ICC (Variance page):** The ANOVA-based ICC estimates the fraction of
+variance attributable to scenario (i.e., σ²_scenario / σ²_total) without requiring likelihood
+maximization — it is always defined, regardless of convergence. The LMM's σ²_scenario /
+σ²_total answers the same question with CIs and as part of a full decomposition. They
+complement each other but measure the same underlying quantity.
 """)
 
             st.divider()
@@ -2491,8 +2936,8 @@ is planned as a follow-on tab "Variance decomp (interaction)".
                 st.dataframe(display_conv, hide_index=True, use_container_width=True)
                 download_button(lmm_conv, "lmm_convergence.csv")
 
-    # ── Tab 9: Variance budget ────────────────────────────────────────────────
-    with tabs[9]:
+    # ── Tab 10: Variance budget ───────────────────────────────────────────────
+    with tabs[10]:
         st.header("Variance budget")
         st.write("""
         **What this measures:** A decomposition of total score variance into the sources
@@ -2585,8 +3030,8 @@ is planned as a follow-on tab "Variance decomp (interaction)".
                 st.dataframe(styled, width="stretch")
                 download_button(converged[display_cols], f"variance_budget_{selected_model}.csv")
 
-    # ── Tab 10: Per-metric deep dive ──────────────────────────────────────────
-    with tabs[10]:
+    # ── Tab 11: Per-metric deep dive ──────────────────────────────────────────
+    with tabs[11]:
         st.header("Per-metric deep dive")
         st.write("""
         **What this measures:** For each metric, how does judge variance relate to trial
@@ -2620,8 +3065,8 @@ is planned as a follow-on tab "Variance decomp (interaction)".
                     f"Variance is primarily driven by **{dominant}**."
                 )
 
-    # ── Tab 11: Statistical tests ─────────────────────────────────────────────
-    with tabs[11]:
+    # ── Tab 12: Statistical tests ─────────────────────────────────────────────
+    with tabs[12]:
         st.header("Statistical tests")
         st.write("""
         Full results for all statistical tests. High-level summaries with plain-English
@@ -2698,6 +3143,11 @@ judge is unusually deterministic (e.g., always returns the same score for a metr
 
         # ── Q1a ───────────────────────────────────────────────────────────────────
         with st.expander("Q1a — Paired Wilcoxon: judge vs. trial variance (→ Judge vs. trial variance tab)"):
+            st.warning(
+                "⚠️ This describes the original Wilcoxon approach. Results are retained for "
+                "reference; the updated analysis uses sign-flip permutation "
+                "(see **Judge vs. trial variance (b)** tab)."
+            )
             if q1a.empty:
                 st.info("No results (need ≥ 5 paired records per model × metric).")
             else:
@@ -2742,6 +3192,10 @@ the differences and tests whether positive and negative ranks are symmetric arou
         with st.expander(
             "Q1b — Kruskal-Wallis: does the judge-vs-trial gap vary across models? (→ Judge vs. trial variance tab)"
         ):
+            st.warning(
+                "⚠️ Kept for reference alongside the original Wilcoxon results. "
+                "The (b) tab also shows Q1b unchanged — K-W on unbounded deltas is valid."
+            )
             if q1b.empty:
                 st.info("No results.")
             else:
@@ -2769,6 +3223,60 @@ do different models have different judge-vs-trial variance ratios?
 
 **No Bonferroni correction here:** Q1b is one test per metric (not a family of pairwise tests),
 so no correction is needed within this test. The 0.05 threshold is applied per metric.
+""")
+
+        # ── Q1a permutation (new) ─────────────────────────────────────────────────
+        with st.expander("Q1a — Sign-flip permutation test (updated approach) (→ Judge vs. trial variance (b) tab)"):
+            st.markdown("**Per-model results**")
+            if q1a_perm_pooled_df.empty:
+                st.info("No results (run stats pipeline first).")
+            else:
+                _q1a_perm_disp = q1a_perm_pooled_df.copy()
+                _q1a_perm_disp["permutation_p_value"] = _q1a_perm_disp["permutation_p_value"].map(fmt_p)
+                _q1a_perm_disp["sign_test_p_value"] = _q1a_perm_disp["sign_test_p_value"].map(fmt_p)
+                _q1a_perm_disp["model"] = _q1a_perm_disp["model"].apply(llm_name)
+                st.dataframe(
+                    _q1a_perm_disp.round({"permutation_mean_delta": 4}),
+                    width="stretch",
+                )
+                download_button(q1a_perm_pooled_df, "stat_q1a_perm.csv")
+
+            st.markdown("**Pooled across models (scenario-averaged)**")
+            if q1a_perm_pooled_scenarios.empty:
+                st.info("No results.")
+            else:
+                _q1a_perm_sc_disp = q1a_perm_pooled_scenarios.copy()
+                _q1a_perm_sc_disp["permutation_p_value"] = _q1a_perm_sc_disp["permutation_p_value"].map(fmt_p)
+                _q1a_perm_sc_disp["sign_test_p_value"] = _q1a_perm_sc_disp["sign_test_p_value"].map(fmt_p)
+                st.dataframe(
+                    _q1a_perm_sc_disp.round({"permutation_mean_delta": 4}),
+                    width="stretch",
+                )
+                download_button(q1a_perm_pooled_scenarios, "stat_q1a_perm_pooled.csv")
+
+            with st.expander("Q1a permutation full methodology"):
+                st.markdown("""
+**Test choice:** Sign-flip permutation test (10,000 permutations, one-sided).
+
+**Permutation test:** For each permutation, the sign of each per-scenario delta
+(trial SD − judge SD) was independently flipped with probability 0.5, and the mean
+was recomputed. The two-sided p-value is the fraction of permuted means where
+|permuted mean| ≥ |observed mean|. The one-sided p-value (H₁: mean trial SD > mean judge SD)
+is p_two / 2 when observed mean ≥ 0, and 1 − p_two / 2 otherwise.
+
+**Why not Bonferroni across models:** Each per-model test is an independent
+directional hypothesis about that specific model's behavior — not a family of pairwise
+comparisons. This differs from the original Wilcoxon Q1a, which was two-sided and applied
+Bonferroni correction across all models simultaneously. Do not directly compare raw
+permutation p-values to the Wilcoxon's corrected p-values.
+
+**Sign test:** Exact binomial test (scipy.stats.binomtest), H₁: P(delta > 0) > 0.5.
+Tests directional consistency — whether more than half of scenarios have trial SD > judge SD.
+Robust to noisy SD estimates; no symmetry assumption.
+
+**Pooled-across-models test:** Deltas averaged per (domain, scenario) across models first
+→ 213 independent observations. Avoids pseudo-replication from the same scenarios
+appearing in all 4 models. Permutation + sign test applied to the 213 averaged deltas.
 """)
 
         # ── Q2 ────────────────────────────────────────────────────────────────────
@@ -3097,13 +3605,22 @@ unavoidably mixes judge stochasticity with model × scenario interactions.
 
 ### Per-model analysis — judge-graded metrics
 
-Same three-level nested structure as the pooled model, with `C(domain, Sum)` as the only
-fixed effect (model_id is removed since one model is fitted at a time).
+Domain is the only fixed effect; model_id is removed since one model is fitted at a time.
+The Judge vc_formula is **omitted entirely** from per-model fits:
 
-`judge_uid = trial_uid::iteration` has exactly one observation per level in a single-model
-fit, so the judge random effect is not estimable and converges to zero. The **residual in
-per-model fits is pure judge stochasticity** — within-(model, scenario, trial) variation
-across iterations — with no model × scenario interaction to confound it.
+```
+score ~ C(domain, Sum)
+      + (1 | scenario_uid)
+      + Trial:  0 + C(trial_uid)   [vc_formula]
+```
+
+Why: `judge_uid` has exactly one observation per level in a single-model fit. With one
+observation per level, judge variance and residual variance are statistically unidentifiable
+— the optimizer cannot separate "this judge call was high" from "unexplained noise." The
+Trial vc_formula is identifiable because `trial_uid` has three observations per level (three
+iterations). Dropping Judge makes the model estimable and lets the residual cleanly capture
+**judge stochasticity** — within-(model, scenario, trial) variation across iterations —
+with no model × scenario interaction to confound it.
 
 ---
 

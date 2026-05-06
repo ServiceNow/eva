@@ -19,70 +19,73 @@ _COMPOSITE_STAT_ORDER = {"pass@1": 0, "pass@k": 1, "pass^k": 2, "mean": 3}
 
 
 _VARIANCE_BUDGET_COLORS = {
-    "Domain": "#1f77b4",
-    "Scenario": "#2ca02c",
-    "Trial": "#ff7f0e",
-    "Judge": "#d62728",
+    # Plotly Vivid qualitative palette — high saturation, spread across hue wheel
+    "Domain": "#DAA51B",  # vivid amber-gold (variance budget tab only)
+    "Judge": "#ED645A",  # vivid coral-red  (variance budget tab only)
+    "Scenario": "#5D69B1",  # vivid blue-purple
+    "Trial": "#E58606",  # vivid orange
+    "Residual": "#CC61B0",  # vivid magenta (generic)
+    "Judge + model × scenario interaction": "#CC61B0",  # vivid magenta (pooled LMM residual)
+    "Judge stochasticity": "#52BCA3",  # vivid teal (per-model LMM residual)
 }
 
 
-def variance_budget_stacked_bar(budget_df: pd.DataFrame, model_id: str) -> go.Figure:
-    """Stacked bar (% of total): one bar per metric, segmented into the variance pots.
+def _stacked_variance_pct_bar(
+    df: pd.DataFrame,
+    pot_cols: list[tuple[str, str]],
+    title: str,
+) -> go.Figure:
+    """Shared core for stacked % variance bar charts.
 
-    σ_total (the standard deviation, sqrt of σ²_total) is shown as an annotation
-    on top of each bar so absolute magnitude and breakdown are both visible.
+    Parameters
+    ----------
+    df : pd.DataFrame
+        One row per metric, already filtered/sorted by the caller.
+    pot_cols : list[tuple[str, str]]
+        (display_label, pct_column) pairs in stack order.
+    title : str
+        Figure title.
     """
     import math
 
-    sub = budget_df[budget_df["model_id"] == model_id]
-    if sub.empty:
-        return empty_fig(f"No variance budget rows for {model_id!r}.")
-
-    metrics = sub["metric"].tolist()
+    metrics = df["metric"].tolist()
     fig = go.Figure()
-    pot_cols = [
-        ("Domain", "pct_domain"),
-        ("Scenario", "pct_scenario"),
-        ("Trial", "pct_trial"),
-        ("Judge", "pct_judge"),
-    ]
     for label, col in pot_cols:
-        if col not in sub.columns:
+        if col not in df.columns:
             continue
-        y_vals = (sub[col] * 100).tolist()
+        y_vals = (df[col] * 100).tolist()
         fig.add_trace(
             go.Bar(
                 name=label,
                 x=metrics,
                 y=y_vals,
-                marker_color=_VARIANCE_BUDGET_COLORS[label],
+                marker_color=_VARIANCE_BUDGET_COLORS.get(label, "#888"),
                 hovertemplate="<b>%{x}</b><br>" + label + ": %{y:.1f}%<extra></extra>",
             )
         )
 
     annotations = []
-    if "sigma2_total" in sub.columns:
-        for metric, total in zip(sub["metric"], sub["sigma2_total"]):
+    if "sigma2_total" in df.columns:
+        for metric, total in zip(df["metric"], df["sigma2_total"]):
             if pd.isna(total) or total <= 0:
                 continue
-            sigma_total = math.sqrt(float(total))
             annotations.append(
-                dict(
-                    x=metric,
-                    y=102,
-                    text=f"σ={sigma_total:.3f}",
-                    showarrow=False,
-                    font=dict(size=11, color="#222"),
-                    yanchor="bottom",
-                )
+                {
+                    "x": metric,
+                    "y": 102,
+                    "text": f"σ={math.sqrt(float(total)):.3f}",
+                    "showarrow": False,
+                    "font": {"size": 11, "color": "#222"},
+                    "yanchor": "bottom",
+                }
             )
 
     fig.update_layout(
         barmode="stack",
-        title=f"Variance breakdown (% of total) — {model_id}",
+        title=title,
         xaxis_title="Metric",
         yaxis_title="% of total variance",
-        yaxis=dict(range=[0, 115], ticksuffix="%"),
+        yaxis={"range": [0, 115], "ticksuffix": "%"},
         legend_title="Source",
         height=520,
         margin={"r": 40, "t": 80},
@@ -91,6 +94,25 @@ def variance_budget_stacked_bar(budget_df: pd.DataFrame, model_id: str) -> go.Fi
     fig.update_xaxes(**_axis_style)
     fig.update_yaxes(**_axis_style)
     return fig
+
+
+def variance_budget_stacked_bar(budget_df: pd.DataFrame, model_id: str) -> go.Figure:
+    """Stacked bar (% of total): one bar per metric, segmented into the variance pots.
+
+    σ_total (the standard deviation, sqrt of σ²_total) is shown as an annotation
+    on top of each bar so absolute magnitude and breakdown are both visible.
+    """
+    sub = budget_df[budget_df["model_id"] == model_id]
+    if sub.empty:
+        return empty_fig(f"No variance budget rows for {model_id!r}.")
+
+    pot_cols = [
+        ("Domain", "pct_domain"),
+        ("Scenario", "pct_scenario"),
+        ("Trial", "pct_trial"),
+        ("Judge", "pct_judge"),
+    ]
+    return _stacked_variance_pct_bar(sub, pot_cols, f"Variance breakdown (% of total) — {model_id}")
 
 
 def variance_budget_absolute_bar(budget_df: pd.DataFrame, model_id: str) -> go.Figure:
@@ -636,4 +658,698 @@ def deep_dive_scatter_fig(
     )
     fig.add_hline(y=merged["judge_std"].mean(), line_dash="dash", line_color="gray", annotation_text="Mean judge std")
     fig.add_vline(x=merged["trial_std"].mean(), line_dash="dash", line_color="gray", annotation_text="Mean trial std")
+    return fig
+
+
+# ── LMM variance decomposition plots ──────────────────────────────────────────
+
+_LMM_COMPONENT_ORDER = ["scenario", "trial", "judge", "residual"]
+_LMM_COMPONENT_LABELS = {
+    "scenario": "Scenario",
+    "trial": "Trial",
+    "judge": "Judge",
+    "residual": "Residual",
+}
+
+
+def lmm_variance_stacked_bar(
+    vc_df: pd.DataFrame,
+    metric: str,
+    title: str,
+) -> go.Figure:
+    """Stacked % bar for a single metric's LMM variance components.
+
+    Components: Scenario, Trial, Judge (if present), Residual.
+    Delegates to _stacked_variance_pct_bar after pivoting long→wide.
+
+    Parameters
+    ----------
+    vc_df : pd.DataFrame
+        lmm_variance_components DataFrame, long format (one row per component).
+    metric : str
+        Metric name to plot.
+    title : str
+        Figure title.
+    """
+    if vc_df.empty or "metric" not in vc_df.columns:
+        return empty_fig(f"No LMM variance components for {metric!r}.")
+    sub = vc_df[vc_df["metric"] == metric]
+    if sub.empty:
+        return empty_fig(f"No LMM variance components for {metric!r}.")
+
+    wide_row: dict = {"metric": metric}
+    for comp in _LMM_COMPONENT_ORDER:
+        comp_rows = sub[sub["component"] == comp]
+        if comp_rows.empty:
+            continue
+        wide_row[f"pct_{comp}"] = float(comp_rows["proportion"].iloc[0])
+        wide_row[f"sigma2_{comp}"] = float(comp_rows["sigma2"].iloc[0])
+
+    total = sub["total_variance"].iloc[0] if "total_variance" in sub.columns else float("nan")
+    wide_row["sigma2_total"] = total
+    wide_df = pd.DataFrame([wide_row])
+
+    pot_cols = [(_LMM_COMPONENT_LABELS[c], f"pct_{c}") for c in _LMM_COMPONENT_ORDER if f"pct_{c}" in wide_df.columns]
+    return _stacked_variance_pct_bar(wide_df, pot_cols, title)
+
+
+def lmm_variance_stacked_bar_all(
+    vc_df: pd.DataFrame,
+    title: str,
+    residual_label: str = "Residual",
+    min_proportion: float = 0.001,
+    metric_order: list[str] | None = None,
+    judge_count: int = 0,
+) -> go.Figure:
+    """Stacked % bar for all metrics' LMM variance components on one chart.
+
+    One bar per metric; segments are Scenario, Trial, Judge (if non-trivial), Residual.
+    Components whose max proportion across all metrics is below min_proportion are omitted.
+    If metric_order is given, metrics are displayed in that order. If judge_count > 0 and
+    < len(metrics), a light gray dashed divider is drawn between the two groups.
+    """
+    if vc_df.empty or "metric" not in vc_df.columns:
+        return empty_fig("No LMM variance components available.")
+    all_metrics = sorted(vc_df["metric"].unique())
+    if metric_order:
+        all_metrics = [m for m in metric_order if m in set(all_metrics)]
+    wide_rows = []
+    for metric in all_metrics:
+        sub = vc_df[vc_df["metric"] == metric]
+        if sub.empty:
+            continue
+        row: dict = {"metric": metric}
+        for comp in _LMM_COMPONENT_ORDER:
+            comp_rows = sub[sub["component"] == comp]
+            if comp_rows.empty:
+                continue
+            row[f"pct_{comp}"] = float(comp_rows["proportion"].iloc[0])
+        total = sub["total_variance"].iloc[0] if "total_variance" in sub.columns else float("nan")
+        row["sigma2_total"] = total
+        wide_rows.append(row)
+    if not wide_rows:
+        return empty_fig("No LMM variance components available.")
+    wide_df = pd.DataFrame(wide_rows)
+    pot_cols = []
+    for c in _LMM_COMPONENT_ORDER:
+        col = f"pct_{c}"
+        if col not in wide_df.columns or wide_df[col].max() < min_proportion:
+            continue
+        label = residual_label if c == "residual" else _LMM_COMPONENT_LABELS[c]
+        pot_cols.append((label, col))
+    fig = _stacked_variance_pct_bar(wide_df, pot_cols, title)
+    fig.update_layout(legend_traceorder="reversed")
+    n_metrics = len(wide_df)
+    if 0 < judge_count < n_metrics:
+        fig.add_shape(
+            type="line",
+            xref="x",
+            yref="paper",
+            x0=judge_count - 0.5,
+            x1=judge_count - 0.5,
+            y0=0,
+            y1=1,
+            line={"color": "lightgray", "width": 1.5, "dash": "dash"},
+        )
+        for x_pos, text in [(-0.45, "Judge-graded"), (judge_count - 0.45, "Deterministic")]:
+            fig.add_annotation(
+                x=x_pos,
+                y=106,
+                xref="x",
+                yref="y",
+                text=f"<i>{text}</i>",
+                showarrow=False,
+                font={"size": 10, "color": "gray"},
+                xanchor="left",
+                yanchor="bottom",
+            )
+    return fig
+
+
+def lmm_variance_stacked_bar_grid(
+    per_model_df: pd.DataFrame,
+    metric: str,
+    model_ids: list[str],
+) -> go.Figure:
+    """2×2 subplot grid of stacked % variance bars, one panel per model.
+
+    Parameters
+    ----------
+    per_model_df : pd.DataFrame
+        lmm_per_model_variance_components DataFrame, long format.
+    metric : str
+        Metric name to plot.
+    model_ids : list[str]
+        Ordered list of model IDs (determines subplot layout).
+    """
+    from plotly.subplots import make_subplots
+
+    sub = per_model_df[per_model_df["metric"] == metric]
+    if sub.empty:
+        return empty_fig(f"No per-model LMM variance data for {metric!r}.")
+
+    n = len(model_ids)
+    n_cols = 2
+    n_rows = (n + 1) // n_cols
+    fig = make_subplots(
+        rows=n_rows,
+        cols=n_cols,
+        subplot_titles=model_ids,
+        shared_yaxes=True,
+    )
+
+    legend_added: set[str] = set()
+    for idx, model_id in enumerate(model_ids):
+        row, col = divmod(idx, n_cols)
+        model_sub = sub[sub["model_id"] == model_id]
+        for comp in _LMM_COMPONENT_ORDER:
+            comp_row = model_sub[model_sub["component"] == comp]
+            if comp_row.empty:
+                continue
+            pct = float(comp_row["proportion"].iloc[0]) * 100
+            label = _LMM_COMPONENT_LABELS[comp]
+            show_legend = label not in legend_added
+            fig.add_trace(
+                go.Bar(
+                    name=label,
+                    x=[metric],
+                    y=[pct],
+                    marker_color=_VARIANCE_BUDGET_COLORS.get(label, "#888"),
+                    showlegend=show_legend,
+                    legendgroup=label,
+                    hovertemplate=f"<b>{model_id}</b><br>{label}: %{{y:.1f}}%<extra></extra>",
+                ),
+                row=row + 1,
+                col=col + 1,
+            )
+            legend_added.add(label)
+
+    fig.update_layout(
+        barmode="stack",
+        title_text=f"Variance decomposition per model — {metric}",
+        height=420 * n_rows,
+        legend_title="Source",
+    )
+    fig.update_yaxes(range=[0, 115], ticksuffix="%")
+    return fig
+
+
+def lmm_per_model_stacked_bar_rows(
+    per_model_df: pd.DataFrame,
+    model_ids: list[str],
+    title: str = "Per-model variance decomposition — all metrics",
+    residual_label: str = "Residual",
+    min_proportion: float = 0.001,
+    metric_order: list[str] | None = None,
+    judge_count: int = 0,
+) -> go.Figure:
+    """Stacked % variance bars: one subplot row per model, all metrics on x-axis.
+
+    Parameters
+    ----------
+    per_model_df : pd.DataFrame
+        lmm_per_model_variance_components DataFrame, long format.
+    model_ids : list[str]
+        Ordered list of model IDs (one subplot row each).
+    title : str
+        Figure title.
+    residual_label : str
+        Display label for the residual component.
+    min_proportion : float
+        Components whose max proportion across all cells is below this threshold are omitted.
+    metric_order : list[str] or None
+        If given, display metrics in this order.
+    judge_count : int
+        If > 0 and < n_metrics, draw a dashed divider after this many metrics.
+    """
+    from plotly.subplots import make_subplots
+
+    if per_model_df.empty or "model_id" not in per_model_df.columns:
+        return empty_fig("No per-model LMM variance components available.")
+
+    all_metrics = sorted(per_model_df["metric"].unique().tolist())
+    if metric_order:
+        all_metrics = [m for m in metric_order if m in set(all_metrics)]
+
+    # Determine which components have any non-trivial proportion
+    active_comps = []
+    for comp in _LMM_COMPONENT_ORDER:
+        max_pct = 0.0
+        for model_id in model_ids:
+            ms = per_model_df[per_model_df["model_id"] == model_id]
+            for metric in all_metrics:
+                cell = ms[(ms["metric"] == metric) & (ms["component"] == comp)]
+                if not cell.empty:
+                    max_pct = max(max_pct, float(cell["proportion"].iloc[0]))
+        if max_pct >= min_proportion:
+            active_comps.append(comp)
+
+    n_rows = len(model_ids)
+    fig = make_subplots(
+        rows=n_rows,
+        cols=1,
+        subplot_titles=model_ids,
+        shared_xaxes=True,
+        vertical_spacing=0.08 if n_rows <= 4 else 0.05,
+    )
+
+    seen: set[str] = set()
+    for row_i, model_id in enumerate(model_ids, start=1):
+        model_sub = per_model_df[per_model_df["model_id"] == model_id]
+        for comp in active_comps:
+            label = residual_label if comp == "residual" else _LMM_COMPONENT_LABELS[comp]
+            color = _VARIANCE_BUDGET_COLORS.get(label, "#888")
+            y_vals = []
+            for metric in all_metrics:
+                cell = model_sub[(model_sub["metric"] == metric) & (model_sub["component"] == comp)]
+                y_vals.append(float(cell["proportion"].iloc[0]) * 100 if not cell.empty else 0.0)
+            fig.add_trace(
+                go.Bar(
+                    name=label,
+                    x=all_metrics,
+                    y=y_vals,
+                    marker_color=color,
+                    showlegend=label not in seen,
+                    legendgroup=label,
+                    hovertemplate=f"<b>%{{x}}</b><br>{label}: %{{y:.1f}}%<extra></extra>",
+                ),
+                row=row_i,
+                col=1,
+            )
+            seen.add(label)
+
+    fig.update_layout(
+        barmode="stack",
+        title=title,
+        height=300 * n_rows + 80,
+        legend_title="Source",
+        legend_traceorder="reversed",
+        margin={"r": 40, "t": 80},
+    )
+    fig.update_yaxes(range=[0, 115], ticksuffix="%")
+    fig.update_xaxes(row=n_rows, col=1, **_axis_style)
+    n_metrics = len(all_metrics)
+    if 0 < judge_count < n_metrics:
+        for row_i in range(1, n_rows + 1):
+            xref = "x" if row_i == 1 else f"x{row_i}"
+            fig.add_shape(
+                type="line",
+                xref=xref,
+                yref="paper",
+                x0=judge_count - 0.5,
+                x1=judge_count - 0.5,
+                y0=0,
+                y1=1,
+                line={"color": "lightgray", "width": 1.5, "dash": "dash"},
+            )
+        # Group labels in top subplot only (x-axis is shared across rows)
+        for x_pos, text in [(-0.45, "Judge-graded"), (judge_count - 0.45, "Deterministic")]:
+            fig.add_annotation(
+                x=x_pos,
+                y=106,
+                xref="x",
+                yref="y",
+                text=f"<i>{text}</i>",
+                showarrow=False,
+                font={"size": 10, "color": "gray"},
+                xanchor="left",
+                yanchor="bottom",
+            )
+    return fig
+
+
+def _lmm_absolute_bar_core(
+    wide_df: pd.DataFrame,
+    pot_cols: list[tuple[str, str]],
+    title: str,
+) -> go.Figure:
+    """Core for absolute σ² stacked bar charts (LMM tab).
+
+    Parameters
+    ----------
+    wide_df : pd.DataFrame
+        One row per metric with sigma2_<comp> columns.
+    pot_cols : list[tuple[str, str]]
+        (display_label, column_name) pairs in stack order.
+    title : str
+        Figure title.
+    """
+    metrics = wide_df["metric"].tolist()
+    fig = go.Figure()
+    for label, col in pot_cols:
+        if col not in wide_df.columns:
+            continue
+        y_vals = wide_df[col].tolist()
+        fig.add_trace(
+            go.Bar(
+                name=label,
+                x=metrics,
+                y=y_vals,
+                marker_color=_VARIANCE_BUDGET_COLORS.get(label, "#888"),
+                hovertemplate="<b>%{x}</b><br>" + label + ": σ²=%{y:.5f}<extra></extra>",
+            )
+        )
+    fig.update_layout(
+        barmode="stack",
+        title=title,
+        xaxis_title="Metric",
+        yaxis_title="σ² (variance)",
+        legend_title="Source",
+        legend_traceorder="reversed",
+        height=480,
+        margin={"r": 40, "t": 80},
+    )
+    fig.update_xaxes(**_axis_style)
+    fig.update_yaxes(**_axis_style)
+    return fig
+
+
+def lmm_variance_absolute_bar_all(
+    vc_df: pd.DataFrame,
+    title: str,
+    residual_label: str = "Residual",
+    min_proportion: float = 0.001,
+    metric_order: list[str] | None = None,
+    judge_count: int = 0,
+    y_max: float | None = None,
+) -> go.Figure:
+    """Absolute σ² stacked bar for all metrics' LMM variance components on one chart."""
+    if vc_df.empty or "metric" not in vc_df.columns:
+        return empty_fig("No LMM variance components available.")
+    all_metrics = sorted(vc_df["metric"].unique())
+    if metric_order:
+        all_metrics = [m for m in metric_order if m in set(all_metrics)]
+    wide_rows = []
+    for metric in all_metrics:
+        sub = vc_df[vc_df["metric"] == metric]
+        if sub.empty:
+            continue
+        row: dict = {"metric": metric}
+        for comp in _LMM_COMPONENT_ORDER:
+            comp_rows = sub[sub["component"] == comp]
+            if comp_rows.empty:
+                continue
+            row[f"sigma2_{comp}"] = float(comp_rows["sigma2"].iloc[0])
+        wide_rows.append(row)
+    if not wide_rows:
+        return empty_fig("No LMM variance components available.")
+    wide_df = pd.DataFrame(wide_rows)
+    pot_cols = []
+    for c in _LMM_COMPONENT_ORDER:
+        col = f"sigma2_{c}"
+        if col not in wide_df.columns:
+            continue
+        comp_rows = vc_df[vc_df["component"] == c]
+        if comp_rows.empty or comp_rows["proportion"].max() < min_proportion:
+            continue
+        label = residual_label if c == "residual" else _LMM_COMPONENT_LABELS[c]
+        pot_cols.append((label, col))
+    fig = _lmm_absolute_bar_core(wide_df, pot_cols, title)
+    if y_max is not None:
+        fig.update_yaxes(range=[0, y_max])
+    n_metrics = len(wide_df)
+    if 0 < judge_count < n_metrics:
+        fig.add_shape(
+            type="line",
+            xref="x",
+            yref="paper",
+            x0=judge_count - 0.5,
+            x1=judge_count - 0.5,
+            y0=0,
+            y1=1,
+            line={"color": "lightgray", "width": 1.5, "dash": "dash"},
+        )
+        for x_pos, text in [(-0.45, "Judge-graded"), (judge_count - 0.45, "Deterministic")]:
+            fig.add_annotation(
+                x=x_pos,
+                y=0.97,
+                xref="x",
+                yref="paper",
+                text=f"<i>{text}</i>",
+                showarrow=False,
+                font={"size": 10, "color": "gray"},
+                xanchor="left",
+                yanchor="top",
+            )
+    return fig
+
+
+def lmm_per_model_absolute_bar_rows(
+    per_model_df: pd.DataFrame,
+    model_ids: list[str],
+    title: str = "Per-model absolute variance (σ²) — all metrics",
+    residual_label: str = "Residual",
+    min_proportion: float = 0.001,
+    metric_order: list[str] | None = None,
+    judge_count: int = 0,
+    y_max: float | None = None,
+) -> go.Figure:
+    """Absolute σ² stacked bars: one subplot row per model, all metrics on x-axis."""
+    from plotly.subplots import make_subplots
+
+    if per_model_df.empty or "model_id" not in per_model_df.columns:
+        return empty_fig("No per-model LMM variance components available.")
+
+    all_metrics = sorted(per_model_df["metric"].unique().tolist())
+    if metric_order:
+        all_metrics = [m for m in metric_order if m in set(all_metrics)]
+
+    active_comps = [
+        comp
+        for comp in _LMM_COMPONENT_ORDER
+        if not per_model_df[per_model_df["component"] == comp].empty
+        and per_model_df[per_model_df["component"] == comp]["proportion"].max() >= min_proportion
+    ]
+
+    n_rows = len(model_ids)
+    fig = make_subplots(
+        rows=n_rows,
+        cols=1,
+        subplot_titles=model_ids,
+        shared_xaxes=True,
+        vertical_spacing=0.08 if n_rows <= 4 else 0.05,
+    )
+
+    seen: set[str] = set()
+    for row_i, model_id in enumerate(model_ids, start=1):
+        model_sub = per_model_df[per_model_df["model_id"] == model_id]
+        for comp in active_comps:
+            label = residual_label if comp == "residual" else _LMM_COMPONENT_LABELS[comp]
+            color = _VARIANCE_BUDGET_COLORS.get(label, "#888")
+            y_vals = []
+            for metric in all_metrics:
+                cell = model_sub[(model_sub["metric"] == metric) & (model_sub["component"] == comp)]
+                y_vals.append(float(cell["sigma2"].iloc[0]) if not cell.empty else 0.0)
+            fig.add_trace(
+                go.Bar(
+                    name=label,
+                    x=all_metrics,
+                    y=y_vals,
+                    marker_color=color,
+                    showlegend=label not in seen,
+                    legendgroup=label,
+                    hovertemplate=f"<b>%{{x}}</b><br>{label}: σ²=%{{y:.5f}}<extra></extra>",
+                ),
+                row=row_i,
+                col=1,
+            )
+            seen.add(label)
+
+    # Shared y-axis range
+    if y_max is not None:
+        y_range_max = y_max
+    else:
+        totals = per_model_df["total_variance"].dropna()
+        y_range_max = float(totals.max()) * 1.15 if not totals.empty else 1.0
+
+    fig.update_layout(
+        barmode="stack",
+        title=title,
+        height=300 * n_rows + 80,
+        legend_title="Source",
+        legend_traceorder="reversed",
+        margin={"r": 40, "t": 80},
+    )
+    fig.update_yaxes(tickformat=".4f", title_text="σ²", range=[0, y_range_max])
+    fig.update_xaxes(row=n_rows, col=1, **_axis_style)
+
+    n_metrics = len(all_metrics)
+    if 0 < judge_count < n_metrics:
+        for row_i in range(1, n_rows + 1):
+            xref = "x" if row_i == 1 else f"x{row_i}"
+            fig.add_shape(
+                type="line",
+                xref=xref,
+                yref="paper",
+                x0=judge_count - 0.5,
+                x1=judge_count - 0.5,
+                y0=0,
+                y1=1,
+                line={"color": "lightgray", "width": 1.5, "dash": "dash"},
+            )
+        for x_pos, text in [(-0.45, "Judge-graded"), (judge_count - 0.45, "Deterministic")]:
+            fig.add_annotation(
+                x=x_pos,
+                y=0.97,
+                xref="x",
+                yref="paper",
+                text=f"<i>{text}</i>",
+                showarrow=False,
+                font={"size": 10, "color": "gray"},
+                xanchor="left",
+                yanchor="top",
+            )
+    return fig
+
+
+def lmm_forest_plot(
+    fe_df: pd.DataFrame,
+    metric: str,
+    effect_type: str,
+) -> go.Figure:
+    """Forest plot of fixed effect coefficients for one metric.
+
+    One point per level with horizontal CI bars and a vertical reference line at 0.
+    Positive coefficient = above grand mean; negative = below grand mean
+    (sum-to-zero coding).
+
+    Parameters
+    ----------
+    fe_df : pd.DataFrame
+        lmm_fixed_effects or lmm_per_model_fixed_effects DataFrame.
+    metric : str
+        Metric name to plot.
+    effect_type : str
+        ``"domain"`` or ``"model_id"`` — filters terms to this effect.
+    """
+    if fe_df.empty or "metric" not in fe_df.columns:
+        return empty_fig(f"No fixed effects for {metric!r}.")
+    sub = fe_df[fe_df["metric"] == metric]
+    if sub.empty:
+        return empty_fig(f"No fixed effects for {metric!r}.")
+
+    # Keep only rows for the requested effect (patsy name pattern: C(<effect>, Sum)[S.<level>])
+    pattern = f"C({effect_type}, Sum)[S."
+    effect_rows = sub[sub["term"].str.startswith(pattern)].copy()
+    if effect_rows.empty:
+        return empty_fig(f"No {effect_type!r} fixed effect terms for {metric!r}.")
+
+    # Extract level label from patsy term string
+    effect_rows["level"] = effect_rows["term"].str.extract(r"\[S\.(.+)\]$")
+    effect_rows = effect_rows.sort_values("coef")
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=effect_rows["coef"],
+            y=effect_rows["level"],
+            mode="markers",
+            marker={"size": 10, "color": "#1f77b4"},
+            error_x={
+                "type": "data",
+                "symmetric": False,
+                "array": (effect_rows["ci_upper"] - effect_rows["coef"]).tolist(),
+                "arrayminus": (effect_rows["coef"] - effect_rows["ci_lower"]).tolist(),
+                "color": "#1f77b4",
+                "thickness": 2,
+            },
+            hovertemplate="<b>%{y}</b><br>coef=%{x:.3f}<extra></extra>",
+            showlegend=False,
+        )
+    )
+    fig.add_vline(x=0, line={"color": "#888", "dash": "dash", "width": 1})
+
+    effect_label = {"domain": "Domain", "model_id": "Model"}.get(effect_type, effect_type)
+    fig.update_layout(
+        title=f"{effect_label} fixed effects — {metric}",
+        xaxis_title="Coefficient (deviation from grand mean)",
+        yaxis_title=effect_label,
+        height=max(300, 60 + len(effect_rows) * 40),
+        margin={"l": 140, "r": 40, "t": 60},
+    )
+    fig.update_xaxes(**_axis_style)
+    fig.update_yaxes(**_axis_style)
+    return fig
+
+
+def lmm_component_boxplot(
+    per_model_df: pd.DataFrame,
+    metric_order: list[str] | None = None,
+    residual_label: str = "Judge stochasticity",
+) -> go.Figure:
+    """Box + strip plot of % variance by component across models.
+
+    x-axis = metric, one grouped box per component, individual points = model estimates.
+    Deterministic metrics have no residual box (trial IS the residual there).
+
+    Parameters
+    ----------
+    per_model_df : pd.DataFrame
+        lmm_per_model_variance_components DataFrame, long format.
+    metric_order : list[str] or None
+        If given, display metrics in this order.
+    residual_label : str
+        Display label for the residual component.
+    """
+    df = per_model_df[per_model_df["component"] != "judge"].copy()
+    df["proportion_pct"] = df["proportion"] * 100
+
+    _label_map = {"scenario": "Scenario", "trial": "Trial", "residual": residual_label}
+    df["comp_label"] = df["component"].map(_label_map)
+
+    comp_order = ["Scenario", "Trial", residual_label]
+
+    if metric_order:
+        metrics = [m for m in metric_order if m in df["metric"].unique()]
+    else:
+        metrics = sorted(df["metric"].unique())
+
+    _metric_display = {m: m.replace("_", " ") for m in metrics}
+
+    fig = go.Figure()
+
+    for comp in comp_order:
+        cdf = df[df["comp_label"] == comp]
+        if cdf.empty:
+            continue
+        color = _VARIANCE_BUDGET_COLORS.get(comp, "#888")
+
+        x_vals, y_vals, hover_vals = [], [], []
+        for m in metrics:
+            mdf = cdf[cdf["metric"] == m]
+            for _, row in mdf.iterrows():
+                x_vals.append(_metric_display[m])
+                y_vals.append(row["proportion_pct"])
+                hover_vals.append(row.get("model_id", ""))
+
+        fig.add_trace(
+            go.Box(
+                x=x_vals,
+                y=y_vals,
+                name=comp,
+                marker_color=color,
+                line_color=color,
+                fillcolor=color,
+                opacity=0.7,
+                boxpoints="all",
+                jitter=0.3,
+                pointpos=0,
+                marker={"size": 7, "opacity": 1.0, "color": color, "line": {"width": 1, "color": "white"}},
+                text=hover_vals,
+                hovertemplate="<b>%{text}</b><br>%{y:.1f}%<extra>" + comp + "</extra>",
+                legendgroup=comp,
+            )
+        )
+
+    fig.update_layout(
+        title="Variance components by metric — per-model estimates",
+        boxmode="group",
+        yaxis=dict(title="% of total variance", range=[0, 108], **_axis_style),
+        xaxis=dict(tickangle=-30, **_axis_style),
+        legend={"title": "Component", "orientation": "v"},
+        height=480,
+        margin={"b": 100, "t": 60},
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+    )
     return fig

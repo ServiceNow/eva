@@ -114,6 +114,12 @@ output_processed/eva-bench-stats/
       q3_kw.csv
       q3_pairwise.csv
       within_type_*.csv          (within-type KW/pairwise results, one per run type × test)
+      lmm/                       ← written by stats_variance_lmm.py (run_stats.py --skip-lmm to omit)
+        lmm_variance_components.csv         (pooled: σ², proportions, CIs per metric × component)
+        lmm_fixed_effects.csv               (pooled: domain + model coefficients + CIs per metric)
+        lmm_convergence.csv                 (all fits: converged, log-likelihood, notes)
+        lmm_per_model_variance_components.csv (per-model: σ², proportions, CIs per metric × model)
+        lmm_per_model_fixed_effects.csv     (per-model: domain coefficients + CIs per metric × model)
   perturbations/
     results_pooled.csv
     results_per_domain.csv
@@ -175,6 +181,7 @@ domain names, and paths to trial-score CSVs.
 | `plots_perturbations.py` | Perturbation figures and display tables |
 | `data_variance.py` | Process variance iteration archives → `output_processed/eva-bench-stats/variance/data/` |
 | `stats_variance.py` | Variance stats: judge/trial variance, ICC, Q0/Q1/Q2/Q3 tests |
+| `stats_variance_lmm.py` | LMM variance decomposition: REML mixed effects models, variance component CIs, fixed effect coefficients |
 | `plots_variance.py` | Variance figures and display tables |
 | `data_CIs.py` | Process clean trial scores → scenario-level means for CI analysis |
 | `stats_CIs.py` | Bootstrap stability check, per-domain, and equal-weighted pooled CIs |
@@ -285,3 +292,60 @@ same scenario. 30 paired deltas per (model, condition, domain).
 - **Correction:** None — one test per (model, metric, domain). Raw p-value reported directly.
 - **Interpretation:** Positive residual = synergistic (combined effect exceeds sum of parts);
   negative residual = sub-additive (combined effect less than sum of parts).
+
+---
+
+### Variance decomposition — mixed effects (`stats_variance_lmm.py`)
+
+Partitions score variance into scenario, trial, judge (judge-graded metrics only), and
+residual components using a linear mixed effects model fitted with REML.
+
+**Pipeline:**
+```
+_detect_judge_metrics          → classify metrics as judge-graded or deterministic
+fit_lmm_pooled                 → one REML model per metric (all 4 models together)
+  extract_variance_components  → σ², proportions, Wald CIs, fixed effects, convergence
+fit_lmm_per_model              → one REML model per (metric, model_id)
+  extract_variance_components  → same extraction
+results_to_dataframes          → assemble 5 output CSVs from result dicts
+main                           → load scores.csv, run pipeline, write lmm/ CSVs
+```
+
+Three model variants are used depending on metric type and analysis level:
+
+**Pooled, judge-graded** (all models together, Judge vc_formula included):
+```
+score ~ C(model_id, Sum) + C(domain, Sum)
+      + (1 | scenario_uid)
+      + Trial:  0 + C(trial_uid)   [vc_formula]
+      + Judge:  0 + C(judge_uid)   [vc_formula]
+```
+Residual = "Judge + interactions": judge_uid is shared across models, so the judge random
+effect cannot isolate per-model judge stochasticity; it absorbs instead model×scenario
+interactions. Judge and interactions are confounded in the pooled residual.
+
+**Pooled, deterministic** — same but without the Judge vc_formula term.
+
+**Per-model, judge-graded** (one fit per model, Judge vc_formula *omitted*):
+```
+score ~ C(domain, Sum)
+      + (1 | scenario_uid)
+      + Trial:  0 + C(trial_uid)   [vc_formula]
+```
+Residual = "Judge stochasticity": judge_uid has 1 obs/level in a single-model fit, making
+judge variance unidentifiable. Dropping Judge makes Trial identifiable (3 obs/level) and
+the residual is pure judge stochasticity.
+
+**Per-model, deterministic** — iterations are collapsed (identical across iterations);
+two-level model fitted: `score ~ C(domain, Sum) + (1 | scenario_uid)`.
+Residual = σ²_trial; only Scenario and Trial components are reported.
+
+Sum-to-zero (effects) coding means coefficients are deviations from the grand mean.
+Variance component CIs are approximate Wald (likelihood-based) intervals from the REML
+Hessian (clipped to zero). See the app tab for interpretation guidance.
+
+Skip LMM when it's not needed: `uv run python analysis/eva-bench-stats/run_stats.py --skip-lmm`
+
+**Future:** A model × scenario random interaction term (requiring pymer4 / lme4 via rpy2)
+is planned as a follow-on tab "Variance decomp (interaction)". See `local/superpowers/specs/`
+for the future spec.
