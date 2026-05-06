@@ -33,6 +33,7 @@ def _load_config(area: str) -> dict | None:
 
 _VARIANCE_DATA_DIR = PROCESSED_DIR / "variance" / "data"
 _VARIANCE_STATS_DIR = PROCESSED_DIR / "variance" / "stats"
+_VARIANCE_LMM_DIR = PROCESSED_DIR / "variance" / "stats" / "lmm"
 _RUN_DATA_SCRIPT = PROJECT_ROOT / "analysis" / "eva-bench-stats" / "run_data.py"
 _RUN_STATS_SCRIPT = PROJECT_ROOT / "analysis" / "eva-bench-stats" / "run_stats.py"
 _VARIANCE_DATA_FILES = [
@@ -61,9 +62,10 @@ def _variance_data_ready() -> bool:
     return True
 
 
-def _run_script(script_path: Path) -> tuple[bool, str]:
+def _run_script(script_path: Path, extra_args: list[str] | None = None) -> tuple[bool, str]:
+    cmd = [sys.executable, str(script_path)] + (extra_args or [])
     result = subprocess.run(
-        [sys.executable, str(script_path)],
+        cmd,
         capture_output=True,
         text=True,
         cwd=str(PROJECT_ROOT),
@@ -798,6 +800,8 @@ def variance_page():
     q0_trial_per_model = _read_stat("q0_trial_per_model.csv")
     q1a_pooled = _read_stat("q1a.csv")
     q1b_pooled = _read_stat("q1b.csv")
+    q1a_perm_pooled_df = _read_stat("q1a_perm.csv")  # noqa: F841
+    q1a_perm_pooled_scenarios = _read_stat("q1a_perm_pooled.csv")  # noqa: F841
 
     _TYPE_LABELS_ALL = {"cascade": "Cascade", "s2s": "S2S / audio-native"}
     within_type_results: dict[str, dict[str, pd.DataFrame]] = {}
@@ -868,6 +872,7 @@ def variance_page():
     icc_pc = _read_stat(f"icc_pooled_centered{_d_suffix}.csv")
     q1a_within = _read_stat(f"q1a{_d_suffix}.csv") if selected_domain else pd.DataFrame()
     q1b_within = _read_stat(f"q1b{_d_suffix}.csv") if selected_domain else pd.DataFrame()
+    q1a_perm_within = _read_stat(f"q1a_perm{_d_suffix}.csv") if selected_domain else pd.DataFrame()  # noqa: F841
     q2_kw = _read_stat(f"q2_kw{_d_suffix}.csv")
     q2_pw = _read_stat(f"q2_pairwise{_d_suffix}.csv")
     q3_kw = _read_stat(f"q3_kw{_d_suffix}.csv")
@@ -878,20 +883,21 @@ def variance_page():
     _domain_label = f"Domain: **{selected_domain}**" if selected_domain else "All data"
     _pooled_label = "Pooled across all 3 domains"
 
-    # ── 11 Tabs ───────────────────────────────────────────────────────────────
+    # ── 12 Tabs ───────────────────────────────────────────────────────────────
     tabs = st.tabs(
         [
-            "Overview",
-            "Variance overview",
-            "Judge vs. trial variance",
-            "Judge variance",
-            "Trial variance",
-            "EVA score stability",
-            "Borderline scenarios",
-            "Intraclass correlation",
-            "Variance budget",
-            "Per-metric deep dive",
-            "Statistical tests",
+            "Overview",  # 0
+            "Variance overview",  # 1
+            "Judge vs. trial variance",  # 2
+            "Judge variance",  # 3
+            "Trial variance",  # 4
+            "EVA score stability",  # 5
+            "Borderline scenarios",  # 6
+            "Intraclass correlation",  # 7
+            "Variance decomp (LMM)",  # 8
+            "Variance budget",  # 9
+            "Per-metric deep dive",  # 10
+            "Statistical tests",  # 11
         ]
     )
 
@@ -2177,8 +2183,307 @@ less powerful for the same true effect size.
                 f"({_icc_min['icc']:.2f}, 95% CI [{_icc_min['ci_lower']:.2f}–{_icc_min['ci_upper']:.2f}])."
             )
 
-    # ── Tab 8: Variance budget ────────────────────────────────────────────────
+    # ── Tab 8: Variance decomp (LMM) ─────────────────────────────────────────
     with tabs[8]:
+        import pandas as pd
+        from plots_variance import (
+            lmm_forest_plot,
+            lmm_per_model_stacked_bar_rows,
+            lmm_variance_stacked_bar_all,
+        )
+
+        st.header("Variance decomposition (mixed effects model)")
+        st.write("""
+        **What this measures:** A hierarchical variance decomposition using a linear mixed
+        effects model (REML). Score variance is partitioned into:
+
+        - **Scenario** — driven by which scenario is being evaluated (benchmark discriminability)
+        - **Trial** — driven by stochastic differences across conversation simulations
+        - **Judge** — measurement noise from the LLM judge re-evaluating the same conversation
+          (judge-graded metrics only)
+        - **Residual** — unexplained variance
+
+        Domain and model are fixed effects: their coefficients show mean score differences
+        after controlling for each other. This complements the Variance Budget tab (classical
+        SS decomposition) with confidence intervals and fixed effect estimates.
+        """)
+
+        _lmm_vc_path = _VARIANCE_LMM_DIR / "lmm_variance_components.csv"
+        _lmm_fe_path = _VARIANCE_LMM_DIR / "lmm_fixed_effects.csv"
+        _lmm_conv_path = _VARIANCE_LMM_DIR / "lmm_convergence.csv"
+        _lmm_pm_vc_path = _VARIANCE_LMM_DIR / "lmm_per_model_variance_components.csv"
+        _lmm_pm_fe_path = _VARIANCE_LMM_DIR / "lmm_per_model_fixed_effects.csv"
+
+        _lmm_ready = all(
+            p.exists() for p in [_lmm_vc_path, _lmm_fe_path, _lmm_conv_path, _lmm_pm_vc_path, _lmm_pm_fe_path]
+        )
+        if not _lmm_ready:
+            st.info("LMM results not found. Run statistical tests with **Include LMM fitting** checked.")
+        else:
+            lmm_vc = pd.read_csv(_lmm_vc_path)
+            lmm_fe = pd.read_csv(_lmm_fe_path)
+            lmm_conv = pd.read_csv(_lmm_conv_path)
+            lmm_pm_vc = pd.read_csv(_lmm_pm_vc_path)
+            lmm_pm_fe = pd.read_csv(_lmm_pm_fe_path)  # noqa: F841
+
+            lmm_metrics = sorted(lmm_vc["metric"].unique().tolist())
+            lmm_model_ids = sorted(lmm_pm_vc["model_id"].unique().tolist()) if not lmm_pm_vc.empty else []
+
+            # ── Metric classification expander ────────────────────────────
+            _lmm_judge_set = set(lmm_vc[lmm_vc["component"] == "judge"]["metric"].unique())
+            _lmm_judge_metrics = sorted(m for m in lmm_metrics if m in _lmm_judge_set)
+            _lmm_det_metrics = sorted(m for m in lmm_metrics if m not in _lmm_judge_set)
+            _lmm_ordered_metrics = _lmm_judge_metrics + _lmm_det_metrics
+            _lmm_judge_count = len(_lmm_judge_metrics)
+            with st.expander("Metric classification (judge-graded vs. deterministic)", expanded=False):
+                _mc_rows = []
+                for m in lmm_metrics:
+                    is_judge = m in _lmm_judge_set
+                    _mc_rows.append(
+                        {
+                            "Metric": m,
+                            "Type": "Judge-graded" if is_judge else "Deterministic",
+                            "Random effects": "Scenario + Trial + Judge + Residual"
+                            if is_judge
+                            else "Scenario + Trial + Residual",
+                        }
+                    )
+                st.dataframe(pd.DataFrame(_mc_rows), hide_index=True, use_container_width=True)
+                st.caption(
+                    "Classification is automatic: a metric is judge-graded if scores vary across "
+                    "judge iterations for the same (run_id, record, trial). "
+                    "`transcription_accuracy_key_entities` is fitted on cascade models only."
+                )
+
+            st.divider()
+
+            # ── Section 1: Pooled variance decomposition ──────────────────
+            st.subheader("Section 1 — Variance decomposition: pooled")
+            st.write("""
+            Each bar shows the proportion of total score variance attributable to each source,
+            estimated from a single mixed-effects model fitted on all models' data simultaneously (model and
+            domain as fixed effects). **High scenario variance** means the benchmark discriminates
+            well between task difficulties. **High trial variance** means model behavior is
+            stochastic across conversation simulations. **High judge variance** (judge-graded
+            metrics) is measurement noise from the LLM evaluator.
+            """)
+            st.caption(
+                "The residual captures everything not accounted for by the other components — "
+                "in the pooled analysis, this unavoidably mixes judge stochasticity with "
+                "model × scenario interactions."
+            )
+            st.caption(
+                "Variance component CIs are approximate Wald (likelihood-based) intervals from "
+                "the REML Hessian; bootstrap CIs may be added in a future revision."
+            )
+            st.plotly_chart(
+                lmm_variance_stacked_bar_all(
+                    lmm_vc,
+                    "Pooled variance decomposition — all metrics",
+                    residual_label="Judge + interactions",
+                    metric_order=_lmm_ordered_metrics,
+                    judge_count=_lmm_judge_count,
+                ),
+                use_container_width=True,
+            )
+            with st.expander("Detail table + download", expanded=False):
+                _sub_vc = lmm_vc[lmm_vc["component"] != "judge"][
+                    ["metric", "component", "sigma2", "proportion", "ci_lower", "ci_upper"]
+                ].copy()
+                _sub_vc["component"] = _sub_vc["component"].replace("residual", "judge + interactions")
+                _sub_vc["proportion"] = _sub_vc["proportion"].map("{:.1%}".format)
+                _sub_vc = _sub_vc.rename(
+                    columns={
+                        "metric": "Metric",
+                        "component": "Component",
+                        "sigma2": "σ²",
+                        "proportion": "% of total",
+                        "ci_lower": "CI lower",
+                        "ci_upper": "CI upper",
+                    }
+                )
+                st.dataframe(_sub_vc, hide_index=True, use_container_width=True)
+                download_button(lmm_vc, "lmm_vc_pooled.csv")
+
+            st.divider()
+
+            # ── Section 2: Per-model variance decomposition ───────────────
+            st.subheader("Section 2 — Variance decomposition: per model")
+            st.write("""
+            Each model is fitted separately (domain fixed effect only, no model fixed effect).
+            **Consistent variance structure across models** means the benchmark's noise profile
+            does not depend on which model is evaluated. **Large differences** across models suggest
+            some models are more sensitive to scenario difficulty, trial stochasticity, or judge scoring.
+            """)
+            if lmm_pm_vc.empty:
+                st.info("Per-model LMM results not available.")
+            else:
+                st.plotly_chart(
+                    lmm_per_model_stacked_bar_rows(
+                        lmm_pm_vc,
+                        lmm_model_ids,
+                        residual_label="Judge stochasticity",
+                        metric_order=_lmm_ordered_metrics,
+                        judge_count=_lmm_judge_count,
+                    ),
+                    use_container_width=True,
+                )
+                with st.expander("Detail table + download", expanded=False):
+                    _pm_display = lmm_pm_vc[
+                        ["model_id", "metric", "component", "sigma2", "proportion", "ci_lower", "ci_upper"]
+                    ].copy()
+                    _pm_display["proportion"] = _pm_display["proportion"].map("{:.1%}".format)
+                    _pm_display = _pm_display.rename(
+                        columns={
+                            "model_id": "Model",
+                            "metric": "Metric",
+                            "component": "Component",
+                            "sigma2": "σ²",
+                            "proportion": "% of total",
+                            "ci_lower": "CI lower",
+                            "ci_upper": "CI upper",
+                        }
+                    )
+                    st.dataframe(_pm_display, hide_index=True, use_container_width=True)
+                    download_button(lmm_pm_vc, "lmm_vc_per_model.csv")
+
+            st.divider()
+
+            # ── Section 3: Domain fixed effects ──────────────────────────
+            st.subheader("Section 3 — Domain fixed effects")
+            st.write("""
+            Coefficients are deviations from the grand mean score (sum-to-zero / effects coding).
+            A **positive coefficient** means this domain scores higher than average after
+            controlling for model. A **negative coefficient** means it scores lower. Error bars
+            are 95% Wald CIs. The reference line at zero is the grand mean.
+            """)
+            dom_metric_tabs = st.tabs(_lmm_ordered_metrics)
+            for _tab, _metric in zip(dom_metric_tabs, _lmm_ordered_metrics):
+                with _tab:
+                    st.plotly_chart(
+                        lmm_forest_plot(lmm_fe, _metric, "domain"),
+                        use_container_width=True,
+                    )
+                    _fe_sub = lmm_fe[
+                        (lmm_fe["metric"] == _metric) & lmm_fe["term"].str.startswith("C(domain, Sum)[S.")
+                    ].copy()
+                    _fe_sub["level"] = _fe_sub["term"].str.extract(r"\[S\.(.+)\]$")
+                    _display_fe = _fe_sub[["level", "coef", "ci_lower", "ci_upper"]].rename(
+                        columns={
+                            "level": "Domain",
+                            "coef": "Coefficient",
+                            "ci_lower": "CI lower",
+                            "ci_upper": "CI upper",
+                        }
+                    )
+                    with st.expander("Detail table + download", expanded=False):
+                        st.dataframe(_display_fe.round(4), hide_index=True, use_container_width=True)
+                        download_button(_fe_sub, f"lmm_fe_domain_{_metric}.csv")
+
+            st.divider()
+
+            # ── Section 4: Model fixed effects ────────────────────────────
+            st.subheader("Section 4 — Model fixed effects")
+            st.write("""
+            Coefficients are deviations from the grand mean score after controlling for domain.
+            A **positive coefficient** means this model scores higher than average across all domains.
+            Only available from the pooled analysis (the per-model fits have no model fixed effect).
+            """)
+            mod_metric_tabs = st.tabs(_lmm_ordered_metrics)
+            for _tab, _metric in zip(mod_metric_tabs, _lmm_ordered_metrics):
+                with _tab:
+                    st.plotly_chart(
+                        lmm_forest_plot(lmm_fe, _metric, "model_id"),
+                        use_container_width=True,
+                    )
+                    _fe_sub = lmm_fe[
+                        (lmm_fe["metric"] == _metric) & lmm_fe["term"].str.startswith("C(model_id, Sum)[S.")
+                    ].copy()
+                    _fe_sub["level"] = _fe_sub["term"].str.extract(r"\[S\.(.+)\]$")
+                    _display_fe = _fe_sub[["level", "coef", "ci_lower", "ci_upper"]].rename(
+                        columns={
+                            "level": "Model",
+                            "coef": "Coefficient",
+                            "ci_lower": "CI lower",
+                            "ci_upper": "CI upper",
+                        }
+                    )
+                    with st.expander("Detail table + download", expanded=False):
+                        st.dataframe(_display_fe.round(4), hide_index=True, use_container_width=True)
+                        download_button(_fe_sub, f"lmm_fe_model_{_metric}.csv")
+
+            st.divider()
+
+            # ── Section 5: Statistical methods ────────────────────────────
+            st.subheader("Section 5 — Statistical methods")
+            st.markdown("""
+**Model specification**
+
+For judge-graded metrics (`faithfulness`, `agent_speech_fidelity`, `conversation_progression`,
+`conciseness`, `transcription_accuracy_key_entities`):
+```
+score ~ C(model_id, Sum) + C(domain, Sum)
+      + (1 | domain:scenario)
+      + (1 | domain:scenario:trial)
+      + (1 | domain:scenario:trial:judge)
+```
+
+For deterministic metrics (`task_completion`, `authentication_success`,
+`conversation_correctly_finished`, `turn_taking`):
+```
+score ~ C(model_id, Sum) + C(domain, Sum)
+      + (1 | domain:scenario)
+      + (1 | domain:scenario:trial)
+```
+
+The per-model analysis (Section 2) uses the same formulas with `C(model_id, Sum)` removed.
+`transcription_accuracy_key_entities` is fitted on cascade models only.
+
+**Why REML?** Restricted maximum likelihood (REML) provides unbiased estimates of variance
+components, unlike standard MLE which underestimates them in small samples.
+
+**Fixed effect coding:** Sum-to-zero (effects) coding means each coefficient is a deviation
+from the grand mean. The last level's coefficient is the negative sum of all others.
+
+**Variance component CIs:** Approximate Wald (likelihood-based) intervals from the REML
+Hessian, clipped to zero. Bootstrap CIs may be added in a future revision.
+
+**Convergence:** Models are fitted with the Powell optimizer. Convergence failures are
+reported in Section 6 and shown as missing bars/points.
+
+**Relationship to other tabs:** The Variance Budget tab uses a classical sum-of-squares
+decomposition (no CIs, per-model, includes domain as a random-effect-like pot). This tab
+uses a proper mixed model (CIs, pooled and per-model, domain as a fixed effect). They are
+complementary, not redundant. The Variance page tabs (Judge vs. trial variance, ICC) address
+related but distinct questions about variance structure.
+
+**Future:** A model × scenario random interaction term (requiring pymer4 / lme4 via rpy2)
+is planned as a follow-on tab "Variance decomp (interaction)".
+""")
+
+            st.divider()
+
+            # ── Section 6: Convergence and model fit ──────────────────────
+            st.subheader("Section 6 — Convergence and model fit")
+            if lmm_conv.empty:
+                st.info("No convergence data.")
+            else:
+                failed = lmm_conv[~lmm_conv["converged"].fillna(False)]
+                if not failed.empty:
+                    st.warning(
+                        f"{len(failed)} fit(s) did not converge:\n\n"
+                        + "\n".join(
+                            f"- **{r['metric']}** ({r['analysis']}): {r.get('convergence_note') or 'no note'}"
+                            for _, r in failed.iterrows()
+                        )
+                    )
+                display_conv = lmm_conv.copy()
+                display_conv["converged"] = display_conv["converged"].map({True: "✓", False: "✗", None: "—"})
+                st.dataframe(display_conv, hide_index=True, use_container_width=True)
+                download_button(lmm_conv, "lmm_convergence.csv")
+
+    # ── Tab 9: Variance budget ────────────────────────────────────────────────
+    with tabs[9]:
         st.header("Variance budget")
         st.write("""
         **What this measures:** A decomposition of total score variance into the sources
@@ -2271,8 +2576,8 @@ less powerful for the same true effect size.
                 st.dataframe(styled, width="stretch")
                 download_button(converged[display_cols], f"variance_budget_{selected_model}.csv")
 
-    # ── Tab 9: Per-metric deep dive ───────────────────────────────────────────
-    with tabs[9]:
+    # ── Tab 10: Per-metric deep dive ──────────────────────────────────────────
+    with tabs[10]:
         st.header("Per-metric deep dive")
         st.write("""
         **What this measures:** For each metric, how does judge variance relate to trial
@@ -2306,8 +2611,8 @@ less powerful for the same true effect size.
                     f"Variance is primarily driven by **{dominant}**."
                 )
 
-    # ── Tab 10: Statistical tests ─────────────────────────────────────────────
-    with tabs[10]:
+    # ── Tab 11: Statistical tests ─────────────────────────────────────────────
+    with tabs[11]:
         st.header("Statistical tests")
         st.write("""
         Full results for all statistical tests. High-level summaries with plain-English
@@ -2715,6 +3020,102 @@ harder or easier for specific models. A non-significant interaction supports the
 assumption and means the benchmark discriminates scenarios consistently across models.
 """)
 
+        # ── LMM ───────────────────────────────────────────────────────────────────
+        with st.expander("LMM variance decomposition — full methodology (→ Variance decomp (LMM) tab)"):
+            st.markdown("""
+### Overview
+
+Partitions score variance into scenario, trial, judge (judge-graded metrics only), and
+residual components using a linear mixed effects model fitted with REML
+(`statsmodels.MixedLM`, Powell optimizer). Two analyses are run: a pooled model using
+all models' data simultaneously, and a per-model analysis fitting one model at a time.
+
+Fixed effects use sum-to-zero (effects) coding (`C(x, Sum)` via patsy), so coefficients
+are deviations from the grand mean, and the reference level is not arbitrarily excluded.
+
+---
+
+### Judge-graded vs. deterministic classification
+
+A metric is classified as judge-graded if any (run_id, record_id, trial) cell shows more
+than one distinct score across iterations. Deterministic metrics produce identical scores
+across all iterations for a given (model, scenario, trial) — their within-cell variance is
+structurally zero. The classification drives which model variant is fitted.
+
+---
+
+### Pooled model (all models together)
+
+**Formula (judge-graded metrics):**
+```
+score ~ C(model_id, Sum) + C(domain, Sum)
+      + (1 | scenario_uid)
+      + Trial:  0 + C(trial_uid)       [vc_formula]
+      + Judge:  0 + C(judge_uid)       [vc_formula]
+```
+
+**Formula (deterministic metrics):** same, without the Judge term.
+
+`scenario_uid = domain::record_id`, `trial_uid = scenario_uid::trial`,
+`judge_uid = trial_uid::iteration`.
+
+**Variance extraction:**
+
+statsmodels stores variance component parameters as ratios to the residual scale in
+`params` (e.g. `params["Trial Var"] = σ²_trial / σ²_residual`). Absolute σ² values are
+recovered by multiplying by `fit.scale`:
+
+| Component | Source |
+|---|---|
+| σ²_scenario | `fit.cov_re.iloc[0, 0]` (already absolute) |
+| σ²_trial | `params["Trial Var"] × fit.scale` |
+| σ²_judge | `params["Judge Var"] × fit.scale` |
+| σ²_residual | `fit.scale` |
+
+Confidence intervals are Wald intervals from the REML Hessian (`fit.conf_int()`), also in
+ratio-to-residual scale, multiplied by `fit.scale` to recover absolute σ² CIs. Lower
+bounds are clipped to zero.
+
+**Limitation — judge variance in the pooled model:**
+`judge_uid` is shared across all models for the same (domain, record, trial, iteration).
+The judge random effect therefore captures whether a given iteration scores all models
+simultaneously higher or lower — not model-specific judge stochasticity. Since models'
+conversations are evaluated independently by the judge, this cross-model iteration signal
+is near zero, and judge variance is absorbed into the residual. The pooled residual
+unavoidably mixes judge stochasticity with model × scenario interactions.
+
+---
+
+### Per-model analysis — judge-graded metrics
+
+Same three-level nested structure as the pooled model, with `C(domain, Sum)` as the only
+fixed effect (model_id is removed since one model is fitted at a time).
+
+`judge_uid = trial_uid::iteration` has exactly one observation per level in a single-model
+fit, so the judge random effect is not estimable and converges to zero. The **residual in
+per-model fits is pure judge stochasticity** — within-(model, scenario, trial) variation
+across iterations — with no model × scenario interaction to confound it.
+
+---
+
+### Per-model analysis — deterministic metrics
+
+The standard three-level model cannot be fitted for deterministic metrics: identical scores
+across iterations give zero within-trial residual variance, causing a singular Hessian.
+
+**Solution:** iterations are collapsed (all identical, so any single value suffices), and
+a **two-level model** is fitted instead:
+
+```
+score ~ C(domain, Sum)  +  (1 | scenario_uid)
+```
+
+In this model, within-scenario variation across trials is entirely trial stochasticity. The
+residual variance (`fit.scale`) is therefore interpreted as **σ²_trial**, and the two
+reported components are scenario and trial only. Trial CIs are not available from this fit
+(the scale parameter does not appear in `conf_int()`).
+""")
+
 
 def frontier_page():
     import pandas as pd
@@ -2794,9 +3195,15 @@ with st.sidebar:
                 st.rerun()
             else:
                 st.error("run_data.py failed.")
+        include_lmm = st.checkbox(
+            "Include LMM fitting",
+            value=True,
+            help="LMM fitting may take 1–2 minutes. Uncheck to skip and update other statistics faster.",
+        )
         if st.button("Run statistical tests"):
+            lmm_args = [] if include_lmm else ["--skip-lmm"]
             with st.spinner("Running run_stats.py…"):
-                ok, out = _run_script(_RUN_STATS_SCRIPT)
+                ok, out = _run_script(_RUN_STATS_SCRIPT, extra_args=lmm_args)
             with st.expander("Output", expanded=not ok):
                 st.text(out)
             if ok:
