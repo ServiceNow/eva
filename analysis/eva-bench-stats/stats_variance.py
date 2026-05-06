@@ -1291,11 +1291,21 @@ def main(config_path: Path = CONFIG_PATH) -> None:
     # Note: q2_kw / q3_kw / q2_pairwise / q3_pairwise from pooled_tests are
     # intentionally NOT written — they conflate model and domain.
 
+    judge_metrics = (
+        variance_budget[variance_budget["metric_type"] == "judge_graded"]["metric"].dropna().unique().tolist()
+    )
+    print(f"Computing permutation tests for judge metrics: {judge_metrics} ...")
+    perm_pooled = compute_permutation_tests(judge_var, trial_var, judge_metrics, domain=None)
+    perm_pooled["per_model"].to_csv(stats_dir / "q1a_perm.csv", index=False)
+    perm_pooled["pooled"].to_csv(stats_dir / "q1a_perm_pooled.csv", index=False)
+
     if domains_present:
         for d in domains_present:
             d_tests = compute_statistical_tests(judge_var, trial_var, metrics, domain=d)
             d_tests["q1a"].to_csv(stats_dir / f"q1a_{d}.csv", index=False)
             d_tests["q1b"].to_csv(stats_dir / f"q1b_{d}.csv", index=False)
+            d_perm = compute_permutation_tests(judge_var, trial_var, judge_metrics, domain=d)
+            d_perm["per_model"].to_csv(stats_dir / f"q1a_perm_{d}.csv", index=False)
             d_tests["q2_kw"].to_csv(stats_dir / f"q2_kw_{d}.csv", index=False)
             d_tests["q2_pairwise"].to_csv(stats_dir / f"q2_pairwise_{d}.csv", index=False)
             d_tests["q3_kw"].to_csv(stats_dir / f"q3_kw_{d}.csv", index=False)
