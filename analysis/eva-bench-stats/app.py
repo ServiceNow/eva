@@ -1078,6 +1078,11 @@ def variance_page():
         st.dataframe(_jt_table.round({"mean judge std": 3, "mean trial std": 3}), hide_index=True, width="stretch")
 
         st.subheader("Is variance significantly greater than zero?")
+        st.warning(
+            "**Note:** The one-sample Wilcoxon signed-rank test applied here has validity "
+            "concerns for non-negative bounded values (standard deviations). Results should "
+            "be interpreted with caution."
+        )
         st.write(
             "One-sample Wilcoxon signed-rank test against 0 (one-sided, H₁: median > 0), "
             "pooled across all models per metric. "
@@ -1126,6 +1131,10 @@ treated as a separate analysis question.
     # ── Tab 2: Judge vs. trial variance ──────────────────────────────────────
     with tabs[2]:
         st.header("Judge vs. trial variance")
+        st.warning(
+            "⚠️ This tab uses Wilcoxon signed-rank and is kept for comparison with the "
+            "updated statistical approach in the **(b)** tab."
+        )
         if selected_domain:
             st.caption(
                 f"Plots show {_domain_label}. Q1a/Q1b shown below are **{_pooled_label}** "
