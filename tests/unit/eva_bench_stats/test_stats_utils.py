@@ -1,11 +1,11 @@
 """Unit tests for analysis/eva-bench-stats/stats_utils.py."""
+
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / "analysis" / "eva-bench-stats"))
@@ -74,3 +74,37 @@ def test_bootstrap_slope_ci_negative_slope():
     y = 1.0 - 0.9 * x + rng.normal(0, 0.01, 11)
     lo, hi = bootstrap_slope_ci(x, y, quantile=0.75, n_boot=500, seed=2)
     assert hi < 0, f"Expected negative CI upper bound for strong negative slope, got hi={hi}"
+
+
+def test_permutation_test_all_zero_deltas():
+    from stats_utils import permutation_test
+
+    p = permutation_test(np.zeros(20), seed=0)
+    assert p == 1.0
+
+
+def test_permutation_test_large_positive_effect_low_p():
+    from stats_utils import permutation_test
+
+    deltas = np.full(50, 0.3)
+    p = permutation_test(deltas, n_perm=1000, seed=42)
+    assert p < 0.05
+
+
+def test_permutation_test_deterministic():
+    from stats_utils import permutation_test
+
+    rng = np.random.default_rng(0)
+    deltas = rng.normal(0.1, 0.2, 30)
+    p1 = permutation_test(deltas, seed=7)
+    p2 = permutation_test(deltas, seed=7)
+    assert p1 == p2
+
+
+def test_permutation_test_p_in_unit_interval():
+    from stats_utils import permutation_test
+
+    rng = np.random.default_rng(1)
+    deltas = rng.normal(0, 0.1, 20)
+    p = permutation_test(deltas, n_perm=200, seed=1)
+    assert 0.0 <= p <= 1.0

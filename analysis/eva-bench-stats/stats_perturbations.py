@@ -41,45 +41,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-from stats_utils import bootstrap_ci  # noqa: F401 (re-exported for backward compatibility)
+from stats_utils import bootstrap_ci, permutation_test  # noqa: F401 (re-exported for backward compatibility)
 from statsmodels.stats.multitest import multipletests
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONFIG_PATH = PROJECT_ROOT / "local" / "eva-bench-stats" / "perturbations_config.yaml"
-
-
-def permutation_test(
-    deltas: np.ndarray,
-    n_perm: int = 10000,
-    seed: int = 42,
-) -> float:
-    """Two-sided paired sign-flip permutation test.
-
-    For each permutation, independently flip the sign of each delta with p=0.5,
-    compute the mean. P-value = fraction of permutations where |permuted mean|
-    >= |observed mean|.
-
-    Args:
-        deltas: 1-D array of scenario-level (perturbation - baseline) deltas.
-        n_perm: Number of permutations.
-        seed: RNG seed for reproducibility.
-
-    Returns:
-        Two-sided p-value in [0, 1].
-    """
-    deltas = np.asarray(deltas, dtype=float)
-    n = len(deltas)
-    observed = np.mean(deltas)
-
-    if observed == 0.0 and np.all(deltas == 0.0):
-        return 1.0
-
-    rng = np.random.default_rng(seed)
-    signs = rng.choice([-1.0, 1.0], size=(n_perm, n))
-    permuted_means = (signs * deltas).mean(axis=1)
-
-    p = np.mean(np.abs(permuted_means) >= np.abs(observed))
-    return float(p)
 
 
 def run_analysis(
