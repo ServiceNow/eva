@@ -77,14 +77,31 @@ def _run_script(script_path: Path, extra_args: list[str] | None = None) -> tuple
 def overview_page():
     st.header("EVA-Bench Statistics")
     st.markdown("""
-Statistical analyses for EVA-Bench.
+Statistical analyses for EVA-Bench. Use the sidebar to navigate between sections.
 
-| Page | Status |
-|------|--------|
-| Perturbations | Implemented |
-| CIs | Placeholder |
-| Variance | Placeholder |
-| Frontier | Placeholder |
+### Sections
+
+**Perturbations** — Tests whether model performance changes significantly under user-side
+perturbations (accent, background noise, both). Sign-flip permutation tests on scenario-level
+deltas, with Holm-Bonferroni correction, bootstrap CIs, pairwise comparisons, and additivity
+checks.
+
+**CIs** — 95% percentile bootstrap confidence intervals over scenario-level means, per
+domain and equal-weighted across domains. Forest plots and a paper-ready summary table for
+EVA-A and EVA-X composites.
+
+**Variance** — Three sources of variance in EVA metric scores: judge stochasticity, trial
+(simulation) variance, and scenario-explained variance. Includes Q0–Q3 nonparametric tests,
+ICC estimates, EVA composite stability, borderline-scenario flips, and an LMM variance
+decomposition (REML mixed effects with scenario / trial / judge components).
+
+**Frontier** — Exploratory: quantile regression on the EVA-A vs. EVA-X frontier across
+models, testing whether the upper boundary of one metric falls as the other rises.
+
+### Pipeline
+
+Use the **Run pipeline** expander in the sidebar to (re)build processed data and statistics
+without leaving the browser. Pages display warnings and links when their inputs are missing.
 """)
 
 
@@ -648,7 +665,7 @@ def CIs_page():
         if stability_df.empty:
             st.info("No stability log available.")
         else:
-            st.dataframe(stability_df, use_container_width=True)
+            st.dataframe(stability_df, width="stretch")
             download_button(stability_df, "stability_log.csv")
 
     with st.expander("Paper-ready summary (EVA-A & EVA-X means)", expanded=False):
@@ -658,14 +675,14 @@ def CIs_page():
             metrics=("EVA-A_mean", "EVA-X_mean"),
             domains=tuple(config["expected_domains"]),
         )
-        st.dataframe(summary, use_container_width=True)
+        st.dataframe(summary, width="stretch")
         download_button(summary, "ci_summary_paper.csv")
 
     with st.expander("Completeness report", expanded=False):
         if completeness_df.empty:
             st.info("No completeness report available.")
         else:
-            st.dataframe(completeness_df, use_container_width=True)
+            st.dataframe(completeness_df, width="stretch")
             download_button(completeness_df, "completeness_report.csv")
 
     metrics_present = sorted(set(per_domain_df["metric"]) | set(pooled_df["metric"]))
@@ -685,7 +702,7 @@ def CIs_page():
                     domains=config["expected_domains"],
                     color_map=model_to_color,
                 ),
-                use_container_width=True,
+                width="stretch",
             )
             combined = pd.concat(
                 [
@@ -694,7 +711,7 @@ def CIs_page():
                 ],
                 ignore_index=True,
             )[["model_label", "domain", "n", "point_estimate", "ci_lower", "ci_upper"]]
-            st.dataframe(combined, use_container_width=True)
+            st.dataframe(combined, width="stretch")
             download_button(combined, f"ci_{metric}.csv")
 
 
@@ -826,8 +843,8 @@ def variance_page():
         for _, row in borderlines_df.drop_duplicates("metric").iterrows():
             _pass_thresholds[row["metric"]] = float(row["threshold"])
 
-    def download_button(df: pd.DataFrame, filename: str) -> None:
-        st.download_button("Download CSV", df.to_csv(index=False).encode(), filename, "text/csv", key=filename)
+    def download_button(df: pd.DataFrame, filename: str, *, key: str | None = None) -> None:
+        st.download_button("Download CSV", df.to_csv(index=False).encode(), filename, "text/csv", key=key or filename)
 
     # ── Domain selector ───────────────────────────────────────────────────────
     # Single-choice radio. Drives which within-domain CSV is loaded for
@@ -887,18 +904,19 @@ def variance_page():
     tabs = st.tabs(
         [
             "Overview",  # 0
-            "Variance overview",  # 1
-            "Judge vs. trial variance",  # 2
-            "Judge vs. trial variance (b)",  # 3
-            "Judge variance",  # 4
-            "Trial variance",  # 5
-            "EVA score stability",  # 6
-            "Borderline scenarios",  # 7
-            "Intraclass correlation",  # 8
-            "Variance decomp (LMM)",  # 9
-            "Variance budget",  # 10
-            "Per-metric deep dive",  # 11
-            "Statistical tests",  # 12
+            "Paper tables",  # 1
+            "Variance overview",  # 2
+            "Judge vs. trial variance",  # 3
+            "Judge vs. trial variance (b)",  # 4
+            "Judge variance",  # 5
+            "Trial variance",  # 6
+            "EVA score stability",  # 7
+            "Borderline scenarios",  # 8
+            "Intraclass correlation",  # 9
+            "Variance decomp (LMM)",  # 10
+            "Variance budget",  # 11
+            "Per-metric deep dive",  # 12
+            "Statistical tests",  # 13
         ]
     )
 
@@ -1011,8 +1029,8 @@ def variance_page():
             )
             st.dataframe(_n_judge.merge(_n_trial, on="model"), width="stretch")
 
-    # ── Tab 1: Variance overview ──────────────────────────────────────────────
-    with tabs[1]:
+    # ── Tab 2: Variance overview ──────────────────────────────────────────────
+    with tabs[2]:
         st.header("Variance overview")
         if selected_domain:
             st.caption(f"Plots show {_domain_label}; statistical tests below are {_pooled_label}.")
@@ -1129,8 +1147,8 @@ values of the non-zero observations and tests whether they tend to be positive.
 treated as a separate analysis question.
 """)
 
-    # ── Tab 2: Judge vs. trial variance ──────────────────────────────────────
-    with tabs[2]:
+    # ── Tab 3: Judge vs. trial variance ──────────────────────────────────────
+    with tabs[3]:
         st.header("Judge vs. trial variance")
         st.warning(
             "⚠️ This tab uses Wilcoxon signed-rank and is kept for comparison with the "
@@ -1424,8 +1442,8 @@ by model — i.e., some models have noisier judges relative to their trial varia
                     width="stretch",
                 )
 
-    # ── Tab 3: Judge vs. trial variance (b) ──────────────────────────────────
-    with tabs[3]:
+    # ── Tab 4: Judge vs. trial variance (b) ──────────────────────────────────
+    with tabs[4]:
         st.header("Judge vs. trial variance (b)")
         if selected_domain:
             st.caption(
@@ -1542,7 +1560,9 @@ by model — i.e., some models have noisier judges relative to their trial varia
                 "Run the stats pipeline first."
             )
         else:
-            st.markdown("**Q1a — Sign-flip permutation test (per model × metric, one-sided, H₁: trial SD > judge SD)**")
+            st.markdown(
+                "**Q1a — Sign-flip permutation + binomial sign test (per model × metric, one-sided, H₁: trial SD > judge SD)**"
+            )
             q1a_perm_disp = q1a_perm_pooled_df[
                 [
                     "metric",
@@ -1566,7 +1586,9 @@ by model — i.e., some models have noisier judges relative to their trial varia
             download_button(q1a_perm_pooled_df, "stat_q1a_perm.csv")
 
             if not q1a_perm_pooled_scenarios.empty:
-                st.markdown("**Q1a pooled — Permutation test on scenario-averaged deltas (across models)**")
+                st.markdown(
+                    "**Q1a pooled — Sign-flip permutation + binomial sign test on scenario-averaged deltas (across models)**"
+                )
                 st.caption(
                     "Deltas averaged per (domain, scenario) across all 4 models → 213 independent observations. "
                     "Avoids pseudo-replication from the same scenarios appearing in all models."
@@ -1603,7 +1625,7 @@ by model — i.e., some models have noisier judges relative to their trial varia
                         "Same permutation test, restricted to the selected domain only. "
                         "Use this to check whether the pooled conclusion holds inside this domain."
                     )
-                    st.markdown("**Q1a (permutation) — within-domain**")
+                    st.markdown("**Q1a (permutation + sign test) — within-domain**")
                     q1a_pw_disp = q1a_perm_within[
                         [
                             "metric",
@@ -1703,8 +1725,163 @@ test is valid here (no bounded-at-zero concern). No correction is applied: Q1b i
 test per metric.
 """)
 
-    # ── Tab 4: Judge variance ─────────────────────────────────────────────────
-    with tabs[4]:
+        # ── Per-domain × per-model summary table ──────────────────────────────
+        st.subheader("Per-domain × per-model summary table")
+        st.caption(
+            "Mean judge SD and trial SD aggregated per (domain × model × metric), "
+            "with permutation and sign test p-values from the per-domain analyses. "
+            "Restricted to judge-graded metrics (the ones the permutation test runs on)."
+        )
+
+        _jv_all = pd.read_csv(data_dir / "judge_var.csv")
+        _tv_all = pd.read_csv(data_dir / "trial_var.csv")
+        for _df in (_jv_all, _tv_all):
+            _df["model_id"] = _df["run_label"].str.split(" — ").str[0].str.strip()
+
+        _judge_metrics_set = set(q1a_perm_pooled_df["metric"].unique()) if not q1a_perm_pooled_df.empty else set()
+
+        _j_agg = (
+            _jv_all[_jv_all["metric"].isin(_judge_metrics_set)]
+            .groupby(["domain", "model_id", "metric"])["std"]
+            .mean()
+            .reset_index()
+            .rename(columns={"std": "judge_sd"})
+        )
+        _t_agg = (
+            _tv_all[_tv_all["metric"].isin(_judge_metrics_set)]
+            .groupby(["domain", "model_id", "metric"])["std"]
+            .mean()
+            .reset_index()
+            .rename(columns={"std": "trial_sd"})
+        )
+
+        _domains_for_table = sorted(_jv_all["domain"].dropna().unique())
+        _perm_dfs = []
+        for _d in _domains_for_table:
+            _p_path = stats_dir / f"q1a_perm_{_d}.csv"
+            if _p_path.exists():
+                _pdf = pd.read_csv(_p_path)
+                _pdf["domain"] = _d
+                _perm_dfs.append(_pdf)
+        _perm_combined = pd.concat(_perm_dfs, ignore_index=True) if _perm_dfs else pd.DataFrame()
+
+        _table_b = _j_agg.merge(_t_agg, on=["domain", "model_id", "metric"])
+        if not _perm_combined.empty:
+            _table_b = _table_b.merge(
+                _perm_combined[["domain", "model", "metric", "permutation_p_value", "sign_test_p_value"]],
+                left_on=["domain", "model_id", "metric"],
+                right_on=["domain", "model", "metric"],
+                how="left",
+            ).drop(columns=["model"])
+
+        _table_b["model"] = _table_b["model_id"].apply(llm_name)
+        _METRIC_DISPLAY_NAMES = {
+            "agent_speech_fidelity": "Speech fidelity",
+        }
+        _table_b["_metric_display"] = _table_b["metric"].apply(
+            lambda m: _METRIC_DISPLAY_NAMES.get(m, m.replace("_", " ").capitalize())
+        )
+        _table_b = (
+            _table_b.sort_values(["_metric_display", "domain", "model"])
+            .drop(columns=["_metric_display"])
+            .reset_index(drop=True)
+        )
+
+        _disp_b = _table_b[
+            ["metric", "domain", "model", "judge_sd", "trial_sd", "permutation_p_value", "sign_test_p_value"]
+        ].copy()
+        _disp_b["judge_sd"] = _disp_b["judge_sd"].round(4)
+        _disp_b["trial_sd"] = _disp_b["trial_sd"].round(4)
+        _disp_b["permutation_p_value"] = _disp_b["permutation_p_value"].map(fmt_p)
+        _disp_b["sign_test_p_value"] = _disp_b["sign_test_p_value"].map(fmt_p)
+        st.dataframe(_disp_b, hide_index=True, width="stretch")
+        download_button(_table_b, "judge_vs_trial_per_domain_per_model.csv")
+
+        # ── LaTeX export ──────────────────────────────────────────────────────
+
+        def _latex_escape(s: str) -> str:
+            return (
+                str(s)
+                .replace("\\", "\\textbackslash{}")
+                .replace("&", "\\&")
+                .replace("%", "\\%")
+                .replace("#", "\\#")
+                .replace("_", "\\_")
+                .replace("$", "\\$")
+            )
+
+        def _fmt_p_latex(p: float) -> str:
+            if pd.isna(p):
+                return "--"
+            if p < 0.0001:
+                return "$< 0.0001$"
+            if p < 0.001:
+                return "$< 0.001$"
+            return f"{p:.3f}"
+
+        _METRIC_DISPLAY_OVERRIDES = {
+            "agent_speech_fidelity": "Speech fidelity",
+        }
+
+        def _metric_display(m: str) -> str:
+            label = _METRIC_DISPLAY_OVERRIDES.get(m, m.replace("_", " ").capitalize())
+            return _latex_escape(label)
+
+        def _build_latex_judge_vs_trial(df: pd.DataFrame) -> str:
+            header_row = (
+                "Metric & Domain & Model & Judge std dev & Trial std dev & $p_\\text{perm}$ & $p_\\text{sign}$ \\\\"
+            )
+            lines = [
+                "\\begingroup\\footnotesize",
+                "\\begin{longtable}{>{\\raggedright\\arraybackslash}p{1.8cm}llrrrr}",
+                "\\caption{Judge vs. trial variance per domain and model. Each cell value is the "
+                "mean across records of the per-record standard deviation: \\textit{Judge std dev} "
+                "is the per-record SD across the 3 judge iterations (averaged over trials before "
+                "averaging across records); \\textit{Trial std dev} is the per-record SD across "
+                "trials (after averaging across judge iterations), averaged across records. "
+                "$p_\\text{perm}$ is the one-sided sign-flip permutation test p-value (10,000 "
+                "permutations, $H_1$: trial std dev $>$ judge std dev). $p_\\text{sign}$ is the "
+                "one-sided exact binomial sign test p-value ($H_1$: P(trial std dev $>$ judge std dev) $> 0.5$).}",
+                "\\label{tab:judge-trial} \\\\",
+                "\\toprule",
+                header_row,
+                "\\midrule",
+                "\\endfirsthead",
+                "\\multicolumn{7}{l}{\\emph{Table~\\ref{tab:judge-trial} continued from previous page}} \\\\",
+                "\\toprule",
+                header_row,
+                "\\midrule",
+                "\\endhead",
+                "\\midrule \\multicolumn{7}{r}{\\emph{continued on next page}} \\\\",
+                "\\endfoot",
+                "\\bottomrule",
+                "\\endlastfoot",
+            ]
+            metric_groups = list(df.groupby("metric", sort=False))
+            for gi, (metric, sub) in enumerate(metric_groups):
+                if gi > 0:
+                    lines.append("\\midrule")
+                rows = list(sub.iterrows())
+                for ri, (_, row) in enumerate(rows):
+                    metric_cell = _metric_display(metric) if ri == 0 else ""
+                    lines.append(
+                        f"{metric_cell} & "
+                        f"{_latex_escape(row['domain'])} & "
+                        f"{_latex_escape(row['model'])} & "
+                        f"{row['judge_sd']:.4f} & "
+                        f"{row['trial_sd']:.4f} & "
+                        f"{_fmt_p_latex(row['permutation_p_value'])} & "
+                        f"{_fmt_p_latex(row['sign_test_p_value'])} \\\\"
+                    )
+            lines.append("\\end{longtable}")
+            lines.append("\\endgroup")
+            return "\n".join(lines)
+
+        with st.expander("LaTeX code for paper (click to copy)"):
+            st.code(_build_latex_judge_vs_trial(_table_b), language="latex")
+
+    # ── Tab 5: Judge variance ─────────────────────────────────────────────────
+    with tabs[5]:
         st.header("Judge variance (stochasticity)")
         if selected_domain:
             st.caption(
@@ -1925,8 +2102,8 @@ distributions of judge std devs differ across models without assuming normality.
    separately so that cross-type differences don't dominate the signal.
 """)
 
-    # ── Tab 5: Trial variance ─────────────────────────────────────────────────
-    with tabs[5]:
+    # ── Tab 6: Trial variance ─────────────────────────────────────────────────
+    with tabs[6]:
         st.header("Trial variance (conversation-to-conversation)")
         if selected_domain:
             st.caption(
@@ -2110,8 +2287,8 @@ less powerful for the same true effect size.
    separately so that cross-type differences don't dominate the signal.
 """)
 
-    # ── Tab 6: EVA score stability ────────────────────────────────────────────
-    with tabs[6]:
+    # ── Tab 7: EVA score stability ────────────────────────────────────────────
+    with tabs[7]:
         st.header("EVA score stability")
         st.write("""
         **What this measures:** For each iteration, the headline EVA composite metrics are
@@ -2178,8 +2355,8 @@ less powerful for the same true effect size.
                 f"**Key finding:** Largest composite shift across iterations is {max_range:.4f} for **{max_metric}**."
             )
 
-    # ── Tab 7: Borderline scenarios ───────────────────────────────────────────
-    with tabs[7]:
+    # ── Tab 8: Borderline scenarios ───────────────────────────────────────────
+    with tabs[8]:
         st.header("Borderline scenarios")
         st.write(
             "**What this measures:** (Record, trial) pairs where judge stochasticity flipped the score "
@@ -2372,8 +2549,8 @@ less powerful for the same true effect size.
             _ranked_detail.index.name = "rank"
             st.dataframe(_ranked_detail, width="stretch")
 
-    # ── Tab 8: Intraclass correlation ─────────────────────────────────────────
-    with tabs[8]:
+    # ── Tab 9: Intraclass correlation ─────────────────────────────────────────
+    with tabs[9]:
         st.header("Intraclass correlation (ICC)")
         if selected_domain:
             st.caption(
@@ -2476,8 +2653,204 @@ less powerful for the same true effect size.
                 f"({_icc_min['icc']:.2f}, 95% CI [{_icc_min['ci_lower']:.2f}–{_icc_min['ci_upper']:.2f}])."
             )
 
-    # ── Tab 9: Variance decomp (LMM) ─────────────────────────────────────────
-    with tabs[9]:
+        st.divider()
+
+        # ── ICC paper-table helpers ────────────────────────────────────────────
+        _ICC_OVERRIDES = {"agent_speech_fidelity": "Speech fidelity"}
+
+        def _icc_metric_label(m: str) -> str:
+            return _ICC_OVERRIDES.get(m, m.replace("_", " ").capitalize())
+
+        def _icc_latex_escape(s: str) -> str:
+            return (
+                str(s)
+                .replace("\\", "\\textbackslash{}")
+                .replace("&", "\\&")
+                .replace("%", "\\%")
+                .replace("#", "\\#")
+                .replace("_", "\\_")
+                .replace("$", "\\$")
+            )
+
+        def _icc_fmt_p(p: float) -> str:
+            if pd.isna(p):
+                return "--"
+            if p < 0.0001:
+                return "$< 0.0001$"
+            if p < 0.001:
+                return "$< 0.001$"
+            return f"{p:.3f}"
+
+        # ── Centered ICC paper table ──────────────────────────────────────────
+        st.subheader("Per-(metric × domain) centered ICC table")
+        st.caption(
+            "ICC$_\\text{scenario}$ from one-way ANOVA on per-model-centered scores, "
+            "computed within each task domain. Listed alongside its 95% bootstrap CI."
+        )
+
+        _domains_for_icc = sorted(
+            {p.stem.split("icc_pooled_centered_")[1] for p in stats_dir.glob("icc_pooled_centered_*.csv")}
+        )
+        _icc_c_dfs = []
+        for _d in _domains_for_icc:
+            _path = stats_dir / f"icc_pooled_centered_{_d}.csv"
+            if _path.exists():
+                _df = pd.read_csv(_path)
+                _df["domain"] = _d
+                _icc_c_dfs.append(_df)
+        _icc_centered_all = pd.concat(_icc_c_dfs, ignore_index=True) if _icc_c_dfs else pd.DataFrame()
+
+        if not _icc_centered_all.empty:
+            _icc_centered_all["_metric_display"] = _icc_centered_all["metric"].apply(_icc_metric_label)
+            _icc_centered_all = _icc_centered_all.sort_values(["_metric_display", "domain"]).reset_index(drop=True)
+            _icc_c_disp = _icc_centered_all[["metric", "domain", "icc", "ci_lower", "ci_upper", "n_scenarios"]].copy()
+            for _col in ("icc", "ci_lower", "ci_upper"):
+                _icc_c_disp[_col] = _icc_c_disp[_col].round(3)
+            st.dataframe(_icc_c_disp, hide_index=True, width="stretch")
+            download_button(_icc_centered_all, "icc_centered_paper_table.csv")
+
+            def _build_latex_icc_centered(df: pd.DataFrame) -> str:
+                header_row = "Metric & Domain & ICC$_\\text{scenario}$ & 95\\% CI & $n$ \\\\"
+                lines = [
+                    "\\begingroup\\footnotesize",
+                    "\\begin{longtable}{>{\\raggedright\\arraybackslash}p{1.8cm}lrrr}",
+                    "\\caption{Per-(metric $\\times$ domain) scenario-level ICC from one-way "
+                    "ANOVA on per-model-centered scores. ICC$_\\text{scenario}$ = $\\sigma^2_\\text{scenario} / "
+                    "(\\sigma^2_\\text{scenario} + \\sigma^2_\\text{residual})$. 95\\% CI from the F-distribution "
+                    "(Fisher's exact ICC bounds). $n$ is the number of scenarios in the (metric, "
+                    "domain) cell.}",
+                    "\\label{tab:icc-pooled} \\\\",
+                    "\\toprule",
+                    header_row,
+                    "\\midrule",
+                    "\\endfirsthead",
+                    "\\multicolumn{5}{l}{\\emph{Table~\\ref{tab:icc-pooled} continued from previous page}} \\\\",
+                    "\\toprule",
+                    header_row,
+                    "\\midrule",
+                    "\\endhead",
+                    "\\midrule \\multicolumn{5}{r}{\\emph{continued on next page}} \\\\",
+                    "\\endfoot",
+                    "\\bottomrule",
+                    "\\endlastfoot",
+                ]
+                metric_groups = list(df.groupby("metric", sort=False))
+                for gi, (metric, sub) in enumerate(metric_groups):
+                    if gi > 0:
+                        lines.append("\\midrule")
+                    rows = list(sub.iterrows())
+                    for ri, (_, row) in enumerate(rows):
+                        metric_cell = _icc_latex_escape(_icc_metric_label(metric)) if ri == 0 else ""
+                        ci = f"[{row['ci_lower']:.3f}, {row['ci_upper']:.3f}]"
+                        lines.append(
+                            f"{metric_cell} & "
+                            f"{_icc_latex_escape(row['domain'])} & "
+                            f"{row['icc']:.3f} & "
+                            f"{ci} & "
+                            f"{int(row['n_scenarios'])} \\\\"
+                        )
+                lines += ["\\end{longtable}", "\\endgroup"]
+                return "\n".join(lines)
+
+            with st.expander("LaTeX code for paper (click to copy)"):
+                st.code(_build_latex_icc_centered(_icc_centered_all), language="latex")
+        else:
+            st.info("No per-domain centered ICC data found.")
+
+        # ── Two-way ICC (interaction) paper table ─────────────────────────────
+        st.subheader("Per-(metric × domain) two-way ICC table (with interaction)")
+        st.caption(
+            "Variance decomposition from a two-way random-effects ANOVA per task domain "
+            "(scenario, model, model × scenario interaction, residual). Percentages of "
+            "total variance, plus F and p for the interaction term."
+        )
+
+        _icc_tw_path = stats_dir / "icc_pooled_twoway.csv"
+        _icc_tw_all = pd.read_csv(_icc_tw_path) if _icc_tw_path.exists() else pd.DataFrame()
+
+        if not _icc_tw_all.empty:
+            _icc_tw_all["pct_scenario"] = _icc_tw_all["sigma2_scenario"] / _icc_tw_all["sigma2_total"] * 100
+            _icc_tw_all["pct_model"] = _icc_tw_all["sigma2_model"] / _icc_tw_all["sigma2_total"] * 100
+            _icc_tw_all["pct_interaction"] = _icc_tw_all["sigma2_interaction"] / _icc_tw_all["sigma2_total"] * 100
+            _icc_tw_all["pct_residual"] = _icc_tw_all["sigma2_residual"] / _icc_tw_all["sigma2_total"] * 100
+            _icc_tw_all["_metric_display"] = _icc_tw_all["metric"].apply(_icc_metric_label)
+            _icc_tw_all = _icc_tw_all.sort_values(["_metric_display", "domain"]).reset_index(drop=True)
+            _icc_tw_disp = _icc_tw_all[
+                [
+                    "metric",
+                    "domain",
+                    "pct_scenario",
+                    "pct_model",
+                    "pct_interaction",
+                    "pct_residual",
+                    "f_interaction",
+                    "p_interaction",
+                ]
+            ].copy()
+            for _col in ("pct_scenario", "pct_model", "pct_interaction", "pct_residual"):
+                _icc_tw_disp[_col] = _icc_tw_disp[_col].round(1)
+            _icc_tw_disp["f_interaction"] = _icc_tw_disp["f_interaction"].round(2)
+            _icc_tw_disp["p_interaction"] = _icc_tw_disp["p_interaction"].map(fmt_p)
+            st.dataframe(_icc_tw_disp, hide_index=True, width="stretch")
+            download_button(_icc_tw_all, "icc_twoway_paper_table.csv")
+
+            def _build_latex_icc_twoway(df: pd.DataFrame) -> str:
+                header_row = (
+                    "Metric & Domain & Scenario (\\%) & Model (\\%) & Interaction (\\%) "
+                    "& Residual (\\%) & $F_\\text{int}$ & $p_\\text{int}$ \\\\"
+                )
+                lines = [
+                    "\\begingroup\\footnotesize",
+                    "\\begin{longtable}{>{\\raggedright\\arraybackslash}p{1.8cm}lrrrrrr}",
+                    "\\caption{Per-(metric $\\times$ domain) variance decomposition from a "
+                    "two-way random-effects ANOVA. Each row partitions total observed variance "
+                    "into scenario, model, model $\\times$ scenario interaction, and residual "
+                    "components (\\% of $\\sigma^2_\\text{total}$). $F_\\text{int}$ and "
+                    "$p_\\text{int}$ are the F-statistic and p-value for the interaction term, "
+                    "computed using the interaction mean square as the F-test denominator "
+                    "(Cornfield-Tukey rule for random effects).}",
+                    "\\label{tab:icc-interaction} \\\\",
+                    "\\toprule",
+                    header_row,
+                    "\\midrule",
+                    "\\endfirsthead",
+                    "\\multicolumn{8}{l}{\\emph{Table~\\ref{tab:icc-interaction} continued from previous page}} \\\\",
+                    "\\toprule",
+                    header_row,
+                    "\\midrule",
+                    "\\endhead",
+                    "\\midrule \\multicolumn{8}{r}{\\emph{continued on next page}} \\\\",
+                    "\\endfoot",
+                    "\\bottomrule",
+                    "\\endlastfoot",
+                ]
+                metric_groups = list(df.groupby("metric", sort=False))
+                for gi, (metric, sub) in enumerate(metric_groups):
+                    if gi > 0:
+                        lines.append("\\midrule")
+                    rows = list(sub.iterrows())
+                    for ri, (_, row) in enumerate(rows):
+                        metric_cell = _icc_latex_escape(_icc_metric_label(metric)) if ri == 0 else ""
+                        lines.append(
+                            f"{metric_cell} & "
+                            f"{_icc_latex_escape(row['domain'])} & "
+                            f"{row['pct_scenario']:.1f} & "
+                            f"{row['pct_model']:.1f} & "
+                            f"{row['pct_interaction']:.1f} & "
+                            f"{row['pct_residual']:.1f} & "
+                            f"{row['f_interaction']:.2f} & "
+                            f"{_icc_fmt_p(row['p_interaction'])} \\\\"
+                        )
+                lines += ["\\end{longtable}", "\\endgroup"]
+                return "\n".join(lines)
+
+            with st.expander("LaTeX code for paper (click to copy)"):
+                st.code(_build_latex_icc_twoway(_icc_tw_all), language="latex")
+        else:
+            st.info("No two-way ICC data found.")
+
+    # ── Tab 10: Variance decomp (LMM) ─────────────────────────────────────────
+    with tabs[10]:
         import pandas as pd
         from plots_variance import (
             lmm_component_boxplot,
@@ -2544,7 +2917,7 @@ less powerful for the same true effect size.
                             else "Scenario + Trial + Residual",
                         }
                     )
-                st.dataframe(pd.DataFrame(_mc_rows), hide_index=True, use_container_width=True)
+                st.dataframe(pd.DataFrame(_mc_rows), hide_index=True, width="stretch")
                 st.caption(
                     "Classification is automatic: a metric is judge-graded if scores vary across "
                     "judge iterations for the same (run_id, record, trial). "
@@ -2594,7 +2967,7 @@ less powerful for the same true effect size.
                     metric_order=_lmm_ordered_metrics,
                     judge_count=_lmm_judge_count,
                 ),
-                use_container_width=True,
+                width="stretch",
             )
             st.caption(
                 "Absolute σ² below. Bar height shows how much variance there is to explain — "
@@ -2610,7 +2983,7 @@ less powerful for the same true effect size.
                     judge_count=_lmm_judge_count,
                     y_max=_abs_y_max,
                 ),
-                use_container_width=True,
+                width="stretch",
             )
             with st.expander("Detail table + download", expanded=False):
                 _sub_vc = lmm_vc[lmm_vc["component"] != "judge"][
@@ -2628,7 +3001,7 @@ less powerful for the same true effect size.
                         "ci_upper": "CI upper",
                     }
                 )
-                st.dataframe(_sub_vc, hide_index=True, use_container_width=True)
+                st.dataframe(_sub_vc, hide_index=True, width="stretch")
                 download_button(lmm_vc, "lmm_vc_pooled.csv")
 
             st.divider()
@@ -2653,7 +3026,7 @@ less powerful for the same true effect size.
                         metric_order=_lmm_ordered_metrics,
                         judge_count=_lmm_judge_count,
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
                 st.caption(
                     "Absolute σ² below. Residual = judge stochasticity: within-(model, scenario, trial) "
@@ -2669,7 +3042,7 @@ less powerful for the same true effect size.
                         judge_count=_lmm_judge_count,
                         y_max=_abs_y_max,
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
 
                 # ── Summary table: Metric × Model with σ² and % breakdown ─
@@ -2700,7 +3073,7 @@ less powerful for the same true effect size.
                                 _row[_pm_comp_labels[comp]] = "{:.1%}".format(float(_comp_cell["proportion"].iloc[0]))
                         _pm_rows.append(_row)
                 if _pm_rows:
-                    st.dataframe(pd.DataFrame(_pm_rows), hide_index=True, use_container_width=True)
+                    st.dataframe(pd.DataFrame(_pm_rows), hide_index=True, width="stretch")
 
                 with st.expander("Long-format detail + download", expanded=False):
                     _pm_display = lmm_pm_vc[
@@ -2718,7 +3091,7 @@ less powerful for the same true effect size.
                             "ci_upper": "CI upper",
                         }
                     )
-                    st.dataframe(_pm_display, hide_index=True, use_container_width=True)
+                    st.dataframe(_pm_display, hide_index=True, width="stretch")
                     download_button(lmm_pm_vc, "lmm_vc_per_model.csv")
 
             if not lmm_pm_vc.empty:
@@ -2734,7 +3107,7 @@ less powerful for the same true effect size.
                         metric_order=_lmm_ordered_metrics,
                         residual_label="Judge stochasticity",
                     ),
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             st.divider()
@@ -2752,7 +3125,7 @@ less powerful for the same true effect size.
                 with _tab:
                     st.plotly_chart(
                         lmm_forest_plot(lmm_fe, _metric, "domain"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                     _fe_sub = lmm_fe[
                         (lmm_fe["metric"] == _metric) & lmm_fe["term"].str.startswith("C(domain, Sum)[S.")
@@ -2767,7 +3140,7 @@ less powerful for the same true effect size.
                         }
                     )
                     with st.expander("Detail table + download", expanded=False):
-                        st.dataframe(_display_fe.round(4), hide_index=True, use_container_width=True)
+                        st.dataframe(_display_fe.round(4), hide_index=True, width="stretch")
                         download_button(_fe_sub, f"lmm_fe_domain_{_metric}.csv")
 
             # Paper-ready wide table: domains × metrics with coef [lo, hi]
@@ -2785,7 +3158,7 @@ less powerful for the same true effect size.
                 _dom_wide = _dom_wide.reindex(columns=_lmm_ordered_metrics, fill_value="—")
                 _dom_wide.index.name = "Domain"
                 _dom_wide.columns.name = None
-                st.dataframe(_dom_wide, use_container_width=True)
+                st.dataframe(_dom_wide, width="stretch")
                 download_button(
                     _dom_fe[["domain", "metric", "coef", "ci_lower", "ci_upper"]], "lmm_fe_domain_paper.csv"
                 )
@@ -2804,7 +3177,7 @@ less powerful for the same true effect size.
                 with _tab:
                     st.plotly_chart(
                         lmm_forest_plot(lmm_fe, _metric, "model_id"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                     _fe_sub = lmm_fe[
                         (lmm_fe["metric"] == _metric) & lmm_fe["term"].str.startswith("C(model_id, Sum)[S.")
@@ -2819,7 +3192,7 @@ less powerful for the same true effect size.
                         }
                     )
                     with st.expander("Detail table + download", expanded=False):
-                        st.dataframe(_display_fe.round(4), hide_index=True, use_container_width=True)
+                        st.dataframe(_display_fe.round(4), hide_index=True, width="stretch")
                         download_button(_fe_sub, f"lmm_fe_model_{_metric}.csv")
 
             st.divider()
@@ -2933,11 +3306,149 @@ complement each other but measure the same underlying quantity.
                     )
                 display_conv = lmm_conv.copy()
                 display_conv["converged"] = display_conv["converged"].map({True: "✓", False: "✗", None: "—"})
-                st.dataframe(display_conv, hide_index=True, use_container_width=True)
+                st.dataframe(display_conv, hide_index=True, width="stretch")
                 download_button(lmm_conv, "lmm_convergence.csv")
 
-    # ── Tab 10: Variance budget ───────────────────────────────────────────────
-    with tabs[10]:
+            st.divider()
+
+            # ── Per-(metric × model) variance decomposition table ────────────
+            st.subheader("Per-metric × per-model variance decomposition table")
+            st.caption(
+                "Variance components from per-model REML fits (domain as fixed effect; scenario "
+                "and trial as nested random effects, plus judge iterations for judge-graded "
+                "metrics). Cell values are percentages of total variance attributable to each "
+                "component."
+            )
+
+            _JUDGE_METRICS_LMM = {
+                "agent_speech_fidelity",
+                "conciseness",
+                "conversation_progression",
+                "faithfulness",
+                "transcription_accuracy_key_entities",
+            }
+
+            _lmm_pivot = lmm_pm_vc.pivot_table(
+                index=["metric", "model_id"], columns="component", values="proportion"
+            ).reset_index()
+            _lmm_pivot.columns.name = None
+            _lmm_total = lmm_pm_vc.groupby(["metric", "model_id"])["total_variance"].first().reset_index()
+            _lmm_pivot = _lmm_pivot.merge(_lmm_total, on=["metric", "model_id"])
+            _lmm_pivot["metric_type"] = _lmm_pivot["metric"].apply(
+                lambda m: "judge_graded" if m in _JUDGE_METRICS_LMM else "deterministic"
+            )
+            _lmm_pivot["_type_order"] = _lmm_pivot["metric_type"].map({"judge_graded": 0, "deterministic": 1})
+            _LMM_METRIC_DISPLAY_NAMES = {
+                "agent_speech_fidelity": "Speech fidelity",
+            }
+            _lmm_pivot["_metric_display"] = _lmm_pivot["metric"].apply(
+                lambda m: _LMM_METRIC_DISPLAY_NAMES.get(m, m.replace("_", " ").capitalize())
+            )
+            _lmm_pivot = (
+                _lmm_pivot.sort_values(["_type_order", "_metric_display", "model_id"])
+                .drop(columns=["_type_order", "_metric_display"])
+                .reset_index(drop=True)
+            )
+            _lmm_pivot["model"] = _lmm_pivot["model_id"].apply(llm_name)
+
+            _lmm_disp = _lmm_pivot[
+                ["metric_type", "metric", "model", "scenario", "trial", "residual", "total_variance"]
+            ].copy()
+            for _col in ("scenario", "trial", "residual"):
+                _lmm_disp[_col] = (_lmm_disp[_col] * 100).round(1)
+            _lmm_disp["total_variance"] = _lmm_disp["total_variance"].round(4)
+            _lmm_disp = _lmm_disp.rename(
+                columns={
+                    "metric_type": "type",
+                    "scenario": "scenario (%)",
+                    "trial": "trial (%)",
+                    "residual": "judge (%)",
+                    "total_variance": "σ²_total",
+                }
+            )
+            st.dataframe(_lmm_disp, hide_index=True, width="stretch")
+            download_button(_lmm_pivot, "lmm_variance_decomposition_per_model.csv")
+
+            # ── LaTeX export ──────────────────────────────────────────────
+
+            def _latex_escape_lmm(s: str) -> str:
+                return (
+                    str(s)
+                    .replace("\\", "\\textbackslash{}")
+                    .replace("&", "\\&")
+                    .replace("%", "\\%")
+                    .replace("#", "\\#")
+                    .replace("_", "\\_")
+                    .replace("$", "\\$")
+                )
+
+            _METRIC_DISPLAY_OVERRIDES_LMM = {
+                "agent_speech_fidelity": "Speech fidelity",
+            }
+
+            def _metric_display_lmm(m: str) -> str:
+                label = _METRIC_DISPLAY_OVERRIDES_LMM.get(m, m.replace("_", " ").capitalize())
+                return _latex_escape_lmm(label)
+
+            def _pct_lmm(v) -> str:
+                return "--" if pd.isna(v) else f"{v * 100:.1f}"
+
+            def _build_latex_lmm(df: pd.DataFrame) -> str:
+                header_row = (
+                    "Metric & Model & Scenario (\\%) & Trial (\\%) & Judge (\\%) & $\\sigma^2_\\text{total}$ \\\\"
+                )
+                lines = [
+                    "\\begingroup\\small",
+                    "\\begin{longtable}{>{\\raggedright\\arraybackslash}p{2cm}lrrrr}",
+                    "\\caption{Per-model variance decomposition from REML linear mixed-effects "
+                    "fits with domain as a fixed effect and scenario and trial as nested random "
+                    "effects. For judge-graded metrics, judge iterations are an additional "
+                    "nested random effect, captured here in the \\textit{Judge (\\%)} column "
+                    "(the residual at the lowest level of the hierarchy). For deterministic "
+                    "metrics, trial is the lowest modeled level, so the \\textit{Trial (\\%)} "
+                    "column already absorbs the lowest-level variance and \\textit{Judge (\\%)} "
+                    "is left blank. All component columns give the proportion of total variance "
+                    "attributable to each component (\\% of $\\sigma^2_\\text{total}$). "
+                    "Judge-graded metrics appear first, followed by deterministic metrics.}",
+                    "\\label{tab:lmm} \\\\",
+                    "\\toprule",
+                    header_row,
+                    "\\midrule",
+                    "\\endfirsthead",
+                    "\\multicolumn{6}{l}{\\emph{Table~\\ref{tab:lmm} continued from previous page}} \\\\",
+                    "\\toprule",
+                    header_row,
+                    "\\midrule",
+                    "\\endhead",
+                    "\\midrule \\multicolumn{6}{r}{\\emph{continued on next page}} \\\\",
+                    "\\endfoot",
+                    "\\bottomrule",
+                    "\\endlastfoot",
+                ]
+                metric_groups = list(df.groupby("metric", sort=False))
+                for gi, (metric, sub) in enumerate(metric_groups):
+                    if gi > 0:
+                        lines.append("\\midrule")
+                    rows = list(sub.iterrows())
+                    for ri, (_, row) in enumerate(rows):
+                        metric_cell = _metric_display_lmm(metric) if ri == 0 else ""
+                        lines.append(
+                            f"{metric_cell} & "
+                            f"{_latex_escape_lmm(row['model'])} & "
+                            f"{_pct_lmm(row.get('scenario'))} & "
+                            f"{_pct_lmm(row.get('trial'))} & "
+                            f"{_pct_lmm(row.get('residual'))} & "
+                            f"{row['total_variance']:.4f} \\\\"
+                        )
+                lines.append("\\end{longtable}")
+                lines.append("\\endgroup")
+                return "\n".join(lines)
+
+            with st.expander("LaTeX code for paper (click to copy)"):
+                st.code(_build_latex_lmm(_lmm_pivot), language="latex")
+
+    # ── Tab 11: Variance budget ───────────────────────────────────────────────
+    with tabs[11]:
         st.header("Variance budget")
         st.write("""
         **What this measures:** A decomposition of total score variance into the sources
@@ -3030,8 +3541,8 @@ complement each other but measure the same underlying quantity.
                 st.dataframe(styled, width="stretch")
                 download_button(converged[display_cols], f"variance_budget_{selected_model}.csv")
 
-    # ── Tab 11: Per-metric deep dive ──────────────────────────────────────────
-    with tabs[11]:
+    # ── Tab 12: Per-metric deep dive ──────────────────────────────────────────
+    with tabs[12]:
         st.header("Per-metric deep dive")
         st.write("""
         **What this measures:** For each metric, how does judge variance relate to trial
@@ -3065,8 +3576,8 @@ complement each other but measure the same underlying quantity.
                     f"Variance is primarily driven by **{dominant}**."
                 )
 
-    # ── Tab 12: Statistical tests ─────────────────────────────────────────────
-    with tabs[12]:
+    # ── Tab 13: Statistical tests ─────────────────────────────────────────────
+    with tabs[13]:
         st.header("Statistical tests")
         st.write("""
         Full results for all statistical tests. High-level summaries with plain-English
@@ -3239,7 +3750,7 @@ so no correction is needed within this test. The 0.05 threshold is applied per m
                     _q1a_perm_disp.round({"permutation_mean_delta": 4}),
                     width="stretch",
                 )
-                download_button(q1a_perm_pooled_df, "stat_q1a_perm.csv")
+                download_button(q1a_perm_pooled_df, "stat_q1a_perm.csv", key="stat_q1a_perm__q1a_tab.csv")
 
             st.markdown("**Pooled across models (scenario-averaged)**")
             if q1a_perm_pooled_scenarios.empty:
@@ -3252,7 +3763,11 @@ so no correction is needed within this test. The 0.05 threshold is applied per m
                     _q1a_perm_sc_disp.round({"permutation_mean_delta": 4}),
                     width="stretch",
                 )
-                download_button(q1a_perm_pooled_scenarios, "stat_q1a_perm_pooled.csv")
+                download_button(
+                    q1a_perm_pooled_scenarios,
+                    "stat_q1a_perm_pooled.csv",
+                    key="stat_q1a_perm_pooled__q1a_tab.csv",
+                )
 
             with st.expander("Q1a permutation full methodology"):
                 st.markdown("""
@@ -3642,6 +4157,32 @@ reported components are scenario and trial only. Trial CIs are not available fro
 (the scale parameter does not appear in `conf_int()`).
 """)
 
+    # ── Paper tables index ────────────────────────────────────────────────────
+    with tabs[1]:
+        st.header("Paper tables")
+        st.write(
+            "Index of LaTeX-export tables generated by this app. Each entry below "
+            "tells you which tab to open and scroll to the **LaTeX code for paper** "
+            "expander."
+        )
+        st.markdown("""
+- **`tab:judge-trial`** — Per-(domain × model × metric) judge vs. trial standard deviations
+  with permutation and sign-test p-values.
+  → on the **Judge vs. trial variance (b)** tab, bottom of the page.
+
+- **`tab:icc-pooled`** — Per-(metric × domain) scenario-level ICC from one-way ANOVA on
+  per-model-centered scores, with 95% CI.
+  → on the **Intraclass correlation** tab, bottom of the page.
+
+- **`tab:icc-interaction`** — Per-(metric × domain) variance decomposition from the two-way
+  random-effects ANOVA, with the model × scenario interaction's $F$ and $p$.
+  → on the **Intraclass correlation** tab, bottom of the page.
+
+- **`tab:lmm`** — Per-(metric × model) variance decomposition (scenario / trial / judge %)
+  from the REML linear mixed-effects fits.
+  → on the **Variance decomp (LMM)** tab, bottom of the page.
+""")
+
 
 def frontier_page():
     import pandas as pd
@@ -3668,19 +4209,19 @@ def frontier_page():
             "uv run python analysis/eva-bench-stats/run_stats.py\n"
             "```"
         )
-        st.plotly_chart(frontier_placeholder_fig(), use_container_width=True)
+        st.plotly_chart(frontier_placeholder_fig(), width="stretch")
         return
 
     scores_df = pd.read_csv(scores_path)
     qr_results_df = pd.read_csv(qr_path)
 
     fig = frontier_scatter_plot(scores_df, qr_results_df, alpha=alpha)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     with st.expander("Quantile regression results", expanded=False):
         tbl = qr_results_table(qr_results_df, alpha=alpha)
         if not tbl.empty:
-            st.dataframe(tbl, use_container_width=True)
+            st.dataframe(tbl, width="stretch")
         st.caption(f"n={len(scores_df)} models. Results are exploratory — see methods below.")
 
     with st.expander("Statistical methods", expanded=False):
