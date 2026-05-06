@@ -824,6 +824,143 @@ def compute_statistical_tests(
     }
 
 
+def compute_permutation_tests(
+    judge_var: pd.DataFrame,
+    trial_var: pd.DataFrame,
+    judge_metrics: list[str],
+    domain: str | None = None,
+    n_perm: int = 10000,
+    seed: int = 42,
+    alpha: float = 0.05,
+) -> dict[str, pd.DataFrame]:
+    """Sign-flip permutation test: is trial SD systematically greater than judge SD?
+
+    H₁ (one-sided): mean(trial_SD − judge_SD) > 0.
+    One-sided p derived from two-sided sign-flip result:
+      observed mean ≥ 0 → p_one = p_two / 2
+      observed mean < 0 → p_one = 1 − p_two / 2
+
+    Args:
+        judge_var: Per-(run, metric, record, trial) judge std devs.
+        trial_var: Per-(run, metric, record) trial std devs.
+        judge_metrics: Judge-graded metric names to test (caller detects from variance_budget).
+        domain: If set, restrict to this domain; if None, pool across all domains.
+        n_perm: Number of sign-flip permutations.
+        seed: Base RNG seed (perturbed per metric×model combination).
+        alpha: Significance threshold.
+
+    Returns:
+        Dict with:
+          "per_model" — one row per (metric, model), columns:
+              metric, model, n_scenarios, permutation_mean_delta,
+              permutation_p_value, permutation_significant,
+              n_positive_deltas, sign_test_p_value, sign_test_significant
+          "pooled"    — one row per metric (deltas averaged per scenario across models), columns:
+              metric, n_scenarios, permutation_mean_delta,
+              permutation_p_value, permutation_significant,
+              sign_test_p_value, sign_test_significant
+    """
+    from scipy.stats import binomtest
+    from stats_utils import permutation_test
+
+    judge_var = _filter_and_relabel(judge_var, domain)
+    trial_var = _filter_and_relabel(trial_var, domain)
+
+    judge_var = judge_var[judge_var["metric"].isin(judge_metrics)]
+    trial_var = trial_var[trial_var["metric"].isin(judge_metrics)]
+
+    # Aggregate judge std to per-(model_id, metric, [domain,] record_id)
+    j_keys = ["model_id", "metric", "record_id"]
+    if "domain" in judge_var.columns:
+        j_keys = ["model_id", "metric", "domain", "record_id"]
+    judge_by_record = (
+        judge_var.groupby(j_keys, dropna=False)["std"].mean().reset_index().rename(columns={"std": "judge_sd"})
+    )
+
+    t_cols = ["model_id", "metric", "record_id", "std"]
+    if "domain" in trial_var.columns:
+        t_cols = ["model_id", "metric", "domain", "record_id", "std"]
+    trial_by_record = trial_var[t_cols].rename(columns={"std": "trial_sd"})
+
+    merge_keys = ["model_id", "metric", "record_id"]
+    if "domain" in judge_by_record.columns and "domain" in trial_by_record.columns:
+        merge_keys = ["model_id", "metric", "domain", "record_id"]
+
+    merged = pd.merge(judge_by_record, trial_by_record, on=merge_keys).dropna(subset=["judge_sd", "trial_sd"])
+    merged["delta"] = merged["trial_sd"] - merged["judge_sd"]
+
+    # ── Per-model ─────────────────────────────────────────────────────────────
+    per_model_rows: list[dict] = []
+    for metric in judge_metrics:
+        metric_sub = merged[merged["metric"] == metric]
+        for model_id in metric_sub["model_id"].unique():
+            sub = metric_sub[metric_sub["model_id"] == model_id]
+            deltas = sub["delta"].values
+            n = len(deltas)
+            if n < 5:
+                continue
+
+            cell_seed = seed + hash(f"{metric}:{model_id}") % (2**31)
+            p_two = permutation_test(deltas, n_perm=n_perm, seed=cell_seed)
+            obs_mean = float(deltas.mean())
+            p_one = p_two / 2 if obs_mean >= 0 else 1 - p_two / 2
+
+            n_pos = int((deltas > 0).sum())
+            sign_p = float(binomtest(n_pos, n=n, p=0.5, alternative="greater").pvalue)
+
+            per_model_rows.append(
+                {
+                    "metric": metric,
+                    "model": model_id,
+                    "n_scenarios": n,
+                    "permutation_mean_delta": obs_mean,
+                    "permutation_p_value": p_one,
+                    "permutation_significant": bool(p_one < alpha),
+                    "n_positive_deltas": n_pos,
+                    "sign_test_p_value": sign_p,
+                    "sign_test_significant": bool(sign_p < alpha),
+                }
+            )
+
+    # ── Pooled across models ──────────────────────────────────────────────────
+    scenario_key_cols = ["domain", "record_id"] if "domain" in merged.columns else ["record_id"]
+    pooled_rows: list[dict] = []
+    for metric in judge_metrics:
+        metric_sub = merged[merged["metric"] == metric]
+        if metric_sub.empty:
+            continue
+        avg_deltas = metric_sub.groupby(scenario_key_cols)["delta"].mean().reset_index()
+        deltas = avg_deltas["delta"].values
+        n = len(deltas)
+        if n < 5:
+            continue
+
+        cell_seed = seed + hash(f"{metric}:pooled") % (2**31)
+        p_two = permutation_test(deltas, n_perm=n_perm, seed=cell_seed)
+        obs_mean = float(deltas.mean())
+        p_one = p_two / 2 if obs_mean >= 0 else 1 - p_two / 2
+
+        n_pos = int((deltas > 0).sum())
+        sign_p = float(binomtest(n_pos, n=n, p=0.5, alternative="greater").pvalue)
+
+        pooled_rows.append(
+            {
+                "metric": metric,
+                "n_scenarios": n,
+                "permutation_mean_delta": obs_mean,
+                "permutation_p_value": p_one,
+                "permutation_significant": bool(p_one < alpha),
+                "sign_test_p_value": sign_p,
+                "sign_test_significant": bool(sign_p < alpha),
+            }
+        )
+
+    return {
+        "per_model": pd.DataFrame(per_model_rows),
+        "pooled": pd.DataFrame(pooled_rows),
+    }
+
+
 def compute_within_type_tests(
     judge_var: pd.DataFrame,
     trial_var: pd.DataFrame,
