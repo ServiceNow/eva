@@ -38,7 +38,7 @@ from eva.assistant.audio_bridge import (
 )
 from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
 from eva.models.agents import AgentConfig
-from eva.models.config import SpeechToSpeechConfig
+from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -154,7 +154,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
     def __init__(
         self,
         current_date_time: str,
-        pipeline_config: SpeechToSpeechConfig,
+        pipeline_config: ModelConfig,
         agent: AgentConfig,
         agent_config_path: str,
         scenario_db_path: str,
@@ -177,12 +177,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         self._audio_sample_rate = _RECORDING_SAMPLE_RATE
 
         # Gemini model name from s2s_params or default
-        s2s_params: dict[str, Any] = {}
-        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-            s2s_params = self.pipeline_config.s2s_params
-        else:
-            logger.error("Pipeline config is not SpeechToSpeechConfig")
-            return
+        s2s_params = self.pipeline_config.s2s_params or {}
         self._model = s2s_params["model"]
         self._voice = s2s_params.get("voice", "Kore")
         self._language_code = s2s_params.get("language_code", "en-US")

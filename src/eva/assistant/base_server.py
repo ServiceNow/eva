@@ -19,7 +19,7 @@ from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.audio_bridge import FrameworkLogWriter, MetricsLogWriter
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
-from eva.models.config import AudioLLMConfig, PipelineConfig, SpeechToSpeechConfig
+from eva.models.config import ModelConfig
 from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import get_logger
 
@@ -43,7 +43,7 @@ class AbstractAssistantServer(ABC):
     def __init__(
         self,
         current_date_time: str,
-        pipeline_config: PipelineConfig | SpeechToSpeechConfig | AudioLLMConfig,
+        pipeline_config: ModelConfig,
         agent: AgentConfig,
         agent_config_path: str,
         scenario_db_path: str,

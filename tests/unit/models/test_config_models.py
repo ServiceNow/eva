@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 from pydantic_settings import SettingsError
 
-from eva.models.config import RunConfig, SpeechToSpeechConfig
+from eva.models.config import PipelineType, RunConfig
 
 MODEL_LIST = [
     {
@@ -377,12 +377,11 @@ class TestRunConfig:
         (
             (
                 {},
-                r"model\s+Field required",
+                "Model pipeline required",
             ),
             (
                 {"EVA_MODEL": "{}"},
-                # Discriminator defaults to PipelineConfig when no unique field present
-                r"model\.pipeline\.llm\s+Field required",
+                "Model pipeline required",
             ),
             (
                 {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b"},
@@ -402,17 +401,17 @@ class TestRunConfig:
             ),
             (
                 {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__TTS": "cartesia"},
-                r"model\.pipeline\.stt\s+Field required",
+                r"model\.stt\s+EVA_MODEL__STT required in cascade mode",
             ),
             (
                 {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__STT": "deepgram"},
-                r"model\.pipeline\.tts\s+Field required",
+                r"model\.tts\s+EVA_MODEL__TTS required in cascade mode",
             ),
             (
                 {"EVA_MODEL__LLM": "gpt-5.2"},
-                r"model\.pipeline\.stt\s+Field required"
+                r"model\.stt\s+EVA_MODEL__STT required in cascade mode"
                 r"(?s:.+)"
-                r"model\.pipeline\.tts\s+Field required",
+                r"model\.tts\s+EVA_MODEL__TTS required in cascade mode",
             ),
             (
                 {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__STT": "deepgram", "EVA_MODEL__TTS": "cartesia"},
@@ -422,7 +421,7 @@ class TestRunConfig:
             ),
             (
                 {"EVA_MODEL__AUDIO_LLM": "ultravox"},
-                r"model\.audio_llm\.tts\s+Field required",
+                r"model\.tts\s+EVA_MODEL__TTS required in audio_llm mode",
             ),
         ),
         ids=(
@@ -469,6 +468,41 @@ class TestRunConfig:
                     "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k"}),
                 }
             )
+
+
+class TestMaxRerunAttemptsZeroSkipsConflictCheck:
+    """When max_rerun_attempts=0, multiple pipeline modes don't raise."""
+
+    def test_multiple_modes_allowed_with_zero_rerun_attempts(self):
+        """max_rerun_attempts=0 suppresses the 'Multiple pipeline modes' error."""
+        # Without max_rerun_attempts=0, this raises ValueError
+        with pytest.raises(ValidationError, match="Multiple pipeline modes set"):
+            _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b"})
+
+        # With max_rerun_attempts=0, it should not raise the conflict error.
+        # It will still fail validation for other reasons (missing stt/tts params etc.),
+        # but the "Multiple pipeline modes" error must be suppressed.
+        try:
+            _config(
+                env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b"},
+                max_rerun_attempts=0,
+            )
+        except Exception as exc:
+            assert "Multiple pipeline modes set" not in str(exc)
+
+    def test_single_mode_still_works_with_zero_rerun_attempts(self):
+        """max_rerun_attempts=0 doesn't break normal single-mode configs."""
+        config = _config(env_vars=_BASE_ENV, max_rerun_attempts=0)
+        assert config.max_rerun_attempts == 0
+        assert config.model.llm == "gpt-5.2"
+
+    def test_no_model_config_with_zero_rerun_attempts(self):
+        """max_rerun_attempts=0 allows omitting model config entirely."""
+        config = _config(env_vars=_EVA_MODEL_LIST_ENV, max_rerun_attempts=0)
+        assert config.max_rerun_attempts == 0
+        assert config.model.llm is None
+        assert config.model.s2s is None
+        assert config.model.audio_llm is None
 
 
 class TestDefaults:
@@ -851,6 +885,142 @@ class TestParamAlias:
         assert "nova-2" in config.run_id
 
 
+class TestApplyEnvOverridesAcrossModes:
+    """Verify apply_env_overrides works for non-cascade pipeline modes and cross-mode scenarios."""
+
+    _S2S_ENV_WITH_SECRET = _EVA_MODEL_LIST_ENV | {
+        "EVA_MODEL__S2S": "gpt-realtime-mini",
+        "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "secret_s2s_key", "model": "rt-mini"}),
+    }
+    _AUDIO_LLM_ENV = _EVA_MODEL_LIST_ENV | {
+        "EVA_MODEL__AUDIO_LLM": "ultravox",
+        "EVA_MODEL__AUDIO_LLM_PARAMS": json.dumps({"api_key": "secret_allm_key", "model": "ultravox-v1"}),
+        "EVA_MODEL__TTS": "cartesia",
+        "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "secret_tts_key", "model": "sonic"}),
+    }
+
+    def test_s2s_round_trip_restores_secrets(self):
+        """S2S config: save → redact → reload → apply_env_overrides restores api_key."""
+        config = _config(env_vars=self._S2S_ENV_WITH_SECRET)
+        assert config.model.s2s_params["api_key"] == "secret_s2s_key"
+
+        dumped = config.model_dump_json()
+        loaded = _load_json_into_runconfig(dumped)
+
+        # Secrets are redacted after round-trip
+        assert loaded.model.s2s_params["api_key"] == "***"
+
+        loaded.apply_env_overrides(config)
+        assert loaded.model.s2s_params["api_key"] == "secret_s2s_key"
+        assert loaded.model.s2s_params["model"] == "rt-mini"
+
+    def test_audio_llm_round_trip_restores_secrets(self):
+        """AudioLLM config: save → redact → reload → apply_env_overrides restores api_keys."""
+        config = _config(env_vars=self._AUDIO_LLM_ENV)
+        dumped = config.model_dump_json()
+        loaded = _load_json_into_runconfig(dumped)
+
+        # Both audio_llm_params and tts_params should be redacted
+        assert loaded.model.audio_llm_params["api_key"] == "***"
+        assert loaded.model.tts_params["api_key"] == "***"
+
+        loaded.apply_env_overrides(config)
+        assert loaded.model.audio_llm_params["api_key"] == "secret_allm_key"
+        assert loaded.model.tts_params["api_key"] == "secret_tts_key"
+
+    def test_s2s_saved_with_cascade_env_active(self):
+        """Saved S2S config loaded while cascade env is active still restores S2S secrets.
+
+        This is the scenario from commit dd47960: from_existing_run loads a saved S2S config
+        but the current environment has cascade (LLM+STT+TTS) vars set.  apply_env_overrides
+        should restore the S2S secrets from a live S2S config, not the cascade one.
+        """
+        s2s_config = _config(env_vars=self._S2S_ENV_WITH_SECRET)
+        dumped = s2s_config.model_dump_json()
+
+        # Reload with isolated env (simulating from_existing_run's _StoredRunConfig)
+        loaded = _load_json_into_runconfig(dumped)
+        assert loaded.model.s2s_params["api_key"] == "***"
+
+        # apply_env_overrides with the original S2S config
+        loaded.apply_env_overrides(s2s_config)
+        assert loaded.model.s2s_params["api_key"] == "secret_s2s_key"
+
+    def test_zero_rerun_attempts_preserves_first_mode_params(self):
+        """With max_rerun_attempts=0 + conflicting modes, the surviving mode's params are intact."""
+        # Cascade config saved normally
+        cascade_config = _config(env_vars=_BASE_ENV)
+        dumped = cascade_config.model_dump_json()
+        loaded = _load_json_into_runconfig(dumped)
+        assert loaded.model.stt_params["api_key"] == "***"
+
+        # Restore secrets — should work even when max_rerun_attempts=0 is set elsewhere
+        loaded.apply_env_overrides(cascade_config)
+        assert loaded.model.stt_params["api_key"] == "test_key"
+        assert loaded.model.tts_params["api_key"] == "test_key"
+
+
+class TestStripOtherModeFields:
+    """Cross-mode fields are stripped so extra='forbid' on each config class doesn't reject them."""
+
+    def test_s2s_with_leftover_pipeline_fields(self):
+        """S2S config ignores leftover stt/tts/llm fields from a previous pipeline setup."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__S2S": "gpt-realtime-mini",
+                "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "", "model": "gpt-realtime-mini"}),
+                # Leftover pipeline fields that should be stripped
+                "EVA_MODEL__STT": "deepgram",
+                "EVA_MODEL__TTS": "cartesia",
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2"}),
+                "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic"}),
+            }
+        )
+        assert config.model.s2s == "gpt-realtime-mini"
+
+    def test_pipeline_with_leftover_s2s_fields(self):
+        """Pipeline config ignores leftover s2s_params from a previous S2S setup."""
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                # Leftover S2S field (s2s_params without s2s won't trigger exclusivity)
+                "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "", "model": "old-model"}),
+            }
+        )
+        assert config.model.llm == "gpt-5.2"
+
+    def test_audio_llm_with_leftover_pipeline_fields(self):
+        """Audio LLM config ignores leftover stt/llm fields from a previous pipeline setup."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__AUDIO_LLM": "vllm",
+                "EVA_MODEL__AUDIO_LLM_PARAMS": json.dumps(
+                    {"api_key": "k", "model": "ultravox", "base_url": "http://localhost:8000"}
+                ),
+                "EVA_MODEL__TTS": "cartesia",
+                "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic"}),
+                # Leftover pipeline fields that should be stripped
+                "EVA_MODEL__STT": "deepgram",
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2"}),
+            }
+        )
+        assert config.model.audio_llm == "vllm"
+
+    def test_pipeline_with_leftover_audio_llm_fields(self):
+        """Pipeline config ignores leftover audio_llm_params from a previous audio LLM setup."""
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_MODEL__AUDIO_LLM_PARAMS": json.dumps(
+                    {"api_key": "k", "model": "ultravox", "base_url": "http://localhost:8000"}
+                ),
+            }
+        )
+        assert config.model.llm == "gpt-5.2"
+
+
 class TestSpeechToSpeechConfig:
     """Tests for SpeechToSpeechConfig discriminated union."""
 
@@ -863,7 +1033,7 @@ class TestSpeechToSpeechConfig:
                 "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "", "model": "gpt-realtime-mini"}),
             }
         )
-        assert isinstance(config.model, SpeechToSpeechConfig)
+        assert config.model.pipeline_type == PipelineType.S2S
         assert config.model.s2s == "gpt-realtime-mini"
 
     def test_s2s_config_from_cli(self):
@@ -877,7 +1047,7 @@ class TestSpeechToSpeechConfig:
                 '{"api_key": "test-key", "model": "gemini_live"}',
             ],
         )
-        assert isinstance(config.model, SpeechToSpeechConfig)
+        assert config.model.pipeline_type == PipelineType.S2S
         assert config.model.s2s == "gemini_live"
         assert config.model.s2s_params == {"api_key": "test-key", "model": "gemini_live"}
 
@@ -890,5 +1060,5 @@ class TestSpeechToSpeechConfig:
                 "s2s_params": {"voice": "alloy", "api_key": "key_1", "model": "gpt-realtime-mini"},
             },
         )
-        assert isinstance(config.model, SpeechToSpeechConfig)
+        assert config.model.pipeline_type == PipelineType.S2S
         assert config.model.s2s_params == {"voice": "alloy", "api_key": "key_1", "model": "gpt-realtime-mini"}

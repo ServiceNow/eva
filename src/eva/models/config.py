@@ -18,16 +18,14 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 import yaml
 from litellm.types.router import DeploymentTypedDict
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Discriminator,
     Field,
-    Tag,
     ValidationError,
     computed_field,
     field_serializer,
@@ -56,8 +54,13 @@ def _param_alias(params: dict[str, Any]) -> str:
     return params.get("alias") or params["model"]
 
 
-class PipelineConfig(BaseModel):
-    """Configuration for a STT + LLM + TTS pipeline."""
+class ModelConfig(BaseModel):
+    """Flat model configuration covering all pipeline modes.
+
+    Exactly one mode selector (``llm``, ``s2s``, or ``audio_llm``) should be set.
+    Mode exclusivity is enforced by ``RunConfig``, not here, so that
+    ``max_rerun_attempts == 0`` can freely construct a config with mixed env vars.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -69,15 +72,28 @@ class PipelineConfig(BaseModel):
     }
     _LEGACY_DROP: ClassVar[set[str]] = {"realtime_model", "realtime_model_params"}
 
-    llm: str = Field(
+    # ── Mode selectors (exactly one group must be set for a real run) ──
+    llm: str | None = Field(
+        None,
         description="LLM model name matching a model_name in --model-list/EVA_MODEL_LIST",
         examples=["gpt-5.2", "gemini-3-pro"],
     )
-    stt: str = Field(description="STT model", examples=["deepgram", "openai_whisper"])
-    tts: str = Field(description="TTS model", examples=["cartesia", "elevenlabs"])
+    stt: str | None = Field(None, description="STT model", examples=["deepgram", "openai_whisper"])
+    tts: str | None = Field(None, description="TTS model", examples=["cartesia", "elevenlabs"])
 
-    stt_params: dict[str, Any] = Field({}, description="Additional STT model parameters (JSON)")
-    tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
+    s2s: str | None = Field(
+        None, description="Speech-to-speech model name", examples=["gpt-realtime-mini", "gemini_live"]
+    )
+
+    audio_llm: str | None = Field(None, description="Audio-LLM model identifier", examples=["vllm"])
+
+    # ── Params dicts ──
+    stt_params: dict[str, Any] | None = Field(None, description="Additional STT model parameters (JSON)")
+    tts_params: dict[str, Any] | None = Field(None, description="Additional TTS model parameters (JSON)")
+    s2s_params: dict[str, Any] | None = Field(None, description="Additional speech-to-speech model parameters (JSON)")
+    audio_llm_params: dict[str, Any] | None = Field(
+        None, description="Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, max_tokens"
+    )
 
     # Configurable turn start/stop strategies
     turn_start_strategy: str = Field(
@@ -121,13 +137,40 @@ class PipelineConfig(BaseModel):
     )
 
     @property
+    def pipeline_type(self) -> "PipelineType":
+        """Detected pipeline mode based on which selector is set."""
+        if self.audio_llm:
+            return PipelineType.AUDIO_LLM
+        if self.s2s:
+            return PipelineType.S2S
+        if self.llm:
+            return PipelineType.CASCADE
+
+    @property
     def pipeline_parts(self) -> dict[str, str]:
-        """Component names for this pipeline."""
-        return {
-            "stt": _param_alias(self.stt_params),
-            "llm": self.llm,
-            "tts": _param_alias(self.tts_params),
-        }
+        """Component names for this pipeline (used in run_id generation)."""
+        match self.pipeline_type:
+            case PipelineType.AUDIO_LLM:
+                return {
+                    "audio_llm": _param_alias(self.audio_llm_params),
+                    "tts": _param_alias(self.tts_params),
+                }
+            case PipelineType.S2S:
+                if self.s2s == "elevenlabs":
+                    # hardcoded for now. Models are set on the agent UI
+                    return {
+                        "s2s": _param_alias(self.s2s_params) or self.s2s,
+                        "stt": "scribe_v2.2_realtime",
+                        "llm": "gemini-3-flash-preview",
+                        "tts": "v3-conversational",
+                    }
+                return {"s2s": _param_alias(self.s2s_params)}
+            case PipelineType.CASCADE:
+                return {
+                    "stt": _param_alias(self.stt_params),
+                    "llm": self.llm,
+                    "tts": _param_alias(self.tts_params),
+                }
 
     @model_validator(mode="before")
     @classmethod
@@ -145,181 +188,6 @@ class PipelineConfig(BaseModel):
         return data
 
 
-class SpeechToSpeechConfig(BaseModel):
-    """Configuration for a speech-to-speech model."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    s2s: str = Field(description="Speech-to-speech model name", examples=["gpt-realtime-mini", "gemini_live"])
-    s2s_params: dict[str, Any] = Field({}, description="Additional speech-to-speech model parameters (JSON)")
-
-    # Configurable turn start/stop strategies (same as PipelineConfig)
-    turn_start_strategy: str = Field(
-        "vad",
-        description=(
-            "User turn start strategy: 'vad', 'transcription', or 'external'. "
-            "Defaults to 'vad' (VADUserTurnStartStrategy). "
-            "Set via EVA_MODEL__TURN_START_STRATEGY."
-        ),
-    )
-    turn_start_strategy_params: dict[str, Any] = Field(
-        {},
-        description="Parameters for turn start strategy (JSON). Set via EVA_MODEL__TURN_START_STRATEGY_PARAMS.",
-    )
-
-    turn_stop_strategy: str = Field(
-        "turn_analyzer",
-        description=(
-            "User turn stop strategy: 'speech_timeout', 'turn_analyzer', or 'external'. "
-            "Defaults to 'turn_analyzer' (TurnAnalyzerUserTurnStopStrategy with LocalSmartTurnAnalyzerV3). "
-            "Set via EVA_MODEL__TURN_STOP_STRATEGY."
-        ),
-    )
-    turn_stop_strategy_params: dict[str, Any] = Field(
-        {},
-        description="Parameters for turn stop strategy (JSON). Set via EVA_MODEL__TURN_STOP_STRATEGY_PARAMS.",
-    )
-
-    # VAD configuration
-    vad: str = Field(
-        "silero",
-        description=(
-            "VAD analyzer type: 'silero' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."
-        ),
-    )
-    vad_params: dict[str, Any] = Field(
-        {},
-        description=(
-            "VAD parameters (JSON): confidence, start_secs, stop_secs, min_volume. Set via EVA_MODEL__VAD_PARAMS."
-        ),
-    )
-
-    @property
-    def pipeline_parts(self) -> dict[str, str]:
-        """Component names for this pipeline."""
-        if self.s2s == "elevenlabs":
-            # hardcoded for now. Models are set on the agent UI
-            return {
-                "s2s": _param_alias(self.s2s_params),
-                "stt": "scribe_v2.2_realtime",
-                "llm": "gemini-3-flash-preview",
-                "tts": "v3-conversational",
-            }
-        return {"s2s": _param_alias(self.s2s_params)}
-
-
-class AudioLLMConfig(BaseModel):
-    """Configuration for an Audio-LLM pipeline (audio in, text out, separate TTS).
-
-    Used for models like self-hosted Ultravox that accept audio input + text context
-    and return text output, requiring a separate TTS stage for speech synthesis.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    audio_llm: str = Field(
-        description="Audio-LLM model identifier",
-        examples=["vllm"],
-    )
-    audio_llm_params: dict[str, Any] = Field(
-        {},
-        description=(
-            "Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, max_tokens, "
-            "vad_stop_secs (default: 0.4), smart_turn_stop_secs (default: 0.8)"
-        ),
-    )
-    tts: str = Field(description="TTS model", examples=["cartesia", "elevenlabs"])
-    tts_params: dict[str, Any] = Field({}, description="Additional TTS model parameters (JSON)")
-
-    # Configurable turn start/stop strategies (same as PipelineConfig)
-    turn_start_strategy: str = Field(
-        "vad",
-        description=(
-            "User turn start strategy: 'vad', 'transcription', or 'external'. "
-            "Defaults to 'vad' (VADUserTurnStartStrategy). "
-            "Set via EVA_MODEL__TURN_START_STRATEGY."
-        ),
-    )
-    turn_start_strategy_params: dict[str, Any] = Field(
-        {},
-        description="Parameters for turn start strategy (JSON). Set via EVA_MODEL__TURN_START_STRATEGY_PARAMS.",
-    )
-
-    turn_stop_strategy: str = Field(
-        "turn_analyzer",
-        description=(
-            "User turn stop strategy: 'speech_timeout', 'turn_analyzer', or 'external'. "
-            "Defaults to 'turn_analyzer' (TurnAnalyzerUserTurnStopStrategy with LocalSmartTurnAnalyzerV3). "
-            "Set via EVA_MODEL__TURN_STOP_STRATEGY."
-        ),
-    )
-    turn_stop_strategy_params: dict[str, Any] = Field(
-        {},
-        description="Parameters for turn stop strategy (JSON). Set via EVA_MODEL__TURN_STOP_STRATEGY_PARAMS.",
-    )
-
-    # VAD configuration
-    vad: str = Field(
-        "silero",
-        description=(
-            "VAD analyzer type: 'silero' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."
-        ),
-    )
-    vad_params: dict[str, Any] = Field(
-        {},
-        description=(
-            "VAD parameters (JSON): confidence, start_secs, stop_secs, min_volume. Set via EVA_MODEL__VAD_PARAMS."
-        ),
-    )
-
-    @property
-    def pipeline_parts(self) -> dict[str, str]:
-        """Component names for this pipeline."""
-        return {
-            "audio_llm": _param_alias(self.audio_llm_params),
-            "tts": _param_alias(self.tts_params),
-        }
-
-
-_PIPELINE_FIELDS = {
-    "llm",
-    "stt",
-    "tts",
-    "stt_params",
-    "tts_params",
-    "turn_start_strategy",
-    "turn_start_strategy_params",
-    "turn_stop_strategy",
-    "turn_stop_strategy_params",
-    "vad",
-    "vad_params",
-    *PipelineConfig._LEGACY_RENAMES,
-    *PipelineConfig._LEGACY_DROP,
-}
-_S2S_FIELDS = {
-    "s2s",
-    "s2s_params",
-    "turn_start_strategy",
-    "turn_start_strategy_params",
-    "turn_stop_strategy",
-    "turn_stop_strategy_params",
-    "vad",
-    "vad_params",
-}
-_AUDIO_LLM_FIELDS = {
-    "audio_llm",
-    "audio_llm_params",
-    "tts",
-    "tts_params",
-    "turn_start_strategy",
-    "turn_start_strategy_params",
-    "turn_stop_strategy",
-    "turn_stop_strategy_params",
-    "vad",
-    "vad_params",
-}
-
-
 class PipelineType(StrEnum):
     """Type of voice pipeline."""
 
@@ -328,31 +196,14 @@ class PipelineType(StrEnum):
     S2S = "s2s"
 
 
-def _model_config_discriminator(data: Any) -> str:
-    """Discriminate which pipeline config type to use based on unique fields."""
-    if isinstance(data, dict):
-        if "audio_llm" in data:
-            return "audio_llm"
-        if "s2s" in data:
-            return "s2s"
-        return "pipeline"
-    if isinstance(data, AudioLLMConfig):
-        return "audio_llm"
-    if isinstance(data, SpeechToSpeechConfig):
-        return "s2s"
-    return "pipeline"
-
-
-def get_pipeline_type(model_data: dict | Any) -> PipelineType:
+def get_pipeline_type(model_data: dict) -> PipelineType:
     """Return the pipeline type for the given model config.
 
-    Works with both raw dicts (e.g. from config.json) and parsed model config objects.
+    Works with raw dicts, e.g., from config.json.
     Also handles legacy configs where ``realtime_model`` was stored alongside
-    ``llm_model`` in a flat dict (before the discriminated-union refactor).
+    ``llm_model`` in a flat dict.
     """
-    mode = _model_config_discriminator(model_data)
-    if mode == "s2s":
-        s2s_value = model_data.get("s2s")
+    if s2s_value := model_data.get("s2s"):
         # ElevenLabs uses s2s_params for configuration but is a cascade pipeline internally
         if s2s_value == "elevenlabs":
             return PipelineType.CASCADE
@@ -360,53 +211,12 @@ def get_pipeline_type(model_data: dict | Any) -> PipelineType:
         if s2s_value == "ultravox":
             return PipelineType.AUDIO_LLM
         return PipelineType.S2S
-    if mode == "audio_llm":
+    if model_data.get("audio_llm"):
         return PipelineType.AUDIO_LLM
     # Legacy: realtime_model was a sibling of llm_model before the union split
-    if isinstance(model_data, dict) and model_data.get("realtime_model"):
+    if model_data.get("realtime_model"):
         return PipelineType.S2S
     return PipelineType.CASCADE
-
-
-def _strip_other_mode_fields(data: dict, strict: bool = True) -> dict:
-    """Validate pipeline mode exclusivity, then strip irrelevant shared fields.
-
-    Raises ``ValueError`` if multiple pipeline modes are specified (when strict=True).
-    Then strips shared fields (e.g. ``tts`` from S2S mode) so that
-    ``extra="forbid"`` on each config class doesn't reject them.
-
-    Args:
-        data: Raw config dictionary from the YAML/env input.
-        strict: If False, skip the conflict error (used for metrics-only re-runs
-            where the model config is not needed).
-    """
-    # --- Mutual exclusivity: only one pipeline mode allowed ---
-    has_llm = bool(data.get("llm") or data.get("llm_model"))
-    has_s2s = bool(data.get("s2s"))
-    has_audio_llm = bool(data.get("audio_llm"))
-    active = [
-        name
-        for flag, name in [
-            (has_llm, "EVA_MODEL__LLM"),
-            (has_s2s, "EVA_MODEL__S2S"),
-            (has_audio_llm, "EVA_MODEL__AUDIO_LLM"),
-        ]
-        if flag
-    ]
-    if len(active) > 1 and strict:
-        raise ValueError(
-            f"Multiple pipeline modes set: {', '.join(active)}. "
-            f"Set exactly one of: EVA_MODEL__LLM (ASR-LLM-TTS), "
-            f"EVA_MODEL__S2S (S2S), or EVA_MODEL__AUDIO_LLM (SpeechLM-TTS)."
-        )
-
-    mode = _model_config_discriminator(data)
-    if mode == "audio_llm":
-        return {k: v for k, v in data.items() if k in _AUDIO_LLM_FIELDS}
-    if mode == "s2s":
-        return {k: v for k, v in data.items() if k in _S2S_FIELDS}
-    # pipeline: keep pipeline fields + any legacy fields the model_validator handles
-    return {k: v for k, v in data.items() if k in _PIPELINE_FIELDS}
 
 
 class BackgroundNoiseType(StrEnum):
@@ -478,15 +288,6 @@ class PerturbationConfig(BaseModel):
         return self
 
 
-# Discriminated union so Pydantic picks the right config type from env vars / CLI
-ModelConfigUnion = Annotated[
-    Annotated[PipelineConfig, Tag("pipeline")]
-    | Annotated[SpeechToSpeechConfig, Tag("s2s")]
-    | Annotated[AudioLLMConfig, Tag("audio_llm")],
-    Discriminator(_model_config_discriminator),
-]
-
-
 class RunConfig(BaseSettings):
     """A New End-to-end Framework for Evaluating Voice Agents\033[94m
 
@@ -529,7 +330,8 @@ class RunConfig(BaseSettings):
     model_list: list[ModelDeployment] = Field(min_length=1)
 
     # Model to test
-    model: ModelConfigUnion = Field(
+    model: ModelConfig = Field(
+        default_factory=ModelConfig,
         description="Pipeline (STT + LLM + TTS), speech-to-speech, or audio-LLM model configuration",
     )
 
@@ -687,49 +489,65 @@ class RunConfig(BaseSettings):
     def agent_config_path(self) -> Path:
         return Path(f"configs/agents/{self.domain}_agent.yaml")
 
-    @model_validator(mode="before")
-    @classmethod
-    def _warn_deprecated_aliases(cls, data: Any) -> Any:
-        """Error out if deprecated environment variables are detected."""
-        if not isinstance(data, dict):
-            return data
-
-        # Strip env-var fields from other pipeline modes so extra="forbid" doesn't reject them.
-        # For metrics-only re-runs, skip the strict conflict check — the model isn't used.
-        if isinstance(data.get("model"), dict):
-            force_rerun = bool(data.get("force_rerun_metrics"))
-            data["model"] = _strip_other_mode_fields(data["model"], strict=not force_rerun)
-
-        return data
-
     @model_validator(mode="after")
     def _check_companion_services(self) -> "RunConfig":
-        """Ensure required companion services are set for each pipeline mode."""
+        """Validate pipeline mode mutual exclusivity and required companion services.
+
+        Skipped entirely when ``max_rerun_attempts == 0`` where the model
+        config is unused and conflicting env vars are harmless.
+        """
+        if self.max_rerun_attempts == 0:
+            return self
+
+        # ── Validate pipeline mode mutual exclusivity ──
+        active = [
+            name
+            for flag, name in [
+                (self.model.llm, "EVA_MODEL__LLM"),
+                (self.model.s2s, "EVA_MODEL__S2S"),
+                (self.model.audio_llm, "EVA_MODEL__AUDIO_LLM"),
+            ]
+            if flag
+        ]
+        if len(active) != 1:
+            raise ValueError(
+                (f"Multiple pipeline modes set: {', '.join(active)}. " if active else "Model pipeline required. ")
+                + "Set exactly one of: EVA_MODEL__LLM (TTS+LLM+TTS), EVA_MODEL__S2S (S2S), or EVA_MODEL__AUDIO_LLM (Audio LLM+TTS)."
+            )
+
+        # ── Validate companion services ──
         errors: list[InitErrorDetails] = []
-        if isinstance(self.model, PipelineConfig):
-            errors.extend(self._validate_service_params("STT", self.model.stt, self.model.stt_params))
-            errors.extend(self._validate_service_params("TTS", self.model.tts, self.model.tts_params))
-        elif isinstance(self.model, AudioLLMConfig):
-            errors.extend(self._validate_service_params("TTS", self.model.tts, self.model.tts_params))
-            errors.extend(self._validate_service_params("AUDIO_LLM", self.model.audio_llm, self.model.audio_llm_params))
-        elif isinstance(self.model, SpeechToSpeechConfig):
-            errors.extend(self._validate_service_params("S2S", self.model.s2s, self.model.s2s_params))
+        match self.model.pipeline_type:
+            case PipelineType.CASCADE:
+                errors.extend(self._validate_service_params("STT", self.model.stt, self.model.stt_params))
+                errors.extend(self._validate_service_params("TTS", self.model.tts, self.model.tts_params))
+            case PipelineType.AUDIO_LLM:
+                errors.extend(self._validate_service_params("TTS", self.model.tts, self.model.tts_params))
+                errors.extend(
+                    self._validate_service_params("AUDIO_LLM", self.model.audio_llm, self.model.audio_llm_params)
+                )
+            case PipelineType.S2S:
+                errors.extend(self._validate_service_params("S2S", self.model.s2s, self.model.s2s_params))
         if errors:
             raise ValidationError.from_exception_data(title=type(self).__name__, line_errors=errors)
-        return self
 
-    @model_validator(mode="after")
-    def _set_default_run_id(self) -> "RunConfig":
+        # ── Set default run_id ──
+        # self.model.pipeline_parts is only available if self.model is valid, which the above asserts.
         if "run_id" not in self.model_fields_set:
             suffix = "_".join(v for v in self.model.pipeline_parts.values() if v)
             self.run_id = f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}_{suffix}"
+
         return self
 
-    @classmethod
     def _validate_service_params(
-        cls, service: str, provider: str, params: dict[str, Any]
+        self, service: str, provider: str | None, params: dict[str, Any] | None
     ) -> Iterator[InitErrorDetails]:
-        """Validate that STT/TTS params contain required keys."""
+        """Validate that the service's name is set and its params contain the required keys."""
+        if not provider:
+            message = f"EVA_MODEL__{service} required in {self.model.pipeline_type} mode."
+            loc = ("model", service.lower())
+            yield InitErrorDetails(type=PydanticCustomError("missing_service", message), loc=loc, input=provider)
+
         required_keys = ["api_key", "model"]
         missing = [key for key in required_keys if key not in params] if params else required_keys
         if missing:
@@ -788,9 +606,9 @@ class RunConfig(BaseSettings):
 
     @field_serializer("model")
     @classmethod
-    def _redact_model_params(cls, model: ModelConfigUnion) -> dict:
+    def _redact_model_params(cls, model: ModelConfig) -> dict:
         """Redact secret values in STT/TTS/S2S/AudioLLM params when serializing."""
-        data = model.model_dump(mode="json")
+        data = model.model_dump(mode="json", exclude_none=True)
         for field_name, value in data.items():
             if field_name.endswith("_params") and isinstance(value, dict):
                 data[field_name] = cls._redact_dict(value)

@@ -10,7 +10,7 @@ from typing import Any
 from eva.metrics.legacy_aliases import rename_metric_keys, rename_metric_list
 from eva.metrics.runner import MetricsRunner, MetricsRunResult
 from eva.models.agents import AgentConfig
-from eva.models.config import PipelineConfig, RunConfig
+from eva.models.config import PipelineType, RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RunResult
 from eva.orchestrator.port_pool import PortPool
@@ -125,7 +125,7 @@ class BenchmarkRunner:
         (self.output_dir / "records").mkdir(exist_ok=True)
 
         # Resolve exact models used (captures defaults from services.py + any alias labels)
-        if isinstance(self.config.model, PipelineConfig):
+        if self.config.model.pipeline_type == PipelineType.CASCADE:
             stt_params = self.config.model.stt_params
             tts_params = self.config.model.tts_params
             self.config.resolved_models = {

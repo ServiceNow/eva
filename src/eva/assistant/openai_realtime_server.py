@@ -27,7 +27,6 @@ from eva.assistant.audio_bridge import (
     sync_buffer_to_position,
 )
 from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
-from eva.models.config import SpeechToSpeechConfig
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -104,12 +103,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         # User speech start timestamp from audio_interface (source of truth)
         self._audio_interface_speech_start_ts: str | None = None
 
-        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-            s2s_params = self.pipeline_config.s2s_params
-        else:
-            logger.error("Pipeline config is not SpeechToSpeechConfig")
-            return
-
+        s2s_params = self.pipeline_config.s2s_params or {}
         self._model: str = s2s_params["model"]
 
     async def start(self) -> None:

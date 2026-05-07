@@ -149,7 +149,7 @@ class MetricsRunner:
 
         config_data = json.loads(config_path.read_text())
 
-        # Determine pipeline type from config (fallback to False for legacy runs)
+        # Determine pipeline type from config
         model_data = config_data.get("model", {})
         self._pipeline_type = get_pipeline_type(model_data) if model_data else PipelineType.CASCADE
 

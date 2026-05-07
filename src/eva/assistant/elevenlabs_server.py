@@ -17,7 +17,6 @@ import asyncio
 import json
 import time
 from pathlib import Path
-from typing import Any
 
 try:
     import audioop
@@ -45,7 +44,7 @@ from eva.assistant.audio_bridge import (
 from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
 from eva.assistant.elevenlabs_audio_interface import TwilioAudioBridge
 from eva.models.agents import AgentConfig
-from eva.models.config import SpeechToSpeechConfig
+from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -113,7 +112,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
     def __init__(
         self,
         current_date_time: str,
-        pipeline_config: SpeechToSpeechConfig,
+        pipeline_config: ModelConfig,
         agent: AgentConfig,
         agent_config_path: str,
         scenario_db_path: str,
@@ -135,12 +134,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         # Recording sample rate (ElevenLabs operates at 16 kHz)
         self._audio_sample_rate = _RECORDING_SAMPLE_RATE
 
-        s2s_params: dict[str, Any] = {}
-        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-            s2s_params = self.pipeline_config.s2s_params
-        else:
-            logger.error("Pipeline config is not SpeechToSpeechConfig")
-            return
+        s2s_params = self.pipeline_config.s2s_params or {}
         self.s2s_params = s2s_params
         self._model = s2s_params.get("model", "elevenlabs")
 

@@ -7,10 +7,9 @@ from eva.models.agents import (
     AgentToolParameter,
 )
 from eva.models.config import (
-    AudioLLMConfig,
-    PipelineConfig,
+    ModelConfig,
+    PipelineType,
     RunConfig,
-    SpeechToSpeechConfig,
 )
 from eva.models.record import (
     AgentOverride,
@@ -37,9 +36,8 @@ __all__ = [
     "AgentOverride",
     # Config models
     "RunConfig",
-    "PipelineConfig",
-    "SpeechToSpeechConfig",
-    "AudioLLMConfig",
+    "ModelConfig",
+    "PipelineType",
     # Result models
     "ConversationResult",
     "MetricScore",

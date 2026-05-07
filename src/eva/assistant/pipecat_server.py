@@ -61,7 +61,7 @@ from eva.assistant.pipeline.turn_config import (
 )
 from eva.assistant.services.llm import LiteLLMClient
 from eva.models.agents import AgentConfig
-from eva.models.config import AudioLLMConfig, PipelineConfig, SpeechToSpeechConfig
+from eva.models.config import ModelConfig, PipelineType
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -88,7 +88,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
     def __init__(
         self,
         current_date_time: str,
-        pipeline_config: PipelineConfig | SpeechToSpeechConfig | AudioLLMConfig,
+        pipeline_config: ModelConfig,
         agent: AgentConfig,
         agent_config_path: str,
         scenario_db_path: str,
@@ -225,7 +225,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
             audio_llm_processor = None
             audio_llm_audio_collector = None
             alm_client = None
-            if isinstance(self.pipeline_config, SpeechToSpeechConfig):
+            if self.pipeline_config.pipeline_type == PipelineType.S2S:
                 realtime_llm = create_realtime_llm_service(
                     self.pipeline_config.s2s,
                     self.pipeline_config.s2s_params,
@@ -256,7 +256,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 realtime_llm.register_function(function_name=None, handler=_realtime_tool_handler)
                 stt = None
                 tts = None
-            elif isinstance(self.pipeline_config, AudioLLMConfig):
+            elif self.pipeline_config.pipeline_type == PipelineType.AUDIO_LLM:
                 # Audio-LLM mode: model handles STT+LLM, TTS still needed
                 stt = None
                 tts = create_tts_service(
@@ -338,8 +338,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
             # Create Audio-LLM components now that context/user_aggregator are available
             audio_llm_audio_collector = None
             audio_llm_processor = None
-            if isinstance(self.pipeline_config, AudioLLMConfig):
-                assert alm_client is not None  # Set in AudioLLMConfig branch above
+            if self.pipeline_config.pipeline_type == PipelineType.AUDIO_LLM:
+                assert alm_client is not None  # Set in AUDIO_LLM branch above
                 audio_llm_audio_collector = AudioLLMUserAudioCollector(
                     context, user_aggregator, pre_speech_secs=VAD_PRE_SPEECH_BUFFER_SECS
                 )
@@ -392,7 +392,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
             )
             # Create agent processor (pipeline mode only — realtime handles LLM internally)
             agent_processor = None
-            if isinstance(self.pipeline_config, PipelineConfig):
+            if self.pipeline_config.pipeline_type == PipelineType.CASCADE:
                 agent_processor = BenchmarkAgentProcessor(
                     current_date_time=self.current_date_time,
                     agent=self.agent,
@@ -589,7 +589,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
             await audiobuffer.start_recording()
 
             # Send initial greeting
-            if isinstance(self.pipeline_config, SpeechToSpeechConfig):
+            if self.pipeline_config.pipeline_type == PipelineType.S2S:
                 await task.queue_frames([LLMRunFrame()])
             else:
                 await task.queue_frames([TTSSpeakFrame(INITIAL_MESSAGE)])
@@ -643,13 +643,13 @@ class PipecatAssistantServer(AbstractAssistantServer):
             logger.info(f"User turn stopped - complete transcript: '{message.content}'")
             logger.debug(f"Turn timestamp: {message.timestamp}, user_id: {message.user_id}")
 
-            if isinstance(self.pipeline_config, PipelineConfig):
+            if self.pipeline_config.pipeline_type == PipelineType.CASCADE:
                 # STT provides real transcript text — save it now
                 await self._save_transcript_message_from_turn(
                     role="user", content=message.content, timestamp=message.timestamp
                 )
                 await agent_processor.process_complete_user_turn(message.content)
-            elif isinstance(self.pipeline_config, AudioLLMConfig) and audio_llm_processor:
+            elif self.pipeline_config.pipeline_type == PipelineType.AUDIO_LLM and audio_llm_processor:
                 # No STT → message.content is empty.
                 # Processing is triggered by LLMContextFrame flow through ParallelPipeline
                 # (AudioLLMUserAudioCollector pushes LLMContextFrame on UserStoppedSpeakingFrame)
@@ -721,7 +721,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         For pipeline mode, only write if not already written incrementally.
         """
         transcript_path = self.output_dir / "transcript.jsonl"
-        if isinstance(self.pipeline_config, SpeechToSpeechConfig) or not transcript_path.exists():
+        if self.pipeline_config.pipeline_type == PipelineType.S2S or not transcript_path.exists():
             self.audit_log.save_transcript_jsonl(transcript_path)
 
     async def save_outputs(self) -> None:
