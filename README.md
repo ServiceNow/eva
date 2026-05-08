@@ -141,8 +141,7 @@ done;
 exit $exit_code
 ```
 
-> [!TIP]
-> If you need a single command, like in Docker, you can wrap the above script with `sh -c '...'`.
+:bulb: If you need a single command, like in Docker, you can wrap the shell script with `sh -c '...'`.
 
 #### Running Specific Metrics
 
