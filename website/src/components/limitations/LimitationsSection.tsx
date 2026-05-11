@@ -20,10 +20,6 @@ const limitations = [
     category: 'Simulation',
     items: [
       {
-        title: 'Domain & Simulation Scope',
-        description: '50 scenarios in a single domain (airline). All scenarios are in English with standard American accents — no multilingual or accented speech coverage. Our user simulator does not include challenging speech conditions such as background noise, non-native accents, or intended interruptions.',
-      },
-      {
         title: 'User Simulator Fidelity',
         description: 'As our user simulator relies on a commercial system, its behavior may change across versions. The simulator may not fully replicate the natural disfluencies, hesitations, or emotional variations exhibited by real callers. The simulator may also occasionally go off policy; while we employ validators to detect such cases, perfect adherence cannot be guaranteed, particularly on subjective validator metrics.',
       },
@@ -74,10 +70,6 @@ const futurePlans = [
         title: 'Expand Data and Domain Scope',
         description: 'Compound requests, multi-step follow-ups, and scenarios requiring longer conversational memory. New voice agent domains with distinct policy structures, entity types, and conversational dynamics.',
       },
-      {
-        title: 'Robustness Testing',
-        description: 'Evaluate voice agent performance in noisy environments, with diverse user accents, multilingual users, and varied speaker behaviors (slow, interruptive, etc.).',
-      },
     ],
   },
   {
@@ -85,7 +77,7 @@ const futurePlans = [
     items: [
       {
         title: 'Extended Leaderboard',
-        description: 'More cascade and speech-to-speech systems evaluated and added to the findings including native voice agent APIs beyond Pipecat (ElevenAgents, Gemini Live, OpenAI Realtime, Deepgram Voice Agent, etc.)',
+        description: 'We continue to expand the leaderboard with more cascade and audio-native systems. ElevenAgent, OpenAI Realtime, and Gemini Live are already integrated; next additions include Deepgram Voice Agent and additional speech-to-speech systems.',
       },
     ],
   },
