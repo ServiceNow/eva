@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, LabelList, Customized } from 'recharts';
 import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
 import { getPertValue, perturbations, perturbationLabels, groupedSystems } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
@@ -148,15 +148,45 @@ export function PerturbationBarChart({ metric, metricLabel, systems, domain }: P
                 label={{ value: 'Δ vs clean', angle: -90, position: 'insideLeft', offset: 0, fill: colors.text.secondary, style: { fontSize: 12 } }}
               />
               <ReferenceLine y={0} stroke={colors.text.muted} />
-              {separators.map((sepName) => (
-                <ReferenceLine
-                  key={`sep-${sepName}`}
-                  x={sepName}
-                  stroke={colors.text.muted}
-                  strokeDasharray="4 4"
-                  strokeOpacity={0.6}
-                />
-              ))}
+              <Customized
+                component={(props: unknown) => {
+                  const p = props as {
+                    xAxisMap?: Record<string, { scale?: { (v: string): number | undefined; bandwidth?: () => number; step?: () => number } }>;
+                    offset?: { top?: number; height?: number };
+                  };
+                  const xMap = p.xAxisMap;
+                  if (!xMap) return null;
+                  const xAxis = Object.values(xMap)[0];
+                  const scale = xAxis?.scale;
+                  if (!scale || typeof scale.bandwidth !== 'function') return null;
+                  const top = p.offset?.top ?? 0;
+                  const height = p.offset?.height ?? 0;
+                  const bandwidth = scale.bandwidth();
+                  const step = typeof scale.step === 'function' ? scale.step() : bandwidth;
+                  const gapHalf = (step - bandwidth) / 2;
+                  return (
+                    <g>
+                      {separators.map((name) => {
+                        const start = scale(name);
+                        if (start == null) return null;
+                        const x = start - gapHalf;
+                        return (
+                          <line
+                            key={`sep-${name}`}
+                            x1={x}
+                            x2={x}
+                            y1={top}
+                            y2={top + height}
+                            stroke={colors.text.muted}
+                            strokeDasharray="4 4"
+                            strokeOpacity={0.6}
+                          />
+                        );
+                      })}
+                    </g>
+                  );
+                }}
+              />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: colors.bg.hover, opacity: 0.3 }} />
               {perturbations.map((p) => (
                 <Bar key={p} dataKey={`${p}_point`} fill={colorFor(p, colors)} radius={[2, 2, 0, 0]}>
