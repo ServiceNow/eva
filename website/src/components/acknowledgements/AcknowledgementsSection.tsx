@@ -18,21 +18,7 @@ export function AcknowledgementsSection() {
         >
           <div className="rounded-xl border border-purple/30 bg-purple/5 p-6">
             <h3 className="text-base font-semibold text-purple-light mb-3">Core Contributors</h3>
-            <p className="text-sm font-semibold text-text-primary">Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz, Oluwanifemi Bamgbose, Fanny Riols, Hoang Nguyen, Raghav Mehndiratta, Lindsay Brin, Hari Subramani</p>
-          </div>
-        </motion.div>
-
-        {/* Secondary Contributors */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <div className="rounded-xl border border-blue/30 bg-blue/5 p-6">
-            <h3 className="text-base font-semibold text-blue-light mb-2">Secondary Contributors</h3>
-            <p className="text-sm text-text-secondary mb-3">We thank the following individuals for their careful data review and thoughtful contributions to the framework.</p>
-            <p className="text-sm font-semibold text-text-primary">Akshay Kalkunte, Joseph Marinier, Jishnu Nair, Aman Tiwari</p>
+            <p className="text-sm font-semibold text-text-primary">Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz, Oluwanifemi Bamgbose, Fanny Riols, Hoang Nguyen, Raghav Mehndiratta, Lindsay Brin, Hari Subramani, Joseph Marinier</p>
           </div>
         </motion.div>
 
@@ -41,12 +27,26 @@ export function AcknowledgementsSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.15 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
         >
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6">
             <h3 className="text-base font-semibold text-emerald-400 mb-2">Linguists</h3>
-            <p className="text-sm text-text-secondary mb-3">We thank our linguist collaborators for their work creating high-quality scenarios, evaluations, and domain expertise.</p>
-            <p className="text-sm font-semibold text-text-primary">Tiffany Do, Ryan Dux, Maria Kossenko, Keerthana Gopinathan, Ann Heaton-Dunlap, Nidhi Kumari, Ranjani Iyer</p>
+            <p className="text-sm text-text-secondary mb-3">We thank our linguist collaborators for their work on carefully reviewing the HR and ITSM data domains, providing feedback on domain design, and annotating conversation samples with ratings for us to measure judge alignment.</p>
+            <p className="text-sm font-semibold text-text-primary">Tiffany Do, Ryan Dux, Maria Kossenko, Keerthana Gopinathan, Anne Heaton-Dunlap, Nidhi Kumari, Ranjani Iyer</p>
+          </div>
+        </motion.div>
+
+        {/* Secondary Contributors */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+        >
+          <div className="rounded-xl border border-blue/30 bg-blue/5 p-6">
+            <h3 className="text-base font-semibold text-blue-light mb-2">Secondary Contributors</h3>
+            <p className="text-sm text-text-secondary mb-3">We thank the following individuals for their careful data review of the CSM domain and thoughtful contributions to the framework.</p>
+            <p className="text-sm font-semibold text-text-primary">Akshay Kalkunte, Jishnu Nair, Aman Tiwari</p>
           </div>
         </motion.div>
 
@@ -106,7 +106,7 @@ export function AcknowledgementsSection() {
           and Stankiewicz, Katrina and Bamgbose, Oluwanifemi
           and Riols, Fanny and Nguyen, Hoang
           and Mehndiratta, Raghav and Brin, Lindsay
-          and Subramani, Hari},
+          and Subramani, Hari and Marinier, Joseph},
   year={2026},
   url={https://github.com/ServiceNow/eva}
 }`}

@@ -43,7 +43,7 @@ export function Hero() {
             A New End-to-end Framework for<br />Evaluating Voice Agents (EVA)
           </h1>
           <p className="text-sm sm:text-base font-bold text-[#A78BFA] max-w-3xl mx-auto mb-2.5">
-            Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz, Oluwanifemi Bamgbose, Fanny Riols, Hoang Nguyen, Raghav Mehndiratta, Lindsay Brin, Hari Subramani*
+            Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz, Oluwanifemi Bamgbose, Fanny Riols, Hoang Nguyen, Raghav Mehndiratta, Lindsay Brin, Hari Subramani, Joseph Marinier*
           </p>
           <p className="text-base sm:text-lg font-semibold text-text-secondary max-w-3xl mx-auto mb-4">
             ServiceNow AI Research
