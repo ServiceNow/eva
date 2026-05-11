@@ -48,6 +48,22 @@ export interface SystemStats {
 const stats = statsRaw as { systems: SystemStats[] };
 export const systems: SystemStats[] = stats.systems;
 
+/**
+ * Order systems by architecture group (S2S → Hybrid → Cascade), then
+ * alphabetically by name within each group. Used by the heatmaps and the
+ * scatter plot so visual ordering is consistent across views.
+ */
+export function groupedSystems(input: SystemStats[]): SystemStats[] {
+  const order: Record<SystemStats['type'], number> = {
+    s2s: 0,
+    '2-part': 1,
+    cascade: 2,
+  };
+  return [...input].sort(
+    (a, b) => order[a.type] - order[b.type] || a.name.localeCompare(b.name),
+  );
+}
+
 /** Return the CIPoint for `metric` on `system` at `domain` (or pooled). */
 export function getValue(system: SystemStats, metric: string, domain: DomainOrPooled): CIPoint | null {
   const block = system.clean[metric];

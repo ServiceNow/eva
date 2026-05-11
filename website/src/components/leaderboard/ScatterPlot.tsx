@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ErrorBar, useXAxisScale, useYAxisScale } from 'recharts';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
-import { getValue } from '../../data/leaderboardData';
+import { getValue, groupedSystems } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
 
 function useIsMobile(breakpoint = 640) {
@@ -218,7 +218,7 @@ export function ScatterPlot({ systems, domain }: ScatterPlotProps) {
   const isMobile = useIsMobile();
   const plot = plots[index];
 
-  const data: ScatterPoint[] = systems.flatMap(s => {
+  const data: ScatterPoint[] = groupedSystems(systems).flatMap(s => {
     const x = getValue(s, plot.xMetric, domain);
     const y = getValue(s, plot.yMetric, domain);
     if (!x || !y) return [];

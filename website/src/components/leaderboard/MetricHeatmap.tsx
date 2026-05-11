@@ -1,8 +1,10 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { Fragment, useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { invertedMetrics, getValue } from '../../data/leaderboardData';
+import { invertedMetrics, getValue, groupedSystems, domainLabels } from '../../data/leaderboardData';
 import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
+
+const DOMAIN_TABS: DomainOrPooled[] = ['pooled', 'airline', 'itsm', 'medical_hr'];
 import { getScaledHeatmapColor, useThemeColors, useThemeMode } from '../../styles/theme';
 
 export interface AggregateColumn {
@@ -149,7 +151,7 @@ interface MetricHeatmapProps {
   aggregateColumns?: AggregateColumn[];
   aggregateColor?: string;
   systems: SystemStats[];
-  domain: DomainOrPooled;
+  initialDomain?: DomainOrPooled;
 }
 
 interface CellData {
@@ -166,13 +168,14 @@ function cellTitle(label: string, c: CellData): string {
   return `${label}: ${c.point.toFixed(3)}`;
 }
 
-export function MetricHeatmap({ title, description, metricKeys, metricLabels, baseColor, aggregateColumns, aggregateColor = '#F59E0B', systems, domain }: MetricHeatmapProps) {
+export function MetricHeatmap({ title, description, metricKeys, metricLabels, baseColor, aggregateColumns, aggregateColor = '#F59E0B', systems, initialDomain = 'pooled' }: MetricHeatmapProps) {
   const themeColors = useThemeColors();
   const themeMode = useThemeMode();
   const aggCols = aggregateColumns ?? [];
   const isDark = themeMode !== 'light';
   const componentColors = useMemo(() => getComponentColorMap(systems, isDark), [systems, isDark]);
 
+  const [domain, setDomain] = useState<DomainOrPooled>(initialDomain);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [systemMenuOpen, setSystemMenuOpen] = useState(false);
@@ -237,13 +240,7 @@ export function MetricHeatmap({ title, description, metricKeys, metricLabels, ba
 
   const sorted = useMemo(() => {
     if (!sortKey) {
-      return [...systems].sort((a, b) => {
-        const aS2S = a.type === 's2s' || a.type === '2-part';
-        const bS2S = b.type === 's2s' || b.type === '2-part';
-        if (aS2S && !bS2S) return -1;
-        if (!aS2S && bS2S) return 1;
-        return a.stt.localeCompare(b.stt);
-      });
+      return groupedSystems(systems);
     }
 
     const getSortValue = (s: SystemStats): number | string => {
@@ -315,7 +312,22 @@ export function MetricHeatmap({ title, description, metricKeys, metricLabels, ba
   return (
     <div className="bg-bg-secondary rounded-xl border border-border-default p-4 sm:p-6">
       <h3 className="text-lg font-semibold text-text-primary mb-1">{title}</h3>
-      <p className="text-sm text-text-secondary mb-4">{description}</p>
+      <p className="text-sm text-text-secondary mb-3">{description}</p>
+
+      {/* Per-table domain toggle */}
+      <div className="inline-flex rounded-lg border border-border-default bg-bg-primary p-1 mb-4">
+        {DOMAIN_TABS.map(d => (
+          <button
+            key={d}
+            onClick={() => setDomain(d)}
+            className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+              domain === d ? 'bg-bg-tertiary text-text-primary' : 'text-text-muted hover:text-text-secondary'
+            }`}
+          >
+            {domainLabels[d]}
+          </button>
+        ))}
+      </div>
 
       {/* Mobile tabs - only show if we have both aggregate columns and metrics */}
       {aggCols.length > 0 && metricKeys.length > 0 && (
@@ -402,63 +414,87 @@ export function MetricHeatmap({ title, description, metricKeys, metricLabels, ba
             </tr>
           </thead>
           <tbody>
-            {sorted.map((s) => (
-              <tr key={s.id} className="border-b border-border-default/30">
-                <td className="py-2.5 px-3 sticky left-0 bg-bg-secondary z-10 whitespace-nowrap">
-                  <SystemName system={s} componentColors={componentColors} />
-                </td>
-                {aggCols.map((col, i) => {
-                  const v = getValue(s, col.metric, domain);
-                  const cell: CellData = v
-                    ? { point: v.point, ci_lower: v.ci_lower, ci_upper: v.ci_upper }
-                    : { point: null, ci_lower: null, ci_upper: null };
-                  const borderClass = i === aggCols.length - 1 ? 'border-r-2 border-border-default' : '';
-                  if (cell.point === null) {
-                    return (
-                      <td key={col.key} className={`py-1.5 px-1 text-center ${borderClass}`} title={cellTitle(col.label, cell)}>
-                        <div className="rounded-md px-0.5 py-1.5 font-mono text-xs font-medium text-text-muted">—</div>
+            {sorted.map((s, idx) => {
+              const prev = idx > 0 ? sorted[idx - 1] : null;
+              const showSeparator = !sortKey && prev !== null && prev.type !== s.type;
+              const totalCols = 1 + aggCols.length + metricKeys.length;
+              return (
+                <Fragment key={s.id}>
+                  {showSeparator && (
+                    <tr aria-hidden="true">
+                      <td colSpan={totalCols} className="p-0">
+                        <div className="border-t border-dashed border-border-default my-1" />
                       </td>
-                    );
-                  }
-                  const { min, max } = aggRanges[col.key];
-                  const { bg, text } = getScaledHeatmapColor(cell.point, min, max, aggregateColor, false, themeColors);
-                  return (
-                    <td key={col.key} className={`py-1.5 px-1 text-center ${borderClass}`} title={cellTitle(col.label, cell)}>
-                      <div
-                        className="rounded-md px-0.5 py-1.5 font-mono text-xs font-medium"
-                        style={{ backgroundColor: bg, color: text }}
-                      >
-                        {cell.point.toFixed(2)}
-                      </div>
+                    </tr>
+                  )}
+                  <tr className="border-b border-border-default/30">
+                    <td className="py-2.5 px-3 sticky left-0 bg-bg-secondary z-10 whitespace-nowrap">
+                      <SystemName system={s} componentColors={componentColors} />
                     </td>
-                  );
-                })}
-                {metricKeys.map(k => {
-                  const cell = metricCell(s, k);
-                  const label = metricLabels[k] || k;
-                  if (cell.point === null) {
-                    return (
-                      <td key={k} className="py-1.5 px-1 text-center" title={cellTitle(label, cell)}>
-                        <div className="rounded-md px-0.5 py-1.5 font-mono text-xs font-medium text-text-muted">—</div>
-                      </td>
-                    );
-                  }
-                  const { min, max } = metricRanges[k];
-                  const invert = invertedMetrics.has(k);
-                  const { bg, text } = getScaledHeatmapColor(cell.point, min, max, baseColor, invert, themeColors);
-                  return (
-                    <td key={k} className="py-1.5 px-1 text-center" title={cellTitle(label, cell)}>
-                      <div
-                        className="rounded-md px-0.5 py-1.5 font-mono text-xs font-medium"
-                        style={{ backgroundColor: bg, color: text }}
-                      >
-                        {cell.point.toFixed(2)}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                    {aggCols.map((col, i) => {
+                      const v = getValue(s, col.metric, domain);
+                      const cell: CellData = v
+                        ? { point: v.point, ci_lower: v.ci_lower, ci_upper: v.ci_upper }
+                        : { point: null, ci_lower: null, ci_upper: null };
+                      const borderClass = i === aggCols.length - 1 ? 'border-r-2 border-border-default' : '';
+                      if (cell.point === null) {
+                        return (
+                          <td key={col.key} className={`py-1.5 px-1 text-center ${borderClass}`} title={cellTitle(col.label, cell)}>
+                            <div className="rounded-md px-0.5 py-1.5 font-mono text-xs font-medium text-text-muted">—</div>
+                          </td>
+                        );
+                      }
+                      const { min, max } = aggRanges[col.key];
+                      const { bg, text } = getScaledHeatmapColor(cell.point, min, max, aggregateColor, false, themeColors);
+                      return (
+                        <td key={col.key} className={`py-1.5 px-1 text-center ${borderClass}`} title={cellTitle(col.label, cell)}>
+                          <div
+                            className="rounded-md px-0.5 py-1 font-mono font-medium leading-tight"
+                            style={{ backgroundColor: bg, color: text }}
+                          >
+                            <div className="text-xs">{cell.point.toFixed(2)}</div>
+                            {cell.ci_lower !== null && cell.ci_upper !== null && (
+                              <div className="text-[9px] opacity-75 font-normal">
+                                [{cell.ci_lower.toFixed(2)}, {cell.ci_upper.toFixed(2)}]
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                    {metricKeys.map(k => {
+                      const cell = metricCell(s, k);
+                      const label = metricLabels[k] || k;
+                      if (cell.point === null) {
+                        return (
+                          <td key={k} className="py-1.5 px-1 text-center" title={cellTitle(label, cell)}>
+                            <div className="rounded-md px-0.5 py-1.5 font-mono text-xs font-medium text-text-muted">—</div>
+                          </td>
+                        );
+                      }
+                      const { min, max } = metricRanges[k];
+                      const invert = invertedMetrics.has(k);
+                      const { bg, text } = getScaledHeatmapColor(cell.point, min, max, baseColor, invert, themeColors);
+                      return (
+                        <td key={k} className="py-1.5 px-1 text-center" title={cellTitle(label, cell)}>
+                          <div
+                            className="rounded-md px-0.5 py-1 font-mono font-medium leading-tight"
+                            style={{ backgroundColor: bg, color: text }}
+                          >
+                            <div className="text-xs">{cell.point.toFixed(2)}</div>
+                            {cell.ci_lower !== null && cell.ci_upper !== null && (
+                              <div className="text-[9px] opacity-75 font-normal">
+                                [{cell.ci_lower.toFixed(2)}, {cell.ci_upper.toFixed(2)}]
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -496,62 +532,86 @@ export function MetricHeatmap({ title, description, metricKeys, metricLabels, ba
             </tr>
           </thead>
           <tbody>
-            {sorted.map((s) => (
-              <tr key={s.id} className="border-b border-border-default/30">
-                <td className="py-2 px-2 sticky left-0 bg-bg-secondary z-10 text-xs">
-                  <SystemName system={s} componentColors={componentColors} />
-                </td>
-                {showAggCols.map((col) => {
-                  const v = getValue(s, col.metric, domain);
-                  const cell: CellData = v
-                    ? { point: v.point, ci_lower: v.ci_lower, ci_upper: v.ci_upper }
-                    : { point: null, ci_lower: null, ci_upper: null };
-                  if (cell.point === null) {
-                    return (
-                      <td key={col.key} className="py-1 px-0.5 text-center" title={cellTitle(col.label, cell)}>
-                        <div className="rounded-md px-0.5 py-1 font-mono text-[10px] sm:text-xs font-medium text-text-muted">—</div>
+            {sorted.map((s, idx) => {
+              const prev = idx > 0 ? sorted[idx - 1] : null;
+              const showSeparator = !sortKey && prev !== null && prev.type !== s.type;
+              const totalCols = 1 + showAggCols.length + showMetricKeys.length;
+              return (
+                <Fragment key={s.id}>
+                  {showSeparator && (
+                    <tr aria-hidden="true">
+                      <td colSpan={totalCols} className="p-0">
+                        <div className="border-t border-dashed border-border-default my-1" />
                       </td>
-                    );
-                  }
-                  const { min, max } = aggRanges[col.key];
-                  const { bg, text } = getScaledHeatmapColor(cell.point, min, max, aggregateColor, false, themeColors);
-                  return (
-                    <td key={col.key} className="py-1 px-0.5 text-center" title={cellTitle(col.label, cell)}>
-                      <div
-                        className="rounded-md px-0.5 py-1 font-mono text-[10px] sm:text-xs font-medium"
-                        style={{ backgroundColor: bg, color: text }}
-                      >
-                        {cell.point.toFixed(2)}
-                      </div>
+                    </tr>
+                  )}
+                  <tr className="border-b border-border-default/30">
+                    <td className="py-2 px-2 sticky left-0 bg-bg-secondary z-10 text-xs">
+                      <SystemName system={s} componentColors={componentColors} />
                     </td>
-                  );
-                })}
-                {showMetricKeys.map(k => {
-                  const cell = metricCell(s, k);
-                  const label = metricLabels[k] || k;
-                  if (cell.point === null) {
-                    return (
-                      <td key={k} className="py-1 px-0.5 text-center" title={cellTitle(label, cell)}>
-                        <div className="rounded-md px-0.5 py-1 font-mono text-[10px] sm:text-xs font-medium text-text-muted">—</div>
-                      </td>
-                    );
-                  }
-                  const { min, max } = metricRanges[k];
-                  const invert = invertedMetrics.has(k);
-                  const { bg, text } = getScaledHeatmapColor(cell.point, min, max, baseColor, invert, themeColors);
-                  return (
-                    <td key={k} className="py-1 px-0.5 text-center" title={cellTitle(label, cell)}>
-                      <div
-                        className="rounded-md px-0.5 py-1 font-mono text-[10px] sm:text-xs font-medium"
-                        style={{ backgroundColor: bg, color: text }}
-                      >
-                        {cell.point.toFixed(2)}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                    {showAggCols.map((col) => {
+                      const v = getValue(s, col.metric, domain);
+                      const cell: CellData = v
+                        ? { point: v.point, ci_lower: v.ci_lower, ci_upper: v.ci_upper }
+                        : { point: null, ci_lower: null, ci_upper: null };
+                      if (cell.point === null) {
+                        return (
+                          <td key={col.key} className="py-1 px-0.5 text-center" title={cellTitle(col.label, cell)}>
+                            <div className="rounded-md px-0.5 py-1 font-mono text-[10px] sm:text-xs font-medium text-text-muted">—</div>
+                          </td>
+                        );
+                      }
+                      const { min, max } = aggRanges[col.key];
+                      const { bg, text } = getScaledHeatmapColor(cell.point, min, max, aggregateColor, false, themeColors);
+                      return (
+                        <td key={col.key} className="py-1 px-0.5 text-center" title={cellTitle(col.label, cell)}>
+                          <div
+                            className="rounded-md px-0.5 py-1 font-mono font-medium leading-tight"
+                            style={{ backgroundColor: bg, color: text }}
+                          >
+                            <div className="text-[10px] sm:text-xs">{cell.point.toFixed(2)}</div>
+                            {cell.ci_lower !== null && cell.ci_upper !== null && (
+                              <div className="text-[8px] sm:text-[9px] opacity-75 font-normal">
+                                [{cell.ci_lower.toFixed(2)}, {cell.ci_upper.toFixed(2)}]
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                    {showMetricKeys.map(k => {
+                      const cell = metricCell(s, k);
+                      const label = metricLabels[k] || k;
+                      if (cell.point === null) {
+                        return (
+                          <td key={k} className="py-1 px-0.5 text-center" title={cellTitle(label, cell)}>
+                            <div className="rounded-md px-0.5 py-1 font-mono text-[10px] sm:text-xs font-medium text-text-muted">—</div>
+                          </td>
+                        );
+                      }
+                      const { min, max } = metricRanges[k];
+                      const invert = invertedMetrics.has(k);
+                      const { bg, text } = getScaledHeatmapColor(cell.point, min, max, baseColor, invert, themeColors);
+                      return (
+                        <td key={k} className="py-1 px-0.5 text-center" title={cellTitle(label, cell)}>
+                          <div
+                            className="rounded-md px-0.5 py-1 font-mono font-medium leading-tight"
+                            style={{ backgroundColor: bg, color: text }}
+                          >
+                            <div className="text-[10px] sm:text-xs">{cell.point.toFixed(2)}</div>
+                            {cell.ci_lower !== null && cell.ci_upper !== null && (
+                              <div className="text-[8px] sm:text-[9px] opacity-75 font-normal">
+                                [{cell.ci_lower.toFixed(2)}, {cell.ci_upper.toFixed(2)}]
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

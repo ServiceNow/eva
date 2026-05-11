@@ -128,7 +128,6 @@ export function LeaderboardSection() {
           description="Per-metric scores for accuracy. All values normalized to 0-1 (higher is better)."
           metricKeys={accuracyMetricKeys}
           metricLabels={accuracyMetricLabels}
-          domain={domain}
           baseColor={colors.accent.purple}
           aggregateColumns={accuracyAggregates}
           aggregateColor="#F59E0B"
@@ -140,7 +139,6 @@ export function LeaderboardSection() {
           description="Per-metric scores for conversational experience. All values normalized to 0-1 (higher is better)."
           metricKeys={experienceMetricKeys}
           metricLabels={experienceMetricLabels}
-          domain={domain}
           baseColor={colors.accent.blue}
           aggregateColumns={experienceAggregates}
           aggregateColor="#F59E0B"
