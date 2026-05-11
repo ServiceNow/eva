@@ -53,6 +53,51 @@ def _param_alias(params: dict[str, Any]) -> str:
     return params.get("alias") or params["model"]
 
 
+_elevenlabs_agent_cache: dict[str, dict[str, str]] = {}
+
+
+def _fetch_elevenlabs_agent_models(s2s_params: dict[str, Any]) -> dict[str, str]:
+    """Fetch STT, LLM, and TTS model names from the ElevenLabs agent API.
+
+    Results are cached per agent ID so repeated calls (e.g. run_id generation)
+    don't hit the API multiple times.
+    """
+    agent_id = s2s_params.get("assistant_agent_id", "")
+    if not agent_id:
+        logger.warning("No assistant_agent_id in s2s_params, cannot fetch ElevenLabs agent models")
+        return {"stt": "unknown", "llm": "unknown", "tts": "unknown"}
+
+    if agent_id in _elevenlabs_agent_cache:
+        return _elevenlabs_agent_cache[agent_id]
+
+    try:
+        from elevenlabs.client import ElevenLabs
+
+        client = ElevenLabs(api_key=s2s_params.get("api_key"))
+        agent = client.conversational_ai.agents.get(agent_id=agent_id)
+        cc = agent.conversation_config
+
+        stt = "unknown"
+        if cc.asr and cc.asr.provider:
+            stt = cc.asr.provider
+
+        llm = "unknown"
+        if cc.agent and cc.agent.prompt and cc.agent.prompt.llm:
+            llm = cc.agent.prompt.llm
+
+        tts = "unknown"
+        if cc.tts and cc.tts.model_id:
+            tts = cc.tts.model_id
+
+        result = {"stt": stt, "llm": llm, "tts": tts}
+        _elevenlabs_agent_cache[agent_id] = result
+        logger.info(f"Fetched ElevenLabs agent models: {result}")
+        return result
+    except Exception as e:
+        logger.warning(f"Failed to fetch ElevenLabs agent models: {e}")
+        return {"stt": "unknown", "llm": "unknown", "tts": "unknown"}
+
+
 class PipelineConfig(BaseModel):
     """Configuration for a STT + LLM + TTS pipeline."""
 
@@ -195,12 +240,9 @@ class SpeechToSpeechConfig(BaseModel):
     def pipeline_parts(self) -> dict[str, str]:
         """Component names for this pipeline."""
         if self.s2s == "elevenlabs":
-            # hardcoded for now. Models are set on the agent UI
             return {
                 "s2s": _param_alias(self.s2s_params),
-                "stt": "scribe_v2.2_realtime",
-                "llm": "gemini-3-flash-preview",
-                "tts": "v3-conversational",
+                **_fetch_elevenlabs_agent_models(self.s2s_params),
             }
         return {"s2s": _param_alias(self.s2s_params)}
 
