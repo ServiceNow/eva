@@ -8,6 +8,7 @@ interface PerturbationBarChartProps {
   metricLabel: string;
   systems: SystemStats[];
   domain: DomainOrPooled;
+  yDomain?: [number, number];
 }
 
 interface ChartRow {
@@ -75,7 +76,7 @@ function colorFor(pert: string, colors: ReturnType<typeof useThemeColors>): stri
   return colors.accent.blue;
 }
 
-export function PerturbationBarChart({ metric, metricLabel, systems, domain }: PerturbationBarChartProps) {
+export function PerturbationBarChart({ metric, metricLabel, systems, domain, yDomain }: PerturbationBarChartProps) {
   const colors = useThemeColors();
 
   // Order systems by architecture group: S2S → Hybrid (2-part) → Cascade.
@@ -140,6 +141,8 @@ export function PerturbationBarChart({ metric, metricLabel, systems, domain }: P
               <YAxis
                 stroke={colors.text.muted}
                 tick={{ fill: colors.text.secondary, fontSize: 11 }}
+                domain={yDomain ?? ['auto', 'auto']}
+                allowDataOverflow={!!yDomain}
                 label={{ value: 'Δ vs clean', angle: -90, position: 'insideLeft', fill: colors.text.secondary, style: { fontSize: 12 } }}
               />
               <ReferenceLine y={0} stroke={colors.text.muted} />

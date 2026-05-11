@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
-import { perturbations, perturbationLabels } from '../../data/leaderboardData';
+import { perturbations, perturbationLabels, getPertValue } from '../../data/leaderboardData';
 import { PerturbationBarChart } from './PerturbationBarChart';
 import { useThemeColors } from '../../styles/theme';
 
@@ -38,6 +38,34 @@ export function Perturbations({ systems, domain }: PerturbationsProps) {
   const [sectionOpen, setSectionOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
+  // Compute a shared y-axis domain across all metric × perturbation × system bars
+  // (including CI lower/upper bounds) so the 9 metric charts are visually comparable.
+  const sharedYDomain = useMemo<[number, number]>(() => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const s of systems) {
+      for (const m of METRICS) {
+        for (const p of perturbations) {
+          const v = getPertValue(s, m.key, p, domain);
+          if (!v) continue;
+          if (Number.isFinite(v.ci_lower)) lo = Math.min(lo, v.ci_lower);
+          if (Number.isFinite(v.ci_upper)) hi = Math.max(hi, v.ci_upper);
+          if (Number.isFinite(v.point)) {
+            lo = Math.min(lo, v.point);
+            hi = Math.max(hi, v.point);
+          }
+        }
+      }
+    }
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [-1, 1];
+    // Always include zero so the reference line is visible.
+    lo = Math.min(lo, 0);
+    hi = Math.max(hi, 0);
+    const span = hi - lo || 1;
+    const pad = span * 0.05;
+    return [lo - pad, hi + pad];
+  }, [systems, domain]);
+
   const toggleMetric = (key: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -61,8 +89,13 @@ export function Perturbations({ systems, domain }: PerturbationsProps) {
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-text-primary">Perturbations</h3>
           <p className="text-sm text-text-muted mt-0.5">
-            Per-metric deltas (Δ = perturbed − clean) under accent, background noise, and combined perturbations.
-            Error bars show 95% CIs; <span className="text-amber-400">*</span> marks statistically significant pairs.
+            For each domain we select <span className="font-semibold text-text-secondary">30 scenarios</span> and re-run
+            each system with <span className="font-semibold text-text-secondary">k = 3 trials per scenario</span> under
+            accent, background-noise, and combined perturbations. Each bar shows the mean Δ vs. the same scenarios'
+            clean runs with bootstrapped 95% CIs. Significance markers (<span className="text-amber-400">*</span>)
+            indicate that the perturbation effect remains statistically significant after{' '}
+            <span className="font-semibold text-text-secondary">Holm–Bonferroni</span> correction across the family of
+            metric × perturbation × system tests.
           </p>
         </div>
       </button>
@@ -109,6 +142,7 @@ export function Perturbations({ systems, domain }: PerturbationsProps) {
                       metricLabel={m.label}
                       systems={systems}
                       domain={domain}
+                      yDomain={sharedYDomain}
                     />
                   </div>
                 )}
