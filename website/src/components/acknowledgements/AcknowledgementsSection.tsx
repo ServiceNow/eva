@@ -18,7 +18,7 @@ export function AcknowledgementsSection() {
         >
           <div className="rounded-xl border border-purple/30 bg-purple/5 p-6">
             <h3 className="text-base font-semibold text-purple-light mb-3">Core Contributors</h3>
-            <p className="text-sm font-semibold text-text-primary">Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz, Oluwanifemi Bamgbose, Hoang Nguyen, Raghav Mehndiratta, Hari Subramani</p>
+            <p className="text-sm font-semibold text-text-primary">Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz, Oluwanifemi Bamgbose, Fanny Riols, Hoang Nguyen, Raghav Mehndiratta, Lindsay Brin, Hari Subramani</p>
           </div>
         </motion.div>
 
@@ -32,7 +32,21 @@ export function AcknowledgementsSection() {
           <div className="rounded-xl border border-blue/30 bg-blue/5 p-6">
             <h3 className="text-base font-semibold text-blue-light mb-2">Secondary Contributors</h3>
             <p className="text-sm text-text-secondary mb-3">We thank the following individuals for their careful data review and thoughtful contributions to the framework.</p>
-            <p className="text-sm font-semibold text-text-primary">Lindsay Brin, Akshay Kalkunte, Joseph Marinier, Jishnu Nair, Aman Tiwari</p>
+            <p className="text-sm font-semibold text-text-primary">Akshay Kalkunte, Joseph Marinier, Jishnu Nair, Aman Tiwari</p>
+          </div>
+        </motion.div>
+
+        {/* Linguists */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+        >
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6">
+            <h3 className="text-base font-semibold text-emerald-400 mb-2">Linguists</h3>
+            <p className="text-sm text-text-secondary mb-3">We thank our linguist collaborators for their work creating high-quality scenarios, evaluations, and domain expertise.</p>
+            <p className="text-sm font-semibold text-text-primary">Tiffany Do, Ryan Dux, Maria Kossenko, Keerthana Gopinathan, Ann Heaton-Dunlap, Nidhi Kumari, Ranjani Iyer</p>
           </div>
         </motion.div>
 
@@ -47,10 +61,6 @@ export function AcknowledgementsSection() {
             <h3 className="text-base font-semibold text-amber mb-2">Management and Leadership</h3>
             <p className="text-sm text-text-secondary mb-4">We are grateful to the following individuals for their management, leadership, and support.</p>
             <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
-                <span className="text-sm font-semibold text-text-primary">Fanny Riols</span>
-                <span className="text-xs text-text-muted">Research Scientist Manager</span>
-              </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
                 <span className="text-sm font-semibold text-text-primary">Anil Madamala</span>
                 <span className="text-xs text-text-muted">Director, Machine Learning Engineering Management</span>
@@ -94,7 +104,8 @@ export function AcknowledgementsSection() {
   title={EVA: A New End-to-end Framework for Evaluating Voice Agents},
   author={Bogavelli, Tara and Gauthier Melançon, Gabrielle
           and Stankiewicz, Katrina and Bamgbose, Oluwanifemi
-          and Nguyen, Hoang and Mehndiratta, Raghav
+          and Riols, Fanny and Nguyen, Hoang
+          and Mehndiratta, Raghav and Brin, Lindsay
           and Subramani, Hari},
   year={2026},
   url={https://github.com/ServiceNow/eva}
