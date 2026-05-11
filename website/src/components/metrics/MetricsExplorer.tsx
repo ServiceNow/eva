@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { Section } from '../layout/Section';
 import { MetricNode } from './MetricNode';
-import { evaAMetrics, evaXMetrics, debugMetrics, validationMetrics } from '../../data/metricsData';
+import { evaAMetrics, evaXMetrics, debugMetrics, validationMetrics, humanJudgeAgreement } from '../../data/metricsData';
 
 export function MetricsExplorer() {
   const [showDebug, setShowDebug] = useState(false);
@@ -167,6 +167,40 @@ export function MetricsExplorer() {
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <div className="w-3.5 h-3.5 rounded bg-amber/20 border border-amber/40" />
           Audio LLM Judge (LALM)
+        </div>
+      </div>
+
+      {/* Human-Judge Agreement */}
+      <div className="mt-10">
+        <div className="mb-4">
+          <h3 className="text-xl font-bold text-text-primary mb-2">Human–Judge Agreement</h3>
+          <p className="text-sm text-text-secondary leading-relaxed">
+            Agreement between our automated judges and human linguist annotators on held-out validation samples, as reported in the paper (Table 14). Quadratic-weighted Cohen's κ is used for the ordinal metrics; unweighted κ for the binary Speech Fidelity metric. Linguist–judge κ meets or exceeds the linguist–linguist agreement ceiling on every metric.
+          </p>
+        </div>
+        <div className="rounded-xl border border-border-default bg-bg-secondary overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-bg-tertiary">
+              <tr>
+                <th className="text-left px-4 py-2.5 text-text-secondary font-medium">Metric</th>
+                <th className="text-left px-4 py-2.5 text-text-secondary font-medium">Measure</th>
+                <th className="text-right px-4 py-2.5 text-text-secondary font-medium">Value</th>
+                <th className="text-left px-4 py-2.5 text-text-secondary font-medium">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {humanJudgeAgreement.map(row => (
+                <tr key={row.metricId} className="border-t border-border-default">
+                  <td className="px-4 py-2.5 text-text-primary">{row.metricLabel}</td>
+                  <td className="px-4 py-2.5 text-text-muted">{row.agreementLabel}</td>
+                  <td className="px-4 py-2.5 text-right font-mono text-text-primary">
+                    {row.agreement.toFixed(3)}{row.std !== undefined && <span className="text-text-muted"> ± {row.std.toFixed(3)}</span>}
+                  </td>
+                  <td className="px-4 py-2.5 text-text-muted">{row.notes ?? ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </Section>

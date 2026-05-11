@@ -1059,6 +1059,50 @@ Respond with a JSON object. Each turn entry must include the turn_id matching th
   },
 ];
 
+export interface HumanJudgeAgreementRow {
+  metricId: string;
+  metricLabel: string;
+  agreement: number;
+  agreementLabel: string;
+  std?: number;
+  notes?: string;
+}
+
+// Source: EVA-Bench paper, Table 14 ("Human–judge agreement"). Primary judge
+// (L_J) Cohen's κ vs. human linguist annotators. Quadratic-weighted κ for the
+// three ordinal metrics; unweighted κ for the binary Speech Fidelity metric.
+// 95% CIs come from 10,000 record-level bootstrap resamples.
+export const humanJudgeAgreement: HumanJudgeAgreementRow[] = [
+  {
+    metricId: 'faithfulness',
+    metricLabel: 'Faithfulness',
+    agreement: 0.836,
+    agreementLabel: "Cohen's κ",
+    notes: '95% CI [0.729, 0.915]; quadratic-weighted',
+  },
+  {
+    metricId: 'conversation_progression',
+    metricLabel: 'Conversation Progression',
+    agreement: 0.845,
+    agreementLabel: "Cohen's κ",
+    notes: '95% CI [0.753, 0.911]; quadratic-weighted',
+  },
+  {
+    metricId: 'conciseness',
+    metricLabel: 'Conciseness',
+    agreement: 0.823,
+    agreementLabel: "Cohen's κ",
+    notes: '95% CI [0.754, 0.874]; quadratic-weighted',
+  },
+  {
+    metricId: 'speech_fidelity',
+    metricLabel: 'Speech Fidelity',
+    agreement: 0.777,
+    agreementLabel: "Cohen's κ",
+    notes: '95% CI [0.704, 0.835]; unweighted (binary)',
+  },
+];
+
 export const evaAMetrics = metrics.filter(m => m.category === 'eva-a');
 export const evaXMetrics = metrics.filter(m => m.category === 'eva-x');
 export const debugMetrics = metrics.filter(m => m.category === 'debug');
