@@ -364,8 +364,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 input_transcription_context_filter = InputTranscriptionContextFilter()
                 input_transcription_processor = AudioTranscriptionProcessor(
                     audio_collector=audio_llm_audio_collector,
-                    model=self.pipeline_config.audio_llm_params.get("model"),
-                    params=self.pipeline_config.audio_llm_params,
+                    alm_client=alm_client,
                     sample_rate=SAMPLE_RATE,
                 )
 

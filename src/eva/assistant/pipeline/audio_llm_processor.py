@@ -17,15 +17,11 @@ Provides FrameProcessors for the audio-LLM pipeline:
 """
 
 import asyncio
-import base64
-import io
 import time
-import wave
 from collections.abc import Awaitable
 from pathlib import Path
 from typing import Any
 
-from openai import AsyncOpenAI
 from pipecat.frames.frames import (
     CancelFrame,
     EndFrame,
@@ -42,11 +38,10 @@ from pipecat.utils.time import time_now_iso8601
 
 from eva.assistant.agentic.audio_llm_system import AudioLLMAgenticSystem
 from eva.assistant.agentic.audit_log import AuditLog
-from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
+from eva.assistant.pipeline.alm_base import DEFAULT_TRANSCRIPTION_PROMPT, BaseALMClient
 from eva.assistant.pipeline.frames import LLMMessageFrame
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
-from eva.utils.llm_utils import _resolve_url
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -56,9 +51,6 @@ PIPELINE_SAMPLE_RATE = 24000
 
 # Minimum audio size to process (< 10ms of 24kHz 16-bit mono is noise/empty)
 MIN_AUDIO_BYTES = 320
-
-# Round-robin counter for load-balanced transcription URLs
-_transcription_url_counter: int = 0
 
 
 class AudioLLMUserAudioCollector(FrameProcessor):
@@ -174,7 +166,7 @@ class AudioLLMProcessor(FrameProcessor):
         agent: AgentConfig,
         tool_handler: ToolExecutor,
         audit_log: AuditLog,
-        alm_client: ALMvLLMClient,
+        alm_client: BaseALMClient,
         audio_collector: AudioLLMUserAudioCollector,
         output_dir: Path | None = None,
         **kwargs,
@@ -395,35 +387,19 @@ class AudioTranscriptionProcessor(FrameProcessor):
     starts speaking again (interruption). This ensures transcriptions are not lost.
     """
 
-    # Default system prompt for transcription
-    DEFAULT_SYSTEM_PROMPT = """You are an audio transcriber. Your job is to transcribe the input audio to text exactly as it was said by the user.
-
-Rules:
-- Respond with an exact transcription of the audio input only.
-- Do not include any text other than the transcription.
-- Do not explain or add to your response.
-- Transcribe the audio input simply and precisely.
-- If the audio is not clear, respond with exactly: UNCLEAR"""
-
     def __init__(
         self,
         audio_collector: AudioLLMUserAudioCollector,
-        model: str = "",
-        params: dict[str, Any] = None,
+        alm_client: BaseALMClient,
         system_prompt: str | None = None,
         sample_rate: int = PIPELINE_SAMPLE_RATE,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._audio_collector = audio_collector
-        params = params or {}
-        self._api_key = params["api_key"]
-        self._model = model
-        self._system_prompt = system_prompt or self.DEFAULT_SYSTEM_PROMPT
+        self._alm_client = alm_client
+        self._system_prompt = system_prompt or DEFAULT_TRANSCRIPTION_PROMPT
         self._sample_rate = sample_rate
-        global _transcription_url_counter
-        base_url, _transcription_url_counter = _resolve_url(params, _transcription_url_counter)
-        self._client: AsyncOpenAI = AsyncOpenAI(api_key=self._api_key, base_url=base_url)
 
         # Callback for when transcription is ready (set by pipecat_server.py)
         self.on_transcription: Any | None = None
@@ -499,47 +475,21 @@ Rules:
                 logger.info("No/insufficient audio data for transcription")
                 return None
 
-            # Convert raw PCM to WAV and encode as base64
-            wav_buffer = io.BytesIO()
-            with wave.open(wav_buffer, "wb") as wav_file:
-                wav_file.setnchannels(1)  # Mono
-                wav_file.setsampwidth(2)  # 16-bit
-                wav_file.setframerate(self._sample_rate)
-                wav_file.writeframes(audio_data)
-            wav_buffer.seek(0)
-            audio_b64 = base64.b64encode(wav_buffer.read()).decode("utf-8")
-
-            # Call chat completions with audio input
             start_time = time.time()
-            response = await self._client.chat.completions.create(
-                model=self._model,
-                messages=[
-                    {"role": "system", "content": self._system_prompt},
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "input_audio",
-                                "input_audio": {
-                                    "data": audio_b64,
-                                    "format": "wav",
-                                },
-                            },
-                        ],
-                    },
-                ],
-                extra_body={
-                    "chat_template_kwargs": {
-                        "enable_thinking": False,
-                    }
-                },
+            text = await self._alm_client.transcribe(
+                audio_bytes=audio_data,
+                source_sample_rate=self._sample_rate,
+                system_prompt=self._system_prompt,
             )
             elapsed = time.time() - start_time
-            text = response.choices[0].message.content.strip() if response.choices else "EMPTY"
-            logger.info(f"Transcription from {self._model}: {text}")
+
+            if not text:
+                logger.info(f"Empty transcription (turn_id={turn_id})")
+                return None
+
+            logger.info(f"Transcription from {self._alm_client.model}: {text}")
             logger.debug(f"Elapsed time: {elapsed:.2f}s")
 
-            # Call the callback if set (for transcript saving and audit log update)
             if self.on_transcription and text != "EMPTY":
                 await self.on_transcription(text, timestamp, turn_id)
 
