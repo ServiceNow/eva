@@ -36,7 +36,7 @@ export const diagnosticMetricKeys = [
 
 export const accuracyMetricLabels: Record<string, string> = {
   task_completion: 'Task Completion',
-  agent_tts_fidelity: 'Agent Speech Fidelity',
+  agent_tts_fidelity: 'Speech Fidelity',
   faithfulness: 'Faithfulness',
 };
 
