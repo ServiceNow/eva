@@ -6,9 +6,9 @@ export const DOMAINS: Domain[] = ['airline', 'itsm', 'medical_hr'];
 
 export const domainLabels: Record<DomainOrPooled, string> = {
   pooled: 'Pooled',
-  airline: 'Airline',
+  airline: 'CSM',
   itsm: 'ITSM',
-  medical_hr: 'Medical HR',
+  medical_hr: 'HR',
 };
 
 export interface CIPoint {

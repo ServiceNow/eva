@@ -4,12 +4,12 @@ import { Github, ExternalLink, Database, Plane, Wrench, Stethoscope } from 'luci
 const DOMAINS = [
   {
     id: 'airline',
-    label: 'Airline',
+    label: 'CSM',
     icon: Plane,
-    blurb: 'Passengers calling to rebook disrupted flights — IRROPS rebooking, voluntary changes, cancellations, and vouchers.',
+    blurb: 'Customers calling a customer-service line to rebook disrupted flights — IRROPS rebooking, voluntary changes, cancellations, and vouchers.',
     tools: 15,
     scenarios: 50,
-    conversations: 150,
+    conversations: 250,
   },
   {
     id: 'itsm',
@@ -18,16 +18,16 @@ const DOMAINS = [
     blurb: 'Employees calling IT support to resolve enterprise IT and service-management issues.',
     tools: 59,
     scenarios: 80,
-    conversations: 240,
+    conversations: 400,
   },
   {
     id: 'medical-hr',
-    label: 'Medical HR',
+    label: 'HR',
     icon: Stethoscope,
     blurb: 'Healthcare workers calling HR for benefits, scheduling, leave, and policy questions.',
     tools: 47,
     scenarios: 83,
-    conversations: 249,
+    conversations: 415,
   },
 ];
 
