@@ -141,9 +141,12 @@ export function PerturbationBarChart({ metric, metricLabel, systems, domain, yDo
               <YAxis
                 stroke={colors.text.muted}
                 tick={{ fill: colors.text.secondary, fontSize: 11 }}
-                domain={yDomain ?? ['auto', 'auto']}
-                allowDataOverflow={!!yDomain}
-                label={{ value: 'Δ vs clean', angle: -90, position: 'insideLeft', fill: colors.text.secondary, style: { fontSize: 12 } }}
+                domain={[-0.5, 0.5]}
+                ticks={[-0.5, -0.25, 0, 0.25, 0.5]}
+                tickFormatter={(v: number) => v.toFixed(2)}
+                allowDataOverflow
+                width={56}
+                label={{ value: 'Δ vs clean', angle: -90, position: 'insideLeft', offset: 0, fill: colors.text.secondary, style: { fontSize: 12 } }}
               />
               <ReferenceLine y={0} stroke={colors.text.muted} />
               {separators.map((sepName) => (

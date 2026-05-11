@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
-import { perturbations, perturbationLabels, getPertValue } from '../../data/leaderboardData';
+import { perturbations, perturbationLabels } from '../../data/leaderboardData';
 import { PerturbationBarChart } from './PerturbationBarChart';
 import { useThemeColors } from '../../styles/theme';
 
@@ -37,34 +37,6 @@ export function Perturbations({ systems, domain }: PerturbationsProps) {
   const colors = useThemeColors();
   const [sectionOpen, setSectionOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-
-  // Compute a shared y-axis domain across all metric × perturbation × system bars
-  // (including CI lower/upper bounds) so the 9 metric charts are visually comparable.
-  const sharedYDomain = useMemo<[number, number]>(() => {
-    let lo = Infinity;
-    let hi = -Infinity;
-    for (const s of systems) {
-      for (const m of METRICS) {
-        for (const p of perturbations) {
-          const v = getPertValue(s, m.key, p, domain);
-          if (!v) continue;
-          if (Number.isFinite(v.ci_lower)) lo = Math.min(lo, v.ci_lower);
-          if (Number.isFinite(v.ci_upper)) hi = Math.max(hi, v.ci_upper);
-          if (Number.isFinite(v.point)) {
-            lo = Math.min(lo, v.point);
-            hi = Math.max(hi, v.point);
-          }
-        }
-      }
-    }
-    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [-1, 1];
-    // Always include zero so the reference line is visible.
-    lo = Math.min(lo, 0);
-    hi = Math.max(hi, 0);
-    const span = hi - lo || 1;
-    const pad = span * 0.05;
-    return [lo - pad, hi + pad];
-  }, [systems, domain]);
 
   const toggleMetric = (key: string) => {
     setExpanded((prev) => {
@@ -142,7 +114,6 @@ export function Perturbations({ systems, domain }: PerturbationsProps) {
                       metricLabel={m.label}
                       systems={systems}
                       domain={domain}
-                      yDomain={sharedYDomain}
                     />
                   </div>
                 )}
