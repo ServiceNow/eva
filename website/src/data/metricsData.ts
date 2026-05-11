@@ -347,10 +347,10 @@ Respond in JSON format:
     badge: 'beta',
     category: 'eva-x',
     type: 'deterministic',
-    description: 'A timestamp-based metric measuring whether the agent spoke at the right time \u2014 neither interrupting the user nor introducing disruptive silence. Each turn is first classified by its interrupt condition and routed to a semantically appropriate scoring function: agent-interrupted turns are penalized on overlap duration, distinct overlap segment count, and post-interrupt recovery latency (each sub-score capped at 0.5, with the minimum taken); user-interrupted turns are scored on how promptly the agent yields (linear penalty up to a 2,000 ms cap); and uninterrupted turns are scored against a piecewise-linear latency curve with a hard-zero before -500 ms, a linear ramp up to a 500\u20132,000 ms sweet spot, and a linear ramp down to a hard-zero at 3,500 ms. The curve is tool-call-aware: turns that issued a tool call before responding receive more lenient upper breakpoints (sweet-high 3,000 ms, hard-late 5,000 ms) so that tool-execution overhead is not conflated with conversational responsiveness. The per-record score is the mean of per-turn scores in [0, 1].',
+    description: 'A timestamp-based metric measuring whether the agent took the floor at the right time \u2014 not interrupting the user, not letting silence linger. Each turn is classified by its interrupt condition and routed to a scoring function: agent-interrupted turns are penalized on overlap and recovery latency, user-interrupted turns on yield speed, and uninterrupted turns against a piecewise-linear latency curve that is more lenient when the agent first issued a tool call. The per-record score is the mean of per-turn scores in [0, 1]; see the development doc for exact breakpoints.',
     inputs: 'Per-turn event timestamps and latencies from the simulation logs: audio start/end markers for both speakers, agent tool-call boundaries, and per-turn interrupt classification',
     outputRange: 'Continuous score in [0, 1], aggregated as the mean of per-turn scores',
-    passThreshold: '≥ 0.80 (Appendix E.5.3: a record-level threshold of 0.8 corresponds to roughly 4 of 5 turns on-time)',
+    passThreshold: '≥ 0.80 (≈ 4 of 5 turns on-time)',
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/turn_taking_development.md',
   },
   {
