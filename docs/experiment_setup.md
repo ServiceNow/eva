@@ -56,15 +56,15 @@ The table below lists all the other API-hosted models.
 |---------------------------------------------|-------------|------|-----------------------------|
 | gpt-5.4                                     | OpenAI      | LLM  | reasoning: default          |
 | gpt-5.4-mini                                | OpenAI      | LLM  | reasoning: default          |
-| gpt-realtime-2.0                            | OpenAI      | S2S  | reasoning: default          |
-| gpt-realtime-1.5                            | OpenAI      | S2S  | --                          |
-| gpt-realtime-mini                           | OpenAI      | S2S  | --                          |
-| gemini-3.1-flash-live-preview               | Google      | LALM | voice: provider default     |
+| gpt-realtime-2.0                            | OpenAI      | S2S  | reasoning: default; voice: Marin          |
+| gpt-realtime-1.5                            | OpenAI      | S2S  | voice: Marin                         |
+| gpt-realtime-mini                           | OpenAI      | S2S  | voice: Marin                         |
+| gemini-3.1-flash-live-preview               | Google      | LALM | voice: Leda     |
 | gemini-3.1-flash-tts-preview                | Google      | TTS  | voice: provider default     |
 | us.anthropic.claude-haiku-4-5-20251001-v1:0 | AWS Bedrock | LLM  | --                          |
 | Ultravox-realtime                           | Ultravox    | LALM | --                          |
 | ink-whisper                                 | Cartesia    | STT  | --                          |
-| sonic-3                                     | Cartesia    | TTS  | --                          |
+| sonic-3                                     | Cartesia    | TTS  | voice:  Katie - Friendly Fixer  |
 | nova-3                                      | Deepgram    | STT  | --                          |
 | aura-2-helena-en                            | Deepgram    | TTS  | voice: helena; language: en |
 
