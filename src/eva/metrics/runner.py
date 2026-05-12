@@ -19,6 +19,7 @@ from eva.metrics.utils import direction_for_sub_metric
 from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
+from eva.models.versioning import _CURRENT_METRIC_VERSION
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import get_logger
 from eva.utils.pass_at_k import (
@@ -448,6 +449,9 @@ class MetricsRunner:
         # Create tasks for all metrics
         async def compute_metric(metric: BaseMetric) -> tuple[str, MetricScore]:
             """Compute a single metric and handle errors."""
+            # Each gather() task gets its own contextvar snapshot, so this set is
+            # isolated from sibling/parent tasks — no reset needed.
+            _CURRENT_METRIC_VERSION.set(metric.version)
             try:
                 logger.info(f"[{record_id}] Starting metric: {metric.name}")
                 score = await metric.compute(context)

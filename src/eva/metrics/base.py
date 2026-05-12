@@ -24,6 +24,7 @@ from eva.metrics.utils import (
 )
 from eva.models.config import PipelineType
 from eva.models.results import MetricScore
+from eva.models.versioning import _CURRENT_PROMPT_HASH, hash_prompt_template
 from eva.utils.llm_client import LLMClient
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import get_prompt_manager
@@ -163,6 +164,9 @@ class BaseMetric(ABC):
     pass_at_k_threshold: float = 0.5  # Normalized score threshold for pass@k pass/fail
     exclude_from_pass_at_k: bool = False  # Set True for metrics not suitable for pass@k
     supported_pipeline_types: frozenset[PipelineType] = frozenset(PipelineType)  # Pipeline types this metric supports
+    # Bump on intentional logic changes; MetricsRunner stamps this onto every MetricScore
+    # produced by compute(). Required on all concrete subclasses — drift test enforces.
+    version: str | None = None
     # Direction of the displayed value (normalized_score if present, else score).
     # Override to False for lower-is-better parent metrics (e.g. latency). Sub-metric
     # direction is derived from the key suffix (see eva.metrics.utils.direction_for_sub_metric).
@@ -179,8 +183,13 @@ class BaseMetric(ABC):
         self.prompt_manager = get_prompt_manager()
 
     def get_judge_prompt(self, prompt_key: str = "user_prompt", **variables) -> str:
-        """Get judge prompt using PromptManager."""
+        """Get judge prompt using PromptManager.
+
+        Stamps the unrendered template's sha256[:12] into the prompt-hash contextvar so
+        any MetricScore built afterwards in the same compute() picks it up automatically.
+        """
         prompt_path = f"judge.{self.name}.{prompt_key}"
+        _CURRENT_PROMPT_HASH.set(hash_prompt_template(self.prompt_manager.get_template(prompt_path)))
         return self.prompt_manager.get_prompt(prompt_path, **variables)
 
     @abstractmethod

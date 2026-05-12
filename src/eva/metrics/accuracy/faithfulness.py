@@ -54,6 +54,7 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
     """
 
     name = "faithfulness"
+    version = "v0.1"
     description = (
         "LLM judge evaluation of whether the assistant remains faithful to information, policies, and instructions"
     )

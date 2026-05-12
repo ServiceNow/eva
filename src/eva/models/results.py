@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+from eva.models.versioning import _CURRENT_METRIC_VERSION, _CURRENT_PROMPT_HASH
 
 
 class ErrorDetails(BaseModel):
@@ -99,9 +101,24 @@ class MetricScore(BaseModel):
         description="Metric implementation version (set by the metric class) for tracking which "
         "computation logic produced this score across partial reruns",
     )
+    prompt_hash: str | None = Field(
+        None,
+        description="sha256[:12] of the unrendered judge prompt template; None for non-judge metrics. "
+        "Lets us detect prompt edits without relying on the metric author to bump `version`.",
+    )
     sub_metrics: dict[str, "MetricScore"] | None = Field(
         None, description="Optional sub-metric breakdowns, aggregated generically by the runner"
     )
+
+    @model_validator(mode="after")
+    def _auto_stamp_version_and_hash(self) -> "MetricScore":
+        # Only fill if unset, so deserialization from disk preserves historical values
+        # and explicit kwargs (e.g., tests) always win.
+        if self.version is None:
+            self.version = _CURRENT_METRIC_VERSION.get()
+        if self.prompt_hash is None:
+            self.prompt_hash = _CURRENT_PROMPT_HASH.get()
+        return self
 
 
 class PassAtKResult(BaseModel):

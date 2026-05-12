@@ -81,6 +81,24 @@ class PromptManager:
         for yaml_file in yaml_files:
             self._load_single_file(yaml_file)
 
+    def get_template(self, path: str) -> str:
+        """Return the unrendered prompt template at `path` (no variable substitution).
+
+        Used for hashing prompt templates so we can detect prompt edits across
+        runs without the per-record variable substitutions changing the hash.
+        """
+        parts = path.split(".")
+        value = self.prompts
+        for part in parts:
+            if not isinstance(value, dict):
+                raise KeyError(f"Invalid prompt path: {path} (stopped at {part})")
+            if part not in value:
+                raise KeyError(f"Prompt not found: {path} (missing key: {part})")
+            value = value[part]
+        if not isinstance(value, str):
+            raise ValueError(f"Prompt at {path} is not a string: {type(value)}")
+        return value
+
     def get_prompt(self, path: str, **variables) -> str:
         """Get a prompt by its path and substitute variables.
 

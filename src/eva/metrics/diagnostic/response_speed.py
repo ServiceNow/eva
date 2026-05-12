@@ -60,6 +60,7 @@ class ResponseSpeedMetric(CodeMetric):
     description = "Diagnostic metric: latency between user utterance end and assistant response start"
     exclude_from_pass_at_k = True
     higher_is_better = False  # Score is latency in seconds — lower is better.
+    version = "v0.1"
 
     async def compute(self, context: MetricContext) -> MetricScore:
         try:

@@ -72,6 +72,7 @@ class STTWERMetric(CodeMetric):
     """
 
     name = "stt_wer"
+    version = "v0.1"
     description = "Debug metric: Speech-to-Text transcription accuracy using Word Error Rate"
     category = "diagnostic"
     exclude_from_pass_at_k = True

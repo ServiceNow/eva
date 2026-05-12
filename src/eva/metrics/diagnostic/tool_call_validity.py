@@ -39,6 +39,7 @@ class ToolCallValidity(CodeMetric):
     """
 
     name = "tool_call_validity"
+    version = "v0.1"
     description = "Debug metric: fraction of tool calls with correctly formatted parameters"
     category = "diagnostic"
     exclude_from_pass_at_k = True
