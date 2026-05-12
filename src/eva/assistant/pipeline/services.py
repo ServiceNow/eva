@@ -16,10 +16,9 @@ from pipecat.frames.frames import (
     TTSStoppedFrame,
 )
 from pipecat.services.assemblyai.stt import (
-    AssemblyAIConnectionParams,
     AssemblyAISTTService,
 )
-from pipecat.services.cartesia.stt import CartesiaLiveOptions, CartesiaSTTService
+from pipecat.services.cartesia.stt import CartesiaSTTService
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
 from pipecat.services.deepgram.stt import DeepgramSTTService
@@ -121,10 +120,10 @@ def create_stt_service(
         logger.info(f"Using AssemblyAI STT: {params['model']}")
         return AssemblyAISTTService(
             api_key=api_key,
-            language=language_code,
-            connection_params=AssemblyAIConnectionParams(
-                sample_rate=SAMPLE_RATE,
-                speech_model=params["model"],
+            sample_rate=SAMPLE_RATE,
+            settings=AssemblyAISTTService.Settings(
+                language=language_code,
+                model=params["model"],
             ),
         )
 
@@ -132,10 +131,10 @@ def create_stt_service(
         logger.info(f"Using Cartesia STT: {params['model']}")
         return CartesiaSTTService(
             api_key=api_key,
-            live_options=CartesiaLiveOptions(
+            sample_rate=SAMPLE_RATE,
+            settings=CartesiaSTTService.Settings(
                 model=params["model"],
                 language=language_code,
-                sample_rate=SAMPLE_RATE,
             ),
         )
 
@@ -144,8 +143,10 @@ def create_stt_service(
         return OpenAISTTService(
             api_key=api_key,
             base_url=url,
-            model=params["model"],
-            language=Language.EN,
+            settings=OpenAISTTService.Settings(
+                model=params["model"],
+                language=Language.EN,
+            ),
             sample_rate=SAMPLE_RATE,
         )
 
@@ -155,7 +156,9 @@ def create_stt_service(
             logger.info(f"Using Deepgram Flux STT: {params['model']}")
             return DeepgramFluxSTTService(
                 api_key=api_key,
-                model=params["model"],
+                settings=DeepgramFluxSTTService.Settings(
+                    model=params["model"],
+                ),
                 sample_rate=SAMPLE_RATE,
             )
         logger.info(f"Using Deepgram STT: {params['model']}")
@@ -174,7 +177,8 @@ def create_stt_service(
         return ElevenLabsRealtimeSTTService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
-            params=ElevenLabsRealtimeSTTService.InputParams(commit_strategy=CommitStrategy.VAD),
+            model=params["model"],
+            commit_strategy=CommitStrategy.VAD,
         )
 
     elif model_lower == "nvidia":
@@ -203,11 +207,14 @@ def create_stt_service(
 
     elif model_lower == "openai":
         logger.info(f"Using OpenAI STT: {params['model']}")
+        stt_settings = OpenAISTTService.Settings(
+            model=params["model"],
+            language=params.get("language", Language.EN),
+        )
         stt_service = OpenAISTTService(
             api_key=api_key,
             base_url=url,
-            model=params["model"],
-            language=Language.EN,
+            settings=stt_settings,
             sample_rate=SAMPLE_RATE,
         )
         if url and "azure" in url:
@@ -216,8 +223,6 @@ def create_stt_service(
                 api_key=api_key,
                 api_version=params.get("api_version", "2025-03-01-preview"),
             )
-        if params.get("language"):
-            stt_service._settings.language = params.get("language")
         return stt_service
 
     else:
@@ -262,9 +267,11 @@ def create_tts_service(
         return CartesiaTTSService(
             url=url or "wss://api.cartesia.ai/tts/websocket",
             api_key=api_key,
-            model=params["model"],
-            voice_id=params.get("voice_id", "f786b574-daa5-4673-aa0c-cbe3e8534c02"),
-            params=CartesiaTTSService.InputParams(language=language_code),
+            settings=CartesiaTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice_id", "f786b574-daa5-4673-aa0c-cbe3e8534c02"),
+                language=language_code,
+            ),
             sample_rate=SAMPLE_RATE,
         )
 
@@ -272,8 +279,11 @@ def create_tts_service(
         logger.info(f"Using Chatterbox TTS: {params['model']}")
         chatterbox_tts = OpenAITTSService(
             api_key=api_key,
-            model=params["model"],
-            voice=params.get("voice", "alloy"),
+            settings=OpenAITTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice", "alloy"),
+                language=language_code,
+            ),
             base_url=url,
         )
         chatterbox_tts._eva_extra_body = {
@@ -283,15 +293,15 @@ def create_tts_service(
             "streaming_buffer_size": 1,
         }
         OpenAITTSService.run_tts = override_run_tts
-        chatterbox_tts._settings.language = language_code
         return chatterbox_tts
 
     elif model_lower == "deepgram":
         logger.info(f"Using Deepgram TTS: {params['model']}")
         return DeepgramTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice=params.get("voice", "aura-2-helena-en"),
+            settings=DeepgramTTSService.Settings(
+                voice=params.get("voice", "aura-2-helena-en"),
+            ),
             sample_rate=SAMPLE_RATE,
         )
 
@@ -299,8 +309,10 @@ def create_tts_service(
         logger.info(f"Using ElevenLabs TTS: {params['model']}")
         return ElevenLabsTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice_id=params.get("voice_id", "hpp4J3VqNfWAUOO0d1Us"),
+            settings=ElevenLabsTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice_id", "hpp4J3VqNfWAUOO0d1Us"),
+            ),
             sample_rate=SAMPLE_RATE,
         )
 
@@ -315,8 +327,10 @@ def create_tts_service(
         # Supports gemini-2.5-flash-tts, gemini-3.1-flash-tts-preview, etc.
         return GeminiTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice_id=params.get("voice_id", params.get("voice_name", "Kore")),
+            settings=GeminiTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice_id", params.get("voice_name", "Kore")),
+            ),
             sample_rate=SAMPLE_RATE,
         )
 
@@ -324,8 +338,11 @@ def create_tts_service(
         logger.info(f"Using Kokoro TTS: {params['model']}")
         kokoro_tts = OpenAITTSService(
             api_key=api_key,
-            model=params["model"],
-            voice=params.get("voice", "alloy"),
+            settings=OpenAITTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice", "alloy"),
+                language=language_code,
+            ),
             base_url=url,
         )
         kokoro_tts._eva_extra_body = {
@@ -336,7 +353,6 @@ def create_tts_service(
             "streaming_buffer_size": 1,
         }
         OpenAITTSService.run_tts = override_run_tts
-        kokoro_tts._settings.language = language_code
         return kokoro_tts
 
     elif model_lower == "nvidia-baseten":
