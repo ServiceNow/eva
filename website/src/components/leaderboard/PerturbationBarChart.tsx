@@ -1,5 +1,5 @@
 import type React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, Customized } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, Customized, useXAxisScale, useYAxisScale } from 'recharts';
 import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
 import { getPertValue, perturbations, perturbationLabels, groupedSystems } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
@@ -82,6 +82,50 @@ function tierLabel(p: number | null | undefined): string {
   if (p < 0.01) return '**';
   if (p < 0.05) return '*';
   return '';
+}
+
+interface BandScale {
+  (v: string): number | undefined;
+  bandwidth?: () => number;
+}
+
+function StarsLayer({ data, amberColor }: { data: ChartRow[]; amberColor: string }) {
+  const xScale = useXAxisScale() as BandScale | undefined;
+  const yScale = useYAxisScale() as ((v: number) => number | undefined) | undefined;
+  if (!xScale || !yScale || typeof xScale.bandwidth !== 'function') return null;
+  const bandwidth = xScale.bandwidth();
+  const n = perturbations.length;
+  const elements: React.ReactElement[] = [];
+  data.forEach((row) => {
+    const bandStart = xScale(row.name as string);
+    if (bandStart == null) return;
+    perturbations.forEach((pert, i) => {
+      const label = row[`${pert}_sig_label`] as string | undefined;
+      if (!label) return;
+      const point = row[`${pert}_point`] as number | null | undefined;
+      const err = row[`${pert}_err`] as [number, number] | undefined;
+      if (point == null || !err) return;
+      const cx = bandStart + (bandwidth * (i + 0.5)) / n;
+      const isPos = point >= 0;
+      const yTip = isPos
+        ? (yScale(point + err[1]) ?? 0) - 6
+        : (yScale(point - err[0]) ?? 0) + 14;
+      elements.push(
+        <text
+          key={`sig-${row.name}-${pert}`}
+          x={cx}
+          y={yTip}
+          fill={amberColor}
+          fontSize={14}
+          fontWeight={700}
+          textAnchor="middle"
+        >
+          {label}
+        </text>,
+      );
+    });
+  });
+  return <g>{elements}</g>;
 }
 
 export function PerturbationBarChart({ metric, metricLabel, systems, domain }: PerturbationBarChartProps) {
@@ -208,55 +252,7 @@ export function PerturbationBarChart({ metric, metricLabel, systems, domain }: P
                   <ErrorBar dataKey={`${p}_err`} direction="y" width={4} strokeWidth={1} stroke={colors.text.muted} />
                 </Bar>
               ))}
-              <Customized
-                component={(props: unknown) => {
-                  const p = props as {
-                    xAxisMap?: Record<string, { scale?: { (v: string): number | undefined; bandwidth?: () => number } }>;
-                    yAxisMap?: Record<string, { scale?: (v: number) => number | undefined }>;
-                  };
-                  const xMap = p.xAxisMap;
-                  const yMap = p.yAxisMap;
-                  if (!xMap || !yMap) return null;
-                  const xAxis = Object.values(xMap)[0];
-                  const yAxis = Object.values(yMap)[0];
-                  const xScale = xAxis?.scale;
-                  const yScale = yAxis?.scale;
-                  if (!xScale || typeof xScale.bandwidth !== 'function' || !yScale) return null;
-                  const bandwidth = xScale.bandwidth();
-                  const n = perturbations.length;
-                  const elements: React.ReactElement[] = [];
-                  data.forEach((row) => {
-                    const bandStart = xScale(row.name as string);
-                    if (bandStart == null) return;
-                    perturbations.forEach((pert, i) => {
-                      const label = row[`${pert}_sig_label`] as string | undefined;
-                      if (!label) return;
-                      const point = row[`${pert}_point`] as number | null | undefined;
-                      const err = row[`${pert}_err`] as [number, number] | undefined;
-                      if (point == null || !err) return;
-                      const cx = bandStart + (bandwidth * (i + 0.5)) / n;
-                      const isPos = point >= 0;
-                      const yTip = isPos
-                        ? (yScale(point + err[1]) ?? 0) - 6
-                        : (yScale(point - err[0]) ?? 0) + 14;
-                      elements.push(
-                        <text
-                          key={`sig-${row.name}-${pert}`}
-                          x={cx}
-                          y={yTip}
-                          fill={colors.accent.amber}
-                          fontSize={14}
-                          fontWeight={700}
-                          textAnchor="middle"
-                        >
-                          {label}
-                        </text>
-                      );
-                    });
-                  });
-                  return <g>{elements}</g>;
-                }}
-              />
+              <StarsLayer data={data} amberColor={colors.accent.amber} />
             </BarChart>
           </ResponsiveContainer>
         </div>
