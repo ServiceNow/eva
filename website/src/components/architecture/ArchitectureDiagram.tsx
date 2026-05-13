@@ -122,7 +122,7 @@ export function ArchitectureDiagram() {
 
           {/* AssistantServer */}
           <div>
-            <Node label="Voice Agent" sublabel="Pipecat, Gemini Live, OpenAI Realtime, or ElevenAgent" color="#8B5CF6" delay={0.3} />
+            <Node label="Voice Agent" sublabel="Pipecat, Gemini Live, OpenAI Realtime, or ElevenAgents" color="#8B5CF6" delay={0.3} />
             <div className="mt-4 space-y-2.5 pl-4">
               <div className="text-sm text-text-muted border-l-2 border-purple/30 pl-3 py-1">
                 <span className="text-purple-light font-medium">Cascade Pipeline</span> — STT + LLM + TTS
@@ -178,7 +178,7 @@ export function ArchitectureDiagram() {
 
           {/* AssistantServer */}
           <div className="w-full max-w-sm">
-            <Node label="Voice Agent" sublabel="Pipecat, Gemini Live, OpenAI Realtime, or ElevenAgent" color="#8B5CF6" delay={0.3} />
+            <Node label="Voice Agent" sublabel="Pipecat, Gemini Live, OpenAI Realtime, or ElevenAgents" color="#8B5CF6" delay={0.3} />
             <div className="mt-4 space-y-2.5 pl-4">
               <div className="text-sm text-text-muted border-l-2 border-purple/30 pl-3 py-1">
                 <span className="text-purple-light font-medium">Cascade Pipeline</span> — STT + LLM + TTS
