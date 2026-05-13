@@ -35,7 +35,7 @@ const METRICS: MetricSpec[] = [
 
 export function Perturbations({ systems, domain }: PerturbationsProps) {
   const colors = useThemeColors();
-  const [sectionOpen, setSectionOpen] = useState(false);
+  const [sectionOpen, setSectionOpen] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggleMetric = (key: string) => {

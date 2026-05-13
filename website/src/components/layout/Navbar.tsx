@@ -7,7 +7,7 @@ const tabs: { id: TabId; label: string }[] = [
   { id: 'intro', label: 'Intro' },
   { id: 'architecture', label: 'Architecture' },
   { id: 'metrics', label: 'Methodology' },
-  { id: 'early-results', label: 'Early Results' },
+  { id: 'results', label: 'Results' },
   { id: 'demo', label: 'Demo' },
   { id: 'limitations', label: 'Limitations & Future' },
   { id: 'acknowledgements', label: 'Contributors' },
