@@ -294,7 +294,7 @@ eva/
 │   ├── run_text_only.py       # Text-only evaluation runner
 │   ├── docker_entrypoint.py   # Docker entry point
 │   ├── check_version_bump.py  # Version checking
-│   └── push_to_hf.py         # Hugging Face push script
+│   └──  check_version_bump.py  # Version checking
 ├── configs/                   # Configuration files
 │   ├── prompts/               # Judge and simulation prompts
 │   │   ├── judge.yaml         # Judge metric prompts
