@@ -61,11 +61,11 @@ export function Perturbations({ systems, domain }: PerturbationsProps) {
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-text-primary">Perturbations</h3>
           <p className="text-sm text-text-muted mt-0.5">
-            For each domain we select <span className="font-semibold text-text-secondary">30 scenarios</span> and re-run
+            For each domain we select <span className="font-semibold text-text-secondary">30 scenarios</span> and run
             each system with <span className="font-semibold text-text-secondary">k = 3 trials per scenario</span> under
             accent, background-noise, and combined perturbations. Each bar shows the mean Δ vs. the same scenarios'
-            clean runs with bootstrapped 95% CIs. Significance markers (<span className="text-amber-400">*</span>)
-            indicate that the perturbation effect remains statistically significant after{' '}
+            clean runs; error bars show 95% bootstrap confidence intervals. Asterisks (<span className="text-amber-400">*</span>)
+            indicate that the perturbation effect is statistically significant after{' '}
             <span className="font-semibold text-text-secondary">Holm–Bonferroni</span> correction across the family of
             metric × perturbation × system tests.
           </p>

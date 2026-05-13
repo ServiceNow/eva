@@ -162,7 +162,7 @@ const plots: PlotConfig[] = [
   {
     title: 'pass@1',
     description: (<>
-      Average of per-sample scores, where each sample scores 1 if all metrics in category surpass metric-specific threshold, else 0.
+      Average of per-sample scores, where each sample scores 1 if all metrics in category surpass metric-specific threshold, else 0. Error bars (95% confidence intervals) reflect stochastic model behavior rather than measurement noise (see paper section 4.2).
     </>),
     subscript: 'pass@1',
     xMetric: 'EVA-A_pass',
@@ -172,7 +172,7 @@ const plots: PlotConfig[] = [
   {
     title: 'pass@k (k=5)',
     description: (<>
-      Percent of scenarios where at least 1 of k=5 trials surpasses metric-specific thresholds in all metrics in the category. .
+      Percent of scenarios where at least 1 of k=5 trials surpasses metric-specific thresholds in all metrics in the category. Error bars (95% confidence intervals) reflect stochastic model behavior rather than measurement noise (see paper section 4.2).
     </>),
     subscript: 'pass@k',
     xMetric: 'EVA-A_pass_at_k',
@@ -182,7 +182,7 @@ const plots: PlotConfig[] = [
   {
     title: 'pass^k (k=5)',
     description: (<>
-      Per-scenario probability of all k=5 trials succeeding (scenario pass rate raised to the k-th power) for that category, averaged across scenarios.
+      Per-scenario probability of all k=5 trials succeeding (scenario pass rate raised to the k-th power) for that category, averaged across scenarios. Error bars (95% confidence intervals) reflect stochastic model behavior rather than measurement noise (see paper section 4.2).
     </>),
     subscript: 'pass^k',
     xMetric: 'EVA-A_pass_power_k',
@@ -192,7 +192,7 @@ const plots: PlotConfig[] = [
   {
     title: 'Mean',
     description: (<>
-      Average of per-sample scores, where each sample's score is the mean of the submetrics in that category.
+      Average of per-sample scores, where each sample's score is the mean of the submetrics in that category. Error bars (95% confidence intervals) reflect stochastic model behavior rather than measurement noise (see paper section 4.2).
     </>),
     subscript: 'mean',
     xMetric: 'EVA-A_mean',
