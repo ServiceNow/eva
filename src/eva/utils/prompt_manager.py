@@ -84,19 +84,26 @@ class PromptManager:
     def get_template(self, path: str) -> str:
         """Return the unrendered prompt template at `path` (no variable substitution).
 
-        Used for hashing prompt templates so we can detect prompt edits across
+        Args:
+            path: Dot-separated path to the prompt (e.g., "orchestrator.system_prompt")
+
+        Used as is for hashing prompt templates so we can detect prompt edits across
         runs without the per-record variable substitutions changing the hash.
         """
+        # Navigate to the prompt using the dot-separated path
         parts = path.split(".")
         value = self.prompts
+
         for part in parts:
             if not isinstance(value, dict):
                 raise KeyError(f"Invalid prompt path: {path} (stopped at {part})")
             if part not in value:
                 raise KeyError(f"Prompt not found: {path} (missing key: {part})")
             value = value[part]
+
         if not isinstance(value, str):
             raise ValueError(f"Prompt at {path} is not a string: {type(value)}")
+
         return value
 
     def get_prompt(self, path: str, **variables) -> str:
@@ -113,19 +120,7 @@ class PromptManager:
             KeyError: If the prompt path is not found
             ValueError: If the prompt is not a string
         """
-        # Navigate to the prompt using the dot-separated path
-        parts = path.split(".")
-        value = self.prompts
-
-        for part in parts:
-            if not isinstance(value, dict):
-                raise KeyError(f"Invalid prompt path: {path} (stopped at {part})")
-            if part not in value:
-                raise KeyError(f"Prompt not found: {path} (missing key: {part})")
-            value = value[part]
-
-        if not isinstance(value, str):
-            raise ValueError(f"Prompt at {path} is not a string: {type(value)}")
+        value = self.get_template(path)
 
         # Substitute variables using str.format()
         # Auto-inject global variables from the _shared section (prompt-level vars take precedence)
