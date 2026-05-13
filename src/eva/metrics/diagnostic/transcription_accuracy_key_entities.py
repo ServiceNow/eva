@@ -48,6 +48,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     """
 
     name = "transcription_accuracy_key_entities"
+    version = "v0.1"
     description = "Debug metric: LLM judge evaluation of STT key entity transcription accuracy for entire conversation"
     category = "diagnostic"
     exclude_from_pass_at_k = True

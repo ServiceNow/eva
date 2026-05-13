@@ -15,9 +15,22 @@ repos:
       - id: end-of-file-fixer
   - repo: local
     hooks:
+      - id: regen-metric-signatures
+        name: Regenerate metric signatures
+        entry: uv run python scripts/regen_metric_signatures.py
+        language: system
+        pass_filenames: false
+        files: |-
+          (?x:
+            ^configs/prompts/judge\.yaml$
+            |
+            ^scripts/regen_metric_signatures\.py$
+            |
+            ^src/eva/metrics/
+          )
       - id: check-version-bump
         name: Check simulation/metrics version bump
-        entry: python3 scripts/check_version_bump.py
+        entry: uv run python scripts/check_version_bump.py
         language: system
         pass_filenames: false
         always_run: true
