@@ -39,7 +39,10 @@ export function Hero() {
           >
             EVA-Bench
           </h1>
-          <p className="text-xl sm:text-2xl lg:text-[1.75rem] font-semibold text-text-secondary max-w-3xl mx-auto mb-4 leading-tight">
+          <p
+            className="text-xl sm:text-2xl lg:text-[1.75rem] font-semibold max-w-3xl mx-auto mb-4 leading-tight bg-clip-text text-transparent"
+            style={{ backgroundImage: 'linear-gradient(to right, #7C3AED, #818CF8, #60A5FA)' }}
+          >
             A New End-to-end Framework for Evaluating Voice Agents
           </p>
           <p className="text-sm sm:text-base font-bold text-[#A78BFA] max-w-3xl mx-auto mb-2.5">
