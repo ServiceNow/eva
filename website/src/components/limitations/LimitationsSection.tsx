@@ -67,8 +67,8 @@ const futurePlans = [
     category: 'Simulation',
     items: [
       {
-        title: 'Expand Data and Domain Scope',
-        description: 'Compound requests, multi-step follow-ups, and scenarios requiring longer conversational memory. New voice agent domains with distinct policy structures, entity types, and conversational dynamics.',
+        title: 'Expand to Multilingual',
+        description: 'Extend the existing CSM, ITSM, and HR domains beyond English by translating scenarios, user goals, and policy text into additional languages — and pairing them with multilingual user-simulator voices — so voice agents can be evaluated across a wider range of speakers, accents, and language-specific failure modes.',
       },
     ],
   },
