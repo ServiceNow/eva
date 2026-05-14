@@ -47,6 +47,7 @@ from websockets.asyncio.client import connect as websocket_connect
 from eva.assistant.pipeline.alm_base import BaseALMClient
 from eva.assistant.pipeline.alm_gemini import ALMGeminiClient
 from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
+from eva.assistant.pipeline.magpie_tts import MagpieTTSService
 from eva.assistant.pipeline.nvidia_baseten import BasetenSTTService, BasetenTTSService
 from eva.assistant.pipeline.realtime_llm import InstrumentedRealtimeLLMService
 from eva.models.agents import AgentConfig
@@ -339,6 +340,18 @@ def create_tts_service(
         kokoro_tts._settings.language = language_code
         return kokoro_tts
 
+    elif model_lower == "magpie":
+        if not url:
+            raise ValueError("url required in TTS_PARAMS for Magpie TTS")
+        logger.info(f"Using Magpie TTS at {url}")
+        return MagpieTTSService(
+            base_url=url,
+            voice=params.get("voice", "Magpie-Multilingual.EN-US.Aria"),
+            language=params.get("language", "en-US"),
+            sample_rate=params.get("sample_rate", 24000),
+            streaming=params.get("streaming", True),
+        )
+
     elif model_lower == "nvidia-baseten":
         if not url:
             raise ValueError("url required in TTS_PARAMS for NVIDIA Baseten TTS")
@@ -403,7 +416,7 @@ def create_tts_service(
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, magpie, nvidia-baseten, openai, xtts"
         )
 
 
