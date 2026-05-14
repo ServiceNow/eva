@@ -44,7 +44,9 @@ DOMAINS = ["airline", "itsm", "medical_hr"]
 #   S2S: Gemini-3.1-Flash-Live; GPT-Realtime-1.5; GPT-Realtime-mini.
 SYSTEM_META = {
     "Ultravox":                                {"type": "2-part",  "stt": "-",                "llm": "Ultravox-Realtime", "tts": "-"},
+    "GPT Realtime":                            {"type": "s2s",     "stt": "-",                "llm": "gpt-realtime",      "tts": "-"},
     "GPT Realtime 1.5":                        {"type": "s2s",     "stt": "-",                "llm": "gpt-realtime-1.5",  "tts": "-"},
+    "GPT Realtime 2":                          {"type": "s2s",     "stt": "-",                "llm": "gpt-realtime-2",    "tts": "-"},
     "GPT Realtime Mini":                       {"type": "s2s",     "stt": "-",                "llm": "gpt-realtime-mini", "tts": "-"},
     "ElevenAgent":                             {"type": "cascade", "stt": "Scribe v2.2 Realtime", "llm": "Gemini 3 Flash", "tts": "TTS Conversational v3", "display_name": "Scribe v2.2 Realtime + Gemini 3 Flash + TTS Conversational v3 (ElevenAgents)"},
     "Gemini 3.1 Flash Live":                   {"type": "s2s",     "stt": "-",                "llm": "Gemini 3.1 Flash Live", "tts": "-"},
