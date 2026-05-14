@@ -33,7 +33,8 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
     max_empty_retries: int = 6
 
     # Silence trimming parameters — collapse long silences to reduce audio token cost.
-    silence_thresh_dbfs: int = -45
+    trim_silence: bool = True
+    silence_thresh_dbfs: int = -90
     min_silence_len_ms: int = 3000
     speech_padding_ms: int = 100
     inter_segment_pause_ms: int = 3000
@@ -57,7 +58,8 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     error=f"No {self.role} audio file available",
                 )
 
-            audio_segment = self._trim_silence(audio_segment, context)
+            if self.trim_silence:
+                audio_segment = self._trim_silence(audio_segment, context)
 
             intended_turns = self._get_intended_turns(context)
             num_turns = len(intended_turns)
@@ -127,6 +129,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                 "aggregation": self.aggregation,
                 "num_turns": num_turns,
                 "num_evaluated": len(valid_ratings),
+                "audio_trimmed": self.trim_silence,
                 "per_turn_ratings": per_turn_ratings,
                 "per_turn_explanations": per_turn_explanations,
                 "judge_prompt": prompt,

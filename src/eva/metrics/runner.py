@@ -16,6 +16,7 @@ from eva.metrics.legacy_aliases import rename_metric_keys
 from eva.metrics.processor import MetricsContextProcessor
 from eva.metrics.registry import MetricRegistry, get_global_registry
 from eva.metrics.utils import direction_for_sub_metric
+from eva.metrics.versioning import _CURRENT_METRIC_VERSION
 from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
@@ -361,11 +362,12 @@ class MetricsRunner:
         # Determine which metrics actually need computation
         requested_names = {m.name for m in self.metrics}
         if self._is_rerun_mode:
-            # Rerun mode: only recompute filter metrics that haven't already succeeded
+            # Rerun mode: only recompute filter metrics that haven't already succeeded.
             metrics_to_compute = {
                 name
                 for name in self.record_metric_filter[record_id]
-                if name in requested_names and (name not in existing_metrics or existing_metrics[name].error)
+                if name in requested_names
+                and (name not in existing_metrics or existing_metrics[name].error is not None)
             }
         else:
             # Normal mode: compute all requested if force_rerun, otherwise only missing
@@ -447,6 +449,9 @@ class MetricsRunner:
         # Create tasks for all metrics
         async def compute_metric(metric: BaseMetric) -> tuple[str, MetricScore]:
             """Compute a single metric and handle errors."""
+            # Each gather() task gets its own contextvar snapshot, so this set is
+            # isolated from sibling/parent tasks — no reset needed.
+            _CURRENT_METRIC_VERSION.set(metric.version)
             try:
                 logger.info(f"[{record_id}] Starting metric: {metric.name}")
                 score = await metric.compute(context)
@@ -456,11 +461,11 @@ class MetricsRunner:
                 )
                 return metric.name, score
             except Exception as e:
-                logger.error(f"[{record_id}] Metric {metric.name} failed: {e}")
+                logger.exception(f"[{record_id}] Metric {metric.name} failed")
                 return metric.name, MetricScore(
                     name=metric.name,
                     score=0.0,
-                    error=str(e),
+                    error=str(e) or repr(e),  # Memory Errors need repr(e)
                 )
 
         # Filter out metrics incompatible with the pipeline type

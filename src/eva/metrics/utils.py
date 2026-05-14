@@ -156,8 +156,8 @@ def load_audio_file(audio_path: Path) -> AudioSegment | None:
 
     try:
         return AudioSegment.from_file(str(audio_path))
-    except Exception as e:
-        logger.error(f"Failed to load audio file {audio_path}: {e}")
+    except Exception:
+        logger.exception(f"Failed to load audio file {audio_path}")
         return None
 
 

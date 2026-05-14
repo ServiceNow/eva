@@ -45,6 +45,7 @@ class AuthenticationSuccessMetric(CodeMetric):
     """
 
     name = "authentication_success"
+    version = "v0.1"
     description = "Checks if session state in final DB is a superset of expected session"
     category = "diagnostic"
     exclude_from_pass_at_k = True

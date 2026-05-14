@@ -205,40 +205,44 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             logger.info(f"Starting OpenAI Realtime session (model={self._model})")
             async with client.realtime.connect(model=self._model) as conn:
                 # Configure the session
-                await conn.session.update(
-                    session={
-                        "type": "realtime",
-                        "output_modalities": ["audio"],
-                        "instructions": self._system_prompt,
-                        "audio": {
-                            "output": {
-                                "voice": self.pipeline_config.s2s_params.get("voice", "marin"),
-                                "format": {"type": "audio/pcm", "rate": 24000},
+                session_config: dict[str, Any] = {
+                    "type": "realtime",
+                    "output_modalities": ["audio"],
+                    "instructions": self._system_prompt,
+                    "audio": {
+                        "output": {
+                            "voice": self.pipeline_config.s2s_params.get("voice", "marin"),
+                            "format": {"type": "audio/pcm", "rate": 24000},
+                        },
+                        "input": {
+                            "format": {"type": "audio/pcm", "rate": 24000},
+                            "turn_detection": {
+                                "type": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
+                                    "type", "server_vad"
+                                ),
+                                "threshold": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
+                                    "threshold", 0.5
+                                ),
+                                "prefix_padding_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
+                                    "prefix_padding_ms", 300
+                                ),
+                                "silence_duration_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
+                                    "silence_duration_ms", 200
+                                ),
                             },
-                            "input": {
-                                "format": {"type": "audio/pcm", "rate": 24000},
-                                "turn_detection": {
-                                    "type": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                        "type", "server_vad"
-                                    ),
-                                    "threshold": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                        "threshold", 0.5
-                                    ),
-                                    "prefix_padding_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                        "prefix_padding_ms", 300
-                                    ),
-                                    "silence_duration_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                        "silence_duration_ms", 200
-                                    ),
-                                },
-                                "transcription": {
-                                    "model": self.pipeline_config.s2s_params.get("transcription_model", "whisper-1")
-                                },
+                            "transcription": {
+                                "model": self.pipeline_config.s2s_params.get("transcription_model", "whisper-1")
                             },
                         },
-                        "tools": self._realtime_tools,
-                    }
-                )
+                    },
+                    "tools": self._realtime_tools,
+                }
+
+                reasoning_effort = self.pipeline_config.s2s_params.get("reasoning_effort")
+                if reasoning_effort:
+                    session_config["reasoning"] = {"effort": reasoning_effort}
+
+                await conn.session.update(session=session_config)
 
                 # Trigger the initial greeting
                 await conn.conversation.item.create(

@@ -248,17 +248,12 @@ See the [Metrics documentation](docs/metrics/README.md) for detailed scoring rub
 
 ## 🗂️ Dataset
 
-EVA includes **50 airline scenarios**, each specifying a user goal, persona, scenario database, and ground truth end state — making evaluations fully reproducible and directly comparable across agents and model versions. See the [Data documentation](docs/data.md) for a detailed breakdown of the data structure and scenario design, and the [Database & Tool Schema](docs/airline_database_tool_schema.md) for the airline scenario database format.
+We created three datasets on different enterprise domains, each selected to target a distinct axis of difficulty for voice agents. All three require accurate transcription of structured named entities over voice (e.g., confirmation codes and employee identifiers), but differ in their primary challenge. **Airline Customer Service Management (CSM)** tests temporal reasoning and complex policy adherence in high-stakes flight rebooking scenarios. **Healthcare Human Resources Service Delivery (HRSD)** stresses entity density, requiring callers to communicate multiple registration and license numbers across clinical and administrative HR workflows. **Enterprise Information Technology Service Management (ITSM)** introduces branching conversational flows (e.g., incident resolution attempts must fail before ticket escalation is permitted) and tiered authentication reflecting the access sensitivity of different workflows.
 
-Flight rebooking is a strong initial domain: it is high-stakes, time-pressured, and demands temporal reasoning, policy following, constraint satisfaction, and accurate transcription of named entities (confirmation codes, flight numbers, passenger names, dates).
+Within each domain, scenarios span three dimensions: **Single-Intent** (one workflow per call), **Multi-Intent** (one to four concurrent workflows, testing compositional task completion without context loss), and **Adversarial** (hard policy constraints under social pressure, e.g., refusing compensation to an ineligible caller).
 
-| Category | Description |
-|---|---|
-| ✈️ **IRROPS Rebooking** | Airline-initiated disruptions — user is entitled to rebooking at no cost |
-| 🔄 **Voluntary Changes** | User-initiated changes subject to fare differences and change fees |
-| 🔗 **Missed Connections** | Cascading disruptions across multiple legs |
-| ⏱️ **Same-Day Changes** | Time-sensitive standby and same-day change requests |
-| ⚠️ **Adversarial Scenarios** | Users seeking compensation they are not entitled to under policy |
+See the [Data documentation](docs/data.md) for a detailed breakdown of the data structure and scenario design, and the [Database & Tool Schema](docs/airline_database_tool_schema.md) for the airline scenario database format.
+
 
 ## Project Structure
 
@@ -299,7 +294,7 @@ eva/
 │   ├── run_text_only.py       # Text-only evaluation runner
 │   ├── docker_entrypoint.py   # Docker entry point
 │   ├── check_version_bump.py  # Version checking
-│   └── push_to_hf.py         # Hugging Face push script
+│   └──  check_version_bump.py  # Version checking
 ├── configs/                   # Configuration files
 │   ├── prompts/               # Judge and simulation prompts
 │   │   ├── judge.yaml         # Judge metric prompts
@@ -328,7 +323,3 @@ eva/
 ## Contributing
 
 We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request. For larger features, we recommend reaching out first to ensure alignment with our roadmap.
-
-## Limitations
-
-See [Limitations](docs/limitations.md) for known limitations of the framework and metrics.

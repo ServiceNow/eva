@@ -65,6 +65,7 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
     """
 
     name = "user_behavioral_fidelity"
+    version = "v0.1"
     description = "Validation metric for simulated user corruption detection"
     category = "validation"
     rating_scale = (0, 1)

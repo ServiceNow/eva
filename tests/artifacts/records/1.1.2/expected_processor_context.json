@@ -3,7 +3,7 @@
     "0": "Hello, how can I help you today?",
     "1": "Sure. First, I'll need to pull up your reservation. What's your six-character confirmation number and the last name on the booking?",
     "2": "Thanks, Rodriguez. I want to make sure I have the confirmation number exactly right. Could you please say the full code again, one character at a time? It should be six letters and numbers.",
-    "3": "I've pulled up Samantha Rodriguez. Confirmation code Zulu Kilo three Foxtrot Foxtrot Whiskey. You're confirmed on Skyway Flight Sierra Kilo six twenty-one on March twentieth with C twenty-two A. To move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer? Morning, afternoon, or evening?",
+    "3": "[assistant interrupts] I've pulled up Samantha Rodriguez. Confirmation code Zulu Kilo three Foxtrot Foxtrot Whiskey. You're confirmed on Skyway Flight Sierra Kilo six twenty-one on March twentieth with C twenty-two A. To move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer? Morning, afternoon, or evening?",
     "4": "For Wednesday, March twenty-fifth, Austin to Los Angeles, arriving by four PM Pacific, I have two good nonstop afternoon options. Option one is Skyway Flight Sierra Kilo seven thirty-nine. Departs one forty-five PM Austin time, arrives three PM Los Angeles time. Main cabin fare is three hundred forty dollars. Option two is Skyway Flight Sierra Kilo seven eighty-one. Departs two thirty-five PM Austin time, arrives three fifty-five PM Los Angeles time. Main cabin fare is five hundred twenty dollars. Since this is a voluntary change in main cabin, there's a seventy-five dollar change fee, plus any fare difference. Which option would you like me to book?",
     "5": "For your current main cabin ticket, you paid two hundred and sixty dollars for flight Sierra Kilo seven thirty-nine at one forty-five PM. The new fare is three hundred and forty dollars. That's an eighty dollar fare difference, plus the seventy-five dollar change fee. So the total to change is one hundred and fifty-five dollars. For flight Sierra Kilo seven eighty-one at two thirty-five PM, the new fare is five hundred and twenty dollars. That's a two hundred and sixty dollar fare difference, plus the seventy-five dollar change fee. So the total to change is three hundred and thirty-five dollars. Those totals are based on the current available fares right now. Which one should I switch you to?[background noise]",
     "6": "On March twenty-fifth, to keep your total change cost at one hundred twenty dollars or less. The only option I can see is an earlier non-stop. Skyway flight Sierra Kilo seven zero three. Departs eight fifteen AM Austin time, arrives nine twenty-five AM Los Angeles time. In main cabin, the fare is three hundred dollars, so your total to change would be one hundred fifteen dollars, which is the seventy-five dollar change, fee plus a forty dollar fare difference. Window seats are showing as available. If that morning arrival works for you, I can switch you to that flight and request a window seat. Do you want me to book it?",
@@ -25,15 +25,15 @@
   },
   "intended_assistant_turns": {
     "0": "Hello! How can I help you today?",
-    "1": "Sure. First, I\u2019ll need to pull up your reservation. What\u2019s your six-character confirmation number, and the last name on the booking?",
+    "1": "Sure. First, I’ll need to pull up your reservation. What’s your six-character confirmation number, and the last name on the booking?",
     "2": "Thanks, Rodriguez. I want to make sure I have the confirmation number exactly right. Could you please say the full code again, one character at a time? It should be six letters and numbers.",
-    "3": "Got it. I\u2019ve pulled up Samantha Rodriguez, confirmation code Zulu Kilo Three Foxtrot Foxtrot Whiskey. You\u2019re confirmed on SkyWay flight Sierra Kilo six twenty-one on March twentieth, with seat twenty-two A. To move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer, morning, afternoon, or evening?",
-    "4": "Perfect. For Wednesday, March twenty-fifth, Austin to Los Angeles, arriving by four PM Pacific, I have two good nonstop afternoon options. Option one is SkyWay flight Sierra Kilo seven thirty-nine. Departs one forty-five PM Austin time, arrives three PM Los Angeles time. Main Cabin fare is three hundred forty dollars. Option two is SkyWay flight Sierra Kilo seven eighty-one. Departs two thirty-five PM Austin time, arrives three fifty-five PM Los Angeles time. Main Cabin fare is five hundred twenty dollars. Since this is a voluntary change in Main Cabin, there\u2019s a seventy-five dollar change fee, plus any fare difference. Which option would you like me to book?",
-    "5": "For your current Main Cabin ticket, you paid two hundred sixty dollars. For flight Sierra Kilo seven thirty-nine at one forty-five PM, the new fare is three hundred forty dollars. That\u2019s an eighty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is one hundred fifty-five dollars. For flight Sierra Kilo seven eighty-one at two thirty-five PM, the new fare is five hundred twenty dollars. That\u2019s a two hundred sixty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is three hundred thirty-five dollars. Those totals are based on the current available fares right now. Which one should I switch you to?",
+    "3": "[assistant interrupts] Got it. I’ve pulled up Samantha Rodriguez, confirmation code Zulu Kilo Three Foxtrot Foxtrot Whiskey. You’re confirmed on SkyWay flight Sierra Kilo six twenty-one on March twentieth, with seat twenty-two A. To move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer, morning, afternoon, or evening?",
+    "4": "Perfect. For Wednesday, March twenty-fifth, Austin to Los Angeles, arriving by four PM Pacific, I have two good nonstop afternoon options. Option one is SkyWay flight Sierra Kilo seven thirty-nine. Departs one forty-five PM Austin time, arrives three PM Los Angeles time. Main Cabin fare is three hundred forty dollars. Option two is SkyWay flight Sierra Kilo seven eighty-one. Departs two thirty-five PM Austin time, arrives three fifty-five PM Los Angeles time. Main Cabin fare is five hundred twenty dollars. Since this is a voluntary change in Main Cabin, there’s a seventy-five dollar change fee, plus any fare difference. Which option would you like me to book?",
+    "5": "For your current Main Cabin ticket, you paid two hundred sixty dollars. For flight Sierra Kilo seven thirty-nine at one forty-five PM, the new fare is three hundred forty dollars. That’s an eighty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is one hundred fifty-five dollars. For flight Sierra Kilo seven eighty-one at two thirty-five PM, the new fare is five hundred twenty dollars. That’s a two hundred sixty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is three hundred thirty-five dollars. Those totals are based on the current available fares right now. Which one should I switch you to?",
     "6": "On March twenty-fifth, to keep your total change cost at one hundred twenty dollars or less, the only option I can see is an earlier nonstop: SkyWay flight Sierra Kilo seven zero three. Departs eight fifteen AM Austin time, arrives nine twenty-five AM Los Angeles time. In Main Cabin, the fare is three hundred dollars, so your total to change would be one hundred fifteen dollars, which is the seventy-five dollar change fee plus a forty dollar fare difference. Window seats are showing as available. If that morning arrival works for you, I can switch you to that flight and request a window seat. Do you want me to book it?",
     "7": "I can do that. The total to change to SkyWay flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth is one hundred fifteen dollars, which is the seventy-five dollar change fee plus a forty dollar fare difference. Do I have your okay to charge that one hundred fifteen dollars and rebook you now?",
     "8": "All set. I rebooked you to SkyWay flight Sierra Kilo seven zero three on Wednesday, March twenty-fifth, Austin to Los Angeles. It departs at eight fifteen AM Austin time and arrives at nine twenty-five AM Los Angeles time. I charged a total of one hundred fifteen dollars, made up of the seventy-five dollar change fee plus a forty dollar fare difference. And you now have a confirmed window seat, seat twenty-one A. Your confirmation number remains Zulu Kilo Three Foxtrot Foxtrot Whiskey.",
-    "9": "You\u2019re welcome. Yes, I can help. Right now you have seat twenty-one A, and no checked bags or special meal on the reservation. Do you want to add a checked bag, or request a special meal?"
+    "9": "You’re welcome. Yes, I can help. Right now you have seat twenty-one A, and no checked bags or special meal on the reservation. Do you want to add a checked bag, or request a special meal?"
   },
   "intended_user_turns": {
     "1": "Hi, I need to change my flight to March twenty fifth.",
@@ -1120,7 +1120,7 @@
     },
     {
       "role": "assistant",
-      "content": "Sure. First, I\u2019ll need to pull up your reservation.\n\nWhat\u2019s your six-character confirmation number, and the last name on the booking?",
+      "content": "Sure. First, I’ll need to pull up your reservation.\n\nWhat’s your six-character confirmation number, and the last name on the booking?",
       "type": "intended",
       "turn_id": 1
     },
@@ -1202,7 +1202,7 @@
     },
     {
       "role": "assistant",
-      "content": "Got it. I\u2019ve pulled up Samantha Rodriguez, confirmation code Zulu Kilo Three Foxtrot Foxtrot Whiskey. You\u2019re confirmed on SkyWay flight Sierra Kilo six twenty-one on March twentieth, with seat twenty-two A.\n\nTo move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer, morning, afternoon, or evening?",
+      "content": "[assistant interrupts] Got it. I’ve pulled up Samantha Rodriguez, confirmation code Zulu Kilo Three Foxtrot Foxtrot Whiskey. You’re confirmed on SkyWay flight Sierra Kilo six twenty-one on March twentieth, with seat twenty-two A.\n\nTo move you to March twenty-fifth, is your origin and destination staying the same as this current booking? And what time of day do you prefer, morning, afternoon, or evening?",
       "type": "intended",
       "turn_id": 3
     },
@@ -1594,7 +1594,7 @@
     },
     {
       "role": "assistant",
-      "content": "Perfect. For Wednesday, March twenty-fifth, Austin to Los Angeles, arriving by four PM Pacific, I have two good nonstop afternoon options.\n\nOption one is SkyWay flight Sierra Kilo seven thirty-nine. Departs one forty-five PM Austin time, arrives three PM Los Angeles time. Main Cabin fare is three hundred forty dollars.\n\nOption two is SkyWay flight Sierra Kilo seven eighty-one. Departs two thirty-five PM Austin time, arrives three fifty-five PM Los Angeles time. Main Cabin fare is five hundred twenty dollars.\n\nSince this is a voluntary change in Main Cabin, there\u2019s a seventy-five dollar change fee, plus any fare difference. Which option would you like me to book?",
+      "content": "Perfect. For Wednesday, March twenty-fifth, Austin to Los Angeles, arriving by four PM Pacific, I have two good nonstop afternoon options.\n\nOption one is SkyWay flight Sierra Kilo seven thirty-nine. Departs one forty-five PM Austin time, arrives three PM Los Angeles time. Main Cabin fare is three hundred forty dollars.\n\nOption two is SkyWay flight Sierra Kilo seven eighty-one. Departs two thirty-five PM Austin time, arrives three fifty-five PM Los Angeles time. Main Cabin fare is five hundred twenty dollars.\n\nSince this is a voluntary change in Main Cabin, there’s a seventy-five dollar change fee, plus any fare difference. Which option would you like me to book?",
       "type": "intended",
       "turn_id": 4
     },
@@ -1606,7 +1606,7 @@
     },
     {
       "role": "assistant",
-      "content": "For your current Main Cabin ticket, you paid two hundred sixty dollars.\n\nFor flight Sierra Kilo seven thirty-nine at one forty-five PM, the new fare is three hundred forty dollars. That\u2019s an eighty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is one hundred fifty-five dollars.\n\nFor flight Sierra Kilo seven eighty-one at two thirty-five PM, the new fare is five hundred twenty dollars. That\u2019s a two hundred sixty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is three hundred thirty-five dollars.\n\nThose totals are based on the current available fares right now. Which one should I switch you to?",
+      "content": "For your current Main Cabin ticket, you paid two hundred sixty dollars.\n\nFor flight Sierra Kilo seven thirty-nine at one forty-five PM, the new fare is three hundred forty dollars. That’s an eighty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is one hundred fifty-five dollars.\n\nFor flight Sierra Kilo seven eighty-one at two thirty-five PM, the new fare is five hundred twenty dollars. That’s a two hundred sixty dollar fare difference, plus the seventy-five dollar change fee, so the total to change is three hundred thirty-five dollars.\n\nThose totals are based on the current available fares right now. Which one should I switch you to?",
       "type": "intended",
       "turn_id": 5
     },
@@ -2156,7 +2156,7 @@
     },
     {
       "role": "assistant",
-      "content": "You\u2019re welcome. Yes, I can help.\n\nRight now you have seat twenty-one A, and no checked bags or special meal on the reservation. Do you want to add a checked bag, or request a special meal?",
+      "content": "You’re welcome. Yes, I can help.\n\nRight now you have seat twenty-one A, and no checked bags or special meal on the reservation. Do you want to add a checked bag, or request a special meal?",
       "type": "intended",
       "turn_id": 9
     },
@@ -2169,7 +2169,9 @@
   ],
   "conversation_ended_reason": "goodbye",
   "is_audio_native": false,
-  "assistant_interrupted_turns": [],
+  "assistant_interrupted_turns": [
+    3
+  ],
   "user_interrupted_turns": [],
   "latency_assistant_turns": {
     "1": 1.966091,
