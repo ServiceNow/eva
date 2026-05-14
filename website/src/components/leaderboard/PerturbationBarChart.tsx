@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, Customized, LabelList, useXAxisScale, useYAxisScale } from 'recharts';
-import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
+import type { SystemStats } from '../../data/leaderboardData';
 import { getPertValue, perturbations, perturbationLabels, groupedSystems } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
 
@@ -7,7 +7,6 @@ interface PerturbationBarChartProps {
   metric: string;
   metricLabel: string;
   systems: SystemStats[];
-  domain: DomainOrPooled;
 }
 
 interface ChartRow {
@@ -134,34 +133,47 @@ function SeparatorsLayer({
   );
 }
 
-/** Renders a single significance marker above a bar+CI structure. Uses the
- *  YAxis scale hook so the y position is exact regardless of chart layout. */
+/** Renders a single significance marker just outside a bar+CI structure in
+ *  the bar's direction (above for positive deltas, below for negative). Font
+ *  size scales with bar width so "***" always fits. */
 function StarMark({
   vb,
   label,
-  upperValue,
+  point,
+  ciLower,
+  ciUpper,
   amberColor,
 }: {
   vb: { x: number; width: number };
   label: string;
-  upperValue: number;
+  point: number;
+  ciLower: number;
+  ciUpper: number;
   amberColor: string;
 }) {
   const yScale = useYAxisScale() as ((v: number) => number | undefined) | undefined;
   if (!yScale) return null;
-  // Position the star above the higher of (upper CI cap, zero line).
-  // For deeply-negative bars whose entire CI sits below zero, this clamps
-  // the star to the zero line so it stays well above the x-axis instead of
-  // drifting to the bottom of the plot.
-  const target = Math.max(0, upperValue);
-  const ySc = yScale(target);
-  if (ySc == null) return null;
+  // "***" width ≈ 3 chars × 0.6 × fontSize. Solve for fontSize that fits vb.width.
+  const fontSize = Math.max(7, Math.min(13, Math.floor(vb.width / (3 * 0.6))));
+  const clearance = 5;
+  const above = point >= 0;
+  const capPx = yScale(above ? ciUpper : ciLower);
+  if (capPx == null) return null;
+  // SVG text y is the baseline. For above-bar placement, baseline sits just
+  // above the cap so the glyphs hover over the cap; for below-bar placement,
+  // baseline sits one fontSize below the cap so the glyphs hover under it.
+  let y = above ? capPx - clearance : capPx + clearance + fontSize;
+  // Clamp inside the plot area in case the cap is outside the visible domain.
+  const topPx = yScale(0.5);
+  const bottomPx = yScale(-0.5);
+  if (topPx != null) y = Math.max(y, topPx + fontSize);
+  if (bottomPx != null) y = Math.min(y, bottomPx - 2);
   return (
     <text
       x={vb.x + vb.width / 2}
-      y={ySc - 14}
+      y={y}
       fill={amberColor}
-      fontSize={14}
+      fontSize={fontSize}
       fontWeight={700}
       textAnchor="middle"
     >
@@ -170,18 +182,19 @@ function StarMark({
   );
 }
 
-export function PerturbationBarChart({ metric, metricLabel, systems, domain }: PerturbationBarChartProps) {
+export function PerturbationBarChart({ metric, metricLabel, systems }: PerturbationBarChartProps) {
   const colors = useThemeColors();
 
   // Order systems by architecture group: S2S → Hybrid (2-part) → Cascade.
   const ordered = groupedSystems(systems);
 
-  // Build data rows: one per system that has any perturbation data for this metric.
+  // Perturbation results are always shown pooled across domains; the domain
+  // pills at the top of the leaderboard scope only the scatter plot.
   const data: ChartRow[] = ordered.flatMap((s) => {
     const row: ChartRow = { name: s.name, type: s.type };
     let any = false;
     for (const p of perturbations) {
-      const v = getPertValue(s, metric, p, domain);
+      const v = getPertValue(s, metric, p, 'pooled');
       if (v) {
         const label = tierLabel(v.corrected_p);
         row[`${p}_point`] = v.point;
@@ -202,7 +215,7 @@ export function PerturbationBarChart({ metric, metricLabel, systems, domain }: P
   if (data.length === 0) {
     return (
       <div className="text-sm text-text-muted italic px-4 py-6">
-        No perturbation data available for {metricLabel} at this domain.
+        No perturbation data available for {metricLabel}.
       </div>
     );
   }
@@ -281,7 +294,9 @@ export function PerturbationBarChart({ metric, metricLabel, systems, domain }: P
                         <StarMark
                           vb={{ x: vb.x, width: vb.width }}
                           label={label}
-                          upperValue={point + err[1]}
+                          point={point}
+                          ciLower={point - err[0]}
+                          ciUpper={point + err[1]}
                           amberColor={colors.accent.amber}
                         />
                       );

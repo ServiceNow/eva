@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
+import type { SystemStats } from '../../data/leaderboardData';
 import { perturbations, perturbationLabels } from '../../data/leaderboardData';
 import { PerturbationBarChart } from './PerturbationBarChart';
 import { useThemeColors } from '../../styles/theme';
@@ -13,7 +13,6 @@ const PERT_COLOR_KEYS: Record<string, 'amber' | 'cyan' | 'purple'> = {
 
 interface PerturbationsProps {
   systems: SystemStats[];
-  domain: DomainOrPooled;
 }
 
 interface MetricSpec {
@@ -33,7 +32,7 @@ const METRICS: MetricSpec[] = [
   { key: 'conversation_correctly_finished', label: 'Conversation Correctly Finished' },
 ];
 
-export function Perturbations({ systems, domain }: PerturbationsProps) {
+export function Perturbations({ systems }: PerturbationsProps) {
   const colors = useThemeColors();
   const [sectionOpen, setSectionOpen] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -113,7 +112,6 @@ export function Perturbations({ systems, domain }: PerturbationsProps) {
                       metric={m.key}
                       metricLabel={m.label}
                       systems={systems}
-                      domain={domain}
                     />
                   </div>
                 )}

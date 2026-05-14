@@ -165,7 +165,7 @@ export function LeaderboardSection() {
           </p>
         </div>
 
-        <Perturbations systems={systems} domain={domain} />
+        <Perturbations systems={systems} />
       </div>
     </Section>
   );
