@@ -125,7 +125,7 @@ export function LeaderboardSection() {
 
         <MetricHeatmap
           title="Accuracy Metrics (EVA-A)"
-          description="Per-metric scores for accuracy. All values normalized to 0-1 (higher is better)."
+          description="Per-metric scores for accuracy. All values normalized to 0-1 (higher is better). 95% bootstrap confidence intervals shown for each value."
           metricKeys={accuracyMetricKeys}
           metricLabels={accuracyMetricLabels}
           baseColor={colors.accent.purple}
@@ -136,7 +136,7 @@ export function LeaderboardSection() {
 
         <MetricHeatmap
           title="Experience Metrics (EVA-X)"
-          description="Per-metric scores for conversational experience. All values normalized to 0-1 (higher is better)."
+          description="Per-metric scores for conversational experience. All values normalized to 0-1 (higher is better). 95% bootstrap confidence intervals shown for each value."
           metricKeys={experienceMetricKeys}
           metricLabels={experienceMetricLabels}
           baseColor={colors.accent.blue}
@@ -160,6 +160,9 @@ export function LeaderboardSection() {
               </div>
             ))}
           </div>
+          <p className="text-xs text-text-muted mt-4">
+            *see <a href="https://arxiv.org/pdf/2605.13841" target="_blank" rel="noopener noreferrer" className="underline hover:text-text-secondary">paper</a> for full details
+          </p>
         </div>
 
         <Perturbations systems={systems} domain={domain} />
