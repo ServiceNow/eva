@@ -154,6 +154,9 @@ export function Hero() {
         <p className="text-xs text-text-muted mt-6">
           *Full list of contributors found in the Contributors tab
         </p>
+        <p className="text-xs text-text-muted mt-1">
+          Part of the NOWAI-Bench benchmark suite
+        </p>
       </div>
     </section>
   );
