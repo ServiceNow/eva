@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, Customized, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, Customized, LabelList, useYAxisScale } from 'recharts';
 import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
 import { getPertValue, perturbations, perturbationLabels, groupedSystems } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
@@ -83,10 +83,41 @@ function tierLabel(p: number | null | undefined): string {
   return '';
 }
 
-// YAxis domain is [-0.5, 0.5] (range = 1.0); chart container is h-[440px]
-// with top:24 / bottom:70 margins -> plot area height = 346px.
-// pxPerUnit = 346 / 1.0 = 346.
-const Y_PX_PER_UNIT = 346;
+/** Renders a single significance marker above a bar+CI structure. Uses the
+ *  YAxis scale hook so the y position is exact regardless of chart layout. */
+function StarMark({
+  vb,
+  label,
+  upperValue,
+  amberColor,
+}: {
+  vb: { x: number; width: number };
+  label: string;
+  upperValue: number;
+  amberColor: string;
+}) {
+  const yScale = useYAxisScale() as ((v: number) => number | undefined) | undefined;
+  if (!yScale) return null;
+  // Position the star above the higher of (upper CI cap, zero line).
+  // For deeply-negative bars whose entire CI sits below zero, this clamps
+  // the star to the zero line so it stays well above the x-axis instead of
+  // drifting to the bottom of the plot.
+  const target = Math.max(0, upperValue);
+  const ySc = yScale(target);
+  if (ySc == null) return null;
+  return (
+    <text
+      x={vb.x + vb.width / 2}
+      y={ySc - 14}
+      fill={amberColor}
+      fontSize={14}
+      fontWeight={700}
+      textAnchor="middle"
+    >
+      {label}
+    </text>
+  );
+}
 
 export function PerturbationBarChart({ metric, metricLabel, systems, domain }: PerturbationBarChartProps) {
   const colors = useThemeColors();
@@ -214,57 +245,26 @@ export function PerturbationBarChart({ metric, metricLabel, systems, domain }: P
                     dataKey={`${p}_sig_label`}
                     content={(props: unknown) => {
                       const cp = props as {
-                        viewBox?: { x?: number; y?: number; width?: number; height?: number };
+                        viewBox?: { x?: number; width?: number };
                         value?: string;
                         index?: number;
                       };
                       const label = cp.value;
                       const vb = cp.viewBox;
-                      if (
-                        !label ||
-                        !vb ||
-                        vb.x == null ||
-                        vb.y == null ||
-                        vb.width == null ||
-                        vb.height == null ||
-                        cp.index == null
-                      ) {
+                      if (!label || !vb || vb.x == null || vb.width == null || cp.index == null) {
                         return null;
                       }
                       const row = data[cp.index];
                       const point = row?.[`${p}_point`] as number | null | undefined;
                       const err = row?.[`${p}_err`] as [number, number] | undefined;
                       if (point == null || !err) return null;
-                      const cx = vb.x + vb.width / 2;
-                      // Derive px-per-data-unit from this bar's own geometry.
-                      const pxPerUnit = Math.abs(point) > 1e-6
-                        ? vb.height / Math.abs(point)
-                        : Y_PX_PER_UNIT;
-                      // Star sits at whichever is higher on screen:
-                      //   (a) 8 px above the upper CI cap, or
-                      //   (b) 14 px above the bar's top edge (so a short CI
-                      //       cap that lands inside the bar never lets the
-                      //       star fall inside the bar).
-                      // For negative bars, "top edge" is the zero line (vb.y),
-                      // which keeps stars well away from the x-axis even for
-                      // deeply negative deltas.
-                      const isPos = point >= 0;
-                      const pointPx = isPos ? vb.y : vb.y + vb.height;
-                      const upperCapPx = pointPx - err[1] * pxPerUnit;
-                      const aboveCap = upperCapPx - 8;
-                      const aboveBarTop = vb.y - 14;
-                      const yPos = Math.min(aboveCap, aboveBarTop);
                       return (
-                        <text
-                          x={cx}
-                          y={yPos}
-                          fill={colors.accent.amber}
-                          fontSize={14}
-                          fontWeight={700}
-                          textAnchor="middle"
-                        >
-                          {label}
-                        </text>
+                        <StarMark
+                          vb={{ x: vb.x, width: vb.width }}
+                          label={label}
+                          upperValue={point + err[1]}
+                          amberColor={colors.accent.amber}
+                        />
                       );
                     }}
                   />
