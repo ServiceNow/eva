@@ -73,6 +73,14 @@ export function AcknowledgementsSection() {
                 <span className="text-sm font-semibold text-text-primary">Srinivas Sunkara</span>
                 <span className="text-xs text-text-muted">VP, Research Engineering Management</span>
               </div>
+              <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+                <span className="text-sm font-semibold text-text-primary">Joyce Li</span>
+                <span className="text-xs text-text-muted">Principal Product Manager</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+                <span className="text-sm font-semibold text-text-primary">Nitin Aggarwal</span>
+                <span className="text-xs text-text-muted">Senior Director, Product Management</span>
+              </div>
             </div>
           </div>
         </motion.div>
