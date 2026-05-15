@@ -139,6 +139,16 @@ python main.py \
     --metrics task_completion,faithfulness,conciseness
 ```
 
+### Configuring EVA
+
+EVA includes a Streamlit config editor for building your `.env` file interactively:
+
+```bash
+streamlit run apps/config_editor.py
+```
+
+The editor covers all variables grouped by tab (API keys, voice pipeline, model deployments, runtime settings, perturbations, etc.), with proper widgets for each type. See [`apps/README.md`](apps/README.md) for details.
+
 ### Exploring Results
 
 EVA includes a Streamlit analysis app for visualizing and comparing results:

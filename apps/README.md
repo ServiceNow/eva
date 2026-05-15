@@ -1,6 +1,20 @@
 # EVA Apps
 
-Streamlit applications for exploring EVA results.
+Streamlit applications for exploring and configuring EVA.
+
+## Config Editor
+
+Interactive UI for building and editing `.env` configuration files without hand-editing JSON or looking up variable names.
+
+### Usage
+
+```bash
+streamlit run apps/config_editor.py
+```
+
+The app reads `.env.example` for the full variable set and loads existing values from `.env` if present. Each variable's widget type, enum options, ranges, and tooltips are declared directly in `.env.example` using annotation prefixes (`#i`, `#d`, `#e`, `#r`, `#x`, `#v`). Use the **Preview** button to inspect the generated file before saving, or **Download** to export it without writing to disk.
+
+---
 
 ## Analysis App
 
