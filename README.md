@@ -2,9 +2,9 @@
 
 > *Most voice agent benchmarks evaluate either what the agent **does** or how it **sounds** — EVA evaluates both.*
 
-[![Blog Post](https://img.shields.io/badge/Blog-Post-blue?style=flat-square&logo=huggingface)](https://huggingface.co/blog/ServiceNow-AI/eva)
+[![Arxiv](https://img.shields.io/badge/arXiv-2605.13841-b31b1b?style=flat-square&logo=arxiv)](https://arxiv.org/abs/2605.13841)
 [![Website](https://img.shields.io/badge/Website-EVA-green?style=flat-square&logo=googlechrome)](https://servicenow.github.io/eva/)
-[![Leaderboard](https://img.shields.io/badge/Leaderboard-Rankings-orange?style=flat-square&logo=trophy)](https://servicenow.github.io/eva/#early-results)
+[![Leaderboard](https://img.shields.io/badge/Leaderboard-Rankings-orange?style=flat-square&logo=trophy)](https://servicenow.github.io/eva/#results)
 [![Dataset](https://img.shields.io/badge/Dataset-HuggingFace-yellow?style=flat-square&logo=huggingface)](https://huggingface.co/datasets/ServiceNow-AI/eva)
 [![Demo](https://img.shields.io/badge/Demo-See%20It-purple?style=flat-square&logo=rocket)](https://servicenow.github.io/eva/#demo)
 
@@ -94,13 +94,13 @@ pip install -e ".[dev]"
 **Key Environment Variables:**
 ```bash
 # Framework Configuration
-EVA_DOMAIN=airline           # Domain-based path conventions
-EVA_MAX_CONCURRENT_CONVERSATIONS=5   # Max parallel conversations
+EVA_DOMAIN=airline
+EVA_MAX_CONCURRENT_CONVERSATIONS=5
 EVA_DEBUG=false                       # Run only 1 record for testing when enabled
 EVA_RECORD_IDS=1.2.1,1.2.2            # Run specific records only (remove to run all records)
 
 # Pipeline Model Configuration (nested under EVA_MODEL__)
-EVA_MODEL__LLM=gpt-5-mini                # LLM model name (must match EVA_MODEL_LIST)
+EVA_MODEL__LLM=gpt-5-mini             # LLM model name (must match EVA_MODEL_LIST)
 EVA_MODEL__STT=deepgram               # deepgram | openai_whisper
 EVA_MODEL__TTS=cartesia               # cartesia | elevenlabs
 
@@ -116,25 +116,39 @@ EVA_LOG_LEVEL=INFO                    # DEBUG | INFO | WARNING | ERROR
 
 See `.env.example` for the complete list of configuration options.
 
-### Running the framework
+### Running EVA
+
+#### Running with CLI Arguments
+
+The CLI arguments take precedence over environment variables, which in turn take precedence over the `.env` file.
 
 ```bash
-# Run with domain-based conventions (easiest):
-EVA_DOMAIN=airline python main.py
-# Automatically uses:
-#   data/airline_dataset.jsonl
-#   configs/agents/airline_agent.yaml
-#   data/airline_scenarios/
-
-# Run with CLI overrides
-python main.py --model.llm gpt-5-mini --max-concurrent-conversations 10
+eva --domain airline --model.llm gpt-5-mini --max-concurrent-conversations 10
 ```
 
-### Running Metrics
+#### Running Multiple Configurations
+
+Here is an example of shell loop to sweep over domains, models, or any combination of parameters.
+Each iteration is an independent `eva` run. The loop continues on failure and exits with the last non-zero exit code.
 
 ```bash
-# Re-run specific metrics on an existing run
-python main.py \
+exit_code=0;
+for domain in airline itsm medical_hr; do
+    for llm in gpt-5-mini gpt-5; do
+        eva --domain "$domain" --model.llm "$llm" || exit_code=$?;
+    done;
+done;
+exit $exit_code
+```
+
+:bulb: If you need a single command, like in Docker, you can wrap the shell script with `sh -c '...'`.
+
+#### Running Specific Metrics
+
+Re-run specific metrics on an existing run.
+
+```bash
+eva \
     --run-id <existing_run_id> \
     --metrics task_completion,faithfulness,conciseness
 ```
@@ -248,17 +262,12 @@ See the [Metrics documentation](docs/metrics/README.md) for detailed scoring rub
 
 ## 🗂️ Dataset
 
-EVA includes **50 airline scenarios**, each specifying a user goal, persona, scenario database, and ground truth end state — making evaluations fully reproducible and directly comparable across agents and model versions. See the [Data documentation](docs/data.md) for a detailed breakdown of the data structure and scenario design, and the [Database & Tool Schema](docs/airline_database_tool_schema.md) for the airline scenario database format.
+We created three datasets on different enterprise domains, each selected to target a distinct axis of difficulty for voice agents. All three require accurate transcription of structured named entities over voice (e.g., confirmation codes and employee identifiers), but differ in their primary challenge. **Airline Customer Service Management (CSM)** tests temporal reasoning and complex policy adherence in high-stakes flight rebooking scenarios. **Healthcare Human Resources Service Delivery (HRSD)** stresses entity density, requiring callers to communicate multiple registration and license numbers across clinical and administrative HR workflows. **Enterprise Information Technology Service Management (ITSM)** introduces branching conversational flows (e.g., incident resolution attempts must fail before ticket escalation is permitted) and tiered authentication reflecting the access sensitivity of different workflows.
 
-Flight rebooking is a strong initial domain: it is high-stakes, time-pressured, and demands temporal reasoning, policy following, constraint satisfaction, and accurate transcription of named entities (confirmation codes, flight numbers, passenger names, dates).
+Within each domain, scenarios span three dimensions: **Single-Intent** (one workflow per call), **Multi-Intent** (one to four concurrent workflows, testing compositional task completion without context loss), and **Adversarial** (hard policy constraints under social pressure, e.g., refusing compensation to an ineligible caller).
 
-| Category | Description |
-|---|---|
-| ✈️ **IRROPS Rebooking** | Airline-initiated disruptions — user is entitled to rebooking at no cost |
-| 🔄 **Voluntary Changes** | User-initiated changes subject to fare differences and change fees |
-| 🔗 **Missed Connections** | Cascading disruptions across multiple legs |
-| ⏱️ **Same-Day Changes** | Time-sensitive standby and same-day change requests |
-| ⚠️ **Adversarial Scenarios** | Users seeking compensation they are not entitled to under policy |
+See the [Data documentation](docs/data.md) for a detailed breakdown of the data structure and scenario design, and the [Database & Tool Schema](docs/airline_database_tool_schema.md) for the airline scenario database format.
+
 
 ## Project Structure
 
@@ -299,7 +308,7 @@ eva/
 │   ├── run_text_only.py       # Text-only evaluation runner
 │   ├── docker_entrypoint.py   # Docker entry point
 │   ├── check_version_bump.py  # Version checking
-│   └── push_to_hf.py         # Hugging Face push script
+│   └──  check_version_bump.py  # Version checking
 ├── configs/                   # Configuration files
 │   ├── prompts/               # Judge and simulation prompts
 │   │   ├── judge.yaml         # Judge metric prompts
@@ -328,7 +337,3 @@ eva/
 ## Contributing
 
 We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting a pull request. For larger features, we recommend reaching out first to ensure alignment with our roadmap.
-
-## Limitations
-
-See [Limitations](docs/limitations.md) for known limitations of the framework and metrics.

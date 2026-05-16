@@ -414,11 +414,8 @@ def _handle_audio_start(
             if pipeline_type == PipelineType.S2S:
                 state.assistant_spoke_in_turn = True
         # Interruption: assistant audio_start overlaps an open user audio session. Flag the turn
-        # whenever there's overlap (validated against audio: real barge-ins occur even when a
-        # tool call has already fired this turn).
-        #
-        # `hold_turn` is gated on no-tool-call-yet: setting it after a tool call suppresses the
-        # next turn advance and cascades into incorrect turn boundaries downstream.
+        # whenever there's overlap.
+        # `hold_turn` if the assistant has not yet spoken.
         if state.user_audio_open and state.user_audio_started_in_turn:
             state.assistant_interrupted_turns.add(state.turn_num)
             if not state.assistant_processed_in_turn:

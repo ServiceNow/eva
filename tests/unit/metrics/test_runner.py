@@ -67,10 +67,12 @@ def _setup_run_dir(tmp_path: Path, record_ids: list[str]) -> Path:
     # Create config.json
     (run_dir / "config.json").write_text(json.dumps({"agent_config_path": str(agent_config_path)}))
 
-    # Create record directories
+    # Create record directories with a stub result.json so run_and_save_record
+    # doesn't short-circuit on the missing-result.json check.
     for rid in record_ids:
         record_dir = run_dir / "records" / rid
         record_dir.mkdir(parents=True)
+        (record_dir / "result.json").write_text("{}")
 
     return run_dir
 

@@ -22,9 +22,9 @@ from eva.metrics.utils import (
     resolve_turn_id,
     validate_rating,
 )
+from eva.metrics.versioning import _CURRENT_PROMPT_HASH, hash_prompt_template
 from eva.models.config import PipelineType
 from eva.models.results import MetricScore
-from eva.models.versioning import _CURRENT_PROMPT_HASH, hash_prompt_template
 from eva.utils.llm_client import LLMClient
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import get_prompt_manager

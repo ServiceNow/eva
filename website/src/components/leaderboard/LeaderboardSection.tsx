@@ -1,79 +1,110 @@
+import { useState } from 'react';
 import { Lightbulb } from 'lucide-react';
 import { Section } from '../layout/Section';
 import { ScatterPlot } from './ScatterPlot';
 import { MetricHeatmap } from './MetricHeatmap';
+import { Perturbations } from './Perturbations';
 import type { AggregateColumn } from './MetricHeatmap';
 import {
-  ossSystems,
+  systems,
   accuracyMetricKeys, experienceMetricKeys,
   accuracyMetricLabels, experienceMetricLabels,
+  domainLabels,
+  type DomainOrPooled,
 } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
 
-const ossKeyInsights = [
+// Three central findings from the EVA-Bench paper abstract / §5 Conclusion.
+const paretoInsights = [
   {
-    title: 'Transcription failures cascade into low task completion',
-    description: 'Transcription failures around last names and confirmation codes cascade into low task completion as the agent is unable to pull up the user\'s booking and proceed with the request.',
+    title: 'No system clears 0.5 on both axes pass@1',
+    description:
+      'Across 12 systems spanning all three architectures, no system simultaneously exceeds 0.5 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
   },
   {
-    title: 'Turn taking remains a key challenge',
-    description: 'Effective turn taking remains a key challenge for cascade systems \u2014 most turns are late (>4 seconds).',
+    title: 'Peak and reliable performance diverge',
+    description:
+      'Peak (pass@k) and reliable (pass^k) performance diverge substantially: the median pass@k–pass^k gap is 0.44 on EVA-A and 0.24 on EVA-X, indicating single-trial scores systematically overstate deployment-grade reliability.',
   },
   {
-    title: 'Speech synthesis struggles with alphanumeric codes',
-    description: 'Speech synthesis systems generally produce the intended speech but struggle the most with alphanumeric codes, often dropping or switching characters and letters.',
+    title: 'S2S systems anchor every Pareto frontier',
+    description:
+      'Speech-to-speech systems consistently sit on the Pareto frontier in every domain — their experience-side lead (driven by turn-taking and response latency) makes them uniformly Pareto-efficient relative to cascades.',
   },
-  {
-    title: 'LLMs produce verbose, non-voice-appropriate content',
-    description: 'LLMs struggle to produce concise, voice-appropriate content, particularly when trying to list flight options for the user.',
-  },
-  {
-    title: 'Transcription failures reduce conversation efficiency',
-    description: 'Transcription failures also lead to inefficient conversation progression, as the agent cannot move the conversation forward when it\'s stuck trying to retrieve the user\'s reservation.',
-  },
-{
-  title: 'Audio-native systems show promise',
-  description: 'Both audio-native systems sit on the Pareto frontier, while the single speech-to-speech system does not — we aim to benchmark more audio-native and s2s systems to see if this holds across the architectural classes.',
-},
 ];
 
-const ossInsights = [
+// Supporting bullets drawn from §4.3 Robustness and §4.4 Failure Mode Analysis.
+const keyInsights = [
   {
-    title: 'Accuracy–experience trade-off',
-    description: 'The Pareto frontier reveals a clear accuracy-experience tradeoff across systems, systems that push harder on accuracy are doing so at the cost of conversational experience, and vice versa.',
+    title: 'Architectures diverge on experience',
+    description:
+      'While the best cascade and S2S systems achieve comparable accuracy, experience quality diverges sharply along architecture lines, with the S2S–cascade gap on EVA-X driven almost entirely by turn-taking.',
   },
   {
-    title: 'Low Pass Rates',
-    description: 'Performance remains far from saturated — no system clears 0.5 pass@1 on accuracy, and only a few systems exceed 0.50 EVA-X pass@1, suggesting ample opportunities for improvement.',
+    title: 'Cascade accuracy–experience trade-off',
+    description:
+      'Among cascade systems we observe a consistent accuracy–experience trade-off: the three highest-accuracy cascades have mean tool-call latencies above 5 s, while faster cascades trade accuracy for lower latency. No cascade exceeds 0.25 on both dimensions.',
   },
   {
-    title: 'Sparse Frontier',
-    description: 'Only a few systems sit on the Pareto frontier, meaning most systems are strictly dominated. This concentrates the real decision space: only a small subset of system choices actually matter for navigating the accuracy–experience tradeoff.',
+    title: 'Asymmetric degradation under perturbation',
+    description:
+      'Cascade systems are most vulnerable on accuracy under accented speech (task completion drops 10 points on average, up to 17), while S2S systems suffer most on experience under background noise (EVA-X mean ∆ = −0.16). Turn-taking is the most perturbation-sensitive metric overall (81% of pairs significant).',
+  },
+  {
+    title: 'Named-entity transcription bottlenecks cascades',
+    description:
+      'Across seven cascade systems, mean key-entity transcription accuracy is strongly correlated with mean task completion (Pearson r = 0.93, p = 0.002). Cascades below 70% key-entity transcription accuracy show task completion 39% lower than those above it.',
+  },
+  {
+    title: 'Faithfulness is decoupled from task completion',
+    description:
+      '72.2% of conversations with task completion = 1 still exhibit at least one faithfulness deviation, and 50.5% of faithfulness deviations co-occur with task completion = 0. Faithfulness must therefore be measured as an independent dimension.',
+  },
+  {
+    title: 'Speech fidelity fails on alphanumeric content',
+    description:
+      'Entity errors — letter substitutions, digit omissions, spurious insertions, and phonetic confusions — are the dominant speech-fidelity failure mode. Even 1% per-turn fail rates compound over multi-turn interactions when the caller cannot detect the error from context.',
   },
 ];
+
+const DOMAIN_TABS: DomainOrPooled[] = ['pooled', 'airline', 'itsm', 'medical_hr'];
 
 const accuracyAggregates: AggregateColumn[] = [
-  { key: 'eva_a_pass', label: 'EVA-A pass@1', getValue: (s) => s.successRates.accuracy.pass_threshold },
-  { key: 'eva_a_mean', label: 'EVA-A Mean', getValue: (s) => s.successRates.accuracy.mean },
+  { key: 'eva_a_pass', label: 'EVA-A pass@1', metric: 'EVA-A_pass' },
+  { key: 'eva_a_mean', label: 'EVA-A Mean',  metric: 'EVA-A_mean' },
 ];
-
 const experienceAggregates: AggregateColumn[] = [
-  { key: 'eva_x_pass', label: 'EVA-X pass@1', getValue: (s) => s.successRates.experience.pass_threshold },
-  { key: 'eva_x_mean', label: 'EVA-X Mean', getValue: (s) => s.successRates.experience.mean },
+  { key: 'eva_x_pass', label: 'EVA-X pass@1', metric: 'EVA-X_pass' },
+  { key: 'eva_x_mean', label: 'EVA-X Mean',  metric: 'EVA-X_mean' },
 ];
 
 export function LeaderboardSection() {
   const colors = useThemeColors();
-  const systems = ossSystems;
+  const [domain, setDomain] = useState<DomainOrPooled>('pooled');
 
   return (
     <Section
       id="leaderboard"
-      title="Early Results"
-      subtitle="Early results on the airline domain (50 scenarios, 3 trials each)."
+      title="Results"
+      subtitle="Results across three domains (CSM, ITSM, HR). Pooled by default; toggle to inspect a single domain."
     >
       <div className="space-y-8">
-        <ScatterPlot systems={systems} />
+        {/* Domain Toggle */}
+        <div className="inline-flex rounded-lg border border-border-default bg-bg-secondary p-1">
+          {DOMAIN_TABS.map(d => (
+            <button
+              key={d}
+              onClick={() => setDomain(d)}
+              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                domain === d ? 'bg-bg-primary text-text-primary' : 'text-text-muted hover:text-text-secondary'
+              }`}
+            >
+              {domainLabels[d]}
+            </button>
+          ))}
+        </div>
+
+        <ScatterPlot systems={systems} domain={domain} />
 
         <div className="rounded-xl border border-purple/20 bg-purple/5 p-6">
           <div className="flex items-center gap-3 mb-5">
@@ -83,7 +114,7 @@ export function LeaderboardSection() {
             <h3 className="text-lg font-bold text-text-primary">Pareto Analysis</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {ossInsights.map((insight, i) => (
+            {paretoInsights.map((insight, i) => (
               <div key={i} className="rounded-lg bg-bg-secondary border border-border-default p-4">
                 <div className="text-sm font-semibold text-text-primary mb-2">{insight.title}</div>
                 <p className="text-sm text-text-secondary leading-relaxed">{insight.description}</p>
@@ -94,10 +125,9 @@ export function LeaderboardSection() {
 
         <MetricHeatmap
           title="Accuracy Metrics (EVA-A)"
-          description="Per-metric scores for accuracy. All values normalized to 0-1 (higher is better)."
+          description="Per-metric scores for accuracy. All values normalized to 0-1 (higher is better). 95% bootstrap confidence intervals shown for each value."
           metricKeys={accuracyMetricKeys}
           metricLabels={accuracyMetricLabels}
-          dataKey="accuracyMetrics"
           baseColor={colors.accent.purple}
           aggregateColumns={accuracyAggregates}
           aggregateColor="#F59E0B"
@@ -106,10 +136,9 @@ export function LeaderboardSection() {
 
         <MetricHeatmap
           title="Experience Metrics (EVA-X)"
-          description="Per-metric scores for conversational experience. All values normalized to 0-1 (higher is better)."
+          description="Per-metric scores for conversational experience. All values normalized to 0-1 (higher is better). 95% bootstrap confidence intervals shown for each value."
           metricKeys={experienceMetricKeys}
           metricLabels={experienceMetricLabels}
-          dataKey="experienceMetrics"
           baseColor={colors.accent.blue}
           aggregateColumns={experienceAggregates}
           aggregateColor="#F59E0B"
@@ -124,15 +153,19 @@ export function LeaderboardSection() {
             <h3 className="text-lg font-bold text-text-primary">Key Insights</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {ossKeyInsights.map((insight, i) => (
+            {keyInsights.map((insight, i) => (
               <div key={i} className="rounded-lg bg-bg-secondary border border-border-default p-4">
                 <div className="text-sm font-semibold text-text-primary mb-2">{insight.title}</div>
                 <p className="text-sm text-text-secondary leading-relaxed">{insight.description}</p>
               </div>
             ))}
           </div>
+          <p className="text-xs text-text-muted mt-4">
+            *see <a href="https://arxiv.org/pdf/2605.13841" target="_blank" rel="noopener noreferrer" className="underline hover:text-text-secondary">paper</a> for full details
+          </p>
         </div>
 
+        <Perturbations systems={systems} />
       </div>
     </Section>
   );

@@ -15,6 +15,12 @@ export interface MetricDefinition {
   judgePrompt?: string;
   judgeAccuracy?: number;
   judgeScores?: { label: string; value: number; std?: number }[];
+  judgeAlignment?: {
+    measure: string;
+    value: number;
+    ci?: [number, number];
+    notes?: string;
+  };
   judgeDevelopmentNotes?: string;
   developmentDocUrl?: string;
 }
@@ -45,16 +51,22 @@ export const metrics: MetricDefinition[] = [
   },
   {
     id: 'agent_tts_fidelity',
-    displayName: 'Agent Speech Fidelity',
+    displayName: 'Speech Fidelity',
     badge: 'beta',
     category: 'eva-a',
     type: 'lalm_judge',
-    judgeModel: 'Gemini 3.1 Pro',
+    judgeModel: 'Gemini 3 Flash',
     judgeAccuracy: 0.8957,
     judgeScores: [
       { label: 'accuracy', value: 0.8957, std: 0.0258 },
       { label: 'macro_f1', value: 0.856, std: 0.024 },
     ],
+    judgeAlignment: {
+      measure: "Unweighted Cohen's κ",
+      value: 0.777,
+      ci: [0.704, 0.835],
+      notes: 'Binary metric',
+    },
     description: 'Measures whether the agent correctly spoke the information it intended to communicate. TTS systems can mispronounce, skip, or distort words \u2014 in a voice context, if a confirmation code is not spoken correctly, the user cannot act on it regardless of whether the LLM produced the right answer.',
     inputs: 'Agent audio recording, intended assistant text (what LLM generated)',
     outputRange: 'Binary per turn (0=low fidelity, 1=high fidelity), aggregated as mean across turns',
@@ -143,6 +155,11 @@ Respond with a JSON object. Each turn entry must include the turn_id matching th
       { label: 'accuracy', value: 0.8394, std: 0.0292 },
       { label: 'macro_f1', value: 0.8065, std: 0.0286 },
     ],
+    judgeAlignment: {
+      measure: "Quadratic-weighted Cohen's κ",
+      value: 0.836,
+      ci: [0.729, 0.915],
+    },
     description: 'Measures whether the agent\'s responses were consistent with its instructions, provided policy, user inputs, and tool call results. Evaluates across 5 dimensions: fabricating tool parameters, misrepresenting tool results, violating policies, failing to disambiguate, and hallucination.',
     inputs: 'Agent role, agent instructions, available tools, current date/time, full conversation trace with tool calls',
     outputRange: '1-3 scale, normalized to 0-1 (1=unfaithful, 2=partially faithful, 3=fully faithful)',
@@ -344,187 +361,12 @@ Respond in JSON format:
   {
     id: 'turn_taking',
     displayName: 'Turn Taking',
-    badge: 'beta',
     category: 'eva-x',
-    type: 'llm_judge',
-    judgeModel: 'GPT-5.2',
-    description: 'Measures whether the agent spoke at the right time \u2014 not interrupting the user during speech, but also not introducing excessive silence. Early responses cut off users; late responses make interactions feel unresponsive.',
-    inputs: 'Segment transitions with latencies, interruption flags, user/assistant transcripts (expected + heard)',
-    outputRange: '-1 to +1 per turn (-1=early/interrupting, 0=on-time, +1=late), normalized to 0-1',
-    passThreshold: '≥ 0.5',
-    judgePrompt: `ROLE
-You are a judge evaluating a voice agent conversation transcript for turn-taking accuracy: Did the agent take the floor at the correct time after the user finished?
-
-You will work from text transcripts, timestamps, and metadata tags \u2014 not audio.
-
-\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-UNDERSTANDING YOUR INPUTS
-\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
-For each [User Utterance \u2192 Agent Response] pair, you receive:
-
-1. Segment Transitions
-Latencies between each speaker transition within the turn, derived from log timestamps.
-When a turn has a single user segment and a single assistant segment, you see one transition (e.g., "user_end\u2192assistant_start: 1.4s").
-When interruptions/streaming cause multiple segments within a turn, you can see multiple transitions showing every speaker handoff (e.g., "user_end\u2192assistant_start: 0.15s; assistant_end\u2192user_start: -0.20s").
-\u2022 Positive values (e.g., 1.4s) = gap between one speaker finishing and the next starting.
-\u2022 Negative values (e.g., -0.5s) = the next speaker started before the previous finished (overlap).
-\u2022 CAVEAT: Timestamps can be unreliable. Extreme or implausible values (e.g., -20s) should be treated with skepticism. Normal-range values are generally trustworthy.
-
-2. Interruption Flags
-Per-turn flags (\u26a0) and a global summary at the top indicate which turns had interruptions and who interrupted whom, detected from audio overlap analysis.
-\u2022 "\u26a0 User interrupted the assistant" \u2014 The user spoke over the agent. This is NOT the agent's fault. Also treat this with skepticism if the latency or transcript indicates something different happened.
-\u2022 "\u26a0 Assistant interrupted the user" \u2014 The agent spoke over the user. This IS the agent's fault. Also treat this with skepticism if the latency or transcript indicates something different happened.
-
-3. User Transcript
-\u2022 Expected: What the user intended to say, including audio-direction tags (e.g., [slow], [firm], [annoyed]) describing how the words were spoken. Might contain interruption tags (see below).
-\u2022 Heard: What the agent's speech-to-text system actually transcribed. Differences between Expected and Heard indicate transcription errors by the agent (more likely) or that the user speech was cutoff (less likely), as indicated by interruption tags (see below).
-
-4. Assistant Transcript
-\u2022 Expected: What the agent intended to say. May contain more text than was actually spoken if the agent was interrupted or cut itself off, as indicated by interruption tags (see below).
-\u2022 Heard: What was actually spoken aloud (transcribed by a high-quality user-side system). Use this as the main source of truth for what the agent said. Might contain interruption tags (see below).
-
-**Interruption Tags** (non-spoken metadata)
-These tags are generated by audio overlap detection.
-
-\u2022 [assistant interrupts] \u2014 The agent started speaking while the user was still talking. As a prefix on assistant text, it means the agent spoke over the user. As an inline marker in user text, it marks approximately where in the user's speech the agent cut in.
-\u2022 [user interrupts] \u2014 The user interrupted the agent. Inline in assistant text, it marks approximately where the user cut in.
-\u2022 [likely cut off by user] \u2014 In the expected assistant transcript, marks approximately where the agent's speech was probably cut off. Text before this tag was likely cut off at some point (See what was heard). Text after was most likely said.
-\u2022 [speaker likely cut itself off] \u2014 The agent stopped talking on its own, probably because it noticed it was talking over the user. Words before this tag were probably not all said (see what was heard). The tag marks the boundary at which the agent then resumed speaking, after the user properly ended talking.
-\u2022 [likely interruption] \u2014 Catch-all for unexplained breaks in assistant speech where overlap detection didn't flag either party.
-\u2022 [assistant starts replying - user interrupts] \u2014 The agent began replying without interrupting, but the user interrupted. In user text, text before this tag is the user's initial utterance; text after is what the user said when interrupting the agent's reply. In this case, the user is typically in the wrong, and this should not penalize the agent.
-
-Example: If the segment transition shows 1.5s (normal range) but [assistant interrupts] is present, label Early / Interrupting. The tags and interruption flags override timing. If only the user is interrupting the agent (\u26a0 User interrupted), do not label Early / Interrupting \u2014 we care about the assistant's behavior, not the user's.
-
-ADDITIONAL DIAGNOSTIC SIGNALS:
-\u2022 Large differences between Expected and Heard on the assistant side often indicate overlapping speech or interruptions, even without explicit tags.
-\u2022 Audio-direction tags on user text (e.g., [slow], [annoyed]) provide context about the user's manner but do not change turn-taking rules.
-
-\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-TURN-TAKING EVALUATION
-\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
-For each turn, determine whether the agent took the floor at the right time.
-
-The user still holds the floor when:
-  \u2022 They are mid-sentence or mid-thought (non-final phrasing).
-  \u2022 Interruption tags indicate the user was still speaking.
-
-The user has yielded the floor when:
-  \u2022 Their utterance is syntactically and pragmatically complete.
-  \u2022 No interruption tags indicate overlap.
-
-TIMING THRESHOLDS (heuristic \u2014 tags override these when they conflict):
-
-| Label                  | Score | Condition |
-|------------------------|-------|-----------|
-| Early / Interrupting   | -1    | Agent begins before user completion, overlaps the user's speech, or begins <200 ms after completion. Interruption tags ([assistant interrupts], negative latency with tag confirmation) are the strongest signal. |
-| On-Time                | 0     | Agent begins ~200\u20134000 ms after user completion; smooth transfer. |
-| Late                   | +1    | Agent begins >4000 ms after user completion; noticeable awkward silence. |
-| Other / Indeterminate  | null  | User trails off without clear completion; overlapping speech too tangled to assess; audio unclear. |
-
-
-\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-OUTPUT FORMAT
-\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
-For EACH [User Utterance \u2192 Agent Response] pair, provide:
-
-- turn: Turn number from the conversation context.
-- explanation: 1\u20132 sentences justifying the label. Reference the key evidence: what the user said, the segment transition latencies, interruption flags, and any interruption tags or transcript discrepancies that informed your decision.
-- label \u2208 {{Early / Interrupting, On-Time, Late, Other / Indeterminate}}
-- rating \u2208 {{-1, 0, +1, null}}
-
-CONVERSATION CONTEXT
-{conversation_context}
-
-\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-EXAMPLES
-\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-
-Example 1 \u2014 On-Time:
-
-Turn 1:
-  User: start=3.2s end=7.3s
-    Expected: "Hi, I need to change my flight to an earlier departure."
-    Heard: "Hi, I need to change my flight to an earlier departure."
-  Assistant: start=8.7s end=14.7s
-    Expected: "Sure. Let me pull up your booking. What's your confirmation number?"
-    Heard: "Sure. Let me pull up your booking. What's your confirmation number?"
-  Computed Latency: 1.4s
-
-Judgment:
-{{
-    "turn_id": 1,
-    "explanation": "User's request 'I need to change my flight to an earlier departure' is syntactically complete. 1.4s gap with no interruption tags. Smooth floor transfer."
-    "label": "On-Time",
-    "rating": 0,
-}}
-
-Example 2 \u2014 Early / Interrupting:
-
-Turn 2:
-  User: start=42.8s end=53.9s
-    Expected: "[slow] It is X X F six O H, with the letter O, not zero."
-    Heard: "It is... [assistant interrupts] X. F. 6. Oh. Oh. with the letter O. not zero."
-  Assistant: start=45.9s end=63.8s
-    Expected: "[assistant interrupts] I'm here. Take your time. Please say the six characters one at a time. [speaker likely cut itself off] Got it. So I have X, F, six, O, O, and I'm still missing the sixth character."
-    Heard: "[assistant interrupts] Mm-hmm. -in it. So I have X F six O O, and I'm still missing the sixth character. What's the very last character?"
-  Computed Latency: -8.0s
-
-Judgment:
-{{
-    "turn_id": 2,
-    "explanation": "[assistant interrupts] tag present in both user and assistant transcripts. Negative latency (-8.0s) confirms agent started speaking while user was mid-utterance spelling the code. User was clearly not finished."
-    "label": "Early / Interrupting",
-    "rating": -1,
-}}
-
-Example 3 \u2014 Late:
-
-Turn 4:
-  User: start=93.1s end=103.2s
-    Expected: "[slow] The code is X X F six O H, that is six characters, and yes, the last name is K I M."
-    Heard: "The code is... X, X, X. 6OH. That is six counts. And yes, The last name is K-I-M."
-  Assistant: start=108.8s end=122.8s
-    Expected: "Thank you. I tried confirmation code X X X six O H, last name Kim, and it's still not coming up."
-    Heard: "Thank you. I tried confirmation code X X X X O H, last name Kim, and it's still not coming up."
-  Computed Latency: 5.6s
-
-Judgment:
-{{
-    "turn_id": 4,
-    "explanation": "User's utterance is clearly complete ('the last name is K-I-M'). No interruption tags. 5.6s gap exceeds the 4s threshold \u2014 noticeable awkward silence before the agent responded."
-    "label": "Late",
-    "rating": 1,
-}}
-
-Example 4 \u2014 Other / Indeterminate:
-
-Turn 7:
-  User: start=186.7s end=230.0s
-    Expected: "[annoyed] I am looking at it right now. [slow] The code is X X F six O H... [assistant starts replying - user interrupts] [slow] Fine. Here it is: X\u2026 X\u2026 F\u2026 six\u2026 O\u2026 H."
-    Heard: "I am looking at it right now. The code is X... [assistant starts replying - user interrupts] Fine, here it is."
-  Assistant: start=206.2s end=227.7s
-    Expected: "Thanks. I also heard a lot of extra characters in the middle, so let's reset. Please read the code six characters, one at a time. [likely cut off by user] Go ahead. I'm listening."
-    Heard: "I also heard a lot of extra characters in the middle, so let's reset and do it cleanly. Please read the confirmation code exactly six characters, one at a time, with a pause between each. For example, X, X, X."
-  Computed Latency: -23.8s
-
-Judgment:
-{{
-    "turn_id": 7,
-    "explanation": "[assistant starts replying - user interrupts] tag shows tangled overlapping exchange \u2014 the agent began replying during the user's spelling, then the user interrupted back. Multiple floor transfers make it impossible to cleanly assess a single handoff. Highly negative latency (-23.8s) reflects the overlap."
-    "label": "Other / Indeterminate",
-    "rating": null,
-}}
-
-Return a JSON array with one object per turn:
-[
-  {{"turn_id": 1, "explanation": "...", "label": "On-Time", "rating": 0,}},
-  {{"turn_id": 2, "explanation": "...", "label": "Early / Interrupting", "rating": -1}}
-]
-Make sure to use the same turn ids as provided in the conversation context. It typically starts at 1.
-The length of the array must equal the number of assistant turns in the conversation.`,
+    type: 'deterministic',
+    description: 'A timestamp-based metric measuring whether the agent took the floor at the right time \u2014 not interrupting the user, not letting silence linger.\n\nEach turn is classified by its interrupt condition and routed to one of three scoring functions:\n\nUninterrupted turns \u2014 scored against a piecewise-linear latency curve on the agent\'s response latency:\n- Hard zero below -500 ms (premature speech)\n- Ramp from 0 to 1 between -500 and 500 ms\n- Score = 1 in the 500\u20132000 ms sweet spot\n- Ramp back to 0 between 2000 and 3500 ms\n- A tool-call-aware variant stretches the upper breakpoints to 3000 ms and 5000 ms so infrastructure latency from tool execution isn\'t conflated with slow responsiveness.\n\nAgent-interrupted turns \u2014 take the minimum of three sub-scores, each capped at 0.5:\n- Total overlap duration (penalized up to a 2000 ms tolerance)\n- Count of distinct overlapping segments (penalized up to 3)\n- Post-interrupt recovery latency (scored on the same latency curve)\n\nUser-interrupted turns \u2014 scored on yield latency with a linear penalty up to a 2000 ms cap, rewarding agents that stop speaking immediately.\n\nThe per-record Turn Taking score is the mean of these per-turn scores in [0, 1].',
+    inputs: 'Per-turn event timestamps and latencies from the simulation logs: audio start/end markers for both speakers, agent tool-call boundaries, and per-turn interrupt classification',
+    outputRange: 'Continuous score in [0, 1], aggregated as the mean of per-turn scores',
+    passThreshold: '≥ 0.80 (≈ 4 of 5 turns on-time)',
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/turn_taking_development.md',
   },
   {
@@ -538,6 +380,11 @@ The length of the array must equal the number of assistant turns in the conversa
       { label: 'accuracy', value: 0.9226, std: 0.0076 },
       { label: 'macro_f1', value: 0.8375, std: 0.0112 },
     ],
+    judgeAlignment: {
+      measure: "Quadratic-weighted Cohen's κ",
+      value: 0.823,
+      ci: [0.754, 0.874],
+    },
     description: 'Measures whether the agent\'s responses were appropriately brief and focused for spoken delivery. In voice, users cannot skim, re-read, or scroll back \u2014 presenting too many options, asking multiple questions per turn, or including unnecessary hedging degrades the interaction.',
     inputs: 'Full conversation trace with all turns',
     outputRange: '1-3 per turn (1=verbose, 2=adequate, 3=concise), normalized to 0-1',
@@ -659,6 +506,11 @@ If the turn is rated 3 or null, failure_modes must be an empty list: [].`,
       { label: 'accuracy', value: 0.799, std: 0.0112 },
       { label: 'macro_f1', value: 0.7817, std: 0.0128 },
     ],
+    judgeAlignment: {
+      measure: "Quadratic-weighted Cohen's κ",
+      value: 0.845,
+      ci: [0.753, 0.911],
+    },
     description: 'Measures whether the agent moved the conversation forward effectively \u2014 avoiding unnecessary repetition, retaining context across turns, and driving toward task completion without stalling.',
     inputs: 'Full conversation trace',
     outputRange: '1-3 (1=clear progression issues, 2=minor issues, 3=smooth progression), normalized to 0-1',
@@ -840,6 +692,15 @@ Respond in JSON format. The "evidence" field must ALWAYS contain 1-2 sentences r
     description: 'Measures the elapsed time in seconds between the user\'s last audio and the agent\'s first audio response. A direct measurement of end-to-end latency.',
     inputs: 'Audio timestamp data from pipeline events',
     outputRange: 'Seconds (lower is better). Normalized: (5.0 - clamped_speed) / 3.0 for scores in 0-1 range',
+  },
+  {
+    id: 'conversation_correctly_finished',
+    displayName: 'Conversation Correctly Finished',
+    category: 'debug',
+    type: 'deterministic',
+    description: 'Reports whether the conversation reached a clean close — both sides exchanged proper goodbyes and the user simulator invoked the end-call tool — rather than terminating because the agent went silent or otherwise failed to drive the call to completion. Useful for surfacing systems who systematically fail to respond to user turns leading the conversation to hang.',
+    inputs: 'Transcript, audit log, end-call tool invocations',
+    outputRange: 'Binary: 0 (agent failed to respond / conversation timed out) or 1 (user-driven close)',
   },
   {
     id: 'stt_wer',
@@ -1125,19 +986,19 @@ Respond in JSON format:
   },
   {
     id: 'conversation_finished',
-    displayName: 'Conversation Finished',
+    displayName: 'Conversation Valid End',
     category: 'validation',
     type: 'deterministic',
-    description: 'Binary check of whether the conversation completed properly \u2014 both sides exchanged goodbye messages or the conversation reached a natural endpoint.',
-    inputs: 'Transcript, audit log',
-    outputRange: 'Binary: 0 (incomplete) or 1 (finished)',
+    description: 'Validation gate that decides whether a conversation enters scoring. Before any LLM judges are invoked, EVA-Bench runs a deterministic check on the conversation logs to verify that the simulation terminated correctly: a valid end state is one in which either the agent failed to respond to the user, or the user invoked the end-call tool. Conversations meeting this criterion proceed to the User Speech and Behavioral Fidelity judges; all others are rerun. This gate primarily catches infrastructure-level failures (WebSocket disconnects, simulator timeouts, conversations that failed to start) so judge calls are not spent on malformed simulations.',
+    inputs: 'Transcript, audit log, end-call tool invocations',
+    outputRange: 'Binary: 0 (invalid end / rerun) or 1 (valid end / proceed to scoring)',
   },
   {
     id: 'user_tts_fidelity',
     displayName: 'User Speech Fidelity',
     category: 'validation',
     type: 'lalm_judge',
-    judgeModel: 'Gemini 3.1 Pro',
+    judgeModel: 'Gemini 3 Flash',
     description: 'Audio-based check that the user simulator\'s TTS output matches the intended text. Validates that the simulated user is actually saying what it\'s supposed to say.',
     inputs: 'User audio recording, intended user text',
     outputRange: '1-3 per turn (1=low fidelity, 2=medium, 3=high), aggregated as mean',

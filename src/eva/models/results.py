@@ -6,8 +6,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from eva.models.versioning import _CURRENT_METRIC_VERSION, _CURRENT_PROMPT_HASH
-
 
 class ErrorDetails(BaseModel):
     """Detailed error information."""
@@ -114,10 +112,15 @@ class MetricScore(BaseModel):
     def _auto_stamp_version_and_hash(self) -> "MetricScore":
         # Only fill if unset, so deserialization from disk preserves historical values
         # and explicit kwargs (e.g., tests) always win.
-        if self.version is None:
-            self.version = _CURRENT_METRIC_VERSION.get()
-        if self.prompt_hash is None:
-            self.prompt_hash = _CURRENT_PROMPT_HASH.get()
+        if self.version is None or self.prompt_hash is None:
+            # Lazy import to avoid circular dependency:
+            # eva.models.results -> eva.metrics -> ... -> eva.metrics.utils -> eva.models.results
+            from eva.metrics.versioning import _CURRENT_METRIC_VERSION, _CURRENT_PROMPT_HASH
+
+            if self.version is None:
+                self.version = _CURRENT_METRIC_VERSION.get()
+            if self.prompt_hash is None:
+                self.prompt_hash = _CURRENT_PROMPT_HASH.get()
         return self
 
 

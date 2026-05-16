@@ -1210,7 +1210,7 @@
     },
     {
       "name": "agent_speech_fidelity",
-      "displayName": "Agent Speech Fidelity",
+      "displayName": "Speech Fidelity",
       "category": "eva-a",
       "type": "lalm_judge",
       "score": 1.0,
@@ -1389,7 +1389,7 @@
       "name": "turn_taking",
       "displayName": "Turn Taking",
       "category": "eva-x",
-      "type": "llm_judge",
+      "type": "deterministic",
       "score": 4.5,
       "normalizedScore": 0.25,
       "details": {

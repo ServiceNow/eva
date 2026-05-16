@@ -21,4 +21,4 @@ _CURRENT_PROMPT_HASH: ContextVar[str | None] = ContextVar("current_prompt_hash",
 
 def hash_prompt_template(template: str) -> str:
     """Return sha256[:12] of an unrendered prompt template string."""
-    return hashlib.sha256(template.encode("utf-8")).hexdigest()[:12]
+    return hashlib.sha256(template.encode()).hexdigest()[:12]

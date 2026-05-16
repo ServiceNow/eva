@@ -20,7 +20,7 @@ import eva.metrics.diagnostic  # noqa: F401
 import eva.metrics.experience  # noqa: F401
 import eva.metrics.validation  # noqa: F401
 from eva.metrics.base import AudioJudgeMetric, BaseMetric, TextJudgeMetric
-from eva.models.versioning import hash_prompt_template
+from eva.metrics.versioning import hash_prompt_template
 from eva.utils.prompt_manager import get_prompt_manager
 
 

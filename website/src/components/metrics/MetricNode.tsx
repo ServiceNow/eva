@@ -18,6 +18,7 @@ const typeIcons = {
 export function MetricNode({ metric }: MetricNodeProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDevAccuracy, setShowDevAccuracy] = useState(false);
+  const [showAlignment, setShowAlignment] = useState(false);
   const Icon = typeIcons[metric.type];
   const badgeColor = metricTypeColors[metric.type];
 
@@ -67,8 +68,49 @@ export function MetricNode({ metric }: MetricNodeProps) {
             className="overflow-hidden"
           >
             <div className="px-5 pb-5 space-y-4">
-              <div className="border-t border-border-default pt-4">
-                <p className="text-sm text-text-secondary leading-relaxed">{metric.description}</p>
+              <div className="border-t border-border-default pt-4 space-y-3">
+                {metric.description.split('\n\n').map((block, blockIdx) => {
+                  const lines = block.split('\n');
+                  const bulletLines = lines.filter((l) => /^\s*[-•]\s+/.test(l));
+                  if (bulletLines.length > 0 && bulletLines.length === lines.length) {
+                    return (
+                      <ul key={blockIdx} className="text-sm text-text-secondary leading-relaxed list-disc pl-5 space-y-1">
+                        {lines.map((l, i) => (
+                          <li key={i}>{l.replace(/^\s*[-•]\s+/, '')}</li>
+                        ))}
+                      </ul>
+                    );
+                  }
+                  // Mixed: some intro/outro text plus bullets — split into a <p> with trailing <ul>
+                  const leadingNonBullet: string[] = [];
+                  const bullets: string[] = [];
+                  let inBullets = false;
+                  for (const l of lines) {
+                    if (/^\s*[-•]\s+/.test(l)) {
+                      inBullets = true;
+                      bullets.push(l.replace(/^\s*[-•]\s+/, ''));
+                    } else if (!inBullets) {
+                      leadingNonBullet.push(l);
+                    } else {
+                      // trailing prose after bullets — append as its own paragraph
+                      bullets.push('__TRAILING__' + l);
+                    }
+                  }
+                  return (
+                    <div key={blockIdx} className="space-y-2">
+                      {leadingNonBullet.length > 0 && (
+                        <p className="text-sm text-text-secondary leading-relaxed">{leadingNonBullet.join(' ')}</p>
+                      )}
+                      {bullets.length > 0 && (
+                        <ul className="text-sm text-text-secondary leading-relaxed list-disc pl-5 space-y-1">
+                          {bullets.filter((b) => !b.startsWith('__TRAILING__')).map((b, i) => (
+                            <li key={i}>{b}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="space-y-3">
@@ -99,7 +141,7 @@ export function MetricNode({ metric }: MetricNodeProps) {
                     onClick={() => setShowDevAccuracy(!showDevAccuracy)}
                     className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-hover/30 transition-colors"
                   >
-                    <div className="text-sm font-semibold text-text-secondary">Judge Accuracy</div>
+                    <div className="text-sm font-semibold text-text-secondary">Judge Accuracy (Dev Dataset)</div>
                     <ChevronDown
                       className={`w-4 h-4 text-text-muted transition-transform ${showDevAccuracy ? 'rotate-180' : ''}`}
                     />
@@ -144,6 +186,50 @@ export function MetricNode({ metric }: MetricNodeProps) {
                           )}
                           {metric.judgeDevelopmentNotes && (
                             <p className="text-sm text-text-secondary leading-relaxed">{metric.judgeDevelopmentNotes}</p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {metric.judgeAlignment && (
+                <div className="rounded-lg border border-border-default overflow-hidden">
+                  <button
+                    onClick={() => setShowAlignment(!showAlignment)}
+                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-bg-hover/30 transition-colors"
+                  >
+                    <div className="text-sm font-semibold text-text-secondary">Judge Alignment (Test Dataset)</div>
+                    <ChevronDown
+                      className={`w-4 h-4 text-text-muted transition-transform ${showAlignment ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {showAlignment && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 pb-4 space-y-2">
+                          <div className="border-t border-border-default pt-3">
+                            <div className="flex items-center gap-2 rounded-lg bg-bg-primary px-3 py-2 w-fit">
+                              <span className="text-xs text-text-muted">{metric.judgeAlignment.measure}</span>
+                              <span className="text-sm font-semibold text-text-primary font-mono">
+                                {metric.judgeAlignment.value.toFixed(3)}
+                              </span>
+                              {metric.judgeAlignment.ci && (
+                                <span className="text-xs text-text-muted font-mono">
+                                  [{metric.judgeAlignment.ci[0].toFixed(3)}, {metric.judgeAlignment.ci[1].toFixed(3)}]
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {metric.judgeAlignment.notes && (
+                            <p className="text-sm text-text-muted leading-relaxed">{metric.judgeAlignment.notes}</p>
                           )}
                         </div>
                       </motion.div>
