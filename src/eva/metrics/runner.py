@@ -151,6 +151,7 @@ class MetricsRunner:
             raise FileNotFoundError(f"Run config not found: {config_path}")
 
         config_data = json.loads(config_path.read_text())
+        self._run_language = config_data.get("language", os.getenv("EVA_LANGUAGE", "en"))
 
         # Determine pipeline type from config
         model_data = config_data.get("model", {})
@@ -554,7 +555,7 @@ class MetricsRunner:
         if record.agent_override and record.agent_override.instructions:
             agent_instructions = record.agent_override.instructions
 
-        language = os.getenv("EVA_LANGUAGE", "en")
+        language = self._run_language
         resolved_user_goal = resolve_user_goal(
             record.user_goal,
             record.culture_overrides,
