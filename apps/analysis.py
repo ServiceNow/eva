@@ -1585,7 +1585,7 @@ def render_cross_run_comparison(run_dirs: list[Path]):
                 height=max(350, 80 + 40 * len(y_labels)),
                 margin={"l": 20, "r": 20, "t": 50, "b": 120},
             )
-            st.plotly_chart(heatmap_fig, use_container_width=True)
+            st.plotly_chart(heatmap_fig, width="stretch")
 
 
 def render_run_overview(run_dir: Path):
