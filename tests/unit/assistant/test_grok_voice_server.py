@@ -28,6 +28,17 @@ class TestCreateClient:
         assert client.api_key == "xai-test-key"
         assert "api.x.ai" in str(client.base_url)
 
+    def test_raises_when_api_key_missing(self):
+        srv = _bare_server()
+        srv.pipeline_config.s2s_params = {}
+        try:
+            srv._create_client()
+        except ValueError as e:
+            assert "API key required" in str(e)
+            assert "Grok Voice" in str(e)
+        else:
+            raise AssertionError("expected ValueError")
+
 
 class TestDefaultVoice:
     def test_default_voice_is_eve(self):

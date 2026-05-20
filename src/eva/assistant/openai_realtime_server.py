@@ -478,7 +478,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 logger.error(f"{self._service_name} error: {error_data}")
 
             case _:
-                logger.debug(f"Unhandled OpenAI event: {event_type}")
+                logger.debug(f"Unhandled {self._service_name} event: {event_type}")
 
     # ── Event handlers ────────────────────────────────────────────────
 
