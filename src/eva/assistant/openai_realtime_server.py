@@ -180,6 +180,46 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         """
         return "marin"
 
+    def _build_session_config(self) -> dict[str, Any]:
+        """Construct the `session.update` payload for the realtime connection.
+
+        Subclasses override to adjust service-specific fields (e.g. drop the
+        `transcription.model` selector for xAI, which doesn't expose one).
+        """
+        s2s = self.pipeline_config.s2s_params or {}
+        vad = s2s.get("vad_settings", {}) or {}
+
+        session_config: dict[str, Any] = {
+            "type": "realtime",
+            "output_modalities": ["audio"],
+            "instructions": self._system_prompt,
+            "audio": {
+                "output": {
+                    "voice": s2s.get("voice", self._default_voice()),
+                    "format": {"type": "audio/pcm", "rate": 24000},
+                },
+                "input": {
+                    "format": {"type": "audio/pcm", "rate": 24000},
+                    "turn_detection": {
+                        "type": vad.get("type", "server_vad"),
+                        "threshold": vad.get("threshold", 0.5),
+                        "prefix_padding_ms": vad.get("prefix_padding_ms", 300),
+                        "silence_duration_ms": vad.get("silence_duration_ms", 200),
+                    },
+                    "transcription": {
+                        "model": s2s.get("transcription_model", "whisper-1"),
+                    },
+                },
+            },
+            "tools": self._realtime_tools,
+        }
+
+        reasoning_effort = s2s.get("reasoning_effort")
+        if reasoning_effort:
+            session_config["reasoning"] = {"effort": reasoning_effort}
+
+        return session_config
+
     def _create_client(self) -> AsyncOpenAI:
         """Construct the AsyncOpenAI client used for the realtime connection.
 
@@ -218,43 +258,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             logger.info(f"Starting {self._service_name} session (model={self._model})")
             async with client.realtime.connect(model=self._model) as conn:
                 # Configure the session
-                session_config: dict[str, Any] = {
-                    "type": "realtime",
-                    "output_modalities": ["audio"],
-                    "instructions": self._system_prompt,
-                    "audio": {
-                        "output": {
-                            "voice": self.pipeline_config.s2s_params.get("voice", "marin"),
-                            "format": {"type": "audio/pcm", "rate": 24000},
-                        },
-                        "input": {
-                            "format": {"type": "audio/pcm", "rate": 24000},
-                            "turn_detection": {
-                                "type": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                    "type", "server_vad"
-                                ),
-                                "threshold": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                    "threshold", 0.5
-                                ),
-                                "prefix_padding_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                    "prefix_padding_ms", 300
-                                ),
-                                "silence_duration_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                    "silence_duration_ms", 200
-                                ),
-                            },
-                            "transcription": {
-                                "model": self.pipeline_config.s2s_params.get("transcription_model", "whisper-1")
-                            },
-                        },
-                    },
-                    "tools": self._realtime_tools,
-                }
-
-                reasoning_effort = self.pipeline_config.s2s_params.get("reasoning_effort")
-                if reasoning_effort:
-                    session_config["reasoning"] = {"effort": reasoning_effort}
-
+                session_config = self._build_session_config()
                 await conn.session.update(session=session_config)
 
                 # Trigger the initial greeting
