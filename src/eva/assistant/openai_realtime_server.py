@@ -279,7 +279,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                         logger.error(f"Session task failed: {task.exception()}")
 
         except Exception as e:
-            logger.error(f"OpenAI Realtime session error: {e}", exc_info=True)
+            logger.error(f"{self._service_name} session error: {e}", exc_info=True)
         finally:
             logger.info(f"Client disconnected from {self._service_name} server")
 
