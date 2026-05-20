@@ -19,7 +19,7 @@ const paretoInsights = [
   {
     title: 'No system clears 0.5 on both axes pass@1',
     description:
-      'Across 12 systems spanning all three architectures, no system simultaneously exceeds 0.5 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
+      'Across 16 systems spanning all three architectures, no system simultaneously exceeds 0.5 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
   },
   {
     title: 'Peak and reliable performance diverge',
@@ -27,23 +27,18 @@ const paretoInsights = [
       'Peak (pass@k) and reliable (pass^k) performance diverge substantially: the median pass@k–pass^k gap is 0.44 on EVA-A and 0.24 on EVA-X, indicating single-trial scores systematically overstate deployment-grade reliability.',
   },
   {
-    title: 'S2S systems anchor every Pareto frontier',
+    title: 'Both S2S and cascade systems sit on the Pareto frontier',
     description:
-      'Speech-to-speech systems consistently sit on the Pareto frontier in every domain — their experience-side lead (driven by turn-taking and response latency) makes them uniformly Pareto-efficient relative to cascades.',
+      'The Pareto frontier spans both architectures. Low-latency cascades that integrate provider SDKs directly — avoiding the overhead of standalone STT/TTS pipelines — achieve turn-taking scores competitive with S2S models, while higher-accuracy cascades anchor the right side of the frontier.',
   },
 ];
 
 // Supporting bullets drawn from §4.3 Robustness and §4.4 Failure Mode Analysis.
 const keyInsights = [
   {
-    title: 'Architectures diverge on experience',
-    description:
-      'While the best cascade and S2S systems achieve comparable accuracy, experience quality diverges sharply along architecture lines, with the S2S–cascade gap on EVA-X driven almost entirely by turn-taking.',
-  },
-  {
     title: 'Cascade accuracy–experience trade-off',
     description:
-      'Among cascade systems we observe a consistent accuracy–experience trade-off: the three highest-accuracy cascades have mean tool-call latencies above 5 s, while faster cascades trade accuracy for lower latency. No cascade exceeds 0.25 on both dimensions.',
+      'Among cascade systems we observe a consistent accuracy–experience trade-off: higher-accuracy cascades tend to have higher tool-call latencies, while faster cascades trade accuracy for lower latency.',
   },
   {
     title: 'Asymmetric degradation under perturbation',
@@ -53,7 +48,7 @@ const keyInsights = [
   {
     title: 'Named-entity transcription bottlenecks cascades',
     description:
-      'Across seven cascade systems, mean key-entity transcription accuracy is strongly correlated with mean task completion (Pearson r = 0.93, p = 0.002). Cascades below 70% key-entity transcription accuracy show task completion 39% lower than those above it.',
+      'Across nine cascade systems, mean key-entity transcription accuracy is strongly correlated with mean task completion. Cascades below 70% key-entity transcription accuracy show substantially lower task completion than those above it.',
   },
   {
     title: 'Faithfulness is decoupled from task completion',
@@ -64,6 +59,11 @@ const keyInsights = [
     title: 'Speech fidelity fails on alphanumeric content',
     description:
       'Entity errors — letter substitutions, digit omissions, spurious insertions, and phonetic confusions — are the dominant speech-fidelity failure mode. Even 1% per-turn fail rates compound over multi-turn interactions when the caller cannot detect the error from context.',
+  },
+  {
+    title: 'Low-latency cascades close the experience gap',
+    description:
+      'Cascade systems built with low-latency models can outperform S2S models on experience. The fastest cascade system achieves the highest EVA-X pass@1 (0.82) of any system, with turn-taking (0.88) surpassing all S2S models — suggesting that latency, not architecture, is the primary driver of experience quality.',
   },
 ];
 
