@@ -45,3 +45,9 @@ class TestCreateClient:
             assert "API key required" in str(e)
         else:
             raise AssertionError("expected ValueError")
+
+
+class TestDefaultVoice:
+    def test_default_voice_is_marin(self):
+        srv = _bare_server()
+        assert srv._default_voice() == "marin"

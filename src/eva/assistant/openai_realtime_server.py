@@ -172,6 +172,14 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         logger.info(f"{self._service_name} server stopped on port {self.port}")
 
+    def _default_voice(self) -> str:
+        """Default voice ID when `s2s_params.voice` is not set.
+
+        Subclasses override when the underlying service uses a different
+        voice catalogue.
+        """
+        return "marin"
+
     def _create_client(self) -> AsyncOpenAI:
         """Construct the AsyncOpenAI client used for the realtime connection.
 
