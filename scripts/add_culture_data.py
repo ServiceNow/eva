@@ -50,9 +50,10 @@ from dotenv import load_dotenv
 from eva.utils.culture import FIRST_NAME_PLACEHOLDER, LAST_NAME_PLACEHOLDER
 from eva.utils.json_utils import extract_and_load_json
 from eva.utils.llm_client import LLMClient
-from eva.utils.logging import get_logger
+from eva.utils.logging import get_logger, setup_logging
 from eva.utils.router import init
 
+setup_logging()
 logger = get_logger(__name__)
 load_dotenv()
 init(json.loads(os.getenv("EVA_MODEL_LIST")))
@@ -69,7 +70,10 @@ TRANSLATION_BATCH = 25
 ADDENDUM_TEMPLATE = (
     "Always respond to the user in {language_name}{native_suffix}, regardless of the instructions given or tool outputs received."
     " However, tool calls and tool names must always be done using ascii characters, except parameters like people's first"
-    " or last names which may be in non-ascii, native script. You may need to try both scripts when looking up by name."
+    " or last names which may be in non-ascii, native script. You may need to try both scripts when looking up by name. "
+    "All translatable values should be translated when talking to the user. For example, if you are telling the user about "
+    "a location from a tool response which says 'downtown', this should be translated. Distinct item names (e.g. 'IntelliJ') "
+    "should be kept in their original form."
 )
 
 
@@ -208,8 +212,14 @@ async def _romanize_names(names: dict[str, list[str]], language_name: str, llm: 
 def _load_names_file(path: Path) -> dict[str, list[str]]:
     data = json.loads(path.read_text(encoding="utf-8"))
     for key in ("male_first", "female_first", "last"):
-        if not isinstance(data.get(key), list) or not data[key]:
+        lst = data.get(key)
+        if not isinstance(lst, list) or not lst:
             raise ValueError(f"--names-file missing/empty key {key!r}")
+        if len(lst) < BUCKET_SIZE * 2:
+            raise ValueError(
+                f"--names-file key {key!r} has {len(lst)} entries; need at least {BUCKET_SIZE * 2} "
+                f"({BUCKET_SIZE} ASCII + {BUCKET_SIZE} native-script)"
+            )
     return data
 
 
@@ -341,7 +351,7 @@ async def add_culture(
 
     # 3. Write back atomically.
     if dry_run:
-        logger.info(f"[dry-run] would update {dataset_path} ({len(records)} records)")
+        logger.info(f"[dry-run] would update {dataset_path} ({len(target_ids)} records)")
     else:
         tmp = dataset_path.with_suffix(dataset_path.suffix + ".tmp")
         with tmp.open("w", encoding="utf-8") as f:

@@ -14,7 +14,7 @@ class UserSpeechFidelityMetric(SpeechFidelityBaseMetric):
     """
 
     name = "user_speech_fidelity"
-    version = "v0.1"
+    version = "v0.2"
     description = "Audio-based validation of user speech fidelity to the intended text"
     category = "validation"
     role = "user"

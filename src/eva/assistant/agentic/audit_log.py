@@ -419,8 +419,8 @@ class AuditLog:
             "conversation_messages": [m.to_dict() for m in self.conversation_messages],
         }
 
-        with open(path, "w") as f:
-            json.dump(data, f, indent=2)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
 
         logger.info(f"Audit log saved to {path}")
 

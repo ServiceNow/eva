@@ -47,7 +47,7 @@ judge:
       For each turn that contains assistant content, evaluate whether the assistant's response is appropriately concise and easy to digest when spoken aloud to a human.
 
       The assistant is expected to follow conversational voice guidelines:
-      - Keep responses brief and conversational (typically 2–4 sentences)
+      - Keep responses brief and conversational (typically 2–4 sentences of meaningful conversation content; this may vary by language — some languages have obligatory politeness phrases or structural conventions that naturally add length without adding cognitive load)
       - Summarize long lists rather than reading them exhaustively
       - Avoid overwhelming the listener with too much information at once
       - Spread multiple requests across turns when possible
@@ -82,6 +82,7 @@ judge:
 
       **verbosity_or_filler**
       Contains unnecessary wording, repetition within the same turn, hedging, or explanation beyond what the context requires.
+      Exception: do NOT flag following of cultural norms, such as obligatory politeness structures, as filler (e.g. in Japanese and Korean: keigo, honorifics, set opening/closing phrases).
 
       **excess_information_density**
       Presents too many distinct facts, options, numbers, steps, or requests at once, making it difficult for a listener to process in real time. Note: bundling closely related transactional details that the user needs to act on or remember together (e.g., confirming a reference number, date, and one or two key details in a single turn) is expected behavior — only flag this when the volume of information genuinely exceeds what a listener can comfortably retain.
@@ -111,7 +112,7 @@ judge:
       [
         {{
           "turn_id": <int: the turn number from the conversation>,
-          "explanation": "<Detailed analysis referencing the evaluation criteria and explicitly linking identified weaknesses to the listed failure modes to justify the selected rating (1–3). Empty string if rating is null.>",
+          "explanation": "<Detailed analysis in English referencing the evaluation criteria and explicitly linking identified weaknesses to the listed failure modes to justify the selected rating (1–3). Empty string if rating is null.>",
           "failure_modes": ["<failure_mode_1>", "<failure_mode_2>", ...],
           "rating": <int: 1, 2, or 3, or null if no assistant content>
         }}
@@ -338,7 +339,7 @@ judge:
       - Reasonable contextual inferences for categorical parameters, when the enum value's meaning is clearly supported by the user's stated intent
       - Numeric values derived from prior tool results through simple arithmetic (e.g., summing line items, subtracting used amounts from a balance, or computing a total from prior results)
       - System-level or framework-generated tool calls made before the assistant has any user input, if the assistant subsequently asks for proper information
-      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters like "v"/"z" or "b"/"d", reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance
+      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters, reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance. Which letters are phonetically confusable is language-dependent: in English "v"/"z" or "b"/"d" are classic pairs; in Korean, M is named "엠" and N is named "엔" — nearly identical in fast or phone-quality audio; other languages have their own similar-sounding pairs. The agent should apply the same disambiguation logic regardless of which language's phonetic naming convention the user is using.
 
       **Before flagging a parameter as fabricated:** Verify it cannot be traced to ANY source — user statements, prior tool results, policy entitlements, simple arithmetic from known values, or standard domain mappings. Also verify enum values against the actual tool specification before claiming a value is invalid.
 
@@ -624,7 +625,7 @@ judge:
       [
         {{
           "turn_id": <int: the turn number>,
-          "explanation": "<string: 1-3 sentence analysis of the speakability of the assistant response, citing specific example of any issues that you detect>",
+          "explanation": "<string: 1-3 sentence analysis in English of the speakability of the assistant response, citing specific example of any issues that you detect>",
           "rating": <int: 0 if ANY violation found, 1 if perfectly voice-friendly>
         }}
       ]
@@ -678,12 +679,15 @@ judge:
         - Substituted words that alter an entity value
 
         **What to ignore (does NOT cause rating = 0):**
-        - Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss" is acceptable)
+        - Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss", "Mr." vs "Mister", or language-equivalent honorific forms such as French "Madame" vs "Mme" or Japanese "様" vs "-san")
         - Filler words ("um", "uh", "so") added or omitted
         - End-of-audio cut-off: if the audio cuts off at the very END of the last turn, missing trailing words is acceptable as long as all entities in that turn were spoken correctly before the cut-off
         - Slight pacing or prosody differences
         - Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
         - Words in regions flagged by interruption tags as likely not spoken
+        - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the correct spoken form of those letters in that language and are not errors
+        - Regional and language-structural number variants that represent the same value — accept any valid spoken form; many languages have systematic surface differences that are not errors: regional variants (French "septante" vs "soixante-dix" for 70), reversed digit order (German spoken form reverses tens and units: "vierundzwanzig" = four-and-twenty = 24), dual counting systems (Korean native/Sino-Korean, Japanese on/kun reading), large-unit grouping differences (Japanese 万-based system: "ichi-man" = 10,000), or grammatical agreement variants (Spanish "veintiún" vs "veintiuna")
+        - Name spelling variants where the phonetic form is the same (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
 
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
@@ -695,8 +699,8 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Intended Turns>,
-              "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the intended text>
-              "explanation": "<string: 1-3 sentence analysis of fidelity for this turn, citing specific intended vs actual mismatches, noting any regions skipped due to interruption flags>",
+              "transcript": <string: your transcription of the audio for this turn using the appropriate script for the language spoken, use only the audio for this not the intended text>
+              "explanation": "<string: 1-3 sentence analysis in English of fidelity for this turn, citing specific intended vs actual mismatches, noting any regions skipped due to interruption flags>",
               "rating": <0 or 1>
             }}
           ]
@@ -768,9 +772,9 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Conversation Trace>,
-              "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the conversation trace>,
+              "transcript": <string: your transcription of the audio for this turn using the appropriate script for the language spoken, use only the audio for this not the conversation trace>,
               "has_entities": <boolean: true if the assistant speaks entities from the conversation trace in this turn, false otherwise>,
-              "explanation": "<string: 1-3 sentence analysis listing which trace entities were spoken and whether they are clearly articulated>",
+              "explanation": "<string: 1-3 sentence analysis in English listing which trace entities were spoken and whether they are clearly articulated>",
               "rating": <0 or 1>
             }}
           ]
@@ -822,6 +826,10 @@ judge:
         - Minor pronunciation variations that do not change meaning (accent differences)
         - Natural filler words (um, uh) if they do not affect core content
         - Missing words at the END of the LAST turn only (audio recordings are often cut off before the final utterance completes). However, missing words in the middle of the last turn, or missing words in any earlier turn, should still be penalized.
+        - Honorific/title variants that refer to the same person (e.g., "Ms." vs "Miss", "Mr." vs "Mister", French "Madame" vs "Mme", Japanese "様" vs "-san")
+        - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the correct spoken form in that language
+        - Regional and language-structural number variants that represent the same value — many languages have systematic surface differences that are not errors: regional forms (French "septante" vs "soixante-dix" for 70), reversed digit order in spoken form (German "vierundzwanzig" = 24), dual counting systems (Korean native/Sino-Korean, Japanese on/kun reading), large-unit grouping (Japanese 万-based: "ichi-man" = 10,000), or grammatical agreement (Spanish "veintiún" vs "veintiuna")
+        - Name spelling variants where the pronunciation is the same (e.g., German Meyer/Meier/Maier/Mayer)
 
         ## Rating Scale (per turn)
         - **3 (High Fidelity)**: 
@@ -844,8 +852,8 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Intended Turns>,
-              "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the intended turns>,
-              "explanation": "<succinct analysis; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
+              "transcript": <string: your transcription of the audio for this turn using the appropriate script for the language spoken, use only the audio for this not the intended turns>,
+              "explanation": "<succinct analysis in English; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
               "rating": <1, 2, 3>
             }}
           ]
@@ -899,7 +907,16 @@ judge:
       - Numbers: "150" and "one hundred fifty" are equivalent
       - Dates: "December 15th" and "Dec 15" are equivalent
       - Names: Case-insensitive exact match required
-      
+      - Non-Latin scripts: A name or identifier rendered in its native script (e.g. Kanji, Hangul, Arabic) is equivalent to its romanized/phonetic transcription if they represent the same spoken entity. For example, "山田" and "Yamada" should be treated as matching.
+      - Phonetic letter spellings: In languages that do not use the Latin alphabet, Roman/Latin letters are spoken using language-specific phonetic equivalents. These are correct transcriptions, not errors. For example, in Korean "에이" for "A" or "비" for "B" — if the expected text contains a Latin letter and the transcription contains its Korean phonetic form (or vice versa), treat them as matching.
+      - Number surface variants: Many languages have systematic spoken-form differences that do not change the underlying value and must not be penalized. Accept any of the following as correct:
+        - Reversed digit order in spoken form (e.g., German "vierundzwanzig" = four-and-twenty = 24 — this is the standard spoken form, not an error)
+        - Grammatical gender/agreement variants (e.g., Spanish "veintiún" vs "veintiuna" for 21)
+        - Large-unit grouping differences (e.g., Japanese 万-system: "ichi-man go-sen" = 15,000; accept either Western or Japanese grouping if the value matches)
+        Note — context-dependent number systems: Some languages require a specific number system depending on context and using the wrong one is an error. In Korean, hours are counted using the native Korean system (하나, 둘…) while minutes, prices, and most other quantities use Sino-Korean (일, 이…). In Japanese, counters (助数詞) impose specific reading conventions. Only flag these as wrong if the system used is clearly inappropriate for the context (e.g., a price stated in native Korean numbers).
+      - Name spelling variants: Accept variants that are phonetically equivalent and refer to the same person (e.g., German Meyer/Meier/Maier/Mayer). Only flag if the spoken form clearly differs or if the spelling is incorrect after clarification from the user.
+      - Honorific/title variants: "Ms." vs "Miss", "Mr." vs "Mister", and language equivalents (e.g., French "Madame" vs "Mme", Japanese "様" vs "-san") are acceptable variants of the same title.
+
       Important note: The expected text will often feature things formatted like "one two three" instead of "123". Your goal is to evaluate the semantic equivalence, meaning these are considered equivalent if they were heard in audio.
       
       ## Examples

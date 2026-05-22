@@ -470,15 +470,17 @@ def create_realtime_llm_service(
         session_properties = get_openai_session_properties(system_prompt, params, pipecat_tools)
         if audit_log is not None:
             logger.info(f"Using InstrumentedRealtimeLLMService for audit log interception: openai: {params['model']}")
-            return InstrumentedRealtimeLLMService(
-                settings=OpenAIRealtimeLLMService.Settings(
+            kwargs: dict = {
+                "settings": OpenAIRealtimeLLMService.Settings(
                     model=params["model"],
                     session_properties=session_properties,
                 ),
-                audit_log=audit_log,
-                api_key=params["api_key"],
-                base_url=params.get("url", ""),
-            )
+                "audit_log": audit_log,
+                "api_key": params["api_key"],
+            }
+            if params.get("url"):
+                kwargs["base_url"] = params["url"]
+            return InstrumentedRealtimeLLMService(**kwargs)
 
         return OpenAIRealtimeLLMService(
             api_key=params["api_key"],

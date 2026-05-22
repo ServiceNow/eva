@@ -17,6 +17,10 @@ from eva.utils.wer_normalization import normalize_text
 
 _BRACKET_PATTERN = re.compile(r"\[.*?\]")
 
+# Languages where text has no word-level whitespace segmentation — CER is the
+# appropriate error-rate measure instead of WER.
+_CER_LANGUAGES = frozenset({"ja", "zh", "ko"})
+
 
 def _build_wer_component_sub_metrics(
     parent_name: str,
@@ -113,56 +117,62 @@ class STTWERMetric(CodeMetric):
                     error="No user turns with both TTS text and transcript available",
                 )
 
-            # Compute WER using jiwer with normalized text
-            wer = jiwer.wer(references_clean, hypotheses_clean)
+            use_cer = self.language in _CER_LANGUAGES
 
-            # Get detailed word-level alignment
-            output = jiwer.process_words(references_clean, hypotheses_clean)
+            if use_cer:
+                error_rate = jiwer.cer(references_clean, hypotheses_clean)
+                output = jiwer.process_characters(references_clean, hypotheses_clean)
+            else:
+                error_rate = jiwer.wer(references_clean, hypotheses_clean)
+                output = jiwer.process_words(references_clean, hypotheses_clean)
 
-            # Convert WER to accuracy score (1 - wer, clamped to 0-1)
-            accuracy = reverse_word_error_rate(wer)
+            accuracy = reverse_word_error_rate(error_rate)
+            rate_key = "cer" if use_cer else "wer"
 
             per_turn_wer: dict[int, float] = {}
             per_turn_errors: dict[int, dict] = {}
 
             for turn_id, ref_clean, hyp_clean in zip(evaluated_turn_ids, references_clean, hypotheses_clean):
-                turn_wer = jiwer.wer(ref_clean, hyp_clean)
-                per_turn_wer[turn_id] = round(turn_wer, 3)
-
-                # Get alignment for this turn
-                turn_output = jiwer.process_words(ref_clean, hyp_clean)
+                if use_cer:
+                    turn_rate = jiwer.cer(ref_clean, hyp_clean)
+                    turn_output = jiwer.process_characters(ref_clean, hyp_clean)
+                else:
+                    turn_rate = jiwer.wer(ref_clean, hyp_clean)
+                    turn_output = jiwer.process_words(ref_clean, hyp_clean)
+                per_turn_wer[turn_id] = round(turn_rate, 3)
                 turn_errors = extract_wer_errors(turn_output)
                 per_turn_errors[turn_id] = turn_errors
 
-            # Aggregate error statistics across all turns
             error_summary = aggregate_wer_errors(output)
 
-            reference_word_count = sum(len(r.split()) for r in references_clean)
+            reference_unit_count = (
+                len("".join(references_clean)) if use_cer else sum(len(r.split()) for r in references_clean)
+            )
             sub_metrics = _build_wer_component_sub_metrics(
                 parent_name=self.name,
                 substitutions=output.substitutions,
                 deletions=output.deletions,
                 insertions=output.insertions,
-                reference_words=reference_word_count,
+                reference_words=reference_unit_count,
             )
 
             return MetricScore(
                 name=self.name,
-                score=round(wer, 3),  # Raw WER
-                normalized_score=round(accuracy, 3),  # Accuracy (1-WER)
+                score=round(error_rate, 3),
+                normalized_score=round(accuracy, 3),
                 details={
-                    "wer": round(wer, 3),
+                    rate_key: round(error_rate, 3),
                     "accuracy": round(accuracy, 3),
-                    "language": self.language,  # Include language
+                    "language": self.language,
+                    "use_cer": use_cer,
                     "num_turns": len(references),
                     "per_turn_wer": per_turn_wer,
                     "per_turn_errors": per_turn_errors,
                     "error_summary": error_summary,
-                    # Overall error counts
                     "total_substitutions": output.substitutions,
                     "total_deletions": output.deletions,
                     "total_insertions": output.insertions,
-                    "reference_words": reference_word_count,
+                    "reference_words": reference_unit_count,
                 },
                 sub_metrics=sub_metrics or None,
             )

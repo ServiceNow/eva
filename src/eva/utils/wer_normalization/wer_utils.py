@@ -71,7 +71,15 @@ def normalize_apostrophes(text: str) -> str:
 
 
 def convert_unicode_to_characters(text: str) -> str:
-    r"""Convert unicode (\u00e9) to characters (é)."""
+    r"""Convert unicode (\u00e9) to characters (é).
+
+    Only applied when the text is pure ASCII — the round-trip via
+    raw_unicode_escape/unicode-escape is only safe for ASCII strings containing
+    \uXXXX escape sequences. Non-ASCII text (CJK, Arabic, accented Latin, …)
+    is already in the correct form and must not be re-encoded.
+    """
+    if not text.isascii():
+        return text
     return text.encode("raw_unicode_escape").decode("unicode-escape")
 
 

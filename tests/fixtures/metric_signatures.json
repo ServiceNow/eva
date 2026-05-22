@@ -43,8 +43,8 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "1add7d47362c",
-    "source_hash": "8e3fd6bc9960",
+    "prompt_hash": "c455aa09587a",
+    "source_hash": "82ab3e3244f5",
     "version": "v0.2"
   },
   "ResponseSpeedMetric": {
@@ -56,13 +56,13 @@
   "STTWERMetric": {
     "name": "stt_wer",
     "prompt_hash": null,
-    "source_hash": "01fcfbc1cf21",
-    "version": "v0.1"
+    "source_hash": "2c9f52bbbbcc",
+    "version": "v0.2"
   },
   "SpeakabilityJudgeMetric": {
     "name": "speakability",
-    "prompt_hash": "cd2cc44fc96c",
-    "source_hash": "187ddf9dc0da",
+    "prompt_hash": "e8a9bb4c95c2",
+    "source_hash": "75a203410ec1",
     "version": "v0.2"
   },
   "TaskCompletion": {
@@ -79,9 +79,9 @@
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
-    "prompt_hash": "c0980ff2168d",
-    "source_hash": "a83a699d0fda",
-    "version": "v0.1"
+    "prompt_hash": "8c99c4a95b9d",
+    "source_hash": "2eb5cecaaa2b",
+    "version": "v0.2"
   },
   "TurnTakingMetric": {
     "name": "turn_taking",
@@ -91,14 +91,14 @@
   },
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
-    "prompt_hash": "06477144c28e",
-    "source_hash": "af8144bd7731",
+    "prompt_hash": "5ab4fcac8a8a",
+    "source_hash": "92f6992d980b",
     "version": "v0.2"
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "c4d97e36b865",
-    "source_hash": "e38e8c162b3d",
+    "prompt_hash": "c783db0a7ca4",
+    "source_hash": "cac98a26dcd0",
     "version": "v0.2"
   }
 }

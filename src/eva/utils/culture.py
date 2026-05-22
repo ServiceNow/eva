@@ -116,6 +116,24 @@ def _load_language_addenda() -> dict[str, str]:
     return yaml.safe_load(LANGUAGE_ADDENDA_PATH.read_text(encoding="utf-8")) or {}
 
 
+def get_user_language_directive(language: str, language_display_name: str) -> str | None:
+    """Return the language directive appended to the user-simulator persona.
+
+    Returns None for English (no directive needed). The same string is used both
+    at runtime (injected into the simulator persona) and by the judge metric
+    (so the judge sees the exact instruction the simulator received).
+    """
+    if not language or language.lower() in {"en", "english"}:
+        return None
+    return (
+        f"Speak ONLY in {language_display_name}. Do not switch to English even if the agent does. "
+        "All translatable values should be translated when talking to the agent. "
+        "For example, if you are telling the agent about a location like 'downtown' or a date, "
+        "this should be translated. Distinct proper names (e.g. 'IntelliJ') "
+        "should be kept in their original form."
+    )
+
+
 def get_language_addendum(language: str) -> str | None:
     """Return the agent prompt addendum for the language, or None for English/unknown."""
     if not language or language.lower() in {"en", "english"}:
@@ -133,7 +151,7 @@ def _load_initial_messages() -> dict[str, str]:
 def get_initial_message(language: str) -> str:
     """Return the assistant's opening line for ``language``.
 
-    Falls back to English. Raises if even English is missing (data quality).
+    Falls back to English. Raises if even English is missing.
     """
     msgs = _load_initial_messages()
     if language in msgs:

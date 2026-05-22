@@ -171,13 +171,13 @@ def resolve_paths(domain: str) -> tuple[Path, Path, Path]:
     return dataset, scenario_db_dir, agent_config
 
 
-def build_user_sim_prompt(record: EvaluationRecord) -> str:
+def build_user_sim_prompt(record: EvaluationRecord, language: str) -> str:
     """Build the user-simulator system prompt from the record's goal and persona."""
     pm = PromptManager()
     goal = resolve_user_goal(
         record.user_goal,
         record.culture_overrides,
-        os.getenv("EVA_LANGUAGE", "en"),
+        language,
         record.romanized_culture_overrides,
         record.starting_utterances,
     )
@@ -518,7 +518,7 @@ async def run_record(
         output_dir=record_output_dir,
     )
 
-    user_prompt = build_user_sim_prompt(record)
+    user_prompt = build_user_sim_prompt(record, language)
 
     # ---- Conversation loop ----
     logger.info(f"Text-only test: record {record.id} | model={llm_model} | max_turns={max_turns}")
@@ -527,7 +527,7 @@ async def run_record(
     user_message = resolve_user_goal(
         record.user_goal,
         record.culture_overrides,
-        os.getenv("EVA_LANGUAGE", "en"),
+        language,
         record.romanized_culture_overrides,
         record.starting_utterances,
     )["starting_utterance"]

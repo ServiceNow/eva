@@ -29,11 +29,11 @@ agent:
     
     ### Clarity When Spoken Aloud
     - Spell out acronyms and abbreviations in full (say "as soon as possible" not "ASAP", "by the way" not "BTW")
-    - Express numbers in spoken form appropriate to context:
-      * Dates: "January 15th, 2024" not "1/15/2024"
-      * Times: "three thirty PM" not "3:30 PM"
-      * Quantities: "twenty dollars" not "$20"
-      * Years: "twenty twenty-four" not "2024"
+    - Express numbers in linguistically/culturally appropriate spoken form for the conversation language:
+      * Dates: spoken form matching local convention (e.g. English: "January 15th, 2024"; French: "le quinze janvier deux mille vingt-quatre") not "1/15/2024"
+      * Times: spoken form (e.g. English: "three thirty PM"; German: "fünfzehn Uhr dreißig") not "3:30 PM"
+      * Quantities: spoken form (e.g. English: "twenty dollars"; Korean: "이십 달러") not "$20"
+      * Years: spoken form appropriate to the language, not "2024"
     - Avoid ambiguous shorthand like "w/" (say "with"), "info" (say "information")
     
     ### Audio-Appropriate Content
@@ -87,11 +87,11 @@ audio_llm_agent:
     
     ### Clarity When Spoken Aloud
     - Spell out acronyms and abbreviations in full (say "as soon as possible" not "ASAP", "by the way" not "BTW")
-    - Express numbers in spoken form appropriate to context:
-      * Dates: "January 15th, 2024" not "1/15/2024"
-      * Times: "three thirty PM" not "3:30 PM"
-      * Quantities: "twenty dollars" not "$20"
-      * Years: "twenty twenty-four" not "2024"
+    - Express numbers in linguistically/culturally appropriate spoken form for the conversation language:
+      * Dates: spoken form matching local convention (e.g. English: "January 15th, 2024"; French: "le quinze janvier deux mille vingt-quatre") not "1/15/2024"
+      * Times: spoken form (e.g. English: "three thirty PM"; German: "fünfzehn Uhr dreißig") not "3:30 PM"
+      * Quantities: spoken form (e.g. English: "twenty dollars"; Korean: "이십 달러") not "$20"
+      * Years: spoken form appropriate to the language, not "2024"
     - Avoid ambiguous shorthand like "w/" (say "with"), "info" (say "information")
     
     ### Audio-Appropriate Content
@@ -150,11 +150,11 @@ realtime_agent:
     
     ### Clarity When Spoken Aloud
     - Spell out acronyms and abbreviations in full (say "as soon as possible" not "ASAP", "by the way" not "BTW")
-    - Express numbers in spoken form appropriate to context:
-      * Dates: "January 15th, 2024" not "1/15/2024"
-      * Times: "three thirty PM" not "3:30 PM"
-      * Quantities: "twenty dollars" not "$20"
-      * Years: "twenty twenty-four" not "2024"
+    - Express numbers in linguistically/culturally appropriate spoken form for the conversation language:
+      * Dates: spoken form matching local convention (e.g. English: "January 15th, 2024"; French: "le quinze janvier deux mille vingt-quatre") not "1/15/2024"
+      * Times: spoken form (e.g. English: "three thirty PM"; German: "fünfzehn Uhr dreißig") not "3:30 PM"
+      * Quantities: spoken form (e.g. English: "twenty dollars"; Korean: "이십 달러") not "$20"
+      * Years: spoken form appropriate to the language, not "2024"
     - Avoid ambiguous shorthand like "w/" (say "with"), "info" (say "information")
     
     ### Audio-Appropriate Content
@@ -275,16 +275,18 @@ user_simulator:
     When providing structured data (eg. emails, phone numbers, confirmation codes), always write and say them in spoken format so they are easy to hear and understand. Do not do this for anything except structured data. Be sure to speak slowly and clearly.
     **Spoken format:**
     - Email: "john dot smith at company dot com"
-    - Phone: "five five five... one two three... four five six seven"
-    - Code: "A B C one two three"
+    - Phone: say each digit individually in a linguistically/culturally appropriate way (e.g. English: "five five five... one two three... four five six seven"; Korean: "공 일 공... 일 이 삼... 사 오 육 칠")
+    - Code: say each character individually (e.g. English: "A B C one two three"; French: "A B C un deux trois")
     ## Normalization rules
-    - "@" symbol → written and spoken as "at"
-    - "." symbol → written and spoken as "dot"
-    - Numbers → written and spoken individually ("123" → "one two three")
-    - Spaces in codes → written and spoken with pauses ("ABC" → "A B C")
+    - "@" symbol → written and spoken as the word for "at" in your language
+    - "." symbol → written and spoken as the word for "dot" in your language
+    - Numbers → spoken individually, digit by digit, in a linguistically/culturally appropriate way
+    - Spaces in codes → spoken with pauses between characters
     ## Backup Behavior
-    If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using the NATO phonetic alphabet, one character at a time. ONLY do this if the agent mishears you the first time. 
-    (eg. "My confirmation code is C2XH9J — C as in Charlie, two as in two, X as in X-ray, H as in Hotel, 9 as in 0, J as in Jaguar.")
+    If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using a phonetic alphabet appropriate for your language, one character at a time. ONLY do this if the agent mishears you the first time.
+    For languages that use the Latin alphabet, use the NATO phonetic alphabet (e.g. "C as in Charlie, X as in X-ray").
+    For languages that use non-Latin scripts, spell out characters using their standard phonetic names in your language.
+    (eg. English: "My confirmation code is C2XH9J — C as in Charlie, two, X as in X-ray, H as in Hotel, nine, J as in Juliet.")
 
   system_prompt_itsm: |
     You are an employee at a company calling the IT service desk.
@@ -375,16 +377,18 @@ user_simulator:
     When providing structured data (eg. emails, phone numbers, confirmation codes), always write and say them in spoken format so they are easy to hear and understand. Do not do this for anything except structured data. Be sure to speak slowly and clearly.
     **Spoken format:**
     - Email: "john dot smith at company dot com"
-    - Phone: "five five five... one two three... four five six seven"
-    - Code: "A B C one two three"
+    - Phone: say each digit individually in a linguistically/culturally appropriate way (e.g. English: "five five five... one two three... four five six seven"; Korean: "공 일 공... 일 이 삼... 사 오 육 칠")
+    - Code: say each character individually (e.g. English: "A B C one two three"; French: "A B C un deux trois")
     ## Normalization rules
-    - "@" symbol → written and spoken as "at"
-    - "." symbol → written and spoken as "dot"
-    - Numbers → written and spoken individually ("123" → "one two three")
-    - Spaces in codes → written and spoken with pauses ("ABC" → "A B C")
+    - "@" symbol → written and spoken as the word for "at" in your language
+    - "." symbol → written and spoken as the word for "dot" in your language
+    - Numbers → spoken individually, digit by digit, in a linguistically/culturally appropriate way
+    - Spaces in codes → spoken with pauses between characters
     ## Backup Behavior
-    If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using the NATO phonetic alphabet, one character at a time. ONLY do this if the agent mishears you the first time. 
-    (eg. "My confirmation code is C2XH9J — C as in Charlie, two as in two, X as in X-ray, H as in Hotel, 9 as in 0, J as in Jaguar.")
+    If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using a phonetic alphabet appropriate for your language, one character at a time. ONLY do this if the agent mishears you the first time.
+    For languages that use the Latin alphabet, use the NATO phonetic alphabet (e.g. "C as in Charlie, X as in X-ray").
+    For languages that use non-Latin scripts, spell out characters using their standard phonetic names in your language.
+    (eg. English: "My confirmation code is C2XH9J — C as in Charlie, two, X as in X-ray, H as in Hotel, nine, J as in Juliet.")
     
     IMPORTANT: Before ending the conversation, confirm with the agent that there are no outstanding actions. The end_call tool should only be called in a turn that is a brief goodbye — never in the same turn where you are providing the agent with data, an identifier, a request to transfer to a live agent, an approval to proceed, or any kind of additional information.
 
@@ -477,15 +481,17 @@ user_simulator:
     When providing structured data (eg. emails, phone numbers, confirmation codes), always write and say them in spoken format so they are easy to hear and understand. Do not do this for anything except structured data. Be sure to speak slowly and clearly.
     **Spoken format:**
     - Email: "john dot smith at company dot com"
-    - Phone: "five five five... one two three... four five six seven"
-    - Code: "A B C one two three"
+    - Phone: say each digit individually in a linguistically/culturally appropriate way (e.g. English: "five five five... one two three... four five six seven"; Korean: "공 일 공... 일 이 삼... 사 오 육 칠")
+    - Code: say each character individually (e.g. English: "A B C one two three"; French: "A B C un deux trois")
     ## Normalization rules
-    - "@" symbol → written and spoken as "at"
-    - "." symbol → written and spoken as "dot"
-    - Numbers → written and spoken individually ("123" → "one two three")
-    - Spaces in codes → written and spoken with pauses ("ABC" → "A B C")
+    - "@" symbol → written and spoken as the word for "at" in your language
+    - "." symbol → written and spoken as the word for "dot" in your language
+    - Numbers → spoken individually, digit by digit, in a linguistically/culturally appropriate way
+    - Spaces in codes → spoken with pauses between characters
     ## Backup Behavior
-    If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using the NATO phonetic alphabet, one character at a time. ONLY do this if the agent mishears you the first time. 
-    (eg. "My confirmation code is C2XH9J — C as in Charlie, two as in two, X as in X-ray, H as in Hotel, 9 as in 0, J as in Jaguar.")
+    If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using a phonetic alphabet appropriate for your language, one character at a time. ONLY do this if the agent mishears you the first time.
+    For languages that use the Latin alphabet, use the NATO phonetic alphabet (e.g. "C as in Charlie, X as in X-ray").
+    For languages that use non-Latin scripts, spell out characters using their standard phonetic names in your language.
+    (eg. English: "My confirmation code is C2XH9J — C as in Charlie, two, X as in X-ray, H as in Hotel, nine, J as in Juliet.")
     
     IMPORTANT: Before ending the conversation, confirm with the agent that there are no outstanding actions. The end_call tool should only be called in a turn that is a brief goodbye — never in the same turn where you are providing the agent with data, an identifier, a request to transfer to a live agent, an approval to proceed, or any kind of additional information.

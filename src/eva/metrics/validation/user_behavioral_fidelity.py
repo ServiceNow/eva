@@ -8,6 +8,7 @@ from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import build_binary_flag_sub_metrics
 from eva.models.results import MetricScore
+from eva.utils.culture import get_user_language_directive
 from eva.utils.prompt_manager import get_prompt_manager
 
 _USER_BEHAVIORAL_FIDELITY_CORRUPTION_KEYS = (
@@ -135,6 +136,14 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
         )
 
 
+def _apply_language_directive(context: MetricContext) -> str:
+    """Return user_persona with the language directive appended, matching runtime behaviour."""
+    directive = get_user_language_directive(context.language, context.language_display_name)
+    if directive:
+        return f"{context.user_persona}\n\n{directive}"
+    return context.user_persona
+
+
 def _render_user_simulator_instructions(context: MetricContext) -> str:
     """Render the user-simulator system prompt for the record's domain.
 
@@ -165,7 +174,7 @@ def _render_user_simulator_instructions(context: MetricContext) -> str:
         escalation_behavior=decision_tree.get("escalation_behavior", ""),
         edge_cases=decision_tree.get("edge_cases", []),
         information_required=context.user_goal.get("information_required", {}),
-        user_persona=context.user_persona,
+        user_persona=_apply_language_directive(context),
         starting_utterance=context.user_goal.get("starting_utterance", ""),
         current_date_time=context.current_date_time,
     )
