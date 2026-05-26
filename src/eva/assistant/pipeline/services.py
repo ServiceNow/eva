@@ -182,7 +182,10 @@ def create_stt_service(
         return ElevenLabsRealtimeSTTService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
-            params=ElevenLabsRealtimeSTTService.InputParams(commit_strategy=CommitStrategy.VAD),
+            commit_strategy=CommitStrategy.VAD,
+            settings=ElevenLabsRealtimeSTTService.Settings(
+                language=language_code,
+            ),
         )
 
     elif model_lower == "nvidia":
@@ -308,9 +311,12 @@ def create_tts_service(
         logger.info(f"Using ElevenLabs TTS: {params['model']}")
         return ElevenLabsTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice_id=params.get("voice_id", "hpp4J3VqNfWAUOO0d1Us"),
             sample_rate=SAMPLE_RATE,
+            settings=ElevenLabsTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice_id", "hpp4J3VqNfWAUOO0d1Us"),
+                language=language_code,
+            ),
         )
 
     elif model_lower == "gemini":
