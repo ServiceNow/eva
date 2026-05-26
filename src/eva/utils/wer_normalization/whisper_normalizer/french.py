@@ -22,7 +22,7 @@ class FrenchNumberNormalizer:
     def __init__(self):
         super().__init__()
 
-        self.zeros = {"zéro"}
+        self.zeros = {"zéro", "zero"}
         self.ones = {
             name: i
             for i, name in enumerate(
@@ -423,9 +423,6 @@ class FrenchNumberNormalizer:
         # apply currency postprocessing; "€2 et ¢7" -> "€2.07"
         s = re.sub(r"([€£$])([0-9]+) (?:et )?¢([0-9]{1,2})\b", combine_cents, s)
         s = re.sub(r"[€£$]0.([0-9]{1,2})\b", extract_cents, s)
-
-        # write "un" instead of "1" for readability (matching English behavior with "one")
-        s = re.sub(r"\b1\b", "un", s)
 
         return s
 

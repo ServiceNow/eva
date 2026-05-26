@@ -6,13 +6,16 @@ from jiwer import Compose, RemovePunctuation, Strip, ToLowerCase
 
 from eva.utils.logging import get_logger
 from eva.utils.wer_normalization.normalizers import JapaneseTextNormalizer
-from eva.utils.wer_normalization.whisper_normalizer.basic import BasicTextNormalizer
-from eva.utils.wer_normalization.whisper_normalizer.english import EnglishTextNormalizer
+from eva.utils.wer_normalization.whisper_normalizer import (
+    BasicTextNormalizer,
+    EnglishTextNormalizer,
+    FrenchTextNormalizer,
+)
 
 logger = get_logger(__name__)
 
 # Normalizers per language
-NORMALIZERS = {"en": EnglishTextNormalizer(), "ja": JapaneseTextNormalizer()}
+NORMALIZERS = {"en": EnglishTextNormalizer(), "ja": JapaneseTextNormalizer(), "fr": FrenchTextNormalizer()}
 DEFAULT_NORMALIZER = BasicTextNormalizer()
 
 # Basic transformations applied after Whisper normalization

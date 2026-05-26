@@ -53,6 +53,11 @@ class BenchmarkRunner:
             pool_size=config.port_pool_size,
         )
 
+        # Per-metric configuration derived from run config (e.g. language for stt_wer).
+        self._metric_configs: dict[str, dict] = {
+            "stt_wer": {"language": config.language.value},
+        }
+
         # Results tracking
         self._results: list[ConversationResult] = []
         self._failed_record_ids: list[str] = []
@@ -180,6 +185,7 @@ class BenchmarkRunner:
             run_dir=self.output_dir,
             dataset=_all_unique_records,
             thresholds=self.config.validation_thresholds,
+            metric_configs=self._metric_configs,
         )
 
         # Pre-create MetricsRunner so metrics can start as soon as records pass validation,
@@ -194,6 +200,7 @@ class BenchmarkRunner:
                     run_dir=self.output_dir,
                     dataset=all_unique_records,
                     metric_names=self.config.metrics,
+                    metric_configs=self._metric_configs,
                     num_draws=self.config.num_trials,
                     force_rerun=self.config.force_rerun_metrics,
                 )
@@ -372,6 +379,7 @@ class BenchmarkRunner:
                     run_dir=self.output_dir,
                     dataset=successful_records,
                     metric_names=self.config.metrics,
+                    metric_configs=self._metric_configs,
                     record_ids=list(successful_ids),
                     num_draws=self.config.num_trials,
                     force_rerun=self.config.force_rerun_metrics,
@@ -635,6 +643,7 @@ class BenchmarkRunner:
                 run_dir=self.output_dir,
                 dataset=filtered_records,
                 thresholds=self.config.validation_thresholds,
+                metric_configs=self._metric_configs,
                 output_ids=needs_validation_ids,
             )
             validation_results = await validation_runner.run_validation()
@@ -690,6 +699,7 @@ class BenchmarkRunner:
                     run_dir=self.output_dir,
                     dataset=to_validate_records,
                     thresholds=self.config.validation_thresholds,
+                    metric_configs=self._metric_configs,
                     output_ids=to_validate_ids,
                 )
                 new_results = await vr_runner.run_validation()
@@ -743,6 +753,7 @@ class BenchmarkRunner:
                 run_dir=self.output_dir,
                 dataset=successful_records,
                 metric_names=self.config.metrics,
+                metric_configs=self._metric_configs,
                 record_ids=list(successful_ids),
                 num_draws=self.config.num_trials,
                 force_rerun=self.config.force_rerun_metrics,
@@ -957,6 +968,7 @@ class BenchmarkRunner:
             run_dir=run_dir,
             dataset=records,
             metric_names=metric_names,
+            metric_configs=self._metric_configs,
             record_ids=successful_ids,
             num_draws=self.config.num_trials,
             record_metric_filter=record_metric_filter,

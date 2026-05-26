@@ -22,32 +22,41 @@ class TestWordDigitEquivalence:
     """Reference (digit form) and ASR (spelled-out) must normalize to the same string."""
 
     @pytest.mark.parametrize(
-        "digits,words",
+        "digits,words,language",
         [
-            ("3", "three"),
-            ("12", "twelve"),
-            ("21", "twenty one"),
-            ("21", "twenty-one"),
-            ("22", "twenty two"),
-            ("42", "forty-two"),
-            ("100", "one hundred"),
-            ("1000", "one thousand"),
-            ("2024", "two thousand twenty four"),
-            ("2024", "twenty twenty four"),
-            ("EMP343467", "E M P three four three four six seven"),
-            ("1994-02-11", "nineteen ninety four, zero two, eleven"),
+            ("3", "three", "en"),
+            ("12", "twelve", "en"),
+            ("21", "twenty one", "en"),
+            ("21", "twenty-one", "en"),
+            ("22", "twenty two", "en"),
+            ("42", "forty-two", "en"),
+            ("100", "one hundred", "en"),
+            ("1000", "one thousand", "en"),
+            ("2024", "two thousand twenty four", "en"),
+            ("2024", "twenty twenty four", "en"),
+            ("EMP343467", "E M P three four three four six seven", "en"),
+            ("1994-02-11", "nineteen ninety four, zero two, eleven", "en"),
             # Hyphen-separated digit IDs / phone numbers (very common when STT writes
             # "919-696-3901" while the user simulator says individual digits).
-            ("919-696-3901", "nine one nine six nine six three nine zero one"),
-            ("899-787", "eight nine nine seven eight seven"),
-            ("OVH-89B", "O V H eight nine B"),
+            ("919-696-3901", "nine one nine six nine six three nine zero one", "en"),
+            ("899-787", "eight nine nine seven eight seven", "en"),
+            ("OVH-89B", "O V H eight nine B", "en"),
             # User simulator pronounces literal "dash" when spelling IDs;
             # STT writes a hyphen.
-            ("WZH-89B", "W Z H dash eight nine B"),
+            ("WZH-89B", "W Z H dash eight nine B", "en"),
+            ("3", "trois", "fr"),
+            ("12", "douze", "fr"),
+            ("21", "vingt et un", "fr"),
+            ("30", "trente", "fr"),
+            ("EMP343467", "E M P trois quatre trois quatre six sept", "fr"),
+            ("100", "cent", "fr"),
+            ("Au bâtiment Headquarters, à l'étage FL2.", "au bâtiment headquarters à l'étage fl deux", "fr"),
         ],
     )
-    def test_digits_match_spelled_out(self, digits: str, words: str):
-        assert normalize_text(digits) == normalize_text(words)
+    def test_digits_match_spelled_out(self, digits: str, words: str, language: str):
+        digits_normalized = normalize_text(digits, language=language)
+        words_normalized = normalize_text(words, language=language)
+        assert digits_normalized == words_normalized
 
     def test_spelled_dash_drops_in_id_readout(self):
         # User simulator readout with "dash" between groups should not include
@@ -83,7 +92,7 @@ class TestOrdinalNotConvertedToSaint:
         ],
     )
     def test_ordinals_preserved(self, text: str, expected: str):
-        assert normalize_text(text) == expected
+        assert normalize_text(text, "fr") == expected
 
     @pytest.mark.parametrize(
         "digits,words",
