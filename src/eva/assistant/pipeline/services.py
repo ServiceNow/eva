@@ -177,6 +177,20 @@ def create_stt_service(
             params=ElevenLabsRealtimeSTTService.InputParams(commit_strategy=CommitStrategy.VAD),
         )
 
+    elif model_lower == "grok":
+        from eva.assistant.pipeline.grok_stt import GrokSTTService
+
+        logger.info("Using Grok STT (WebSocket)")
+        return GrokSTTService(
+            api_key=api_key,
+            base_url=url or "wss://api.x.ai/v1/stt",
+            sample_rate=params.get("sample_rate", 16000),
+            encoding=params.get("encoding", "pcm"),
+            interim_results=params.get("interim_results", True),
+            endpointing=params.get("endpointing", 10),
+            language=language_code,
+        )
+
     elif model_lower == "nvidia":
         if not url:
             raise ValueError("url required in STT_PARAMS for NVIDIA STT (WebSocket endpoint)")
@@ -222,7 +236,7 @@ def create_stt_service(
 
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai"
+            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, grok, nvidia, nvidia-baseten, openai"
         )
 
 
@@ -320,6 +334,23 @@ def create_tts_service(
             sample_rate=SAMPLE_RATE,
         )
 
+    elif model_lower == "grok":
+        from eva.assistant.pipeline.grok_tts import GrokTTSService
+
+        logger.info(f"Using Grok TTS (WebSocket): voice={params.get('voice', 'eve')}")
+        return GrokTTSService(
+            api_key=api_key,
+            voice=params.get("voice", "eve"),
+            language=language_code,
+            base_url=url or "wss://api.x.ai/v1/tts",
+            sample_rate=params.get("sample_rate", SAMPLE_RATE),
+            speed=params.get("speed", 1.0),
+            codec=params.get("codec", "pcm"),
+            bit_rate=params.get("bit_rate", 128000),
+            optimize_streaming_latency=params.get("optimize_streaming_latency", 0),
+            text_normalization=params.get("text_normalization", False),
+        )
+
     elif model_lower == "kokoro":
         logger.info(f"Using Kokoro TTS: {params['model']}")
         kokoro_tts = OpenAITTSService(
@@ -403,7 +434,7 @@ def create_tts_service(
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, grok, kokoro, nvidia-baseten, openai, xtts"
         )
 
 
