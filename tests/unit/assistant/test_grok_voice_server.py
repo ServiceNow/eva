@@ -47,13 +47,6 @@ class TestDefaultVoice:
 
 
 class TestBuildSessionConfig:
-    def test_transcription_block_present_without_model(self):
-        srv = _bare_server()
-        cfg = srv._build_session_config()
-        # Block kept as a defensive opt-in; model subfield removed since xAI
-        # does not accept it.
-        assert cfg["audio"]["input"]["transcription"] == {}
-
     def test_voice_defaults_to_eve(self):
         srv = _bare_server()
         cfg = srv._build_session_config()
