@@ -36,17 +36,12 @@ class GrokVoiceAssistantServer(OpenAIRealtimeAssistantServer):
         api_key = self.pipeline_config.s2s_params.get("api_key")
         if not api_key:
             raise ValueError(f"API key required for {self._service_name}")
-        return AsyncOpenAI(api_key=api_key, base_url=XAI_REALTIME_BASE_URL)
+        return AsyncOpenAI(
+            api_key=api_key, base_url=self.pipeline_config.s2s_params.get("base_url", XAI_REALTIME_BASE_URL)
+        )
 
     def _default_voice(self) -> str:
         return "eve"
-
-    def _build_session_config(self) -> dict[str, Any]:
-        cfg = super()._build_session_config()
-        # xAI does not accept the `transcription.model` field. Keep the
-        # `transcription` block as a defensive opt-in; drop the subfield.
-        cfg["audio"]["input"]["transcription"] = {}
-        return cfg
 
     # ── Deferred transcription (xAI sends incremental completed events) ──
 
