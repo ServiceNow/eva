@@ -1,3 +1,4 @@
+print("EVA_BRANCH marker: hello from custom branch", flush=True)
 """Text-only test flow for EVA.
 
 Runs records through the agent/user-simulator loop using pure text
