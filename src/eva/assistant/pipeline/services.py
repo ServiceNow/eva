@@ -15,11 +15,8 @@ from pipecat.frames.frames import (
     TTSStartedFrame,
     TTSStoppedFrame,
 )
-from pipecat.services.assemblyai.stt import (
-    AssemblyAIConnectionParams,
-    AssemblyAISTTService,
-)
-from pipecat.services.cartesia.stt import CartesiaLiveOptions, CartesiaSTTService
+from pipecat.services.assemblyai.stt import AssemblyAISTTService
+from pipecat.services.cartesia.stt import CartesiaSTTService
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
 from pipecat.services.deepgram.stt import DeepgramSTTService
@@ -129,10 +126,10 @@ def create_stt_service(
         logger.info(f"Using AssemblyAI STT: {params['model']}")
         return AssemblyAISTTService(
             api_key=api_key,
-            language=language_code,
-            connection_params=AssemblyAIConnectionParams(
-                sample_rate=SAMPLE_RATE,
-                speech_model=params["model"],
+            sample_rate=SAMPLE_RATE,
+            settings=AssemblyAISTTService.Settings(
+                language=language_code,
+                model=params["model"],
             ),
         )
 
@@ -140,10 +137,10 @@ def create_stt_service(
         logger.info(f"Using Cartesia STT: {params['model']}")
         return CartesiaSTTService(
             api_key=api_key,
-            live_options=CartesiaLiveOptions(
+            sample_rate=SAMPLE_RATE,
+            settings=CartesiaSTTService.Settings(
                 model=params["model"],
                 language=language_code,
-                sample_rate=SAMPLE_RATE,
             ),
         )
 
@@ -274,10 +271,12 @@ def create_tts_service(
         return CartesiaTTSService(
             url=url or "wss://api.cartesia.ai/tts/websocket",
             api_key=api_key,
-            model=params["model"],
-            voice_id=params.get("voice_id", "f786b574-daa5-4673-aa0c-cbe3e8534c02"),
-            params=CartesiaTTSService.InputParams(language=language_code),
             sample_rate=SAMPLE_RATE,
+            settings=CartesiaTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice_id", "f786b574-daa5-4673-aa0c-cbe3e8534c02"),
+                language=language_code,
+            ),
         )
 
     elif model_lower == "chatterbox":
@@ -330,9 +329,12 @@ def create_tts_service(
         # Supports gemini-2.5-flash-tts, gemini-3.1-flash-tts-preview, etc.
         return GeminiTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice_id=params.get("voice_id", params.get("voice_name", "Kore")),
             sample_rate=SAMPLE_RATE,
+            settings=GeminiTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice_id", params.get("voice_name", "Kore")),
+                language=language_code,
+            ),
         )
 
     elif model_lower == "kokoro":

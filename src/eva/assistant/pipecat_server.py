@@ -614,11 +614,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
             # Accumulate audio chunks
             self._audio_buffer.extend(audio)
             self._audio_sample_rate = sample_rate
-            if len(audio) > 0:
-                self.num_seconds += 1
-                # helps to measure that the audio timing matches up to pipecat during the run.
-                # when the logs say that silence is being sent, the audio duration should also increase by 1 second.
-                logger.debug(f"Audio duration: {self.num_seconds} seconds")
 
         @audiobuffer.event_handler("on_track_audio_data")
         async def on_track_audio_data(buffer, user_audio, bot_audio, sample_rate, num_channels):
