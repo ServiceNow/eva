@@ -1381,7 +1381,7 @@
       }
     },
     {
-      "id": "elevenagent",
+      "id": "scribe-realtime-gemini-3-flash-eleven-conversational-v3",
       "name": "Scribe v2.2 Realtime + Gemini 3 Flash + TTS Conversational v3 (ElevenAgents)",
       "type": "cascade",
       "stt": "Scribe v2.2 Realtime",
@@ -17926,9 +17926,9 @@
     },
     {
       "id": "scribe-realtime-claude-haiku-4-5-eleven-flash-v2",
-      "name": "Scribe Realtime + Claude Haiku 4.5 + Eleven Flash v2",
+      "name": "Scribe v2.2 Realtime + Claude Haiku 4.5 + Eleven Flash v2 (ElevenAgents)",
       "type": "cascade",
-      "stt": "Scribe Realtime",
+      "stt": "Scribe v2.2 Realtime",
       "llm": "Claude Haiku 4.5",
       "tts": "Eleven Flash v2",
       "clean": {
@@ -18342,9 +18342,9 @@
     },
     {
       "id": "scribe-realtime-gpt-5-4-eleven-flash-v2",
-      "name": "Scribe Realtime + GPT-5.4 + Eleven Flash v2",
+      "name": "Scribe v2.2 Realtime + GPT-5.4 + Eleven Flash v2 (ElevenAgents)",
       "type": "cascade",
-      "stt": "Scribe Realtime",
+      "stt": "Scribe v2.2 Realtime",
       "llm": "GPT-5.4",
       "tts": "Eleven Flash v2",
       "clean": {
