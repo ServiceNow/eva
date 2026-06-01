@@ -217,7 +217,8 @@ def compute_run_level_aggregates(
         num_draws: Number of draws (k) for pass@k computation.
         composites: Custom composite definitions. Defaults to EVA_COMPOSITES.
         seed: Bootstrap seed for CI computation. Keyword-only and required.
-            Production callers (the metrics runner) pass ``run_seed(run_dir.name)``.
+            Production callers pass ``run_seed(run_dir.name)`` for within-run
+            determinism.
 
     Returns:
         Dict with per-composite statistics, CI fields, and optional pass@k data.

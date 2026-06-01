@@ -648,7 +648,8 @@ class MetricsRunner:
             pass_at_k_results: Per-record pass@k results (if multi-trial).
             num_draws: Number of draws (k) for pass@k.
             seed: Bootstrap seed for CI computation. Keyword-only and required;
-                production callers pass ``run_seed(run_dir.name)``.
+                production callers pass ``run_seed(run_dir.name)`` for within-run
+                determinism.
 
         Returns:
             Dict mapping metric name to aggregate stats.
