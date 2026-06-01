@@ -11,7 +11,7 @@
           "last_name": "<LAST_NAME>",
           "ticket_number": "1801234567890",
           "email": "mina.<LAST_NAME_ROMANIZED>@example.com",
-          "phone": "+1-415-555-0134",
+          "phone": "<PHONE>",
           "elite_status": null,
           "meal_preference": "none",
           "seat_preference": "no_preference"

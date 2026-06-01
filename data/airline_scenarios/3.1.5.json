@@ -11,7 +11,7 @@
           "last_name": "<LAST_NAME>",
           "ticket_number": "2301234567890",
           "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
-          "phone": "+1-225-555-3902",
+          "phone": "<PHONE>",
           "elite_status": null,
           "meal_preference": "none",
           "seat_preference": "aisle"

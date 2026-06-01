@@ -37,7 +37,7 @@
           "last_name": "<LAST_NAME>",
           "meal_preference": "none",
           "passenger_id": "PAX001",
-          "phone": "+1-803-555-6013",
+          "phone": "<PHONE>",
           "seat_preference": "no_preference",
           "ticket_number": "1234567890123"
         }

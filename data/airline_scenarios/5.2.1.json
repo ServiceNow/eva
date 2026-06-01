@@ -35,7 +35,7 @@
           "last_name": "<LAST_NAME>",
           "meal_preference": "none",
           "passenger_id": "PAX001",
-          "phone": "+1-312-555-0144",
+          "phone": "<PHONE>",
           "seat_preference": "aisle",
           "ticket_number": "7245819301746"
         }

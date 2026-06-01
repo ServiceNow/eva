@@ -12,6 +12,7 @@ form of the user's name found in the data:
 - Lower-case full        ``"first last"``  → ``"<FIRST_NAME_ROMANIZED> <LAST_NAME_ROMANIZED>"``
 - Lower-case first       ``"first"``       → ``"<FIRST_NAME_ROMANIZED>"``
 - Lower-case last        ``"last"``        → ``"<LAST_NAME_ROMANIZED>"``
+- Phone number           ``"+1234567890"`` → ``"<PHONE>"``
 
 Stringified replacement catches sneaky spots like ``edge_cases`` free text,
 ``session.last_name`` (which is lowercase), and emails — without the resolver
@@ -37,12 +38,14 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 from eva.utils.culture import (
     FIRST_NAME_PLACEHOLDER,
     FIRST_NAME_ROMANIZED_PLACEHOLDER,
     LAST_NAME_PLACEHOLDER,
     LAST_NAME_ROMANIZED_PLACEHOLDER,
+    PHONE_PLACEHOLDER,
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -145,22 +148,71 @@ def migrate_record(record: dict) -> tuple[bool, str, str]:
     return changed, first, last
 
 
-def migrate_scenario_db(path: Path, first: str, last: str, dry_run: bool) -> bool:
-    if not path.exists():
+def _looks_like_phone(value: Any) -> bool:
+    """Return True if ``value`` looks like a full phone number.
+
+    Accepts values that contain '+' or have 7+ consecutive digits.
+    Rejects short strings like phone_last_four (4-digit strings).
+    """
+    if not isinstance(value, str):
         return False
+    digit_count = sum(c.isdigit() for c in value)
+    return digit_count >= 7
+
+
+def _extract_phone(obj: Any) -> str | None:
+    """Recursively search ``obj`` for a key named 'phone' with a phone-like value.
+
+    Returns the first matching value found, or None.
+    Only looks at keys literally named 'phone' — skips 'phone_last_four' etc.
+    """
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == "phone" and isinstance(v, str) and _looks_like_phone(v):
+                return v
+        for v in obj.values():
+            result = _extract_phone(v)
+            if result is not None:
+                return result
+    elif isinstance(obj, list):
+        for item in obj:
+            result = _extract_phone(item)
+            if result is not None:
+                return result
+    return None
+
+
+def migrate_scenario_db(path: Path, first: str, last: str, dry_run: bool) -> tuple[bool, str | None]:
+    """Placeholderize names and phone numbers in a scenario DB file.
+
+    Returns ``(changed, phone_value_or_None)``.
+    """
+    if not path.exists():
+        return False, None
     original = path.read_text(encoding="utf-8")
     replaced = _placeholderize_string(original, first, last)
-    if replaced == original:
-        return False
-    # Sanity: confirm no leaks.
-    if _word_re(first).search(replaced) or _word_re(last).search(replaced):
-        raise RuntimeError(f"{path}: name leaked past placeholderization")
-    if not dry_run:
-        tmp = path.with_suffix(path.suffix + ".tmp")
-        # Re-pretty-print to keep diffs sane.
-        tmp.write_text(json.dumps(json.loads(replaced), ensure_ascii=False, indent=2), encoding="utf-8")
-        tmp.replace(path)
-    return True
+
+    # Extract the phone number from the original parsed object (before name replacement).
+    parsed_original = json.loads(original)
+    phone = _extract_phone(parsed_original)
+
+    # Replace phone value with placeholder in the (already name-replaced) string.
+    if phone and phone in replaced:
+        replaced = replaced.replace(json.dumps(phone), json.dumps(PHONE_PLACEHOLDER))
+
+    changed = replaced != original
+
+    if changed:
+        # Sanity: confirm no name leaks.
+        if _word_re(first).search(replaced) or _word_re(last).search(replaced):
+            raise RuntimeError(f"{path}: name leaked past placeholderization")
+        if not dry_run:
+            tmp = path.with_suffix(path.suffix + ".tmp")
+            # Re-pretty-print to keep diffs sane.
+            tmp.write_text(json.dumps(json.loads(replaced), ensure_ascii=False, indent=2), encoding="utf-8")
+            tmp.replace(path)
+
+    return changed, phone
 
 
 def migrate_file(path: Path, dry_run: bool) -> tuple[int, int, int]:
@@ -177,10 +229,32 @@ def migrate_file(path: Path, dry_run: bool) -> tuple[int, int, int]:
                 continue
             rec = json.loads(line)
             rec_changed, first, last = migrate_record(rec)
+            changed_scen, phone = migrate_scenario_db(scenario_dir / f"{rec['id']}.json", first, last, dry_run)
+            if changed_scen:
+                scenario_changed += 1
+            # Resolve phone: prefer what was just extracted, fall back to already-stored value.
+            phone = phone or rec.get("culture_overrides", {}).get("en", {}).get("phone")
+            if phone:
+                if "phone" not in rec.get("culture_overrides", {}).get("en", {}):
+                    rec.setdefault("culture_overrides", {}).setdefault("en", {})["phone"] = phone
+                    rec_changed = True
+                # Replace the literal phone value in the record body (e.g. ground_truth.expected_scenario_db).
+                # Pop culture_overrides so the stored value isn't itself substituted.
+                culture = rec.pop("culture_overrides")
+                romanized = rec.pop("romanized_culture_overrides", {})
+                rec_str = json.dumps(rec, ensure_ascii=False)
+                new_rec_str = rec_str.replace(json.dumps(phone), json.dumps(PHONE_PLACEHOLDER))
+                if new_rec_str != rec_str:
+                    rec.clear()
+                    rec.update(json.loads(new_rec_str))
+                    rec_changed = True
+                else:
+                    rec.clear()
+                    rec.update(json.loads(rec_str))
+                rec["culture_overrides"] = culture
+                rec["romanized_culture_overrides"] = romanized
             if rec_changed:
                 changed += 1
-            if migrate_scenario_db(scenario_dir / f"{rec['id']}.json", first, last, dry_run):
-                scenario_changed += 1
             records.append(rec)
 
     if not dry_run and changed:

@@ -132,6 +132,67 @@ ADDENDUM_TEMPLATE = (
 BUCKET_SIZE = 40  # Each name array: indices [0:BUCKET_SIZE] = ASCII, [BUCKET_SIZE:2*BUCKET_SIZE] = native script.
 
 
+async def _generate_phone_format(language_name: str, language: str, llm: LLMClient) -> dict:
+    """Return {calling_code: str, mobile_groups: list[int | str]} for the language's mobile format.
+
+    Each group element is either:
+      - int: that many random digits
+      - str: a fixed literal prefix (e.g. "6" for French mobiles that always start with 06/+336)
+
+    Example for France: {"calling_code": "33", "mobile_groups": ["6", 2, 2, 2, 2]}
+    renders as +33 6 XX XX XX XX.
+    Example for UK: {"calling_code": "44", "mobile_groups": ["7", 3, 6]}
+    renders as +44 7 XXX XXXXXX.
+    """
+    prompt = (
+        f"For {language_name} ({language}), what is the standard mobile phone number format?\n"
+        "Return JSON with:\n"
+        "  calling_code: string (country calling code, no leading +)\n"
+        "  mobile_groups: list where each element is either:\n"
+        '    - a string: a fixed digit or prefix that all mobile numbers share (e.g. "6" for France, "7" for UK)\n'
+        "    - an integer: the count of random digits in that group\n"
+        "Use a string element for any digit position that is fixed across all mobile numbers of that country.\n"
+        'Example for France (+33 6 XX XX XX XX): {"calling_code": "33", "mobile_groups": ["6", 2, 2, 2, 2]}\n'
+        'Example for UK (+44 7XXX XXXXXX): {"calling_code": "44", "mobile_groups": ["7", 3, 6]}\n'
+        'Example for US (+1 NXX NXX XXXX, no fixed mobile prefix): {"calling_code": "1", "mobile_groups": [3, 3, 4]}\n'
+        "Return only the JSON object, no markdown."
+    )
+    text, _ = await llm.generate_text(
+        [{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"},
+    )
+    data = extract_and_load_json(text)
+    calling_code = str(data.get("calling_code", ""))
+    mobile_groups = data.get("mobile_groups")
+    if not calling_code or not isinstance(mobile_groups, list) or not mobile_groups:
+        raise ValueError(f"Phone format generation returned invalid data: {data!r}")
+    # Coerce: strings stay as fixed literals, everything else becomes int.
+    coerced = [g if isinstance(g, str) else int(g) for g in mobile_groups]
+    return {"calling_code": calling_code, "mobile_groups": coerced}
+
+
+def _render_phone(spec: dict, record_id: str) -> str:
+    """Generate a deterministic mobile phone number for record_id using the format spec.
+
+    Each element of mobile_groups is either a str (fixed literal) or int (random digit count).
+    """
+    h = int(hashlib.sha256(f"phone:{record_id}".encode()).hexdigest(), 16)
+    calling_code = spec["calling_code"]
+    parts = []
+    for group in spec["mobile_groups"]:
+        if isinstance(group, str):
+            parts.append(group)
+        else:
+            group_digits = []
+            for _ in range(group):
+                group_digits.append(str(h % 10))
+                h //= 10
+                if h == 0:
+                    h = int(hashlib.sha256(str(group_digits).encode()).hexdigest(), 16)
+            parts.append("".join(group_digits))
+    return f"+{calling_code} {' '.join(parts)}"
+
+
 def _seeded_index(seed: str, n: int) -> int:
     """Deterministic index in ``[0, n)`` keyed by ``seed``."""
     if n <= 0:
@@ -490,12 +551,13 @@ async def add_culture(
     domain: str,
     language: str,
     language_name: str,
-    names: dict[str, list[str]],
-    romanized_names: dict[str, list[str]],
+    names: dict[str, list[str]] | None,
+    romanized_names: dict[str, list[str]] | None,
     llm: LLMClient,
     dry_run: bool,
     addendum: str,
     record_id: str | None = None,
+    phone_spec: dict | None = None,
 ) -> None:
     dataset_path = DATA_DIR / f"{domain}_dataset.jsonl"
     if not dataset_path.exists():
@@ -535,6 +597,11 @@ async def add_culture(
         bucket = _gender_to_bucket(gender)
 
         if language not in rec["culture_overrides"]:
+            if names is None or romanized_names is None:
+                raise ValueError(
+                    f"Record {rec.get('id')!r} missing culture_overrides[{language!r}] but no name arrays available — "
+                    "re-run without skipping name generation"
+                )
             seed = f"{rec['id']}|{language}"
             # Script tier is fixed per record_id across all languages (~50/50 ASCII vs native).
             offset = BUCKET_SIZE if _use_native_script(rec["id"]) else 0
@@ -548,6 +615,10 @@ async def add_culture(
                 "first_name": romanized_names[bucket][first_idx],
                 "last_name": romanized_names["last"][last_idx],
             }
+
+        # Assign phone number for airline domain (deterministic per record).
+        if phone_spec and "phone" not in rec["culture_overrides"].get(language, {}):
+            rec["culture_overrides"].setdefault(language, {})["phone"] = _render_phone(phone_spec, rec["id"])
 
         rec.setdefault("starting_utterances", {})
         if "en" not in rec["starting_utterances"]:
@@ -583,25 +654,76 @@ async def add_culture(
         logger.info(f"Updated {ADDENDA_PATH}")
 
 
+def _all_records_have_language(language: str, domains: list[str], record_id: str | None) -> bool:
+    """Return True if every target record already has culture_overrides[language] with first/last name."""
+    for domain in domains:
+        path = DATA_DIR / f"{domain}_dataset.jsonl"
+        if not path.exists():
+            continue
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                if record_id and rec.get("id") != record_id:
+                    continue
+                entry = rec.get("culture_overrides", {}).get(language, {})
+                if not entry.get("first_name") or not entry.get("last_name"):
+                    return False
+    return True
+
+
+def _all_airline_records_have_phone(language: str, record_id: str | None) -> bool:
+    """Return True if every target airline record already has culture_overrides[language].phone."""
+    path = DATA_DIR / "airline_dataset.jsonl"
+    if not path.exists():
+        return True
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            rec = json.loads(line)
+            if record_id and rec.get("id") != record_id:
+                continue
+            if not rec.get("culture_overrides", {}).get(language, {}).get("phone"):
+                return False
+    return True
+
+
 async def amain(args: argparse.Namespace) -> int:
     llm = LLMClient(model=args.llm_model, params={"temperature": 0.0})
 
+    domains = args.domains or [p.stem.removesuffix("_dataset") for p in sorted(DATA_DIR.glob("*_dataset.jsonl"))]
+
     if args.auto_generate_names:
-        logger.info(f"Generating {args.language_name} name arrays via LLM")
-        names = await _generate_names(args.language_name, llm)
-        if args.dump_names:
-            Path(args.dump_names).write_text(json.dumps(names, ensure_ascii=False, indent=2), encoding="utf-8")
-            logger.info(f"Wrote generated names to {args.dump_names}")
+        if _all_records_have_language(args.language, domains, args.record_id):
+            logger.info(f"All records already have {args.language} names — skipping name generation")
+            names = None
+            romanized_names = None
+        else:
+            logger.info(f"Generating {args.language_name} name arrays via LLM")
+            names = await _generate_names(args.language_name, llm)
+            if args.dump_names:
+                Path(args.dump_names).write_text(json.dumps(names, ensure_ascii=False, indent=2), encoding="utf-8")
+                logger.info(f"Wrote generated names to {args.dump_names}")
+            logger.info("Romanizing name arrays via LLM")
+            romanized_names = await _romanize_names(names, args.language_name, llm)
+            if args.dump_names:
+                out = Path(args.dump_names)
+                rom_out = out.with_name(out.stem + "_romanized" + out.suffix)
+                rom_out.write_text(json.dumps(romanized_names, ensure_ascii=False, indent=2), encoding="utf-8")
+                logger.info(f"Wrote romanized names to {rom_out}")
     else:
         names = _load_names_file(Path(args.names_file))
-
-    logger.info("Romanizing name arrays via LLM")
-    romanized_names = await _romanize_names(names, args.language_name, llm)
-    if args.dump_names:
-        out = Path(args.dump_names)
-        rom_out = out.with_name(out.stem + "_romanized" + out.suffix)
-        rom_out.write_text(json.dumps(romanized_names, ensure_ascii=False, indent=2), encoding="utf-8")
-        logger.info(f"Wrote romanized names to {rom_out}")
+        logger.info("Romanizing name arrays via LLM")
+        romanized_names = await _romanize_names(names, args.language_name, llm)
+        if args.dump_names:
+            out = Path(args.dump_names)
+            rom_out = out.with_name(out.stem + "_romanized" + out.suffix)
+            rom_out.write_text(json.dumps(romanized_names, ensure_ascii=False, indent=2), encoding="utf-8")
+            logger.info(f"Wrote romanized names to {rom_out}")
 
     native_suffix = f" ({args.native_name})" if args.native_name else ""
     addendum = ADDENDUM_TEMPLATE.format(language_name=args.language_name, native_suffix=native_suffix)
@@ -613,9 +735,20 @@ async def amain(args: argparse.Namespace) -> int:
         _update_initial_messages(args.language, initial_message)
         logger.info(f"Updated {INITIAL_MESSAGES_PATH}")
 
-    domains = args.domains or [p.stem.removesuffix("_dataset") for p in sorted(DATA_DIR.glob("*_dataset.jsonl"))]
     for domain in domains:
         logger.info(f"=== Domain: {domain} ===")
+        if domain == "airline":
+            if _all_airline_records_have_phone(args.language, args.record_id):
+                logger.info(
+                    f"All airline records already have {args.language} phone — skipping phone format generation"
+                )
+                phone_spec = None
+            else:
+                logger.info(f"Generating phone format spec for {args.language_name}")
+                phone_spec: dict | None = await _generate_phone_format(args.language_name, args.language, llm)
+                logger.info(f"Phone format for {args.language_name}: {phone_spec}")
+        else:
+            phone_spec = None
         await add_culture(
             domain,
             args.language,
@@ -626,6 +759,7 @@ async def amain(args: argparse.Namespace) -> int:
             args.dry_run,
             addendum,
             args.record_id,
+            phone_spec,
         )
         await add_scenario_aliases(domain, args.language, args.language_name, llm, args.dry_run)
 

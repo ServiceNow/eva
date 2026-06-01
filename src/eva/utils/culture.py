@@ -33,23 +33,34 @@ FIRST_NAME_PLACEHOLDER = "<FIRST_NAME>"
 LAST_NAME_PLACEHOLDER = "<LAST_NAME>"
 FIRST_NAME_ROMANIZED_PLACEHOLDER = "<FIRST_NAME_ROMANIZED>"
 LAST_NAME_ROMANIZED_PLACEHOLDER = "<LAST_NAME_ROMANIZED>"
+PHONE_PLACEHOLDER = "<PHONE>"
 
 
-def _replace_in(obj: Any, first: str, last: str, first_rom: str, last_rom: str) -> Any:
+def _replace_in(obj: Any, first: str, last: str, first_rom: str, last_rom: str, phone: str = "") -> Any:
     if isinstance(obj, str):
         # Romanized placeholders are emitted lowercase: they exist for email
         # local-parts and similar ASCII slug contexts.
-        return (
+        result = (
             obj.replace(FIRST_NAME_ROMANIZED_PLACEHOLDER, first_rom.lower())
             .replace(LAST_NAME_ROMANIZED_PLACEHOLDER, last_rom.lower())
             .replace(FIRST_NAME_PLACEHOLDER, first)
             .replace(LAST_NAME_PLACEHOLDER, last)
         )
+        if phone:
+            result = result.replace(PHONE_PLACEHOLDER, phone)
+        return result
     if isinstance(obj, list):
-        return [_replace_in(x, first, last, first_rom, last_rom) for x in obj]
+        return [_replace_in(x, first, last, first_rom, last_rom, phone) for x in obj]
     if isinstance(obj, dict):
-        return {k: _replace_in(v, first, last, first_rom, last_rom) for k, v in obj.items()}
+        return {k: _replace_in(v, first, last, first_rom, last_rom, phone) for k, v in obj.items()}
     return obj
+
+
+def _phone_for(culture_overrides: dict | None, language: str) -> str:
+    """Extract phone number for ``language`` from ``culture_overrides``, or empty string."""
+    if not culture_overrides or language not in culture_overrides:
+        return ""
+    return culture_overrides[language].get("phone", "")
 
 
 def _names_for(
@@ -86,7 +97,8 @@ def resolve_user_goal(
     dict is kept off the goal payload to avoid leaking other-language context.
     """
     first, last, first_rom, last_rom = _names_for(culture_overrides, romanized_culture_overrides, language)
-    resolved = _replace_in(copy.deepcopy(user_goal), first, last, first_rom, last_rom)
+    phone = _phone_for(culture_overrides, language)
+    resolved = _replace_in(copy.deepcopy(user_goal), first, last, first_rom, last_rom, phone)
 
     if not starting_utterances or language not in starting_utterances:
         raise KeyError(
@@ -95,7 +107,7 @@ def resolve_user_goal(
             f"Run scripts/add_culture_data.py --language {language} to populate it."
         )
     utt = starting_utterances[language]
-    resolved["starting_utterance"] = _replace_in(utt, first, last, first_rom, last_rom)
+    resolved["starting_utterance"] = _replace_in(utt, first, last, first_rom, last_rom, phone)
     return resolved
 
 
@@ -106,7 +118,8 @@ def resolve_user_config(
     romanized_culture_overrides: dict | None = None,
 ) -> dict:
     first, last, first_rom, last_rom = _names_for(culture_overrides, romanized_culture_overrides, language)
-    return _replace_in(copy.deepcopy(user_config), first, last, first_rom, last_rom)
+    phone = _phone_for(culture_overrides, language)
+    return _replace_in(copy.deepcopy(user_config), first, last, first_rom, last_rom, phone)
 
 
 @lru_cache(maxsize=1)
@@ -168,4 +181,5 @@ def resolve_scenario_db(
     romanized_culture_overrides: dict | None = None,
 ) -> Any:
     first, last, first_rom, last_rom = _names_for(culture_overrides, romanized_culture_overrides, language)
-    return _replace_in(copy.deepcopy(db), first, last, first_rom, last_rom)
+    phone = _phone_for(culture_overrides, language)
+    return _replace_in(copy.deepcopy(db), first, last, first_rom, last_rom, phone)
