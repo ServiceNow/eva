@@ -420,9 +420,13 @@
         "name": "Downtown Engineering Center",
         "name_aliases": [
           "bâtiment ingénierie centre-ville",
+          "centre du centre-ville",
+          "centre d’ingénierie",
+          "centre d’ingénierie downtown",
           "centre d’ingénierie du centre-ville",
           "centre ingénierie centre-ville",
           "centre technique du centre-ville",
+          "centre-ville",
           "downtown",
           "engineering center",
           "site ingénierie centre-ville"
@@ -501,8 +505,10 @@
         "name_aliases": [
           "garage a",
           "garage a principal",
+          "garage principal",
           "parking a principal",
-          "parking principal"
+          "parking principal",
+          "stationnement a"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [

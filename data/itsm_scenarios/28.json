@@ -446,6 +446,8 @@
           "centre technique harbor",
           "engineering hq",
           "harbor",
+          "qg d’ingénierie",
+          "qg ingénierie",
           "site du port",
           "site ingénierie harbor"
         ],
@@ -522,7 +524,8 @@
         "name_aliases": [
           "garage a",
           "garage nord",
-          "parking nord"
+          "parking nord",
+          "stationnement nord"
         ],
         "zone_code": "PZA",
         "name_aliases_translatable": true,

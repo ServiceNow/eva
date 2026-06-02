@@ -405,10 +405,12 @@
       "BLD5": {
         "name": "Headquarters",
         "name_aliases": [
+          "bureau chef",
           "bureaux du siège",
           "head office",
           "hq",
           "le siège",
+          "qg",
           "quartier général",
           "siège",
           "siège social"
@@ -575,7 +577,8 @@
         "name_aliases": [
           "garage sud",
           "parking sud",
-          "south parking"
+          "south parking",
+          "stationnement sud"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [
@@ -591,7 +594,9 @@
           "parc nord",
           "parking nord",
           "parking nord du siège",
-          "parking nord headquarters"
+          "parking nord headquarters",
+          "stationnement nord",
+          "stationnement nord du siège social"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [

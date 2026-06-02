@@ -584,10 +584,12 @@
         },
         "name": "Headquarters",
         "name_aliases": [
+          "bureau chef",
           "bureaux du siège",
           "head office",
           "hq",
           "le siège",
+          "qg",
           "quartier général",
           "siège",
           "siège social"
@@ -703,12 +705,14 @@
         "name_aliases": [
           "exec garage",
           "garage de la direction",
+          "garage des cadres",
           "garage direction",
           "garage exécutif",
           "parking de la direction",
           "parking des dirigeants",
           "parking direction",
-          "parking exécutif"
+          "parking exécutif",
+          "stationnement exécutif"
         ],
         "zone_code": "PZE",
         "name_aliases_translatable": true,
@@ -724,7 +728,9 @@
           "garage principal",
           "main garage",
           "parking général",
-          "parking principal"
+          "parking principal",
+          "stationnement général",
+          "stationnement principal"
         ],
         "zone_code": "PZG",
         "name_aliases_translatable": true,

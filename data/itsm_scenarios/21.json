@@ -421,11 +421,15 @@
           "aile est du siège",
           "annexe est",
           "annexe est du siège",
+          "bâtiment est",
           "bâtiment est du siège",
           "east building",
           "hq east",
+          "qg est",
           "site est du siège",
-          "siège est"
+          "siège est",
+          "siège social est",
+          "édifice est"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [
@@ -512,12 +516,14 @@
         "name_aliases": [
           "executive garage",
           "garage de la direction",
+          "garage des cadres",
           "garage direction",
           "garage exécutif",
           "parking de la direction",
           "parking des dirigeants",
           "parking direction",
-          "parking exécutif"
+          "parking exécutif",
+          "stationnement exécutif"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [
@@ -534,7 +540,10 @@
           "parking extérieur nord",
           "parking nord",
           "parking nord en surface",
-          "parking nord extérieur"
+          "parking nord extérieur",
+          "stationnement extérieur nord",
+          "stationnement nord",
+          "terrain nord"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [

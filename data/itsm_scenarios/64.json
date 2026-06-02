@@ -505,7 +505,8 @@
           "garage du campus est",
           "garage est",
           "parking du campus est",
-          "parking est"
+          "parking est",
+          "stationnement du campus est"
         ],
         "zone_code": "PZD",
         "name_aliases_translatable": true,

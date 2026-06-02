@@ -418,6 +418,9 @@
         "building_code": "BLD3",
         "name": "Riverside Engineering Center",
         "name_aliases": [
+          "centre d’ingénierie",
+          "centre d’ingénierie au bord de la rivière",
+          "centre d’ingénierie au bord de l’eau",
           "centre d’ingénierie riverside",
           "centre ingénierie riverside",
           "centre technique riverside",
@@ -499,7 +502,8 @@
         "name_aliases": [
           "garage nord",
           "north garage",
-          "parking nord"
+          "parking nord",
+          "stationnement nord"
         ],
         "zone_code": "PZA",
         "name_aliases_translatable": true,

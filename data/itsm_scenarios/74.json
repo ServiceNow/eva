@@ -466,10 +466,12 @@
       "BLD1": {
         "name": "Headquarters",
         "name_aliases": [
+          "bureau chef",
           "bureaux du siège",
           "hq",
           "le siège",
           "main office",
+          "qg",
           "quartier général",
           "siège",
           "siège social"
@@ -545,7 +547,8 @@
         "name_aliases": [
           "garage a",
           "garage nord",
-          "parking nord"
+          "parking nord",
+          "stationnement nord"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [

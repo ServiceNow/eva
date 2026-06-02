@@ -474,7 +474,8 @@
         "name_aliases": [
           "east garage",
           "garage est",
-          "parking est"
+          "parking est",
+          "stationnement est"
         ],
         "zone_code": "PZE",
         "name_aliases_translatable": true,

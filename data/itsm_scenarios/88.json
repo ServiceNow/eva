@@ -523,10 +523,12 @@
         "building_code": "BLD1",
         "name": "Headquarters",
         "name_aliases": [
+          "bureau chef",
           "bureaux du siège",
           "headquarters",
           "hq",
           "le siège",
+          "qg",
           "quartier général",
           "siège",
           "siège social"
@@ -643,7 +645,8 @@
         "name_aliases": [
           "garage nord",
           "north garage",
-          "parking nord"
+          "parking nord",
+          "stationnement nord"
         ],
         "zone_code": "PZA",
         "name_aliases_translatable": true,

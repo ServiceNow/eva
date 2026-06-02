@@ -417,11 +417,14 @@
       "BLD3": {
         "name": "Downtown",
         "name_aliases": [
+          "bureau du centre-ville",
+          "bâtiment downtown",
           "bâtiment du centre-ville",
           "centre-ville",
           "downtown building",
           "site centre-ville",
-          "site du centre-ville"
+          "site du centre-ville",
+          "édifice du centre-ville"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [
@@ -490,7 +493,8 @@
           "central parking",
           "garage central",
           "parc central",
-          "parking central"
+          "parking central",
+          "stationnement central"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [

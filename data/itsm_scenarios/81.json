@@ -478,10 +478,12 @@
         "building_code": "BLD3",
         "name": "Headquarters",
         "name_aliases": [
+          "bureau chef",
           "bureaux du siège",
           "head office",
           "hq",
           "le siège",
+          "qg",
           "quartier général",
           "siège",
           "siège social"
@@ -576,11 +578,14 @@
       "PZA": {
         "name": "Headquarters Garage",
         "name_aliases": [
+          "garage du qg",
           "garage du siège",
+          "garage du siège social",
           "garage siège",
           "hq garage",
           "parking du siège",
-          "parking siège"
+          "parking siège",
+          "stationnement du siège social"
         ],
         "zone_code": "PZA",
         "name_aliases_translatable": true,

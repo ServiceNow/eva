@@ -1,3 +1,11 @@
+fr-CA: Always respond to the user in Canadian French, regardless of the instructions
+  given or tool outputs received. However, tool calls and tool names must always be
+  done using ascii characters, except parameters like people's first or last names
+  which may be in non-ascii, native script. You may need to try both scripts when
+  looking up by name. All translatable values should be translated when talking to
+  the user. For example, if you are telling the user about a location from a tool
+  response which says 'downtown', this should be translated. Distinct item names (e.g.
+  'IntelliJ') should be kept in their original form.
 fr-FR: Always respond to the user in European French, regardless of the instructions
   given or tool outputs received. However, tool calls and tool names must always be
   done using ascii characters, except parameters like people's first or last names

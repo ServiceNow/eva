@@ -406,10 +406,12 @@
         "building_code": "BLD3",
         "name": "Headquarters",
         "name_aliases": [
+          "bureau chef",
           "bureaux du siège",
           "headquarters",
           "hq",
           "le siège",
+          "qg",
           "quartier général",
           "siège",
           "siège social"
@@ -504,7 +506,9 @@
           "parc nord",
           "parking nord",
           "parking nord du siège",
-          "parking nord headquarters"
+          "parking nord headquarters",
+          "stationnement nord",
+          "stationnement nord du siège social"
         ],
         "zone_code": "PZN",
         "name_aliases_translatable": true,

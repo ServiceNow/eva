@@ -299,6 +299,7 @@ class BehaviorType(StrEnum):
 LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.EN: "English",
     Language.FR_FR: "European French",
+    Language.FR_CA: "Canadian French",
 }
 
 

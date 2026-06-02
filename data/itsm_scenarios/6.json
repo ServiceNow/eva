@@ -524,6 +524,7 @@
         "building_code": "BLD3",
         "name": "Downtown Office",
         "name_aliases": [
+          "bureau downtown",
           "bureau du centre-ville",
           "bureaux du centre-ville",
           "bâtiment finance",
@@ -531,7 +532,8 @@
           "centre-ville",
           "downtown",
           "main hr office",
-          "site du centre-ville"
+          "site du centre-ville",
+          "édifice des finances"
         ],
         "name_aliases_translatable": true,
         "name_aliases_base": [
@@ -623,7 +625,8 @@
         "name_aliases": [
           "garage nord",
           "north garage",
-          "parking nord"
+          "parking nord",
+          "stationnement nord"
         ],
         "zone_code": "PZA",
         "name_aliases_translatable": true,

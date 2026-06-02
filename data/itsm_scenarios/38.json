@@ -406,10 +406,12 @@
         "building_code": "BLD2",
         "name": "Headquarters",
         "name_aliases": [
+          "bureau chef",
           "bureaux du siège",
           "head office",
           "hq",
           "le siège",
+          "qg",
           "quartier général",
           "siège",
           "siège social"
