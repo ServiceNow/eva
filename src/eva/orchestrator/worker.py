@@ -364,9 +364,11 @@ class ConversationWorker:
     def _calculate_stt_latency(self) -> LatencyStats | None:
         """Calculate STT latency statistics from pipecat_metrics.jsonl.
 
-        Accepts both Pipecat-native ProcessingMetricsData entries (written by
-        MetricsFileObserver) and LatencyMetric entries with stage="stt" (written
-        by MetricsLogWriter for non-Pipecat cascade frameworks).
+        Uses Pipecat-native TTFBMetricsData (time-to-first-byte) entries for
+        STT services, which measure how long until the first transcript is
+        returned after receiving audio.  Also accepts LatencyMetric entries
+        with stage="stt" (written by MetricsLogWriter for non-Pipecat cascade
+        frameworks).
         """
         metrics_path = self.output_dir / "pipecat_metrics.jsonl"
         if not metrics_path.exists():
@@ -379,11 +381,9 @@ class ConversationWorker:
                     try:
                         metric = json.loads(line)
                         metric_type = metric.get("type")
-                        is_stt_processing = metric_type == "ProcessingMetricsData" and "STTService" in metric.get(
-                            "processor", ""
-                        )
+                        is_stt_ttfb = metric_type == "TTFBMetricsData" and "STTService" in metric.get("processor", "")
                         is_stt_latency = metric_type == "LatencyMetric" and metric.get("stage") == "stt"
-                        if not (is_stt_processing or is_stt_latency):
+                        if not (is_stt_ttfb or is_stt_latency):
                             continue
                         value_sec = metric.get("value")
                         if not isinstance(value_sec, (int, float)) or not (0 < value_sec < 30):

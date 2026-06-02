@@ -413,14 +413,14 @@ def create_tts_service(
             ),
         )
         _orig_build_url = xai_tts._build_url
-        extra_qs = (
+        extra_strings = (
             f"&optimize_streaming_latency={params.get('optimize_streaming_latency', 2)}"
             f"&text_normalization={str(params.get('text_normalization', False)).lower()}"
         )
         speed = params.get("speed")
         if speed is not None:
-            extra_qs += f"&speed={speed}"
-        xai_tts._build_url = lambda: _orig_build_url() + extra_qs
+            extra_strings += f"&speed={speed}"
+        xai_tts._build_url = lambda: _orig_build_url() + extra_strings
         return xai_tts
 
     elif model_lower == "xtts":
