@@ -37,6 +37,8 @@ class ALMvLLMClient(BaseALMClient):
         sample_rate: int = DEFAULT_SAMPLE_RATE,
         num_channels: int = DEFAULT_NUM_CHANNELS,
         sample_width: int = DEFAULT_SAMPLE_WIDTH,
+        sampling_params: dict[str, Any] | None = None,
+        enable_thinking: bool = False,
     ):
         super().__init__(
             model=model,
@@ -53,6 +55,13 @@ class ALMvLLMClient(BaseALMClient):
         if not self.base_url.endswith("/v1"):
             self.base_url = f"{self.base_url}/v1"
 
+        # vLLM-specific decoding params (repetition_penalty, top_p, top_k,
+        # min_p, frequency_penalty, presence_penalty, ...). Merged into
+        # extra_body of every complete() call; not applied to transcribe(),
+        # which is kept deterministic.
+        self.sampling_params: dict[str, Any] = dict(sampling_params or {})
+        self.enable_thinking = enable_thinking
+
         self._client = AsyncOpenAI(
             base_url=self.base_url,
             api_key=api_key,
@@ -62,7 +71,8 @@ class ALMvLLMClient(BaseALMClient):
         logger.info(
             f"Initialized ALMvLLMClient: base_url={self.base_url}, model={self.model}, "
             f"sample_rate={self.sample_rate}, num_channels={self.num_channels}, "
-            f"sample_width={self.sample_width}"
+            f"sample_width={self.sample_width}, "
+            f"sampling_params={self.sampling_params}, enable_thinking={self.enable_thinking}"
         )
 
     def _audio_content_part(self, audio_b64: str) -> dict[str, Any]:
@@ -84,16 +94,20 @@ class ALMvLLMClient(BaseALMClient):
         When tool_calls are present, returns the full message object.
         Otherwise returns the content string.
         """
+        extra_body: dict[str, Any] = {
+            "chat_template_kwargs": {"enable_thinking": self.enable_thinking},
+        }
+        # Merge vLLM sampling params (repetition_penalty, top_p, etc.).
+        # These ride alongside chat_template_kwargs in extra_body; vLLM
+        # accepts non-OpenAI keys at the top level of extra_body.
+        extra_body.update(self.sampling_params)
+
         kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "extra_body": {
-                "chat_template_kwargs": {
-                    "enable_thinking": False,
-                }
-            },
+            "extra_body": extra_body,
         }
         if tools:
             kwargs["tools"] = tools

@@ -56,18 +56,26 @@ MIN_AUDIO_BYTES = 320
 class AudioLLMUserAudioCollector(FrameProcessor):
     """Buffers raw audio frames during user speech for the audio-LLM pipeline.
 
-    Collects audio and pushes LLMContextFrame when user stops speaking, which
-    triggers the parallel pipeline (transcription + audio-LLM processing).
+    Audio capture is driven by raw VAD events (UserStartedSpeakingFrame /
+    UserStoppedSpeakingFrame), but LLM invocation is gated by the
+    smart-turn-aware user_aggregator. Callers invoke ``notify_turn_ended()``
+    from the aggregator's ``on_user_turn_stopped`` event (after the turn-stop
+    strategy is satisfied), which increments the turn id and pushes an
+    LLMContextFrame to trigger both branches of the parallel pipeline.
 
-    Uses a ring buffer of pre-VAD audio so that the beginning of the user's
-    speech—before VAD fires UserStartedSpeakingFrame—is not lost. This mirrors
-    the S2S UserAudioCollector pattern.
+    Between the first speech segment of a turn and the smart-turn verdict,
+    the collector keeps appending audio across VAD start/stop blips so that
+    natural pauses (e.g., between phonetic-alphabet characters) don't fragment
+    the captured buffer.
+
+    A ring buffer of pre-VAD audio captures the start of speech that occurs
+    before VAD fires UserStartedSpeakingFrame.
 
     All frames pass through unchanged.
     """
 
     # Default pre-speech buffer (can be overridden via constructor)
-    DEFAULT_PRE_SPEECH_SECS = 0.5
+    DEFAULT_PRE_SPEECH_SECS = 1.0
 
     def __init__(
         self,
@@ -82,44 +90,82 @@ class AudioLLMUserAudioCollector(FrameProcessor):
         self._audio_buffer = bytearray()
         self._pre_speech_buffer: list[bytes] = []
         self._user_speaking = False
-        self._current_turn_id = 0  # Incremented on each user turn
+        # True between turn boundaries; reset by notify_turn_ended() so the
+        # next UserStartedSpeakingFrame starts a fresh buffer instead of
+        # appending to the previous turn.
+        self._turn_finalized = True
+        self._current_turn_id = 0  # Incremented on each finalized turn
         # Pre-speech buffer size (captures audio before VAD fires to avoid cutting off speech)
         self._pre_speech_secs = pre_speech_secs or self.DEFAULT_PRE_SPEECH_SECS
+        # Actual sample rate observed on InputAudioRawFrames. Falls back to
+        # PIPELINE_SAMPLE_RATE until the first audio frame arrives.
+        self._frame_sample_rate: int = PIPELINE_SAMPLE_RATE
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
         await super().process_frame(frame, direction)
 
         if isinstance(frame, UserStartedSpeakingFrame):
             self._user_speaking = True
-            # Prepend the pre-speech ring buffer so we don't lose the start of speech
             pre_speech_bytes = b"".join(self._pre_speech_buffer)
-            pre_speech_duration_ms = len(pre_speech_bytes) / (PIPELINE_SAMPLE_RATE * 2) * 1000
-            logger.debug(
-                f"Prepending {len(pre_speech_bytes)} bytes ({pre_speech_duration_ms:.0f}ms) of pre-speech audio"
-            )
-            self._audio_buffer = bytearray(pre_speech_bytes)
+            pre_speech_duration_ms = len(pre_speech_bytes) / (self._frame_sample_rate * 2) * 1000
+            if self._turn_finalized:
+                # Fresh turn: pre-speech becomes the start of the new buffer
+                logger.info(
+                    f"New turn — prepending {len(pre_speech_bytes)} bytes "
+                    f"({pre_speech_duration_ms:.0f}ms) of pre-speech audio "
+                    f"(target {self._pre_speech_secs * 1000:.0f}ms, "
+                    f"ring chunks={len(self._pre_speech_buffer)})"
+                )
+                self._audio_buffer = bytearray(pre_speech_bytes)
+                self._turn_finalized = False
+            else:
+                # VAD blip mid-turn (e.g., pause between phonetic letters):
+                # append pre-speech so the buffer stays continuous.
+                logger.info(
+                    f"Resuming turn — appending {len(pre_speech_bytes)} bytes "
+                    f"({pre_speech_duration_ms:.0f}ms) of pre-speech audio "
+                    f"(target {self._pre_speech_secs * 1000:.0f}ms, "
+                    f"ring chunks={len(self._pre_speech_buffer)})"
+                )
+                self._audio_buffer.extend(pre_speech_bytes)
             self._pre_speech_buffer.clear()
 
         elif isinstance(frame, UserStoppedSpeakingFrame):
+            # Stop buffering active speech, but DO NOT trigger the LLM here —
+            # smart-turn-aware on_user_turn_stopped drives that via
+            # notify_turn_ended().
             self._user_speaking = False
-            # Increment turn ID BEFORE pushing frame so both parallel branches see the same ID
-            self._current_turn_id += 1
-            # Push LLMContextFrame to trigger parallel pipeline
-            await self._user_context_aggregator.push_frame(LLMContextFrame(context=self._context))
+            logger.info(
+                f"VAD stop — switching to pre-speech buffering "
+                f"(audio_buffer_size={len(self._audio_buffer)} bytes, turn_id={self._current_turn_id})"
+            )
 
         elif isinstance(frame, InputAudioRawFrame):
+            self._frame_sample_rate = frame.sample_rate
             if self._user_speaking:
                 self._audio_buffer.extend(frame.audio)
             else:
                 # Ring buffer: keep a rolling window of pre-speech audio
                 self._pre_speech_buffer.append(frame.audio)
                 # 16-bit mono → 2 bytes per sample
-                max_bytes = int(self._pre_speech_secs * PIPELINE_SAMPLE_RATE * 2)
+                max_bytes = int(self._pre_speech_secs * self._frame_sample_rate * 2)
                 total = sum(len(chunk) for chunk in self._pre_speech_buffer)
                 while total > max_bytes and self._pre_speech_buffer:
                     total -= len(self._pre_speech_buffer.pop(0))
 
         await self.push_frame(frame, direction)
+
+    async def notify_turn_ended(self) -> None:
+        """Finalize the current turn and trigger downstream processing.
+
+        Called from pipecat_server's ``on_user_turn_stopped`` handler after
+        the smart-turn-aware turn-stop strategy is satisfied. Increments the
+        turn id and pushes LLMContextFrame so the transcription branch and
+        the audio-LLM branch both observe a consistent turn boundary.
+        """
+        self._current_turn_id += 1
+        self._turn_finalized = True
+        await self._user_context_aggregator.push_frame(LLMContextFrame(context=self._context))
 
     def get_buffered_audio(self) -> bytes:
         """Get the buffered audio and clear the buffer."""
@@ -142,6 +188,15 @@ class AudioLLMUserAudioCollector(FrameProcessor):
     def current_turn_id(self) -> int:
         """Get the current turn ID for associating transcriptions with entries."""
         return self._current_turn_id
+
+    @property
+    def frame_sample_rate(self) -> int:
+        """Sample rate observed on the most recent InputAudioRawFrame.
+
+        The audio buffer holds raw PCM at whatever rate the transport delivered
+        it; downstream consumers should use this rather than guessing.
+        """
+        return self._frame_sample_rate
 
 
 class AudioLLMProcessor(FrameProcessor):
@@ -257,7 +312,8 @@ class AudioLLMProcessor(FrameProcessor):
         turn_id = self.audio_collector.current_turn_id
         self.audit_log.append_user_input(self._USER_PLACEHOLDER, turn_id=turn_id)
 
-        self._current_query_task = asyncio.create_task(self._process_audio_turn(audio_bytes))
+        source_sample_rate = self.audio_collector.frame_sample_rate
+        self._current_query_task = asyncio.create_task(self._process_audio_turn(audio_bytes, source_sample_rate))
         try:
             await self._current_query_task
         except asyncio.CancelledError:
@@ -268,11 +324,11 @@ class AudioLLMProcessor(FrameProcessor):
     # Placeholder used in audit_log / transcript since no real transcription is available
     _USER_PLACEHOLDER = "[user audio]"
 
-    async def _process_audio_turn(self, audio_bytes: bytes) -> None:
+    async def _process_audio_turn(self, audio_bytes: bytes, source_sample_rate: int) -> None:
         """Process a user turn with audio data."""
         try:
             # Send audio to the agentic system and process
-            self.agentic_system.set_turn_audio(audio_bytes, PIPELINE_SAMPLE_RATE)
+            self.agentic_system.set_turn_audio(audio_bytes, source_sample_rate)
 
             async for response in self.agentic_system.process_query_with_audio(self._USER_PLACEHOLDER):
                 if self._interrupted.is_set():
@@ -392,14 +448,12 @@ class AudioTranscriptionProcessor(FrameProcessor):
         audio_collector: AudioLLMUserAudioCollector,
         alm_client: BaseALMClient,
         system_prompt: str | None = None,
-        sample_rate: int = PIPELINE_SAMPLE_RATE,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._audio_collector = audio_collector
         self._alm_client = alm_client
         self._system_prompt = system_prompt or DEFAULT_TRANSCRIPTION_PROMPT
-        self._sample_rate = sample_rate
 
         # Callback for when transcription is ready (set by pipecat_server.py)
         self.on_transcription: Any | None = None
@@ -426,15 +480,18 @@ class AudioTranscriptionProcessor(FrameProcessor):
             await self.push_frame(frame, direction)
             return
 
-        # Capture turn_id and audio at the moment we receive the frame
+        # Capture turn_id, audio, and sample rate at the moment we receive the frame
         turn_id = self._audio_collector.current_turn_id
         # Capture audio NOW before it gets overwritten by the next turn
         audio_data = self._audio_collector.peek_buffered_audio()
+        source_sample_rate = self._audio_collector.frame_sample_rate
         logger.info(f"transcribe (turn_id={turn_id})")
         timestamp = time_now_iso8601()
 
         # Run transcription as background task so it completes even if interrupted
-        task = asyncio.create_task(self._transcribe_audio(audio_data, timestamp, turn_id=turn_id))
+        task = asyncio.create_task(
+            self._transcribe_audio(audio_data, timestamp, source_sample_rate, turn_id=turn_id)
+        )
         self._transcription_tasks.append(task)
         # Clean up completed tasks
         self._transcription_tasks = [t for t in self._transcription_tasks if not t.done()]
@@ -453,9 +510,16 @@ class AudioTranscriptionProcessor(FrameProcessor):
             The transcription text, or None if transcription failed or audio was empty.
         """
         audio_data = self._audio_collector.peek_buffered_audio()
-        return await self._transcribe_audio(audio_data, timestamp, turn_id)
+        source_sample_rate = self._audio_collector.frame_sample_rate
+        return await self._transcribe_audio(audio_data, timestamp, source_sample_rate, turn_id)
 
-    async def _transcribe_audio(self, audio_data: bytes, timestamp: str, turn_id: int | None = None) -> str | None:
+    async def _transcribe_audio(
+        self,
+        audio_data: bytes,
+        timestamp: str,
+        source_sample_rate: int,
+        turn_id: int | None = None,
+    ) -> str | None:
         """Transcribe pre-captured audio data using chat completions.
 
         This method takes audio data directly instead of reading from the collector,
@@ -478,7 +542,7 @@ class AudioTranscriptionProcessor(FrameProcessor):
             start_time = time.time()
             text = await self._alm_client.transcribe(
                 audio_bytes=audio_data,
-                source_sample_rate=self._sample_rate,
+                source_sample_rate=source_sample_rate,
                 system_prompt=self._system_prompt,
             )
             elapsed = time.time() - start_time

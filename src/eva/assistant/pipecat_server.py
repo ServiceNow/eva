@@ -10,10 +10,12 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
+from pipecat.audio.turn.base_turn_analyzer import EndOfTurnState
 from pipecat.frames.frames import (
     CancelFrame,
     LLMRunFrame,
     TTSSpeakFrame,
+    VADUserStoppedSpeakingFrame,
 )
 from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
 from pipecat.pipeline.parallel_pipeline import ParallelPipeline
@@ -72,7 +74,15 @@ VAD_STOP_SECS = 0.2  # How long silence must be detected before triggering stop 
 SMART_TURN_STOP_SECS = 3  # Default from SmartTurnParams
 # Pre-speech audio buffer - captures audio BEFORE VAD fires to avoid cutting off speech start.
 # Should be larger than pipecat's VAD start_secs (0.2s) to account for VAD latency.
-VAD_PRE_SPEECH_BUFFER_SECS = 0.5
+VAD_PRE_SPEECH_BUFFER_SECS = 1.0
+
+# Hybrid smart-turn floor: total silence (since VAD detected speech-end) that
+# the audio-LLM pipeline must observe before ending a user turn, regardless of
+# smart turn's "is_complete" prediction. Defends against smart turn V3 false
+# "complete" calls on mid-utterance fragments with statement-final intonation
+# (phonetic-alphabet codes, structured speech). Set larger than the longest
+# expected inter-word pause for that kind of speech.
+HYBRID_MIN_SILENCE_AFTER_COMPLETE = 1.5
 
 
 class PipecatAssistantServer(AbstractAssistantServer):
@@ -293,6 +303,16 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 TurnAnalyzerUserTurnStopStrategy._maybe_trigger_user_turn_stopped = (
                     override__maybe_trigger_user_turn_stopped
                 )
+                # Hybrid smart-turn override: require a minimum total silence
+                # after the VAD-stop event before ending the turn, regardless
+                # of smart turn's verdict. Smart turn V3 (prosody-only) misfires
+                # "complete" on mid-utterance fragments with statement-final
+                # intonation (e.g. phonetic-alphabet spelling), so we treat its
+                # "complete" verdict as advisory and require the user to truly
+                # stay silent for HYBRID_MIN_SILENCE_AFTER_COMPLETE seconds.
+                TurnAnalyzerUserTurnStopStrategy._handle_vad_user_stopped_speaking = (
+                    override__handle_vad_user_stopped_speaking
+                )
                 vad_stop_secs = self.pipeline_config.audio_llm_params.get(
                     "vad_stop_secs", 0.4
                 )  # Longer silence default because we don't have an stt transcript
@@ -365,7 +385,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 input_transcription_processor = AudioTranscriptionProcessor(
                     audio_collector=audio_llm_audio_collector,
                     alm_client=alm_client,
-                    sample_rate=SAMPLE_RATE,
                 )
 
                 # Set callback to save user transcription to transcript.jsonl and update audit log
@@ -457,6 +476,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 assistant_aggregator=assistant_aggregator,
                 agent_processor=agent_processor,
                 audio_llm_processor=audio_llm_processor,
+                audio_llm_audio_collector=audio_llm_audio_collector,
                 input_transcription_processor=input_transcription_processor,
             )
 
@@ -579,6 +599,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         assistant_aggregator,
         agent_processor,
         audio_llm_processor=None,
+        audio_llm_audio_collector=None,
         input_transcription_processor=None,
     ) -> None:
         """Setup event handlers for the pipeline."""
@@ -650,10 +671,12 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 )
                 await agent_processor.process_complete_user_turn(message.content)
             elif isinstance(self.pipeline_config, AudioLLMConfig) and audio_llm_processor:
-                # No STT → message.content is empty.
-                # Processing is triggered by LLMContextFrame flow through ParallelPipeline
-                # (AudioLLMUserAudioCollector pushes LLMContextFrame on UserStoppedSpeakingFrame)
-                pass
+                # No STT → message.content is empty. Trigger the audio-LLM and
+                # transcription branches now that the smart-turn-aware turn-stop
+                # strategy has fired. The collector kept appending audio across
+                # VAD blips up to this point.
+                assert audio_llm_audio_collector is not None
+                await audio_llm_audio_collector.notify_turn_ended()
             elif self.non_instrumented_realtime_llm:
                 # Non-instrumented realtime fallback (e.g. Ultravox)
                 if message.content:
@@ -751,3 +774,45 @@ async def override__maybe_trigger_user_turn_stopped(self):
     # For non-finalized, only trigger if timeout task has completed
     if self._timeout_task is None:
         await self.trigger_user_turn_stopped()
+
+
+async def override__handle_vad_user_stopped_speaking(self, frame: VADUserStoppedSpeakingFrame):
+    """Hybrid smart-turn handler for the audio-LLM pipeline.
+
+    Replaces pipecat's default ``_handle_vad_user_stopped_speaking`` to enforce
+    a minimum silence window after the VAD-stop event before the turn can end.
+    Smart turn V3 is prosody-only and falsely predicts "complete" on
+    mid-utterance fragments that happen to end on a statement-final tone
+    (phonetic spelling, structured speech). Treating its verdict as advisory
+    and requiring HYBRID_MIN_SILENCE_AFTER_COMPLETE of total silence catches
+    cases where the user resumes within that window.
+
+    Behaviour:
+      - VAD stops → smart turn evaluates (records metrics).
+      - Timer scheduled for (HYBRID_MIN_SILENCE_AFTER_COMPLETE - vad_stop_secs).
+      - If smart turn said "complete" and the user stays silent that long, the
+        existing override__maybe_trigger_user_turn_stopped fires the turn end.
+      - If smart turn said "incomplete", _turn_complete stays False so the
+        timer expires harmlessly and the turn remains open until the next
+        VAD-stop event re-evaluates.
+      - If the user resumes mid-window, _handle_vad_user_started_speaking
+        cancels the timer and clears _turn_complete.
+    """
+    self._vad_user_speaking = False
+    self._stop_secs = frame.stop_secs
+    self._vad_stopped_time = frame.timestamp
+
+    state, prediction = await self._turn_analyzer.analyze_end_of_turn()
+    await self._handle_prediction_result(prediction)
+    self._turn_complete = state == EndOfTurnState.COMPLETE
+
+    # Total silence already elapsed at the time this event fires is
+    # `self._stop_secs` (VAD waited that long before declaring stop). Wait the
+    # remainder up to HYBRID_MIN_SILENCE_AFTER_COMPLETE.
+    timeout = max(0.0, HYBRID_MIN_SILENCE_AFTER_COMPLETE - self._stop_secs)
+
+    self._timeout_task = self.task_manager.create_task(
+        self._timeout_handler(timeout), f"{self}::_timeout_handler"
+    )
+    # Make sure the task is scheduled.
+    await asyncio.sleep(0)

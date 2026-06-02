@@ -644,6 +644,11 @@ def create_audio_llm_client(
             sample_rate=params.get("sample_rate", 16000),
             num_channels=params.get("num_channels", 1),
             sample_width=params.get("sample_width", 2),
+            # vLLM-specific decoding knobs merged into extra_body of every
+            # complete() request. Opt-in only — set under audio_llm_params in
+            # the run config to apply (e.g., {"repetition_penalty": 1.2}).
+            sampling_params=params.get("sampling_params"),
+            enable_thinking=params.get("enable_thinking", False),
         )
         logger.info(f"Using {model} vLLM audio-LLM: {base_url}")
         return client
