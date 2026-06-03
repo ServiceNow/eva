@@ -146,16 +146,15 @@ async def _generate_phone_format(language_name: str, language: str, llm: LLMClie
     """
     prompt = (
         f"For {language_name} ({language}), what is the standard mobile phone number format?\n"
-        "Make sure you're aware that the region is the defining factor (eg, pt-BR would use Brazlian phone numbers).\n"
+        "Make sure you're aware that the region is the defining factor (eg, pt-BR would use Brazilian phone numbers).\n"
         "Return JSON with:\n"
         "  calling_code: string (country calling code, no leading +)\n"
-        "  mobile_groups: list where each element is either:\n"
-        '    - a string: a fixed digit or prefix that all mobile numbers share (e.g. "6" for France, "7" for UK)\n'
-        "    - an integer: the count of random digits in that group\n"
-        "Use a string element for any digit position that is fixed across all mobile numbers of that country.\n"
-        'Example for France (+33 6 XX XX XX XX): {"calling_code": "33", "mobile_groups": ["6", 2, 2, 2, 2]}\n'
-        'Example for UK (+44 7XXX XXXXXX): {"calling_code": "44", "mobile_groups": ["7", 3, 6]}\n'
-        'Example for US (+1 NXX NXX XXXX, no fixed mobile prefix): {"calling_code": "1", "mobile_groups": [3, 3, 4]}\n'
+        "  mobile_format: a format string where X = random digit, fixed digits are written literally,\n"
+        "    and separators (spaces, hyphens, dots) are included as-is.\n"
+        'Example for France (+33 6 XX XX XX XX): {"calling_code": "33", "mobile_format": "6 XX XX XX XX"}\n'
+        'Example for UK (+44 7XXX XXXXXX): {"calling_code": "44", "mobile_format": "7XXX XXXXXX"}\n'
+        'Example for US (+1 NXX-NXX-XXXX): {"calling_code": "1", "mobile_format": "XXX-XXX-XXXX"}\n'
+        'Example for Germany (+49 151 12345678): {"calling_code": "49", "mobile_format": "151 XXXXXXXX"}\n'
         "Return only the JSON object, no markdown."
     )
     text, _ = await llm.generate_text(
@@ -164,34 +163,29 @@ async def _generate_phone_format(language_name: str, language: str, llm: LLMClie
     )
     data = extract_and_load_json(text)
     calling_code = str(data.get("calling_code", ""))
-    mobile_groups = data.get("mobile_groups")
-    if not calling_code or not isinstance(mobile_groups, list) or not mobile_groups:
+    mobile_format = data.get("mobile_format")
+    if not calling_code or not isinstance(mobile_format, str) or not mobile_format:
         raise ValueError(f"Phone format generation returned invalid data: {data!r}")
-    # Coerce: strings stay as fixed literals, everything else becomes int.
-    coerced = [g if isinstance(g, str) else int(g) for g in mobile_groups]
-    return {"calling_code": calling_code, "mobile_groups": coerced}
+    return {"calling_code": calling_code, "mobile_format": mobile_format}
 
 
 def _render_phone(spec: dict, record_id: str) -> str:
     """Generate a deterministic mobile phone number for record_id using the format spec.
 
-    Each element of mobile_groups is either a str (fixed literal) or int (random digit count).
+    In mobile_format, each 'X' is replaced by a random digit; all other characters are literals.
     """
     h = int(hashlib.sha256(f"phone:{record_id}".encode()).hexdigest(), 16)
     calling_code = spec["calling_code"]
-    parts = []
-    for group in spec["mobile_groups"]:
-        if isinstance(group, str):
-            parts.append(group)
+    result = []
+    for ch in spec["mobile_format"]:
+        if ch == "X":
+            result.append(str(h % 10))
+            h //= 10
+            if h == 0:
+                h = int(hashlib.sha256("".join(result).encode()).hexdigest(), 16)
         else:
-            group_digits = []
-            for _ in range(group):
-                group_digits.append(str(h % 10))
-                h //= 10
-                if h == 0:
-                    h = int(hashlib.sha256(str(group_digits).encode()).hexdigest(), 16)
-            parts.append("".join(group_digits))
-    return f"+{calling_code} {' '.join(parts)}"
+            result.append(ch)
+    return f"+{calling_code} {''.join(result)}"
 
 
 def _seeded_index(seed: str, n: int) -> int:
