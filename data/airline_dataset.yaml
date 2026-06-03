@@ -1004,7 +1004,7 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: I need to change my flight to an earlier date.
-  fr-CA: Je dois changer mon vol pour une date plus tôt.
+  fr-CA: Je dois devancer la date de mon vol.
   fr: Je dois avancer la date de mon vol.
 culture_overrides:
   en:
@@ -1534,7 +1534,7 @@ ground_truth:
 starting_utterances:
   en: Hi, I need to change my return flight date.
   fr-CA: Bonjour, je dois changer la date de mon vol de retour.
-  fr: Bonjour, je dois changer la date de mon vol retour.
+  fr: Bonjour, je dois changer la date de mon vol de retour.
 culture_overrides:
   en:
     first_name: Emily
@@ -3957,7 +3957,7 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: Hi, I need to change my flight to an earlier daytime departure.
-  fr-CA: Bonjour, je dois changer mon vol pour un départ de jour plus tôt.
+  fr-CA: Bonjour, je dois changer mon vol pour un départ plus tôt dans la journée.
   fr: Bonjour, je dois changer mon vol pour un départ plus tôt dans la journée.
 culture_overrides:
   en:
@@ -8447,8 +8447,8 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: My flight is delayed—can I get a meal voucher?
-  fr-CA: Mon vol est retardé — est-ce que je peux avoir un bon-repas?
-  fr: Mon vol est retardé — est-ce que je peux avoir un bon repas ?
+  fr-CA: Mon vol est retardé — est-ce que je peux avoir un bon de repas?
+  fr: Mon vol est retardé — est-ce que je peux avoir un bon de repas ?
 culture_overrides:
   en:
     first_name: Lisa
@@ -10055,7 +10055,7 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: My flight just got canceled after we had to turn back—can you get me rebooked?
-  fr-CA: Mon vol vient d’être annulé après qu’on a dû faire demi-tour — pouvez-vous me réserver sur un autre vol?
+  fr-CA: Mon vol vient d’être annulé après qu’on a dû faire demi-tour — pouvez-vous me réserver un autre vol?
   fr: Mon vol vient d’être annulé après qu’on a dû faire demi-tour — pouvez-vous me réserver un autre vol ?
 culture_overrides:
   en:
@@ -10493,7 +10493,7 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: Hi—can you tell me what’s going on with my flight that came back to Minneapolis? We took off at the scheduled time around 12:30, and then had to turn around
-  fr-CA: Bonjour — pouvez-vous me dire ce qui se passe avec mon vol qui est revenu à Minneapolis? On a décollé à l’heure prévue vers 12:30, puis on a dû faire demi-tour.
+  fr-CA: Bonjour — pouvez-vous me dire ce qui se passe avec mon vol qui est revenu à Minneapolis? On a décollé à l’heure prévue, vers 12:30, puis on a dû faire demi-tour.
   fr: Bonjour — pouvez-vous me dire ce qui se passe avec mon vol qui est revenu à Minneapolis ? Nous avons décollé à l’heure prévue, vers 12:30, puis nous avons dû faire demi-tour.
 culture_overrides:
   en:
@@ -14310,8 +14310,8 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: Hi, can you move me to the next flight home as soon as possible?
-  fr-CA: Bonjour, est-ce que vous pouvez me mettre sur le prochain vol de retour à la maison dès que possible?
-  fr: Bonjour, pouvez-vous me mettre sur le prochain vol retour dès que possible ?
+  fr-CA: Bonjour, est-ce que vous pouvez me mettre sur le prochain vol pour rentrer à la maison dès que possible?
+  fr: Bonjour, pouvez-vous me mettre sur le prochain pour rentrer à la maison dès que possible ?
 culture_overrides:
   en:
     first_name: Joseph
@@ -14719,7 +14719,7 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: Can you put me on standby for the noon flight?
-  fr-CA: Est-ce que vous pouvez me mettre en attente pour le vol de midi?
+  fr-CA: Est-ce que vous pouvez me mettre sur la liste d’attente pour le vol de midi?
   fr: Pouvez-vous me mettre en liste d’attente pour le vol de midi ?
 culture_overrides:
   en:
@@ -15584,7 +15584,7 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: Can you put me on standby for the 10:00 AM flight?
-  fr-CA: Est-ce que vous pouvez me mettre en attente pour le vol de 10:00 AM?
+  fr-CA: Est-ce que vous pouvez me mettre sur la liste d’attente pour le vol de 10:00 AM?
   fr: Pouvez-vous me mettre en liste d’attente pour le vol de 10:00 AM ?
 culture_overrides:
   en:
@@ -20171,8 +20171,8 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: My flight is delayed and I’m stuck at the airport—can I get a meal voucher?
-  fr-CA: Mon vol est retardé et je suis coincé à l’aéroport — est-ce que je peux avoir un bon-repas?
-  fr: 'Mon vol est retardé et je suis bloqué à l’aéroport : est-ce que je peux avoir un bon repas ?'
+  fr-CA: Mon vol est retardé et je suis coincé à l’aéroport — est-ce que je peux avoir un bon de repas?
+  fr: 'Mon vol est retardé et je suis bloqué à l’aéroport : est-ce que je peux avoir un bon de repas ?'
 culture_overrides:
   en:
     first_name: Scott
@@ -23999,8 +23999,8 @@ ground_truth:
       last_name: <LAST_NAME_ROMANIZED>
 starting_utterances:
   en: My flight’s been delayed for hours—can you get me a meal voucher and rebook me for free?
-  fr-CA: Mon vol est retardé depuis des heures — est-ce que vous pouvez me donner un bon-repas et me replacer sur un autre vol gratuitement?
-  fr: 'Mon vol a des heures de retard : pouvez-vous m’obtenir un bon repas et me replacer gratuitement sur un autre vol ?'
+  fr-CA: Mon vol est retardé depuis des heures — est-ce que vous pouvez me donner un bon de repas et me replacer sur un autre vol gratuitement?
+  fr: 'Mon vol a des heures de retard : pouvez-vous m’obtenir un bon de repas et me replacer gratuitement sur un autre vol ?'
 culture_overrides:
   en:
     first_name: Tanya
