@@ -12,6 +12,7 @@ repos:
         exclude: ^website/tsconfig.*\.json$
       - id: check-toml
       - id: check-yaml
+        args: [--allow-multiple-documents]
       - id: end-of-file-fixer
   - repo: local
     hooks:
@@ -50,3 +51,8 @@ repos:
         entry: bash -c 'printf "%s\n" "$@"; exit 1' --
         language: system
         files: \.jpg$
+      - id: jsonl_to_yaml
+        name: JSONL to YAML
+        entry: uv run python scripts/jsonl_to_yaml.py
+        language: system
+        files: ^data/.+_dataset.jsonl$
