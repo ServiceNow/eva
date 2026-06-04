@@ -116,7 +116,7 @@ class TestCalculateSttLatency:
         worker.output_dir.mkdir(parents=True)
         lines = "\n".join(
             [
-                json.dumps({"type": "ProcessingMetricsData", "processor": "DeepgramSTTService", "value": v})
+                json.dumps({"type": "TTFBMetricsData", "processor": "DeepgramSTTService", "value": v})
                 for v in [0.1, 0.2, 0.3]
             ]
         )
@@ -132,7 +132,7 @@ class TestCalculateSttLatency:
         worker.output_dir.mkdir(parents=True)
         lines = "\n".join(
             [
-                json.dumps({"type": "ProcessingMetricsData", "processor": "DeepgramSTTService", "value": v})
+                json.dumps({"type": "TTFBMetricsData", "processor": "DeepgramSTTService", "value": v})
                 for v in [0.1, 0, 50]  # 0 and 50s filtered
             ]
         )

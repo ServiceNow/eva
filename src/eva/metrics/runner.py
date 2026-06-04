@@ -3,6 +3,7 @@
 import asyncio
 import inspect
 import json
+import statistics
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -903,6 +904,44 @@ class MetricsRunner:
         logger.info(f"pass@k computation complete for {len(results)} records")
         return results
 
+    def _compute_latency_summary(self) -> dict[str, Any]:
+        """Compute mean latency for llm, stt, and tts across all records.
+
+        Reads each record's result.json and collects the mean_ms values
+        for llm_latency, stt_latency, and tts_latency, skipping nulls.
+        Returns a dict with the mean of mean_ms values for each latency type
+        that has at least one non-null entry.
+        """
+        latency_keys = ["llm_latency", "stt_latency", "tts_latency"]
+        collected: dict[str, list[float]] = {k: [] for k in latency_keys}
+
+        for _record_id, record_dir in self._discover_record_dirs(self.run_dir, self.record_ids):
+            result_path = record_dir / "result.json"
+            if not result_path.exists():
+                continue
+            try:
+                result_data = json.loads(result_path.read_text())
+            except Exception:
+                continue
+            for key in latency_keys:
+                latency = result_data.get(key)
+                if latency is not None and isinstance(latency, dict) and latency.get("mean_ms") is not None:
+                    collected[key].append(latency["mean_ms"])
+
+        summary: dict[str, Any] = {}
+        for key in latency_keys:
+            values = collected[key]
+            # Strip the _latency suffix for the summary key (e.g. "llm", "stt", "tts")
+            short_key = key.removesuffix("_latency")
+            if values:
+                summary[short_key] = {
+                    "mean_of_means_ms": round(statistics.mean(values), 2),
+                }
+            else:
+                summary[short_key] = None
+
+        return summary
+
     async def _save_summary(
         self,
         all_metrics: dict[str, RecordMetrics],
@@ -981,6 +1020,14 @@ class MetricsRunner:
             }
         elif existing_summary.get("pass_at_k_config"):
             summary["pass_at_k_config"] = existing_summary["pass_at_k_config"]
+
+        # Add latency summary from record result.json files
+        try:
+            latency_summary = self._compute_latency_summary()
+            if latency_summary:
+                summary["latency"] = latency_summary
+        except Exception as e:
+            logger.warning(f"Failed to compute latency summary: {e}")
 
         try:
             run_config = json.loads((self.run_dir / "config.json").read_text())
