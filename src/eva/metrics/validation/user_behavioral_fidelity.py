@@ -94,6 +94,11 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
             )
         elif agent_timeout:
             conversation_end = "the agent's failure to respond to the final user turn."
+        elif context.conversation_ended_reason == "inactivity_timeout":
+            conversation_end = (
+                "an inactivity timeout — neither the user nor the agent spoke for an extended period. "
+                "The user did NOT end the call; the system terminated the conversation due to silence."
+            )
         else:
             conversation_end = "the user calling the end_call tool."
 
