@@ -12,9 +12,9 @@ Performs all one-time setup needed to run the benchmark in a new language:
        - Translates any scenario alias names (facility names, zones, etc.)
          that appear in ``data/<domain>_scenarios/``.
 
-  2. **Agent config** — writes a "respond in <language>" addendum to
-     ``configs/agents/language_addenda.yaml`` and the agent's opening greeting
-     to ``configs/agents/initial_messages.yaml``.
+  2. **Agent config** — writes the agent's opening greeting to
+     ``configs/agents/initial_messages.yaml`` and registers the display name in
+     ``LANGUAGE_DISPLAY_NAMES`` (which drives the language directive at runtime).
 
   3. **WER normalizer** — generates ``wer_normalization/configs/<lang>.json``
      via LLM (number vocabulary, filler words, abbreviations, etc.) and
@@ -36,7 +36,6 @@ Name source (one of):
 Key arguments:
   --language            BCP-47 tag (required), e.g. ``fr``, ``es-MX``
   --language-name       Human-readable English name (required), e.g. ``French``
-  --native-name         Optional native name shown in the agent addendum, e.g. ``français``
   --domain              Restrict to one domain (repeatable). Default: all domains.
   --auto-generate-names Ask the LLM for 80 culturally authentic names per gender
                         (40 romanized + 40 native-script). Mutually exclusive with
@@ -103,7 +102,6 @@ init(json.loads(os.getenv("EVA_MODEL_LIST")))
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
-ADDENDA_PATH = REPO_ROOT / "configs" / "agents" / "language_addenda.yaml"
 INITIAL_MESSAGES_PATH = REPO_ROOT / "configs" / "agents" / "initial_messages.yaml"
 WER_CONFIGS_DIR = REPO_ROOT / "src" / "eva" / "utils" / "wer_normalization" / "configs"
 
@@ -117,17 +115,6 @@ _ALIAS_PATHS: list[tuple[str, ...]] = [
     ("facilities", "zones"),
     ("software_catalog",),
 ]
-
-# Template filled at runtime from --language-name (and optionally --native-name).
-ADDENDUM_TEMPLATE = (
-    "Always respond to the user in {language_name}{native_suffix}, regardless of the instructions given or tool outputs received."
-    " However, tool calls and tool names must always be done using ascii characters, except parameters like people's first"
-    " or last names which may be in non-ascii, native script. You may need to try both scripts when looking up by name. "
-    "All translatable values should be translated when talking to the user. For example, if you are telling the user about "
-    "a location from a tool response which says 'downtown', this should be translated. Distinct item names (e.g. 'IntelliJ') "
-    "should be kept in their original form."
-)
-
 
 BUCKET_SIZE = 40  # Each name array: indices [0:BUCKET_SIZE] = ASCII, [BUCKET_SIZE:2*BUCKET_SIZE] = native script.
 
@@ -367,17 +354,6 @@ def _update_initial_messages(language: str, message: str) -> None:
     INITIAL_MESSAGES_PATH.write_text(yaml.safe_dump(existing, allow_unicode=True, sort_keys=True), encoding="utf-8")
 
 
-def _update_addenda(language: str, addendum: str) -> None:
-    existing: dict[str, str] = {}
-    if ADDENDA_PATH.exists():
-        existing = yaml.safe_load(ADDENDA_PATH.read_text(encoding="utf-8")) or {}
-    if existing.get(language) == addendum:
-        return
-    existing[language] = addendum
-    ADDENDA_PATH.parent.mkdir(parents=True, exist_ok=True)
-    ADDENDA_PATH.write_text(yaml.safe_dump(existing, allow_unicode=True, sort_keys=True), encoding="utf-8")
-
-
 def _get_nested(obj: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
     for k in keys:
         obj = obj.get(k, {})
@@ -546,7 +522,6 @@ async def add_culture(
     romanized_names: dict[str, list[str]] | None,
     llm: LLMClient,
     dry_run: bool,
-    addendum: str,
     record_id: str | None = None,
     phone_spec: dict | None = None,
 ) -> None:
@@ -634,12 +609,6 @@ async def add_culture(
         tmp.replace(dataset_path)
         logger.info(f"Updated {dataset_path}")
 
-    # 4. Agent addendum (template filled from CLI args).
-    logger.info(f"Addendum for {language}: {addendum}")
-    if not dry_run:
-        _update_addenda(language, addendum)
-        logger.info(f"Updated {ADDENDA_PATH}")
-
 
 def _all_records_have_language(language: str, domains: list[str], record_id: str | None) -> bool:
     """Return True if every target record already has culture_overrides[language] with first/last name."""
@@ -706,9 +675,6 @@ async def amain(args: argparse.Namespace) -> int:
             rom_out.write_text(json.dumps(romanized_names, ensure_ascii=False, indent=2), encoding="utf-8")
             logger.info(f"Wrote romanized names to {rom_out}")
 
-    native_suffix = f" ({args.native_name})" if args.native_name else ""
-    addendum = ADDENDUM_TEMPLATE.format(language_name=args.language_name, native_suffix=native_suffix)
-
     logger.info(f"Translating initial message to {args.language_name}")
     initial_message = await _translate_initial_message(args.language, args.language_name, llm)
     logger.info(f"Initial message for {args.language}: {initial_message}")
@@ -738,7 +704,6 @@ async def amain(args: argparse.Namespace) -> int:
             romanized_names,
             llm,
             args.dry_run,
-            addendum,
             args.record_id,
             phone_spec,
         )
@@ -1509,10 +1474,6 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--language", required=True, help="BCP 47 language tag, e.g. 'fr', 'es-MX'")
     ap.add_argument("--language-name", required=True, help="Human-readable English name, e.g. 'French'")
-    ap.add_argument(
-        "--native-name",
-        help="Optional native-script name shown in parentheses in the agent addendum, e.g. 'français'",
-    )
     ap.add_argument("--domain", dest="domains", action="append", help="Domain (repeatable). Default: all.")
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--names-file", help="JSON file with male_first/female_first/last arrays")

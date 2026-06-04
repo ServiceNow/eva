@@ -1,13 +1,13 @@
 {
   "AgentSpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "eae9bd992999",
+    "prompt_hash": "bda2e4573005",
     "source_hash": "77743114e9b0",
     "version": "v0.1"
   },
   "AgentSpeechFidelityS2SMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "eae9bd992999",
+    "prompt_hash": "bda2e4573005",
     "source_hash": "db924988e9f4",
     "version": "v0.1"
   },
@@ -19,7 +19,7 @@
   },
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
-    "prompt_hash": "5e6bdd0dd2d4",
+    "prompt_hash": "57caf9a18a3c",
     "source_hash": "cd0ea09a9613",
     "version": "v0.1"
   },
@@ -43,7 +43,7 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "a140859bd2e4",
+    "prompt_hash": "060e3f1f9e7a",
     "source_hash": "82ab3e3244f5",
     "version": "v0.2"
   },
@@ -91,7 +91,7 @@
   },
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
-    "prompt_hash": "e2fc0a863591",
+    "prompt_hash": "db47bdd92866",
     "source_hash": "c1c200d0fdcb",
     "version": "v0.1"
   },

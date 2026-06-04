@@ -17,6 +17,7 @@ _USER_BEHAVIORAL_FIDELITY_CORRUPTION_KEYS = (
     "missing_information",
     "duplicate_modifications",
     "decision_tree_violation",
+    "wrong_language",
 )
 
 # --- Pipeline-specific prompt text for user behavioral fidelity ---

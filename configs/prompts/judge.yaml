@@ -82,7 +82,7 @@ judge:
 
       **verbosity_or_filler**
       Contains unnecessary wording, repetition within the same turn, hedging, or explanation beyond what the context requires.
-      Exception: do NOT flag following of cultural norms, such as obligatory politeness structures, as filler (e.g. in Japanese and Korean: keigo, honorifics, set opening/closing phrases).
+      Exception: do NOT flag following of cultural norms, such as obligatory politeness structures (e.g. in Japanese and Korean: keigo, honorifics, set opening/closing phrases).
 
       **excess_information_density**
       Presents too many distinct facts, options, numbers, steps, or requests at once, making it difficult for a listener to process in real time. Note: bundling closely related transactional details that the user needs to act on or remember together (e.g., confirming a reference number, date, and one or two key details in a single turn) is expected behavior — only flag this when the volume of information genuinely exceeds what a listener can comfortably retain.
@@ -334,12 +334,12 @@ judge:
       - Using parameter values explicitly stated by the user
       - Using parameter values returned by a prior tool response (e.g., reusing an ID or record returned by an earlier lookup in a subsequent call)
       - Using reasonable defaults that are standard for the tool (e.g., a date format conversion)
-      - Standard domain mappings from user-stated information (e.g., "Chicago O'Hare" → "ORD"; "sore throat and fever" → ICD-10 code "J06.9"; or other unambiguous geographic, enterprise, or industry-standard mappings present in the agent's domain) — unambiguous mappings are considered grounded
+      - Standard domain mappings from user-stated information (e.g., "Chicago O'Hare" → "ORD"; "parental leave" → leave_type code "FMLA"; or other unambiguous geographic, enterprise, or industry-standard mappings present in the agent's domain) — unambiguous mappings are considered grounded
       - Parameters grounded in policy entitlements derived from prior tool results (e.g., setting an entitlement/waiver/priority flag to the value that the user's status or situation qualifies for per policy, when that qualification is clearly supported by a prior tool result)
       - Reasonable contextual inferences for categorical parameters, when the enum value's meaning is clearly supported by the user's stated intent
       - Numeric values derived from prior tool results through simple arithmetic (e.g., summing line items, subtracting used amounts from a balance, or computing a total from prior results)
       - System-level or framework-generated tool calls made before the assistant has any user input, if the assistant subsequently asks for proper information
-      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters, reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance. Which letters are phonetically confusable is language-dependent: in English "v"/"z" or "b"/"d" are classic pairs; in Korean, M is named "엠" and N is named "엔" — nearly identical in fast or phone-quality audio; other languages have their own similar-sounding pairs. The agent should apply the same disambiguation logic regardless of which language's phonetic naming convention the user is using.
+      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters, reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance. Which letters are phonetically confusable is language-dependent: in English "v"/"z" or "b"/"d" are classic pairs; in Korean, M is named "엠" and N is named "엔" — nearly identical in fast or phone-quality audio; other languages have their own similar-sounding pairs.
 
       **Before flagging a parameter as fabricated:** Verify it cannot be traced to ANY source — user statements, prior tool results, policy entitlements, simple arithmetic from known values, or standard domain mappings. Also verify enum values against the actual tool specification before claiming a value is invalid.
 
@@ -575,6 +575,12 @@ judge:
       - Examples: the user accepted an option that did not meet their must-have criteria when they should have rejected it; the user ignored an edge case instruction (e.g., accepted a standby flight when told to reject standby) and this led to a modification; the user failed to follow their failure condition and instead accepted an unsuitable resolution.
       - Only flag this if the violation directly caused a modification tool to be called incorrectly. If the user deviated from instructions but no modification tool was affected, this is NOT corruption.
       - Do NOT flag this if the agent only presented options that failed to meet the user's must-have criteria AND the user had no correct option to choose — in that case the agent failed, not the user. Only flag this if the user had a correct action available (e.g., rejecting all options, asking for alternatives, triggering the failure condition) but chose incorrectly instead.
+
+      ### Corruption Type 6: User did not speak the target language
+        The user was instructed to communicate in {language_display_name}, but spoke predominantly in a different language during the conversation.
+      - Only flag this if the user's non-target-language speech was substantial and pervasive — isolated foreign words, proper nouns, or brief code-switching are acceptable.
+      - Do NOT flag this if the agent itself switched languages and the user followed the agent's lead.
+      - Do NOT flag this if the user spoke in the target language for the majority of the conversation and only slipped briefly.
       
       ## Rating
         
@@ -582,17 +588,15 @@ judge:
       - **1 (Clean)**: The user's behavior did not corrupt the agent evaluation. None of the corruption types above occurred. Minor deviations from the user's instructions that did not affect database state are acceptable.
       - **0 (Corrupted)**: One or more corruption types occurred — the user's behavior caused the agent to be evaluated against an incorrect database state.
 
-      **Language:**
-      - Always provide analysis in English.
-      
       Respond in JSON format:
         {{
           "corruption_analysis": {{
-            "extra_modifications": {{"analysis": "<reasoning about whether the user made off-script requests that caused modification tool calls>", "detected": <bool>}},
-            "premature_ending": {{"analysis": "<reasoning about whether the user ended the call before the agent could complete necessary modifications>", "detected": <bool>}},
-            "missing_information": {{"analysis": "<reasoning about whether the user failed to provide requested information that blocked a modification>", "detected": <bool>}},
-            "duplicate_modifications": {{"analysis": "<reasoning about whether user looping caused duplicate modification tool calls>", "detected": <bool>}},
-            "decision_tree_violation": {{"analysis": "<reasoning about whether the user violated a specific instruction and whether a correct action was available, and whether this caused an incorrect modification>", "detected": <bool>}}
+            "extra_modifications": {{"analysis": "<reasoning in English about whether the user made off-script requests that caused modification tool calls>", "detected": <bool>}},
+            "premature_ending": {{"analysis": "<reasoning in English about whether the user ended the call before the agent could complete necessary modifications>", "detected": <bool>}},
+            "missing_information": {{"analysis": "<reasoning in English about whether the user failed to provide requested information that blocked a modification>", "detected": <bool>}},
+            "duplicate_modifications": {{"analysis": "<reasoning in English about whether user looping caused duplicate modification tool calls>", "detected": <bool>}},
+            "decision_tree_violation": {{"analysis": "<reasoning in English about whether the user violated a specific instruction and whether a correct action was available, and whether this caused an incorrect modification>", "detected": <bool>}},
+            "wrong_language": {{"analysis": "<reasoning in English about whether the user spoke predominantly in a language other than {language_display_name}>", "detected": <bool>}}
           }},
           "rating": <int: 0 or 1>
         }}
@@ -704,7 +708,7 @@ judge:
             {{
               "turn_id": <int: the turn number from the Intended Turns>,
               "transcript": <string: your transcription of the audio for this turn using the appropriate script for the language spoken, use only the audio for this not the intended text>
-              "explanation": "<string: 1-3 sentence analysis in English of fidelity for this turn, citing specific intended vs actual mismatches, noting any regions skipped due to interruption flags>",
+              "explanation": "<string: 1-3 sentence analysis in English of fidelity for this turn, citing specific intended vs actual mismatches in the original language, and noting any regions skipped due to interruption flags, if applicable>",
               "rating": <0 or 1>
             }}
           ]

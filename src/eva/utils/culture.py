@@ -24,10 +24,23 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from pipecat.transcriptions.language import Language
+
+from eva.models.config import LANGUAGE_DISPLAY_NAMES
 
 _CONFIGS_AGENTS = Path(__file__).resolve().parents[3] / "configs" / "agents"
-LANGUAGE_ADDENDA_PATH = _CONFIGS_AGENTS / "language_addenda.yaml"
 INITIAL_MESSAGES_PATH = _CONFIGS_AGENTS / "initial_messages.yaml"
+
+_LANGUAGE_ADDENDUM_TEMPLATE = (
+    "Always respond to the user in {display_name}, regardless of the instructions"
+    " given or tool outputs received. However, tool calls and tool names must always be"
+    " done using ascii characters, except parameters like people's first or last names"
+    " which may be in non-ascii, native script. You may need to try both scripts when"
+    " looking up by name. All translatable values should be translated when talking to"
+    " the user. For example, if you are telling the user about a location from a tool"
+    " response which says 'downtown', this should be translated. Distinct item names (e.g."
+    " 'IntelliJ') should be kept in their original form."
+)
 
 FIRST_NAME_PLACEHOLDER = "<FIRST_NAME>"
 LAST_NAME_PLACEHOLDER = "<LAST_NAME>"
@@ -122,13 +135,6 @@ def resolve_user_config(
     return _replace_in(copy.deepcopy(user_config), first, last, first_rom, last_rom, phone)
 
 
-@lru_cache(maxsize=1)
-def _load_language_addenda() -> dict[str, str]:
-    if not LANGUAGE_ADDENDA_PATH.exists():
-        return {}
-    return yaml.safe_load(LANGUAGE_ADDENDA_PATH.read_text(encoding="utf-8")) or {}
-
-
 def get_user_language_directive(language: str, language_display_name: str) -> str | None:
     """Return the language directive appended to the user-simulator persona.
 
@@ -149,9 +155,9 @@ def get_user_language_directive(language: str, language_display_name: str) -> st
 
 def get_language_addendum(language: str) -> str | None:
     """Return the agent prompt addendum for the language, or None for English/unknown."""
-    if not language or language.lower() in {"en", "english"}:
+    if not language or language.lower() in ("en", "english"):
         return None
-    return _load_language_addenda().get(language)
+    return _LANGUAGE_ADDENDUM_TEMPLATE.format(display_name=LANGUAGE_DISPLAY_NAMES.get(Language(language)))
 
 
 @lru_cache(maxsize=1)
