@@ -305,9 +305,12 @@ def create_tts_service(
         logger.info(f"Using Deepgram TTS: {params['model']}")
         return DeepgramTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice=params.get("voice", "aura-2-helena-en"),
             sample_rate=SAMPLE_RATE,
+            settings=DeepgramTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice", "aura-2-helena-en"),
+                language=language_code,
+            ),
         )
 
     elif model_lower == "elevenlabs":
