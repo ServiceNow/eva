@@ -30450,8 +30450,8 @@
     },
     "starting_utterances": {
       "en": "Hi, I’ve got a couple of IT hardware requests I need help with.",
-      "fr": "Bonjour, j’ai deux ou trois demandes concernant du matériel informatique pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois demandes de matériel informatique pour lesquelles j’ai besoin d’aide."
+      "fr": "Bonjour, j’ai quelques demandes concernant du matériel informatique pour lesquelles j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques demandes de matériel informatique pour lesquelles j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -32826,7 +32826,7 @@
     "starting_utterances": {
       "en": "Hi, I've got a couple of IT things I need help with.",
       "fr": "Bonjour, j’ai quelques trucs liées à l’informatique pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois trucs informatiques pour lesquels j’ai besoin d’aide."
+      "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -33818,8 +33818,8 @@
     },
     "starting_utterances": {
       "en": "Hi, I’ve got a couple of software license things I need help with.",
-      "fr": "Bonjour, j’ai deux ou trois sujets de licences logicielles pour lesquels j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois affaires de licences de logiciels pour lesquelles j’ai besoin d’aide."
+      "fr": "Bonjour, j’ai quelques sujets de licences logicielles pour lesquels j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de licences de logiciels pour lesquelles j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -34920,8 +34920,8 @@
     },
     "starting_utterances": {
       "en": "Hi, I've got a couple of facilities things I need help with.",
-      "fr": "Bonjour, j’ai deux ou trois sujets liés aux services généraux pour lesquels j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois affaires liées aux installations pour lesquelles j’ai besoin d’aide."
+      "fr": "Bonjour, j’ai quelques sujets liés aux services généraux pour lesquels j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques affaires liées aux installations pour lesquelles j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -35980,8 +35980,8 @@
     },
     "starting_utterances": {
       "en": "Hi, I've got a couple of workplace requests I need help with.",
-      "fr": "Bonjour, j’ai deux ou trois demandes liées au lieu de travail pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois demandes liées au milieu de travail pour lesquelles j’ai besoin d’aide."
+      "fr": "Bonjour, j’ai quelques demandes liées au lieu de travail pour lesquelles j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques demandes liées au milieu de travail pour lesquelles j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -37314,8 +37314,8 @@
     },
     "starting_utterances": {
       "en": "Hi, I've got a couple of IT issues I need help with.",
-      "fr": "Bonjour, j’ai deux ou trois problèmes informatiques pour lesquels j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois problèmes informatiques pour lesquels j’ai besoin d’aide."
+      "fr": "Bonjour, j’ai quelques problèmes informatiques pour lesquels j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques problèmes informatiques pour lesquels j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -38279,7 +38279,7 @@
     "starting_utterances": {
       "en": "Hi, I've got a couple of IT things I need help with.",
       "fr": "Bonjour, j’ai quelques trucs liées à l’informatique pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois trucs informatiques pour lesquels j’ai besoin d’aide."
+      "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -39584,7 +39584,7 @@
     "starting_utterances": {
       "en": "Hi, I've got a couple of IT things I need help with.",
       "fr": "Bonjour, j’ai quelques trucs liées à l’informatique pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois trucs informatiques pour lesquels j’ai besoin d’aide."
+      "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -42104,7 +42104,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of IT things I need help with.",
       "fr": "Bonjour, j’ai quelques trucs liées à l’informatique pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois trucs informatiques pour lesquels j’ai besoin d’aide."
+      "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -43122,8 +43122,8 @@
     },
     "starting_utterances": {
       "en": "Hi, I've got a couple of IT requests I need help with.",
-      "fr": "Bonjour, j’ai deux ou trois demandes informatiques pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois demandes informatiques pour lesquelles j’ai besoin d’aide."
+      "fr": "Bonjour, j’ai quelques demandes informatiques pour lesquelles j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques demandes informatiques pour lesquelles j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -44317,8 +44317,8 @@
     },
     "starting_utterances": {
       "en": "Hi, I've got a couple of workplace requests I need help with.",
-      "fr": "Bonjour, j’ai deux ou trois demandes liées au lieu de travail pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai deux ou trois demandes liées au milieu de travail pour lesquelles j’ai besoin d’aide."
+      "fr": "Bonjour, j’ai quelques demandes liées au lieu de travail pour lesquelles j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques demandes liées au milieu de travail pour lesquelles j’ai besoin d’aide."
     },
     "culture_overrides": {
       "en": {
@@ -63347,8 +63347,8 @@
     },
     "starting_utterances": {
       "en": "Hi, I've got a couple of IT things I need help with.",
-      "fr": "Bonjour, j’ai besoin d’aide pour deux ou trois soucis informatiques.",
-      "fr-CA": "Bonjour, j’ai deux ou trois trucs en TI pour lesquels j’aurais besoin d’aide."
+      "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
+      "fr-CA": "Bonjour, j’ai quelques trucs en TI pour lesquels j’aurais besoin d’aide."
     },
     "culture_overrides": {
       "en": {
