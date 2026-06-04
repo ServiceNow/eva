@@ -7,10 +7,10 @@
       "passengers": [
         {
           "passenger_id": "PAX001",
-          "first_name": "Jordan",
+          "first_name": "<FIRST_NAME>",
           "last_name": "<LAST_NAME>",
           "ticket_number": "0741234567890",
-          "email": "jordan.<LAST_NAME_ROMANIZED>@example.com",
+          "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@example.com",
           "phone": "<PHONE>",
           "elite_status": null,
           "meal_preference": "none",

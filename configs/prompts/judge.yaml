@@ -588,15 +588,15 @@ judge:
       - **1 (Clean)**: The user's behavior did not corrupt the agent evaluation. None of the corruption types above occurred. Minor deviations from the user's instructions that did not affect database state are acceptable.
       - **0 (Corrupted)**: One or more corruption types occurred — the user's behavior caused the agent to be evaluated against an incorrect database state.
 
-      Respond in JSON format:
+      Respond in JSON format and provide reasoning in English:
         {{
           "corruption_analysis": {{
-            "extra_modifications": {{"analysis": "<reasoning in English about whether the user made off-script requests that caused modification tool calls>", "detected": <bool>}},
-            "premature_ending": {{"analysis": "<reasoning in English about whether the user ended the call before the agent could complete necessary modifications>", "detected": <bool>}},
-            "missing_information": {{"analysis": "<reasoning in English about whether the user failed to provide requested information that blocked a modification>", "detected": <bool>}},
-            "duplicate_modifications": {{"analysis": "<reasoning in English about whether user looping caused duplicate modification tool calls>", "detected": <bool>}},
-            "decision_tree_violation": {{"analysis": "<reasoning in English about whether the user violated a specific instruction and whether a correct action was available, and whether this caused an incorrect modification>", "detected": <bool>}},
-            "wrong_language": {{"analysis": "<reasoning in English about whether the user spoke predominantly in a language other than {language_display_name}>", "detected": <bool>}}
+            "extra_modifications": {{"analysis": "<reasoning about whether the user made off-script requests that caused modification tool calls>", "detected": <bool>}},
+            "premature_ending": {{"analysis": "<reasoning about whether the user ended the call before the agent could complete necessary modifications>", "detected": <bool>}},
+            "missing_information": {{"analysis": "<reasoning about whether the user failed to provide requested information that blocked a modification>", "detected": <bool>}},
+            "duplicate_modifications": {{"analysis": "<reasoning about whether user looping caused duplicate modification tool calls>", "detected": <bool>}},
+            "decision_tree_violation": {{"analysis": "<reasoning about whether the user violated a specific instruction and whether a correct action was available, and whether this caused an incorrect modification>", "detected": <bool>}},
+            "wrong_language": {{"analysis": "<reasoning about whether the user spoke predominantly in a language other than {language_display_name}>", "detected": <bool>}}
           }},
           "rating": <int: 0 or 1>
         }}
@@ -693,9 +693,9 @@ judge:
         - Slight pacing or prosody differences
         - Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
         - Words in regions flagged by interruption tags as likely not spoken
-        - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the correct spoken form of those letters in that language and are not errors
-        - Regional and language-structural number variants that represent the same value — accept any valid spoken form; many languages have systematic surface differences that are not errors: regional variants (French "septante" vs "soixante-dix" for 70), reversed digit order (German spoken form reverses tens and units: "vierundzwanzig" = four-and-twenty = 24), dual counting systems (Korean native/Sino-Korean, Japanese on/kun reading), large-unit grouping differences (Japanese 万-based system: "ichi-man" = 10,000), or grammatical agreement variants (Spanish "veintiún" vs "veintiuna")
-        - Name spelling variants where the phonetic form is the same (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
+        - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form of those letters in that language
+        - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
+        - Name spelling variants that are phonetically identical (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
 
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
@@ -707,7 +707,7 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Intended Turns>,
-              "transcript": <string: your transcription of the audio for this turn using the appropriate script for the language spoken, use only the audio for this not the intended text>
+              "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the intended text>
               "explanation": "<string: 1-3 sentence analysis in English of fidelity for this turn, citing specific intended vs actual mismatches in the original language, and noting any regions skipped due to interruption flags, if applicable>",
               "rating": <0 or 1>
             }}
@@ -780,7 +780,7 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Conversation Trace>,
-              "transcript": <string: your transcription of the audio for this turn using the appropriate script for the language spoken, use only the audio for this not the conversation trace>,
+              "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the conversation trace>,
               "has_entities": <boolean: true if the assistant speaks entities from the conversation trace in this turn, false otherwise>,
               "explanation": "<string: 1-3 sentence analysis in English listing which trace entities were spoken and whether they are clearly articulated>",
               "rating": <0 or 1>
@@ -835,9 +835,9 @@ judge:
         - Natural filler words (um, uh) if they do not affect core content
         - Missing words at the END of the LAST turn only (audio recordings are often cut off before the final utterance completes). However, missing words in the middle of the last turn, or missing words in any earlier turn, should still be penalized.
         - Honorific/title variants that refer to the same person (e.g., "Ms." vs "Miss", "Mr." vs "Mister", French "Madame" vs "Mme", Japanese "様" vs "-san")
-        - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the correct spoken form in that language
-        - Regional and language-structural number variants that represent the same value — many languages have systematic surface differences that are not errors: regional forms (French "septante" vs "soixante-dix" for 70), reversed digit order in spoken form (German "vierundzwanzig" = 24), dual counting systems (Korean native/Sino-Korean, Japanese on/kun reading), large-unit grouping (Japanese 万-based: "ichi-man" = 10,000), or grammatical agreement (Spanish "veintiún" vs "veintiuna")
-        - Name spelling variants where the pronunciation is the same (e.g., German Meyer/Meier/Maier/Mayer)
+        - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form in that language
+        - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
+        - Name spelling variants where the pronunciation is identical (e.g., German Meyer/Meier/Maier/Mayer)
 
         ## Rating Scale (per turn)
         - **3 (High Fidelity)**: 
@@ -860,7 +860,7 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Intended Turns>,
-              "transcript": <string: your transcription of the audio for this turn using the appropriate script for the language spoken, use only the audio for this not the intended turns>,
+              "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the intended turns>,
               "explanation": "<succinct analysis in English; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
               "rating": <1, 2, 3>
             }}
@@ -914,15 +914,16 @@ judge:
       - Entity value must match (minor formatting variations OK)
       - Numbers: "150" and "one hundred fifty" are equivalent
       - Dates: "December 15th" and "Dec 15" are equivalent
-      - Names: Case-insensitive exact match required
-      - Non-Latin scripts: A name or identifier rendered in its native script (e.g. Kanji, Hangul, Arabic) is equivalent to its romanized/phonetic transcription if they represent the same spoken entity. For example, "山田" and "Yamada" should be treated as matching.
+      - Names: Case-insensitive match. Phonetically equivalent spelling variants are acceptable on the **first mention** of a name (e.g., German Meyer/Meier/Maier/Mayer — all sound the same when spoken). Once the user has explicitly disambiguated the spelling (e.g., spelled it out letter by letter, corrected a prior spelling, or confirmed a specific spelling after the assistant read it back), subsequent transcriptions must match that clarified spelling exactly. Flag if:
+        - The spoken form clearly differs (different sound, not just different spelling)
+        - The transcription uses a different spelling variant **after** the user has explicitly clarified the correct spelling
+      - Non-Latin scripts: A name or identifier rendered in its native writing system (e.g. Kanji, Hangul, Arabic) is equivalent to its romanized/phonetic transcription if they represent the same spoken entity. For example, "山田" and "Yamada" should be treated as matching.
       - Phonetic letter spellings: In languages that do not use the Latin alphabet, Roman/Latin letters are spoken using language-specific phonetic equivalents. These are correct transcriptions, not errors. For example, in Korean "에이" for "A" or "비" for "B" — if the expected text contains a Latin letter and the transcription contains its Korean phonetic form (or vice versa), treat them as matching.
       - Number surface variants: Many languages have systematic spoken-form differences that do not change the underlying value and must not be penalized. Accept any of the following as correct:
         - Reversed digit order in spoken form (e.g., German "vierundzwanzig" = four-and-twenty = 24 — this is the standard spoken form, not an error)
         - Grammatical gender/agreement variants (e.g., Spanish "veintiún" vs "veintiuna" for 21)
-        - Large-unit grouping differences (e.g., Japanese 万-system: "ichi-man go-sen" = 15,000; accept either Western or Japanese grouping if the value matches)
+        - Large-unit grouping differences (e.g., Japanese 万-system: "ichi-man go-sen" / 一万五千 = 15,000; accept either Western or Japanese grouping if the value matches)
         Note — context-dependent number systems: Some languages require a specific number system depending on context and using the wrong one is an error. In Korean, hours are counted using the native Korean system (하나, 둘…) while minutes, prices, and most other quantities use Sino-Korean (일, 이…). In Japanese, counters (助数詞) impose specific reading conventions. Only flag these as wrong if the system used is clearly inappropriate for the context (e.g., a price stated in native Korean numbers).
-      - Name spelling variants: Accept variants that are phonetically equivalent and refer to the same person (e.g., German Meyer/Meier/Maier/Mayer). Only flag if the spoken form clearly differs or if the spelling is incorrect after clarification from the user.
       - Honorific/title variants: "Ms." vs "Miss", "Mr." vs "Mister", and language equivalents (e.g., French "Madame" vs "Mme", Japanese "様" vs "-san") are acceptable variants of the same title.
 
       Important note: The expected text will often feature things formatted like "one two three" instead of "123". Your goal is to evaluate the semantic equivalence, meaning these are considered equivalent if they were heard in audio.

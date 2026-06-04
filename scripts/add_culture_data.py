@@ -578,6 +578,32 @@ async def add_culture(
                 "last_name": romanized_names["last"][last_idx],
             }
 
+        # Companion name: present if the English record has a companion entry
+        # (a named third party in the scenario — see fix_orphan_passenger_names.py).
+        # Sampled gender-matched and guaranteed distinct from the user's first name.
+        en_companion = rec["culture_overrides"].get("en", {}).get("companion")
+        if en_companion and "companion" not in rec["culture_overrides"].get(language, {}):
+            if names is None or romanized_names is None:
+                raise ValueError(
+                    f"Record {rec.get('id')!r} needs companion name for {language!r} but no name arrays available"
+                )
+            comp_gender = en_companion.get("gender") or gender
+            comp_bucket = _gender_to_bucket(comp_gender)
+            offset = BUCKET_SIZE if _use_native_script(rec["id"]) else 0
+            comp_idx = offset + _seeded_index(f"{rec['id']}|{language}|companion|first", BUCKET_SIZE)
+            # Ensure distinct from the user's first-name slot. Recompute the user's
+            # first_idx here since the primary entry may have been written in a prior run.
+            user_first_idx = offset + _seeded_index(f"{rec['id']}|{language}|first", BUCKET_SIZE)
+            if comp_bucket == bucket and comp_idx == user_first_idx:
+                comp_idx = offset + ((comp_idx + 1) % BUCKET_SIZE)
+            rec["culture_overrides"][language]["companion"] = {
+                "first_name": names[comp_bucket][comp_idx],
+                "gender": comp_gender,
+            }
+            rec["romanized_culture_overrides"][language]["companion"] = {
+                "first_name": romanized_names[comp_bucket][comp_idx],
+            }
+
         # Assign phone number for airline domain (deterministic per record).
         if phone_spec and "phone" not in rec["culture_overrides"].get(language, {}):
             rec["culture_overrides"].setdefault(language, {})["phone"] = _render_phone(phone_spec, rec["id"])

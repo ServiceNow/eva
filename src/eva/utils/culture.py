@@ -47,9 +47,23 @@ LAST_NAME_PLACEHOLDER = "<LAST_NAME>"
 FIRST_NAME_ROMANIZED_PLACEHOLDER = "<FIRST_NAME_ROMANIZED>"
 LAST_NAME_ROMANIZED_PLACEHOLDER = "<LAST_NAME_ROMANIZED>"
 PHONE_PLACEHOLDER = "<PHONE>"
+# Companion = a named third party referenced in the scenario (e.g. the user's
+# husband). Sampled per-language alongside the user's name (see add_culture_data.py),
+# guaranteed distinct from the user's first name within the record.
+COMPANION_FIRST_NAME_PLACEHOLDER = "<COMPANION_FIRST_NAME>"
+COMPANION_FIRST_NAME_ROMANIZED_PLACEHOLDER = "<COMPANION_FIRST_NAME_ROMANIZED>"
 
 
-def _replace_in(obj: Any, first: str, last: str, first_rom: str, last_rom: str, phone: str = "") -> Any:
+def _replace_in(
+    obj: Any,
+    first: str,
+    last: str,
+    first_rom: str,
+    last_rom: str,
+    phone: str = "",
+    companion_first: str = "",
+    companion_first_rom: str = "",
+) -> Any:
     if isinstance(obj, str):
         # Romanized placeholders are emitted lowercase: they exist for email
         # local-parts and similar ASCII slug contexts.
@@ -61,11 +75,20 @@ def _replace_in(obj: Any, first: str, last: str, first_rom: str, last_rom: str, 
         )
         if phone:
             result = result.replace(PHONE_PLACEHOLDER, phone)
+        if companion_first:
+            result = result.replace(COMPANION_FIRST_NAME_ROMANIZED_PLACEHOLDER, companion_first_rom.lower()).replace(
+                COMPANION_FIRST_NAME_PLACEHOLDER, companion_first
+            )
         return result
     if isinstance(obj, list):
-        return [_replace_in(x, first, last, first_rom, last_rom, phone) for x in obj]
+        return [
+            _replace_in(x, first, last, first_rom, last_rom, phone, companion_first, companion_first_rom) for x in obj
+        ]
     if isinstance(obj, dict):
-        return {k: _replace_in(v, first, last, first_rom, last_rom, phone) for k, v in obj.items()}
+        return {
+            k: _replace_in(v, first, last, first_rom, last_rom, phone, companion_first, companion_first_rom)
+            for k, v in obj.items()
+        }
     return obj
 
 
@@ -74,6 +97,28 @@ def _phone_for(culture_overrides: dict | None, language: str) -> str:
     if not culture_overrides or language not in culture_overrides:
         return ""
     return culture_overrides[language].get("phone", "")
+
+
+def _companion_for(
+    culture_overrides: dict | None,
+    romanized_culture_overrides: dict | None,
+    language: str,
+) -> tuple[str, str]:
+    """Return ``(companion_first, companion_first_rom)`` for ``language``, or empty strings.
+
+    Records without a companion entry get empty strings, in which case the placeholder
+    substitution is skipped (the placeholder stays literal and any reference to it would
+    surface as a visible bug at runtime — desired loud-fail behavior).
+    """
+    if not culture_overrides or language not in culture_overrides:
+        return "", ""
+    comp = culture_overrides[language].get("companion") or {}
+    first = comp.get("first_name", "")
+    if not first:
+        return "", ""
+    rom_comp = (romanized_culture_overrides or {}).get(language, {}).get("companion") or {}
+    first_rom = rom_comp.get("first_name") or first
+    return first, first_rom
 
 
 def _names_for(
@@ -111,7 +156,10 @@ def resolve_user_goal(
     """
     first, last, first_rom, last_rom = _names_for(culture_overrides, romanized_culture_overrides, language)
     phone = _phone_for(culture_overrides, language)
-    resolved = _replace_in(copy.deepcopy(user_goal), first, last, first_rom, last_rom, phone)
+    comp_first, comp_first_rom = _companion_for(culture_overrides, romanized_culture_overrides, language)
+    resolved = _replace_in(
+        copy.deepcopy(user_goal), first, last, first_rom, last_rom, phone, comp_first, comp_first_rom
+    )
 
     if not starting_utterances or language not in starting_utterances:
         raise KeyError(
@@ -120,7 +168,9 @@ def resolve_user_goal(
             f"Run scripts/add_culture_data.py --language {language} to populate it."
         )
     utt = starting_utterances[language]
-    resolved["starting_utterance"] = _replace_in(utt, first, last, first_rom, last_rom, phone)
+    resolved["starting_utterance"] = _replace_in(
+        utt, first, last, first_rom, last_rom, phone, comp_first, comp_first_rom
+    )
     return resolved
 
 
@@ -132,7 +182,8 @@ def resolve_user_config(
 ) -> dict:
     first, last, first_rom, last_rom = _names_for(culture_overrides, romanized_culture_overrides, language)
     phone = _phone_for(culture_overrides, language)
-    return _replace_in(copy.deepcopy(user_config), first, last, first_rom, last_rom, phone)
+    comp_first, comp_first_rom = _companion_for(culture_overrides, romanized_culture_overrides, language)
+    return _replace_in(copy.deepcopy(user_config), first, last, first_rom, last_rom, phone, comp_first, comp_first_rom)
 
 
 def get_user_language_directive(language: str, language_display_name: str) -> str | None:
@@ -188,4 +239,5 @@ def resolve_scenario_db(
 ) -> Any:
     first, last, first_rom, last_rom = _names_for(culture_overrides, romanized_culture_overrides, language)
     phone = _phone_for(culture_overrides, language)
-    return _replace_in(copy.deepcopy(db), first, last, first_rom, last_rom, phone)
+    comp_first, comp_first_rom = _companion_for(culture_overrides, romanized_culture_overrides, language)
+    return _replace_in(copy.deepcopy(db), first, last, first_rom, last_rom, phone, comp_first, comp_first_rom)

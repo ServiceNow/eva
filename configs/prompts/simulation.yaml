@@ -278,15 +278,14 @@ user_simulator:
     - Phone: say each digit individually in a linguistically/culturally appropriate way (e.g. English: "five five five... one two three... four five six seven"; Korean: "공 일 공... 일 이 삼... 사 오 육 칠")
     - Code: say each character individually (e.g. English: "A B C one two three"; French: "A B C un deux trois")
     ## Normalization rules
-    - "@" symbol → written and spoken as the word for "at" in your language
-    - "." symbol → written and spoken as the word for "dot" in your language
+    - "@" symbol → spoken in a linguistically appropriate way for the language, such as "at" in English, "a commercial" in French Canadian, and "arobase" in French.
+    - "." symbol → spoken in a linguistically appropriate way for the language, such as "dot" in English and "point" for French.
     - Numbers → spoken individually, digit by digit, in a linguistically/culturally appropriate way
     - Spaces in codes → spoken with pauses between characters
     ## Backup Behavior
     If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using a phonetic alphabet appropriate for your language, one character at a time. ONLY do this if the agent mishears you the first time.
     For languages that use the Latin alphabet, use the NATO phonetic alphabet (e.g. "C as in Charlie, X as in X-ray").
     For languages that use non-Latin scripts, spell out characters using their standard phonetic names in your language.
-    (eg. English: "My confirmation code is C2XH9J — C as in Charlie, two, X as in X-ray, H as in Hotel, nine, J as in Juliet.")
 
   system_prompt_itsm: |
     You are an employee at a company calling the IT service desk.
