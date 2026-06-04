@@ -491,7 +491,10 @@ async def run_record(
     raw_scenario_db_path = scenario_db_dir / f"{record.id}.json"
     with open(raw_scenario_db_path) as f:
         raw_db = json.load(f)
-    resolved_db = resolve_scenario_db(raw_db, record.culture_overrides, language, record.romanized_culture_overrides)
+    aliases_dir = scenario_db_dir.with_name(scenario_db_dir.name.replace("_scenarios", "_aliases"))
+    resolved_db = resolve_scenario_db(
+        raw_db, record.culture_overrides, language, record.romanized_culture_overrides, aliases_dir=aliases_dir
+    )
     scenario_db_path = str(record_output_dir / "scenario_db.json")
     with open(scenario_db_path, "w", encoding="utf-8") as f:
         json.dump(resolved_db, f, ensure_ascii=False, indent=2)
@@ -629,6 +632,7 @@ async def run_record(
             record.culture_overrides,
             language,
             record.romanized_culture_overrides,
+            aliases_dir=aliases_dir,
         ),
         initial_scenario_db=initial_db,
         final_scenario_db=final_db,

@@ -416,26 +416,7 @@
   "facilities": {
     "buildings": {
       "BLD2": {
-        "name": "Headquarters East",
-        "name_aliases": [
-          "aile est du siège",
-          "annexe est",
-          "annexe est du siège",
-          "bâtiment est",
-          "bâtiment est du siège",
-          "east building",
-          "hq east",
-          "qg est",
-          "site est du siège",
-          "siège est",
-          "siège social est",
-          "édifice est"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "hq east",
-          "east building"
-        ]
+        "name": "Headquarters East"
       }
     },
     "conference_rooms": {
@@ -512,43 +493,10 @@
     },
     "zones": {
       "PZA": {
-        "name": "Executive Garage",
-        "name_aliases": [
-          "executive garage",
-          "garage de la direction",
-          "garage des cadres",
-          "garage direction",
-          "garage exécutif",
-          "parking de la direction",
-          "parking des dirigeants",
-          "parking direction",
-          "parking exécutif",
-          "stationnement exécutif"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "executive garage"
-        ]
+        "name": "Executive Garage"
       },
       "PZB": {
-        "name": "North Surface Lot",
-        "name_aliases": [
-          "aire de stationnement nord",
-          "lot nord",
-          "north lot",
-          "parc nord",
-          "parking extérieur nord",
-          "parking nord",
-          "parking nord en surface",
-          "parking nord extérieur",
-          "stationnement extérieur nord",
-          "stationnement nord",
-          "terrain nord"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "north lot"
-        ]
+        "name": "North Surface Lot"
       }
     }
   },
@@ -584,15 +532,8 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Salesforce",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "slack"
-      ]
+      "vendor": "Salesforce"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -602,14 +543,7 @@
         "temporary"
       ],
       "name": "Microsoft Project",
-      "name_aliases": [
-        "ms project"
-      ],
-      "vendor": "Microsoft",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "ms project"
-      ]
+      "vendor": "Microsoft"
     }
   },
   "tickets": {},

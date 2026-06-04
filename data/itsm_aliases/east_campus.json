@@ -1,0 +1,17 @@
+{
+  "name": "East Campus",
+  "translatable": true,
+  "base": [
+    "east campus"
+  ],
+  "translations": {
+    "fr": [
+      "campus est",
+      "site est"
+    ],
+    "fr-CA": [
+      "campus est",
+      "site est"
+    ]
+  }
+}

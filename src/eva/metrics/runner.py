@@ -153,6 +153,7 @@ class MetricsRunner:
 
         config_data = json.loads(config_path.read_text())
         self._run_language = config_data.get("language", os.getenv("EVA_LANGUAGE", "en"))
+        self._aliases_path = Path(f"data/{config_data.get('domain')}_aliases")
 
         # Determine pipeline type from config
         model_data = config_data.get("model", {})
@@ -611,6 +612,7 @@ class MetricsRunner:
                 record.culture_overrides,
                 language,
                 record.romanized_culture_overrides,
+                aliases_dir=self._aliases_path,
             ),
             initial_scenario_db=initial_scenario_db,
             final_scenario_db=final_scenario_db,

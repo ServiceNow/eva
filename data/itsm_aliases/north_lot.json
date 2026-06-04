@@ -1,0 +1,29 @@
+{
+  "name": "North Lot",
+  "translatable": true,
+  "base": [
+    "north parking",
+    "north lot at headquarters",
+    "north lot"
+  ],
+  "translations": {
+    "fr": [
+      "lot nord",
+      "parc nord",
+      "parking nord",
+      "parking nord du siège",
+      "parking nord headquarters",
+      "stationnement nord",
+      "stationnement nord du siège social"
+    ],
+    "fr-CA": [
+      "lot nord",
+      "parc nord",
+      "parking nord",
+      "parking nord du siège",
+      "parking nord headquarters",
+      "stationnement nord",
+      "stationnement nord du siège social"
+    ]
+  }
+}

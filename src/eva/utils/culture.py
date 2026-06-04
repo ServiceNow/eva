@@ -19,6 +19,7 @@ Translated opening utterances live at ``user_goal.<language>_starting_utterance`
 from __future__ import annotations
 
 import copy
+import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -231,13 +232,61 @@ def get_initial_message(language: str) -> str:
     raise KeyError(f"initial_messages.yaml missing 'en' fallback (looked up {language!r})")
 
 
+@lru_cache(maxsize=8)
+def _load_aliases_index(aliases_dir: str) -> dict[str, dict]:
+    """Load every ``<slug>.json`` under ``aliases_dir`` into a ``{canonical_name: payload}`` map.
+
+    Cached per directory so repeated record-level calls don't reread the same files.
+    Returns ``{}`` if the directory is missing — domains without an aliases store
+    just skip injection.
+    """
+    p = Path(aliases_dir)
+    if not p.exists():
+        return {}
+    index: dict[str, dict] = {}
+    for f in sorted(p.glob("*.json")):
+        data = json.loads(f.read_text(encoding="utf-8"))
+        index[data["name"]] = data
+    return index
+
+
+def _inject_aliases(obj: Any, index: dict[str, dict], language: str) -> None:
+    """Walk ``obj`` in place, populating ``name_aliases`` on dicts whose ``name`` is in ``index``.
+
+    ``name_aliases`` = base + ``translations[language]`` (deduped, order-preserved).
+    Other dicts/lists are recursed into. Entries whose ``name`` is unknown are left alone.
+    """
+    if isinstance(obj, dict):
+        name = obj.get("name")
+        if isinstance(name, str) and name in index:
+            entry = index[name]
+            seen: set[str] = set()
+            merged: list[str] = []
+            for a in entry.get("base") + list((entry.get("translations")).get(language, [])):
+                if a not in seen:
+                    seen.add(a)
+                    merged.append(a)
+            obj["name_aliases"] = merged
+        for v in obj.values():
+            _inject_aliases(v, index, language)
+    elif isinstance(obj, list):
+        for item in obj:
+            _inject_aliases(item, index, language)
+
+
 def resolve_scenario_db(
     db: Any,
     culture_overrides: dict | None,
     language: str,
     romanized_culture_overrides: dict | None = None,
+    aliases_dir: Path | str | None = None,
 ) -> Any:
     first, last, first_rom, last_rom = _names_for(culture_overrides, romanized_culture_overrides, language)
     phone = _phone_for(culture_overrides, language)
     comp_first, comp_first_rom = _companion_for(culture_overrides, romanized_culture_overrides, language)
-    return _replace_in(copy.deepcopy(db), first, last, first_rom, last_rom, phone, comp_first, comp_first_rom)
+    resolved = _replace_in(copy.deepcopy(db), first, last, first_rom, last_rom, phone, comp_first, comp_first_rom)
+    if aliases_dir is not None:
+        index = _load_aliases_index(str(aliases_dir))
+        if index:
+            _inject_aliases(resolved, index, language)
+    return resolved

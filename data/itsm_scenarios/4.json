@@ -784,44 +784,11 @@
     "buildings": {
       "BLD1": {
         "building_code": "BLD1",
-        "name": "Operations Center",
-        "name_aliases": [
-          "bâtiment des opérations",
-          "centre des opérations",
-          "centre ops",
-          "centre opé",
-          "centre opérationnel",
-          "les opérations",
-          "ops",
-          "ops center",
-          "opérations",
-          "site des opérations"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "ops center"
-        ]
+        "name": "Operations Center"
       },
       "BLD2": {
         "building_code": "BLD2",
-        "name": "Downtown Office",
-        "name_aliases": [
-          "bureau downtown",
-          "bureau du centre-ville",
-          "bureaux du centre-ville",
-          "bâtiment finance",
-          "bâtiment finances",
-          "centre-ville",
-          "downtown",
-          "finance building",
-          "site du centre-ville",
-          "édifice des finances"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "downtown",
-          "finance building"
-        ]
+        "name": "Downtown Office"
       }
     },
     "conference_rooms": {
@@ -922,35 +889,11 @@
     "zones": {
       "PZA": {
         "name": "Garage A",
-        "name_aliases": [
-          "garage a",
-          "garage principal",
-          "main garage",
-          "parking a",
-          "parking principal",
-          "stationnement a"
-        ],
-        "zone_code": "PZA",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "main garage"
-        ]
+        "zone_code": "PZA"
       },
       "PZB": {
         "name": "Garage B",
-        "name_aliases": [
-          "garage b",
-          "garage ouest",
-          "parking b",
-          "parking ouest",
-          "stationnement b",
-          "west garage"
-        ],
-        "zone_code": "PZB",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "west garage"
-        ]
+        "zone_code": "PZB"
       }
     }
   },
@@ -1024,15 +967,8 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack app"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Slack Technologies",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "slack app"
-      ]
+      "vendor": "Slack Technologies"
     },
     "APP-1002": {
       "available_access_levels": [
@@ -1043,15 +979,8 @@
       "catalog_id": "APP-1002",
       "department_restrictions": [],
       "name": "Confluence",
-      "name_aliases": [
-        "atlassian confluence"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Atlassian",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "atlassian confluence"
-      ]
+      "vendor": "Atlassian"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -1061,14 +990,7 @@
         "temporary"
       ],
       "name": "Microsoft Project",
-      "name_aliases": [
-        "ms project"
-      ],
-      "vendor": "Microsoft",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "ms project"
-      ]
+      "vendor": "Microsoft"
     },
     "LIC-2002": {
       "catalog_id": "LIC-2002",
@@ -1078,14 +1000,7 @@
         "temporary"
       ],
       "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "intellij"
-      ],
-      "vendor": "JetBrains",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "intellij"
-      ]
+      "vendor": "JetBrains"
     }
   },
   "tickets": {

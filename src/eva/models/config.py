@@ -551,6 +551,11 @@ class RunConfig(BaseSettings):
 
     @computed_field
     @property
+    def aliases_path(self) -> Path:
+        return Path(f"data/{self.domain}_aliases")
+
+    @computed_field
+    @property
     def agent_config_path(self) -> Path:
         return Path(f"configs/agents/{self.domain}_agent.yaml")
 

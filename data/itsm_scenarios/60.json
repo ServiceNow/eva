@@ -405,23 +405,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Headquarters",
-        "name_aliases": [
-          "bureau chef",
-          "bureaux du siège",
-          "headquarters",
-          "hq",
-          "le siège",
-          "qg",
-          "quartier général",
-          "siège",
-          "siège social"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "hq",
-          "headquarters"
-        ]
+        "name": "Headquarters"
       }
     },
     "conference_rooms": {
@@ -534,20 +518,7 @@
     "zones": {
       "PZA": {
         "name": "Headquarters Garage A",
-        "name_aliases": [
-          "garage a",
-          "garage a du qg",
-          "garage a du siège",
-          "garage a du siège social",
-          "parking a",
-          "parking a du siège",
-          "stationnement a du siège social"
-        ],
-        "zone_code": "PZA",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "garage a"
-        ]
+        "zone_code": "PZA"
       }
     }
   },
@@ -583,15 +554,8 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack app"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Salesforce",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "slack app"
-      ]
+      "vendor": "Salesforce"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -601,14 +565,7 @@
         "temporary"
       ],
       "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "intellij"
-      ],
-      "vendor": "JetBrains",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "intellij"
-      ]
+      "vendor": "JetBrains"
     }
   },
   "tickets": {},

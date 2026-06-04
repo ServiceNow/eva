@@ -464,17 +464,6 @@
           }
         },
         "name": "Headquarters",
-        "name_aliases": [
-          "bureau chef",
-          "bureaux du siège",
-          "headquarters",
-          "hq",
-          "le siège",
-          "qg",
-          "quartier général",
-          "siège",
-          "siège social"
-        ],
         "parking_zones": {
           "PZA": {
             "covered": false,
@@ -506,12 +495,7 @@
             },
             "zone_code": "PZE"
           }
-        },
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "hq",
-          "headquarters"
-        ]
+        }
       }
     },
     "conference_rooms": {},
@@ -599,45 +583,12 @@
       "PZA": {
         "covered": false,
         "name": "General Surface Lot",
-        "name_aliases": [
-          "aire de stationnement générale",
-          "general lot",
-          "lot général",
-          "parc général",
-          "parking extérieur général",
-          "parking général",
-          "parking général en surface",
-          "parking général extérieur",
-          "stationnement extérieur général",
-          "stationnement général",
-          "terrain général"
-        ],
-        "zone_code": "PZA",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "general lot"
-        ]
+        "zone_code": "PZA"
       },
       "PZE": {
         "covered": true,
         "name": "Executive Garage",
-        "name_aliases": [
-          "executive garage",
-          "garage de la direction",
-          "garage des cadres",
-          "garage direction",
-          "garage exécutif",
-          "parking de la direction",
-          "parking des dirigeants",
-          "parking direction",
-          "parking exécutif",
-          "stationnement exécutif"
-        ],
-        "zone_code": "PZE",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "executive garage"
-        ]
+        "zone_code": "PZE"
       }
     }
   },

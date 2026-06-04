@@ -416,23 +416,7 @@
     "buildings": {
       "BLD1": {
         "building_code": "BLD1",
-        "name": "Headquarters",
-        "name_aliases": [
-          "bureau chef",
-          "bureaux du siège",
-          "headquarters",
-          "hq",
-          "le siège",
-          "qg",
-          "quartier général",
-          "siège",
-          "siège social"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "hq",
-          "headquarters"
-        ]
+        "name": "Headquarters"
       }
     },
     "conference_rooms": {
@@ -555,17 +539,7 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "garage nord",
-          "north garage",
-          "parking nord",
-          "stationnement nord"
-        ],
-        "zone_code": "PZA",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "north garage"
-        ]
+        "zone_code": "PZA"
       }
     }
   },

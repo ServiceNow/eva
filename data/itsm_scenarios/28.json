@@ -437,25 +437,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Harbor Engineering Center",
-        "name_aliases": [
-          "centre d’ingénierie du port",
-          "centre d’ingénierie harbor",
-          "centre ingénierie harbor",
-          "centre technique du port",
-          "centre technique harbor",
-          "engineering hq",
-          "harbor",
-          "qg d’ingénierie",
-          "qg ingénierie",
-          "site du port",
-          "site ingénierie harbor"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "engineering hq",
-          "harbor"
-        ]
+        "name": "Harbor Engineering Center"
       }
     },
     "conference_rooms": {
@@ -521,17 +503,7 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "garage a",
-          "garage nord",
-          "parking nord",
-          "stationnement nord"
-        ],
-        "zone_code": "PZA",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "garage a"
-        ]
+        "zone_code": "PZA"
       }
     }
   },
@@ -583,15 +555,8 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Salesforce",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "slack"
-      ]
+      "vendor": "Salesforce"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -601,16 +566,7 @@
         "temporary"
       ],
       "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "intellij",
-        "intellij idea"
-      ],
-      "vendor": "JetBrains",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "intellij",
-        "intellij idea"
-      ]
+      "vendor": "JetBrains"
     }
   },
   "tickets": {},

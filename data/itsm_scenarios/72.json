@@ -396,16 +396,7 @@
     "buildings": {
       "BLD4": {
         "building_code": "BLD4",
-        "name": "East Campus",
-        "name_aliases": [
-          "campus est",
-          "east campus",
-          "site est"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "east campus"
-        ]
+        "name": "East Campus"
       }
     },
     "conference_rooms": {
@@ -471,17 +462,7 @@
     "zones": {
       "PZE": {
         "name": "East Garage",
-        "name_aliases": [
-          "east garage",
-          "garage est",
-          "parking est",
-          "stationnement est"
-        ],
-        "zone_code": "PZE",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "east garage"
-        ]
+        "zone_code": "PZE"
       }
     }
   },

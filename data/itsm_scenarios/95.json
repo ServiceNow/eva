@@ -404,25 +404,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "bâtiment ingénierie centre-ville",
-          "centre du centre-ville",
-          "centre d’ingénierie",
-          "centre d’ingénierie downtown",
-          "centre d’ingénierie du centre-ville",
-          "centre ingénierie centre-ville",
-          "centre technique du centre-ville",
-          "centre-ville",
-          "downtown",
-          "engineering center",
-          "site ingénierie centre-ville"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "downtown",
-          "engineering center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -496,21 +478,7 @@
     "zones": {
       "PZA": {
         "name": "Main Garage A",
-        "name_aliases": [
-          "garage a",
-          "garage a principal",
-          "garage principal",
-          "main garage",
-          "parking a principal",
-          "parking principal",
-          "stationnement a"
-        ],
-        "zone_code": "PZA",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "garage a",
-          "main garage"
-        ]
+        "zone_code": "PZA"
       }
     }
   },
@@ -574,15 +542,8 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack app"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Slack Technologies",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "slack app"
-      ]
+      "vendor": "Slack Technologies"
     },
     "APP-1002": {
       "available_access_levels": [
@@ -593,15 +554,8 @@
       "catalog_id": "APP-1002",
       "department_restrictions": [],
       "name": "Confluence",
-      "name_aliases": [
-        "wiki"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Atlassian",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "wiki"
-      ]
+      "vendor": "Atlassian"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -611,14 +565,7 @@
         "temporary"
       ],
       "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "intellij"
-      ],
-      "vendor": "JetBrains",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "intellij"
-      ]
+      "vendor": "JetBrains"
     }
   },
   "tickets": {},

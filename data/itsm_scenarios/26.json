@@ -396,25 +396,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "bâtiment ingénierie centre-ville",
-          "centre du centre-ville",
-          "centre d’ingénierie",
-          "centre d’ingénierie downtown",
-          "centre d’ingénierie du centre-ville",
-          "centre ingénierie centre-ville",
-          "centre technique du centre-ville",
-          "centre-ville",
-          "downtown",
-          "engineering center",
-          "site ingénierie centre-ville"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "downtown",
-          "engineering center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -471,17 +453,7 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "garage a",
-          "garage nord",
-          "parking nord",
-          "stationnement nord"
-        ],
-        "zone_code": "PZA",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "garage a"
-        ]
+        "zone_code": "PZA"
       }
     }
   },
@@ -532,15 +504,8 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Salesforce",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "slack"
-      ]
+      "vendor": "Salesforce"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -550,16 +515,7 @@
         "temporary"
       ],
       "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "intellij",
-        "idea"
-      ],
-      "vendor": "JetBrains",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "intellij",
-        "idea"
-      ]
+      "vendor": "JetBrains"
     }
   },
   "tickets": {},

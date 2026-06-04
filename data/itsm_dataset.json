@@ -440,39 +440,23 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Slack Technologies",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -547,44 +531,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Garage A",
-              "name_aliases": [
-                "a garage",
-                "garage a",
-                "garage principal",
-                "main garage",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "a garage",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage A"
             }
           },
           "desks": {
@@ -1341,9 +1293,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -1351,28 +1300,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -1444,44 +1382,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Garage A",
-              "name_aliases": [
-                "a garage",
-                "garage a",
-                "garage principal",
-                "main garage",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "a garage",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage A"
             }
           },
           "desks": {
@@ -2323,39 +2229,13 @@
           "buildings": {
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "floors": {
@@ -3342,43 +3222,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage a",
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "garage a",
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -4192,9 +4042,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -4202,30 +4049,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -4299,39 +4133,13 @@
           "buildings": {
             "BLD5": {
               "building_code": "BLD5",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -5173,37 +4981,23 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack app"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack app"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 649,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -5296,19 +5090,6 @@
             "BLD3": {
               "building_code": "BLD3",
               "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
               "floors": {
                 "FL2": {
                   "desks": {
@@ -5378,12 +5159,7 @@
                     }
                   }
                 }
-              },
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              }
             }
           },
           "desks": {
@@ -5466,20 +5242,7 @@
           },
           "zones": {
             "PZA": {
-              "name": "A Garage",
-              "name_aliases": [
-                "garage a",
-                "garage principal",
-                "main garage",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "garage a",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "A Garage"
             }
           }
         },
@@ -6178,39 +5941,23 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "intellij idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "intellij idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -6265,41 +6012,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -7107,39 +6826,23 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack app"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack app"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -7196,39 +6899,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters campus",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters campus"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "main garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -7998,9 +7675,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -8008,30 +7682,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -8105,32 +7766,13 @@
           "buildings": {
             "BLD4": {
               "building_code": "BLD4",
-              "name": "East Campus",
-              "name_aliases": [
-                "campus est",
-                "east campus",
-                "site est"
-              ],
-              "name_aliases_base": [
-                "east campus"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus"
             }
           },
           "zones": {
             "PZE": {
               "zone_code": "PZE",
-              "name": "East Garage",
-              "name_aliases": [
-                "east garage",
-                "garage est",
-                "parking est",
-                "stationnement est"
-              ],
-              "name_aliases_base": [
-                "east garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Garage"
             }
           },
           "desks": {
@@ -8994,45 +8636,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Garage A",
-              "name_aliases": [
-                "a garage",
-                "garage a",
-                "garage principal",
-                "main garage",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "a garage",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage A"
             }
           },
           "desks": {
@@ -10022,41 +9632,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -10954,47 +10536,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Downtown Garage A",
-              "name_aliases": [
-                "downtown garage",
-                "garage a",
-                "garage a downtown",
-                "garage a du centre-ville",
-                "garage centre-ville",
-                "garage du centre-ville",
-                "parking a centre-ville",
-                "parking a du centre-ville",
-                "parking du centre-ville",
-                "stationnement a du centre-ville"
-              ],
-              "name_aliases_base": [
-                "garage a",
-                "downtown garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Garage A"
             }
           },
           "desks": {
@@ -11870,40 +11417,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Riverside Engineering Center",
-              "name_aliases": [
-                "centre d’ingénierie",
-                "centre d’ingénierie au bord de la rivière",
-                "centre d’ingénierie au bord de l’eau",
-                "centre d’ingénierie riverside",
-                "centre ingénierie riverside",
-                "centre technique riverside",
-                "engineering center",
-                "riverside",
-                "site ingénierie riverside",
-                "site riverside"
-              ],
-              "name_aliases_base": [
-                "engineering center",
-                "riverside"
-              ],
-              "name_aliases_translatable": true
+              "name": "Riverside Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -12630,41 +12150,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -13467,23 +12959,7 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {},
@@ -14493,63 +13969,17 @@
           "buildings": {
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "hq",
-                "le siège",
-                "main office",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "main office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             },
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown",
-              "name_aliases": [
-                "bureau du centre-ville",
-                "bâtiment downtown",
-                "bâtiment du centre-ville",
-                "centre-ville",
-                "downtown building",
-                "site centre-ville",
-                "site du centre-ville",
-                "édifice du centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown building"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Executive Garage",
-              "name_aliases": [
-                "executive garage",
-                "garage de la direction",
-                "garage des cadres",
-                "garage direction",
-                "garage exécutif",
-                "parking de la direction",
-                "parking des dirigeants",
-                "parking direction",
-                "parking exécutif",
-                "stationnement exécutif"
-              ],
-              "name_aliases_base": [
-                "executive garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Executive Garage"
             }
           },
           "desks": {
@@ -15372,32 +14802,13 @@
           "buildings": {
             "BLD7": {
               "building_code": "BLD7",
-              "name": "East Campus",
-              "name_aliases": [
-                "campus est",
-                "east campus",
-                "site est"
-              ],
-              "name_aliases_base": [
-                "east campus"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "East Garage",
-              "name_aliases": [
-                "east garage",
-                "garage est",
-                "parking est",
-                "stationnement est"
-              ],
-              "name_aliases_base": [
-                "east garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Garage"
             }
           },
           "desks": {
@@ -16159,9 +15570,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -16169,28 +15577,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "Microsoft Project",
-            "name_aliases": [
-              "ms project"
-            ],
             "vendor": "Microsoft",
             "license_cost_usd": 350,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "ms project"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -16245,67 +15642,15 @@
         "facilities": {
           "buildings": {
             "BLD2": {
-              "name": "Headquarters East",
-              "name_aliases": [
-                "aile est du siège",
-                "annexe est",
-                "annexe est du siège",
-                "bâtiment est",
-                "bâtiment est du siège",
-                "east building",
-                "hq east",
-                "qg est",
-                "site est du siège",
-                "siège est",
-                "siège social est",
-                "édifice est"
-              ],
-              "name_aliases_base": [
-                "hq east",
-                "east building"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters East"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Executive Garage",
-              "name_aliases": [
-                "executive garage",
-                "garage de la direction",
-                "garage des cadres",
-                "garage direction",
-                "garage exécutif",
-                "parking de la direction",
-                "parking des dirigeants",
-                "parking direction",
-                "parking exécutif",
-                "stationnement exécutif"
-              ],
-              "name_aliases_base": [
-                "executive garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Executive Garage"
             },
             "PZB": {
-              "name": "North Surface Lot",
-              "name_aliases": [
-                "aire de stationnement nord",
-                "lot nord",
-                "north lot",
-                "parc nord",
-                "parking extérieur nord",
-                "parking nord",
-                "parking nord en surface",
-                "parking nord extérieur",
-                "stationnement extérieur nord",
-                "stationnement nord",
-                "terrain nord"
-              ],
-              "name_aliases_base": [
-                "north lot"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Surface Lot"
             }
           },
           "desks": {
@@ -17065,39 +16410,23 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-1001": {
             "catalog_id": "LIC-1001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 699,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -17153,38 +16482,12 @@
         "facilities": {
           "buildings": {
             "BLD1": {
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -17980,34 +17283,13 @@
           "buildings": {
             "BLD2": {
               "building_code": "BLD2",
-              "name": "East Campus",
-              "name_aliases": [
-                "campus est",
-                "east campus",
-                "site est"
-              ],
-              "name_aliases_base": [
-                "east campus"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "East Campus Garage",
-              "name_aliases": [
-                "east garage",
-                "garage du campus est",
-                "garage est",
-                "parking du campus est",
-                "parking est",
-                "stationnement du campus est"
-              ],
-              "name_aliases_base": [
-                "east garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus Garage"
             }
           },
           "desks": {
@@ -18732,9 +18014,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -18742,30 +18021,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -18824,42 +18090,13 @@
           "buildings": {
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -19655,39 +18892,13 @@
           "buildings": {
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north parking",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north parking"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -20564,39 +19775,23 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -20687,41 +19882,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage a",
-                "garage nord",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -21517,37 +20684,23 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack messenger"
-            ],
             "vendor": "Slack",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack messenger"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -21635,43 +20788,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "A Garage",
-              "name_aliases": [
-                "garage a",
-                "garage principal",
-                "main garage",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "garage a",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "A Garage"
             }
           },
           "desks": {
@@ -22518,9 +21640,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -22528,30 +21647,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "intellij idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 649,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "intellij idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -22639,41 +21745,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Harbor Engineering Center",
-              "name_aliases": [
-                "centre d’ingénierie du port",
-                "centre d’ingénierie harbor",
-                "centre ingénierie harbor",
-                "centre technique du port",
-                "centre technique harbor",
-                "engineering hq",
-                "harbor",
-                "qg d’ingénierie",
-                "qg ingénierie",
-                "site du port",
-                "site ingénierie harbor"
-              ],
-              "name_aliases_base": [
-                "engineering hq",
-                "harbor"
-              ],
-              "name_aliases_translatable": true
+              "name": "Harbor Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage a",
-                "garage nord",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -23381,9 +22459,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack messenger"
-            ],
             "vendor": "Slack",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -23391,28 +22466,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack messenger"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -23545,43 +22609,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Garage A",
-              "name_aliases": [
-                "a garage",
-                "garage a",
-                "garage principal",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "a garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage A"
             }
           },
           "desks": {
@@ -24438,44 +23472,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Alpha Garage",
-              "name_aliases": [
-                "alpha",
-                "garage alpha",
-                "garage principal",
-                "main garage",
-                "parking alpha",
-                "parking principal",
-                "stationnement alpha"
-              ],
-              "name_aliases_base": [
-                "alpha",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Alpha Garage"
             }
           },
           "desks": {
@@ -25346,9 +24348,6 @@
           "APP-1021": {
             "catalog_id": "APP-1021",
             "name": "Salesforce",
-            "name_aliases": [
-              "sfdc"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": true,
             "available_access_levels": [
@@ -25356,42 +24355,28 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "sfdc"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "APP-1040": {
             "catalog_id": "APP-1040",
             "name": "Slack",
-            "name_aliases": [],
             "vendor": "Slack",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "Microsoft Project",
-            "name_aliases": [
-              "ms project"
-            ],
             "vendor": "Microsoft",
             "license_cost_usd": 480,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "ms project"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -25447,37 +24432,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown",
-              "name_aliases": [
-                "bureau du centre-ville",
-                "bâtiment downtown",
-                "bâtiment du centre-ville",
-                "centre-ville",
-                "downtown building",
-                "site centre-ville",
-                "site du centre-ville",
-                "édifice du centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown building"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown"
             }
           },
           "zones": {
             "PZC": {
-              "name": "Central Garage",
-              "name_aliases": [
-                "central parking",
-                "garage central",
-                "parc central",
-                "parking central",
-                "stationnement central"
-              ],
-              "name_aliases_base": [
-                "central parking"
-              ],
-              "name_aliases_translatable": true
+              "name": "Central Garage"
             }
           },
           "desks": {
@@ -26311,27 +25271,17 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack app"
-            ],
             "vendor": "Slack Technologies",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack app"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "APP-1002": {
             "catalog_id": "APP-1002",
             "name": "Confluence",
-            "name_aliases": [
-              "wiki"
-            ],
             "vendor": "Atlassian",
             "requires_manager_approval": true,
             "available_access_levels": [
@@ -26339,28 +25289,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "wiki"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -26436,42 +25375,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -28068,45 +26978,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Garage A",
-              "name_aliases": [
-                "a garage",
-                "garage a",
-                "garage principal",
-                "main garage",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "a garage",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage A"
             }
           },
           "desks": {
@@ -29079,23 +27957,7 @@
           "buildings": {
             "BLD2": {
               "building_code": "BLD2",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {},
@@ -29976,34 +28838,13 @@
           "buildings": {
             "BLD4": {
               "building_code": "BLD4",
-              "name": "East Campus",
-              "name_aliases": [
-                "campus est",
-                "east campus",
-                "site est"
-              ],
-              "name_aliases_base": [
-                "east campus"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus"
             }
           },
           "zones": {
             "PZE": {
               "zone_code": "PZE",
-              "name": "East Campus Garage",
-              "name_aliases": [
-                "east campus garage",
-                "garage du campus est",
-                "garage est",
-                "parking du campus est",
-                "parking est",
-                "stationnement du campus est"
-              ],
-              "name_aliases_base": [
-                "east campus garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus Garage"
             }
           },
           "desks": {
@@ -31281,9 +30122,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack app"
-            ],
             "vendor": "Slack Technologies",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -31291,18 +30129,11 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack app"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "APP-1002": {
             "catalog_id": "APP-1002",
             "name": "Confluence",
-            "name_aliases": [
-              "atlassian confluence"
-            ],
             "vendor": "Atlassian",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -31310,45 +30141,27 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "atlassian confluence"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "Microsoft Project",
-            "name_aliases": [
-              "ms project"
-            ],
             "vendor": "Microsoft",
             "license_cost_usd": 480,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "ms project"
-            ],
-            "name_aliases_translatable": false
+            ]
           },
           "LIC-2002": {
             "catalog_id": "LIC-2002",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -31443,78 +30256,21 @@
           "buildings": {
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Operations Center",
-              "name_aliases": [
-                "bâtiment des opérations",
-                "centre des opérations",
-                "centre ops",
-                "centre opé",
-                "centre opérationnel",
-                "les opérations",
-                "ops",
-                "ops center",
-                "opérations",
-                "site des opérations"
-              ],
-              "name_aliases_base": [
-                "ops center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Operations Center"
             },
             "BLD2": {
               "building_code": "BLD2",
-              "name": "Downtown Office",
-              "name_aliases": [
-                "bureau downtown",
-                "bureau du centre-ville",
-                "bureaux du centre-ville",
-                "bâtiment finance",
-                "bâtiment finances",
-                "centre-ville",
-                "downtown",
-                "finance building",
-                "site du centre-ville",
-                "édifice des finances"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "finance building"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Office"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage principal",
-                "main garage",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage A"
             },
             "PZB": {
               "zone_code": "PZB",
-              "name": "Garage B",
-              "name_aliases": [
-                "garage b",
-                "garage ouest",
-                "parking b",
-                "parking ouest",
-                "stationnement b",
-                "west garage"
-              ],
-              "name_aliases_base": [
-                "west garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage B"
             }
           },
           "desks": {
@@ -32427,41 +31183,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -33442,40 +32170,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -34411,17 +33111,6 @@
             "BLD1": {
               "building_code": "BLD1",
               "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
               "floors": {
                 "FL2": {
                   "desks": {
@@ -34500,12 +33189,7 @@
                     }
                   }
                 }
-              },
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              }
             }
           },
           "desks": {
@@ -34563,45 +33247,12 @@
             "PZE": {
               "zone_code": "PZE",
               "name": "Executive Garage",
-              "name_aliases": [
-                "executive garage",
-                "garage de la direction",
-                "garage des cadres",
-                "garage direction",
-                "garage exécutif",
-                "parking de la direction",
-                "parking des dirigeants",
-                "parking direction",
-                "parking exécutif",
-                "stationnement exécutif"
-              ],
-              "covered": true,
-              "name_aliases_base": [
-                "executive garage"
-              ],
-              "name_aliases_translatable": true
+              "covered": true
             },
             "PZA": {
               "zone_code": "PZA",
               "name": "General Surface Lot",
-              "name_aliases": [
-                "aire de stationnement générale",
-                "general lot",
-                "lot général",
-                "parc général",
-                "parking extérieur général",
-                "parking général",
-                "parking général en surface",
-                "parking général extérieur",
-                "stationnement extérieur général",
-                "stationnement général",
-                "terrain général"
-              ],
-              "covered": false,
-              "name_aliases_base": [
-                "general lot"
-              ],
-              "name_aliases_translatable": true
+              "covered": false
             }
           },
           "parking": {
@@ -35508,42 +34159,13 @@
           "buildings": {
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -36696,10 +35318,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Salesforce",
-            "name_aliases": [
-              "crm",
-              "salesforce crm"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -36707,48 +35325,27 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "crm",
-              "salesforce crm"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "APP-1002": {
             "catalog_id": "APP-1002",
             "name": "Cisco AnyConnect",
-            "name_aliases": [
-              "vpn",
-              "corporate vpn"
-            ],
             "vendor": "Cisco",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "vpn",
-              "corporate vpn"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "Microsoft 365 E3",
-            "name_aliases": [
-              "office 365"
-            ],
             "vendor": "Microsoft",
             "license_cost_usd": 420,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "office 365"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -36833,38 +35430,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown",
-              "name_aliases": [
-                "bureau du centre-ville",
-                "bâtiment downtown",
-                "bâtiment du centre-ville",
-                "centre-ville",
-                "downtown building",
-                "sales hq",
-                "site centre-ville",
-                "site du centre-ville",
-                "édifice du centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown building",
-                "sales hq"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown"
             }
           },
           "zones": {
             "PZS": {
-              "name": "South Garage",
-              "name_aliases": [
-                "garage sud",
-                "parking sud",
-                "south parking",
-                "stationnement sud"
-              ],
-              "name_aliases_base": [
-                "south parking"
-              ],
-              "name_aliases_translatable": true
+              "name": "South Garage"
             }
           },
           "desks": {
@@ -37887,39 +36458,13 @@
           "buildings": {
             "BLD5": {
               "building_code": "BLD5",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -39024,19 +37569,6 @@
             "BLD3": {
               "building_code": "BLD3",
               "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
               "floors": {
                 "FL2": {
                   "desks": {
@@ -39099,12 +37631,7 @@
                     }
                   }
                 }
-              },
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              }
             }
           },
           "desks": {
@@ -39174,18 +37701,7 @@
           },
           "zones": {
             "PZA": {
-              "name": "Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage principal",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage A"
             }
           }
         },
@@ -40309,27 +38825,17 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Slack Technologies",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "APP-1002": {
             "catalog_id": "APP-1002",
             "name": "Confluence",
-            "name_aliases": [
-              "wiki"
-            ],
             "vendor": "Atlassian",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -40337,28 +38843,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "wiki"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -40438,45 +38933,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Main Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a principal",
-                "garage principal",
-                "main garage",
-                "parking a principal",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "garage a",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Main Garage A"
             }
           },
           "desks": {
@@ -41424,9 +39887,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Confluence",
-            "name_aliases": [
-              "atlassian confluence"
-            ],
             "vendor": "Atlassian",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -41434,46 +39894,28 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "atlassian confluence"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "APP-1002": {
             "catalog_id": "APP-1002",
             "name": "Slack",
-            "name_aliases": [
-              "slack enterprise"
-            ],
             "vendor": "Slack",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack enterprise"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -41572,43 +40014,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "main garage",
-                "north parking",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "main garage",
-                "north parking"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -42603,9 +41015,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -42613,28 +41022,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 699,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -42692,42 +41090,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -43627,9 +41996,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack app"
-            ],
             "vendor": "Slack Technologies",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -43637,28 +42003,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack app"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "Microsoft 365 Apps",
-            "name_aliases": [
-              "office 365"
-            ],
             "vendor": "Microsoft",
             "license_cost_usd": 180,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "office 365"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -43714,57 +42069,15 @@
         "facilities": {
           "buildings": {
             "BLD5": {
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
-              "name": "South Garage",
-              "name_aliases": [
-                "garage sud",
-                "parking sud",
-                "south parking",
-                "stationnement sud"
-              ],
-              "name_aliases_base": [
-                "south parking"
-              ],
-              "name_aliases_translatable": true
+              "name": "South Garage"
             },
             "PZB": {
-              "name": "North Lot",
-              "name_aliases": [
-                "lot nord",
-                "north lot at headquarters",
-                "north parking",
-                "parc nord",
-                "parking nord",
-                "parking nord du siège",
-                "parking nord headquarters",
-                "stationnement nord",
-                "stationnement nord du siège social"
-              ],
-              "name_aliases_base": [
-                "north parking",
-                "north lot at headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Lot"
             }
           },
           "desks": {
@@ -44814,9 +43127,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -44824,30 +43134,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "intellij idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "intellij idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -44920,39 +43217,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -46318,17 +44589,6 @@
             "BLD3": {
               "building_code": "BLD3",
               "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
               "floors": {
                 "FL2": {
                   "desks": {
@@ -46388,53 +44648,19 @@
                   },
                   "rooms": {}
                 }
-              },
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              }
             }
           },
           "zones": {
             "PZE": {
               "zone_code": "PZE",
               "name": "Executive Garage",
-              "name_aliases": [
-                "exec garage",
-                "garage de la direction",
-                "garage des cadres",
-                "garage direction",
-                "garage exécutif",
-                "parking de la direction",
-                "parking des dirigeants",
-                "parking direction",
-                "parking exécutif",
-                "stationnement exécutif"
-              ],
-              "covered": true,
-              "name_aliases_base": [
-                "exec garage"
-              ],
-              "name_aliases_translatable": true
+              "covered": true
             },
             "PZG": {
               "zone_code": "PZG",
               "name": "General Garage",
-              "name_aliases": [
-                "garage général",
-                "garage principal",
-                "main garage",
-                "parking général",
-                "parking principal",
-                "stationnement général",
-                "stationnement principal"
-              ],
-              "covered": true,
-              "name_aliases_base": [
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "covered": true
             }
           },
           "desks": {
@@ -47624,40 +45850,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Office",
-              "name_aliases": [
-                "bureau downtown",
-                "bureau du centre-ville",
-                "bureaux du centre-ville",
-                "bâtiment finance",
-                "bâtiment finances",
-                "centre-ville",
-                "downtown",
-                "main hr office",
-                "site du centre-ville",
-                "édifice des finances"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "main hr office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Office"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -48496,9 +46695,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack app"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -48506,28 +46702,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack app"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -48585,42 +46770,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -49910,41 +48066,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -51107,43 +49235,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZN": {
               "zone_code": "PZN",
-              "name": "North Lot",
-              "name_aliases": [
-                "lot nord",
-                "north lot",
-                "parc nord",
-                "parking nord",
-                "parking nord du siège",
-                "parking nord headquarters",
-                "stationnement nord",
-                "stationnement nord du siège social"
-              ],
-              "name_aliases_base": [
-                "north lot"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Lot"
             }
           },
           "desks": {
@@ -52237,34 +50335,13 @@
           "buildings": {
             "BLD4": {
               "building_code": "BLD4",
-              "name": "East Campus",
-              "name_aliases": [
-                "campus est",
-                "east campus",
-                "site est"
-              ],
-              "name_aliases_base": [
-                "east campus"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus"
             }
           },
           "zones": {
             "PZD": {
               "zone_code": "PZD",
-              "name": "East Campus Garage",
-              "name_aliases": [
-                "east garage",
-                "garage du campus est",
-                "garage est",
-                "parking du campus est",
-                "parking est",
-                "stationnement du campus est"
-              ],
-              "name_aliases_base": [
-                "east garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus Garage"
             }
           },
           "desks": {
@@ -53570,43 +51647,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown",
-              "name_aliases": [
-                "bureau du centre-ville",
-                "bâtiment downtown",
-                "bâtiment du centre-ville",
-                "centre-ville",
-                "downtown building",
-                "site centre-ville",
-                "site du centre-ville",
-                "édifice du centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown building"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Executive Garage",
-              "name_aliases": [
-                "garage de la direction",
-                "garage des cadres",
-                "garage direction",
-                "garage exécutif",
-                "main garage",
-                "parking de la direction",
-                "parking des dirigeants",
-                "parking direction",
-                "parking exécutif",
-                "stationnement exécutif"
-              ],
-              "name_aliases_base": [
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Executive Garage"
             }
           },
           "desks": {
@@ -54662,37 +52709,23 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -54750,39 +52783,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -56050,42 +54057,13 @@
           "buildings": {
             "BLD2": {
               "building_code": "BLD2",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -57522,42 +55500,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Main Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a principal",
-                "garage principal",
-                "parking a principal",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Main Garage A"
             }
           },
           "desks": {
@@ -58518,9 +56466,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Slack Technologies",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -58528,30 +56473,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "intellij idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "intellij idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -58623,42 +56555,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Main Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a principal",
-                "garage principal",
-                "parking a principal",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Main Garage A"
             }
           },
           "desks": {
@@ -59582,17 +57484,6 @@
             "BLD3": {
               "building_code": "BLD3",
               "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
               "floors": {
                 "FL2": {
                   "desks": {
@@ -59652,12 +57543,7 @@
                   }
                 }
               },
-              "parking_zones": {},
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "parking_zones": {}
             }
           },
           "desks": {
@@ -60774,32 +58660,13 @@
           "buildings": {
             "BLD4": {
               "building_code": "BLD4",
-              "name": "East Campus",
-              "name_aliases": [
-                "campus est",
-                "east campus",
-                "site est"
-              ],
-              "name_aliases_base": [
-                "east campus"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus"
             }
           },
           "zones": {
             "PZE": {
               "zone_code": "PZE",
-              "name": "East Garage",
-              "name_aliases": [
-                "east garage",
-                "garage est",
-                "parking est",
-                "stationnement est"
-              ],
-              "name_aliases_base": [
-                "east garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Garage"
             }
           },
           "desks": {
@@ -61649,9 +59516,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -61659,30 +59523,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij",
-              "intellij idea"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 699,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij",
-              "intellij idea"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -61737,23 +59588,7 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {},
@@ -62764,38 +60599,12 @@
         "facilities": {
           "buildings": {
             "BLD1": {
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "hq",
-                "le siège",
-                "main office",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "main office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
-              "name": "North Garage",
-              "name_aliases": [
-                "garage a",
-                "garage nord",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -64067,43 +61876,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZN": {
               "zone_code": "PZN",
-              "name": "North Lot",
-              "name_aliases": [
-                "lot nord",
-                "north lot",
-                "parc nord",
-                "parking nord",
-                "parking nord du siège",
-                "parking nord headquarters",
-                "stationnement nord",
-                "stationnement nord du siège social"
-              ],
-              "name_aliases_base": [
-                "north lot"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Lot"
             }
           },
           "desks": {
@@ -65309,42 +63088,13 @@
           "buildings": {
             "BLD5": {
               "building_code": "BLD5",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -66433,34 +64183,13 @@
           "buildings": {
             "BLD4": {
               "building_code": "BLD4",
-              "name": "East Campus",
-              "name_aliases": [
-                "campus est",
-                "east campus",
-                "site est"
-              ],
-              "name_aliases_base": [
-                "east campus"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus"
             }
           },
           "zones": {
             "PZE": {
               "zone_code": "PZE",
-              "name": "East Campus Garage",
-              "name_aliases": [
-                "east garage",
-                "garage du campus est",
-                "garage est",
-                "parking du campus est",
-                "parking est",
-                "stationnement du campus est"
-              ],
-              "name_aliases_base": [
-                "east garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus Garage"
             }
           },
           "desks": {
@@ -67805,47 +65534,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZE": {
               "zone_code": "PZE",
-              "name": "Executive Garage",
-              "name_aliases": [
-                "exec garage",
-                "executive <last_name>ing",
-                "garage de la direction",
-                "garage des cadres",
-                "garage direction",
-                "garage exécutif",
-                "parking de la direction",
-                "parking des dirigeants",
-                "parking direction",
-                "parking exécutif",
-                "stationnement exécutif"
-              ],
-              "name_aliases_base": [
-                "exec garage",
-                "executive <last_name>ing"
-              ],
-              "name_aliases_translatable": true
+              "name": "Executive Garage"
             }
           },
           "desks": {
@@ -69340,60 +67035,17 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             },
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Downtown",
-              "name_aliases": [
-                "bureau du centre-ville",
-                "bâtiment downtown",
-                "bâtiment du centre-ville",
-                "centre-ville",
-                "downtown office",
-                "site centre-ville",
-                "site du centre-ville",
-                "édifice du centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -70751,41 +68403,12 @@
         "facilities": {
           "buildings": {
             "BLD1": {
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -71880,44 +69503,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Garage A",
-              "name_aliases": [
-                "a garage",
-                "garage a",
-                "garage principal",
-                "main garage",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "a garage",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage A"
             }
           },
           "desks": {
@@ -72963,37 +70554,23 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -73049,43 +70626,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage",
-              "name_aliases": [
-                "garage du qg",
-                "garage du siège",
-                "garage du siège social",
-                "garage siège",
-                "hq garage",
-                "parking du siège",
-                "parking siège",
-                "stationnement du siège social"
-              ],
-              "name_aliases_base": [
-                "hq garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage"
             }
           },
           "desks": {
@@ -74453,41 +72000,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -75556,45 +73075,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZE": {
               "zone_code": "PZE",
-              "name": "Executive Garage",
-              "name_aliases": [
-                "executive garage",
-                "garage de la direction",
-                "garage des cadres",
-                "garage direction",
-                "garage exécutif",
-                "parking de la direction",
-                "parking des dirigeants",
-                "parking direction",
-                "parking exécutif",
-                "stationnement exécutif"
-              ],
-              "name_aliases_base": [
-                "executive garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Executive Garage"
             }
           },
           "desks": {
@@ -76943,39 +74430,13 @@
           "buildings": {
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "main garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -78314,39 +75775,13 @@
           "buildings": {
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -79706,17 +77141,6 @@
             "BLD3": {
               "building_code": "BLD3",
               "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
               "floors": {
                 "FL2": {
                   "desks": {
@@ -79744,12 +77168,7 @@
                   "rooms": {}
                 }
               },
-              "parking_zones": {},
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "parking_zones": {}
             }
           },
           "zones": {},
@@ -80994,42 +78413,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "head office",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "head office"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Headquarters Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a du qg",
-                "garage a du siège",
-                "garage a du siège social",
-                "parking a",
-                "parking a du siège",
-                "stationnement a du siège social"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters Garage A"
             }
           },
           "desks": {
@@ -82652,42 +80042,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown",
-              "name_aliases": [
-                "bureau du centre-ville",
-                "bâtiment downtown",
-                "bâtiment du centre-ville",
-                "centre-ville",
-                "downtown building",
-                "site centre-ville",
-                "site du centre-ville",
-                "édifice du centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown building"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Downtown Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a downtown",
-                "garage a du centre-ville",
-                "garage centre-ville",
-                "garage du centre-ville",
-                "parking a centre-ville",
-                "parking a du centre-ville",
-                "parking du centre-ville",
-                "stationnement a du centre-ville"
-              ],
-              "name_aliases_base": [
-                "garage a"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Garage A"
             }
           },
           "desks": {
@@ -83850,9 +81211,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack app"
-            ],
             "vendor": "Slack Technologies",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -83860,18 +81218,11 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack app"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "APP-1002": {
             "catalog_id": "APP-1002",
             "name": "Confluence",
-            "name_aliases": [
-              "wiki"
-            ],
             "vendor": "Atlassian",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -83879,28 +81230,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "wiki"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -83972,45 +81312,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "Main Garage A",
-              "name_aliases": [
-                "garage a",
-                "garage a principal",
-                "garage principal",
-                "main garage",
-                "parking a principal",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "garage a",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Main Garage A"
             }
           },
           "desks": {
@@ -84998,41 +82306,13 @@
           "buildings": {
             "BLD3": {
               "building_code": "BLD3",
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -86058,44 +83338,12 @@
         "facilities": {
           "buildings": {
             "BLD3": {
-              "name": "Downtown Engineering Center",
-              "name_aliases": [
-                "bâtiment ingénierie centre-ville",
-                "centre du centre-ville",
-                "centre d’ingénierie",
-                "centre d’ingénierie downtown",
-                "centre d’ingénierie du centre-ville",
-                "centre ingénierie centre-ville",
-                "centre technique du centre-ville",
-                "centre-ville",
-                "downtown",
-                "engineering center",
-                "site ingénierie centre-ville"
-              ],
-              "name_aliases_base": [
-                "downtown",
-                "engineering center"
-              ],
-              "name_aliases_translatable": true
+              "name": "Downtown Engineering Center"
             }
           },
           "zones": {
             "PZA": {
-              "name": "Garage A",
-              "name_aliases": [
-                "a garage",
-                "garage a",
-                "garage principal",
-                "main garage",
-                "parking a",
-                "parking principal",
-                "stationnement a"
-              ],
-              "name_aliases_base": [
-                "a garage",
-                "main garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "Garage A"
             }
           },
           "desks": {
@@ -86798,9 +84046,6 @@
           "APP-1001": {
             "catalog_id": "APP-1001",
             "name": "Slack",
-            "name_aliases": [
-              "slack"
-            ],
             "vendor": "Salesforce",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -86808,18 +84053,11 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "slack"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "APP-1002": {
             "catalog_id": "APP-1002",
             "name": "Confluence",
-            "name_aliases": [
-              "confluence"
-            ],
             "vendor": "Atlassian",
             "requires_manager_approval": false,
             "available_access_levels": [
@@ -86827,30 +84065,17 @@
               "standard",
               "admin"
             ],
-            "department_restrictions": [],
-            "name_aliases_base": [
-              "confluence"
-            ],
-            "name_aliases_translatable": false
+            "department_restrictions": []
           },
           "LIC-2001": {
             "catalog_id": "LIC-2001",
             "name": "JetBrains IntelliJ IDEA",
-            "name_aliases": [
-              "intellij idea",
-              "intellij"
-            ],
             "vendor": "JetBrains",
             "license_cost_usd": 599,
             "license_types_supported": [
               "permanent",
               "temporary"
-            ],
-            "name_aliases_base": [
-              "intellij idea",
-              "intellij"
-            ],
-            "name_aliases_translatable": false
+            ]
           }
         },
         "access_groups": {
@@ -86907,39 +84132,13 @@
           "buildings": {
             "BLD1": {
               "building_code": "BLD1",
-              "name": "Headquarters",
-              "name_aliases": [
-                "bureau chef",
-                "bureaux du siège",
-                "headquarters",
-                "hq",
-                "le siège",
-                "qg",
-                "quartier général",
-                "siège",
-                "siège social"
-              ],
-              "name_aliases_base": [
-                "hq",
-                "headquarters"
-              ],
-              "name_aliases_translatable": true
+              "name": "Headquarters"
             }
           },
           "zones": {
             "PZA": {
               "zone_code": "PZA",
-              "name": "North Garage",
-              "name_aliases": [
-                "garage nord",
-                "north garage",
-                "parking nord",
-                "stationnement nord"
-              ],
-              "name_aliases_base": [
-                "north garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "North Garage"
             }
           },
           "desks": {
@@ -87864,34 +85063,13 @@
           "buildings": {
             "BLD4": {
               "building_code": "BLD4",
-              "name": "East Campus",
-              "name_aliases": [
-                "campus est",
-                "east campus",
-                "site est"
-              ],
-              "name_aliases_base": [
-                "east campus"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus"
             }
           },
           "zones": {
             "PZE": {
               "zone_code": "PZE",
-              "name": "East Campus Garage",
-              "name_aliases": [
-                "east campus garage",
-                "garage du campus est",
-                "garage est",
-                "parking du campus est",
-                "parking est",
-                "stationnement du campus est"
-              ],
-              "name_aliases_base": [
-                "east campus garage"
-              ],
-              "name_aliases_translatable": true
+              "name": "East Campus Garage"
             }
           },
           "desks": {

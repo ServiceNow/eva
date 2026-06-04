@@ -461,25 +461,7 @@
     },
     "buildings": {
       "BLD3": {
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "bâtiment ingénierie centre-ville",
-          "centre du centre-ville",
-          "centre d’ingénierie",
-          "centre d’ingénierie downtown",
-          "centre d’ingénierie du centre-ville",
-          "centre ingénierie centre-ville",
-          "centre technique du centre-ville",
-          "centre-ville",
-          "downtown",
-          "engineering center",
-          "site ingénierie centre-ville"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "downtown",
-          "engineering center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {},
@@ -532,21 +514,7 @@
     },
     "zones": {
       "PZA": {
-        "name": "Alpha Garage",
-        "name_aliases": [
-          "alpha",
-          "garage alpha",
-          "garage principal",
-          "main garage",
-          "parking alpha",
-          "parking principal",
-          "stationnement alpha"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "alpha",
-          "main garage"
-        ]
+        "name": "Alpha Garage"
       }
     }
   },

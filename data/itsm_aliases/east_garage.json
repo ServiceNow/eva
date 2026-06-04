@@ -1,0 +1,19 @@
+{
+  "name": "East Garage",
+  "translatable": true,
+  "base": [
+    "east garage"
+  ],
+  "translations": {
+    "fr": [
+      "garage est",
+      "parking est",
+      "stationnement est"
+    ],
+    "fr-CA": [
+      "garage est",
+      "parking est",
+      "stationnement est"
+    ]
+  }
+}

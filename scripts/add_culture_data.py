@@ -109,13 +109,6 @@ DEFAULT_MODEL = "gpt-5.5-2026-04-23"
 TRANSLATION_BATCH = 25
 ALIAS_BATCH = 50  # Max unique names per alias-translation LLM call.
 
-# Paths within a scenario JSON that may contain name_aliases entries.
-_ALIAS_PATHS: list[tuple[str, ...]] = [
-    ("facilities", "buildings"),
-    ("facilities", "zones"),
-    ("software_catalog",),
-]
-
 BUCKET_SIZE = 40  # Each name array: indices [0:BUCKET_SIZE] = ASCII, [BUCKET_SIZE:2*BUCKET_SIZE] = native script.
 
 
@@ -354,22 +347,6 @@ def _update_initial_messages(language: str, message: str) -> None:
     INITIAL_MESSAGES_PATH.write_text(yaml.safe_dump(existing, allow_unicode=True, sort_keys=True), encoding="utf-8")
 
 
-def _get_nested(obj: dict[str, Any], keys: tuple[str, ...]) -> dict[str, Any]:
-    for k in keys:
-        obj = obj.get(k, {})
-    return obj
-
-
-def _iter_alias_entries(data: dict[str, Any]) -> list[tuple[tuple[str, ...], str, dict[str, Any]]]:
-    results = []
-    for path in _ALIAS_PATHS:
-        section = _get_nested(data, path)
-        for entry_key, entry in section.items():
-            if entry.get("name_aliases_translatable"):
-                results.append((path, entry_key, entry))
-    return results
-
-
 async def _translate_aliases(
     name_to_base: dict[str, list[str]],
     language_name: str,
@@ -427,91 +404,55 @@ async def add_scenario_aliases(
     llm: LLMClient,
     dry_run: bool,
 ) -> None:
-    """Translate name_aliases for tagged translatable entries in scenario DB JSONs.
+    """Translate name_aliases into the per-object alias files at ``data/<domain>_aliases/``.
 
-    Idempotent: aliases already present in name_aliases are not re-added.
-    Requires migrate_aliases.py to have been run first (entries must have
-    name_aliases_translatable and name_aliases_base).
+    Each file is the single source of truth for one canonical object: ``base`` (English)
+    aliases plus ``translations[<lang>]`` per language. Scenario DBs no longer carry
+    aliases inline — ``resolve_scenario_db`` injects them at load time.
+
+    Idempotent: skips files that already have a non-empty entry for ``language``.
+    Domains without an aliases directory are silently skipped.
     """
-    scenario_dir = DATA_DIR / f"{domain}_scenarios"
-    if not scenario_dir.exists():
-        logger.info(f"No scenario directory for domain={domain!r}, skipping alias translation")
+    aliases_dir = DATA_DIR / f"{domain}_aliases"
+    if not aliases_dir.exists():
+        logger.info(f"No aliases directory for domain={domain!r}, skipping alias translation")
         return
 
-    files = sorted(scenario_dir.glob("*.json"))
+    files = sorted(aliases_dir.glob("*.json"))
     if not files:
         return
 
-    # Collect unique translatable names and their base aliases across all files.
+    # Collect translatable names that don't already have this language populated.
     name_to_base: dict[str, list[str]] = {}
+    file_by_name: dict[str, Path] = {}
     for path in files:
         data = json.loads(path.read_text(encoding="utf-8"))
-        for _, _, entry in _iter_alias_entries(data):
-            name = entry["name"]
-            if name not in name_to_base:
-                name_to_base[name] = entry.get("name_aliases_base", entry.get("name_aliases", []))
+        if not data.get("translatable"):
+            continue
+        if data.get("translations", {}).get(language):
+            continue
+        name_to_base[data["name"]] = data.get("base", [])
+        file_by_name[data["name"]] = path
 
     if not name_to_base:
-        logger.info(f"No translatable alias entries found for domain={domain!r}")
+        logger.info(f"All translatable aliases already have a {language!r} entry for domain={domain!r}")
         return
 
     logger.info(f"Translating aliases for {len(name_to_base)} unique names to {language_name}")
     translated = await _translate_aliases(name_to_base, language_name, llm)
 
-    for path in files:
+    for name, new_aliases in translated.items():
+        path = file_by_name[name]
         data = json.loads(path.read_text(encoding="utf-8"))
-        changed = False
-
-        for _, _, entry in _iter_alias_entries(data):
-            new_aliases = translated.get(entry["name"], [])
-            existing = set(entry.get("name_aliases", []))
-            to_add = [a for a in new_aliases if a not in existing]
-            if to_add:
-                entry["name_aliases"].extend(to_add)
-                entry["name_aliases"].sort()
-                changed = True
-
-        if not changed:
-            continue
-
+        base_set = set(data.get("base", []))
+        # Drop anything that's already in base — base is always served alongside translations.
+        deduped = sorted({a for a in new_aliases if a not in base_set})
+        data.setdefault("translations", {})[language] = deduped
         if dry_run:
-            logger.info(f"[dry-run] would update {path.name}")
+            logger.info(f"[dry-run] would write {path.name} (translations.{language}={len(deduped)} entries)")
         else:
-            tmp = path.with_suffix(".json.tmp")
-            tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-            tmp.replace(path)
-            logger.info(f"Updated {path.name}")
-
-    # Also update expected_scenario_db inside the dataset JSON.
-    dataset_path = DATA_DIR / f"{domain}_dataset.json"
-    if dataset_path.exists():
-        with dataset_path.open(encoding="utf-8") as f:
-            records: list[dict[str, Any]] = json.load(f)
-        dataset_changed = False
-
-        for rec in records:
-            db = rec.get("ground_truth", {}).get("expected_scenario_db")
-            if not db:
-                continue
-            for _, _, entry in _iter_alias_entries(db):
-                new_aliases = translated.get(entry["name"], [])
-                existing = set(entry.get("name_aliases", []))
-                to_add = [a for a in new_aliases if a not in existing]
-                if to_add:
-                    entry["name_aliases"].extend(to_add)
-                    entry["name_aliases"].sort()
-                    dataset_changed = True
-
-        if dataset_changed:
-            if dry_run:
-                logger.info(f"[dry-run] would update {dataset_path.name} with translated aliases")
-            else:
-                tmp = dataset_path.with_suffix(dataset_path.suffix + ".tmp")
-                with tmp.open("w", encoding="utf-8") as f:
-                    json.dump(records, f, ensure_ascii=False, indent=2)
-                    f.write("\n")
-                tmp.replace(dataset_path)
-                logger.info(f"Updated {dataset_path.name} with translated aliases")
+            path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            logger.info(f"Updated {path.name} with {len(deduped)} {language!r} aliases")
 
 
 async def add_culture(

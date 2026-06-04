@@ -328,6 +328,7 @@ class ConversationWorker:
             self.record.culture_overrides,
             self.config.language,
             self.record.romanized_culture_overrides,
+            aliases_dir=self.config.aliases_path,
         )
         out = self.output_dir / "scenario_db.json"
         out.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,22 @@
+{
+  "name": "A Garage",
+  "translatable": true,
+  "base": [
+    "garage a",
+    "main garage"
+  ],
+  "translations": {
+    "fr": [
+      "garage principal",
+      "parking a",
+      "parking principal",
+      "stationnement a"
+    ],
+    "fr-CA": [
+      "garage principal",
+      "parking a",
+      "parking principal",
+      "stationnement a"
+    ]
+  }
+}

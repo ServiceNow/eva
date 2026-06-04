@@ -416,24 +416,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Riverside Engineering Center",
-        "name_aliases": [
-          "centre d’ingénierie",
-          "centre d’ingénierie au bord de la rivière",
-          "centre d’ingénierie au bord de l’eau",
-          "centre d’ingénierie riverside",
-          "centre ingénierie riverside",
-          "centre technique riverside",
-          "engineering center",
-          "riverside",
-          "site ingénierie riverside",
-          "site riverside"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "engineering center",
-          "riverside"
-        ]
+        "name": "Riverside Engineering Center"
       }
     },
     "conference_rooms": {
@@ -499,17 +482,7 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "garage nord",
-          "north garage",
-          "parking nord",
-          "stationnement nord"
-        ],
-        "zone_code": "PZA",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "north garage"
-        ]
+        "zone_code": "PZA"
       }
     }
   },

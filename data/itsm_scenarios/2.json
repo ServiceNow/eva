@@ -542,41 +542,11 @@
     "buildings": {
       "BLD1": {
         "building_code": "BLD1",
-        "name": "Headquarters",
-        "name_aliases": [
-          "bureau chef",
-          "bureaux du siège",
-          "hq",
-          "le siège",
-          "main office",
-          "qg",
-          "quartier général",
-          "siège",
-          "siège social"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "hq",
-          "main office"
-        ]
+        "name": "Headquarters"
       },
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown",
-        "name_aliases": [
-          "bureau du centre-ville",
-          "bâtiment downtown",
-          "bâtiment du centre-ville",
-          "centre-ville",
-          "downtown building",
-          "site centre-ville",
-          "site du centre-ville",
-          "édifice du centre-ville"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "downtown building"
-        ]
+        "name": "Downtown"
       }
     },
     "conference_rooms": {
@@ -651,23 +621,7 @@
     "zones": {
       "PZA": {
         "name": "Executive Garage",
-        "name_aliases": [
-          "executive garage",
-          "garage de la direction",
-          "garage des cadres",
-          "garage direction",
-          "garage exécutif",
-          "parking de la direction",
-          "parking des dirigeants",
-          "parking direction",
-          "parking exécutif",
-          "stationnement exécutif"
-        ],
-        "zone_code": "PZA",
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "executive garage"
-        ]
+        "zone_code": "PZA"
       }
     }
   },

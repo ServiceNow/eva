@@ -403,23 +403,7 @@
   "facilities": {
     "buildings": {
       "BLD5": {
-        "name": "Headquarters",
-        "name_aliases": [
-          "bureau chef",
-          "bureaux du siège",
-          "head office",
-          "hq",
-          "le siège",
-          "qg",
-          "quartier général",
-          "siège",
-          "siège social"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "hq",
-          "head office"
-        ]
+        "name": "Headquarters"
       }
     },
     "conference_rooms": {
@@ -573,36 +557,10 @@
     },
     "zones": {
       "PZA": {
-        "name": "South Garage",
-        "name_aliases": [
-          "garage sud",
-          "parking sud",
-          "south parking",
-          "stationnement sud"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "south parking"
-        ]
+        "name": "South Garage"
       },
       "PZB": {
-        "name": "North Lot",
-        "name_aliases": [
-          "lot nord",
-          "north lot at headquarters",
-          "north parking",
-          "parc nord",
-          "parking nord",
-          "parking nord du siège",
-          "parking nord headquarters",
-          "stationnement nord",
-          "stationnement nord du siège social"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "north parking",
-          "north lot at headquarters"
-        ]
+        "name": "North Lot"
       }
     }
   },
@@ -638,15 +596,8 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack app"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Slack Technologies",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "slack app"
-      ]
+      "vendor": "Slack Technologies"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -656,14 +607,7 @@
         "temporary"
       ],
       "name": "Microsoft 365 Apps",
-      "name_aliases": [
-        "office 365"
-      ],
-      "vendor": "Microsoft",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "office 365"
-      ]
+      "vendor": "Microsoft"
     }
   },
   "tickets": {},

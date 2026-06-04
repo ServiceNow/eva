@@ -417,25 +417,7 @@
   "facilities": {
     "buildings": {
       "BLD3": {
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "bâtiment ingénierie centre-ville",
-          "centre du centre-ville",
-          "centre d’ingénierie",
-          "centre d’ingénierie downtown",
-          "centre d’ingénierie du centre-ville",
-          "centre ingénierie centre-ville",
-          "centre technique du centre-ville",
-          "centre-ville",
-          "downtown",
-          "engineering center",
-          "site ingénierie centre-ville"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "downtown",
-          "engineering center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -501,19 +483,7 @@
     },
     "zones": {
       "PZA": {
-        "name": "Main Garage A",
-        "name_aliases": [
-          "garage a",
-          "garage a principal",
-          "garage principal",
-          "parking a principal",
-          "parking principal",
-          "stationnement a"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "garage a"
-        ]
+        "name": "Main Garage A"
       }
     }
   },
@@ -565,15 +535,8 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Slack Technologies",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "slack"
-      ]
+      "vendor": "Slack Technologies"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -583,16 +546,7 @@
         "temporary"
       ],
       "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "intellij",
-        "intellij idea"
-      ],
-      "vendor": "JetBrains",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "intellij",
-        "intellij idea"
-      ]
+      "vendor": "JetBrains"
     }
   },
   "tickets": {},

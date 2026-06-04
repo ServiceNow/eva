@@ -415,21 +415,7 @@
   "facilities": {
     "buildings": {
       "BLD3": {
-        "name": "Downtown",
-        "name_aliases": [
-          "bureau du centre-ville",
-          "bâtiment downtown",
-          "bâtiment du centre-ville",
-          "centre-ville",
-          "downtown building",
-          "site centre-ville",
-          "site du centre-ville",
-          "édifice du centre-ville"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "downtown building"
-        ]
+        "name": "Downtown"
       }
     },
     "conference_rooms": {
@@ -488,18 +474,7 @@
     },
     "zones": {
       "PZC": {
-        "name": "Central Garage",
-        "name_aliases": [
-          "central parking",
-          "garage central",
-          "parc central",
-          "parking central",
-          "stationnement central"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "central parking"
-        ]
+        "name": "Central Garage"
       }
     }
   },
@@ -548,15 +523,8 @@
       "catalog_id": "APP-1021",
       "department_restrictions": [],
       "name": "Salesforce",
-      "name_aliases": [
-        "sfdc"
-      ],
       "requires_manager_approval": true,
-      "vendor": "Salesforce",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "sfdc"
-      ]
+      "vendor": "Salesforce"
     },
     "APP-1040": {
       "available_access_levels": [
@@ -566,11 +534,8 @@
       "catalog_id": "APP-1040",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [],
       "requires_manager_approval": false,
-      "vendor": "Slack",
-      "name_aliases_translatable": false,
-      "name_aliases_base": []
+      "vendor": "Slack"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -580,14 +545,7 @@
         "temporary"
       ],
       "name": "Microsoft Project",
-      "name_aliases": [
-        "ms project"
-      ],
-      "vendor": "Microsoft",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "ms project"
-      ]
+      "vendor": "Microsoft"
     }
   },
   "tickets": {},

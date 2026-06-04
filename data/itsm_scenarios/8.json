@@ -415,23 +415,7 @@
   "facilities": {
     "buildings": {
       "BLD1": {
-        "name": "Headquarters",
-        "name_aliases": [
-          "bureau chef",
-          "bureaux du siège",
-          "headquarters",
-          "hq",
-          "le siège",
-          "qg",
-          "quartier général",
-          "siège",
-          "siège social"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "hq",
-          "headquarters"
-        ]
+        "name": "Headquarters"
       }
     },
     "conference_rooms": {
@@ -490,20 +474,7 @@
     },
     "zones": {
       "PZA": {
-        "name": "Headquarters Garage A",
-        "name_aliases": [
-          "garage a",
-          "garage a du qg",
-          "garage a du siège",
-          "garage a du siège social",
-          "parking a",
-          "parking a du siège",
-          "stationnement a du siège social"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "garage a"
-        ]
+        "name": "Headquarters Garage A"
       }
     }
   },

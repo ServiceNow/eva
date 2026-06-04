@@ -650,23 +650,7 @@
   "facilities": {
     "buildings": {
       "BLD3": {
-        "name": "Downtown",
-        "name_aliases": [
-          "bureau du centre-ville",
-          "bâtiment downtown",
-          "bâtiment du centre-ville",
-          "centre-ville",
-          "downtown building",
-          "sales hq",
-          "site centre-ville",
-          "site du centre-ville",
-          "édifice du centre-ville"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "downtown building",
-          "sales hq"
-        ]
+        "name": "Downtown"
       }
     },
     "conference_rooms": {
@@ -748,17 +732,7 @@
     },
     "zones": {
       "PZS": {
-        "name": "South Garage",
-        "name_aliases": [
-          "garage sud",
-          "parking sud",
-          "south parking",
-          "stationnement sud"
-        ],
-        "name_aliases_translatable": true,
-        "name_aliases_base": [
-          "south parking"
-        ]
+        "name": "South Garage"
       }
     }
   },
@@ -824,17 +798,8 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Salesforce",
-      "name_aliases": [
-        "crm",
-        "salesforce crm"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Salesforce",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "crm",
-        "salesforce crm"
-      ]
+      "vendor": "Salesforce"
     },
     "APP-1002": {
       "available_access_levels": [
@@ -843,17 +808,8 @@
       "catalog_id": "APP-1002",
       "department_restrictions": [],
       "name": "Cisco AnyConnect",
-      "name_aliases": [
-        "vpn",
-        "corporate vpn"
-      ],
       "requires_manager_approval": false,
-      "vendor": "Cisco",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "vpn",
-        "corporate vpn"
-      ]
+      "vendor": "Cisco"
     },
     "LIC-2001": {
       "catalog_id": "LIC-2001",
@@ -863,14 +819,7 @@
         "temporary"
       ],
       "name": "Microsoft 365 E3",
-      "name_aliases": [
-        "office 365"
-      ],
-      "vendor": "Microsoft",
-      "name_aliases_translatable": false,
-      "name_aliases_base": [
-        "office 365"
-      ]
+      "vendor": "Microsoft"
     }
   },
   "tickets": {},
