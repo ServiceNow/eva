@@ -571,31 +571,28 @@ tools:
         type: string
         enum: [end_of_life, performance_degradation, physical_damage, lost_or_stolen, new_setup, replacement]
         description: "The reason for the request. For laptops: end_of_life, performance_degradation, physical_damage, or lost_or_stolen. For monitors: new_setup or replacement."
-      - name: current_asset_tag
-        type: string
-        description: "The asset tag of the current device being replaced (e.g. AST-LPT-284719). Required for laptop replacements unless the device is lost or stolen, and for monitor bundles when justification is replacement. **Omit this field entirely** (do not include the key) when not applicable — do not pass null, an empty string, or 'N/A'."
-        required: false
-      - name: laptop_os
-        type: string
-        enum: [macos, windows]
-        description: "The operating system for the new laptop. Required for laptop replacements only. **Omit this field entirely** (do not include the key) for monitor_bundle and other request types — do not pass null, an empty string, or 'N/A'."
-        required: false
-      - name: laptop_size
-        type: string
-        enum: [13_inch, 14_inch, 16_inch]
-        description: "The screen size for the new laptop. Required for laptop replacements only. **Omit this field entirely** (do not include the key) for monitor_bundle and other request types — do not pass null, an empty string, or 'N/A'."
-        required: false
-      - name: monitor_size
-        type: string
-        enum: [24_inch, 27_inch, 32_inch]
-        description: "The monitor size. Required for monitor bundles only. **Omit this field entirely** (do not include the key) for laptop_replacement and other request types — do not pass null, an empty string, or 'N/A'."
-        required: false
       - name: delivery_building
         type: string
         description: "The building for delivery. Can be a building code (e.g. BLD3) or a common name or alias (e.g. Headquarters, Downtown)."
       - name: delivery_floor
         type: string
         description: "The floor for delivery (e.g. FL2)."
+    optional_parameters:
+      - name: current_asset_tag
+        type: string
+        description: "The asset tag of the current device being replaced (e.g. AST-LPT-284719). Required for laptop replacements unless the device is lost or stolen, and for monitor bundles when justification is replacement. **Omit this field entirely** (do not include the key) when not applicable — do not pass null, an empty string, or 'N/A'."
+      - name: laptop_os
+        type: string
+        enum: [macos, windows]
+        description: "The operating system for the new laptop. Required for laptop replacements only. **Omit this field entirely** (do not include the key) for monitor_bundle and other request types — do not pass null, an empty string, or 'N/A'."
+      - name: laptop_size
+        type: string
+        enum: [13_inch, 14_inch, 16_inch]
+        description: "The screen size for the new laptop. Required for laptop replacements only. **Omit this field entirely** (do not include the key) for monitor_bundle and other request types — do not pass null, an empty string, or 'N/A'."
+      - name: monitor_size
+        type: string
+        enum: [24_inch, 27_inch, 32_inch]
+        description: "The monitor size. Required for monitor bundles only. **Omit this field entirely** (do not include the key) for laptop_replacement and other request types — do not pass null, an empty string, or 'N/A'."
 
   - id: initiate_asset_return
     name: initiate_asset_return
@@ -718,11 +715,11 @@ tools:
       - name: catalog_id
         type: string
         description: "The license catalog identifier (e.g. LIC-0018)."
+    optional_parameters:
       - name: duration_days
         type: string
         enum: ["30", "60", "90"]
         description: "Duration in days for a temporary license. **Omit this field entirely** (do not include the key) for permanent licenses — do not pass null, the string 'null', or an empty string."
-        required: false
 
   - id: validate_cost_center
     name: validate_cost_center
@@ -814,11 +811,10 @@ tools:
       know zone codes can simply ask what's available.
     tool_type: read
     domain: itsm
-    required_parameters:
+    optional_parameters:
       - name: zone_code
         type: string
         description: "Parking zone code or common name/alias (e.g. PZA, Executive Garage, North Lot). Optional — omit to see all zones."
-        required: false
 
   - id: submit_parking_assignment
     name: submit_parking_assignment
@@ -908,10 +904,6 @@ tools:
       - name: building_code
         type: string
         description: "Building code or common name/alias (e.g. BLD3, Headquarters, Downtown). Returns name_not_found if unrecognized."
-      - name: floor_code
-        type: string
-        description: "Floor code (e.g. FL2). **Omit this field entirely** (do not include the key) to search all floors in the building — do not pass an empty string or null."
-        required: false
       - name: date
         type: string
         description: "The booking date in YYYY-MM-DD format (e.g. 2026-08-15)."
@@ -924,10 +916,15 @@ tools:
       - name: min_capacity
         type: integer
         description: "Minimum number of seats needed (e.g. 8)."
+    optional_parameters:
+      - name: floor_code
+        type: string
+        description: "Floor code (e.g. FL2). **Omit this field entirely** (do not include the key) to search all floors in the building — do not pass an empty string or null."
       - name: equipment_required
         type: array
+        items:
+          type: string
         description: "Equipment that must be present in the room. Allowed values: projector, whiteboard, video_conferencing, display_screen, speakerphone. Only rooms with all listed items are returned. Optional — omit if the caller has no equipment requirements."
-        required: false
 
   - id: submit_room_booking
     name: submit_room_booking
@@ -1036,6 +1033,8 @@ tools:
         description: "The new hire's start date in YYYY-MM-DD format (e.g. 2026-08-18)."
       - name: access_groups
         type: array
+        items:
+          type: string
         description: "List of initial access group codes to assign (e.g. ['GRP-ENGCORE', 'GRP-VPNALL'])."
 
   # ── FLOW 16: GROUP MEMBERSHIP REQUEST ───────────────────────────────────────

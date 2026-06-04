@@ -446,7 +446,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
             self._task = PipelineTask(
                 pipeline,
                 params=PipelineParams(
-                    allow_interruptions=True,
                     enable_metrics=True,  # Enable TTFB and ProcessingMetricsData
                     enable_usage_metrics=True,  # Enable LLM/TTS usage metrics
                 ),

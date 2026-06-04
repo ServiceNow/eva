@@ -37,6 +37,8 @@ from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import OpenAITTSService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
+from pipecat.services.xai.stt import XAISTTService
+from pipecat.services.xai.tts import XAITTSService
 from pipecat.utils.text.base_text_filter import BaseTextFilter
 from websockets.asyncio.client import connect as websocket_connect
 
@@ -229,9 +231,22 @@ def create_stt_service(
             )
         return stt_service
 
+    elif model_lower == "xai":
+        logger.info("Using xAI STT")
+        return XAISTTService(
+            api_key=api_key,
+            sample_rate=params.get("sample_rate", 16000),
+            encoding=params.get("encoding", "pcm"),
+            settings=XAISTTService.Settings(
+                language=language_code,
+                interim_results=params.get("interim_results", True),
+                endpointing=params.get("endpointing", 200),
+            ),
+        )
+
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai"
+            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, xai"
         )
 
 
@@ -301,9 +316,12 @@ def create_tts_service(
         logger.info(f"Using Deepgram TTS: {params['model']}")
         return DeepgramTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice=params.get("voice", "aura-2-helena-en"),
             sample_rate=SAMPLE_RATE,
+            settings=DeepgramTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice", "aura-2-helena-en"),
+                language=language_code,
+            ),
         )
 
     elif model_lower == "elevenlabs":
@@ -409,6 +427,31 @@ def create_tts_service(
         voxtral_tts._settings.language = language_code
         return voxtral_tts
 
+    elif model_lower == "xai":
+        logger.info(f"Using xAI TTS: voice={params.get('voice', 'eve')}")
+        # Lowest-latency defaults: pcm codec, optimize_streaming_latency=2,
+        # text_normalization=false.  Monkey-patch _build_url to inject the
+        # extra query params that pipecat's XAITTSService doesn't expose yet.
+        xai_tts = XAITTSService(
+            api_key=api_key,
+            sample_rate=params.get("sample_rate", SAMPLE_RATE),
+            codec=params.get("codec", "pcm"),
+            settings=XAITTSService.Settings(
+                voice=params.get("voice", "eve"),
+                language=language_code,
+            ),
+        )
+        _orig_build_url = xai_tts._build_url
+        extra_strings = (
+            f"&optimize_streaming_latency={params.get('optimize_streaming_latency', 2)}"
+            f"&text_normalization={str(params.get('text_normalization', False)).lower()}"
+        )
+        speed = params.get("speed")
+        if speed is not None:
+            extra_strings += f"&speed={speed}"
+        xai_tts._build_url = lambda: _orig_build_url() + extra_strings
+        return xai_tts
+
     elif model_lower == "xtts":
         logger.info(f"Using XTTS TTS: {params['model']}")
         xtts_tts = OpenAITTSService(
@@ -429,7 +472,7 @@ def create_tts_service(
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xai, xtts"
         )
 
 
