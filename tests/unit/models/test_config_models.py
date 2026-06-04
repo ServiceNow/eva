@@ -93,7 +93,7 @@ class TestRunConfig:
         # run_id = timestamp + model suffix (e.g. "2024-01-15_14-30-45.123456_nova-2_gpt-5.2_sonic")
         assert config.run_id.endswith("nova-2_gpt-5.2_sonic")
         assert config.max_concurrent_conversations == 1
-        assert config.conversation_timeout_seconds == 360
+        assert config.conversation_timeout_seconds == 600
 
     def test_create_full_config(self, temp_dir: Path):
         """Test creating a RunConfig with all options."""
@@ -519,7 +519,7 @@ class TestDefaults:
         assert c.model.stt == "deepgram"
         assert c.model.tts == "cartesia"
         assert c.max_concurrent_conversations == 1
-        assert c.conversation_timeout_seconds == 360
+        assert c.conversation_timeout_seconds == 600
         assert c.base_port == 10000
         assert c.port_pool_size == 150
         assert c.max_rerun_attempts == 3

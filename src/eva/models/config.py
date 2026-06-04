@@ -487,7 +487,7 @@ class RunConfig(BaseSettings):
         description="Maximum number of concurrent conversations",
     )
     conversation_timeout_seconds: int = Field(
-        360,
+        600,
         ge=30,
         le=10000,
         description="Timeout for each conversation in seconds",
