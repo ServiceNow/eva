@@ -6,18 +6,14 @@
   ],
   "translations": {
     "fr": [
-      "garage a principal",
       "garage principal",
-      "parking a principal",
       "parking principal",
-      "stationnement a"
+      "stationnement principal"
     ],
     "fr-CA": [
-      "garage a principal",
       "garage principal",
-      "parking a principal",
       "parking principal",
-      "stationnement a"
+      "stationnement principal"
     ]
   }
 }
