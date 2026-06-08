@@ -25,7 +25,7 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
     """
 
     name = "agent_speech_fidelity"
-    version = "v0.1"
+    version = "v0.2"
     description = "Audio-based evaluation of agent entity fidelity for S2S models"
     category = "accuracy"
     role = "assistant"

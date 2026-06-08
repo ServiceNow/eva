@@ -1,15 +1,15 @@
 {
   "AgentSpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "2476f53be1ba",
-    "source_hash": "77743114e9b0",
-    "version": "v0.1"
+    "prompt_hash": "f66f096d3279",
+    "source_hash": "15b21e9c2be1",
+    "version": "v0.2"
   },
   "AgentSpeechFidelityS2SMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "2476f53be1ba",
-    "source_hash": "db924988e9f4",
-    "version": "v0.1"
+    "prompt_hash": "f66f096d3279",
+    "source_hash": "d5e91fa3425a",
+    "version": "v0.2"
   },
   "AuthenticationSuccessMetric": {
     "name": "authentication_success",
@@ -97,7 +97,7 @@
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "590d2c2648b0",
+    "prompt_hash": "849e13c42e3b",
     "source_hash": "cac98a26dcd0",
     "version": "v0.2"
   }

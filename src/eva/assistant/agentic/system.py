@@ -17,6 +17,7 @@ from eva.assistant.agentic.audit_log import (
 )
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
+from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
 from eva.utils.error_handler import categorize_error
 from eva.utils.log_processing import truncate_data_uris
 from eva.utils.logging import get_logger
@@ -26,9 +27,6 @@ logger = get_logger(__name__)
 
 # Suppress LiteLLM's Pydantic serialization warnings (harmless internal warnings)
 warnings.filterwarnings("ignore", category=UserWarning, message=".*Pydantic serializer warnings.*")
-
-# Response messages
-GENERIC_ERROR = "I'm sorry, I encountered an error processing your request."
 
 
 def _clean_tool_name(name: str) -> str:

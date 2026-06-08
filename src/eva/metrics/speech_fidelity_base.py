@@ -393,5 +393,15 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
 
     @staticmethod
     def _format_intended_turns(intended_turns: dict[int, str]) -> str:
-        """Format intended turns dictionary as numbered list."""
-        return "\n".join(f"Turn {turn_id}: {text}" for turn_id, text in intended_turns.items())
+        """Format intended turns dictionary as a numbered list, one turn per line.
+
+        Each turn's text is flattened to a single line (internal newlines and
+        repeated whitespace collapsed to single spaces). Turns are separated by
+        newlines, so a turn whose text contains its own newline -- e.g. a normal
+        paragraph break, or a self-duplicated response like "X\nX" -- would
+        otherwise spill onto unlabeled lines and be misread by the judge as a
+        separate turn or an "added" repetition, unfairly penalizing fidelity.
+        Spoken audio has no notion of newlines, so flattening preserves the
+        intended words while keeping turn boundaries unambiguous.
+        """
+        return "\n".join(f"Turn {turn_id}: {' '.join(text.split())}" for turn_id, text in intended_turns.items())
