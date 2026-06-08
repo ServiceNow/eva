@@ -5,9 +5,9 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from eva.assistant.agentic.system import GENERIC_ERROR
 from eva.models.config import PipelineType
 from eva.models.results import ConversationResult
+from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
 from eva.utils.log_processing import (
     AnnotationLabel,
     aggregate_pipecat_logs_by_type,
