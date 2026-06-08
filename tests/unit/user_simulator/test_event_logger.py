@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from eva.user_simulator.event_logger import ElevenLabsEventLogger
+from eva.user_simulator.event_logger import ElevenLabsEventLogger, UserSimulatorEventLogger
 
 
 @pytest.fixture
@@ -109,6 +109,7 @@ class TestEventLogger:
         assert event0["type"] == "user_speech"
         event1 = json.loads(lines[1])
         assert event1["type"] == "assistant_speech"
+        assert "provider" not in event0
 
     def test_save_creates_parent_dirs(self, tmp_path):
         nested = tmp_path / "a" / "b" / "events.jsonl"
@@ -151,3 +152,26 @@ class TestEventLogger:
         # New events start at sequence 1 again
         logger.log_event("c", {})
         assert logger._events[0]["sequence"] == 1
+
+
+def test_neutral_logger_can_dual_write_legacy_artifact(tmp_path):
+    neutral_path = tmp_path / "user_simulator_events.jsonl"
+    legacy_path = tmp_path / "elevenlabs_events.jsonl"
+    logger = UserSimulatorEventLogger(
+        neutral_path,
+        provider="elevenlabs",
+        legacy_output_path=legacy_path,
+    )
+
+    logger.log_event("user_speech", {"text": "hello", "source": "elevenlabs_agent"})
+    logger.log_audio_start("elevenlabs_user")
+    logger.save()
+
+    neutral = [json.loads(line) for line in neutral_path.read_text().splitlines()]
+    legacy = [json.loads(line) for line in legacy_path.read_text().splitlines()]
+    assert neutral[0]["provider"] == "elevenlabs"
+    assert neutral[0]["data"]["source"] == "simulated_user"
+    assert neutral[1]["user"] == "simulated_user"
+    assert "provider" not in legacy[0]
+    assert legacy[0]["data"]["source"] == "elevenlabs_agent"
+    assert legacy[1]["user"] == "elevenlabs_user"

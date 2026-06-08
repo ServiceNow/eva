@@ -7,11 +7,9 @@ using ElevenLabs Conversational AI as the user simulation engine.
 import asyncio
 import json
 import os
-from functools import lru_cache
 from pathlib import Path
 
 import httpx
-import yaml
 from elevenlabs.client import ElevenLabs
 from elevenlabs.conversational_ai.conversation import (
     Conversation,
@@ -20,25 +18,19 @@ from elevenlabs.conversational_ai.conversation import (
 
 from eva.models.config import PerturbationConfig
 from eva.user_simulator.audio_interface import ELEVENLABS_OUTPUT_RATE, BotToBotAudioInterface
-from eva.user_simulator.event_logger import ElevenLabsEventLogger
-from eva.user_simulator.perturbation import AudioPerturbator
+from eva.user_simulator.base import AbstractUserSimulator, load_behavior_prompts
 from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import current_record_id, get_logger
-from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
-_BEHAVIORS_PATH = Path(__file__).parent.parent.parent.parent / "configs" / "user_behaviors.yaml"
 _PERSONA_GENDER = {1: "F", 2: "M"}
 
 
-@lru_cache(maxsize=1)
-def _load_behavior_prompts() -> dict:
-    with open(_BEHAVIORS_PATH) as f:
-        return yaml.safe_load(f)
+_load_behavior_prompts = load_behavior_prompts
 
 
-class UserSimulator:
+class ElevenLabsUserSimulator(AbstractUserSimulator):
     """ElevenLabs-based user simulator that connects to the assistant.
 
     Uses ElevenLabs Conversational AI to simulate a real user:
@@ -70,56 +62,24 @@ class UserSimulator:
             agent_id: Agent identifier used to select the domain-specific simulator prompt
             perturbation_config: Optional perturbation to apply to user audio
         """
-        self.persona_config = persona_config
-        self.goal = goal
-        self.server_url = server_url
-        self.output_dir = Path(output_dir)
-        self.timeout = timeout
-        self.current_date_time = current_date_time
-        self.agent_id = agent_id
-        self._perturbation_config = perturbation_config
-        self._perturbator = (
-            AudioPerturbator(perturbation_config)
-            if perturbation_config is not None
-            and (perturbation_config.background_noise is not None or perturbation_config.connection_degradation)
-            else None
+        super().__init__(
+            current_date_time=current_date_time,
+            persona_config=persona_config,
+            goal=goal,
+            server_url=server_url,
+            output_dir=output_dir,
+            agent_id=agent_id,
+            timeout=timeout,
+            perturbation_config=perturbation_config,
+            provider="elevenlabs",
+            write_legacy_elevenlabs_log=True,
         )
 
-        # State
         self._conversation = None
-        self._audio_interface: BotToBotAudioInterface | None = None
-        self._end_reason: str = "unknown"
-        self._conversation_done = asyncio.Event()
-
-        # Event logger
-        self.event_logger = ElevenLabsEventLogger(self.output_dir / "elevenlabs_events.jsonl")
-
-        # Audio recording buffers
-        self._user_audio_chunks: list[bytes] = []
-        self._assistant_audio_chunks: list[bytes] = []
-        self._user_clean_audio_chunks: list[bytes] = []
 
         # Keep-alive inactivity detection
         self._consecutive_keepalive_count = 0
         self._max_consecutive_keepalives = 12  # End call after this many pings without activity (2 minutes)
-
-        # Capture the worker's record ID so ElevenLabs callbacks (which run in
-        # a different thread) can restore it for per-record log routing.
-        self._record_id = current_record_id.get()
-
-    def _on_conversation_end(self, reason: str = "goodbye") -> None:
-        """Signal conversation completion.
-
-        Thread-safe - can be called from any thread/callback.
-        Only the first call takes effect (Event.set() is idempotent).
-
-        Args:
-            reason: Why conversation ended (goodbye/transfer/error)
-        """
-        if not self._conversation_done.is_set():
-            self._end_reason = reason
-            self._conversation_done.set()
-            logger.info(f"Conversation end signaled: {reason}")
 
     async def run_conversation(self) -> str:
         """Run the conversation until completion.
@@ -176,34 +136,8 @@ class UserSimulator:
                 httpx_client=http_client,
             )
 
-            # TODO: test and improve behavior prompts to more closely match desired user behavior
-            behavior_prompts = _load_behavior_prompts()
-            if self._perturbation_config and self._perturbation_config.behavior:
-                behavior_key = self._perturbation_config.behavior.value
-                user_persona = behavior_prompts[behavior_key]
-            else:
-                user_persona = behavior_prompts["default"]
-
-            # Derive domain from agent_id (e.g. "agent_airline" → "airline")
-            domain = self.agent_id.removeprefix("agent_")
-            prompt = PromptManager().get_prompt(
-                f"user_simulator.system_prompt_{domain}",
-                high_level_user_goal=self.goal["high_level_user_goal"],
-                must_have_criteria=self.goal["decision_tree"]["must_have_criteria"],
-                escalation_behavior=self.goal["decision_tree"]["escalation_behavior"],
-                nice_to_have_criteria=self.goal["decision_tree"]["nice_to_have_criteria"],
-                negotiation_behavior=self.goal["decision_tree"]["negotiation_behavior"],
-                resolution_condition=self.goal["decision_tree"]["resolution_condition"],
-                failure_condition=self.goal["decision_tree"]["failure_condition"],
-                edge_cases=self.goal["decision_tree"]["edge_cases"],
-                information_required=self.goal["information_required"],
-                user_persona=user_persona,
-                starting_utterance=self.goal["starting_utterance"],
-                current_date_time=self.current_date_time,
-            )
-
             # Create conversation config with dynamic variables
-            config = ConversationInitiationData(dynamic_variables={"prompt": prompt})
+            config = ConversationInitiationData(dynamic_variables={"prompt": self._build_prompt()})
 
             # ElevenLabs user simulator agent ID
             persona_id = self.persona_config["user_persona_id"]
@@ -521,3 +455,7 @@ class UserSimulator:
         user_audio = b"".join(self._user_audio_chunks)
         assistant_audio = b"".join(self._assistant_audio_chunks)
         return user_audio, assistant_audio
+
+
+# Historical import retained for downstream users and existing tests.
+UserSimulator = ElevenLabsUserSimulator

@@ -12,12 +12,14 @@ from eva.models.agents import AgentConfig
 from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, ErrorDetails, LatencyStats
-from eva.user_simulator.client import UserSimulator
+from eva.user_simulator.factory import create_user_simulator
 from eva.utils.error_handler import create_error_details
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import add_record_log_file, current_record_id, get_logger, remove_record_log_file
 
 logger = get_logger(__name__)
+
+USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS = 90
 
 
 def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
@@ -157,7 +159,7 @@ class ConversationWorker:
             try:
                 conversation_ended_reason = await asyncio.wait_for(
                     self._run_conversation(),
-                    timeout=self.config.conversation_timeout_seconds,
+                    timeout=self._conversation_guard_timeout_seconds(),
                 )
                 logger.info(f"Conversation {self.record.id} ended: {conversation_ended_reason}")
             except TimeoutError:
@@ -247,7 +249,12 @@ class ConversationWorker:
                 audit_log_path=str(self.output_dir / "audit_log.json"),
                 conversation_log_path=str(self.output_dir / "logs.log"),
                 pipecat_logs_path=self._resolve_framework_logs_path(),
-                elevenlabs_logs_path=str(self.output_dir / "elevenlabs_events.jsonl"),
+                user_simulator_logs_path=str(self.output_dir / "user_simulator_events.jsonl"),
+                elevenlabs_logs_path=(
+                    str(self.output_dir / "elevenlabs_events.jsonl")
+                    if self.config.user_simulator.provider == "elevenlabs"
+                    else None
+                ),
                 num_turns=self._conversation_stats.get("num_turns", 0),
                 num_tool_calls=self._conversation_stats.get("num_tool_calls", 0),
                 tools_called=self._conversation_stats.get("tools_called", []),
@@ -314,15 +321,21 @@ class ConversationWorker:
 
     async def _start_user_simulator(self) -> None:
         """Start the user simulator."""
-        self._user_simulator = UserSimulator(
+        self._user_simulator = create_user_simulator(
+            self.config.user_simulator,
             current_date_time=self.record.current_date_time,
             persona_config=self.record.user_config,
             goal=self.record.user_goal,
             server_url=f"ws://localhost:{self.port}/ws",
             output_dir=self.output_dir,
             agent_id=self.agent.id,
+            timeout=self.config.conversation_timeout_seconds,
             perturbation_config=self.config.perturbation,
         )
+
+    def _conversation_guard_timeout_seconds(self) -> int:
+        """Keep the worker guard outside the provider's timeout and cleanup window."""
+        return self.config.conversation_timeout_seconds + USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS
 
     async def _run_conversation(self) -> str:
         """Run the conversation until completion.

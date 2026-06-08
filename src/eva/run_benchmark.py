@@ -112,6 +112,9 @@ async def run_benchmark(config: RunConfig) -> int:
             logger.info(f"  TTS model: {config.model.tts}")
         else:
             logger.info(f"  S2S model: {config.model.s2s}")
+        logger.info(f"  User simulator: {config.user_simulator.provider}")
+        if config.user_simulator.provider == "openai_realtime":
+            logger.info(f"  User simulator model: {config.user_simulator.model}")
         logger.info(f"  Max concurrent: {config.max_concurrent_conversations}")
         logger.info(f"  Timeout: {config.conversation_timeout_seconds}s")
         return 0

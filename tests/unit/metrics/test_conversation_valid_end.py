@@ -32,6 +32,25 @@ class TestConversationValidEnd:
         assert score.details["ended_properly"] is True
 
     @pytest.mark.asyncio
+    async def test_prefers_provider_neutral_events(self, tmp_path):
+        (tmp_path / "user_simulator_events.jsonl").write_text(
+            json.dumps(
+                {
+                    "provider": "openai_realtime",
+                    "type": "connection_state",
+                    "data": {"details": {"reason": "goodbye"}},
+                }
+            )
+            + "\n"
+        )
+        ctx = make_metric_context(output_dir=str(tmp_path))
+
+        score = await self.metric.compute(ctx)
+
+        assert score.score == 1.0
+        assert score.details["file_path"].endswith("user_simulator_events.jsonl")
+
+    @pytest.mark.asyncio
     async def test_missing_events_file(self, tmp_path):
         ctx = make_metric_context(output_dir=str(tmp_path))
         score = await self.metric.compute(ctx)

@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 from pydantic_settings import SettingsError
 
-from eva.models.config import PipelineType, RunConfig
+from eva.models.config import PipelineType, RunConfig, UserSimulatorConfig
 
 MODEL_LIST = [
     {
@@ -1062,3 +1062,39 @@ class TestSpeechToSpeechConfig:
         )
         assert config.model.pipeline_type == PipelineType.S2S
         assert config.model.s2s_params == {"voice": "alloy", "api_key": "key_1", "model": "gpt-realtime-mini"}
+
+
+class TestUserSimulatorConfig:
+    def test_defaults_preserve_elevenlabs(self):
+        config = UserSimulatorConfig()
+
+        assert config.provider == "elevenlabs"
+        assert config.model == "gpt-realtime-1.5"
+        assert config.female_voice == "marin"
+        assert config.male_voice == "cedar"
+
+    def test_nested_environment_configuration(self):
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_USER_SIMULATOR__PROVIDER": "openai_realtime",
+                "EVA_USER_SIMULATOR__MODEL": "gpt-realtime-2",
+                "EVA_USER_SIMULATOR__FEMALE_VOICE": "coral",
+                "EVA_USER_SIMULATOR__MALE_VOICE": "verse",
+            }
+        )
+
+        assert config.user_simulator == UserSimulatorConfig(
+            provider="openai_realtime",
+            model="gpt-realtime-2",
+            female_voice="coral",
+            male_voice="verse",
+        )
+
+    def test_openai_realtime_rejects_accent_perturbation_during_config_load(self):
+        with pytest.raises(ValidationError, match="Accent perturbations require the ElevenLabs user simulator"):
+            _config(
+                env_vars=_BASE_ENV,
+                user_simulator={"provider": "openai_realtime"},
+                perturbation={"accent": "french"},
+            )

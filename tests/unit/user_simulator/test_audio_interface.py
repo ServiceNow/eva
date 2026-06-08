@@ -262,6 +262,27 @@ class TestReceiveFromAssistant:
         callback.assert_called_once_with("elevenlabs_disconnect")
 
     @pytest.mark.asyncio
+    async def test_disconnect_reason_is_provider_configurable(self):
+        callback = MagicMock()
+        iface = _make_interface(
+            conversation_done_callback=callback,
+            disconnect_reason="assistant_disconnect",
+        )
+        iface.running = True
+
+        async def ws_messages():
+            return
+            yield
+
+        mock_ws = MagicMock()
+        mock_ws.__aiter__ = lambda self: ws_messages()
+        iface.websocket = mock_ws
+
+        await iface._receive_from_assistant()
+
+        callback.assert_called_once_with("assistant_disconnect")
+
+    @pytest.mark.asyncio
     async def test_disconnect_closes_active_assistant_audio(self):
         """If assistant was speaking when WS closes, audio_end is logged."""
         event_logger = MagicMock()

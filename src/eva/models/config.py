@@ -331,6 +331,29 @@ class PerturbationConfig(BaseModel):
         return self
 
 
+class UserSimulatorConfig(BaseModel):
+    """Provider selection and voice settings for the simulated caller."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    provider: Literal["elevenlabs", "openai_realtime"] = Field(
+        "elevenlabs",
+        description="Simulated caller provider. ElevenLabs remains the backward-compatible default.",
+    )
+    model: str = Field(
+        "gpt-realtime-1.5",
+        description="OpenAI Realtime caller model when provider=openai_realtime.",
+    )
+    female_voice: str = Field(
+        "marin",
+        description="OpenAI voice used for the female caller persona.",
+    )
+    male_voice: str = Field(
+        "cedar",
+        description="OpenAI voice used for the male caller persona.",
+    )
+
+
 class RunConfig(BaseSettings):
     """A New End-to-end Framework for Evaluating Voice Agents\033[94m
 
@@ -467,6 +490,11 @@ class RunConfig(BaseSettings):
         ),
     )
 
+    user_simulator: UserSimulatorConfig = Field(
+        default_factory=UserSimulatorConfig,
+        description="Configuration for the provider that simulates the caller.",
+    )
+
     # Debug and filtering
     debug: bool = Field(
         False,
@@ -540,6 +568,16 @@ class RunConfig(BaseSettings):
         Skipped entirely when ``max_rerun_attempts == 0`` where the model
         config is unused and conflicting env vars are harmless.
         """
+        if (
+            self.user_simulator.provider == "openai_realtime"
+            and self.perturbation is not None
+            and self.perturbation.accent is not None
+        ):
+            raise ValueError(
+                "Accent perturbations require the ElevenLabs user simulator; "
+                "OpenAI Realtime supports behavior, noise, and connection perturbations."
+            )
+
         if self.max_rerun_attempts == 0:
             return self
 

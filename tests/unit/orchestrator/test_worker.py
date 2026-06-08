@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from eva.orchestrator.worker import ConversationWorker, _percentile
+from eva.orchestrator.worker import USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS, ConversationWorker, _percentile
 
 
 class TestPercentile:
@@ -217,6 +217,39 @@ class TestRunConversation:
         worker = _make_worker(tmp_path)
         with pytest.raises(RuntimeError, match="User simulator not initialized"):
             await worker._run_conversation()
+
+
+class TestUserSimulatorSelection:
+    @pytest.mark.asyncio
+    async def test_worker_uses_configured_factory_and_timeout(self, tmp_path, monkeypatch):
+        worker = _make_worker(tmp_path)
+        worker.config.user_simulator = MagicMock(provider="openai_realtime")
+        worker.config.perturbation = None
+        worker.agent.id = "agent_itsm"
+        simulator = MagicMock()
+        factory = MagicMock(return_value=simulator)
+        monkeypatch.setattr("eva.orchestrator.worker.create_user_simulator", factory)
+
+        await worker._start_user_simulator()
+
+        assert worker._user_simulator is simulator
+        factory.assert_called_once_with(
+            worker.config.user_simulator,
+            current_date_time=worker.record.current_date_time,
+            persona_config=worker.record.user_config,
+            goal=worker.record.user_goal,
+            server_url="ws://localhost:9999/ws",
+            output_dir=worker.output_dir,
+            agent_id="agent_itsm",
+            timeout=60,
+            perturbation_config=None,
+        )
+
+    def test_worker_timeout_reserves_provider_cleanup_window(self, tmp_path):
+        worker = _make_worker(tmp_path)
+
+        assert worker._conversation_guard_timeout_seconds() == 150
+        assert USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS == 90
 
     @pytest.mark.asyncio
     async def test_returns_ended_reason_and_captures_stats(self, tmp_path):

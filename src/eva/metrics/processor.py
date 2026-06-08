@@ -8,6 +8,7 @@ from pathlib import Path
 from eva.assistant.agentic.system import GENERIC_ERROR
 from eva.models.config import PipelineType
 from eva.models.results import ConversationResult
+from eva.user_simulator.events import normalize_event_for_processor, resolve_user_simulator_events_path
 from eva.utils.log_processing import (
     AnnotationLabel,
     aggregate_pipecat_logs_by_type,
@@ -816,10 +817,12 @@ class MetricsContextProcessor:
         context.conversation_ended_reason = result.conversation_ended_reason
 
         pipecat_path = _resolve_path(result.pipecat_logs_path, output_dir)
-        elevenlabs_path = _resolve_path(result.elevenlabs_logs_path, output_dir)
+        stored_simulator_path = result.user_simulator_logs_path or result.elevenlabs_logs_path
+        resolved_simulator_path = resolve_user_simulator_events_path(output_dir, stored_simulator_path)
+        user_simulator_path = str(resolved_simulator_path) if resolved_simulator_path else None
 
         try:
-            self._build_history(context, output_dir, pipecat_path, elevenlabs_path)
+            self._build_history(context, output_dir, pipecat_path, user_simulator_path)
             self._extract_turns_from_history(context)
             self._compute_per_turn_latency(context)
             self._reconcile_transcript_with_tools(context)
@@ -885,16 +888,16 @@ class MetricsContextProcessor:
         return history
 
     @staticmethod
-    def _load_elevenlabs_logs(elevenlabs_logs_path: str) -> list[dict]:
-        """Load and normalize ElevenLabs log entries into history format."""
+    def _load_user_simulator_logs(user_simulator_logs_path: str) -> list[dict]:
+        """Load and normalize provider-neutral or legacy simulator events."""
         history = []
-        raw_elevenlabs = []
-        with open(elevenlabs_logs_path) as f:
+        raw_events = []
+        with open(user_simulator_logs_path) as f:
             for line in f:
-                raw_elevenlabs.append(json.loads(line))
+                raw_events.append(normalize_event_for_processor(json.loads(line)))
 
-        filtered_elevenlabs = filter_empty_responses(raw_elevenlabs)
-        for entry in filtered_elevenlabs:
+        filtered_events = filter_empty_responses(raw_events)
+        for entry in filtered_events:
             if (ts := entry.get("timestamp")) is None:
                 continue
             event_type = entry.get("type") or entry.get("event_type", "unknown")
@@ -902,11 +905,19 @@ class MetricsContextProcessor:
             history.append(
                 {
                     "timestamp_ms": int(ts),
-                    "source": "elevenlabs",
+                    "source": "user_simulator",
                     "event_type": event_type,
                     "data": data,
                 }
             )
+        return history
+
+    @staticmethod
+    def _load_elevenlabs_logs(elevenlabs_logs_path: str) -> list[dict]:
+        """Backward-compatible alias for older callers and tests."""
+        history = MetricsContextProcessor._load_user_simulator_logs(elevenlabs_logs_path)
+        for event in history:
+            event["source"] = "elevenlabs"
         return history
 
     def _build_history(
@@ -914,17 +925,17 @@ class MetricsContextProcessor:
         context: _ProcessorContext,
         output_dir: Path,
         pipecat_path: str | None,
-        elevenlabs_path: str | None,
+        user_simulator_path: str | None,
     ) -> None:
-        """Merge audit log, pipecat, and ElevenLabs logs into a timestamp-sorted context.history.
+        """Merge audit, framework, and simulator logs into a timestamp-sorted history.
 
         Each entry: {timestamp_ms, source, event_type, data}.
         """
         history = self._load_audit_log_transcript(output_dir)
         if context.pipeline_type != PipelineType.S2S and pipecat_path:
             history.extend(self._load_pipecat_logs(pipecat_path))
-        if elevenlabs_path:
-            history.extend(self._load_elevenlabs_logs(elevenlabs_path))
+        if user_simulator_path:
+            history.extend(self._load_user_simulator_logs(user_simulator_path))
 
         history.sort(key=lambda e: e["timestamp_ms"])
         context.history = history
@@ -961,7 +972,7 @@ class MetricsContextProcessor:
                 _handle_audit_log_event(event, state, context, conversation_trace, context.pipeline_type)
             elif event["source"] == "pipecat":
                 _handle_pipecat_event(event, state, context, conversation_trace)
-            elif event["source"] == "elevenlabs":
+            elif event["source"] in {"elevenlabs", "user_simulator"}:
                 if _handle_elevenlabs_event(event, state, context, conversation_trace, context.pipeline_type):
                     continue
 

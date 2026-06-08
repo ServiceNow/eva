@@ -27,6 +27,22 @@ def test_check_conversation_finished_success(record_dir):
     assert check_conversation_finished(record_dir) is True
 
 
+def test_check_conversation_finished_neutral_artifact(record_dir):
+    events_path = record_dir / "user_simulator_events.jsonl"
+    events_path.write_text(
+        json.dumps(
+            {
+                "provider": "openai_realtime",
+                "type": "connection_state",
+                "data": {"details": {"reason": "goodbye"}},
+            }
+        )
+        + "\n"
+    )
+
+    assert check_conversation_finished(record_dir) is True
+
+
 def test_check_conversation_finished_no_goodbye(record_dir):
     """Test check returns False when last event is not goodbye."""
     events = [

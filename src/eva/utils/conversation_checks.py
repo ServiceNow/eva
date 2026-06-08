@@ -7,6 +7,7 @@ requiring the full metrics pipeline or MetricContext construction.
 import json
 from pathlib import Path
 
+from eva.user_simulator.events import resolve_user_simulator_events_path
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -19,15 +20,13 @@ def check_conversation_finished(output_dir: Path) -> bool:
     returns a simple boolean. No LLM calls, just file parsing.
 
     Args:
-        output_dir: Path to the record output directory containing
-            elevenlabs_events.jsonl
+        output_dir: Path to the record output directory containing simulator events.
 
     Returns:
         True if the conversation ended with a goodbye, False otherwise
     """
-    events_path = output_dir / "elevenlabs_events.jsonl"
-
-    if not events_path.exists():
+    events_path = resolve_user_simulator_events_path(output_dir)
+    if events_path is None:
         return False
 
     try:
