@@ -523,7 +523,7 @@ class RunConfig(BaseSettings):
     @computed_field
     @property
     def dataset_path(self) -> Path:
-        return Path(f"data/{self.domain}_dataset.jsonl")
+        return Path(f"data/{self.domain}_dataset.json")
 
     @computed_field
     @property

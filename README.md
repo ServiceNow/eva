@@ -317,7 +317,6 @@ eva/
 │   ├── run_text_only.py       # Text-only evaluation runner
 │   ├── docker_entrypoint.py   # Docker entry point
 │   ├── check_version_bump.py  # Version checking
-│   └──  check_version_bump.py  # Version checking
 ├── configs/                   # Configuration files
 │   ├── prompts/               # Judge and simulation prompts
 │   │   ├── judge.yaml         # Judge metric prompts
@@ -333,7 +332,7 @@ eva/
 │   ├── limitations.md         # Known limitations
 │   └── demo/                  # Demo audio files
 ├── data/                      # Data files
-│   ├── airline_dataset.jsonl  # Evaluation dataset
+│   ├── airline_dataset.json   # Evaluation dataset
 │   └── airline_scenarios/     # Per-record scenario databases
 ├── tests/                     # Test suite
 │   ├── unit/                  # Unit tests

@@ -159,7 +159,7 @@ END_CALL_TOOL = [
 
 def resolve_paths(domain: str) -> tuple[Path, Path, Path]:
     """Resolve dataset, scenario-db-dir, and agent-config paths from a domain name."""
-    dataset = Path(f"data/{domain}_dataset.jsonl")
+    dataset = Path(f"data/{domain}_dataset.json")
     scenario_db_dir = Path(f"data/{domain}_scenarios")
     agent_config = Path(f"configs/agents/{domain}_agent.yaml")
 

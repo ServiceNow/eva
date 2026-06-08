@@ -126,19 +126,16 @@ class EvaluationRecord(BaseModel):
 
     @classmethod
     def load_dataset(cls, path: Path | str) -> list["EvaluationRecord"]:
-        """Load records from JSONL file."""
+        """Load records from JSON file (array of objects)."""
         path = Path(path)
-        records = []
         with open(path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    records.append(cls.model_validate_json(line))
-        return records
+            data = json.load(f)
+        return [cls.model_validate(record) for record in data]
 
     @classmethod
     def save_dataset(cls, records: list["EvaluationRecord"], path: Path | str) -> None:
-        """Save records to JSONL file."""
+        """Save records to JSON file (array of objects)."""
         path = Path(path)
         with open(path, "w", encoding="utf-8") as f:
-            f.writelines(record.model_dump_json() + "\n" for record in records)
+            json.dump([record.model_dump() for record in records], f, indent=2, ensure_ascii=False)
+            f.write("\n")

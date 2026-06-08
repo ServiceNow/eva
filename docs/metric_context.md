@@ -312,7 +312,7 @@ Minor discrepancies are still possible (turn IDs off by one, audio timestamps no
 
 ```
 Benchmark Execution:
-  ├─ EvaluationRecord (dataset.jsonl)
+  ├─ EvaluationRecord (dataset.json)
   │  ├─ user_goal, user_persona, scenario_db → MetricContext
   │  └─ Feeds to AssistantServer + UserSimulator
   │

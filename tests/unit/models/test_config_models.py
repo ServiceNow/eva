@@ -88,7 +88,7 @@ class TestRunConfig:
         """Test creating a minimal RunConfig."""
         config = _config(env_vars=_BASE_ENV | {"EVA_DOMAIN": "airline", "EVA_MODEL__LLM": "gpt-5.2"})
 
-        assert config.dataset_path == Path("data/airline_dataset.jsonl")
+        assert config.dataset_path == Path("data/airline_dataset.json")
         assert config.tool_mocks_path == Path("data/airline_scenarios")
         # run_id = timestamp + model suffix (e.g. "2024-01-15_14-30-45.123456_nova-2_gpt-5.2_sonic")
         assert config.run_id.endswith("nova-2_gpt-5.2_sonic")
@@ -511,7 +511,7 @@ class TestDefaults:
     def test_defaults(self):
         c = _config(env_vars=_BASE_ENV)
         assert c.domain == "airline"
-        assert c.dataset_path == Path("data/airline_dataset.jsonl")
+        assert c.dataset_path == Path("data/airline_dataset.json")
         assert c.tool_mocks_path == Path("data/airline_scenarios")
         assert c.agent_config_path == Path("configs/agents/airline_agent.yaml")
         assert c.output_dir == Path("output")
@@ -642,7 +642,7 @@ class TestDomainResolution:
 
     def test_domain_sets_paths(self):
         c = _config(env_vars=_BASE_ENV | {"EVA_DOMAIN": "airline"})
-        assert c.dataset_path == Path("data/airline_dataset.jsonl")
+        assert c.dataset_path == Path("data/airline_dataset.json")
         assert c.agent_config_path == Path("configs/agents/airline_agent.yaml")
         assert c.tool_mocks_path == Path("data/airline_scenarios")
 
