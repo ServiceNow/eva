@@ -114,8 +114,7 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
                     per_turn_ratings[turn_id] = rating
                     per_turn_explanations[turn_id] = explanation
                     per_turn_transcripts[turn_id] = transcript
-                    if language is not None:
-                        per_turn_languages[turn_id] = language
+                    per_turn_languages[turn_id] = language
                     continue
 
                 if rating not in valid_ratings_range:
