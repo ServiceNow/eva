@@ -21,6 +21,7 @@ from pipecat.services.assemblyai.stt import (
 )
 from pipecat.services.cartesia.stt import CartesiaLiveOptions, CartesiaSTTService
 from pipecat.services.cartesia.tts import CartesiaTTSService
+from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.deepgram.tts import DeepgramTTSService
@@ -79,7 +80,7 @@ from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
-# Default sample rate for audio
+# Default sample rate for audio (TTS output rate).
 SAMPLE_RATE = 24000
 
 # Round-robin counters for load-balanced URLs (one per service type)
@@ -98,7 +99,7 @@ def create_stt_service(
     Based on create_stt_service() from chatbot.py.
 
     Args:
-        model: STT model identifier (deepgram, deepgram-flux, openai, assemblyai, cartesia, nvidia)
+        model: STT model identifier (deepgram, deepgram-flux, openai, assemblyai, cartesia, cartesia-multilingual, nvidia)
         params: Model-specific parameters (may include 'alias' key which is ignored here)
         language_code: Language code for transcription
 
@@ -131,13 +132,24 @@ def create_stt_service(
         )
 
     elif model_lower == "cartesia":
-        logger.info(f"Using Cartesia STT: {params['model']}")
+        # ink-2 provides its own turn boundaries; ModelConfig selects external endpointing.
+        model_name = params.get("model", "ink-2")
+        logger.info(f"Using Cartesia STT (ink-2): {model_name}")
+        return CartesiaTurnsSTTService(
+            api_key=api_key,
+            sample_rate=params.get("sample_rate", 16000),
+            should_interrupt=params.get("should_interrupt", True),
+            settings=CartesiaTurnsSTTService.Settings(model=model_name),
+        )
+
+    elif model_lower == "cartesia-multilingual":
+        logger.info(f"Using Cartesia multilingual STT (ink-whisper): {params['model']}")
         return CartesiaSTTService(
             api_key=api_key,
             live_options=CartesiaLiveOptions(
                 model=params["model"],
                 language=language_code,
-                sample_rate=SAMPLE_RATE,
+                sample_rate=16000,
             ),
         )
 
@@ -237,7 +249,7 @@ def create_stt_service(
 
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, xai"
+            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cartesia-multilingual, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, xai"
         )
 
 

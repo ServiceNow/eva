@@ -117,6 +117,10 @@ class ModelConfig(BaseModel):
     }
     _LEGACY_DROP: ClassVar[set[str]] = {"realtime_model", "realtime_model_params"}
 
+    # STT models that perform their own (server-side) semantic endpointing. They drive turn
+    # boundaries themselves, so they must run with the 'external' turn strategies and no local VAD.
+    _SELF_ENDPOINTING_STT: ClassVar[set[str]] = {"cartesia"}
+
     # ── Mode selectors (exactly one group must be set for a real run) ──
     llm: str | None = Field(
         None,
@@ -229,6 +233,34 @@ class ModelConfig(BaseModel):
         for key in cls._LEGACY_DROP:
             data.pop(key, None)
         return data
+
+    @model_validator(mode="after")
+    def _autowire_self_endpointing_stt(self) -> "ModelConfig":
+        """Auto-configure turn-taking for self-endpointing STT models (e.g. Cartesia ink-2).
+
+        These models drive turn boundaries themselves (the service pushes its own speech
+        start/stop and transcription frames), so they require the 'external' turn strategies
+        with local VAD disabled. Forcing it here lets a bare ``EVA_MODEL__STT=cartesia``
+        "just work", and the forced values are reflected in the persisted config.json / run_id.
+        A conflicting user-provided value is overridden with a WARNING; an untouched default is
+        logged at INFO. Idempotent: a value already at the target is left untouched (clean reload).
+        """
+        if (self.stt or "").lower() not in self._SELF_ENDPOINTING_STT:
+            return self
+
+        forced = {"turn_start_strategy": "external", "turn_stop_strategy": "external", "vad": "none"}
+        for field, target in forced.items():
+            if getattr(self, field) == target:
+                continue
+            if field in self.model_fields_set:
+                logger.warning(
+                    f"STT '{self.stt}' performs its own endpointing; overriding "
+                    f"{field}='{getattr(self, field)}' -> '{target}'."
+                )
+            else:
+                logger.info(f"STT '{self.stt}': auto-setting {field}='{target}' (self-endpointing).")
+            setattr(self, field, target)
+        return self
 
 
 class PipelineType(StrEnum):

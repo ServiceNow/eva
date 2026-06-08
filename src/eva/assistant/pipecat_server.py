@@ -6,6 +6,7 @@ It handles audio streaming via WebSocket with Twilio-style frame serialization.
 
 import asyncio
 import json
+import time
 from pathlib import Path
 
 import uvicorn
@@ -29,6 +30,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
 )
 from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
 from pipecat.serializers.twilio import TwilioFrameSerializer
+from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
@@ -282,6 +284,12 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 # Create LLM client for agentic system (separate from Pipecat LLM service)
                 llm_client = LiteLLMClient(model=self.pipeline_config.llm)
 
+                # Self-endpointing STT (Cartesia ink-2): log its turn diagnostics. Turn boundaries
+                # come from the service's own frames via the external strategies (auto-forced in
+                # ModelConfig); these handlers are diagnostics only and do not affect aggregation.
+                if isinstance(stt, CartesiaTurnsSTTService):
+                    self._register_ink2_diagnostics(stt)
+
             # Create context aggregator with user turn strategies
             messages = []
             if realtime_llm:
@@ -480,6 +488,36 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 self._metrics_observer = None
 
             logger.info("Client disconnected from assistant server")
+
+    def _register_ink2_diagnostics(self, stt: CartesiaTurnsSTTService) -> None:
+        """Log Cartesia ink-2 eager-end / resume events and the eager->final latency delta.
+
+        Diagnostics only: ink-2's committed turn boundaries already drive aggregation through the
+        external turn strategies. The eager->final delta quantifies how much earlier the LLM could
+        have started if speculative execution were enabled (a possible future enhancement).
+        """
+        # monotonic seconds at the last eager-end prediction (None if none pending)
+        eager: dict[str, float | None] = {"ts": None}
+
+        @stt.event_handler("on_turn_eager_end")
+        async def _on_eager_end(_service, transcript: str) -> None:
+            eager["ts"] = time.monotonic()
+            logger.info(f"[ink-2] eager end-of-turn predicted: {transcript!r}")
+
+        @stt.event_handler("on_turn_resume")
+        async def _on_resume(_service) -> None:
+            eager["ts"] = None
+            logger.info("[ink-2] turn resumed after eager end (user kept talking)")
+
+        @stt.event_handler("on_turn_end")
+        async def _on_turn_end(_service, transcript: str) -> None:
+            ts = eager["ts"]
+            if ts is not None:
+                delta_ms = int((time.monotonic() - ts) * 1000)
+                logger.info(f"[ink-2] committed end-of-turn (eager->final +{delta_ms}ms): {transcript!r}")
+            else:
+                logger.info(f"[ink-2] committed end-of-turn (no eager prediction): {transcript!r}")
+            eager["ts"] = None
 
     def _create_transport(self, websocket) -> FastAPIWebsocketTransport:
         """Create the WebSocket transport with Twilio frame serialization."""

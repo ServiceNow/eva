@@ -74,9 +74,41 @@ class TestCreateSttService:
         svc = create_stt_service("openai", params={"api_key": "k", "model": "whisper-2"})
         assert svc._settings.model == "whisper-2"
 
-    def test_cartesia_service_created(self):
-        svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink"})
-        assert "Cartesia" in type(svc).__name__
+    def test_cartesia_is_ink2_turns_service(self):
+        svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink-2"})
+        assert "Turns" in type(svc).__name__
+
+    def test_cartesia_defaults_to_ink2(self):
+        svc = create_stt_service("cartesia", params={"api_key": "k"})
+        assert svc._settings.model == "ink-2"
+
+    def test_cartesia_multilingual_is_ink_whisper(self):
+        svc = create_stt_service("cartesia-multilingual", params={"api_key": "k", "model": "ink-whisper"})
+        assert "Cartesia" in type(svc).__name__ and "Turns" not in type(svc).__name__
+
+    def test_unknown_stt_error_lists_cartesia_multilingual_and_xai(self):
+        with pytest.raises(ValueError, match="Unknown STT model") as exc:
+            create_stt_service("bogus", params={"api_key": "k"})
+        msg = str(exc.value)
+        assert "cartesia-multilingual" in msg
+        assert "xai" in msg
+
+
+_CARTESIA_STT_PROVIDERS = [
+    ("cartesia", {"api_key": "k", "model": "ink-2"}),
+    ("cartesia-multilingual", {"api_key": "k", "model": "ink-whisper"}),
+]
+
+
+class TestCartesiaSttInputSampleRate:
+    @pytest.mark.parametrize("provider,params", _CARTESIA_STT_PROVIDERS)
+    def test_cartesia_stt_declares_16khz_input(self, provider, params):
+        svc = create_stt_service(provider, params=params)
+        assert svc._init_sample_rate == 16000
+
+    def test_cartesia_caller_can_override_sample_rate(self):
+        svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink-2", "sample_rate": 8000})
+        assert svc._init_sample_rate == 8000
 
 
 class TestCreateTtsService:
