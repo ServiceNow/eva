@@ -597,7 +597,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Ivan",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -628,7 +628,7 @@
       "hire_date": "2021-06-14",
       "is_manager": false,
       "last_desk_assignment_date": "2026-04-01",
-      "last_name": "Moreau",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": "2026-01-15",
       "manager_auth_code": null,
       "manager_employee_id": "EMP052200",
@@ -656,10 +656,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown",
-        "name_aliases": [
-          "Downtown Building"
-        ]
+        "name": "Downtown"
       }
     },
     "conference_rooms": {
@@ -771,9 +768,6 @@
     "zones": {
       "PZA": {
         "name": "Downtown Garage A",
-        "name_aliases": [
-          "Garage A"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -820,9 +814,6 @@
         "catalog_id": "APP-2001",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "Atlassian Confluence"
-        ],
         "requires_manager_approval": true,
         "vendor": "Atlassian"
       },
@@ -835,9 +826,6 @@
         "catalog_id": "APP-2002",
         "department_restrictions": [],
         "name": "Salesforce",
-        "name_aliases": [
-          "SFDC"
-        ],
         "requires_manager_approval": true,
         "vendor": "Salesforce"
       }
@@ -851,9 +839,6 @@
           "temporary"
         ],
         "name": "Figma",
-        "name_aliases": [
-          "Figma Design"
-        ],
         "vendor": "Figma"
       },
       "LIC-3002": {
@@ -864,9 +849,6 @@
           "temporary"
         ],
         "name": "Adobe Creative Cloud",
-        "name_aliases": [
-          "Adobe CC"
-        ],
         "vendor": "Adobe"
       }
     }

@@ -221,8 +221,10 @@ class AgenticSystem:
                     "cost_source": llm_stats.get("cost_source", "unknown"),
                     "stop_reason": llm_stats.get("finish_reason", "unknown"),
                     "latency": llm_stats.get("latency", 0.0),
-                    "parameters": json.dumps(llm_stats.get("parameters", {})),
-                    "tool_calls": json.dumps(response_tool_calls_for_stats) if response_tool_calls_for_stats else "",
+                    "parameters": json.dumps(llm_stats.get("parameters", {}), ensure_ascii=False),
+                    "tool_calls": json.dumps(response_tool_calls_for_stats, ensure_ascii=False)
+                    if response_tool_calls_for_stats
+                    else "",
                     "reasoning": f'"{reasoning_content_for_csv}"',
                     "reasoning_tokens": reasoning_tokens,
                 }
@@ -332,7 +334,7 @@ class AgenticSystem:
 
                 # Log tool call
                 logger.info(f"🔧 Tool call: {tool_name}")
-                logger.info(f"   Parameters: {json.dumps(params, indent=2)}")
+                logger.info(f"   Parameters: {json.dumps(params, indent=2, ensure_ascii=False)}")
 
                 # Special handling for transfer to live agent
                 if tool_name == "transfer_to_agent":
@@ -354,7 +356,7 @@ class AgenticSystem:
                     logger.warning(f"❌ Tool error: {tool_name} - {result.get('message', 'Unknown error')}")
                 else:
                     logger.info(f"✅ Tool response: {tool_name}")
-                    logger.info(f"   Result: {json.dumps(result, indent=2)}")
+                    logger.info(f"   Result: {json.dumps(result, indent=2, ensure_ascii=False)}")
 
                 self.audit_log.append_tool_call(
                     tool_name=tool_name,
@@ -363,7 +365,7 @@ class AgenticSystem:
                 )
 
                 # Add tool response to messages
-                tool_content = json.dumps(result)
+                tool_content = json.dumps(result, ensure_ascii=False)
                 messages.append(
                     {
                         "role": "tool",

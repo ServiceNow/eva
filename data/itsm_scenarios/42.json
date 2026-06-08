@@ -357,7 +357,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Nathan",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -388,7 +388,7 @@
       "hire_date": "2021-06-14",
       "is_manager": false,
       "last_desk_assignment_date": null,
-      "last_name": "Kowalski",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP054210",
@@ -464,10 +464,6 @@
           }
         },
         "name": "Headquarters",
-        "name_aliases": [
-          "HQ",
-          "Headquarters"
-        ],
         "parking_zones": {
           "PZA": {
             "covered": false,
@@ -587,17 +583,11 @@
       "PZA": {
         "covered": false,
         "name": "General Surface Lot",
-        "name_aliases": [
-          "General Lot"
-        ],
         "zone_code": "PZA"
       },
       "PZE": {
         "covered": true,
         "name": "Executive Garage",
-        "name_aliases": [
-          "Executive Garage"
-        ],
         "zone_code": "PZE"
       }
     }
@@ -634,9 +624,6 @@
         "catalog_id": "APP-1001",
         "department_restrictions": [],
         "name": "Slack",
-        "name_aliases": [
-          "slack"
-        ],
         "requires_manager_approval": false,
         "vendor": "Salesforce"
       }
@@ -650,9 +637,6 @@
           "temporary"
         ],
         "name": "Microsoft Visio",
-        "name_aliases": [
-          "Visio"
-        ],
         "vendor": "Microsoft"
       }
     }

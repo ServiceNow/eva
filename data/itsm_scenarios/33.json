@@ -357,7 +357,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Sofia",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -388,7 +388,7 @@
       "hire_date": "2022-03-14",
       "is_manager": false,
       "last_desk_assignment_date": "2026-02-10",
-      "last_name": "Alvarez",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP055500",
@@ -415,10 +415,7 @@
   "facilities": {
     "buildings": {
       "BLD3": {
-        "name": "Downtown",
-        "name_aliases": [
-          "Downtown Building"
-        ]
+        "name": "Downtown"
       }
     },
     "conference_rooms": {
@@ -477,10 +474,7 @@
     },
     "zones": {
       "PZC": {
-        "name": "Central Garage",
-        "name_aliases": [
-          "Central Parking"
-        ]
+        "name": "Central Garage"
       }
     }
   },
@@ -529,9 +523,6 @@
       "catalog_id": "APP-1021",
       "department_restrictions": [],
       "name": "Salesforce",
-      "name_aliases": [
-        "SFDC"
-      ],
       "requires_manager_approval": true,
       "vendor": "Salesforce"
     },
@@ -543,7 +534,6 @@
       "catalog_id": "APP-1040",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [],
       "requires_manager_approval": false,
       "vendor": "Slack"
     },
@@ -555,9 +545,6 @@
         "temporary"
       ],
       "name": "Microsoft Project",
-      "name_aliases": [
-        "MS Project"
-      ],
       "vendor": "Microsoft"
     }
   },

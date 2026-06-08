@@ -8,6 +8,7 @@ from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import build_binary_flag_sub_metrics
 from eva.models.results import MetricScore
+from eva.utils.culture import add_user_language_directive
 from eva.utils.prompt_manager import get_prompt_manager
 
 _USER_BEHAVIORAL_FIDELITY_CORRUPTION_KEYS = (
@@ -16,6 +17,7 @@ _USER_BEHAVIORAL_FIDELITY_CORRUPTION_KEYS = (
     "missing_information",
     "duplicate_modifications",
     "decision_tree_violation",
+    "wrong_language",
 )
 
 # --- Pipeline-specific prompt text for user behavioral fidelity ---
@@ -98,6 +100,7 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
             "modification_tools": json.dumps(modification_tools, indent=2),
             "conversation_end": conversation_end,
             "user_simulator_instructions": _render_user_simulator_instructions(context),
+            "language_display_name": context.language_display_name,
         }
 
     def build_metric_score(
@@ -164,7 +167,7 @@ def _render_user_simulator_instructions(context: MetricContext) -> str:
         escalation_behavior=decision_tree.get("escalation_behavior", ""),
         edge_cases=decision_tree.get("edge_cases", []),
         information_required=context.user_goal.get("information_required", {}),
-        user_persona=context.user_persona,
+        user_persona=add_user_language_directive(context.language, context.language_display_name, context.user_persona),
         starting_utterance=context.user_goal.get("starting_utterance", ""),
         current_date_time=context.current_date_time,
     )

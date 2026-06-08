@@ -14,7 +14,6 @@ from eva.assistant.pipeline.alm_base import (
     DEFAULT_NUM_CHANNELS,
     DEFAULT_SAMPLE_RATE,
     DEFAULT_SAMPLE_WIDTH,
-    DEFAULT_TRANSCRIPTION_PROMPT,
     BaseALMClient,
 )
 from eva.utils.logging import get_logger
@@ -37,6 +36,7 @@ class ALMvLLMClient(BaseALMClient):
         sample_rate: int = DEFAULT_SAMPLE_RATE,
         num_channels: int = DEFAULT_NUM_CHANNELS,
         sample_width: int = DEFAULT_SAMPLE_WIDTH,
+        language: str | None = None,
     ):
         super().__init__(
             model=model,
@@ -47,6 +47,7 @@ class ALMvLLMClient(BaseALMClient):
             sample_rate=sample_rate,
             num_channels=num_channels,
             sample_width=sample_width,
+            language=language,
         )
         # Normalize base_url: ensure it ends with /v1 for the OpenAI client
         self.base_url = base_url.rstrip("/")
@@ -163,7 +164,7 @@ class ALMvLLMClient(BaseALMClient):
         if not audio_bytes:
             return None
 
-        prompt = system_prompt or DEFAULT_TRANSCRIPTION_PROMPT
+        prompt = system_prompt or self.default_transcription_prompt
         user_msg = self.build_audio_user_message(audio_bytes, source_sample_rate)
         messages = [{"role": "system", "content": prompt}, user_msg]
 

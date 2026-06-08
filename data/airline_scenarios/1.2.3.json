@@ -30,12 +30,12 @@
       "passengers": [
         {
           "elite_status": null,
-          "email": "william.kim@gmail.com",
-          "first_name": "William",
-          "last_name": "Kim",
+          "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
+          "first_name": "<FIRST_NAME>",
+          "last_name": "<LAST_NAME>",
           "meal_preference": "none",
           "passenger_id": "PAX001",
-          "phone": "+1-404-555-0856",
+          "phone": "<PHONE>",
           "seat_preference": "aisle",
           "ticket_number": "1801234567890"
         }

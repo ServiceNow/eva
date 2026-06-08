@@ -3,6 +3,7 @@
 import asyncio
 import inspect
 import json
+import os
 import statistics
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -21,6 +22,7 @@ from eva.metrics.versioning import _CURRENT_METRIC_VERSION
 from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
+from eva.utils.culture import get_language_addendum, resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import get_logger
 from eva.utils.pass_at_k import (
@@ -150,6 +152,8 @@ class MetricsRunner:
             raise FileNotFoundError(f"Run config not found: {config_path}")
 
         config_data = json.loads(config_path.read_text())
+        self._run_language = config_data.get("language", os.getenv("EVA_LANGUAGE", "en"))
+        self._aliases_path = Path(f"data/{config_data.get('domain')}_aliases")
 
         # Determine pipeline type from config
         model_data = config_data.get("model", {})
@@ -182,10 +186,15 @@ class MetricsRunner:
         if "role" not in agent_config:
             raise ValueError(f"Agent config missing 'role' field: {agent_config_path}")
 
+        instructions = agent_config["instructions"]
+        addendum = get_language_addendum(self._run_language)
+        if addendum:
+            instructions = f"{instructions}\n\n{addendum}"
+
         return {
             "id": agent_config.get("id"),
             "role": agent_config["role"],
-            "instructions": agent_config["instructions"],
+            "instructions": instructions,
             "tools": agent_config["tools"],
         }
 
@@ -553,7 +562,18 @@ class MetricsRunner:
         if record.agent_override and record.agent_override.instructions:
             agent_instructions = record.agent_override.instructions
 
-        user_persona = record.user_config["user_persona"]
+        language = self._run_language
+        resolved_user_goal = resolve_user_goal(
+            record.user_goal,
+            record.culture_overrides,
+            language,
+            record.romanized_culture_overrides,
+            record.starting_utterances,
+        )
+        resolved_user_config = resolve_user_config(
+            record.user_config, record.culture_overrides, language, record.romanized_culture_overrides
+        )
+        user_persona = resolved_user_config["user_persona"]
 
         initial_scenario_db = json.loads(initial_db_text)
         final_scenario_db = json.loads(final_db_text)
@@ -584,10 +604,16 @@ class MetricsRunner:
         metric_context = MetricContext(
             **postprocessor_fields,
             # Ground truth (only in dataset, not in postprocessor)
-            user_goal=record.user_goal,
+            user_goal=resolved_user_goal,
             user_persona=user_persona,
             # Scenario database state (loaded from files above)
-            expected_scenario_db=gt.expected_scenario_db,
+            expected_scenario_db=resolve_scenario_db(
+                gt.expected_scenario_db,
+                record.culture_overrides,
+                language,
+                record.romanized_culture_overrides,
+                aliases_dir=self._aliases_path,
+            ),
             initial_scenario_db=initial_scenario_db,
             final_scenario_db=final_scenario_db,
             initial_scenario_db_hash=initial_scenario_db_hash,
@@ -598,6 +624,7 @@ class MetricsRunner:
             agent_tools=agent_tools,
             agent_id=self._agent_config["id"],
             current_date_time=record.current_date_time,
+            language=self._run_language,
             # Basic stats from result
             num_turns=result.num_turns,
             tools_called=result.tools_called,
@@ -1036,11 +1063,11 @@ class MetricsRunner:
         except Exception as e:
             logger.warning(f"Failed to capture metrics provenance: {e}")
 
-        summary_path.write_text(json.dumps(summary, indent=2))
+        summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False))
 
         logger.info(f"Metrics summary saved to {summary_path}")
         logger.info("Metrics summary:")
-        logger.info(json.dumps(summary, indent=2))
+        logger.info(json.dumps(summary, indent=2, ensure_ascii=False))
 
         return metric_failures
 

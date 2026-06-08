@@ -386,7 +386,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Amara",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -417,7 +417,7 @@
       "hire_date": "2021-07-19",
       "is_manager": false,
       "last_desk_assignment_date": "2025-11-10",
-      "last_name": "Diallo",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP062210",
@@ -540,11 +540,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "downtown",
-          "engineering center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -627,9 +623,6 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "north garage"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -666,9 +659,6 @@
         "catalog_id": "APP-1010",
         "department_restrictions": [],
         "name": "Slack",
-        "name_aliases": [
-          "slack"
-        ],
         "requires_manager_approval": false,
         "vendor": "Salesforce"
       },
@@ -680,9 +670,6 @@
         "catalog_id": "APP-1042",
         "department_restrictions": [],
         "name": "Datadog",
-        "name_aliases": [
-          "datadog"
-        ],
         "requires_manager_approval": true,
         "vendor": "Datadog"
       },
@@ -695,9 +682,6 @@
         "catalog_id": "APP-1065",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       }
@@ -710,11 +694,7 @@
           "permanent",
           "temporary"
         ],
-        "name": "JetBrains IntelliJ IDEA",
-        "name_aliases": [
-          "intellij",
-          "idea"
-        ],
+        "name": "IntelliJ IDEA",
         "vendor": "JetBrains"
       }
     }
@@ -739,7 +719,7 @@
     "network_connectivity": {
       "steps": [
         "Confirm whether other websites or apps are reachable.",
-        "Toggle Wi\u2011Fi or reconnect the network cable.",
+        "Toggle Wi‑Fi or reconnect the network cable.",
         "Reconnect the VPN if required.",
         "Restart the device and test again."
       ]

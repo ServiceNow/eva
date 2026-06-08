@@ -14,15 +14,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependency files and source code
+# Install dependencies — cached as long as pyproject.toml doesn't change
 COPY pyproject.toml README.md ./
-COPY src/ ./src/
-
-# Install dependencies into a virtual environment
+# Stub src so hatchling can resolve the package during dep install
+RUN mkdir -p src/eva && echo '__version__ = "0.0.0"' > src/eva/__init__.py
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir .
+
+# Copy real source and reinstall only the package (deps already cached above)
+COPY src/ ./src/
+RUN pip install --no-cache-dir --no-deps .
 
 # ============================================
 # Stage 2: Runtime

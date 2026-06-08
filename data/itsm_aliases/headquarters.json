@@ -1,0 +1,31 @@
+{
+  "name": "Headquarters",
+  "translatable": true,
+  "base": [
+    "hq",
+    "headquarters",
+    "headquarters campus",
+    "head office",
+    "main office"
+  ],
+  "translations": {
+    "fr": [
+      "bureau chef",
+      "bureaux du siège",
+      "le siège",
+      "qg",
+      "quartier général",
+      "siège",
+      "siège social"
+    ],
+    "fr-CA": [
+      "bureau chef",
+      "bureaux du siège",
+      "le siège",
+      "qg",
+      "quartier général",
+      "siège",
+      "siège social"
+    ]
+  }
+}

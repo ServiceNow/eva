@@ -13,6 +13,7 @@ from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, ErrorDetails, LatencyStats
 from eva.user_simulator.client import UserSimulator
+from eva.utils.culture import resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.error_handler import create_error_details
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import add_record_log_file, current_record_id, get_logger, remove_record_log_file
@@ -299,29 +300,67 @@ class ConversationWorker:
     async def _start_assistant(self) -> None:
         """Start the assistant server using the configured framework."""
         server_cls = _get_server_class(self.config.framework)
+        resolved_db_path = self._materialize_resolved_scenario_db()
         self._assistant_server = server_cls(
             current_date_time=self.record.current_date_time,
             pipeline_config=self.config.model,
             agent=self.agent,
             agent_config_path=self.agent_config_path,
-            scenario_db_path=self.scenario_db_path,
+            scenario_db_path=str(resolved_db_path),
             output_dir=self.output_dir,
             port=self.port,
             conversation_id=self.record.id,
+            language=self.config.language,
         )
 
         await self._assistant_server.start()
 
+    def _materialize_resolved_scenario_db(self) -> Path:
+        """Load the placeholdered scenario DB.
+
+        Resolve names for the configured
+        language, and write it into ``output_dir`` for the assistant runtime.
+        """
+        with open(self.scenario_db_path) as f:
+            db = json.load(f)
+        resolved = resolve_scenario_db(
+            db,
+            self.record.culture_overrides,
+            self.config.language,
+            self.record.romanized_culture_overrides,
+            aliases_dir=self.config.aliases_path,
+        )
+        out = self.output_dir / "scenario_db.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(resolved, f, ensure_ascii=False, indent=2)
+        return out
+
     async def _start_user_simulator(self) -> None:
         """Start the user simulator."""
+        language = self.config.language
+        resolved_goal = resolve_user_goal(
+            self.record.user_goal,
+            self.record.culture_overrides,
+            language,
+            self.record.romanized_culture_overrides,
+            self.record.starting_utterances,
+        )
+        resolved_persona = resolve_user_config(
+            self.record.user_config,
+            self.record.culture_overrides,
+            language,
+            self.record.romanized_culture_overrides,
+        )
         self._user_simulator = UserSimulator(
             current_date_time=self.record.current_date_time,
-            persona_config=self.record.user_config,
-            goal=self.record.user_goal,
+            persona_config=resolved_persona,
+            goal=resolved_goal,
             server_url=f"ws://localhost:{self.port}/ws",
             output_dir=self.output_dir,
             agent_id=self.agent.id,
             perturbation_config=self.config.perturbation,
+            language=self.config.language,
         )
 
     async def _run_conversation(self) -> str:

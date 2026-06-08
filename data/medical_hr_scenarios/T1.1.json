@@ -29,8 +29,8 @@
     "5464285982": {
       "npi": "5464285982",
       "employee_id": "EMP751051",
-      "first_name": "Oscar",
-      "last_name": "Lindgren",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "AJD-47K",
       "pin": "7807",
       "phone_last_four": "2481",
@@ -107,8 +107,8 @@
   "employees": {
     "EMP751051": {
       "employee_id": "EMP751051",
-      "first_name": "Oscar",
-      "last_name": "Lindgren",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1978-11-06",
       "phone_last_four": "2481",
       "otp_code": "284171",

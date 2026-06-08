@@ -75,8 +75,8 @@
   "employees": {
     "EMP522179": {
       "employee_id": "EMP522179",
-      "first_name": "Erik",
-      "last_name": "Lindqvist",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1989-02-14",
       "phone_last_four": "4821",
       "otp_code": "654321",

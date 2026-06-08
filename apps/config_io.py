@@ -279,14 +279,14 @@ def _format_value(value: Any) -> str:
     if isinstance(value, (int, float)):
         return str(value)
     if isinstance(value, (dict, list)):
-        return f"'{json.dumps(value)}'"
+        return f"'{json.dumps(value, ensure_ascii=False)}'"
     s = str(value)
     if not s:
         return ""
     if any(c in s for c in (" ", "\t", "#", "'", '"', "$", "\n")):
         if "'" not in s:
             return f"'{s}'"
-        return json.dumps(s)
+        return json.dumps(s, ensure_ascii=False)
     return s
 
 
@@ -385,7 +385,8 @@ def compute_disabled(parsed: ParsedEnvExample, **state_values: str) -> set[str]:
     disabled: set[str] = set()
     for var in parsed.vars:
         for cond_key, cond_val in var.conditions:
-            if state_values.get(cond_key, "") != cond_val:
+            allowed = {v.strip() for v in cond_val.split(",") if v.strip()}
+            if state_values.get(cond_key, "") not in allowed:
                 disabled.add(var.name)
                 break
     return disabled

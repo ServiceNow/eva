@@ -27,8 +27,8 @@
     "8115628227": {
       "npi": "8115628227",
       "employee_id": "EMP262246",
-      "first_name": "Xiomara",
-      "last_name": "Villanueva",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "WJ-81L",
       "pin": "2882",
       "phone_last_four": "4821",
@@ -96,8 +96,8 @@
   "employees": {
     "EMP262246": {
       "employee_id": "EMP262246",
-      "first_name": "Xiomara",
-      "last_name": "Villanueva",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1989-11-24",
       "phone_last_four": "4821",
       "otp_code": "899649",

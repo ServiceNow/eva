@@ -1322,7 +1322,7 @@ tools:
         description: "The reason for transferring the call."
       - name: issue_summary
         type: string
-        description: "A brief summary of the request, what was attempted, and why transfer is needed, so the live agent has full context."
+        description: "A brief summary of the request, what was attempted, and why transfer is needed, so the live agent has full context. This should be in the same language as the conversation you had with the user."
 
   - id: mark_resolved
     name: mark_resolved

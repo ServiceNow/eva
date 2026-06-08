@@ -75,8 +75,8 @@
   "employees": {
     "EMP666847": {
       "employee_id": "EMP666847",
-      "first_name": "Solomon",
-      "last_name": "Tesfaye",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-02-14",
       "phone_last_four": "4829",
       "otp_code": "551204",

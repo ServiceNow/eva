@@ -1,19 +1,39 @@
 """WER text normalization utilities."""
 
 import re
+from pathlib import Path
 
 from jiwer import Compose, RemovePunctuation, Strip, ToLowerCase
 
 from eva.utils.logging import get_logger
-from eva.utils.wer_normalization.normalizers import JapaneseTextNormalizer
-from eva.utils.wer_normalization.whisper_normalizer.basic import BasicTextNormalizer
-from eva.utils.wer_normalization.whisper_normalizer.english import EnglishTextNormalizer
+from eva.utils.wer_normalization.cjk import ChineseTextNormalizer, JapaneseTextNormalizer, KoreanTextNormalizer
+from eva.utils.wer_normalization.engine import GenericTextNormalizer, LanguageConfig
+from eva.utils.wer_normalization.whisper_normalizer import BasicTextNormalizer
 
 logger = get_logger(__name__)
 
-# Normalizers per language
-NORMALIZERS = {"en": EnglishTextNormalizer(), "ja": JapaneseTextNormalizer()}
-DEFAULT_NORMALIZER = BasicTextNormalizer()
+_CONFIGS_DIR = Path(__file__).parent / "configs"
+_DEFAULT_NORMALIZER = BasicTextNormalizer()
+
+
+def _make_normalizer(language: str) -> BasicTextNormalizer | GenericTextNormalizer:
+    """Return a normalizer for *language*, instantiated on demand.
+
+    ``language`` must be an exact pipecat Language value (e.g. ``Language.FR.value``).
+    Config files are named after those values verbatim (``fr-FR.json``, ``en.json``).
+    """
+    base = language.split("-")[0]
+    if base == "ja":
+        return JapaneseTextNormalizer()
+    if base == "ko":
+        return KoreanTextNormalizer()
+    if base == "zh":
+        return ChineseTextNormalizer()
+    if (_CONFIGS_DIR / f"{language}.json").exists():
+        return GenericTextNormalizer(LanguageConfig.load(language))
+    logger.warning(f"No normalizer found for language {language}, using default normalizer")
+    return _DEFAULT_NORMALIZER
+
 
 # Basic transformations applied after Whisper normalization
 BASIC_TRANSFORMATIONS = Compose(
@@ -71,7 +91,15 @@ def normalize_apostrophes(text: str) -> str:
 
 
 def convert_unicode_to_characters(text: str) -> str:
-    r"""Convert unicode (\u00e9) to characters (é)."""
+    r"""Convert unicode (\u00e9) to characters (é).
+
+    Only applied when the text is pure ASCII — the round-trip via
+    raw_unicode_escape/unicode-escape is only safe for ASCII strings containing
+    \uXXXX escape sequences. Non-ASCII text (CJK, Arabic, accented Latin, …)
+    is already in the correct form and must not be re-encoded.
+    """
+    if not text.isascii():
+        return text
     return text.encode("raw_unicode_escape").decode("unicode-escape")
 
 
@@ -111,7 +139,7 @@ def normalize_text(text: str, language: str = "en") -> str:
         8. Remove space between numbers and suffixes (e.g., "3 rd" -> "3rd")
     """
     try:
-        normalizer = NORMALIZERS.get(language, DEFAULT_NORMALIZER)
+        normalizer = _make_normalizer(language)
         text = convert_unicode_to_characters(text)
         text = normalize_apostrophes(text)
         text = collapse_single_letters(text)

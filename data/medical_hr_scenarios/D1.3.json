@@ -29,8 +29,8 @@
     "2472659626": {
       "npi": "2472659626",
       "employee_id": "EMP852470",
-      "first_name": "Aisling",
-      "last_name": "Murphy",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "QGMX-16C",
       "pin": "7939",
       "phone_last_four": "4821",
@@ -180,8 +180,8 @@
   "employees": {
     "EMP852470": {
       "employee_id": "EMP852470",
-      "first_name": "Aisling",
-      "last_name": "Murphy",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1984-11-08",
       "phone_last_four": "4821",
       "otp_code": "969634",

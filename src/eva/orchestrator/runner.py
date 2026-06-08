@@ -17,6 +17,7 @@ from eva.orchestrator.port_pool import PortPool
 from eva.orchestrator.validation_runner import ValidationResult, ValidationRunner
 from eva.orchestrator.worker import ConversationWorker
 from eva.utils.conversation_checks import check_conversation_finished, find_records_with_llm_generic_error
+from eva.utils.culture import get_language_addendum
 from eva.utils.logging import get_logger
 from eva.utils.provenance import capture_provenance, resolve_tool_module_file
 
@@ -52,13 +53,22 @@ class BenchmarkRunner:
             pool_size=config.port_pool_size,
         )
 
+        # Per-metric configuration derived from run config (e.g. language for stt_wer).
+        self._metric_configs: dict[str, dict] = {
+            "stt_wer": {"language": config.language.value},
+        }
+
         # Results tracking
         self._results: list[ConversationResult] = []
         self._failed_record_ids: list[str] = []
 
     def _load_agent_config(self) -> AgentConfig:
-        """Load single agent configuration."""
-        return AgentConfig.from_yaml(self.config.agent_config_path)
+        """Load single agent configuration; append the language addendum once."""
+        agent = AgentConfig.from_yaml(self.config.agent_config_path)
+        addendum = get_language_addendum(self.config.language)
+        if addendum:
+            agent.instructions = f"{agent.instructions}\n\n{addendum}"
+        return agent
 
     def _filter_records(self, records: list[EvaluationRecord]) -> list[EvaluationRecord]:
         """Filter records based on debug mode or record_ids.
@@ -142,7 +152,7 @@ class BenchmarkRunner:
         config_data = self.config.model_dump(mode="json")
         pipeline_parts = self.config.model.pipeline_parts
         config_data["pipeline_parts"] = pipeline_parts
-        config_path.write_text(json.dumps(config_data, indent=2))
+        config_path.write_text(json.dumps(config_data, indent=2, ensure_ascii=False))
 
         # Build output_id list for tracking (supports pass@k)
         num_trials = self.config.num_trials
@@ -175,6 +185,7 @@ class BenchmarkRunner:
             run_dir=self.output_dir,
             dataset=_all_unique_records,
             thresholds=self.config.validation_thresholds,
+            metric_configs=self._metric_configs,
         )
 
         # Pre-create MetricsRunner so metrics can start as soon as records pass validation,
@@ -189,6 +200,7 @@ class BenchmarkRunner:
                     run_dir=self.output_dir,
                     dataset=all_unique_records,
                     metric_names=self.config.metrics,
+                    metric_configs=self._metric_configs,
                     num_draws=self.config.num_trials,
                     force_rerun=self.config.force_rerun_metrics,
                 )
@@ -367,6 +379,7 @@ class BenchmarkRunner:
                     run_dir=self.output_dir,
                     dataset=successful_records,
                     metric_names=self.config.metrics,
+                    metric_configs=self._metric_configs,
                     record_ids=list(successful_ids),
                     num_draws=self.config.num_trials,
                     force_rerun=self.config.force_rerun_metrics,
@@ -630,6 +643,7 @@ class BenchmarkRunner:
                 run_dir=self.output_dir,
                 dataset=filtered_records,
                 thresholds=self.config.validation_thresholds,
+                metric_configs=self._metric_configs,
                 output_ids=needs_validation_ids,
             )
             validation_results = await validation_runner.run_validation()
@@ -685,6 +699,7 @@ class BenchmarkRunner:
                     run_dir=self.output_dir,
                     dataset=to_validate_records,
                     thresholds=self.config.validation_thresholds,
+                    metric_configs=self._metric_configs,
                     output_ids=to_validate_ids,
                 )
                 new_results = await vr_runner.run_validation()
@@ -738,6 +753,7 @@ class BenchmarkRunner:
                 run_dir=self.output_dir,
                 dataset=successful_records,
                 metric_names=self.config.metrics,
+                metric_configs=self._metric_configs,
                 record_ids=list(successful_ids),
                 num_draws=self.config.num_trials,
                 force_rerun=self.config.force_rerun_metrics,
@@ -818,7 +834,7 @@ class BenchmarkRunner:
 
         eval_summary_path = self.output_dir / "evaluation_summary.json"
         with open(eval_summary_path, "w") as f:
-            json.dump(eval_summary, f, indent=2)
+            json.dump(eval_summary, f, indent=2, ensure_ascii=False)
 
         # Terminal output — clearly separate simulation from metrics
         logger.info(f"{'=' * 60}")
@@ -952,6 +968,7 @@ class BenchmarkRunner:
             run_dir=run_dir,
             dataset=records,
             metric_names=metric_names,
+            metric_configs=self._metric_configs,
             record_ids=successful_ids,
             num_draws=self.config.num_trials,
             record_metric_filter=record_metric_filter,
@@ -969,7 +986,7 @@ class BenchmarkRunner:
         }
 
         with open(eval_summary_path, "w") as f:
-            json.dump(eval_summary, f, indent=2)
+            json.dump(eval_summary, f, indent=2, ensure_ascii=False)
 
         # Terminal output
         logger.info("=" * 60)

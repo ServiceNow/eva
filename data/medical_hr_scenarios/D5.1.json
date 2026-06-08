@@ -29,8 +29,8 @@
     "1111111111": {
       "npi": "1111111111",
       "employee_id": "EMP437960",
-      "first_name": "Liora",
-      "last_name": "Goldstein",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "MGH-04B",
       "pin": "4821",
       "phone_last_four": "4421",
@@ -77,8 +77,8 @@
   "employees": {
     "EMP437960": {
       "employee_id": "EMP437960",
-      "first_name": "Liora",
-      "last_name": "Goldstein",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-04-22",
       "phone_last_four": "4421",
       "otp_code": "654321",

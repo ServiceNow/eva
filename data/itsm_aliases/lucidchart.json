@@ -1,0 +1,9 @@
+{
+  "name": "Lucidchart",
+  "translatable": false,
+  "base": [
+    "lucid chart",
+    "lucid"
+  ],
+  "translations": {}
+}

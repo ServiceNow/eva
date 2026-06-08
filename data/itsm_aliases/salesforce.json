@@ -1,0 +1,10 @@
+{
+  "name": "Salesforce",
+  "translatable": false,
+  "base": [
+    "sfdc",
+    "crm",
+    "salesforce crm"
+  ],
+  "translations": {}
+}

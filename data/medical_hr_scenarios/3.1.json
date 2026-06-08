@@ -27,8 +27,8 @@
     "7110082321": {
       "npi": "7110082321",
       "employee_id": "EMP391369",
-      "first_name": "Mei-Ling",
-      "last_name": "Chen",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "FT-23C",
       "pin": "7224",
       "phone_last_four": "4829",
@@ -100,8 +100,8 @@
   "employees": {
     "EMP391369": {
       "employee_id": "EMP391369",
-      "first_name": "Mei-Ling",
-      "last_name": "Chen",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1988-11-22",
       "phone_last_four": "4829",
       "otp_code": "418263",

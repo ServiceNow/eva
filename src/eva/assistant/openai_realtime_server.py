@@ -26,7 +26,7 @@ from eva.assistant.audio_bridge import (
     pcm16_24k_to_mulaw_8k,
     sync_buffer_to_position,
 )
-from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
+from eva.assistant.base_server import AbstractAssistantServer
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -269,7 +269,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                         "content": [
                             {
                                 "type": "input_text",
-                                "text": f"Say: '{INITIAL_MESSAGE}'",
+                                "text": f"Say: '{self.initial_message}'",
                             }
                         ],
                     }
@@ -639,7 +639,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         except json.JSONDecodeError:
             arguments = {}
 
-        logger.info(f"Tool call: {func_name}({json.dumps(arguments)})")
+        logger.info(f"Tool call: {func_name}({json.dumps(arguments, ensure_ascii=False)})")
         self._assistant_state.has_function_calls = True
 
         # Execute tool and record in audit log
@@ -661,7 +661,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             item={
                 "type": "function_call_output",
                 "call_id": call_id,
-                "output": json.dumps(result),
+                "output": json.dumps(result, ensure_ascii=False),
             }
         )
 
