@@ -130,6 +130,25 @@ _EVA_COMPOSITE_DISPLAY = {
 }
 
 
+_RE_NUMBER = re.compile(r"(\d+)")
+
+
+def split_numbers(s: str) -> list[str | int]:
+    """Split a string into a list of parts, with numbers converted to `int`.
+
+    This function may be used as the `key` to sort strings in a natural order similar to files in macOS's Finder.
+
+    Args:
+        s: A string that may contain numbers. For example, `"$42k"`.
+
+    Returns:
+        A list of parts, with numbers converted to `int`. For example, `["$", 42, "k"]`.
+    """
+    parts = _RE_NUMBER.split(s)
+    parts[1::2] = map(int, parts[1::2])
+    return parts
+
+
 # ============================================================================
 # Data Loading
 # ============================================================================
@@ -182,7 +201,7 @@ def get_record_directories(run_dir: Path) -> list[Path]:
     records_dir = run_dir / "records"
     if not records_dir.exists():
         return []
-    return sorted([d for d in records_dir.iterdir() if d.is_dir()], key=lambda d: d.name)
+    return sorted([d for d in records_dir.iterdir() if d.is_dir()], key=lambda d: split_numbers(d.name))
 
 
 def load_record_result(record_dir: Path) -> ConversationResult | None:
@@ -478,7 +497,7 @@ def _get_record_data_dirs(record_dir: Path) -> list[tuple[str, Path]]:
                 for d in record_dir.iterdir()
                 if d.is_dir() and any(f for f in d.iterdir() if f.suffix in (".json", ".wav", ".jsonl"))
             ],
-            key=lambda d: d.name,
+            key=lambda d: split_numbers(d.name),
         )
     if trial_dirs:
         return [(d.name, d) for d in trial_dirs]
