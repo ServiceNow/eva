@@ -9,8 +9,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Literal
 
-import numpy as np
-
 from eva.models.results import RecordMetrics
 from eva.utils.bootstrap import bootstrap_ci_fields, mean_ci_fields
 from eva.utils.pass_at_k import (
@@ -86,7 +84,7 @@ EVA_COMPOSITES: list[EVACompositeDefinition] = [
 ]
 
 
-def _scenario_means(per_record_values: dict[str, float | None]) -> np.ndarray:
+def _scenario_means(per_record_values: dict[str, float | None]) -> list[float]:
     """Group per-record values by base scenario id and return per-scenario means.
 
     Scenarios where every record contributes None are dropped.
@@ -97,15 +95,13 @@ def _scenario_means(per_record_values: dict[str, float | None]) -> np.ndarray:
             continue
         base_id, _ = parse_trial_record_id(record_id)
         grouped.setdefault(base_id, []).append(float(val))
-    if not grouped:
-        return np.array([], dtype=float)
-    return np.array([sum(vs) / len(vs) for vs in grouped.values()], dtype=float)
+    return [sum(vs) / len(vs) for vs in grouped.values()]
 
 
 def scenario_means_for_metric(
     all_metrics: dict[str, RecordMetrics],
     metric_name: str,
-) -> np.ndarray:
+) -> list[float]:
     """Per-scenario mean over trials of one metric's score.
 
     Uses ``normalized_score`` (falling back to ``score``). Scenarios where all
@@ -120,7 +116,7 @@ def scenario_means_for_metric(
 def _scenario_values_for_composite(
     all_metrics: dict[str, RecordMetrics],
     comp: EVACompositeDefinition,
-) -> np.ndarray:
+) -> list[float]:
     """Per-scenario mean over trials of a composite's per-trial value.
 
     Reads from ``aggregate_metrics``. For pass/derived composites this is the

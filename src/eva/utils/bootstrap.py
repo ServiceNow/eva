@@ -79,7 +79,7 @@ def bootstrap_ci_fields(
 
 
 def mean_ci_fields(
-    scenario_values: np.ndarray,
+    scenario_values: Sequence[float],
     *,
     seed: int,
     decimals: int = 4,

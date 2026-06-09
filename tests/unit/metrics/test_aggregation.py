@@ -411,7 +411,7 @@ class TestScenarioGrouping:
         r1 = make_record_metrics({"task_completion": 1.0}, record_id="1.1.1")
         r2 = make_record_metrics({"task_completion": 0.5}, record_id="1.1.2")
         vals = scenario_means_for_metric({"1.1.1": r1, "1.1.2": r2}, "task_completion")
-        np.testing.assert_allclose(sorted(vals.tolist()), [0.5, 1.0])
+        np.testing.assert_allclose(sorted(vals), [0.5, 1.0])
 
     def test_per_metric_k3_collapses_trials(self):
         # Same scenario id "1.1.1", three trials with scores 0.0, 0.5, 1.0 → scenario mean 0.5
@@ -420,7 +420,7 @@ class TestScenarioGrouping:
         r2 = make_record_metrics({"task_completion": 1.0}, record_id="1.1.1/trial_2")
         all_m = {"1.1.1/trial_0": r0, "1.1.1/trial_1": r1, "1.1.1/trial_2": r2}
         vals = scenario_means_for_metric(all_m, "task_completion")
-        np.testing.assert_allclose(vals.tolist(), [0.5])
+        np.testing.assert_allclose(vals, [0.5])
 
     def test_per_metric_skips_errored_trials(self):
         # One scenario, two trials; one trial has the metric errored
@@ -430,7 +430,7 @@ class TestScenarioGrouping:
             metrics={"task_completion": MetricScore(name="task_completion", score=0.0, error="boom")},
         )
         vals = scenario_means_for_metric({"1.1.1/trial_0": r0, "1.1.1/trial_1": r1}, "task_completion")
-        np.testing.assert_allclose(vals.tolist(), [1.0])  # mean over the 1 valid trial
+        np.testing.assert_allclose(vals, [1.0])  # mean over the 1 valid trial
 
     def test_per_metric_drops_all_none_scenarios(self):
         # Scenario with all trials errored is dropped from the bootstrap unit count.
@@ -445,7 +445,7 @@ class TestScenarioGrouping:
         r2 = make_record_metrics({"task_completion": 0.5}, record_id="1.1.2/trial_0")
         all_m = {"1.1.1/trial_0": r0, "1.1.1/trial_1": r1, "1.1.2/trial_0": r2}
         vals = scenario_means_for_metric(all_m, "task_completion")
-        np.testing.assert_allclose(vals.tolist(), [0.5])
+        np.testing.assert_allclose(vals, [0.5])
 
     def test_composite_k3_collapses_trials(self):
         # EVA-A_pass scenario value = mean over trials of per-trial 0/1
@@ -463,12 +463,12 @@ class TestScenarioGrouping:
         all_m = {"1.1.1/trial_0": r0, "1.1.1/trial_1": r1}
         vals = _scenario_values_for_composite(all_m, comp)
         # trial 0 passes (1.0), trial 1 fails (0.0) → scenario mean 0.5
-        np.testing.assert_allclose(vals.tolist(), [0.5])
+        np.testing.assert_allclose(vals, [0.5])
 
     def test_composite_empty_returns_empty_array(self):
         comp = _composite_by_name("EVA-A_pass")
         vals = _scenario_values_for_composite({}, comp)
-        assert vals.shape == (0,)
+        assert vals == []
 
 
 class TestRunLevelCompositeCIs:
