@@ -718,10 +718,10 @@ def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dic
     # Sync intended + transcribed (skip intended for S2S — no intended text exists)
     if context.pipeline_type != PipelineType.S2S:
         context.intended_assistant_turns[trailing_turn_id] = labeled
-    if not context.transcribed_assistant_turns.get(trailing_turn_id):
-        context.transcribed_assistant_turns[trailing_turn_id] = labeled
-    else:
+    if context.transcribed_assistant_turns.get(trailing_turn_id):
         context.transcribed_assistant_turns[trailing_turn_id] += f" {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
+    else:
+        context.transcribed_assistant_turns[trailing_turn_id] = labeled
 
     logger.info(f"Record {context.record_id}: Labeled trailing assistant at turn {trailing_turn_id}")
 
