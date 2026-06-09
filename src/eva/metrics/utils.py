@@ -448,6 +448,51 @@ def build_binary_flag_sub_metrics(
     return sub_metrics
 
 
+def build_per_category_rate_sub_metrics(
+    parent_name: str,
+    categories: tuple[str, ...],
+    rated_turn_ids: list[int],
+    per_turn_categories: dict[int, list[str] | None],
+    key_suffix: str = "_rate",
+) -> dict[str, MetricScore]:
+    """Build per-category rate sub-metrics from per-turn category tags.
+
+    For each known category, compute ``flagged_turns / rated_turns`` across the
+    given rated turns and emit a sub-metric named ``f"{parent_name}.{category}{key_suffix}"``.
+    Categories absent from ``per_turn_categories[turn_id]`` count as not flagged.
+    Categories the judge invents but that aren't in ``categories`` are silently
+    ignored (callers preserve them in ``details`` if they want them visible).
+
+    Args:
+        parent_name: Parent metric name (prefix in the sub-metric name).
+        categories: Ordered tuple of known category keys to emit a rate for.
+        rated_turn_ids: Turns to use as the denominator (typically those with a
+            non-null rating).
+        per_turn_categories: ``{turn_id: list of category strings the judge tagged}``.
+            Missing or ``None`` values are treated as no categories flagged.
+        key_suffix: Suffix appended to each category key (default ``"_rate"``).
+
+    Returns:
+        Dict of sub-metrics keyed by ``f"{category}{key_suffix}"``. Empty when
+        ``rated_turn_ids`` is empty.
+    """
+    sub_metrics: dict[str, MetricScore] = {}
+    num_rated = len(rated_turn_ids)
+    if num_rated == 0:
+        return sub_metrics
+    for category in categories:
+        flagged_ids = [tid for tid in rated_turn_ids if category in (per_turn_categories.get(tid) or [])]
+        sub_key = f"{category}{key_suffix}"
+        sub_metrics[sub_key] = make_rate_sub_metric(
+            parent_name=parent_name,
+            key=sub_key,
+            numerator=len(flagged_ids),
+            denominator=num_rated,
+            details={"count": len(flagged_ids), "num_rated": num_rated, "turn_ids": flagged_ids},
+        )
+    return sub_metrics
+
+
 def aggregate_per_turn_scores(scores: list[float | None], aggregation: str) -> float | None:
     """Aggregate per-turn scores using specified method.
 

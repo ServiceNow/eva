@@ -14,8 +14,10 @@ _shared:
     - `[user interrupts]` — The user started speaking while the assistant was still talking. As a prefix on user text, it marks the start of overlapping user speech. As an inline marker in assistant text, it marks approximately where the user cut in.
     - `[likely cut off by user]` — Appears in assistant text. The assistant's speech was probably cut off by the user starting to speak. Text before this tag may not have been fully spoken. Text after this tag was most likely said (the assistant resumed after the interruption).
     - `[likely cut off by assistant]` — Appears in user text. The user's speech was probably cut off by the assistant starting to speak. Text before this tag may not have been fully spoken.
-    - `[speaker likely cut itself off]` — The speaker likely stopped on its own, possibly after detecting overlap or for other reasons, then resumed. Text before this tag may not have been fully spoken. Text after is what the speaker said after resuming.
+    - `[speaker likely cut itself off]` — The speaker likely stopped on its own, possibly after detecting overlap or for other reasons. If the tag appears mid-turn, text after it is what the speaker said after resuming. If the tag appears at the end of the turn, the speaker did not resume in this turn. Text before this tag may not have been fully spoken.
     - `[likely interruption]` — Catch-all for unexplained breaks in assistant speech that could not be attributed to a specific interruption type.
+
+    **Scope of "text before this tag":** For all four cut-off tags (`[likely cut off by user]`, `[likely cut off by assistant]`, `[speaker likely cut itself off]`, `[likely interruption]`), "text before this tag" means **all text from the start of the turn (or from the previous resumption point) up to the tag** — not just the few adjacent words. This region can span multiple sentences and contain multiple entities (confirmation codes, dollar amounts, names, etc.). Any or all of it may have been silently dropped from the audio. The tag is just a signal that an interruption occurred; it might not be at the right place and do not assume the cut-off was small.
 
 judge:
   conciseness:
@@ -663,7 +665,7 @@ judge:
 
         The tags tell you that certain portions of the intended text were likely never spoken, because the speaker was interrupted or cut themselves off. Do NOT penalize for missing words that fall in a region the tags indicate was not spoken.
 
-        **Key principle:** If a tag indicates that a section of text was likely not spoken aloud (due to interruption or cut-off), do NOT penalize for those words being missing from the audio. Only evaluate fidelity for words that were reasonably expected to have been spoken.
+        **Key principle:** If a tag indicates that a section of text was likely not spoken aloud (due to interruption or cut-off), do NOT penalize for those words being missing from the audio — **including entity words** (confirmation codes, dollar amounts, names, etc.). A turn where the only missing content falls inside a cut-off region is rating = 1, even if that missing content contains critical entities.
 
         ## Evaluation Criteria
 
@@ -694,6 +696,7 @@ judge:
         - Slight pacing or prosody differences
         - Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
         - Words in regions flagged by interruption tags as likely not spoken
+        - **Adjacent-turn drift:** turn boundaries are derived from imperfect timing/event heuristics, so a sentence may land in the wrong adjacent turn (turn N's intended text actually spoken in turn N-1 or N+1, or vice versa). If content from turn N appears to have been spoken in an adjacent turn, treat it as fidelity-preserved rather than missing. Only mark missing if the content does not appear in this turn **or** in either neighboring turn's audio.
         - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form of those letters in that language
         - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
         - Name spelling variants that are phonetically identical (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
@@ -701,6 +704,24 @@ judge:
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
         - **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn.
+
+        ## Failure Modes (only when rating = 0)
+        For each low-fidelity turn, tag every failure mode that applies. A turn may have multiple failure modes. Leave the list empty when rating = 1.
+
+        - **entity_error** — A TTS-critical entity (confirmation code, dollar amount, name, date, time, flight/seat number, reference ID, etc.) was rendered incorrectly in the audio. Use this whenever the intended text shows an entity at that position, regardless of *how* it went wrong: a wrong digit/letter, a missing character in a spelled-out code, a value swapped for a different one, OR sounds that are garbled / slurred / unintelligible in place of an entity. The intended text tells you whether a given position is an entity — if it is, any defect there is `entity_error`, not `garbled_hallucination`.
+
+        - **truncation** — Expected content from the intended text is missing in the audio, and the missing region is **NOT** covered by an interruption tag (`[likely cut off ...]`, `[user interrupts]`, `[speaker likely cut itself off]`, `[likely interruption]`). Apply only when the speaker silently dropped content that the tags do not explain. Missing content before a tag is fidelity-preserved by design and should NOT be flagged here.
+
+        - **garbled_hallucination** — The audio contains speech-like sounds in place of expected **non-entity** words, but the sounds are distorted, slurred, or unintelligible enough that the listener cannot reliably parse what was said. The TTS produced noise/non-words rather than a clean rendering of the intended text. Use this category only for non-entity regions — if the garbled region corresponds to an entity in the intended text, use `entity_error` instead.
+
+        - **insertion_hallucination** — The audio contains words or phrases that were NOT in the intended text. The TTS added content on its own — extra sentences, repeated phrases, or filler that the script did not contain.
+
+        - **wrong_language** — The audio is spoken in a language different from the expected language ({expected_language}). Use this when the language mismatch is clear and affects a meaningful portion of the turn, not for individual foreign loanwords or proper nouns that are expected to be pronounced natively.
+
+        Tagging guidance:
+        - If a turn has both an entity error and missing/dropped content outside tagged regions, list both `entity_error` and `truncation`.
+        - Garbled audio at an entity position is `entity_error`, not `garbled_hallucination` — check the intended text first to decide whether the affected region is an entity.
+        - Do NOT use `truncation` for content lost to interruption tags, even if the interruption tags are not at the exact location where the truncation occured — that is expected behavior, not an error.
 
         ## Response Format
         Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Intended Turns above:
@@ -711,7 +732,8 @@ judge:
               "language": "<string: the language spoken in this turn, e.g. English, French, Spanish>",
               "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the intended text>
               "explanation": "<string: 1-3 sentence analysis in English of fidelity for this turn, citing specific intended vs actual mismatches in the original language, and noting any regions skipped due to interruption flags, if applicable>",
-              "rating": <0 or 1>
+              "rating": <0 or 1>,
+              "failure_modes": <list of strings: zero or more of "entity_error", "truncation", "garbled_hallucination", "insertion_hallucination", "wrong_language". Must be [] when rating = 1.>
             }}
           ]
         }}
