@@ -113,7 +113,7 @@ async def run_benchmark(config: RunConfig) -> int:
         else:
             logger.info(f"  S2S model: {config.model.s2s}")
         logger.info(f"  Max concurrent: {config.max_concurrent_conversations}")
-        logger.info(f"  Timeout: {config.conversation_timeout_seconds}s")
+        logger.info(f"  Time limit: {config.conversation_time_limit_seconds}s")
         return 0
 
     # Create and run benchmark

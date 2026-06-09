@@ -76,8 +76,8 @@
   "employees": {
     "EMP821590": {
       "employee_id": "EMP821590",
-      "first_name": "Yuki",
-      "last_name": "Tanaka",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-02-14",
       "phone_last_four": "4821",
       "otp_code": "631204",

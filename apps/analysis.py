@@ -2143,8 +2143,8 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
                 expected_db = context.get("expected_scenario_db")
                 final_db = context.get("final_scenario_db")
                 if expected_db and final_db:
-                    expected_str = json.dumps(expected_db, indent=2, sort_keys=True, default=str)
-                    actual_str = json.dumps(final_db, indent=2, sort_keys=True, default=str)
+                    expected_str = json.dumps(expected_db, indent=2, sort_keys=True, default=str, ensure_ascii=False)
+                    actual_str = json.dumps(final_db, indent=2, sort_keys=True, default=str, ensure_ascii=False)
                     diff_viewer(expected_str, actual_str, lang="json", key="task_completion_diff")
             elif details_to_show:
                 st.json(details_to_show)
@@ -2387,13 +2387,15 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
                 col_left = st.container()
             with col_left:
                 if entry_type == "tool_call":
-                    params_str = json.dumps(entry.get("parameters", {}), indent=2)
+                    params_str = json.dumps(entry.get("parameters", {}), indent=2, ensure_ascii=False)
                     with st.expander(f"Tool Call — `{tool_name}`", expanded=False):
                         st.code(params_str, language="json")
                 elif entry_type == "tool_response":
                     tool_response = entry.get("tool_response", "")
                     response_str = (
-                        json.dumps(tool_response, indent=2) if isinstance(tool_response, dict) else str(tool_response)
+                        json.dumps(tool_response, indent=2, ensure_ascii=False)
+                        if isinstance(tool_response, dict)
+                        else str(tool_response)
                     )
                     with st.expander(f"Tool Response — `{tool_name}`", expanded=False):
                         st.code(response_str, language="json")

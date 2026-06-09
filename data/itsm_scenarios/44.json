@@ -414,7 +414,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Raj",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -445,7 +445,7 @@
       "hire_date": "2021-06-14",
       "is_manager": false,
       "last_desk_assignment_date": "2026-01-15",
-      "last_name": "Gupta",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP051002",
@@ -650,11 +650,7 @@
   "facilities": {
     "buildings": {
       "BLD3": {
-        "name": "Downtown",
-        "name_aliases": [
-          "Downtown Building",
-          "Sales HQ"
-        ]
+        "name": "Downtown"
       }
     },
     "conference_rooms": {
@@ -736,10 +732,7 @@
     },
     "zones": {
       "PZS": {
-        "name": "South Garage",
-        "name_aliases": [
-          "South Parking"
-        ]
+        "name": "South Garage"
       }
     }
   },
@@ -805,10 +798,6 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Salesforce",
-      "name_aliases": [
-        "CRM",
-        "Salesforce CRM"
-      ],
       "requires_manager_approval": false,
       "vendor": "Salesforce"
     },
@@ -819,10 +808,6 @@
       "catalog_id": "APP-1002",
       "department_restrictions": [],
       "name": "Cisco AnyConnect",
-      "name_aliases": [
-        "VPN",
-        "Corporate VPN"
-      ],
       "requires_manager_approval": false,
       "vendor": "Cisco"
     },
@@ -834,9 +819,6 @@
         "temporary"
       ],
       "name": "Microsoft 365 E3",
-      "name_aliases": [
-        "Office 365"
-      ],
       "vendor": "Microsoft"
     }
   },

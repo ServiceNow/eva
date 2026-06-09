@@ -18,9 +18,9 @@ DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 # Discover all (dataset, scenarios_dir) pairs
 DOMAIN_CONFIGS = [
-    ("airline_dataset.jsonl", "airline_scenarios"),
-    ("medical_hr_dataset.jsonl", "medical_hr_scenarios"),
-    ("itsm_dataset.jsonl", "itsm_scenarios"),
+    ("airline_dataset.json", "airline_scenarios"),
+    ("medical_hr_dataset.json", "medical_hr_scenarios"),
+    ("itsm_dataset.json", "itsm_scenarios"),
 ]
 
 
@@ -29,28 +29,23 @@ def _load_records():
     for dataset_file, scenarios_dir in DOMAIN_CONFIGS:
         dataset_path = DATA_DIR / dataset_file
         scenarios_path = DATA_DIR / scenarios_dir
-        if not dataset_path.exists():
-            continue
 
         with open(dataset_path) as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                record = json.loads(line)
-                record_id = record["id"]
-                current_date_time = record.get("current_date_time", "")
-                expected_db = record.get("ground_truth", {}).get("expected_scenario_db", {})
+            records = json.load(f)
+        for record in records:
+            record_id = record["id"]
+            current_date_time = record.get("current_date_time", "")
+            expected_db = record.get("ground_truth", {}).get("expected_scenario_db", {})
 
-                initial_db_path = scenarios_path / f"{record_id}.json"
-                if initial_db_path.exists():
-                    with open(initial_db_path) as sf:
-                        initial_db = json.load(sf)
-                else:
-                    initial_db = {}
+            initial_db_path = scenarios_path / f"{record_id}.json"
+            if initial_db_path.exists():
+                with open(initial_db_path) as sf:
+                    initial_db = json.load(sf)
+            else:
+                initial_db = {}
 
-                domain = dataset_file.replace("_dataset.jsonl", "")
-                yield domain, record_id, current_date_time, initial_db, expected_db
+            domain = dataset_file.replace("_dataset.json", "")
+            yield domain, record_id, current_date_time, initial_db, expected_db
 
 
 _ALL_RECORDS = list(_load_records())

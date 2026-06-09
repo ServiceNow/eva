@@ -29,8 +29,8 @@
     "6923301988": {
       "npi": "6923301988",
       "employee_id": "EMP453894",
-      "first_name": "Esperanza",
-      "last_name": "Morales",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "GCA-79B",
       "pin": "6733",
       "phone_last_four": "4829",
@@ -162,8 +162,8 @@
   "employees": {
     "EMP453894": {
       "employee_id": "EMP453894",
-      "first_name": "Esperanza",
-      "last_name": "Morales",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1987-09-14",
       "phone_last_four": "4829",
       "otp_code": "335113",

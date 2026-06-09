@@ -333,7 +333,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Jasmine",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -364,7 +364,7 @@
       "hire_date": "2019-04-22",
       "is_manager": false,
       "last_desk_assignment_date": null,
-      "last_name": "Park",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP031200",
@@ -392,11 +392,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Headquarters",
-        "name_aliases": [
-          "HQ",
-          "Head Office"
-        ]
+        "name": "Headquarters"
       }
     },
     "conference_rooms": {},
@@ -468,10 +464,6 @@
     "zones": {
       "PZE": {
         "name": "Executive Garage",
-        "name_aliases": [
-          "Exec Garage",
-          "Executive Parking"
-        ],
         "zone_code": "PZE"
       }
     }

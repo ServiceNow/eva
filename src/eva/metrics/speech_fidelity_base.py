@@ -69,6 +69,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             prompt = self.get_judge_prompt(
                 prompt_key="user_prompt",
                 intended_turns_formatted=intended_turns_formatted,
+                expected_language=context.language_display_name,
             )
 
             messages = self.create_audio_message(audio_b64, prompt)
@@ -76,6 +77,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             per_turn_ratings: dict[int, int | None] = {}
             per_turn_explanations: dict[int, str] = {}
             per_turn_transcripts: dict[int, str] = {}
+            per_turn_languages: dict[int, str] = {}
             per_turn_normalized: dict[int, float] = {}
             tts_turn_ids = sorted(intended_turns.keys())
             min_rating, max_rating = self.rating_scale
@@ -107,6 +109,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     continue
                 rating = response_item.get("rating")
                 transcript = response_item.get("transcript")
+                language = response_item.get("language")
                 explanation = response_item.get("explanation", "")
 
                 if rating not in valid_ratings_range:
@@ -118,6 +121,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                 per_turn_ratings[turn_id] = rating
                 per_turn_explanations[turn_id] = explanation
                 per_turn_transcripts[turn_id] = transcript
+                per_turn_languages[turn_id] = language
                 per_turn_normalized[turn_id] = normalize_rating(rating, min_rating, max_rating)
 
             aggregated_score = aggregate_per_turn_scores(list(per_turn_normalized.values()), self.aggregation)
@@ -132,6 +136,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                 "audio_trimmed": self.trim_silence,
                 "per_turn_ratings": per_turn_ratings,
                 "per_turn_explanations": per_turn_explanations,
+                "per_turn_languages": per_turn_languages,
                 "judge_prompt": prompt,
                 "judge_raw_response": response_text,
             }
@@ -387,5 +392,15 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
 
     @staticmethod
     def _format_intended_turns(intended_turns: dict[int, str]) -> str:
-        """Format intended turns dictionary as numbered list."""
-        return "\n".join(f"Turn {turn_id}: {text}" for turn_id, text in intended_turns.items())
+        """Format intended turns dictionary as a numbered list, one turn per line.
+
+        Each turn's text is flattened to a single line (internal newlines and
+        repeated whitespace collapsed to single spaces). Turns are separated by
+        newlines, so a turn whose text contains its own newline -- e.g. a normal
+        paragraph break, or a self-duplicated response like "X\nX" -- would
+        otherwise spill onto unlabeled lines and be misread by the judge as a
+        separate turn or an "added" repetition, unfairly penalizing fidelity.
+        Spoken audio has no notion of newlines, so flattening preserves the
+        intended words while keeping turn boundaries unambiguous.
+        """
+        return "\n".join(f"Turn {turn_id}: {' '.join(text.split())}" for turn_id, text in intended_turns.items())

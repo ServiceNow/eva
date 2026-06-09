@@ -75,8 +75,8 @@
   "employees": {
     "EMP609231": {
       "employee_id": "EMP609231",
-      "first_name": "Zara",
-      "last_name": "Hussain",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1993-09-14",
       "phone_last_four": "0184",
       "otp_code": "314159",

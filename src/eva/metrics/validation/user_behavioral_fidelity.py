@@ -8,6 +8,7 @@ from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import build_binary_flag_sub_metrics
 from eva.models.results import MetricScore
+from eva.utils.culture import add_user_language_directive
 from eva.utils.prompt_manager import get_prompt_manager
 
 _USER_BEHAVIORAL_FIDELITY_CORRUPTION_KEYS = (
@@ -16,6 +17,7 @@ _USER_BEHAVIORAL_FIDELITY_CORRUPTION_KEYS = (
     "missing_information",
     "duplicate_modifications",
     "decision_tree_violation",
+    "wrong_language",
 )
 
 # --- Pipeline-specific prompt text for user behavioral fidelity ---
@@ -87,17 +89,27 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
             context.audio_timestamps_user_turns,
             context.audio_timestamps_assistant_turns,
         )
-        conversation_end = (
-            "the agent's failure to respond to the final user turn."
-            if agent_timeout
-            else "the user calling the end_call tool."
-        )
+        if context.conversation_ended_reason == "time_limit_exceeded":
+            conversation_end = (
+                "a system timeout - the conversation exceeded the allowed time limit. "
+                "The user did NOT end the call; the system terminated the conversation."
+            )
+        elif agent_timeout:
+            conversation_end = "the agent's failure to respond to the final user turn."
+        elif context.conversation_ended_reason == "inactivity_timeout":
+            conversation_end = (
+                "an inactivity timeout - neither the user nor the agent spoke for an extended period. "
+                "The user did NOT end the call; the system terminated the conversation due to silence."
+            )
+        else:
+            conversation_end = "the user calling the end_call tool."
 
         return {
             "conversation_evidence": conversation_evidence,
             "modification_tools": json.dumps(modification_tools, indent=2),
             "conversation_end": conversation_end,
             "user_simulator_instructions": _render_user_simulator_instructions(context),
+            "language_display_name": context.language_display_name,
         }
 
     def build_metric_score(
@@ -164,7 +176,7 @@ def _render_user_simulator_instructions(context: MetricContext) -> str:
         escalation_behavior=decision_tree.get("escalation_behavior", ""),
         edge_cases=decision_tree.get("edge_cases", []),
         information_required=context.user_goal.get("information_required", {}),
-        user_persona=context.user_persona,
+        user_persona=add_user_language_directive(context.language, context.language_display_name, context.user_persona),
         starting_utterance=context.user_goal.get("starting_utterance", ""),
         current_date_time=context.current_date_time,
     )

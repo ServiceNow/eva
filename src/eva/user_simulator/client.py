@@ -17,12 +17,14 @@ from elevenlabs.conversational_ai.conversation import (
     Conversation,
     ConversationInitiationData,
 )
+from pipecat.transcriptions.language import Language
 
-from eva.models.config import PerturbationConfig
+from eva.models.config import LANGUAGE_DISPLAY_NAMES, PerturbationConfig
 from eva.user_simulator.audio_interface import ELEVENLABS_OUTPUT_RATE, BotToBotAudioInterface
 from eva.user_simulator.event_logger import ElevenLabsEventLogger
 from eva.user_simulator.perturbation import AudioPerturbator
 from eva.utils.audio_utils import save_pcm_as_wav
+from eva.utils.culture import add_user_language_directive
 from eva.utils.logging import current_record_id, get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -57,6 +59,7 @@ class UserSimulator:
         agent_id: str,
         timeout: int = 600,
         perturbation_config: PerturbationConfig | None = None,
+        language: str = "en",
     ):
         """Initialize the user simulator.
 
@@ -69,6 +72,7 @@ class UserSimulator:
             timeout: Conversation timeout in seconds
             agent_id: Agent identifier used to select the domain-specific simulator prompt
             perturbation_config: Optional perturbation to apply to user audio
+            language: ISO 639-1 code (e.g. 'en', 'fr'); when not 'en', uses EVA_{LANG}_USER_{gender}
         """
         self.persona_config = persona_config
         self.goal = goal
@@ -78,6 +82,7 @@ class UserSimulator:
         self.current_date_time = current_date_time
         self.agent_id = agent_id
         self._perturbation_config = perturbation_config
+        self._language = language
         self._perturbator = (
             AudioPerturbator(perturbation_config)
             if perturbation_config is not None
@@ -184,6 +189,12 @@ class UserSimulator:
             else:
                 user_persona = behavior_prompts["default"]
 
+            # Append a language directive to the persona so the simulator speaks
+            # in the target language even if its voice agent could default to English.
+            user_persona = add_user_language_directive(
+                self._language, LANGUAGE_DISPLAY_NAMES.get(Language(self._language), self._language), user_persona
+            )
+
             # Derive domain from agent_id (e.g. "agent_airline" → "airline")
             domain = self.agent_id.removeprefix("agent_")
             prompt = PromptManager().get_prompt(
@@ -208,7 +219,9 @@ class UserSimulator:
             # ElevenLabs user simulator agent ID
             persona_id = self.persona_config["user_persona_id"]
             gender = _PERSONA_GENDER[persona_id]
-            if self._perturbation_config and self._perturbation_config.accent:
+            if self._language and self._language.lower() != "en":
+                env_var = f"EVA_{self._language.upper().replace('-', '_')}_USER_{gender}"
+            elif self._perturbation_config and self._perturbation_config.accent:
                 key = self._perturbation_config.accent.value.upper()
                 env_var = f"EVA_{key}_ACCENT_USER_{gender}"
             elif self._perturbation_config and self._perturbation_config.behavior:
@@ -347,7 +360,7 @@ class UserSimulator:
             details_path = self.output_dir / "elevenlabs_conversation_details.json"
             try:
                 with open(details_path, "w") as f:
-                    json.dump(conv_details.model_dump(), f, indent=2, default=str)
+                    json.dump(conv_details.model_dump(), f, indent=2, default=str, ensure_ascii=False)
             except Exception as e:
                 logger.warning(f"Failed to write conversation details to {details_path}: {e}")
 

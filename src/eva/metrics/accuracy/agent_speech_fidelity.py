@@ -14,7 +14,7 @@ class AgentSpeechFidelityMetric(SpeechFidelityBaseMetric):
     """
 
     name = "agent_speech_fidelity"
-    version = "v0.1"
+    version = "v0.2"
     description = "Audio-based evaluation of agent speech fidelity to the intended text"
     category = "accuracy"
     role = "assistant"

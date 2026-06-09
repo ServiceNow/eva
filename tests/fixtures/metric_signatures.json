@@ -1,15 +1,15 @@
 {
   "AgentSpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "864be78919d2",
-    "source_hash": "77743114e9b0",
-    "version": "v0.1"
+    "prompt_hash": "f66f096d3279",
+    "source_hash": "15b21e9c2be1",
+    "version": "v0.2"
   },
   "AgentSpeechFidelityS2SMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "864be78919d2",
-    "source_hash": "5b3deb4968cd",
-    "version": "v0.1"
+    "prompt_hash": "f66f096d3279",
+    "source_hash": "db35af2de8a3",
+    "version": "v0.2"
   },
   "AuthenticationSuccessMetric": {
     "name": "authentication_success",
@@ -19,7 +19,7 @@
   },
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
-    "prompt_hash": "5d033338d36a",
+    "prompt_hash": "57caf9a18a3c",
     "source_hash": "cd0ea09a9613",
     "version": "v0.1"
   },
@@ -31,8 +31,14 @@
   },
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
-    "prompt_hash": "f3240185faf6",
+    "prompt_hash": "174cdf93b398",
     "source_hash": "91b71c803d77",
+    "version": "v0.1"
+  },
+  "ConversationTimeLimitExceededMetric": {
+    "name": "conversation_completed_on_time",
+    "prompt_hash": null,
+    "source_hash": "0628e2833ac5",
     "version": "v0.1"
   },
   "ConversationValidEndMetric": {
@@ -43,9 +49,9 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "1add7d47362c",
-    "source_hash": "8e3fd6bc9960",
-    "version": "v0.1"
+    "prompt_hash": "060e3f1f9e7a",
+    "source_hash": "82ab3e3244f5",
+    "version": "v0.2"
   },
   "ResponseSpeedMetric": {
     "name": "response_speed",
@@ -56,14 +62,14 @@
   "STTWERMetric": {
     "name": "stt_wer",
     "prompt_hash": null,
-    "source_hash": "01fcfbc1cf21",
+    "source_hash": "4094b78bfb65",
     "version": "v0.1"
   },
   "SpeakabilityJudgeMetric": {
     "name": "speakability",
-    "prompt_hash": "cd2cc44fc96c",
-    "source_hash": "187ddf9dc0da",
-    "version": "v0.1"
+    "prompt_hash": "1e4f78cb051e",
+    "source_hash": "75a203410ec1",
+    "version": "v0.2"
   },
   "TaskCompletion": {
     "name": "task_completion",
@@ -79,9 +85,9 @@
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
-    "prompt_hash": "c0980ff2168d",
-    "source_hash": "a83a699d0fda",
-    "version": "v0.1"
+    "prompt_hash": "aa1a7fdd6df7",
+    "source_hash": "2eb5cecaaa2b",
+    "version": "v0.2"
   },
   "TurnTakingMetric": {
     "name": "turn_taking",
@@ -91,14 +97,14 @@
   },
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
-    "prompt_hash": "06477144c28e",
-    "source_hash": "af8144bd7731",
+    "prompt_hash": "21527fa8d79b",
+    "source_hash": "c6fb73aef9d3",
     "version": "v0.1"
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "c4d97e36b865",
-    "source_hash": "e38e8c162b3d",
-    "version": "v0.1"
+    "prompt_hash": "849e13c42e3b",
+    "source_hash": "cac98a26dcd0",
+    "version": "v0.2"
   }
 }

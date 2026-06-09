@@ -126,7 +126,7 @@ export function Hero() {
             <Github className="w-4 h-4" /> View on GitHub
           </a>
           <a
-            href="https://huggingface.co/datasets/ServiceNow-AI/eva"
+            href="https://huggingface.co/datasets/ServiceNow-AI/eva-bench"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-bg-tertiary text-text-primary font-medium text-sm hover:bg-bg-hover border border-border-default transition-colors"

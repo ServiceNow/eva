@@ -39,7 +39,7 @@ class ValidationRunner:
         self,
         run_dir: Path,
         dataset: list[EvaluationRecord],
-        thresholds: dict[str, float],
+        thresholds: dict[str, float | int],
         metric_configs: dict[str, dict] | None = None,
         output_ids: list[str] | None = None,
     ):
@@ -103,7 +103,7 @@ class ValidationRunner:
 
         return validation_results
 
-    async def validate_one(self, output_id: str) -> ValidationResult:
+    async def validate_one(self, output_id: str, *, skip_gate: bool = False) -> ValidationResult:
         """Validate a single record inline for per-record pipelining.
 
         Runs a two-phase check matching run_validation():
@@ -118,6 +118,10 @@ class ValidationRunner:
 
         Args:
             output_id: Record directory name (e.g. "1.2.1" or "1.2.1/trial_0").
+            skip_gate: If True, bypass the conversation_valid_end gate and run only
+                LLM metrics. Used for time-limit-accepted records where the conversation
+                timed out (no goodbye event) but we still want to evaluate against
+                thresholds.
 
         Returns:
             ValidationResult with pass/fail details.
@@ -141,23 +145,25 @@ class ValidationRunner:
 
         record_dir = self.run_dir / "records" / output_id
 
-        # Phase 1: gate metric
-        gate_metrics = await self._shared_gate_runner.run_and_save_record(output_id, record_dir)
-        rm = gate_metrics
-        ms = rm.metrics.get(GATE_METRIC) if rm else None
-        if ms is None or ms.error:
-            return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
-        score = ms.normalized_score if ms.normalized_score is not None else ms.score
-        if score != 1.0:
-            return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
+        if not skip_gate:
+            # Phase 1: gate metric
+            gate_metrics = await self._shared_gate_runner.run_and_save_record(output_id, record_dir)
+            rm = gate_metrics
+            ms = rm.metrics.get(GATE_METRIC) if rm else None
+            if ms is None or ms.error:
+                return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
+            score = ms.normalized_score if ms.normalized_score is not None else ms.score
+            if score != 1.0:
+                return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
 
-        # Phase 2: LLM metrics (gate passed)
+        # Phase 2: LLM metrics (gate passed or skipped)
         llm_metrics = await self._shared_llm_runner.run_and_save_record(output_id, record_dir)
         if llm_metrics is None:
             return ValidationResult(passed=False, failed_metrics=list(LLM_METRICS))
 
         vr = self._evaluate_record(output_id, llm_metrics, LLM_METRICS)
-        vr.scores[GATE_METRIC] = 1.0
+        if not skip_gate:
+            vr.scores[GATE_METRIC] = 1.0
         return vr
 
     @staticmethod
@@ -226,10 +232,11 @@ class ValidationRunner:
                         details[metric_name] = metric_score.details
                 continue
 
-            threshold = self.thresholds.get(metric_name, 1.0)
-            if score < threshold:
+            threshold = float(self.thresholds.get(metric_name, 1.0))
+            if score is None or score < threshold:
+                score_str = f"{score:.2f}" if score is not None else "None"
                 logger.debug(
-                    f"Record {record_id}: Metric '{metric_name}' score {score:.2f} < threshold {threshold:.2f}"
+                    f"Record {record_id}: Metric '{metric_name}' score {score_str} < threshold {threshold:.2f}"
                 )
                 failed_metrics.append(metric_name)
                 if metric_score.details:

@@ -79,7 +79,7 @@ class ToolMockDatabase(BaseModel):
             for record_id, mock_list in self.mocks.items()
         }
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2, ensure_ascii=False)
 
     def get_mocks_for_record(self, record_id: str) -> list[ToolMock]:
         """Get mocks for a specific record ID."""
@@ -117,6 +117,19 @@ class EvaluationRecord(BaseModel):
 
     scenario_context: dict = Field(..., description="Scenario context for the record")
 
+    culture_overrides: dict[str, dict[str, str]] = Field(
+        default_factory=dict,
+        description="Per-language name pairs (first_name/last_name) substituted into <FIRST_NAME>/<LAST_NAME>",
+    )
+    romanized_culture_overrides: dict[str, dict[str, str]] = Field(
+        default_factory=dict,
+        description="Per-language ASCII-romanized name pairs for <FIRST_NAME_ROMANIZED>/<LAST_NAME_ROMANIZED> (used in emails)",
+    )
+    starting_utterances: dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-language opening utterance the user simulator says first; the active one is injected into user_goal at runtime",
+    )
+
     ground_truth: GroundTruth = Field(default_factory=GroundTruth, description="Expected outcomes for evaluation")
 
     agent_override: AgentOverride | None = Field(None, description="Override agent configuration for this record")
@@ -126,19 +139,16 @@ class EvaluationRecord(BaseModel):
 
     @classmethod
     def load_dataset(cls, path: Path | str) -> list["EvaluationRecord"]:
-        """Load records from JSONL file."""
+        """Load records from JSON file (array of objects)."""
         path = Path(path)
-        records = []
         with open(path, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    records.append(cls.model_validate_json(line))
-        return records
+            data = json.load(f)
+        return [cls.model_validate(record) for record in data]
 
     @classmethod
     def save_dataset(cls, records: list["EvaluationRecord"], path: Path | str) -> None:
-        """Save records to JSONL file."""
+        """Save records to JSON file (array of objects)."""
         path = Path(path)
         with open(path, "w", encoding="utf-8") as f:
-            f.writelines(record.model_dump_json() + "\n" for record in records)
+            json.dump([record.model_dump() for record in records], f, indent=2, ensure_ascii=False)
+            f.write("\n")

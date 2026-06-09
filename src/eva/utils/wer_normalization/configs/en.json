@@ -1,0 +1,480 @@
+{
+  "code": "en",
+  "zeros": [
+    "o",
+    "oh",
+    "zero"
+  ],
+  "cardinals": {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19
+  },
+  "cardinal_variants": {},
+  "cardinals_suffixed": {
+    "ones": [
+      1,
+      "s"
+    ],
+    "twos": [
+      2,
+      "s"
+    ],
+    "threes": [
+      3,
+      "s"
+    ],
+    "fours": [
+      4,
+      "s"
+    ],
+    "fives": [
+      5,
+      "s"
+    ],
+    "sixes": [
+      6,
+      "s"
+    ],
+    "sevens": [
+      7,
+      "s"
+    ],
+    "eights": [
+      8,
+      "s"
+    ],
+    "nines": [
+      9,
+      "s"
+    ],
+    "tens": [
+      10,
+      "s"
+    ],
+    "elevens": [
+      11,
+      "s"
+    ],
+    "twelves": [
+      12,
+      "s"
+    ],
+    "thirteens": [
+      13,
+      "s"
+    ],
+    "fourteens": [
+      14,
+      "s"
+    ],
+    "fifteens": [
+      15,
+      "s"
+    ],
+    "sixteens": [
+      16,
+      "s"
+    ],
+    "seventeens": [
+      17,
+      "s"
+    ],
+    "eighteens": [
+      18,
+      "s"
+    ],
+    "nineteens": [
+      19,
+      "s"
+    ],
+    "zeroth": [
+      0,
+      "th"
+    ],
+    "first": [
+      1,
+      "st"
+    ],
+    "second": [
+      2,
+      "nd"
+    ],
+    "third": [
+      3,
+      "rd"
+    ],
+    "fifth": [
+      5,
+      "th"
+    ],
+    "twelfth": [
+      12,
+      "th"
+    ],
+    "fourth": [
+      4,
+      "th"
+    ],
+    "sixth": [
+      6,
+      "th"
+    ],
+    "seventh": [
+      7,
+      "th"
+    ],
+    "eighth": [
+      8,
+      "th"
+    ],
+    "nineth": [
+      9,
+      "th"
+    ],
+    "tenth": [
+      10,
+      "th"
+    ],
+    "eleventh": [
+      11,
+      "th"
+    ],
+    "thirteenth": [
+      13,
+      "th"
+    ],
+    "fourteenth": [
+      14,
+      "th"
+    ],
+    "fifteenth": [
+      15,
+      "th"
+    ],
+    "sixteenth": [
+      16,
+      "th"
+    ],
+    "seventeenth": [
+      17,
+      "th"
+    ],
+    "eighteenth": [
+      18,
+      "th"
+    ],
+    "nineteenth": [
+      19,
+      "th"
+    ]
+  },
+  "tens": {
+    "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "sixty": 60,
+    "seventy": 70,
+    "eighty": 80,
+    "ninety": 90
+  },
+  "tens_suffixed": {
+    "twenties": [
+      20,
+      "s"
+    ],
+    "thirties": [
+      30,
+      "s"
+    ],
+    "forties": [
+      40,
+      "s"
+    ],
+    "fifties": [
+      50,
+      "s"
+    ],
+    "sixties": [
+      60,
+      "s"
+    ],
+    "seventies": [
+      70,
+      "s"
+    ],
+    "eighties": [
+      80,
+      "s"
+    ],
+    "nineties": [
+      90,
+      "s"
+    ],
+    "twentieth": [
+      20,
+      "th"
+    ],
+    "thirtieth": [
+      30,
+      "th"
+    ],
+    "fortieth": [
+      40,
+      "th"
+    ],
+    "fiftieth": [
+      50,
+      "th"
+    ],
+    "sixtieth": [
+      60,
+      "th"
+    ],
+    "seventieth": [
+      70,
+      "th"
+    ],
+    "eightieth": [
+      80,
+      "th"
+    ],
+    "ninetieth": [
+      90,
+      "th"
+    ]
+  },
+  "scaling_units": {
+    "hundred": 100,
+    "thousand": 1000,
+    "million": 1000000,
+    "billion": 1000000000,
+    "trillion": 1000000000000,
+    "quadrillion": 1000000000000000,
+    "quintillion": 1000000000000000000,
+    "sextillion": 1000000000000000000000,
+    "septillion": 1000000000000000000000000,
+    "octillion": 1000000000000000000000000000,
+    "nonillion": 1000000000000000000000000000000,
+    "decillion": 1000000000000000000000000000000000
+  },
+  "scaling_units_suffixed": {
+    "hundreds": [
+      100,
+      "s"
+    ],
+    "thousands": [
+      1000,
+      "s"
+    ],
+    "millions": [
+      1000000,
+      "s"
+    ],
+    "billions": [
+      1000000000,
+      "s"
+    ],
+    "trillions": [
+      1000000000000,
+      "s"
+    ],
+    "quadrillions": [
+      1000000000000000,
+      "s"
+    ],
+    "quintillions": [
+      1000000000000000000,
+      "s"
+    ],
+    "sextillions": [
+      1000000000000000000000,
+      "s"
+    ],
+    "septillions": [
+      1000000000000000000000000,
+      "s"
+    ],
+    "octillions": [
+      1000000000000000000000000000,
+      "s"
+    ],
+    "nonillions": [
+      1000000000000000000000000000000,
+      "s"
+    ],
+    "decillions": [
+      1000000000000000000000000000000000,
+      "s"
+    ],
+    "hundredth": [
+      100,
+      "th"
+    ],
+    "thousandth": [
+      1000,
+      "th"
+    ],
+    "millionth": [
+      1000000,
+      "th"
+    ],
+    "billionth": [
+      1000000000,
+      "th"
+    ],
+    "trillionth": [
+      1000000000000,
+      "th"
+    ],
+    "quadrillionth": [
+      1000000000000000,
+      "th"
+    ],
+    "quintillionth": [
+      1000000000000000000,
+      "th"
+    ],
+    "sextillionth": [
+      1000000000000000000000,
+      "th"
+    ],
+    "septillionth": [
+      1000000000000000000000000,
+      "th"
+    ],
+    "octillionth": [
+      1000000000000000000000000000,
+      "th"
+    ],
+    "nonillionth": [
+      1000000000000000000000000000000,
+      "th"
+    ],
+    "decillionth": [
+      1000000000000000000000000000000000,
+      "th"
+    ]
+  },
+  "preceding_prefixers": {
+    "minus": "-",
+    "negative": "-",
+    "plus": "+",
+    "positive": "+"
+  },
+  "following_prefixers": {
+    "pound": "£",
+    "pounds": "£",
+    "euro": "€",
+    "euros": "€",
+    "dollar": "$",
+    "dollars": "$",
+    "cent": "¢",
+    "cents": "¢"
+  },
+  "suffixers": {
+    "per": {
+      "cent": "%"
+    },
+    "percent": "%"
+  },
+  "conjunction_word": "and",
+  "conjunction_ignore_prev": [
+    "scaling_units"
+  ],
+  "repeat_words": {
+    "double": 2,
+    "triple": 3
+  },
+  "decimal_word": "point",
+  "vigesimal_trigger_words": [],
+  "vigesimal_multiplier": 20,
+  "vigesimal_residuals": [],
+  "additive_teen_residuals": [
+    0
+  ],
+  "cardinal_continuation_on_prev_cardinal": true,
+  "half_pattern": "\\band\\s+a\\s+half\\b",
+  "half_replacement": "point five",
+  "split_hyphenated_numbers": false,
+  "letter_class": "a-z",
+  "ordinal_suffix_pattern": "st|nd|rd|th|s",
+  "one_word": "one",
+  "one_plural_suffix": "s",
+  "cents_connector": "and",
+  "ignore_patterns": "\\b(hmm|mm|mhm|mmm|uh|um)\\b",
+  "replacers": {
+    "\\bwon't\\b": "will not",
+    "\\bcan't\\b": "can not",
+    "\\blet's\\b": "let us",
+    "\\bain't\\b": "aint",
+    "\\by'all\\b": "you all",
+    "\\bwanna\\b": "want to",
+    "\\bgotta\\b": "got to",
+    "\\bgonna\\b": "going to",
+    "\\bi'ma\\b": "i am going to",
+    "\\bimma\\b": "i am going to",
+    "\\bwoulda\\b": "would have",
+    "\\bcoulda\\b": "could have",
+    "\\bshoulda\\b": "should have",
+    "\\bma'am\\b": "madam",
+    "\\bmr\\b": "mister ",
+    "\\bmrs\\b": "missus ",
+    "\\bst\\b": "saint ",
+    "\\bdr\\b": "doctor ",
+    "\\bprof\\b": "professor ",
+    "\\bcapt\\b": "captain ",
+    "\\bgov\\b": "governor ",
+    "\\bald\\b": "alderman ",
+    "\\bgen\\b": "general ",
+    "\\bsen\\b": "senator ",
+    "\\brep\\b": "representative ",
+    "\\bpres\\b": "president ",
+    "\\brev\\b": "reverend ",
+    "\\bhon\\b": "honorable ",
+    "\\basst\\b": "assistant ",
+    "\\bassoc\\b": "associate ",
+    "\\blt\\b": "lieutenant ",
+    "\\bcol\\b": "colonel ",
+    "\\bjr\\b": "junior ",
+    "\\bsr\\b": "senior ",
+    "\\besq\\b": "esquire ",
+    "'d been\\b": " had been",
+    "'s been\\b": " has been",
+    "'d gone\\b": " had gone",
+    "'s gone\\b": " has gone",
+    "'d done\\b": " had done",
+    "'s got\\b": " has got",
+    "n't\\b": " not",
+    "'re\\b": " are",
+    "'s\\b": " is",
+    "'d\\b": " would",
+    "'ll\\b": " will",
+    "'t\\b": " not",
+    "'ve\\b": " have",
+    "'m\\b": " am"
+  },
+  "strip_space_before_apostrophe": true,
+  "thousand_separators": [
+    "comma"
+  ],
+  "decimal_separator": "dot",
+  "spelling_map_path": "en_spelling.json"
+}

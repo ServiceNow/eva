@@ -28,8 +28,8 @@
     "2139027119": {
       "npi": "2139027119",
       "employee_id": "EMP630458",
-      "first_name": "Mateo",
-      "last_name": "Castillo",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "WWJ-30O",
       "pin": "9900",
       "phone_last_four": "4821",
@@ -106,8 +106,8 @@
   "employees": {
     "EMP630458": {
       "employee_id": "EMP630458",
-      "first_name": "Mateo",
-      "last_name": "Castillo",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1981-11-14",
       "phone_last_four": "4821",
       "otp_code": "837715",

@@ -33,7 +33,7 @@ class TestPercentile:
 
 def _make_worker(tmp_path: Path) -> ConversationWorker:
     config = MagicMock()
-    config.conversation_timeout_seconds = 60
+    config.conversation_time_limit_seconds = 60
     record = MagicMock()
     record.id = "test-record"
     record.current_date_time = "2026-01-01T00:00:00"
@@ -116,7 +116,7 @@ class TestCalculateSttLatency:
         worker.output_dir.mkdir(parents=True)
         lines = "\n".join(
             [
-                json.dumps({"type": "ProcessingMetricsData", "processor": "DeepgramSTTService", "value": v})
+                json.dumps({"type": "TTFBMetricsData", "processor": "DeepgramSTTService", "value": v})
                 for v in [0.1, 0.2, 0.3]
             ]
         )
@@ -132,7 +132,7 @@ class TestCalculateSttLatency:
         worker.output_dir.mkdir(parents=True)
         lines = "\n".join(
             [
-                json.dumps({"type": "ProcessingMetricsData", "processor": "DeepgramSTTService", "value": v})
+                json.dumps({"type": "TTFBMetricsData", "processor": "DeepgramSTTService", "value": v})
                 for v in [0.1, 0, 50]  # 0 and 50s filtered
             ]
         )

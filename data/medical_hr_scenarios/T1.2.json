@@ -29,8 +29,8 @@
     "2595467139": {
       "npi": "2595467139",
       "employee_id": "EMP576877",
-      "first_name": "Fumiko",
-      "last_name": "Sato",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "GAWO-88H",
       "pin": "2035",
       "phone_last_four": "1842",
@@ -102,8 +102,8 @@
   "employees": {
     "EMP576877": {
       "employee_id": "EMP576877",
-      "first_name": "Fumiko",
-      "last_name": "Sato",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1981-02-14",
       "phone_last_four": "1842",
       "otp_code": "766269",

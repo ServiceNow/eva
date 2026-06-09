@@ -49,6 +49,7 @@ from eva.models.agents import AgentConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, RecordMetrics
 from eva.utils import router
+from eva.utils.culture import resolve_scenario_db, resolve_user_goal
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.log_processing import (
     extract_tool_params_and_responses,
@@ -159,7 +160,7 @@ END_CALL_TOOL = [
 
 def resolve_paths(domain: str) -> tuple[Path, Path, Path]:
     """Resolve dataset, scenario-db-dir, and agent-config paths from a domain name."""
-    dataset = Path(f"data/{domain}_dataset.jsonl")
+    dataset = Path(f"data/{domain}_dataset.json")
     scenario_db_dir = Path(f"data/{domain}_scenarios")
     agent_config = Path(f"configs/agents/{domain}_agent.yaml")
 
@@ -170,10 +171,16 @@ def resolve_paths(domain: str) -> tuple[Path, Path, Path]:
     return dataset, scenario_db_dir, agent_config
 
 
-def build_user_sim_prompt(record: EvaluationRecord) -> str:
+def build_user_sim_prompt(record: EvaluationRecord, language: str) -> str:
     """Build the user-simulator system prompt from the record's goal and persona."""
     pm = PromptManager()
-    goal = record.user_goal
+    goal = resolve_user_goal(
+        record.user_goal,
+        record.culture_overrides,
+        language,
+        record.romanized_culture_overrides,
+        record.starting_utterances,
+    )
     domain = os.getenv("EVA_DOMAIN")
     return pm.get_prompt(
         f"user_simulator.system_prompt_{domain}",
@@ -437,7 +444,7 @@ def write_trace(
         elif msg_type == "assistant":
             lines.append(f"[AGENT] {value}")
         elif msg_type == "tool_call" and isinstance(value, dict):
-            params_str = json.dumps(value.get("parameters", {}), indent=None)
+            params_str = json.dumps(value.get("parameters", {}), indent=None, ensure_ascii=False)
             lines.append(f"  [TOOL] {value.get('tool')}({params_str})")
         elif msg_type == "tool_response" and isinstance(value, dict):
             resp = value.get("response") or value.get("error", "")
@@ -480,7 +487,17 @@ async def run_record(
     record_output_dir.mkdir(parents=True, exist_ok=True)
 
     # ---- Init components ----
-    scenario_db_path = str(scenario_db_dir / f"{record.id}.json")
+    language = os.getenv("EVA_LANGUAGE", "en")
+    raw_scenario_db_path = scenario_db_dir / f"{record.id}.json"
+    with open(raw_scenario_db_path) as f:
+        raw_db = json.load(f)
+    aliases_dir = scenario_db_dir.with_name(scenario_db_dir.name.replace("_scenarios", "_aliases"))
+    resolved_db = resolve_scenario_db(
+        raw_db, record.culture_overrides, language, record.romanized_culture_overrides, aliases_dir=aliases_dir
+    )
+    scenario_db_path = str(record_output_dir / "scenario_db.json")
+    with open(scenario_db_path, "w", encoding="utf-8") as f:
+        json.dump(resolved_db, f, ensure_ascii=False, indent=2)
 
     tool_executor = ToolExecutor(
         tool_config_path=str(agent_config_path),
@@ -504,13 +521,19 @@ async def run_record(
         output_dir=record_output_dir,
     )
 
-    user_prompt = build_user_sim_prompt(record)
+    user_prompt = build_user_sim_prompt(record, language)
 
     # ---- Conversation loop ----
     logger.info(f"Text-only test: record {record.id} | model={llm_model} | max_turns={max_turns}")
     logger.info(f"Metrics: {', '.join(requested_metrics)}")
 
-    user_message = record.user_goal["starting_utterance"]
+    user_message = resolve_user_goal(
+        record.user_goal,
+        record.culture_overrides,
+        language,
+        record.romanized_culture_overrides,
+        record.starting_utterances,
+    )["starting_utterance"]
     end_reason = "max_turns"
     turn_count = 0
     started_at = datetime.now(UTC)
@@ -556,9 +579,9 @@ async def run_record(
     final_hash = get_dict_hash(final_db)
 
     with open(record_output_dir / "initial_scenario_db.json", "w") as f:
-        json.dump(initial_db, f, indent=2)
+        json.dump(initial_db, f, indent=2, ensure_ascii=False)
     with open(record_output_dir / "final_scenario_db.json", "w") as f:
-        json.dump(final_db, f, indent=2)
+        json.dump(final_db, f, indent=2, ensure_ascii=False)
 
     stats = audit_log.get_stats()
     conv_result = ConversationResult(
@@ -577,7 +600,7 @@ async def run_record(
         final_scenario_db_hash=final_hash,
     )
     with open(record_output_dir / "result.json", "w") as f:
-        json.dump(conv_result.model_dump(mode="json"), f, indent=2, default=str)
+        json.dump(conv_result.model_dump(mode="json"), f, indent=2, default=str, ensure_ascii=False)
 
     with open(record_output_dir / "audit_log.json") as f:
         audit_log_data = json.load(f)
@@ -596,9 +619,21 @@ async def run_record(
 
     metric_context = MetricContext(
         record_id=record.id,
-        user_goal=record.user_goal,
+        user_goal=resolve_user_goal(
+            record.user_goal,
+            record.culture_overrides,
+            language,
+            record.romanized_culture_overrides,
+            record.starting_utterances,
+        ),
         user_persona=record.user_config.get("user_persona", ""),
-        expected_scenario_db=record.ground_truth.expected_scenario_db,
+        expected_scenario_db=resolve_scenario_db(
+            record.ground_truth.expected_scenario_db,
+            record.culture_overrides,
+            language,
+            record.romanized_culture_overrides,
+            aliases_dir=aliases_dir,
+        ),
         initial_scenario_db=initial_db,
         final_scenario_db=final_db,
         initial_scenario_db_hash=initial_hash,
@@ -898,11 +933,11 @@ async def main() -> None:
     # Save per-record results
     with open(output_dir / "summary.json", "w") as f:
         serializable = [{k: v for k, v in r.items() if k != "record_metrics"} for r in all_results]
-        json.dump(serializable, f, indent=2, default=str)
+        json.dump(serializable, f, indent=2, default=str, ensure_ascii=False)
 
     if rerun_history:
         with open(output_dir / "rerun_history.json", "w") as f:
-            json.dump(rerun_history, f, indent=2)
+            json.dump(rerun_history, f, indent=2, ensure_ascii=False)
 
     # ---- Metrics summary (across all records/trials) ----
     all_record_metrics: dict[str, RecordMetrics] = {}
@@ -980,9 +1015,9 @@ async def main() -> None:
             }
 
         summary_path = output_dir / "metrics_summary.json"
-        summary_path.write_text(json.dumps(metrics_summary_data, indent=2))
+        summary_path.write_text(json.dumps(metrics_summary_data, indent=2, ensure_ascii=False))
         logger.info(f"Metrics summary saved to {summary_path}")
-        logger.info(json.dumps(metrics_summary_data, indent=2))
+        logger.info(json.dumps(metrics_summary_data, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,8 @@
+{
+  "name": "Microsoft Project",
+  "translatable": false,
+  "base": [
+    "ms project"
+  ],
+  "translations": {}
+}

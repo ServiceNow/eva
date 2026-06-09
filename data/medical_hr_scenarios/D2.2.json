@@ -29,8 +29,8 @@
     "4745927824": {
       "npi": "4745927824",
       "employee_id": "EMP501124",
-      "first_name": "Elif",
-      "last_name": "Yilmaz",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "FVL-49Z",
       "pin": "4728",
       "phone_last_four": "4821",
@@ -102,8 +102,8 @@
   "employees": {
     "EMP501124": {
       "employee_id": "EMP501124",
-      "first_name": "Elif",
-      "last_name": "Yilmaz",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1991-04-17",
       "phone_last_four": "4821",
       "otp_code": "482193",
