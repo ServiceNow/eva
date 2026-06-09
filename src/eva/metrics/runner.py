@@ -24,7 +24,7 @@ from eva.metrics.versioning import _CURRENT_METRIC_VERSION
 from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
-from eva.utils.bootstrap import bootstrap_ci_fields, mean_ci_fields, run_seed
+from eva.utils.bootstrap import mean_ci_fields, named_ci_fields, run_seed
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import get_logger
 from eva.utils.pass_at_k import (
@@ -742,7 +742,7 @@ class MetricsRunner:
                         "count": count,
                     }
                     pass_k_block.update(
-                        bootstrap_ci_fields(
+                        named_ci_fields(
                             {
                                 "pass_at_1": pass_at_1_values,
                                 "pass_at_k": pass_at_k_values,

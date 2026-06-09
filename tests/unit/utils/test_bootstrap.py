@@ -57,10 +57,10 @@ class TestBootstrapCI:
         lo_95, hi_95 = bootstrap_ci(values, n_boot=2000, seed=42, alpha=0.05)
         assert (hi_95 - lo_95) > (hi_90 - lo_90)
 
-    def test_empty_input_returns_nans(self):
+    def test_empty_input_returns_nones(self):
         lower, upper = bootstrap_ci(np.array([]), n_boot=100, seed=0)
-        assert math.isnan(lower)
-        assert math.isnan(upper)
+        assert lower is None
+        assert upper is None
 
     def test_single_value(self):
         lower, upper = bootstrap_ci(np.array([0.42]), n_boot=100, seed=0)

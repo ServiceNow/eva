@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from eva.models.results import RecordMetrics
-from eva.utils.bootstrap import bootstrap_ci_fields, mean_ci_fields
+from eva.utils.bootstrap import mean_ci_fields, named_ci_fields
 from eva.utils.pass_at_k import (
     compute_pass_at_k,
     compute_pass_power_k,
@@ -331,7 +331,7 @@ def _compute_aggregate_pass_k(
                 "count": count,
             }
             entry.update(
-                bootstrap_ci_fields(
+                named_ci_fields(
                     {
                         "pass_at_1": pass_at_1_values,
                         "pass_at_k": pass_at_k_values,

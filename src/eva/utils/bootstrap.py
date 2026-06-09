@@ -47,31 +47,34 @@ def bootstrap_ci(
     *,
     seed: int,
     alpha: float = ALPHA,
-) -> tuple[float, float]:
+) -> tuple[float | None, float | None]:
     """95% bootstrap CI on the mean (default alpha=0.05).
 
     ``seed`` is keyword-only and required: callers must supply a deliberate
     seed (typically from ``run_seed(run_dir.name)``) so behavior is deterministic.
 
-    Returns ``(lower, upper)``; ``(nan, nan)`` if the input is empty.
     """
+    if len(values) == 0:
+        return None, None
     boot = bootstrap_resample(values, n_boot=n_boot, seed=seed)
-    if len(boot) == 0:
-        return float("nan"), float("nan")
     lower = float(np.percentile(boot, 100 * alpha / 2))
     upper = float(np.percentile(boot, 100 * (1 - alpha / 2)))
     return lower, upper
 
 
-def bootstrap_ci_fields(
+def named_ci_fields(
     samples: dict[str, Sequence[float]],
     *,
     seed: int,
     decimals: int = 4,
-) -> dict[str, float]:
+) -> dict[str, float | None]:
     """Return ``{name}_ci_lower`` / ``{name}_ci_upper`` for each ``(name, sample)`` pair."""
-    out: dict[str, float] = {}
+    out: dict[str, float | None] = {}
     for name, sample in samples.items():
+        if not sample:
+            out[f"{name}_ci_lower"] = None
+            out[f"{name}_ci_upper"] = None
+            continue
         lower, upper = bootstrap_ci(sample, seed=seed)
         out[f"{name}_ci_lower"] = round(lower, decimals)
         out[f"{name}_ci_upper"] = round(upper, decimals)
