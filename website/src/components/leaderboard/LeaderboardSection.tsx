@@ -17,9 +17,9 @@ import { useThemeColors } from '../../styles/theme';
 // Three central findings from the EVA-Bench paper abstract / §5 Conclusion.
 const paretoInsights = [
   {
-    title: 'No system clears 0.5 on both axes pass@1',
+    title: 'No system clears 0.6 on both axes pass@1',
     description:
-      'Across 16 systems spanning all three architectures, no system simultaneously exceeds 0.5 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
+      'Across 17 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
   },
   {
     title: 'Peak and reliable performance diverge',

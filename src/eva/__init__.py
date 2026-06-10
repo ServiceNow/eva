@@ -11,4 +11,4 @@ simulation_version = "2.0.2"
 
 # Bump metrics_version when changes affect metric computation (metrics code,
 # judge prompts, pricing tables, postprocessor).
-metrics_version = "2.1.1"
+metrics_version = "2.1.2"

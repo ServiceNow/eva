@@ -12,7 +12,11 @@ from typing import Any
 import yaml
 
 from eva.metrics.accuracy.agent_speech_fidelity_s2s import AgentSpeechFidelityS2SMetric
-from eva.metrics.aggregation import compute_record_aggregates, compute_run_level_aggregates
+from eva.metrics.aggregation import (
+    compute_record_aggregates,
+    compute_run_level_aggregates,
+    scenario_means_for_metric,
+)
 from eva.metrics.base import BaseMetric, MetricContext
 from eva.metrics.legacy_aliases import rename_metric_keys
 from eva.metrics.processor import MetricsContextProcessor
@@ -22,6 +26,7 @@ from eva.metrics.versioning import _CURRENT_METRIC_VERSION
 from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
+from eva.utils.bootstrap import mean_ci_fields, named_ci_fields, run_seed
 from eva.utils.culture import get_language_addendum, resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import get_logger
@@ -660,6 +665,8 @@ class MetricsRunner:
         metric_names: list[str],
         pass_at_k_results: dict[str, dict[str, PassAtKResult]] | None = None,
         num_draws: int = 1,
+        *,
+        seed: int,
     ) -> dict[str, dict[str, Any]]:
         """Build per-metric aggregate stats including pass_k.
 
@@ -668,6 +675,9 @@ class MetricsRunner:
             metric_names: List of metric names to aggregate.
             pass_at_k_results: Per-record pass@k results (if multi-trial).
             num_draws: Number of draws (k) for pass@k.
+            seed: Bootstrap seed for CI computation. Keyword-only and required;
+                production callers pass ``run_seed(run_dir.name)`` for within-run
+                determinism.
 
         Returns:
             Dict mapping metric name to aggregate stats.
@@ -726,6 +736,9 @@ class MetricsRunner:
                         coverage["not_applicable_turns"] = total_not_applicable_across_records
                     entry["per_turn_coverage"] = coverage
 
+                # Bootstrap CI on the per-scenario mean.
+                entry.update(mean_ci_fields(scenario_means_for_metric(all_metrics, name), seed=seed))
+
                 entry["higher_is_better"] = _metric_higher_is_better(name)
                 metric_aggregates[name] = entry
 
@@ -748,7 +761,7 @@ class MetricsRunner:
 
                 if pass_at_k_values:
                     count = len(pass_at_k_values)
-                    metric_aggregates[name]["pass_k"] = {
+                    pass_k_block: dict[str, Any] = {
                         "pass_at_1": round(sum(pass_at_1_values) / count, 4),
                         "pass_at_k": round(sum(pass_at_k_values) / count, 4),
                         "pass_power_k_observed": round(sum(pass_power_k_obs_values) / count, 4),
@@ -756,6 +769,17 @@ class MetricsRunner:
                         "k": num_draws,
                         "count": count,
                     }
+                    pass_k_block.update(
+                        named_ci_fields(
+                            {
+                                "pass_at_1": pass_at_1_values,
+                                "pass_at_k": pass_at_k_values,
+                                "pass_power_k_observed": pass_power_k_obs_values,
+                            },
+                            seed=seed,
+                        )
+                    )
+                    metric_aggregates[name]["pass_k"] = pass_k_block
 
         # Generic sub-metric aggregation.
         # Sub-keys are collected in first-seen insertion order so each metric controls
@@ -986,8 +1010,13 @@ class MetricsRunner:
         # Aggregate per_metric for ALL metrics present across records (not just those just run),
         # so that a partial re-run (e.g. --metrics response_speed) preserves other metrics.
         all_metric_names = sorted({name for rm in all_metrics.values() for name in rm.metrics})
+        seed = run_seed(self.run_dir.name)
         metric_aggregates = self._build_per_metric_aggregates(
-            all_metrics, all_metric_names, pass_at_k_results, self.num_draws
+            all_metrics,
+            all_metric_names,
+            pass_at_k_results,
+            self.num_draws,
+            seed=seed,
         )
 
         # Compute metric failures for MetricsRunResult (only for metrics just run)
@@ -1000,7 +1029,7 @@ class MetricsRunner:
                         metric_failures.setdefault(name, []).append(record_id)
 
         # Compute EVA composite run-level aggregates
-        overall_scores = compute_run_level_aggregates(all_metrics, self.num_draws)
+        overall_scores = compute_run_level_aggregates(all_metrics, self.num_draws, seed=seed)
 
         # Load existing summary to preserve fields for metrics not being re-run
         summary_path = self.run_dir / "metrics_summary.json"
@@ -1112,12 +1141,17 @@ class MetricsRunner:
         all_metric_names = sorted({name for rm in all_metrics.values() for name in rm.metrics})
 
         # Compute per-metric aggregates (including pass_k)
+        seed = run_seed(run_dir.name)
         metric_aggregates = cls._build_per_metric_aggregates(
-            all_metrics, all_metric_names, pass_at_k_results or None, num_draws
+            all_metrics,
+            all_metric_names,
+            pass_at_k_results or None,
+            num_draws,
+            seed=seed,
         )
 
         # Compute run-level aggregates
-        overall_scores = compute_run_level_aggregates(all_metrics, num_draws)
+        overall_scores = compute_run_level_aggregates(all_metrics, num_draws, seed=seed)
 
         # Update metrics_summary.json (preserve existing fields, replace computed sections)
         summary_path = run_dir / "metrics_summary.json"
