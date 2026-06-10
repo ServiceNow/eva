@@ -25,6 +25,7 @@ import json
 import queue
 import ssl
 import time
+from collections import deque
 from collections.abc import AsyncGenerator
 from urllib.parse import urlparse
 
@@ -53,6 +54,12 @@ logger = get_logger(__name__)
 
 # Seconds after VAD stop to wait for a `completed` before force-finalizing.
 _FINALIZE_TIMEOUT_SECS = 3.0
+
+# Pre-roll buffer depth for NVidiaRivaSTTService.
+# Silero VAD fires ~200–500 ms after speech starts, so the gRPC stream would
+# otherwise miss the opening words.  Keeping the last N chunks (at typical
+# 20 ms/chunk ≈ 1 s) and prepending them on utterance start fixes the truncation.
+_PRE_ROLL_CHUNKS = 50  # 50 × 20 ms ≈ 1 s
 
 # Seconds after a Parakeet `completed` (with no VAD) before auto-finalizing.
 # Gives VAD a chance to catch up; if it doesn't, Parakeet's own sentence
@@ -504,6 +511,9 @@ class NVidiaRivaSTTService(STTService):
         self._finalize_requested = False
         self._finalize_timeout_task: asyncio.Task | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
+        # Circular buffer of recent audio chunks captured while the gate is open.
+        # Drained into new gRPC streams so speech before VAD fires isn't lost.
+        self._pre_roll_buffer: deque = deque(maxlen=_PRE_ROLL_CHUNKS)
 
     def can_generate_metrics(self) -> bool:
         return True
@@ -518,11 +528,15 @@ class NVidiaRivaSTTService(STTService):
         except ImportError as e:
             raise RuntimeError("nvidia-riva-client not installed. Run: pip install nvidia-riva-client") from e
 
-        self._riva = _riva
-        metadata = [["authorization", f"Bearer {self._api_key}"]] if self._api_key else None
-        auth = _riva.Auth(use_ssl=self._use_ssl, uri=self._server, metadata_args=metadata)
-        self._asr_service = _riva.ASRService(auth)
-        logger.info(f"{self} Riva gRPC ready at {self._server} (model={self._model_name})")
+        try:
+            self._riva = _riva
+            metadata = [["authorization", f"Bearer {self._api_key}"]] if self._api_key else None
+            auth = _riva.Auth(use_ssl=self._use_ssl, uri=self._server, metadata_args=metadata)
+            self._asr_service = _riva.ASRService(auth)
+            logger.info(f"{self} Riva gRPC ready at {self._server} (model={self._model_name})")
+        except Exception as e:
+            logger.error(f"{self} failed to initialize Riva gRPC client: {e}")
+            raise
 
     async def stop(self, frame: EndFrame):
         await super().stop(frame)
@@ -538,8 +552,10 @@ class NVidiaRivaSTTService(STTService):
 
     async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame, None]:
         """Feed audio chunk into the active gRPC stream."""
-        if self._audio_gate_open and self._audio_q is not None:
-            self._audio_q.put_nowait(audio)
+        if self._audio_gate_open:
+            self._pre_roll_buffer.append(audio)
+            if self._audio_q is not None:
+                self._audio_q.put_nowait(audio)
         yield None
 
     # -- Frame handling --
@@ -551,6 +567,7 @@ class NVidiaRivaSTTService(STTService):
             self._audio_gate_open = False
             self._pending_transcript = None
             self._signal_audio_done()
+            self._pre_roll_buffer.clear()  # stale inter-turn audio; next turn starts fresh
             logger.debug(f"{self} audio gate CLOSED (bot speaking)")
 
         elif isinstance(frame, BotStoppedSpeakingFrame):
@@ -581,6 +598,10 @@ class NVidiaRivaSTTService(STTService):
         """Start a fresh gRPC streaming call for this utterance."""
         self._signal_audio_done()  # clean up any in-flight utterance
         audio_q: queue.Queue = queue.Queue()
+        # Prepend pre-VAD audio so the gRPC stream captures speech that was
+        # spoken before Silero VAD fired (typically 200–500 ms of context).
+        for chunk in self._pre_roll_buffer:
+            audio_q.put_nowait(chunk)
         self._audio_q = audio_q
         loop = self._loop
 
