@@ -68,7 +68,7 @@ from pipecat.services.ultravox.llm import OneShotInputParams, UltravoxRealtimeLL
 # NOTE: Speechmatics support temporarily disabled due to API incompatibility with current pipecat version
 # from pipecat.services.speechmatics.stt import SpeechmaticsSTTService
 from eva.assistant.agentic.audit_log import AuditLog
-from eva.assistant.pipeline.nvidia_stt import NVidiaWebSocketSTTService
+from eva.assistant.pipeline.nvidia_stt import NVidiaRivaSTTService, NVidiaWebSocketSTTService
 from eva.utils.llm_utils import _resolve_url
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
@@ -199,6 +199,25 @@ def create_stt_service(
             verify=False,
             model=params.get("model"),
             language=None,
+        )
+
+    elif model_lower == "nvidia-riva":
+        if not url:
+            raise ValueError("url required in STT_PARAMS for NVIDIA Riva gRPC STT (host:port)")
+
+        # Riva requires full BCP-47 codes (e.g. "en-US", "fr-CA") or "multi".
+        if language_code == "en":
+            language_code = "en-US"
+        elif language_code == "fr":
+            language_code = "fr-FR"
+        logger.info(f"Using NVIDIA Riva gRPC STT: {params['model']} language={language_code}")
+        return NVidiaRivaSTTService(
+            server=url,
+            model_name=params.get("model", ""),
+            language_code=language_code,
+            use_ssl=params.get("use_ssl", False),
+            api_key=api_key,
+            sample_rate=params.get("sample_rate", 16000),
         )
 
     elif model_lower == "nvidia-baseten":

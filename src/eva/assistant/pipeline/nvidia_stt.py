@@ -22,6 +22,7 @@ Finalization (VAD-primary, Parakeet-fallback):
 import asyncio
 import base64
 import json
+import queue
 import ssl
 import time
 from collections.abc import AsyncGenerator
@@ -44,7 +45,7 @@ from pipecat.frames.frames import (
 )
 from pipecat.processors.frame_processor import FrameDirection
 from pipecat.services.settings import STTSettings
-from pipecat.services.stt_service import WebsocketSTTService
+from pipecat.services.stt_service import STTService, WebsocketSTTService
 
 from eva.utils.logging import get_logger
 
@@ -461,4 +462,264 @@ class NVidiaWebSocketSTTService(WebsocketSTTService):
         await self.push_frame(
             TranscriptionFrame(full_transcript, self._user_id, current_time_ms(), language=None, finalized=True)
         )
+        await self.stop_processing_metrics()
+
+
+class NVidiaRivaSTTService(STTService):
+    """NVIDIA Parakeet RNNT streaming STT via Riva gRPC.
+
+    Each user utterance (VAD start → VAD stop) is a single stateless gRPC
+    streaming call, eliminating server-side VAD state bleed between turns.
+
+    Audio gate strategy mirrors NVidiaWebSocketSTTService: the gate closes
+    while the bot is speaking and reopens when it stops.
+    """
+
+    def __init__(
+        self,
+        *,
+        server: str,
+        model_name: str,
+        language_code: str = "multi",
+        use_ssl: bool = False,
+        api_key: str | None = None,
+        sample_rate: int = 16000,
+        **kwargs,
+    ):
+        super().__init__(
+            sample_rate=sample_rate,
+            settings=STTSettings(model=None, language=None),
+            **kwargs,
+        )
+        self._server = server
+        self._model_name = model_name
+        self._language_code = language_code
+        self._use_ssl = use_ssl
+        self._api_key = api_key
+        self._asr_service = None
+        self._riva = None
+        self._audio_q: queue.Queue | None = None
+        self._pending_transcript: str | None = None
+        self._audio_gate_open = True
+        self._finalize_requested = False
+        self._finalize_timeout_task: asyncio.Task | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+    def can_generate_metrics(self) -> bool:
+        return True
+
+    # -- Lifecycle --
+
+    async def start(self, frame: StartFrame):
+        await super().start(frame)
+        self._loop = asyncio.get_running_loop()
+        try:
+            import riva.client as _riva
+        except ImportError as e:
+            raise RuntimeError("nvidia-riva-client not installed. Run: pip install nvidia-riva-client") from e
+
+        self._riva = _riva
+        metadata = [["authorization", f"Bearer {self._api_key}"]] if self._api_key else None
+        auth = _riva.Auth(use_ssl=self._use_ssl, uri=self._server, metadata_args=metadata)
+        self._asr_service = _riva.ASRService(auth)
+        logger.info(f"{self} Riva gRPC ready at {self._server} (model={self._model_name})")
+
+    async def stop(self, frame: EndFrame):
+        await super().stop(frame)
+        await self._cancel_finalize_timeout()
+        self._signal_audio_done()
+
+    async def cancel(self, frame: CancelFrame):
+        await super().cancel(frame)
+        await self._cancel_finalize_timeout()
+        self._signal_audio_done()
+
+    # -- Audio processing --
+
+    async def run_stt(self, audio: bytes) -> AsyncGenerator[Frame, None]:
+        """Feed audio chunk into the active gRPC stream."""
+        if self._audio_gate_open and self._audio_q is not None:
+            self._audio_q.put_nowait(audio)
+        yield None
+
+    # -- Frame handling --
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+        await super().process_frame(frame, direction)
+
+        if isinstance(frame, BotStartedSpeakingFrame):
+            self._audio_gate_open = False
+            self._pending_transcript = None
+            self._signal_audio_done()
+            logger.debug(f"{self} audio gate CLOSED (bot speaking)")
+
+        elif isinstance(frame, BotStoppedSpeakingFrame):
+            self._audio_gate_open = True
+            logger.debug(f"{self} audio gate OPEN (bot stopped)")
+
+        elif isinstance(frame, VADUserStartedSpeakingFrame):
+            await self._cancel_finalize_timeout()
+            self._pending_transcript = None
+            self._start_utterance()
+
+        elif isinstance(frame, VADUserStoppedSpeakingFrame):
+            self._finalize_requested = True
+            self.request_finalize()
+            await self.start_processing_metrics()
+            self._signal_audio_done()
+            if self._pending_transcript is not None:
+                # gRPC already finished before VAD stop — use cached result.
+                text = self._pending_transcript
+                self._pending_transcript = None
+                await self._emit_final_transcript(text)
+            else:
+                self._start_finalize_timeout()
+
+    # -- Utterance lifecycle --
+
+    def _start_utterance(self):
+        """Start a fresh gRPC streaming call for this utterance."""
+        self._signal_audio_done()  # clean up any in-flight utterance
+        audio_q: queue.Queue = queue.Queue()
+        self._audio_q = audio_q
+        loop = self._loop
+
+        async def _run_in_executor():
+            assert loop is not None
+            await loop.run_in_executor(None, self._grpc_stream_thread, audio_q, loop)
+
+        self.create_task(_run_in_executor())
+
+    # Trailing silence injected after VAD stop so the server's internal Silero
+    # VAD has enough context to detect end-of-speech and emit is_final=True.
+    _TRAILING_SILENCE_MS = 800
+
+    def _signal_audio_done(self):
+        """Inject trailing silence then send None sentinel to stop the audio iterator.
+
+        The server (Parakeet RNNT) uses Silero VAD internally to decide when to
+        emit is_final=True.  Silero needs trailing silence — without it the stream
+        closes before the server VAD fires and we never get a final result.
+        """
+        if self._audio_q is not None:
+            try:
+                # 16-bit mono: 2 bytes per sample
+                silence_bytes = bytes(int(self._sample_rate * self._TRAILING_SILENCE_MS / 1000) * 2)
+                chunk_size = int(self._sample_rate * 0.02) * 2  # 20 ms chunks
+                for i in range(0, len(silence_bytes), chunk_size):
+                    self._audio_q.put_nowait(silence_bytes[i : i + chunk_size])
+            except Exception:
+                pass
+            try:
+                self._audio_q.put_nowait(None)
+            except Exception:
+                pass
+            self._audio_q = None
+
+    def _grpc_stream_thread(self, audio_q: queue.Queue, loop: asyncio.AbstractEventLoop):
+        """Synchronous gRPC streaming call — runs in a thread-pool executor."""
+        try:
+            config = self._riva.StreamingRecognitionConfig(
+                config=self._riva.RecognitionConfig(
+                    encoding=self._riva.AudioEncoding.LINEAR_PCM,
+                    sample_rate_hertz=self._sample_rate,
+                    language_code=self._language_code,
+                    model=self._model_name,
+                    max_alternatives=1,
+                    enable_automatic_punctuation=True,
+                ),
+                interim_results=True,
+            )
+
+            def _audio_iter():
+                while True:
+                    chunk = audio_q.get()
+                    if chunk is None:
+                        return
+                    yield chunk
+
+            transcript_parts: list[str] = []
+            last_text: str = ""
+
+            for response in self._asr_service.streaming_response_generator(
+                audio_chunks=_audio_iter(),
+                streaming_config=config,
+            ):
+                for result in response.results:
+                    if not result.alternatives:
+                        continue
+                    text = result.alternatives[0].transcript.strip()
+                    if not text:
+                        continue
+                    if result.is_final:
+                        transcript_parts.append(text)
+                    last_text = text
+                    asyncio.run_coroutine_threadsafe(self._push_interim(text), loop)
+
+            # Prefer is_final parts; fall back to the last RNNT hypothesis when
+            # the server's Silero VAD never fires before the stream closes.
+            final_text = " ".join(transcript_parts) if transcript_parts else last_text
+            asyncio.run_coroutine_threadsafe(self._on_grpc_done(final_text), loop)
+
+        except Exception as e:
+            logger.error(f"{self} gRPC error: {e}")
+            asyncio.run_coroutine_threadsafe(self._on_grpc_error(e), loop)
+
+    # -- Async callbacks from gRPC thread --
+
+    async def _push_interim(self, text: str):
+        await self.push_frame(InterimTranscriptionFrame(text, self._user_id, current_time_ms(), language=None))
+
+    async def _on_grpc_done(self, text: str):
+        """Called when the gRPC stream finishes (all audio consumed)."""
+        await self._cancel_finalize_timeout()
+        if self._finalize_requested:
+            if text:
+                await self._emit_final_transcript(text)
+            else:
+                logger.debug(f"{self} ghost turn (empty gRPC result)")
+                self._finalize_requested = False
+                self.confirm_finalize()
+                await self.stop_processing_metrics()
+        else:
+            # gRPC finished before external VAD fired (rare).
+            # Cache the transcript; VADUserStoppedSpeakingFrame will pick it up.
+            logger.debug(f"{self} gRPC done before VAD stop: {text!r}")
+            if text:
+                self._pending_transcript = text
+                await self._push_interim(text)
+
+    async def _on_grpc_error(self, e: Exception):
+        if self._finalize_requested:
+            logger.error(f"{self} gRPC error during finalization: {e}")
+            self._finalize_requested = False
+            self.confirm_finalize()
+            await self.stop_processing_metrics()
+
+    # -- Finalize timeout --
+
+    def _start_finalize_timeout(self):
+        if self._finalize_timeout_task:
+            self._finalize_timeout_task.cancel()
+        self._finalize_timeout_task = self.create_task(self._finalize_timeout_handler())
+
+    async def _cancel_finalize_timeout(self):
+        if self._finalize_timeout_task:
+            await self.cancel_task(self._finalize_timeout_task)
+            self._finalize_timeout_task = None
+
+    async def _finalize_timeout_handler(self):
+        await asyncio.sleep(_FINALIZE_TIMEOUT_SECS)
+        if self._finalize_requested:
+            logger.warning(f"{self} finalize timeout after {_FINALIZE_TIMEOUT_SECS}s — force-finalizing")
+            self._finalize_requested = False
+            self.confirm_finalize()
+            await self.stop_processing_metrics()
+
+    async def _emit_final_transcript(self, text: str):
+        self._finalize_requested = False
+        await self._cancel_finalize_timeout()
+        logger.info(f"{self} final transcript: {text}")
+        self.confirm_finalize()
+        await self.push_frame(TranscriptionFrame(text, self._user_id, current_time_ms(), language=None, finalized=True))
         await self.stop_processing_metrics()
