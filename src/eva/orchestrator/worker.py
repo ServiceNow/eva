@@ -167,6 +167,10 @@ class ConversationWorker:
             except asyncio.CancelledError:
                 conversation_ended_reason = "cancelled"
                 logger.info(f"Conversation {self.record.id} was cancelled")
+            finally:
+                # Collect stats regardless of how the conversation ended
+                if self._assistant_server:
+                    self._conversation_stats = self._assistant_server.get_conversation_stats()
 
         except asyncio.CancelledError:
             conversation_ended_reason = "cancelled"
@@ -373,10 +377,6 @@ class ConversationWorker:
             raise RuntimeError("User simulator not initialized")
 
         ended_reason = await self._user_simulator.run_conversation()
-
-        # Collect stats from assistant
-        if self._assistant_server:
-            self._conversation_stats = self._assistant_server.get_conversation_stats()
 
         return ended_reason
 

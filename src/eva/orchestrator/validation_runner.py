@@ -1,6 +1,7 @@
 """Validation metrics runner for benchmark validation mode."""
 
 import asyncio
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -72,28 +73,50 @@ class ValidationRunner:
         gate_run = await gate_runner.run(contexts=contexts)
 
         gate_passed, not_finished, agent_timeout_ids = self._partition(check_ids, gate_run.all_metrics)
+
+        # Separate time-limit-exceeded records from truly not_finished — they get LLM
+        # metrics evaluated with gate bypass (same as validate_one(skip_gate=True)).
+        time_limit_ids = []
+        truly_not_finished = []
+        for record_id in not_finished:
+            result_path = self.run_dir / "records" / record_id / "result.json"
+            try:
+                with open(result_path) as f:
+                    result_data = json.load(f)
+                if result_data.get("conversation_ended_reason") == "time_limit_exceeded":
+                    time_limit_ids.append(record_id)
+                    continue
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass
+            truly_not_finished.append(record_id)
+
         logger.info(
             f"Gate: {len(gate_passed)} passed ({len(agent_timeout_ids)} agent_timeout_on_user_turn), "
-            f"{len(not_finished)} not_finished"
+            f"{len(truly_not_finished)} not_finished, {len(time_limit_ids)} time_limit_exceeded"
         )
 
-        for record_id in not_finished:
+        for record_id in truly_not_finished:
             validation_results[record_id] = ValidationResult(passed=False)
 
-        if gate_passed:
+        # Run LLM metrics on gate-passed and time-limit records together.
+        # gate_passed records get GATE_METRIC=1.0 in their scores; time-limit records do not.
+        all_llm_ids = gate_passed + time_limit_ids
+        if all_llm_ids:
             metrics_runner = MetricsRunner(
                 run_dir=self.run_dir,
                 dataset=self.dataset,
                 metric_names=LLM_METRICS,
                 metric_configs=self.metric_configs,
-                record_ids=gate_passed,
+                record_ids=all_llm_ids,
             )
-            passed_contexts = {rid: contexts[rid] for rid in gate_passed if rid in contexts}
-            metrics_run = await metrics_runner.run(contexts=passed_contexts)
+            all_llm_contexts = {rid: contexts[rid] for rid in all_llm_ids if rid in contexts}
+            metrics_run = await metrics_runner.run(contexts=all_llm_contexts)
 
+            gate_passed_set = set(gate_passed)
             for record_id, record_metrics in metrics_run.all_metrics.items():
                 vr = self._evaluate_record(record_id, record_metrics, LLM_METRICS)
-                vr.scores[GATE_METRIC] = 1.0
+                if record_id in gate_passed_set:
+                    vr.scores[GATE_METRIC] = 1.0
                 validation_results[record_id] = vr
 
         passed_count = sum(1 for vr in validation_results.values() if vr.passed)
