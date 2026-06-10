@@ -10,7 +10,8 @@ Code-based metric (no LLM) that scores each user→assistant transition on a con
 
 - **Greeting (turn 0) is excluded.**
 - A turn is **evaluable** only when both `audio_timestamps_user_turns[t]` and `audio_timestamps_assistant_turns[t]` are non-empty. Turns without both sides are silently excluded from the set that feeds the score and sub-metrics.
-- If no evaluable turns exist, the metric returns `normalized_score = None` with an error `"No turns with both user and assistant audio timestamps"`.
+- If no evaluable turns exist, the metric returns `score = normalized_score = 0.0` with no error (per-turn detail dicts are empty but `details.missed_turn` is still populated).
+- **Missed-turn zeroing**: when `is_agent_timeout_on_user_turn(...)` is true (`conversation_ended_reason == "inactivity_timeout"` and the user was the last speaker), the main score is forced to `0.0` regardless of per-turn scores. Per-turn data and sub-metrics are still emitted for analysis. `details.missed_turn` carries the boolean. This mirrors the `conversation_correctly_finished` diagnostic so the two stay aligned.
 
 ## Inputs (from `MetricContext`)
 
@@ -38,8 +39,8 @@ Ramp up from `LATENCY_HARD_EARLY_MS` (-500ms) to `LATENCY_SWEET_SPOT_LOW_MS` (50
 
 | | Non-tool turn | Tool-call turn |
 |---|---|---|
-| Sweet-spot upper edge | 2000 ms | 4000 ms (`LATENCY_SWEET_SPOT_HIGH_MS_TOOL`) |
-| Hard-late edge | 5000 ms | 7000 ms (`LATENCY_HARD_LATE_MS_TOOL`) |
+| Sweet-spot upper edge | 2000 ms | 3000 ms (`LATENCY_SWEET_SPOT_HIGH_MS_TOOL`) |
+| Hard-late edge | 3500 ms | 5000 ms (`LATENCY_HARD_LATE_MS_TOOL`) |
 
 | Latency (ms) | Non-tool score | Tool-call score |
 |---|---|---|
@@ -48,11 +49,11 @@ Ramp up from `LATENCY_HARD_EARLY_MS` (-500ms) to `LATENCY_SWEET_SPOT_LOW_MS` (50
 | 200 | 0.70 | 0.70 |
 | 500 | 1.00 | 1.00 |
 | 2000 | 1.00 | 1.00 |
-| 3500 | 0.50 | 1.00 |
-| 4000 | 0.33 | 1.00 |
-| 5000 | 0.00 | 0.67 |
-| 6500 | 0.00 | 0.17 |
-| ≥ 7000 | 0.00 | 0.00 |
+| 2750 | 0.50 | 1.00 |
+| 3000 | 0.33 | 1.00 |
+| 3500 | 0.00 | 0.75 |
+| 4000 | 0.00 | 0.50 |
+| ≥ 5000 | 0.00 | 0.00 |
 
 A turn is considered a "tool-call turn" when `conversation_trace` has at least one entry with `type == "tool_call"` at that `turn_id`. The `has_tool_call` flag is echoed into `per_turn_evidence` for transparency.
 
@@ -149,6 +150,7 @@ The remaining fields depend on which signal fired:
 | `per_turn_evidence` | `{turn_id: {...}}` — see previous section. |
 | `num_turns` | Highest turn_id present in either user or assistant audio timestamps (greeting excluded). |
 | `num_evaluated` | Number of turns actually scored (both timestamp sides present). |
+| `missed_turn` | Boolean — `True` when the agent failed to respond to the user's final turn (`is_agent_timeout_on_user_turn(...)`). When `True`, the main score is forced to `0.0`. |
 
 ## Sub-metrics (flat)
 
@@ -163,7 +165,7 @@ Emitted as `sub_metrics` on the main `MetricScore`, in this order. The runner ag
 | `p90_latency_ms` | no | 90th-percentile latency. |
 | `on_time_rate` | yes | Fraction with `EARLY_THRESHOLD_MS ≤ latency < late_threshold` (where the late threshold is `LATE_THRESHOLD_MS_TOOL` on tool-call turns, `LATE_THRESHOLD_MS` otherwise). |
 | `early_rate` | yes | Fraction with `latency < EARLY_THRESHOLD_MS` (default 200 ms). |
-| `late_rate` | yes | Fraction with `latency ≥ late_threshold` — 4000 ms on non-tool turns, 6000 ms on tool-call turns. |
+| `late_rate` | yes | Fraction with `latency ≥ late_threshold` — 2750 ms on non-tool turns, 4000 ms on tool-call turns (each set roughly halfway between sweet-spot-high and hard-late so "late" lines up with "score has dropped past ~0.5"). |
 
 **Agent interruptions** (dotted prefix so tables group them visibly)
 
@@ -198,16 +200,17 @@ All thresholds live as class-level attributes on `TurnTakingMetric`. Override by
  | `LATENCY_HARD_EARLY_MS` | -500 | Left edge of the latency ramp (score = 0 at or below). Shared across tool / non-tool turns. |
 | `LATENCY_SWEET_SPOT_LOW_MS` | 500 | Left edge of the latency plateau (score reaches 1). Shared. |
 | `LATENCY_SWEET_SPOT_HIGH_MS` | 2000 | Right edge of the plateau on **non-tool** turns. |
-| `LATENCY_HARD_LATE_MS` | 5000 | Right edge of the ramp on **non-tool** turns (score = 0 at or above). |
-| `LATENCY_SWEET_SPOT_HIGH_MS_TOOL` | 4000 | Right edge of the plateau on **tool-call** turns. |
-| `LATENCY_HARD_LATE_MS_TOOL` | 7000 | Right edge of the ramp on **tool-call** turns. |
+| `LATENCY_HARD_LATE_MS` | 3500 | Right edge of the ramp on **non-tool** turns (score = 0 at or above). |
+| `LATENCY_SWEET_SPOT_HIGH_MS_TOOL` | 3000 | Right edge of the plateau on **tool-call** turns. |
+| `LATENCY_HARD_LATE_MS_TOOL` | 5000 | Right edge of the ramp on **tool-call** turns. |
 | `OVERLAP_HARD_MS` | 2000 | Overlap at which the agent-interrupt overlap score hits 0. |
 | `AGENT_INTERRUPT_MAX_SCORE` | 0.5 | Cap on the overlap and count sub-scores — interrupting is never fully "free". |
 | `INTERRUPT_COUNT_HARD` | 3 | Number of distinct barge-in segments at which the count sub-score hits 0. |
 | `YIELD_HARD_MS` | 2000 | Yield time at which the user-interrupt score hits 0. |
 | `EARLY_THRESHOLD_MS` | 200 | Latency classification cutoff — below ⇒ "early". Shared across tool / non-tool turns. |
-| `LATE_THRESHOLD_MS` | 4000 | Latency classification cutoff on **non-tool** turns — at or above ⇒ "late". |
-| `LATE_THRESHOLD_MS_TOOL` | 6000 | Latency classification cutoff on **tool-call** turns. |
+| `LATE_THRESHOLD_MS` | 2750 | Latency classification cutoff on **non-tool** turns — at or above ⇒ "late". |
+| `LATE_THRESHOLD_MS_TOOL` | 4000 | Latency classification cutoff on **tool-call** turns. |
+| `pass_at_k_threshold` | 0.8 | Per-attempt threshold used for pass@k computation and the `EVA-X_pass` composite gate. |
 
 Note: the latency *curve* and the latency *classification* use independent thresholds. The curve is continuous (hard-early / hard-late), while `EARLY_THRESHOLD_MS` / `LATE_THRESHOLD_MS{,_TOOL}` bucket turns for the `early_rate` / `on_time_rate` / `late_rate` sub-metrics only.
 
@@ -223,7 +226,7 @@ Note: the latency *curve* and the latency *classification* use independent thres
     "per_turn_reason": {"1": "latency", "2": "latency", "3": "agent_interrupt", "4": "user_interrupt"},
     "per_turn_evidence": {
       "1": {"has_tool_call": false, "latency_ms": 1000, "latency_score": 1.0},
-      "2": {"has_tool_call": true,  "latency_ms": 3500, "latency_score": 1.0},
+      "2": {"has_tool_call": true,  "latency_ms": 2500, "latency_score": 1.0},
       "3": {"has_tool_call": false,
             "overlap_ms": 200, "overlap_score": 0.45,
             "n_interrupt_segments": 1, "interrupt_count_score": 0.5,

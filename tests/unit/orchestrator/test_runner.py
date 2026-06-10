@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from eva.models.config import PipelineConfig, RunConfig
+from eva.models.config import ModelConfig, RunConfig
 from eva.models.results import ConversationResult
 from eva.orchestrator.runner import BenchmarkRunner
 from tests.unit.conftest import make_evaluation_record
@@ -25,7 +25,7 @@ def _make_record(record_id: str):
 def _make_config(tmp_path: Path, max_concurrent: int = 3) -> RunConfig:
     """Create a minimal RunConfig for testing."""
     return RunConfig(
-        model=PipelineConfig(
+        model=ModelConfig(
             llm="test-model",
             stt="deepgram",
             tts="cartesia",
@@ -193,6 +193,86 @@ class TestFromExistingRun:
             runner = BenchmarkRunner.from_existing_run(run_dir)
 
         assert runner.output_dir == run_dir
+
+    def test_ignores_env_vars_when_loading_saved_config(self, tmp_path):
+        """from_existing_run loads the saved config without env var contamination.
+
+        If the current environment has a different pipeline mode set (e.g. EVA_MODEL__LLM)
+        but the saved run used S2S, the saved config should load without conflicts.
+        """
+        # Create a saved S2S config on disk (in a clean env to avoid conflicts)
+        with patch.dict(os.environ, {}, clear=True):
+            s2s_config = RunConfig(
+                model={"s2s": "gpt-realtime-mini", "s2s_params": {"api_key": "k", "model": "rt"}},
+                model_list=_MODEL_LIST,
+                run_id="s2s-run",
+                output_dir=tmp_path / "output",
+            )
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        (run_dir / "config.json").write_text(s2s_config.model_dump_json(indent=2))
+
+        # Set env vars for a *different* pipeline mode — these must be ignored
+        conflicting_env = _BASE_ENV | {
+            "EVA_MODEL__LLM": "gpt-5.2",
+            "EVA_MODEL__STT": "deepgram",
+            "EVA_MODEL__TTS": "cartesia",
+            "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2"}),
+            "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic"}),
+        }
+        with patch.dict(os.environ, conflicting_env, clear=True):
+            with patch.object(BenchmarkRunner, "_load_agent_config", return_value=MagicMock()):
+                runner = BenchmarkRunner.from_existing_run(run_dir)
+
+        assert runner.config.model.s2s == "gpt-realtime-mini"
+        assert runner.output_dir == run_dir
+
+    def test_from_existing_run_then_apply_env_overrides_restores_secrets(self, tmp_path):
+        """Full flow: save S2S config → from_existing_run → apply_env_overrides with a live config built from an env where cascade vars also leak in.
+
+        The live config is the one that carries fresh secrets from the current
+        environment.  If that environment has both S2S *and* cascade vars set
+        (e.g. because .env contains both), max_rerun_attempts=0 must allow
+        constructing the live config and apply_env_overrides must still restore
+        the S2S secrets.
+        """
+        # Create a saved S2S config with a real secret
+        with patch.dict(os.environ, {}, clear=True):
+            saved = RunConfig(
+                model={"s2s": "gpt-realtime-mini", "s2s_params": {"api_key": "real_secret", "model": "rt"}},
+                model_list=_MODEL_LIST,
+                run_id="s2s-run",
+                output_dir=tmp_path / "output",
+            )
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        (run_dir / "config.json").write_text(saved.model_dump_json(indent=2))
+
+        # Load via from_existing_run (env doesn't matter — _StoredRunConfig ignores it)
+        with patch.dict(os.environ, _BASE_ENV, clear=True):
+            with patch.object(BenchmarkRunner, "_load_agent_config", return_value=MagicMock()):
+                runner = BenchmarkRunner.from_existing_run(run_dir)
+
+        assert runner.config.model.s2s_params["api_key"] == "***"
+
+        # Build the live config from an env that has both S2S and cascade vars.
+        # max_rerun_attempts=0 suppresses the conflict error.
+        conflicting_env = _BASE_ENV | {
+            "EVA_MODEL__S2S": "gpt-realtime-mini",
+            "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "fresh_secret", "model": "rt"}),
+            "EVA_MODEL__LLM": "gpt-5.2",
+            "EVA_MODEL__STT": "deepgram",
+            "EVA_MODEL__TTS": "cartesia",
+            "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2"}),
+            "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic"}),
+            "EVA_MODEL__AUDIO_LLM": "whatever",
+        }
+        with patch.dict(os.environ, conflicting_env, clear=True):
+            live = RunConfig(max_rerun_attempts=0, _cli_parse_args=[])
+
+        # apply_env_overrides restores secrets from the live config
+        runner.config.apply_env_overrides(live, strict_llm=False)
+        assert runner.config.model.s2s_params["api_key"] == "fresh_secret"
 
     def test_missing_config_json_raises_file_not_found(self, tmp_path):
         run_dir = tmp_path / "no_config"

@@ -623,7 +623,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Samuel",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -654,7 +654,7 @@
       "hire_date": "2020-03-16",
       "is_manager": false,
       "last_desk_assignment_date": "2026-01-10",
-      "last_name": "Lindqvist",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP055210",
@@ -771,11 +771,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "Downtown",
-          "Engineering Center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -868,10 +864,6 @@
     "zones": {
       "PZA": {
         "name": "Garage A",
-        "name_aliases": [
-          "A Garage",
-          "Main Garage"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -924,9 +916,6 @@
         "catalog_id": "APP-1001",
         "department_restrictions": [],
         "name": "Slack",
-        "name_aliases": [
-          "slack"
-        ],
         "requires_manager_approval": false,
         "vendor": "Salesforce"
       },
@@ -939,9 +928,6 @@
         "catalog_id": "APP-1002",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       }
@@ -954,11 +940,7 @@
           "permanent",
           "temporary"
         ],
-        "name": "JetBrains IntelliJ IDEA",
-        "name_aliases": [
-          "IntelliJ",
-          "IntelliJ IDEA"
-        ],
+        "name": "IntelliJ IDEA",
         "vendor": "JetBrains"
       }
     }

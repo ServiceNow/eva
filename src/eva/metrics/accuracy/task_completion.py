@@ -35,6 +35,7 @@ class TaskCompletion(BaseMetric):
     """
 
     name = "task_completion"
+    version = "v0.1"
     description = "Binary task completion via scenario DB state hash comparison"
     category = "accuracy"
     metric_type = MetricType.CODE

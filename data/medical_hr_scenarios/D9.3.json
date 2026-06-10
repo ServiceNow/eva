@@ -75,8 +75,8 @@
   "employees": {
     "EMP529893": {
       "employee_id": "EMP529893",
-      "first_name": "Deepa",
-      "last_name": "Ranganathan",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1997-11-08",
       "phone_last_four": "2841",
       "otp_code": "612844",

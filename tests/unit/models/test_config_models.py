@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 from pydantic_settings import SettingsError
 
-from eva.models.config import RunConfig, SpeechToSpeechConfig
+from eva.models.config import PipelineType, RunConfig
 
 MODEL_LIST = [
     {
@@ -73,13 +73,13 @@ def _config(
         assert env_file is not None, "Please pass `env_file=tmp_path / '.env'` along with `env_file_vars`."
         env_file.write_text("".join(f"{key}='{value}'\n" for key, value in env_file_vars.items()))
 
-    with patch.dict(os.environ, env_vars or {}, clear=True):
+    with patch.dict(os.environ, {"PATH": os.environ["PATH"]} | (env_vars or {}), clear=True):
         return RunConfig(_env_file=env_file, _cli_parse_args=cli_args, **kwargs)
 
 
 def _load_json_into_runconfig(json_str: str) -> RunConfig:
     """Load RunConfig from JSON with isolated environment (no real env vars)."""
-    with patch.dict(os.environ, {}, clear=True):
+    with patch.dict(os.environ, {"PATH": os.environ["PATH"]}, clear=True):
         return RunConfig.model_validate_json(json_str)
 
 
@@ -88,12 +88,12 @@ class TestRunConfig:
         """Test creating a minimal RunConfig."""
         config = _config(env_vars=_BASE_ENV | {"EVA_DOMAIN": "airline", "EVA_MODEL__LLM": "gpt-5.2"})
 
-        assert config.dataset_path == Path("data/airline_dataset.jsonl")
+        assert config.dataset_path == Path("data/airline_dataset.json")
         assert config.tool_mocks_path == Path("data/airline_scenarios")
         # run_id = timestamp + model suffix (e.g. "2024-01-15_14-30-45.123456_nova-2_gpt-5.2_sonic")
         assert config.run_id.endswith("nova-2_gpt-5.2_sonic")
         assert config.max_concurrent_conversations == 1
-        assert config.conversation_timeout_seconds == 360
+        assert config.conversation_time_limit_seconds == 600
 
     def test_create_full_config(self, temp_dir: Path):
         """Test creating a RunConfig with all options."""
@@ -107,7 +107,7 @@ class TestRunConfig:
                 "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "test_key", "model": "sonic"}),
                 "EVA_RUN_ID": "test_run_001",
                 "EVA_MAX_CONCURRENT_CONVERSATIONS": "50",
-                "EVA_CONVERSATION_TIMEOUT_SECONDS": "180",
+                "EVA_CONVERSATION_TIME_LIMIT_SECONDS": "180",
                 "EVA_OUTPUT_DIR": str(temp_dir / "output"),
                 "EVA_BASE_PORT": "8000",
                 "EVA_PORT_POOL_SIZE": "200",
@@ -149,9 +149,9 @@ class TestRunConfig:
         with pytest.raises(ValueError):
             _config(env_vars=_BASE_ENV | {"EVA_MAX_CONCURRENT_CONVERSATIONS": "0"})
 
-        # conversation_timeout_seconds too low
+        # conversation_time_limit_seconds too low
         with pytest.raises(ValueError):
-            _config(env_vars=_BASE_ENV | {"EVA_CONVERSATION_TIMEOUT_SECONDS": "10"})
+            _config(env_vars=_BASE_ENV | {"EVA_CONVERSATION_TIME_LIMIT_SECONDS": "10"})
 
     @pytest.mark.parametrize("indent", (None, 2))
     @pytest.mark.parametrize("vars_location", ("env_vars", "env_file_vars"))
@@ -377,12 +377,11 @@ class TestRunConfig:
         (
             (
                 {},
-                r"model\s+Field required",
+                "Model pipeline required",
             ),
             (
                 {"EVA_MODEL": "{}"},
-                # Discriminator defaults to PipelineConfig when no unique field present
-                r"model\.pipeline\.llm\s+Field required",
+                "Model pipeline required",
             ),
             (
                 {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b"},
@@ -402,15 +401,27 @@ class TestRunConfig:
             ),
             (
                 {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__TTS": "cartesia"},
-                r"model\.pipeline\.stt\s+Field required",
+                r"model\.stt\s+EVA_MODEL__STT required in cascade mode",
             ),
             (
                 {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__STT": "deepgram"},
-                r"model\.pipeline\.tts\s+Field required",
+                r"model\.tts\s+EVA_MODEL__TTS required in cascade mode",
+            ),
+            (
+                {"EVA_MODEL__LLM": "gpt-5.2"},
+                r"model\.stt\s+EVA_MODEL__STT required in cascade mode"
+                r"(?s:.+)"
+                r"model\.tts\s+EVA_MODEL__TTS required in cascade mode",
+            ),
+            (
+                {"EVA_MODEL__LLM": "gpt-5.2", "EVA_MODEL__STT": "deepgram", "EVA_MODEL__TTS": "cartesia"},
+                r'model\.stt_params\s+"api_key" and "model" required in EVA_MODEL__STT_PARAMS for deepgram STT'
+                r"(?s:.+)"
+                r'model\.tts_params\s+"api_key" and "model" required in EVA_MODEL__TTS_PARAMS for cartesia TTS',
             ),
             (
                 {"EVA_MODEL__AUDIO_LLM": "ultravox"},
-                r"model\.audio_llm\.tts\s+Field required",
+                r"model\.tts\s+EVA_MODEL__TTS required in audio_llm mode",
             ),
         ),
         ids=(
@@ -422,6 +433,8 @@ class TestRunConfig:
             "Mixed all three",
             "LLM without STT",
             "LLM without TTS",
+            "LLM without STT and TTS",
+            "LLM without STT params and TTS params ",
             "Audio LLM without TTS",
         ),
     )
@@ -457,13 +470,48 @@ class TestRunConfig:
             )
 
 
+class TestMaxRerunAttemptsZeroSkipsConflictCheck:
+    """When max_rerun_attempts=0, multiple pipeline modes don't raise."""
+
+    def test_multiple_modes_allowed_with_zero_rerun_attempts(self):
+        """max_rerun_attempts=0 suppresses the 'Multiple pipeline modes' error."""
+        # Without max_rerun_attempts=0, this raises ValueError
+        with pytest.raises(ValidationError, match="Multiple pipeline modes set"):
+            _config(env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b"})
+
+        # With max_rerun_attempts=0, it should not raise the conflict error.
+        # It will still fail validation for other reasons (missing stt/tts params etc.),
+        # but the "Multiple pipeline modes" error must be suppressed.
+        try:
+            _config(
+                env_vars=_EVA_MODEL_LIST_ENV | {"EVA_MODEL__LLM": "a", "EVA_MODEL__S2S": "b"},
+                max_rerun_attempts=0,
+            )
+        except Exception as exc:
+            assert "Multiple pipeline modes set" not in str(exc)
+
+    def test_single_mode_still_works_with_zero_rerun_attempts(self):
+        """max_rerun_attempts=0 doesn't break normal single-mode configs."""
+        config = _config(env_vars=_BASE_ENV, max_rerun_attempts=0)
+        assert config.max_rerun_attempts == 0
+        assert config.model.llm == "gpt-5.2"
+
+    def test_no_model_config_with_zero_rerun_attempts(self):
+        """max_rerun_attempts=0 allows omitting model config entirely."""
+        config = _config(env_vars=_EVA_MODEL_LIST_ENV, max_rerun_attempts=0)
+        assert config.max_rerun_attempts == 0
+        assert config.model.llm is None
+        assert config.model.s2s is None
+        assert config.model.audio_llm is None
+
+
 class TestDefaults:
     """Verify default values match expectations."""
 
     def test_defaults(self):
         c = _config(env_vars=_BASE_ENV)
         assert c.domain == "airline"
-        assert c.dataset_path == Path("data/airline_dataset.jsonl")
+        assert c.dataset_path == Path("data/airline_dataset.json")
         assert c.tool_mocks_path == Path("data/airline_scenarios")
         assert c.agent_config_path == Path("configs/agents/airline_agent.yaml")
         assert c.output_dir == Path("output")
@@ -471,12 +519,13 @@ class TestDefaults:
         assert c.model.stt == "deepgram"
         assert c.model.tts == "cartesia"
         assert c.max_concurrent_conversations == 1
-        assert c.conversation_timeout_seconds == 360
+        assert c.conversation_time_limit_seconds == 600
         assert c.base_port == 10000
         assert c.port_pool_size == 150
         assert c.max_rerun_attempts == 3
         assert c.num_trials == 1
-        assert c.metrics is None
+        assert isinstance(c.metrics, list)
+        assert len(c.metrics) > 0
         assert c.debug is False
         assert c.record_ids is None
         assert c.log_level == "INFO"
@@ -486,106 +535,23 @@ class TestDefaults:
 class TestDeprecatedEnvVars:
     """Deprecated env vars cause validation errors."""
 
-    @pytest.mark.parametrize(
-        "environ, old_var, new_var, value, accessor",
-        (
-            (
-                _BASE_ENV,
-                "LLM_MODEL",
-                "EVA_MODEL__LLM",
-                "test-model",
-                lambda c: c.model.llm,
-            ),
-            (
-                _BASE_ENV,
-                "STT_MODEL",
-                "EVA_MODEL__STT",
-                "test-model",
-                lambda c: c.model.stt,
-            ),
-            (
-                _BASE_ENV,
-                "TTS_MODEL",
-                "EVA_MODEL__TTS",
-                "test-model",
-                lambda c: c.model.tts,
-            ),
-            (
-                _S2S_ENV,
-                "REALTIME_MODEL",
-                "EVA_MODEL__S2S",
-                "test-model",
-                lambda c: c.model.s2s,
-            ),
-            (
-                _S2S_ENV,
-                "EVA_MODEL__REALTIME_MODEL",
-                "EVA_MODEL__S2S",
-                "test-model",
-                lambda c: c.model.s2s,
-            ),
-            (
-                _BASE_ENV,
-                "STT_PARAMS",
-                "EVA_MODEL__STT_PARAMS",
-                {"api_key": "k", "model": "nova-2", "foo": "bar"},
-                lambda c: c.model.stt_params,
-            ),
-            (
-                _BASE_ENV,
-                "TTS_PARAMS",
-                "EVA_MODEL__TTS_PARAMS",
-                {"api_key": "k", "model": "sonic", "foo": "bar"},
-                lambda c: c.model.tts_params,
-            ),
-            (
-                _S2S_ENV,
-                "REALTIME_MODEL_PARAMS",
-                "EVA_MODEL__S2S_PARAMS",
-                {"api_key": "k", "model": "model"},
-                lambda c: c.model.s2s_params,
-            ),
-            (
-                _S2S_ENV,
-                "EVA_MODEL__REALTIME_MODEL_PARAMS",
-                "EVA_MODEL__S2S_PARAMS",
-                {"api_key": "k", "model": "model"},
-                lambda c: c.model.s2s_params,
-            ),
-            (
-                _BASE_ENV,
-                "EVA_MAX_CONCURRENT",
-                "EVA_MAX_CONCURRENT_CONVERSATIONS",
-                1,
-                lambda c: c.max_concurrent_conversations,
-            ),
-            (
-                _BASE_ENV,
-                "EVA_CONVERSATION_TIMEOUT",
-                "EVA_CONVERSATION_TIMEOUT_SECONDS",
-                360,
-                lambda c: c.conversation_timeout_seconds,
-            ),
-        ),
-    )
-    @pytest.mark.parametrize("vars_location", ("env_vars", "env_file_vars"))
-    def test_old_env_var_errors(
-        self, tmp_path: Path, vars_location: str, environ: dict, old_var: str, new_var: str, value: str, accessor
-    ):
-        """Using an old env var raises a ValueError."""
-        env_value = json.dumps(value) if isinstance(value, dict) else str(value)
-
-        with pytest.raises(ValueError, match=f"{old_var} -> use {new_var}"):
-            _config(env_file=tmp_path / ".env", **{vars_location: environ | {old_var: env_value}})
-
-        config = _config(env_file=tmp_path / ".env", **{vars_location: environ | {new_var: env_value}})
-        assert accessor(config) == value
-
 
 class TestExpandMetricsAll:
     """Tests for _expand_metrics_all validator that expands 'all' to non-validation metrics."""
 
-    def test_all_excludes_validation_metrics(self):
+    @pytest.mark.parametrize(
+        "env_vars, cli_args",
+        (
+            pytest.param({"EVA_METRICS": "all"}, [], id="EVA_METRICS=all"),
+            pytest.param({"EVA_METRICS": "ALL"}, [], id="EVA_METRICS=ALL"),
+            pytest.param({"EVA_METRICS": "All"}, [], id="EVA_METRICS=All"),
+            pytest.param({}, ["--metrics", "all"], id="--metrics=all"),
+            pytest.param({}, ["--metrics", "ALL"], id="--metrics=ALL"),
+            pytest.param({}, ["--metrics", "All"], id="--metrics=All"),
+            pytest.param({}, [], id="default"),
+        ),
+    )
+    def test_all_excludes_validation_metrics(self, env_vars, cli_args):
         """'all' expands to all registered metrics minus validation metrics."""
         all_metrics = [
             "task_completion",
@@ -601,19 +567,9 @@ class TestExpandMetricsAll:
         mock_registry.list_metrics.return_value = all_metrics
 
         with patch("eva.metrics.registry._global_registry", mock_registry):
-            c = _config(env_vars=_BASE_ENV | {"EVA_METRICS": "all"})
+            c = _config(env_vars=_BASE_ENV | env_vars, cli_args=cli_args)
 
         assert set(c.metrics) == {"task_completion", "conciseness", "stt_wer", "response_speed"}
-
-    def test_all_case_insensitive(self):
-        """'ALL' and 'All' also expand."""
-        mock_registry = MagicMock()
-        mock_registry.list_metrics.return_value = ["stt_wer"]
-
-        with patch("eva.metrics.registry._global_registry", mock_registry):
-            c = _config(env_vars=_BASE_ENV | {"EVA_METRICS": "ALL"})
-
-        assert c.metrics == ["stt_wer"]
 
     def test_explicit_names_not_expanded(self):
         """Comma-separated metric names pass through without registry lookup."""
@@ -624,16 +580,56 @@ class TestExpandMetricsAll:
 class TestCommaSeparatedFields:
     """Comma-separated env vars are parsed into lists."""
 
-    def test_metrics_parsed(self):
-        c = _config(env_vars=_BASE_ENV | {"EVA_METRICS": "task_completion_judge,stt_wer, response_speed"})
+    @pytest.mark.parametrize(
+        "env_vars, cli_args",
+        (
+            pytest.param({"EVA_METRICS": "task_completion_judge,stt_wer, response_speed"}, [], id="EVA_METRICS"),
+            pytest.param({}, ["--metrics", "task_completion_judge,stt_wer, response_speed"], id="single --metrics"),
+            pytest.param(
+                {},
+                ["--metrics", "task_completion_judge", "--metrics", "stt_wer", "--metrics", "response_speed"],
+                id="multiple --metrics",
+            ),
+            pytest.param(
+                {},
+                ["--metrics", "task_completion_judge", "--metrics", "stt_wer, response_speed"],
+                id="mixed --metrics",
+            ),
+        ),
+    )
+    def test_metrics_parsed(self, env_vars, cli_args):
+        c = _config(env_vars=_BASE_ENV | env_vars, cli_args=cli_args)
         assert c.metrics == ["task_completion_judge", "stt_wer", "response_speed"]
 
-    def test_record_ids_parsed(self):
-        c = _config(env_vars=_BASE_ENV | {"EVA_RECORD_IDS": "1.2.1, 1.2.2, 1.3.1"})
+    @pytest.mark.parametrize(
+        "env_vars, cli_args",
+        (
+            pytest.param({"EVA_RECORD_IDS": "1.2.1, 1.2.2, 1.3.1"}, [], id="EVA_RECORD_IDS"),
+            pytest.param({}, ["--record-ids", "1.2.1, 1.2.2, 1.3.1"], id="single --record-ids"),
+            pytest.param(
+                {},
+                ["--record-ids", "1.2.1", "--record-ids", "1.2.2", "--record-ids", "1.3.1"],
+                id="multiple --record-ids",
+            ),
+            pytest.param({}, ["--record-ids", "1.2.1", "--record-ids", "1.2.2, 1.3.1"], id="mixed --record-ids"),
+        ),
+    )
+    def test_record_ids_parsed(self, env_vars, cli_args):
+        c = _config(env_vars=_BASE_ENV | env_vars, cli_args=cli_args)
         assert c.record_ids == ["1.2.1", "1.2.2", "1.3.1"]
 
-    def test_empty_string_becomes_none(self):
-        c = _config(env_vars=_BASE_ENV | {"EVA_METRICS": ""})
+    @pytest.mark.parametrize(
+        "env_vars, cli_args",
+        (
+            pytest.param({"EVA_METRICS": ""}, [], id="EVA_METRICS"),
+            pytest.param({"EVA_METRICS": "[]"}, [], id="EVA_METRICS"),
+            pytest.param({}, ["--metrics", ""], id='--metrics ""'),
+            pytest.param({}, ["--metrics="], id="--metrics="),
+            pytest.param({}, ["--metrics", "[]"], id="--metrics []"),
+        ),
+    )
+    def test_empty_string_becomes_none(self, env_vars, cli_args):
+        c = _config(env_vars=_BASE_ENV | env_vars, cli_args=cli_args)
         assert c.metrics is None
 
     def test_whitespace_only_becomes_none(self):
@@ -646,7 +642,7 @@ class TestDomainResolution:
 
     def test_domain_sets_paths(self):
         c = _config(env_vars=_BASE_ENV | {"EVA_DOMAIN": "airline"})
-        assert c.dataset_path == Path("data/airline_dataset.jsonl")
+        assert c.dataset_path == Path("data/airline_dataset.json")
         assert c.agent_config_path == Path("configs/agents/airline_agent.yaml")
         assert c.tool_mocks_path == Path("data/airline_scenarios")
 
@@ -658,9 +654,9 @@ class TestExecutionSettings:
         c = _config(env_vars=_BASE_ENV | {"EVA_MAX_CONCURRENT_CONVERSATIONS": "20"})
         assert c.max_concurrent_conversations == 20
 
-    def test_conversation_timeout_seconds(self):
-        c = _config(env_vars=_BASE_ENV | {"EVA_CONVERSATION_TIMEOUT_SECONDS": "600"})
-        assert c.conversation_timeout_seconds == 600
+    def test_conversation_time_limit_seconds(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_CONVERSATION_TIME_LIMIT_SECONDS": "600"})
+        assert c.conversation_time_limit_seconds == 600
 
     def test_base_port(self):
         c = _config(env_vars=_BASE_ENV | {"EVA_BASE_PORT": "8000"})
@@ -696,110 +692,6 @@ class TestExecutionSettings:
         params = {"api_key": "k", "model": "sonic", "voice": "alloy", "speed": 1.2}
         c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__TTS_PARAMS": json.dumps(params)})
         assert c.model.tts_params == params
-
-
-class TestCliArgs:
-    """Backward-compat: every old argparse flag from run_benchmark.py and run_benchmark_with_reruns.py still works."""
-
-    # ── run_benchmark.py old flags ───────────────────────────────
-
-    def test_output_short_flag(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["-o", "/tmp/out"])
-        assert c.output_dir == Path("/tmp/out")
-
-    def test_output_long_flag(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--output", "/tmp/out"])
-        assert c.output_dir == Path("/tmp/out")
-
-    def test_max_concurrent_short_flag(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["-n", "20"])
-        assert c.max_concurrent_conversations == 20
-
-    def test_max_concurrent_long_flag(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--max-concurrent", "20"])
-        assert c.max_concurrent_conversations == 20
-
-    def test_timeout(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--timeout", "600"])
-        assert c.conversation_timeout_seconds == 600
-
-    def test_llm_model(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--llm-model", "gpt-4o"])
-        assert c.model.llm == "gpt-4o"
-
-    def test_stt_model(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--stt-model", "deepgram"])
-        assert c.model.stt == "deepgram"
-
-    def test_tts_model(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--tts-model", "cartesia"])
-        assert c.model.tts == "cartesia"
-
-    def test_realtime_model(self):
-        config = _config(env_vars=_S2S_ENV, cli_args=["--realtime-model", "test-model"])
-        assert config.model.s2s == "test-model"
-
-    def test_run_id(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--run-id", "my-run"])
-        assert c.run_id == "my-run"
-
-    def test_log_level(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--log-level", "DEBUG"])
-        assert c.log_level == "DEBUG"
-
-    def test_dry_run(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--dry-run"])
-        assert c.dry_run is True
-
-    def test_debug(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--debug"])
-        assert c.debug is True
-
-    def test_ids(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--ids", "1.2.1,1.2.2"])
-        assert c.record_ids == ["1.2.1", "1.2.2"]
-
-    def test_num_trials(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--num-trials", "3"])
-        assert c.num_trials == 3
-
-    # ── run_benchmark_with_reruns.py old flags ───────────────────
-
-    def test_max_reruns(self):
-        c = _config(env_vars=_BASE_ENV, cli_args=["--max-reruns", "5"])
-        assert c.max_rerun_attempts == 5
-
-    # ── priority and composition ─────────────────────────────────
-
-    def test_cli_overrides_env(self):
-        """CLI args take priority over environment variables."""
-        c = _config(env_vars=_BASE_ENV, cli_args=["--llm-model", "gpt-4o"])
-        assert c.model.llm == "gpt-4o"
-
-    def test_multiple_old_flags_together(self):
-        """Combination of old flags from run_benchmark.py works."""
-        c = _config(
-            env_vars=_BASE_ENV,
-            cli_args=[
-                "-o",
-                "out",
-                "-n",
-                "10",
-                "--llm-model",
-                "gpt-4o",
-                "--timeout",
-                "600",
-                "--debug",
-                "--ids",
-                "1.2.1",
-            ],
-        )
-        assert c.output_dir == Path("out")
-        assert c.max_concurrent_conversations == 10
-        assert c.model.llm == "gpt-4o"
-        assert c.conversation_timeout_seconds == 600
-        assert c.debug is True
-        assert c.record_ids == ["1.2.1"]
 
 
 class TestTurnStrategyConfig:
@@ -890,12 +782,12 @@ class TestTurnStrategyConfig:
 
 
 class TestApiKeyRedactionInPipelineModels:
-    """api_key redaction works for all three pipeline config types."""
+    """api_key redaction works for all three pipeline config types via RunConfig serialization."""
 
     def test_pipeline_config_stt_tts_params_api_key_redacted(self):
-        """PipelineConfig redacts api_key in stt_params and tts_params on serialization."""
+        """RunConfig redacts api_key in stt_params and tts_params on serialization."""
         config = _config(env_vars=_BASE_ENV)
-        dumped = config.model.model_dump(mode="json")
+        dumped = config.model_dump(mode="json")["model"]
         assert dumped["stt_params"]["api_key"] == "***"
         assert dumped["tts_params"]["api_key"] == "***"
         # Non-secret fields survive
@@ -903,14 +795,14 @@ class TestApiKeyRedactionInPipelineModels:
         assert dumped["tts_params"]["model"] == "sonic"
 
     def test_pipeline_config_redaction_does_not_mutate(self):
-        """Serializing PipelineConfig does not mutate live stt_params/tts_params."""
+        """Serializing RunConfig does not mutate live stt_params/tts_params."""
         config = _config(env_vars=_BASE_ENV)
-        config.model.model_dump(mode="json")
+        config.model_dump(mode="json")
         assert config.model.stt_params["api_key"] == "test_key"
         assert config.model.tts_params["api_key"] == "test_key"
 
     def test_s2s_config_s2s_params_api_key_redacted(self):
-        """SpeechToSpeechConfig redacts api_key in s2s_params on serialization."""
+        """RunConfig redacts api_key in s2s_params on serialization."""
         config = _config(
             env_vars=_EVA_MODEL_LIST_ENV
             | {
@@ -918,13 +810,13 @@ class TestApiKeyRedactionInPipelineModels:
                 "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "secret", "model": "gpt-realtime-mini"}),
             }
         )
-        dumped = config.model.model_dump(mode="json")
+        dumped = config.model_dump(mode="json")["model"]
         assert dumped["s2s_params"]["api_key"] == "***"
         # Non-secret fields survive
         assert dumped["s2s_params"]["model"] == "gpt-realtime-mini"
 
     def test_s2s_config_redaction_does_not_mutate(self):
-        """Serializing SpeechToSpeechConfig does not mutate live s2s_params."""
+        """Serializing RunConfig does not mutate live s2s_params."""
         config = _config(
             env_vars=_EVA_MODEL_LIST_ENV
             | {
@@ -932,11 +824,11 @@ class TestApiKeyRedactionInPipelineModels:
                 "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "secret", "model": "gpt-realtime-mini"}),
             }
         )
-        config.model.model_dump(mode="json")
+        config.model_dump(mode="json")
         assert config.model.s2s_params["api_key"] == "secret"
 
     def test_audio_llm_config_params_api_key_redacted(self):
-        """AudioLLMConfig redacts api_key in audio_llm_params and tts_params on serialization."""
+        """RunConfig redacts api_key in audio_llm_params and tts_params on serialization."""
         config = _config(
             env_vars=_EVA_MODEL_LIST_ENV
             | {
@@ -948,7 +840,7 @@ class TestApiKeyRedactionInPipelineModels:
                 "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "tts_secret", "model": "sonic"}),
             }
         )
-        dumped = config.model.model_dump(mode="json")
+        dumped = config.model_dump(mode="json")["model"]
         assert dumped["audio_llm_params"]["api_key"] == "***"
         assert dumped["tts_params"]["api_key"] == "***"
         # Non-secret fields survive
@@ -964,7 +856,7 @@ class TestApiKeyRedactionInPipelineModels:
                 "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic", "speed": 1.0}),
             }
         )
-        dumped = config.model.model_dump(mode="json")
+        dumped = config.model_dump(mode="json")["model"]
         # api_key is redacted
         assert dumped["stt_params"]["api_key"] == "***"
         assert dumped["tts_params"]["api_key"] == "***"
@@ -993,6 +885,142 @@ class TestParamAlias:
         assert "nova-2" in config.run_id
 
 
+class TestApplyEnvOverridesAcrossModes:
+    """Verify apply_env_overrides works for non-cascade pipeline modes and cross-mode scenarios."""
+
+    _S2S_ENV_WITH_SECRET = _EVA_MODEL_LIST_ENV | {
+        "EVA_MODEL__S2S": "gpt-realtime-mini",
+        "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "secret_s2s_key", "model": "rt-mini"}),
+    }
+    _AUDIO_LLM_ENV = _EVA_MODEL_LIST_ENV | {
+        "EVA_MODEL__AUDIO_LLM": "ultravox",
+        "EVA_MODEL__AUDIO_LLM_PARAMS": json.dumps({"api_key": "secret_allm_key", "model": "ultravox-v1"}),
+        "EVA_MODEL__TTS": "cartesia",
+        "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "secret_tts_key", "model": "sonic"}),
+    }
+
+    def test_s2s_round_trip_restores_secrets(self):
+        """S2S config: save → redact → reload → apply_env_overrides restores api_key."""
+        config = _config(env_vars=self._S2S_ENV_WITH_SECRET)
+        assert config.model.s2s_params["api_key"] == "secret_s2s_key"
+
+        dumped = config.model_dump_json()
+        loaded = _load_json_into_runconfig(dumped)
+
+        # Secrets are redacted after round-trip
+        assert loaded.model.s2s_params["api_key"] == "***"
+
+        loaded.apply_env_overrides(config)
+        assert loaded.model.s2s_params["api_key"] == "secret_s2s_key"
+        assert loaded.model.s2s_params["model"] == "rt-mini"
+
+    def test_audio_llm_round_trip_restores_secrets(self):
+        """AudioLLM config: save → redact → reload → apply_env_overrides restores api_keys."""
+        config = _config(env_vars=self._AUDIO_LLM_ENV)
+        dumped = config.model_dump_json()
+        loaded = _load_json_into_runconfig(dumped)
+
+        # Both audio_llm_params and tts_params should be redacted
+        assert loaded.model.audio_llm_params["api_key"] == "***"
+        assert loaded.model.tts_params["api_key"] == "***"
+
+        loaded.apply_env_overrides(config)
+        assert loaded.model.audio_llm_params["api_key"] == "secret_allm_key"
+        assert loaded.model.tts_params["api_key"] == "secret_tts_key"
+
+    def test_s2s_saved_with_cascade_env_active(self):
+        """Saved S2S config loaded while cascade env is active still restores S2S secrets.
+
+        This is the scenario from commit dd47960: from_existing_run loads a saved S2S config
+        but the current environment has cascade (LLM+STT+TTS) vars set.  apply_env_overrides
+        should restore the S2S secrets from a live S2S config, not the cascade one.
+        """
+        s2s_config = _config(env_vars=self._S2S_ENV_WITH_SECRET)
+        dumped = s2s_config.model_dump_json()
+
+        # Reload with isolated env (simulating from_existing_run's _StoredRunConfig)
+        loaded = _load_json_into_runconfig(dumped)
+        assert loaded.model.s2s_params["api_key"] == "***"
+
+        # apply_env_overrides with the original S2S config
+        loaded.apply_env_overrides(s2s_config)
+        assert loaded.model.s2s_params["api_key"] == "secret_s2s_key"
+
+    def test_zero_rerun_attempts_preserves_first_mode_params(self):
+        """With max_rerun_attempts=0 + conflicting modes, the surviving mode's params are intact."""
+        # Cascade config saved normally
+        cascade_config = _config(env_vars=_BASE_ENV)
+        dumped = cascade_config.model_dump_json()
+        loaded = _load_json_into_runconfig(dumped)
+        assert loaded.model.stt_params["api_key"] == "***"
+
+        # Restore secrets — should work even when max_rerun_attempts=0 is set elsewhere
+        loaded.apply_env_overrides(cascade_config)
+        assert loaded.model.stt_params["api_key"] == "test_key"
+        assert loaded.model.tts_params["api_key"] == "test_key"
+
+
+class TestStripOtherModeFields:
+    """Cross-mode fields are stripped so extra='forbid' on each config class doesn't reject them."""
+
+    def test_s2s_with_leftover_pipeline_fields(self):
+        """S2S config ignores leftover stt/tts/llm fields from a previous pipeline setup."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__S2S": "gpt-realtime-mini",
+                "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "", "model": "gpt-realtime-mini"}),
+                # Leftover pipeline fields that should be stripped
+                "EVA_MODEL__STT": "deepgram",
+                "EVA_MODEL__TTS": "cartesia",
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2"}),
+                "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic"}),
+            }
+        )
+        assert config.model.s2s == "gpt-realtime-mini"
+
+    def test_pipeline_with_leftover_s2s_fields(self):
+        """Pipeline config ignores leftover s2s_params from a previous S2S setup."""
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                # Leftover S2S field (s2s_params without s2s won't trigger exclusivity)
+                "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "", "model": "old-model"}),
+            }
+        )
+        assert config.model.llm == "gpt-5.2"
+
+    def test_audio_llm_with_leftover_pipeline_fields(self):
+        """Audio LLM config ignores leftover stt/llm fields from a previous pipeline setup."""
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__AUDIO_LLM": "vllm",
+                "EVA_MODEL__AUDIO_LLM_PARAMS": json.dumps(
+                    {"api_key": "k", "model": "ultravox", "base_url": "http://localhost:8000"}
+                ),
+                "EVA_MODEL__TTS": "cartesia",
+                "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "k", "model": "sonic"}),
+                # Leftover pipeline fields that should be stripped
+                "EVA_MODEL__STT": "deepgram",
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "nova-2"}),
+            }
+        )
+        assert config.model.audio_llm == "vllm"
+
+    def test_pipeline_with_leftover_audio_llm_fields(self):
+        """Pipeline config ignores leftover audio_llm_params from a previous audio LLM setup."""
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_MODEL__AUDIO_LLM_PARAMS": json.dumps(
+                    {"api_key": "k", "model": "ultravox", "base_url": "http://localhost:8000"}
+                ),
+            }
+        )
+        assert config.model.llm == "gpt-5.2"
+
+
 class TestSpeechToSpeechConfig:
     """Tests for SpeechToSpeechConfig discriminated union."""
 
@@ -1005,7 +1033,7 @@ class TestSpeechToSpeechConfig:
                 "EVA_MODEL__S2S_PARAMS": json.dumps({"api_key": "", "model": "gpt-realtime-mini"}),
             }
         )
-        assert isinstance(config.model, SpeechToSpeechConfig)
+        assert config.model.pipeline_type == PipelineType.S2S
         assert config.model.s2s == "gpt-realtime-mini"
 
     def test_s2s_config_from_cli(self):
@@ -1019,7 +1047,7 @@ class TestSpeechToSpeechConfig:
                 '{"api_key": "test-key", "model": "gemini_live"}',
             ],
         )
-        assert isinstance(config.model, SpeechToSpeechConfig)
+        assert config.model.pipeline_type == PipelineType.S2S
         assert config.model.s2s == "gemini_live"
         assert config.model.s2s_params == {"api_key": "test-key", "model": "gemini_live"}
 
@@ -1032,5 +1060,5 @@ class TestSpeechToSpeechConfig:
                 "s2s_params": {"voice": "alloy", "api_key": "key_1", "model": "gpt-realtime-mini"},
             },
         )
-        assert isinstance(config.model, SpeechToSpeechConfig)
+        assert config.model.pipeline_type == PipelineType.S2S
         assert config.model.s2s_params == {"voice": "alloy", "api_key": "key_1", "model": "gpt-realtime-mini"}

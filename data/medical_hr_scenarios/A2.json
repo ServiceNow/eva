@@ -28,8 +28,8 @@
     "5407856339": {
       "npi": "5407856339",
       "employee_id": "EMP680933",
-      "first_name": "Olga",
-      "last_name": "Ivanova",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "JUOP-21C",
       "pin": "6067",
       "phone_last_four": "4419",
@@ -171,8 +171,8 @@
   "employees": {
     "EMP680933": {
       "employee_id": "EMP680933",
-      "first_name": "Olga",
-      "last_name": "Ivanova",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1987-11-24",
       "phone_last_four": "4419",
       "otp_code": "517500",

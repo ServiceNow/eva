@@ -13,7 +13,7 @@ interface SectionProps {
 export function Section({ id, title, subtitle, children, className = '', wide = false }: SectionProps) {
   return (
     <section id={id} className={`pt-28 pb-20 px-4 sm:px-6 lg:px-8 ${className}`}>
-      <div className={`${wide ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto`}>
+      <div className={`${wide ? 'max-w-[1600px]' : 'max-w-screen-2xl'} mx-auto`}>
         {title && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

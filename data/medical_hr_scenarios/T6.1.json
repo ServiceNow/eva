@@ -81,8 +81,8 @@
   "employees": {
     "EMP405420": {
       "employee_id": "EMP405420",
-      "first_name": "Wei",
-      "last_name": "Liu",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1998-02-14",
       "phone_last_four": "4821",
       "otp_code": "551204",

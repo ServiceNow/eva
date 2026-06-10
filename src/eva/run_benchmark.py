@@ -6,7 +6,7 @@ import sys
 from dotenv import load_dotenv
 
 from eva.metrics.runner import MetricsRunner
-from eva.models.config import PipelineConfig, RunConfig
+from eva.models.config import PipelineType, RunConfig
 from eva.models.record import EvaluationRecord
 from eva.orchestrator.runner import BenchmarkRunner
 from eva.utils import router
@@ -106,14 +106,14 @@ async def run_benchmark(config: RunConfig) -> int:
     if config.dry_run:
         logger.info("Dry run - configuration validated successfully")
         logger.info(f"  Dataset: {len(records)} records")
-        if isinstance(config.model, PipelineConfig):
+        if config.model.pipeline_type == PipelineType.CASCADE:
             logger.info(f"  STT model: {config.model.stt}")
             logger.info(f"  LLM model: {config.model.llm}")
             logger.info(f"  TTS model: {config.model.tts}")
         else:
             logger.info(f"  S2S model: {config.model.s2s}")
         logger.info(f"  Max concurrent: {config.max_concurrent_conversations}")
-        logger.info(f"  Timeout: {config.conversation_timeout_seconds}s")
+        logger.info(f"  Time limit: {config.conversation_time_limit_seconds}s")
         return 0
 
     # Create and run benchmark

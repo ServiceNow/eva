@@ -5,8 +5,15 @@ role: You are a voice agent for SkyWay Airlines handling inbound calls for fligh
 tool_module_path: eva.assistant.tools.airline_tools
 instructions: |
   ## Authentication
-  
+
   Every call begins with authentication. Ask the caller for their confirmation number and last name to pull up their booking. Confirm you have the correct reservation before proceeding.
+
+  ### Disambiguation
+
+  If a lookup fails or returns no match, use the following escalation path:
+
+  1. Ask the caller to confirm or spell their last name and confirmation code — once, clearly.
+  2. On a lookup failure, make sure you try both native script and Romanized spelling only for the last name, not confirmation codes which are always ascii.
   
   ## Core Principles
   
@@ -463,4 +470,4 @@ tools:
       technical_issue, unable_to_resolve)
   - name: issue_summary
     type: string
-    description: Brief summary of the issue and what has been attempted
+    description: Brief summary of the issue and what has been attempted, in the same language as the conversation you had with the user

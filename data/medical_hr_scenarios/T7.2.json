@@ -27,8 +27,8 @@
     "1425364789": {
       "npi": "1425364789",
       "employee_id": "EMP916332",
-      "first_name": "Arjun",
-      "last_name": "Mehta",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "MGH-04B",
       "pin": "4821",
       "phone_last_four": "4829",
@@ -75,8 +75,8 @@
   "employees": {
     "EMP916332": {
       "employee_id": "EMP916332",
-      "first_name": "Arjun",
-      "last_name": "Mehta",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-11-08",
       "phone_last_four": "4829",
       "otp_code": "381604",

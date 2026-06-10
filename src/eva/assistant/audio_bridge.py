@@ -256,6 +256,6 @@ class MetricsLogWriter:
     def _append(self, entry: dict) -> None:
         try:
             with open(self.log_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(entry) + "\n")
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
         except Exception as e:
             logger.error(f"Error writing metrics log: {e}")

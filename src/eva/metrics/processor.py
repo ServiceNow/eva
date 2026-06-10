@@ -5,9 +5,9 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from eva.assistant.agentic.system import GENERIC_ERROR
 from eva.models.config import PipelineType
 from eva.models.results import ConversationResult
+from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
 from eva.utils.log_processing import (
     AnnotationLabel,
     aggregate_pipecat_logs_by_type,
@@ -413,13 +413,13 @@ def _handle_audio_start(
             # the next user's audio_start) and can't be relied on for turn boundary detection.
             if pipeline_type == PipelineType.S2S:
                 state.assistant_spoke_in_turn = True
-        # Interruption: assistant starts speaking while user is still speaking. Only count if (a) user
-        # audio started in the current turn (not lingering from a previous turn's delayed delivery) and
-        # (b) no tool calls happened yet — tool calls mean the assistant is responding to the user's
-        # input, not barging in.
-        if state.user_audio_open and state.user_audio_started_in_turn and not state.assistant_processed_in_turn:
+        # Interruption: assistant audio_start overlaps an open user audio session. Flag the turn
+        # whenever there's overlap.
+        # `hold_turn` if the assistant has not yet spoken.
+        if state.user_audio_open and state.user_audio_started_in_turn:
             state.assistant_interrupted_turns.add(state.turn_num)
-            state.hold_turn = True
+            if not state.assistant_processed_in_turn:
+                state.hold_turn = True
 
     turn_idx = state.turn_num
     key = (role, turn_idx)
@@ -701,27 +701,22 @@ def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dic
     if trailing_turn_id is None:
         return
 
-    text = (
-        context.conversation_trace[-1]["content"]
-        if last_entry.get("role") == "assistant"
-        else context.intended_assistant_turns[trailing_turn_id]
-    )
-    labeled = f"{text} {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
-
     if last_entry.get("role") == "assistant":
-        context.conversation_trace[-1]["content"] = labeled
+        context.conversation_trace[-1]["content"] += f" {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
     else:
+        labeled = f"{context.intended_assistant_turns[trailing_turn_id]} {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
         context.conversation_trace.append(
             {"role": "assistant", "content": labeled, "type": "intended", "turn_id": trailing_turn_id}
         )
 
-    # Sync intended + transcribed (skip intended for S2S — no intended text exists)
-    if context.pipeline_type != PipelineType.S2S:
-        context.intended_assistant_turns[trailing_turn_id] = labeled
-    if not context.transcribed_assistant_turns.get(trailing_turn_id):
-        context.transcribed_assistant_turns[trailing_turn_id] = labeled
-    else:
+    # Append the label to the aggregated turn text (skip intended for S2S — no intended text exists).
+    if context.intended_assistant_turns.get(trailing_turn_id) and context.pipeline_type != PipelineType.S2S:
+        context.intended_assistant_turns[trailing_turn_id] += f" {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
+    if context.transcribed_assistant_turns.get(trailing_turn_id):
         context.transcribed_assistant_turns[trailing_turn_id] += f" {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
+    else:
+        # STT produced no text for the final turn — back from the (already-labeled) intended text.
+        context.transcribed_assistant_turns[trailing_turn_id] = context.intended_assistant_turns.get(trailing_turn_id)
 
     logger.info(f"Record {context.record_id}: Labeled trailing assistant at turn {trailing_turn_id}")
 

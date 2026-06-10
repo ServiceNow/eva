@@ -1,0 +1,8 @@
+{
+  "name": "Microsoft 365 E3",
+  "translatable": false,
+  "base": [
+    "office 365"
+  ],
+  "translations": {}
+}

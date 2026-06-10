@@ -27,8 +27,7 @@ produce `ConversationResult`. The server name must be registered in
 ## Quick checklist
 
 - [ ] Subclass `AbstractAssistantServer`
-- [ ] Assert `isinstance(self.pipeline_config, SpeechToSpeechConfig)` (or the correct
-      config type) in `__init__`
+- [ ] Read `self.pipeline_config.s2s_params` (a `ModelConfig` field) in `__init__`
 - [ ] Expose `ws://localhost:{self.port}/ws` accepting Twilio-framed audio
 - [ ] Override `_audio_sample_rate` to match the recording sample rate
 - [ ] Populate `self.user_audio_buffer` and `self.assistant_audio_buffer` during
@@ -58,25 +57,18 @@ Call `super().__init__(**kwargs)` first. The base class sets up:
 | `self._audio_buffer` | `bytearray` | Mixed audio (leave empty — base class mixes automatically) |
 | `self._audio_sample_rate` | `int` | Recording sample rate, default 24000 |
 
-After calling `super().__init__()`, narrow the config type and initialize state:
+After calling `super().__init__()`, read params and initialize state:
 
 ```python
 def __init__(self, **kwargs):
     super().__init__(**kwargs)
-    if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-        s2s_params = self.pipeline_config.s2s_params
-    else:
-        logger.error("Pipeline config is not SpeechToSpeechConfig")
-        return
+    s2s_params = self.pipeline_config.s2s_params or {}
     self._model = s2s_params["model"] # model is required in the s2s params config
     self._audio_sample_rate = SAMPLE_RATE  # match  recording rate
     self._fw_log: FrameworkLogWriter | None = None
     self._metrics_log: MetricsLogWriter | None = None
     # ... other setup
 ```
-
-The assertion fails fast with a clear message rather than an obscure `AttributeError`
-later.
 
 ---
 
@@ -352,15 +344,12 @@ async def save_outputs(self) -> None:
 
 ## 9. Config type
 
-`pipeline_config` arrives as a union type from the orchestrator. For s2s models it
-will be `SpeechToSpeechConfig`, which exposes:
+`pipeline_config` is a `ModelConfig` instance from the orchestrator. For s2s models, it exposes:
 
 ```python
 self.pipeline_config.s2s            # model identifier string
 self.pipeline_config.s2s_params     # dict of additional params (api_key, voice, model, etc.)
 ```
-
-Return if the config is not `SpeechToSpeechConfig`.
 
 Server should be documented in the relevant `configs/` YAML with `framework:
 my_framework` and `model: {s2s: my-model-id, s2s_params: {...}}`.
@@ -402,18 +391,14 @@ from eva.assistant.audio_bridge import (
     sync_buffer_to_position,
 )
 from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
-from eva.models.config import SpeechToSpeechConfig
+from eva.models.config import ModelConfig
 
 
 class MyFrameworkAssistantServer(AbstractAssistantServer):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-            s2s_params = self.pipeline_config.s2s_params
-        else:
-            logger.error("Pipeline config is not SpeechToSpeechConfig")
-            return
+        s2s_params = self.pipeline_config.s2s_params or {}
         self._model = s2s_params["model"]
 
 

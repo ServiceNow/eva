@@ -30,16 +30,17 @@ def _make_trace(tool_call_turn_ids: set[int], all_turn_ids: set[int]) -> list[di
 class TestResponseSpeedMetric:
     @pytest.mark.asyncio
     async def test_no_latencies(self):
-        """Missing latency data returns error."""
+        """Missing latency data is skipped (no error)."""
         metric = ResponseSpeedMetric()
         ctx = make_metric_context()
 
         result = await metric.compute(ctx)
 
         assert result.name == "response_speed"
-        assert result.score == 0.0
+        assert result.score is None
         assert result.normalized_score is None
-        assert result.error is not None
+        assert result.error is None
+        assert result.skipped is True
 
     @pytest.mark.asyncio
     async def test_valid_latencies(self):
@@ -72,16 +73,16 @@ class TestResponseSpeedMetric:
 
     @pytest.mark.asyncio
     async def test_all_latencies_filtered_out(self):
-        """When all values are invalid, returns error."""
+        """When all values are invalid, the metric is skipped (no error)."""
         metric = ResponseSpeedMetric()
         ctx = make_metric_context(latency_assistant_turns={1: -5.0, 2: 2000.0})
 
         result = await metric.compute(ctx)
 
-        assert result.score == 0.0
+        assert result.score is None
         assert result.normalized_score is None
-        assert result.error is not None
-        assert "No valid response speeds" in result.error
+        assert result.error is None
+        assert result.skipped is True
 
     @pytest.mark.asyncio
     async def test_single_latency_value(self):

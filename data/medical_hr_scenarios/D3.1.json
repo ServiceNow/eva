@@ -32,8 +32,8 @@
     "7049001493": {
       "npi": "7049001493",
       "employee_id": "EMP799287",
-      "first_name": "Nalini",
-      "last_name": "Patel",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "SOE-95M",
       "pin": "3851",
       "phone_last_four": "0184",
@@ -110,8 +110,8 @@
   "employees": {
     "EMP799287": {
       "employee_id": "EMP799287",
-      "first_name": "Nalini",
-      "last_name": "Patel",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1984-11-22",
       "phone_last_four": "0184",
       "otp_code": "745414",

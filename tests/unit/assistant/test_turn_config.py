@@ -185,6 +185,26 @@ class TestCreateTurnStopStrategy:
         assert isinstance(passed_params, SmartTurnParams)
         assert passed_params.stop_secs == 0.8
 
+    def test_turn_analyzer_smart_turn_stop_secs_via_strategy_params(self):
+        """smart_turn_stop_secs in strategy_params takes precedence over the function argument."""
+        from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
+
+        mock_analyzer = MagicMock()
+        with patch(
+            "eva.assistant.pipeline.turn_config.LocalSmartTurnAnalyzerV3",
+            return_value=mock_analyzer,
+        ) as mock_cls:
+            create_turn_stop_strategy(
+                "turn_analyzer",
+                {"smart_turn_stop_secs": 1.5},
+                smart_turn_stop_secs=0.8,
+            )
+
+        call_args = mock_cls.call_args
+        passed_params = call_args.kwargs["params"]
+        assert isinstance(passed_params, SmartTurnParams)
+        assert passed_params.stop_secs == 1.5
+
     def test_external_stop_strategy(self):
         """'external' returns ExternalUserTurnStopStrategy."""
         result = create_turn_stop_strategy("external", {})

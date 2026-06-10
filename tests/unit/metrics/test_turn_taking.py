@@ -1,10 +1,19 @@
 """Tests for TurnTakingMetric.
 
 Scoring model (continuous, 0–1):
-  - Latency → piecewise linear (ramp 0 → 1 over [-500ms, 500ms], flat 1 to 2000ms, ramp 1 → 0 to 5000ms).
+  - Latency → piecewise linear:
+      ramp 0 → 1 over [-500ms, 500ms], flat 1 to 2000ms,
+      ramp 1 → 0 over [2000ms, 3500ms] (non-tool) or [3000ms, 5000ms] (tool call).
   - Agent-interrupt turns → overlap-based, capped at AGENT_INTERRUPT_MAX_SCORE = 0.5.
   - User-interrupt turns → agent yield-latency-based (ramp 1 → 0 over [0, 2000ms]).
   - Both flags on one turn → min of the two.
+  - Conversation not completed → overall score zeroed; per-turn data preserved in details.
+
+Latency thresholds:
+  LATENCY_HARD_EARLY_MS = -500, LATENCY_SWEET_SPOT_LOW_MS = 500
+  LATENCY_SWEET_SPOT_HIGH_MS = 2000, LATENCY_HARD_LATE_MS = 3500
+  LATENCY_SWEET_SPOT_HIGH_MS_TOOL = 3000, LATENCY_HARD_LATE_MS_TOOL = 5000
+  LATE_THRESHOLD_MS = 2750, LATE_THRESHOLD_MS_TOOL = 4000
 
 Sub-metrics (flat, one number each):
   Latency:              mean_latency_ms, p50_latency_ms, p90_latency_ms,
@@ -48,10 +57,11 @@ class TestLatencyScore:
             (500, 1.00),
             (1000, 1.00),
             (2000, 1.00),
-            (2500, 0.8333),
-            (3500, 0.5),
-            (4500, 0.1667),
-            (5000, 0.00),
+            # Ramp-down [2000, 3500]: score = (3500 - lat) / (3500 - 2000)
+            (2500, 0.6667),  # (3500-2500)/1500
+            (3000, 0.3333),  # (3500-3000)/1500
+            (3500, 0.00),  # hard_late boundary
+            (4500, 0.00),  # beyond hard_late
             (8000, 0.00),
         ],
     )
@@ -65,15 +75,16 @@ class TestLatencyScore:
             (-500, 0.00),
             (0, 0.50),
             (500, 1.00),
-            # Extended sweet spot [500, 4000] for tool turns.
+            # Extended sweet spot [500, 3000] for tool turns.
             (2000, 1.00),
-            (3500, 1.00),
-            (4000, 1.00),
-            # Ramp 1 → 0 over [4000, 7000] (vs [2000, 5000] without a tool call).
-            (4500, 0.8333),
-            (5500, 0.5),
-            (6500, 0.1667),
-            (7000, 0.00),
+            (3000, 1.00),
+            # Ramp 1 → 0 over [3000, 5000] (vs [2000, 3500] without a tool call).
+            # score = (5000 - lat) / (5000 - 3000)
+            (3500, 0.75),  # (5000-3500)/2000
+            (4000, 0.50),  # (5000-4000)/2000
+            (4500, 0.25),  # (5000-4500)/2000
+            (5000, 0.00),  # hard_late_tool boundary
+            (6000, 0.00),  # beyond hard_late_tool
             (9000, 0.00),
         ],
     )
@@ -268,14 +279,17 @@ class TestComputeScenarios:
         assert ev["yield_score"] == pytest.approx(0.95, abs=1e-3)
 
     @pytest.mark.asyncio
-    async def test_no_timestamps_returns_skipped(self, metric):
+    async def test_no_timestamps_scores_zero(self, metric):
+        """No usable turns means turn-taking failed → score 0, not skipped."""
         context = make_metric_context(
             audio_timestamps_user_turns={},
             audio_timestamps_assistant_turns={},
         )
         result = await metric.compute(context)
-        assert result.normalized_score is None
-        assert result.error
+        assert result.score == 0.0
+        assert result.normalized_score == 0.0
+        assert result.error is None
+        assert result.skipped is False
 
 
 # ---------- Sub-metric structure ----------
@@ -285,7 +299,8 @@ class TestFlatSubMetrics:
     @pytest.mark.asyncio
     async def test_latency_headlines_populated(self, metric):
         """5 turns, mix of latencies → 6 latency sub-metrics present with expected values."""
-        # Latencies: 100ms (early), 300ms, 1000ms, 3000ms, 5000ms (late)
+        # Latencies: 100ms (early), 300ms (on-time), 1000ms (on-time),
+        #            3000ms (late, ≥ LATE_THRESHOLD_MS=2750), 5000ms (late).
         context = make_metric_context(
             audio_timestamps_user_turns={i: [(i * 10.0, i * 10.0 + 1.0)] for i in range(1, 6)},
             audio_timestamps_assistant_turns={
@@ -300,15 +315,15 @@ class TestFlatSubMetrics:
         sub = result.sub_metrics
         for k in ("mean_latency_ms", "p50_latency_ms", "p90_latency_ms", "on_time_rate", "early_rate", "late_rate"):
             assert k in sub
-        assert sub["on_time_rate"].score == pytest.approx(0.6)
+        assert sub["on_time_rate"].score == pytest.approx(0.4)
         assert sub["early_rate"].score == pytest.approx(0.2)
-        assert sub["late_rate"].score == pytest.approx(0.2)
+        assert sub["late_rate"].score == pytest.approx(0.4)
         assert sub["p50_latency_ms"].score == pytest.approx(1000, abs=1)
         # Raw-ms sub-metrics are not normalized
         assert sub["mean_latency_ms"].normalized_score is None
         assert sub["p50_latency_ms"].normalized_score is None
         # Rate sub-metrics are normalized
-        assert sub["on_time_rate"].normalized_score == pytest.approx(0.6)
+        assert sub["on_time_rate"].normalized_score == pytest.approx(0.4)
 
     @pytest.mark.asyncio
     async def test_no_agent_interruptions_omits_conditional_subs(self, metric):
@@ -421,11 +436,11 @@ class TestToolAwareScoring:
     """Turns with tool calls get a more lenient latency curve and late-rate threshold."""
 
     @pytest.mark.asyncio
-    async def test_5s_latency_scores_perfect_on_tool_turn(self, metric):
-        """5s wait is 0 on the non-tool curve, but sits inside the tool sweet spot → score 1.0."""
+    async def test_2500ms_latency_scores_perfect_on_tool_turn(self, metric):
+        """2.5s is on the ramp-down for non-tool (score 0.667) but inside the tool sweet spot → 1.0."""
         context = make_metric_context(
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(20.0, 21.0)]},
-            audio_timestamps_assistant_turns={1: [(6.0, 7.0)], 2: [(22.0, 23.0)]},  # 5s, 1s
+            audio_timestamps_assistant_turns={1: [(3.5, 4.5)], 2: [(22.0, 23.0)]},  # 2.5s, 1s
             conversation_trace=[
                 {"type": "tool_call", "turn_id": 1, "tool_name": "lookup"},
             ],
@@ -435,15 +450,14 @@ class TestToolAwareScoring:
         ev2 = result.details["per_turn_evidence"][2]
         assert ev1["has_tool_call"] is True
         assert ev2["has_tool_call"] is False
-        # Tool turn at 5s latency: inside the extended sweet spot [500ms, 4000ms]? No — 5000ms
-        # is on the ramp-down. (7000-5000)/(7000-4000) = 0.6667.
-        assert ev1["latency_score"] == pytest.approx(0.6667, abs=1e-3)
-        # Non-tool turn at 1s: firmly in the sweet spot.
+        # Tool turn at 2.5s: inside the extended sweet spot [500ms, 3000ms] → score 1.0.
+        assert ev1["latency_score"] == pytest.approx(1.0, abs=1e-3)
+        # Non-tool turn at 1s: firmly in the [500ms, 2000ms] sweet spot.
         assert ev2["latency_score"] == pytest.approx(1.0, abs=1e-3)
 
     @pytest.mark.asyncio
     async def test_tool_turn_beyond_hard_late_scores_zero(self, metric):
-        """Latency past 7s on a tool turn still drops to 0 (just further out than the non-tool 5s)."""
+        """Latency past 5s on a tool turn drops to 0 (hard_late_tool=5000ms)."""
         context = make_metric_context(
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(20.0, 21.0)]},
             audio_timestamps_assistant_turns={1: [(9.0, 10.0)], 2: [(22.0, 23.0)]},  # 8s, 1s
@@ -467,16 +481,16 @@ class TestToolAwareScoring:
 
     @pytest.mark.asyncio
     async def test_late_rate_uses_tool_threshold(self, metric):
-        """A 5s latency is 'late' on a non-tool turn but 'on time' on a tool turn (threshold 6s)."""
+        """A 3s latency is 'late' on a non-tool turn but 'on time' on a tool turn."""
         context = make_metric_context(
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(20.0, 21.0)]},
-            audio_timestamps_assistant_turns={1: [(6.0, 7.0)], 2: [(27.0, 28.0)]},  # 5s tool, 6s no-tool
+            audio_timestamps_assistant_turns={1: [(4.0, 5.0)], 2: [(24.0, 25.0)]},  # 3s tool, 3s no-tool
             conversation_trace=[{"type": "tool_call", "turn_id": 1, "tool_name": "lookup"}],
         )
         result = await metric.compute(context)
         sub = result.sub_metrics
-        # Turn 1 (tool, 5s < LATE_THRESHOLD_MS_TOOL=6000) → on_time.
-        # Turn 2 (no tool, 6s >= LATE_THRESHOLD_MS=4000) → late.
+        # Turn 1 (tool, 3s < LATE_THRESHOLD_MS_TOOL=4000) → on_time.
+        # Turn 2 (no tool, 3s >= LATE_THRESHOLD_MS=2750) → late.
         assert sub["late_rate"].score == pytest.approx(0.5, abs=1e-3)
         assert sub["on_time_rate"].score == pytest.approx(0.5, abs=1e-3)
 
@@ -490,10 +504,10 @@ class TestToolAwareScoring:
         """
         context = make_metric_context(
             # Turn 1: 1s latency, no tool call → non-tool curve → score 1.0 (sweet spot)
-            # Turn 2: 5s latency, tool call   → tool curve    → score 0.6667 (ramp-down)
-            #                                   non-tool curve → score 0.0   (past hard_late=5000)
+            # Turn 2: 4s latency, tool call   → tool curve    → score 0.5 (ramp-down)
+            #                                   non-tool curve → score 0.0 (past hard_late=3500)
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(20.0, 21.0)]},
-            audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(26.0, 27.0)]},  # 1s, 5s
+            audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(25.0, 26.0)]},  # 1s, 4s
             conversation_trace=[
                 {"type": "tool_call", "turn_id": 2, "tool_name": "lookup"},
             ],
@@ -505,25 +519,26 @@ class TestToolAwareScoring:
         assert ev2["has_tool_call"] is True
         # Turn 1: 1s latency, no tool → firmly inside sweet spot.
         assert ev1["latency_score"] == pytest.approx(1.0, abs=1e-3)
-        # Turn 2: 5s latency with tool call → on ramp-down (7000-5000)/(7000-4000) = 0.6667.
-        # Without the fix this scores 0.0 (non-tool hard_late=5000 treats 5s as beyond the cliff).
-        assert ev2["latency_score"] == pytest.approx(0.6667, abs=1e-3)
+        # Turn 2: 4s latency with tool call → on ramp-down (5000-4000)/(5000-3000) = 0.5.
+        # Without the fix this scores 0.0 (non-tool hard_late=3500 treats 4s as beyond the cliff).
+        assert ev2["latency_score"] == pytest.approx(0.5, abs=1e-3)
 
     @pytest.mark.asyncio
     async def test_post_interrupt_latency_honors_tool_curve(self, metric):
-        """Settled response 5s after user_end on a tool turn → non-zero score via the tool curve."""
+        """Settled response 4s after user_end on a tool turn → non-zero score via the tool curve."""
         context = make_metric_context(
-            # Interrupt at 0.8–1.0, then settled response at 6.0 (5s after user end = 1.0).
+            # Interrupt at 0.8–1.0, then settled response at 5.0 (4s after user end = 1.0).
             audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(10.0, 11.0)]},
-            audio_timestamps_assistant_turns={1: [(0.8, 1.0), (6.0, 7.0)], 2: [(12.0, 13.0)]},
+            audio_timestamps_assistant_turns={1: [(0.8, 1.0), (5.0, 6.0)], 2: [(12.0, 13.0)]},
             assistant_interrupted_turns={1},
             conversation_trace=[{"type": "tool_call", "turn_id": 1, "tool_name": "lookup"}],
         )
         result = await metric.compute(context)
         ev = result.details["per_turn_evidence"][1]
-        # 5000ms post-interrupt latency on the tool curve: (7000-5000)/(7000-4000) = 0.6667.
-        assert ev["post_interrupt_latency_ms"] == pytest.approx(5000, abs=1)
-        assert ev["post_interrupt_latency_score"] == pytest.approx(0.6667, abs=1e-3)
+        # 4000ms post-interrupt latency on the tool curve: (5000-4000)/(5000-3000) = 0.5.
+        # On the non-tool curve (hard_late=3500) this would be 0.0.
+        assert ev["post_interrupt_latency_ms"] == pytest.approx(4000, abs=1)
+        assert ev["post_interrupt_latency_score"] == pytest.approx(0.5, abs=1e-3)
 
 
 # ---------- Count-based interrupt penalty ----------
@@ -623,6 +638,59 @@ class TestInterruptCountSubMetrics:
         assert sub["agent_interruption.num_interruptions"].score is None
         assert sub["agent_interruption.num_interruptions"].normalized_score is None
         assert "agent_interruption.mean_count_score" not in sub
+
+
+# ---------- Missed-turn zeroing ----------
+
+
+class TestMissedTurnZeroing:
+    """missed_turn=True → overall score zeroed; per-turn detail data preserved."""
+
+    @pytest.mark.asyncio
+    async def test_missed_turn_zeros_score_with_no_error(self, metric):
+        """missed_turn=True → score 0, error=None, but per-turn data and sub-metrics still emitted."""
+        # Turn 3 has user audio but no assistant response → user was last speaker.
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)], 3: [(10.0, 11.0)]},
+            audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(7.0, 8.0)]},
+            conversation_ended_reason="inactivity_timeout",
+        )
+        result = await metric.compute(context)
+        assert result.score == pytest.approx(0.0)
+        assert result.normalized_score == pytest.approx(0.0)
+        assert result.error is None
+        assert result.details["missed_turn"] is True
+        # Turns 1 and 2 still have per-turn data + headline sub-metrics for analysis.
+        assert len(result.details["per_turn_score"]) == 2
+        assert all(v == pytest.approx(1.0) for v in result.details["per_turn_score"].values())
+        assert "on_time_rate" in result.sub_metrics
+        assert "late_rate" in result.sub_metrics
+
+    @pytest.mark.asyncio
+    async def test_no_missed_turn_uses_mean_score(self, metric):
+        """No missed turn → score equals mean of per-turn scores, missed_turn=False."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)]},
+            audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(7.0, 8.0)]},
+            conversation_ended_reason="goodbye",
+        )
+        result = await metric.compute(context)
+        assert result.error is None
+        assert result.score == pytest.approx(1.0)
+        assert result.details["missed_turn"] is False
+
+    @pytest.mark.asyncio
+    async def test_inactivity_timeout_with_agent_last_does_not_zero(self, metric):
+        """Boundary: inactivity_timeout but agent spoke last → not a missed turn → score not zeroed."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(5.0, 6.0)]},
+            audio_timestamps_assistant_turns={1: [(2.0, 3.0)], 2: [(7.0, 8.0)]},  # agent ends last at 8.0
+            conversation_ended_reason="inactivity_timeout",
+        )
+        result = await metric.compute(context)
+        assert result.error is None
+        assert result.score > 0.0
+        assert result.details["missed_turn"] is False
 
 
 # ---------- Dual interrupt ----------

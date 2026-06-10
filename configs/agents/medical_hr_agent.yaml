@@ -1249,4 +1249,4 @@ tools:
         description: "The reason for the transfer"
       - name: issue_summary
         type: string
-        description: "A brief summary of the caller's request, what was attempted, and why the transfer is needed"
+        description: "A brief summary of the caller's request, what was attempted, and why the transfer is needed. This should be in the same language as the conversation you had with the user."

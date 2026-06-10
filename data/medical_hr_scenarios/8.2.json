@@ -28,8 +28,8 @@
     "5897045684": {
       "npi": "5897045684",
       "employee_id": "EMP292401",
-      "first_name": "Anh",
-      "last_name": "Nguyen",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "MGH-04B",
       "pin": "4827",
       "phone_last_four": "2481",
@@ -173,8 +173,8 @@
   "employees": {
     "EMP292401": {
       "employee_id": "EMP292401",
-      "first_name": "Anh",
-      "last_name": "Nguyen",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1988-11-14",
       "phone_last_four": "2481",
       "otp_code": "179046",

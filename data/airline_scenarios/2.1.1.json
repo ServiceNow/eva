@@ -7,11 +7,11 @@
       "passengers": [
         {
           "passenger_id": "PAX001",
-          "first_name": "Lucas",
-          "last_name": "Rivera",
+          "first_name": "<FIRST_NAME>",
+          "last_name": "<LAST_NAME>",
           "ticket_number": "0741234567890",
-          "email": "lucas.rivera@gmail.com",
-          "phone": "+1-919-555-1912",
+          "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
+          "phone": "<PHONE>",
           "elite_status": null,
           "meal_preference": "none",
           "seat_preference": "aisle"

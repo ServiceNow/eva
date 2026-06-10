@@ -282,7 +282,7 @@
         "completed_date": "2025-11-03",
         "status": "completed"
       },
-      "first_name": "Evelyn",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -313,7 +313,7 @@
       "hire_date": "2019-06-10",
       "is_manager": true,
       "last_desk_assignment_date": "2026-03-01",
-      "last_name": "Hayes",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "last_parking_assignment_date": "2026-01-15",
       "manager_auth_code": "V7H8N3",
       "manager_employee_id": "EMP066600",
@@ -575,14 +575,10 @@
           }
         },
         "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "Downtown",
-          "Engineering Center"
-        ],
         "parking_zones": {
           "PZA": {
             "covered": true,
-            "name": "A Garage",
+            "name": "Garage A",
             "spaces": {
               "PZA-002": {
                 "assigned_employee_id": "EMP066600",
@@ -682,11 +678,7 @@
     },
     "zones": {
       "PZA": {
-        "name": "A Garage",
-        "name_aliases": [
-          "Garage A",
-          "Main Garage"
-        ]
+        "name": "Garage A"
       }
     }
   },
@@ -737,9 +729,6 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack app"
-      ],
       "requires_manager_approval": false,
       "vendor": "Salesforce"
     },
@@ -750,10 +739,7 @@
         "permanent",
         "temporary"
       ],
-      "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "IntelliJ"
-      ],
+      "name": "IntelliJ IDEA",
       "vendor": "JetBrains"
     }
   },

@@ -27,8 +27,8 @@
     "1487392045": {
       "npi": "1487392045",
       "employee_id": "EMP921414",
-      "first_name": "Pavel",
-      "last_name": "Kowalski",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "BWH-03A",
       "pin": "4829",
       "phone_last_four": "4829",
@@ -75,8 +75,8 @@
   "employees": {
     "EMP921414": {
       "employee_id": "EMP921414",
-      "first_name": "Pavel",
-      "last_name": "Kowalski",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1991-09-03",
       "phone_last_four": "4829",
       "otp_code": "610311",

@@ -1,0 +1,10 @@
+{
+  "name": "Confluence",
+  "translatable": false,
+  "base": [
+    "wiki",
+    "atlassian confluence",
+    "confluence"
+  ],
+  "translations": {}
+}

@@ -28,8 +28,8 @@
     "1487392045": {
       "npi": "1487392045",
       "employee_id": "EMP533321",
-      "first_name": "Rosa",
-      "last_name": "Delgado",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "MGH-08A",
       "pin": "4829",
       "phone_last_four": "4829",
@@ -76,8 +76,8 @@
   "employees": {
     "EMP533321": {
       "employee_id": "EMP533321",
-      "first_name": "Rosa",
-      "last_name": "Delgado",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-02-14",
       "phone_last_four": "4829",
       "otp_code": "654321",

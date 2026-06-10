@@ -1,0 +1,30 @@
+{
+  "name": "Downtown Garage A",
+  "translatable": true,
+  "base": [
+    "garage a",
+    "downtown garage"
+  ],
+  "translations": {
+    "fr": [
+      "garage a downtown",
+      "garage a du centre-ville",
+      "garage centre-ville",
+      "garage du centre-ville",
+      "parking a centre-ville",
+      "parking a du centre-ville",
+      "parking du centre-ville",
+      "stationnement a du centre-ville"
+    ],
+    "fr-CA": [
+      "garage a downtown",
+      "garage a du centre-ville",
+      "garage centre-ville",
+      "garage du centre-ville",
+      "parking a centre-ville",
+      "parking a du centre-ville",
+      "parking du centre-ville",
+      "stationnement a du centre-ville"
+    ]
+  }
+}

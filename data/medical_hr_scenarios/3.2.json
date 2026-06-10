@@ -28,8 +28,8 @@
     "4289233844": {
       "npi": "4289233844",
       "employee_id": "EMP234628",
-      "first_name": "Takeshi",
-      "last_name": "Nakamura",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "MOGW-64G",
       "pin": "9835",
       "phone_last_four": "2841",
@@ -92,8 +92,8 @@
   "employees": {
     "EMP234628": {
       "employee_id": "EMP234628",
-      "first_name": "Takeshi",
-      "last_name": "Nakamura",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1989-11-18",
       "phone_last_four": "2841",
       "otp_code": "482913",

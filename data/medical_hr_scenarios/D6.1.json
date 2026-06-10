@@ -27,8 +27,8 @@
     "8313706299": {
       "npi": "8313706299",
       "employee_id": "EMP546173",
-      "first_name": "Hiroshi",
-      "last_name": "Watanabe",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "HFS-50D",
       "pin": "9779",
       "phone_last_four": "4421",
@@ -89,8 +89,8 @@
   "employees": {
     "EMP546173": {
       "employee_id": "EMP546173",
-      "first_name": "Hiroshi",
-      "last_name": "Watanabe",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1988-11-14",
       "phone_last_four": "4421",
       "otp_code": "899213",

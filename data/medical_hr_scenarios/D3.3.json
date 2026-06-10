@@ -31,8 +31,8 @@
     "8995059760": {
       "npi": "8995059760",
       "employee_id": "EMP742412",
-      "first_name": "Brigitte",
-      "last_name": "Fontaine",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "GGQ-76P",
       "pin": "4919",
       "phone_last_four": "8421",
@@ -176,8 +176,8 @@
   "employees": {
     "EMP742412": {
       "employee_id": "EMP742412",
-      "first_name": "Brigitte",
-      "last_name": "Fontaine",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1984-02-19",
       "phone_last_four": "8421",
       "otp_code": "387936",

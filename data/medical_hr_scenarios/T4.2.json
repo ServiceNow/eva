@@ -75,8 +75,8 @@
   "employees": {
     "EMP235215": {
       "employee_id": "EMP235215",
-      "first_name": "Yelena",
-      "last_name": "Kuznetsova",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1992-04-08",
       "phone_last_four": "4826",
       "otp_code": "494976",

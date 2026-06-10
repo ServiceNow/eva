@@ -17,7 +17,6 @@ import asyncio
 import json
 import time
 from pathlib import Path
-from typing import Any
 
 try:
     import audioop
@@ -42,10 +41,10 @@ from eva.assistant.audio_bridge import (
     parse_twilio_media_message,
     sync_buffer_to_position,
 )
-from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
+from eva.assistant.base_server import AbstractAssistantServer
 from eva.assistant.elevenlabs_audio_interface import TwilioAudioBridge
 from eva.models.agents import AgentConfig
-from eva.models.config import SpeechToSpeechConfig
+from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -97,7 +96,7 @@ def _agent_tools_to_client_tools(
             # before forwarding to the domain tool handler.
             args = {k: v for k, v in parameters.items() if k != "tool_call_id"}
             result = await execute_tool_fn(_name, args)
-            return json.dumps(result) if isinstance(result, dict) else str(result)
+            return json.dumps(result, ensure_ascii=False) if isinstance(result, dict) else str(result)
 
         client_tools.register(func_name, _handle, is_async=True)
 
@@ -113,13 +112,14 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
     def __init__(
         self,
         current_date_time: str,
-        pipeline_config: SpeechToSpeechConfig,
+        pipeline_config: ModelConfig,
         agent: AgentConfig,
         agent_config_path: str,
         scenario_db_path: str,
         output_dir: Path,
         port: int,
         conversation_id: str,
+        language: str = "en",
     ):
         super().__init__(
             current_date_time=current_date_time,
@@ -130,17 +130,13 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
             output_dir=output_dir,
             port=port,
             conversation_id=conversation_id,
+            language=language,
         )
 
         # Recording sample rate (ElevenLabs operates at 16 kHz)
         self._audio_sample_rate = _RECORDING_SAMPLE_RATE
 
-        s2s_params: dict[str, Any] = {}
-        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-            s2s_params = self.pipeline_config.s2s_params
-        else:
-            logger.error("Pipeline config is not SpeechToSpeechConfig")
-            return
+        s2s_params = self.pipeline_config.s2s_params or {}
         self.s2s_params = s2s_params
         self._model = s2s_params.get("model", "elevenlabs")
 
@@ -195,7 +191,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         logger.info(f"Elevenlabs server started on ws://localhost:{self.port}")
 
     async def _shutdown(self) -> None:
-        """Stop the server, save outputs."""
+        """Stop the server (framework-specific teardown)."""
         if not self._running:
             return
         self._running = False
@@ -216,7 +212,6 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
             self._server = None
             self._server_task = None
 
-        await self.save_outputs()
         logger.info(f"ElevenLabs server stopped on port {self.port}")
 
     async def _handle_session(self, websocket: WebSocket) -> None:  # noqa: C901
@@ -295,7 +290,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         conv_config = ConversationInitiationData(
             dynamic_variables={
                 "system_prompt": self._system_prompt,
-                "initial_message": INITIAL_MESSAGE,
+                "initial_message": self.initial_message,
             },
         )
 

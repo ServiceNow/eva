@@ -28,8 +28,8 @@
     "8528185058": {
       "npi": "8528185058",
       "employee_id": "EMP680238",
-      "first_name": "Padma",
-      "last_name": "Iyer",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "WO-70P",
       "pin": "8216",
       "phone_last_four": "4821",
@@ -90,8 +90,8 @@
   "employees": {
     "EMP680238": {
       "employee_id": "EMP680238",
-      "first_name": "Padma",
-      "last_name": "Iyer",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1990-04-12",
       "phone_last_four": "4821",
       "otp_code": "457256",

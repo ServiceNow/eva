@@ -27,8 +27,8 @@
     "7767834064": {
       "npi": "7767834064",
       "employee_id": "EMP428267",
-      "first_name": "Mira",
-      "last_name": "Jovanovic",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "KQHK-51F",
       "pin": "8538",
       "phone_last_four": "4821",
@@ -100,8 +100,8 @@
   "employees": {
     "EMP428267": {
       "employee_id": "EMP428267",
-      "first_name": "Mira",
-      "last_name": "Jovanovic",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1987-09-14",
       "phone_last_four": "4821",
       "otp_code": "972442",

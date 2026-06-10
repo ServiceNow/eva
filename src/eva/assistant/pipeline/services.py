@@ -15,11 +15,8 @@ from pipecat.frames.frames import (
     TTSStartedFrame,
     TTSStoppedFrame,
 )
-from pipecat.services.assemblyai.stt import (
-    AssemblyAIConnectionParams,
-    AssemblyAISTTService,
-)
-from pipecat.services.cartesia.stt import CartesiaLiveOptions, CartesiaSTTService
+from pipecat.services.assemblyai.stt import AssemblyAISTTService
+from pipecat.services.cartesia.stt import CartesiaSTTService
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
 from pipecat.services.deepgram.stt import DeepgramSTTService
@@ -40,10 +37,13 @@ from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import OpenAITTSService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
-from pipecat.transcriptions.language import Language
+from pipecat.services.xai.stt import XAISTTService
+from pipecat.services.xai.tts import XAITTSService
 from pipecat.utils.text.base_text_filter import BaseTextFilter
 from websockets.asyncio.client import connect as websocket_connect
 
+from eva.assistant.pipeline.alm_base import BaseALMClient
+from eva.assistant.pipeline.alm_gemini import ALMGeminiClient
 from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
 from eva.assistant.pipeline.nvidia_baseten import BasetenSTTService, BasetenTTSService
 from eva.assistant.pipeline.realtime_llm import InstrumentedRealtimeLLMService
@@ -77,6 +77,15 @@ logger = get_logger(__name__)
 
 # Default sample rate for audio
 SAMPLE_RATE = 24000
+
+
+def _base_language(tag: str) -> str:
+    """Return the ISO 639-1 base code from a BCP 47 tag (e.g. 'es-MX' → 'es').
+
+    Used for providers that only accept the two-letter base code (e.g. Whisper/OpenAI STT).
+    """
+    return tag.split("-")[0].split("_")[0]
+
 
 # Round-robin counters for load-balanced URLs (one per service type)
 _tts_url_counter: int = 0
@@ -119,10 +128,10 @@ def create_stt_service(
         logger.info(f"Using AssemblyAI STT: {params['model']}")
         return AssemblyAISTTService(
             api_key=api_key,
-            language=language_code,
-            connection_params=AssemblyAIConnectionParams(
-                sample_rate=SAMPLE_RATE,
-                speech_model=params["model"],
+            sample_rate=SAMPLE_RATE,
+            settings=AssemblyAISTTService.Settings(
+                language=language_code,
+                model=params["model"],
             ),
         )
 
@@ -130,10 +139,10 @@ def create_stt_service(
         logger.info(f"Using Cartesia STT: {params['model']}")
         return CartesiaSTTService(
             api_key=api_key,
-            live_options=CartesiaLiveOptions(
+            sample_rate=SAMPLE_RATE,
+            settings=CartesiaSTTService.Settings(
                 model=params["model"],
                 language=language_code,
-                sample_rate=SAMPLE_RATE,
             ),
         )
 
@@ -143,7 +152,7 @@ def create_stt_service(
             api_key=api_key,
             base_url=url,
             model=params["model"],
-            language=Language.EN,
+            language=_base_language(language_code),
             sample_rate=SAMPLE_RATE,
         )
 
@@ -172,7 +181,10 @@ def create_stt_service(
         return ElevenLabsRealtimeSTTService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
-            params=ElevenLabsRealtimeSTTService.InputParams(commit_strategy=CommitStrategy.VAD),
+            commit_strategy=CommitStrategy.VAD,
+            settings=ElevenLabsRealtimeSTTService.Settings(
+                language=language_code,
+            ),
         )
 
     elif model_lower == "nvidia":
@@ -185,6 +197,8 @@ def create_stt_service(
             api_key=api_key,
             sample_rate=params.get("sample_rate", SAMPLE_RATE),
             verify=False,
+            model=params.get("model"),
+            language=None,
         )
 
     elif model_lower == "nvidia-baseten":
@@ -199,11 +213,14 @@ def create_stt_service(
 
     elif model_lower == "openai":
         logger.info(f"Using OpenAI STT: {params['model']}")
+        # Whisper only accepts ISO 639-1 base codes (e.g. "es", not "es-MX")
+        # params["language"] takes precedence if explicitly set by the user
+        whisper_lang = params.get("language") or _base_language(language_code)
         stt_service = OpenAISTTService(
             api_key=api_key,
             base_url=url,
             model=params["model"],
-            language=Language.EN,
+            language=whisper_lang,
             sample_rate=SAMPLE_RATE,
         )
         if url and "azure" in url:
@@ -212,13 +229,24 @@ def create_stt_service(
                 api_key=api_key,
                 api_version=params.get("api_version", "2025-03-01-preview"),
             )
-        if params.get("language"):
-            stt_service._settings.language = params.get("language")
         return stt_service
+
+    elif model_lower == "xai":
+        logger.info("Using xAI STT")
+        return XAISTTService(
+            api_key=api_key,
+            sample_rate=params.get("sample_rate", 16000),
+            encoding=params.get("encoding", "pcm"),
+            settings=XAISTTService.Settings(
+                language=language_code,
+                interim_results=params.get("interim_results", True),
+                endpointing=params.get("endpointing", 200),
+            ),
+        )
 
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai"
+            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, xai"
         )
 
 
@@ -258,10 +286,12 @@ def create_tts_service(
         return CartesiaTTSService(
             url=url or "wss://api.cartesia.ai/tts/websocket",
             api_key=api_key,
-            model=params["model"],
-            voice_id=params.get("voice_id", "f786b574-daa5-4673-aa0c-cbe3e8534c02"),
-            params=CartesiaTTSService.InputParams(language=language_code),
             sample_rate=SAMPLE_RATE,
+            settings=CartesiaTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice_id", "f786b574-daa5-4673-aa0c-cbe3e8534c02"),
+                language=language_code,
+            ),
         )
 
     elif model_lower == "chatterbox":
@@ -272,6 +302,12 @@ def create_tts_service(
             voice=params.get("voice", "alloy"),
             base_url=url,
         )
+        chatterbox_tts._eva_extra_body = {
+            "streaming_quality": "fast",
+            "streaming_strategy": "word",
+            "streaming_chunk_size": 80,
+            "streaming_buffer_size": 1,
+        }
         OpenAITTSService.run_tts = override_run_tts
         chatterbox_tts._settings.language = language_code
         return chatterbox_tts
@@ -280,18 +316,24 @@ def create_tts_service(
         logger.info(f"Using Deepgram TTS: {params['model']}")
         return DeepgramTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice=params.get("voice", "aura-2-helena-en"),
             sample_rate=SAMPLE_RATE,
+            settings=DeepgramTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice", "aura-2-helena-en"),
+                language=language_code,
+            ),
         )
 
     elif model_lower == "elevenlabs":
         logger.info(f"Using ElevenLabs TTS: {params['model']}")
         return ElevenLabsTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice_id=params.get("voice_id", "hpp4J3VqNfWAUOO0d1Us"),
             sample_rate=SAMPLE_RATE,
+            settings=ElevenLabsTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice_id", "hpp4J3VqNfWAUOO0d1Us"),
+                language=language_code,
+            ),
         )
 
     elif model_lower == "gemini":
@@ -302,10 +344,15 @@ def create_tts_service(
             )
 
         logger.info(f"Using Gemini TTS: {params['model']}")
+        # Supports gemini-2.5-flash-tts, gemini-3.1-flash-tts-preview, etc.
         return GeminiTTSService(
             api_key=api_key,
-            model=params["model"],
-            voice_name=params.get("voice_name", "Puck"),
+            sample_rate=SAMPLE_RATE,
+            settings=GeminiTTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice_id", params.get("voice_name", "Kore")),
+                language=language_code,
+            ),
         )
 
     elif model_lower == "kokoro":
@@ -316,8 +363,24 @@ def create_tts_service(
             voice=params.get("voice", "alloy"),
             base_url=url,
         )
+        # Kokoro sometimes accepts the 2 char codes, and sometimes doesn't
+        # reference codes: https://github.com/hexgrad/kokoro/blob/main/kokoro/pipeline.py
+        supported = ["en-us", "en-gb", "es", "fr-fr", "hi", "it", "pt-br", "ja", "zh"]
+        if language_code not in supported:
+            logger.warning(f"Language code {language_code} not supported by Kokoro, trying to convert to 4 char code")
+            two_to_four = {"en": "en-us", "fr": "fr-fr", "pt": "pt-br"}
+            language_code = two_to_four.get(language_code, language_code)
+            if language_code not in supported:
+                raise ValueError(f"Language code {language_code} not supported by Kokoro")
+        kokoro_tts._eva_extra_body = {
+            "stream": True,
+            "streaming_quality": "fast",
+            "streaming_strategy": "word",
+            "streaming_chunk_size": 80,
+            "streaming_buffer_size": 1,
+            "lang_code": language_code,
+        }
         OpenAITTSService.run_tts = override_run_tts
-        kokoro_tts._settings.language = language_code
         return kokoro_tts
 
     elif model_lower == "nvidia-baseten":
@@ -364,6 +427,31 @@ def create_tts_service(
         voxtral_tts._settings.language = language_code
         return voxtral_tts
 
+    elif model_lower == "xai":
+        logger.info(f"Using xAI TTS: voice={params.get('voice', 'eve')}")
+        # Lowest-latency defaults: pcm codec, optimize_streaming_latency=2,
+        # text_normalization=false.  Monkey-patch _build_url to inject the
+        # extra query params that pipecat's XAITTSService doesn't expose yet.
+        xai_tts = XAITTSService(
+            api_key=api_key,
+            sample_rate=params.get("sample_rate", SAMPLE_RATE),
+            codec=params.get("codec", "pcm"),
+            settings=XAITTSService.Settings(
+                voice=params.get("voice", "eve"),
+                language=language_code,
+            ),
+        )
+        _orig_build_url = xai_tts._build_url
+        extra_strings = (
+            f"&optimize_streaming_latency={params.get('optimize_streaming_latency', 2)}"
+            f"&text_normalization={str(params.get('text_normalization', False)).lower()}"
+        )
+        speed = params.get("speed")
+        if speed is not None:
+            extra_strings += f"&speed={speed}"
+        xai_tts._build_url = lambda: _orig_build_url() + extra_strings
+        return xai_tts
+
     elif model_lower == "xtts":
         logger.info(f"Using XTTS TTS: {params['model']}")
         xtts_tts = OpenAITTSService(
@@ -372,13 +460,19 @@ def create_tts_service(
             voice=params.get("voice", "alloy"),
             base_url=url,
         )
+        xtts_tts._eva_extra_body = {
+            "streaming_quality": "fast",
+            "streaming_strategy": "word",
+            "streaming_chunk_size": 80,
+            "streaming_buffer_size": 1,
+        }
         OpenAITTSService.run_tts = override_run_tts
         xtts_tts._settings.language = language_code
         return xtts_tts
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xai, xtts"
         )
 
 
@@ -436,14 +530,17 @@ def create_realtime_llm_service(
         session_properties = get_openai_session_properties(system_prompt, params, pipecat_tools)
         if audit_log is not None:
             logger.info(f"Using InstrumentedRealtimeLLMService for audit log interception: openai: {params['model']}")
-            return InstrumentedRealtimeLLMService(
-                settings=OpenAIRealtimeLLMService.Settings(
+            kwargs: dict = {
+                "settings": OpenAIRealtimeLLMService.Settings(
                     model=params["model"],
                     session_properties=session_properties,
                 ),
-                audit_log=audit_log,
-                api_key=params["api_key"],
-            )
+                "audit_log": audit_log,
+                "api_key": params["api_key"],
+            }
+            if params.get("url"):
+                kwargs["base_url"] = params["url"]
+            return InstrumentedRealtimeLLMService(**kwargs)
 
         return OpenAIRealtimeLLMService(
             api_key=params["api_key"],
@@ -522,7 +619,23 @@ def create_realtime_llm_service(
 
 
 def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tools) -> SessionProperties:
-    """Create openai compatible session properties object."""
+    """Create openai compatible session properties object.
+
+    ``params["turn_detection_disabled"]`` (bool, default False): set True
+    when the realtime endpoint does NOT implement server-side VAD (e.g. our
+    vLLM-omni server). With turn_detection=False, pipecat falls back to its
+    own pipeline VAD (silero) and explicitly sends
+    ``input_audio_buffer.commit`` + ``response.create`` on
+    UserStoppedSpeakingFrame. Without this, pipecat assumes the server will
+    detect turn boundaries and never commits the audio buffer.
+    """
+    if params.get("turn_detection_disabled"):
+        # Pipecat will drive turn detection from its own VAD signals.
+        turn_detection: SemanticTurnDetection | bool = False
+    else:
+        # Set openai TurnDetection parameters. Not setting this at all will
+        # turn it on by default.
+        turn_detection = SemanticTurnDetection()
     return SessionProperties(
         instructions=system_prompt,
         audio=AudioConfiguration(
@@ -530,8 +643,7 @@ def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tool
                 transcription=InputAudioTranscription(
                     model=params.get("transcription_model", "gpt-4o-mini-transcribe")
                 ),
-                # Set openai TurnDetection parameters. Not setting this at all will turn it on by default
-                turn_detection=SemanticTurnDetection(),
+                turn_detection=turn_detection,
             ),
             output=AudioOutput(
                 voice=params.get("voice", "marin"),
@@ -545,26 +657,57 @@ def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tool
 def create_audio_llm_client(
     model: str,
     params: dict[str, Any],
-) -> ALMvLLMClient:
+    language: str | None = None,
+) -> BaseALMClient:
     """Create an audio-LLM API client.
 
     Audio-LLM models accept audio input + text context and return text output.
-    Currently supports self-hosted models via vLLM's OpenAI-compatible API.
+    Supports self-hosted models via vLLM's OpenAI-compatible API and Gemini
+    via its OpenAI-compatibility endpoint (e.g. gemini-3-flash-preview).
 
     Args:
-        model: Audio-LLM model identifier (e.g. "vllm").
-        params: Model-specific parameters. Required: url (or urls for round-robin).
-                Optional: api_key, model, temperature, max_tokens,
-                sample_rate, num_channels, sample_width.
+        model: Audio-LLM model identifier (e.g. "vllm", "gemini").
+        params: Model-specific parameters. Required for vLLM: url (or urls).
+                Required for Gemini: api_key, model.
+                Optional: temperature, max_tokens, sample_rate, num_channels, sample_width.
+        language: BCP 47 language tag (e.g. 'en', 'fr'). Used to build the
+                  client's default transcription prompt.
 
     Returns:
-        Configured ALMvLLMClient.
+        Configured audio-LLM client.
     """
     model_lower = model.lower()
 
     # Resolve URL once (supports round-robin via "base_urls" list)
     global _audio_llm_url_counter
     base_url, _audio_llm_url_counter = _resolve_url(params, _audio_llm_url_counter)
+
+    if "gemini" in model_lower:
+        gemini_model = params["model"]
+        project = params.get("project")
+        location = params.get("location")
+        api_key = params.get("api_key")
+        if not (project and location) and not api_key:
+            raise ValueError(
+                "Gemini audio-LLM requires either api_key (Developer API) "
+                "or project+location (Vertex AI via GOOGLE_APPLICATION_CREDENTIALS)."
+            )
+        client = ALMGeminiClient(
+            api_key=api_key,
+            base_url=base_url or None,
+            model=gemini_model,
+            temperature=params.get("temperature", 1.0),
+            max_tokens=params.get("max_tokens", 1024),
+            sample_rate=params.get("sample_rate", 16000),
+            num_channels=params.get("num_channels", 1),
+            sample_width=params.get("sample_width", 2),
+            project=project,
+            location=location,
+            thinking_level=params.get("thinking_level", "minimal"),
+            language=language,
+        )
+        logger.info(f"Using Gemini audio-LLM: {gemini_model} ({'vertex' if project and location else 'api_key'})")
+        return client
 
     if "vllm" in model_lower:
         if not base_url:
@@ -579,11 +722,12 @@ def create_audio_llm_client(
             sample_rate=params.get("sample_rate", 16000),
             num_channels=params.get("num_channels", 1),
             sample_width=params.get("sample_width", 2),
+            language=language,
         )
         logger.info(f"Using {model} vLLM audio-LLM: {base_url}")
         return client
 
-    raise ValueError(f"Unknown audio-LLM model: {model}. Available: vllm")
+    raise ValueError(f"Unknown audio-LLM model: {model}. Available: vllm, gemini")
 
 
 async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[Frame, None]:
@@ -604,20 +748,18 @@ async def override_run_tts(self, text: str, context_id: str) -> AsyncGenerator[F
     try:
         await self.start_ttfb_metrics()
 
-        # add chatterbox streaming params to `create_params``
-        # Setup API parameters
+        # Per-backend streaming knobs are attached to the service instance as
+        # `_eva_extra_body` by the factory in this module (e.g. kokoro sets
+        # "stream": True; chatterbox/xtts omit it).
         create_params = {
             "input": text,
             "model": self._settings.model,
             "voice": self._settings.voice,
             "response_format": "pcm",
-            "extra_body": {
-                "streaming_quality": "fast",
-                "streaming_strategy": "word",
-                "streaming_chunk_size": 80,
-                "streaming_buffer_size": 1,
-            },
         }
+        extra_body = getattr(self, "_eva_extra_body", None)
+        if extra_body:
+            create_params["extra_body"] = extra_body
 
         if self._settings.instructions:
             create_params["instructions"] = self._settings.instructions

@@ -283,7 +283,7 @@
         "completed_date": "2025-11-14",
         "status": "completed"
       },
-      "first_name": "Evelyn",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -314,7 +314,7 @@
       "hire_date": "2018-06-11",
       "is_manager": true,
       "last_desk_assignment_date": "2026-04-15",
-      "last_name": "Hayes",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": "2026-01-05",
       "manager_auth_code": "V7H8N3",
       "manager_employee_id": "EMP066660",
@@ -521,11 +521,7 @@
     "buildings": {
       "BLD1": {
         "building_code": "BLD1",
-        "name": "Headquarters",
-        "name_aliases": [
-          "HQ",
-          "Headquarters"
-        ]
+        "name": "Headquarters"
       }
     },
     "conference_rooms": {
@@ -630,9 +626,6 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "North Garage"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -686,9 +679,6 @@
         "catalog_id": "APP-2101",
         "department_restrictions": [],
         "name": "Datadog",
-        "name_aliases": [
-          "datadog"
-        ],
         "requires_manager_approval": true,
         "vendor": "Datadog"
       },
@@ -701,9 +691,6 @@
         "catalog_id": "APP-2205",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       }
@@ -717,9 +704,6 @@
           "temporary"
         ],
         "name": "Figma",
-        "name_aliases": [
-          "figma"
-        ],
         "vendor": "Figma"
       },
       "LIC-3111": {
@@ -730,9 +714,6 @@
           "temporary"
         ],
         "name": "Lucidchart",
-        "name_aliases": [
-          "lucidchart"
-        ],
         "vendor": "Lucid Software"
       }
     }

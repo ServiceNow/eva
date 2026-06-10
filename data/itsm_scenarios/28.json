@@ -372,7 +372,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Tomoko",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -409,7 +409,7 @@
       "hire_date": "2020-03-09",
       "is_manager": false,
       "last_desk_assignment_date": "2026-05-01",
-      "last_name": "Ishikawa",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP045210",
@@ -437,11 +437,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Harbor Engineering Center",
-        "name_aliases": [
-          "Engineering HQ",
-          "Harbor"
-        ]
+        "name": "Harbor Engineering Center"
       }
     },
     "conference_rooms": {
@@ -507,9 +503,6 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "Garage A"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -562,9 +555,6 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack"
-      ],
       "requires_manager_approval": false,
       "vendor": "Salesforce"
     },
@@ -575,11 +565,7 @@
         "permanent",
         "temporary"
       ],
-      "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "IntelliJ",
-        "IntelliJ IDEA"
-      ],
+      "name": "IntelliJ IDEA",
       "vendor": "JetBrains"
     }
   },

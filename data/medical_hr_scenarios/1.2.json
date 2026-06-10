@@ -28,8 +28,8 @@
     "3615507143": {
       "npi": "3615507143",
       "employee_id": "EMP260263",
-      "first_name": "Kwame",
-      "last_name": "Asante",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "TOU-77A",
       "pin": "6310",
       "phone_last_four": "0148",
@@ -101,8 +101,8 @@
   "employees": {
     "EMP260263": {
       "employee_id": "EMP260263",
-      "first_name": "Kwame",
-      "last_name": "Asante",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1988-02-17",
       "phone_last_four": "0148",
       "otp_code": "482913",

@@ -29,8 +29,8 @@
     "3225231724": {
       "npi": "3225231724",
       "employee_id": "EMP418897",
-      "first_name": "Kweku",
-      "last_name": "Owusu",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "EY-38L",
       "pin": "9501",
       "phone_last_four": "4821",
@@ -169,8 +169,8 @@
   "employees": {
     "EMP418897": {
       "employee_id": "EMP418897",
-      "first_name": "Kweku",
-      "last_name": "Owusu",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1989-11-08",
       "phone_last_four": "4821",
       "otp_code": "482193",

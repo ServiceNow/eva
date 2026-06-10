@@ -24,9 +24,13 @@ def mock_dataset():
     """Create a dataset with one record matching the real artifacts."""
     record = EvaluationRecord(
         id=RECORD_ID,
-        user_goal="Change flight to March 25th",
+        user_goal={
+            "information_required": {"Passenger first name": "<FIRST_NAME>", "Passenger last name": "<LAST_NAME>"},
+            "task": "Change flight to March 25th",
+        },
         user_config={
             "user_persona": "Traveler rebooking a flight",
+            "gender": "woman",
         },
         current_date_time="2026-03-01T22:22:03Z",
         scenario_context={"steps": ["get_reservation", "search_rebooking_options", "rebook_flight"]},
@@ -34,6 +38,9 @@ def mock_dataset():
             expected_scenario_db=json.loads((ARTIFACTS_DIR / "final_scenario_db.json").read_text()),
         ),
         category="airline",
+        culture_overrides={"en": {"first_name": "Samantha", "last_name": "Rodriguez"}},
+        romanized_culture_overrides={"en": {"first_name": "Samantha", "last_name": "Rodriguez"}},
+        starting_utterances={"en": "Hi, I need to change my flight to March 25th."},
     )
     return [record]
 
@@ -85,7 +92,7 @@ def mock_run_dir(tmp_path):
         yaml.dump(agent_config, f)
 
     # Create config.json pointing to agent config
-    config = {"agent_config_path": str(agent_config_path)}
+    config = {"agent_config_path": str(agent_config_path), "language": "en"}
     (run_dir / "config.json").write_text(json.dumps(config))
 
     return run_dir

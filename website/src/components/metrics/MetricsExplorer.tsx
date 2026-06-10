@@ -77,25 +77,25 @@ export function MetricsExplorer() {
           <div className="rounded-xl border border-border-default bg-bg-secondary p-5">
             <div className="text-base font-semibold text-text-primary mb-2">pass@1</div>
             <p className="text-sm text-text-secondary leading-relaxed">
-              For each scenario, the proportion of trials where <em>all</em> metric thresholds are met (<em>c</em>/<em>n</em>), where <em>c</em> is the number of passing trials and <em>n</em> is the total number of trials (n=3), then averaged across all scenarios.
+              For each scenario, the proportion of trials where <em>all</em> metric thresholds are met (<em>c</em>/<em>n</em>), where <em>c</em> is the number of passing trials and <em>n</em> is the total number of trials (n=5), then averaged across all scenarios.
             </p>
           </div>
           <div className="rounded-xl border border-border-default bg-bg-secondary p-5">
-            <div className="text-base font-semibold text-text-primary mb-2">pass@k (k=3)</div>
+            <div className="text-base font-semibold text-text-primary mb-2">pass@k (k=5)</div>
             <p className="text-sm text-text-secondary leading-relaxed">
-              For each scenario, 1 if at least one of the k (3) trials meets pass criteria for all metrics, otherwise 0, then averaged across all scenarios. Measures whether the system <em>can</em> succeed.
+              For each scenario, 1 if at least one of the k (5) trials meets pass criteria for all metrics, otherwise 0, then averaged across all scenarios. Measures whether the system <em>can</em> succeed.
             </p>
           </div>
           <div className="rounded-xl border border-border-default bg-bg-secondary p-5">
-            <div className="text-base font-semibold text-text-primary mb-2">pass^k (k=3)</div>
+            <div className="text-base font-semibold text-text-primary mb-2">pass^k (k=5)</div>
             <p className="text-sm text-text-secondary leading-relaxed">
-             For each scenario, we estimate the theoretical probability of passing k = 3 consecutive independent trials as  (<em>c</em>/<em>n</em>)<sup>k</sup> where c is the number of passing trials out of n = 3 total. We then average this value across all scenarios to measure consistency and reliability.
+             For each scenario, we estimate the theoretical probability of passing k = 5 consecutive independent trials as  (<em>c</em>/<em>n</em>)<sup>k</sup> where c is the number of passing trials out of n = 5 total. We then average this value across all scenarios to measure consistency and reliability.
             </p>
           </div>
           <div className="rounded-xl border border-border-default bg-bg-secondary p-5">
             <div className="text-base font-semibold text-text-primary mb-2">Mean</div>
             <p className="text-sm text-text-secondary leading-relaxed">
-              For each sample, we average sub-metric scores per dimension, then average across all 150 samples. Raw scores avoid binarizing near-boundary differences into a full pass/fail gap, capturing more nuanced system comparisons.
+              For each sample, we average sub-metric scores per dimension, then average across all trials. Raw scores avoid binarizing near-boundary differences into a full pass/fail gap, capturing more nuanced system comparisons.
             </p>
           </div>
         </div>
@@ -169,6 +169,7 @@ export function MetricsExplorer() {
           Audio LLM Judge (LALM)
         </div>
       </div>
+
     </Section>
   );
 }

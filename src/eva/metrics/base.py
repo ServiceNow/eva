@@ -9,6 +9,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from pipecat.transcriptions.language import Language
 from pydub import AudioSegment
 
 from eva.metrics.utils import (
@@ -22,7 +23,8 @@ from eva.metrics.utils import (
     resolve_turn_id,
     validate_rating,
 )
-from eva.models.config import PipelineType
+from eva.metrics.versioning import _CURRENT_PROMPT_HASH, hash_prompt_template
+from eva.models.config import LANGUAGE_DISPLAY_NAMES, PipelineType
 from eva.models.results import MetricScore
 from eva.utils.llm_client import LLMClient
 from eva.utils.logging import get_logger
@@ -89,6 +91,7 @@ class MetricContext:
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
         pipeline_type: PipelineType = PipelineType.CASCADE,
+        language: str = "en",
     ):
         self.record_id = record_id
 
@@ -122,6 +125,8 @@ class MetricContext:
         self.agent_tools = agent_tools
         self.agent_id = agent_id
         self.current_date_time = current_date_time
+        self.language = language
+        self.language_display_name = LANGUAGE_DISPLAY_NAMES.get(Language(language), language)
 
         # Processed log data
         self.transcribed_assistant_turns = transcribed_assistant_turns or {}
@@ -163,6 +168,9 @@ class BaseMetric(ABC):
     pass_at_k_threshold: float = 0.5  # Normalized score threshold for pass@k pass/fail
     exclude_from_pass_at_k: bool = False  # Set True for metrics not suitable for pass@k
     supported_pipeline_types: frozenset[PipelineType] = frozenset(PipelineType)  # Pipeline types this metric supports
+    # Bump on intentional logic changes; MetricsRunner stamps this onto every MetricScore
+    # produced by compute(). Required on all concrete subclasses — drift test enforces.
+    version: str | None = None
     # Direction of the displayed value (normalized_score if present, else score).
     # Override to False for lower-is-better parent metrics (e.g. latency). Sub-metric
     # direction is derived from the key suffix (see eva.metrics.utils.direction_for_sub_metric).
@@ -179,8 +187,13 @@ class BaseMetric(ABC):
         self.prompt_manager = get_prompt_manager()
 
     def get_judge_prompt(self, prompt_key: str = "user_prompt", **variables) -> str:
-        """Get judge prompt using PromptManager."""
+        """Get judge prompt using PromptManager.
+
+        Stamps the unrendered template's sha256[:12] into the prompt-hash contextvar so
+        any MetricScore built afterwards in the same compute() picks it up automatically.
+        """
         prompt_path = f"judge.{self.name}.{prompt_key}"
+        _CURRENT_PROMPT_HASH.set(hash_prompt_template(self.prompt_manager.get_template(prompt_path)))
         return self.prompt_manager.get_prompt(prompt_path, **variables)
 
     @abstractmethod
@@ -285,7 +298,7 @@ class BaseMetric(ABC):
         entry["total_input_tokens"] += input_tokens or 0
         entry["total_output_tokens"] += output_tokens or 0
         entry["num_calls"] += 1
-        json_path.write_text(json.dumps(summary, indent=2))
+        json_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False))
 
     def _handle_error(self, error: Exception, context: MetricContext) -> MetricScore:
         """Standard error handling for all metrics."""

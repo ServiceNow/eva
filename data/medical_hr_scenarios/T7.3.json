@@ -31,8 +31,8 @@
     "1487392045": {
       "npi": "1487392045",
       "employee_id": "EMP688956",
-      "first_name": "Keiko",
-      "last_name": "Mori",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "MGH-04B",
       "pin": "4826",
       "phone_last_four": "4826",
@@ -79,8 +79,8 @@
   "employees": {
     "EMP688956": {
       "employee_id": "EMP688956",
-      "first_name": "Keiko",
-      "last_name": "Mori",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-11-23",
       "phone_last_four": "4826",
       "otp_code": "551204",

@@ -389,7 +389,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Sofia",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -420,7 +420,7 @@
       "hire_date": "2021-06-07",
       "is_manager": false,
       "last_desk_assignment_date": "2025-11-10",
-      "last_name": "Alvarez",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP055501",
@@ -542,18 +542,11 @@
     "buildings": {
       "BLD1": {
         "building_code": "BLD1",
-        "name": "Headquarters",
-        "name_aliases": [
-          "hq",
-          "main office"
-        ]
+        "name": "Headquarters"
       },
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown",
-        "name_aliases": [
-          "downtown building"
-        ]
+        "name": "Downtown"
       }
     },
     "conference_rooms": {
@@ -628,9 +621,6 @@
     "zones": {
       "PZA": {
         "name": "Executive Garage",
-        "name_aliases": [
-          "executive garage"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -668,9 +658,6 @@
         "catalog_id": "APP-1001",
         "department_restrictions": [],
         "name": "Slack",
-        "name_aliases": [
-          "slack"
-        ],
         "requires_manager_approval": false,
         "vendor": "Salesforce"
       },
@@ -683,9 +670,6 @@
         "catalog_id": "APP-1002",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       }
@@ -699,10 +683,6 @@
           "temporary"
         ],
         "name": "Adobe Creative Cloud",
-        "name_aliases": [
-          "creative cloud",
-          "adobe cc"
-        ],
         "vendor": "Adobe"
       }
     }

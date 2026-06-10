@@ -351,7 +351,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Elena",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -382,7 +382,7 @@
       "hire_date": "2021-06-14",
       "is_manager": false,
       "last_desk_assignment_date": "2025-12-01",
-      "last_name": "Petrov",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP041002",
@@ -410,11 +410,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "Downtown",
-          "Engineering Center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -488,10 +484,6 @@
     "zones": {
       "PZA": {
         "name": "Garage A",
-        "name_aliases": [
-          "A Garage",
-          "Main Garage"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -529,9 +521,6 @@
         "catalog_id": "APP-1007",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "Atlassian Confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       },
@@ -544,9 +533,6 @@
         "catalog_id": "APP-1011",
         "department_restrictions": [],
         "name": "Jira",
-        "name_aliases": [
-          "Atlassian Jira"
-        ],
         "requires_manager_approval": true,
         "vendor": "Atlassian"
       },
@@ -562,7 +548,6 @@
           "MKT"
         ],
         "name": "Salesforce",
-        "name_aliases": [],
         "requires_manager_approval": true,
         "vendor": "Salesforce"
       }
@@ -575,10 +560,7 @@
           "permanent",
           "temporary"
         ],
-        "name": "JetBrains IntelliJ IDEA",
-        "name_aliases": [
-          "IntelliJ"
-        ],
+        "name": "IntelliJ IDEA",
         "vendor": "JetBrains"
       }
     }

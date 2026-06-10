@@ -352,7 +352,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Carlos",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -383,7 +383,7 @@
       "hire_date": "2020-02-10",
       "is_manager": false,
       "last_desk_assignment_date": "2025-11-15",
-      "last_name": "Rivera",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP052001",
@@ -410,11 +410,7 @@
   "facilities": {
     "buildings": {
       "BLD3": {
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "Downtown",
-          "Engineering Center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -480,11 +476,7 @@
     },
     "zones": {
       "PZA": {
-        "name": "Downtown Garage A",
-        "name_aliases": [
-          "Garage A",
-          "Downtown Garage"
-        ]
+        "name": "Downtown Garage A"
       }
     }
   },
@@ -536,9 +528,6 @@
         "catalog_id": "APP-1001",
         "department_restrictions": [],
         "name": "Slack",
-        "name_aliases": [
-          "slack"
-        ],
         "requires_manager_approval": false,
         "vendor": "Salesforce"
       },
@@ -551,9 +540,6 @@
         "catalog_id": "APP-1002",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "confluence"
-        ],
         "requires_manager_approval": true,
         "vendor": "Atlassian"
       }
@@ -566,11 +552,7 @@
           "permanent",
           "temporary"
         ],
-        "name": "JetBrains IntelliJ IDEA",
-        "name_aliases": [
-          "IntelliJ",
-          "IntelliJ IDEA"
-        ],
+        "name": "IntelliJ IDEA",
         "vendor": "JetBrains"
       },
       "LIC-2002": {
@@ -581,9 +563,6 @@
           "temporary"
         ],
         "name": "Microsoft Visio",
-        "name_aliases": [
-          "Visio"
-        ],
         "vendor": "Microsoft"
       }
     }

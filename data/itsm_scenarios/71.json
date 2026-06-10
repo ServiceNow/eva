@@ -345,7 +345,7 @@
         "completed_date": "2026-04-12",
         "status": "completed"
       },
-      "first_name": "Henrik",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -376,7 +376,7 @@
       "hire_date": "2021-03-15",
       "is_manager": false,
       "last_desk_assignment_date": null,
-      "last_name": "Berg",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP021100",
@@ -464,10 +464,6 @@
           }
         },
         "name": "Headquarters",
-        "name_aliases": [
-          "HQ",
-          "Head Office"
-        ],
         "parking_zones": {}
       }
     },

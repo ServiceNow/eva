@@ -1,0 +1,24 @@
+{
+  "name": "East Campus Garage",
+  "translatable": true,
+  "base": [
+    "east garage",
+    "east campus garage"
+  ],
+  "translations": {
+    "fr": [
+      "garage du campus est",
+      "garage est",
+      "parking du campus est",
+      "parking est",
+      "stationnement du campus est"
+    ],
+    "fr-CA": [
+      "garage du campus est",
+      "garage est",
+      "parking du campus est",
+      "parking est",
+      "stationnement du campus est"
+    ]
+  }
+}

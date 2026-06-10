@@ -27,8 +27,8 @@
     "2591414076": {
       "npi": "2591414076",
       "employee_id": "EMP823811",
-      "first_name": "Rafael",
-      "last_name": "Cordova",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "LGJ-97L",
       "pin": "9920",
       "phone_last_four": "4821",
@@ -167,8 +167,8 @@
   "employees": {
     "EMP823811": {
       "employee_id": "EMP823811",
-      "first_name": "Rafael",
-      "last_name": "Cordova",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1981-09-14",
       "phone_last_four": "4821",
       "otp_code": "776149",

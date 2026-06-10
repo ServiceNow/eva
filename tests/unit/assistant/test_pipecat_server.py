@@ -10,6 +10,7 @@ import pytest
 
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.pipecat_server import SAMPLE_RATE, PipecatAssistantServer
+from eva.models.config import PipelineType
 from eva.utils.audio_utils import save_pcm_as_wav
 
 
@@ -146,7 +147,7 @@ class TestSaveOutputs:
         srv.user_audio_buffer = bytearray(b"\x00" * 100)
         srv.assistant_audio_buffer = bytearray(b"\x00" * 100)
         # PipelineConfig (not SpeechToSpeechConfig) — transcript.jsonl written via audit log
-        srv.pipeline_config = MagicMock(spec=[])
+        srv.pipeline_config = MagicMock(pipeline_type=PipelineType.CASCADE)
 
         # Add an entry so audit_log is non-trivial
         srv.audit_log.append_user_input("Hello")
@@ -170,7 +171,7 @@ class TestSaveOutputs:
         srv._audio_buffer = bytearray(b"\x00" * 100)
         srv.user_audio_buffer = bytearray(b"\x00" * 100)
         srv.assistant_audio_buffer = bytearray(b"\x00" * 100)
-        srv.pipeline_config = MagicMock(spec=[])
+        srv.pipeline_config = MagicMock(pipeline_type=PipelineType.CASCADE)
 
         mock_system = MagicMock()
         srv.agentic_system = mock_system

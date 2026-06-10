@@ -374,7 +374,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Benjamin",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL3",
       "group_memberships": [
         {
@@ -405,7 +405,7 @@
       "hire_date": "2019-06-10",
       "is_manager": false,
       "last_desk_assignment_date": "2025-11-03",
-      "last_name": "Torres",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP041200",
@@ -522,11 +522,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Headquarters",
-        "name_aliases": [
-          "HQ",
-          "Head Office"
-        ]
+        "name": "Headquarters"
       }
     },
     "conference_rooms": {
@@ -601,9 +597,6 @@
     "zones": {
       "PZA": {
         "name": "Headquarters Garage A",
-        "name_aliases": [
-          "Garage A"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -691,9 +684,6 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack app"
-      ],
       "requires_manager_approval": false,
       "vendor": "Slack Technologies"
     },
@@ -706,9 +696,6 @@
       "catalog_id": "APP-1002",
       "department_restrictions": [],
       "name": "Confluence",
-      "name_aliases": [
-        "wiki"
-      ],
       "requires_manager_approval": true,
       "vendor": "Atlassian"
     },
@@ -719,10 +706,7 @@
         "permanent",
         "temporary"
       ],
-      "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "IntelliJ"
-      ],
+      "name": "IntelliJ IDEA",
       "vendor": "JetBrains"
     }
   },

@@ -33,7 +33,8 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
     max_empty_retries: int = 6
 
     # Silence trimming parameters — collapse long silences to reduce audio token cost.
-    silence_thresh_dbfs: int = -45
+    trim_silence: bool = True
+    silence_thresh_dbfs: int = -90
     min_silence_len_ms: int = 3000
     speech_padding_ms: int = 100
     inter_segment_pause_ms: int = 3000
@@ -57,7 +58,8 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     error=f"No {self.role} audio file available",
                 )
 
-            audio_segment = self._trim_silence(audio_segment, context)
+            if self.trim_silence:
+                audio_segment = self._trim_silence(audio_segment, context)
 
             intended_turns = self._get_intended_turns(context)
             num_turns = len(intended_turns)
@@ -67,6 +69,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             prompt = self.get_judge_prompt(
                 prompt_key="user_prompt",
                 intended_turns_formatted=intended_turns_formatted,
+                expected_language=context.language_display_name,
             )
 
             messages = self.create_audio_message(audio_b64, prompt)
@@ -74,7 +77,9 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             per_turn_ratings: dict[int, int | None] = {}
             per_turn_explanations: dict[int, str] = {}
             per_turn_transcripts: dict[int, str] = {}
+            per_turn_languages: dict[int, str] = {}
             per_turn_normalized: dict[int, float] = {}
+            per_turn_failure_modes: dict[int, list[str]] = {}
             tts_turn_ids = sorted(intended_turns.keys())
             min_rating, max_rating = self.rating_scale
             valid_ratings_range = list(range(min_rating, max_rating + 1))
@@ -105,18 +110,25 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     continue
                 rating = response_item.get("rating")
                 transcript = response_item.get("transcript")
+                language = response_item.get("language")
                 explanation = response_item.get("explanation", "")
+                failure_modes = response_item.get("failure_modes")
+                if not isinstance(failure_modes, list):
+                    failure_modes = []
 
                 if rating not in valid_ratings_range:
                     self.logger.warning(f"[{context.record_id}] Invalid rating {rating} for turn {turn_id}")
                     per_turn_ratings[turn_id] = None
                     per_turn_explanations[turn_id] = f"Invalid rating: {rating}"
+                    per_turn_failure_modes[turn_id] = failure_modes
                     continue
 
                 per_turn_ratings[turn_id] = rating
                 per_turn_explanations[turn_id] = explanation
                 per_turn_transcripts[turn_id] = transcript
+                per_turn_languages[turn_id] = language
                 per_turn_normalized[turn_id] = normalize_rating(rating, min_rating, max_rating)
+                per_turn_failure_modes[turn_id] = failure_modes
 
             aggregated_score = aggregate_per_turn_scores(list(per_turn_normalized.values()), self.aggregation)
 
@@ -127,13 +139,18 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                 "aggregation": self.aggregation,
                 "num_turns": num_turns,
                 "num_evaluated": len(valid_ratings),
+                "audio_trimmed": self.trim_silence,
                 "per_turn_ratings": per_turn_ratings,
                 "per_turn_explanations": per_turn_explanations,
+                "per_turn_failure_modes": per_turn_failure_modes,
+                "per_turn_languages": per_turn_languages,
                 "judge_prompt": prompt,
                 "judge_raw_response": response_text,
             }
             if min_rating != 0 or max_rating != 1:
                 details["per_turn_normalized"] = per_turn_normalized
+
+            sub_metrics = self.build_sub_metrics(context, per_turn_ratings, per_turn_failure_modes)
 
             return MetricScore(
                 name=self.name,
@@ -141,6 +158,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                 normalized_score=round(aggregated_score, 3) if aggregated_score is not None else 0,
                 details=details,
                 error="Aggregation failed" if aggregated_score is None else None,
+                sub_metrics=sub_metrics or None,
             )
 
         except Exception as e:
@@ -384,5 +402,27 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
 
     @staticmethod
     def _format_intended_turns(intended_turns: dict[int, str]) -> str:
-        """Format intended turns dictionary as numbered list."""
-        return "\n".join(f"Turn {turn_id}: {text}" for turn_id, text in intended_turns.items())
+        """Format intended turns dictionary as a numbered list, one turn per line.
+
+        Each turn's text is flattened to a single line (internal newlines and
+        repeated whitespace collapsed to single spaces). Turns are separated by
+        newlines, so a turn whose text contains its own newline -- e.g. a normal
+        paragraph break, or a self-duplicated response like "X\nX" -- would
+        otherwise spill onto unlabeled lines and be misread by the judge as a
+        separate turn or an "added" repetition, unfairly penalizing fidelity.
+        Spoken audio has no notion of newlines, so flattening preserves the
+        intended words while keeping turn boundaries unambiguous.
+        """
+        return "\n".join(f"Turn {turn_id}: {' '.join(text.split())}" for turn_id, text in intended_turns.items())
+
+    def build_sub_metrics(
+        self,
+        context: MetricContext,
+        per_turn_ratings: dict[int, int | None],
+        per_turn_failure_modes: dict[int, list[str]],
+    ) -> dict[str, MetricScore] | None:
+        """Return sub-metrics derived from per-turn data, or None.
+
+        Default returns None so the parent metric has no sub-metrics.
+        """
+        return None

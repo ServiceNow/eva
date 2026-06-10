@@ -456,7 +456,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Naomi",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
       "floor_code": "FL3",
       "group_memberships": [
         {
@@ -487,7 +487,7 @@
       "hire_date": "2020-09-21",
       "is_manager": false,
       "last_desk_assignment_date": "2026-01-10",
-      "last_name": "Okafor",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP030112",
@@ -784,18 +784,11 @@
     "buildings": {
       "BLD1": {
         "building_code": "BLD1",
-        "name": "Operations Center",
-        "name_aliases": [
-          "ops center"
-        ]
+        "name": "Operations Center"
       },
       "BLD2": {
         "building_code": "BLD2",
-        "name": "Downtown Office",
-        "name_aliases": [
-          "downtown",
-          "finance building"
-        ]
+        "name": "Downtown Office"
       }
     },
     "conference_rooms": {
@@ -896,16 +889,10 @@
     "zones": {
       "PZA": {
         "name": "Garage A",
-        "name_aliases": [
-          "main garage"
-        ],
         "zone_code": "PZA"
       },
       "PZB": {
         "name": "Garage B",
-        "name_aliases": [
-          "west garage"
-        ],
         "zone_code": "PZB"
       }
     }
@@ -980,9 +967,6 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack app"
-      ],
       "requires_manager_approval": false,
       "vendor": "Slack Technologies"
     },
@@ -995,9 +979,6 @@
       "catalog_id": "APP-1002",
       "department_restrictions": [],
       "name": "Confluence",
-      "name_aliases": [
-        "atlassian confluence"
-      ],
       "requires_manager_approval": false,
       "vendor": "Atlassian"
     },
@@ -1009,9 +990,6 @@
         "temporary"
       ],
       "name": "Microsoft Project",
-      "name_aliases": [
-        "ms project"
-      ],
       "vendor": "Microsoft"
     },
     "LIC-2002": {
@@ -1021,10 +999,7 @@
         "permanent",
         "temporary"
       ],
-      "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "intellij"
-      ],
+      "name": "IntelliJ IDEA",
       "vendor": "JetBrains"
     }
   },

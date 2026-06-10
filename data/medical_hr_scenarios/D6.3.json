@@ -27,8 +27,8 @@
     "9196963901": {
       "npi": "9196963901",
       "employee_id": "EMP913373",
-      "first_name": "Lukas",
-      "last_name": "Hofer",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "WZH-89B",
       "pin": "2625",
       "phone_last_four": "4821",
@@ -95,8 +95,8 @@
   "employees": {
     "EMP913373": {
       "employee_id": "EMP913373",
-      "first_name": "Lukas",
-      "last_name": "Hofer",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1990-04-17",
       "phone_last_four": "4821",
       "otp_code": "899787",

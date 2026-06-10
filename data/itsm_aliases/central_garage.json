@@ -1,0 +1,21 @@
+{
+  "name": "Central Garage",
+  "translatable": true,
+  "base": [
+    "central parking"
+  ],
+  "translations": {
+    "fr": [
+      "garage central",
+      "parc central",
+      "parking central",
+      "stationnement central"
+    ],
+    "fr-CA": [
+      "garage central",
+      "parc central",
+      "parking central",
+      "stationnement central"
+    ]
+  }
+}

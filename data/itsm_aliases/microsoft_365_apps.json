@@ -1,0 +1,8 @@
+{
+  "name": "Microsoft 365 Apps",
+  "translatable": false,
+  "base": [
+    "office 365"
+  ],
+  "translations": {}
+}

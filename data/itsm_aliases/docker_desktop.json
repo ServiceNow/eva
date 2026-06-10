@@ -1,0 +1,9 @@
+{
+  "name": "Docker Desktop",
+  "translatable": false,
+  "base": [
+    "docker",
+    "docker for desktop"
+  ],
+  "translations": {}
+}

@@ -190,7 +190,7 @@
       "hire_date": "2017-03-13",
       "is_manager": true,
       "last_desk_assignment_date": "2025-01-15",
-      "last_name": "Sj\u00f6berg",
+      "last_name": "Sjöberg",
       "last_parking_assignment_date": "2025-01-15",
       "manager_auth_code": "A7K9Q2",
       "manager_employee_id": "EMP070099",
@@ -345,7 +345,7 @@
         "status": "not_completed",
         "completed_date": null
       },
-      "first_name": "Clara",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -376,7 +376,7 @@
       "hire_date": "2020-06-08",
       "is_manager": false,
       "last_desk_assignment_date": "2025-09-10",
-      "last_name": "Bergstr\u00f6m",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP070001",
@@ -412,11 +412,7 @@
   "facilities": {
     "buildings": {
       "BLD3": {
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "downtown",
-          "engineering center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -473,10 +469,7 @@
     },
     "zones": {
       "PZA": {
-        "name": "North Garage",
-        "name_aliases": [
-          "north garage"
-        ]
+        "name": "North Garage"
       }
     }
   },
@@ -528,9 +521,6 @@
         "catalog_id": "APP-2001",
         "department_restrictions": [],
         "name": "Slack",
-        "name_aliases": [
-          "slack"
-        ],
         "requires_manager_approval": false,
         "vendor": "Slack Technologies"
       }
@@ -544,10 +534,6 @@
           "temporary"
         ],
         "name": "Adobe Creative Cloud",
-        "name_aliases": [
-          "adobe cc",
-          "creative cloud"
-        ],
         "vendor": "Adobe"
       },
       "LIC-1002": {
@@ -558,10 +544,6 @@
           "temporary"
         ],
         "name": "IntelliJ IDEA",
-        "name_aliases": [
-          "jetbrains intellij idea",
-          "intellij"
-        ],
         "vendor": "JetBrains"
       },
       "LIC-1003": {
@@ -571,9 +553,6 @@
           "permanent"
         ],
         "name": "Microsoft Visio",
-        "name_aliases": [
-          "visio"
-        ],
         "vendor": "Microsoft"
       }
     }

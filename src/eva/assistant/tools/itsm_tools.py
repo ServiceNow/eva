@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json as _json
 import re
+import unicodedata
 from datetime import datetime as _dt
 from datetime import timedelta
 
@@ -173,12 +174,17 @@ def _parse_date(s):
     return _dt.strptime(s, "%Y-%m-%d")
 
 
+def _normalize_alias(s: str) -> str:
+    """Lowercase and strip Unicode punctuation/symbols, safe for any script."""
+    return "".join(c for c in s.lower() if not unicodedata.category(c).startswith(("P", "S"))).strip()
+
+
 def _catalog_match(name, entry):
-    """Case-insensitive exact match against entry.name and entry.name_aliases."""
-    target = name.strip().lower()
-    if entry.get("name", "").strip().lower() == target:
+    """Case-insensitive match against entry.name and entry.name_aliases, ignoring punctuation."""
+    target = _normalize_alias(name)
+    if _normalize_alias(entry.get("name", "")) == target:
         return True
-    return any(target == a.strip().lower() for a in entry.get("name_aliases", []))
+    return any(target == _normalize_alias(a) for a in entry.get("name_aliases", []))
 
 
 _BUILDING_CODE_RE = re.compile(r"^BLD\d{1,2}$")
@@ -206,12 +212,12 @@ def _resolve_facility(kind, value, db):
     # Direct code match: return as-is if it parses, even if table is empty
     if code_re.match(value):
         return value, None
-    # Alias / name match (case-insensitive exact)
-    target = value.strip().lower()
+    # Alias / name match (case-insensitive, punctuation-ignored)
+    target = _normalize_alias(value)
     for code, entry in table.items():
-        if entry.get("name", "").strip().lower() == target:
+        if _normalize_alias(entry.get("name", "")) == target:
             return code, None
-        if any(target == a.strip().lower() for a in entry.get("name_aliases", [])):
+        if any(target == _normalize_alias(a) for a in entry.get("name_aliases", [])):
             return code, None
     known = [entry.get("name") for entry in table.values() if entry.get("name")]
     return None, {

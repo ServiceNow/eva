@@ -75,8 +75,8 @@
   "employees": {
     "EMP141043": {
       "employee_id": "EMP141043",
-      "first_name": "Annika",
-      "last_name": "Muller",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1993-11-14",
       "phone_last_four": "8426",
       "otp_code": "560767",

@@ -26,8 +26,8 @@
     "1487392045": {
       "npi": "1487392045",
       "employee_id": "EMP850800",
-      "first_name": "Jamal",
-      "last_name": "Washington",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "MGH-04B",
       "pin": "4821",
       "phone_last_four": "2486",
@@ -74,8 +74,8 @@
   "employees": {
     "EMP850800": {
       "employee_id": "EMP850800",
-      "first_name": "Jamal",
-      "last_name": "Washington",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-08-22",
       "phone_last_four": "2486",
       "otp_code": "483920",

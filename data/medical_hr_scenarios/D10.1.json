@@ -75,8 +75,8 @@
   "employees": {
     "EMP897305": {
       "employee_id": "EMP897305",
-      "first_name": "Mamadou",
-      "last_name": "Diop",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1993-04-18",
       "phone_last_four": "4821",
       "otp_code": "827712",

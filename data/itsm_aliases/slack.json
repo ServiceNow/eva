@@ -1,0 +1,11 @@
+{
+  "name": "Slack",
+  "translatable": false,
+  "base": [
+    "slack",
+    "slack app",
+    "slack messenger",
+    "slack enterprise"
+  ],
+  "translations": {}
+}

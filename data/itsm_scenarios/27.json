@@ -366,7 +366,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Wei",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -397,7 +397,7 @@
       "hire_date": "2021-06-14",
       "is_manager": false,
       "last_desk_assignment_date": "2026-04-01",
-      "last_name": "Zhang",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP065210",
@@ -424,11 +424,7 @@
   "facilities": {
     "buildings": {
       "BLD3": {
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "Downtown",
-          "Engineering Center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -494,11 +490,7 @@
     },
     "zones": {
       "PZA": {
-        "name": "A Garage",
-        "name_aliases": [
-          "Garage A",
-          "Main Garage"
-        ]
+        "name": "Garage A"
       }
     }
   },
@@ -550,9 +542,6 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack messenger"
-      ],
       "requires_manager_approval": false,
       "vendor": "Slack"
     },
@@ -563,10 +552,7 @@
         "permanent",
         "temporary"
       ],
-      "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "IntelliJ"
-      ],
+      "name": "IntelliJ IDEA",
       "vendor": "JetBrains"
     }
   },

@@ -14,6 +14,7 @@ class ConversationValidEndMetric(CodeMetric):
     """Binary score: 1.0 when the conversation ended on goodbye OR agent-timeout-on-user-turn; 0.0 otherwise."""
 
     name = "conversation_valid_end"
+    version = "v0.1"
     description = "Validation metric: conversation reached a definitive end state"
     category = "validation"
 

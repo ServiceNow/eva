@@ -75,8 +75,8 @@
   "employees": {
     "EMP479580": {
       "employee_id": "EMP479580",
-      "first_name": "Ravi",
-      "last_name": "Krishnamurthy",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1997-09-14",
       "phone_last_four": "4829",
       "otp_code": "361204",

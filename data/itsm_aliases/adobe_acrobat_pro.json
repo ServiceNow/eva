@@ -1,0 +1,10 @@
+{
+  "name": "Adobe Acrobat Pro",
+  "translatable": false,
+  "base": [
+    "acrobat",
+    "adobe acrobat",
+    "acrobat pro"
+  ],
+  "translations": {}
+}

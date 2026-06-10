@@ -391,14 +391,14 @@
       "date_of_birth": "1991-04-12",
       "department_code": "ENG",
       "direct_reports": [],
-      "email": "ahmed.patel@company.com",
+      "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@company.com",
       "employee_id": "EMP055555",
       "employment_status": "active",
       "ergonomic_assessment": {
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Ahmed",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -429,7 +429,7 @@
       "hire_date": "2020-06-15",
       "is_manager": false,
       "last_desk_assignment_date": "2026-03-01",
-      "last_name": "Patel",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP055510",
@@ -460,11 +460,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "Downtown",
-          "Engineering Center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -530,9 +526,6 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "North Garage"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -589,9 +582,6 @@
         "catalog_id": "APP-1007",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "Atlassian Confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       },
@@ -604,9 +594,6 @@
         "catalog_id": "APP-1012",
         "department_restrictions": [],
         "name": "Jira",
-        "name_aliases": [
-          "Atlassian Jira"
-        ],
         "requires_manager_approval": true,
         "vendor": "Atlassian"
       }
@@ -619,10 +606,7 @@
           "permanent",
           "temporary"
         ],
-        "name": "JetBrains IntelliJ IDEA",
-        "name_aliases": [
-          "IntelliJ"
-        ],
+        "name": "IntelliJ IDEA",
         "vendor": "JetBrains"
       }
     }

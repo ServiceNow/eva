@@ -1,0 +1,30 @@
+{
+  "name": "Riverside Engineering Center",
+  "translatable": true,
+  "base": [
+    "engineering center",
+    "riverside"
+  ],
+  "translations": {
+    "fr": [
+      "centre d’ingénierie",
+      "centre d’ingénierie au bord de la rivière",
+      "centre d’ingénierie au bord de l’eau",
+      "centre d’ingénierie riverside",
+      "centre ingénierie riverside",
+      "centre technique riverside",
+      "site ingénierie riverside",
+      "site riverside"
+    ],
+    "fr-CA": [
+      "centre d’ingénierie",
+      "centre d’ingénierie au bord de la rivière",
+      "centre d’ingénierie au bord de l’eau",
+      "centre d’ingénierie riverside",
+      "centre ingénierie riverside",
+      "centre technique riverside",
+      "site ingénierie riverside",
+      "site riverside"
+    ]
+  }
+}

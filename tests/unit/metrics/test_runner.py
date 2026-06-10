@@ -67,10 +67,12 @@ def _setup_run_dir(tmp_path: Path, record_ids: list[str]) -> Path:
     # Create config.json
     (run_dir / "config.json").write_text(json.dumps({"agent_config_path": str(agent_config_path)}))
 
-    # Create record directories
+    # Create record directories with a stub result.json so run_and_save_record
+    # doesn't short-circuit on the missing-result.json check.
     for rid in record_ids:
         record_dir = run_dir / "records" / rid
         record_dir.mkdir(parents=True)
+        (record_dir / "result.json").write_text("{}")
 
     return run_dir
 
@@ -616,6 +618,96 @@ class TestRerunMode:
         assert result.metrics["m_b"].error == "still failing"
 
     @pytest.mark.asyncio
+    async def test_rerun_preserves_version_of_non_rerun_metrics(self, tmp_path):
+        """Non-rerun metrics keep their on-disk version; only the rerun metric gets the new version.
+
+        Models the workflow where a user bumps `m_b`'s class version (e.g., to v0.2) and
+        then reruns only the errored records for m_b. m_a wasn't touched, so its on-disk
+        version must survive untouched.
+        """
+        run_dir = _setup_run_dir(tmp_path, ["rec-0"])
+        records = [_make_record("rec-0")]
+        record_dir = run_dir / "records" / "rec-0"
+
+        # On disk: m_a succeeded at v0.1, m_b failed at v0.1 (and we want to rerun m_b)
+        _write_metrics_json(
+            record_dir,
+            "rec-0",
+            {
+                "m_a": MetricScore(name="m_a", score=0.9, normalized_score=0.9, version="v0.1"),
+                "m_b": MetricScore(name="m_b", score=0.0, normalized_score=0.0, error="fail-b", version="v0.1"),
+            },
+        )
+
+        runner = _make_runner(
+            run_dir,
+            records,
+            ["m_a", "m_b"],
+            record_metric_filter={"rec-0": {"m_b"}},
+        )
+        # Simulate that m_b's class version was bumped to v0.2 between runs
+        _install_mock(
+            runner,
+            {
+                "rec-0": {
+                    "m_b": MetricScore(name="m_b", score=0.7, normalized_score=0.7, version="v0.2"),
+                },
+            },
+        )
+
+        result = await runner.run_and_save_record("rec-0", record_dir)
+
+        # In-memory result preserves on-disk version for m_a, stamps new version on m_b
+        assert result.metrics["m_a"].version == "v0.1", "m_a version must not change on partial rerun"
+        assert result.metrics["m_b"].version == "v0.2", "m_b should be re-stamped with the new version"
+
+        # Persisted to disk identically
+        on_disk = json.loads((record_dir / "metrics.json").read_text())["metrics"]
+        assert on_disk["m_a"]["version"] == "v0.1"
+        assert on_disk["m_b"]["version"] == "v0.2"
+
+    @pytest.mark.asyncio
+    async def test_rerun_preserves_legacy_unversioned_metrics(self, tmp_path):
+        """Pre-versioning rows (no `version` on disk) stay `version=None` after a partial rerun."""
+        run_dir = _setup_run_dir(tmp_path, ["rec-0"])
+        records = [_make_record("rec-0")]
+        record_dir = run_dir / "records" / "rec-0"
+
+        # Write a metrics.json by hand without the version field (pre-versioning format)
+        legacy_blob = {
+            "record_id": "rec-0",
+            "metrics": {
+                "m_a": {"name": "m_a", "score": 0.5, "normalized_score": 0.5, "details": {}},
+                "m_b": {
+                    "name": "m_b",
+                    "score": 0.0,
+                    "normalized_score": 0.0,
+                    "error": "fail-b",
+                    "details": {},
+                },
+            },
+        }
+        (record_dir / "metrics.json").write_text(json.dumps(legacy_blob))
+
+        runner = _make_runner(
+            run_dir,
+            records,
+            ["m_a", "m_b"],
+            record_metric_filter={"rec-0": {"m_b"}},
+        )
+        _install_mock(
+            runner,
+            {"rec-0": {"m_b": MetricScore(name="m_b", score=0.7, normalized_score=0.7, version="v0.2")}},
+        )
+
+        result = await runner.run_and_save_record("rec-0", record_dir)
+
+        # m_a was not rerun, so its legacy unversioned state must survive
+        assert result.metrics["m_a"].version is None
+        # m_b was rerun with the bumped class version
+        assert result.metrics["m_b"].version == "v0.2"
+
+    @pytest.mark.asyncio
     async def test_same_metric_fails_on_two_records(self, tmp_path):
         """The same metric failing on two different records is rerun independently on each."""
         run_dir = _setup_run_dir(tmp_path, ["rec-0", "rec-1"])
@@ -672,7 +764,7 @@ class TestBuildPerMetricAggregates:
             "r1": RecordMetrics(record_id="r1", metrics={"m": _ms("m", 0.8)}),
             "r2": RecordMetrics(record_id="r2", metrics={"m": _ms("m", 0.6)}),
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"], seed=42)
         assert result["m"]["count"] == 2
         assert result["m"]["none_count"] == 0
         assert result["m"]["error_count"] == 0
@@ -686,7 +778,7 @@ class TestBuildPerMetricAggregates:
             "r2": RecordMetrics(record_id="r2", metrics={"m": _ms("m", 0.0, error="JSON parse failed")}),
             "r3": RecordMetrics(record_id="r3", metrics={}),  # metric missing entirely
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"], seed=42)
         assert result["m"]["count"] == 1
         assert result["m"]["error_count"] == 1
         assert result["m"]["missing_count"] == 1
@@ -699,7 +791,7 @@ class TestBuildPerMetricAggregates:
             "r1": RecordMetrics(record_id="r1", metrics={"m": _ms("m", 0.0, error="fail1")}),
             "r2": RecordMetrics(record_id="r2", metrics={"m": _ms("m", 0.0, error="fail2")}),
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"], seed=42)
         assert result["m"]["count"] == 0
         assert result["m"]["error_count"] == 2
         assert result["m"]["missing_count"] == 0
@@ -715,7 +807,7 @@ class TestBuildPerMetricAggregates:
                 metrics={"response_speed": MetricScore(name="response_speed", score=1.2, normalized_score=None)},
             ),
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["response_speed"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["response_speed"], seed=42)
         assert result["response_speed"]["higher_is_better"] is False
 
     def test_higher_is_better_defaults_true_for_unknown_metric(self):
@@ -723,7 +815,7 @@ class TestBuildPerMetricAggregates:
         all_metrics = {
             "r1": RecordMetrics(record_id="r1", metrics={"m": MetricScore(name="m", score=0.3)}),
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"], seed=42)
         assert result["m"]["higher_is_better"] is True
 
     def test_sub_metric_direction_derived_from_suffix(self):
@@ -756,7 +848,7 @@ class TestBuildPerMetricAggregates:
             ),
         }
         result = MetricsRunner._build_per_metric_aggregates(
-            all_metrics, ["faithfulness", "transcription_accuracy_key_entities"]
+            all_metrics, ["faithfulness", "transcription_accuracy_key_entities"], seed=42
         )
         assert result["faithfulness"]["sub_metrics"]["hallucination_rate"]["higher_is_better"] is False
         assert result["transcription_accuracy_key_entities"]["sub_metrics"]["name_accuracy"]["higher_is_better"] is True

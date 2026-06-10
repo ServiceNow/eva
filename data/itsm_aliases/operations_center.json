@@ -1,0 +1,31 @@
+{
+  "name": "Operations Center",
+  "translatable": true,
+  "base": [
+    "ops center"
+  ],
+  "translations": {
+    "fr": [
+      "bâtiment des opérations",
+      "centre des opérations",
+      "centre ops",
+      "centre opé",
+      "centre opérationnel",
+      "les opérations",
+      "ops",
+      "opérations",
+      "site des opérations"
+    ],
+    "fr-CA": [
+      "bâtiment des opérations",
+      "centre des opérations",
+      "centre ops",
+      "centre opé",
+      "centre opérationnel",
+      "les opérations",
+      "ops",
+      "opérations",
+      "site des opérations"
+    ]
+  }
+}

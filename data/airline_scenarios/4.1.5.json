@@ -7,11 +7,11 @@
       "passengers": [
         {
           "passenger_id": "PAX001",
-          "first_name": "Joseph",
-          "last_name": "Scott",
+          "first_name": "<FIRST_NAME_ROMANIZED>",
+          "last_name": "<LAST_NAME_ROMANIZED>",
           "ticket_number": "0834512789043",
-          "email": "joseph.scott@gmail.com",
-          "phone": "+1-208-555-5346",
+          "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
+          "phone": "<PHONE>",
           "elite_status": null,
           "meal_preference": "none",
           "seat_preference": "aisle"

@@ -30,12 +30,12 @@
       "passengers": [
         {
           "elite_status": null,
-          "email": "andrea.simmons@outlook.com",
-          "first_name": "Andrea",
-          "last_name": "Simmons",
+          "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@outlook.com",
+          "first_name": "<FIRST_NAME>",
+          "last_name": "<LAST_NAME>",
           "meal_preference": "none",
           "passenger_id": "PAX001",
-          "phone": "+1-919-555-0968",
+          "phone": "<PHONE>",
           "seat_preference": "aisle",
           "ticket_number": "1804567890123"
         }

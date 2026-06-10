@@ -28,8 +28,8 @@
     "7767538527": {
       "npi": "7767538527",
       "employee_id": "EMP998348",
-      "first_name": "Jin-Ho",
-      "last_name": "Park",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "AJT-63R",
       "pin": "9947",
       "phone_last_four": "4829",
@@ -101,8 +101,8 @@
   "employees": {
     "EMP998348": {
       "employee_id": "EMP998348",
-      "first_name": "Jin-Ho",
-      "last_name": "Park",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1988-11-02",
       "phone_last_four": "4829",
       "otp_code": "938722",

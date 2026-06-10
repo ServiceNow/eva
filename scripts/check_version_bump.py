@@ -106,7 +106,6 @@ def main() -> int:
         if len(triggered_by) > 5:
             print(f"    ... and {len(triggered_by) - 5} more")
     print(f"\n  Edit: {VERSION_FILE}")
-    print("  Also update pyproject.toml [tool.eva] to match.")
     print()
     print("  To skip this check: git commit --no-verify")
     print("=" * 60)

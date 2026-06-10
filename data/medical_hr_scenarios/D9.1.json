@@ -76,8 +76,8 @@
   "employees": {
     "EMP678043": {
       "employee_id": "EMP678043",
-      "first_name": "Mirembe",
-      "last_name": "Nakato",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1998-04-22",
       "phone_last_four": "4826",
       "otp_code": "561204",

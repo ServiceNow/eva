@@ -75,8 +75,8 @@
   "employees": {
     "EMP174637": {
       "employee_id": "EMP174637",
-      "first_name": "Thandi",
-      "last_name": "Ndlovu",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-04-12",
       "phone_last_four": "4829",
       "otp_code": "929683",

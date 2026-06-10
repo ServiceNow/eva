@@ -1,0 +1,9 @@
+{
+  "name": "Datadog",
+  "translatable": false,
+  "base": [
+    "data dog",
+    "datadog monitoring"
+  ],
+  "translations": {}
+}

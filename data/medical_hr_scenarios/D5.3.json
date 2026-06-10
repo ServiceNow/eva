@@ -27,8 +27,8 @@
     "1487392045": {
       "npi": "1487392045",
       "employee_id": "EMP824156",
-      "first_name": "Chioma",
-      "last_name": "Nwosu",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "MGH-04B",
       "pin": "4821",
       "phone_last_four": "4821",
@@ -75,8 +75,8 @@
   "employees": {
     "EMP824156": {
       "employee_id": "EMP824156",
-      "first_name": "Chioma",
-      "last_name": "Nwosu",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1992-04-11",
       "phone_last_four": "4821",
       "otp_code": "483920",

@@ -26,8 +26,7 @@ from eva.assistant.audio_bridge import (
     pcm16_24k_to_mulaw_8k,
     sync_buffer_to_position,
 )
-from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
-from eva.models.config import SpeechToSpeechConfig
+from eva.assistant.base_server import AbstractAssistantServer
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -77,6 +76,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
     (24 kHz PCM16 base64).
     """
 
+    _service_name: str = "OpenAI Realtime"
+    _metrics_processor_name: str = "openai_realtime"
+
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
@@ -104,12 +106,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         # User speech start timestamp from audio_interface (source of truth)
         self._audio_interface_speech_start_ts: str | None = None
 
-        if isinstance(self.pipeline_config, SpeechToSpeechConfig):
-            s2s_params = self.pipeline_config.s2s_params
-        else:
-            logger.error("Pipeline config is not SpeechToSpeechConfig")
-            return
-
+        s2s_params = self.pipeline_config.s2s_params or {}
         self._model: str = s2s_params["model"]
 
     async def start(self) -> None:
@@ -148,7 +145,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         while not self._server.started:
             await asyncio.sleep(0.01)
 
-        logger.info(f"OpenAI Realtime server started on ws://localhost:{self.port}")
+        logger.info(f"{self._service_name} server started on ws://localhost:{self.port}")
 
     async def _shutdown(self) -> None:
         """Stop the OpenAI Realtime server."""
@@ -173,7 +170,66 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             self._server = None
             self._server_task = None
 
-        logger.info(f"OpenAI Realtime server stopped on port {self.port}")
+        logger.info(f"{self._service_name} server stopped on port {self.port}")
+
+    def _default_voice(self) -> str:
+        """Default voice ID when `s2s_params.voice` is not set.
+
+        Subclasses override when the underlying service uses a different
+        voice catalogue.
+        """
+        return "marin"
+
+    def _build_session_config(self) -> dict[str, Any]:
+        """Construct the `session.update` payload for the realtime connection.
+
+        Subclasses override to adjust service-specific fields (e.g. drop the
+        `transcription.model` selector for xAI, which doesn't expose one).
+        """
+        s2s = self.pipeline_config.s2s_params or {}
+        vad = s2s.get("vad_settings", {}) or {}
+
+        session_config: dict[str, Any] = {
+            "type": "realtime",
+            "output_modalities": ["audio"],
+            "instructions": self._system_prompt,
+            "audio": {
+                "output": {
+                    "voice": s2s.get("voice", self._default_voice()),
+                    "format": {"type": "audio/pcm", "rate": 24000},
+                },
+                "input": {
+                    "format": {"type": "audio/pcm", "rate": 24000},
+                    "turn_detection": {
+                        "type": vad.get("type", "server_vad"),
+                        "threshold": vad.get("threshold", 0.5),
+                        "prefix_padding_ms": vad.get("prefix_padding_ms", 300),
+                        "silence_duration_ms": vad.get("silence_duration_ms", 200),
+                    },
+                    "transcription": {
+                        "model": s2s.get("transcription_model", "whisper-1"),
+                    },
+                },
+            },
+            "tools": self._realtime_tools,
+        }
+
+        reasoning_effort = s2s.get("reasoning_effort")
+        if reasoning_effort:
+            session_config["reasoning"] = {"effort": reasoning_effort}
+
+        return session_config
+
+    def _create_client(self) -> AsyncOpenAI:
+        """Construct the AsyncOpenAI client used for the realtime connection.
+
+        Subclasses override to point at a different base_url (e.g. xAI's
+        realtime endpoint, which is OpenAI-Realtime-API-compatible).
+        """
+        api_key = self.pipeline_config.s2s_params.get("api_key")
+        if not api_key:
+            raise ValueError(f"API key required for {self._service_name}")
+        return AsyncOpenAI(api_key=api_key)
 
     async def _handle_session(self, websocket: WebSocket) -> None:
         """Handle a single WebSocket session.
@@ -187,7 +243,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         5. On tool call: execute via self.tool_handler, send result back
         6. On audio: decode base64 PCM16 -> record -> encode mulaw -> send to Twilio WS
         """
-        logger.info("Client connected to OpenAI Realtime server")
+        logger.info(f"Client connected to {self._service_name} server")
 
         # Reset per-session state
         self._user_turn = None
@@ -196,49 +252,14 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._user_speaking = False
         self._bot_speaking = False
 
-        api_key = self.pipeline_config.s2s_params.get("api_key")
-        if not api_key:
-            raise ValueError("API key required for openai realtime")
-        client = AsyncOpenAI(api_key=api_key)
+        client = self._create_client()
 
         try:
-            logger.info(f"Starting OpenAI Realtime session (model={self._model})")
+            logger.info(f"Starting {self._service_name} session (model={self._model})")
             async with client.realtime.connect(model=self._model) as conn:
                 # Configure the session
-                await conn.session.update(
-                    session={
-                        "type": "realtime",
-                        "output_modalities": ["audio"],
-                        "instructions": self._system_prompt,
-                        "audio": {
-                            "output": {
-                                "voice": self.pipeline_config.s2s_params.get("voice", "marin"),
-                                "format": {"type": "audio/pcm", "rate": 24000},
-                            },
-                            "input": {
-                                "format": {"type": "audio/pcm", "rate": 24000},
-                                "turn_detection": {
-                                    "type": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                        "type", "server_vad"
-                                    ),
-                                    "threshold": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                        "threshold", 0.5
-                                    ),
-                                    "prefix_padding_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                        "prefix_padding_ms", 300
-                                    ),
-                                    "silence_duration_ms": self.pipeline_config.s2s_params.get("vad_settings", {}).get(
-                                        "silence_duration_ms", 200
-                                    ),
-                                },
-                                "transcription": {
-                                    "model": self.pipeline_config.s2s_params.get("transcription_model", "whisper-1")
-                                },
-                            },
-                        },
-                        "tools": self._realtime_tools,
-                    }
-                )
+                session_config = self._build_session_config()
+                await conn.session.update(session=session_config)
 
                 # Trigger the initial greeting
                 await conn.conversation.item.create(
@@ -248,7 +269,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                         "content": [
                             {
                                 "type": "input_text",
-                                "text": f"Say: '{INITIAL_MESSAGE}'",
+                                "text": f"Say: '{self.initial_message}'",
                             }
                         ],
                     }
@@ -278,9 +299,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                         logger.error(f"Session task failed: {task.exception()}")
 
         except Exception as e:
-            logger.error(f"OpenAI Realtime session error: {e}", exc_info=True)
+            logger.error(f"{self._service_name} session error: {e}", exc_info=True)
         finally:
-            logger.info("Client disconnected from OpenAI Realtime server")
+            logger.info(f"Client disconnected from {self._service_name} server")
 
     # ── Audio output pacer (OpenAI -> Twilio WS at real-time rate) ───
 
@@ -406,10 +427,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         match event_type:
             case "session.created":
-                logger.info("OpenAI Realtime session created")
+                logger.info(f"{self._service_name} session created")
 
             case "session.updated":
-                logger.debug("OpenAI Realtime session updated")
+                logger.debug(f"{self._service_name} session updated")
 
             case "input_audio_buffer.speech_started":
                 await self._on_speech_started(event)
@@ -454,10 +475,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
             case "error":
                 error_data = getattr(event, "error", None)
-                logger.error(f"OpenAI Realtime error: {error_data}")
+                logger.error(f"{self._service_name} error: {error_data}")
 
             case _:
-                logger.debug(f"Unhandled OpenAI event: {event_type}")
+                logger.debug(f"Unhandled {self._service_name} event: {event_type}")
 
     # ── Event handlers ────────────────────────────────────────────────
 
@@ -618,7 +639,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         except json.JSONDecodeError:
             arguments = {}
 
-        logger.info(f"Tool call: {func_name}({json.dumps(arguments)})")
+        logger.info(f"Tool call: {func_name}({json.dumps(arguments, ensure_ascii=False)})")
         self._assistant_state.has_function_calls = True
 
         # Execute tool and record in audit log
@@ -640,7 +661,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             item={
                 "type": "function_call_output",
                 "call_id": call_id,
-                "output": json.dumps(result),
+                "output": json.dumps(result, ensure_ascii=False),
             }
         )
 
@@ -662,7 +683,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 input_tokens = getattr(usage, "input_tokens", 0) or 0
                 output_tokens = getattr(usage, "output_tokens", 0) or 0
                 self._metrics_log.write_token_usage(
-                    processor="openai_realtime",
+                    processor=self._metrics_processor_name,
                     model=self._model,
                     prompt_tokens=input_tokens,
                     completion_tokens=output_tokens,

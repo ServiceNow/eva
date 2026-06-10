@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, useXAxisScale, useYAxisScale } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ErrorBar, useXAxisScale, useYAxisScale } from 'recharts';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { SystemScore } from '../../data/leaderboardData';
+import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
+import { getValue, groupedSystems } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
 
 function useIsMobile(breakpoint = 640) {
@@ -20,9 +21,26 @@ function Sub({ base, sub }: { base: string; sub: string }) {
   return <>{base}<sub className="text-[0.7em]">{sub}</sub></>;
 }
 
+interface ScatterPoint {
+  id: string;
+  name: string;
+  type: 'cascade' | 's2s' | '2-part';
+  stt: string;
+  llm: string;
+  tts: string;
+  plotX: number;
+  plotY: number;
+  xLower: number;
+  xUpper: number;
+  yLower: number;
+  yUpper: number;
+  xErr: [number, number];
+  yErr: [number, number];
+}
+
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: Array<{ payload: SystemScore & { plotX: number; plotY: number } }>;
+  payload?: Array<{ payload: ScatterPoint }>;
   xSub: string;
   ySub: string;
 }
@@ -30,14 +48,22 @@ interface CustomTooltipProps {
 function CustomTooltip({ active, payload, xSub, ySub }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   const s = payload[0].payload;
-  const typeLabel = s.type === 'cascade' ? 'Cascade' : s.type === '2-part' ? '2-Part' : 'Speech-to-Speech';
+  const typeLabel = s.type === 'cascade' ? 'Cascade' : s.type === '2-part' ? 'Hybrid' : 'Speech-to-Speech';
   const typeColor = s.type === 'cascade' ? 'bg-purple/20 text-purple-light' : s.type === '2-part' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue/20 text-blue-light';
   return (
     <div className="bg-bg-tertiary border border-border-default rounded-lg p-3 shadow-xl max-w-xs">
       <div className="text-sm font-semibold text-text-primary mb-1">{s.name}</div>
-      <div className="flex gap-4 text-xs">
-        <div><span className="text-text-muted"><Sub base="EVA-A" sub={xSub} />:</span> <span className="text-purple-light font-mono">{s.plotX.toFixed(2)}</span></div>
-        <div><span className="text-text-muted"><Sub base="EVA-X" sub={ySub} />:</span> <span className="text-blue-light font-mono">{s.plotY.toFixed(2)}</span></div>
+      <div className="flex flex-col gap-1 text-xs">
+        <div>
+          <span className="text-text-muted"><Sub base="EVA-A" sub={xSub} />:</span>{' '}
+          <span className="text-purple-light font-mono">{s.plotX.toFixed(2)}</span>{' '}
+          <span className="text-text-muted font-mono">[{s.xLower.toFixed(2)}, {s.xUpper.toFixed(2)}]</span>
+        </div>
+        <div>
+          <span className="text-text-muted"><Sub base="EVA-X" sub={ySub} />:</span>{' '}
+          <span className="text-blue-light font-mono">{s.plotY.toFixed(2)}</span>{' '}
+          <span className="text-text-muted font-mono">[{s.yLower.toFixed(2)}, {s.yUpper.toFixed(2)}]</span>
+        </div>
       </div>
       {s.type === 'cascade' && (
         <div className="text-[10px] text-text-muted mt-1.5 space-y-0.5">
@@ -87,11 +113,6 @@ const twoPartColor = '#34D399';
 const twoPartStroke = '#6EE7B7';
 const frontierColor = '#06B6D4';
 
-interface ScatterPoint extends SystemScore {
-  plotX: number;
-  plotY: number;
-}
-
 function computeParetoFrontier(points: ScatterPoint[]): { plotX: number; plotY: number }[] {
   const frontier: ScatterPoint[] = [];
   for (const p of points) {
@@ -132,8 +153,8 @@ interface PlotConfig {
   title: string;
   description: React.ReactNode;
   subscript: string;
-  getX: (s: SystemScore) => number;
-  getY: (s: SystemScore) => number;
+  xMetric: string;
+  yMetric: string;
   domain: [number, number];
 }
 
@@ -141,41 +162,41 @@ const plots: PlotConfig[] = [
   {
     title: 'pass@1',
     description: (<>
-      Average of per-sample scores, where each sample scores 1 if all metrics in category surpass metric-specific threshold, else 0.
+      Average of per-sample scores, where each sample scores 1 if all metrics in category surpass metric-specific threshold, else 0. Error bars (95% confidence intervals) reflect stochastic model behavior rather than measurement noise (see paper section 4.2).
     </>),
     subscript: 'pass@1',
-    getX: (s) => s.successRates.accuracy.pass_threshold,
-    getY: (s) => s.successRates.experience.pass_threshold,
+    xMetric: 'EVA-A_pass',
+    yMetric: 'EVA-X_pass',
     domain: [0, 1],
   },
   {
-    title: 'pass@k (k=3)',
+    title: 'pass@k (k=5)',
     description: (<>
-      Percent of scenarios where at least 1 of k=3 trials surpasses metric-specific thresholds in all metrics in the category. .
+      Percent of scenarios where at least 1 of k=5 trials surpasses metric-specific thresholds in all metrics in the category. Error bars (95% confidence intervals) reflect stochastic model behavior rather than measurement noise (see paper section 4.2).
     </>),
     subscript: 'pass@k',
-    getX: (s) => s.successRates.accuracy.pass_at_k,
-    getY: (s) => s.successRates.experience.pass_at_k,
+    xMetric: 'EVA-A_pass_at_k',
+    yMetric: 'EVA-X_pass_at_k',
     domain: [0, 1],
   },
   {
-    title: 'pass^k (k=3)',
+    title: 'pass^k (k=5)',
     description: (<>
-      Per-scenario probability of all k=3 trials succeeding (scenario pass rate raised to the k-th power) for that category, averaged across scenarios.
+      Per-scenario probability of all k=5 trials succeeding (scenario pass rate raised to the k-th power) for that category, averaged across scenarios. Error bars (95% confidence intervals) reflect stochastic model behavior rather than measurement noise (see paper section 4.2).
     </>),
     subscript: 'pass^k',
-    getX: (s) => s.successRates.accuracy.pass_k,
-    getY: (s) => s.successRates.experience.pass_k,
+    xMetric: 'EVA-A_pass_power_k',
+    yMetric: 'EVA-X_pass_power_k',
     domain: [0, 1],
   },
   {
     title: 'Mean',
     description: (<>
-      Average of per-sample scores, where each sample's score is the mean of the submetrics in that category.
+      Average of per-sample scores, where each sample's score is the mean of the submetrics in that category. Error bars (95% confidence intervals) reflect stochastic model behavior rather than measurement noise (see paper section 4.2).
     </>),
     subscript: 'mean',
-    getX: (s) => s.successRates.accuracy.mean,
-    getY: (s) => s.successRates.experience.mean,
+    xMetric: 'EVA-A_mean',
+    yMetric: 'EVA-X_mean',
     domain: [0, 1],
   },
 ];
@@ -187,15 +208,37 @@ function getPointColor(type: string): { fill: string; stroke: string } {
 }
 
 interface ScatterPlotProps {
-  systems: SystemScore[];
+  systems: SystemStats[];
+  domain: DomainOrPooled;
 }
 
-export function ScatterPlot({ systems }: ScatterPlotProps) {
+export function ScatterPlot({ systems, domain }: ScatterPlotProps) {
   const colors = useThemeColors();
   const [index, setIndex] = useState(0);
   const isMobile = useIsMobile();
   const plot = plots[index];
-  const data: ScatterPoint[] = systems.map(s => ({ ...s, plotX: plot.getX(s), plotY: plot.getY(s) }));
+
+  const data: ScatterPoint[] = groupedSystems(systems).flatMap(s => {
+    const x = getValue(s, plot.xMetric, domain);
+    const y = getValue(s, plot.yMetric, domain);
+    if (!x || !y) return [];
+    return [{
+      id: s.id,
+      name: s.name,
+      type: s.type,
+      stt: s.stt,
+      llm: s.llm,
+      tts: s.tts,
+      plotX: x.point,
+      plotY: y.point,
+      xLower: x.ci_lower,
+      xUpper: x.ci_upper,
+      yLower: y.ci_lower,
+      yUpper: y.ci_upper,
+      xErr: [x.point - x.ci_lower, x.ci_upper - x.point],
+      yErr: [y.point - y.ci_lower, y.ci_upper - y.point],
+    }];
+  });
   const frontierLine = computeParetoFrontier(data);
 
   const prev = () => setIndex((i) => (i - 1 + plots.length) % plots.length);
@@ -275,6 +318,8 @@ export function ScatterPlot({ systems }: ScatterPlotProps) {
                 <Tooltip content={<CustomTooltip xSub={plot.subscript} ySub={plot.subscript} />} cursor={false} />
                 <ParetoLine frontier={frontierLine} />
                 <Scatter data={data} fill={cascadeColor}>
+                  <ErrorBar dataKey="xErr" direction="x" width={4} strokeWidth={1} stroke={colors.text.muted} />
+                  <ErrorBar dataKey="yErr" direction="y" width={4} strokeWidth={1} stroke={colors.text.muted} />
                   {data.map((s) => {
                     const { fill, stroke } = getPointColor(s.type);
                     return (
@@ -301,7 +346,7 @@ export function ScatterPlot({ systems }: ScatterPlotProps) {
           </div>
           <div className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary">
             <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: twoPartColor }} />
-            <span className="whitespace-nowrap">Audio Native</span>
+            <span className="whitespace-nowrap">Hybrid</span>
           </div>
           <div className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary">
             <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: s2sColor }} />

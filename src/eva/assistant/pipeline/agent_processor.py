@@ -239,18 +239,11 @@ class BenchmarkAgentProcessor(FrameProcessor):
                 LLMMessageFrame(text=message),
                 FrameDirection.DOWNSTREAM,
             )
-            if len(message) > 1000:
-                # chunk into sentences
-                sentences = message.split(". ")
-                for sentence in sentences:
-                    await self.push_frame(
-                        TTSSpeakFrame(text=sentence),
-                        FrameDirection.DOWNSTREAM,
-                    )
-            else:
-                # Push content to TTS
+            # Split into chunks so TTS can start synthesizing the first chunk
+            # while the rest pipelines behind it
+            for chunk in self._chunk_text(message):
                 await self.push_frame(
-                    TTSSpeakFrame(text=message),
+                    TTSSpeakFrame(text=chunk),
                     FrameDirection.DOWNSTREAM,
                 )
         except (asyncio.CancelledError, Exception) as e:
@@ -259,6 +252,24 @@ class BenchmarkAgentProcessor(FrameProcessor):
             # Re-raise CancelledError to ensure proper cancellation propagation
             if isinstance(e, asyncio.CancelledError):
                 raise
+
+    @staticmethod
+    def _chunk_text(text: str, first_chunk_chars: int = 100) -> list[str]:
+        """Split text into a small first chunk and the remainder.
+
+        Splits at the first whitespace boundary after ``first_chunk_chars``
+        characters so the TTS service can begin synthesizing sooner.  Short
+        texts (at or below the threshold) are returned as-is.
+        """
+        if len(text) <= first_chunk_chars:
+            return [text]
+
+        # Find first whitespace at or after the threshold
+        split_idx = text.find(" ", first_chunk_chars)
+        if split_idx == -1:
+            return [text]
+
+        return [text[:split_idx], text[split_idx + 1 :]]
 
     async def stop(self):
         """Stop the processor and cleanup."""

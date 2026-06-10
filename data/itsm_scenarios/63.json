@@ -345,7 +345,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Viktor",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL1",
       "group_memberships": [
         {
@@ -376,7 +376,7 @@
       "hire_date": "2019-05-20",
       "is_manager": false,
       "last_desk_assignment_date": null,
-      "last_name": "Novak",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP072110",
@@ -404,11 +404,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Headquarters",
-        "name_aliases": [
-          "HQ",
-          "Headquarters"
-        ]
+        "name": "Headquarters"
       }
     },
     "conference_rooms": {},
@@ -487,10 +483,7 @@
     },
     "zones": {
       "PZN": {
-        "name": "North Lot",
-        "name_aliases": [
-          "North Lot"
-        ],
+        "name": "North Surface Lot",
         "zone_code": "PZN"
       }
     }
@@ -528,9 +521,6 @@
         "catalog_id": "APP-1001",
         "department_restrictions": [],
         "name": "Slack",
-        "name_aliases": [
-          "slack"
-        ],
         "requires_manager_approval": false,
         "vendor": "Salesforce"
       }
@@ -543,11 +533,7 @@
           "permanent",
           "temporary"
         ],
-        "name": "JetBrains IntelliJ IDEA",
-        "name_aliases": [
-          "IntelliJ",
-          "IntelliJ IDEA"
-        ],
+        "name": "IntelliJ IDEA",
         "vendor": "JetBrains"
       }
     }

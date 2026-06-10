@@ -75,8 +75,8 @@
   "employees": {
     "EMP359947": {
       "employee_id": "EMP359947",
-      "first_name": "Luz",
-      "last_name": "Gutierrez",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1998-11-22",
       "phone_last_four": "0148",
       "otp_code": "551204",

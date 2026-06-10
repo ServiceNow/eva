@@ -81,19 +81,14 @@ class PromptManager:
         for yaml_file in yaml_files:
             self._load_single_file(yaml_file)
 
-    def get_prompt(self, path: str, **variables) -> str:
-        """Get a prompt by its path and substitute variables.
+    def get_template(self, path: str) -> str:
+        """Return the unrendered prompt template at `path` (no variable substitution).
 
         Args:
             path: Dot-separated path to the prompt (e.g., "orchestrator.system_prompt")
-            **variables: Variable values to substitute in the prompt
 
-        Returns:
-            The prompt with variables substituted
-
-        Raises:
-            KeyError: If the prompt path is not found
-            ValueError: If the prompt is not a string
+        Used as is for hashing prompt templates so we can detect prompt edits across
+        runs without the per-record variable substitutions changing the hash.
         """
         # Navigate to the prompt using the dot-separated path
         parts = path.split(".")
@@ -108,6 +103,24 @@ class PromptManager:
 
         if not isinstance(value, str):
             raise ValueError(f"Prompt at {path} is not a string: {type(value)}")
+
+        return value
+
+    def get_prompt(self, path: str, **variables) -> str:
+        """Get a prompt by its path and substitute variables.
+
+        Args:
+            path: Dot-separated path to the prompt (e.g., "orchestrator.system_prompt")
+            **variables: Variable values to substitute in the prompt
+
+        Returns:
+            The prompt with variables substituted
+
+        Raises:
+            KeyError: If the prompt path is not found
+            ValueError: If the prompt is not a string
+        """
+        value = self.get_template(path)
 
         # Substitute variables using str.format()
         # Auto-inject global variables from the _shared section (prompt-level vars take precedence)

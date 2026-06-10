@@ -28,8 +28,8 @@
     "3373077218": {
       "npi": "3373077218",
       "employee_id": "EMP710805",
-      "first_name": "Kofi",
-      "last_name": "Mensah",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "DIX-15L",
       "pin": "4441",
       "phone_last_four": "4821",
@@ -167,8 +167,8 @@
   "employees": {
     "EMP710805": {
       "employee_id": "EMP710805",
-      "first_name": "Kofi",
-      "last_name": "Mensah",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1987-11-14",
       "phone_last_four": "4821",
       "otp_code": "612483",

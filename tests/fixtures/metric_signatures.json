@@ -1,0 +1,110 @@
+{
+  "AgentSpeechFidelityMetric": {
+    "name": "agent_speech_fidelity",
+    "prompt_hash": "c3a02ab03f06",
+    "source_hash": "4bb84934ffb3",
+    "version": "v0.3"
+  },
+  "AgentSpeechFidelityS2SMetric": {
+    "name": "agent_speech_fidelity",
+    "prompt_hash": "c3a02ab03f06",
+    "source_hash": "db35af2de8a3",
+    "version": "v0.2"
+  },
+  "AuthenticationSuccessMetric": {
+    "name": "authentication_success",
+    "prompt_hash": null,
+    "source_hash": "cdc7c59d2684",
+    "version": "v0.1"
+  },
+  "ConcisenessJudgeMetric": {
+    "name": "conciseness",
+    "prompt_hash": "57caf9a18a3c",
+    "source_hash": "cd73d4caaf6f",
+    "version": "v0.1"
+  },
+  "ConversationCorrectlyFinishedMetric": {
+    "name": "conversation_correctly_finished",
+    "prompt_hash": null,
+    "source_hash": "4f27cacab7d2",
+    "version": "v0.1"
+  },
+  "ConversationProgressionJudgeMetric": {
+    "name": "conversation_progression",
+    "prompt_hash": "174cdf93b398",
+    "source_hash": "91b71c803d77",
+    "version": "v0.1"
+  },
+  "ConversationTimeLimitExceededMetric": {
+    "name": "conversation_completed_on_time",
+    "prompt_hash": null,
+    "source_hash": "0628e2833ac5",
+    "version": "v0.1"
+  },
+  "ConversationValidEndMetric": {
+    "name": "conversation_valid_end",
+    "prompt_hash": null,
+    "source_hash": "02d1c3fb330b",
+    "version": "v0.1"
+  },
+  "FaithfulnessJudgeMetric": {
+    "name": "faithfulness",
+    "prompt_hash": "060e3f1f9e7a",
+    "source_hash": "82ab3e3244f5",
+    "version": "v0.2"
+  },
+  "ResponseSpeedMetric": {
+    "name": "response_speed",
+    "prompt_hash": null,
+    "source_hash": "ebce1a06bf30",
+    "version": "v0.1"
+  },
+  "STTWERMetric": {
+    "name": "stt_wer",
+    "prompt_hash": null,
+    "source_hash": "4094b78bfb65",
+    "version": "v0.1"
+  },
+  "SpeakabilityJudgeMetric": {
+    "name": "speakability",
+    "prompt_hash": "1e4f78cb051e",
+    "source_hash": "75a203410ec1",
+    "version": "v0.2"
+  },
+  "TaskCompletion": {
+    "name": "task_completion",
+    "prompt_hash": null,
+    "source_hash": "01aed1a552f4",
+    "version": "v0.1"
+  },
+  "ToolCallValidity": {
+    "name": "tool_call_validity",
+    "prompt_hash": null,
+    "source_hash": "1572b16592fe",
+    "version": "v0.1"
+  },
+  "TranscriptionAccuracyKeyEntitiesMetric": {
+    "name": "transcription_accuracy_key_entities",
+    "prompt_hash": "aa1a7fdd6df7",
+    "source_hash": "2eb5cecaaa2b",
+    "version": "v0.2"
+  },
+  "TurnTakingMetric": {
+    "name": "turn_taking",
+    "prompt_hash": null,
+    "source_hash": "aa574674ff83",
+    "version": "v0.1"
+  },
+  "UserBehavioralFidelityMetric": {
+    "name": "user_behavioral_fidelity",
+    "prompt_hash": "21527fa8d79b",
+    "source_hash": "c6fb73aef9d3",
+    "version": "v0.1"
+  },
+  "UserSpeechFidelityMetric": {
+    "name": "user_speech_fidelity",
+    "prompt_hash": "849e13c42e3b",
+    "source_hash": "cac98a26dcd0",
+    "version": "v0.2"
+  }
+}

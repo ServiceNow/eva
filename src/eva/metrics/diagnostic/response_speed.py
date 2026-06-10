@@ -60,15 +60,16 @@ class ResponseSpeedMetric(CodeMetric):
     description = "Diagnostic metric: latency between user utterance end and assistant response start"
     exclude_from_pass_at_k = True
     higher_is_better = False  # Score is latency in seconds — lower is better.
+    version = "v0.1"
 
     async def compute(self, context: MetricContext) -> MetricScore:
         try:
             if not context.latency_assistant_turns:
                 return MetricScore(
                     name=self.name,
-                    score=0.0,
+                    score=None,
                     normalized_score=None,
-                    error="No response latencies available (missing audio timestamps)",
+                    skipped=True,
                 )
 
             all_latencies = list(context.latency_assistant_turns.values())
@@ -77,9 +78,9 @@ class ResponseSpeedMetric(CodeMetric):
             if not overall_stats:
                 return MetricScore(
                     name=self.name,
-                    score=0.0,
+                    score=None,
                     normalized_score=None,
-                    error="No valid response speeds computed",
+                    skipped=True,
                 )
 
             dropped = [v for v in all_latencies if not (0 < v < 1000)]

@@ -1,0 +1,24 @@
+{
+  "name": "Alpha Garage",
+  "translatable": true,
+  "base": [
+    "alpha",
+    "main garage"
+  ],
+  "translations": {
+    "fr": [
+      "garage alpha",
+      "garage principal",
+      "parking alpha",
+      "parking principal",
+      "stationnement alpha"
+    ],
+    "fr-CA": [
+      "garage alpha",
+      "garage principal",
+      "parking alpha",
+      "parking principal",
+      "stationnement alpha"
+    ]
+  }
+}

@@ -27,8 +27,8 @@
     "4026113008": {
       "npi": "4026113008",
       "employee_id": "EMP148050",
-      "first_name": "Fatima",
-      "last_name": "Al-Rashidi",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "EJR-99V",
       "pin": "2169",
       "phone_last_four": "4418",
@@ -95,8 +95,8 @@
   "employees": {
     "EMP148050": {
       "employee_id": "EMP148050",
-      "first_name": "Fatima",
-      "last_name": "Al-Rashidi",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1988-11-14",
       "phone_last_four": "4418",
       "otp_code": "738720",

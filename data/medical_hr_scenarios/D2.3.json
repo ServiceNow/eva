@@ -29,8 +29,8 @@
     "7161404428": {
       "npi": "7161404428",
       "employee_id": "EMP725550",
-      "first_name": "Aleksandr",
-      "last_name": "Petrov",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "ULZD-83G",
       "pin": "5173",
       "phone_last_four": "2841",
@@ -93,8 +93,8 @@
   "employees": {
     "EMP725550": {
       "employee_id": "EMP725550",
-      "first_name": "Aleksandr",
-      "last_name": "Petrov",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1988-04-22",
       "phone_last_four": "2841",
       "otp_code": "482731",

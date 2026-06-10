@@ -246,14 +246,14 @@
       "direct_reports": [
         "EMP092841"
       ],
-      "email": "priya.ramaswamy@company.com",
+      "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@company.com",
       "employee_id": "EMP031482",
       "employment_status": "active",
       "ergonomic_assessment": {
         "completed_date": "2025-11-18",
         "status": "completed"
       },
-      "first_name": "Priya",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -278,7 +278,7 @@
       "hire_date": "2019-05-20",
       "is_manager": true,
       "last_desk_assignment_date": "2026-02-01",
-      "last_name": "Ramaswamy",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "last_parking_assignment_date": "2026-01-10",
       "manager_auth_code": "K4M2P9",
       "manager_employee_id": "EMP010001",
@@ -396,11 +396,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "Downtown",
-          "Engineering Center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -457,9 +453,6 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "Garage A"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -511,9 +504,6 @@
       "catalog_id": "APP-1001",
       "department_restrictions": [],
       "name": "Slack",
-      "name_aliases": [
-        "slack"
-      ],
       "requires_manager_approval": false,
       "vendor": "Salesforce"
     },
@@ -524,11 +514,7 @@
         "permanent",
         "temporary"
       ],
-      "name": "JetBrains IntelliJ IDEA",
-      "name_aliases": [
-        "IntelliJ",
-        "IDEA"
-      ],
+      "name": "IntelliJ IDEA",
       "vendor": "JetBrains"
     }
   },

@@ -1,0 +1,22 @@
+{
+  "name": "North Garage",
+  "translatable": true,
+  "base": [
+    "north garage",
+    "garage a",
+    "main garage",
+    "north parking"
+  ],
+  "translations": {
+    "fr": [
+      "garage nord",
+      "parking nord",
+      "stationnement nord"
+    ],
+    "fr-CA": [
+      "garage nord",
+      "parking nord",
+      "stationnement nord"
+    ]
+  }
+}

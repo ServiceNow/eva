@@ -13,6 +13,7 @@ from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, ErrorDetails, LatencyStats
 from eva.user_simulator.client import UserSimulator
+from eva.utils.culture import resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.error_handler import create_error_details
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import add_record_log_file, current_record_id, get_logger, remove_record_log_file
@@ -42,9 +43,14 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
         from eva.assistant.elevenlabs_server import ElevenLabsAssistantServer
 
         return ElevenLabsAssistantServer
+    elif framework == "grok_voice":
+        from eva.assistant.grok_voice_server import GrokVoiceAssistantServer
+
+        return GrokVoiceAssistantServer
     else:
         raise ValueError(
-            f"Unknown framework: {framework!r}. Supported: pipecat, openai_realtime, gemini_live, elevenlabs"
+            f"Unknown framework: {framework!r}. "
+            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice"
         )
 
 
@@ -152,12 +158,12 @@ class ConversationWorker:
             try:
                 conversation_ended_reason = await asyncio.wait_for(
                     self._run_conversation(),
-                    timeout=self.config.conversation_timeout_seconds,
+                    timeout=self.config.conversation_time_limit_seconds,
                 )
                 logger.info(f"Conversation {self.record.id} ended: {conversation_ended_reason}")
             except TimeoutError:
-                conversation_ended_reason = "timeout"
-                logger.warning(f"Conversation {self.record.id} timed out")
+                conversation_ended_reason = "time_limit_exceeded"
+                logger.warning(f"Conversation {self.record.id} exceeded time limit")
             except asyncio.CancelledError:
                 conversation_ended_reason = "cancelled"
                 logger.info(f"Conversation {self.record.id} was cancelled")
@@ -179,117 +185,182 @@ class ConversationWorker:
             )
         finally:
             await self._cleanup()
-            # Remove the log file handler after cleanup is complete
-            if self._log_file_handler:
-                remove_record_log_file(self._log_file_handler)
-                self._log_file_handler = None
 
-        # If the conversation errored, return a failed result immediately. DB hashes or latency stats cannot be computed if the run did not complete.
-        if error is not None:
+        try:
+            # If the conversation errored, return a failed result immediately.
+            # DB hashes or latency stats cannot be computed if the run did not complete.
+            if error is not None:
+                now = datetime.now()
+                return ConversationResult(
+                    record_id=self.record.id,
+                    completed=False,
+                    error=error,
+                    error_details=error_details,
+                    started_at=started_at,
+                    ended_at=now,
+                    duration_seconds=(now - started_at).total_seconds(),
+                    output_dir=str(self.output_dir),
+                    conversation_ended_reason="error",
+                )
+
+            ended_at = datetime.now()
+
+            # Compute scenario database hashes (REQUIRED for deterministic metrics)
+            initial_db_path = self.output_dir / "initial_scenario_db.json"
+            final_db_path = self.output_dir / "final_scenario_db.json"
+
+            with open(initial_db_path) as f:
+                initial_db = json.load(f)
+            with open(final_db_path) as f:
+                final_db = json.load(f)
+
+            initial_scenario_db_hash = get_dict_hash(initial_db)
+            final_scenario_db_hash = get_dict_hash(final_db)
+
+            logger.info(
+                f"Computed scenario DB hashes - Initial: {initial_scenario_db_hash[:8]}..., "
+                f"Final: {final_scenario_db_hash[:8]}..."
+            )
+
+            # Calculate latency statistics
+            llm_latency = self._calculate_llm_latency()
+            stt_latency = self._calculate_stt_latency()
+            tts_latency = self._calculate_tts_latency()
+            model_response_latency = self._calculate_model_response_latency()
+
+            result = ConversationResult(
+                record_id=self.record.id,
+                completed=error is None and conversation_ended_reason != "error",
+                error=error,
+                error_details=error_details,
+                llm_latency=llm_latency,
+                stt_latency=stt_latency,
+                tts_latency=tts_latency,
+                model_response_latency=model_response_latency,
+                started_at=started_at,
+                ended_at=ended_at,
+                duration_seconds=(ended_at - started_at).total_seconds(),
+                output_dir=str(self.output_dir),
+                audio_assistant_path=str(self.output_dir / "audio_assistant.wav"),
+                audio_user_path=str(self.output_dir / "audio_user_clean.wav"),
+                audio_mixed_path=str(self.output_dir / "audio_mixed.wav"),
+                transcript_path=str(self.output_dir / "transcript.jsonl"),
+                audit_log_path=str(self.output_dir / "audit_log.json"),
+                conversation_log_path=str(self.output_dir / "logs.log"),
+                pipecat_logs_path=self._resolve_framework_logs_path(),
+                elevenlabs_logs_path=str(self.output_dir / "elevenlabs_events.jsonl"),
+                num_turns=self._conversation_stats.get("num_turns", 0),
+                num_tool_calls=self._conversation_stats.get("num_tool_calls", 0),
+                tools_called=self._conversation_stats.get("tools_called", []),
+                conversation_ended_reason=conversation_ended_reason,
+                initial_scenario_db_hash=initial_scenario_db_hash,
+                final_scenario_db_hash=final_scenario_db_hash,
+            )
+
+            # Write result.json here (inside Phase 1 / semaphore) so it lands on
+            # disk alongside audit_log and scenario DBs.  Previously this was done
+            # in the runner's Phase 2 *after* the semaphore release, where it was
+            # vulnerable to task cancellation from process signals or gather crashes.
+            result_path = self.output_dir / "result.json"
+            result_path.write_text(result.model_dump_json(indent=2))
+
+            return result
+
+        except Exception as e:
+            # Post-conversation processing failed (hash computation, latency stats, etc.)
+            # Return a failed result so result.json still gets written by the runner,
+            # rather than raising and leaving no result.json on disk.
+            logger.error(
+                f"Post-conversation processing failed for {self.record.id}: {e}",
+                exc_info=True,
+            )
             now = datetime.now()
             return ConversationResult(
                 record_id=self.record.id,
                 completed=False,
-                error=error,
-                error_details=error_details,
+                error=f"Post-conversation processing failed: {e}",
+                error_details=create_error_details(error=e, retry_count=0, retry_succeeded=False),
                 started_at=started_at,
                 ended_at=now,
                 duration_seconds=(now - started_at).total_seconds(),
                 output_dir=str(self.output_dir),
-                conversation_ended_reason="error",
+                conversation_ended_reason=conversation_ended_reason,
+                num_turns=self._conversation_stats.get("num_turns", 0),
+                num_tool_calls=self._conversation_stats.get("num_tool_calls", 0),
+                tools_called=self._conversation_stats.get("tools_called", []),
             )
 
-        ended_at = datetime.now()
-
-        # Compute scenario database hashes (REQUIRED for deterministic metrics)
-        initial_db_path = self.output_dir / "initial_scenario_db.json"
-        final_db_path = self.output_dir / "final_scenario_db.json"
-
-        if not initial_db_path.exists():
-            raise FileNotFoundError(
-                f"Initial scenario database not found at {initial_db_path}. "
-                "This is required for deterministic task completion metrics."
-            )
-        if not final_db_path.exists():
-            raise FileNotFoundError(
-                f"Final scenario database not found at {final_db_path}. "
-                "This is required for deterministic task completion metrics."
-            )
-
-        with open(initial_db_path) as f:
-            initial_db = json.load(f)
-        with open(final_db_path) as f:
-            final_db = json.load(f)
-
-        initial_scenario_db_hash = get_dict_hash(initial_db)
-        final_scenario_db_hash = get_dict_hash(final_db)
-
-        logger.info(
-            f"Computed scenario DB hashes - Initial: {initial_scenario_db_hash[:8]}..., "
-            f"Final: {final_scenario_db_hash[:8]}..."
-        )
-
-        # Calculate latency statistics
-        llm_latency = self._calculate_llm_latency()
-        stt_latency = self._calculate_stt_latency()
-        tts_latency = self._calculate_tts_latency()
-        model_response_latency = self._calculate_model_response_latency()
-
-        return ConversationResult(
-            record_id=self.record.id,
-            completed=error is None and conversation_ended_reason != "error",
-            error=error,
-            error_details=error_details,
-            llm_latency=llm_latency,
-            stt_latency=stt_latency,
-            tts_latency=tts_latency,
-            model_response_latency=model_response_latency,
-            started_at=started_at,
-            ended_at=ended_at,
-            duration_seconds=(ended_at - started_at).total_seconds(),
-            output_dir=str(self.output_dir),
-            audio_assistant_path=str(self.output_dir / "audio_assistant.wav"),
-            audio_user_path=str(self.output_dir / "audio_user_clean.wav"),
-            audio_mixed_path=str(self.output_dir / "audio_mixed.wav"),
-            transcript_path=str(self.output_dir / "transcript.jsonl"),
-            audit_log_path=str(self.output_dir / "audit_log.json"),
-            conversation_log_path=str(self.output_dir / "logs.log"),
-            pipecat_logs_path=self._resolve_framework_logs_path(),
-            elevenlabs_logs_path=str(self.output_dir / "elevenlabs_events.jsonl"),
-            num_turns=self._conversation_stats.get("num_turns", 0),
-            num_tool_calls=self._conversation_stats.get("num_tool_calls", 0),
-            tools_called=self._conversation_stats.get("tools_called", []),
-            conversation_ended_reason=conversation_ended_reason,
-            initial_scenario_db_hash=initial_scenario_db_hash,
-            final_scenario_db_hash=final_scenario_db_hash,
-        )
+        finally:
+            # Remove the log file handler LAST so post-conversation errors
+            # are captured in the record's logs.log (not just the console).
+            if self._log_file_handler:
+                remove_record_log_file(self._log_file_handler)
+                self._log_file_handler = None
 
     async def _start_assistant(self) -> None:
         """Start the assistant server using the configured framework."""
         server_cls = _get_server_class(self.config.framework)
+        resolved_db_path = self._materialize_resolved_scenario_db()
         self._assistant_server = server_cls(
             current_date_time=self.record.current_date_time,
             pipeline_config=self.config.model,
             agent=self.agent,
             agent_config_path=self.agent_config_path,
-            scenario_db_path=self.scenario_db_path,
+            scenario_db_path=str(resolved_db_path),
             output_dir=self.output_dir,
             port=self.port,
             conversation_id=self.record.id,
+            language=self.config.language,
         )
 
         await self._assistant_server.start()
 
+    def _materialize_resolved_scenario_db(self) -> Path:
+        """Load the placeholdered scenario DB.
+
+        Resolve names for the configured
+        language, and write it into ``output_dir`` for the assistant runtime.
+        """
+        with open(self.scenario_db_path) as f:
+            db = json.load(f)
+        resolved = resolve_scenario_db(
+            db,
+            self.record.culture_overrides,
+            self.config.language,
+            self.record.romanized_culture_overrides,
+            aliases_dir=self.config.aliases_path,
+        )
+        out = self.output_dir / "scenario_db.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with open(out, "w", encoding="utf-8") as f:
+            json.dump(resolved, f, ensure_ascii=False, indent=2)
+        return out
+
     async def _start_user_simulator(self) -> None:
         """Start the user simulator."""
+        language = self.config.language
+        resolved_goal = resolve_user_goal(
+            self.record.user_goal,
+            self.record.culture_overrides,
+            language,
+            self.record.romanized_culture_overrides,
+            self.record.starting_utterances,
+        )
+        resolved_persona = resolve_user_config(
+            self.record.user_config,
+            self.record.culture_overrides,
+            language,
+            self.record.romanized_culture_overrides,
+        )
         self._user_simulator = UserSimulator(
             current_date_time=self.record.current_date_time,
-            persona_config=self.record.user_config,
-            goal=self.record.user_goal,
+            persona_config=resolved_persona,
+            goal=resolved_goal,
             server_url=f"ws://localhost:{self.port}/ws",
             output_dir=self.output_dir,
             agent_id=self.agent.id,
             perturbation_config=self.config.perturbation,
+            language=self.config.language,
         )
 
     async def _run_conversation(self) -> str:
@@ -332,9 +403,11 @@ class ConversationWorker:
     def _calculate_stt_latency(self) -> LatencyStats | None:
         """Calculate STT latency statistics from pipecat_metrics.jsonl.
 
-        Accepts both Pipecat-native ProcessingMetricsData entries (written by
-        MetricsFileObserver) and LatencyMetric entries with stage="stt" (written
-        by MetricsLogWriter for non-Pipecat cascade frameworks).
+        Uses Pipecat-native TTFBMetricsData (time-to-first-byte) entries for
+        STT services, which measure how long until the first transcript is
+        returned after receiving audio.  Also accepts LatencyMetric entries
+        with stage="stt" (written by MetricsLogWriter for non-Pipecat cascade
+        frameworks).
         """
         metrics_path = self.output_dir / "pipecat_metrics.jsonl"
         if not metrics_path.exists():
@@ -347,11 +420,9 @@ class ConversationWorker:
                     try:
                         metric = json.loads(line)
                         metric_type = metric.get("type")
-                        is_stt_processing = metric_type == "ProcessingMetricsData" and "STTService" in metric.get(
-                            "processor", ""
-                        )
+                        is_stt_ttfb = metric_type == "TTFBMetricsData" and "STTService" in metric.get("processor", "")
                         is_stt_latency = metric_type == "LatencyMetric" and metric.get("stage") == "stt"
-                        if not (is_stt_processing or is_stt_latency):
+                        if not (is_stt_ttfb or is_stt_latency):
                             continue
                         value_sec = metric.get("value")
                         if not isinstance(value_sec, (int, float)) or not (0 < value_sec < 30):

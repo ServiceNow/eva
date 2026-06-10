@@ -29,8 +29,8 @@
     "7116096874": {
       "npi": "7116096874",
       "employee_id": "EMP794093",
-      "first_name": "Abdi",
-      "last_name": "Hassan",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "LHTC-65D",
       "pin": "5640",
       "phone_last_four": "4821",
@@ -144,8 +144,8 @@
   "employees": {
     "EMP794093": {
       "employee_id": "EMP794093",
-      "first_name": "Abdi",
-      "last_name": "Hassan",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-02-14",
       "phone_last_four": "4821",
       "otp_code": "811163",

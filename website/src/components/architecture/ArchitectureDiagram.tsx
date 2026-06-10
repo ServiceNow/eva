@@ -96,6 +96,9 @@ export function ArchitectureDiagram() {
               <div className="text-sm text-text-muted border-l-2 border-blue/30 pl-3 py-1">
                 <span className="text-blue-light font-medium">Human-like voice</span> — Conversational TTS
               </div>
+              <div className="text-sm text-text-muted border-l-2 border-blue/30 pl-3 py-1">
+                <span className="text-blue-light font-medium">Perturbation Suite</span> — Accent, background noise &amp; behavioral overlays applied to outbound user audio
+              </div>
             </div>
           </div>
 
@@ -119,7 +122,7 @@ export function ArchitectureDiagram() {
 
           {/* AssistantServer */}
           <div>
-            <Node label="Voice Agent" sublabel="Pipecat Server" color="#8B5CF6" delay={0.3} />
+            <Node label="Voice Agent" sublabel="Pipecat, Gemini Live, OpenAI Realtime, or ElevenAgents" color="#8B5CF6" delay={0.3} />
             <div className="mt-4 space-y-2.5 pl-4">
               <div className="text-sm text-text-muted border-l-2 border-purple/30 pl-3 py-1">
                 <span className="text-purple-light font-medium">Cascade Pipeline</span> — STT + LLM + TTS
@@ -128,7 +131,7 @@ export function ArchitectureDiagram() {
                 <span className="text-purple-light font-medium">Audio-native models</span> — S2S, LALM + TTS
               </div>
               <div className="text-sm text-text-muted border-l-2 border-purple/30 pl-3 py-1">
-                <span className="text-purple-light font-medium">Turn Detection</span> — Built-in Pipecat Silero VAD + Smart Turn Analyzer (unless overridden by external VAD)
+                <span className="text-purple-light font-medium">Turn Detection</span> — framework dependent
               </div>
               <div className="text-sm text-text-muted border-l-2 border-purple/30 pl-3 py-1">
                 <span className="text-purple-light font-medium">Tool Executor</span> — Dynamic python tools
@@ -148,6 +151,9 @@ export function ArchitectureDiagram() {
               </div>
               <div className="text-sm text-text-muted border-l-2 border-blue/30 pl-3 py-1">
                 <span className="text-blue-light font-medium">Human-like voice</span> — Conversational TTS
+              </div>
+              <div className="text-sm text-text-muted border-l-2 border-blue/30 pl-3 py-1">
+                <span className="text-blue-light font-medium">Perturbation Suite</span> — Accent, background noise &amp; behavioral overlays
               </div>
             </div>
           </div>
@@ -172,7 +178,7 @@ export function ArchitectureDiagram() {
 
           {/* AssistantServer */}
           <div className="w-full max-w-sm">
-            <Node label="Voice Agent" sublabel="Pipecat Server" color="#8B5CF6" delay={0.3} />
+            <Node label="Voice Agent" sublabel="Pipecat, Gemini Live, OpenAI Realtime, or ElevenAgents" color="#8B5CF6" delay={0.3} />
             <div className="mt-4 space-y-2.5 pl-4">
               <div className="text-sm text-text-muted border-l-2 border-purple/30 pl-3 py-1">
                 <span className="text-purple-light font-medium">Cascade Pipeline</span> — STT + LLM + TTS
@@ -181,7 +187,7 @@ export function ArchitectureDiagram() {
                 <span className="text-purple-light font-medium">Audio-native models</span> — S2S, LALM + TTS
               </div>
               <div className="text-sm text-text-muted border-l-2 border-purple/30 pl-3 py-1">
-                <span className="text-purple-light font-medium">Turn Detection</span> — VAD + Smart Turn Analyzer
+                <span className="text-purple-light font-medium">Turn Detection</span> — framework dependent
               </div>
               <div className="text-sm text-text-muted border-l-2 border-purple/30 pl-3 py-1">
                 <span className="text-purple-light font-medium">Tool Executor</span> — Dynamic python tools
@@ -260,7 +266,7 @@ export function ArchitectureDiagram() {
               </div>
               <div className="rounded-xl border border-amber/25 bg-amber/5 px-4 py-5 text-center">
                 <div className="text-base font-bold text-amber">Diagnostic</div>
-                <div className="text-sm text-text-muted mt-1.5">5 diagnostic metrics</div>
+                <div className="text-sm text-text-muted mt-1.5">7 diagnostic metrics</div>
               </div>
             </div>
           </div>

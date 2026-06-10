@@ -28,8 +28,8 @@
     "7977267911": {
       "npi": "7977267911",
       "employee_id": "EMP586490",
-      "first_name": "Kwesi",
-      "last_name": "Boateng",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "ILMQ-45S",
       "pin": "1920",
       "phone_last_four": "4821",
@@ -168,8 +168,8 @@
   "employees": {
     "EMP586490": {
       "employee_id": "EMP586490",
-      "first_name": "Kwesi",
-      "last_name": "Boateng",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1987-11-22",
       "phone_last_four": "4821",
       "otp_code": "469038",

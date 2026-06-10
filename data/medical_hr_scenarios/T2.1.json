@@ -27,8 +27,8 @@
     "1749459431": {
       "npi": "1749459431",
       "employee_id": "EMP937302",
-      "first_name": "Adaeze",
-      "last_name": "Obi",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "WDJU-85K",
       "pin": "1258",
       "phone_last_four": "4821",
@@ -118,8 +118,8 @@
   "employees": {
     "EMP937302": {
       "employee_id": "EMP937302",
-      "first_name": "Adaeze",
-      "last_name": "Obi",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1988-11-04",
       "phone_last_four": "4821",
       "otp_code": "282710",

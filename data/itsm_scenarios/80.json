@@ -345,7 +345,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Daniel",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -376,7 +376,7 @@
       "hire_date": "2021-06-14",
       "is_manager": false,
       "last_desk_assignment_date": "2026-04-10",
-      "last_name": "Kim",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP055001",
@@ -403,11 +403,7 @@
   "facilities": {
     "buildings": {
       "BLD3": {
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "Downtown",
-          "Engineering Center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -473,11 +469,7 @@
     },
     "zones": {
       "PZA": {
-        "name": "Garage A",
-        "name_aliases": [
-          "A Garage",
-          "Main Garage"
-        ]
+        "name": "Garage A"
       }
     }
   },
@@ -530,9 +522,6 @@
         "catalog_id": "APP-1201",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "Atlassian Confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       },
@@ -545,9 +534,6 @@
         "catalog_id": "APP-1344",
         "department_restrictions": [],
         "name": "Datadog",
-        "name_aliases": [
-          "DataDog"
-        ],
         "requires_manager_approval": true,
         "vendor": "Datadog"
       },
@@ -560,9 +546,6 @@
         "catalog_id": "APP-1550",
         "department_restrictions": [],
         "name": "Jira",
-        "name_aliases": [
-          "Atlassian Jira"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       }
@@ -575,10 +558,7 @@
           "permanent",
           "temporary"
         ],
-        "name": "IntelliJ",
-        "name_aliases": [
-          "JetBrains IntelliJ IDEA"
-        ],
+        "name": "IntelliJ IDEA",
         "vendor": "JetBrains"
       },
       "LIC-2310": {
@@ -589,9 +569,6 @@
           "permanent"
         ],
         "name": "Adobe Creative Cloud",
-        "name_aliases": [
-          "Adobe CC"
-        ],
         "vendor": "Adobe"
       },
       "LIC-2402": {
@@ -601,9 +578,6 @@
           "permanent"
         ],
         "name": "Visual Studio Enterprise",
-        "name_aliases": [
-          "VS Enterprise"
-        ],
         "vendor": "Microsoft"
       }
     }

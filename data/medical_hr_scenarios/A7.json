@@ -75,8 +75,8 @@
   "employees": {
     "EMP305837": {
       "employee_id": "EMP305837",
-      "first_name": "Indira",
-      "last_name": "Subramaniam",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1991-11-08",
       "phone_last_four": "4829",
       "otp_code": "654321",

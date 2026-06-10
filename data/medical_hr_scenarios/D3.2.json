@@ -28,8 +28,8 @@
     "1104906255": {
       "npi": "1104906255",
       "employee_id": "EMP254511",
-      "first_name": "Ousmane",
-      "last_name": "Traore",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "ZP-19O",
       "pin": "7790",
       "phone_last_four": "4821",
@@ -106,8 +106,8 @@
   "employees": {
     "EMP254511": {
       "employee_id": "EMP254511",
-      "first_name": "Ousmane",
-      "last_name": "Traore",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1987-11-03",
       "phone_last_four": "4821",
       "otp_code": "760356",

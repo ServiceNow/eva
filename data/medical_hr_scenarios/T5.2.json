@@ -77,8 +77,8 @@
   "employees": {
     "EMP155843": {
       "employee_id": "EMP155843",
-      "first_name": "Kolade",
-      "last_name": "Adebayo",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1991-11-18",
       "phone_last_four": "4829",
       "otp_code": "347231",

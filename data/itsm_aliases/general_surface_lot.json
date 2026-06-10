@@ -1,0 +1,33 @@
+{
+  "name": "General Surface Lot",
+  "translatable": true,
+  "base": [
+    "general lot"
+  ],
+  "translations": {
+    "fr": [
+      "aire de stationnement générale",
+      "lot général",
+      "parc général",
+      "parking extérieur général",
+      "parking général",
+      "parking général en surface",
+      "parking général extérieur",
+      "stationnement extérieur général",
+      "stationnement général",
+      "terrain général"
+    ],
+    "fr-CA": [
+      "aire de stationnement générale",
+      "lot général",
+      "parc général",
+      "parking extérieur général",
+      "parking général",
+      "parking général en surface",
+      "parking général extérieur",
+      "stationnement extérieur général",
+      "stationnement général",
+      "terrain général"
+    ]
+  }
+}

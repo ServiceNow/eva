@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from eva.models.config import PipelineConfig, RunConfig
+from eva.models.config import ModelConfig, RunConfig
 from eva.models.record import EvaluationRecord, GroundTruth
 from eva.models.results import ConversationResult
 from eva.orchestrator.runner import BenchmarkRunner
@@ -72,7 +72,7 @@ def eval_config(tmp_path):
     return RunConfig(
         run_id="test_eval_run",
         model_list=_TEST_MODEL_LIST,
-        model=PipelineConfig(
+        model=ModelConfig(
             llm="gpt-4",
             stt="deepgram",
             tts="cartesia",

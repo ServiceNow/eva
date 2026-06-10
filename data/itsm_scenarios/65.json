@@ -590,7 +590,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Tomasz",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -621,7 +621,7 @@
       "hire_date": "2021-04-12",
       "is_manager": false,
       "last_desk_assignment_date": "2026-03-01",
-      "last_name": "Lewandowski",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP050210",
@@ -649,10 +649,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown",
-        "name_aliases": [
-          "Downtown Building"
-        ]
+        "name": "Downtown"
       }
     },
     "conference_rooms": {
@@ -744,9 +741,6 @@
     "zones": {
       "PZA": {
         "name": "Executive Garage",
-        "name_aliases": [
-          "Main Garage"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -809,9 +803,6 @@
         "catalog_id": "APP-1001",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "Atlassian Confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       },
@@ -824,9 +815,6 @@
         "catalog_id": "APP-1002",
         "department_restrictions": [],
         "name": "Salesforce",
-        "name_aliases": [
-          "SFDC"
-        ],
         "requires_manager_approval": true,
         "vendor": "Salesforce"
       },
@@ -838,9 +826,6 @@
         "catalog_id": "APP-1003",
         "department_restrictions": [],
         "name": "Jira",
-        "name_aliases": [
-          "Atlassian Jira"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       }
@@ -854,9 +839,6 @@
           "temporary"
         ],
         "name": "Microsoft Project",
-        "name_aliases": [
-          "MS Project"
-        ],
         "vendor": "Microsoft"
       }
     }

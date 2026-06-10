@@ -11,7 +11,7 @@ from typing import Any
 
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.agentic.system import AgenticSystem
-from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
+from eva.assistant.pipeline.alm_base import BaseALMClient
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
 from eva.utils.logging import get_logger
@@ -37,7 +37,7 @@ class AudioLLMAgenticSystem(AgenticSystem):
         agent: AgentConfig,
         tool_handler: ToolExecutor,
         audit_log: AuditLog,
-        alm_client: ALMvLLMClient,
+        alm_client: BaseALMClient,
         output_dir: Path | None = None,
     ):
         super().__init__(
@@ -48,7 +48,7 @@ class AudioLLMAgenticSystem(AgenticSystem):
             llm_client=alm_client,
             output_dir=output_dir,
         )
-        self.alm_client: ALMvLLMClient = alm_client
+        self.alm_client: BaseALMClient = alm_client
 
         # Override system prompt with audio-LLM specific version
         self.system_prompt = self.prompt_manager.get_prompt(

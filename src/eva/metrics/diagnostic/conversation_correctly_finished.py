@@ -11,6 +11,7 @@ class ConversationCorrectlyFinishedMetric(CodeMetric):
     """0.0 when the agent timed out on the user's final turn; 1.0 otherwise."""
 
     name = "conversation_correctly_finished"
+    version = "v0.1"
     description = "Diagnostic metric: 0.0 when agent failed to respond to the user's final turn"
     category = "diagnostic"
     exclude_from_pass_at_k = True

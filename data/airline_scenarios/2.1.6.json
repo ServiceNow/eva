@@ -7,11 +7,11 @@
       "passengers": [
         {
           "passenger_id": "PAX001",
-          "first_name": "Zoe",
-          "last_name": "Brown",
+          "first_name": "<FIRST_NAME>",
+          "last_name": "<LAST_NAME>",
           "ticket_number": "2201234567890",
-          "email": "zoe.brown@gmail.com",
-          "phone": "+1-704-555-2467",
+          "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
+          "phone": "<PHONE>",
           "elite_status": null,
           "meal_preference": "none",
           "seat_preference": "aisle"
