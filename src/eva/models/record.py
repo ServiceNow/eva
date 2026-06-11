@@ -117,13 +117,13 @@ class EvaluationRecord(BaseModel):
 
     scenario_context: dict = Field(..., description="Scenario context for the record")
 
-    culture_overrides: dict[str, dict[str, str]] = Field(
+    culture_overrides: dict[str, dict[str, str | dict]] = Field(
         default_factory=dict,
-        description="Per-language name pairs (first_name/last_name) substituted into <FIRST_NAME>/<LAST_NAME>",
+        description="Per-language name/phone/companion pairs substituted into placeholders",
     )
-    romanized_culture_overrides: dict[str, dict[str, str]] = Field(
+    romanized_culture_overrides: dict[str, dict[str, str | dict]] = Field(
         default_factory=dict,
-        description="Per-language ASCII-romanized name pairs for <FIRST_NAME_ROMANIZED>/<LAST_NAME_ROMANIZED> (used in emails)",
+        description="Per-language ASCII-romanized name/companion pairs for romanized placeholders",
     )
     starting_utterances: dict[str, str] = Field(
         default_factory=dict,

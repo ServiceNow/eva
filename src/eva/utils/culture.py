@@ -39,8 +39,8 @@ _LANGUAGE_ADDENDUM_TEMPLATE = (
     " which may be in non-ascii, native script. You may need to try both scripts when"
     " looking up by name. All translatable values should be translated when talking to"
     " the user. For example, if you are telling the user about a location from a tool"
-    " response which says 'downtown', this should be translated. Distinct item names (e.g."
-    " 'IntelliJ') should be kept in their original form."
+    " response which says 'Downtown' or 'West Laboratory', this should be translated. Only"
+    " distinct item names (e.g. 'IntelliJ') should be kept in their original form."
 )
 
 FIRST_NAME_PLACEHOLDER = "<FIRST_NAME>"
@@ -199,7 +199,7 @@ def add_user_language_directive(language: str, language_display_name: str, user_
     directive = (
         f"Speak ONLY in {language_display_name}. Do not switch to English even if the agent does. "
         "All translatable values should be translated when talking to the agent. "
-        "For example, if you are telling the agent about a location like 'downtown office' and you are speaking Spanish, say 'oficina del centro'. "
+        "For example, if you are telling the agent about a location like 'Downtown Office' and you are speaking Spanish, say 'oficina del centro'. "
         "If you are talking about a date that you read as MM/DD/YYYY, you should say it in the culturally appropriate format. "
         "Distinct proper names (e.g. 'IntelliJ', 'Google') should be kept in their original form."
     )

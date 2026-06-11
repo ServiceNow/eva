@@ -313,7 +313,7 @@ class PerturbationConfig(BaseModel):
     - connection_degradation: stacks codec artifacts, packet loss, and volume fluctuation on top
 
     Agent ID env vars follow the pattern EVA_{TYPE}_USER_F / EVA_{TYPE}_USER_M.
-    Default (no accent/behavior): EVA_DEFAULT_USER_F and EVA_DEFAULT_USER_M.
+    Default (no accent/behavior): EVA_EN_USER_F and EVA_EN_USER_M (language defaults to English).
     """
 
     model_config = ConfigDict(extra="forbid")
