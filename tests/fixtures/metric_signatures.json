@@ -2,73 +2,73 @@
   "AuthenticationSuccessMetric": {
     "name": "authentication_success",
     "prompt_hash": null,
-    "source_hash": "cdc7c59d2684",
+    "source_hash": "ecce31785d0d",
     "version": "v0.1"
   },
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
     "prompt_hash": "57caf9a18a3c",
-    "source_hash": "cd73d4caaf6f",
+    "source_hash": "e39cacd719a2",
     "version": "v0.1"
   },
   "ConversationCorrectlyFinishedMetric": {
     "name": "conversation_correctly_finished",
     "prompt_hash": null,
-    "source_hash": "4f27cacab7d2",
+    "source_hash": "3f495631946f",
     "version": "v0.1"
   },
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
     "prompt_hash": "174cdf93b398",
-    "source_hash": "91b71c803d77",
+    "source_hash": "8d1a32e8a4fe",
     "version": "v0.1"
   },
   "ConversationTimeLimitExceededMetric": {
     "name": "conversation_completed_on_time",
     "prompt_hash": null,
-    "source_hash": "0628e2833ac5",
+    "source_hash": "26e274ce8076",
     "version": "v0.1"
   },
   "ConversationValidEndMetric": {
     "name": "conversation_valid_end",
     "prompt_hash": null,
-    "source_hash": "02d1c3fb330b",
+    "source_hash": "a52233ab765a",
     "version": "v0.1"
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
     "prompt_hash": "060e3f1f9e7a",
-    "source_hash": "82ab3e3244f5",
+    "source_hash": "7db40c133d8a",
     "version": "v0.2"
   },
   "ResponseSpeedMetric": {
     "name": "response_speed",
     "prompt_hash": null,
-    "source_hash": "ebce1a06bf30",
+    "source_hash": "7fecaf5fa24f",
     "version": "v0.1"
   },
   "STTWERMetric": {
     "name": "stt_wer",
     "prompt_hash": null,
-    "source_hash": "4094b78bfb65",
+    "source_hash": "e7b839b89d75",
     "version": "v0.1"
   },
   "SpeakabilityJudgeMetric": {
     "name": "speakability",
     "prompt_hash": "1e4f78cb051e",
-    "source_hash": "75a203410ec1",
+    "source_hash": "dd4feece62c1",
     "version": "v0.2"
   },
   "SpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
     "prompt_hash": "c614dd12d4fe",
-    "source_hash": "0ada0bb6e360",
+    "source_hash": "5e61505dc729",
     "version": "v0.4"
   },
   "TTSFidelityMetric": {
     "name": "tts_fidelity",
     "prompt_hash": "c3a02ab03f06",
-    "source_hash": "2be67c42f3d0",
+    "source_hash": "10b97af355f7",
     "version": "v0.3"
   },
   "TaskCompletion": {
@@ -80,31 +80,31 @@
   "ToolCallValidity": {
     "name": "tool_call_validity",
     "prompt_hash": null,
-    "source_hash": "1572b16592fe",
+    "source_hash": "761f0d0a32dd",
     "version": "v0.1"
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
     "prompt_hash": "aa1a7fdd6df7",
-    "source_hash": "2eb5cecaaa2b",
+    "source_hash": "80a4d892e1f6",
     "version": "v0.2"
   },
   "TurnTakingMetric": {
     "name": "turn_taking",
     "prompt_hash": null,
-    "source_hash": "aa574674ff83",
+    "source_hash": "0ae7b7f0fc8c",
     "version": "v0.1"
   },
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
     "prompt_hash": "21527fa8d79b",
-    "source_hash": "c6fb73aef9d3",
+    "source_hash": "fded1ad48aa4",
     "version": "v0.1"
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
     "prompt_hash": "849e13c42e3b",
-    "source_hash": "cac98a26dcd0",
+    "source_hash": "5463b901a11b",
     "version": "v0.2"
   }
 }
