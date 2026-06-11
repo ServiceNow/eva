@@ -4,7 +4,7 @@
 
 ## Overview
 
-Audio-based metric that evaluates whether the assistant's **spoken audio** accurately represents the intended text, using Gemini for multimodal analysis. This metric evaluates the speech output regardless of how it was produced — whether by a separate TTS engine or generated directly by an audio-native model. Specifically, it checks that all words from the intended text are present (no missing words), no extra words were added (no insertions), words are spoken correctly (no substitutions), and key entities are accurately conveyed (dates, names, numbers, codes, addresses).
+Audio-based metric that evaluates whether the assistant's **spoken audio** accurately represents the intended text, using an audio LLM for multimodal analysis. This metric evaluates the speech output regardless of how it was produced — whether by a separate TTS engine or generated directly by an audio-native model. Specifically, it checks that all words from the intended text are present (no missing words), no extra words were added (no insertions), words are spoken correctly (no substitutions), and key entities are accurately conveyed (dates, names, numbers, codes, addresses).
 
 > [!NOTE]
 > By default, this diagnostic metric is excluded. Enable it explicitly with `--metrics tts_fidelity` (or include it in a comma-separated `--metrics` list).

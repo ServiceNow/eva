@@ -4,7 +4,7 @@
 
 ## Overview
 
-Audio-based metric that evaluates whether the assistant's **spoken audio** accurately represents the **key entities** (dates, names, numbers, codes, addresses, etc.), using Gemini for multimodal analysis.
+Audio-based metric that evaluates whether the assistant's **spoken audio** accurately represents the **key entities** (dates, names, numbers, codes, addresses, etc.), using an audio LLM for multimodal analysis.
 
 To keep the EVA score **apples-to-apples across all pipeline setups**, the same entity-focused metric runs for every pipeline type — cascade, S2S, and audio-LLM. It does not require any intended text.
 

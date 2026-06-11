@@ -4,7 +4,7 @@
 
 ## Overview
 
-Audio-based validation metric that evaluates whether the user simulator's **spoken audio** accurately represents the intended text, using Gemini for multimodal analysis. The user simulator always uses a TTS engine, so this measures TTS quality directly. It validates simulation quality by checking that all words from the intended text are present (no missing words), no extra words were added (no insertions), words are spoken correctly (no substitutions), and key entities are accurately conveyed (dates, names, numbers, codes).
+Audio-based validation metric that evaluates whether the user simulator's **spoken audio** accurately represents the intended text, using an audio LLM for multimodal analysis. The user simulator always uses a TTS engine, so this measures TTS quality directly. It validates simulation quality by checking that all words from the intended text are present (no missing words), no extra words were added (no insertions), words are spoken correctly (no substitutions), and key entities are accurately conveyed (dates, names, numbers, codes).
 
 ## How It Works
 
