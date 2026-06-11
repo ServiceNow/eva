@@ -56,8 +56,8 @@
   "ResponseSpeedMetric": {
     "name": "response_speed",
     "prompt_hash": null,
-    "source_hash": "ebce1a06bf30",
-    "version": "v0.1"
+    "source_hash": "f4d81db9f95b",
+    "version": "v0.2"
   },
   "STTWERMetric": {
     "name": "stt_wer",
