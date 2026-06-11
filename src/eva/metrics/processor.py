@@ -5,9 +5,9 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from eva.assistant.agentic.system import GENERIC_ERROR
 from eva.models.config import PipelineType
 from eva.models.results import ConversationResult
+from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
 from eva.utils.log_processing import (
     AnnotationLabel,
     aggregate_pipecat_logs_by_type,
@@ -701,27 +701,22 @@ def _label_trailing_assistant_turn(context: "_ProcessorContext", last_entry: dic
     if trailing_turn_id is None:
         return
 
-    text = (
-        context.conversation_trace[-1]["content"]
-        if last_entry.get("role") == "assistant"
-        else context.intended_assistant_turns[trailing_turn_id]
-    )
-    labeled = f"{text} {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
-
     if last_entry.get("role") == "assistant":
-        context.conversation_trace[-1]["content"] = labeled
+        context.conversation_trace[-1]["content"] += f" {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
     else:
+        labeled = f"{context.intended_assistant_turns[trailing_turn_id]} {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
         context.conversation_trace.append(
             {"role": "assistant", "content": labeled, "type": "intended", "turn_id": trailing_turn_id}
         )
 
-    # Sync intended + transcribed (skip intended for S2S — no intended text exists)
-    if context.pipeline_type != PipelineType.S2S:
-        context.intended_assistant_turns[trailing_turn_id] = labeled
-    if not context.transcribed_assistant_turns.get(trailing_turn_id):
-        context.transcribed_assistant_turns[trailing_turn_id] = labeled
-    else:
+    # Append the label to the aggregated turn text (skip intended for S2S — no intended text exists).
+    if context.intended_assistant_turns.get(trailing_turn_id) and context.pipeline_type != PipelineType.S2S:
+        context.intended_assistant_turns[trailing_turn_id] += f" {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
+    if context.transcribed_assistant_turns.get(trailing_turn_id):
         context.transcribed_assistant_turns[trailing_turn_id] += f" {AnnotationLabel.CUT_OFF_ON_ITS_OWN}"
+    else:
+        # STT produced no text for the final turn — back from the (already-labeled) intended text.
+        context.transcribed_assistant_turns[trailing_turn_id] = context.intended_assistant_turns.get(trailing_turn_id)
 
     logger.info(f"Record {context.record_id}: Labeled trailing assistant at turn {trailing_turn_id}")
 

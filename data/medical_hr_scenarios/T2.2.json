@@ -29,8 +29,8 @@
     "2847692041": {
       "npi": "2847692041",
       "employee_id": "EMP575755",
-      "first_name": "Nikolai",
-      "last_name": "Sorokin",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "CRWO-37N",
       "pin": "8398",
       "phone_last_four": "4821",
@@ -168,8 +168,8 @@
   "employees": {
     "EMP575755": {
       "employee_id": "EMP575755",
-      "first_name": "Nikolai",
-      "last_name": "Sorokin",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1990-11-24",
       "phone_last_four": "4821",
       "otp_code": "339592",

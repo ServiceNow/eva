@@ -3,6 +3,7 @@
 import asyncio
 import inspect
 import json
+import os
 import statistics
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -11,7 +12,11 @@ from typing import Any
 import yaml
 
 from eva.metrics.accuracy.agent_speech_fidelity_s2s import AgentSpeechFidelityS2SMetric
-from eva.metrics.aggregation import compute_record_aggregates, compute_run_level_aggregates
+from eva.metrics.aggregation import (
+    compute_record_aggregates,
+    compute_run_level_aggregates,
+    scenario_means_for_metric,
+)
 from eva.metrics.base import BaseMetric, MetricContext
 from eva.metrics.legacy_aliases import rename_metric_keys
 from eva.metrics.processor import MetricsContextProcessor
@@ -21,6 +26,8 @@ from eva.metrics.versioning import _CURRENT_METRIC_VERSION
 from eva.models.config import PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
+from eva.utils.bootstrap import mean_ci_fields, named_ci_fields, run_seed
+from eva.utils.culture import get_language_addendum, resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import get_logger
 from eva.utils.pass_at_k import (
@@ -150,6 +157,8 @@ class MetricsRunner:
             raise FileNotFoundError(f"Run config not found: {config_path}")
 
         config_data = json.loads(config_path.read_text())
+        self._run_language = config_data.get("language", os.getenv("EVA_LANGUAGE", "en"))
+        self._aliases_path = Path(f"data/{config_data.get('domain')}_aliases")
 
         # Determine pipeline type from config
         model_data = config_data.get("model", {})
@@ -182,10 +191,15 @@ class MetricsRunner:
         if "role" not in agent_config:
             raise ValueError(f"Agent config missing 'role' field: {agent_config_path}")
 
+        instructions = agent_config["instructions"]
+        addendum = get_language_addendum(self._run_language)
+        if addendum:
+            instructions = f"{instructions}\n\n{addendum}"
+
         return {
             "id": agent_config.get("id"),
             "role": agent_config["role"],
-            "instructions": agent_config["instructions"],
+            "instructions": instructions,
             "tools": agent_config["tools"],
         }
 
@@ -553,7 +567,18 @@ class MetricsRunner:
         if record.agent_override and record.agent_override.instructions:
             agent_instructions = record.agent_override.instructions
 
-        user_persona = record.user_config["user_persona"]
+        language = self._run_language
+        resolved_user_goal = resolve_user_goal(
+            record.user_goal,
+            record.culture_overrides,
+            language,
+            record.romanized_culture_overrides,
+            record.starting_utterances,
+        )
+        resolved_user_config = resolve_user_config(
+            record.user_config, record.culture_overrides, language, record.romanized_culture_overrides
+        )
+        user_persona = resolved_user_config["user_persona"]
 
         initial_scenario_db = json.loads(initial_db_text)
         final_scenario_db = json.loads(final_db_text)
@@ -584,10 +609,16 @@ class MetricsRunner:
         metric_context = MetricContext(
             **postprocessor_fields,
             # Ground truth (only in dataset, not in postprocessor)
-            user_goal=record.user_goal,
+            user_goal=resolved_user_goal,
             user_persona=user_persona,
             # Scenario database state (loaded from files above)
-            expected_scenario_db=gt.expected_scenario_db,
+            expected_scenario_db=resolve_scenario_db(
+                gt.expected_scenario_db,
+                record.culture_overrides,
+                language,
+                record.romanized_culture_overrides,
+                aliases_dir=self._aliases_path,
+            ),
             initial_scenario_db=initial_scenario_db,
             final_scenario_db=final_scenario_db,
             initial_scenario_db_hash=initial_scenario_db_hash,
@@ -598,6 +629,7 @@ class MetricsRunner:
             agent_tools=agent_tools,
             agent_id=self._agent_config["id"],
             current_date_time=record.current_date_time,
+            language=self._run_language,
             # Basic stats from result
             num_turns=result.num_turns,
             tools_called=result.tools_called,
@@ -633,6 +665,8 @@ class MetricsRunner:
         metric_names: list[str],
         pass_at_k_results: dict[str, dict[str, PassAtKResult]] | None = None,
         num_draws: int = 1,
+        *,
+        seed: int,
     ) -> dict[str, dict[str, Any]]:
         """Build per-metric aggregate stats including pass_k.
 
@@ -641,6 +675,9 @@ class MetricsRunner:
             metric_names: List of metric names to aggregate.
             pass_at_k_results: Per-record pass@k results (if multi-trial).
             num_draws: Number of draws (k) for pass@k.
+            seed: Bootstrap seed for CI computation. Keyword-only and required;
+                production callers pass ``run_seed(run_dir.name)`` for within-run
+                determinism.
 
         Returns:
             Dict mapping metric name to aggregate stats.
@@ -699,6 +736,9 @@ class MetricsRunner:
                         coverage["not_applicable_turns"] = total_not_applicable_across_records
                     entry["per_turn_coverage"] = coverage
 
+                # Bootstrap CI on the per-scenario mean.
+                entry.update(mean_ci_fields(scenario_means_for_metric(all_metrics, name), seed=seed))
+
                 entry["higher_is_better"] = _metric_higher_is_better(name)
                 metric_aggregates[name] = entry
 
@@ -721,7 +761,7 @@ class MetricsRunner:
 
                 if pass_at_k_values:
                     count = len(pass_at_k_values)
-                    metric_aggregates[name]["pass_k"] = {
+                    pass_k_block: dict[str, Any] = {
                         "pass_at_1": round(sum(pass_at_1_values) / count, 4),
                         "pass_at_k": round(sum(pass_at_k_values) / count, 4),
                         "pass_power_k_observed": round(sum(pass_power_k_obs_values) / count, 4),
@@ -729,6 +769,17 @@ class MetricsRunner:
                         "k": num_draws,
                         "count": count,
                     }
+                    pass_k_block.update(
+                        named_ci_fields(
+                            {
+                                "pass_at_1": pass_at_1_values,
+                                "pass_at_k": pass_at_k_values,
+                                "pass_power_k_observed": pass_power_k_obs_values,
+                            },
+                            seed=seed,
+                        )
+                    )
+                    metric_aggregates[name]["pass_k"] = pass_k_block
 
         # Generic sub-metric aggregation.
         # Sub-keys are collected in first-seen insertion order so each metric controls
@@ -912,7 +963,7 @@ class MetricsRunner:
         Returns a dict with the mean of mean_ms values for each latency type
         that has at least one non-null entry.
         """
-        latency_keys = ["llm_latency", "stt_latency", "tts_latency"]
+        latency_keys = ["llm_latency", "stt_latency", "tts_latency", "model_response_latency"]
         collected: dict[str, list[float]] = {k: [] for k in latency_keys}
 
         for _record_id, record_dir in self._discover_record_dirs(self.run_dir, self.record_ids):
@@ -959,8 +1010,13 @@ class MetricsRunner:
         # Aggregate per_metric for ALL metrics present across records (not just those just run),
         # so that a partial re-run (e.g. --metrics response_speed) preserves other metrics.
         all_metric_names = sorted({name for rm in all_metrics.values() for name in rm.metrics})
+        seed = run_seed(self.run_dir.name)
         metric_aggregates = self._build_per_metric_aggregates(
-            all_metrics, all_metric_names, pass_at_k_results, self.num_draws
+            all_metrics,
+            all_metric_names,
+            pass_at_k_results,
+            self.num_draws,
+            seed=seed,
         )
 
         # Compute metric failures for MetricsRunResult (only for metrics just run)
@@ -973,7 +1029,7 @@ class MetricsRunner:
                         metric_failures.setdefault(name, []).append(record_id)
 
         # Compute EVA composite run-level aggregates
-        overall_scores = compute_run_level_aggregates(all_metrics, self.num_draws)
+        overall_scores = compute_run_level_aggregates(all_metrics, self.num_draws, seed=seed)
 
         # Load existing summary to preserve fields for metrics not being re-run
         summary_path = self.run_dir / "metrics_summary.json"
@@ -1036,11 +1092,11 @@ class MetricsRunner:
         except Exception as e:
             logger.warning(f"Failed to capture metrics provenance: {e}")
 
-        summary_path.write_text(json.dumps(summary, indent=2))
+        summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False))
 
         logger.info(f"Metrics summary saved to {summary_path}")
         logger.info("Metrics summary:")
-        logger.info(json.dumps(summary, indent=2))
+        logger.info(json.dumps(summary, indent=2, ensure_ascii=False))
 
         return metric_failures
 
@@ -1085,12 +1141,17 @@ class MetricsRunner:
         all_metric_names = sorted({name for rm in all_metrics.values() for name in rm.metrics})
 
         # Compute per-metric aggregates (including pass_k)
+        seed = run_seed(run_dir.name)
         metric_aggregates = cls._build_per_metric_aggregates(
-            all_metrics, all_metric_names, pass_at_k_results or None, num_draws
+            all_metrics,
+            all_metric_names,
+            pass_at_k_results or None,
+            num_draws,
+            seed=seed,
         )
 
         # Compute run-level aggregates
-        overall_scores = compute_run_level_aggregates(all_metrics, num_draws)
+        overall_scores = compute_run_level_aggregates(all_metrics, num_draws, seed=seed)
 
         # Update metrics_summary.json (preserve existing fields, replace computed sections)
         summary_path = run_dir / "metrics_summary.json"

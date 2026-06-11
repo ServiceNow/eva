@@ -14,8 +14,10 @@ _shared:
     - `[user interrupts]` — The user started speaking while the assistant was still talking. As a prefix on user text, it marks the start of overlapping user speech. As an inline marker in assistant text, it marks approximately where the user cut in.
     - `[likely cut off by user]` — Appears in assistant text. The assistant's speech was probably cut off by the user starting to speak. Text before this tag may not have been fully spoken. Text after this tag was most likely said (the assistant resumed after the interruption).
     - `[likely cut off by assistant]` — Appears in user text. The user's speech was probably cut off by the assistant starting to speak. Text before this tag may not have been fully spoken.
-    - `[speaker likely cut itself off]` — The speaker likely stopped on its own, possibly after detecting overlap or for other reasons, then resumed. Text before this tag may not have been fully spoken. Text after is what the speaker said after resuming.
+    - `[speaker likely cut itself off]` — The speaker likely stopped on its own, possibly after detecting overlap or for other reasons. If the tag appears mid-turn, text after it is what the speaker said after resuming. If the tag appears at the end of the turn, the speaker did not resume in this turn. Text before this tag may not have been fully spoken.
     - `[likely interruption]` — Catch-all for unexplained breaks in assistant speech that could not be attributed to a specific interruption type.
+
+    **Scope of "text before this tag":** For all four cut-off tags (`[likely cut off by user]`, `[likely cut off by assistant]`, `[speaker likely cut itself off]`, `[likely interruption]`), "text before this tag" means **all text from the start of the turn (or from the previous resumption point) up to the tag** — not just the few adjacent words. This region can span multiple sentences and contain multiple entities (confirmation codes, dollar amounts, names, etc.). Any or all of it may have been silently dropped from the audio. The tag is just a signal that an interruption occurred; it might not be at the right place and do not assume the cut-off was small.
 
 judge:
   conciseness:
@@ -47,7 +49,7 @@ judge:
       For each turn that contains assistant content, evaluate whether the assistant's response is appropriately concise and easy to digest when spoken aloud to a human.
 
       The assistant is expected to follow conversational voice guidelines:
-      - Keep responses brief and conversational (typically 2–4 sentences)
+      - Keep responses brief and conversational (typically 2–4 sentences of meaningful conversation content; this may vary by language — some languages have obligatory politeness phrases or structural conventions that naturally add length without adding cognitive load)
       - Summarize long lists rather than reading them exhaustively
       - Avoid overwhelming the listener with too much information at once
       - Spread multiple requests across turns when possible
@@ -82,6 +84,7 @@ judge:
 
       **verbosity_or_filler**
       Contains unnecessary wording, repetition within the same turn, hedging, or explanation beyond what the context requires.
+      Exception: do NOT flag following of cultural norms, such as obligatory politeness structures (e.g. in Japanese and Korean: keigo, honorifics, set opening/closing phrases).
 
       **excess_information_density**
       Presents too many distinct facts, options, numbers, steps, or requests at once, making it difficult for a listener to process in real time. Note: bundling closely related transactional details that the user needs to act on or remember together (e.g., confirming a reference number, date, and one or two key details in a single turn) is expected behavior — only flag this when the volume of information genuinely exceeds what a listener can comfortably retain.
@@ -111,7 +114,7 @@ judge:
       [
         {{
           "turn_id": <int: the turn number from the conversation>,
-          "explanation": "<Detailed analysis referencing the evaluation criteria and explicitly linking identified weaknesses to the listed failure modes to justify the selected rating (1–3). Empty string if rating is null.>",
+          "explanation": "<Detailed analysis in English referencing the evaluation criteria and explicitly linking identified weaknesses to the listed failure modes to justify the selected rating (1–3). Empty string if rating is null.>",
           "failure_modes": ["<failure_mode_1>", "<failure_mode_2>", ...],
           "rating": <int: 1, 2, or 3, or null if no assistant content>
         }}
@@ -254,7 +257,7 @@ judge:
         - Three or more dimensions are flagged (even if each is individually minor, widespread issues across many areas constitute a clear overall progression problem)
 
       ## Response Format
-      Respond in JSON format. The "evidence" field must ALWAYS contain 1-2 sentences referencing specific parts of the transcript, even when flagged is false. When not flagged, briefly explain why no issue was found.
+      Respond in JSON format. The "evidence" field must ALWAYS contain 1-2 sentences referencing specific parts of the transcript, even when flagged is false. When not flagged, briefly explain why no issue was found. The evidence should always be in English but keep the citations in the original language.
       {{
           "dimensions": {{
               "unnecessary_tool_calls": {{
@@ -333,12 +336,12 @@ judge:
       - Using parameter values explicitly stated by the user
       - Using parameter values returned by a prior tool response (e.g., reusing an ID or record returned by an earlier lookup in a subsequent call)
       - Using reasonable defaults that are standard for the tool (e.g., a date format conversion)
-      - Standard domain mappings from user-stated information (e.g., "Chicago O'Hare" → "ORD", "Miami" → "MIA"; or other unambiguous geographic, enterprise, or industry-standard mappings present in the agent's domain) — unambiguous mappings are considered grounded
+      - Standard domain mappings from user-stated information (e.g., "Chicago O'Hare" → "ORD"; "parental leave" → leave_type code "FMLA"; or other unambiguous geographic, enterprise, or industry-standard mappings present in the agent's domain) — unambiguous mappings are considered grounded
       - Parameters grounded in policy entitlements derived from prior tool results (e.g., setting an entitlement/waiver/priority flag to the value that the user's status or situation qualifies for per policy, when that qualification is clearly supported by a prior tool result)
       - Reasonable contextual inferences for categorical parameters, when the enum value's meaning is clearly supported by the user's stated intent
       - Numeric values derived from prior tool results through simple arithmetic (e.g., summing line items, subtracting used amounts from a balance, or computing a total from prior results)
       - System-level or framework-generated tool calls made before the assistant has any user input, if the assistant subsequently asks for proper information
-      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters like "v"/"z" or "b"/"d", reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance
+      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters, reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance. Which letters are phonetically confusable is language-dependent: in English "v"/"z" or "b"/"d" are classic pairs; in Korean, M is named "엠" and N is named "엔" — nearly identical in fast or phone-quality audio; other languages have their own similar-sounding pairs.
 
       **Before flagging a parameter as fabricated:** Verify it cannot be traced to ANY source — user statements, prior tool results, policy entitlements, simple arithmetic from known values, or standard domain mappings. Also verify enum values against the actual tool specification before claiming a value is invalid.
 
@@ -465,6 +468,7 @@ judge:
       For the final rating of the conversation, use the minimum rating across all dimensions as the overall faithfulness rating (i.e., if any dimension is rated 1, overall rating is 1; if all dimensions are 3, overall rating is 3; if there are no 1s but at least one 2, overall rating is 2).
 
       ## Response Format
+      Provide evidence in English.
       Respond in JSON format:
       {{
           "dimensions": {{
@@ -511,6 +515,7 @@ judge:
       The conversation ended due to: {conversation_end}
         
       ## User Simulator Instructions
+      The user in this conversation was expected to communicate in {language_display_name} throughout.
       The following is the full system prompt the user simulator was given for this conversation, including the user's persona, goal, decision tree, must-have criteria, and end-of-call rules. This is the source of truth for what the user-sim was told to do. Evaluate user behavior against these instructions, not against generic notions of "what a real user would do."
       ```
       {user_simulator_instructions}
@@ -572,21 +577,28 @@ judge:
       - Examples: the user accepted an option that did not meet their must-have criteria when they should have rejected it; the user ignored an edge case instruction (e.g., accepted a standby flight when told to reject standby) and this led to a modification; the user failed to follow their failure condition and instead accepted an unsuitable resolution.
       - Only flag this if the violation directly caused a modification tool to be called incorrectly. If the user deviated from instructions but no modification tool was affected, this is NOT corruption.
       - Do NOT flag this if the agent only presented options that failed to meet the user's must-have criteria AND the user had no correct option to choose — in that case the agent failed, not the user. Only flag this if the user had a correct action available (e.g., rejecting all options, asking for alternatives, triggering the failure condition) but chose incorrectly instead.
+
+      ### Corruption Type 6: User did not speak the target language
+        The user was instructed to communicate in {language_display_name}, but spoke predominantly in a different language during the conversation.
+      - Only flag this if the user's non-target-language speech was substantial and pervasive — isolated foreign words, proper nouns, or brief code-switching are acceptable.
+      - Do NOT flag this if the agent itself switched languages and the user followed the agent's lead.
+      - Do NOT flag this if the user spoke in the target language for the majority of the conversation and only slipped briefly.
       
       ## Rating
         
        **Binary Rating:**
       - **1 (Clean)**: The user's behavior did not corrupt the agent evaluation. None of the corruption types above occurred. Minor deviations from the user's instructions that did not affect database state are acceptable.
       - **0 (Corrupted)**: One or more corruption types occurred — the user's behavior caused the agent to be evaluated against an incorrect database state.
-      
-      Respond in JSON format:
+
+      Respond in JSON format and provide reasoning in English:
         {{
           "corruption_analysis": {{
             "extra_modifications": {{"analysis": "<reasoning about whether the user made off-script requests that caused modification tool calls>", "detected": <bool>}},
             "premature_ending": {{"analysis": "<reasoning about whether the user ended the call before the agent could complete necessary modifications>", "detected": <bool>}},
             "missing_information": {{"analysis": "<reasoning about whether the user failed to provide requested information that blocked a modification>", "detected": <bool>}},
             "duplicate_modifications": {{"analysis": "<reasoning about whether user looping caused duplicate modification tool calls>", "detected": <bool>}},
-            "decision_tree_violation": {{"analysis": "<reasoning about whether the user violated a specific instruction and whether a correct action was available, and whether this caused an incorrect modification>", "detected": <bool>}}
+            "decision_tree_violation": {{"analysis": "<reasoning about whether the user violated a specific instruction and whether a correct action was available, and whether this caused an incorrect modification>", "detected": <bool>}},
+            "wrong_language": {{"analysis": "<reasoning about whether the user spoke predominantly in a language other than {language_display_name}>", "detected": <bool>}}
           }},
           "rating": <int: 0 or 1>
         }}
@@ -606,7 +618,7 @@ judge:
         - Markdown tables
         - Repeated Punctuation/Symbols: Strings of characters (e.g., ----- or *****) that are typically used for visual emphasis
       2. Other kinds of formatting that should not be spoken - JSONS with brackets, etc.
-      3. Missing spaces between words that would cause a TTS system to fail (eg. eighttwentypm instead of eight twenty PM). Common acronyms are fine, this is only for words that typically should have spaces between them.
+      3. Missing spaces between words that would cause a TTS system to fail (eg. eighttwentypm instead of eight twenty PM). Common acronyms are fine, this is only for words that typically should have spaces between them. Note: Chinese, Japanese, and Korean text does not use spaces between characters by convention — do NOT flag CJK text for missing spaces.
       4. Emojis
 
       ## Instructions
@@ -623,7 +635,7 @@ judge:
       [
         {{
           "turn_id": <int: the turn number>,
-          "explanation": "<string: 1-3 sentence analysis of the speakability of the assistant response, citing specific example of any issues that you detect>",
+          "explanation": "<string: 1-3 sentence analysis in English of the speakability of the assistant response, citing specific example of any issues that you detect>",
           "rating": <int: 0 if ANY violation found, 1 if perfectly voice-friendly>
         }}
       ]
@@ -653,7 +665,7 @@ judge:
 
         The tags tell you that certain portions of the intended text were likely never spoken, because the speaker was interrupted or cut themselves off. Do NOT penalize for missing words that fall in a region the tags indicate was not spoken.
 
-        **Key principle:** If a tag indicates that a section of text was likely not spoken aloud (due to interruption or cut-off), do NOT penalize for those words being missing from the audio. Only evaluate fidelity for words that were reasonably expected to have been spoken.
+        **Key principle:** If a tag indicates that a section of text was likely not spoken aloud (due to interruption or cut-off), do NOT penalize for those words being missing from the audio — **including entity words** (confirmation codes, dollar amounts, names, etc.). A turn where the only missing content falls inside a cut-off region is rating = 1, even if that missing content contains critical entities.
 
         ## Evaluation Criteria
 
@@ -675,18 +687,41 @@ judge:
         - Missing words that change the meaning or omit an entity
         - Added words that introduce a factually incorrect entity
         - Substituted words that alter an entity value
+        - Audio spoken in the wrong language (We expect audio in {expected_language})
 
         **What to ignore (does NOT cause rating = 0):**
-        - Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss" is acceptable)
+        - Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss", "Mr." vs "Mister", or language-equivalent honorific forms such as French "Madame" vs "Mme" or Japanese "様" vs "-san")
         - Filler words ("um", "uh", "so") added or omitted
         - End-of-audio cut-off: if the audio cuts off at the very END of the last turn, missing trailing words is acceptable as long as all entities in that turn were spoken correctly before the cut-off
         - Slight pacing or prosody differences
         - Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
         - Words in regions flagged by interruption tags as likely not spoken
+        - **Adjacent-turn drift:** turn boundaries are derived from imperfect timing/event heuristics, so a sentence may land in the wrong adjacent turn (turn N's intended text actually spoken in turn N-1 or N+1, or vice versa). If content from turn N appears to have been spoken in an adjacent turn, treat it as fidelity-preserved rather than missing. Only mark missing if the content does not appear in this turn **or** in either neighboring turn's audio.
+        - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form of those letters in that language
+        - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
+        - Name spelling variants that are phonetically identical (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
 
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
         - **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn.
+
+        ## Failure Modes (only when rating = 0)
+        For each low-fidelity turn, tag every failure mode that applies. A turn may have multiple failure modes. Leave the list empty when rating = 1.
+
+        - **entity_error** — A TTS-critical entity (confirmation code, dollar amount, name, date, time, flight/seat number, reference ID, etc.) was rendered incorrectly in the audio. Use this whenever the intended text shows an entity at that position, regardless of *how* it went wrong: a wrong digit/letter, a missing character in a spelled-out code, a value swapped for a different one, OR sounds that are garbled / slurred / unintelligible in place of an entity. The intended text tells you whether a given position is an entity — if it is, any defect there is `entity_error`, not `garbled_hallucination`.
+
+        - **truncation** — Expected content from the intended text is missing in the audio, and the missing region is **NOT** covered by an interruption tag (`[likely cut off ...]`, `[user interrupts]`, `[speaker likely cut itself off]`, `[likely interruption]`). Apply only when the speaker silently dropped content that the tags do not explain. Missing content before a tag is fidelity-preserved by design and should NOT be flagged here.
+
+        - **garbled_hallucination** — The audio contains speech-like sounds in place of expected **non-entity** words, but the sounds are distorted, slurred, or unintelligible enough that the listener cannot reliably parse what was said. The TTS produced noise/non-words rather than a clean rendering of the intended text. Use this category only for non-entity regions — if the garbled region corresponds to an entity in the intended text, use `entity_error` instead.
+
+        - **insertion_hallucination** — The audio contains words or phrases that were NOT in the intended text. The TTS added content on its own — extra sentences, repeated phrases, or filler that the script did not contain.
+
+        - **wrong_language** — The audio is spoken in a language different from the expected language ({expected_language}). Use this when the language mismatch is clear and affects a meaningful portion of the turn, not for individual foreign loanwords or proper nouns that are expected to be pronounced natively.
+
+        Tagging guidance:
+        - If a turn has both an entity error and missing/dropped content outside tagged regions, list both `entity_error` and `truncation`.
+        - Garbled audio at an entity position is `entity_error`, not `garbled_hallucination` — check the intended text first to decide whether the affected region is an entity.
+        - Do NOT use `truncation` for content lost to interruption tags, even if the interruption tags are not at the exact location where the truncation occured — that is expected behavior, not an error.
 
         ## Response Format
         Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Intended Turns above:
@@ -694,9 +729,11 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Intended Turns>,
-              "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the intended text>
-              "explanation": "<string: 1-3 sentence analysis of fidelity for this turn, citing specific intended vs actual mismatches, noting any regions skipped due to interruption flags>",
-              "rating": <0 or 1>
+              "language": "<string: the language spoken in this turn, e.g. English, French, Spanish>",
+              "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the intended text>
+              "explanation": "<string: 1-3 sentence analysis in English of fidelity for this turn, citing specific intended vs actual mismatches in the original language, and noting any regions skipped due to interruption flags, if applicable>",
+              "rating": <0 or 1>,
+              "failure_modes": <list of strings: zero or more of "entity_error", "truncation", "garbled_hallucination", "insertion_hallucination", "wrong_language". Must be [] when rating = 1.>
             }}
           ]
         }}
@@ -725,12 +762,13 @@ judge:
         - Can you clearly hear the entity as spoken?
         - Does the spoken form sound like the correct entity, or is it garbled, mispronounced, or distorted?
         - If the agent spells out a code letter by letter, is each letter/digit clearly distinguishable?
+        - Did the agent communicate in the right language? The expected language is **{expected_language}** — if the audio is clearly spoken in a different language, set rating = 0 for that turn.
 
         ## Entity Categories to Listen For
         - Confirmation codes (e.g., ZK3FFW, FAR0UM) — especially when spelled out letter by letter
-        - Flight numbers (e.g., SkyWay 410, SW302)
+        - Domain-specific record identifiers (e.g., flight numbers like SkyWay 410, ticket/incident numbers like INC-4821, employee IDs like EMP-092)
         - Dollar amounts (e.g., $15, $1,285.00) — "fifteen" vs "fifty" matters
-        - Seat numbers (e.g., 21C, 14A)
+        - Short alphanumeric codes (e.g., seat numbers like 21C, room codes like B-204, extension numbers like x4521)
         - Reference/voucher IDs (e.g., REF-8JVSDF-001) — verify each segment is distinguishable
         - Times (e.g., 3:55 PM, 10:30 AM)
         - Dates (e.g., March 25th, February 3rd)
@@ -767,9 +805,10 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Conversation Trace>,
-              "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the conversation trace>,
+              "language": "<string: the language spoken in this turn, e.g. English, French, Spanish>",
+              "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the conversation trace>,
               "has_entities": <boolean: true if the assistant speaks entities from the conversation trace in this turn, false otherwise>,
-              "explanation": "<string: 1-3 sentence analysis listing which trace entities were spoken and whether they are clearly articulated>",
+              "explanation": "<string: 1-3 sentence analysis in English listing which trace entities were spoken and whether they are clearly articulated>",
               "rating": <0 or 1>
             }}
           ]
@@ -806,7 +845,7 @@ judge:
         - **Numeric values**: Dollar amounts, quantities, percentages (e.g., "$150" vs "$115")
         - **Addresses**: Street numbers, street names, cities (e.g., "123 Main Street" vs "124 Main Street")
         - **Contact information**: Phone numbers, email addresses (e.g., "tom_cobb@gmail.com")
-        - **Flight/route numbers**: "UA204" vs "UA240"
+        - **Domain-specific record identifiers** (flight numbers, ticket IDs, order codes, case numbers): "UA204" vs "UA240", "INC-8821" vs "INC-8281"
         - **Serial numbers and other identifiers**
 
         ### Error Types
@@ -814,6 +853,7 @@ judge:
         - **Added words**: Extra words spoken that are not in the intended text
         - **Wrong words**: Words spoken incorrectly or substituted with different words
         - **Entity errors**: Any of the TTS-critical entities above spoken incorrectly
+        - **Wrong language**: Audio spoken in a language other than {expected_language}
 
         ### What to Ignore
         - Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
@@ -821,6 +861,10 @@ judge:
         - Minor pronunciation variations that do not change meaning (accent differences)
         - Natural filler words (um, uh) if they do not affect core content
         - Missing words at the END of the LAST turn only (audio recordings are often cut off before the final utterance completes). However, missing words in the middle of the last turn, or missing words in any earlier turn, should still be penalized.
+        - Honorific/title variants that refer to the same person (e.g., "Ms." vs "Miss", "Mr." vs "Mister", French "Madame" vs "Mme", Japanese "様" vs "-san")
+        - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form in that language
+        - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
+        - Name spelling variants where the pronunciation is identical (e.g., German Meyer/Meier/Maier/Mayer)
 
         ## Rating Scale (per turn)
         - **3 (High Fidelity)**: 
@@ -843,8 +887,9 @@ judge:
           "turns": [
             {{
               "turn_id": <int: the turn number from the Intended Turns>,
-              "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the intended turns>,
-              "explanation": "<succinct analysis; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
+              "language": "<string: the language spoken in this turn, e.g. English, French, Spanish>",
+              "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the intended turns>,
+              "explanation": "<succinct analysis in English; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
               "rating": <1, 2, 3>
             }}
           ]
@@ -897,8 +942,18 @@ judge:
       - Entity value must match (minor formatting variations OK)
       - Numbers: "150" and "one hundred fifty" are equivalent
       - Dates: "December 15th" and "Dec 15" are equivalent
-      - Names: Case-insensitive exact match required
-      
+      - Names: Case-insensitive match. Phonetically equivalent spelling variants are acceptable on the **first mention** of a name (e.g., German Meyer/Meier/Maier/Mayer — all sound the same when spoken). Once the user has explicitly disambiguated the spelling (e.g., spelled it out letter by letter, corrected a prior spelling, or confirmed a specific spelling after the assistant read it back), subsequent transcriptions must match that clarified spelling exactly. Flag if:
+        - The spoken form clearly differs (different sound, not just different spelling)
+        - The transcription uses a different spelling variant **after** the user has explicitly clarified the correct spelling
+      - Non-Latin scripts: A name or identifier rendered in its native writing system (e.g. Kanji, Hangul, Arabic) is equivalent to its romanized/phonetic transcription if they represent the same spoken entity. For example, "山田" and "Yamada" should be treated as matching.
+      - Phonetic letter spellings: In languages that do not use the Latin alphabet, Roman/Latin letters are spoken using language-specific phonetic equivalents. These are correct transcriptions, not errors. For example, in Korean "에이" for "A" or "비" for "B" — if the expected text contains a Latin letter and the transcription contains its Korean phonetic form (or vice versa), treat them as matching.
+      - Number surface variants: Many languages have systematic spoken-form differences that do not change the underlying value and must not be penalized. Accept any of the following as correct:
+        - Reversed digit order in spoken form (e.g., German "vierundzwanzig" = four-and-twenty = 24 — this is the standard spoken form, not an error)
+        - Grammatical gender/agreement variants (e.g., Spanish "veintiún" vs "veintiuna" for 21)
+        - Large-unit grouping differences (e.g., Japanese 万-system: "ichi-man go-sen" / 一万五千 = 15,000; accept either Western or Japanese grouping if the value matches)
+        Note — context-dependent number systems: Some languages require a specific number system depending on context and using the wrong one is an error. In Korean, hours are counted using the native Korean system (하나, 둘…) while minutes, prices, and most other quantities use Sino-Korean (일, 이…). In Japanese, counters (助数詞) impose specific reading conventions. Only flag these as wrong if the system used is clearly inappropriate for the context (e.g., a price stated in native Korean numbers).
+      - Honorific/title variants: "Ms." vs "Miss", "Mr." vs "Mister", and language equivalents (e.g., French "Madame" vs "Mme", Japanese "様" vs "-san") are acceptable variants of the same title.
+
       Important note: The expected text will often feature things formatted like "one two three" instead of "123". Your goal is to evaluate the semantic equivalence, meaning these are considered equivalent if they were heard in audio.
       
       ## Examples

@@ -61,9 +61,9 @@ MUTEX_RADIOS: list[MutexRadio] = [
     MutexRadio(
         state_key="perturbation_mode",
         group=GROUP_PERTURBATIONS,
-        label="Perturbation persona",
-        options=["None", "Accent", "Behavior"],
-        help="Accent and Behavior are mutually exclusive (each claims the agent ID slot).",
+        label="User mode",
+        options=["None", "Language", "Accent", "Behavior"],
+        help="Language, Accent, and Behavior are mutually exclusive — each claims the ElevenLabs agent ID slot.",
         default="None",
     ),
 ]

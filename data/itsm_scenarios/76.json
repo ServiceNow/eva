@@ -345,7 +345,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Liam",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -376,7 +376,7 @@
       "hire_date": "2020-06-15",
       "is_manager": false,
       "last_desk_assignment_date": "2025-09-12",
-      "last_name": "O'Sullivan",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP083001",
@@ -404,11 +404,7 @@
     "buildings": {
       "BLD5": {
         "building_code": "BLD5",
-        "name": "Headquarters",
-        "name_aliases": [
-          "HQ",
-          "Head Office"
-        ]
+        "name": "Headquarters"
       }
     },
     "conference_rooms": {
@@ -474,9 +470,6 @@
     "zones": {
       "PZA": {
         "name": "Headquarters Garage A",
-        "name_aliases": [
-          "Garage A"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -514,9 +507,6 @@
         "catalog_id": "APP-1001",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "Atlassian Confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       },
@@ -529,9 +519,6 @@
         "catalog_id": "APP-1002",
         "department_restrictions": [],
         "name": "Jira",
-        "name_aliases": [
-          "Atlassian Jira"
-        ],
         "requires_manager_approval": true,
         "vendor": "Atlassian"
       }
@@ -545,7 +532,6 @@
           "temporary"
         ],
         "name": "Figma",
-        "name_aliases": [],
         "vendor": "Figma"
       },
       "LIC-2002": {
@@ -556,9 +542,6 @@
           "temporary"
         ],
         "name": "Adobe Creative Cloud",
-        "name_aliases": [
-          "Creative Cloud"
-        ],
         "vendor": "Adobe"
       }
     }

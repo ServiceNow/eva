@@ -27,8 +27,8 @@
     "8598503901": {
       "npi": "8598503901",
       "employee_id": "EMP963333",
-      "first_name": "Amina",
-      "last_name": "Diagne",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "MGH-04B",
       "pin": "4821",
       "phone_last_four": "4829",
@@ -105,8 +105,8 @@
   "employees": {
     "EMP963333": {
       "employee_id": "EMP963333",
-      "first_name": "Amina",
-      "last_name": "Diagne",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1988-11-24",
       "phone_last_four": "4829",
       "otp_code": "773540",

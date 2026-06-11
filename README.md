@@ -5,7 +5,7 @@
 [![Arxiv](https://img.shields.io/badge/arXiv-2605.13841-b31b1b?style=flat-square&logo=arxiv)](https://arxiv.org/abs/2605.13841)
 [![Website](https://img.shields.io/badge/Website-EVA-green?style=flat-square&logo=googlechrome)](https://servicenow.github.io/eva/)
 [![Leaderboard](https://img.shields.io/badge/Leaderboard-Rankings-orange?style=flat-square&logo=trophy)](https://servicenow.github.io/eva/#results)
-[![Dataset](https://img.shields.io/badge/Dataset-HuggingFace-yellow?style=flat-square&logo=huggingface)](https://huggingface.co/datasets/ServiceNow-AI/eva)
+[![Dataset](https://img.shields.io/badge/Dataset-HuggingFace-yellow?style=flat-square&logo=huggingface)](https://huggingface.co/datasets/ServiceNow-AI/eva-bench)
 [![Demo](https://img.shields.io/badge/Demo-See%20It-purple?style=flat-square&logo=rocket)](https://servicenow.github.io/eva/#demo)
 
 **EVA** is an open-source evaluation framework for conversational voice agents that scores complete, multi-turn spoken conversations across two fundamental dimensions:
@@ -161,6 +161,49 @@ streamlit run apps/config_editor.py
 ```
 
 The editor covers all variables grouped by tab (API keys, voice pipeline, model deployments, runtime settings, perturbations, etc.), with proper widgets for each type. See [`apps/README.md`](apps/README.md) for details.
+
+### Adding a Language
+
+**1. Run `add_culture_data.py`** — handles all one-time setup: generates culturally appropriate names and translated utterances for every dataset record, translates the assistant's opening greeting into `configs/agents/initial_messages.yaml`, generates a WER normalizer config, and patches `.env.example` with the new agent ID stubs.
+
+```bash
+PYTHONPATH=src python scripts/add_culture_data.py \
+    --language it \
+    --language-name Italian \
+    --native-name italiano \
+    --auto-generate-names
+```
+
+Re-running is safe — existing entries are skipped (idempotent). Use `--dry-run` to preview changes before writing.
+
+For languages with significant regional spelling divergence (e.g. Portuguese, where pt-BR and pt-PT differ orthographically), pass `--include-spelling-variation` to also generate a spelling normalization map used during WER evaluation:
+
+```bash
+PYTHONPATH=src python scripts/add_culture_data.py \
+    --language pt \
+    --language-name Portuguese \
+    --auto-generate-names \
+    --include-spelling-variation
+```
+
+See the script's `--help` for the full argument reference.
+
+**2. Add your ElevenLabs agent IDs** — the script adds the variable stubs to `.env.example`; fill in the values in your `.env` (or use the config editor's **User Config** tab):
+
+```bash
+EVA_IT_USER_F=your_elevenlabs_agent_id_female
+EVA_IT_USER_M=your_elevenlabs_agent_id_male
+```
+
+**3. Set `EVA_LANGUAGE` and run**:
+
+```bash
+EVA_LANGUAGE=it EVA_DOMAIN=airline python main.py
+```
+
+#### WER normalization for new languages
+
+There are some automatically generated rules for WER calculation which will be generated with the `add_culture_data.py` script. To see the full implications of this auto generation, see [metrics/stt_wer.md](docs/metrics/stt_wer.md).
 
 ### Exploring Results
 

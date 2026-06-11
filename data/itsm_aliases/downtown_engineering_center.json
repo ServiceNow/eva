@@ -1,0 +1,32 @@
+{
+  "name": "Downtown Engineering Center",
+  "translatable": true,
+  "base": [
+    "downtown",
+    "engineering center"
+  ],
+  "translations": {
+    "fr": [
+      "bâtiment ingénierie centre-ville",
+      "centre du centre-ville",
+      "centre d’ingénierie",
+      "centre d’ingénierie downtown",
+      "centre d’ingénierie du centre-ville",
+      "centre ingénierie centre-ville",
+      "centre technique du centre-ville",
+      "centre-ville",
+      "site ingénierie centre-ville"
+    ],
+    "fr-CA": [
+      "bâtiment ingénierie centre-ville",
+      "centre du centre-ville",
+      "centre d’ingénierie",
+      "centre d’ingénierie downtown",
+      "centre d’ingénierie du centre-ville",
+      "centre ingénierie centre-ville",
+      "centre technique du centre-ville",
+      "centre-ville",
+      "site ingénierie centre-ville"
+    ]
+  }
+}

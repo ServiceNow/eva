@@ -45,6 +45,22 @@ def remove_symbols_and_diacritics(s: str, keep=""):
     )
 
 
+def remove_symbols_keep_marks(s: str, keep: str = "") -> str:
+    """Strip punctuation and symbols only; preserve all letters and marks.
+
+    Use for scripts where combining marks are linguistically essential
+    (Devanagari, Bengali, Tamil, Arabic, Hebrew, Thai, …). The default
+    ``remove_symbols_and_diacritics`` replaces ``M*`` with whitespace, which
+    shreds Indic words: e.g. "नौ" (न + vowel-sign-au) → "न " — the vowel sign
+    becomes a space. This variant uses NFC (no decomposition) and only
+    spaces out characters whose category begins with S (symbol) or P
+    (punctuation), leaving L (letter) and M (mark) intact.
+    """
+    return "".join(
+        c if c in keep else (" " if unicodedata.category(c)[0] in "SP" else c) for c in unicodedata.normalize("NFC", s)
+    )
+
+
 def remove_symbols(s: str):
     """Replace any other markers, symbols, punctuations with a space, keeping diacritics"""
     return "".join(" " if unicodedata.category(c)[0] in "MSP" else c for c in unicodedata.normalize("NFKC", s))

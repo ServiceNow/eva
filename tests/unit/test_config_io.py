@@ -57,7 +57,7 @@ def test_parses_multi_condition() -> None:
 def test_group_from_section_header() -> None:
     parsed = parse_env_example(ENV_EXAMPLE)
     assert parsed.by_name["ELEVENLABS_API_KEY"].group == "API Configs"
-    assert parsed.by_name["EVA_MODEL__LLM"].group == "LiteLLM Deployments"
+    assert parsed.by_name["EVA_MODEL__LLM"].group == "Voice Pipeline"
 
 
 def test_dedupes_repeated_names() -> None:

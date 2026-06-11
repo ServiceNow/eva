@@ -36,7 +36,7 @@ from eva.assistant.audio_bridge import (
     pcm16_24k_to_mulaw_8k,
     sync_buffer_to_position,
 )
-from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
+from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
@@ -161,6 +161,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         output_dir: Path,
         port: int,
         conversation_id: str,
+        language: str = "en",
     ):
         super().__init__(
             current_date_time=current_date_time,
@@ -171,6 +172,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
             output_dir=output_dir,
             port=port,
             conversation_id=conversation_id,
+            language=language,
         )
 
         # Recording sample rate (Gemini outputs 24 kHz)
@@ -180,7 +182,8 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         s2s_params = self.pipeline_config.s2s_params or {}
         self._model = s2s_params["model"]
         self._voice = s2s_params.get("voice", "Kore")
-        self._language_code = s2s_params.get("language_code", "en-US")
+        # s2s_params["language_code"] takes precedence; fall back to EVA_LANGUAGE
+        self._language_code = s2s_params.get("language_code") or self.language
         self._api_key = s2s_params.get("api_key", "")
 
         # Build system prompt (same pattern as pipecat realtime)
@@ -352,7 +355,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                 # send_client_content with Content turns is not supported by
                 # some Live models (e.g. gemini-3.1-flash-live-preview), but
                 # send_realtime_input(text=...) works universally.
-                await session.send_realtime_input(text=f"Please greet with: {INITIAL_MESSAGE}")
+                await session.send_realtime_input(text=f"Please greet with: {self.initial_message}")
                 self._fw_log.turn_start()
 
                 # ----- Concurrent tasks -----
@@ -590,11 +593,13 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                 for fc in response.tool_call.function_calls:
                                     tool_name = fc.name
                                     tool_args = dict(fc.args) if fc.args else {}
-                                    logger.info(f"Tool call: {tool_name}({json.dumps(tool_args)})")
+                                    logger.info(f"Tool call: {tool_name}({json.dumps(tool_args, ensure_ascii=False)})")
 
                                     # Execute tool and record in audit log
                                     result = await self.execute_tool(tool_name, tool_args)
-                                    logger.debug(f"Tool result: {tool_name} -> {json.dumps(result)}")
+                                    logger.debug(
+                                        f"Tool result: {tool_name} -> {json.dumps(result, ensure_ascii=False)}"
+                                    )
 
                                     # Send result back to Gemini
                                     await session.send_tool_response(

@@ -1,0 +1,9 @@
+{
+  "name": "Cisco AnyConnect",
+  "translatable": false,
+  "base": [
+    "vpn",
+    "corporate vpn"
+  ],
+  "translations": {}
+}

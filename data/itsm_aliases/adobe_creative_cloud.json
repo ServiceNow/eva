@@ -1,0 +1,10 @@
+{
+  "name": "Adobe Creative Cloud",
+  "translatable": false,
+  "base": [
+    "creative cloud",
+    "adobe cc",
+    "cc"
+  ],
+  "translations": {}
+}

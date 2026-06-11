@@ -764,7 +764,7 @@ class TestBuildPerMetricAggregates:
             "r1": RecordMetrics(record_id="r1", metrics={"m": _ms("m", 0.8)}),
             "r2": RecordMetrics(record_id="r2", metrics={"m": _ms("m", 0.6)}),
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"], seed=42)
         assert result["m"]["count"] == 2
         assert result["m"]["none_count"] == 0
         assert result["m"]["error_count"] == 0
@@ -778,7 +778,7 @@ class TestBuildPerMetricAggregates:
             "r2": RecordMetrics(record_id="r2", metrics={"m": _ms("m", 0.0, error="JSON parse failed")}),
             "r3": RecordMetrics(record_id="r3", metrics={}),  # metric missing entirely
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"], seed=42)
         assert result["m"]["count"] == 1
         assert result["m"]["error_count"] == 1
         assert result["m"]["missing_count"] == 1
@@ -791,7 +791,7 @@ class TestBuildPerMetricAggregates:
             "r1": RecordMetrics(record_id="r1", metrics={"m": _ms("m", 0.0, error="fail1")}),
             "r2": RecordMetrics(record_id="r2", metrics={"m": _ms("m", 0.0, error="fail2")}),
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"], seed=42)
         assert result["m"]["count"] == 0
         assert result["m"]["error_count"] == 2
         assert result["m"]["missing_count"] == 0
@@ -807,7 +807,7 @@ class TestBuildPerMetricAggregates:
                 metrics={"response_speed": MetricScore(name="response_speed", score=1.2, normalized_score=None)},
             ),
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["response_speed"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["response_speed"], seed=42)
         assert result["response_speed"]["higher_is_better"] is False
 
     def test_higher_is_better_defaults_true_for_unknown_metric(self):
@@ -815,7 +815,7 @@ class TestBuildPerMetricAggregates:
         all_metrics = {
             "r1": RecordMetrics(record_id="r1", metrics={"m": MetricScore(name="m", score=0.3)}),
         }
-        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"])
+        result = MetricsRunner._build_per_metric_aggregates(all_metrics, ["m"], seed=42)
         assert result["m"]["higher_is_better"] is True
 
     def test_sub_metric_direction_derived_from_suffix(self):
@@ -848,7 +848,7 @@ class TestBuildPerMetricAggregates:
             ),
         }
         result = MetricsRunner._build_per_metric_aggregates(
-            all_metrics, ["faithfulness", "transcription_accuracy_key_entities"]
+            all_metrics, ["faithfulness", "transcription_accuracy_key_entities"], seed=42
         )
         assert result["faithfulness"]["sub_metrics"]["hallucination_rate"]["higher_is_better"] is False
         assert result["transcription_accuracy_key_entities"]["sub_metrics"]["name_accuracy"]["higher_is_better"] is True

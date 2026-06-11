@@ -93,7 +93,7 @@ class TestRunConfig:
         # run_id = timestamp + model suffix (e.g. "2024-01-15_14-30-45.123456_nova-2_gpt-5.2_sonic")
         assert config.run_id.endswith("nova-2_gpt-5.2_sonic")
         assert config.max_concurrent_conversations == 1
-        assert config.conversation_timeout_seconds == 360
+        assert config.conversation_time_limit_seconds == 600
 
     def test_create_full_config(self, temp_dir: Path):
         """Test creating a RunConfig with all options."""
@@ -107,7 +107,7 @@ class TestRunConfig:
                 "EVA_MODEL__TTS_PARAMS": json.dumps({"api_key": "test_key", "model": "sonic"}),
                 "EVA_RUN_ID": "test_run_001",
                 "EVA_MAX_CONCURRENT_CONVERSATIONS": "50",
-                "EVA_CONVERSATION_TIMEOUT_SECONDS": "180",
+                "EVA_CONVERSATION_TIME_LIMIT_SECONDS": "180",
                 "EVA_OUTPUT_DIR": str(temp_dir / "output"),
                 "EVA_BASE_PORT": "8000",
                 "EVA_PORT_POOL_SIZE": "200",
@@ -149,9 +149,9 @@ class TestRunConfig:
         with pytest.raises(ValueError):
             _config(env_vars=_BASE_ENV | {"EVA_MAX_CONCURRENT_CONVERSATIONS": "0"})
 
-        # conversation_timeout_seconds too low
+        # conversation_time_limit_seconds too low
         with pytest.raises(ValueError):
-            _config(env_vars=_BASE_ENV | {"EVA_CONVERSATION_TIMEOUT_SECONDS": "10"})
+            _config(env_vars=_BASE_ENV | {"EVA_CONVERSATION_TIME_LIMIT_SECONDS": "10"})
 
     @pytest.mark.parametrize("indent", (None, 2))
     @pytest.mark.parametrize("vars_location", ("env_vars", "env_file_vars"))
@@ -519,7 +519,7 @@ class TestDefaults:
         assert c.model.stt == "deepgram"
         assert c.model.tts == "cartesia"
         assert c.max_concurrent_conversations == 1
-        assert c.conversation_timeout_seconds == 360
+        assert c.conversation_time_limit_seconds == 600
         assert c.base_port == 10000
         assert c.port_pool_size == 150
         assert c.max_rerun_attempts == 3
@@ -654,9 +654,9 @@ class TestExecutionSettings:
         c = _config(env_vars=_BASE_ENV | {"EVA_MAX_CONCURRENT_CONVERSATIONS": "20"})
         assert c.max_concurrent_conversations == 20
 
-    def test_conversation_timeout_seconds(self):
-        c = _config(env_vars=_BASE_ENV | {"EVA_CONVERSATION_TIMEOUT_SECONDS": "600"})
-        assert c.conversation_timeout_seconds == 600
+    def test_conversation_time_limit_seconds(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_CONVERSATION_TIME_LIMIT_SECONDS": "600"})
+        assert c.conversation_time_limit_seconds == 600
 
     def test_base_port(self):
         c = _config(env_vars=_BASE_ENV | {"EVA_BASE_PORT": "8000"})
@@ -835,9 +835,7 @@ class TestLatencyOptimizationFlags:
         assert c.model.llm_streaming is False
 
     def test_set_via_env(self):
-        c = _config(
-            env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": "auto", "EVA_MODEL__LLM_STREAMING": "true"}
-        )
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": "auto", "EVA_MODEL__LLM_STREAMING": "true"})
         assert c.model.pre_tool_speech == "auto"
         assert c.model.llm_streaming is True
 

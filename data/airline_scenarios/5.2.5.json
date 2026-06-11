@@ -30,12 +30,12 @@
       "passengers": [
         {
           "elite_status": null,
-          "email": "heather.clark@gmail.com",
-          "first_name": "Heather",
-          "last_name": "Clark",
+          "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
+          "first_name": "<FIRST_NAME_ROMANIZED>",
+          "last_name": "<LAST_NAME_ROMANIZED>",
           "meal_preference": "none",
           "passenger_id": "PAX001",
-          "phone": "+1-479-555-6891",
+          "phone": "<PHONE>",
           "seat_preference": "aisle",
           "ticket_number": "1804567890123"
         }

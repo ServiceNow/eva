@@ -28,8 +28,8 @@
     "3746317213": {
       "npi": "3746317213",
       "employee_id": "EMP126225",
-      "first_name": "Priya",
-      "last_name": "Sharma",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "KAFN-13R",
       "pin": "4257",
       "phone_last_four": "4829",
@@ -168,8 +168,8 @@
   "employees": {
     "EMP126225": {
       "employee_id": "EMP126225",
-      "first_name": "Priya",
-      "last_name": "Sharma",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1987-09-14",
       "phone_last_four": "4829",
       "otp_code": "582641",

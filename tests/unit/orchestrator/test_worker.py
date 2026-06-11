@@ -33,7 +33,7 @@ class TestPercentile:
 
 def _make_worker(tmp_path: Path) -> ConversationWorker:
     config = MagicMock()
-    config.conversation_timeout_seconds = 60
+    config.conversation_time_limit_seconds = 60
     record = MagicMock()
     record.id = "test-record"
     record.current_date_time = "2026-01-01T00:00:00"
