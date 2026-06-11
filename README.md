@@ -164,7 +164,7 @@ The editor covers all variables grouped by tab (API keys, voice pipeline, model 
 
 ### Adding a Language
 
-**1. Run `add_culture_data.py`** — handles all one-time setup: generates culturally appropriate names and translated utterances for every dataset record, writes a "respond in X" addendum to `configs/agents/language_addenda.yaml`, translates the assistant's opening greeting into `configs/agents/initial_messages.yaml`, generates a WER normalizer config, and patches `.env.example` with the new agent ID stubs.
+**1. Run `add_culture_data.py`** — handles all one-time setup: generates culturally appropriate names and translated utterances for every dataset record, translates the assistant's opening greeting into `configs/agents/initial_messages.yaml`, generates a WER normalizer config, and patches `.env.example` with the new agent ID stubs.
 
 ```bash
 PYTHONPATH=src python scripts/add_culture_data.py \

@@ -37,6 +37,7 @@ class ALMvLLMClient(BaseALMClient):
         num_channels: int = DEFAULT_NUM_CHANNELS,
         sample_width: int = DEFAULT_SAMPLE_WIDTH,
         language: str | None = None,
+        enable_thinking: bool = False,
     ):
         super().__init__(
             model=model,
@@ -49,6 +50,7 @@ class ALMvLLMClient(BaseALMClient):
             sample_width=sample_width,
             language=language,
         )
+        self.enable_thinking = enable_thinking
         # Normalize base_url: ensure it ends with /v1 for the OpenAI client
         self.base_url = base_url.rstrip("/")
         if not self.base_url.endswith("/v1"):
@@ -92,7 +94,7 @@ class ALMvLLMClient(BaseALMClient):
             "max_tokens": self.max_tokens,
             "extra_body": {
                 "chat_template_kwargs": {
-                    "enable_thinking": False,
+                    "enable_thinking": self.enable_thinking,
                 }
             },
         }
@@ -149,7 +151,7 @@ class ALMvLLMClient(BaseALMClient):
                     await asyncio.sleep(delay)
                     continue
                 else:
-                    logger.error(f"UltravoxVLLM completion failed: {e}")
+                    logger.error(f"VLLM completion failed: {e}")
                     raise
 
         raise last_exception  # type: ignore[misc]
