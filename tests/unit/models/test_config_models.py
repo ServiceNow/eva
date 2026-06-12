@@ -1081,6 +1081,7 @@ class TestUserSimulatorConfig:
                 "EVA_USER_SIMULATOR__MODEL": "gpt-realtime-2",
                 "EVA_USER_SIMULATOR__FEMALE_VOICE": "coral",
                 "EVA_USER_SIMULATOR__MALE_VOICE": "verse",
+                "OPENAI_API_KEY": "test-key",
             }
         )
 
