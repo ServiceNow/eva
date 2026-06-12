@@ -3,6 +3,7 @@
 Creates Pipecat services with proper configuration.
 """
 
+import dataclasses
 import datetime
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -139,12 +140,15 @@ def create_stt_service(
 
     if model_lower == "assemblyai":
         logger.info(f"Using AssemblyAI STT: {params['model']}")
+        assemblyai_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(AssemblyAISTTService.Settings) if (k := f.name) in params
+        }
         return AssemblyAISTTService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
             settings=AssemblyAISTTService.Settings(
                 language=_to_language_enum(language_code),
-                model=params["model"],
+                **assemblyai_settings_kwargs,
             ),
         )
 
@@ -186,25 +190,31 @@ def create_stt_service(
                 settings=DeepgramFluxSTTSettings(**flux_settings_kwargs),
             )
         logger.info(f"Using Deepgram STT: {params['model']}")
+        deepgram_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(DeepgramSTTService.Settings) if (k := f.name) in params
+        }
+        deepgram_settings_kwargs.setdefault("interim_results", True)
         return DeepgramSTTService(
             api_key=api_key,
             settings=DeepgramSTTService.Settings(
                 language=_to_language_enum(language_code),
-                model=params["model"],
-                interim_results=True,
+                **deepgram_settings_kwargs,
             ),
             sample_rate=SAMPLE_RATE,
         )
 
     elif model_lower == "elevenlabs":
         logger.info(f"Using ElevenLabs STT {params['model']}")
+        elevenlabs_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(ElevenLabsRealtimeSTTService.Settings) if (k := f.name) in params
+        }
         return ElevenLabsRealtimeSTTService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
             commit_strategy=CommitStrategy.VAD,
             settings=ElevenLabsRealtimeSTTService.Settings(
                 language=_base_language(language_code),
-                model=params["model"],
+                **elevenlabs_settings_kwargs,
             ),
         )
 
@@ -254,14 +264,18 @@ def create_stt_service(
 
     elif model_lower == "xai":
         logger.info("Using xAI STT")
+        xai_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(XAISTTService.Settings) if (k := f.name) in params
+        }
+        xai_settings_kwargs.setdefault("interim_results", True)
+        xai_settings_kwargs.setdefault("endpointing", 200)
         return XAISTTService(
             api_key=api_key,
             sample_rate=params.get("sample_rate", 16000),
             encoding=params.get("encoding", "pcm"),
             settings=XAISTTService.Settings(
                 language=_to_language_enum(language_code),
-                interim_results=params.get("interim_results", True),
-                endpointing=params.get("endpointing", 200),
+                **xai_settings_kwargs,
             ),
         )
 
@@ -304,14 +318,17 @@ def create_tts_service(
 
     if model_lower == "cartesia":
         logger.info(f"Using Cartesia TTS: {params['model']}")
+        cartesia_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(CartesiaTTSService.Settings) if (k := f.name) in params
+        }
         return CartesiaTTSService(
             url=url or "wss://api.cartesia.ai/tts/websocket",
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
             settings=CartesiaTTSService.Settings(
-                model=params["model"],
                 voice=params.get("voice_id", "f786b574-daa5-4673-aa0c-cbe3e8534c02"),
                 language=_to_language_enum(language_code),
+                **cartesia_settings_kwargs,
             ),
         )
 
@@ -352,13 +369,16 @@ def create_tts_service(
             and language_code != "en"
         ):
             raise ValueError(f"ElevenLabs model {params['model']} only supports English language")
+        elevenlabs_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(ElevenLabsTTSService.Settings) if (k := f.name) in params
+        }
         return ElevenLabsTTSService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
             settings=ElevenLabsTTSService.Settings(
-                model=params["model"],
                 voice=params.get("voice_id", "hpp4J3VqNfWAUOO0d1Us"),
                 language=_base_language(language_code),
+                **elevenlabs_settings_kwargs,
             ),
         )
 

@@ -53,6 +53,29 @@ class TestCreateSttService:
         with pytest.raises(ValueError, match="Available:.*deepgram"):
             create_stt_service("nonexistent_provider", params={"api_key": "k"})
 
+    def test_assemblyai_service_created(self):
+        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "u3-rt-pro"})
+        assert "AssemblyAI" in type(svc).__name__
+        assert svc._settings.model == "u3-rt-pro"
+
+    def test_assemblyai_forwards_optional_settings(self):
+        svc = create_stt_service(
+            "assemblyai",
+            params={
+                "api_key": "k",
+                "model": "u3-rt-pro",
+                "vad_threshold": 0.1,
+                "min_turn_silence": 120,
+            },
+        )
+        assert svc._settings.vad_threshold == 0.1
+        assert svc._settings.min_turn_silence == 120
+
+    def test_assemblyai_ignores_unspecified_settings(self):
+        """Keys absent from params must not be forwarded, so library defaults apply."""
+        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "u3-rt-pro"})
+        assert svc._settings.vad_threshold is None
+
     def test_nvidia_requires_url(self):
         with pytest.raises(ValueError, match="url required"):
             create_stt_service("nvidia", params={"api_key": "k"})
@@ -66,13 +89,38 @@ class TestCreateSttService:
         assert "Deepgram" in type(svc).__name__
         assert "Flux" not in type(svc).__name__
 
+    def test_deepgram_defaults_interim_results_true(self):
+        svc = create_stt_service("deepgram", params={"api_key": "k", "model": "nova-2"})
+        assert svc._settings.interim_results is True
+
+    def test_deepgram_forwards_optional_settings(self):
+        svc = create_stt_service(
+            "deepgram",
+            params={"api_key": "k", "model": "nova-2", "diarize": True, "interim_results": False},
+        )
+        assert svc._settings.diarize is True
+        assert svc._settings.interim_results is False  # Explicit override wins over the EVA default
+
     def test_deepgram_flux_returns_flux_variant(self):
         svc = create_stt_service("deepgram-flux", params={"api_key": "k", "model": "nova-3"})
         assert "Flux" in type(svc).__name__
 
+    def test_elevenlabs_forwards_vad_settings(self):
+        svc = create_stt_service(
+            "elevenlabs",
+            params={"api_key": "k", "model": "scribe_v1", "vad_threshold": 0.2},
+        )
+        assert svc._settings.vad_threshold == 0.2
+
     def test_openai_service_respects_custom_model(self):
         svc = create_stt_service("openai", params={"api_key": "k", "model": "whisper-2"})
         assert svc._settings.model == "whisper-2"
+
+    def test_xai_stt_defaults_and_forwards(self):
+        svc = create_stt_service("xai", params={"api_key": "k", "model": "grok", "diarize": True, "endpointing": 42})
+        assert svc._settings.diarize is True
+        assert svc._settings.endpointing == 42  # Explicit override wins over the Eva default
+        assert svc._settings.interim_results is True  # EVA default preserved
 
     def test_cartesia_service_created(self):
         svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink"})
@@ -106,9 +154,26 @@ class TestCreateTtsService:
         svc = create_tts_service("cartesia", params={"api_key": "k", "model": "sonic"})
         assert "Cartesia" in type(svc).__name__
 
+    def test_cartesia_forwards_optional_settings_and_voice_id(self):
+        svc = create_tts_service(
+            "cartesia",
+            params={"api_key": "k", "model": "sonic", "voice_id": "my-voice", "pronunciation_dict_id": "dict-1"},
+        )
+        assert svc._settings.voice == "my-voice"  # Mapped from EVA's voice_id key
+        assert svc._settings.pronunciation_dict_id == "dict-1"
+
     def test_elevenlabs_returns_elevenlabs_service(self):
         svc = create_tts_service("elevenlabs", params={"api_key": "k", "model": "eleven_turbo_v2"})
         assert "ElevenLabs" in type(svc).__name__
+
+    def test_elevenlabs_forwards_voice_tuning(self):
+        svc = create_tts_service(
+            "elevenlabs",
+            params={"api_key": "k", "model": "eleven_turbo_v2", "voice_id": "v1", "stability": 0.7, "speed": 1.1},
+        )
+        assert svc._settings.voice == "v1"  # Mapped from EVA's voice_id key
+        assert svc._settings.stability == 0.7
+        assert svc._settings.speed == 1.1
 
     def test_openai_respects_voice_param(self):
         svc = create_tts_service("openai", params={"api_key": "k", "model": "tts-1", "voice": "nova"})
