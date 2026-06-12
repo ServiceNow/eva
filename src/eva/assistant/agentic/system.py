@@ -142,12 +142,7 @@ class AgenticSystem:
             datetime=self.current_date_time,
         )
         if self.pre_tool_speech == "auto":
-            self.system_prompt += (
-                "\n\n## Responsiveness\n"
-                "Before calling a tool, say one brief sentence first. For lookups, use a short lead-in "
-                '(e.g. "Let me pull that up."). Before any action that changes a booking or charges money, '
-                "state what you'll do and the cost, get confirmation, then call the tool."
-            )
+            self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
         # Build tools for the LLM
         self.tools = agent.build_tools_for_agent()
 

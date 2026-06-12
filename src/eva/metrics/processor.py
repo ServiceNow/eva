@@ -864,6 +864,22 @@ class MetricsContextProcessor:
         has_tts_text = any(entry.get("type") == "tts_text" for entry in raw_pipecat)
         if has_tts_text:
             raw_pipecat = [entry for entry in raw_pipecat if entry.get("type") != "llm_response"]
+            # Pipecat emits full-phrase batch-preview tts_text events (multiple sharing
+            # the same timestamp) alongside per-word streaming tokens (unique timestamps).
+            # The batch previews duplicate content that appears again word-by-word, which
+            # causes truncate_to_spoken to fail: the joined segment contains duplicate
+            # phrases that break substring matching. Remove batch-preview duplicates by
+            # dropping multi-word tts_text events whose timestamp appears more than once.
+            tts_ts_counts: Counter = Counter(e["timestamp"] for e in raw_pipecat if e.get("type") == "tts_text")
+            raw_pipecat = [
+                e
+                for e in raw_pipecat
+                if not (
+                    e.get("type") == "tts_text"
+                    and tts_ts_counts[e["timestamp"]] > 1
+                    and " " in e.get("data", {}).get("frame", "")
+                )
+            ]
 
         grouped_pipecat = aggregate_pipecat_logs_by_type(raw_pipecat)
         for entry in grouped_pipecat:

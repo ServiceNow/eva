@@ -151,8 +151,8 @@ def create_stt_service(
 
     elif model_lower == "cartesia":
         # ink-2 provides its own turn boundaries; ModelConfig selects external endpointing.
-        model_name = params.get("model", "ink-2")
-        logger.info(f"Using Cartesia STT (ink-2): {model_name}")
+        model_name = params["model"]
+        logger.info(f"Using Cartesia STT: {model_name}")
         return CartesiaTurnsSTTService(
             api_key=api_key,
             sample_rate=params.get("sample_rate", 16000),
@@ -161,7 +161,7 @@ def create_stt_service(
         )
 
     elif model_lower == "cartesia-multilingual":
-        logger.info(f"Using Cartesia multilingual STT (ink-whisper): {params['model']}")
+        logger.info(f"Using Cartesia multilingual STT: {params['model']}")
         return CartesiaSTTService(
             api_key=api_key,
             sample_rate=16000,
