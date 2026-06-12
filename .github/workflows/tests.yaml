@@ -47,6 +47,12 @@ jobs:
       - name: Run tests
         run: uv run pytest tests/ --color=yes --cov=eva --cov-report=term-missing --durations=10
 
-      - name: Fail if pre-commit failed
+      - name: pre-commit failed (fork PR)
+        if: steps.run-pre-commit.outcome == 'failure' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::Please run 'uv run pre-commit run --all-files', commit the fixes, and push."
+          exit 1
+
+      - name: pre-commit failed (internal PR)
         if: steps.run-pre-commit.outcome == 'failure'
         run: exit 1
