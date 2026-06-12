@@ -19,7 +19,7 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 import yaml
 from litellm.types.router import DeploymentTypedDict
@@ -342,27 +342,37 @@ class PerturbationConfig(BaseModel):
         return self
 
 
-class UserSimulatorConfig(BaseModel):
-    """Provider selection and voice settings for the simulated caller."""
+class ElevenLabsSimulatorConfig(BaseModel):
+    """ElevenLabs Conversational AI settings for the user simulator."""
 
-    model_config = ConfigDict(extra="forbid")
+    provider: Literal["elevenlabs"] = "elevenlabs"
 
-    provider: Literal["elevenlabs", "openai_realtime"] = Field(
-        "elevenlabs",
-        description="Simulated caller provider. ElevenLabs remains the backward-compatible default.",
-    )
-    model: str = Field(
-        "gpt-realtime-1.5",
-        description="OpenAI Realtime caller model when provider=openai_realtime.",
-    )
-    female_voice: str = Field(
-        "marin",
-        description="OpenAI voice used for the female caller persona.",
-    )
-    male_voice: str = Field(
-        "cedar",
-        description="OpenAI voice used for the male caller persona.",
-    )
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_extra_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            extra = [k for k in data if k not in cls.model_fields and k != "provider"]
+            if extra:
+                logger.warning(
+                    f"ElevenLabsSimulatorConfig received unrecognised fields that will be ignored: "
+                    f"{', '.join(sorted(extra))}"
+                )
+        return data
+
+
+class OpenAIRealtimeSimulatorConfig(BaseModel):
+    """OpenAI Realtime-specific settings for the user simulator."""
+
+    provider: Literal["openai_realtime"] = "openai_realtime"
+    model: str = Field("gpt-realtime-1.5", description="OpenAI Realtime model.")
+    female_voice: str = Field("marin", description="Voice used for female caller personas.")
+    male_voice: str = Field("cedar", description="Voice used for male caller personas.")
+
+
+UserSimulatorConfig = Annotated[
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    Field(discriminator="provider"),
+]
 
 
 class RunConfig(BaseSettings):
@@ -504,7 +514,7 @@ class RunConfig(BaseSettings):
     )
 
     user_simulator: UserSimulatorConfig = Field(
-        default_factory=UserSimulatorConfig,
+        default_factory=ElevenLabsSimulatorConfig,
         description="Configuration for the provider that simulates the caller.",
     )
     # User simulator language — picks per-language ElevenLabs agent IDs

@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from eva.models.config import PerturbationConfig, UserSimulatorConfig
+from eva.models.config import OpenAIRealtimeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.openai_realtime import OpenAIRealtimeUserSimulator
 
 
@@ -33,7 +33,7 @@ def _simulator(tmp_path: Path, *, persona_id: int = 1, **config_overrides) -> Op
         server_url="ws://localhost:9999/ws",
         output_dir=tmp_path,
         agent_id="agent_itsm",
-        simulator_config=UserSimulatorConfig(provider="openai_realtime", **config_overrides),
+        simulator_config=OpenAIRealtimeSimulatorConfig(**config_overrides),
     )
 
 
@@ -70,7 +70,7 @@ def test_elevenlabs_specific_accent_variants_are_rejected(tmp_path):
             output_dir=tmp_path,
             agent_id="agent_itsm",
             perturbation_config=PerturbationConfig(accent="french"),
-            simulator_config=UserSimulatorConfig(provider="openai_realtime"),
+            simulator_config=OpenAIRealtimeSimulatorConfig(),
         )
 
 
@@ -83,7 +83,7 @@ def test_behavior_variant_uses_shared_prompt(tmp_path):
         output_dir=tmp_path,
         agent_id="agent_itsm",
         perturbation_config=PerturbationConfig(behavior="aggressive_impatient"),
-        simulator_config=UserSimulatorConfig(provider="openai_realtime"),
+        simulator_config=OpenAIRealtimeSimulatorConfig(),
     )
 
     prompt = simulator._build_prompt()
