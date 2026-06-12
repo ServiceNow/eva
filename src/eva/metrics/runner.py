@@ -11,7 +11,6 @@ from typing import Any
 
 import yaml
 
-from eva.metrics.accuracy.agent_speech_fidelity_s2s import AgentSpeechFidelityS2SMetric
 from eva.metrics.aggregation import (
     compute_record_aggregates,
     compute_run_level_aggregates,
@@ -140,13 +139,6 @@ class MetricsRunner:
                 self.metrics.append(metric)
             else:
                 logger.warning(f"Metric '{name}' not found, skipping")
-
-        # For S2S pipelines, swap agent_speech_fidelity with entity-focused variant
-        if self._pipeline_type == PipelineType.S2S:
-            self.metrics = [
-                AgentSpeechFidelityS2SMetric(config=m.config) if m.name == "agent_speech_fidelity" else m
-                for m in self.metrics
-            ]
 
         logger.info(f"Metrics runner initialized with {len(self.metrics)} metrics")
 

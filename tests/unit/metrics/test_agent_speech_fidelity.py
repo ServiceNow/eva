@@ -1,4 +1,4 @@
-"""Tests for agent_speech_fidelity S2S variant (entity-focused evaluation)."""
+"""Tests for agent_speech_fidelity metric."""
 
 import json
 import logging
@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from eva.metrics.accuracy.agent_speech_fidelity_s2s import AgentSpeechFidelityS2SMetric
+from eva.metrics.accuracy.speech_fidelity import SpeechFidelityMetric
 from eva.models.config import PipelineType
 
 from .conftest import make_judge_metric, make_metric_context
@@ -20,7 +20,7 @@ def make_judge_response(turns: list[dict]) -> str:
 @pytest.fixture
 def s2s_metric():
     return make_judge_metric(
-        AgentSpeechFidelityS2SMetric,
+        SpeechFidelityMetric,
         mock_llm=True,
         logger_name="test_agent_speech_fidelity_s2s",
     )
@@ -230,7 +230,6 @@ class TestS2SCompute:
         assert result.normalized_score == 1.0
         assert result.details["num_turns"] == 2
         assert result.details["num_evaluated"] == 2
-        assert result.details["variant"] == "s2s"
         assert result.error is None
 
     @pytest.mark.asyncio

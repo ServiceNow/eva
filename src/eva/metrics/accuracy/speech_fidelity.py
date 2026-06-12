@@ -1,7 +1,7 @@
-"""Agent speech fidelity metric for S2S models — entity-focused evaluation.
+"""Agent speech fidelity metric — entity-focused, pipeline-agnostic evaluation.
 
-For S2S (speech-to-speech) models, there is no intended text to compare against.
-Instead, this metric verifies that key entities spoken by the agent (from tool
+Because S2S (speech-to-speech) models expose no intended text to compare against,
+this metric instead verifies that key entities spoken by the agent (from tool
 responses and user utterances) are accurate by sending a redacted conversation
 trace alongside the agent audio to Gemini.
 """
@@ -10,13 +10,15 @@ import json
 from typing import Any
 
 from eva.metrics.base import MetricContext
+from eva.metrics.registry import register_metric
 from eva.metrics.speech_fidelity_base import SpeechFidelityBaseMetric
 from eva.metrics.utils import aggregate_per_turn_scores, normalize_rating, resolve_turn_id
 from eva.models.results import MetricScore
 
 
-class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
-    """Audio-based entity fidelity metric for S2S agent speech.
+@register_metric
+class SpeechFidelityMetric(SpeechFidelityBaseMetric):
+    """Audio-based entity fidelity metric for agent speech.
 
     Evaluates whether key entities (from tool responses and user utterances) are
     spoken correctly by the agent, without requiring intended text.
@@ -25,8 +27,8 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
     """
 
     name = "agent_speech_fidelity"
-    version = "v0.2"
-    description = "Audio-based evaluation of agent entity fidelity for S2S models"
+    version = "v0.4"
+    description = "Audio-based evaluation of agent entity fidelity"
     category = "accuracy"
     role = "assistant"
     rating_scale = (0, 1)
@@ -63,7 +65,6 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
             audio_b64 = self.encode_audio_segment(audio_segment)
 
             prompt = self.get_judge_prompt(
-                prompt_key="s2s_user_prompt",
                 conversation_trace_formatted=trace_formatted,
                 expected_language=context.language_display_name,
             )
@@ -145,7 +146,6 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
             avg_rating = sum(valid_ratings) / len(valid_ratings) if valid_ratings else None
 
             details: dict[str, Any] = {
-                "variant": "s2s",
                 "aggregation": self.aggregation,
                 "num_turns": num_turns,
                 "num_evaluated": len(valid_ratings),
