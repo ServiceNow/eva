@@ -227,7 +227,7 @@ class TestUserSimulatorSelection:
         worker.config.user_simulator = MagicMock(provider="openai_realtime")
         worker.config.perturbation = None
         worker.config.language = "en"
-        worker.config.conversation_timeout_seconds = 60
+        worker.config.conversation_time_limit_seconds = 60
         worker.agent.id = "agent_itsm"
 
         resolved_goal = {"high_level_user_goal": "test goal", "starting_utterance": "Hi"}
@@ -250,7 +250,7 @@ class TestUserSimulatorSelection:
             server_url="ws://localhost:9999/ws",
             output_dir=worker.output_dir,
             agent_id="agent_itsm",
-            timeout=60,
+            timeout=worker._conversation_guard_timeout_seconds(),
             perturbation_config=None,
             language="en",
         )

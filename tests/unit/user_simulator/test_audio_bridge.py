@@ -118,7 +118,7 @@ class TestAudioStateTransitions:
         iface = _make_interface(event_logger=event_logger)
         iface._assistant_audio_ended_time = 50.0  # Was waiting for user
 
-        with patch("eva.user_simulator.audio_interface.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.time.return_value = 100.0
             await iface._on_user_audio_start()
 
@@ -132,7 +132,7 @@ class TestAudioStateTransitions:
         iface = _make_interface(event_logger=event_logger)
         iface._user_audio_ended_time = 50.0
 
-        with patch("eva.user_simulator.audio_interface.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.time.return_value = 100.0
             iface._on_assistant_audio_start()
 
@@ -157,7 +157,7 @@ class TestAudioStateTransitions:
         iface = _make_interface(event_logger=event_logger)
         iface._assistant_audio_active = True
 
-        with patch("eva.user_simulator.audio_interface.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.time.return_value = 200.0
             await iface._on_assistant_audio_end()
 
@@ -188,7 +188,7 @@ class TestReceiveFromAssistant:
         mock_ws.__aiter__ = lambda self: ws_messages()
         iface.websocket = mock_ws
 
-        with patch("eva.user_simulator.audio_interface.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.time.return_value = 100.0
             await iface._receive_from_assistant()
 
