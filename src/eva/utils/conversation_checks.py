@@ -7,10 +7,28 @@ requiring the full metrics pipeline or MetricContext construction.
 import json
 from pathlib import Path
 
-from eva.user_simulator.events import resolve_user_simulator_events_path
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+USER_SIMULATOR_EVENTS_FILENAME = "user_simulator_events.jsonl"
+LEGACY_ELEVENLABS_EVENTS_FILENAME = "elevenlabs_events.jsonl"
+
+
+def resolve_user_simulator_events_path(output_dir: Path, stored_path: str | None = None) -> Path | None:
+    """Resolve the neutral event file, falling back to the legacy ElevenLabs artifact."""
+    candidates: list[Path] = [
+        output_dir / USER_SIMULATOR_EVENTS_FILENAME,
+        output_dir / LEGACY_ELEVENLABS_EVENTS_FILENAME,
+    ]
+    if stored_path:
+        stored = Path(stored_path)
+        candidates.insert(0, output_dir / stored.name)
+        candidates.append(stored)
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def check_conversation_finished(output_dir: Path) -> bool:

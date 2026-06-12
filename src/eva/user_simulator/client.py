@@ -75,7 +75,6 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
             perturbation_config=perturbation_config,
             language=language,
             provider="elevenlabs",
-            write_legacy_elevenlabs_log=True,
         )
 
         self._conversation = None

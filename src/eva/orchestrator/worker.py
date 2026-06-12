@@ -251,11 +251,6 @@ class ConversationWorker:
                 conversation_log_path=str(self.output_dir / "logs.log"),
                 pipecat_logs_path=self._resolve_framework_logs_path(),
                 user_simulator_logs_path=str(self.output_dir / "user_simulator_events.jsonl"),
-                elevenlabs_logs_path=(
-                    str(self.output_dir / "elevenlabs_events.jsonl")
-                    if self.config.user_simulator.provider == "elevenlabs"
-                    else None
-                ),
                 num_turns=self._conversation_stats.get("num_turns", 0),
                 num_tool_calls=self._conversation_stats.get("num_tool_calls", 0),
                 tools_called=self._conversation_stats.get("tools_called", []),

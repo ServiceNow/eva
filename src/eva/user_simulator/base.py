@@ -47,7 +47,6 @@ class AbstractUserSimulator(ABC):
         language: str = "en",
         *,
         provider: str,
-        write_legacy_elevenlabs_log: bool = False,
     ) -> None:
         self.provider = provider
         self.persona_config = persona_config
@@ -70,11 +69,9 @@ class AbstractUserSimulator(ABC):
         self._end_reason = "unknown"
         self._conversation_done = asyncio.Event()
 
-        legacy_path = self.output_dir / "elevenlabs_events.jsonl" if write_legacy_elevenlabs_log else None
         self.event_logger = UserSimulatorEventLogger(
             self.output_dir / "user_simulator_events.jsonl",
             provider=provider,
-            legacy_output_path=legacy_path,
         )
 
         self._user_audio_chunks: list[bytes] = []

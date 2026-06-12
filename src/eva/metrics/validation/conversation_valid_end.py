@@ -7,7 +7,7 @@ from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
-from eva.user_simulator.events import resolve_user_simulator_events_path
+from eva.utils.conversation_checks import resolve_user_simulator_events_path
 
 
 @register_metric

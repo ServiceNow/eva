@@ -7,8 +7,8 @@ from pathlib import Path
 
 from eva.models.config import PipelineType
 from eva.models.results import ConversationResult
-from eva.user_simulator.events import normalize_event_for_processor, resolve_user_simulator_events_path
 from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
+from eva.utils.conversation_checks import resolve_user_simulator_events_path
 from eva.utils.log_processing import (
     AnnotationLabel,
     aggregate_pipecat_logs_by_type,
@@ -24,6 +24,12 @@ from eva.utils.log_processing import (
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+_LEGACY_PROCESSOR_ROLE = {
+    "elevenlabs_user": "simulated_user",
+    "framework_agent": "assistant",
+    "pipecat_agent": "assistant",
+}
 
 
 def last_audio_speaker(
@@ -58,6 +64,18 @@ def is_agent_timeout_on_user_turn(
     return last_audio_speaker(audio_timestamps_user_turns, audio_timestamps_assistant_turns) == "user"
 
 
+def _normalize_event_for_processor(event: dict) -> dict:
+    """Map legacy role names from old elevenlabs_events.jsonl files to neutral names.
+
+    New user_simulator_events.jsonl files already use neutral names and pass through unchanged.
+    """
+    normalized = dict(event)
+    role = normalized.get("user")
+    if role in _LEGACY_PROCESSOR_ROLE:
+        normalized["user"] = _LEGACY_PROCESSOR_ROLE[role]
+    return normalized
+
+
 def _resolve_path(stored: str | None, output_dir: Path) -> str | None:
     """Return *stored* if it exists on disk, otherwise ``output_dir / basename(stored)``.
 
@@ -73,11 +91,10 @@ def _resolve_path(stored: str | None, output_dir: Path) -> str | None:
     return str(output_dir / Path(stored).name)
 
 
-# Elevenlabs audio user field → _ProcessorContext attribute name
+# Audio user field → _ProcessorContext attribute name
 AUDIO_ATTR = {
-    "framework_agent": "audio_timestamps_assistant_turns",
-    "pipecat_agent": "audio_timestamps_assistant_turns",  # Deprecated name - kept for old runs
-    "elevenlabs_user": "audio_timestamps_user_turns",
+    "assistant": "audio_timestamps_assistant_turns",
+    "simulated_user": "audio_timestamps_user_turns",
 }
 
 # Turn variable names grouped by role, used for cross-source alignment checks
@@ -97,7 +114,7 @@ TURN_VARS_BY_ROLE = {
 class _TurnExtractionState:
     """Mutable state for the single-pass event loop in _extract_turns_from_history.
 
-    Turns are numbered by ElevenLabs ``audio_start(elevenlabs_user)`` events.
+    Turns are numbered by ``audio_start(simulated_user)`` events.
     Turn 0 = assistant greeting (before first user audio).
     """
 
@@ -118,23 +135,23 @@ class _TurnExtractionState:
     # Track which turn each speaker's audio started at, so late-arriving speech transcripts land at the correct turn.
     last_assistant_audio_turn: int = 0
     last_user_audio_turn: int = 0
-    # True when framework_agent audio started after user audio ended, meaning any subsequent user_speech (while
+    # True when assistant audio started after user audio ended, meaning any subsequent user_speech (while
     # user_audio_open is False) belongs to a new speaking session and should be buffered until the next
-    # audio_start(elevenlabs_user) sets the correct turn.
+    # audio_start(simulated_user) sets the correct turn.
     assistant_responded_since_user_ended: bool = False
-    # True when user_speech was received in the current ElevenLabs user audio session. If False at the next
-    # audio_start(elevenlabs_user), the previous session was empty and should not create a new turn.
+    # True when user_speech was received in the current user audio session. If False at the next
+    # audio_start(simulated_user), the previous session was empty and should not create a new turn.
     user_speech_in_session: bool = False
-    # Buffer for user_speech events that arrive before the first audio_start(elevenlabs_user). Replayed once the
+    # Buffer for user_speech events that arrive before the first audio_start(simulated_user). Replayed once the
     # audio_start fires.
     buffered_user_speech: list[dict] = field(default_factory=list)
     # Track text of buffered user_speech to deduplicate post-audio_start copies.
     buffered_user_speech_texts: set[str] = field(default_factory=set)
-    # Set on empty-session rollback so the next audio_start(elevenlabs_user) can advance even though
+    # Set on empty-session rollback so the next audio_start(simulated_user) can advance even though
     # assistant_spoke_in_turn was consumed by the (now undone) advance.  Also checked by audit_log/user — if pipecat
-    # captured speech that ElevenLabs missed, the user IS speaking and the audit_log/user should advance to a new turn.
+    # captured speech that the user simulator missed, the user IS speaking and the audit_log/user should advance to a new turn.
     pending_advance_after_rollback: bool = False
-    # True when an audit_log/user consumed pending_advance_after_rollback. At the next audio_start(elevenlabs_user), if
+    # True when an audit_log/user consumed pending_advance_after_rollback. At the next audio_start(simulated_user), if
     # the user is interrupting the assistant (assistant_audio_open), this is the same utterance — skip the advance so
     # user_speech lands at the same turn.
     rollback_advance_consumed_by_user: bool = False
@@ -361,11 +378,11 @@ def _handle_audio_start(
     conversation_trace: list[dict],
     pipeline_type: PipelineType,
 ) -> None:
-    """Process an ElevenLabs audio_start event, advancing the turn counter if needed."""
+    """Process an audio_start event, advancing the turn counter if needed."""
     role = event["data"]["user"]
     timestamp = event["data"]["audio_timestamp"]
 
-    if role == "elevenlabs_user":
+    if role == "simulated_user":
         if state.assistant_audio_open:
             # User interrupts assistant — apply "[likely cut off by user]" labels to the OLD turn now,
             # then advance so the user's retry starts a new turn.
@@ -404,13 +421,13 @@ def _handle_audio_start(
                 _process_user_speech(buffered, state, context, conversation_trace, pipeline_type)
             state.buffered_user_speech.clear()
 
-    elif role in ("framework_agent", "pipecat_agent"):
+    elif role == "assistant":
         state.assistant_audio_open = True
         state.last_assistant_audio_turn = state.turn_num
         if not state.user_audio_open:
             state.assistant_responded_since_user_ended = True
             # For S2S pipelines, mark that the assistant spoke as soon as audio starts.
-            # EL assistant_speech transcripts arrive late (often at the same timestamp as
+            # assistant_speech transcripts arrive late (often at the same timestamp as
             # the next user's audio_start) and can't be relied on for turn boundary detection.
             if pipeline_type == PipelineType.S2S:
                 state.assistant_spoke_in_turn = True
@@ -429,12 +446,12 @@ def _handle_audio_start(
 
 
 def _handle_audio_end(event: dict, state: "_TurnExtractionState") -> None:
-    """Process an ElevenLabs audio_end event, recording the end timestamp and closing the audio session."""
+    """Process an audio_end event, recording the end timestamp and closing the audio session."""
     role = event["data"]["user"]
     timestamp = event["data"]["audio_timestamp"]
     if (key := state.last_audio_start_key.get(role)) is not None:
         state.audio_ends.setdefault(key, []).append(timestamp)
-    if role == "elevenlabs_user":
+    if role == "simulated_user":
         state.user_audio_open = False
         # If the user audio session produced no user_speech, it was an empty burst (e.g. background
         # noise) that should not count as a turn. Roll back the turn advance that happened at this
@@ -442,11 +459,11 @@ def _handle_audio_end(event: dict, state: "_TurnExtractionState") -> None:
         if not state.user_speech_in_session and state.user_audio_started_in_turn:
             state.turn_num -= 1
             state.user_audio_started_in_turn = False
-            # Defer the advance to the next real audio_start(elevenlabs_user). Do NOT restore
+            # Defer the advance to the next real audio_start(simulated_user). Do NOT restore
             # assistant_spoke_in_turn — this prevents late audit_log/user STT chunks from advancing
             # (they naturally stay at the current turn).
             state.pending_advance_after_rollback = True
-    elif role in ("framework_agent", "pipecat_agent"):
+    elif role == "assistant":
         state.assistant_audio_open = False
 
 
@@ -889,7 +906,7 @@ class MetricsContextProcessor:
         raw_events = []
         with open(user_simulator_logs_path) as f:
             for line in f:
-                raw_events.append(normalize_event_for_processor(json.loads(line)))
+                raw_events.append(_normalize_event_for_processor(json.loads(line)))
 
         filtered_events = filter_empty_responses(raw_events)
         for entry in filtered_events:
@@ -905,14 +922,6 @@ class MetricsContextProcessor:
                     "data": data,
                 }
             )
-        return history
-
-    @staticmethod
-    def _load_elevenlabs_logs(elevenlabs_logs_path: str) -> list[dict]:
-        """Backward-compatible alias for older callers and tests."""
-        history = MetricsContextProcessor._load_user_simulator_logs(elevenlabs_logs_path)
-        for event in history:
-            event["source"] = "elevenlabs"
         return history
 
     def _build_history(

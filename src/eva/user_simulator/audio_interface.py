@@ -109,8 +109,8 @@ class BotToBotAudioBridge:
         self.audio_buffer: asyncio.Queue[bytes] = asyncio.Queue()
 
         # Track audio timing state
-        self._user_audio_active = False  # elevenlabs_user speaking
-        self._assistant_audio_active = False  # framework_agent speaking
+        self._user_audio_active = False  # simulated_user speaking
+        self._assistant_audio_active = False  # assistant speaking
         self._user_audio_ended_time = None  # Track when user audio ended for silence sending
         self._assistant_audio_ended_time = None  # Track when assistant audio ended for silence sending
 
@@ -411,7 +411,7 @@ class BotToBotAudioBridge:
             logger.info(f"🎤 User audio START - stopping user silence after {silence_duration:.2f}s")
             self._assistant_audio_ended_time = None
         if self.event_logger:
-            self.event_logger.log_audio_start("elevenlabs_user", timestamp_ms)
+            self.event_logger.log_audio_start("simulated_user", timestamp_ms)
         logger.info("🎤 User audio START")
 
         # Send user_speech_start event to assistant server with timestamp
@@ -434,7 +434,7 @@ class BotToBotAudioBridge:
         self._user_audio_ended_time = current_time
         self._user_audio_active = False
         if self.event_logger:
-            self.event_logger.log_audio_end("elevenlabs_user")
+            self.event_logger.log_audio_end("simulated_user")
         logger.info("🎤 User audio END")
 
         # Send user_speech_stop event so assistant servers can compute model response latency.
@@ -468,7 +468,7 @@ class BotToBotAudioBridge:
             self._assistant_audio_ended_time = None
         self._assistant_audio_active = True
         if self.event_logger:
-            self.event_logger.log_audio_start("framework_agent")
+            self.event_logger.log_audio_start("assistant")
         logger.info("🔊 Assistant audio START")
 
     async def _on_assistant_audio_end(self) -> None:
@@ -476,7 +476,7 @@ class BotToBotAudioBridge:
         self._assistant_audio_active = False
         self._assistant_audio_ended_time = asyncio.get_event_loop().time()
         if self.event_logger:
-            self.event_logger.log_audio_end("framework_agent")
+            self.event_logger.log_audio_end("assistant")
         logger.info("🔊 Assistant audio END (silence detected)")
         # Send catch-up silence to cover the detection delay for ElevenLabs
         if ASSISTANT_CATCHUP_SILENCE_CHUNKS > 0 and not self._should_send_ambient_noise():
@@ -613,7 +613,7 @@ class BotToBotAudioBridge:
             # Mark end of assistant audio if still active
             if self._assistant_audio_active and self.event_logger:
                 self._assistant_audio_active = False
-                self.event_logger.log_audio_end("framework_agent")
+                self.event_logger.log_audio_end("assistant")
                 logger.info("🔊 Assistant audio END (connection closed)")
 
             # Signal conversation end if disconnected while still running

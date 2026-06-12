@@ -113,7 +113,6 @@ async def test_end_call_writes_neutral_artifact(tmp_path):
     assert events[0]["provider"] == "openai_realtime"
     assert events[0]["data"]["source"] == "simulated_user"
     assert events[-1]["data"]["details"]["reason"] == "goodbye"
-    assert not (tmp_path / "elevenlabs_events.jsonl").exists()
 
 
 @pytest.mark.asyncio

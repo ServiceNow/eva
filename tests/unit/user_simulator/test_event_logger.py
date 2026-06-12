@@ -4,13 +4,13 @@ import json
 
 import pytest
 
-from eva.user_simulator.event_logger import ElevenLabsEventLogger, UserSimulatorEventLogger
+from eva.user_simulator.event_logger import UserSimulatorEventLogger
 
 
 @pytest.fixture
 def logger(tmp_path):
     """Create an event logger with a temp output path."""
-    return ElevenLabsEventLogger(output_path=tmp_path / "events.jsonl")
+    return UserSimulatorEventLogger(output_path=tmp_path / "events.jsonl", provider="test")
 
 
 class TestEventLogger:
@@ -82,20 +82,20 @@ class TestEventLogger:
 
     def test_log_audio_start_structure(self, logger):
         """Audio events have different structure: event_type/user instead of type/data."""
-        logger.log_audio_start("elevenlabs_user")
+        logger.log_audio_start("simulated_user")
         event = logger._events[0]
         assert event["event_type"] == "audio_start"
-        assert event["user"] == "elevenlabs_user"
+        assert event["user"] == "simulated_user"
         assert isinstance(event["audio_timestamp"], float)
         assert event["sequence"] == 1
         assert "type" not in event
         assert "data" not in event
 
     def test_log_audio_end_structure(self, logger):
-        logger.log_audio_end("framework_agent")
+        logger.log_audio_end("assistant")
         event = logger._events[0]
         assert event["event_type"] == "audio_end"
-        assert event["user"] == "framework_agent"
+        assert event["user"] == "assistant"
         assert isinstance(event["audio_timestamp"], float)
 
     def test_save_creates_jsonl(self, logger):
@@ -109,11 +109,11 @@ class TestEventLogger:
         assert event0["type"] == "user_speech"
         event1 = json.loads(lines[1])
         assert event1["type"] == "assistant_speech"
-        assert "provider" not in event0
+        assert event0["provider"] == "test"
 
     def test_save_creates_parent_dirs(self, tmp_path):
         nested = tmp_path / "a" / "b" / "events.jsonl"
-        log = ElevenLabsEventLogger(output_path=nested)
+        log = UserSimulatorEventLogger(output_path=nested, provider="test")
         log.log_event("test", {})
         log.save()
         assert nested.exists()
@@ -152,26 +152,3 @@ class TestEventLogger:
         # New events start at sequence 1 again
         logger.log_event("c", {})
         assert logger._events[0]["sequence"] == 1
-
-
-def test_neutral_logger_can_dual_write_legacy_artifact(tmp_path):
-    neutral_path = tmp_path / "user_simulator_events.jsonl"
-    legacy_path = tmp_path / "elevenlabs_events.jsonl"
-    logger = UserSimulatorEventLogger(
-        neutral_path,
-        provider="elevenlabs",
-        legacy_output_path=legacy_path,
-    )
-
-    logger.log_event("user_speech", {"text": "hello", "source": "elevenlabs_agent"})
-    logger.log_audio_start("elevenlabs_user")
-    logger.save()
-
-    neutral = [json.loads(line) for line in neutral_path.read_text().splitlines()]
-    legacy = [json.loads(line) for line in legacy_path.read_text().splitlines()]
-    assert neutral[0]["provider"] == "elevenlabs"
-    assert neutral[0]["data"]["source"] == "simulated_user"
-    assert neutral[1]["user"] == "simulated_user"
-    assert "provider" not in legacy[0]
-    assert legacy[0]["data"]["source"] == "elevenlabs_agent"
-    assert legacy[1]["user"] == "elevenlabs_user"

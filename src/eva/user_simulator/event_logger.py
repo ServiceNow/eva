@@ -1,4 +1,4 @@
-"""Event loggers for provider-neutral and legacy simulator artifacts."""
+"""Event logger for provider-neutral simulator artifacts."""
 
 import json
 import time
@@ -10,45 +10,21 @@ from eva.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-_NEUTRAL_ROLE = {
-    "elevenlabs_user": "simulated_user",
-    "framework_agent": "assistant",
-    "pipecat_agent": "assistant",
-}
-_LEGACY_ROLE = {"simulated_user": "elevenlabs_user", "assistant": "framework_agent"}
-_NEUTRAL_SOURCE = {"elevenlabs_agent": "simulated_user", "pipecat_assistant": "assistant"}
-_LEGACY_SOURCE = {"simulated_user": "elevenlabs_agent", "assistant": "pipecat_assistant"}
-
-
 class UserSimulatorEventLogger:
     """Logs provider-neutral simulator events for metrics processing.
 
     Events are stored in JSONL format for easy processing by the metrics system.
     """
 
-    def __init__(
-        self,
-        output_path: Path,
-        *,
-        provider: str,
-        legacy_output_path: Path | None = None,
-        normalize_roles: bool = True,
-        include_provider: bool = True,
-    ):
+    def __init__(self, output_path: Path, *, provider: str):
         """Initialize the event logger.
 
         Args:
             output_path: Path to the output JSONL file
-            provider: Provider identifier stored with neutral events.
-            legacy_output_path: Optional path for a legacy ElevenLabs-compatible copy.
-            normalize_roles: Whether to convert historical role names to neutral names.
-            include_provider: Whether serialized events include the provider identifier.
+            provider: Provider identifier stored with each event.
         """
         self.output_path = output_path
         self.provider = provider
-        self.legacy_output_path = legacy_output_path
-        self.normalize_roles = normalize_roles
-        self.include_provider = include_provider
         self._events: list[dict[str, Any]] = []
         self._sequence = 0
 
@@ -64,10 +40,9 @@ class UserSimulatorEventLogger:
             "timestamp": int(time.time() * 1000),
             "sequence": self._sequence,
             "type": event_type,
-            "data": self._normalize_data(data),
+            "data": data,
         }
-        if self.include_provider:
-            event["provider"] = self.provider
+        event["provider"] = self.provider
         self._events.append(event)
         logger.debug(f"User simulator event: {event_type}")
 
@@ -132,7 +107,7 @@ class UserSimulatorEventLogger:
         """Log when audio starts for a given role.
 
         Args:
-            role: Provider-neutral or legacy speaker role.
+            role: Speaker role (e.g. "simulated_user", "assistant").
             timestamp: Timestamp in milliseconds when audio started
         """
         # Use Unix timestamp in seconds (as float)
@@ -144,11 +119,10 @@ class UserSimulatorEventLogger:
             "timestamp": int(time.time() * 1000),  # Keep milliseconds for consistency
             "sequence": self._sequence,
             "event_type": "audio_start",
-            "user": self._normalize_role(role),
+            "user": role,
             "audio_timestamp": audio_timestamp,  # Unix timestamp in seconds for audio timing
+            "provider": self.provider,
         }
-        if self.include_provider:
-            event["provider"] = self.provider
         self._events.append(event)
         logger.debug(f"Audio start logged: {role}")
 
@@ -156,7 +130,7 @@ class UserSimulatorEventLogger:
         """Log when audio ends for a given role.
 
         Args:
-            role: Provider-neutral or legacy speaker role.
+            role: Speaker role (e.g. "simulated_user", "assistant").
         """
         # Use Unix timestamp in seconds (as float)
         audio_timestamp = time.time()
@@ -167,11 +141,10 @@ class UserSimulatorEventLogger:
             "timestamp": int(time.time() * 1000),  # Keep milliseconds for consistency
             "sequence": self._sequence,
             "event_type": "audio_end",
-            "user": self._normalize_role(role),
+            "user": role,
             "audio_timestamp": audio_timestamp,  # Unix timestamp in seconds for audio timing
+            "provider": self.provider,
         }
-        if self.include_provider:
-            event["provider"] = self.provider
         self._events.append(event)
         logger.debug(f"Audio end logged: {role}")
 
@@ -181,11 +154,6 @@ class UserSimulatorEventLogger:
 
         with open(self.output_path, "w") as f:
             f.writelines(json.dumps(event, ensure_ascii=False) + "\n" for event in self._events)
-
-        if self.legacy_output_path is not None:
-            self.legacy_output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.legacy_output_path, "w") as f:
-                f.writelines(json.dumps(self._to_legacy_event(event)) + "\n" for event in self._events)
 
         logger.info(f"Saved {len(self._events)} user simulator events to {self.output_path}")
 
@@ -218,39 +186,3 @@ class UserSimulatorEventLogger:
         """Clear all logged events."""
         self._events.clear()
         self._sequence = 0
-
-    def _normalize_role(self, role: str) -> str:
-        if not self.normalize_roles:
-            return role
-        return _NEUTRAL_ROLE.get(role, role)
-
-    def _normalize_data(self, data: dict[str, Any]) -> dict[str, Any]:
-        if not self.normalize_roles or data.get("source") not in _NEUTRAL_SOURCE:
-            return data
-        normalized = dict(data)
-        normalized["source"] = _NEUTRAL_SOURCE[normalized["source"]]
-        return normalized
-
-    @staticmethod
-    def _to_legacy_event(event: dict[str, Any]) -> dict[str, Any]:
-        legacy = dict(event)
-        legacy.pop("provider", None)
-        if legacy.get("user") in _LEGACY_ROLE:
-            legacy["user"] = _LEGACY_ROLE[legacy["user"]]
-        data = legacy.get("data")
-        if isinstance(data, dict) and data.get("source") in _LEGACY_SOURCE:
-            legacy["data"] = dict(data)
-            legacy["data"]["source"] = _LEGACY_SOURCE[data["source"]]
-        return legacy
-
-
-class ElevenLabsEventLogger(UserSimulatorEventLogger):
-    """Backward-compatible logger preserving the historical event schema."""
-
-    def __init__(self, output_path: Path):
-        super().__init__(
-            output_path,
-            provider="elevenlabs",
-            normalize_roles=False,
-            include_provider=False,
-        )
