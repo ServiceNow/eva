@@ -26,6 +26,18 @@
       "centre-ville",
       "site du centre-ville",
       "édifice des finances"
+    ],
+    "es": [
+      "centro",
+      "edificio de finanzas",
+      "oficina del centro",
+      "oficina principal de recursos humanos"
+    ],
+    "de": [
+      "büro in der innenstadt",
+      "finanzgebäude",
+      "hauptbüro personal",
+      "innenstadtbüro"
     ]
   }
 }

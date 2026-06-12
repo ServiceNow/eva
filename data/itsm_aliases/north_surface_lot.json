@@ -30,6 +30,17 @@
       "stationnement extérieur nord",
       "stationnement nord",
       "terrain nord"
+    ],
+    "es": [
+      "estacionamiento norte al aire libre",
+      "lote norte",
+      "lote norte de la sede",
+      "parking norte"
+    ],
+    "de": [
+      "nordparkplatz",
+      "nordparkplatz an der zentrale",
+      "parkplatz nord"
     ]
   }
 }

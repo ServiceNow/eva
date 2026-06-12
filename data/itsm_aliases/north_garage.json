@@ -17,6 +17,18 @@
       "garage nord",
       "parking nord",
       "stationnement nord"
+    ],
+    "es": [
+      "estacionamiento norte",
+      "garaje norte",
+      "garaje principal",
+      "parking norte"
+    ],
+    "de": [
+      "hauptgarage",
+      "nord-parkhaus",
+      "nordgarage",
+      "parkhaus nord"
     ]
   }
 }

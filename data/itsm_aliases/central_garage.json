@@ -16,6 +16,16 @@
       "parc central",
       "parking central",
       "stationnement central"
+    ],
+    "es": [
+      "estacionamiento central",
+      "garaje central",
+      "parking central"
+    ],
+    "de": [
+      "zentrale parkgarage",
+      "zentrales parkhaus",
+      "zentralgarage"
     ]
   }
 }

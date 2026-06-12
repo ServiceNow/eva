@@ -22,6 +22,17 @@
       "parking du siège",
       "parking siège",
       "stationnement du siège social"
+    ],
+    "es": [
+      "estacionamiento de la sede",
+      "garaje central",
+      "garaje de la sede central",
+      "parking de la sede"
+    ],
+    "de": [
+      "hauptsitz-parkhaus",
+      "parkhaus der zentrale",
+      "zentrale-parkhaus"
     ]
   }
 }

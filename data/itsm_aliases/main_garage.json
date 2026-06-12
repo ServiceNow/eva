@@ -16,6 +16,17 @@
       "garage principal",
       "parking principal",
       "stationnement principal"
+    ],
+    "es": [
+      "estacionamiento principal",
+      "garaje principal",
+      "lote principal",
+      "parking principal"
+    ],
+    "de": [
+      "hauptgarage",
+      "hauptparkhaus",
+      "hauptparkplatz"
     ]
   }
 }

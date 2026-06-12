@@ -28,6 +28,17 @@
       "stationnement extérieur général",
       "stationnement général",
       "terrain général"
+    ],
+    "es": [
+      "aparcamiento general",
+      "estacionamiento general al aire libre",
+      "lote general",
+      "parking general"
+    ],
+    "de": [
+      "allgemeiner parkplatz",
+      "normaler parkplatz",
+      "oberflächenparkplatz"
     ]
   }
 }

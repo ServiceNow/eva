@@ -18,6 +18,17 @@
       "parking b",
       "parking ouest",
       "stationnement b"
+    ],
+    "es": [
+      "estacionamiento b",
+      "garaje b",
+      "garaje oeste",
+      "parking b"
+    ],
+    "de": [
+      "garage b",
+      "parkhaus b",
+      "west-parkhaus"
     ]
   }
 }

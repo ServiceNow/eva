@@ -24,6 +24,18 @@
       "site centre-ville",
       "site du centre-ville",
       "édifice du centre-ville"
+    ],
+    "es": [
+      "centro",
+      "edificio del centro",
+      "oficina del centro",
+      "sede de ventas"
+    ],
+    "de": [
+      "gebäude in der innenstadt",
+      "innenstadt",
+      "innenstadtbüro",
+      "vertriebszentrale"
     ]
   }
 }

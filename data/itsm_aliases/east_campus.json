@@ -12,6 +12,14 @@
     "fr-CA": [
       "campus est",
       "site est"
+    ],
+    "es": [
+      "campus este",
+      "sede este"
+    ],
+    "de": [
+      "campus ost",
+      "ostcampus"
     ]
   }
 }

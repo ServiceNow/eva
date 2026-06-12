@@ -19,6 +19,17 @@
       "parking alpha",
       "parking principal",
       "stationnement alpha"
+    ],
+    "es": [
+      "estacionamiento alfa",
+      "garaje alfa",
+      "garaje principal",
+      "parking alfa"
+    ],
+    "de": [
+      "alpha-garage",
+      "alpha-parkhaus",
+      "hauptgarage"
     ]
   }
 }

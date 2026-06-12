@@ -13,6 +13,15 @@
     "fr-CA": [
       "parking a",
       "stationnement a"
+    ],
+    "es": [
+      "estacionamiento a",
+      "garaje a",
+      "parking a"
+    ],
+    "de": [
+      "a-garage",
+      "parkhaus a"
     ]
   }
 }
