@@ -159,7 +159,7 @@ class _TurnExtractionState:
     def advance_turn_if_needed(self, from_audio_start: bool = False, bypass_hold: bool = False) -> None:
         """Advance turn if the assistant responded since the last user event.
 
-        Called on audio_start(elevenlabs_user) and audit_log/user events.
+        Called on audio_start (simulated_user) and audit_log/user events.
         After an interruption, hold_turn suppresses one advance from audit_log/user
         (late STT from the interrupted session) but never blocks audio_start
         (the user speaking again always starts a new turn).
@@ -262,7 +262,7 @@ def _handle_audit_log_event(
     """Process a single audit_log source event into turn variables and conversation trace."""
     if event["event_type"] == "user":
         if state.pending_advance_after_rollback:
-            # Pipecat captured speech that ElevenLabs missed during an empty session. The user IS speaking — advance.
+            # The agent captured speech that the user simulator missed during an empty session. The user IS speaking — advance.
             state.assistant_spoke_in_turn = True
             state.pending_advance_after_rollback = False
             state.rollback_advance_consumed_by_user = True
@@ -282,7 +282,7 @@ def _handle_audit_log_event(
         elif state.pending_user_interrupts_label:
             entry["content"] = f"{AnnotationLabel.USER_INTERRUPTS} {entry['content']}"
             state.pending_user_interrupts_label = False
-        # For audio-native models, user trace entries come from ElevenLabs user_speech instead
+        # For audio-native models, user trace entries come from user simulator user_speech instead
         if pipeline_type == PipelineType.CASCADE:
             conversation_trace.append(entry)
         sep = _user_transcript_separator(existing, turn, state)
@@ -467,16 +467,16 @@ def _handle_audio_end(event: dict, state: "_TurnExtractionState") -> None:
         state.assistant_audio_open = False
 
 
-def _handle_elevenlabs_event(
+def _handle_user_simulator_event(
     event: dict,
     state: "_TurnExtractionState",
     context: "_ProcessorContext",
     conversation_trace: list[dict],
     pipeline_type: PipelineType,
 ) -> bool:
-    """Process a single elevenlabs source event. Returns True if the caller should continue."""
+    """Process a single user simulator event. Returns True if the caller should continue."""
     if event["event_type"] == "assistant_speech":
-        # Use the turn where assistant audio started, not the current turn — ElevenLabs transcripts can
+        # Use the turn where assistant audio started, not the current turn — user simulator transcripts can
         # arrive after a user audio_start has already advanced the turn.
         turn = state.last_assistant_audio_turn
         # Only mark "assistant spoke" if the speech belongs to the current turn; late transcripts from a
@@ -490,7 +490,7 @@ def _handle_elevenlabs_event(
         if not existing and turn in state.assistant_interrupted_turns:
             text = f"{AnnotationLabel.ASSISTANT_INTERRUPTS} {text}"
         append_turn_text(context.transcribed_assistant_turns, turn, text, sep)
-        # For S2S, assistant trace entries come from EL (audit log assistant entries are skipped)
+        # For S2S, assistant trace entries come from the user simulator (audit log assistant entries are skipped)
         if pipeline_type == PipelineType.S2S:
             conversation_trace.append(
                 {
@@ -505,7 +505,7 @@ def _handle_elevenlabs_event(
     elif event["event_type"] == "user_speech":
         # Buffer user_speech when it cannot be paired with the current user audio session. This happens when:
         # - The transcript arrives before the first audio_start
-        #   (ElevenLabs sends speech slightly before audio_start)
+        #   (the user simulator sends speech slightly before audio_start)
         # - The assistant responded after the user's last audio ended, so this speech is for a NEW session
         #   whose audio_start hasn't arrived yet.
         # Late transcripts for the SAME session (arriving shortly after audio_end, before any new assistant
@@ -515,8 +515,7 @@ def _handle_elevenlabs_event(
             state.buffered_user_speech_texts.add(event["data"]["data"]["text"])
             state.user_speech_in_session = True
             return True  # signal "continue" to caller
-        # Deduplicate: skip if this is a post-audio_start copy of a buffered event (ElevenLabs sometimes
-        # sends it twice).
+        # Deduplicate: skip if this is a post-audio_start copy of a buffered event (sometimes sent twice).
         raw_text = event["data"]["data"]["text"]
         if raw_text in state.buffered_user_speech_texts:
             state.buffered_user_speech_texts.discard(raw_text)
@@ -671,8 +670,8 @@ def _finalize_extraction(
 def _ensure_greeting_is_first(context: "_ProcessorContext") -> None:
     """Ensure the assistant greeting (turn 0) is the first entry in conversation_trace.
 
-    With audio-native models, a ElevenLabs user_speech timestamp can arrive before the audit-log assistant entry, so the
-    greeting ends up out of order. Move it to the front, or synthesize it from pipecat text if absent.
+    With audio-native models, a user simulator user_speech timestamp can arrive before the audit-log assistant entry,
+    so the greeting ends up out of order. Move it to the front, or synthesize it from pipecat text if absent.
     """
     first = context.conversation_trace[0]
     if not (first.get("role") == "user" and first.get("turn_id", 0) > 0):
@@ -951,21 +950,21 @@ class MetricsContextProcessor:
     def _extract_turns_from_history(context: _ProcessorContext) -> None:
         """Extract all turn variables from context.history in a single pass.
 
-        Turn boundaries are driven by ElevenLabs audio_start(elevenlabs_user) events via advance_turn_if_needed().
+        Turn boundaries are driven by audio_start(simulated_user) events via advance_turn_if_needed().
         Turn 0 = assistant greeting. Index *i* aligns assistant[i] as the reply to user[i].
 
         Source → variable mapping:
-            audit_log/user              → ``transcribed_user_turns[N]``
-            pipecat tts_text/llm_response → ``intended_assistant_turns[N]``
-            elevenlabs assistant_speech  → ``transcribed_assistant_turns[N]``
-            elevenlabs user_speech       → ``intended_user_turns[N]``
-            elevenlabs audio_start/end   → ``audio_timestamps_{role}_turns[N]``
+            audit_log/user                    → ``transcribed_user_turns[N]``
+            pipecat tts_text/llm_response     → ``intended_assistant_turns[N]``
+            user_simulator assistant_speech   → ``transcribed_assistant_turns[N]``
+            user_simulator user_speech        → ``intended_user_turns[N]``
+            user_simulator audio_start/end    → ``audio_timestamps_{role}_turns[N]``
 
         audio_end events are paired with the most recent audio_start of the same role;
         session_end_ts is used as fallback if no audio_end arrives.
 
         Audio-native models (S2S, AudioLLM) process raw audio — the audit-log user entries are not trustworthy.
-        For audio-native pipelines we source user conversation_trace entries from ElevenLabs user_speech
+        For audio-native pipelines we source user conversation_trace entries from user simulator user_speech
         (intended) instead of the audit-log (transcribed).
         """
         state = _TurnExtractionState()
@@ -976,8 +975,8 @@ class MetricsContextProcessor:
                 _handle_audit_log_event(event, state, context, conversation_trace, context.pipeline_type)
             elif event["source"] == "pipecat":
                 _handle_pipecat_event(event, state, context, conversation_trace)
-            elif event["source"] in {"elevenlabs", "user_simulator"}:
-                if _handle_elevenlabs_event(event, state, context, conversation_trace, context.pipeline_type):
+            elif event["source"] in {"elevenlabs", "user_simulator"}:  # "elevenlabs" for legacy runs
+                if _handle_user_simulator_event(event, state, context, conversation_trace, context.pipeline_type):
                     continue
 
         if not state.session_end_ts:
@@ -985,7 +984,7 @@ class MetricsContextProcessor:
 
         _pair_audio_segments(state, context)
         if context.pipeline_type == PipelineType.S2S:
-            # S2S has no pipecat segments to validate against — trace entries come from EL directly
+            # S2S has no pipecat segments to validate against — trace entries come from user simulator directly
             validated_trace = conversation_trace
         else:
             validated_trace = _validate_conversation_trace(conversation_trace, context)
