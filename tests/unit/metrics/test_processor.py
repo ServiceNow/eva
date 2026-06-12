@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from eva.metrics.processor import MetricsContextProcessor, _ProcessorContext
+from eva.metrics.processor import MetricsContextProcessor, _normalize_event_for_processor, _ProcessorContext
 from eva.models.config import PipelineType
 
 FIXTURES_PATH = Path(__file__).parent.parent.parent / "fixtures" / "processor_histories.json"
@@ -69,3 +69,37 @@ class TestExtractTurnsFromHistory:
             assert actual == expected, (
                 f"Case '{case['id']}', attribute '{key}':\n  expected: {expected}\n  actual:   {actual}"
             )
+
+
+class TestNormalizeEventForProcessor:
+    """_normalize_event_for_processor maps legacy role names to neutral names for old elevenlabs_events.jsonl files."""
+
+    def test_legacy_elevenlabs_user_mapped_to_neutral(self):
+        event = {"event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1.0}
+        result = _normalize_event_for_processor(event)
+        assert result["user"] == "simulated_user"
+
+    def test_legacy_framework_agent_mapped_to_neutral(self):
+        event = {"event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1.0}
+        result = _normalize_event_for_processor(event)
+        assert result["user"] == "assistant"
+
+    def test_legacy_pipecat_agent_mapped_to_neutral(self):
+        event = {"event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1.0}
+        result = _normalize_event_for_processor(event)
+        assert result["user"] == "assistant"
+
+    def test_neutral_role_passes_through_unchanged(self):
+        event = {"event_type": "audio_start", "user": "simulated_user", "audio_timestamp": 1.0}
+        result = _normalize_event_for_processor(event)
+        assert result["user"] == "simulated_user"
+
+    def test_event_without_user_field_unchanged(self):
+        event = {"type": "user_speech", "data": {"text": "hello"}}
+        result = _normalize_event_for_processor(event)
+        assert result == event
+
+    def test_original_event_not_mutated(self):
+        event = {"event_type": "audio_start", "user": "simulated_user"}
+        _normalize_event_for_processor(event)
+        assert event["user"] == "simulated_user"
