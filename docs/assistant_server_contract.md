@@ -535,3 +535,36 @@ the run to fail or produce `None` latency fields in the result.
 | `audio_assistant.wav` | Yes | TTS quality metrics |
 | `framework_logs.jsonl` | Yes | Turn boundary metrics |
 | `pipecat_metrics.jsonl` | Yes | `model_response_latency` in `ConversationResult` |
+
+---
+
+## 13. Reference implementation: Deepgram Voice Agent
+
+`src/eva/assistant/deepgram_server.py` (`framework: deepgram`) bridges to Deepgram's
+**Voice Agent API** (unified STT→LLM→TTS over one WebSocket) via the `deepgram-sdk`
+`client.agent.v1.connect()` interface. It is the closest analogue to the Gemini Live
+server and a good template for a new S2S framework.
+
+Notable points specific to Deepgram:
+
+- **Config.** `framework: deepgram`, `model: {s2s: deepgram, s2s_params: {...}}`. Recognised
+  `s2s_params`: `api_key` and `model` (both **required**; `model` is the exact Deepgram LLM id,
+  e.g. `gpt-4o-mini` or `claude-haiku-4-5`), `think_provider` (default `open_ai`; use `anthropic`
+  for Claude models), `think_label` (optional short metrics/run_id label — Deepgram still receives
+  `model`), `listen_model` (STT, default `nova-3`), `speak_model` (TTS, default `aura-2-thalia-en`).
+  The conversation language comes from the run's `language` (base server), not `s2s_params`.
+- **Evaluation.** Although configured via `s2s`, Deepgram is scored as a **cascade** pipeline
+  (`get_pipeline_type` → `CASCADE`), since it runs STT→LLM→TTS internally — so STT/TTS metrics
+  (`stt_wer`, `transcription_accuracy_key_entities`, `speakability`) run. `pipeline_parts` exposes
+  `{stt, llm, tts}` so the run_id/folder shows the three component models.
+- **Settings.** Sent once on connect via `send_settings(AgentV1Settings)`. Built from a plain
+  dict and validated with `AgentV1Settings.model_validate(...)`, which resolves the
+  discriminated provider unions. Audio is `linear16` @ 24 kHz both directions with output
+  `container: "none"` (raw PCM); `agent.greeting` carries `INITIAL_MESSAGE`.
+- **Tools.** Configured under `agent.think.functions` (no `endpoint` ⇒ *client-side*), so the
+  agent emits `FunctionCallRequest` events; reply with `send_function_call_response`.
+- **Events.** `async for message in connection` yields raw `bytes` (TTS audio) or typed events
+  (`ConversationText`, `UserStartedSpeaking`, `AgentStartedSpeaking`, `AgentAudioDone`,
+  `FunctionCallRequest`, `Error`, `Warning`).
+- **Limitation.** The Voice Agent event stream exposes no token-usage event, so token usage is
+  not reported for this framework. Latency is still emitted on the first audio chunk per turn.
