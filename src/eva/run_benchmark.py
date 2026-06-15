@@ -45,8 +45,8 @@ async def run_benchmark(config: RunConfig) -> int:
             return 1
 
         # Apply env-dependent values (secrets, urls) from live env onto saved config.
-        # Skip strict LLM check when force-rerunning metrics only — the LLM is not needed.
-        runner.config.apply_env_overrides(config, strict_llm=not config.force_rerun_metrics)
+        # Skip strict LLM check when no conversations can run (max_rerun_attempts == 0).
+        runner.config.apply_env_overrides(config, strict_llm=config.max_rerun_attempts != 0)
 
         # Apply CLI overrides
         runner.config.max_rerun_attempts = config.max_rerun_attempts
