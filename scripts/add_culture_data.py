@@ -311,12 +311,14 @@ def _load_names_file(path: Path) -> dict[str, list[str]]:
     return data
 
 
-async def _translate_initial_message(language: str, language_name: str, llm: LLMClient) -> str:
+async def _translate_initial_message(
+    language: str, language_name: str, llm: LLMClient, overwrite: bool = False
+) -> str:
     """Translate the English initial message into ``language``."""
     existing: dict[str, str] = {}
     if INITIAL_MESSAGES_PATH.exists():
         existing = yaml.safe_load(INITIAL_MESSAGES_PATH.read_text(encoding="utf-8")) or {}
-    if language in existing:
+    if language in existing and not overwrite:
         return existing[language]
     en_message = existing.get("en", "Hello! How can I help you today?")
     prompt = (
@@ -403,6 +405,7 @@ async def add_scenario_aliases(
     language_name: str,
     llm: LLMClient,
     dry_run: bool,
+    overwrite: bool = False,
 ) -> None:
     """Translate name_aliases into the per-object alias files at ``data/<domain>_aliases/``.
 
@@ -429,7 +432,7 @@ async def add_scenario_aliases(
         data = json.loads(path.read_text(encoding="utf-8"))
         if not data.get("translatable"):
             continue
-        if data.get("translations", {}).get(language):
+        if data.get("translations", {}).get(language) and not overwrite:
             continue
         name_to_base[data["name"]] = data.get("base", [])
         file_by_name[data["name"]] = path
@@ -465,6 +468,7 @@ async def add_culture(
     dry_run: bool,
     record_id: str | None = None,
     phone_spec: dict | None = None,
+    overwrite: bool = False,
 ) -> None:
     dataset_path = DATA_DIR / f"{domain}_dataset.json"
     if not dataset_path.exists():
@@ -499,7 +503,7 @@ async def add_culture(
             raise ValueError(f"Record {rec.get('id')!r} missing user_config.gender")
         bucket = _gender_to_bucket(gender)
 
-        if language not in rec["culture_overrides"]:
+        if overwrite or language not in rec["culture_overrides"]:
             if names is None or romanized_names is None:
                 raise ValueError(
                     f"Record {rec.get('id')!r} missing culture_overrides[{language!r}] but no name arrays available — "
@@ -551,7 +555,7 @@ async def add_culture(
             raise ValueError(
                 f"Record {rec.get('id')!r} missing starting_utterances.en — run migrate_to_culture_schema.py first"
             )
-        if language not in rec["starting_utterances"]:
+        if language not in rec["starting_utterances"] or overwrite:
             to_translate_idx.append(idx)
             to_translate_text.append(rec["starting_utterances"]["en"])
 
@@ -612,7 +616,7 @@ async def amain(args: argparse.Namespace) -> int:
     domains = args.domains or [p.stem.removesuffix("_dataset") for p in sorted(DATA_DIR.glob("*_dataset.json"))]
 
     if args.auto_generate_names:
-        if _all_records_have_language(args.language, domains, args.record_id):
+        if not args.overwrite and _all_records_have_language(args.language, domains, args.record_id):
             logger.info(f"All records already have {args.language} names — skipping name generation")
             names = None
             romanized_names = None
@@ -640,7 +644,7 @@ async def amain(args: argparse.Namespace) -> int:
             logger.info(f"Wrote romanized names to {rom_out}")
 
     logger.info(f"Translating initial message to {args.language_name}")
-    initial_message = await _translate_initial_message(args.language, args.language_name, llm)
+    initial_message = await _translate_initial_message(args.language, args.language_name, llm, args.overwrite)
     logger.info(f"Initial message for {args.language}: {initial_message}")
     if not args.dry_run:
         _update_initial_messages(args.language, initial_message)
@@ -649,7 +653,7 @@ async def amain(args: argparse.Namespace) -> int:
     for domain in domains:
         logger.info(f"=== Domain: {domain} ===")
         if domain == "airline":
-            if _all_airline_records_have_phone(args.language, args.record_id):
+            if not args.overwrite and _all_airline_records_have_phone(args.language, args.record_id):
                 logger.info(
                     f"All airline records already have {args.language} phone — skipping phone format generation"
                 )
@@ -670,12 +674,17 @@ async def amain(args: argparse.Namespace) -> int:
             args.dry_run,
             args.record_id,
             phone_spec,
+            args.overwrite,
         )
-        await add_scenario_aliases(domain, args.language, args.language_name, llm, args.dry_run)
+        await add_scenario_aliases(domain, args.language, args.language_name, llm, args.dry_run, args.overwrite)
 
     update_env_example(args.language, args.language_name, REPO_ROOT / ".env.example", args.dry_run)
     update_language_display_names(
-        args.language, args.language_name, REPO_ROOT / "src" / "eva" / "models" / "config.py", args.dry_run
+        args.language,
+        args.language_name,
+        REPO_ROOT / "src" / "eva" / "models" / "config.py",
+        args.dry_run,
+        args.overwrite,
     )
     await update_wer_normalizer_config(
         args.language,
@@ -684,6 +693,7 @@ async def amain(args: argparse.Namespace) -> int:
         llm,
         args.dry_run,
         args.include_spelling_variation,
+        args.overwrite,
     )
     return 0
 
@@ -1256,6 +1266,7 @@ async def update_wer_normalizer_config(
     llm: LLMClient,
     dry_run: bool,
     include_spelling_variation: bool,
+    overwrite: bool = False,
 ) -> None:
     """Generate the WER normalizer JSON config for *language*.
 
@@ -1264,7 +1275,7 @@ async def update_wer_normalizer_config(
     2. Optionally generate ``configs/{language}_spelling.json`` when --include-spelling-variation.
     """
     config_path = configs_dir / f"{language}.json"
-    if config_path.exists():
+    if config_path.exists() and not overwrite:
         logger.info(f"WER config already exists at {config_path} — skipping generation")
     else:
         logger.info(f"Generating WER normalizer config for {language_name}")
@@ -1285,11 +1296,14 @@ async def update_wer_normalizer_config(
                 logger.info(f"Patched spelling_map_path in {config_path.name}")
 
 
-def update_language_display_names(language: str, language_name: str, config_path: Path, dry_run: bool) -> None:
+def update_language_display_names(
+    language: str, language_name: str, config_path: Path, dry_run: bool, overwrite: bool = False
+) -> None:
     """Add the new language to LANGUAGE_DISPLAY_NAMES in config.py if not already present.
 
     Locates the dict by searching for its opening line, then finds the closing
-    brace and inserts a new entry before it.
+    brace and inserts a new entry before it. When ``overwrite`` is set and the key
+    is already present, its display name is replaced in place.
     """
     if not config_path.exists():
         logger.warning(f"{config_path} not found — skipping LANGUAGE_DISPLAY_NAMES update")
@@ -1301,8 +1315,25 @@ def update_language_display_names(language: str, language_name: str, config_path
     lines = config_path.read_text(encoding="utf-8").splitlines()
 
     # Idempotency check
-    if any(new_key in line for line in lines):
-        logger.info(f"{new_key} already present in LANGUAGE_DISPLAY_NAMES")
+    existing_idx = next(
+        (i for i, line in enumerate(lines) if re.match(rf"\s*{re.escape(new_key)}\s*:", line)),
+        None,
+    )
+    if existing_idx is not None:
+        if not overwrite:
+            logger.info(f"{new_key} already present in LANGUAGE_DISPLAY_NAMES")
+            return
+        indent = "    "
+        new_line = f'{indent}{new_key}: "{language_name}",'
+        if lines[existing_idx] == new_line:
+            logger.info(f"{new_key} already set to {language_name!r} in LANGUAGE_DISPLAY_NAMES")
+            return
+        if dry_run:
+            logger.info(f"[dry-run] would update {new_key} to {language_name!r} in LANGUAGE_DISPLAY_NAMES")
+            return
+        lines[existing_idx] = new_line
+        config_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        logger.info(f"Updated {new_key} to {language_name!r} in LANGUAGE_DISPLAY_NAMES in {config_path}")
         return
 
     # Find the opening line of LANGUAGE_DISPLAY_NAMES
@@ -1445,6 +1476,16 @@ def main() -> int:
     ap.add_argument("--dump-names", help="When auto-generating, also save the arrays here")
     ap.add_argument("--llm-model", default=DEFAULT_MODEL)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "Regenerate all content for --language even if it already exists: names, "
+            "phone numbers, starting utterances, scenario alias translations, initial "
+            "greeting, WER config, and the LANGUAGE_DISPLAY_NAMES entry. Use to re-localise "
+            "after changing the language display name (e.g. 'Spanish' -> 'European Spanish')."
+        ),
+    )
     ap.add_argument(
         "--include-spelling-variation",
         action="store_true",

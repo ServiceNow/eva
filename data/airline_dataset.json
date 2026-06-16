@@ -2379,7 +2379,7 @@
       "en": "I need to change my flight to an earlier date.",
       "fr-CA": "Je dois devancer la date de mon vol.",
       "fr": "Je dois avancer la date de mon vol.",
-      "es": "Necesito cambiar mi vuelo a una fecha más temprana.",
+      "es": "Necesito adelantar mi vuelo.",
       "de": "Ich muss meinen Flug auf ein früheres Datum umbuchen."
     },
     "culture_overrides": {
@@ -3569,7 +3569,7 @@
       "en": "Hi, I need to change my return flight date.",
       "fr-CA": "Bonjour, je dois changer la date de mon vol de retour.",
       "fr": "Bonjour, je dois changer la date de mon vol de retour.",
-      "es": "Hola, necesito cambiar la fecha de mi vuelo de regreso.",
+      "es": "Hola, necesito cambiar la fecha de mi vuelo de vuelta.",
       "de": "Hallo, ich muss das Datum meines Rückflugs ändern."
     },
     "culture_overrides": {
@@ -5416,7 +5416,7 @@
       "en": "I need to change my round-trip flight dates.",
       "fr-CA": "Je dois changer les dates de mon vol aller-retour.",
       "fr": "Je dois changer les dates de mon vol aller-retour.",
-      "es": "Necesito cambiar las fechas de mi vuelo de ida y vuelta.",
+      "es": "Necesito cambiar las fechas de mis vuelos de ida y vuelta.",
       "de": "Ich muss die Daten meines Hin- und Rückflugs ändern."
     },
     "culture_overrides": {
@@ -6746,7 +6746,7 @@
       "en": "Can you move me to an earlier flight today?",
       "fr-CA": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui?",
       "fr": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui ?",
-      "es": "¿Me puede cambiar a un vuelo más temprano hoy?",
+      "es": "¿Me podéis cambiar a un vuelo más temprano hoy?",
       "de": "Können Sie mich heute auf einen früheren Flug umbuchen?"
     },
     "culture_overrides": {
@@ -7780,7 +7780,7 @@
       "en": "Hi, I’m going to miss my flight this morning—can you move me to a later one today?",
       "fr-CA": "Bonjour, je vais manquer mon vol ce matin — pouvez-vous me mettre sur un vol plus tard aujourd’hui?",
       "fr": "Bonjour, je vais rater mon vol ce matin — pouvez-vous me mettre sur un vol plus tard aujourd’hui ?",
-      "es": "Hola, voy a perder mi vuelo esta mañana. ¿Me puede cambiar a uno más tarde hoy?",
+      "es": "Hola, voy a perder mi vuelo de esta mañana. ¿Me podéis cambiar a uno más tarde hoy?",
       "de": "Hallo, ich werde meinen Flug heute Morgen verpassen – können Sie mich heute auf einen späteren Flug umbuchen?"
     },
     "culture_overrides": {
@@ -11827,7 +11827,7 @@
       "en": "I need to change my flight to leave from Newark instead of JFK.",
       "fr-CA": "Je dois changer mon vol pour partir de Newark au lieu de JFK.",
       "fr": "Je dois changer mon vol pour partir de Newark au lieu de JFK.",
-      "es": "Necesito cambiar mi vuelo para salir de Newark en lugar de JFK.",
+      "es": "Necesito cambiar mi vuelo para salir desde Newark en vez de JFK.",
       "de": "Ich muss meinen Flug so ändern, dass er von Newark statt von JFK abfliegt."
     },
     "culture_overrides": {
@@ -13012,7 +13012,7 @@
       "en": "My flight to Chicago was canceled—can you get me on another flight today?",
       "fr-CA": "Mon vol pour Chicago a été annulé — pouvez-vous me mettre sur un autre vol aujourd’hui?",
       "fr": "Mon vol pour Chicago a été annulé — pouvez-vous me mettre sur un autre vol aujourd’hui ?",
-      "es": "Mi vuelo a Chicago fue cancelado. ¿Me puede conseguir otro vuelo hoy?",
+      "es": "Mi vuelo a Chicago se ha cancelado. ¿Me podéis poner en otro vuelo hoy?",
       "de": "Mein Flug nach Chicago wurde gestrichen – können Sie mich heute auf einen anderen Flug umbuchen?"
     },
     "culture_overrides": {
@@ -14239,7 +14239,7 @@
       "en": "My flight got canceled—can you get me rebooked and help with a hotel?",
       "fr-CA": "Mon vol a été annulé — pouvez-vous me réserver sur un autre vol et m’aider avec un hôtel?",
       "fr": "Mon vol a été annulé — pouvez-vous me réserver un autre vol et m’aider pour un hôtel ?",
-      "es": "Mi vuelo fue cancelado. ¿Me puede volver a reservar y ayudarme con un hotel?",
+      "es": "Mi vuelo se ha cancelado. ¿Me podéis reubicar y ayudarme con un hotel?",
       "de": "Mein Flug wurde gestrichen – können Sie mich umbuchen und mir mit einem Hotel helfen?"
     },
     "culture_overrides": {
@@ -14953,7 +14953,7 @@
       "en": "My flight got canceled and I need a refund.",
       "fr-CA": "Mon vol a été annulé et j’ai besoin d’un remboursement.",
       "fr": "Mon vol a été annulé et j’ai besoin d’un remboursement.",
-      "es": "Mi vuelo fue cancelado y necesito un reembolso.",
+      "es": "Mi vuelo se ha cancelado y necesito un reembolso.",
       "de": "Mein Flug wurde gestrichen und ich brauche eine Rückerstattung."
     },
     "culture_overrides": {
@@ -16325,7 +16325,7 @@
       "en": "My flight is delayed and I need to switch to a different flight.",
       "fr-CA": "Mon vol est retardé et je dois changer pour un autre vol.",
       "fr": "Mon vol est retardé et je dois passer sur un autre vol.",
-      "es": "Mi vuelo está retrasado y necesito cambiarme a otro vuelo.",
+      "es": "Mi vuelo va con retraso y necesito cambiarme a otro vuelo.",
       "de": "Mein Flug hat Verspätung und ich muss auf einen anderen Flug wechseln."
     },
     "culture_overrides": {
@@ -17351,7 +17351,7 @@
       "en": "Hi, I’m calling about my delayed flight—can you tell me the updated details?",
       "fr-CA": "Bonjour, j’appelle au sujet de mon vol retardé — pouvez-vous me donner les détails à jour?",
       "fr": "Bonjour, j’appelle au sujet de mon vol retardé — pouvez-vous me donner les informations mises à jour ?",
-      "es": "Hola, llamo por mi vuelo retrasado. ¿Me puede decir los detalles actualizados?",
+      "es": "Hola, llamo por mi vuelo retrasado. ¿Me podéis decir los detalles actualizados?",
       "de": "Hallo, ich rufe wegen meines verspäteten Flugs an – können Sie mir die aktualisierten Details nennen?"
     },
     "culture_overrides": {
@@ -18189,7 +18189,7 @@
       "en": "My flight is delayed—can I get a meal voucher?",
       "fr-CA": "Mon vol est retardé — est-ce que je peux avoir un bon de repas?",
       "fr": "Mon vol est retardé — est-ce que je peux avoir un bon de repas ?",
-      "es": "Mi vuelo está retrasado. ¿Puedo recibir un vale de comida?",
+      "es": "Mi vuelo va con retraso. ¿Puedo recibir un vale de comida?",
       "de": "Mein Flug hat Verspätung – kann ich einen Essensgutschein bekommen?"
     },
     "culture_overrides": {
@@ -19161,7 +19161,7 @@
       "en": "Hi—my flight time changed and I need help confirming everything.",
       "fr-CA": "Bonjour — l’heure de mon vol a changé et j’ai besoin d’aide pour tout confirmer.",
       "fr": "Bonjour — l’horaire de mon vol a changé et j’ai besoin d’aide pour tout confirmer.",
-      "es": "Hola, cambiaron la hora de mi vuelo y necesito ayuda para confirmar todo.",
+      "es": "Hola, han cambiado la hora de mi vuelo y necesito ayuda para confirmarlo todo.",
       "de": "Hallo – meine Flugzeit hat sich geändert und ich brauche Hilfe, um alles zu bestätigen."
     },
     "culture_overrides": {
@@ -19928,7 +19928,7 @@
       "en": "Hi, my flight time got changed a lot and I need to cancel and get a refund.",
       "fr-CA": "Bonjour, l’heure de mon vol a beaucoup changé et je dois annuler et obtenir un remboursement.",
       "fr": "Bonjour, l’horaire de mon vol a beaucoup changé et je dois annuler et obtenir un remboursement.",
-      "es": "Hola, cambiaron mucho la hora de mi vuelo y necesito cancelarlo y recibir un reembolso.",
+      "es": "Hola, han cambiado mucho la hora de mi vuelo y necesito cancelarlo y recibir un reembolso.",
       "de": "Hallo, meine Flugzeit wurde stark geändert und ich muss stornieren und eine Rückerstattung bekommen."
     },
     "culture_overrides": {
@@ -21137,7 +21137,7 @@
       "en": "My flight just got canceled after we had to turn back—can you get me rebooked?",
       "fr-CA": "Mon vol vient d’être annulé après qu’on a dû faire demi-tour — pouvez-vous me réserver un autre vol?",
       "fr": "Mon vol vient d’être annulé après qu’on a dû faire demi-tour — pouvez-vous me réserver un autre vol ?",
-      "es": "Mi vuelo acaba de ser cancelado después de que tuvimos que regresar. ¿Me puede volver a reservar?",
+      "es": "Acaban de cancelarme el vuelo después de que tuviéramos que regresarnos. ¿Me puedes volver a reservar?",
       "de": "Mein Flug wurde gerade gestrichen, nachdem wir umkehren mussten – können Sie mich umbuchen?"
     },
     "culture_overrides": {
@@ -21945,7 +21945,7 @@
       "en": "Hi—can you tell me what’s going on with my flight that came back to Minneapolis? We took off at the scheduled time around 12:30, and then had to turn around",
       "fr-CA": "Bonjour — pouvez-vous me dire ce qui se passe avec mon vol qui est revenu à Minneapolis? On a décollé à l’heure prévue, vers 12:30, puis on a dû faire demi-tour.",
       "fr": "Bonjour — pouvez-vous me dire ce qui se passe avec mon vol qui est revenu à Minneapolis ? Nous avons décollé à l’heure prévue, vers 12:30, puis nous avons dû faire demi-tour.",
-      "es": "Hola, ¿me puede decir qué está pasando con mi vuelo que regresó a Minneapolis? Despegamos a la hora programada, alrededor de las 12:30, y luego tuvimos que dar la vuelta.",
+      "es": "Hola, ¿me podéis decir qué está pasando con mi vuelo que volvió a Minneapolis? Despegamos a la hora prevista, sobre las 12:30, y luego tuvimos que dar la vuelta.",
       "de": "Hallo – können Sie mir sagen, was mit meinem Flug los ist, der nach Minneapolis zurückgekehrt ist? Wir sind planmäßig gegen 12:30 gestartet und mussten dann umdrehen."
     },
     "culture_overrides": {
@@ -22879,7 +22879,7 @@
       "en": "I missed my flight this morning—can you get me on the cheapest option to D.C. today?",
       "fr-CA": "J’ai manqué mon vol ce matin — pouvez-vous me trouver l’option la moins chère pour D.C. aujourd’hui?",
       "fr": "J’ai raté mon vol ce matin — pouvez-vous me trouver l’option la moins chère pour D.C. aujourd’hui ?",
-      "es": "Perdí mi vuelo esta mañana. ¿Me puede conseguir la opción más barata a D.C. hoy?",
+      "es": "He perdido el vuelo esta mañana. ¿Me puedes conseguir la opción más barata a D.C. hoy?",
       "de": "Ich habe meinen Flug heute Morgen verpasst – können Sie mich heute auf die günstigste Option nach D.C. umbuchen?"
     },
     "culture_overrides": {
@@ -24658,7 +24658,7 @@
       "en": "I missed my flight this morning and I need to get rebooked to Minneapolis today.",
       "fr-CA": "J’ai manqué mon vol ce matin et je dois être réservé sur un autre vol pour Minneapolis aujourd’hui.",
       "fr": "J’ai raté mon vol ce matin et je dois être replacé sur un vol pour Minneapolis aujourd’hui.",
-      "es": "Perdí mi vuelo esta mañana y necesito que me vuelvan a reservar a Minneapolis hoy.",
+      "es": "He perdido el vuelo esta mañana y necesito que me vuelvan a reservar a Minneapolis hoy.",
       "de": "Ich habe meinen Flug heute Morgen verpasst und muss heute nach Minneapolis umgebucht werden."
     },
     "culture_overrides": {
@@ -26046,7 +26046,7 @@
       "en": "Hi, I need to rebook my flight because I was denied boarding over my passport expiration date.",
       "fr-CA": "Bonjour, je dois réserver un autre vol parce qu’on m’a refusé l’embarquement à cause de la date d’expiration de mon passeport.",
       "fr": "Bonjour, je dois réserver un autre vol parce qu’on m’a refusé l’embarquement à cause de la date d’expiration de mon passeport.",
-      "es": "Hola, necesito volver a reservar mi vuelo porque me negaron el embarque por la fecha de vencimiento de mi pasaporte.",
+      "es": "Hola, necesito volver a reservar mi vuelo porque me negaron el embarque por la fecha de caducidad de mi pasaporte.",
       "de": "Hallo, ich muss meinen Flug umbuchen, weil mir wegen des Ablaufdatums meines Reisepasses das Boarding verweigert wurde."
     },
     "culture_overrides": {
@@ -27118,7 +27118,7 @@
       "en": "Can you move me to the earlier flight today?",
       "fr-CA": "Pouvez-vous me mettre sur le vol plus tôt aujourd’hui?",
       "fr": "Pouvez-vous me mettre sur le vol plus tôt aujourd’hui ?",
-      "es": "¿Me puede cambiar al vuelo más temprano de hoy?",
+      "es": "¿Me podéis cambiar al vuelo más temprano de hoy?",
       "de": "Können Sie mich heute auf den früheren Flug umbuchen?"
     },
     "culture_overrides": {
@@ -29135,7 +29135,7 @@
       "en": "Can you move me to an earlier flight today?",
       "fr-CA": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui?",
       "fr": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui ?",
-      "es": "¿Me puede cambiar a un vuelo más temprano hoy?",
+      "es": "¿Me podéis cambiar a un vuelo más temprano hoy?",
       "de": "Können Sie mich heute auf einen früheren Flug umbuchen?"
     },
     "culture_overrides": {
@@ -30160,7 +30160,7 @@
       "en": "Hi, can you move me to the next flight home as soon as possible?",
       "fr-CA": "Bonjour, est-ce que vous pouvez me mettre sur le prochain vol pour rentrer à la maison dès que possible?",
       "fr": "Bonjour, pouvez-vous me mettre sur le prochain pour rentrer à la maison dès que possible ?",
-      "es": "Hola, ¿me puede cambiar al próximo vuelo de regreso a casa lo antes posible?",
+      "es": "Hola, ¿puede cambiarme al próximo vuelo de vuelta a casa lo antes posible?",
       "de": "Hallo, können Sie mich bitte so schnell wie möglich auf den nächsten Flug nach Hause umbuchen?"
     },
     "culture_overrides": {
@@ -30954,7 +30954,7 @@
       "en": "Can you put me on standby for the noon flight?",
       "fr-CA": "Est-ce que vous pouvez me mettre sur la liste d’attente pour le vol de midi?",
       "fr": "Pouvez-vous me mettre en liste d’attente pour le vol de midi ?",
-      "es": "¿Me puede poner en lista de espera para el vuelo del mediodía?",
+      "es": "¿Puede ponerme en lista de espera para el vuelo del mediodía?",
       "de": "Können Sie mich bitte auf die Warteliste für den Mittagsflug setzen?"
     },
     "culture_overrides": {
@@ -32132,7 +32132,7 @@
       "en": "Can you add me to standby for an earlier flight today?",
       "fr-CA": "Est-ce que vous pouvez m’ajouter à la liste d’attente pour un vol plus tôt aujourd’hui?",
       "fr": "Pouvez-vous m’ajouter à la liste d’attente pour un vol plus tôt aujourd’hui ?",
-      "es": "¿Me puede agregar a la lista de espera para un vuelo más temprano hoy?",
+      "es": "¿Me pueden añadir a la lista de espera para un vuelo más temprano hoy?",
       "de": "Können Sie mich bitte für einen früheren Flug heute auf die Warteliste setzen?"
     },
     "culture_overrides": {
@@ -32903,7 +32903,7 @@
       "en": "Can you put me on standby for the 10:00 AM flight?",
       "fr-CA": "Est-ce que vous pouvez me mettre sur la liste d’attente pour le vol de 10:00 AM?",
       "fr": "Pouvez-vous me mettre en liste d’attente pour le vol de 10:00 AM ?",
-      "es": "¿Me puede poner en lista de espera para el vuelo de las 10:00 AM?",
+      "es": "¿Puede ponerme en lista de espera para el vuelo de las 10:00 AM?",
       "de": "Können Sie mich bitte auf die Warteliste für den Flug um 10:00 AM setzen?"
     },
     "culture_overrides": {
@@ -35443,7 +35443,7 @@
       "en": "My flight got canceled and I want a full refund.",
       "fr-CA": "Mon vol a été annulé et je veux un remboursement complet.",
       "fr": "Mon vol a été annulé et je veux un remboursement intégral.",
-      "es": "Mi vuelo fue cancelado y quiero un reembolso completo.",
+      "es": "Mi vuelo ha sido cancelado y quiero un reembolso completo.",
       "de": "Mein Flug wurde gestrichen und ich möchte eine vollständige Rückerstattung."
     },
     "culture_overrides": {
@@ -36380,7 +36380,7 @@
       "en": "Hi, I need to cancel just the return part of my trip.",
       "fr-CA": "Bonjour, je dois annuler seulement la portion retour de mon voyage.",
       "fr": "Bonjour, je dois annuler seulement le trajet retour de mon voyage.",
-      "es": "Hola, necesito cancelar solo la parte de regreso de mi viaje.",
+      "es": "Hola, necesito cancelar solo la parte de vuelta de mi viaje.",
       "de": "Hallo, ich muss nur den Rückflug meiner Reise stornieren."
     },
     "culture_overrides": {
@@ -39001,7 +39001,7 @@
       "en": "I need to cancel my flight because of a medical emergency.",
       "fr-CA": "Je dois annuler mon vol à cause d’une urgence médicale.",
       "fr": "Je dois annuler mon vol à cause d’une urgence médicale.",
-      "es": "Necesito cancelar mi vuelo por una emergencia médica.",
+      "es": "Necesito cancelar mi vuelo por una urgencia médica.",
       "de": "Ich muss meinen Flug wegen eines medizinischen Notfalls stornieren."
     },
     "culture_overrides": {
@@ -39851,7 +39851,7 @@
       "en": "My flight is delayed and I’m stuck at the airport—can I get a meal voucher?",
       "fr-CA": "Mon vol est retardé et je suis coincé à l’aéroport — est-ce que je peux avoir un bon de repas?",
       "fr": "Mon vol est retardé et je suis bloqué à l’aéroport : est-ce que je peux avoir un bon de repas ?",
-      "es": "Mi vuelo está retrasado y estoy varado en el aeropuerto. ¿Puedo recibir un vale de comida?",
+      "es": "Mi vuelo está retrasado y estoy atrapado en el aeropuerto. ¿Puedo conseguir un vale de comida?",
       "de": "Mein Flug hat Verspätung und ich sitze am Flughafen fest – kann ich einen Essensgutschein bekommen?"
     },
     "culture_overrides": {
@@ -41116,7 +41116,7 @@
       "en": "My flight to Seattle got canceled and I need help getting rebooked.",
       "fr-CA": "Mon vol pour Seattle a été annulé et j’ai besoin d’aide pour être replacé sur un autre vol.",
       "fr": "Mon vol pour Seattle a été annulé et j’ai besoin d’aide pour être replacé sur un autre vol.",
-      "es": "Mi vuelo a Seattle fue cancelado y necesito ayuda para que me reubiquen en otro vuelo.",
+      "es": "Mi vuelo a Seattle ha sido cancelado y necesito ayuda para que me reubiquen en otro vuelo.",
       "de": "Mein Flug nach Seattle wurde gestrichen und ich brauche Hilfe bei der Umbuchung."
     },
     "culture_overrides": {
@@ -43370,7 +43370,7 @@
       "en": "My flight got canceled and the rebooking they gave me isn’t acceptable—can you help?",
       "fr-CA": "Mon vol a été annulé et le nouveau vol qu’on m’a donné ne me convient pas — est-ce que vous pouvez m’aider?",
       "fr": "Mon vol a été annulé et le nouveau vol qu’on m’a attribué ne me convient pas : pouvez-vous m’aider ?",
-      "es": "Mi vuelo fue cancelado y la nueva reserva que me dieron no me sirve. ¿Me puede ayudar?",
+      "es": "Mi vuelo ha sido cancelado y la alternativa que me han dado no me sirve. ¿Puede ayudarme?",
       "de": "Mein Flug wurde gestrichen und die Umbuchung, die man mir gegeben hat, ist nicht akzeptabel – können Sie mir helfen?"
     },
     "culture_overrides": {
@@ -44424,7 +44424,7 @@
       "en": "My flight is delayed four hours and I need help.",
       "fr-CA": "Mon vol est retardé de quatre heures et j’ai besoin d’aide.",
       "fr": "Mon vol a quatre heures de retard et j’ai besoin d’aide.",
-      "es": "Mi vuelo está retrasado cuatro horas y necesito ayuda.",
+      "es": "Mi vuelo lleva cuatro horas de retraso y necesito ayuda.",
       "de": "Mein Flug hat vier Stunden Verspätung und ich brauche Hilfe."
     },
     "culture_overrides": {
@@ -45546,7 +45546,7 @@
       "en": "Hi, I need to change my flight to Chicago next week.",
       "fr-CA": "Bonjour, je dois changer mon vol pour Chicago la semaine prochaine.",
       "fr": "Bonjour, je dois changer mon vol pour Chicago la semaine prochaine.",
-      "es": "Hola, necesito cambiar mi vuelo a Chicago para la próxima semana.",
+      "es": "Hola, necesito cambiar mi vuelo a Chicago de la semana que viene.",
       "de": "Hallo, ich muss meinen Flug nach Chicago nächste Woche ändern."
     },
     "culture_overrides": {
@@ -46945,7 +46945,7 @@
       "en": "My flight this morning was cancelled and I need to be rebooked.",
       "fr-CA": "Mon vol de ce matin a été annulé et j’ai besoin d’être replacé sur un autre vol.",
       "fr": "Mon vol de ce matin a été annulé et j’ai besoin d’être replacé sur un autre vol.",
-      "es": "Mi vuelo de esta mañana fue cancelado y necesito que me reubiquen en otro vuelo.",
+      "es": "Me han cancelado el vuelo de esta mañana y necesito que me reubiquen en otro vuelo.",
       "de": "Mein Flug heute Morgen wurde gestrichen und ich muss umgebucht werden."
     },
     "culture_overrides": {
@@ -47897,7 +47897,7 @@
       "en": "My flight’s been delayed for hours—can you get me a meal voucher and rebook me for free?",
       "fr-CA": "Mon vol est retardé depuis des heures — est-ce que vous pouvez me donner un bon de repas et me replacer sur un autre vol gratuitement?",
       "fr": "Mon vol a des heures de retard : pouvez-vous m’obtenir un bon de repas et me replacer gratuitement sur un autre vol ?",
-      "es": "Mi vuelo lleva horas retrasado. ¿Me puede conseguir un vale de comida y cambiarme a otro vuelo sin costo?",
+      "es": "Mi vuelo lleva horas retrasado. ¿Me puedes conseguir un vale de comida y cambiarme a otro vuelo sin coste?",
       "de": "Mein Flug hat seit Stunden Verspätung – können Sie mir einen Essensgutschein besorgen und mich kostenlos umbuchen?"
     },
     "culture_overrides": {
@@ -48894,7 +48894,7 @@
       "en": "I need to change my flight right now because of a death in my family.",
       "fr-CA": "Je dois changer mon vol tout de suite à cause d’un décès dans ma famille.",
       "fr": "Je dois changer mon vol tout de suite à cause d’un décès dans ma famille.",
-      "es": "Necesito cambiar mi vuelo ahora mismo por una muerte en mi familia.",
+      "es": "Necesito cambiar mi vuelo ahora mismo debido a un fallecimiento.",
       "de": "Ich muss meinen Flug sofort ändern, weil es einen Todesfall in meiner Familie gab."
     },
     "culture_overrides": {
@@ -49608,7 +49608,7 @@
       "en": "I need to cancel my flight and get a full refund.",
       "fr-CA": "Je dois annuler mon vol et obtenir un remboursement complet.",
       "fr": "Je dois annuler mon vol et obtenir un remboursement intégral.",
-      "es": "Necesito cancelar mi vuelo y recibir un reembolso completo.",
+      "es": "Necesito cancelar mi vuelo y obtener un reembolso completo.",
       "de": "Ich muss meinen Flug stornieren und eine vollständige Rückerstattung bekommen."
     },
     "culture_overrides": {
@@ -50323,7 +50323,7 @@
       "en": "I was charged for an upgrade that I was told would be free—can you fix that?",
       "fr-CA": "On m’a facturé un surclassement qu’on m’avait dit être gratuit — est-ce que vous pouvez corriger ça?",
       "fr": "On m’a facturé un surclassement alors qu’on m’avait dit qu’il serait gratuit : pouvez-vous corriger ça ?",
-      "es": "Me cobraron por una mejora de categoría que me dijeron que sería gratis. ¿Puede arreglarlo?",
+      "es": "Me han cobrado por una mejora que me dijeron que sería gratis. ¿Puede arreglarlo?",
       "de": "Mir wurde ein Upgrade berechnet, von dem mir gesagt wurde, dass es kostenlos wäre – können Sie das korrigieren?"
     },
     "culture_overrides": {
@@ -52746,7 +52746,7 @@
       "en": "Can you help me look up my husband’s flight for tomorrow?",
       "fr-CA": "Est-ce que vous pouvez m’aider à chercher le vol de mon mari pour demain?",
       "fr": "Pouvez-vous m’aider à rechercher le vol de mon mari pour demain ?",
-      "es": "¿Me puede ayudar a buscar el vuelo de mi esposo para mañana?",
+      "es": "¿Me puedes ayudar a buscar el vuelo de mi marido para mañana?",
       "de": "Können Sie mir helfen, den Flug meines Mannes für morgen nachzuschauen?"
     },
     "culture_overrides": {

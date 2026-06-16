@@ -1658,7 +1658,7 @@
       "en": "Hi, I can't connect to the corporate Wi-Fi.",
       "fr": "Bonjour, je n’arrive pas à me connecter au Wi-Fi de l’entreprise.",
       "fr-CA": "Bonjour, je n’arrive pas à me connecter au Wi-Fi de l’entreprise.",
-      "es": "Hola, no puedo conectarme al Wi‑Fi corporativo.",
+      "es": "Hola, no puedo conectarme a la Wi-Fi corporativa.",
       "de": "Hallo, ich kann mich nicht mit dem Firmen-WLAN verbinden."
     },
     "culture_overrides": {
@@ -2660,7 +2660,7 @@
       "en": "Hi, I need to book a conference room.",
       "fr": "Bonjour, j’ai besoin de réserver une salle de conférence.",
       "fr-CA": "Bonjour, j’ai besoin de réserver une salle de conférence.",
-      "es": "Hola, necesito reservar una sala de conferencias.",
+      "es": "Hola, necesito reservar una sala de reuniones.",
       "de": "Hallo, ich muss einen Konferenzraum buchen."
     },
     "culture_overrides": {
@@ -4473,7 +4473,7 @@
       "en": "Hi, I need to get my laptop replaced.",
       "fr": "Bonjour, j’ai besoin de faire remplacer mon ordinateur portable.",
       "fr-CA": "Bonjour, j’ai besoin de faire remplacer mon portable.",
-      "es": "Hola, necesito que me reemplacen la laptop.",
+      "es": "Hola, necesito que me reemplacen el portátil.",
       "de": "Hallo, ich muss meinen Laptop austauschen lassen."
     },
     "culture_overrides": {
@@ -5578,7 +5578,7 @@
       "en": "Hi, I need to get a new hire provisioned.",
       "fr": "Bonjour, j’ai besoin de faire provisionner un nouvel employé.",
       "fr-CA": "Bonjour, j’ai besoin de faire provisionner un nouvel employé.",
-      "es": "Hola, necesito preparar el acceso para una nueva contratación.",
+      "es": "Hola, necesito dar de alta a una nueva incorporación.",
       "de": "Hallo, ich muss einen neuen Mitarbeiter einrichten lassen."
     },
     "culture_overrides": {
@@ -6458,7 +6458,7 @@
       "en": "Hi, my VPN keeps disconnecting and I need help with it.",
       "fr": "Bonjour, mon VPN n’arrête pas de se déconnecter et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon VPN n’arrête pas de se déconnecter et j’ai besoin d’aide avec ça.",
-      "es": "Hola, mi VPN se sigue desconectando y necesito ayuda con eso.",
+      "es": "Hola, la VPN se me desconecta continuamente y necesito ayuda con eso.",
       "de": "Hallo, meine VPN-Verbindung bricht ständig ab und ich brauche Hilfe dabei."
     },
     "culture_overrides": {
@@ -7476,7 +7476,7 @@
       "en": "Hi, I need to replace my laptop because it's gotten really old and slow.",
       "fr": "Bonjour, j’ai besoin de remplacer mon ordinateur portable parce qu’il est devenu vraiment vieux et lent.",
       "fr-CA": "Bonjour, j’ai besoin de remplacer mon portable parce qu’il est vraiment rendu vieux et lent.",
-      "es": "Hola, necesito reemplazar mi laptop porque ya está muy vieja y lenta.",
+      "es": "Hola, necesito reemplazar mi portátil porque ya está muy viejo y lento.",
       "de": "Hallo, ich muss meinen Laptop ersetzen, weil er wirklich alt und langsam geworden ist."
     },
     "culture_overrides": {
@@ -8200,7 +8200,7 @@
       "en": "Hi, I need help getting an external monitor for my workstation.",
       "fr": "Bonjour, j’ai besoin d’aide pour obtenir un écran externe pour mon poste de travail.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir un moniteur externe pour mon poste de travail.",
-      "es": "Hola, necesito ayuda para conseguir un monitor externo para mi estación de trabajo.",
+      "es": "Hola, necesito ayuda para conseguir un monitor externo para mi puesto de trabajo.",
       "de": "Hallo, ich brauche Hilfe, um einen externen Monitor für meinen Arbeitsplatz zu bekommen."
     },
     "culture_overrides": {
@@ -11063,7 +11063,7 @@
       "en": "Hi, I need to get an IntelliJ license for my development work.",
       "fr": "Bonjour, j’ai besoin d’obtenir une licence IntelliJ pour mon travail de développement.",
       "fr-CA": "Bonjour, j’ai besoin d’obtenir une licence IntelliJ pour mon travail de développement.",
-      "es": "Hola, necesito obtener una licencia de IntelliJ para mi trabajo de desarrollo.",
+      "es": "Hola, necesito conseguir una licencia de IntelliJ para mi trabajo de desarrollo.",
       "de": "Hallo, ich brauche eine IntelliJ-Lizenz für meine Entwicklungsarbeit."
     },
     "culture_overrides": {
@@ -13523,7 +13523,7 @@
       "en": "Hi, I need help getting a desk assignment.",
       "fr": "Bonjour, j’ai besoin d’aide pour obtenir l’attribution d’un bureau.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir une attribution de bureau.",
-      "es": "Hola, necesito ayuda para que me asignen un escritorio.",
+      "es": "Hola, necesito ayuda para que me asignen una mesa.",
       "de": "Hallo, ich brauche Hilfe, einen Schreibtisch zugewiesen zu bekommen."
     },
     "culture_overrides": {
@@ -14506,7 +14506,7 @@
       "en": "Hi, I need help resetting my VPN password.",
       "fr": "Bonjour, j’ai besoin d’aide pour réinitialiser mon mot de passe VPN.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour réinitialiser mon mot de passe VPN.",
-      "es": "Hola, necesito ayuda para restablecer mi contraseña de VPN.",
+      "es": "Hola, necesito ayuda para restablecer mi contraseña de la VPN.",
       "de": "Hallo, ich brauche Hilfe beim Zurücksetzen meines VPN-Passworts."
     },
     "culture_overrides": {
@@ -15371,7 +15371,7 @@
       "en": "Hi, I need help getting a desk at East Campus.",
       "fr": "Bonjour, j’ai besoin d’aide pour obtenir un bureau à East Campus.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir un bureau à East Campus.",
-      "es": "Hola, necesito ayuda para conseguir un escritorio en East Campus.",
+      "es": "Hola, necesito ayuda para conseguir una mesa en East Campus.",
       "de": "Hallo, ich brauche Hilfe, einen Schreibtisch am East Campus zu bekommen."
     },
     "culture_overrides": {
@@ -16240,7 +16240,7 @@
       "en": "Hi, I need help getting parking in the Executive Garage.",
       "fr": "Bonjour, j’ai besoin d’aide pour obtenir une place de parking dans l’Executive Garage.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir une place de stationnement dans l’Executive Garage.",
-      "es": "Hola, necesito ayuda para conseguir estacionamiento en el Executive Garage.",
+      "es": "Hola, necesito ayuda para conseguir aparcamiento en el Executive Garage.",
       "de": "Hallo, ich brauche Hilfe, einen Parkplatz in der Executive Garage zu bekommen."
     },
     "culture_overrides": {
@@ -17062,7 +17062,7 @@
       "en": "Hi, I need to request an ergonomic chair for my workstation.",
       "fr": "Bonjour, j’ai besoin de demander une chaise ergonomique pour mon poste de travail.",
       "fr-CA": "Bonjour, j’ai besoin de demander une chaise ergonomique pour mon poste de travail.",
-      "es": "Hola, necesito solicitar una silla ergonómica para mi estación de trabajo.",
+      "es": "Hola, necesito solicitar una silla ergonómica para mi puesto de trabajo.",
       "de": "Hallo, ich möchte einen ergonomischen Stuhl für meinen Arbeitsplatz beantragen."
     },
     "culture_overrides": {
@@ -17864,7 +17864,7 @@
       "en": "Hi, I need to request a footrest for my desk.",
       "fr": "Bonjour, j’ai besoin de demander un repose-pieds pour mon bureau.",
       "fr-CA": "Bonjour, j’ai besoin de demander un repose-pieds pour mon bureau.",
-      "es": "Hola, necesito solicitar un reposapiés para mi escritorio.",
+      "es": "Hola, necesito solicitar un reposapiés para mi mesa.",
       "de": "Hallo, ich möchte eine Fußstütze für meinen Schreibtisch beantragen."
     },
     "culture_overrides": {
@@ -18818,7 +18818,7 @@
       "en": "Hi, I need to book a conference room for a meeting next Tuesday.",
       "fr": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion mardi prochain.",
       "fr-CA": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion mardi prochain.",
-      "es": "Hola, necesito reservar una sala de conferencias para una reunión el próximo martes.",
+      "es": "Hola, necesito reservar una sala de reuniones para una reunión el próximo martes.",
       "de": "Hallo, ich muss einen Konferenzraum für ein Meeting nächsten Dienstag buchen."
     },
     "culture_overrides": {
@@ -19673,7 +19673,7 @@
       "en": "Hi, I need to book a conference room for a meeting.",
       "fr": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion.",
       "fr-CA": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion.",
-      "es": "Hola, necesito reservar una sala de conferencias para una reunión.",
+      "es": "Hola, necesito reservar una sala de reuniones para una reunión.",
       "de": "Hallo, ich muss einen Konferenzraum für ein Meeting buchen."
     },
     "culture_overrides": {
@@ -20581,7 +20581,7 @@
       "en": "Hi, I need to set up accounts for a new team member starting next week.",
       "fr": "Bonjour, j’ai besoin de créer des comptes pour un nouveau membre de l’équipe qui commence la semaine prochaine.",
       "fr-CA": "Bonjour, j’ai besoin de configurer des comptes pour un nouveau membre de l’équipe qui commence la semaine prochaine.",
-      "es": "Hola, necesito configurar cuentas para un nuevo miembro del equipo que empieza la próxima semana.",
+      "es": "Hola, necesito configurar cuentas para un nuevo miembro del equipo que empieza la semana que viene.",
       "de": "Hallo, ich muss Konten für ein neues Teammitglied einrichten lassen, das nächste Woche anfängt."
     },
     "culture_overrides": {
@@ -21563,7 +21563,7 @@
       "en": "Hi, I need access to the database read group for a production issue.",
       "fr": "Bonjour, j’ai besoin d’un accès au groupe de lecture de la base de données pour un problème en production.",
       "fr-CA": "Bonjour, j’ai besoin d’avoir accès au groupe de lecture de la base de données pour un problème en production.",
-      "es": "Hola, necesito acceso al grupo de lectura de la base de datos por un problema de producción.",
+      "es": "Hola, necesito acceso al grupo de lectura de la base de datos por un problema en producción.",
       "de": "Hallo, ich brauche Zugriff auf die Datenbank-Lesegruppe wegen eines Produktionsproblems."
     },
     "culture_overrides": {
@@ -24325,7 +24325,7 @@
       "en": "Hi, I need to remove access for a departing member of my team.",
       "fr": "Bonjour, j’ai besoin de retirer les accès d’un membre de mon équipe qui s’en va.",
       "fr-CA": "Bonjour, j’ai besoin de retirer les accès d’un membre de mon équipe qui quitte l’entreprise.",
-      "es": "Hola, necesito quitarle el acceso a un miembro de mi equipo que se va.",
+      "es": "Hola, necesito quitar el acceso a un miembro de mi equipo que se va.",
       "de": "Hallo, ich muss die Zugriffsrechte für ein Teammitglied entfernen lassen, das das Unternehmen verlässt."
     },
     "culture_overrides": {
@@ -26509,7 +26509,7 @@
       "en": "Hi, my work laptop won't power on and I need help with it.",
       "fr": "Bonjour, mon ordinateur portable professionnel ne s’allume plus et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon portable de travail ne s’allume pas et j’ai besoin d’aide avec ça.",
-      "es": "Hola, mi laptop del trabajo no enciende y necesito ayuda con eso.",
+      "es": "Hola, mi portátil del trabajo no enciende y necesito ayuda con eso.",
       "de": "Hallo, mein Arbeitslaptop lässt sich nicht einschalten und ich brauche Hilfe damit."
     },
     "culture_overrides": {
@@ -31139,7 +31139,7 @@
       "en": "Hi, my email has been down and I need help with it.",
       "fr": "Bonjour, ma messagerie est en panne et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon courriel ne fonctionne plus et j’ai besoin d’aide avec ça.",
-      "es": "Hola, mi correo electrónico no ha estado funcionando y necesito ayuda con eso.",
+      "es": "Hola, mi correo electrónico no funciona y necesito ayuda.",
       "de": "Hallo, meine E-Mail funktioniert nicht und ich brauche Hilfe damit."
     },
     "culture_overrides": {
@@ -39941,7 +39941,7 @@
       "en": "Hi, our VPN seems to be completely down and I need to report it.",
       "fr": "Bonjour, notre VPN semble être complètement hors service et je voudrais le signaler.",
       "fr-CA": "Bonjour, notre VPN semble être complètement en panne et j’ai besoin de le signaler.",
-      "es": "Hola, parece que nuestra VPN está completamente caída y necesito reportarlo.",
+      "es": "Hola, parece que nuestra VPN se ha caído y necesito notificarlo.",
       "de": "Hallo, unser VPN scheint komplett ausgefallen zu sein und ich möchte das melden."
     },
     "culture_overrides": {
@@ -44628,7 +44628,7 @@
       "en": "Hi, I have a few IT things I need help with.",
       "fr": "Bonjour, j’ai quelques sujets informatiques pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
-      "es": "Hola, tengo algunas cosas de TI con las que necesito ayuda.",
+      "es": "Hola, tengo unas cuantas cosas de TI con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
@@ -45903,7 +45903,7 @@
       "en": "Hi, I have a few workspace setup requests I need help with.",
       "fr": "Bonjour, j’ai quelques demandes d’aménagement de poste de travail pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques demandes d’aménagement d’espace de travail pour lesquelles j’ai besoin d’aide.",
-      "es": "Hola, tengo algunas solicitudes de configuración del espacio de trabajo con las que necesito ayuda.",
+      "es": "Hola, tengo unas cuantas solicitudes de configuración del espacio de trabajo con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar Anfragen zur Einrichtung meines Arbeitsplatzes, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
@@ -48160,7 +48160,7 @@
       "en": "Hi, I've got a few things I need help with today.",
       "fr": "Bonjour, j’ai quelques petites choses pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques petites choses pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "es": "Hola, tengo algunas cosas con las que necesito ayuda hoy.",
+      "es": "Hola, tengo unas cuantas cosas con las que necesito ayuda hoy.",
       "de": "Hallo, ich habe heute ein paar Dinge, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
@@ -49443,7 +49443,7 @@
       "en": "Hi, I've got a few access requests I need help with.",
       "fr": "Bonjour, j’ai quelques demandes d’accès pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques demandes d’accès pour lesquelles j’ai besoin d’aide.",
-      "es": "Hola, tengo algunas solicitudes de acceso con las que necesito ayuda.",
+      "es": "Hola, tengo unas cuantas solicitudes de acceso con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar Zugriffsanfragen, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
@@ -50521,7 +50521,7 @@
       "en": "Hi, I've got a few things I need help with.",
       "fr": "Bonjour, j’ai quelques petites choses pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques petites choses pour lesquelles j’ai besoin d’aide.",
-      "es": "Hola, tengo algunas cosas con las que necesito ayuda.",
+      "es": "Hola, tengo unas cuantas cosas con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar Dinge, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
@@ -51573,7 +51573,7 @@
       "en": "Hi, I have a few things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas.",
       "de": "Hallo, ich brauche bei ein paar Dingen Hilfe."
     },
     "culture_overrides": {
@@ -53045,7 +53045,7 @@
       "en": "Hi, I've got a few IT things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas de TI.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
     },
     "culture_overrides": {
@@ -54181,7 +54181,7 @@
       "en": "Hi, I've got a few equipment requests I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes de matériel.",
       "fr-CA": "Bonjour, j’ai quelques demandes d’équipement pour lesquelles j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas solicitudes de equipo.",
+      "es": "Hola, necesito ayuda con unas cuantas solicitudes de equipo.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Anfragen zu Ausstattung."
     },
     "culture_overrides": {
@@ -55733,7 +55733,7 @@
       "en": "Hi, I have a few things I need help with about my laptop and a room booking.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses concernant mon ordinateur portable et une réservation de salle.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide concernant mon portable et une réservation de salle.",
-      "es": "Hola, necesito ayuda con algunas cosas sobre mi laptop y una reserva de sala.",
+      "es": "Hola, necesito ayuda con mi portátil y una reserva de sala.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zu meinem Laptop und einer Raumbuchung."
     },
     "culture_overrides": {
@@ -56890,7 +56890,7 @@
       "en": "Hi, I have a few software requests I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes de logiciels.",
       "fr-CA": "Bonjour, j’ai quelques demandes de logiciels pour lesquelles j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas solicitudes de software.",
+      "es": "Hola, necesito ayuda con unas cuantas solicitudes de software.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen."
     },
     "culture_overrides": {
@@ -59008,7 +59008,7 @@
       "en": "Hi, I have a few office setup things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques questions d’aménagement de bureau.",
       "fr-CA": "Bonjour, j’ai quelques trucs d’aménagement de bureau pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas de configuración de la oficina.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas de la configuración de la oficina.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Büroeinrichtung."
     },
     "culture_overrides": {
@@ -60117,7 +60117,7 @@
       "en": "Hi, I've got a few IT requests I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes informatiques.",
       "fr-CA": "Bonjour, j’ai quelques demandes TI pour lesquelles j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas solicitudes de TI.",
+      "es": "Hola, necesito ayuda con unas cuantas solicitudes de informática.",
       "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen."
     },
     "culture_overrides": {
@@ -61000,7 +61000,7 @@
       "en": "Hi, I have a few things I need help with today.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide aujourd’hui.",
-      "es": "Hola, necesito ayuda con algunas cosas hoy.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe."
     },
     "culture_overrides": {
@@ -62196,7 +62196,7 @@
       "en": "Hi, I've got a couple of IT things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con un par de cosas de TI.",
+      "es": "Hola, necesito ayuda con un par de cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
     },
     "culture_overrides": {
@@ -63527,7 +63527,7 @@
       "en": "Hi, I have a few workspace setup things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques questions d’aménagement de mon espace de travail.",
       "fr-CA": "Bonjour, j’ai quelques trucs d’aménagement de mon espace de travail pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas de configuración de mi espacio de trabajo.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas de la configuración de mi puesto de trabajo.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Einrichtung meines Arbeitsplatzes."
     },
     "culture_overrides": {
@@ -64701,7 +64701,7 @@
       "en": "Hi, I've got a few IT things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas de TI.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
     },
     "culture_overrides": {
@@ -66073,7 +66073,7 @@
       "en": "Hi, my work laptop is completely dead and I need help with it.",
       "fr": "Bonjour, mon ordinateur portable professionnel est complètement hors service et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon portable de travail est complètement mort et j’aurais besoin d’aide avec ça.",
-      "es": "Hola, mi laptop del trabajo está completamente muerta y necesito ayuda con ella.",
+      "es": "Hola, mi portátil del trabajo está completamente muerto y necesito asistencia.",
       "de": "Hallo, mein Arbeitslaptop ist komplett tot, und ich brauche Hilfe damit."
     },
     "culture_overrides": {
@@ -67299,7 +67299,7 @@
       "en": "Hi, I have a few things I need help with for my office move.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses liées à mon déménagement de bureau.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide pour mon déménagement de bureau.",
-      "es": "Hola, necesito ayuda con algunas cosas para mi mudanza de oficina.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas para mi traslado de oficina.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen für meinen Büroumzug."
     },
     "culture_overrides": {
@@ -68987,7 +68987,7 @@
       "en": "Hi, I have a few things I need help with today.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide aujourd’hui.",
-      "es": "Hola, necesito ayuda con algunas cosas hoy.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe."
     },
     "culture_overrides": {
@@ -69993,7 +69993,7 @@
       "en": "Hi, my laptop won't turn on and I need help with it.",
       "fr": "Bonjour, mon ordinateur portable ne s’allume pas et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon portable ne s’allume pas et j’aurais besoin d’aide avec ça.",
-      "es": "Hola, mi laptop no enciende y necesito ayuda con ella.",
+      "es": "Hola, mi portátil no enciende y necesito ayuda al respecto.",
       "de": "Hallo, mein Laptop lässt sich nicht einschalten, und ich brauche Hilfe damit."
     },
     "culture_overrides": {
@@ -71214,7 +71214,7 @@
       "en": "Hi, I have a few software requests I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes de logiciels.",
       "fr-CA": "Bonjour, j’ai quelques demandes de logiciels pour lesquelles j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas solicitudes de software.",
+      "es": "Hola, necesito ayuda con unas cuantas solicitudes de software.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen."
     },
     "culture_overrides": {
@@ -72430,7 +72430,7 @@
       "en": "Hi, I've got a few things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas.",
       "de": "Hallo, ich brauche bei ein paar Dingen Hilfe."
     },
     "culture_overrides": {
@@ -73846,7 +73846,7 @@
       "en": "Hi, I've got a few IT things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas de TI.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
     },
     "culture_overrides": {
@@ -75061,7 +75061,7 @@
       "en": "Hi, I have a few things I need help with today.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide aujourd’hui.",
-      "es": "Hola, necesito ayuda con algunas cosas hoy.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe."
     },
     "culture_overrides": {
@@ -76238,7 +76238,7 @@
       "en": "Hi, I have a few IT requests I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes informatiques.",
       "fr-CA": "Bonjour, j’ai quelques demandes TI pour lesquelles j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas solicitudes de TI.",
+      "es": "Hola, necesito ayuda con unas cuantas solicitudes de informática.",
       "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen."
     },
     "culture_overrides": {
@@ -77771,7 +77771,7 @@
       "en": "Hi, I have a few IT things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques sujets informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas de TI.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
     },
     "culture_overrides": {
@@ -78958,7 +78958,7 @@
       "en": "Hi, I've got a few IT things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas de TI.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
     },
     "culture_overrides": {
@@ -80463,7 +80463,7 @@
       "en": "Hi, I have a few things I need help with today.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide aujourd’hui.",
-      "es": "Hola, necesito ayuda con algunas cosas hoy.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe."
     },
     "culture_overrides": {
@@ -82054,7 +82054,7 @@
       "en": "Hi, I've got a few IT things I need help with.",
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
-      "es": "Hola, necesito ayuda con algunas cosas de TI.",
+      "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
     },
     "culture_overrides": {
@@ -82991,7 +82991,7 @@
       "en": "Hi, my VPN still isn't working and I need help with it.",
       "fr": "Bonjour, mon VPN ne fonctionne toujours pas et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon VPN ne fonctionne toujours pas et j’ai besoin d’aide avec ça.",
-      "es": "Hola, mi VPN todavía no funciona y necesito ayuda con eso.",
+      "es": "Hola, mi VPN sigue sin funcionar y necesito ayuda con eso.",
       "de": "Hallo, mein VPN funktioniert immer noch nicht, und ich brauche Hilfe dabei."
     },
     "culture_overrides": {
@@ -84957,7 +84957,7 @@
       "en": "Hi, I need help checking something in an employee record.",
       "fr": "Bonjour, j’ai besoin d’aide pour vérifier quelque chose dans le dossier d’un employé.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour vérifier quelque chose dans un dossier d’employé.",
-      "es": "Hola, necesito ayuda para revisar algo en el registro de un empleado.",
+      "es": "Hola, necesito ayuda para comprobar algo en el expediente de un empleado.",
       "de": "Hallo, ich brauche Hilfe dabei, etwas in einem Mitarbeiterdatensatz zu überprüfen."
     },
     "culture_overrides": {
@@ -85912,7 +85912,7 @@
       "en": "Hi, I need to replace my laptop.",
       "fr": "Bonjour, j’ai besoin de remplacer mon ordinateur portable.",
       "fr-CA": "Bonjour, j’ai besoin de remplacer mon ordinateur portable.",
-      "es": "Hola, necesito reemplazar mi laptop.",
+      "es": "Hola, necesito reemplazar mi portátil.",
       "de": "Hallo, ich muss meinen Laptop ersetzen."
     },
     "culture_overrides": {
@@ -86903,7 +86903,7 @@
       "en": "Hi, I need to replace my work laptop.",
       "fr": "Bonjour, j’ai besoin de remplacer mon ordinateur portable professionnel.",
       "fr-CA": "Bonjour, j’ai besoin de remplacer mon ordinateur portable de travail.",
-      "es": "Hola, necesito reemplazar mi laptop del trabajo.",
+      "es": "Hola, necesito reemplazar mi portátil del trabajo.",
       "de": "Hallo, ich muss meinen Arbeitslaptop ersetzen."
     },
     "culture_overrides": {

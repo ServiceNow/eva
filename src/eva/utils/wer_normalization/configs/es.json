@@ -25,10 +25,9 @@
     "diecisiete": 17,
     "dieciocho": 18,
     "diecinueve": 19,
+    "veintiuno": 21,
     "veintiún": 21,
     "veintiun": 21,
-    "veintiuno": 21,
-    "veintiuna": 21,
     "veintidós": 22,
     "veintidos": 22,
     "veintitrés": 23,
@@ -40,32 +39,26 @@
     "veintisiete": 27,
     "veintiocho": 28,
     "veintinueve": 29,
-    "cien": 100,
-    "ciento": 100,
     "doscientos": 200,
-    "doscientas": 200,
     "trescientos": 300,
-    "trescientas": 300,
     "cuatrocientos": 400,
-    "cuatrocientas": 400,
     "quinientos": 500,
-    "quinientas": 500,
     "seiscientos": 600,
-    "seiscientas": 600,
     "setecientos": 700,
-    "setecientas": 700,
     "ochocientos": 800,
-    "ochocientas": 800,
-    "novecientos": 900,
-    "novecientas": 900
+    "novecientos": 900
   },
   "cardinal_variants": {
     "una": 1,
-    "dieciseis": 16,
-    "veintiun": 21,
-    "veintidos": 22,
-    "veintitres": 23,
-    "veintiseis": 26
+    "veintiuna": 21,
+    "doscientas": 200,
+    "trescientas": 300,
+    "cuatrocientas": 400,
+    "quinientas": 500,
+    "seiscientas": 600,
+    "setecientas": 700,
+    "ochocientas": 800,
+    "novecientas": 900
   },
   "cardinals_suffixed": {
     "primero": [
@@ -205,6 +198,10 @@
       "ª"
     ],
     "decimotercero": [
+      13,
+      "º"
+    ],
+    "decimotercer": [
       13,
       "º"
     ],
@@ -410,6 +407,8 @@
     ]
   },
   "scaling_units": {
+    "cien": 100,
+    "ciento": 100,
     "mil": 1000,
     "millón": 1000000,
     "millon": 1000000,
@@ -495,7 +494,7 @@
   "preceding_prefixers": {},
   "following_prefixers": {},
   "suffixers": {},
-  "ignore_patterns": "\\b(eh|em|mmm|hum|aja|este|esto|bueno|pues)\\b",
+  "ignore_patterns": "\\b(eh|em|mmm|hm|hum|pues|bueno|o sea|esto)\\b",
   "replacers": {
     "\\bsr\\b": "senor",
     "\\bsra\\b": "senora",
@@ -504,13 +503,8 @@
     "\\bdra\\b": "doctora",
     "\\bprof\\b": "profesor",
     "\\bprofa\\b": "profesora",
-    "\\blic\\b": "licenciado",
-    "\\bing\\b": "ingeniero",
-    "\\bmtro\\b": "maestro",
-    "\\bmtra\\b": "maestra",
-    "\\bfray\\b": "fray",
-    "\\bdon\\b": "don",
-    "\\bdona\\b": "dona"
+    "\\bd\\b": "don",
+    "\\bda\\b": "dona"
   },
   "strip_space_before_apostrophe": false,
   "ordinal_suffix_pattern": "",
