@@ -97,17 +97,18 @@ class ValidationRunner:
             validation_results[record_id] = ValidationResult(passed=False)
 
         # Run LLM metrics on gate-passed and time-limit records together.
-        # gate_passed records get GATE_METRIC=1.0 in their scores; time-limit records do not.
-        all_llm_ids = gate_passed + time_limit_ids
-        if all_llm_ids:
+        # gate_passed means that the record passed all gate metrics.
+        # time_limit_ids are those that exceeded the time limit but the user simulation scores passed the gate metrics.
+        ids_to_judge = gate_passed + time_limit_ids
+        if ids_to_judge:
             metrics_runner = MetricsRunner(
                 run_dir=self.run_dir,
                 dataset=self.dataset,
                 metric_names=LLM_METRICS,
                 metric_configs=self.metric_configs,
-                record_ids=all_llm_ids,
+                record_ids=ids_to_judge,
             )
-            all_llm_contexts = {rid: contexts[rid] for rid in all_llm_ids if rid in contexts}
+            all_llm_contexts = {rid: contexts[rid] for rid in ids_to_judge if rid in contexts}
             metrics_run = await metrics_runner.run(contexts=all_llm_contexts)
 
             gate_passed_set = set(gate_passed)
