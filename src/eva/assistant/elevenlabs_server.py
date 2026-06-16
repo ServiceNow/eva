@@ -242,20 +242,24 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         # -- ElevenLabs callbacks ------------------------------------------
 
         async def _on_agent_response(text: str) -> None:
-            nonlocal _assistant_turn_start_ts, _in_model_turn, _is_first_turn
+            nonlocal _assistant_turn_start_ts, _is_first_turn
             logger.info(f"Agent response: {text}")
             self.audit_log.append_assistant_output(text, timestamp_ms=_assistant_turn_start_ts)
             self._fw_log.llm_response(text)
             self._fw_log.turn_end(was_interrupted=False)
             if _is_first_turn:
-                # Need to track first turn to set _assistant_turn_start_ts correctly
                 _is_first_turn = False
-            else:
-                _in_model_turn = False
+            # NOTE: do NOT reset _in_model_turn here.  The agent_response
+            # event carries the full text but audio is still streaming.
+            # Resetting the flag mid-stream causes sync_buffer_to_position
+            # to inject silence into the assistant recording buffer,
+            # shifting the waveform and making user/assistant audio appear
+            # to overlap.  _in_model_turn resets at the next
+            # user_speech_start event instead.
             _assistant_turn_start_ts = None
 
         async def _on_agent_response_correction(original: str, corrected: str) -> None:
-            nonlocal _assistant_turn_start_ts, _in_model_turn
+            nonlocal _assistant_turn_start_ts
             logger.info(f"Agent response corrected: {original!r} -> {corrected!r}")
             if corrected:
                 self.audit_log.append_assistant_output(
@@ -264,7 +268,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                 )
                 self._fw_log.s2s_transcript(corrected)
             self._fw_log.turn_end(was_interrupted=True)
-            _in_model_turn = False
+            # Same as _on_agent_response: don't reset _in_model_turn here.
             _assistant_turn_start_ts = None
 
         async def _on_user_transcript(text: str) -> None:

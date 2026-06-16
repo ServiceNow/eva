@@ -12,6 +12,10 @@ from elevenlabs.conversational_ai.conversation import AsyncAudioInterface
 INPUT_CHUNK_BYTES = 8000
 INPUT_CHUNK_DURATION = 0.25  # seconds
 
+# µ-law silence byte (encodes to ~0 amplitude).  Sent as padding so
+# ElevenLabs' VAD always receives audio and can detect end-of-speech.
+MULAW_SILENCE = b"\xff"
+
 
 class TwilioAudioBridge(AsyncAudioInterface):
     """Bridges Twilio WebSocket audio to an ElevenLabs AsyncConversation.
@@ -78,15 +82,21 @@ class TwilioAudioBridge(AsyncAudioInterface):
     async def _feed_input(self) -> None:
         """Buffer small Twilio chunks into 250 ms frames for ElevenLabs.
 
-        ElevenLabs expects 16 kHz PCM16 in ~4000-sample (8000-byte) chunks.
-        Twilio media messages are ~640 bytes each after conversion, so we
-        accumulate until we have a full chunk or the interval elapses.
+        The agent is configured to accept µ-law 8 kHz audio.  Twilio media
+        messages are small (~160 bytes each), so we accumulate until we have
+        a full 250 ms chunk or the interval elapses.
+
+        Crucially, when no user audio arrives we must still send silence so
+        that ElevenLabs' VAD can detect end-of-speech.  Without continuous
+        input the VAD stalls and never triggers transcription.
         """
+        # 8 kHz µ-law, 1 byte per sample → 2000 bytes per 250 ms chunk
+        mulaw_chunk_bytes = int(8000 * INPUT_CHUNK_DURATION)
+
         buf = bytearray()
         while self._running:
             try:
-                # Collect audio until we fill a chunk or time out
-                remaining = max(0.01, INPUT_CHUNK_DURATION - len(buf) / (16000 * 2))
+                remaining = max(0.01, INPUT_CHUNK_DURATION - len(buf) / 8000)
                 chunk = await asyncio.wait_for(self._input_queue.get(), timeout=remaining)
                 buf.extend(chunk)
             except TimeoutError:
@@ -94,14 +104,19 @@ class TwilioAudioBridge(AsyncAudioInterface):
             except asyncio.CancelledError:
                 break
 
-            # Send when we have enough data, or on timeout if there's anything
-            if len(buf) >= INPUT_CHUNK_BYTES:
-                while len(buf) >= INPUT_CHUNK_BYTES and self._input_callback:
-                    await self._input_callback(bytes(buf[:INPUT_CHUNK_BYTES]))
-                    del buf[:INPUT_CHUNK_BYTES]
+            if len(buf) >= mulaw_chunk_bytes:
+                # Send full chunks of real audio
+                while len(buf) >= mulaw_chunk_bytes and self._input_callback:
+                    await self._input_callback(bytes(buf[:mulaw_chunk_bytes]))
+                    del buf[:mulaw_chunk_bytes]
             elif buf:
-                # Partial buffer on timeout — send what we have so we don't
-                # add latency waiting for the next Twilio packet
+                # Partial audio on timeout — send as-is without silence
+                # padding.  Mixing silence into speech chunks causes the
+                # VAD to trigger end-of-speech mid-utterance.
                 if self._input_callback:
                     await self._input_callback(bytes(buf))
                     buf.clear()
+            elif self._input_callback:
+                # No audio arrived this interval — send a pure silence
+                # chunk so ElevenLabs' VAD can detect end-of-speech.
+                await self._input_callback(MULAW_SILENCE * mulaw_chunk_bytes)
