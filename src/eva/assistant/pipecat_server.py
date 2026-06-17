@@ -53,6 +53,7 @@ from eva.assistant.pipeline.services import (
     create_realtime_llm_service,
     create_stt_service,
     create_tts_service,
+    update_stt_agent_context,
 )
 from eva.assistant.pipeline.turn_config import (
     create_turn_start_strategy,
@@ -408,9 +409,15 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     llm_client=llm_client,
                     output_dir=self.output_dir,
                 )
-                agent_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
-                    role="assistant", content=msg, timestamp=self._current_iso_timestamp()
-                )
+                async def on_assistant_response(msg: str) -> None:
+                    await self._save_transcript_message_from_turn(
+                        role="assistant", content=msg, timestamp=self._current_iso_timestamp()
+                    )
+                    # Carry the agent's reply into STT as conversation context so it improves
+                    # transcription of the user's next turn (AssemblyAI Universal-3 Pro; no-op otherwise).
+                    await update_stt_agent_context(stt, msg)
+
+                agent_processor.on_assistant_response = on_assistant_response
                 self.agentic_system = agent_processor.agentic_system
 
             # Create pipeline

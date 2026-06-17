@@ -1,6 +1,6 @@
 """Tests for assistant/pipeline/services.py — service factory functions."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -9,6 +9,7 @@ from eva.assistant.pipeline.services import (
     _resolve_url,
     create_stt_service,
     create_tts_service,
+    update_stt_agent_context,
 )
 
 
@@ -54,16 +55,16 @@ class TestCreateSttService:
             create_stt_service("nonexistent_provider", params={"api_key": "k"})
 
     def test_assemblyai_service_created(self):
-        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "u3-rt-pro"})
+        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "universal-3-5-pro"})
         assert "AssemblyAI" in type(svc).__name__
-        assert svc._settings.model == "u3-rt-pro"
+        assert svc._settings.model == "universal-3-5-pro"
 
     def test_assemblyai_forwards_optional_settings(self):
         svc = create_stt_service(
             "assemblyai",
             params={
                 "api_key": "k",
-                "model": "u3-rt-pro",
+                "model": "universal-3-5-pro",
                 "vad_threshold": 0.1,
                 "min_turn_silence": 120,
             },
@@ -71,9 +72,23 @@ class TestCreateSttService:
         assert svc._settings.vad_threshold == 0.1
         assert svc._settings.min_turn_silence == 120
 
+    def test_assemblyai_forwards_context_carryover_settings(self):
+        """Conversation-context carryover settings (pipecat >= 1.4.0) forward through."""
+        svc = create_stt_service(
+            "assemblyai",
+            params={
+                "api_key": "k",
+                "model": "universal-3-5-pro",
+                "agent_context": "Booking confirmed for flight AA123.",
+                "previous_context_n_turns": 0,
+            },
+        )
+        assert svc._settings.agent_context == "Booking confirmed for flight AA123."
+        assert svc._settings.previous_context_n_turns == 0
+
     def test_assemblyai_ignores_unspecified_settings(self):
         """Keys absent from params must not be forwarded, so library defaults apply."""
-        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "u3-rt-pro"})
+        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "universal-3-5-pro"})
         assert svc._settings.vad_threshold is None
 
     def test_nvidia_requires_url(self):
@@ -125,6 +140,30 @@ class TestCreateSttService:
     def test_cartesia_service_created(self):
         svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink"})
         assert "Cartesia" in type(svc).__name__
+
+
+class TestUpdateSttAgentContext:
+    """Conversation-context carryover hook (AssemblyAI Universal-3 Pro)."""
+
+    async def test_forwards_text_when_supported(self):
+        stt = MagicMock()
+        stt.update_agent_context = AsyncMock()
+        await update_stt_agent_context(stt, "The agent's latest reply.")
+        stt.update_agent_context.assert_awaited_once_with("The agent's latest reply.")
+
+    async def test_noop_when_capability_absent(self):
+        """STT services without the method (Deepgram, Cartesia, …) are skipped silently."""
+        stt = MagicMock(spec=[])  # no attributes → getattr returns None
+        await update_stt_agent_context(stt, "ignored")  # must not raise
+
+    async def test_noop_for_empty_text(self):
+        stt = MagicMock()
+        stt.update_agent_context = AsyncMock()
+        await update_stt_agent_context(stt, "")
+        stt.update_agent_context.assert_not_awaited()
+
+    async def test_noop_for_none_stt(self):
+        await update_stt_agent_context(None, "anything")  # must not raise
 
 
 class TestCreateTtsService:
