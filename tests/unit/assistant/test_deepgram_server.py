@@ -46,6 +46,12 @@ def _bare_server() -> DeepgramAssistantServer:
     srv._system_prompt = "you are a helpful assistant"
     srv._functions = None
     srv.initial_message = INITIAL_MESSAGE
+    # BYO think config (all default to "off"; managed provider path).
+    srv._think_credentials = None
+    srv._think_endpoint = None
+    srv._think_params = {}
+    srv._context_length = None
+    srv._think_region = None
     return srv
 
 
@@ -103,3 +109,53 @@ class TestBuildSettings:
         functions = wire["agent"]["think"]["functions"]
         assert len(functions) == 1
         assert functions[0]["parameters"]["required"] == ["booking_id"]
+
+
+class TestBuildSettingsByo:
+    """BYO ('bring your own') think configuration is opt-in and additive."""
+
+    def test_managed_default_has_no_credentials_or_endpoint(self):
+        # With no BYO params set, the managed path is unchanged.
+        think = _bare_server()._build_settings().dict()["agent"]["think"]
+        assert "credentials" not in think["provider"]
+        assert think.get("endpoint") is None
+        assert think.get("context_length") is None
+
+    def test_bedrock_explicit_credentials_passthrough(self):
+        srv = _bare_server()
+        srv._think_provider = "aws_bedrock"
+        srv._think_model = "anthropic/claude-3-5-haiku-20240307-v1:0"
+        srv._think_credentials = {
+            "type": "iam",
+            "region": "us-east-1",
+            "access_key_id": "AK",
+            "secret_access_key": "SK",
+        }
+        provider = srv._build_settings().dict()["agent"]["think"]["provider"]
+        assert provider["type"] == "aws_bedrock"
+        assert provider["credentials"]["region"] == "us-east-1"
+        assert provider["credentials"]["access_key_id"] == "AK"
+
+    def test_endpoint_params_and_context_length_passthrough(self):
+        srv = _bare_server()
+        srv._think_params = {"temperature": 0.5}
+        srv._think_endpoint = {"url": "https://example.test/v1", "headers": {"x-api-key": "KEY"}}
+        srv._context_length = "max"
+        think = srv._build_settings().dict()["agent"]["think"]
+        assert think["provider"]["temperature"] == 0.5
+        assert think["endpoint"]["url"] == "https://example.test/v1"
+        assert think["endpoint"]["headers"]["x-api-key"] == "KEY"
+        assert think["context_length"] == "max"
+
+    def test_bedrock_credentials_built_from_env(self, monkeypatch):
+        srv = _bare_server()
+        srv._think_provider = "aws_bedrock"
+        srv._think_model = "anthropic/claude-3-5-haiku-20240307-v1:0"
+        srv._think_region = "us-west-2"
+        monkeypatch.setenv("AWS_ACCESS_KEY_ID", "envAK")
+        monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "envSK")
+        monkeypatch.delenv("AWS_SESSION_TOKEN", raising=False)
+        creds = srv._build_settings().dict()["agent"]["think"]["provider"]["credentials"]
+        assert creds["type"] == "iam"
+        assert creds["region"] == "us-west-2"
+        assert creds["access_key_id"] == "envAK"
