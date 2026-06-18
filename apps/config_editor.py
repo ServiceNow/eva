@@ -37,6 +37,7 @@ from config_schema import (
     GROUP_RUNTIME,
     GROUPS,
     MUTEX_RADIOS,
+    TOGGLE_CHECKS,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -107,24 +108,39 @@ def _init_state() -> None:
         return
     parsed = parse_env_example(ENV_EXAMPLE_PATH)
     st.session_state.parsed = parsed
-    existing = load_env(ENV_PATH)
+    loaded = load_env(ENV_PATH)
+    all_values = loaded.all_values
     values: dict[str, Any] = {}
     for var in parsed.vars:
-        raw = existing.get(var.name)
+        raw = all_values.get(var.name)
         if raw is None and var.is_active:
             raw = var.example_value.strip().strip("'\"")
         values[var.name] = _coerce(var.widget, raw or "")
-    for name, raw in existing.items():
+    for name, raw in all_values.items():
         if name not in {v.name for v in parsed.vars}:
             values[name] = raw
     st.session_state.field_values = values
-    st.session_state.loaded_keys = set(existing.keys())
-    st.session_state.pipeline_mode = _detect_pipeline_mode(existing)
-    st.session_state.perturbation_mode = _detect_perturbation_mode(existing)
+    st.session_state.loaded_keys = loaded.active_names
+    st.session_state.pipeline_mode = _detect_pipeline_mode(loaded.active)
+    st.session_state.perturbation_mode = _detect_perturbation_mode(loaded.active)
     # Initialise all mutex radio states
     for mx in MUTEX_RADIOS:
         if mx.state_key not in st.session_state:
             st.session_state[mx.state_key] = st.session_state.get(mx.state_key, mx.default)
+    # Initialise toggle checks — derive initial state from whether any gated var has a value
+    _gated_vars: dict[str, list[str]] = {}
+    for var in parsed.vars:
+        for cond_key, cond_val in var.conditions:
+            if cond_val.strip().lower() == "true":
+                _gated_vars.setdefault(cond_key, []).append(var.name)
+    for tc in TOGGLE_CHECKS:
+        if tc.state_key not in st.session_state:
+            gated = _gated_vars.get(tc.state_key, [])
+            has_value = any(
+                loaded.active.get(n) or loaded.inactive.get(n)
+                for n in gated
+            )
+            st.session_state[tc.state_key] = has_value or tc.default
     st.session_state.initialized = True
 
 
@@ -143,6 +159,8 @@ def _is_visible_av(var: AnnotatedVar) -> bool:
         actual = st.session_state.get(cond_key)
         if actual is None:
             actual = st.session_state.get("field_values", {}).get(cond_key)
+        if isinstance(actual, bool):
+            actual = "true" if actual else "false"
         allowed = {v.strip() for v in cond_val.split(",") if v.strip()}
         if actual not in allowed:
             return False
@@ -478,6 +496,17 @@ def _render_group(group: str) -> None:
             )
             st.divider()
 
+    # Render standalone toggle checkboxes for this group
+    for tc in TOGGLE_CHECKS:
+        if tc.group == group:
+            current_tc = st.session_state.get(tc.state_key, tc.default)
+            st.session_state[tc.state_key] = st.checkbox(
+                tc.label,
+                value=bool(current_tc),
+                help=tc.help or None,
+                key=f"toggle_{tc.state_key}",
+            )
+
     # Template vars for this group
     group_vars = [v for v in parsed.vars if v.group == group]
 
@@ -565,6 +594,8 @@ def _build_serialized() -> str:
     mode_state: dict[str, str] = {}
     for mx in MUTEX_RADIOS:
         mode_state[mx.state_key] = st.session_state.get(mx.state_key, mx.default)
+    for tc in TOGGLE_CHECKS:
+        mode_state[tc.state_key] = "true" if st.session_state.get(tc.state_key, tc.default) else "false"
     mode_state.update({k: str(v) for k, v in values.items() if isinstance(v, str)})
     disabled = compute_disabled(parsed, **mode_state)
     # Split extras by auto-routing: inline into their parent section or fall through to Misc

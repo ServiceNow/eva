@@ -236,35 +236,71 @@ def parse_env_example(path: str | Path) -> ParsedEnvExample:
     return ParsedEnvExample(lines=raw_lines, vars=vars_list)
 
 
-def load_env(path: str | Path) -> dict[str, str]:
-    """Read an existing .env into a flat {NAME: value} dict.
+@dataclass
+class LoadedEnv:
+    """Result of parsing a .env file, split by active/inactive status."""
 
-    Commented-out lines (including #v lines) are skipped.
+    active: dict[str, str]    # NAME=value lines
+    inactive: dict[str, str]  # #v NAME=value lines (saved-but-disabled)
+
+    @property
+    def all_values(self) -> dict[str, str]:
+        """Merged dict; active values take priority over inactive for the same name."""
+        return {**self.inactive, **self.active}
+
+    @property
+    def active_names(self) -> set[str]:
+        return set(self.active)
+
+    @property
+    def inactive_names(self) -> set[str]:
+        return set(self.inactive) - set(self.active)
+
+
+def load_env(path: str | Path) -> LoadedEnv:
+    """Parse a .env file into active and inactive value dicts.
+
+    Active lines  (NAME=value)    → LoadedEnv.active
+    Inactive lines (#v NAME=value) → LoadedEnv.inactive
     Values have surrounding quotes stripped.
     """
     p = Path(path)
     if not p.exists():
-        return {}
-    out: dict[str, str] = {}
+        return LoadedEnv(active={}, inactive={})
+    active: dict[str, str] = {}
+    inactive: dict[str, str] = {}
     i = 0
     lines = p.read_text().splitlines(keepends=False)
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
-        if stripped.startswith("#") or not stripped:
-            i += 1
-            continue
-        if "=" in stripped:
+
+        # Active variable
+        if not stripped.startswith("#") and "=" in stripped:
             name, _, value_head = stripped.partition("=")
             name = name.strip()
             if _NAME_RE.match(name):
                 end_idx = _consume_quoted_continuation(lines, i, value_head)
                 raw = "\n".join([value_head, *lines[i + 1 : end_idx + 1]]) if end_idx > i else value_head
-                out[name] = _unquote(raw.strip())
+                active[name] = _unquote(raw.strip())
                 i = end_idx + 1
                 continue
+
+        # Inactive variable (#v NAME=value) — only load if it carries a real value
+        if stripped.startswith("#v ") and "=" in stripped:
+            rest = stripped[3:].strip()
+            name, _, value_head = rest.partition("=")
+            name = name.strip()
+            if _NAME_RE.match(name) and value_head.strip():
+                end_idx = _consume_quoted_continuation(lines, i, value_head)
+                raw = "\n".join([value_head, *lines[i + 1 : end_idx + 1]]) if end_idx > i else value_head
+                inactive.setdefault(name, _unquote(raw.strip()))
+                i = end_idx + 1
+                continue
+
         i += 1
-    return out
+
+    return LoadedEnv(active=active, inactive=inactive)
 
 
 def _unquote(value: str) -> str:
