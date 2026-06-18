@@ -143,9 +143,14 @@ def create_stt_service(
         assemblyai_settings_kwargs = {
             k: params[k] for f in dataclasses.fields(AssemblyAISTTService.Settings) if (k := f.name) in params
         }
+        # vad_force_turn_endpoint is a constructor arg, not a Settings field, so the dataclass
+        # forwarding above won't carry it — thread it explicitly. Default True = Pipecat-mode
+        # (force the endpoint on Silero VAD stop); set False to let AssemblyAI's own server-side
+        # turn detection (min_turn_silence/max_turn_silence) decide turn ends.
         return AssemblyAISTTService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
+            vad_force_turn_endpoint=params.get("vad_force_turn_endpoint", True),
             settings=AssemblyAISTTService.Settings(
                 language=_to_language_enum(language_code),
                 **assemblyai_settings_kwargs,

@@ -66,11 +66,25 @@ class TestCreateSttService:
                 "api_key": "k",
                 "model": "universal-3-5-pro",
                 "vad_threshold": 0.1,
-                "min_turn_silence": 120,
+                "min_turn_silence": 100,
+                "max_turn_silence": 100,
             },
         )
         assert svc._settings.vad_threshold == 0.1
-        assert svc._settings.min_turn_silence == 120
+        assert svc._settings.min_turn_silence == 100
+        assert svc._settings.max_turn_silence == 100
+
+    def test_assemblyai_vad_force_turn_endpoint_defaults_true(self):
+        """Constructor arg (not a Settings field) — defaults to pipecat-mode (True)."""
+        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "universal-3-5-pro"})
+        assert svc._vad_force_turn_endpoint is True
+
+    def test_assemblyai_vad_force_turn_endpoint_overridable(self):
+        svc = create_stt_service(
+            "assemblyai",
+            params={"api_key": "k", "model": "universal-3-5-pro", "vad_force_turn_endpoint": False},
+        )
+        assert svc._vad_force_turn_endpoint is False
 
     def test_assemblyai_forwards_context_carryover_settings(self):
         """Conversation-context carryover settings (pipecat >= 1.4.0) forward through."""
