@@ -162,6 +162,7 @@ async def test_streaming_resampler_preserves_state_across_deltas(tmp_path, monke
         return b"converted", f"state-{len(states)}"
 
     monkeypatch.setattr("eva.user_simulator.openai_realtime.audioop.ratecv", ratecv)
+    monkeypatch.setattr("eva.user_simulator.openai_realtime.audioop.mul", lambda data, width, factor: data)
     delta = "AAAAAA=="
 
     await simulator._handle_caller_event(SimpleNamespace(type="response.output_audio.delta", delta=delta))

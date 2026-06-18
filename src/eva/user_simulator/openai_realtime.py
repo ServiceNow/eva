@@ -391,6 +391,8 @@ class OpenAIRealtimeUserSimulator(AbstractUserSimulator):
                     BRIDGE_SAMPLE_RATE,
                     self._resampler_state,
                 )
+                # Realtime is kind of quiet for no reason, much better to listen to with this
+                pcm16_16k = audioop.mul(pcm16_16k, 2, 2.75)
                 self._audio_interface.output(pcm16_16k)
                 self._caller_audio_seen = True
                 self._caller_playback_pending = True
