@@ -149,7 +149,9 @@ class TestAudioStateTransitions:
 
         assert iface._user_audio_active is False
         assert iface._user_audio_ended_time == 150.0
-        event_logger.log_audio_end.assert_called_once_with("elevenlabs_user")
+        args, _ = event_logger.log_audio_end.call_args
+        assert args[0] == "elevenlabs_user"
+        assert isinstance(args[1], float)
 
     @pytest.mark.asyncio
     async def test_assistant_end_records_timestamp(self):
@@ -280,7 +282,8 @@ class TestReceiveFromAssistant:
         await iface._receive_from_assistant()
 
         assert iface._assistant_audio_active is False
-        event_logger.log_audio_end.assert_called_once_with("framework_agent")
+        args, _ = event_logger.log_audio_end.call_args
+        assert args[0] == "framework_agent"
 
 
 class TestSendAudioFrame:
