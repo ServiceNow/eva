@@ -40,7 +40,6 @@ from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
-from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -186,14 +185,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         self._language_code = s2s_params.get("language_code") or self.language
         self._api_key = s2s_params.get("api_key", "")
 
-        # Build system prompt (same pattern as pipecat realtime)
-        prompt_manager = PromptManager()
-        self._system_prompt = prompt_manager.get_prompt(
-            "realtime_agent.system_prompt",
-            agent_personality=agent.description,
-            agent_instructions=agent.instructions,
-            datetime=self.current_date_time,
-        )
+        self._system_prompt = self._build_system_prompt()
 
         # Build Gemini tools
         self._gemini_tools = _agent_tools_to_gemini(agent)
@@ -608,6 +600,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                                 id=fc.id,
                                                 name=fc.name,
                                                 response=result,
+                                                scheduling=types.FunctionResponseScheduling.WHEN_IDLE,
                                             )
                                         ]
                                     )

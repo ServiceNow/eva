@@ -45,7 +45,6 @@ from eva.assistant.elevenlabs_audio_interface import TwilioAudioBridge
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
-from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -156,14 +155,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         self.s2s_params = s2s_params
         self._model = s2s_params.get("model", "elevenlabs")
 
-        # Build system prompt
-        prompt_manager = PromptManager()
-        self._system_prompt = prompt_manager.get_prompt(
-            "realtime_agent.system_prompt",
-            agent_personality=agent.description,
-            agent_instructions=agent.instructions,
-            datetime=self.current_date_time,
-        )
+        self._system_prompt = self._build_system_prompt()
 
         # Build ElevenLabs client tools from agent config
         self._client_tools = _agent_tools_to_client_tools(agent, self.execute_tool)
