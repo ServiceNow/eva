@@ -1,4 +1,4 @@
-"""Event logger for ElevenLabs conversation events."""
+"""Event logger for provider-neutral simulator artifacts."""
 
 import json
 import time
@@ -10,19 +10,21 @@ from eva.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-class ElevenLabsEventLogger:
-    """Logs events from ElevenLabs conversations for analysis.
+class UserSimulatorEventLogger:
+    """Logs provider-neutral simulator events for metrics processing.
 
     Events are stored in JSONL format for easy processing by the metrics system.
     """
 
-    def __init__(self, output_path: Path):
+    def __init__(self, output_path: Path, *, provider: str):
         """Initialize the event logger.
 
         Args:
             output_path: Path to the output JSONL file
+            provider: Provider identifier stored with each event.
         """
         self.output_path = output_path
+        self.provider = provider
         self._events: list[dict[str, Any]] = []
         self._sequence = 0
 
@@ -40,8 +42,9 @@ class ElevenLabsEventLogger:
             "type": event_type,
             "data": data,
         }
+        event["provider"] = self.provider
         self._events.append(event)
-        logger.debug(f"ElevenLabs event: {event_type}")
+        logger.debug(f"User simulator event: {event_type}")
 
     def log_user_speech(self, text: str, is_final: bool = True) -> None:
         """Log user speech transcription."""
@@ -104,7 +107,7 @@ class ElevenLabsEventLogger:
         """Log when audio starts for a given role.
 
         Args:
-            role: Either 'elevenlabs_user' or 'framework_agent'
+            role: Speaker role (e.g. "simulated_user", "assistant").
             timestamp: Timestamp in milliseconds when audio started
         """
         # Use Unix timestamp in seconds (as float)
@@ -118,6 +121,7 @@ class ElevenLabsEventLogger:
             "event_type": "audio_start",
             "user": role,
             "audio_timestamp": audio_timestamp,  # Unix timestamp in seconds for audio timing
+            "provider": self.provider,
         }
         self._events.append(event)
         logger.debug(f"Audio start logged: {role}")
@@ -126,7 +130,7 @@ class ElevenLabsEventLogger:
         """Log when audio ends for a given role.
 
         Args:
-            role: Either 'elevenlabs_user' or 'framework_agent'
+            role: Speaker role (e.g. "simulated_user", "assistant").
             timestamp: Unix timestamp (seconds) of the *actual* audio end. End-of-
                 audio is detected after a silence threshold, so callers pass the
                 real end time; otherwise the stamp would lag by that threshold and
@@ -143,6 +147,7 @@ class ElevenLabsEventLogger:
             "event_type": "audio_end",
             "user": role,
             "audio_timestamp": audio_timestamp,  # Unix timestamp in seconds for audio timing
+            "provider": self.provider,
         }
         self._events.append(event)
         logger.debug(f"Audio end logged: {role}")
@@ -154,7 +159,7 @@ class ElevenLabsEventLogger:
         with open(self.output_path, "w") as f:
             f.writelines(json.dumps(event, ensure_ascii=False) + "\n" for event in self._events)
 
-        logger.info(f"Saved {len(self._events)} ElevenLabs events to {self.output_path}")
+        logger.info(f"Saved {len(self._events)} user simulator events to {self.output_path}")
 
     def get_events(self, event_type: str | None = None) -> list[dict[str, Any]]:
         """Get logged events, optionally filtered by type.
@@ -167,13 +172,13 @@ class ElevenLabsEventLogger:
         """
         if event_type is None:
             return self._events.copy()
-        return [e for e in self._events if e["type"] == event_type]
+        return [e for e in self._events if (e.get("type") or e.get("event_type")) == event_type]
 
     def get_summary(self) -> dict[str, Any]:
         """Get a summary of logged events."""
         event_counts: dict[str, int] = {}
         for event in self._events:
-            event_type = event["type"]
+            event_type = event.get("type") or event.get("event_type", "unknown")
             event_counts[event_type] = event_counts.get(event_type, 0) + 1
 
         return {

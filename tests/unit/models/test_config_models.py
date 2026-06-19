@@ -1,6 +1,7 @@
 """Unit tests for RunConfig model."""
 
 import json
+import logging
 import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -9,7 +10,13 @@ import pytest
 from pydantic import ValidationError
 from pydantic_settings import SettingsError
 
-from eva.models.config import ModelConfig, PipelineType, RunConfig
+from eva.models.config import (
+    ElevenLabsSimulatorConfig,
+    ModelConfig,
+    OpenAIRealtimeSimulatorConfig,
+    PipelineType,
+    RunConfig,
+)
 
 MODEL_LIST = [
     {
@@ -1140,3 +1147,69 @@ class TestSpeechToSpeechConfig:
         )
         assert config.model.pipeline_type == PipelineType.S2S
         assert config.model.s2s_params == {"voice": "alloy", "api_key": "key_1", "model": "gpt-realtime-mini"}
+
+
+class TestUserSimulatorConfig:
+    def test_defaults_preserve_elevenlabs(self):
+        config = ElevenLabsSimulatorConfig()
+
+        assert config.provider == "elevenlabs"
+
+    def test_openai_realtime_defaults(self):
+        config = OpenAIRealtimeSimulatorConfig()
+
+        assert config.model == "gpt-realtime-1.5"
+        assert config.female_voice == "marin"
+        assert config.male_voice == "cedar"
+
+    def test_nested_environment_configuration(self):
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_USER_SIMULATOR__PROVIDER": "openai_realtime",
+                "EVA_USER_SIMULATOR__MODEL": "gpt-realtime-2",
+                "EVA_USER_SIMULATOR__FEMALE_VOICE": "coral",
+                "EVA_USER_SIMULATOR__MALE_VOICE": "verse",
+                "OPENAI_API_KEY": "test-key",
+            }
+        )
+
+        assert config.user_simulator == OpenAIRealtimeSimulatorConfig(
+            model="gpt-realtime-2",
+            female_voice="coral",
+            male_voice="verse",
+        )
+
+    def test_elevenlabs_warns_on_unrecognised_fields(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            config = ElevenLabsSimulatorConfig(
+                **{"provider": "elevenlabs", "model": "gpt-realtime-1.5", "female_voice": "marin"}
+            )
+
+        assert "model" in caplog.text
+        assert "female_voice" in caplog.text
+        assert not hasattr(config, "model")
+        assert not hasattr(config, "female_voice")
+        assert config.provider == "elevenlabs"
+
+    def test_elevenlabs_warns_on_unrecognised_env_vars(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            run_config = _config(
+                env_vars=_BASE_ENV
+                | {
+                    "EVA_USER_SIMULATOR__PROVIDER": "elevenlabs",
+                    "EVA_USER_SIMULATOR__MODEL": "gpt-realtime-1.5",
+                }
+            )
+
+        assert "model" in caplog.text
+        assert not hasattr(run_config.user_simulator, "model")
+        assert isinstance(run_config.user_simulator, ElevenLabsSimulatorConfig)
+
+    def test_openai_realtime_rejects_accent_perturbation_during_config_load(self):
+        with pytest.raises(ValidationError, match="Accent perturbations require the ElevenLabs user simulator"):
+            _config(
+                env_vars=_BASE_ENV,
+                user_simulator={"provider": "openai_realtime"},
+                perturbation={"accent": "french"},
+            )

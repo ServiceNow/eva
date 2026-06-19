@@ -507,20 +507,12 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                         except TimeoutError:
                             continue
 
-                        twilio_msg = create_twilio_media_message(stream_sid, mulaw_chunk)
-                        try:
-                            await websocket.send_text(twilio_msg)
-                        except Exception:
-                            twilio_connected = False
-                            return
-
+                        # Stamp before send so WAV position matches when the chunk
+                        # starts transmission (when the user sim can first receive it).
                         now = time.monotonic()
 
-                        # Record the assistant track at playback time. Pad to the
-                        # shared wall-clock anchor only at a turn boundary so the
-                        # track lines up with the user track; within a turn append
-                        # contiguously so ElevenLabs' bursty delivery does not get
-                        # silence injected mid-utterance (which garbles the audio).
+                        # Pad assistant track to wall-clock only at turn boundaries;
+                        # append contiguously within a turn to avoid mid-utterance gaps.
                         if _record_t0 is None:
                             _record_t0 = now
                         if turn_start:
@@ -530,6 +522,13 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                                 self._audio_sample_rate,
                             )
                         self.assistant_audio_buffer.extend(pcm_chunk)
+
+                        twilio_msg = create_twilio_media_message(stream_sid, mulaw_chunk)
+                        try:
+                            await websocket.send_text(twilio_msg)
+                        except Exception:
+                            twilio_connected = False
+                            return
 
                         if next_send_time <= now:
                             next_send_time = now
