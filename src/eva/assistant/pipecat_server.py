@@ -409,6 +409,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     llm_client=llm_client,
                     output_dir=self.output_dir,
                 )
+
                 async def on_assistant_response(msg: str) -> None:
                     await self._save_transcript_message_from_turn(
                         role="assistant", content=msg, timestamp=self._current_iso_timestamp()
