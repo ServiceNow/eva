@@ -655,7 +655,7 @@ class RunConfig(BaseSettings):
         if "run_id" not in self.model_fields_set:
             suffix = "_".join(v for v in self.model.pipeline_parts.values() if v)
             lang = self.language.value
-            self.run_id = f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}_{lang}_{suffix}"
+            self.run_id = f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}_{self.domain}_{lang}_{suffix}"
 
         return self
 
