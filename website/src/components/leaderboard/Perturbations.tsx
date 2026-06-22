@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { SystemStats } from '../../data/leaderboardData';
 import { perturbations, perturbationLabels } from '../../data/leaderboardData';
 import { PerturbationBarChart } from './PerturbationBarChart';
+import { PerturbationMetricValueBarChart } from './PerturbationMetricValueBarChart';
 import { useThemeColors } from '../../styles/theme';
 
 const PERT_COLOR_KEYS: Record<string, 'amber' | 'cyan' | 'purple'> = {
@@ -34,6 +35,7 @@ const METRICS: MetricSpec[] = [
 
 export function Perturbations({ systems }: PerturbationsProps) {
   const colors = useThemeColors();
+  const cascadeSystems = systems.filter((s) => s.type === 'cascade');
   const [sectionOpen, setSectionOpen] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -118,6 +120,28 @@ export function Perturbations({ systems }: PerturbationsProps) {
               </div>
             );
           })}
+
+          {/* Cascade-only metric: its own section (kept out of the shared METRICS list).
+              Shows both the delta plot (Plot A) and the metric-values plot (Plot B). */}
+          <div className="rounded-lg border border-border-default bg-bg-primary overflow-hidden">
+            <div className="px-4 py-3 border-b border-border-default">
+              <span className="text-sm font-semibold text-text-primary">
+                Key-Entity Transcription Accuracy (cascade systems)
+              </span>
+            </div>
+            <div className="p-4 space-y-6">
+              <PerturbationBarChart
+                metric="transcription_accuracy_key_entities"
+                metricLabel="Key Entity Transcription — Δ vs. clean"
+                systems={cascadeSystems}
+              />
+              <PerturbationMetricValueBarChart
+                metric="transcription_accuracy_key_entities"
+                metricLabel="Key Entity Transcription — values"
+                systems={cascadeSystems}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
