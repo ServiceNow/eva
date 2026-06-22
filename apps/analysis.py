@@ -130,6 +130,25 @@ _EVA_COMPOSITE_DISPLAY = {
 }
 
 
+_RE_NUMBER = re.compile(r"(\d+)")
+
+
+def split_numbers(s: str) -> list[str | int]:
+    """Split a string into a list of parts, with numbers converted to `int`.
+
+    This function may be used as the `key` to sort strings in a natural order similar to files in macOS's Finder.
+
+    Args:
+        s: A string that may contain numbers. For example, `"$42k"`.
+
+    Returns:
+        A list of parts, with numbers converted to `int`. For example, `["$", 42, "k"]`.
+    """
+    parts = _RE_NUMBER.split(s)
+    parts[1::2] = map(int, parts[1::2])
+    return parts
+
+
 # ============================================================================
 # Data Loading
 # ============================================================================
@@ -182,7 +201,7 @@ def get_record_directories(run_dir: Path) -> list[Path]:
     records_dir = run_dir / "records"
     if not records_dir.exists():
         return []
-    return sorted([d for d in records_dir.iterdir() if d.is_dir()], key=lambda d: d.name)
+    return sorted([d for d in records_dir.iterdir() if d.is_dir()], key=lambda d: split_numbers(d.name))
 
 
 def load_record_result(record_dir: Path) -> ConversationResult | None:
@@ -478,7 +497,7 @@ def _get_record_data_dirs(record_dir: Path) -> list[tuple[str, Path]]:
                 for d in record_dir.iterdir()
                 if d.is_dir() and any(f for f in d.iterdir() if f.suffix in (".json", ".wav", ".jsonl"))
             ],
-            key=lambda d: d.name,
+            key=lambda d: split_numbers(d.name),
         )
     if trial_dirs:
         return [(d.name, d) for d in trial_dirs]
@@ -1873,9 +1892,9 @@ def render_metrics_tab(metrics: RecordMetrics | None):
                 if metric_score.normalized_score is not None
                 else f"**{metric_name}**"
             ):
-                col1, col2 = st.columns([1, 3])
+                cols = iter(st.columns([1, 3]))
 
-                with col1:
+                with next(cols):
                     st.metric("Score", f"{metric_score.score:.3f}" if metric_score.score is not None else "N/A")
                     st.metric(
                         "Normalized",
@@ -1898,7 +1917,7 @@ def render_metrics_tab(metrics: RecordMetrics | None):
                                 prefix = "⚠ " if flagged else ""
                                 st.markdown(f"{prefix}**{label}:** {score_str}")
 
-                with col2:
+                with next(cols):
                     if metric_score.details:
                         st.markdown("**Details:**")
                         if "explanation" in metric_score.details:
@@ -1978,14 +1997,14 @@ def render_processed_data_tab(metrics: RecordMetrics | None):
             st.info("No tool responses data")
 
     # Transcripts by speaker
-    col1, col2 = st.columns(2)
-    with col1:
+    cols = iter(st.columns(2))
+    with next(cols):
         with st.expander("Assistant Transcript (by Turn)"):
             if context.get("transcribed_assistant_turns"):
                 st.json(context["transcribed_assistant_turns"])
             else:
                 st.info("No assistant transcript data")
-    with col2:
+    with next(cols):
         with st.expander("User Transcript (by Turn)"):
             if context.get("transcribed_user_turns"):
                 st.json(context["transcribed_user_turns"])
@@ -1993,14 +2012,14 @@ def render_processed_data_tab(metrics: RecordMetrics | None):
                 st.info("No user transcript data")
 
     # TTS text
-    col1, col2 = st.columns(2)
-    with col1:
+    cols = iter(st.columns(2))
+    with next(cols):
         with st.expander("Assistant TTS Text (by Turn)"):
             if context.get("intended_assistant_turns"):
                 st.json(context["intended_assistant_turns"])
             else:
                 st.info("No assistant TTS text data")
-    with col2:
+    with next(cols):
         with st.expander("User TTS Text (by Turn)"):
             if context.get("intended_user_turns"):
                 st.json(context["intended_user_turns"])
@@ -2143,8 +2162,8 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
                 expected_db = context.get("expected_scenario_db")
                 final_db = context.get("final_scenario_db")
                 if expected_db and final_db:
-                    expected_str = json.dumps(expected_db, indent=2, sort_keys=True, default=str)
-                    actual_str = json.dumps(final_db, indent=2, sort_keys=True, default=str)
+                    expected_str = json.dumps(expected_db, indent=2, sort_keys=True, default=str, ensure_ascii=False)
+                    actual_str = json.dumps(final_db, indent=2, sort_keys=True, default=str, ensure_ascii=False)
                     diff_viewer(expected_str, actual_str, lang="json", key="task_completion_diff")
             elif details_to_show:
                 st.json(details_to_show)
@@ -2387,13 +2406,15 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
                 col_left = st.container()
             with col_left:
                 if entry_type == "tool_call":
-                    params_str = json.dumps(entry.get("parameters", {}), indent=2)
+                    params_str = json.dumps(entry.get("parameters", {}), indent=2, ensure_ascii=False)
                     with st.expander(f"Tool Call — `{tool_name}`", expanded=False):
                         st.code(params_str, language="json")
                 elif entry_type == "tool_response":
                     tool_response = entry.get("tool_response", "")
                     response_str = (
-                        json.dumps(tool_response, indent=2) if isinstance(tool_response, dict) else str(tool_response)
+                        json.dumps(tool_response, indent=2, ensure_ascii=False)
+                        if isinstance(tool_response, dict)
+                        else str(tool_response)
                     )
                     with st.expander(f"Tool Response — `{tool_name}`", expanded=False):
                         st.code(response_str, language="json")
@@ -2504,15 +2525,15 @@ def render_record_detail(selected_run_dir: Path):
 
     # Result summary
     if result:
-        col1, col2, col3 = st.columns(3)
-        with col1:
+        cols = iter(st.columns(3))
+        with next(cols):
             if result.completed:
                 st.success(f"Completed ({result.conversation_ended_reason or 'ok'})")
             else:
                 st.warning(f"Failed: {result.error or 'unknown'}")
-        with col2:
+        with next(cols):
             st.metric("Duration", f"{result.duration_seconds:.1f}s")
-        with col3:
+        with next(cols):
             st.metric("Turns", result.num_turns)
 
     # Audio player
@@ -2521,10 +2542,10 @@ def render_record_detail(selected_run_dir: Path):
     if audio_path.exists() or el_audio_path.exists():
         st.markdown("### Audio Recording")
         if audio_path.exists():
-            st.audio(str(audio_path))
+            st.audio(audio_path)
         if el_audio_path.exists():
             st.caption("ElevenLabs recording")
-            st.audio(str(el_audio_path))
+            st.audio(el_audio_path)
 
     # User goal & ground truth
     with st.expander("User Goal", expanded=False):
@@ -2548,61 +2569,46 @@ def render_record_detail(selected_run_dir: Path):
     preload_audio_data(selected_record_dir)
 
     # Tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        [
-            "Conversation Trace",
-            "Transcript",
-            "Metrics Detail",
-            "Processed Data",
-            "Turn Taking Analysis",
-        ]
+    tab_names = (
+        "Conversation Trace",
+        "Transcript",
+        "Metrics Detail",
+        "Processed Data",
+        "Turn Taking Analysis",
     )
+    tabs = iter(st.tabs(tab_names))
 
-    with tab1:
+    with next(tabs):
         render_conversation_trace_tab(metrics, selected_record_dir)
 
-    with tab2:
+    with next(tabs):
         st.markdown("### Transcript")
+        transcript_df = None
         if metrics and metrics.context and "turns_transcript" in metrics.context:
             try:
                 turns = metrics.context["turns_transcript"]
-                if turns:
-                    transcript_df = pd.DataFrame(turns)
-                    column_config = {}
-                    if "content" in transcript_df.columns:
-                        column_config["content"] = st.column_config.TextColumn("content", width="large")
-                    if "timestamp" in transcript_df.columns:
-                        column_config["timestamp"] = st.column_config.TextColumn("timestamp", width="small")
-                    if "role" in transcript_df.columns:
-                        column_config["role"] = st.column_config.TextColumn("role", width="small")
-                    st.dataframe(transcript_df, hide_index=True, column_config=column_config)
-                else:
-                    st.info("No transcript data available")
+                transcript_df = pd.DataFrame(turns) if turns else pd.DataFrame()
             except Exception:
-                transcript_df = format_transcript(selected_record_dir / "transcript.jsonl")
-                if not transcript_df.empty:
-                    st.dataframe(transcript_df, hide_index=True)
-        else:
+                transcript_df = None  # fall back to transcript.jsonl
+        if transcript_df is None:
             transcript_df = format_transcript(selected_record_dir / "transcript.jsonl")
-            if not transcript_df.empty:
-                column_config = {}
-                if "content" in transcript_df.columns:
-                    column_config["content"] = st.column_config.TextColumn("content", width="large")
-                if "timestamp" in transcript_df.columns:
-                    column_config["timestamp"] = st.column_config.TextColumn("timestamp", width="small")
-                if "role" in transcript_df.columns:
-                    column_config["role"] = st.column_config.TextColumn("role", width="small")
-                st.dataframe(transcript_df, hide_index=True, column_config=column_config)
-            else:
-                st.info("No transcript data available")
+        if transcript_df.empty:
+            st.info("No transcript data available")
+        else:
+            transcript_df = transcript_df.set_index(["timestamp", "role"])
+            column_config = {
+                "timestamp": st.column_config.DatetimeColumn(format="YYYY-MM-DD HH:mm:ss.SSS"),
+                "role": st.column_config.MultiselectColumn(options=("user", "assistant"), color=("purple", "blue")),
+            }
+            st.dataframe(transcript_df, column_config=column_config)
 
-    with tab3:
+    with next(tabs):
         render_metrics_tab(metrics)
 
-    with tab4:
+    with next(tabs):
         render_processed_data_tab(metrics)
 
-    with tab5:
+    with next(tabs):
         render_audio_analysis_tab(selected_record_dir)
 
 

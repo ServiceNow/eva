@@ -26,8 +26,8 @@
     "6649827836": {
       "npi": "6649827836",
       "employee_id": "EMP380746",
-      "first_name": "Carlos",
-      "last_name": "Mendes",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "MGH-04B",
       "pin": "4821",
       "phone_last_four": "1842",
@@ -104,8 +104,8 @@
   "employees": {
     "EMP380746": {
       "employee_id": "EMP380746",
-      "first_name": "Carlos",
-      "last_name": "Mendes",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1984-11-22",
       "phone_last_four": "1842",
       "otp_code": "246413",

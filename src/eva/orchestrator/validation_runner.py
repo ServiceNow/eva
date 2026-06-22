@@ -1,6 +1,7 @@
 """Validation metrics runner for benchmark validation mode."""
 
 import asyncio
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -39,7 +40,7 @@ class ValidationRunner:
         self,
         run_dir: Path,
         dataset: list[EvaluationRecord],
-        thresholds: dict[str, float],
+        thresholds: dict[str, float | int],
         metric_configs: dict[str, dict] | None = None,
         output_ids: list[str] | None = None,
     ):
@@ -72,28 +73,49 @@ class ValidationRunner:
         gate_run = await gate_runner.run(contexts=contexts)
 
         gate_passed, not_finished, agent_timeout_ids = self._partition(check_ids, gate_run.all_metrics)
+
+        # Separate time-limit-exceeded records from truly not_finished — they get LLM
+        # metrics evaluated with gate bypass (same as validate_one(skip_gate=True)).
+        time_limit_ids = []
+        truly_not_finished = []
+        for record_id in not_finished:
+            result_path = self.run_dir / "records" / record_id / "result.json"
+            if result_path.exists():
+                with open(result_path) as f:
+                    result_data = json.load(f)
+                if result_data.get("conversation_ended_reason") == "time_limit_exceeded":
+                    time_limit_ids.append(record_id)
+                    continue
+            truly_not_finished.append(record_id)
+
         logger.info(
             f"Gate: {len(gate_passed)} passed ({len(agent_timeout_ids)} agent_timeout_on_user_turn), "
-            f"{len(not_finished)} not_finished"
+            f"{len(truly_not_finished)} not_finished, {len(time_limit_ids)} time_limit_exceeded"
         )
 
-        for record_id in not_finished:
+        for record_id in truly_not_finished:
             validation_results[record_id] = ValidationResult(passed=False)
 
-        if gate_passed:
+        # Run LLM metrics on gate-passed and time-limit records together.
+        # gate_passed means that the record passed all gate metrics.
+        # time_limit_ids are those that exceeded the time limit but the user simulation scores passed the gate metrics.
+        ids_to_judge = gate_passed + time_limit_ids
+        if ids_to_judge:
             metrics_runner = MetricsRunner(
                 run_dir=self.run_dir,
                 dataset=self.dataset,
                 metric_names=LLM_METRICS,
                 metric_configs=self.metric_configs,
-                record_ids=gate_passed,
+                record_ids=ids_to_judge,
             )
-            passed_contexts = {rid: contexts[rid] for rid in gate_passed if rid in contexts}
-            metrics_run = await metrics_runner.run(contexts=passed_contexts)
+            all_llm_contexts = {rid: contexts[rid] for rid in ids_to_judge if rid in contexts}
+            metrics_run = await metrics_runner.run(contexts=all_llm_contexts)
 
+            gate_passed_set = set(gate_passed)
             for record_id, record_metrics in metrics_run.all_metrics.items():
                 vr = self._evaluate_record(record_id, record_metrics, LLM_METRICS)
-                vr.scores[GATE_METRIC] = 1.0
+                if record_id in gate_passed_set:
+                    vr.scores[GATE_METRIC] = 1.0
                 validation_results[record_id] = vr
 
         passed_count = sum(1 for vr in validation_results.values() if vr.passed)
@@ -103,7 +125,7 @@ class ValidationRunner:
 
         return validation_results
 
-    async def validate_one(self, output_id: str) -> ValidationResult:
+    async def validate_one(self, output_id: str, *, skip_gate: bool = False) -> ValidationResult:
         """Validate a single record inline for per-record pipelining.
 
         Runs a two-phase check matching run_validation():
@@ -118,6 +140,10 @@ class ValidationRunner:
 
         Args:
             output_id: Record directory name (e.g. "1.2.1" or "1.2.1/trial_0").
+            skip_gate: If True, bypass the conversation_valid_end gate and run only
+                LLM metrics. Used for time-limit-accepted records where the conversation
+                timed out (no goodbye event) but we still want to evaluate against
+                thresholds.
 
         Returns:
             ValidationResult with pass/fail details.
@@ -141,23 +167,25 @@ class ValidationRunner:
 
         record_dir = self.run_dir / "records" / output_id
 
-        # Phase 1: gate metric
-        gate_metrics = await self._shared_gate_runner.run_and_save_record(output_id, record_dir)
-        rm = gate_metrics
-        ms = rm.metrics.get(GATE_METRIC) if rm else None
-        if ms is None or ms.error:
-            return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
-        score = ms.normalized_score if ms.normalized_score is not None else ms.score
-        if score != 1.0:
-            return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
+        if not skip_gate:
+            # Phase 1: gate metric
+            gate_metrics = await self._shared_gate_runner.run_and_save_record(output_id, record_dir)
+            rm = gate_metrics
+            ms = rm.metrics.get(GATE_METRIC) if rm else None
+            if ms is None or ms.error:
+                return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
+            score = ms.normalized_score if ms.normalized_score is not None else ms.score
+            if score != 1.0:
+                return ValidationResult(passed=False)  # empty failed_metrics = "not_finished"
 
-        # Phase 2: LLM metrics (gate passed)
+        # Phase 2: LLM metrics (gate passed or skipped)
         llm_metrics = await self._shared_llm_runner.run_and_save_record(output_id, record_dir)
         if llm_metrics is None:
             return ValidationResult(passed=False, failed_metrics=list(LLM_METRICS))
 
         vr = self._evaluate_record(output_id, llm_metrics, LLM_METRICS)
-        vr.scores[GATE_METRIC] = 1.0
+        if not skip_gate:
+            vr.scores[GATE_METRIC] = 1.0
         return vr
 
     @staticmethod
@@ -226,10 +254,11 @@ class ValidationRunner:
                         details[metric_name] = metric_score.details
                 continue
 
-            threshold = self.thresholds.get(metric_name, 1.0)
-            if score < threshold:
+            threshold = float(self.thresholds.get(metric_name, 1.0))
+            if score is None or score < threshold:
+                score_str = f"{score:.2f}" if score is not None else "None"
                 logger.debug(
-                    f"Record {record_id}: Metric '{metric_name}' score {score:.2f} < threshold {threshold:.2f}"
+                    f"Record {record_id}: Metric '{metric_name}' score {score_str} < threshold {threshold:.2f}"
                 )
                 failed_metrics.append(metric_name)
                 if metric_score.details:

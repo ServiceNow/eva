@@ -1,0 +1,27 @@
+{
+  "name": "Headquarters Garage",
+  "translatable": true,
+  "base": [
+    "hq garage"
+  ],
+  "translations": {
+    "fr": [
+      "garage du qg",
+      "garage du siège",
+      "garage du siège social",
+      "garage siège",
+      "parking du siège",
+      "parking siège",
+      "stationnement du siège social"
+    ],
+    "fr-CA": [
+      "garage du qg",
+      "garage du siège",
+      "garage du siège social",
+      "garage siège",
+      "parking du siège",
+      "parking siège",
+      "stationnement du siège social"
+    ]
+  }
+}

@@ -24,6 +24,10 @@ import wave
 from abc import ABC, abstractmethod
 from typing import Any
 
+from pipecat.transcriptions.language import Language
+
+from eva.models.config import LANGUAGE_DISPLAY_NAMES
+
 # Default audio parameters (Ultravox: 16kHz PCM16 mono)
 DEFAULT_SAMPLE_RATE = 16000
 DEFAULT_NUM_CHANNELS = 1
@@ -42,6 +46,21 @@ Rules:
 - Do not explain or add to your response.
 - Transcribe the audio input simply and precisely.
 - If the audio is not clear, respond with exactly: UNCLEAR"""
+
+
+def build_transcription_prompt(language: str | None = None) -> str:
+    """Return a transcription system prompt, optionally with a language hint.
+
+    Args:
+        language: BCP 47 language tag (e.g. 'en', 'fr', 'es'). When provided
+            and not 'en', a language hint is appended to the prompt so the
+            model knows what language to expect.
+    """
+    prompt = DEFAULT_TRANSCRIPTION_PROMPT
+    if language and language != "en":
+        display_name = LANGUAGE_DISPLAY_NAMES.get(Language(language), language)
+        prompt += f"\n- The audio is primarily in {display_name}. Transcribe in that language."
+    return prompt
 
 
 def pcm16_to_wav_bytes(
@@ -95,6 +114,7 @@ class BaseALMClient(ABC):
         sample_rate: int = DEFAULT_SAMPLE_RATE,
         num_channels: int = DEFAULT_NUM_CHANNELS,
         sample_width: int = DEFAULT_SAMPLE_WIDTH,
+        language: str | None = None,
     ):
         if sample_rate not in VALID_SAMPLE_RATES:
             raise ValueError(f"Invalid sample_rate={sample_rate}. Must be one of {sorted(VALID_SAMPLE_RATES)}")
@@ -106,6 +126,7 @@ class BaseALMClient(ABC):
         self.sample_rate = sample_rate
         self.num_channels = num_channels
         self.sample_width = sample_width
+        self.default_transcription_prompt = build_transcription_prompt(language)
 
     def _audio_to_b64_wav(self, audio_bytes: bytes, source_sample_rate: int) -> str:
         """Resample, WAV-wrap, and base64-encode raw PCM16 audio."""

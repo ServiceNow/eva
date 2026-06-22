@@ -9,6 +9,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from pipecat.transcriptions.language import Language
 from pydub import AudioSegment
 
 from eva.metrics.utils import (
@@ -23,7 +24,7 @@ from eva.metrics.utils import (
     validate_rating,
 )
 from eva.metrics.versioning import _CURRENT_PROMPT_HASH, hash_prompt_template
-from eva.models.config import PipelineType
+from eva.models.config import LANGUAGE_DISPLAY_NAMES, PipelineType
 from eva.models.results import MetricScore
 from eva.utils.llm_client import LLMClient
 from eva.utils.logging import get_logger
@@ -90,6 +91,7 @@ class MetricContext:
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
         pipeline_type: PipelineType = PipelineType.CASCADE,
+        language: str = "en",
     ):
         self.record_id = record_id
 
@@ -123,6 +125,8 @@ class MetricContext:
         self.agent_tools = agent_tools
         self.agent_id = agent_id
         self.current_date_time = current_date_time
+        self.language = language
+        self.language_display_name = LANGUAGE_DISPLAY_NAMES.get(Language(language), language)
 
         # Processed log data
         self.transcribed_assistant_turns = transcribed_assistant_turns or {}
@@ -163,6 +167,7 @@ class BaseMetric(ABC):
     metric_type: MetricType = MetricType.CODE  # Override in subclasses
     pass_at_k_threshold: float = 0.5  # Normalized score threshold for pass@k pass/fail
     exclude_from_pass_at_k: bool = False  # Set True for metrics not suitable for pass@k
+    exclude_from_default_metrics: bool = False
     supported_pipeline_types: frozenset[PipelineType] = frozenset(PipelineType)  # Pipeline types this metric supports
     # Bump on intentional logic changes; MetricsRunner stamps this onto every MetricScore
     # produced by compute(). Required on all concrete subclasses — drift test enforces.
@@ -294,7 +299,7 @@ class BaseMetric(ABC):
         entry["total_input_tokens"] += input_tokens or 0
         entry["total_output_tokens"] += output_tokens or 0
         entry["num_calls"] += 1
-        json_path.write_text(json.dumps(summary, indent=2))
+        json_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False))
 
     def _handle_error(self, error: Exception, context: MetricContext) -> MetricScore:
         """Standard error handling for all metrics."""
@@ -325,7 +330,7 @@ class TextJudgeMetric(BaseMetric):
 
     # Subclasses can override these
     default_model = "gpt-5.2"
-    default_params: dict[str, Any] = {"max_tokens": 100000}
+    default_params: dict[str, Any] = {"max_tokens": 100000, "service_tier": "flex"}
     rating_scale: tuple[int, int] = (1, 3)  # (min, max)
 
     def __init__(self, config: dict[str, Any] | None = None):

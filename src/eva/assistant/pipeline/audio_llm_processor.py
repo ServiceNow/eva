@@ -38,7 +38,7 @@ from pipecat.utils.time import time_now_iso8601
 
 from eva.assistant.agentic.audio_llm_system import AudioLLMAgenticSystem
 from eva.assistant.agentic.audit_log import AuditLog
-from eva.assistant.pipeline.alm_base import DEFAULT_TRANSCRIPTION_PROMPT, BaseALMClient
+from eva.assistant.pipeline.alm_base import BaseALMClient
 from eva.assistant.pipeline.frames import LLMMessageFrame
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
@@ -398,7 +398,7 @@ class AudioTranscriptionProcessor(FrameProcessor):
         super().__init__(**kwargs)
         self._audio_collector = audio_collector
         self._alm_client = alm_client
-        self._system_prompt = system_prompt or DEFAULT_TRANSCRIPTION_PROMPT
+        self._system_prompt = system_prompt or alm_client.default_transcription_prompt
         self._sample_rate = sample_rate
 
         # Callback for when transcription is ready (set by pipecat_server.py)

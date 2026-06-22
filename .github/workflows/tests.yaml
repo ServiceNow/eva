@@ -17,7 +17,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.head_ref }}  # Required in non-push events for git-auto-commit-action to work.
+          # Internal PRs: Check out the head branch so git-auto-commit-action can push pre-commit fixes.
+          # Fork PRs: The head branch doesn't exist in this repo, so fall back to the default merge ref.
+          ref: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || '' }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
@@ -36,6 +38,8 @@ jobs:
         uses: pre-commit/action@v3.0.1
 
       - name: Commit and push changes
+        # Fork PRs: The token is read-only so it's not possible to push pre-commit fixes.
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: Apply pre-commit
@@ -43,6 +47,12 @@ jobs:
       - name: Run tests
         run: uv run pytest tests/ --color=yes --cov=eva --cov-report=term-missing --durations=10
 
-      - name: Fail if pre-commit failed
+      - name: pre-commit failed (fork PR)
+        if: steps.run-pre-commit.outcome == 'failure' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::Please run 'uv run pre-commit run --all-files', commit the fixes, and push."
+          exit 1
+
+      - name: pre-commit failed (internal PR)
         if: steps.run-pre-commit.outcome == 'failure'
         run: exit 1

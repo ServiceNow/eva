@@ -28,8 +28,8 @@
     "9881824272": {
       "npi": "9881824272",
       "employee_id": "EMP723939",
-      "first_name": "Hana",
-      "last_name": "Yoshida",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "facility_code": "KY-82H",
       "pin": "1651",
       "phone_last_four": "3814",
@@ -168,8 +168,8 @@
   "employees": {
     "EMP723939": {
       "employee_id": "EMP723939",
-      "first_name": "Hana",
-      "last_name": "Yoshida",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1984-09-14",
       "phone_last_four": "3814",
       "otp_code": "749468",

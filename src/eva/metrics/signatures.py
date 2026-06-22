@@ -27,8 +27,8 @@ from eva.utils.prompt_manager import get_prompt_manager
 def _all_concrete_versioned_metric_classes() -> dict[str, type[BaseMetric]]:
     """Walk BaseMetric subclasses; return concrete classes that set a version.
 
-    Keyed on class qualname so co-named classes (e.g., the cascade vs S2S
-    variants of `agent_speech_fidelity`) get distinct entries.
+    Keyed on class qualname (not metric name) so each concrete class gets a
+    distinct entry even if two ever shared a `name`.
     """
     result: dict[str, type[BaseMetric]] = {}
 
@@ -48,8 +48,17 @@ def _all_concrete_versioned_metric_classes() -> dict[str, type[BaseMetric]]:
 
 
 def _source_hash(cls: type) -> str:
-    """sha256[:12] of the class body source."""
-    return hashlib.sha256(inspect.getsource(cls).encode("utf-8")).hexdigest()[:12]
+    """sha256[:12] of the source code of the class and its parent classes.
+
+    The hash includes the source code of the given class as well as its parent classes in the inheritance chain,
+    up to BaseMetric, which is excluded so its shared infra (logging, etc.) doesn't affect every metric's hash.
+    """
+    source = ""
+    for base in cls.__mro__:
+        if base is BaseMetric:
+            break
+        source += inspect.getsource(base)
+    return hashlib.sha256(source.encode("utf-8")).hexdigest()[:12]
 
 
 def _prompt_hash_for_metric(cls: type[BaseMetric]) -> str | None:

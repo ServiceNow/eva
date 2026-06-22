@@ -54,12 +54,13 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
     """
 
     name = "faithfulness"
-    version = "v0.1"
+    version = "v0.2"
     description = (
         "LLM judge evaluation of whether the assistant remains faithful to information, policies, and instructions"
     )
     category = "accuracy"
     default_model = "us.anthropic.claude-opus-4-6-v1"
+    default_params = {"max_tokens": 100000}  # Drop the OpenAI-only flex tier inherited from TextJudgeMetric.
     rating_scale = (1, 3)
 
     def get_prompt_variables(self, context: MetricContext, transcript_text: str) -> dict[str, Any]:

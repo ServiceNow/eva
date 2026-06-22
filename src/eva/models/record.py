@@ -79,7 +79,7 @@ class ToolMockDatabase(BaseModel):
             for record_id, mock_list in self.mocks.items()
         }
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2, ensure_ascii=False)
 
     def get_mocks_for_record(self, record_id: str) -> list[ToolMock]:
         """Get mocks for a specific record ID."""
@@ -116,6 +116,19 @@ class EvaluationRecord(BaseModel):
     current_date_time: str = Field(..., description="Current date and time for the record")
 
     scenario_context: dict = Field(..., description="Scenario context for the record")
+
+    culture_overrides: dict[str, dict[str, str | dict]] = Field(
+        default_factory=dict,
+        description="Per-language name/phone/companion pairs substituted into placeholders",
+    )
+    romanized_culture_overrides: dict[str, dict[str, str | dict]] = Field(
+        default_factory=dict,
+        description="Per-language ASCII-romanized name/companion pairs for romanized placeholders",
+    )
+    starting_utterances: dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-language opening utterance the user simulator says first; the active one is injected into user_goal at runtime",
+    )
 
     ground_truth: GroundTruth = Field(default_factory=GroundTruth, description="Expected outcomes for evaluation")
 

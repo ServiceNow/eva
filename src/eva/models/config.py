@@ -14,14 +14,16 @@ and explicit kwargs.  Scripts opt in to ``.env`` and/or CLI via
 
 import copy
 import logging
+import os
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 import yaml
 from litellm.types.router import DeploymentTypedDict
+from pipecat.transcriptions.language import Language
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -351,6 +353,15 @@ class BehaviorType(StrEnum):
     forgetful_disorganized = "forgetful_disorganized"
 
 
+# Supported languages: keys are pipecat Language codes; presence in this dict
+# defines what's supported. Display names are used in prompts and logging.
+LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
+    Language.EN: "English",
+    Language.FR: "European French",
+    Language.FR_CA: "Canadian French",
+}
+
+
 class PerturbationConfig(BaseModel):
     """Perturbations applied to the simulated user during a benchmark run.
 
@@ -361,7 +372,7 @@ class PerturbationConfig(BaseModel):
     - connection_degradation: stacks codec artifacts, packet loss, and volume fluctuation on top
 
     Agent ID env vars follow the pattern EVA_{TYPE}_USER_F / EVA_{TYPE}_USER_M.
-    Default (no accent/behavior): EVA_DEFAULT_USER_F and EVA_DEFAULT_USER_M.
+    Default (no accent/behavior): EVA_EN_USER_F and EVA_EN_USER_M (language defaults to English).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -388,6 +399,39 @@ class PerturbationConfig(BaseModel):
                 "accent and behavior cannot both be set — they each require exclusive use of the ElevenLabs agent ID"
             )
         return self
+
+
+class ElevenLabsSimulatorConfig(BaseModel):
+    """ElevenLabs Conversational AI settings for the user simulator."""
+
+    provider: Literal["elevenlabs"] = "elevenlabs"
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_extra_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            extra = [k for k in data if k not in cls.model_fields and k != "provider"]
+            if extra:
+                logger.warning(
+                    f"ElevenLabsSimulatorConfig received unrecognised fields that will be ignored: "
+                    f"{', '.join(sorted(extra))}"
+                )
+        return data
+
+
+class OpenAIRealtimeSimulatorConfig(BaseModel):
+    """OpenAI Realtime-specific settings for the user simulator."""
+
+    provider: Literal["openai_realtime"] = "openai_realtime"
+    model: str = Field("gpt-realtime-1.5", description="OpenAI Realtime model.")
+    female_voice: str = Field("marin", description="Voice used for female caller personas.")
+    male_voice: str = Field("cedar", description="Voice used for male caller personas.")
+
+
+UserSimulatorConfig = Annotated[
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    Field(discriminator="provider"),
+]
 
 
 class RunConfig(BaseSettings):
@@ -488,12 +532,14 @@ class RunConfig(BaseSettings):
         init=False,
     )
 
-    validation_thresholds: dict[str, float] = Field(
+    validation_thresholds: dict[str, float | int] = Field(
         {
             "conversation_valid_end": 1.0,
             "user_behavioral_fidelity": 1.0,
+            "max_time_limit_attempts": 1,
         },
-        description="Validation metric thresholds for rerun decisions (JSON)",
+        description="Validation metric thresholds and settings for rerun decisions (JSON). "
+        "max_time_limit_attempts sets the max number of attempts that timeout before accepting a run for evaluation. Default is 1.",
     )
 
     # Multi-attempt (for pass@k evaluation)
@@ -526,6 +572,20 @@ class RunConfig(BaseSettings):
         ),
     )
 
+    user_simulator: UserSimulatorConfig = Field(
+        default_factory=ElevenLabsSimulatorConfig,
+        description="Configuration for the provider that simulates the caller.",
+    )
+    # User simulator language — picks per-language ElevenLabs agent IDs
+    language: Language = Field(
+        Language.EN,
+        description=(
+            "Language for the user simulator. When set to a non-English value, "
+            "the matching EVA_{LANGUAGE}_USER_F and EVA_{LANGUAGE}_USER_M agent IDs must also be set. "
+            "Mutually exclusive with accent and behavior perturbations."
+        ),
+    )
+
     # Debug and filtering
     debug: bool = Field(
         False,
@@ -543,11 +603,11 @@ class RunConfig(BaseSettings):
         le=100,
         description="Maximum number of concurrent conversations",
     )
-    conversation_timeout_seconds: int = Field(
-        360,
+    conversation_time_limit_seconds: int = Field(
+        600,
         ge=30,
         le=10000,
-        description="Timeout for each conversation in seconds",
+        description="Max conversation duration in seconds",
     )
 
     # Output
@@ -589,6 +649,11 @@ class RunConfig(BaseSettings):
 
     @computed_field
     @property
+    def aliases_path(self) -> Path:
+        return Path(f"data/{self.domain}_aliases")
+
+    @computed_field
+    @property
     def agent_config_path(self) -> Path:
         return Path(f"configs/agents/{self.domain}_agent.yaml")
 
@@ -599,6 +664,16 @@ class RunConfig(BaseSettings):
         Skipped entirely when ``max_rerun_attempts == 0`` where the model
         config is unused and conflicting env vars are harmless.
         """
+        if (
+            isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig)
+            and self.perturbation is not None
+            and self.perturbation.accent is not None
+        ):
+            raise ValueError(
+                "Accent perturbations require the ElevenLabs user simulator; "
+                "OpenAI Realtime supports behavior, noise, and connection perturbations."
+            )
+
         if self.max_rerun_attempts == 0:
             return self
 
@@ -638,7 +713,8 @@ class RunConfig(BaseSettings):
         # self.model.pipeline_parts is only available if self.model is valid, which the above asserts.
         if "run_id" not in self.model_fields_set:
             suffix = "_".join(v for v in self.model.pipeline_parts.values() if v)
-            self.run_id = f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}_{suffix}"
+            lang = self.language.value
+            self.run_id = f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}_{lang}_{suffix}"
 
         return self
 
@@ -662,6 +738,46 @@ class RunConfig(BaseSettings):
             )
             loc = ("model", f"{service.lower()}_params")
             yield InitErrorDetails(type=PydanticCustomError("missing_service_params", message), loc=loc, input=params)
+
+    @model_validator(mode="after")
+    def _check_language_personas(self) -> "RunConfig":
+        """When a non-English language is set, validate matching agent IDs and mutual exclusivity."""
+        if self.language == Language.EN or not isinstance(self.user_simulator, ElevenLabsSimulatorConfig):
+            return self
+
+        key = self.language.value.upper().replace("-", "_")
+        missing = [
+            f"EVA_{key}_USER_{gender}" for gender in ("F", "M") if not os.environ.get(f"EVA_{key}_USER_{gender}")
+        ]
+        if missing:
+            raise ValueError(
+                f"EVA_LANGUAGE is set to {self.language.value!r}, but the following required env vars are missing: "
+                f"{', '.join(missing)}"
+            )
+
+        if self.perturbation is not None and (
+            self.perturbation.accent is not None or self.perturbation.behavior is not None
+        ):
+            conflicts = [
+                f"EVA_PERTURBATION__{k.upper()}={v}"
+                for k, v in (("accent", self.perturbation.accent), ("behavior", self.perturbation.behavior))
+                if v is not None
+            ]
+            raise ValueError(
+                f"EVA_LANGUAGE ({self.language.value!r}) cannot be combined with accent/behavior perturbations "
+                f"({', '.join(conflicts)}) — they each require exclusive use of the ElevenLabs agent ID."
+            )
+
+        return self
+
+    @model_validator(mode="after")
+    def _check_openai_realtime_simulator(self) -> "RunConfig":
+        """When openai_realtime user simulator is selected, OPENAI_API_KEY must be present."""
+        if not isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig):
+            return self
+        if not os.environ.get("OPENAI_API_KEY"):
+            raise ValueError("EVA_USER_SIMULATOR__PROVIDER=openai_realtime requires OPENAI_API_KEY to be set.")
+        return self
 
     @model_validator(mode="before")
     @classmethod

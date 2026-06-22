@@ -357,7 +357,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Leo",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL2",
       "group_memberships": [
         {
@@ -388,7 +388,7 @@
       "hire_date": "2021-06-14",
       "is_manager": false,
       "last_desk_assignment_date": "2026-04-15",
-      "last_name": "Andersen",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP045210",
@@ -416,11 +416,7 @@
     "buildings": {
       "BLD3": {
         "building_code": "BLD3",
-        "name": "Downtown Engineering Center",
-        "name_aliases": [
-          "Downtown",
-          "Engineering Center"
-        ]
+        "name": "Downtown Engineering Center"
       }
     },
     "conference_rooms": {
@@ -480,9 +476,6 @@
     "zones": {
       "PZA": {
         "name": "North Garage",
-        "name_aliases": [
-          "North Garage"
-        ],
         "zone_code": "PZA"
       }
     }
@@ -520,9 +513,6 @@
         "catalog_id": "APP-1007",
         "department_restrictions": [],
         "name": "Datadog",
-        "name_aliases": [
-          "datadog"
-        ],
         "requires_manager_approval": true,
         "vendor": "Datadog"
       },
@@ -534,9 +524,6 @@
         "catalog_id": "APP-1011",
         "department_restrictions": [],
         "name": "Confluence",
-        "name_aliases": [
-          "confluence"
-        ],
         "requires_manager_approval": false,
         "vendor": "Atlassian"
       }
@@ -549,11 +536,7 @@
           "permanent",
           "temporary"
         ],
-        "name": "JetBrains IntelliJ IDEA",
-        "name_aliases": [
-          "IntelliJ",
-          "IntelliJ IDEA"
-        ],
+        "name": "IntelliJ IDEA",
         "vendor": "JetBrains"
       },
       "LIC-2012": {
@@ -564,9 +547,6 @@
           "temporary"
         ],
         "name": "Adobe Acrobat Pro",
-        "name_aliases": [
-          "Acrobat Pro"
-        ],
         "vendor": "Adobe"
       }
     }

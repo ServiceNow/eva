@@ -1,0 +1,34 @@
+{
+  "name": "Headquarters East",
+  "translatable": true,
+  "base": [
+    "hq east",
+    "east building"
+  ],
+  "translations": {
+    "fr": [
+      "aile est du siège",
+      "annexe est",
+      "annexe est du siège",
+      "bâtiment est",
+      "bâtiment est du siège",
+      "qg est",
+      "site est du siège",
+      "siège est",
+      "siège social est",
+      "édifice est"
+    ],
+    "fr-CA": [
+      "aile est du siège",
+      "annexe est",
+      "annexe est du siège",
+      "bâtiment est",
+      "bâtiment est du siège",
+      "qg est",
+      "site est du siège",
+      "siège est",
+      "siège social est",
+      "édifice est"
+    ]
+  }
+}

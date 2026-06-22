@@ -4,14 +4,14 @@
 
 ## Overview
 
-Audio-based validation metric that evaluates whether the user simulator's **spoken audio** accurately represents the intended text, using Gemini for multimodal analysis. The user simulator always uses a TTS engine, so this measures TTS quality directly. It validates simulation quality by checking that all words from the intended text are present (no missing words), no extra words were added (no insertions), words are spoken correctly (no substitutions), and key entities are accurately conveyed (dates, names, numbers, codes).
+Audio-based validation metric that evaluates whether the user simulator's **spoken audio** accurately represents the intended text, using an audio LLM for multimodal analysis. The user simulator always uses a TTS engine, so this measures TTS quality directly. It validates simulation quality by checking that all words from the intended text are present (no missing words), no extra words were added (no insertions), words are spoken correctly (no substitutions), and key entities are accurately conveyed (dates, names, numbers, codes).
 
 ## How It Works
 
 ### Evaluation Method
 
 - **Type**: Audio Judge (multimodal LLM with audio input)
-- **Model**: Gemini 3.1 Pro
+- **Model**: Gemini 3 Flash
 - **Granularity**: Per-turn (each user turn evaluated independently)
 
 ### Input Data
@@ -67,5 +67,5 @@ This metric uses a 1-3 scale instead of binary 0-1 (like agent speech fidelity) 
 - **Prompt location**: `configs/prompts/judge.yaml` under `judge.user_speech_fidelity`
   - Uses the same speech fidelity prompt structure as `agent_speech_fidelity` but with `evaluation_mode="user"` and user turns
 - **Configuration options**:
-  - `audio_judge_model`: LLM model (default: Gemini 3.1 Pro)
+  - `audio_judge_model`: LLM model (default: Gemini 3 Flash)
   - `aggregation`: Aggregation method (default: "mean")

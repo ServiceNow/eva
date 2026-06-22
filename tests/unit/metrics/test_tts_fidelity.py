@@ -1,4 +1,4 @@
-"""Tests for agent_speech_fidelity and user_speech_fidelity metrics."""
+"""Tests for tts_fidelity and user_speech_fidelity metrics."""
 
 import json
 import logging
@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from google.api_core import exceptions as google_exceptions
 
-from eva.metrics.accuracy.agent_speech_fidelity import AgentSpeechFidelityMetric
+from eva.metrics.diagnostic.tts_fidelity import TTSFidelityMetric
 from eva.metrics.validation.user_speech_fidelity import UserSpeechFidelityMetric
 
 from .conftest import make_judge_metric, make_metric_context
@@ -21,7 +21,7 @@ def make_judge_response(turns: list[dict]) -> str:
 @pytest.fixture
 def agent_metric():
     return make_judge_metric(
-        AgentSpeechFidelityMetric,
+        TTSFidelityMetric,
         mock_llm=True,
         logger_name="test_agent_speech_fidelity",
     )
@@ -54,11 +54,11 @@ class TestClassAttributes:
     """Verify subclass metadata is set correctly."""
 
     def test_agent_metric_attributes(self, agent_metric):
-        assert agent_metric.name == "agent_speech_fidelity"
-        assert agent_metric.category == "accuracy"
+        assert agent_metric.name == "tts_fidelity"
+        assert agent_metric.category == "diagnostic"
         assert agent_metric.role == "assistant"
         assert agent_metric.rating_scale == (0, 1)
-        assert agent_metric.pass_at_k_threshold == 0.95
+        assert agent_metric.exclude_from_pass_at_k is True
 
     def test_user_metric_attributes(self, user_metric):
         assert user_metric.name == "user_speech_fidelity"
@@ -206,6 +206,125 @@ class TestAgentCompute:
                 result = await agent_metric.compute(context)
 
         assert "per_turn_normalized" not in result.details
+
+
+class TestAgentFailureModeSubMetrics:
+    """Verify failure_modes produce per-mode rate sub-metrics on the agent metric."""
+
+    @pytest.mark.asyncio
+    async def test_failure_modes_produce_rate_sub_metrics(self, agent_metric):
+        """Two rated turns, one flagged with two modes → 0.5 rates for each, 0.0 for others."""
+        response = make_judge_response(
+            [
+                {
+                    "turn_id": 0,
+                    "rating": 0,
+                    "explanation": "Wrong code and dropped sentence",
+                    "failure_modes": ["entity_error", "truncation"],
+                },
+                {"turn_id": 1, "rating": 1, "explanation": "Good", "failure_modes": []},
+            ]
+        )
+        agent_metric.llm_client.generate_text.return_value = (response, None)
+        with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
+            with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
+                context = _default_context()
+                result = await agent_metric.compute(context)
+
+        assert result.sub_metrics is not None
+        assert set(result.sub_metrics.keys()) == {
+            "entity_error_rate",
+            "truncation_rate",
+            "garbled_hallucination_rate",
+            "insertion_hallucination_rate",
+            "wrong_language_rate",
+        }
+        assert result.sub_metrics["entity_error_rate"].score == 0.5
+        assert result.sub_metrics["truncation_rate"].score == 0.5
+        assert result.sub_metrics["garbled_hallucination_rate"].score == 0.0
+        assert result.sub_metrics["insertion_hallucination_rate"].score == 0.0
+        assert result.sub_metrics["wrong_language_rate"].score == 0.0
+        assert result.sub_metrics["entity_error_rate"].name == "tts_fidelity.entity_error_rate"
+        assert result.sub_metrics["entity_error_rate"].details == {
+            "count": 1,
+            "num_rated": 2,
+            "turn_ids": [0],
+        }
+        assert result.details["per_turn_failure_modes"] == {0: ["entity_error", "truncation"], 1: []}
+
+    @pytest.mark.asyncio
+    async def test_no_failure_modes_returned_all_zero(self, agent_metric):
+        """Missing failure_modes in judge response → all rates 0.0, still surfaced."""
+        response = make_judge_response(
+            [
+                {"turn_id": 0, "rating": 1, "explanation": "Good"},
+                {"turn_id": 1, "rating": 1, "explanation": "Good"},
+            ]
+        )
+        agent_metric.llm_client.generate_text.return_value = (response, None)
+        with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
+            with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
+                context = _default_context()
+                result = await agent_metric.compute(context)
+
+        assert result.sub_metrics is not None
+        for key in (
+            "entity_error_rate",
+            "truncation_rate",
+            "garbled_hallucination_rate",
+            "insertion_hallucination_rate",
+            "wrong_language_rate",
+        ):
+            assert result.sub_metrics[key].score == 0.0
+        assert result.details["per_turn_failure_modes"] == {0: [], 1: []}
+
+    @pytest.mark.asyncio
+    async def test_unknown_mode_ignored(self, agent_metric):
+        """Modes the judge invents are stored in details but do not produce sub-metrics."""
+        response = make_judge_response(
+            [
+                {
+                    "turn_id": 0,
+                    "rating": 0,
+                    "explanation": "Made up mode",
+                    "failure_modes": ["something_new", "entity_error"],
+                },
+                {"turn_id": 1, "rating": 1, "explanation": "Good", "failure_modes": []},
+            ]
+        )
+        agent_metric.llm_client.generate_text.return_value = (response, None)
+        with patch.object(agent_metric, "load_role_audio", return_value=MagicMock()):
+            with patch.object(agent_metric, "encode_audio_segment", return_value="base64audio"):
+                context = _default_context()
+                result = await agent_metric.compute(context)
+
+        # Unknown mode preserved in details, no extra sub-metric created
+        assert "something_new" in result.details["per_turn_failure_modes"][0]
+        assert set(result.sub_metrics.keys()) == {
+            "entity_error_rate",
+            "truncation_rate",
+            "garbled_hallucination_rate",
+            "insertion_hallucination_rate",
+            "wrong_language_rate",
+        }
+        assert result.sub_metrics["entity_error_rate"].score == 0.5
+
+    @pytest.mark.asyncio
+    async def test_user_metric_has_no_sub_metrics(self, user_metric):
+        """user_speech_fidelity does not override build_sub_metrics, so no sub-metrics are surfaced."""
+        response = make_judge_response(
+            [
+                {"turn_id": 0, "rating": 3, "explanation": "Good"},
+                {"turn_id": 1, "rating": 1, "explanation": "Bad", "failure_modes": ["entity_error"]},
+            ]
+        )
+        user_metric.llm_client.generate_text.return_value = (response, None)
+        with patch.object(user_metric, "load_role_audio", return_value=MagicMock()):
+            with patch.object(user_metric, "encode_audio_segment", return_value="base64audio"):
+                context = _default_context()
+                result = await user_metric.compute(context)
+
+        assert result.sub_metrics is None
 
 
 class TestUserSpeechFidelityCompute:

@@ -40,7 +40,7 @@ from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
 
 from eva.assistant.agentic.audit_log import convert_to_epoch_ms, current_timestamp_ms
-from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
+from eva.assistant.base_server import AbstractAssistantServer
 from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor, UserAudioCollector, UserObserver
 from eva.assistant.pipeline.audio_llm_processor import (
     AudioLLMProcessor,
@@ -97,6 +97,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         output_dir: Path,
         port: int,
         conversation_id: str,
+        language: str = "en",
     ):
         """Initialize the assistant server.
 
@@ -109,6 +110,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
             output_dir: Directory for output files
             port: Port to listen on
             conversation_id: Unique ID for this conversation
+            language: BCP 47 language tag for STT/TTS services (e.g. 'en', 'fr', 'es-MX')
         """
         super().__init__(
             current_date_time=current_date_time,
@@ -119,6 +121,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
             output_dir=output_dir,
             port=port,
             conversation_id=conversation_id,
+            language=language,
         )
 
         self.agentic_system = None  # Will be set in _handle_session
@@ -264,11 +267,13 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 tts = create_tts_service(
                     self.pipeline_config.tts,
                     self.pipeline_config.tts_params,
+                    language_code=self.language,
                 )
 
                 alm_client = create_audio_llm_client(
                     self.pipeline_config.audio_llm,
                     self.pipeline_config.audio_llm_params,
+                    language=self.language,
                 )
                 # Note: audio_llm_audio_collector and audio_llm_processor are created
                 # after context/user_aggregator below (they need those references)
@@ -276,10 +281,12 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 stt = create_stt_service(
                     self.pipeline_config.stt,
                     self.pipeline_config.stt_params,
+                    language_code=self.language,
                 )
                 tts = create_tts_service(
                     self.pipeline_config.tts,
                     self.pipeline_config.tts_params,
+                    language_code=self.language,
                 )
                 # Create LLM client for agentic system (separate from Pipecat LLM service)
                 llm_client = LiteLLMClient(
@@ -294,7 +301,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
             # Create context aggregator with user turn strategies
             messages = []
             if realtime_llm:
-                messages = [{"role": "user", "content": f"Say '{INITIAL_MESSAGE}'"}]
+                messages = [{"role": "user", "content": f"Say '{self.initial_message}'"}]
             context = LLMContext(messages=messages)
             vad_stop_secs = VAD_STOP_SECS
             smart_turn_stop_secs = SMART_TURN_STOP_SECS
@@ -632,7 +639,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
             if self.pipeline_config.pipeline_type == PipelineType.S2S:
                 await task.queue_frames([LLMRunFrame()])
             else:
-                await task.queue_frames([TTSSpeakFrame(INITIAL_MESSAGE)])
+                await task.queue_frames([TTSSpeakFrame(self.initial_message)])
 
         @transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(transport, client):

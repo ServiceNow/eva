@@ -303,7 +303,7 @@
         "completed_date": null,
         "status": "not_completed"
       },
-      "first_name": "Zara",
+      "first_name": "<FIRST_NAME>",
       "floor_code": "FL1",
       "group_memberships": [
         {
@@ -334,7 +334,7 @@
       "hire_date": "2019-06-17",
       "is_manager": false,
       "last_desk_assignment_date": "2026-01-15",
-      "last_name": "Hussain",
+      "last_name": "<LAST_NAME>",
       "last_parking_assignment_date": null,
       "manager_auth_code": null,
       "manager_employee_id": "EMP041200",
@@ -362,10 +362,7 @@
     "buildings": {
       "BLD4": {
         "building_code": "BLD4",
-        "name": "East Campus",
-        "name_aliases": [
-          "East Campus"
-        ]
+        "name": "East Campus"
       }
     },
     "conference_rooms": {},
@@ -419,9 +416,6 @@
     "zones": {
       "PZE": {
         "name": "East Campus Garage",
-        "name_aliases": [
-          "East Campus Garage"
-        ],
         "zone_code": "PZE"
       }
     }

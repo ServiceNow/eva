@@ -28,7 +28,6 @@ from eva.assistant.pipeline.alm_base import (
     DEFAULT_NUM_CHANNELS,
     DEFAULT_SAMPLE_RATE,
     DEFAULT_SAMPLE_WIDTH,
-    DEFAULT_TRANSCRIPTION_PROMPT,
     BaseALMClient,
 )
 from eva.utils.logging import get_logger
@@ -66,6 +65,7 @@ class ALMGeminiClient(BaseALMClient):
         project: str | None = None,
         location: str | None = None,
         thinking_level: str | None = "minimal",
+        language: str | None = None,
     ):
         # thinking_level controls Gemini 3 reasoning depth: minimal | low | medium | high.
         # "minimal" is only supported on Flash / Flash-Lite / Flash-Image variants.
@@ -80,6 +80,7 @@ class ALMGeminiClient(BaseALMClient):
             sample_rate=sample_rate,
             num_channels=num_channels,
             sample_width=sample_width,
+            language=language,
         )
 
         self._adc_credentials = None  # Set in vertex mode for token refresh
@@ -256,7 +257,7 @@ class ALMGeminiClient(BaseALMClient):
         if not audio_bytes:
             return None
 
-        prompt = system_prompt or DEFAULT_TRANSCRIPTION_PROMPT
+        prompt = system_prompt or self.default_transcription_prompt
         user_msg = self.build_audio_user_message(audio_bytes, source_sample_rate)
         messages = [{"role": "system", "content": prompt}, user_msg]
 

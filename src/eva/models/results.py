@@ -68,6 +68,10 @@ class ConversationResult(BaseModel):
     audit_log_path: str | None = Field(None, description="Path to audit log JSON file")
     conversation_log_path: str | None = Field(None, description="Path to conversation log file")
     pipecat_logs_path: str | None = Field(None, description="Path to pipecat logs JSONL file")
+    user_simulator_logs_path: str | None = Field(
+        None,
+        description="Path to provider-neutral user simulator events JSONL file",
+    )
     elevenlabs_logs_path: str | None = Field(None, description="Path to elevenlabs logs JSONL file")
 
     # Summary stats (pre-metrics)
@@ -80,6 +84,10 @@ class ConversationResult(BaseModel):
     )
     initial_scenario_db_hash: str | None = Field(None, description="SHA-256 hash of initial scenario database")
     final_scenario_db_hash: str | None = Field(None, description="SHA-256 hash of final scenario database")
+    time_limit_accepted: bool = Field(
+        False,
+        description="Whether this record was accepted after exhausting time limit attempts (gate bypass)",
+    )
 
 
 class MetricScore(BaseModel):

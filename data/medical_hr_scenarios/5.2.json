@@ -29,8 +29,8 @@
     "1945826486": {
       "npi": "1945826486",
       "employee_id": "EMP174441",
-      "first_name": "Andre",
-      "last_name": "Baptiste",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "QFXW-19Q",
       "pin": "4899",
       "phone_last_four": "4821",
@@ -102,8 +102,8 @@
   "employees": {
     "EMP174441": {
       "employee_id": "EMP174441",
-      "first_name": "Andre",
-      "last_name": "Baptiste",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1987-11-14",
       "phone_last_four": "4821",
       "otp_code": "392004",

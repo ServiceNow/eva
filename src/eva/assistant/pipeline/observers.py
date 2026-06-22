@@ -85,7 +85,7 @@ class BenchmarkLogObserver(TurnTrackingObserver):
         """Write a log entry to the JSONL file."""
         try:
             with open(self.log_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(entry) + "\n")
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
         except Exception as e:
             logger.error(f"Error writing to log file: {e}")
 
@@ -281,7 +281,7 @@ class MetricsFileObserver(BaseObserver):
             entry: Dictionary to write as JSON line
         """
         if self._file_handle:
-            self._file_handle.write(json.dumps(entry) + "\n")
+            self._file_handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
             self._file_handle.flush()
 
     async def on_push_frame(self, data: FramePushed):

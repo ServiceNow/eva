@@ -1,7 +1,7 @@
-"""Agent speech fidelity metric for S2S models — entity-focused evaluation.
+"""Agent speech fidelity metric — entity-focused, pipeline-agnostic evaluation.
 
-For S2S (speech-to-speech) models, there is no intended text to compare against.
-Instead, this metric verifies that key entities spoken by the agent (from tool
+Because S2S (speech-to-speech) models expose no intended text to compare against,
+this metric instead verifies that key entities spoken by the agent (from tool
 responses and user utterances) are accurate by sending a redacted conversation
 trace alongside the agent audio to Gemini.
 """
@@ -10,13 +10,15 @@ import json
 from typing import Any
 
 from eva.metrics.base import MetricContext
+from eva.metrics.registry import register_metric
 from eva.metrics.speech_fidelity_base import SpeechFidelityBaseMetric
 from eva.metrics.utils import aggregate_per_turn_scores, normalize_rating, resolve_turn_id
 from eva.models.results import MetricScore
 
 
-class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
-    """Audio-based entity fidelity metric for S2S agent speech.
+@register_metric
+class SpeechFidelityMetric(SpeechFidelityBaseMetric):
+    """Audio-based entity fidelity metric for agent speech.
 
     Evaluates whether key entities (from tool responses and user utterances) are
     spoken correctly by the agent, without requiring intended text.
@@ -25,8 +27,8 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
     """
 
     name = "agent_speech_fidelity"
-    version = "v0.2"
-    description = "Audio-based evaluation of agent entity fidelity for S2S models"
+    version = "v0.4"
+    description = "Audio-based evaluation of agent entity fidelity"
     category = "accuracy"
     role = "assistant"
     rating_scale = (0, 1)
@@ -63,8 +65,8 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
             audio_b64 = self.encode_audio_segment(audio_segment)
 
             prompt = self.get_judge_prompt(
-                prompt_key="s2s_user_prompt",
                 conversation_trace_formatted=trace_formatted,
+                expected_language=context.language_display_name,
             )
 
             messages = self.create_audio_message(audio_b64, prompt)
@@ -72,6 +74,7 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
             per_turn_ratings: dict[int, int | None] = {}
             per_turn_explanations: dict[int, str] = {}
             per_turn_transcripts: dict[int, str] = {}
+            per_turn_languages: dict[int, str] = {}
             per_turn_normalized: dict[int, float] = {}
             min_rating, max_rating = self.rating_scale
             valid_ratings_range = list(range(min_rating, max_rating + 1))
@@ -101,6 +104,7 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
                     continue
                 rating = response_item.get("rating")
                 transcript = response_item.get("transcript")
+                language = response_item.get("language")
                 explanation = response_item.get("explanation", "")
                 has_entities = response_item.get("has_entities", True)
 
@@ -111,6 +115,7 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
                     per_turn_ratings[turn_id] = rating
                     per_turn_explanations[turn_id] = explanation
                     per_turn_transcripts[turn_id] = transcript
+                    per_turn_languages[turn_id] = language
                     continue
 
                 if rating not in valid_ratings_range:
@@ -122,6 +127,8 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
                 per_turn_ratings[turn_id] = rating
                 per_turn_explanations[turn_id] = explanation
                 per_turn_transcripts[turn_id] = transcript
+                if language is not None:
+                    per_turn_languages[turn_id] = language
                 per_turn_normalized[turn_id] = normalize_rating(rating, min_rating, max_rating)
 
             aggregated_score = aggregate_per_turn_scores(list(per_turn_normalized.values()), self.aggregation)
@@ -139,7 +146,6 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
             avg_rating = sum(valid_ratings) / len(valid_ratings) if valid_ratings else None
 
             details: dict[str, Any] = {
-                "variant": "s2s",
                 "aggregation": self.aggregation,
                 "num_turns": num_turns,
                 "num_evaluated": len(valid_ratings),
@@ -149,6 +155,7 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
                 "per_turn_ratings": per_turn_ratings,
                 "per_turn_has_entities": per_turn_has_entities,
                 "per_turn_explanations": per_turn_explanations,
+                "per_turn_languages": per_turn_languages,
                 "judge_prompt": prompt,
                 "judge_raw_response": response_text,
             }
@@ -240,7 +247,7 @@ class AgentSpeechFidelityS2SMetric(SpeechFidelityBaseMetric):
                 tool_name = entry.get("tool_name", "unknown")
                 content = entry.get("content", {})
                 if isinstance(content, (dict, list)):
-                    content_str = json.dumps(content, indent=None)
+                    content_str = json.dumps(content, indent=None, ensure_ascii=False)
                 else:
                     content_str = str(content)
                 lines.append(f"Turn {turn_id} - Tool Response ({tool_name}): {content_str}")

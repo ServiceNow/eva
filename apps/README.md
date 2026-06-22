@@ -12,7 +12,111 @@ Interactive UI for building and editing `.env` configuration files without hand-
 streamlit run apps/config_editor.py
 ```
 
-The app reads `.env.example` for the full variable set and loads existing values from `.env` if present. Each variable's widget type, enum options, ranges, and tooltips are declared directly in `.env.example` using annotation prefixes (`#i`, `#d`, `#e`, `#r`, `#x`, `#v`). Use the **Preview** button to inspect the generated file before saving, or **Download** to export it without writing to disk.
+The app reads `.env.example` for the full variable set and loads existing values from `.env` if present. Each variable's widget type, enum options, ranges, and tooltips are declared directly in `.env.example` using annotation prefixes. Use the **Preview** button to inspect the generated file before saving, or **Download** to export it without writing to disk.
+
+### `.env.example` Annotation Scheme
+
+The editor is driven entirely from annotated comments in `.env.example` — there is no separate schema file. Each annotation prefix applies to the **immediately following** variable definition (active or inactive). Annotation order doesn't matter, but the block must be contiguous: any blank line or `# ` true-comment between annotations resets the accumulator.
+
+| Prefix | Name | Purpose |
+|---|---|---|
+| `# ` | True comment | Human-readable prose. Preserved verbatim, never parsed as metadata. |
+| `#i ` | Info | Tooltip text shown next to the widget. Multiple `#i` lines join with spaces. |
+| `#d ` | Datatype | Widget type — see table below. If omitted, inferred from name + value. |
+| `#e ` | Enum options | Comma-separated valid values for `enum` / `multi_enum`. |
+| `#r ` | Range | Numeric `min,max` or `min,max,step` for `int` / `float`. |
+| `#g ` | Group | Override tab assignment (otherwise inherited from section header). |
+| `#x ` | Condition | `VAR=value` — only render when that var equals that value. Comma-separated values are OR (`#x pipeline_mode=LLM,AudioLLM`). Multiple `#x` lines = AND. |
+| `#v ` | Inactive var | `#v VARNAME=value` — a variable definition that ships off by default but is fully configurable. |
+
+#### Widget types (`#d`)
+
+| Type | Renders as |
+|---|---|
+| `string` | `st.text_input` |
+| `secret` | `st.text_input(type="password")` |
+| `bool` | `st.checkbox` |
+| `int` | `st.number_input` (integers, range from `#r`) |
+| `float` | `st.number_input` (floats, range from `#r`) |
+| `enum` | `st.selectbox` (options from `#e`) |
+| `multi_enum` | `st.multiselect` (options from `#e`) |
+| `csv_list` | `st.text_input` split/joined on comma |
+| `path` | `st.text_input` with existence hint |
+| `json_object` | Key/value table + raw JSON expander |
+| `json_deployment_list` | Special-cased deployment-card editor for `EVA_MODEL_LIST` |
+
+#### Widget inference (when `#d` is omitted)
+
+- Name contains `KEY`, `SECRET`, `TOKEN`, or `PASSWORD` → `secret`
+- Name contains `CREDENTIALS` or ends with `_PATH` / `_DIR` → `path`
+- Value is `true` / `false` → `bool`
+- Value parses as an integer → `int`, as a float → `float`
+- Value looks like a JSON array containing `model_name` → `json_deployment_list`
+- Value looks like a JSON array or object → `json_object`
+- Otherwise → `string`
+
+#### Section headers
+
+Top-level groups are declared by a 3-line header block. Variables that follow inherit the group name until the next header.
+
+```bash
+# ==============================================
+# Voice Pipeline
+# ==============================================
+```
+
+The section title must match one of the tab name constants in [`config_schema.py`](config_schema.py) (`API Configs`, `Voice Pipeline`, `LiteLLM Deployments`, `Framework & Runtime`, `Turn Detection & VAD`, `User Config`, `Debug & Logging`).
+
+#### Variable states
+
+```bash
+# Just a note — ignored entirely.
+
+#i Maximum parallel conversations.
+#d int
+#r 1,100,1
+EVA_MAX_CONCURRENT_CONVERSATIONS=5        # active — written to .env
+
+#i Domain for dataset/agent paths.
+#d enum
+#e airline,itsm,medical_hr
+#v EVA_DOMAIN=airline                     # inactive — user can enable in UI
+
+#i French accent agent ID.
+#d secret
+#x perturbation_mode=Accent
+#x EVA_PERTURBATION__ACCENT=french
+#v EVA_FRENCH_ACCENT_USER_F=              # only renders when both conditions hold
+```
+
+#### Conditions and modes
+
+`#x` conditions can reference either:
+- Another env variable's value (e.g. `#x EVA_PERTURBATION__ACCENT=french`)
+- A UI-only state key managed by a mutex radio button (e.g. `#x pipeline_mode=LLM`)
+
+Mutex radio buttons are declared in [`config_schema.py`](config_schema.py) via `MUTEX_RADIOS`. Each radio writes to a session-state key (`pipeline_mode`, `perturbation_mode`) that `#x` conditions can match against.
+
+#### Serialization rules
+
+When the user saves `.env`:
+
+| In `.env.example` | User sets a value | Disabled by mutex / `#x` | Output |
+|---|---|---|---|
+| Active (`VAR=…`) | yes | no | `VAR=value` |
+| Active (`VAR=…`) | no | no | original line verbatim |
+| Active (`VAR=…`) | any | yes | `#v VAR=value` (or example value) |
+| Inactive (`#v VAR=…`) | yes | no | `VAR=value` (activated) |
+| Inactive (`#v VAR=…`) | no | any | `#v VAR=…` verbatim |
+| Not in template, in user's loaded `.env` | — | — | appended in matching tab section (KEY/URL → API Configs, `EVA_*` → Framework & Runtime, otherwise Misc) |
+
+Round-tripping is lossless: `serialize_env({}, parse_env_example(...))` reproduces the original file byte-for-byte.
+
+#### Implementation
+
+- [`config_io.py`](config_io.py) — `parse_env_example`, `load_env`, `serialize_env`, `compute_disabled`. Pure functions, no Streamlit dependency.
+- [`config_schema.py`](config_schema.py) — group constants, tab ordering, mutex radio definitions. Everything else lives in `.env.example`.
+- [`config_editor.py`](config_editor.py) — Streamlit UI that dispatches on `AnnotatedVar.widget`.
 
 ---
 
@@ -118,7 +222,7 @@ Pauses are computed consistently with `turn_taking.py`:
 Turn timestamps, transcripts, and response latencies are loaded in priority order:
 
 1. **`metrics.json` context** (primary) — uses the same `MetricContext` fields (`audio_timestamps_user_turns`, `audio_timestamps_assistant_turns`, `transcribed_*_turns`) that `turn_taking.py` operates on. Latency is computed as `asst.segments[0].start − user.segments[-1].end` per matching turn ID.
-2. **`elevenlabs_events.jsonl`** (fallback) — used when `metrics.json` is absent or contains no timestamp data. One entry per completed `audio_start`/`audio_end` session; latency computed by temporal proximity.
+2. **`user_simulator_events.jsonl`** (fallback) — used when `metrics.json` is absent or contains no timestamp data. One entry per completed `audio_start`/`audio_end` session; latency computed by temporal proximity. Also resolves legacy `elevenlabs_events.jsonl` from older runs.
 
 ### Spectrogram Details
 

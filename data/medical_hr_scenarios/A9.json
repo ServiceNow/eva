@@ -76,8 +76,8 @@
   "employees": {
     "EMP790731": {
       "employee_id": "EMP790731",
-      "first_name": "Mina",
-      "last_name": "Hashimoto",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1991-11-08",
       "phone_last_four": "4821",
       "otp_code": "965322",

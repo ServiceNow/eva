@@ -6,7 +6,7 @@ This document explains all the variables in the `MetricContext` class, which is 
 
 `MetricContext` is constructed by the `MetricsRunner` during metrics computation. It combines:
 1. **Dataset variables** from the `EvaluationRecord` (ground truth, agent config). Constant across runs.
-2. **Result variables** from raw logs (`audit_log.json`, `pipecat_events.jsonl`, `elevenlabs_events.jsonl`), processed by `MetricsContextProcessor` into structured variables that metrics can consume.
+2. **Result variables** from raw logs (`audit_log.json`, `pipecat_events.jsonl`, `user_simulator_events.jsonl`), processed by `MetricsContextProcessor` into structured variables that metrics can consume.
 
 ---
 
@@ -323,7 +323,7 @@ Benchmark Execution:
   │  └─ audio files (assistant, user, mixed)
   │
   └─ UserSimulator writes:
-     └─ elevenlabs_events.jsonl (speech transcripts, audio timing)
+     └─ user_simulator_events.jsonl (speech transcripts, audio timing)
 
 Metrics Computation:
   ├─ MetricsRunner loads:
@@ -337,7 +337,7 @@ Metrics Computation:
   │  ├─ Extracts turns in single pass through timeline:
   │  │  ├─ audit_log.json → transcribed_user_turns, tool calls/responses
   │  │  ├─ pipecat_events.jsonl → intended_assistant_turns
-  │  │  └─ elevenlabs_events.jsonl → transcribed_assistant_turns, 
+  │  │  └─ user_simulator_events.jsonl → transcribed_assistant_turns, 
   │  │                                intended_user_turns, audio timestamps
   │  ├─ Detects interruptions from audio overlap
   │  ├─ Reconciles conversation_trace with voice logs

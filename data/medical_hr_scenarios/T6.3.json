@@ -75,8 +75,8 @@
   "employees": {
     "EMP787584": {
       "employee_id": "EMP787584",
-      "first_name": "Enrique",
-      "last_name": "Salazar",
+      "first_name": "<FIRST_NAME>",
+      "last_name": "<LAST_NAME>",
       "date_of_birth": "1998-11-16",
       "phone_last_four": "0148",
       "otp_code": "381642",

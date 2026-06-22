@@ -32,12 +32,12 @@
       "passengers": [
         {
           "elite_status": null,
-          "email": "danielle.clark@gmail.com",
-          "first_name": "Danielle",
-          "last_name": "Clark",
+          "email": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
+          "first_name": "<FIRST_NAME_ROMANIZED>",
+          "last_name": "<LAST_NAME_ROMANIZED>",
           "meal_preference": "none",
           "passenger_id": "PAX001",
-          "phone": "+1-803-555-6013",
+          "phone": "<PHONE>",
           "seat_preference": "no_preference",
           "ticket_number": "1234567890123"
         }

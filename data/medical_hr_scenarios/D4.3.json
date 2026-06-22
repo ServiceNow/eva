@@ -28,8 +28,8 @@
     "1851819913": {
       "npi": "1851819913",
       "employee_id": "EMP515922",
-      "first_name": "Tendai",
-      "last_name": "Moyo",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "facility_code": "RQCU-97T",
       "pin": "2983",
       "phone_last_four": "4821",
@@ -92,8 +92,8 @@
   "employees": {
     "EMP515922": {
       "employee_id": "EMP515922",
-      "first_name": "Tendai",
-      "last_name": "Moyo",
+      "first_name": "<FIRST_NAME_ROMANIZED>",
+      "last_name": "<LAST_NAME_ROMANIZED>",
       "date_of_birth": "1987-04-19",
       "phone_last_four": "4821",
       "otp_code": "934904",
