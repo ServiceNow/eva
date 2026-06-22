@@ -26,6 +26,18 @@
       "quartier général",
       "siège",
       "siège social"
+    ],
+    "es": [
+      "campus central",
+      "oficina central",
+      "sede central",
+      "sede principal"
+    ],
+    "de": [
+      "hauptbüro",
+      "hauptquartier",
+      "hauptsitz",
+      "zentrale"
     ]
   }
 }

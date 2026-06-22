@@ -29,6 +29,18 @@
       "parking direction",
       "parking exécutif",
       "stationnement exécutif"
+    ],
+    "es": [
+      "aparcamiento ejecutivo",
+      "garaje de dirección",
+      "garaje ejecutivo",
+      "garaje principal",
+      "parking ejecutivo"
+    ],
+    "de": [
+      "managerparkhaus",
+      "parkhaus der geschäftsleitung",
+      "parkhaus für führungskräfte"
     ]
   }
 }
