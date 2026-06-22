@@ -566,11 +566,15 @@ class DeepgramAssistantServer(AbstractAssistantServer):
                                         )
                                     )
 
+                            # Log the Deepgram session request_id so a conversation can be
+                            # traced in Deepgram's server-side logs / support.
+                            elif event_type == "Welcome":
+                                logger.info(f"Deepgram agent session request_id={event.get('request_id')}")
+
                             # Session-lifecycle / informational events — no action needed.
                             # ``History`` mirrors ConversationText (already recorded);
                             # the others confirm setup or signal the model is working.
                             elif event_type in (
-                                "Welcome",
                                 "SettingsApplied",
                                 "History",
                                 "AgentThinking",
