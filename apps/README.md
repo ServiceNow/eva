@@ -122,7 +122,7 @@ Round-tripping is lossless: `serialize_env({}, parse_env_example(...))` reproduc
 
 ## Analysis App
 
-Interactive dashboard for visualizing and comparing results.
+Interactive Streamlit dashboard for exploring and comparing EVA benchmark results. Provides cross-run comparison, run-level overviews, and deep-dive per-record analysis with rich visualizations.
 
 ### Usage
 
@@ -130,7 +130,7 @@ Interactive dashboard for visualizing and comparing results.
 streamlit run apps/analysis.py
 ```
 
-By default, the app looks for runs in the `output/` directory. You can change this in the sidebar or by setting the `EVA_OUTPUT_DIR` environment variable:
+By default, the app looks for runs in the `output/` directory. Override via the sidebar or environment variable:
 
 ```bash
 EVA_OUTPUT_DIR=path/to/results streamlit run apps/analysis.py
@@ -138,92 +138,198 @@ EVA_OUTPUT_DIR=path/to/results streamlit run apps/analysis.py
 
 ### Views
 
-**Cross-Run Comparison** — Compare aggregate metrics across multiple runs. Filter by model, provider, and pipeline type. Includes an EVA scatter plot (accuracy vs. experience) and per-metric bar charts.
+The app has three main pages:
+
+#### 1. Cross-Run Comparison
+
+Compare metrics across all selected runs with filtering and aggregation options.
+
+- **Filters**: Pipeline Type (Cascade, Speech-to-Speech, Audio-Native), Provider (OpenAI, Gemini, etc.), System/Model
+- **EVA Scatter Plot**: Visualizes EVA-A (Accuracy) vs EVA-X (Experience) with:
+  - Multiple view modes: pass@1, pass@k, pass^k, Mean
+  - Pareto frontier overlay (shows non-dominated points)
+  - Color-coded by pipeline type
+  - Hover for detailed model and component information
+- **Bar Charts**: Grouped metrics by model for Accuracy and Experience categories
+- **Summary Tables**:
+  - EVA composites (pass@1, Mean)
+  - Accuracy metrics (task_completion, faithfulness, etc.)
+  - Experience metrics (agent_speech_fidelity, turn_taking, etc.)
+  - Diagnostic & validation metrics
+- **Metric by Domain Pivot**: See how metrics vary across domains for each system
+- **Per-Sample Heatmap**: Visual grid showing per-record scores across systems (swap axes as needed)
+- **Error Summary**: Track conversation failures and metric computation errors
+
+**Options**:
+- Complete runs only: Hide runs with failed records
+- Average across domains: Collapse same-system runs across different datasets
+- Show sub-metrics: Include granular breakdowns (e.g., latency percentiles)
 
 ![Cross-Run Comparison view](images/cross_run_comparison.png)
 
-**Run Overview** — Drill into a single run: per-category metric breakdowns, score distributions, and a full records table with per-metric scores.
+#### 2. Run Overview
+
+Aggregate metrics and per-record table for a single run.
+
+- **Model Details** (top): Shows LLM, STT, TTS, S2S, or Audio-Native models
+- **Aggregate Metrics**: Horizontal bar chart with mean ± std dev, min, max for each metric
+  - Sorted by category and metric name
+  - Color-coded score ranges
+  - Error bars show ±1 standard deviation
+- **Errors**: Breakdown of conversation failures and metric errors by metric type
+- **Per-Record Metrics Table**:
+  - EVA composites, then metrics sorted by category
+  - Color-coded cells (green ≥0.8, orange 0.5–0.8, red <0.5)
+  - 🔍 link to navigate to Record Detail for each row
+  - Download table as CSV
+
+**Options**:
+- Show failed attempts: Include records marked as retries/failed
+- Show sub-metrics: Include granular metric breakdowns
 
 ![Run Overview view](images/run_overview.png)
 
-**Record Detail** — Deep-dive into individual conversation records:
-- Audio playback (mixed recording)
-- Transcript with color-coded speaker turns
-- Metric scores with explanations
-- Conversation trace: tool calls, LLM calls, and audit log entries with a timeline view
-- Database state diff (expected vs. actual)
-- User goal, persona, and ground truth from the evaluation record
+#### 3. Record Detail
+
+Deep-dive into a single conversation record with multiple perspectives.
+
+- **Status & Summary**: Completed/failed status, duration, turn count
+- **Audio Player**: Mixed stereo audio and (if available) ElevenLabs recording
+- **Expandable Sections**: User goal, ground truth (expected scenario database)
+
+**5 Tabs**:
+
+##### Conversation Trace
+
+Chat-like interface with rich context and inline metrics.
+
+- **Metrics Overview** (top): EVA composites, then metric buttons grouped by category
+  - Click any metric to see its per-turn breakdown and full details
+  - Color-coded by score: 🟢 ≥0.8, 🟡 0.4–0.8, 🔴 <0.4
+  - Selected metric shown with detailed explanation/breakdown
+- **Conversation Trace** (main): Messages with per-turn context
+  - **Assistant messages** (blue): Shows intended text + transcribed (STT) variant if different
+  - **User messages** (purple): Shows intended (TTS) text + transcribed (STT) variant if different
+  - **WER display**: Word Error Rate with substitutions/deletions/insertions breakdown
+  - **Per-turn metric badges**: Inline colored pills (hover for explanation)
+  - **Tool calls & responses**: Expandable code blocks with JSON
+  - Right-side column shows metric explanations when hovering over messages
+
+##### Transcript
+
+Structured table view of the conversation.
+
+- Columns: timestamp (formatted), role (user/assistant), content
+- Filter by speaker using the role column
+- Searchable via browser find (Cmd+F / Ctrl+F)
+- Useful for long conversations where you need to search or copy text
+
+##### Metrics Detail
+
+All computed metrics organized by category with deep details.
+
+- **EVA Composites** (top): Cards showing pass@1 and Mean scores for EVA-A/X
+- **Metrics by Category**: Accuracy, Experience, Conversation Quality, Diagnostic, Validation
+  - Each metric in an expandable section with:
+    - **Score**: Raw score value (e.g., 3 for 1–3 rating)
+    - **Normalized**: 0–1 scale version
+    - **Dimensions** (if applicable): Multi-dimensional metrics show per-dimension ratings with ⚠ flags for lowest-scoring dimensions
+    - **Details**: Judge explanation or summary
+    - **View Judge Prompt**: Expandable section showing exact LLM prompt (for per-turn metrics: multiple prompts)
+    - **Additional Details**: Raw JSON data (per-turn ratings, error details, etc.)
+
+##### Processed Data
+
+Raw processed variables from the metrics computation pipeline.
+
+- **Conversation Trace**: Full turn-by-turn trace with types (message, tool_call, tool_response)
+- **Tool Parameters**: Extracted tool call parameters as JSON
+- **Tool Responses**: Extracted tool responses as JSON
+- **Transcripts**: Assistant and user transcribed text by turn
+- **TTS Text**: Intended assistant and user text (before TTS) by turn
+- **Statistics**: Turn counts, conversation finished flag
+- **Agent Instructions**: System prompt and instructions given to the agent
+
+Use this tab for debugging data pipeline issues.
+
+##### Turn Taking Analysis (Audio Analysis)
+
+Interactive Plotly-based audio visualization showing speaker turns, timing, and pauses. Built from audio files and timestamp logs using the same data that powers the `turn_taking.py` metric.
+
+**Subplots**:
+| Row | Content | Shown when |
+|-----|---------|------------|
+| 1 | Mixed audio waveform, color-coded by speaker | Always |
+| 2 | Mixed audio spectrogram | "Show Mixed Audio Spectrogram" checkbox is on |
+| 3 | ElevenLabs audio waveform | `elevenlabs_audio_recording.mp3` exists |
+| 4 | ElevenLabs audio spectrogram | EL recording exists AND "Show ElevenLabs Spectrogram" is on |
+| 5 | Speaker Turn Timeline with durations and pauses | Always |
+
+**Waveform Rendering**:
+- **Speaker segments**: Color-coded by turn (click legend to hide speaker)
+- **Pause bands**: Semi-transparent gray rectangles marking speaker-transition gaps
+- Click legend items (User, Assistant, Pause) to toggle across all subplots
+
+**Color Coding**:
+| Color | Meaning |
+|-------|---------|
+| Blue | User speaker turn |
+| Orange-red | Assistant speaker turn |
+| Gray shaded band | Pause (gap between turns) |
+
+**Hover Tooltips**:
+- Turn ID, speaker, start/end time, duration
+- Transcript text (transcribed and intended if available)
+- Response latency in ms for user turns
+
+**Pause Definition** (consistent with `turn_taking.py`):
+- Only speaker-transition gaps count (user→assistant or assistant→user)
+- Same-speaker consecutive segments are not marked as pauses
+- Formula: `pause_duration = next_speaker.segments[0].start − current_speaker.segments[-1].end`
+- Only gaps > 1 ms are shown
+
+**Data Sources** (in priority order):
+1. **`metrics.json` context** (primary): Uses `audio_timestamps_user_turns`, `audio_timestamps_assistant_turns`, `transcribed_*_turns` fields
+2. **`elevenlabs_events.jsonl`** (fallback): One entry per audio session; latency computed by temporal proximity
+
+**Spectrogram Details**:
+- 4 kHz intermediate sample rate (via `librosa.resample`)
+- Preserves speech content up to 2 kHz (Nyquist limit)
+- Time axis starts at `t = 0` to align with waveform
+- Results cached per trial for fast switching
 
 ![Record Detail view](images/analysis_record_detail.png)
 
 ### Sidebar Navigation
 
-1. **Output Directory** — Path to the directory containing run folders
-2. **View** — Switch between the three views above
-3. **Run Selection** — Pick a run (with metadata summary)
-4. **Record Selection** — Pick a record within the selected run
-5. **Trial Selection** — If a record has multiple trials, pick one
+1. **Output Directories**: Specify one or more paths containing run folders
+2. **Run Selection**: Pick a run (shows model/domain metadata)
+3. **Record Selection**: Pick a record within the selected run
+4. **Trial Selection**: If a record has multiple trials, pick one
 
----
+### Common Tasks
 
-## Audio Analysis Tab
+**Find a metric value**: Run Overview → locate record in table → click 🔍 → Record Detail → Metrics Detail tab → expand metric
 
-The **Audio Analysis** tab in the Record Detail view renders an interactive Plotly figure built from the audio files and timestamp logs of a single trial. It is implemented in `apps/audio_plots.py`.
+**Understand metric failure**: Cross-Run Comparison → Errors section → Run Overview → Errors table → Record Detail → Metrics Detail → check Error field
 
-### Subplots
+**Compare agent's intended vs transcribed speech**: Record Detail → Conversation Trace tab → look for indented text ("transcribed (STT):" or "intended (TTS):")
 
-| Row | Content | Shown when |
-|-----|---------|------------|
-| 1 | Mixed audio waveform, colour-coded by speaker turn | Always |
-| 2 | Mixed audio spectrogram | "Show Mixed Audio Spectrogram" checkbox is on |
-| 3 | ElevenLabs audio waveform, colour-coded by speaker turn | `elevenlabs_audio_recording.mp3` exists in the record directory |
-| 4 | ElevenLabs audio spectrogram | EL recording exists **and** "Show ElevenLabs Spectrogram" checkbox is on |
-| 5 | Speaker Turn Timeline with per-turn durations and pause markers | Always |
+**Analyze per-turn metrics**: Record Detail → Conversation Trace → click metric button → see per-turn breakdown with reasons and scores
 
-When `elevenlabs_audio_recording.mp3` is not found, rows 3 and 4 are hidden and an info message is shown instead. Spectrogram checkboxes appear above the chart only for the recordings that are available. Results are cached per trial so switching between records is fast after the first load.
+**Download results as CSV**: Run Overview or Cross-Run Comparison → scroll to bottom of table → Download CSV button
 
-### Waveform Rendering
+### Color Coding
 
-Each waveform subplot is drawn in two layers:
+- **Score cells**: Green ≥0.8, Orange 0.5–0.8, Red <0.5
+- **Metric buttons**: 🟢 ≥0.8, 🟡 0.4–0.8, 🔴 <0.4
+- **Turn Taking cards**: Color bar on left matches score color
+- **Conversation speakers**: Blue (assistant), Purple (user)
 
-1. **Speaker segments** — drawn in colour for each active turn window. Clicking a legend item (User or Assistant) hides all traces for that speaker.
-2. **Pause bands** — semi-transparent gray rectangles over speaker-transition gaps, linked to the **Pause** legend item so they can be toggled on/off.
+### Tips & Tricks
 
-### Colour Coding
-
-| Colour | Meaning |
-|--------|---------|
-| Blue | User speaker turn |
-| Orange-red | Assistant speaker turn |
-| Gray shaded band | Pause — speaker-transition gap (user→assistant or assistant→user) |
-
-Colours are chosen for visibility in both Streamlit light and dark mode. Clicking a legend item (User, Assistant, Pause) toggles that category across all subplots simultaneously.
-
-### Hover Tooltips
-
-Hovering over any waveform sample or timeline bar shows:
-- Turn ID, speaker, start/end time, and duration
-- Transcript text (heard and intended where available)
-- Response latency in ms for user turns (time from user's last segment end to assistant's first segment start)
-
-Hovering over a pause band shows the pause duration and the from/to speakers.
-
-### Pause Definition
-
-Pauses are computed consistently with `turn_taking.py`:
-
-- Only **speaker-transition gaps** count as pauses: a gap between a user segment end and the next assistant segment start, or vice versa.
-- Same-speaker consecutive segments (e.g. two user audio sessions back to back) are not marked as pauses.
-- Formula: `pause_duration = next_speaker.segments[0].start − current_speaker.segments[-1].end`
-- Only gaps `> 1 ms` are shown.
-
-### Turn Data Source
-
-Turn timestamps, transcripts, and response latencies are loaded in priority order:
-
-1. **`metrics.json` context** (primary) — uses the same `MetricContext` fields (`audio_timestamps_user_turns`, `audio_timestamps_assistant_turns`, `transcribed_*_turns`) that `turn_taking.py` operates on. Latency is computed as `asst.segments[0].start − user.segments[-1].end` per matching turn ID.
-2. **`elevenlabs_events.jsonl`** (fallback) — used when `metrics.json` is absent or contains no timestamp data. One entry per completed `audio_start`/`audio_end` session; latency computed by temporal proximity.
-
-### Spectrogram Details
-
-Spectrograms are computed at a 4 kHz intermediate sample rate (via `librosa.resample`) to preserve speech content up to 2 kHz (Nyquist) while keeping heatmap size bounded (~60–250 K cells for typical 5–90 s recordings). The time axis starts at `t = 0` to align with the waveform.
+- **Hover everywhere**: Hover over chart points, metric cells, badges, and timeline bars for detailed information
+- **Browser find**: Use Cmd+F / Ctrl+F in the Transcript tab to search the conversation
+- **Pareto frontier**: The dashed line in the EVA scatter plot shows non-dominated runs—useful for identifying "best" approaches
+- **Swap heatmap axes**: See samples as rows and systems as columns (or vice versa)
+- **Sub-metrics**: Enable "Show sub-metrics" for granular breakdowns (e.g., latency percentiles)
