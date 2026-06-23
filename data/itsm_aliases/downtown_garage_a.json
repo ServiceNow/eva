@@ -25,6 +25,20 @@
       "parking a du centre-ville",
       "parking du centre-ville",
       "stationnement a du centre-ville"
+    ],
+    "es": [
+      "aparcamiento a",
+      "aparcamiento a del centro",
+      "garaje a del centro",
+      "garaje del centro",
+      "parking a del centro"
+    ],
+    "de": [
+      "parkhaus a",
+      "parkhaus a in der innenstadt",
+      "parkhaus im zentrum",
+      "parkhaus in der city",
+      "parkhaus in der innenstadt"
     ]
   }
 }

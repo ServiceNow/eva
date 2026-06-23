@@ -29,6 +29,17 @@
       "siège est",
       "siège social est",
       "édifice est"
+    ],
+    "es": [
+      "edificio este",
+      "sede central este",
+      "sede este",
+      "zona este de la sede"
+    ],
+    "de": [
+      "hauptsitz ost",
+      "ostgebäude",
+      "zentrale ost"
     ]
   }
 }

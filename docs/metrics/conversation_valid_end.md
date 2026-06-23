@@ -15,11 +15,11 @@ Deterministic validation metric that verifies the conversation properly ended wi
 
 ### Input Data
 
-Uses `output_dir` from MetricContext to read `elevenlabs_events.jsonl`.
+Uses `output_dir` from MetricContext to read `user_simulator_events.jsonl`.
 
 ### Evaluation Methodology
 
-1. Read `elevenlabs_events.jsonl` from output directory
+1. Read `user_simulator_events.jsonl` from output directory
 2. Parse last line as JSON
 3. Check if `type == "tool_response"` and `data.agent_tool_response.tool_name == "end_call"`
 4. Return 1.0 if both conditions met, else 0.0

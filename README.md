@@ -19,7 +19,7 @@ Using a realistic **bot-to-bot architecture**, EVA runs fully automated evaluati
 - **Metrics** for both EVA-A and EVA-X, fully documented and validated with judge prompts, code, etc.
 - **213 enteprise scenarios** across 3 domains targeting voice-specific failure modes
 - **Results** for 12 cascade and audio-native systems (speech-to-speech models, large audio language models) — see [Experiment Setup](docs/experiment_setup.md) for model configurations.
-- **Perturbation suite** that can apply a wide range of background noises, user accents, simulated connection degradation, and combined perturbations to test voice agents on realistic audio conditions.
+- **Perturbation suite** that can apply a wide range of background noises, user accents, simulated connection degradation, and combined perturbations to test voice agents on realistic audio conditions. Accent variants require the ElevenLabs caller.
 
 
 <details>
@@ -51,7 +51,7 @@ uv sync --all-extras
 
 # Copy environment template
 cp .env.example .env
-# Edit .env with your API keys (ELEVENLABS_API_KEY, OPENAI_API_KEY required)
+# Edit .env with the API keys required by your selected providers
 ```
 
 After installation, you can run EVA using either:
@@ -82,7 +82,7 @@ pip install -e ".[dev]"
 **Required:**
 - `OPENAI_API_KEY` (or another LLM provider): Powers the assistant LLM and text judge metrics
 - `EVA_MODEL_LIST`: Model deployments that reference your API key (see `.env.example`). Also configurable via `--model-list` CLI flag. Only used for regular LLMs.
-- `ELEVENLABS_API_KEY` + agent IDs: For user simulation
+- User simulation: `ELEVENLABS_API_KEY` + agent IDs for the default ElevenLabs caller, or `OPENAI_API_KEY` for the OpenAI Realtime caller
 - STT/TTS API key and model: Passed via `EVA_MODEL__STT_PARAMS` / `EVA_MODEL__TTS_PARAMS` (default provider is Cartesia)
 
 **For all metrics:**
@@ -97,6 +97,12 @@ EVA_DOMAIN=airline
 EVA_MAX_CONCURRENT_CONVERSATIONS=5
 EVA_DEBUG=false                       # Run only 1 record for testing when enabled
 EVA_RECORD_IDS=1.2.1,1.2.2            # Run specific records only (remove to run all records)
+
+# User Simulator Configuration
+EVA_USER_SIMULATOR__PROVIDER=elevenlabs      # elevenlabs | openai_realtime
+EVA_USER_SIMULATOR__MODEL=gpt-realtime-1.5   # Used by openai_realtime
+EVA_USER_SIMULATOR__FEMALE_VOICE=marin       # Used by openai_realtime
+EVA_USER_SIMULATOR__MALE_VOICE=cedar         # Used by openai_realtime
 
 # Pipeline Model Configuration (nested under EVA_MODEL__)
 EVA_MODEL__LLM=gpt-5-mini             # LLM model name (must match EVA_MODEL_LIST)
@@ -115,7 +121,34 @@ EVA_LOG_LEVEL=INFO                    # DEBUG | INFO | WARNING | ERROR
 
 See `.env.example` for the complete list of configuration options.
 
+**ElevenLabs Agents is the recommended user simulator.** The OpenAI Realtime caller is available as an experimental alternative for those who want to try it, but has not yet been validated at scale and should be treated as beta.
+
+The OpenAI Realtime caller supports behavior, background-noise, and connection-degradation perturbations. Accent variants currently require the ElevenLabs caller because they select dedicated ElevenLabs agents. Both caller providers write `user_simulator_events.jsonl`.
+
+#### Known limitations of the OpenAI Realtime caller (beta)
+
+Before relying on it for large-scale evaluation, the following should be kept in mind:
+
+- **Validation metrics** were built for cascade pipelines and may need updates for S2S. `UserBehavioralFidelity` was only validated on ElevenLabs Agents, so it may not catch failure modes specific to GPT-Realtime. GPT-Realtime may also struggle with instruction-following, though user scenarios are generally simple enough that this may not be an issue in practice.
+- **Transcription vs. intent**: with ElevenLabs Agents (Cascade), metrics have access to the *intended* text the user was trying to say. With OpenAI Realtime, only a *transcript* of the audio is available. Transcription errors can be mistaken for behavioral failures by `UserBehavioralFidelity`, or cause downstream issues for metrics like `faithfulness` and `conversation_progression` (e.g. a confirmation number mis-transcribed as "DJLPO" instead of "DJ3LPO" could produce an unjustified faithfulness failure).
+- **Assistant turn transcription** is produced by OpenAI's input audio transcription (Whisper) rather than ElevenLabs ScribeV2.2Realtime. Increased transcription errors on assistant turns could unfairly penalize agents on text-based metrics.
+- **Conversation trace merging** — combining user simulator logs with agent logs to build the turn-by-turn trace is a known source of subtle bugs (delayed or missing transcripts). This new setup has not yet been stress-tested at scale.
+
 ### Running EVA
+
+#### OpenAI Realtime Caller Smoke Test
+
+A smoke test is easier to perform with the OpenAI Realtime caller, as it does not require an ElevenLabs agent ID.
+After configuring the assistant pipeline and `OPENAI_API_KEY` in `.env`, run one ITSM record with the OpenAI caller:
+
+```bash
+EVA_USER_SIMULATOR__PROVIDER=openai_realtime \
+EVA_USER_SIMULATOR__MODEL=gpt-realtime-1.5 \
+EVA_DOMAIN=itsm \
+EVA_RECORD_IDS=15 \
+EVA_MAX_CONCURRENT_CONVERSATIONS=1 \
+eva
+```
 
 #### Running with CLI Arguments
 
@@ -274,7 +307,7 @@ EVA evaluates agents using a **bot-to-bot audio architecture** — no human list
 
 | Component                           | Role                                                                                                                                                                                                                                                                                         |
 |-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 🎭 **User Simulator** (ElevenAgent) | Plays the role of a caller with a defined goal and persona                                                                                                                                                                                                                                   |
+| 🎭 **User Simulator** (ElevenLabs or OpenAI Realtime) | Plays the role of a caller with a defined goal and persona                                                                                                                                                                                                                   |
 | 🤖 **Voice Agent** (Pipecat)        | The system under evaluation — supports cascade (STT→LLM→TTS) and speech-to-speech models                                                                                                                                                                                                     |
 | 🔧 **Tool Executor**                | The engine that provides deterministic, reproducible tool responses via custom Python functions. It dynamically queries and modifies a predefined per-scenario database.                                                                                                                     |
 | ✅ **Validators**                    | Automated checks that verify conversations are complete and that the user simulator faithfully reproduced its intended goal — no human annotation required. Conversations that fail validation are automatically regenerated, ensuring only clean, correctly executed runs enter evaluation. |
@@ -297,7 +330,7 @@ output/<run_id>/
     ├── transcript.jsonl     # Turn-by-turn transcript
     ├── audit_log.json       # Complete interaction log
     ├── pipecat_logs.jsonl   # Pipecat framework events
-    ├── elevenlabs_events.jsonl # ElevenLabs events
+    ├── user_simulator_events.jsonl # Provider-neutral caller events
     └── metrics.json         # Per-record metric scores and details
 ```
 
@@ -344,7 +377,7 @@ eva/
 │   │   ├── tools/             # Python-based tool implementations
 │   │   ├── pipeline/          # Audio/LLM processing pipeline
 │   │   └── services/          # STT/TTS/LLM factories
-│   ├── user_simulator/        # ElevenLabs user simulator
+│   ├── user_simulator/        # Pluggable ElevenLabs and OpenAI Realtime callers
 │   ├── metrics/               # Evaluation metrics
 │   │   ├── base.py            # Base metric classes
 │   │   ├── processor.py       # Metrics context processor

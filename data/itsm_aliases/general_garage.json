@@ -20,6 +20,15 @@
       "parking principal",
       "stationnement général",
       "stationnement principal"
+    ],
+    "es": [
+      "aparcamiento general",
+      "garaje general",
+      "garaje principal",
+      "parking general"
+    ],
+    "de": [
+      "hauptparkhaus"
     ]
   }
 }

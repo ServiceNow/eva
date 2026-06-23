@@ -14,6 +14,16 @@
       "garage sud",
       "parking sud",
       "stationnement sud"
+    ],
+    "es": [
+      "aparcamiento sur",
+      "garaje sur",
+      "parking sur"
+    ],
+    "de": [
+      "parkhaus süd",
+      "süd-parkhaus",
+      "südparkhaus"
     ]
   }
 }

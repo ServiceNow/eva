@@ -290,7 +290,7 @@ Interactive Plotly-based audio visualization showing speaker turns, timing, and 
 
 **Data Sources** (in priority order):
 1. **`metrics.json` context** (primary): Uses `audio_timestamps_user_turns`, `audio_timestamps_assistant_turns`, `transcribed_*_turns` fields
-2. **`elevenlabs_events.jsonl`** (fallback): One entry per audio session; latency computed by temporal proximity
+2. **`user_simulator_events.jsonl`** (fallback) — used when `metrics.json` is absent or contains no timestamp data. One entry per completed `audio_start`/`audio_end` session; latency computed by temporal proximity. Also resolves legacy `elevenlabs_events.jsonl` from older runs.
 
 **Spectrogram Details**:
 - 4 kHz intermediate sample rate (via `librosa.resample`)
