@@ -88,7 +88,7 @@ export function Perturbations({ systems }: PerturbationsProps) {
               );
             })}
             <div className="text-xs text-text-muted ml-auto">
-              <span className="text-amber-400 font-bold">*</span> significant perturbation effect
+              <span className="text-amber-400 font-bold">*</span> significant perturbation effect:  <span className="text-amber-400">*</span> p &lt; 0.05, <span className="text-amber-400">**</span> p &lt; 0.01, <span className="text-amber-400">***</span> p &lt; 0.001
             </div>
           </div>
           {METRICS.map((m) => {

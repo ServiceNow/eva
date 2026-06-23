@@ -1,10 +1,10 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, Customized, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, Customized, LabelList } from 'recharts';
 import type { SystemStats } from '../../data/leaderboardData';
-import { getPertValue, perturbations, perturbationLabels, groupedSystems } from '../../data/leaderboardData';
+import { getPertValue, getPertMetricValue, perturbations, perturbationLabels, groupedSystems } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
-import { tierLabel, colorFor, SeparatorsLayer, StarMark } from './perturbationChartUtils';
+import { tierLabel, colorFor, CustomTick, type CustomTickProps, SeparatorsLayer, StarMark } from './perturbationChartUtils';
 
-interface PerturbationBarChartProps {
+interface PerturbationMetricValueBarChartProps {
   metric: string;
   metricLabel: string;
   systems: SystemStats[];
@@ -15,6 +15,10 @@ interface ChartRow {
   type: SystemStats['type'];
   [key: string]: string | number | [number, number] | boolean | null | undefined;
 }
+
+// Conditions shown as bars: clean baseline first, then each perturbation.
+const CONDITIONS: string[] = ['clean', ...perturbations];
+const conditionLabels: Record<string, string> = { clean: 'Clean', ...perturbationLabels };
 
 interface TooltipPayloadItem {
   dataKey: string;
@@ -36,19 +40,19 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
       <div className="text-sm font-semibold text-text-primary mb-2">{label}</div>
       <div className="flex flex-col gap-1 text-xs">
         {payload.map((item) => {
-          // dataKey of the form `<pert>_point`
-          const pertKey = item.dataKey.replace(/_point$/, '');
-          const sigLabel = item.payload[`${pertKey}_sig_label`] as string | undefined;
-          const err = item.payload[`${pertKey}_err`] as [number, number] | undefined;
+          // dataKey of the form `<condition>_point`
+          const condKey = item.dataKey.replace(/_point$/, '');
+          const sigLabel = item.payload[`${condKey}_sig_label`] as string | undefined;
+          const err = item.payload[`${condKey}_err`] as [number, number] | undefined;
           if (item.value === null || item.value === undefined || Number.isNaN(item.value)) return null;
           const lower = err ? item.value - err[0] : item.value;
           const upper = err ? item.value + err[1] : item.value;
           return (
             <div key={item.dataKey} className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: item.color }} />
-              <span className="text-text-muted">{perturbationLabels[pertKey] ?? pertKey}:</span>
+              <span className="text-text-muted">{conditionLabels[condKey] ?? condKey}:</span>
               <span className="font-mono text-text-primary">
-                {item.value >= 0 ? '+' : ''}{item.value.toFixed(3)}
+                {item.value.toFixed(3)}
                 {sigLabel ? <span className="text-amber-400 ml-0.5">{sigLabel}</span> : null}
               </span>
               <span className="font-mono text-text-muted">
@@ -64,28 +68,29 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 
 
 
-export function PerturbationBarChart({ metric, metricLabel, systems }: PerturbationBarChartProps) {
+export function PerturbationMetricValueBarChart({ metric, metricLabel, systems }: PerturbationMetricValueBarChartProps) {
   const colors = useThemeColors();
 
   // Order systems by architecture group: S2S → Hybrid (2-part) → Cascade.
   const ordered = groupedSystems(systems);
 
-  // Perturbation results are always shown pooled across domains; the domain
-  // pills at the top of the leaderboard scope only the scatter plot.
+  // Always shown pooled across domains; the domain pills scope only the scatter plot.
   const data: ChartRow[] = ordered.flatMap((s) => {
     const row: ChartRow = { name: s.name, type: s.type };
     let any = false;
-    for (const p of perturbations) {
-      const v = getPertValue(s, metric, p, 'pooled');
+    for (const c of CONDITIONS) {
+      const v = getPertMetricValue(s, metric, c, 'pooled'); // bar height + CI
       if (v) {
-        row[`${p}_point`] = v.point;
-        row[`${p}_err`] = [v.point - v.ci_lower, v.ci_upper - v.point];
-        row[`${p}_sig_label`] = tierLabel(v.corrected_p);
+        row[`${c}_point`] = v.point;
+        row[`${c}_err`] = [v.point - v.ci_lower, v.ci_upper - v.point];
+        // asterisks: clean has none; perturbations reuse the delta significance
+        const sig = c === 'clean' ? null : getPertValue(s, metric, c, 'pooled');
+        row[`${c}_sig_label`] = sig ? tierLabel(sig.corrected_p) : '';
         any = true;
       } else {
-        row[`${p}_point`] = null;
-        row[`${p}_err`] = undefined;
-        row[`${p}_sig_label`] = '';
+        row[`${c}_point`] = null;
+        row[`${c}_err`] = undefined;
+        row[`${c}_sig_label`] = '';
       }
     }
     return any ? [row] : [];
@@ -94,7 +99,7 @@ export function PerturbationBarChart({ metric, metricLabel, systems }: Perturbat
   if (data.length === 0) {
     return (
       <div className="text-sm text-text-muted italic px-4 py-6">
-        No perturbation data available for {metricLabel}.
+        No metric-value data available for {metricLabel}.
       </div>
     );
   }
@@ -120,47 +125,46 @@ export function PerturbationBarChart({ metric, metricLabel, systems }: Perturbat
               <XAxis
                 dataKey="name"
                 stroke={colors.text.muted}
-                tick={{ fill: colors.text.secondary, fontSize: 10 }}
-                tickFormatter={(v: string) =>
-                  v.startsWith('Scribe v2.2 Realtime')
-                    ? 'Scribe + Gemini 3 Flash + Conversational v3'
-                    : v
-                }
+                tick={(props: unknown) => (
+                  <CustomTick
+                    {...(props as CustomTickProps)}
+                    fill={colors.text.secondary}
+                    fontSize={10}
+                    angle={-30}
+                    textAnchor="end"
+                  />
+                )}
                 interval={0}
-                angle={-30}
-                textAnchor="end"
                 height={80}
               />
               <YAxis
                 stroke={colors.text.muted}
                 tick={{ fill: colors.text.secondary, fontSize: 11 }}
-                domain={[-0.5, 0.5]}
-                ticks={[-0.5, -0.25, 0, 0.25, 0.5]}
+                domain={[0, 1]}
+                ticks={[0, 0.25, 0.5, 0.75, 1]}
                 tickFormatter={(v: number) => v.toFixed(2)}
                 allowDataOverflow
                 width={56}
-                label={{ value: 'Δ vs clean', angle: -90, position: 'insideLeft', offset: 0, fill: colors.text.secondary, style: { fontSize: 12 } }}
+                label={{ value: 'metric value', angle: -90, position: 'insideLeft', offset: 0, fill: colors.text.secondary, style: { fontSize: 12 } }}
               />
-              <ReferenceLine y={0} stroke={colors.text.muted} />
               <Customized
                 component={() => (
-                  <SeparatorsLayer separators={separators} strokeColor={colors.text.secondary} yTop={0.5} yBottom={-0.5} />
+                  <SeparatorsLayer separators={separators} strokeColor={colors.text.secondary} yTop={1} yBottom={0} />
                 )}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: colors.bg.hover, opacity: 0.3 }} />
-              {perturbations.map((p) => (
-                <Bar key={p} dataKey={`${p}_point`} fill={colorFor(p, colors)} radius={[2, 2, 0, 0]}>
-                  <ErrorBar dataKey={`${p}_err`} direction="y" width={4} strokeWidth={1} stroke={colors.text.muted} />
+              {CONDITIONS.map((c) => (
+                <Bar key={c} dataKey={`${c}_point`} fill={colorFor(c, colors, true)} radius={[2, 2, 0, 0]}>
+                  <ErrorBar dataKey={`${c}_err`} direction="y" width={4} strokeWidth={1} stroke={colors.text.muted} />
                   <LabelList
                     // Encode the row's significance + CI into cp.value via valueAccessor
                     // rather than reading `data[cp.index]` in content: Bar drops zero-dimension
-                    // rectangles, so cp.index is into a filtered array and would misalign rows
-                    // after any all-zero row.
+                    // rectangles, so cp.index is into a filtered array and would misalign rows.
                     valueAccessor={(entry: { payload?: ChartRow }) => {
                       const r = entry?.payload;
-                      const label = r?.[`${p}_sig_label`] as string | undefined;
-                      const point = r?.[`${p}_point`] as number | null | undefined;
-                      const err = r?.[`${p}_err`] as [number, number] | undefined;
+                      const label = r?.[`${c}_sig_label`] as string | undefined;
+                      const point = r?.[`${c}_point`] as number | null | undefined;
+                      const err = r?.[`${c}_err`] as [number, number] | undefined;
                       if (!label || point == null || !err) return '';
                       return `${label}|${point}|${err[0]}|${err[1]}`;
                     }}
@@ -183,8 +187,8 @@ export function PerturbationBarChart({ metric, metricLabel, systems }: Perturbat
                           ciLower={point - errLo}
                           ciUpper={point + errHi}
                           amberColor={colors.accent.amber}
-                          yTop={0.5}
-                          yBottom={-0.5}
+                          yTop={1}
+                          yBottom={0}
                         />
                       );
                     }}
@@ -197,7 +201,7 @@ export function PerturbationBarChart({ metric, metricLabel, systems }: Perturbat
       </div>
       <div className="mt-2 text-xs text-text-muted px-2">
         <span className="font-medium text-text-secondary">{metricLabel}</span>
-        {' '}— Δ = perturbed − clean
+        {' '}— metric value, pooled across domains; asterisks mark significant change vs. clean
       </div>
     </div>
   );

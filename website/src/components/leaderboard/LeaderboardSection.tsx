@@ -4,6 +4,7 @@ import { Section } from '../layout/Section';
 import { ScatterPlot } from './ScatterPlot';
 import { MetricHeatmap } from './MetricHeatmap';
 import { Perturbations } from './Perturbations';
+import { SttTranscription } from './SttTranscription';
 import type { AggregateColumn } from './MetricHeatmap';
 import {
   systems,
@@ -166,6 +167,7 @@ export function LeaderboardSection() {
         </div>
 
         <Perturbations systems={systems} />
+        <SttTranscription systems={systems} />
       </div>
     </Section>
   );
