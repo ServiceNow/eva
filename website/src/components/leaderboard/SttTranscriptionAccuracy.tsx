@@ -65,11 +65,11 @@ interface SttRaw {
 const STT_ACCURACY: SttRaw[] = [
   { name: 'ElevenLabs / Scribe v2.2 Realtime', clean: 0.97, accent: 0.96, background_noise: 0.94, both: 0.94, p: { accent: 0., background_noise: 0., both: 0. } },
   { name: 'AssemblyAI / Universal 3.5 Pro', clean: 0.81, accent: 0.75, background_noise: 0., both: 0., p: { accent: 0., background_noise: 0., both: 0. } },
-  { name: 'Nvidia / Parakeet 1.1', clean: 0.78, accent: 0.75, background_noise: 0.74, both: 0.72, p: { accent: 0., background_noise: 0., both: 0. } },
-  { name: 'Deepgram / Nova 3', clean: 0.75, accent: 0.62, background_noise: 0.57, both: 0.47, p: { accent: 0., background_noise: 0., both: 0. } },
-  { name: 'OpenAI / Whisper Large v3', clean: 0.66, accent: 0.52, background_noise: 0.47, both: 0.44, p: { accent: 0., background_noise: 0., both: 0. } },
+  { name: 'Nvidia / Parakeet 1.1 CTC', clean: 0.78, accent: 0.75, background_noise: 0.74, both: 0.72, p: { accent: 0., background_noise: 0., both: 0. } },
+  { name: 'Deepgram / Nova-3', clean: 0.75, accent: 0.62, background_noise: 0.57, both: 0.47, p: { accent: 0., background_noise: 0., both: 0. } },
+  { name: 'OpenAI / Whisper-Large-v3', clean: 0.66, accent: 0.52, background_noise: 0.47, both: 0.44, p: { accent: 0., background_noise: 0., both: 0. } },
   { name: 'Cohere / Cohere Transcribe', clean: 0.62, accent: 0.48, background_noise: 0.46, both: 0.38, p: { accent: 0., background_noise: 0., both: 0. } },
-  { name: 'Cartesia / Ink Whisper', clean: 0.60, accent: 0.48, background_noise: 0.49, both: 0.34, p: { accent: 0., background_noise: 0., both: 0. } },
+  { name: 'Cartesia / Ink-Whisper', clean: 0.60, accent: 0.48, background_noise: 0.49, both: 0.34, p: { accent: 0., background_noise: 0., both: 0. } },
 ];
 
 // Placeholder 95% confidence-interval half-width applied symmetrically to every bar.
