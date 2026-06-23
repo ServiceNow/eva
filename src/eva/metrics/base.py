@@ -167,6 +167,7 @@ class BaseMetric(ABC):
     metric_type: MetricType = MetricType.CODE  # Override in subclasses
     pass_at_k_threshold: float = 0.5  # Normalized score threshold for pass@k pass/fail
     exclude_from_pass_at_k: bool = False  # Set True for metrics not suitable for pass@k
+    exclude_from_default_metrics: bool = False
     supported_pipeline_types: frozenset[PipelineType] = frozenset(PipelineType)  # Pipeline types this metric supports
     # Bump on intentional logic changes; MetricsRunner stamps this onto every MetricScore
     # produced by compute(). Required on all concrete subclasses — drift test enforces.
@@ -329,7 +330,7 @@ class TextJudgeMetric(BaseMetric):
 
     # Subclasses can override these
     default_model = "gpt-5.2"
-    default_params: dict[str, Any] = {"max_tokens": 100000}
+    default_params: dict[str, Any] = {"max_tokens": 100000, "service_tier": "flex"}
     rating_scale: tuple[int, int] = (1, 3)  # (min, max)
 
     def __init__(self, config: dict[str, Any] | None = None):

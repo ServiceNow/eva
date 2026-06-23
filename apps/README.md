@@ -222,7 +222,7 @@ Pauses are computed consistently with `turn_taking.py`:
 Turn timestamps, transcripts, and response latencies are loaded in priority order:
 
 1. **`metrics.json` context** (primary) — uses the same `MetricContext` fields (`audio_timestamps_user_turns`, `audio_timestamps_assistant_turns`, `transcribed_*_turns`) that `turn_taking.py` operates on. Latency is computed as `asst.segments[0].start − user.segments[-1].end` per matching turn ID.
-2. **`elevenlabs_events.jsonl`** (fallback) — used when `metrics.json` is absent or contains no timestamp data. One entry per completed `audio_start`/`audio_end` session; latency computed by temporal proximity.
+2. **`user_simulator_events.jsonl`** (fallback) — used when `metrics.json` is absent or contains no timestamp data. One entry per completed `audio_start`/`audio_end` session; latency computed by temporal proximity. Also resolves legacy `elevenlabs_events.jsonl` from older runs.
 
 ### Spectrogram Details
 

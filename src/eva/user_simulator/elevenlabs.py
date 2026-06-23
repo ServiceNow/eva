@@ -7,40 +7,27 @@ using ElevenLabs Conversational AI as the user simulation engine.
 import asyncio
 import json
 import os
-from functools import lru_cache
 from pathlib import Path
 
 import httpx
-import yaml
 from elevenlabs.client import ElevenLabs
 from elevenlabs.conversational_ai.conversation import (
     Conversation,
     ConversationInitiationData,
 )
-from pipecat.transcriptions.language import Language
 
-from eva.models.config import LANGUAGE_DISPLAY_NAMES, PerturbationConfig
-from eva.user_simulator.audio_interface import ELEVENLABS_OUTPUT_RATE, BotToBotAudioInterface
-from eva.user_simulator.event_logger import ElevenLabsEventLogger
-from eva.user_simulator.perturbation import AudioPerturbator
+from eva.models.config import PerturbationConfig
+from eva.user_simulator.audio_bridge import ELEVENLABS_OUTPUT_RATE, ElevenLabsAudioInterface
+from eva.user_simulator.base import AbstractUserSimulator
 from eva.utils.audio_utils import save_pcm_as_wav
-from eva.utils.culture import add_user_language_directive
 from eva.utils.logging import current_record_id, get_logger
-from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
-_BEHAVIORS_PATH = Path(__file__).parent.parent.parent.parent / "configs" / "user_behaviors.yaml"
 _PERSONA_GENDER = {1: "F", 2: "M"}
 
 
-@lru_cache(maxsize=1)
-def _load_behavior_prompts() -> dict:
-    with open(_BEHAVIORS_PATH) as f:
-        return yaml.safe_load(f)
-
-
-class UserSimulator:
+class ElevenLabsUserSimulator(AbstractUserSimulator):
     """ElevenLabs-based user simulator that connects to the assistant.
 
     Uses ElevenLabs Conversational AI to simulate a real user:
@@ -74,57 +61,24 @@ class UserSimulator:
             perturbation_config: Optional perturbation to apply to user audio
             language: ISO 639-1 code (e.g. 'en', 'fr'); when not 'en', uses EVA_{LANG}_USER_{gender}
         """
-        self.persona_config = persona_config
-        self.goal = goal
-        self.server_url = server_url
-        self.output_dir = Path(output_dir)
-        self.timeout = timeout
-        self.current_date_time = current_date_time
-        self.agent_id = agent_id
-        self._perturbation_config = perturbation_config
-        self._language = language
-        self._perturbator = (
-            AudioPerturbator(perturbation_config)
-            if perturbation_config is not None
-            and (perturbation_config.background_noise is not None or perturbation_config.connection_degradation)
-            else None
+        super().__init__(
+            current_date_time=current_date_time,
+            persona_config=persona_config,
+            goal=goal,
+            server_url=server_url,
+            output_dir=output_dir,
+            agent_id=agent_id,
+            timeout=timeout,
+            perturbation_config=perturbation_config,
+            language=language,
+            provider="elevenlabs",
         )
 
-        # State
         self._conversation = None
-        self._audio_interface: BotToBotAudioInterface | None = None
-        self._end_reason: str = "unknown"
-        self._conversation_done = asyncio.Event()
-
-        # Event logger
-        self.event_logger = ElevenLabsEventLogger(self.output_dir / "elevenlabs_events.jsonl")
-
-        # Audio recording buffers
-        self._user_audio_chunks: list[bytes] = []
-        self._assistant_audio_chunks: list[bytes] = []
-        self._user_clean_audio_chunks: list[bytes] = []
 
         # Keep-alive inactivity detection
         self._consecutive_keepalive_count = 0
         self._max_consecutive_keepalives = 12  # End call after this many pings without activity (2 minutes)
-
-        # Capture the worker's record ID so ElevenLabs callbacks (which run in
-        # a different thread) can restore it for per-record log routing.
-        self._record_id = current_record_id.get()
-
-    def _on_conversation_end(self, reason: str = "goodbye") -> None:
-        """Signal conversation completion.
-
-        Thread-safe - can be called from any thread/callback.
-        Only the first call takes effect (Event.set() is idempotent).
-
-        Args:
-            reason: Why conversation ended (goodbye/transfer/error)
-        """
-        if not self._conversation_done.is_set():
-            self._end_reason = reason
-            self._conversation_done.set()
-            logger.info(f"Conversation end signaled: {reason}")
 
     async def run_conversation(self) -> str:
         """Run the conversation until completion.
@@ -159,7 +113,7 @@ class UserSimulator:
         conversation_id = self.output_dir.name
 
         # Create audio interface
-        self._audio_interface = BotToBotAudioInterface(
+        self._audio_interface = ElevenLabsAudioInterface(
             websocket_uri=self.server_url,
             conversation_id=conversation_id,
             record_callback=self._record_audio,
@@ -181,54 +135,21 @@ class UserSimulator:
                 httpx_client=http_client,
             )
 
-            # TODO: test and improve behavior prompts to more closely match desired user behavior
-            behavior_prompts = _load_behavior_prompts()
-            if self._perturbation_config and self._perturbation_config.behavior:
-                behavior_key = self._perturbation_config.behavior.value
-                user_persona = behavior_prompts[behavior_key]
-            else:
-                user_persona = behavior_prompts["default"]
-
-            # Append a language directive to the persona so the simulator speaks
-            # in the target language even if its voice agent could default to English.
-            user_persona = add_user_language_directive(
-                self._language, LANGUAGE_DISPLAY_NAMES.get(Language(self._language), self._language), user_persona
-            )
-
-            # Derive domain from agent_id (e.g. "agent_airline" → "airline")
-            domain = self.agent_id.removeprefix("agent_")
-            prompt = PromptManager().get_prompt(
-                f"user_simulator.system_prompt_{domain}",
-                high_level_user_goal=self.goal["high_level_user_goal"],
-                must_have_criteria=self.goal["decision_tree"]["must_have_criteria"],
-                escalation_behavior=self.goal["decision_tree"]["escalation_behavior"],
-                nice_to_have_criteria=self.goal["decision_tree"]["nice_to_have_criteria"],
-                negotiation_behavior=self.goal["decision_tree"]["negotiation_behavior"],
-                resolution_condition=self.goal["decision_tree"]["resolution_condition"],
-                failure_condition=self.goal["decision_tree"]["failure_condition"],
-                edge_cases=self.goal["decision_tree"]["edge_cases"],
-                information_required=self.goal["information_required"],
-                user_persona=user_persona,
-                starting_utterance=self.goal["starting_utterance"],
-                current_date_time=self.current_date_time,
-            )
-
             # Create conversation config with dynamic variables
-            config = ConversationInitiationData(dynamic_variables={"prompt": prompt})
+            config = ConversationInitiationData(dynamic_variables={"prompt": self._build_prompt()})
 
             # ElevenLabs user simulator agent ID
             persona_id = self.persona_config["user_persona_id"]
             gender = _PERSONA_GENDER[persona_id]
-            if self._language and self._language.lower() != "en":
-                env_var = f"EVA_{self._language.upper().replace('-', '_')}_USER_{gender}"
-            elif self._perturbation_config and self._perturbation_config.accent:
+            if self._perturbation_config and self._perturbation_config.accent:
                 key = self._perturbation_config.accent.value.upper()
                 env_var = f"EVA_{key}_ACCENT_USER_{gender}"
             elif self._perturbation_config and self._perturbation_config.behavior:
                 key = self._perturbation_config.behavior.value.upper()
                 env_var = f"EVA_{key}_USER_{gender}"
             else:
-                env_var = f"EVA_DEFAULT_USER_{gender}"
+                lang = (self._language or "en").upper().replace("-", "_")
+                env_var = f"EVA_{lang}_USER_{gender}"
             ELEVENLABS_USER_AGENT_ID = os.getenv(env_var)
             logger.info(f"Using agent ID from env var: {env_var}")
 
@@ -465,11 +386,17 @@ class UserSimulator:
         self._reset_keepalive_counter()
         logger.info(f"🎭 User (ElevenLabs): {response}")
 
+        # Authoritative end-of-turn cue: the user agent has finished its utterance.
+        # Lets the audio interface mark end-of-utterance once the audio drains even
+        # when no partial chunk remains, so trailing silence reaches the assistant VAD.
+        if self._audio_interface:
+            self._audio_interface.notify_user_utterance_complete()
+
         self.event_logger.log_event(
             "user_speech",
             {
                 "text": response,
-                "source": "elevenlabs_agent",
+                "source": "simulated_user",
             },
         )
 
@@ -507,30 +434,6 @@ class UserSimulator:
             "assistant_speech",
             {
                 "text": transcript,
-                "source": "pipecat_assistant",
+                "source": "assistant",
             },
         )
-
-    def _record_audio(self, source: str, audio_data: bytes) -> None:
-        """Record audio for later analysis.
-
-        Args:
-            source: "user", "assistant", or "user_clean"
-            audio_data: Raw audio bytes
-        """
-        if source == "user":
-            self._user_audio_chunks.append(audio_data)
-        elif source == "assistant":
-            self._assistant_audio_chunks.append(audio_data)
-        elif source == "user_clean":
-            self._user_clean_audio_chunks.append(audio_data)
-
-    def get_recorded_audio(self) -> tuple[bytes, bytes]:
-        """Get the recorded audio.
-
-        Returns:
-            Tuple of (user_audio, assistant_audio) as raw bytes
-        """
-        user_audio = b"".join(self._user_audio_chunks)
-        assistant_audio = b"".join(self._assistant_audio_chunks)
-        return user_audio, assistant_audio

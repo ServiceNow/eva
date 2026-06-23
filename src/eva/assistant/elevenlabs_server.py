@@ -39,7 +39,6 @@ from eva.assistant.audio_bridge import (
     create_twilio_media_message,
     mulaw_8k_to_pcm16_16k,
     parse_twilio_media_message,
-    sync_buffer_to_position,
 )
 from eva.assistant.base_server import AbstractAssistantServer
 from eva.assistant.elevenlabs_audio_interface import TwilioAudioBridge
@@ -57,6 +56,10 @@ _RECORDING_SAMPLE_RATE = 16000
 MULAW_CHUNK_SIZE = 160  # bytes per chunk (20ms at 8kHz, 1 byte per sample)
 MULAW_CHUNK_DURATION_S = 0.02  # 20ms per chunk
 
+# 20ms of recording-rate (16kHz) 16-bit mono PCM that corresponds to one
+# MULAW_CHUNK_SIZE mulaw chunk: 160 mulaw samples @8kHz -> 320 PCM @16kHz -> 640 bytes.
+PCM_CHUNK_SIZE = MULAW_CHUNK_SIZE * 4  # 640 bytes
+
 
 # ---------------------------------------------------------------------------
 # Audio conversion helper
@@ -67,6 +70,19 @@ def _pcm16_16k_to_mulaw_8k(pcm_16k: bytes) -> bytes:
     """Convert 16 kHz 16-bit PCM mono to 8 kHz mulaw."""
     pcm_8k, _ = audioop.ratecv(pcm_16k, 2, 1, 16000, 8000, None)
     return audioop.lin2ulaw(pcm_8k, 2)
+
+
+def _pad_buffer_to_walltime(buffer: bytearray, elapsed_s: float, sample_rate: int) -> None:
+    """Pad *buffer* with silence so its length reflects *elapsed_s* of real time.
+
+    Both recording channels are anchored to a single session start, so the
+    mixed/stereo output preserves real inter-turn timing instead of collapsing
+    silence gaps (which previously made the recording shorter than reality and
+    overlapped turns). 16-bit mono PCM => 2 bytes per sample.
+    """
+    target_bytes = int(elapsed_s * sample_rate) * 2
+    if len(buffer) < target_bytes:
+        buffer.extend(b"\x00" * (target_bytes - len(buffer)))
 
 
 # ---------------------------------------------------------------------------
@@ -227,10 +243,21 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         _user_speaking = False
         _user_speech_start_ts: str | None = None
         _user_speech_stop_ts: str | None = None
+        # ElevenLabs' own end-of-user-turn signal (wall-clock ms), stamped when the
+        # user transcript arrives. ElevenLabs runs its own server-side VAD and
+        # responds off that, often before the user sim's local end-of-speech
+        # detection (and its user_speech_stop event) fires. Using this as the
+        # model-response-latency reference avoids the race that drops most turns.
+        _user_turn_end_ts: str | None = None
         _assistant_turn_start_ts: str | None = None
+        # Shared recording anchor: set on the first recorded audio of either
+        # channel. Both tracks pad silence relative to this so the mixed output
+        # keeps real wall-clock timing (set lazily; see _pad_buffer_to_walltime).
+        _record_t0: float | None = None
 
-        # Queue for outbound mulaw chunks; the pacer drains at real-time rate
-        audio_output_queue: asyncio.Queue[bytes] = asyncio.Queue()
+        # Queue of (mulaw_chunk, pcm16k_chunk, turn_start) items; the pacer drains
+        # at real-time rate, sends the mulaw and records the PCM at playback time.
+        audio_output_queue: asyncio.Queue[tuple[bytes, bytes, bool]] = asyncio.Queue()
 
         # Signalled when ElevenLabs ends the session
         session_ended = asyncio.Event()
@@ -242,20 +269,22 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         # -- ElevenLabs callbacks ------------------------------------------
 
         async def _on_agent_response(text: str) -> None:
-            nonlocal _assistant_turn_start_ts, _in_model_turn, _is_first_turn
+            nonlocal _assistant_turn_start_ts, _is_first_turn
             logger.info(f"Agent response: {text}")
             self.audit_log.append_assistant_output(text, timestamp_ms=_assistant_turn_start_ts)
             self._fw_log.llm_response(text)
             self._fw_log.turn_end(was_interrupted=False)
             if _is_first_turn:
-                # Need to track first turn to set _assistant_turn_start_ts correctly
                 _is_first_turn = False
-            else:
-                _in_model_turn = False
+            # NOTE: do not reset _in_model_turn here. The agent_response event
+            # carries the full text but audio is still streaming; resetting the
+            # flag mid-stream would make the recorder treat the rest of the same
+            # utterance as a new turn (re-anchoring to wall-clock and injecting
+            # silence). _in_model_turn resets at the next user_speech_start.
             _assistant_turn_start_ts = None
 
         async def _on_agent_response_correction(original: str, corrected: str) -> None:
-            nonlocal _assistant_turn_start_ts, _in_model_turn
+            nonlocal _assistant_turn_start_ts
             logger.info(f"Agent response corrected: {original!r} -> {corrected!r}")
             if corrected:
                 self.audit_log.append_assistant_output(
@@ -264,13 +293,16 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                 )
                 self._fw_log.s2s_transcript(corrected)
             self._fw_log.turn_end(was_interrupted=True)
-            _in_model_turn = False
+            # Same as _on_agent_response: do not reset _in_model_turn here.
             _assistant_turn_start_ts = None
 
         async def _on_user_transcript(text: str) -> None:
-            nonlocal _user_speech_start_ts, _user_speaking
+            nonlocal _user_speech_start_ts, _user_speaking, _user_turn_end_ts
             logger.info(f"User transcript: {text}")
             _user_speaking = False
+            # ElevenLabs has finished hearing the user — this is its end-of-turn,
+            # the reference for model-response latency to the first agent audio.
+            _user_turn_end_ts = str(int(round(time.time() * 1000)))
             self.audit_log.append_user_input(text, timestamp_ms=_user_speech_start_ts)
             _user_speech_start_ts = None
 
@@ -331,7 +363,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                 """Read Twilio WS messages, convert audio, send to ElevenLabs."""
                 nonlocal stream_sid, twilio_connected
                 nonlocal _user_speech_start_ts, _user_speech_stop_ts
-                nonlocal _user_speaking, _in_model_turn
+                nonlocal _user_speaking, _in_model_turn, _record_t0
                 try:
                     while twilio_connected and self._running:
                         try:
@@ -365,17 +397,23 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                             if mulaw_bytes is None:
                                 continue
 
-                            # Record user audio as 16 kHz PCM for the WAV file
+                            # Record user audio as 16 kHz PCM for the WAV file,
+                            # anchored to real time so gaps are preserved.
                             pcm_16k = mulaw_8k_to_pcm16_16k(mulaw_bytes)
-                            if not _in_model_turn:
-                                sync_buffer_to_position(
-                                    self.assistant_audio_buffer,
-                                    len(self.user_audio_buffer),
-                                )
+                            now = time.monotonic()
+                            if _record_t0 is None:
+                                _record_t0 = now
+                            _pad_buffer_to_walltime(
+                                self.user_audio_buffer,
+                                now - _record_t0,
+                                self._audio_sample_rate,
+                            )
                             self.user_audio_buffer.extend(pcm_16k)
 
                             # Feed raw 8 kHz mulaw to ElevenLabs — the agent
-                            # is configured to accept mulaw input directly
+                            # is configured to accept mulaw input directly. The
+                            # bridge keeps ElevenLabs' VAD fed with silence during
+                            # gaps, so no separate silence task is needed here.
                             await audio_bridge.feed_user_audio(mulaw_bytes)
 
                 except WebSocketDisconnect:
@@ -389,9 +427,9 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                     twilio_connected = False
 
             async def _forward_assistant_audio() -> None:
-                """Pull audio from bridge, record, convert, enqueue for pacer."""
+                """Pull audio from bridge, convert, and enqueue for the pacer."""
                 nonlocal _in_model_turn, _assistant_turn_start_ts
-                nonlocal _user_speech_stop_ts, _user_speaking
+                nonlocal _user_speech_stop_ts, _user_turn_end_ts
                 try:
                     while self._running:
                         pcm_16k = await audio_bridge.get_output_audio(timeout=1.0)
@@ -401,15 +439,21 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                             continue
 
                         # First audio chunk of a new model turn
+                        new_turn = False
                         if not _in_model_turn:
                             _in_model_turn = True
+                            new_turn = True
                             _assistant_turn_start_ts = str(int(round(time.time() * 1000)))
                             self._fw_log.turn_start()
 
-                            # Model response latency: user speech end -> first
-                            # audio.  Absent on the initial greeting turn.
-                            if _user_speech_stop_ts and self._metrics_log:
-                                latency_ms = int(_assistant_turn_start_ts) - int(_user_speech_stop_ts)
+                            # Model response latency: user turn end -> first audio.
+                            # Prefer ElevenLabs' own end-of-turn (user transcript),
+                            # which is what triggered the response and is available
+                            # before the agent audio; fall back to the user sim's
+                            # user_speech_stop event. Absent on the greeting turn.
+                            _user_end_ref = _user_turn_end_ts or _user_speech_stop_ts
+                            if _user_end_ref and self._metrics_log:
+                                latency_ms = int(_assistant_turn_start_ts) - int(_user_end_ref)
                                 if 0 < latency_ms < 30_000:
                                     self._metrics_log.write_latency(
                                         "model_response",
@@ -417,16 +461,17 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                                         self._model,
                                     )
                             _user_speech_stop_ts = None
+                            _user_turn_end_ts = None
 
-                        # Populate recording buffer
-                        if not _user_speaking:
-                            sync_buffer_to_position(
-                                self.user_audio_buffer,
-                                len(self.assistant_audio_buffer),
-                            )
-                        self.assistant_audio_buffer.extend(pcm_16k)
-
-                        # Convert to mulaw and enqueue for pacer
+                        # Convert to mulaw and enqueue for pacer. Recording is
+                        # deferred to the pacer so the assistant track is placed
+                        # at playback (real) time rather than this bursty receive
+                        # time — each mulaw chunk is paired with its 16kHz PCM so
+                        # the pacer can record without a lossy re-conversion. Only
+                        # the first chunk of a turn carries turn_start=True; the
+                        # pacer pads to wall-clock just at the turn boundary and
+                        # then records contiguously, so ElevenLabs' bursty intra-turn
+                        # delivery does not inject silence mid-utterance.
                         if twilio_connected:
                             try:
                                 mulaw = _pcm16_16k_to_mulaw_8k(pcm_16k)
@@ -434,11 +479,15 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                                 logger.warning(f"Audio conversion error ({len(pcm_16k)} bytes): {conv_err}")
                                 continue
 
-                            offset = 0
-                            while offset < len(mulaw):
-                                chunk = mulaw[offset : offset + MULAW_CHUNK_SIZE]
-                                offset += MULAW_CHUNK_SIZE
-                                await audio_output_queue.put(chunk)
+                            m_off = 0
+                            p_off = 0
+                            while m_off < len(mulaw):
+                                m_chunk = mulaw[m_off : m_off + MULAW_CHUNK_SIZE]
+                                p_chunk = pcm_16k[p_off : p_off + PCM_CHUNK_SIZE]
+                                m_off += MULAW_CHUNK_SIZE
+                                p_off += PCM_CHUNK_SIZE
+                                turn_start = new_turn and m_off == MULAW_CHUNK_SIZE
+                                await audio_output_queue.put((m_chunk, p_chunk, turn_start))
 
                 except asyncio.CancelledError:
                     pass
@@ -447,23 +496,40 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
 
             async def _pace_audio_output() -> None:
                 """Drain audio_output_queue and send to Twilio at real-time rate."""
-                nonlocal twilio_connected
+                nonlocal twilio_connected, _record_t0
                 next_send_time = time.monotonic()
                 try:
                     while self._running:
                         try:
-                            chunk = await asyncio.wait_for(audio_output_queue.get(), timeout=1.0)
+                            mulaw_chunk, pcm_chunk, turn_start = await asyncio.wait_for(
+                                audio_output_queue.get(), timeout=1.0
+                            )
                         except TimeoutError:
                             continue
 
-                        twilio_msg = create_twilio_media_message(stream_sid, chunk)
+                        # Stamp before send so WAV position matches when the chunk
+                        # starts transmission (when the user sim can first receive it).
+                        now = time.monotonic()
+
+                        # Pad assistant track to wall-clock only at turn boundaries;
+                        # append contiguously within a turn to avoid mid-utterance gaps.
+                        if _record_t0 is None:
+                            _record_t0 = now
+                        if turn_start:
+                            _pad_buffer_to_walltime(
+                                self.assistant_audio_buffer,
+                                now - _record_t0,
+                                self._audio_sample_rate,
+                            )
+                        self.assistant_audio_buffer.extend(pcm_chunk)
+
+                        twilio_msg = create_twilio_media_message(stream_sid, mulaw_chunk)
                         try:
                             await websocket.send_text(twilio_msg)
                         except Exception:
                             twilio_connected = False
                             return
 
-                        now = time.monotonic()
                         if next_send_time <= now:
                             next_send_time = now
                         next_send_time += MULAW_CHUNK_DURATION_S

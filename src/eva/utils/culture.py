@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,9 @@ import yaml
 from pipecat.transcriptions.language import Language
 
 from eva.models.config import LANGUAGE_DISPLAY_NAMES
+from eva.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 _CONFIGS_AGENTS = Path(__file__).resolve().parents[3] / "configs" / "agents"
 INITIAL_MESSAGES_PATH = _CONFIGS_AGENTS / "initial_messages.yaml"
@@ -39,8 +43,8 @@ _LANGUAGE_ADDENDUM_TEMPLATE = (
     " which may be in non-ascii, native script. You may need to try both scripts when"
     " looking up by name. All translatable values should be translated when talking to"
     " the user. For example, if you are telling the user about a location from a tool"
-    " response which says 'downtown', this should be translated. Distinct item names (e.g."
-    " 'IntelliJ') should be kept in their original form."
+    " response which says 'Downtown' or 'West Laboratory', this should be translated. Only"
+    " distinct item names (e.g. 'IntelliJ') should be kept in their original form."
 )
 
 FIRST_NAME_PLACEHOLDER = "<FIRST_NAME>"
@@ -54,6 +58,49 @@ PHONE_PLACEHOLDER = "<PHONE>"
 COMPANION_FIRST_NAME_PLACEHOLDER = "<COMPANION_FIRST_NAME>"
 COMPANION_FIRST_NAME_ROMANIZED_PLACEHOLDER = "<COMPANION_FIRST_NAME_ROMANIZED>"
 
+# Location placeholders carry the canonical alias name, e.g. ``<LOC:Headquarters>``.
+# They are inserted into ITSM user goals by scripts/add_location_placeholders.py and
+# resolved here to a language-appropriate spoken form so the simulator does not read
+# English location names aloud in a non-English conversation.
+_LOC_PATTERN = re.compile(r"<LOC:([^>]+)>")
+
+
+def _is_english(language: str) -> bool:
+    return not language or language.lower() in ("en", "english")
+
+
+def _resolve_locations(obj: Any, index: dict[str, dict], language: str) -> Any:
+    """Walk ``obj``, replacing ``<LOC:Name>`` tokens with a language-appropriate alias.
+
+    English (and any language without a translation) renders the canonical English
+    ``name``. Other languages render the alias's primary translation
+    (``translations[language][0]``). Unknown alias names are left as the literal name.
+    """
+
+    def render(name: str) -> str:
+        entry = index.get(name)
+        if entry is None:
+            logger.warning(f"LOC placeholder references unknown alias {name}; using literal name.")
+            return name
+        if _is_english(language):
+            return name
+        translations = (entry.get("translations") or {}).get(language) or []
+        if not translations:
+            logger.warning(f"Alias {name} has no {language} translation; rendering English name in user goal.")
+            return name
+        return translations[0]
+
+    def replace_str(s: str) -> str:
+        return _LOC_PATTERN.sub(lambda m: render(m.group(1)), s)
+
+    if isinstance(obj, str):
+        return replace_str(obj)
+    if isinstance(obj, list):
+        return [_resolve_locations(x, index, language) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _resolve_locations(v, index, language) for k, v in obj.items()}
+    return obj
+
 
 def _replace_in(
     obj: Any,
@@ -64,6 +111,8 @@ def _replace_in(
     phone: str = "",
     companion_first: str = "",
     companion_first_rom: str = "",
+    loc_index: dict[str, dict] | None = None,
+    language: str = "",
 ) -> Any:
     if isinstance(obj, str):
         # Romanized placeholders are emitted lowercase: they exist for email
@@ -80,14 +129,21 @@ def _replace_in(
             result = result.replace(COMPANION_FIRST_NAME_ROMANIZED_PLACEHOLDER, companion_first_rom.lower()).replace(
                 COMPANION_FIRST_NAME_PLACEHOLDER, companion_first
             )
+        if loc_index:
+            result = _resolve_locations(result, loc_index, language)
         return result
     if isinstance(obj, list):
         return [
-            _replace_in(x, first, last, first_rom, last_rom, phone, companion_first, companion_first_rom) for x in obj
+            _replace_in(
+                x, first, last, first_rom, last_rom, phone, companion_first, companion_first_rom, loc_index, language
+            )
+            for x in obj
         ]
     if isinstance(obj, dict):
         return {
-            k: _replace_in(v, first, last, first_rom, last_rom, phone, companion_first, companion_first_rom)
+            k: _replace_in(
+                v, first, last, first_rom, last_rom, phone, companion_first, companion_first_rom, loc_index, language
+            )
             for k, v in obj.items()
         }
     return obj
@@ -147,6 +203,7 @@ def resolve_user_goal(
     language: str,
     romanized_culture_overrides: dict | None = None,
     starting_utterances: dict | None = None,
+    aliases_dir: Path | str | None = None,
 ) -> dict:
     """Return a deep copy of ``user_goal`` with placeholders resolved.
 
@@ -154,12 +211,26 @@ def resolve_user_goal(
 
     The simulator only sees the chosen language's utterance; the full per-language
     dict is kept off the goal payload to avoid leaking other-language context.
+
+    ``<LOC:Name>`` tokens are resolved against ``aliases_dir`` (when provided) to a
+    language-appropriate spoken form so the simulator never reads English location
+    names aloud in a non-English conversation.
     """
     first, last, first_rom, last_rom = _names_for(culture_overrides, romanized_culture_overrides, language)
     phone = _phone_for(culture_overrides, language)
     comp_first, comp_first_rom = _companion_for(culture_overrides, romanized_culture_overrides, language)
+    loc_index = _load_aliases_index(str(aliases_dir)) if aliases_dir is not None else None
     resolved = _replace_in(
-        copy.deepcopy(user_goal), first, last, first_rom, last_rom, phone, comp_first, comp_first_rom
+        copy.deepcopy(user_goal),
+        first,
+        last,
+        first_rom,
+        last_rom,
+        phone,
+        comp_first,
+        comp_first_rom,
+        loc_index,
+        language,
     )
 
     if not starting_utterances or language not in starting_utterances:
@@ -168,9 +239,17 @@ def resolve_user_goal(
             f"Available: {list(starting_utterances or [])}. "
             f"Run scripts/add_culture_data.py --language {language} to populate it."
         )
-    utt = starting_utterances[language]
     resolved["starting_utterance"] = _replace_in(
-        utt, first, last, first_rom, last_rom, phone, comp_first, comp_first_rom
+        starting_utterances[language],
+        first,
+        last,
+        first_rom,
+        last_rom,
+        phone,
+        comp_first,
+        comp_first_rom,
+        loc_index,
+        language,
     )
     return resolved
 
@@ -199,7 +278,7 @@ def add_user_language_directive(language: str, language_display_name: str, user_
     directive = (
         f"Speak ONLY in {language_display_name}. Do not switch to English even if the agent does. "
         "All translatable values should be translated when talking to the agent. "
-        "For example, if you are telling the agent about a location like 'downtown office' and you are speaking Spanish, say 'oficina del centro'. "
+        "For example, if you are telling the agent about a location like 'Downtown Office' and you are speaking Spanish, say 'oficina del centro'. "
         "If you are talking about a date that you read as MM/DD/YYYY, you should say it in the culturally appropriate format. "
         "Distinct proper names (e.g. 'IntelliJ', 'Google') should be kept in their original form."
     )

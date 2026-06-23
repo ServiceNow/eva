@@ -25,6 +25,16 @@ class AnotherFakeMetric(BaseMetric):
         return MetricScore(name=self.name, score=0.5, normalized_score=0.5)
 
 
+class ExcludedFakeMetric(BaseMetric):
+    name = "excluded_fake_metric"
+    description = "An excluded fake metric"
+    metric_type = "code"
+    exclude_from_default_metrics = True
+
+    async def compute(self, context: MetricContext) -> MetricScore:
+        return MetricScore(name=self.name, score=0.42, normalized_score=0.42)
+
+
 class TestMetricRegistry:
     def setup_method(self):
         self.registry = MetricRegistry()
@@ -71,8 +81,11 @@ class TestMetricRegistry:
     def test_list_metrics(self):
         self.registry.register(FakeMetric)
         self.registry.register(AnotherFakeMetric)
+        self.registry.register(ExcludedFakeMetric)
         names = self.registry.list_metrics()
         assert set(names) == {"fake_metric", "another_fake"}
+        # The excluded_fake_metric is still resolvable by name for explicit --metrics selection.
+        assert self.registry.get("excluded_fake_metric") is ExcludedFakeMetric
 
     def test_get_all_returns_copy(self):
         self.registry.register(FakeMetric)

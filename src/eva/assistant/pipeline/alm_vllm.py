@@ -16,6 +16,7 @@ from eva.assistant.pipeline.alm_base import (
     DEFAULT_SAMPLE_WIDTH,
     BaseALMClient,
 )
+from eva.utils.llm_utils import approximate_reasoning_tokens
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -37,6 +38,7 @@ class ALMvLLMClient(BaseALMClient):
         num_channels: int = DEFAULT_NUM_CHANNELS,
         sample_width: int = DEFAULT_SAMPLE_WIDTH,
         language: str | None = None,
+        enable_thinking: bool = False,
     ):
         super().__init__(
             model=model,
@@ -49,6 +51,8 @@ class ALMvLLMClient(BaseALMClient):
             sample_width=sample_width,
             language=language,
         )
+        self._reasoning_token_fallback_warned = False
+        self.enable_thinking = enable_thinking
         # Normalize base_url: ensure it ends with /v1 for the OpenAI client
         self.base_url = base_url.rstrip("/")
         if not self.base_url.endswith("/v1"):
@@ -92,7 +96,7 @@ class ALMvLLMClient(BaseALMClient):
             "max_tokens": self.max_tokens,
             "extra_body": {
                 "chat_template_kwargs": {
-                    "enable_thinking": False,
+                    "enable_thinking": self.enable_thinking,
                 }
             },
         }
@@ -111,7 +115,8 @@ class ALMvLLMClient(BaseALMClient):
                 usage = response.usage
 
                 # Extract reasoning content if present (OpenAI o1 and compatible models)
-                reasoning_content = getattr(message, "reasoning_content", None)
+                # vLLM versions use different field names: "reasoning_content" vs "reasoning"
+                reasoning_content = getattr(message, "reasoning_content", None) or getattr(message, "reasoning", None)
 
                 # Extract reasoning tokens if present
                 reasoning_tokens = 0
@@ -119,6 +124,9 @@ class ALMvLLMClient(BaseALMClient):
                     details = usage.completion_tokens_details
                     if details and hasattr(details, "reasoning_tokens"):
                         reasoning_tokens = getattr(details, "reasoning_tokens", 0)
+
+                if reasoning_content and reasoning_tokens == 0:
+                    reasoning_tokens = approximate_reasoning_tokens(reasoning_content, self.model, self, logger)
 
                 stats = {
                     "prompt_tokens": usage.prompt_tokens if usage else 0,
@@ -149,7 +157,7 @@ class ALMvLLMClient(BaseALMClient):
                     await asyncio.sleep(delay)
                     continue
                 else:
-                    logger.error(f"UltravoxVLLM completion failed: {e}")
+                    logger.error(f"VLLM completion failed: {e}")
                     raise
 
         raise last_exception  # type: ignore[misc]

@@ -640,7 +640,7 @@ judge:
         }}
       ]
 
-  agent_speech_fidelity:
+  tts_fidelity:
     user_prompt: |
         You are an expert evaluator judging the fidelity of this audio file against the intended text. 
         You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
@@ -737,7 +737,8 @@ judge:
             }}
           ]
         }}
-    s2s_user_prompt: |
+  agent_speech_fidelity:
+    user_prompt: |
         You are an expert evaluator checking the **speech clarity and articulation** of entities spoken by an AI voice agent.
 
         You will receive:
