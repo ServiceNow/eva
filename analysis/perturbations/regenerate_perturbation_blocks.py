@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Write perturbation_delta + metric_values blocks into leaderboardStats.json
-from the perturbation pipeline's results_*.csv.
+"""Write perturbation_delta + metric_values blocks into leaderboardStats.json from results_*.csv.
 
 Design / contract:
   - ADDITIVE ONLY. Touches only the metrics listed in the config, on systems that
@@ -185,8 +184,9 @@ def _maxdiff(old, new, key):
 
 
 def _verify_scope(before, after, delta_metrics, value_metrics):
-    """Confirm the write touched ONLY the configured metrics' blocks: same system set,
-    unchanged `clean`/metadata, and unchanged out-of-scope metrics.
+    """Confirm the write touched ONLY the configured metrics' blocks.
+
+    Checks: same system set, unchanged `clean`/metadata, and unchanged out-of-scope metrics.
     """
     v = []
     a_by = {s["name"]: s for s in after["systems"]}

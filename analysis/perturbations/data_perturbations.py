@@ -113,7 +113,7 @@ def compute_deltas(
     rows: list[pd.DataFrame] = []
     join_keys = ["system_alias", "domain", "scenario_id", "metric"]
 
-    for label, pert_cat in condition_map.items():
+    for _label, pert_cat in condition_map.items():
         perturb = model_means[model_means["perturbation_category"] == pert_cat][
             ["system_alias", "domain", "scenario_id", "metric", "mean_value"]
         ].rename(columns={"mean_value": "perturb_mean"})
@@ -178,6 +178,7 @@ def check_model_completeness(
         expected_domains: List of domain strings that must all be present.
         expected_scenarios: Required unique scenario count per (domain, condition).
         expected_pert_trials: Required trial count per perturbation scenario.
+        sentinel: Metric name used as a probe for counting; auto-selected if None.
 
     Returns:
         (is_complete, report) where report has keys:
