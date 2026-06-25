@@ -132,6 +132,7 @@ export function PerturbationMetricValueBarChart({ metric, metricLabel, systems }
                     fontSize={10}
                     angle={-30}
                     textAnchor="end"
+                    amberFirst
                   />
                 )}
                 interval={0}

@@ -30,9 +30,11 @@ export interface CustomTickProps {
   fontSize?: number;
   angle?: number;
   textAnchor?: 'start' | 'middle' | 'end' | 'inherit';
+  amberFirst?: boolean;
+  dy?: number;
 }
 
-export function CustomTick({ x, y, payload, fill, fontSize = 10, angle = -30, textAnchor = 'end' }: CustomTickProps) {
+export function CustomTick({ x, y, payload, fill, fontSize = 10, angle = -30, textAnchor = 'end', amberFirst = false, dy = 8 }: CustomTickProps) {
   const colors = useThemeColors();
   if (!payload?.value || x == null || y == null) return null;
   const name = payload.value.startsWith('Scribe v2.2 Realtime')
@@ -48,8 +50,9 @@ export function CustomTick({ x, y, payload, fill, fontSize = 10, angle = -30, te
         textAnchor={textAnchor}
         fill={fill}
         fontSize={fontSize}
+        dy={dy}
       >
-        <tspan fill={colors.accent.amber}>{sttModel}</tspan>
+        <tspan fill={amberFirst ? colors.accent.amber : fill}>{sttModel}</tspan>
         {rest && <tspan>{` + ${rest}`}</tspan>}
       </text>
     </g>

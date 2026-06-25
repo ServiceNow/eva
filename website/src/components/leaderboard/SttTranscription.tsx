@@ -130,6 +130,7 @@ export function SttTranscription({ systems }: { systems: SystemStats[] }) {
                   metric="transcription_accuracy_key_entities"
                   metricLabel="Mean Δ vs. clean (more negative = greater impact)"
                   systems={cascadeSystems}
+                  amberFirst
                 />
               </div>
             )}

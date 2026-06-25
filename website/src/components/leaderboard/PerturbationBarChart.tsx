@@ -8,6 +8,7 @@ interface PerturbationBarChartProps {
   metric: string;
   metricLabel: string;
   systems: SystemStats[];
+  amberFirst?: boolean;
 }
 
 interface ChartRow {
@@ -64,7 +65,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 
 
 
-export function PerturbationBarChart({ metric, metricLabel, systems }: PerturbationBarChartProps) {
+export function PerturbationBarChart({ metric, metricLabel, systems, amberFirst = false }: PerturbationBarChartProps) {
   const colors = useThemeColors();
 
   // Order systems by architecture group: S2S → Hybrid (2-part) → Cascade.
@@ -127,6 +128,7 @@ export function PerturbationBarChart({ metric, metricLabel, systems }: Perturbat
                     fontSize={10}
                     angle={-30}
                     textAnchor="end"
+                    amberFirst={amberFirst}
                   />
                 )}
                 interval={0}
