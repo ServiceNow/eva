@@ -52,6 +52,13 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONFIG_PATH = PROJECT_ROOT / "local" / "perturbations" / "perturbations_config.yaml"
 
 
+def _as_tuple(group_vals: object) -> tuple:
+    """Normalize a pandas groupby key to a tuple (single-column groups yield a scalar)."""
+    if isinstance(group_vals, tuple):
+        return group_vals
+    return (group_vals,)
+
+
 def permutation_test(deltas: np.ndarray, n_perm: int = 10000, seed: int = 42) -> float:
     """Two-sided paired sign-flip permutation test on scenario-level deltas.
 
@@ -108,23 +115,19 @@ def run_analysis(
 
     result_rows: list[dict] = []
 
-    # Within each correction group, compute p-values for all (condition × domain) cells
-    cell_keys = ["perturbation_condition", "domain"]
-    varying_keys = [k for k in cell_keys if k not in correction_groupby]
+    # One cell = one permutation/bootstrap test. Cells split each correction group by
+    # condition (always) and by domain (only when domain isn't already fixed by the group).
+    cell_group_keys = ["perturbation_condition"]
+    if "domain" not in correction_groupby:
+        cell_group_keys.append("domain")
 
     for group_vals, group_df in deltas_df.groupby(correction_groupby, sort=False):
-        if isinstance(group_vals, str):
-            group_vals = (group_vals,)
-        group_meta = dict(zip(correction_groupby, group_vals))
+        group_meta = dict(zip(correction_groupby, _as_tuple(group_vals)))
 
-        # Enumerate all (condition, domain) cells within this correction group
-        cell_group_keys = ["perturbation_condition"] + varying_keys
         cell_results: list[dict] = []
 
         for cell_vals, cell_df in group_df.groupby(cell_group_keys, sort=False):
-            if isinstance(cell_vals, str):
-                cell_vals = (cell_vals,)
-            cell_meta = dict(zip(cell_group_keys, cell_vals))
+            cell_meta = dict(zip(cell_group_keys, _as_tuple(cell_vals)))
 
             cond = cell_meta["perturbation_condition"]
             domain = cell_meta.get("domain", group_meta.get("domain", "pooled"))
@@ -178,11 +181,11 @@ def run_analysis(
 
 
 def metric_value_cis(values_long: pd.DataFrame, config: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Bootstrap CIs on per-scenario metric values per (model, metric, condition).
+    """Bootstrap CIs on scenario-level metric values per (model, metric, condition).
 
     Pooling matches the delta plot: per-domain CIs bootstrap within a domain;
-    the pooled CI bootstraps all per-scenario values concatenated across domains
-    (per-scenario weighting), via eva.utils.bootstrap.bootstrap_ci.
+    the pooled CI bootstraps all scenario-level values concatenated across domains
+    (scenario-level weighting), via eva.utils.bootstrap.bootstrap_ci.
 
     Returns (pooled_df, per_domain_df), columns:
         model_label, metric, domain, condition, point, ci_lower, ci_upper, n
@@ -196,45 +199,32 @@ def metric_value_cis(values_long: pd.DataFrame, config: dict) -> tuple[pd.DataFr
     if values_long.empty:
         return pd.DataFrame(columns=cols), pd.DataFrame(columns=cols)
 
+    def ci_row(model: str, metric: str, condition: str, domain: str, values: np.ndarray) -> dict:
+        cell_seed = run_seed(f"{seed}:mv:{model}:{metric}:{condition}:{domain}")
+        lo, hi = bootstrap_ci(values, n_boot=n_boot, seed=cell_seed, alpha=alpha)
+        return {
+            "model_label": model,
+            "metric": metric,
+            "domain": domain,
+            "condition": condition,
+            "point": float(values.mean()),
+            "ci_lower": lo,
+            "ci_upper": hi,
+            "n": len(values),
+        }
+
     per_domain_rows: list[dict] = []
     pooled_rows: list[dict] = []
 
     for (model, metric, condition), g in values_long.groupby(["model_label", "metric", "condition"], sort=False):
         for domain in expected_domains:
             cell = g[g["domain"] == domain]
-            if cell.empty:
-                continue
-            x = cell["value"].to_numpy()
-            cs = run_seed(f"{seed}:mv:{model}:{metric}:{condition}:{domain}")
-            lo, hi = bootstrap_ci(x, n_boot=n_boot, seed=cs, alpha=alpha)
-            per_domain_rows.append(
-                {
-                    "model_label": model,
-                    "metric": metric,
-                    "domain": domain,
-                    "condition": condition,
-                    "point": float(x.mean()),
-                    "ci_lower": lo,
-                    "ci_upper": hi,
-                    "n": len(x),
-                }
-            )
+            if not cell.empty:
+                per_domain_rows.append(ci_row(model, metric, condition, domain, cell["value"].to_numpy()))
+
         x_all = g["value"].to_numpy()  # concatenate across domains == delta-plot pooling
         if len(x_all):
-            cs = run_seed(f"{seed}:mv:{model}:{metric}:{condition}:pooled")
-            lo, hi = bootstrap_ci(x_all, n_boot=n_boot, seed=cs, alpha=alpha)
-            pooled_rows.append(
-                {
-                    "model_label": model,
-                    "metric": metric,
-                    "domain": "pooled",
-                    "condition": condition,
-                    "point": float(x_all.mean()),
-                    "ci_lower": lo,
-                    "ci_upper": hi,
-                    "n": len(x_all),
-                }
-            )
+            pooled_rows.append(ci_row(model, metric, condition, "pooled", x_all))
 
     return pd.DataFrame(pooled_rows, columns=cols), pd.DataFrame(per_domain_rows, columns=cols)
 

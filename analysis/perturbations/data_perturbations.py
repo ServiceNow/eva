@@ -53,6 +53,21 @@ ALIAS_REMAP: dict[str, str] = {
     "fixie-ai/ultravox": "ultravox",
 }
 
+# Columns of the scenario-level delta tables (see compute_deltas / build_scenario_deltas).
+DELTA_COLUMNS: list[str] = [
+    "system_alias",
+    "domain",
+    "perturbation_condition",
+    "scenario_id",
+    "metric",
+    "baseline_mean",
+    "perturb_mean",
+    "delta",
+]
+
+# Columns of the scenario-level metric-value tables (see build_condition_scenario_values).
+METRIC_VALUE_COLUMNS: list[str] = ["model_label", "domain", "condition", "scenario_id", "metric", "value"]
+
 
 def load_trial_scores(path: Path) -> pd.DataFrame:
     """Load trial_scores.csv and return it with expected column types."""
@@ -70,8 +85,7 @@ def compute_scenario_means(df: pd.DataFrame) -> pd.DataFrame:
         system_alias, domain, perturbation_category, scenario_id, metric, mean_value
     """
     group_keys = ["system_alias", "domain", "perturbation_category", "scenario_id", "metric"]
-    means = df.groupby(group_keys, sort=False)["value"].mean().reset_index().rename(columns={"value": "mean_value"})
-    return means
+    return df.groupby(group_keys, sort=False)["value"].mean().reset_index().rename(columns={"value": "mean_value"})
 
 
 def compute_deltas(
@@ -100,7 +114,7 @@ def compute_deltas(
     rows: list[pd.DataFrame] = []
     join_keys = ["system_alias", "domain", "scenario_id", "metric"]
 
-    for _label, pert_cat in condition_map.items():
+    for pert_cat in condition_map.values():
         perturb = model_means[model_means["perturbation_category"] == pert_cat][
             ["system_alias", "domain", "scenario_id", "metric", "mean_value"]
         ].rename(columns={"mean_value": "perturb_mean"})
@@ -111,32 +125,9 @@ def compute_deltas(
         rows.append(merged)
 
     if not rows:
-        return pd.DataFrame(
-            columns=[
-                "system_alias",
-                "domain",
-                "perturbation_condition",
-                "scenario_id",
-                "metric",
-                "baseline_mean",
-                "perturb_mean",
-                "delta",
-            ]
-        )
+        return pd.DataFrame(columns=DELTA_COLUMNS)
 
-    result = pd.concat(rows, ignore_index=True)
-    return result[
-        [
-            "system_alias",
-            "domain",
-            "perturbation_condition",
-            "scenario_id",
-            "metric",
-            "baseline_mean",
-            "perturb_mean",
-            "delta",
-        ]
-    ]
+    return pd.concat(rows, ignore_index=True)[DELTA_COLUMNS]
 
 
 def check_model_completeness(
@@ -255,40 +246,16 @@ def build_scenario_deltas(
         model_label, system_alias, domain, perturbation_condition, scenario_id,
         metric, baseline_mean, perturb_mean, delta
     """
-    filtered = trial_scores[(trial_scores["system_alias"] == alias) & (trial_scores["metric"].isin(metrics))]
+    empty = pd.DataFrame(columns=["model_label", *DELTA_COLUMNS])
 
+    filtered = trial_scores[(trial_scores["system_alias"] == alias) & (trial_scores["metric"].isin(metrics))]
     if filtered.empty:
-        return pd.DataFrame(
-            columns=[
-                "model_label",
-                "system_alias",
-                "domain",
-                "perturbation_condition",
-                "scenario_id",
-                "metric",
-                "baseline_mean",
-                "perturb_mean",
-                "delta",
-            ]
-        )
+        return empty
 
     means = compute_scenario_means(filtered)
     deltas = compute_deltas(means, alias=alias, condition_map=condition_map)
-
     if deltas.empty:
-        return pd.DataFrame(
-            columns=[
-                "model_label",
-                "system_alias",
-                "domain",
-                "perturbation_condition",
-                "scenario_id",
-                "metric",
-                "baseline_mean",
-                "perturb_mean",
-                "delta",
-            ]
-        )
+        return empty
 
     deltas.insert(0, "model_label", model_label)
     return deltas
@@ -301,7 +268,7 @@ def build_condition_scenario_values(
     condition_map: dict[str, str],
     metrics: list[str],
 ) -> pd.DataFrame:
-    """Per-scenario metric values for clean + each perturbation, on the paired set.
+    """Scenario-level metric values for clean + each perturbation, on the paired set.
 
     The paired set is defined exactly as `compute_deltas` pairs data: a (domain,
     scenario, metric) cell is included for a perturbation condition iff it exists
@@ -311,7 +278,7 @@ def build_condition_scenario_values(
     Returns columns: model_label, domain, condition, scenario_id, metric, value
     (condition ∈ {clean, accent, background_noise, both}).
     """
-    cols = ["model_label", "domain", "condition", "scenario_id", "metric", "value"]
+    cols = METRIC_VALUE_COLUMNS
     pert_cats = list(condition_map.values())
     filtered = trial_scores[(trial_scores["system_alias"] == alias) & (trial_scores["metric"].isin(metrics))]
     if filtered.empty:
@@ -452,16 +419,16 @@ def main(config_path: Path = CONFIG_PATH) -> None:
     metric_values_combined = (
         pd.concat(all_metric_values, ignore_index=True)
         if all_metric_values
-        else pd.DataFrame(columns=["model_label", "domain", "condition", "scenario_id", "metric", "value"])
+        else pd.DataFrame(columns=METRIC_VALUE_COLUMNS)
     )
     metric_values_path = output_dir / "scenario_metricvalues.csv"
     metric_values_combined.to_csv(metric_values_path, index=False)
     print(f"Wrote {len(metric_values_combined):,} metric-value rows → {metric_values_path}")
 
-    n_complete = (
-        completeness_df["model_complete"].any()
-        and completeness_df.groupby("model_label")["model_complete"].first().sum()
-    )
+    if completeness_df.empty:
+        n_complete = 0
+    else:
+        n_complete = int(completeness_df.groupby("model_label")["model_complete"].first().sum())
     n_total = len(config["models"])
     print(f"\n{n_complete}/{n_total} models complete and included in analysis")
     print(f"Wrote {len(combined):,} delta rows → {deltas_path}")
