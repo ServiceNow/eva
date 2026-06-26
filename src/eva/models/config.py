@@ -106,7 +106,7 @@ class ModelConfig(BaseModel):
 
     Exactly one mode selector (``llm``, ``s2s``, or ``audio_llm``) should be set.
     Mode exclusivity is enforced by ``RunConfig``, not here, so that
-    ``max_rerun_attempts == 0`` can freely construct a config with mixed env vars.
+    ``max_rerun_attempts == 0 or self.aggregate_only`` can freely construct a config with mixed env vars.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -663,7 +663,7 @@ class RunConfig(BaseSettings):
     def _check_companion_services(self) -> "RunConfig":
         """Validate pipeline mode mutual exclusivity and required companion services.
 
-        Skipped entirely when ``max_rerun_attempts == 0`` where the model
+        Skipped entirely when ``max_rerun_attempts == 0 or self.aggregate_only`` where the model
         config is unused and conflicting env vars are harmless.
         """
         if (
@@ -676,7 +676,7 @@ class RunConfig(BaseSettings):
                 "OpenAI Realtime supports behavior, noise, and connection perturbations."
             )
 
-        if self.max_rerun_attempts == 0:
+        if self.max_rerun_attempts == 0 or self.aggregate_only:
             return self
 
         # ── Validate pipeline mode mutual exclusivity ──
