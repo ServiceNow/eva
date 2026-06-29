@@ -99,7 +99,17 @@ export function PerturbationMetricValueBarChart({ metric, metricLabel, systems }
     return vb - va;
   });
 
-  if (data.length === 0) {
+  // When multiple systems share the same STT name, keep only the one with the
+  // highest clean score (already first after the sort above).
+  const seen = new Set<string>();
+  const deduped_data = data.filter((row) => {
+    const name = row.name as string;
+    if (seen.has(name)) return false;
+    seen.add(name);
+    return true;
+  });
+
+  if (deduped_data.length === 0) {
     return (
       <div className="text-sm text-text-muted italic px-4 py-6">
         No metric-value data available for {metricLabel}.
@@ -107,14 +117,14 @@ export function PerturbationMetricValueBarChart({ metric, metricLabel, systems }
     );
   }
 
-  const minWidth = Math.max(720, data.length * 80);
+  const minWidth = Math.max(720, deduped_data.length * 80);
 
   return (
     <div>
       <div className="overflow-x-auto">
         <div className="h-[440px]" style={{ minWidth: `${minWidth}px` }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 24, right: 16, bottom: 70, left: 16 }}>
+            <BarChart data={deduped_data} margin={{ top: 24, right: 16, bottom: 70, left: 16 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={colors.bg.tertiary} />
               <XAxis
                 dataKey="name"
@@ -126,7 +136,7 @@ export function PerturbationMetricValueBarChart({ metric, metricLabel, systems }
                     fontSize={10}
                     angle={-30}
                     textAnchor="end"
-                    amberFirst
+
                   />
                 )}
                 interval={0}
