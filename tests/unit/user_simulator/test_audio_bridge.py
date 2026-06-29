@@ -37,26 +37,45 @@ class TestConvertPcmToMulaw:
 
     def test_20ms_chunk_produces_correct_output_size(self):
         """640 bytes PCM (20ms @ 16kHz) → 160 bytes μ-law (20ms @ 8kHz)."""
+        iface = _make_interface()
         pcm_20ms = b"\x00" * SEND_CHUNK_SIZE_PCM  # 640 bytes
-        result = ElevenLabsAudioInterface._convert_pcm_to_mulaw(pcm_20ms)
+        result = iface._convert_pcm_to_mulaw(pcm_20ms)
         expected_mulaw_len = int(ASSISTANT_SAMPLE_RATE * 0.02)  # 160
         assert len(result) == expected_mulaw_len
 
     def test_non_silence_audio_differs_from_silence(self):
         """Actual audio data should produce different μ-law than silence."""
+        iface = _make_interface()
         silence = b"\x00" * SEND_CHUNK_SIZE_PCM
         # Sawtooth-ish pattern (loud enough to differ from silence in μ-law)
         loud = bytes([(i * 50) % 256 for i in range(SEND_CHUNK_SIZE_PCM)])
-        mulaw_silence = ElevenLabsAudioInterface._convert_pcm_to_mulaw(silence)
-        mulaw_loud = ElevenLabsAudioInterface._convert_pcm_to_mulaw(loud)
+        mulaw_silence = iface._convert_pcm_to_mulaw(silence)
+        mulaw_loud = iface._convert_pcm_to_mulaw(loud)
         assert mulaw_silence != mulaw_loud
 
     def test_odd_size_input_does_not_crash(self):
         """Gracefully handles misaligned input (odd byte count)."""
+        iface = _make_interface()
         # 3 bytes is not sample-aligned (16-bit = 2 bytes per sample)
         # audioop may truncate or error; we just want no crash
-        result = ElevenLabsAudioInterface._convert_pcm_to_mulaw(b"\x01\x02\x03")
+        result = iface._convert_pcm_to_mulaw(b"\x01\x02\x03")
         assert isinstance(result, bytes)
+
+    def test_state_is_carried_across_calls(self):
+        """Filter state is preserved between calls — continuous noise has no chunk-boundary clicks."""
+        iface = _make_interface()
+        assert iface._ratecv_state is None
+        chunk = bytes(range(256)) * (SEND_CHUNK_SIZE_PCM // 256)
+        iface._convert_pcm_to_mulaw(chunk)
+        assert iface._ratecv_state is not None  # state set after first call
+
+    def test_error_resets_state(self):
+        """An audioop error resets ratecv state so the next call starts clean."""
+        iface = _make_interface()
+        iface._ratecv_state = ("some", "state")
+        # Pass non-bytes to trigger an exception inside audioop
+        iface._convert_pcm_to_mulaw(None)  # type: ignore[arg-type]
+        assert iface._ratecv_state is None
 
 
 class TestSilenceDetectionStateMachine:

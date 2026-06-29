@@ -130,6 +130,10 @@ class BotToBotAudioBridge:
         # Latency tracking
         self._latency_measurements: list[float] = []
 
+        # State for stateful 16kHz→8kHz downsampling — carried across calls so
+        # audioop.ratecv's anti-aliasing filter has no boundary discontinuities.
+        self._ratecv_state: tuple | None = None
+
     async def start_async(self) -> None:
         """Async initialization - connect to assistant WebSocket."""
         self.running = True
@@ -283,9 +287,13 @@ class BotToBotAudioBridge:
         # Don't clear the send queue - let the user keep talking
         pass
 
-    @staticmethod
-    def _convert_pcm_to_mulaw(pcm_data: bytes) -> bytes:
+    def _convert_pcm_to_mulaw(self, pcm_data: bytes) -> bytes:
         """Convert PCM audio to mulaw format for sending to assistant.
+
+        Carries filter state across calls so the anti-aliasing filter used by
+        audioop.ratecv has no boundary discontinuities between 20ms chunks.
+        Without this, each chunk restarts from zero state, producing a click
+        artifact that is inaudible with silence but clearly audible with noise.
 
         Args:
             pcm_data: 16-bit PCM audio data at 16kHz (from ElevenLabs output)
@@ -294,14 +302,14 @@ class BotToBotAudioBridge:
             mulaw encoded audio data at 8kHz (for assistant)
         """
         try:
-            # Downsample from 16kHz to 8kHz
-            pcm_8khz, _ = audioop.ratecv(
+            # Downsample from 16kHz to 8kHz, carrying filter state between calls.
+            pcm_8khz, self._ratecv_state = audioop.ratecv(
                 pcm_data,
                 PCM_SAMPLE_WIDTH,  # 16-bit PCM
                 1,  # mono
                 ELEVENLABS_OUTPUT_RATE,  # from 16kHz
                 ASSISTANT_SAMPLE_RATE,  # to 8kHz
-                None,
+                self._ratecv_state,
             )
 
             # Convert 16-bit PCM to μ-law
@@ -309,7 +317,18 @@ class BotToBotAudioBridge:
             return mulaw_data
         except Exception as e:
             logger.warning(f"Error converting PCM to mulaw: {e}")
+            self._ratecv_state = None  # reset on error so next call starts clean
             return b""
+
+    def _generate_noise_mulaw(self, chunk_size: int) -> bytes:
+        """Generate one ambient-noise chunk as 8kHz mulaw bytes.
+
+        Intended to be called via asyncio.to_thread so the numpy+audioop work
+        runs in the thread pool and does not stall the event loop while many
+        conversations are running concurrently.
+        """
+        noise_pcm = self._perturbator.get_ambient_chunk(chunk_size)  # type: ignore[union-attr]
+        return self._convert_pcm_to_mulaw(noise_pcm)
 
     def _should_send_assistant_silence(self) -> bool:
         """Return True if we should send assistant silence (user stopped, waiting for assistant).
@@ -383,10 +402,11 @@ class BotToBotAudioBridge:
             True if silence was sent, False otherwise
         """
         if self._perturbator is not None and self._perturbator.has_ambient_noise:
-            silence_pcm = self._perturbator.get_ambient_chunk(chunk_size)
+            # Offload noise generation + conversion to the thread pool so the
+            # event loop stays free for other concurrent conversations.
+            silence_mulaw = await asyncio.to_thread(self._generate_noise_mulaw, chunk_size)
         else:
-            silence_pcm = b"\x00" * chunk_size
-        silence_mulaw = self._convert_pcm_to_mulaw(silence_pcm)
+            silence_mulaw = self._convert_pcm_to_mulaw(b"\x00" * chunk_size)
 
         if not silence_mulaw:
             return False
