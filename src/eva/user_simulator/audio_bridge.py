@@ -14,15 +14,10 @@ import time
 from collections.abc import Callable
 
 import websockets
+from elevenlabs.conversational_ai.conversation import AudioInterface
 from websockets.protocol import State as WebSocketState
 
-try:
-    import audioop
-except ImportError:
-    import audioop_lts as audioop
-
-from elevenlabs.conversational_ai.conversation import AudioInterface
-
+from eva.assistant.audio_bridge import pcm16_16k_to_mulaw_8k
 from eva.user_simulator.perturbation import AudioPerturbator
 from eva.utils.logging import get_logger
 
@@ -294,19 +289,7 @@ class BotToBotAudioBridge:
             mulaw encoded audio data at 8kHz (for assistant)
         """
         try:
-            # Downsample from 16kHz to 8kHz
-            pcm_8khz, _ = audioop.ratecv(
-                pcm_data,
-                PCM_SAMPLE_WIDTH,  # 16-bit PCM
-                1,  # mono
-                ELEVENLABS_OUTPUT_RATE,  # from 16kHz
-                ASSISTANT_SAMPLE_RATE,  # to 8kHz
-                None,
-            )
-
-            # Convert 16-bit PCM to μ-law
-            mulaw_data = audioop.lin2ulaw(pcm_8khz, PCM_SAMPLE_WIDTH)
-            return mulaw_data
+            return pcm16_16k_to_mulaw_8k(pcm_data)
         except Exception as e:
             logger.warning(f"Error converting PCM to mulaw: {e}")
             return b""

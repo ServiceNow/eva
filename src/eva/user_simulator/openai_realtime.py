@@ -19,7 +19,7 @@ except ImportError:
 
 from eva.models.config import OpenAIRealtimeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.audio_bridge import BotToBotAudioBridge
-from eva.user_simulator.base import AbstractUserSimulator
+from eva.user_simulator.base import END_CALL_DESCRIPTION, AbstractUserSimulator
 from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import get_logger
 
@@ -43,18 +43,6 @@ CALLER_TRANSCRIPTION_MODEL = "whisper-1"
 CALLER_RESPONSE_SETTLE_SECONDS = 2.0
 CALLER_RESPONSE_POLL_SECONDS = 0.05
 CALLER_PLAYBACK_DRAIN_SECONDS = 15.0
-END_CALL_DESCRIPTION = """Use this to end the phone call and hang up.
-
-Call this function when it is time to end the call and one of the following is true:
-1. The agent has confirmed your request is resolved, all steps are completed, and you have said goodbye.
-2. The agent has initiated a transfer to a live agent.
-3. The agent has been unable to make progress for at least 5 consecutive turns.
-4. The agent says goodbye or indicates the conversation is over.
-5. The agent indicates that the remainder of your request cannot be fulfilled.
-6. The assistant reports an unrecoverable processing error.
-
-Never call this tool in the same turn that you provide the agent with data, an identifier,
-an approval to proceed, a transfer request, or any other information. Say a brief goodbye first."""
 
 
 class OpenAIRealtimeUserSimulator(AbstractUserSimulator):

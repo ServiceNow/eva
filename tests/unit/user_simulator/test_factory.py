@@ -1,8 +1,13 @@
 from pathlib import Path
 
-from eva.models.config import ElevenLabsSimulatorConfig, OpenAIRealtimeSimulatorConfig
+from eva.models.config import (
+    ElevenLabsSimulatorConfig,
+    GeminiLiveSimulatorConfig,
+    OpenAIRealtimeSimulatorConfig,
+)
 from eva.user_simulator.elevenlabs import ElevenLabsUserSimulator
 from eva.user_simulator.factory import create_user_simulator
+from eva.user_simulator.gemini_live import GeminiLiveUserSimulator
 from eva.user_simulator.openai_realtime import OpenAIRealtimeUserSimulator
 
 
@@ -43,3 +48,12 @@ def test_factory_selects_openai_realtime(tmp_path):
 
     assert isinstance(simulator, OpenAIRealtimeUserSimulator)
     assert simulator.caller_model == "gpt-realtime-1.5"
+
+
+def test_factory_selects_gemini_live(tmp_path):
+    config = GeminiLiveSimulatorConfig()
+    simulator = create_user_simulator(config, **_kwargs(tmp_path))
+
+    assert isinstance(simulator, GeminiLiveUserSimulator)
+    assert simulator.provider == "gemini_live"
+    assert simulator.caller_model == "gemini-2.5-flash-native-audio-preview-09-2025"

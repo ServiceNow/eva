@@ -21,6 +21,21 @@ logger = get_logger(__name__)
 
 _BEHAVIORS_PATH = Path(__file__).parent.parent.parent.parent / "configs" / "user_behaviors.yaml"
 
+# Shared across realtime-style callers (OpenAI Realtime, Gemini Live) that expose
+# an ``end_call`` function tool to let the simulated caller hang up.
+END_CALL_DESCRIPTION = """Use this to end the phone call and hang up.
+
+Call this function when it is time to end the call and one of the following is true:
+1. The agent has confirmed your request is resolved, all steps are completed, and you have said goodbye.
+2. The agent has initiated a transfer to a live agent.
+3. The agent has been unable to make progress for at least 5 consecutive turns.
+4. The agent says goodbye or indicates the conversation is over.
+5. The agent indicates that the remainder of your request cannot be fulfilled.
+6. The assistant reports an unrecoverable processing error.
+
+Never call this tool in the same turn that you provide the agent with data, an identifier,
+an approval to proceed, a transfer request, or any other information. Say a brief goodbye first."""
+
 
 @lru_cache(maxsize=1)
 def load_behavior_prompts() -> dict:

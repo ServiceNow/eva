@@ -371,8 +371,17 @@ class OpenAIRealtimeSimulatorConfig(BaseModel):
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
 
+class GeminiLiveSimulatorConfig(BaseModel):
+    """Gemini Live-specific settings for the user simulator."""
+
+    provider: Literal["gemini_live"] = "gemini_live"
+    model: str = Field("gemini-2.5-flash-native-audio-preview-09-2025", description="Gemini Live model.")
+    female_voice: str = Field("Aoede", description="Voice used for female caller personas.")
+    male_voice: str = Field("Charon", description="Voice used for male caller personas.")
+
+
 UserSimulatorConfig = Annotated[
-    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig | GeminiLiveSimulatorConfig,
     Field(discriminator="provider"),
 ]
 
@@ -608,13 +617,13 @@ class RunConfig(BaseSettings):
         config is unused and conflicting env vars are harmless.
         """
         if (
-            isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig)
+            not isinstance(self.user_simulator, ElevenLabsSimulatorConfig)
             and self.perturbation is not None
             and self.perturbation.accent is not None
         ):
             raise ValueError(
-                "Accent perturbations require the ElevenLabs user simulator; "
-                "OpenAI Realtime supports behavior, noise, and connection perturbations."
+                f"Accent perturbations require the ElevenLabs user simulator; "
+                f"{self.user_simulator.provider} supports behavior, noise, and connection perturbations."
             )
 
         if self.max_rerun_attempts == 0 or self.aggregate_only:
@@ -717,10 +726,30 @@ class RunConfig(BaseSettings):
     @model_validator(mode="after")
     def _check_openai_realtime_simulator(self) -> "RunConfig":
         """When openai_realtime user simulator is selected, OPENAI_API_KEY must be present."""
+        if self.max_rerun_attempts == 0 or self.aggregate_only:
+            return self
         if not isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig):
             return self
         if not os.environ.get("OPENAI_API_KEY"):
             raise ValueError("EVA_USER_SIMULATOR__PROVIDER=openai_realtime requires OPENAI_API_KEY to be set.")
+        return self
+
+    @model_validator(mode="after")
+    def _check_gemini_live_simulator(self) -> "RunConfig":
+        """When gemini_live user simulator is selected, Gemini credentials must be present."""
+        if self.max_rerun_attempts == 0 or self.aggregate_only:
+            return self
+        if not isinstance(self.user_simulator, GeminiLiveSimulatorConfig):
+            return self
+        has_credentials = any(
+            os.environ.get(key)
+            for key in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_CLOUD_PROJECT", "GOOGLE_APPLICATION_CREDENTIALS")
+        )
+        if not has_credentials:
+            raise ValueError(
+                "EVA_USER_SIMULATOR__PROVIDER=gemini_live requires one of GEMINI_API_KEY, GOOGLE_API_KEY, "
+                "GOOGLE_CLOUD_PROJECT (Vertex AI), or GOOGLE_APPLICATION_CREDENTIALS to be set."
+            )
         return self
 
     @model_validator(mode="before")

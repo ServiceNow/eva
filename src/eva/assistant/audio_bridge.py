@@ -35,20 +35,42 @@ def mulaw_8k_to_pcm16_16k(mulaw_bytes: bytes) -> bytes:
     return pcm_16k
 
 
+def pcm16_16k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
+    """Convert 16kHz 16-bit PCM to 8kHz mu-law.
+
+    Uses soxr VHQ resampling for proper anti-aliasing during the 2:1 downsampling.
+    audioop.ratecv lacks an anti-aliasing filter, causing frequencies 4-8kHz (sibilants)
+    to alias back into the speech band as electrical-sounding distortion.
+    """
+    audio_data = np.frombuffer(pcm_bytes, dtype=np.int16)
+    resampled = soxr.resample(audio_data, 16000, 8000, quality="VHQ")
+    expected_samples = round(len(audio_data) * 8000 / 16000)
+    if len(resampled) < expected_samples:
+        resampled = np.pad(resampled, (0, expected_samples - len(resampled)))
+    elif len(resampled) > expected_samples:
+        resampled = resampled[:expected_samples]
+    pcm_8k = np.clip(resampled, -32768, 32767).astype(np.int16).tobytes()
+    return audioop.lin2ulaw(pcm_8k, 2)
+
+
 def mulaw_8k_to_pcm16_24k(mulaw_bytes: bytes) -> bytes:
-    """Convert 8kHz mu-law audio to 24kHz 16-bit PCM."""
+    """Convert 8kHz mu-law audio to 24kHz 16-bit PCM.
+
+    Uses soxr VHQ resampling for clean 3:1 upsampling. audioop.ratecv restarts
+    its interpolation filter on every call (stateless) which creates audible
+    discontinuities at chunk boundaries for the 3:1 ratio.
+    """
     # Decode mu-law to 16-bit PCM at 8kHz
     pcm_8k = audioop.ulaw2lin(mulaw_bytes, 2)
-    # Upsample from 8kHz to 24kHz
-    pcm_24k, _ = audioop.ratecv(pcm_8k, 2, 1, 8000, 24000, None)
-    # audioop.ratecv can produce ±2 samples; clamp to exact 3× input length
-    # so that the inverse conversion recovers the original sample count.
-    expected_bytes = len(pcm_8k) * 3
-    if len(pcm_24k) < expected_bytes:
-        pcm_24k = pcm_24k + b"\x00" * (expected_bytes - len(pcm_24k))
-    elif len(pcm_24k) > expected_bytes:
-        pcm_24k = pcm_24k[:expected_bytes]
-    return pcm_24k
+    # Upsample from 8kHz to 24kHz using high-quality resampler
+    audio_data = np.frombuffer(pcm_8k, dtype=np.int16)
+    resampled = soxr.resample(audio_data, 8000, 24000, quality="VHQ")
+    expected_samples = round(len(audio_data) * 24000 / 8000)
+    if len(resampled) < expected_samples:
+        resampled = np.pad(resampled, (0, expected_samples - len(resampled)))
+    elif len(resampled) > expected_samples:
+        resampled = resampled[:expected_samples]
+    return np.clip(resampled, -32768, 32767).astype(np.int16).tobytes()
 
 
 def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
@@ -67,7 +89,7 @@ def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
         resampled = np.pad(resampled, (0, expected_samples - len(resampled)))
     elif len(resampled) > expected_samples:
         resampled = resampled[:expected_samples]
-    pcm_8k = resampled.astype(np.int16).tobytes()
+    pcm_8k = np.clip(resampled, -32768, 32767).astype(np.int16).tobytes()
     # Encode to mu-law
     return audioop.lin2ulaw(pcm_8k, 2)
 
