@@ -682,18 +682,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help requesting a temporary extension for my medical license."
+      "en": "Hi, I need help requesting a temporary extension for my medical license.",
+      "es": "Hola, necesito ayuda para solicitar una prórroga temporal de mi licencia médica.",
+      "fr": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence médicale.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence médicale.",
+      "de": "Hallo, ich brauche Hilfe dabei, eine vorübergehende Verlängerung meiner medical license zu beantragen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Priya",
         "last_name": "Sharma"
+      },
+      "es": {
+        "first_name": "Julia",
+        "last_name": "Blanco"
+      },
+      "fr": {
+        "first_name": "Jeanne",
+        "last_name": "Faure"
+      },
+      "fr-CA": {
+        "first_name": "Ginette",
+        "last_name": "Pelletier"
+      },
+      "de": {
+        "first_name": "Theresa",
+        "last_name": "Maier"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Priya",
         "last_name": "Sharma"
+      },
+      "es": {
+        "first_name": "Julia",
+        "last_name": "Blanco"
+      },
+      "fr": {
+        "first_name": "Jeanne",
+        "last_name": "Faure"
+      },
+      "fr-CA": {
+        "first_name": "Ginette",
+        "last_name": "Pelletier"
+      },
+      "de": {
+        "first_name": "Theresa",
+        "last_name": "Maier"
       }
     }
   },
@@ -1186,18 +1222,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help requesting a temporary extension for my license."
+      "en": "Hi, I need help requesting a temporary extension for my license.",
+      "es": "Hola, necesito ayuda para solicitar una prórroga temporal de mi licencia.",
+      "fr": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence.",
+      "de": "Hallo, ich brauche Hilfe dabei, eine vorübergehende Verlängerung meiner license zu beantragen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Kwame",
         "last_name": "Asante"
+      },
+      "es": {
+        "first_name": "Mateo",
+        "last_name": "Fernández"
+      },
+      "fr": {
+        "first_name": "Mathieu",
+        "last_name": "Lefèvre"
+      },
+      "fr-CA": {
+        "first_name": "Maxime",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Daniel",
+        "last_name": "Neumann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Kwame",
         "last_name": "Asante"
+      },
+      "es": {
+        "first_name": "Mateo",
+        "last_name": "Fernandez"
+      },
+      "fr": {
+        "first_name": "Mathieu",
+        "last_name": "Lefevre"
+      },
+      "fr-CA": {
+        "first_name": "Maxime",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Daniel",
+        "last_name": "Neumann"
       }
     }
   },
@@ -1748,18 +1820,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help completing my I-9 verification."
+      "en": "Hi, I need help completing my I-9 verification.",
+      "es": "Hola, necesito ayuda para completar mi verificación I-9.",
+      "fr": "Bonjour, j’ai besoin d’aide pour compléter ma vérification I-9.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour compléter ma vérification I-9.",
+      "de": "Hallo, ich brauche Hilfe beim Abschließen meiner I-9 verification."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Ravi",
         "last_name": "Krishnamurthy"
+      },
+      "es": {
+        "first_name": "Manuel",
+        "last_name": "Gutiérrez"
+      },
+      "fr": {
+        "first_name": "Maxime",
+        "last_name": "Michel"
+      },
+      "fr-CA": {
+        "first_name": "Christian",
+        "last_name": "Nadeau"
+      },
+      "de": {
+        "first_name": "Jürgen",
+        "last_name": "Schneider"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Ravi",
         "last_name": "Krishnamurthy"
+      },
+      "es": {
+        "first_name": "Manuel",
+        "last_name": "Gutierrez"
+      },
+      "fr": {
+        "first_name": "Maxime",
+        "last_name": "Michel"
+      },
+      "fr-CA": {
+        "first_name": "Christian",
+        "last_name": "Nadeau"
+      },
+      "de": {
+        "first_name": "Juergen",
+        "last_name": "Schneider"
       }
     }
   },
@@ -2240,18 +2348,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help submitting my I-9 reverification documents."
+      "en": "Hi, I need help submitting my I-9 reverification documents.",
+      "es": "Hola, necesito ayuda para enviar mis documentos de reverificación I-9.",
+      "fr": "Bonjour, j’ai besoin d’aide pour soumettre mes documents de revérification I-9.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour soumettre mes documents de revérification I-9.",
+      "de": "Hallo, ich brauche Hilfe beim Einreichen meiner I-9 reverification documents."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Zara",
         "last_name": "Hussain"
+      },
+      "es": {
+        "first_name": "Irene",
+        "last_name": "Serrano"
+      },
+      "fr": {
+        "first_name": "Marie",
+        "last_name": "François"
+      },
+      "fr-CA": {
+        "first_name": "Ariane",
+        "last_name": "Lessard"
+      },
+      "de": {
+        "first_name": "Hannah",
+        "last_name": "Mayer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Zara",
         "last_name": "Hussain"
+      },
+      "es": {
+        "first_name": "Irene",
+        "last_name": "Serrano"
+      },
+      "fr": {
+        "first_name": "Marie",
+        "last_name": "Francois"
+      },
+      "fr-CA": {
+        "first_name": "Ariane",
+        "last_name": "Lessard"
+      },
+      "de": {
+        "first_name": "Hannah",
+        "last_name": "Mayer"
       }
     }
   },
@@ -2899,18 +3043,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help adding my spouse to my H-1B visa record."
+      "en": "Hi, I need help adding my spouse to my H-1B visa record.",
+      "es": "Hola, necesito ayuda para añadir a mi cónyuge a mi expediente de visa H-1B.",
+      "fr": "Bonjour, j’ai besoin d’aide pour ajouter mon conjoint à mon dossier de visa H-1B.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour ajouter mon conjoint à mon dossier de visa H-1B.",
+      "de": "Hallo, ich brauche Hilfe dabei, meinen Ehepartner zu meinem H-1B visa record hinzuzufügen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Ingrid",
         "last_name": "Bergstrom"
+      },
+      "es": {
+        "first_name": "Julia",
+        "last_name": "Lozano"
+      },
+      "fr": {
+        "first_name": "Juliette",
+        "last_name": "Gauthier"
+      },
+      "fr-CA": {
+        "first_name": "Sophie",
+        "last_name": "Fournier"
+      },
+      "de": {
+        "first_name": "Lena",
+        "last_name": "Weiß"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Ingrid",
         "last_name": "Bergstrom"
+      },
+      "es": {
+        "first_name": "Julia",
+        "last_name": "Lozano"
+      },
+      "fr": {
+        "first_name": "Juliette",
+        "last_name": "Gauthier"
+      },
+      "fr-CA": {
+        "first_name": "Sophie",
+        "last_name": "Fournier"
+      },
+      "de": {
+        "first_name": "Lena",
+        "last_name": "Weiss"
       }
     }
   },
@@ -3381,18 +3561,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help adding my child to my visa petition."
+      "en": "Hi, I need help adding my child to my visa petition.",
+      "es": "Hola, necesito ayuda para añadir a mi hijo a mi petición de visa.",
+      "fr": "Bonjour, j’ai besoin d’aide pour ajouter mon enfant à ma demande de visa.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour ajouter mon enfant à ma demande de visa.",
+      "de": "Hallo, ich brauche Hilfe dabei, mein Kind zu meiner visa petition hinzuzufügen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Pavel",
         "last_name": "Kowalski"
+      },
+      "es": {
+        "first_name": "Rodrigo",
+        "last_name": "Moreno"
+      },
+      "fr": {
+        "first_name": "Cédric",
+        "last_name": "Robert"
+      },
+      "fr-CA": {
+        "first_name": "Luc",
+        "last_name": "Tremblay"
+      },
+      "de": {
+        "first_name": "Emil",
+        "last_name": "Meier"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Pavel",
         "last_name": "Kowalski"
+      },
+      "es": {
+        "first_name": "Rodrigo",
+        "last_name": "Moreno"
+      },
+      "fr": {
+        "first_name": "Cedric",
+        "last_name": "Robert"
+      },
+      "fr-CA": {
+        "first_name": "Luc",
+        "last_name": "Tremblay"
+      },
+      "de": {
+        "first_name": "Emil",
+        "last_name": "Meier"
       }
     }
   },
@@ -4002,18 +4218,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to request some PTO for an upcoming vacation."
+      "en": "Hi, I need to request some PTO for an upcoming vacation.",
+      "es": "Hola, necesito solicitar unos días de PTO para unas próximas vacaciones.",
+      "fr": "Bonjour, j’ai besoin de demander des PTO pour des vacances à venir.",
+      "fr-CA": "Bonjour, j’ai besoin de demander des PTO pour des vacances à venir.",
+      "de": "Hallo, ich möchte PTO für einen bevorstehenden Urlaub beantragen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Catalina",
         "last_name": "Reyes"
+      },
+      "es": {
+        "first_name": "Esther",
+        "last_name": "Blanco"
+      },
+      "fr": {
+        "first_name": "Anaïs",
+        "last_name": "Nicolas"
+      },
+      "fr-CA": {
+        "first_name": "Maude",
+        "last_name": "Lavoie"
+      },
+      "de": {
+        "first_name": "Hannah",
+        "last_name": "Schmitt"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Catalina",
         "last_name": "Reyes"
+      },
+      "es": {
+        "first_name": "Esther",
+        "last_name": "Blanco"
+      },
+      "fr": {
+        "first_name": "Anais",
+        "last_name": "Nicolas"
+      },
+      "fr-CA": {
+        "first_name": "Maude",
+        "last_name": "Lavoie"
+      },
+      "de": {
+        "first_name": "Hannah",
+        "last_name": "Schmitt"
       }
     }
   },
@@ -4507,18 +4759,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help putting in a PTO request."
+      "en": "Hi, I need help putting in a PTO request.",
+      "es": "Hola, necesito ayuda para presentar una solicitud de PTO.",
+      "fr": "Bonjour, j’ai besoin d’aide pour faire une demande de PTO.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour faire une demande de PTO.",
+      "de": "Hallo, ich brauche Hilfe dabei, einen PTO request einzureichen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Idris",
         "last_name": "Diallo"
+      },
+      "es": {
+        "first_name": "Juan",
+        "last_name": "Rodríguez"
+      },
+      "fr": {
+        "first_name": "Jean",
+        "last_name": "Thomas"
+      },
+      "fr-CA": {
+        "first_name": "Gérard",
+        "last_name": "Landry"
+      },
+      "de": {
+        "first_name": "Emil",
+        "last_name": "Richter"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Idris",
         "last_name": "Diallo"
+      },
+      "es": {
+        "first_name": "Juan",
+        "last_name": "Rodriguez"
+      },
+      "fr": {
+        "first_name": "Jean",
+        "last_name": "Thomas"
+      },
+      "fr-CA": {
+        "first_name": "Gerard",
+        "last_name": "Landry"
+      },
+      "de": {
+        "first_name": "Emil",
+        "last_name": "Richter"
       }
     }
   },
@@ -5122,18 +5410,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I'm calling about swapping one of my shifts."
+      "en": "Hi, I'm calling about swapping one of my shifts.",
+      "es": "Hola, llamo por cambiar uno de mis turnos.",
+      "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes shifts.",
+      "fr-CA": "Bonjour, j’appelle au sujet d’un échange d’un de mes quarts de travail.",
+      "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Jamal",
         "last_name": "Washington"
+      },
+      "es": {
+        "first_name": "Rodrigo",
+        "last_name": "Sanz"
+      },
+      "fr": {
+        "first_name": "Gilles",
+        "last_name": "Fournier"
+      },
+      "fr-CA": {
+        "first_name": "Gaétan",
+        "last_name": "Martin"
+      },
+      "de": {
+        "first_name": "Matthias",
+        "last_name": "Braun"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Jamal",
         "last_name": "Washington"
+      },
+      "es": {
+        "first_name": "Rodrigo",
+        "last_name": "Sanz"
+      },
+      "fr": {
+        "first_name": "Gilles",
+        "last_name": "Fournier"
+      },
+      "fr-CA": {
+        "first_name": "Gaetan",
+        "last_name": "Martin"
+      },
+      "de": {
+        "first_name": "Matthias",
+        "last_name": "Braun"
       }
     }
   },
@@ -5653,18 +5977,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I'm calling about swapping one of my shifts."
+      "en": "Hi, I'm calling about swapping one of my shifts.",
+      "es": "Hola, llamo por cambiar uno de mis turnos.",
+      "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes shifts.",
+      "fr-CA": "Bonjour, j’appelle au sujet d’un échange d’un de mes quarts de travail.",
+      "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Saoirse",
         "last_name": "O'Brien"
+      },
+      "es": {
+        "first_name": "Isabel",
+        "last_name": "Lozano"
+      },
+      "fr": {
+        "first_name": "Justine",
+        "last_name": "Girard"
+      },
+      "fr-CA": {
+        "first_name": "Catherine",
+        "last_name": "Lemieux"
+      },
+      "de": {
+        "first_name": "Anna",
+        "last_name": "Koch"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Saoirse",
         "last_name": "O'Brien"
+      },
+      "es": {
+        "first_name": "Isabel",
+        "last_name": "Lozano"
+      },
+      "fr": {
+        "first_name": "Justine",
+        "last_name": "Girard"
+      },
+      "fr-CA": {
+        "first_name": "Catherine",
+        "last_name": "Lemieux"
+      },
+      "de": {
+        "first_name": "Anna",
+        "last_name": "Koch"
       }
     }
   },
@@ -6216,18 +6576,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to update my malpractice insurance information."
+      "en": "Hi, I need to update my malpractice insurance information.",
+      "es": "Hola, necesito actualizar la información de mi seguro de malpractice.",
+      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance malpractice.",
+      "fr-CA": "Bonjour, j’ai besoin de mettre à jour mes renseignements d’assurance malpractice.",
+      "de": "Hallo, ich muss meine malpractice insurance information aktualisieren."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Mei-Ling",
         "last_name": "Chen"
+      },
+      "es": {
+        "first_name": "Blanca",
+        "last_name": "Domínguez"
+      },
+      "fr": {
+        "first_name": "Coralie",
+        "last_name": "Perrin"
+      },
+      "fr-CA": {
+        "first_name": "Lise",
+        "last_name": "Lavoie"
+      },
+      "de": {
+        "first_name": "Antonia",
+        "last_name": "Krüger"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Mei-Ling",
         "last_name": "Chen"
+      },
+      "es": {
+        "first_name": "Blanca",
+        "last_name": "Dominguez"
+      },
+      "fr": {
+        "first_name": "Coralie",
+        "last_name": "Perrin"
+      },
+      "fr-CA": {
+        "first_name": "Lise",
+        "last_name": "Lavoie"
+      },
+      "de": {
+        "first_name": "Antonia",
+        "last_name": "Krueger"
       }
     }
   },
@@ -6705,18 +7101,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to update my malpractice insurance information."
+      "en": "Hi, I need to update my malpractice insurance information.",
+      "es": "Hola, necesito actualizar la información de mi seguro de malpractice.",
+      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance malpractice.",
+      "fr-CA": "Bonjour, j’ai besoin de mettre à jour mes renseignements d’assurance malpractice.",
+      "de": "Hallo, ich muss meine malpractice insurance information aktualisieren."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Takeshi",
         "last_name": "Nakamura"
+      },
+      "es": {
+        "first_name": "Nicolás",
+        "last_name": "Castillo"
+      },
+      "fr": {
+        "first_name": "Rémi",
+        "last_name": "Garcia"
+      },
+      "fr-CA": {
+        "first_name": "Robert",
+        "last_name": "Desjardins"
+      },
+      "de": {
+        "first_name": "Julian",
+        "last_name": "Mayer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Takeshi",
         "last_name": "Nakamura"
+      },
+      "es": {
+        "first_name": "Nicolas",
+        "last_name": "Castillo"
+      },
+      "fr": {
+        "first_name": "Remi",
+        "last_name": "Garcia"
+      },
+      "fr-CA": {
+        "first_name": "Robert",
+        "last_name": "Desjardins"
+      },
+      "de": {
+        "first_name": "Julian",
+        "last_name": "Mayer"
       }
     }
   },
@@ -7261,18 +7693,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help updating a couple of onboarding items and setting up my follow-up appointment."
+      "en": "Hi, I need help updating a couple of onboarding items and setting up my follow-up appointment.",
+      "es": "Hola, necesito ayuda para actualizar un par de elementos de onboarding y programar mi cita de seguimiento.",
+      "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments d’onboarding et planifier mon rendez-vous de suivi.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments de mon onboarding et pour planifier mon rendez-vous de suivi.",
+      "de": "Hallo, ich brauche Hilfe dabei, ein paar onboarding items zu aktualisieren und meinen follow-up appointment zu vereinbaren."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Oluwaseun",
         "last_name": "Adeyemi"
+      },
+      "es": {
+        "first_name": "Pablo",
+        "last_name": "Gómez"
+      },
+      "fr": {
+        "first_name": "Paul",
+        "last_name": "Rousseau"
+      },
+      "fr-CA": {
+        "first_name": "Nicolas",
+        "last_name": "Bédard"
+      },
+      "de": {
+        "first_name": "Jakob",
+        "last_name": "Schmidt"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Oluwaseun",
         "last_name": "Adeyemi"
+      },
+      "es": {
+        "first_name": "Pablo",
+        "last_name": "Gomez"
+      },
+      "fr": {
+        "first_name": "Paul",
+        "last_name": "Rousseau"
+      },
+      "fr-CA": {
+        "first_name": "Nicolas",
+        "last_name": "Bedard"
+      },
+      "de": {
+        "first_name": "Jakob",
+        "last_name": "Schmidt"
       }
     }
   },
@@ -7718,18 +8186,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help marking a couple of my onboarding tasks as complete."
+      "en": "Hi, I need help marking a couple of my onboarding tasks as complete.",
+      "es": "Hola, necesito ayuda para marcar un par de mis tareas de onboarding como completadas.",
+      "fr": "Bonjour, j’ai besoin d’aide pour marquer quelques-unes de mes tâches d’onboarding comme terminées.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour marquer quelques-unes de mes tâches d’onboarding comme terminées.",
+      "de": "Hallo, ich brauche Hilfe dabei, ein paar meiner onboarding tasks als erledigt zu markieren."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Luz",
         "last_name": "Gutierrez"
+      },
+      "es": {
+        "first_name": "Carmen",
+        "last_name": "Molina"
+      },
+      "fr": {
+        "first_name": "Emma",
+        "last_name": "Guérin"
+      },
+      "fr-CA": {
+        "first_name": "Audrey",
+        "last_name": "Gagné"
+      },
+      "de": {
+        "first_name": "Charlotte",
+        "last_name": "Weber"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Luz",
         "last_name": "Gutierrez"
+      },
+      "es": {
+        "first_name": "Carmen",
+        "last_name": "Molina"
+      },
+      "fr": {
+        "first_name": "Emma",
+        "last_name": "Guerin"
+      },
+      "fr-CA": {
+        "first_name": "Audrey",
+        "last_name": "Gagne"
+      },
+      "de": {
+        "first_name": "Charlotte",
+        "last_name": "Weber"
       }
     }
   },
@@ -8332,18 +8836,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help transferring my DEA registration to a new facility."
+      "en": "Hi, I need help transferring my DEA registration to a new facility.",
+      "es": "Hola, necesito ayuda para transferir mi registro DEA a un nuevo centro.",
+      "fr": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA vers un nouvel établissement.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA vers un nouvel établissement.",
+      "de": "Hallo, ich brauche Hilfe dabei, meine DEA registration auf eine neue facility zu übertragen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Fatima",
         "last_name": "Al-Rashidi"
+      },
+      "es": {
+        "first_name": "Sara",
+        "last_name": "Marín"
+      },
+      "fr": {
+        "first_name": "Christine",
+        "last_name": "Lefebvre"
+      },
+      "fr-CA": {
+        "first_name": "Lise",
+        "last_name": "Roy"
+      },
+      "de": {
+        "first_name": "Kerstin",
+        "last_name": "Schmidt"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Fatima",
         "last_name": "Al-Rashidi"
+      },
+      "es": {
+        "first_name": "Sara",
+        "last_name": "Marin"
+      },
+      "fr": {
+        "first_name": "Christine",
+        "last_name": "Lefebvre"
+      },
+      "fr-CA": {
+        "first_name": "Lise",
+        "last_name": "Roy"
+      },
+      "de": {
+        "first_name": "Kerstin",
+        "last_name": "Schmidt"
       }
     }
   },
@@ -8853,18 +9393,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help transferring my DEA registration to a new facility."
+      "en": "Hi, I need help transferring my DEA registration to a new facility.",
+      "es": "Hola, necesito ayuda para transferir mi registro DEA a un nuevo centro.",
+      "fr": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA vers un nouvel établissement.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA vers un nouvel établissement.",
+      "de": "Hallo, ich brauche Hilfe dabei, meine DEA registration auf eine neue facility zu übertragen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Andre",
         "last_name": "Baptiste"
+      },
+      "es": {
+        "first_name": "Diego",
+        "last_name": "Ortiz"
+      },
+      "fr": {
+        "first_name": "David",
+        "last_name": "Martin"
+      },
+      "fr-CA": {
+        "first_name": "Guy",
+        "last_name": "Bergeron"
+      },
+      "de": {
+        "first_name": "Luis",
+        "last_name": "Scholz"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Andre",
         "last_name": "Baptiste"
+      },
+      "es": {
+        "first_name": "Diego",
+        "last_name": "Ortiz"
+      },
+      "fr": {
+        "first_name": "David",
+        "last_name": "Martin"
+      },
+      "fr-CA": {
+        "first_name": "Guy",
+        "last_name": "Bergeron"
+      },
+      "de": {
+        "first_name": "Luis",
+        "last_name": "Scholz"
       }
     }
   },
@@ -9519,18 +10095,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to file for FMLA leave."
+      "en": "Hi, I need to file for FMLA leave.",
+      "es": "Hola, necesito solicitar una baja FMLA.",
+      "fr": "Bonjour, j’ai besoin de déposer une demande de congé FMLA.",
+      "fr-CA": "Bonjour, j’ai besoin de faire une demande de congé FMLA.",
+      "de": "Hallo, ich muss FMLA leave beantragen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Dmitri",
         "last_name": "Volkov"
+      },
+      "es": {
+        "first_name": "Hugo",
+        "last_name": "Castillo"
+      },
+      "fr": {
+        "first_name": "Pierre",
+        "last_name": "Thomas"
+      },
+      "fr-CA": {
+        "first_name": "Sébastien",
+        "last_name": "Desjardins"
+      },
+      "de": {
+        "first_name": "Jan",
+        "last_name": "Koch"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Dmitri",
         "last_name": "Volkov"
+      },
+      "es": {
+        "first_name": "Hugo",
+        "last_name": "Castillo"
+      },
+      "fr": {
+        "first_name": "Pierre",
+        "last_name": "Thomas"
+      },
+      "fr-CA": {
+        "first_name": "Sebastien",
+        "last_name": "Desjardins"
+      },
+      "de": {
+        "first_name": "Jan",
+        "last_name": "Koch"
       }
     }
   },
@@ -10063,18 +10675,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to file for FMLA leave."
+      "en": "Hi, I need to file for FMLA leave.",
+      "es": "Hola, necesito solicitar una baja FMLA.",
+      "fr": "Bonjour, j’ai besoin de déposer une demande de congé FMLA.",
+      "fr-CA": "Bonjour, j’ai besoin de faire une demande de congé FMLA.",
+      "de": "Hallo, ich muss FMLA leave beantragen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Nkechi",
         "last_name": "Eze"
+      },
+      "es": {
+        "first_name": "Rocío",
+        "last_name": "Fernández"
+      },
+      "fr": {
+        "first_name": "Charlotte",
+        "last_name": "Nicolas"
+      },
+      "fr-CA": {
+        "first_name": "Noémie",
+        "last_name": "St-Pierre"
+      },
+      "de": {
+        "first_name": "Vanessa",
+        "last_name": "Schäfer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Nkechi",
         "last_name": "Eze"
+      },
+      "es": {
+        "first_name": "Rocio",
+        "last_name": "Fernandez"
+      },
+      "fr": {
+        "first_name": "Charlotte",
+        "last_name": "Nicolas"
+      },
+      "fr-CA": {
+        "first_name": "Noemie",
+        "last_name": "St-Pierre"
+      },
+      "de": {
+        "first_name": "Vanessa",
+        "last_name": "Schaefer"
       }
     }
   },
@@ -10659,18 +11307,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help fixing missing on-call hours on my timesheet."
+      "en": "Hi, I need help fixing missing on-call hours on my timesheet.",
+      "es": "Hola, necesito ayuda para corregir horas de guardia que faltan en mi hoja de horas.",
+      "fr": "Bonjour, j’ai besoin d’aide pour corriger des heures d’astreinte manquantes sur ma feuille de temps.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour corriger des heures de garde manquantes sur ma feuille de temps.",
+      "de": "Hallo, ich brauche Hilfe dabei, fehlende on-call hours auf meinem timesheet zu korrigieren."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Yuki",
         "last_name": "Tanaka"
+      },
+      "es": {
+        "first_name": "David",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Yann",
+        "last_name": "Bonnet"
+      },
+      "fr-CA": {
+        "first_name": "Guillaume",
+        "last_name": "Séguin"
+      },
+      "de": {
+        "first_name": "Lukas",
+        "last_name": "Krause"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Yuki",
         "last_name": "Tanaka"
+      },
+      "es": {
+        "first_name": "David",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Yann",
+        "last_name": "Bonnet"
+      },
+      "fr-CA": {
+        "first_name": "Guillaume",
+        "last_name": "Seguin"
+      },
+      "de": {
+        "first_name": "Lukas",
+        "last_name": "Krause"
       }
     }
   },
@@ -11172,18 +11856,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help fixing hours on an old shift on my timesheet."
+      "en": "Hi, I need help fixing hours on an old shift on my timesheet.",
+      "es": "Hola, necesito ayuda para corregir horas de un turno antiguo en mi hoja de horas.",
+      "fr": "Bonjour, j’ai besoin d’aide pour corriger des heures sur un ancien shift dans ma feuille de temps.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour corriger des heures d’un ancien quart de travail sur ma feuille de temps.",
+      "de": "Hallo, ich brauche Hilfe dabei, Stunden einer alten Schicht auf meinem timesheet zu korrigieren."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Erik",
         "last_name": "Lindqvist"
+      },
+      "es": {
+        "first_name": "Sergio",
+        "last_name": "Domínguez"
+      },
+      "fr": {
+        "first_name": "Gabriel",
+        "last_name": "Lopez"
+      },
+      "fr-CA": {
+        "first_name": "François",
+        "last_name": "Martel"
+      },
+      "de": {
+        "first_name": "Finn",
+        "last_name": "Hoffmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Erik",
         "last_name": "Lindqvist"
+      },
+      "es": {
+        "first_name": "Sergio",
+        "last_name": "Dominguez"
+      },
+      "fr": {
+        "first_name": "Gabriel",
+        "last_name": "Lopez"
+      },
+      "fr-CA": {
+        "first_name": "Francois",
+        "last_name": "Martel"
+      },
+      "de": {
+        "first_name": "Finn",
+        "last_name": "Hoffmann"
       }
     }
   },
@@ -11871,18 +12591,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to get my clinical privileges reactivated after leave."
+      "en": "Hi, I need to get my clinical privileges reactivated after leave.",
+      "es": "Hola, necesito que se reactiven mis privilegios clínicos después de una baja.",
+      "fr": "Bonjour, j’ai besoin de faire réactiver mes privilèges cliniques après un congé.",
+      "fr-CA": "Bonjour, j’ai besoin de faire réactiver mes privilèges cliniques après un congé.",
+      "de": "Hallo, ich muss meine clinical privileges nach einer leave reaktivieren lassen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Carlos",
         "last_name": "Mendes"
+      },
+      "es": {
+        "first_name": "Iván",
+        "last_name": "Torres"
+      },
+      "fr": {
+        "first_name": "Benoît",
+        "last_name": "Legrand"
+      },
+      "fr-CA": {
+        "first_name": "Nicolas",
+        "last_name": "Gagnon"
+      },
+      "de": {
+        "first_name": "Paul",
+        "last_name": "Schmidt"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Carlos",
         "last_name": "Mendes"
+      },
+      "es": {
+        "first_name": "Ivan",
+        "last_name": "Torres"
+      },
+      "fr": {
+        "first_name": "Benoit",
+        "last_name": "Legrand"
+      },
+      "fr-CA": {
+        "first_name": "Nicolas",
+        "last_name": "Gagnon"
+      },
+      "de": {
+        "first_name": "Paul",
+        "last_name": "Schmidt"
       }
     }
   },
@@ -12568,18 +13324,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help reactivating my clinical privileges after coming back from leave."
+      "en": "Hi, I need help reactivating my clinical privileges after coming back from leave.",
+      "es": "Hola, necesito ayuda para reactivar mis privilegios clínicos después de volver de una baja.",
+      "fr": "Bonjour, j’ai besoin d’aide pour réactiver mes privilèges cliniques après mon retour de congé.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour réactiver mes privilèges cliniques après mon retour de congé.",
+      "de": "Hallo, ich brauche Hilfe dabei, meine clinical privileges nach meiner Rückkehr aus der leave zu reaktivieren."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Anh",
         "last_name": "Nguyen"
+      },
+      "es": {
+        "first_name": "Susana",
+        "last_name": "Gómez"
+      },
+      "fr": {
+        "first_name": "Margaux",
+        "last_name": "Mathieu"
+      },
+      "fr-CA": {
+        "first_name": "Martine",
+        "last_name": "Séguin"
+      },
+      "de": {
+        "first_name": "Marlene",
+        "last_name": "Hoffmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Anh",
         "last_name": "Nguyen"
+      },
+      "es": {
+        "first_name": "Susana",
+        "last_name": "Gomez"
+      },
+      "fr": {
+        "first_name": "Margaux",
+        "last_name": "Mathieu"
+      },
+      "fr-CA": {
+        "first_name": "Martine",
+        "last_name": "Seguin"
+      },
+      "de": {
+        "first_name": "Marlene",
+        "last_name": "Hoffmann"
       }
     }
   },
@@ -13143,18 +13935,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to register my on-call availability."
+      "en": "Hi, I need to register my on-call availability.",
+      "es": "Hola, necesito registrar mi disponibilidad para guardias.",
+      "fr": "Bonjour, j’ai besoin d’enregistrer mes disponibilités d’astreinte.",
+      "fr-CA": "Bonjour, j’ai besoin d’inscrire mes disponibilités de garde.",
+      "de": "Hallo, ich muss meine on-call availability registrieren."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Amara",
         "last_name": "Okafor"
+      },
+      "es": {
+        "first_name": "Ainhoa",
+        "last_name": "López"
+      },
+      "fr": {
+        "first_name": "Mathilde",
+        "last_name": "Chevalier"
+      },
+      "fr-CA": {
+        "first_name": "Hélène",
+        "last_name": "Girard"
+      },
+      "de": {
+        "first_name": "Ella",
+        "last_name": "Hofmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Amara",
         "last_name": "Okafor"
+      },
+      "es": {
+        "first_name": "Ainhoa",
+        "last_name": "Lopez"
+      },
+      "fr": {
+        "first_name": "Mathilde",
+        "last_name": "Chevalier"
+      },
+      "fr-CA": {
+        "first_name": "Helene",
+        "last_name": "Girard"
+      },
+      "de": {
+        "first_name": "Ella",
+        "last_name": "Hofmann"
       }
     }
   },
@@ -13628,18 +14456,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help registering for backup on-call availability."
+      "en": "Hi, I need help registering for backup on-call availability.",
+      "es": "Hola, necesito ayuda para registrar mi disponibilidad para guardias de respaldo.",
+      "fr": "Bonjour, j’ai besoin d’aide pour m’inscrire aux disponibilités d’astreinte de backup.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour m’inscrire comme disponibilité de garde de relève.",
+      "de": "Hallo, ich brauche Hilfe dabei, mich für backup on-call availability zu registrieren."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Solomon",
         "last_name": "Tesfaye"
+      },
+      "es": {
+        "first_name": "Antonio",
+        "last_name": "Vázquez"
+      },
+      "fr": {
+        "first_name": "Laurent",
+        "last_name": "Roussel"
+      },
+      "fr-CA": {
+        "first_name": "Mario",
+        "last_name": "Tremblay"
+      },
+      "de": {
+        "first_name": "Theo",
+        "last_name": "Braun"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Solomon",
         "last_name": "Tesfaye"
+      },
+      "es": {
+        "first_name": "Antonio",
+        "last_name": "Vazquez"
+      },
+      "fr": {
+        "first_name": "Laurent",
+        "last_name": "Roussel"
+      },
+      "fr-CA": {
+        "first_name": "Mario",
+        "last_name": "Tremblay"
+      },
+      "de": {
+        "first_name": "Theo",
+        "last_name": "Braun"
       }
     }
   },
@@ -14213,18 +15077,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I'm calling about swapping one of my shifts."
+      "en": "Hi, I'm calling about swapping one of my shifts.",
+      "es": "Hola, llamo por cambiar uno de mis turnos.",
+      "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes shifts.",
+      "fr-CA": "Bonjour, j’appelle au sujet d’un échange d’un de mes quarts de travail.",
+      "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Dante",
         "last_name": "Ferreira"
+      },
+      "es": {
+        "first_name": "Amparo",
+        "last_name": "González"
+      },
+      "fr": {
+        "first_name": "Noémie",
+        "last_name": "Gauthier"
+      },
+      "fr-CA": {
+        "first_name": "Nathalie",
+        "last_name": "Fournier"
+      },
+      "de": {
+        "first_name": "Emilia",
+        "last_name": "Meyer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Dante",
         "last_name": "Ferreira"
+      },
+      "es": {
+        "first_name": "Amparo",
+        "last_name": "Gonzalez"
+      },
+      "fr": {
+        "first_name": "Noemie",
+        "last_name": "Gauthier"
+      },
+      "fr-CA": {
+        "first_name": "Nathalie",
+        "last_name": "Fournier"
+      },
+      "de": {
+        "first_name": "Emilia",
+        "last_name": "Meyer"
       }
     }
   },
@@ -14852,18 +15752,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to file for FMLA leave."
+      "en": "Hi, I need to file for FMLA leave.",
+      "es": "Hola, necesito solicitar una baja FMLA.",
+      "fr": "Bonjour, je dois faire une demande de congé FMLA.",
+      "fr-CA": "Bonjour, je dois faire une demande de congé FMLA.",
+      "de": "Hallo, ich muss FMLA leave beantragen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Amadou",
         "last_name": "Keita"
+      },
+      "es": {
+        "first_name": "Jorge",
+        "last_name": "Iglesias"
+      },
+      "fr": {
+        "first_name": "Éric",
+        "last_name": "Dumont"
+      },
+      "fr-CA": {
+        "first_name": "Antoine",
+        "last_name": "Bédard"
+      },
+      "de": {
+        "first_name": "Felix",
+        "last_name": "Köhler"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Amadou",
         "last_name": "Keita"
+      },
+      "es": {
+        "first_name": "Jorge",
+        "last_name": "Iglesias"
+      },
+      "fr": {
+        "first_name": "Eric",
+        "last_name": "Dumont"
+      },
+      "fr-CA": {
+        "first_name": "Antoine",
+        "last_name": "Bedard"
+      },
+      "de": {
+        "first_name": "Felix",
+        "last_name": "Koehler"
       }
     }
   },
@@ -15577,18 +16513,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help transferring my DEA registration."
+      "en": "Hi, I need help transferring my DEA registration.",
+      "es": "Hola, necesito ayuda para transferir mi registro DEA.",
+      "fr": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA.",
+      "de": "Hallo, ich brauche Hilfe beim Übertragen meiner DEA registration."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Olga",
         "last_name": "Ivanova"
+      },
+      "es": {
+        "first_name": "Silvia",
+        "last_name": "Lozano"
+      },
+      "fr": {
+        "first_name": "Claire",
+        "last_name": "Garnier"
+      },
+      "fr-CA": {
+        "first_name": "Brigitte",
+        "last_name": "Parent"
+      },
+      "de": {
+        "first_name": "Jana",
+        "last_name": "Fuchs"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Olga",
         "last_name": "Ivanova"
+      },
+      "es": {
+        "first_name": "Silvia",
+        "last_name": "Lozano"
+      },
+      "fr": {
+        "first_name": "Claire",
+        "last_name": "Garnier"
+      },
+      "fr-CA": {
+        "first_name": "Brigitte",
+        "last_name": "Parent"
+      },
+      "de": {
+        "first_name": "Jana",
+        "last_name": "Fuchs"
       }
     }
   },
@@ -16169,18 +17141,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to get my clinical privileges reactivated."
+      "en": "Hi, I need to get my clinical privileges reactivated.",
+      "es": "Hola, necesito reactivar mis privilegios clínicos.",
+      "fr": "Bonjour, je dois faire réactiver mes clinical privileges.",
+      "fr-CA": "Bonjour, je dois faire réactiver mes privilèges cliniques.",
+      "de": "Hallo, ich muss meine clinical privileges reaktivieren lassen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Amina",
         "last_name": "Diagne"
+      },
+      "es": {
+        "first_name": "Blanca",
+        "last_name": "Castro"
+      },
+      "fr": {
+        "first_name": "Manon",
+        "last_name": "Martinez"
+      },
+      "fr-CA": {
+        "first_name": "Johanne",
+        "last_name": "Caron"
+      },
+      "de": {
+        "first_name": "Ella",
+        "last_name": "Schäfer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Amina",
         "last_name": "Diagne"
+      },
+      "es": {
+        "first_name": "Blanca",
+        "last_name": "Castro"
+      },
+      "fr": {
+        "first_name": "Manon",
+        "last_name": "Martinez"
+      },
+      "fr-CA": {
+        "first_name": "Johanne",
+        "last_name": "Caron"
+      },
+      "de": {
+        "first_name": "Ella",
+        "last_name": "Schaefer"
       }
     }
   },
@@ -16625,18 +17633,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help putting in a PTO request for a coworker."
+      "en": "Hi, I need help putting in a PTO request for a coworker.",
+      "es": "Hola, necesito ayuda para presentar una solicitud de PTO para un compañero de trabajo.",
+      "fr": "Bonjour, j’ai besoin d’aide pour saisir une demande de PTO pour un collègue.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour soumettre une demande de PTO pour un collègue.",
+      "de": "Hallo, ich brauche Hilfe dabei, einen PTO request für einen Kollegen einzureichen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Viktor",
         "last_name": "Novak"
+      },
+      "es": {
+        "first_name": "David",
+        "last_name": "Navarro"
+      },
+      "fr": {
+        "first_name": "Nicolas",
+        "last_name": "Petit"
+      },
+      "fr-CA": {
+        "first_name": "Jacques",
+        "last_name": "Lessard"
+      },
+      "de": {
+        "first_name": "Maximilian",
+        "last_name": "Schmitt"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Viktor",
         "last_name": "Novak"
+      },
+      "es": {
+        "first_name": "David",
+        "last_name": "Navarro"
+      },
+      "fr": {
+        "first_name": "Nicolas",
+        "last_name": "Petit"
+      },
+      "fr-CA": {
+        "first_name": "Jacques",
+        "last_name": "Lessard"
+      },
+      "de": {
+        "first_name": "Maximilian",
+        "last_name": "Schmitt"
       }
     }
   },
@@ -17123,18 +18167,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help fixing a payroll issue for a shift."
+      "en": "Hi, I need help fixing a payroll issue for a shift.",
+      "es": "Hola, necesito ayuda para solucionar un problema de nómina de un turno.",
+      "fr": "Bonjour, j’ai besoin d’aide pour corriger un problème de paie pour un shift.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour régler un problème de paie pour un quart de travail.",
+      "de": "Hallo, ich brauche Hilfe dabei, ein payroll issue für eine Schicht zu klären."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Yara",
         "last_name": "Santos"
+      },
+      "es": {
+        "first_name": "Rocío",
+        "last_name": "Delgado"
+      },
+      "fr": {
+        "first_name": "Jeanne",
+        "last_name": "André"
+      },
+      "fr-CA": {
+        "first_name": "Johanne",
+        "last_name": "Thibault"
+      },
+      "de": {
+        "first_name": "Lea",
+        "last_name": "Hartmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Yara",
         "last_name": "Santos"
+      },
+      "es": {
+        "first_name": "Rocio",
+        "last_name": "Delgado"
+      },
+      "fr": {
+        "first_name": "Jeanne",
+        "last_name": "Andre"
+      },
+      "fr-CA": {
+        "first_name": "Johanne",
+        "last_name": "Thibault"
+      },
+      "de": {
+        "first_name": "Lea",
+        "last_name": "Hartmann"
       }
     }
   },
@@ -17799,18 +18879,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help with a supervised license extension request."
+      "en": "Hi, I need help with a supervised license extension request.",
+      "es": "Hola, necesito ayuda con una solicitud de extensión de una licencia supervisada.",
+      "fr": "Bonjour, j’ai besoin d’aide pour une demande de prolongation de supervised license.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide avec une demande de prolongation de supervised license.",
+      "de": "Hallo, ich brauche Hilfe bei einem supervised license extension request."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Kweku",
         "last_name": "Owusu"
+      },
+      "es": {
+        "first_name": "Daniel",
+        "last_name": "Méndez"
+      },
+      "fr": {
+        "first_name": "Julien",
+        "last_name": "Vincent"
+      },
+      "fr-CA": {
+        "first_name": "Étienne",
+        "last_name": "Dubé"
+      },
+      "de": {
+        "first_name": "Andreas",
+        "last_name": "Kaiser"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Kweku",
         "last_name": "Owusu"
+      },
+      "es": {
+        "first_name": "Daniel",
+        "last_name": "Mendez"
+      },
+      "fr": {
+        "first_name": "Julien",
+        "last_name": "Vincent"
+      },
+      "fr-CA": {
+        "first_name": "Etienne",
+        "last_name": "Dube"
+      },
+      "de": {
+        "first_name": "Andreas",
+        "last_name": "Kaiser"
       }
     }
   },
@@ -18349,18 +19465,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help registering for on-call."
+      "en": "Hi, I need help registering for on-call.",
+      "es": "Hola, necesito ayuda para registrarme para on-call.",
+      "fr": "Bonjour, j’ai besoin d’aide pour m’inscrire à l’on-call.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour m’inscrire au on-call.",
+      "de": "Hallo, ich brauche Hilfe bei der Registrierung für on-call."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Indira",
         "last_name": "Subramaniam"
+      },
+      "es": {
+        "first_name": "Lucía",
+        "last_name": "Delgado"
+      },
+      "fr": {
+        "first_name": "Laura",
+        "last_name": "Garnier"
+      },
+      "fr-CA": {
+        "first_name": "Véronique",
+        "last_name": "Tremblay"
+      },
+      "de": {
+        "first_name": "Nele",
+        "last_name": "Lang"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Indira",
         "last_name": "Subramaniam"
+      },
+      "es": {
+        "first_name": "Lucia",
+        "last_name": "Delgado"
+      },
+      "fr": {
+        "first_name": "Laura",
+        "last_name": "Garnier"
+      },
+      "fr-CA": {
+        "first_name": "Veronique",
+        "last_name": "Tremblay"
+      },
+      "de": {
+        "first_name": "Nele",
+        "last_name": "Lang"
       }
     }
   },
@@ -19074,18 +20226,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need to file for FMLA leave."
+      "en": "Hi, I need to file for FMLA leave.",
+      "es": "Hola, necesito solicitar una baja FMLA.",
+      "fr": "Bonjour, je dois faire une demande de congé FMLA.",
+      "fr-CA": "Bonjour, je dois faire une demande de congé FMLA.",
+      "de": "Hallo, ich muss FMLA leave beantragen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Mina",
         "last_name": "Hashimoto"
+      },
+      "es": {
+        "first_name": "Pilar",
+        "last_name": "Rodríguez"
+      },
+      "fr": {
+        "first_name": "Sylvie",
+        "last_name": "Clément"
+      },
+      "fr-CA": {
+        "first_name": "Suzanne",
+        "last_name": "Boucher"
+      },
+      "de": {
+        "first_name": "Johanna",
+        "last_name": "Schäfer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Mina",
         "last_name": "Hashimoto"
+      },
+      "es": {
+        "first_name": "Pilar",
+        "last_name": "Rodriguez"
+      },
+      "fr": {
+        "first_name": "Sylvie",
+        "last_name": "Clement"
+      },
+      "fr-CA": {
+        "first_name": "Suzanne",
+        "last_name": "Boucher"
+      },
+      "de": {
+        "first_name": "Johanna",
+        "last_name": "Schaefer"
       }
     }
   },
@@ -20084,18 +21272,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of urgent HR credentialing issues I need help with."
+      "en": "Hi, I have a couple of urgent HR credentialing issues I need help with.",
+      "es": "Hola, tengo un par de asuntos urgentes de HR credentialing con los que necesito ayuda.",
+      "fr": "Bonjour, j’ai quelques problèmes urgents de HR credentialing pour lesquels j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques problèmes urgents de HR credentialing et j’ai besoin d’aide.",
+      "de": "Hallo, ich habe ein paar dringende HR credentialing issues, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Hana",
         "last_name": "Yoshida"
+      },
+      "es": {
+        "first_name": "Pilar",
+        "last_name": "Blanco"
+      },
+      "fr": {
+        "first_name": "Nathalie",
+        "last_name": "Roux"
+      },
+      "fr-CA": {
+        "first_name": "Ginette",
+        "last_name": "Lavoie"
+      },
+      "de": {
+        "first_name": "Lena",
+        "last_name": "Hahn"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Hana",
         "last_name": "Yoshida"
+      },
+      "es": {
+        "first_name": "Pilar",
+        "last_name": "Blanco"
+      },
+      "fr": {
+        "first_name": "Nathalie",
+        "last_name": "Roux"
+      },
+      "fr-CA": {
+        "first_name": "Ginette",
+        "last_name": "Lavoie"
+      },
+      "de": {
+        "first_name": "Lena",
+        "last_name": "Hahn"
       }
     }
   },
@@ -20866,18 +22090,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR credentialing issues I need help with."
+      "en": "Hi, I have a couple of HR credentialing issues I need help with.",
+      "es": "Hola, tengo un par de asuntos de HR credentialing con los que necesito ayuda.",
+      "fr": "Bonjour, j’ai quelques problèmes de HR credentialing pour lesquels j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques problèmes de HR credentialing et j’ai besoin d’aide.",
+      "de": "Hallo, ich habe ein paar HR credentialing issues, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Mateo",
         "last_name": "Castillo"
+      },
+      "es": {
+        "first_name": "Eduardo",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Grégoire",
+        "last_name": "Fontaine"
+      },
+      "fr-CA": {
+        "first_name": "Antoine",
+        "last_name": "Bélanger"
+      },
+      "de": {
+        "first_name": "David",
+        "last_name": "Neumann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Mateo",
         "last_name": "Castillo"
+      },
+      "es": {
+        "first_name": "Eduardo",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Gregoire",
+        "last_name": "Fontaine"
+      },
+      "fr-CA": {
+        "first_name": "Antoine",
+        "last_name": "Belanger"
+      },
+      "de": {
+        "first_name": "David",
+        "last_name": "Neumann"
       }
     }
   },
@@ -21703,18 +22963,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR credentialing issues I need help with."
+      "en": "Hi, I have a couple of HR credentialing issues I need help with.",
+      "es": "Hola, tengo un par de asuntos de HR credentialing con los que necesito ayuda.",
+      "fr": "Bonjour, j’ai quelques problèmes de HR credentialing pour lesquels j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques problèmes de HR credentialing et j’ai besoin d’aide.",
+      "de": "Hallo, ich habe ein paar HR credentialing issues, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Aisling",
         "last_name": "Murphy"
+      },
+      "es": {
+        "first_name": "Cristina",
+        "last_name": "Cano"
+      },
+      "fr": {
+        "first_name": "Nathalie",
+        "last_name": "Lopez"
+      },
+      "fr-CA": {
+        "first_name": "Émilie",
+        "last_name": "Morin"
+      },
+      "de": {
+        "first_name": "Ursula",
+        "last_name": "Fuchs"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Aisling",
         "last_name": "Murphy"
+      },
+      "es": {
+        "first_name": "Cristina",
+        "last_name": "Cano"
+      },
+      "fr": {
+        "first_name": "Nathalie",
+        "last_name": "Lopez"
+      },
+      "fr-CA": {
+        "first_name": "Emilie",
+        "last_name": "Morin"
+      },
+      "de": {
+        "first_name": "Ursula",
+        "last_name": "Fuchs"
       }
     }
   },
@@ -22580,18 +23876,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR things I need help with today."
+      "en": "Hi, I have a couple of HR things I need help with today.",
+      "es": "Hola, tengo un par de cosas de HR con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques sujets HR pour lesquels j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR avec lesquelles j’ai besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Mamadou",
         "last_name": "Diop"
+      },
+      "es": {
+        "first_name": "Santiago",
+        "last_name": "Gómez"
+      },
+      "fr": {
+        "first_name": "Antoine",
+        "last_name": "Lefèvre"
+      },
+      "fr-CA": {
+        "first_name": "Mathieu",
+        "last_name": "Gagnon"
+      },
+      "de": {
+        "first_name": "Matthias",
+        "last_name": "Schulz"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Mamadou",
         "last_name": "Diop"
+      },
+      "es": {
+        "first_name": "Santiago",
+        "last_name": "Gomez"
+      },
+      "fr": {
+        "first_name": "Antoine",
+        "last_name": "Lefevre"
+      },
+      "fr-CA": {
+        "first_name": "Mathieu",
+        "last_name": "Gagnon"
+      },
+      "de": {
+        "first_name": "Matthias",
+        "last_name": "Schulz"
       }
     }
   },
@@ -23400,18 +24732,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR things I need help with today."
+      "en": "Hi, I have a couple of HR things I need help with today.",
+      "es": "Hola, tengo un par de cosas de HR con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques sujets HR pour lesquels j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR avec lesquelles j’ai besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Tariq",
         "last_name": "Rahman"
+      },
+      "es": {
+        "first_name": "Guillermo",
+        "last_name": "Gil"
+      },
+      "fr": {
+        "first_name": "Léo",
+        "last_name": "Lefebvre"
+      },
+      "fr-CA": {
+        "first_name": "André",
+        "last_name": "Perreault"
+      },
+      "de": {
+        "first_name": "Jürgen",
+        "last_name": "Meyer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Tariq",
         "last_name": "Rahman"
+      },
+      "es": {
+        "first_name": "Guillermo",
+        "last_name": "Gil"
+      },
+      "fr": {
+        "first_name": "Leo",
+        "last_name": "Lefebvre"
+      },
+      "fr-CA": {
+        "first_name": "Andre",
+        "last_name": "Perreault"
+      },
+      "de": {
+        "first_name": "Juergen",
+        "last_name": "Meyer"
       }
     }
   },
@@ -24113,18 +25481,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR things I need help with today."
+      "en": "Hi, I have a couple of HR things I need help with today.",
+      "es": "Hola, tengo un par de cosas de HR con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques sujets HR pour lesquels j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR avec lesquelles j’ai besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Chidi",
         "last_name": "Anyanwu"
+      },
+      "es": {
+        "first_name": "Celia",
+        "last_name": "Marín"
+      },
+      "fr": {
+        "first_name": "Maëlys",
+        "last_name": "Robin"
+      },
+      "fr-CA": {
+        "first_name": "Brigitte",
+        "last_name": "Gauthier"
+      },
+      "de": {
+        "first_name": "Lena",
+        "last_name": "Peters"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Chidi",
         "last_name": "Anyanwu"
+      },
+      "es": {
+        "first_name": "Celia",
+        "last_name": "Marin"
+      },
+      "fr": {
+        "first_name": "Maelys",
+        "last_name": "Robin"
+      },
+      "fr-CA": {
+        "first_name": "Brigitte",
+        "last_name": "Gauthier"
+      },
+      "de": {
+        "first_name": "Lena",
+        "last_name": "Peters"
       }
     }
   },
@@ -24937,18 +26341,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of credentialing updates I need help with today."
+      "en": "Hi, I have a couple of credentialing updates I need help with today.",
+      "es": "Hola, tengo un par de actualizaciones de credentialing con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques mises à jour de credentialing pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour de credentialing avec lesquelles j’ai besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar credentialing updates, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Kofi",
         "last_name": "Mensah"
+      },
+      "es": {
+        "first_name": "Nicolás",
+        "last_name": "Domínguez"
+      },
+      "fr": {
+        "first_name": "Étienne",
+        "last_name": "François"
+      },
+      "fr-CA": {
+        "first_name": "Yves",
+        "last_name": "Rousseau"
+      },
+      "de": {
+        "first_name": "Luis",
+        "last_name": "Bauer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Kofi",
         "last_name": "Mensah"
+      },
+      "es": {
+        "first_name": "Nicolas",
+        "last_name": "Dominguez"
+      },
+      "fr": {
+        "first_name": "Etienne",
+        "last_name": "Francois"
+      },
+      "fr-CA": {
+        "first_name": "Yves",
+        "last_name": "Rousseau"
+      },
+      "de": {
+        "first_name": "Luis",
+        "last_name": "Bauer"
       }
     }
   },
@@ -25592,18 +27032,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of credentialing updates I need help with."
+      "en": "Hi, I have a couple of credentialing updates I need help with.",
+      "es": "Hola, tengo un par de actualizaciones de credentialing con las que necesito ayuda.",
+      "fr": "Bonjour, j’ai quelques mises à jour de credentialing pour lesquelles j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour de credentialing avec lesquelles j’ai besoin d’aide.",
+      "de": "Hallo, ich habe ein paar credentialing updates, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Elif",
         "last_name": "Yilmaz"
+      },
+      "es": {
+        "first_name": "Julia",
+        "last_name": "Guerrero"
+      },
+      "fr": {
+        "first_name": "Amélie",
+        "last_name": "André"
+      },
+      "fr-CA": {
+        "first_name": "Émilie",
+        "last_name": "Bouchard"
+      },
+      "de": {
+        "first_name": "Katharina",
+        "last_name": "Hartmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Elif",
         "last_name": "Yilmaz"
+      },
+      "es": {
+        "first_name": "Julia",
+        "last_name": "Guerrero"
+      },
+      "fr": {
+        "first_name": "Amelie",
+        "last_name": "Andre"
+      },
+      "fr-CA": {
+        "first_name": "Emilie",
+        "last_name": "Bouchard"
+      },
+      "de": {
+        "first_name": "Katharina",
+        "last_name": "Hartmann"
       }
     }
   },
@@ -26168,18 +27644,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of credentialing-related things I need help with."
+      "en": "Hi, I have a couple of credentialing-related things I need help with.",
+      "es": "Hola, tengo un par de cosas relacionadas con credentialing con las que necesito ayuda.",
+      "fr": "Bonjour, j’ai quelques sujets liés au credentialing pour lesquels j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques affaires liées au credentialing avec lesquelles j’ai besoin d’aide.",
+      "de": "Hallo, ich habe ein paar credentialing-related things, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Aleksandr",
         "last_name": "Petrov"
+      },
+      "es": {
+        "first_name": "Raúl",
+        "last_name": "Molina"
+      },
+      "fr": {
+        "first_name": "Adrien",
+        "last_name": "Moreau"
+      },
+      "fr-CA": {
+        "first_name": "Philippe",
+        "last_name": "Bélanger"
+      },
+      "de": {
+        "first_name": "Matthias",
+        "last_name": "Fischer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Aleksandr",
         "last_name": "Petrov"
+      },
+      "es": {
+        "first_name": "Raul",
+        "last_name": "Molina"
+      },
+      "fr": {
+        "first_name": "Adrien",
+        "last_name": "Moreau"
+      },
+      "fr-CA": {
+        "first_name": "Philippe",
+        "last_name": "Belanger"
+      },
+      "de": {
+        "first_name": "Matthias",
+        "last_name": "Fischer"
       }
     }
   },
@@ -27062,18 +28574,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR credentialing things I need help with today."
+      "en": "Hi, I have a couple of HR credentialing things I need help with today.",
+      "es": "Hola, tengo un par de cosas de HR credentialing con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques sujets de HR credentialing pour lesquels j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR credentialing avec lesquelles j’ai besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR credentialing things, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Nalini",
         "last_name": "Patel"
+      },
+      "es": {
+        "first_name": "Cristina",
+        "last_name": "Martínez"
+      },
+      "fr": {
+        "first_name": "Isabelle",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Josée",
+        "last_name": "Grenier"
+      },
+      "de": {
+        "first_name": "Leonie",
+        "last_name": "Hoffmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Nalini",
         "last_name": "Patel"
+      },
+      "es": {
+        "first_name": "Cristina",
+        "last_name": "Martinez"
+      },
+      "fr": {
+        "first_name": "Isabelle",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Josee",
+        "last_name": "Grenier"
+      },
+      "de": {
+        "first_name": "Leonie",
+        "last_name": "Hoffmann"
       }
     }
   },
@@ -27811,18 +29359,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR items I need help with as I come back from leave."
+      "en": "Hi, I have a couple of HR items I need help with as I come back from leave.",
+      "es": "Hola, tengo un par de temas de HR con los que necesito ayuda ahora que vuelvo de una baja.",
+      "fr": "Bonjour, j’ai quelques points HR pour lesquels j’ai besoin d’aide alors que je reviens de congé.",
+      "fr-CA": "Bonjour, j’ai quelques points de HR avec lesquels j’ai besoin d’aide alors que je reviens de congé.",
+      "de": "Hallo, ich habe ein paar HR items, bei denen ich Hilfe brauche, während ich aus dem leave zurückkomme."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Ousmane",
         "last_name": "Traore"
+      },
+      "es": {
+        "first_name": "Elena",
+        "last_name": "Gil"
+      },
+      "fr": {
+        "first_name": "Amélie",
+        "last_name": "Dumont"
+      },
+      "fr-CA": {
+        "first_name": "Lucie",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Melina",
+        "last_name": "Hoffmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Ousmane",
         "last_name": "Traore"
+      },
+      "es": {
+        "first_name": "Elena",
+        "last_name": "Gil"
+      },
+      "fr": {
+        "first_name": "Amelie",
+        "last_name": "Dumont"
+      },
+      "fr-CA": {
+        "first_name": "Lucie",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Melina",
+        "last_name": "Hoffmann"
       }
     }
   },
@@ -28597,18 +30181,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of provider HR items I need help with today."
+      "en": "Hi, I have a couple of provider HR items I need help with today.",
+      "es": "Hola, tengo un par de temas de HR de provider con los que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques points HR concernant mon dossier de provider pour lesquels j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques points de provider HR avec lesquels j’ai besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar provider HR items, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Brigitte",
         "last_name": "Fontaine"
+      },
+      "es": {
+        "first_name": "Verónica",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Valérie",
+        "last_name": "Roux"
+      },
+      "fr-CA": {
+        "first_name": "Noémie",
+        "last_name": "Bédard"
+      },
+      "de": {
+        "first_name": "Charlotte",
+        "last_name": "Schmid"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Brigitte",
         "last_name": "Fontaine"
+      },
+      "es": {
+        "first_name": "Veronica",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Valerie",
+        "last_name": "Roux"
+      },
+      "fr-CA": {
+        "first_name": "Noemie",
+        "last_name": "Bedard"
+      },
+      "de": {
+        "first_name": "Charlotte",
+        "last_name": "Schmid"
       }
     }
   },
@@ -29362,18 +30982,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of provider record updates I need help with."
+      "en": "Hi, I have a couple of provider record updates I need help with.",
+      "es": "Hola, tengo un par de actualizaciones del registro de provider con las que necesito ayuda.",
+      "fr": "Bonjour, j’ai quelques mises à jour de provider record pour lesquelles j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour de provider record avec lesquelles j’ai besoin d’aide.",
+      "de": "Hallo, ich habe ein paar provider record updates, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Jin-Ho",
         "last_name": "Park"
+      },
+      "es": {
+        "first_name": "Santiago",
+        "last_name": "García"
+      },
+      "fr": {
+        "first_name": "Philippe",
+        "last_name": "Martin"
+      },
+      "fr-CA": {
+        "first_name": "Sylvain",
+        "last_name": "Pelletier"
+      },
+      "de": {
+        "first_name": "Philipp",
+        "last_name": "Bauer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Jin-Ho",
         "last_name": "Park"
+      },
+      "es": {
+        "first_name": "Santiago",
+        "last_name": "Garcia"
+      },
+      "fr": {
+        "first_name": "Philippe",
+        "last_name": "Martin"
+      },
+      "fr-CA": {
+        "first_name": "Sylvain",
+        "last_name": "Pelletier"
+      },
+      "de": {
+        "first_name": "Philipp",
+        "last_name": "Bauer"
       }
     }
   },
@@ -30223,18 +31879,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of provider record updates I need help with today."
+      "en": "Hi, I have a couple of provider record updates I need help with today.",
+      "es": "Hola, tengo un par de actualizaciones del registro de provider con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques mises à jour de provider record pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour de provider record avec lesquelles j’ai besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar provider record updates, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Esperanza",
         "last_name": "Morales"
+      },
+      "es": {
+        "first_name": "Blanca",
+        "last_name": "Cortés"
+      },
+      "fr": {
+        "first_name": "Maëlys",
+        "last_name": "Fontaine"
+      },
+      "fr-CA": {
+        "first_name": "Danielle",
+        "last_name": "Leblanc"
+      },
+      "de": {
+        "first_name": "Johanna",
+        "last_name": "Schäfer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Esperanza",
         "last_name": "Morales"
+      },
+      "es": {
+        "first_name": "Blanca",
+        "last_name": "Cortes"
+      },
+      "fr": {
+        "first_name": "Maelys",
+        "last_name": "Fontaine"
+      },
+      "fr-CA": {
+        "first_name": "Danielle",
+        "last_name": "Leblanc"
+      },
+      "de": {
+        "first_name": "Johanna",
+        "last_name": "Schaefer"
       }
     }
   },
@@ -30785,18 +32477,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of provider record updates I need help with."
+      "en": "Hi, I have a couple of provider record updates I need help with.",
+      "es": "Hola, tengo un par de actualizaciones del registro de provider con las que necesito ayuda.",
+      "fr": "Bonjour, j’ai quelques mises à jour de provider record pour lesquelles j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour de provider record avec lesquelles j’ai besoin d’aide.",
+      "de": "Hallo, ich habe ein paar provider record updates, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Tendai",
         "last_name": "Moyo"
+      },
+      "es": {
+        "first_name": "Celia",
+        "last_name": "González"
+      },
+      "fr": {
+        "first_name": "Sarah",
+        "last_name": "Robin"
+      },
+      "fr-CA": {
+        "first_name": "Geneviève",
+        "last_name": "Séguin"
+      },
+      "de": {
+        "first_name": "Amelie",
+        "last_name": "Müller"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Tendai",
         "last_name": "Moyo"
+      },
+      "es": {
+        "first_name": "Celia",
+        "last_name": "Gonzalez"
+      },
+      "fr": {
+        "first_name": "Sarah",
+        "last_name": "Robin"
+      },
+      "fr-CA": {
+        "first_name": "Genevieve",
+        "last_name": "Seguin"
+      },
+      "de": {
+        "first_name": "Amelie",
+        "last_name": "Mueller"
       }
     }
   },
@@ -31598,18 +33326,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR scheduling things I need help with."
+      "en": "Hi, I have a couple of HR scheduling things I need help with.",
+      "es": "Hola, tengo un par de cosas de HR scheduling con las que necesito ayuda.",
+      "fr": "Bonjour, j’ai quelques sujets de planning HR pour lesquels j’ai besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR scheduling avec lesquelles j’ai besoin d’aide.",
+      "de": "Hallo, ich habe ein paar HR scheduling things, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Liora",
         "last_name": "Goldstein"
+      },
+      "es": {
+        "first_name": "Mónica",
+        "last_name": "Cano"
+      },
+      "fr": {
+        "first_name": "Justine",
+        "last_name": "Clément"
+      },
+      "fr-CA": {
+        "first_name": "Hélène",
+        "last_name": "Parent"
+      },
+      "de": {
+        "first_name": "Monika",
+        "last_name": "König"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Liora",
         "last_name": "Goldstein"
+      },
+      "es": {
+        "first_name": "Monica",
+        "last_name": "Cano"
+      },
+      "fr": {
+        "first_name": "Justine",
+        "last_name": "Clement"
+      },
+      "fr-CA": {
+        "first_name": "Helene",
+        "last_name": "Parent"
+      },
+      "de": {
+        "first_name": "Monika",
+        "last_name": "Koenig"
       }
     }
   },
@@ -32327,18 +34091,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I need help swapping one of my upcoming shifts and I have one other scheduling question too."
+      "en": "Hi, I need help swapping one of my upcoming shifts and I have one other scheduling question too.",
+      "es": "Hola, necesito ayuda para cambiar uno de mis próximos turnos y también tengo otra pregunta sobre scheduling.",
+      "fr": "Bonjour, j’ai besoin d’aide pour échanger l’un de mes prochains shifts, et j’ai aussi une autre question de planning.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour échanger un de mes prochains quarts de travail, et j’ai aussi une autre question d’horaire.",
+      "de": "Hallo, ich brauche Hilfe dabei, eine meiner kommenden Schichten zu tauschen, und ich habe auch noch eine weitere scheduling question."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Magnus",
         "last_name": "Eriksson"
+      },
+      "es": {
+        "first_name": "Pablo",
+        "last_name": "Martín"
+      },
+      "fr": {
+        "first_name": "Maxime",
+        "last_name": "Thomas"
+      },
+      "fr-CA": {
+        "first_name": "Pierre",
+        "last_name": "Beaulieu"
+      },
+      "de": {
+        "first_name": "Daniel",
+        "last_name": "Bauer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Magnus",
         "last_name": "Eriksson"
+      },
+      "es": {
+        "first_name": "Pablo",
+        "last_name": "Martin"
+      },
+      "fr": {
+        "first_name": "Maxime",
+        "last_name": "Thomas"
+      },
+      "fr-CA": {
+        "first_name": "Pierre",
+        "last_name": "Beaulieu"
+      },
+      "de": {
+        "first_name": "Daniel",
+        "last_name": "Bauer"
       }
     }
   },
@@ -32920,18 +34720,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of scheduling things I need help with."
+      "en": "Hi, I have a couple of scheduling things I need help with.",
+      "es": "Hola, necesito ayuda con un par de cosas de programación.",
+      "fr": "Bonjour, j’ai deux ou trois questions de planning pour lesquelles j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai deux ou trois choses d’horaire pour lesquelles j’aurais besoin d’aide.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar Planungssachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Chioma",
         "last_name": "Nwosu"
+      },
+      "es": {
+        "first_name": "Isabel",
+        "last_name": "Gutiérrez"
+      },
+      "fr": {
+        "first_name": "Valérie",
+        "last_name": "Thomas"
+      },
+      "fr-CA": {
+        "first_name": "Louise",
+        "last_name": "Leblanc"
+      },
+      "de": {
+        "first_name": "Katharina",
+        "last_name": "Richter"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Chioma",
         "last_name": "Nwosu"
+      },
+      "es": {
+        "first_name": "Isabel",
+        "last_name": "Gutierrez"
+      },
+      "fr": {
+        "first_name": "Valerie",
+        "last_name": "Thomas"
+      },
+      "fr-CA": {
+        "first_name": "Louise",
+        "last_name": "Leblanc"
+      },
+      "de": {
+        "first_name": "Katharina",
+        "last_name": "Richter"
       }
     }
   },
@@ -33719,18 +35555,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need to take care of for my onboarding and credentials."
+      "en": "Hi, I have a few HR things I need to take care of for my onboarding and credentials.",
+      "es": "Hola, tengo que ocuparme de algunas cosas de HR para mi onboarding y mis credenciales.",
+      "fr": "Bonjour, j’ai quelques démarches RH à régler pour mon onboarding et mes credentials.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR à régler pour mon onboarding et mes credentials.",
+      "de": "Hallo, ich muss ein paar HR-Sachen für mein Onboarding und meine Credentials erledigen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Hiroshi",
         "last_name": "Watanabe"
+      },
+      "es": {
+        "first_name": "Adriana",
+        "last_name": "Torres"
+      },
+      "fr": {
+        "first_name": "Charlotte",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Geneviève",
+        "last_name": "Gagnon"
+      },
+      "de": {
+        "first_name": "Carla",
+        "last_name": "Schröder"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Hiroshi",
         "last_name": "Watanabe"
+      },
+      "es": {
+        "first_name": "Adriana",
+        "last_name": "Torres"
+      },
+      "fr": {
+        "first_name": "Charlotte",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Genevieve",
+        "last_name": "Gagnon"
+      },
+      "de": {
+        "first_name": "Carla",
+        "last_name": "Schroeder"
       }
     }
   },
@@ -34389,18 +36261,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR onboarding things I need help with."
+      "en": "Hi, I have a couple of HR onboarding things I need help with.",
+      "es": "Hola, necesito ayuda con un par de cosas de onboarding de HR.",
+      "fr": "Bonjour, j’ai deux ou trois choses liées à l’onboarding RH pour lesquelles j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai deux ou trois choses de HR liées à l’onboarding pour lesquelles j’aurais besoin d’aide.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar HR-Onboarding-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Padma",
         "last_name": "Iyer"
+      },
+      "es": {
+        "first_name": "Cristina",
+        "last_name": "Ruiz"
+      },
+      "fr": {
+        "first_name": "Sandrine",
+        "last_name": "Roux"
+      },
+      "fr-CA": {
+        "first_name": "Catherine",
+        "last_name": "Rousseau"
+      },
+      "de": {
+        "first_name": "Leonie",
+        "last_name": "Schröder"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Padma",
         "last_name": "Iyer"
+      },
+      "es": {
+        "first_name": "Cristina",
+        "last_name": "Ruiz"
+      },
+      "fr": {
+        "first_name": "Sandrine",
+        "last_name": "Roux"
+      },
+      "fr-CA": {
+        "first_name": "Catherine",
+        "last_name": "Rousseau"
+      },
+      "de": {
+        "first_name": "Leonie",
+        "last_name": "Schroeder"
       }
     }
   },
@@ -34948,18 +36856,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR things I need help with today."
+      "en": "Hi, I have a couple of HR things I need help with today.",
+      "es": "Hola, necesito ayuda con un par de cosas de HR hoy.",
+      "fr": "Bonjour, j’ai deux ou trois questions RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai deux ou trois choses de HR pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar HR-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Lukas",
         "last_name": "Hofer"
+      },
+      "es": {
+        "first_name": "Víctor",
+        "last_name": "Torres"
+      },
+      "fr": {
+        "first_name": "Gilles",
+        "last_name": "Laurent"
+      },
+      "fr-CA": {
+        "first_name": "Christian",
+        "last_name": "Paquette"
+      },
+      "de": {
+        "first_name": "Jakob",
+        "last_name": "Herrmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Lukas",
         "last_name": "Hofer"
+      },
+      "es": {
+        "first_name": "Victor",
+        "last_name": "Torres"
+      },
+      "fr": {
+        "first_name": "Gilles",
+        "last_name": "Laurent"
+      },
+      "fr-CA": {
+        "first_name": "Christian",
+        "last_name": "Paquette"
+      },
+      "de": {
+        "first_name": "Jakob",
+        "last_name": "Herrmann"
       }
     }
   },
@@ -35936,18 +37880,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of leave requests I need help with."
+      "en": "Hi, I have a couple of leave requests I need help with.",
+      "es": "Hola, necesito ayuda con un par de solicitudes de permiso.",
+      "fr": "Bonjour, j’ai deux ou trois demandes de congé pour lesquelles j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai deux ou trois demandes de congé pour lesquelles j’aurais besoin d’aide.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar Urlaubsanträgen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Thandi",
         "last_name": "Ndlovu"
+      },
+      "es": {
+        "first_name": "Carolina",
+        "last_name": "Alonso"
+      },
+      "fr": {
+        "first_name": "Amandine",
+        "last_name": "Mathieu"
+      },
+      "fr-CA": {
+        "first_name": "Audrey",
+        "last_name": "Lefebvre"
+      },
+      "de": {
+        "first_name": "Petra",
+        "last_name": "Peters"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Thandi",
         "last_name": "Ndlovu"
+      },
+      "es": {
+        "first_name": "Carolina",
+        "last_name": "Alonso"
+      },
+      "fr": {
+        "first_name": "Amandine",
+        "last_name": "Mathieu"
+      },
+      "fr-CA": {
+        "first_name": "Audrey",
+        "last_name": "Lefebvre"
+      },
+      "de": {
+        "first_name": "Petra",
+        "last_name": "Peters"
       }
     }
   },
@@ -36694,18 +38674,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR leave requests I need help with."
+      "en": "Hi, I have a couple of HR leave requests I need help with.",
+      "es": "Hola, necesito ayuda con un par de solicitudes de permiso de HR.",
+      "fr": "Bonjour, j’ai deux ou trois demandes de congé RH pour lesquelles j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai deux ou trois demandes de congé de HR pour lesquelles j’aurais besoin d’aide.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar HR-Urlaubsanträgen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Brahim",
         "last_name": "Benali"
+      },
+      "es": {
+        "first_name": "Mateo",
+        "last_name": "Cortés"
+      },
+      "fr": {
+        "first_name": "David",
+        "last_name": "Henry"
+      },
+      "fr-CA": {
+        "first_name": "Samuel",
+        "last_name": "Roy"
+      },
+      "de": {
+        "first_name": "Sebastian",
+        "last_name": "Schneider"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Brahim",
         "last_name": "Benali"
+      },
+      "es": {
+        "first_name": "Mateo",
+        "last_name": "Cortes"
+      },
+      "fr": {
+        "first_name": "David",
+        "last_name": "Henry"
+      },
+      "fr-CA": {
+        "first_name": "Samuel",
+        "last_name": "Roy"
+      },
+      "de": {
+        "first_name": "Sebastian",
+        "last_name": "Schneider"
       }
     }
   },
@@ -37397,18 +39413,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of leave-related things I need help with."
+      "en": "Hi, I have a couple of leave-related things I need help with.",
+      "es": "Hola, necesito ayuda con un par de cosas relacionadas con permisos.",
+      "fr": "Bonjour, j’ai deux ou trois choses liées aux congés pour lesquelles j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai deux ou trois choses liées aux congés pour lesquelles j’aurais besoin d’aide.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar urlaubsbezogenen Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Sakura",
         "last_name": "Kimura"
+      },
+      "es": {
+        "first_name": "Nerea",
+        "last_name": "Suárez"
+      },
+      "fr": {
+        "first_name": "Anaïs",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Noémie",
+        "last_name": "Lefebvre"
+      },
+      "de": {
+        "first_name": "Ida",
+        "last_name": "Vogel"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Sakura",
         "last_name": "Kimura"
+      },
+      "es": {
+        "first_name": "Nerea",
+        "last_name": "Suarez"
+      },
+      "fr": {
+        "first_name": "Anais",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Noemie",
+        "last_name": "Lefebvre"
+      },
+      "de": {
+        "first_name": "Ida",
+        "last_name": "Vogel"
       }
     }
   },
@@ -38170,18 +40222,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR things I need help with today."
+      "en": "Hi, I have a couple of HR things I need help with today.",
+      "es": "Hola, necesito ayuda con un par de cosas de HR hoy.",
+      "fr": "Bonjour, j’ai deux ou trois questions RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai deux ou trois choses de HR pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar HR-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Emeka",
         "last_name": "Okoro"
+      },
+      "es": {
+        "first_name": "Jimena",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Julie",
+        "last_name": "Laurent"
+      },
+      "fr-CA": {
+        "first_name": "Stéphanie",
+        "last_name": "Fournier"
+      },
+      "de": {
+        "first_name": "Monika",
+        "last_name": "Schulz"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Emeka",
         "last_name": "Okoro"
+      },
+      "es": {
+        "first_name": "Jimena",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Julie",
+        "last_name": "Laurent"
+      },
+      "fr-CA": {
+        "first_name": "Stephanie",
+        "last_name": "Fournier"
+      },
+      "de": {
+        "first_name": "Monika",
+        "last_name": "Schulz"
       }
     }
   },
@@ -38887,18 +40975,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR issues I need help with today."
+      "en": "Hi, I have a couple of HR issues I need help with today.",
+      "es": "Hola, necesito ayuda con un par de problemas de HR hoy.",
+      "fr": "Bonjour, j’ai deux ou trois problèmes RH pour lesquels j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai deux ou trois problèmes de HR pour lesquels j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar HR-Problemen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Rosa",
         "last_name": "Delgado"
+      },
+      "es": {
+        "first_name": "Ana",
+        "last_name": "Gutiérrez"
+      },
+      "fr": {
+        "first_name": "Isabelle",
+        "last_name": "Dumont"
+      },
+      "fr-CA": {
+        "first_name": "Monique",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Mila",
+        "last_name": "Schmid"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Rosa",
         "last_name": "Delgado"
+      },
+      "es": {
+        "first_name": "Ana",
+        "last_name": "Gutierrez"
+      },
+      "fr": {
+        "first_name": "Isabelle",
+        "last_name": "Dumont"
+      },
+      "fr-CA": {
+        "first_name": "Monique",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Mila",
+        "last_name": "Schmid"
       }
     }
   },
@@ -39537,18 +41661,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of HR scheduling and payroll issues I need help with."
+      "en": "Hi, I have a couple of HR scheduling and payroll issues I need help with.",
+      "es": "Hola, necesito ayuda con un par de problemas de programación y nómina de HR.",
+      "fr": "Bonjour, j’ai deux ou trois problèmes RH de planning et de paie pour lesquels j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai deux ou trois problèmes de HR liés à l’horaire et à la paie pour lesquels j’aurais besoin d’aide.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar HR-Planungs- und Payroll-Problemen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Yosef",
         "last_name": "Abadi"
+      },
+      "es": {
+        "first_name": "Alberto",
+        "last_name": "Domínguez"
+      },
+      "fr": {
+        "first_name": "Julien",
+        "last_name": "Clément"
+      },
+      "fr-CA": {
+        "first_name": "Étienne",
+        "last_name": "Boucher"
+      },
+      "de": {
+        "first_name": "Marcel",
+        "last_name": "Schulze"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Yosef",
         "last_name": "Abadi"
+      },
+      "es": {
+        "first_name": "Alberto",
+        "last_name": "Dominguez"
+      },
+      "fr": {
+        "first_name": "Julien",
+        "last_name": "Clement"
+      },
+      "fr-CA": {
+        "first_name": "Etienne",
+        "last_name": "Boucher"
+      },
+      "de": {
+        "first_name": "Marcel",
+        "last_name": "Schulze"
       }
     }
   },
@@ -40321,18 +42481,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR onboarding things I need to take care of today."
+      "en": "Hi, I have a few HR onboarding things I need to take care of today.",
+      "es": "Hola, tengo que ocuparme hoy de algunas cosas de onboarding de HR.",
+      "fr": "Bonjour, j’ai quelques démarches d’onboarding RH à régler aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses de HR liées à l’onboarding à régler aujourd’hui.",
+      "de": "Hallo, ich muss heute ein paar HR-Onboarding-Sachen erledigen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Mirembe",
         "last_name": "Nakato"
+      },
+      "es": {
+        "first_name": "Cristina",
+        "last_name": "Delgado"
+      },
+      "fr": {
+        "first_name": "Amandine",
+        "last_name": "Clément"
+      },
+      "fr-CA": {
+        "first_name": "Lucie",
+        "last_name": "Poulin"
+      },
+      "de": {
+        "first_name": "Greta",
+        "last_name": "König"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Mirembe",
         "last_name": "Nakato"
+      },
+      "es": {
+        "first_name": "Cristina",
+        "last_name": "Delgado"
+      },
+      "fr": {
+        "first_name": "Amandine",
+        "last_name": "Clement"
+      },
+      "fr-CA": {
+        "first_name": "Lucie",
+        "last_name": "Poulin"
+      },
+      "de": {
+        "first_name": "Greta",
+        "last_name": "Koenig"
       }
     }
   },
@@ -40890,18 +43086,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a couple of onboarding things I need help with."
+      "en": "Hi, I have a couple of onboarding things I need help with.",
+      "es": "Hola, necesito ayuda con un par de cosas de onboarding.",
+      "fr": "Bonjour, j’ai deux ou trois choses liées à l’onboarding pour lesquelles j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai deux ou trois choses d’onboarding pour lesquelles j’aurais besoin d’aide.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar Onboarding-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Deepa",
         "last_name": "Ranganathan"
+      },
+      "es": {
+        "first_name": "Yolanda",
+        "last_name": "Jiménez"
+      },
+      "fr": {
+        "first_name": "Manon",
+        "last_name": "Robert"
+      },
+      "fr-CA": {
+        "first_name": "Jeanne",
+        "last_name": "Bouchard"
+      },
+      "de": {
+        "first_name": "Mila",
+        "last_name": "Schröder"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Deepa",
         "last_name": "Ranganathan"
+      },
+      "es": {
+        "first_name": "Yolanda",
+        "last_name": "Jimenez"
+      },
+      "fr": {
+        "first_name": "Manon",
+        "last_name": "Robert"
+      },
+      "fr-CA": {
+        "first_name": "Jeanne",
+        "last_name": "Bouchard"
+      },
+      "de": {
+        "first_name": "Mila",
+        "last_name": "Schroeder"
       }
     }
   },
@@ -41991,18 +44223,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few credentialing and HR things I need to take care of before I can come back to work."
+      "en": "Hi, I have a few credentialing and HR things I need to take care of before I can come back to work.",
+      "es": "Hola, tengo que ocuparme de algunas cosas de credenciales y de HR antes de poder volver al trabajo.",
+      "fr": "Bonjour, j’ai quelques démarches de credentialing et RH à régler avant de pouvoir reprendre le travail.",
+      "fr-CA": "Bonjour, j’ai quelques choses de credentialing et de HR à régler avant de pouvoir revenir au travail.",
+      "de": "Hallo, ich muss ein paar Credentialing- und HR-Sachen erledigen, bevor ich wieder zur Arbeit kommen kann."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Oscar",
         "last_name": "Lindgren"
+      },
+      "es": {
+        "first_name": "Daniel",
+        "last_name": "Cruz"
+      },
+      "fr": {
+        "first_name": "François",
+        "last_name": "Chevalier"
+      },
+      "fr-CA": {
+        "first_name": "Nicolas",
+        "last_name": "Martin"
+      },
+      "de": {
+        "first_name": "Philipp",
+        "last_name": "Schulze"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Oscar",
         "last_name": "Lindgren"
+      },
+      "es": {
+        "first_name": "Daniel",
+        "last_name": "Cruz"
+      },
+      "fr": {
+        "first_name": "Francois",
+        "last_name": "Chevalier"
+      },
+      "fr-CA": {
+        "first_name": "Nicolas",
+        "last_name": "Martin"
+      },
+      "de": {
+        "first_name": "Philipp",
+        "last_name": "Schulze"
       }
     }
   },
@@ -43005,18 +45273,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few credentialing things I need to take care of today."
+      "en": "Hi, I have a few credentialing things I need to take care of today.",
+      "es": "Hola, tengo que ocuparme hoy de algunas cosas de credenciales.",
+      "fr": "Bonjour, j’ai quelques démarches de credentialing à régler aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses de credentialing à régler aujourd’hui.",
+      "de": "Hallo, ich muss heute ein paar Credentialing-Sachen erledigen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Fumiko",
         "last_name": "Sato"
+      },
+      "es": {
+        "first_name": "Mateo",
+        "last_name": "Jiménez"
+      },
+      "fr": {
+        "first_name": "Arnaud",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Jacques",
+        "last_name": "Martin"
+      },
+      "de": {
+        "first_name": "Stefan",
+        "last_name": "Jung"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Fumiko",
         "last_name": "Sato"
+      },
+      "es": {
+        "first_name": "Mateo",
+        "last_name": "Jimenez"
+      },
+      "fr": {
+        "first_name": "Arnaud",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Jacques",
+        "last_name": "Martin"
+      },
+      "de": {
+        "first_name": "Stefan",
+        "last_name": "Jung"
       }
     }
   },
@@ -43982,18 +46286,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few credentialing things I need help with today."
+      "en": "Hi, I have a few credentialing things I need help with today.",
+      "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales.",
+      "fr": "Bonjour, j’ai quelques démarches de credentialing pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses de credentialing pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar Credentialing-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Rafael",
         "last_name": "Cordova"
+      },
+      "es": {
+        "first_name": "Ignacio",
+        "last_name": "Rodríguez"
+      },
+      "fr": {
+        "first_name": "Nicolas",
+        "last_name": "Petit"
+      },
+      "fr-CA": {
+        "first_name": "Claude",
+        "last_name": "Landry"
+      },
+      "de": {
+        "first_name": "Julian",
+        "last_name": "Schulze"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Rafael",
         "last_name": "Cordova"
+      },
+      "es": {
+        "first_name": "Ignacio",
+        "last_name": "Rodriguez"
+      },
+      "fr": {
+        "first_name": "Nicolas",
+        "last_name": "Petit"
+      },
+      "fr-CA": {
+        "first_name": "Claude",
+        "last_name": "Landry"
+      },
+      "de": {
+        "first_name": "Julian",
+        "last_name": "Schulze"
       }
     }
   },
@@ -45042,18 +47382,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few credentialing and HR items I need help with before I start at a new facility."
+      "en": "Hi, I have a few credentialing and HR items I need help with before I start at a new facility.",
+      "es": "Hola, necesito ayuda con algunas cosas de credenciales y de HR antes de empezar en un nuevo centro.",
+      "fr": "Bonjour, j’ai quelques points de credentialing et RH pour lesquels j’aurais besoin d’aide avant de commencer dans un nouvel établissement.",
+      "fr-CA": "Bonjour, j’ai quelques éléments de credentialing et de HR pour lesquels j’aurais besoin d’aide avant de commencer dans un nouvel établissement.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar Credentialing- und HR-Punkten, bevor ich in einer neuen Facility anfange."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Adaeze",
         "last_name": "Obi"
+      },
+      "es": {
+        "first_name": "Lucía",
+        "last_name": "Ortega"
+      },
+      "fr": {
+        "first_name": "Clara",
+        "last_name": "Robert"
+      },
+      "fr-CA": {
+        "first_name": "Catherine",
+        "last_name": "Caron"
+      },
+      "de": {
+        "first_name": "Mia",
+        "last_name": "Becker"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Adaeze",
         "last_name": "Obi"
+      },
+      "es": {
+        "first_name": "Lucia",
+        "last_name": "Ortega"
+      },
+      "fr": {
+        "first_name": "Clara",
+        "last_name": "Robert"
+      },
+      "fr-CA": {
+        "first_name": "Catherine",
+        "last_name": "Caron"
+      },
+      "de": {
+        "first_name": "Mia",
+        "last_name": "Becker"
       }
     }
   },
@@ -46117,18 +48493,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR credentialing things I need help with today."
+      "en": "Hi, I have a few HR credentialing things I need help with today.",
+      "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales de HR.",
+      "fr": "Bonjour, j’ai quelques démarches RH de credentialing pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses de HR liées au credentialing pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar HR-Credentialing-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Nikolai",
         "last_name": "Sorokin"
+      },
+      "es": {
+        "first_name": "Lidia",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Sylvie",
+        "last_name": "Bertrand"
+      },
+      "fr-CA": {
+        "first_name": "Laurence",
+        "last_name": "Perreault"
+      },
+      "de": {
+        "first_name": "Laura",
+        "last_name": "Wagner"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Nikolai",
         "last_name": "Sorokin"
+      },
+      "es": {
+        "first_name": "Lidia",
+        "last_name": "Medina"
+      },
+      "fr": {
+        "first_name": "Sylvie",
+        "last_name": "Bertrand"
+      },
+      "fr-CA": {
+        "first_name": "Laurence",
+        "last_name": "Perreault"
+      },
+      "de": {
+        "first_name": "Laura",
+        "last_name": "Wagner"
       }
     }
   },
@@ -47064,18 +49476,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few provider HR items I need help with today."
+      "en": "Hi, I have a few provider HR items I need help with today.",
+      "es": "Hola, necesito ayuda hoy con algunas cosas de HR como provider.",
+      "fr": "Bonjour, j’ai quelques points RH provider pour lesquels j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques éléments de HR pour provider pour lesquels j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar Provider-HR-Punkten."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Xiomara",
         "last_name": "Villanueva"
+      },
+      "es": {
+        "first_name": "Ángela",
+        "last_name": "Sánchez"
+      },
+      "fr": {
+        "first_name": "Caroline",
+        "last_name": "Martin"
+      },
+      "fr-CA": {
+        "first_name": "Chantal",
+        "last_name": "Gagnon"
+      },
+      "de": {
+        "first_name": "Paula",
+        "last_name": "Herrmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Xiomara",
         "last_name": "Villanueva"
+      },
+      "es": {
+        "first_name": "Angela",
+        "last_name": "Sanchez"
+      },
+      "fr": {
+        "first_name": "Caroline",
+        "last_name": "Martin"
+      },
+      "fr-CA": {
+        "first_name": "Chantal",
+        "last_name": "Gagnon"
+      },
+      "de": {
+        "first_name": "Paula",
+        "last_name": "Herrmann"
       }
     }
   },
@@ -48066,18 +50514,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few provider credentialing things I need help with today."
+      "en": "Hi, I have a few provider credentialing things I need help with today.",
+      "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales como provider.",
+      "fr": "Bonjour, j’ai quelques démarches de provider credentialing pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses de credentialing pour provider pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar Provider-Credentialing-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Abdi",
         "last_name": "Hassan"
+      },
+      "es": {
+        "first_name": "Verónica",
+        "last_name": "Ruiz"
+      },
+      "fr": {
+        "first_name": "Amandine",
+        "last_name": "Richard"
+      },
+      "fr-CA": {
+        "first_name": "Madeleine",
+        "last_name": "St-Pierre"
+      },
+      "de": {
+        "first_name": "Michelle",
+        "last_name": "Müller"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Abdi",
         "last_name": "Hassan"
+      },
+      "es": {
+        "first_name": "Veronica",
+        "last_name": "Ruiz"
+      },
+      "fr": {
+        "first_name": "Amandine",
+        "last_name": "Richard"
+      },
+      "fr-CA": {
+        "first_name": "Madeleine",
+        "last_name": "St-Pierre"
+      },
+      "de": {
+        "first_name": "Michelle",
+        "last_name": "Mueller"
       }
     }
   },
@@ -48953,18 +51437,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few provider credentialing updates I need help with today."
+      "en": "Hi, I have a few provider credentialing updates I need help with today.",
+      "es": "Hola, necesito ayuda hoy con algunas actualizaciones de credenciales como provider.",
+      "fr": "Bonjour, j’ai quelques mises à jour de provider credentialing pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour de credentialing pour provider pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar Provider-Credentialing-Updates."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Mira",
         "last_name": "Jovanovic"
+      },
+      "es": {
+        "first_name": "Inés",
+        "last_name": "Prieto"
+      },
+      "fr": {
+        "first_name": "Delphine",
+        "last_name": "Fournier"
+      },
+      "fr-CA": {
+        "first_name": "Monique",
+        "last_name": "Perreault"
+      },
+      "de": {
+        "first_name": "Marlene",
+        "last_name": "Lange"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Mira",
         "last_name": "Jovanovic"
+      },
+      "es": {
+        "first_name": "Ines",
+        "last_name": "Prieto"
+      },
+      "fr": {
+        "first_name": "Delphine",
+        "last_name": "Fournier"
+      },
+      "fr-CA": {
+        "first_name": "Monique",
+        "last_name": "Perreault"
+      },
+      "de": {
+        "first_name": "Marlene",
+        "last_name": "Lange"
       }
     }
   },
@@ -49944,18 +52464,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few provider credentialing things I need help with today."
+      "en": "Hi, I have a few provider credentialing things I need help with today.",
+      "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales como provider.",
+      "fr": "Bonjour, j’ai quelques démarches de provider credentialing pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses de credentialing pour provider pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar Provider-Credentialing-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Kwesi",
         "last_name": "Boateng"
+      },
+      "es": {
+        "first_name": "Alba",
+        "last_name": "Rubio"
+      },
+      "fr": {
+        "first_name": "Florence",
+        "last_name": "Chevalier"
+      },
+      "fr-CA": {
+        "first_name": "Johanne",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Mila",
+        "last_name": "Walter"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Kwesi",
         "last_name": "Boateng"
+      },
+      "es": {
+        "first_name": "Alba",
+        "last_name": "Rubio"
+      },
+      "fr": {
+        "first_name": "Florence",
+        "last_name": "Chevalier"
+      },
+      "fr-CA": {
+        "first_name": "Johanne",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Mila",
+        "last_name": "Walter"
       }
     }
   },
@@ -51070,18 +53626,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with related to my new baby."
+      "en": "Hi, I have a few HR things I need help with related to my new baby.",
+      "es": "Hola, necesito ayuda hoy con algunas cosas de HR relacionadas con mi nuevo bebé.",
+      "fr": "Bonjour, j’ai quelques questions RH liées à mon nouveau bébé pour lesquelles j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques choses de HR liées à mon nouveau bébé pour lesquelles j’aurais besoin d’aide.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar HR-Sachen im Zusammenhang mit meinem neuen Baby."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Annika",
         "last_name": "Muller"
+      },
+      "es": {
+        "first_name": "Eva",
+        "last_name": "Muñoz"
+      },
+      "fr": {
+        "first_name": "Sarah",
+        "last_name": "Robin"
+      },
+      "fr-CA": {
+        "first_name": "Laurence",
+        "last_name": "Poirier"
+      },
+      "de": {
+        "first_name": "Laura",
+        "last_name": "Hartmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Annika",
         "last_name": "Muller"
+      },
+      "es": {
+        "first_name": "Eva",
+        "last_name": "Munoz"
+      },
+      "fr": {
+        "first_name": "Sarah",
+        "last_name": "Robin"
+      },
+      "fr-CA": {
+        "first_name": "Laurence",
+        "last_name": "Poirier"
+      },
+      "de": {
+        "first_name": "Laura",
+        "last_name": "Hartmann"
       }
     }
   },
@@ -52135,18 +54727,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with related to a recent adoption."
+      "en": "Hi, I have a few HR things I need help with related to a recent adoption.",
+      "es": "Hola, necesito ayuda hoy con algunas cosas de HR relacionadas con una adopción reciente.",
+      "fr": "Bonjour, j’ai quelques questions RH liées à une adoption récente pour lesquelles j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques choses de HR liées à une adoption récente pour lesquelles j’aurais besoin d’aide.",
+      "de": "Hallo, ich brauche Hilfe bei ein paar HR-Sachen im Zusammenhang mit einer kürzlichen Adoption."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Yelena",
         "last_name": "Kuznetsova"
+      },
+      "es": {
+        "first_name": "Concepción",
+        "last_name": "Fernández"
+      },
+      "fr": {
+        "first_name": "Caroline",
+        "last_name": "Roussel"
+      },
+      "fr-CA": {
+        "first_name": "Julie",
+        "last_name": "Tremblay"
+      },
+      "de": {
+        "first_name": "Leni",
+        "last_name": "Werner"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Yelena",
         "last_name": "Kuznetsova"
+      },
+      "es": {
+        "first_name": "Concepcion",
+        "last_name": "Fernandez"
+      },
+      "fr": {
+        "first_name": "Caroline",
+        "last_name": "Roussel"
+      },
+      "fr-CA": {
+        "first_name": "Julie",
+        "last_name": "Tremblay"
+      },
+      "de": {
+        "first_name": "Leni",
+        "last_name": "Werner"
       }
     }
   },
@@ -52979,18 +55607,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with today."
+      "en": "Hi, I have a few HR things I need help with today.",
+      "es": "Hola, necesito ayuda hoy con algunas cosas de HR.",
+      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses de HR pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar HR-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Carmen",
         "last_name": "Ibarra"
+      },
+      "es": {
+        "first_name": "Javier",
+        "last_name": "Guerrero"
+      },
+      "fr": {
+        "first_name": "Gabriel",
+        "last_name": "Gauthier"
+      },
+      "fr-CA": {
+        "first_name": "François",
+        "last_name": "Thibault"
+      },
+      "de": {
+        "first_name": "Hannes",
+        "last_name": "Lehmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Carmen",
         "last_name": "Ibarra"
+      },
+      "es": {
+        "first_name": "Javier",
+        "last_name": "Guerrero"
+      },
+      "fr": {
+        "first_name": "Gabriel",
+        "last_name": "Gauthier"
+      },
+      "fr-CA": {
+        "first_name": "Francois",
+        "last_name": "Thibault"
+      },
+      "de": {
+        "first_name": "Hannes",
+        "last_name": "Lehmann"
       }
     }
   },
@@ -54045,18 +56709,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with today."
+      "en": "Hi, I have a few HR things I need help with today.",
+      "es": "Hola, necesito ayuda hoy con algunas cosas de HR.",
+      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses de HR pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich brauche heute Hilfe bei ein paar HR-Sachen."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Nadia",
         "last_name": "Bouzid"
+      },
+      "es": {
+        "first_name": "Dolores",
+        "last_name": "Gil"
+      },
+      "fr": {
+        "first_name": "Camille",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Nicole",
+        "last_name": "Lapointe"
+      },
+      "de": {
+        "first_name": "Ida",
+        "last_name": "Bauer"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Nadia",
         "last_name": "Bouzid"
+      },
+      "es": {
+        "first_name": "Dolores",
+        "last_name": "Gil"
+      },
+      "fr": {
+        "first_name": "Camille",
+        "last_name": "Durand"
+      },
+      "fr-CA": {
+        "first_name": "Nicole",
+        "last_name": "Lapointe"
+      },
+      "de": {
+        "first_name": "Ida",
+        "last_name": "Bauer"
       }
     }
   },
@@ -55253,18 +57953,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with today."
+      "en": "Hi, I have a few HR things I need help with today.",
+      "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR avec lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Angelegenheiten, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Kolade",
         "last_name": "Adebayo"
+      },
+      "es": {
+        "first_name": "Noelia",
+        "last_name": "Pérez"
+      },
+      "fr": {
+        "first_name": "Julie",
+        "last_name": "Morin"
+      },
+      "fr-CA": {
+        "first_name": "Madeleine",
+        "last_name": "Lessard"
+      },
+      "de": {
+        "first_name": "Monika",
+        "last_name": "Schulz"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Kolade",
         "last_name": "Adebayo"
+      },
+      "es": {
+        "first_name": "Noelia",
+        "last_name": "Perez"
+      },
+      "fr": {
+        "first_name": "Julie",
+        "last_name": "Morin"
+      },
+      "fr-CA": {
+        "first_name": "Madeleine",
+        "last_name": "Lessard"
+      },
+      "de": {
+        "first_name": "Monika",
+        "last_name": "Schulz"
       }
     }
   },
@@ -56255,18 +58991,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with related to an upcoming surgery."
+      "en": "Hi, I have a few HR things I need help with related to an upcoming surgery.",
+      "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda relacionadas con una próxima cirugía.",
+      "fr": "Bonjour, j’ai quelques questions RH liées à une opération à venir pour lesquelles j’aurais besoin d’aide.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR avec lesquelles j’aurais besoin d’aide concernant une chirurgie à venir.",
+      "de": "Hallo, ich habe ein paar HR-Angelegenheiten im Zusammenhang mit einer bevorstehenden Operation, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Astrid",
         "last_name": "Henriksen"
+      },
+      "es": {
+        "first_name": "Pablo",
+        "last_name": "Suárez"
+      },
+      "fr": {
+        "first_name": "Olivier",
+        "last_name": "Laurent"
+      },
+      "fr-CA": {
+        "first_name": "Alexandre",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Oskar",
+        "last_name": "Müller"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Astrid",
         "last_name": "Henriksen"
+      },
+      "es": {
+        "first_name": "Pablo",
+        "last_name": "Suarez"
+      },
+      "fr": {
+        "first_name": "Olivier",
+        "last_name": "Laurent"
+      },
+      "fr-CA": {
+        "first_name": "Alexandre",
+        "last_name": "Fortin"
+      },
+      "de": {
+        "first_name": "Oskar",
+        "last_name": "Mueller"
       }
     }
   },
@@ -57251,18 +60023,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need to take care of today."
+      "en": "Hi, I have a few HR things I need to take care of today.",
+      "es": "Hola, tengo unas cuantas cosas de HR que necesito gestionar hoy.",
+      "fr": "Bonjour, j’ai quelques démarches RH à régler aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR à régler aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Angelegenheiten, die ich erledigen muss."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Wei",
         "last_name": "Liu"
+      },
+      "es": {
+        "first_name": "Begoña",
+        "last_name": "Gómez"
+      },
+      "fr": {
+        "first_name": "Élodie",
+        "last_name": "Lefèvre"
+      },
+      "fr-CA": {
+        "first_name": "Francine",
+        "last_name": "Poulin"
+      },
+      "de": {
+        "first_name": "Sabine",
+        "last_name": "Weber"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Wei",
         "last_name": "Liu"
+      },
+      "es": {
+        "first_name": "Begona",
+        "last_name": "Gomez"
+      },
+      "fr": {
+        "first_name": "Elodie",
+        "last_name": "Lefevre"
+      },
+      "fr-CA": {
+        "first_name": "Francine",
+        "last_name": "Poulin"
+      },
+      "de": {
+        "first_name": "Sabine",
+        "last_name": "Weber"
       }
     }
   },
@@ -58189,18 +60997,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with today."
+      "en": "Hi, I have a few HR things I need help with today.",
+      "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR avec lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Angelegenheiten, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Soraya",
         "last_name": "Khoury"
+      },
+      "es": {
+        "first_name": "Sara",
+        "last_name": "Torres"
+      },
+      "fr": {
+        "first_name": "Juliette",
+        "last_name": "Mathieu"
+      },
+      "fr-CA": {
+        "first_name": "Nicole",
+        "last_name": "Simard"
+      },
+      "de": {
+        "first_name": "Maja",
+        "last_name": "Möller"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Soraya",
         "last_name": "Khoury"
+      },
+      "es": {
+        "first_name": "Sara",
+        "last_name": "Torres"
+      },
+      "fr": {
+        "first_name": "Juliette",
+        "last_name": "Mathieu"
+      },
+      "fr-CA": {
+        "first_name": "Nicole",
+        "last_name": "Simard"
+      },
+      "de": {
+        "first_name": "Maja",
+        "last_name": "Moeller"
       }
     }
   },
@@ -59169,18 +62013,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with today."
+      "en": "Hi, I have a few HR things I need help with today.",
+      "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR avec lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Angelegenheiten, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Enrique",
         "last_name": "Salazar"
+      },
+      "es": {
+        "first_name": "Celia",
+        "last_name": "Morales"
+      },
+      "fr": {
+        "first_name": "Manon",
+        "last_name": "Dumont"
+      },
+      "fr-CA": {
+        "first_name": "Jeanne",
+        "last_name": "Hébert"
+      },
+      "de": {
+        "first_name": "Monika",
+        "last_name": "Hoffmann"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Enrique",
         "last_name": "Salazar"
+      },
+      "es": {
+        "first_name": "Celia",
+        "last_name": "Morales"
+      },
+      "fr": {
+        "first_name": "Manon",
+        "last_name": "Dumont"
+      },
+      "fr-CA": {
+        "first_name": "Jeanne",
+        "last_name": "Hebert"
+      },
+      "de": {
+        "first_name": "Monika",
+        "last_name": "Hoffmann"
       }
     }
   },
@@ -60068,18 +62948,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR scheduling and payroll things I need help with today."
+      "en": "Hi, I have a few HR scheduling and payroll things I need help with today.",
+      "es": "Hola, tengo unas cuantas cosas de HR sobre horarios y nóminas con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques questions RH concernant les plannings et la paie pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR liées à l’horaire et à la paie avec lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Angelegenheiten zu Dienstplanung und Payroll, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Blessing",
         "last_name": "Udo"
+      },
+      "es": {
+        "first_name": "Adrián",
+        "last_name": "Cruz"
+      },
+      "fr": {
+        "first_name": "Pierre",
+        "last_name": "Garnier"
+      },
+      "fr-CA": {
+        "first_name": "Laurent",
+        "last_name": "Lessard"
+      },
+      "de": {
+        "first_name": "Sebastian",
+        "last_name": "Koch"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Blessing",
         "last_name": "Udo"
+      },
+      "es": {
+        "first_name": "Adrian",
+        "last_name": "Cruz"
+      },
+      "fr": {
+        "first_name": "Pierre",
+        "last_name": "Garnier"
+      },
+      "fr-CA": {
+        "first_name": "Laurent",
+        "last_name": "Lessard"
+      },
+      "de": {
+        "first_name": "Sebastian",
+        "last_name": "Koch"
       }
     }
   },
@@ -60982,18 +63898,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with today."
+      "en": "Hi, I have a few HR things I need help with today.",
+      "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR avec lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Angelegenheiten, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Arjun",
         "last_name": "Mehta"
+      },
+      "es": {
+        "first_name": "Rodrigo",
+        "last_name": "Rubio"
+      },
+      "fr": {
+        "first_name": "Mathieu",
+        "last_name": "Guérin"
+      },
+      "fr-CA": {
+        "first_name": "Jonathan",
+        "last_name": "Lavoie"
+      },
+      "de": {
+        "first_name": "Maximilian",
+        "last_name": "Peters"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Arjun",
         "last_name": "Mehta"
+      },
+      "es": {
+        "first_name": "Rodrigo",
+        "last_name": "Rubio"
+      },
+      "fr": {
+        "first_name": "Mathieu",
+        "last_name": "Guerin"
+      },
+      "fr-CA": {
+        "first_name": "Jonathan",
+        "last_name": "Lavoie"
+      },
+      "de": {
+        "first_name": "Maximilian",
+        "last_name": "Peters"
       }
     }
   },
@@ -61863,18 +64815,54 @@
       }
     },
     "starting_utterances": {
-      "en": "Hi, I have a few HR things I need help with today."
+      "en": "Hi, I have a few HR things I need help with today.",
+      "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
+      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques affaires de HR avec lesquelles j’aurais besoin d’aide aujourd’hui.",
+      "de": "Hallo, ich habe heute ein paar HR-Angelegenheiten, bei denen ich Hilfe brauche."
     },
     "culture_overrides": {
       "en": {
         "first_name": "Keiko",
         "last_name": "Mori"
+      },
+      "es": {
+        "first_name": "Raúl",
+        "last_name": "Alonso"
+      },
+      "fr": {
+        "first_name": "Christophe",
+        "last_name": "Robin"
+      },
+      "fr-CA": {
+        "first_name": "Jérôme",
+        "last_name": "Martel"
+      },
+      "de": {
+        "first_name": "Theo",
+        "last_name": "Lang"
       }
     },
     "romanized_culture_overrides": {
       "en": {
         "first_name": "Keiko",
         "last_name": "Mori"
+      },
+      "es": {
+        "first_name": "Raul",
+        "last_name": "Alonso"
+      },
+      "fr": {
+        "first_name": "Christophe",
+        "last_name": "Robin"
+      },
+      "fr-CA": {
+        "first_name": "Jerome",
+        "last_name": "Martel"
+      },
+      "de": {
+        "first_name": "Theo",
+        "last_name": "Lang"
       }
     }
   }

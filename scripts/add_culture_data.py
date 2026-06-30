@@ -252,6 +252,9 @@ async def _translate_utterances(utterances: list[str], language_name: str, llm: 
             f"- Preserve the literal tokens {FIRST_NAME_PLACEHOLDER} and {LAST_NAME_PLACEHOLDER} verbatim.\n"
             "- Keep numbers, dates, and currency in their original form unless localization is conventional.\n"
             "- Use natural, conversational phrasing as a caller would speak.\n"
+            "- Preserve all proper nouns, acronyms, and domain-specific technical terms verbatim in English "
+            "(e.g. regulatory acronyms like FMLA, DEA, I-9, H-1B, BLS; airport/airline codes; flight numbers; "
+            "software product names; named facilities). Only translate the natural language around them.\n"
             '- Return JSON: {"translations": ["...", "..."]} in the same order.\n\n'
             f"Utterances:\n{numbered}"
         )
@@ -1406,13 +1409,12 @@ def update_env_example(language: str, language_name: str, env_example_path: Path
         existing_opts = [o.strip() for o in lines[enum_line_idx].split(" ", 1)[1].split(",") if o.strip()]
         # Use the base language code (e.g. 'es' from 'es-MX') for the enum option
         # because the #e list holds the values the selectbox will show.
-        lang_code = language.lower()
-        if lang_code not in existing_opts:
-            existing_opts.append(lang_code)
+        if language not in existing_opts:
+            existing_opts.append(language)
             lines[enum_line_idx] = "#e " + ",".join(existing_opts)
-            logger.info(f"Added '{lang_code}' to EVA_LANGUAGE options in .env.example")
+            logger.info(f"Added '{language}' to EVA_LANGUAGE options in .env.example")
         else:
-            logger.info(f"'{lang_code}' already present in EVA_LANGUAGE options")
+            logger.info(f"'{language}' already present in EVA_LANGUAGE options")
 
     # ── 2. Insert agent ID pair before "Default user simulator agents" ───────
     var_f = f"EVA_{prefix}_USER_F"
@@ -1442,13 +1444,13 @@ def update_env_example(language: str, language_name: str, env_example_path: Path
             f"#i ElevenLabs agent ID — {language_name}, female voice.",
             "#d string",
             "#x perturbation_mode=Language",
-            f"#x EVA_LANGUAGE={language.lower()}",
+            f"#x EVA_LANGUAGE={language}",
             f"#v {var_f}=",
             "",
             f"#i ElevenLabs agent ID — {language_name}, male voice.",
             "#d string",
             "#x perturbation_mode=Language",
-            f"#x EVA_LANGUAGE={language.lower()}",
+            f"#x EVA_LANGUAGE={language}",
             f"#v {var_m}=",
             "",
         ]
