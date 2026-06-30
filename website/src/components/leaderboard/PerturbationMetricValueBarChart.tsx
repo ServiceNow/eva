@@ -1,3 +1,4 @@
+import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, LabelList } from 'recharts';
 import type { SystemStats } from '../../data/leaderboardData';
 import { getPertValue, getPertMetricValue, perturbations, perturbationLabels, groupedSystems } from '../../data/leaderboardData';
@@ -8,12 +9,28 @@ interface PerturbationMetricValueBarChartProps {
   metric: string;
   metricLabel: string;
   systems: SystemStats[];
+  disclaimer?: React.ReactNode;
 }
 
 interface ChartRow {
   name: string;
   type: SystemStats['type'];
   [key: string]: string | number | [number, number] | boolean | null | undefined;
+}
+
+const STT_PROVIDERS: Record<string, string> = {
+  'Cohere Transcribe': 'Cohere',
+  'Scribe v2.2 Realtime': 'ElevenLabs',
+  'Ink Whisper': 'Cartesia',
+  'Nova 3': 'Deepgram',
+  'Parakeet 1.1': 'NVIDIA',
+  'Whisper Large v3': 'OpenAI',
+  'Universal 3.5 Pro': 'AssemblyAI',
+};
+
+function sttLabel(stt: string): string {
+  const provider = STT_PROVIDERS[stt];
+  return provider ? `${provider} / ${stt}` : stt;
 }
 
 // Conditions shown as bars: clean baseline first, then each perturbation.
@@ -68,12 +85,12 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 
 
 
-export function PerturbationMetricValueBarChart({ metric, metricLabel, systems }: PerturbationMetricValueBarChartProps) {
+export function PerturbationMetricValueBarChart({ metric, metricLabel, systems, disclaimer }: PerturbationMetricValueBarChartProps) {
   const colors = useThemeColors();
 
   // Always shown pooled across domains; the domain pills scope only the scatter plot.
   const data: ChartRow[] = groupedSystems(systems).flatMap((s) => {
-    const row: ChartRow = { name: s.stt, type: s.type };
+    const row: ChartRow = { name: sttLabel(s.stt), type: s.type };
     let any = false;
     for (const c of CONDITIONS) {
       const v = getPertMetricValue(s, metric, c, 'pooled'); // bar height + CI
@@ -203,6 +220,11 @@ export function PerturbationMetricValueBarChart({ metric, metricLabel, systems }
         <span className="font-medium text-text-secondary">{metricLabel}</span>
         {' '}— metric value, pooled across domains; asterisks mark significant change vs. clean
       </div>
+      {disclaimer && (
+        <div className="mt-2 text-xs text-text-muted px-2 italic">
+          {disclaimer}
+        </div>
+      )}
     </div>
   );
 }
