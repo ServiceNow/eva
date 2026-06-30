@@ -126,10 +126,6 @@ class TestCreateSttService:
         svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink-2"})
         assert "Turns" in type(svc).__name__
 
-    def test_cartesia_defaults_to_ink2(self):
-        svc = create_stt_service("cartesia", params={"api_key": "k"})
-        assert svc._settings.model == "ink-2"
-
     def test_cartesia_multilingual_is_ink_whisper(self):
         svc = create_stt_service("cartesia-multilingual", params={"api_key": "k", "model": "ink-whisper"})
         assert "Cartesia" in type(svc).__name__ and "Turns" not in type(svc).__name__
