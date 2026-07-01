@@ -535,3 +535,37 @@ the run to fail or produce `None` latency fields in the result.
 | `audio_assistant.wav` | Yes | TTS quality metrics |
 | `framework_logs.jsonl` | Yes | Turn boundary metrics |
 | `pipecat_metrics.jsonl` | Yes | `model_response_latency` in `ConversationResult` |
+
+---
+
+## 13. Reference implementation: Smallest Hydra (transcript-less S2S)
+
+`src/eva/assistant/smallest_hydra_server.py` (`framework: smallest_hydra`) bridges to Smallest's
+**Hydra** speech-to-speech model over a raw WebSocket (no SDK; uses `websockets`). It is scored as a
+true **S2S** pipeline (`s2s: hydra`, so `get_pipeline_type → S2S`) and follows the Gemini Live
+three-task structure (forward user audio, process model events, pace audio output).
+
+Notable points specific to Hydra:
+
+- **Config.** `framework: smallest_hydra`, `model: {s2s: hydra, s2s_params: {...}}`. Recognised
+  `s2s_params`: `api_key` (**required**, Smallest key), `model` (default `hydra`), `voice`
+  (`wren`|`sloane`|`marlowe`|`reed`|`knox`|`tate`, default `wren`, frozen at handshake),
+  `generate_initial_response` (default `true` — Hydra speaks first; the system prompt is steered to
+  EVA's canned greeting), and `transcription` (see below).
+- **Protocol.** OpenAI-Realtime-shaped JSON over one WebSocket: `session.configure` handshake;
+  `input_audio_buffer.append` (base64 PCM16 in); `response.output_audio.delta` (base64 PCM16 out);
+  client-side tools via `response.function_call_arguments.done` → reply with
+  `conversation.item.create` (`function_call_output`) then `response.create`. Audio is **16 kHz in /
+  48 kHz out**; recording rate is 48 kHz (assistant native; user track upsampled to match).
+- **Transcripts.** Hydra streams a native **assistant** transcript
+  (`response.output_audio_transcript.delta`, accumulated per response and finalized on
+  `response.done`) — used directly, since it is more accurate than re-transcribing the audio.
+  It sends **no user transcript**, so each completed user utterance is batch-transcribed by a
+  configurable STT (`s2s_transcription.py`) and appended to the audit log; the log's
+  timestamp-sort keeps these asynchronous writes in chronological order. The `transcription`
+  block selects the provider (`smallest` default — Pulse-pro for English, Pulse otherwise, keyed
+  on the Hydra `api_key`; or `openai`/`deepgram` with their own `api_key`). User transcription is
+  **fail-soft**: an STT error drops that turn's text but never aborts the conversation.
+- **Latency / tokens.** `model_response` latency is emitted on the first audio delta per turn,
+  anchored on Hydra's `speech_stopped` (the simulator's `user_speech_stop` races), with a 50 ms
+  floor; token usage is read from the `response.done` `usage` block.
