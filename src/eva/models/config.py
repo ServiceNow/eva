@@ -227,6 +227,17 @@ class ModelConfig(BaseModel):
                         "s2s": _param_alias(self.s2s_params) or self.s2s,
                         **_fetch_elevenlabs_agent_models(self.s2s_params),
                     }
+                if self.s2s == "deepgram":
+                    # Deepgram Voice Agent is a cascade internally (STT -> LLM -> TTS);
+                    # expose its component models. The `llm` part uses the short
+                    # `think_label` if provided (else the Deepgram model id), so the
+                    # run_id/folder stays readable; defaults mirror deepgram_server.py.
+                    p = self.s2s_params or {}
+                    return {
+                        "stt": p.get("listen_model", "nova-3"),
+                        "llm": p.get("think_label") or p.get("model") or p.get("think_model", ""),
+                        "tts": p.get("speak_model", "aura-2-thalia-en"),
+                    }
                 return {"s2s": _param_alias(self.s2s_params)}
             case PipelineType.CASCADE:
                 return {
@@ -308,8 +319,9 @@ def get_pipeline_type(model_data: dict) -> PipelineType:
     ``llm_model`` in a flat dict.
     """
     if s2s_value := model_data.get("s2s"):
-        # ElevenLabs uses s2s_params for configuration but is a cascade pipeline internally
-        if s2s_value == "elevenlabs":
+        # ElevenLabs and Deepgram use s2s_params for configuration but are cascade
+        # pipelines internally (STT -> LLM -> TTS), so they're scored as cascade.
+        if s2s_value in ("elevenlabs", "deepgram"):
             return PipelineType.CASCADE
         # Ultravox uses s2s_params for plumbing but is an audio-LLM (audio in, text out, separate TTS)
         if s2s_value == "ultravox":
@@ -484,7 +496,7 @@ class RunConfig(BaseSettings):
     )
 
     # Framework selection
-    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice"] = Field(
+    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "deepgram"] = Field(
         "pipecat",
         description=(
             "Agent framework to use for the assistant server."
@@ -493,6 +505,7 @@ class RunConfig(BaseSettings):
             "'gemini_live': Gemini Live API via google-genai."
             "'elevenlabs': ElevenLabs Conversational AI API."
             "'grok_voice': xAI Grok voice realtime API."
+            "'deepgram': Deepgram Voice Agent API."
         ),
     )
 
