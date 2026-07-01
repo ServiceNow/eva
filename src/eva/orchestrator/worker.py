@@ -49,10 +49,14 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
         from eva.assistant.grok_voice_server import GrokVoiceAssistantServer
 
         return GrokVoiceAssistantServer
+    elif framework == "telnyx":
+        from eva.assistant.telnyx_server import TelnyxAssistantServer
+
+        return TelnyxAssistantServer
     else:
         raise ValueError(
             f"Unknown framework: {framework!r}. "
-            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice"
+            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, telnyx"
         )
 
 
