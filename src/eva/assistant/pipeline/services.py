@@ -37,6 +37,8 @@ from pipecat.services.openai.realtime.events import (
 from pipecat.services.openai.realtime.llm import OpenAIRealtimeLLMService
 from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import OpenAITTSService
+from pipecat.services.smallest.stt import SmallestSTTService
+from pipecat.services.smallest.tts import SmallestTTSService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 from pipecat.services.xai.stt import XAISTTService
@@ -279,6 +281,21 @@ def create_stt_service(
             )
         return stt_service
 
+    elif model_lower == "smallest":
+        logger.info(f"Using Smallest Pulse STT: {params['model']}")
+        smallest_stt_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(SmallestSTTService.Settings) if (k := f.name) in params
+        }
+        return SmallestSTTService(
+            api_key=api_key,
+            base_url=url or "wss://api.smallest.ai",
+            sample_rate=params.get("sample_rate", SAMPLE_RATE),
+            settings=SmallestSTTService.Settings(
+                language=_to_language_enum(language_code),
+                **smallest_stt_settings_kwargs,
+            ),
+        )
+
     elif model_lower == "xai":
         logger.info("Using xAI STT")
         xai_settings_kwargs = {
@@ -298,7 +315,7 @@ def create_stt_service(
 
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cartesia-multilingual, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, xai"
+            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cartesia-multilingual, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, smallest, xai"
         )
 
 
@@ -500,6 +517,25 @@ def create_tts_service(
 
         return openai_tts
 
+    elif model_lower == "smallest":
+        logger.info(f"Using Smallest Lightning TTS: {params['model']}")
+        smallest_tts_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(SmallestTTSService.Settings) if (k := f.name) in params
+        }
+        if "voice_id" in params:
+            # Omit "voice" entirely when unset so pipecat's per-model default (e.g. "sophia" for
+            # lightning_v3.1, "meher" for lightning_v3.1_pro) applies instead of a hardcoded EVA default.
+            smallest_tts_settings_kwargs["voice"] = params["voice_id"]
+        return SmallestTTSService(
+            api_key=api_key,
+            base_url=url or "wss://api.smallest.ai",
+            sample_rate=SAMPLE_RATE,
+            settings=SmallestTTSService.Settings(
+                language=_to_language_enum(language_code),
+                **smallest_tts_settings_kwargs,
+            ),
+        )
+
     elif model_lower == "voxtral":
         logger.info(f"Using Voxtral TTS: {params['model']}")
         voxtral_tts = OpenAITTSService(
@@ -557,7 +593,7 @@ def create_tts_service(
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, smallest, voxtral, xai, xtts"
         )
 
 
