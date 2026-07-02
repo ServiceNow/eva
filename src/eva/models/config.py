@@ -361,6 +361,8 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.FR_CA: "Canadian French",
     Language.ES: "European Spanish",
     Language.DE: "German",
+    Language.HI: "Hindi",
+    Language.KO: "Korean",
 }
 
 

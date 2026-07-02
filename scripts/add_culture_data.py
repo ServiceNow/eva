@@ -1099,11 +1099,13 @@ async def _generate_wer_config(
     family = llm_data.get("family")
     if family in {"cjk", "unsupported"}:
         reason = llm_data.get("reason", "no reason given")
-        raise ValueError(
+        logger.warning(
             f"LLM classified {language_name!r} as {family!r} — this script only "
-            f"supports alphabetic families. Reason: {reason}. "
-            f"For CJK languages, add a dedicated normalizer class in cjk.py."
+            f"supports alphabetic families. Reason: {reason}. Skipping WER config "
+            f"generation for {language_name!r} (for CJK languages, add a dedicated "
+            f"normalizer class in cjk.py)."
         )
+        return
     if family not in {"alphabetic_ltr", "alphabetic_reversed_units", "lexicalized_below_100"}:
         raise ValueError(f"LLM returned unexpected family {family!r}")
 
@@ -1285,7 +1287,9 @@ async def update_wer_normalizer_config(
         logger.info(f"Generating WER normalizer config for {language_name}")
         await _generate_wer_config(language, language_name, configs_dir, llm, dry_run)
 
-    if include_spelling_variation:
+    if include_spelling_variation and not config_path.exists():
+        logger.info(f"No WER config for {language_name} — skipping spelling-variation map")
+    elif include_spelling_variation:
         spelling_path = configs_dir / f"{language}_spelling.json"
         if spelling_path.exists():
             logger.info(f"Spelling map already exists at {spelling_path} — skipping")

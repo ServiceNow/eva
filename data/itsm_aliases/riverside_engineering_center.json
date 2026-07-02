@@ -36,6 +36,17 @@
       "engineering-center riverside",
       "entwicklungszentrum riverside",
       "technikzentrum riverside"
+    ],
+    "hi": [
+      "इंजीनियरिंग सेंटर",
+      "रिवरसाइड",
+      "रिवरसाइड इंजीनियरिंग सेंटर"
+    ],
+    "ko": [
+      "강변 기술센터",
+      "리버사이드",
+      "리버사이드 엔지니어링 센터",
+      "엔지니어링 센터"
     ]
   }
 }

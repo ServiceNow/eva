@@ -826,7 +826,9 @@
       "fr": "Bonjour, je suis bloqué hors de mon compte et j’ai besoin d’aide pour y accéder à nouveau.",
       "fr-CA": "Bonjour, je suis bloqué hors de mon compte et j’ai besoin d’aide pour y accéder de nouveau.",
       "es": "Hola, no puedo acceder a mi cuenta y necesito ayuda para volver a entrar.",
-      "de": "Hallo, ich bin ausgesperrt und brauche Hilfe, um wieder an mein Konto zu kommen."
+      "de": "Hallo, ich bin ausgesperrt und brauche Hilfe, um wieder an mein Konto zu kommen.",
+      "hi": "नमस्ते, मेरा account lock हो गया है और मुझे अपने account में वापस जाने में मदद चाहिए।",
+      "ko": "안녕하세요, 계정이 잠겨서 다시 들어갈 수 있게 도움을 받고 싶어요."
     },
     "culture_overrides": {
       "en": {
@@ -848,6 +850,14 @@
       "de": {
         "first_name": "Jan",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "ईशान",
+        "last_name": "चोपड़ा"
+      },
+      "ko": {
+        "first_name": "재현",
+        "last_name": "주"
       }
     },
     "romanized_culture_overrides": {
@@ -870,6 +880,14 @@
       "de": {
         "first_name": "Jan",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "Ishan",
+        "last_name": "Chopra"
+      },
+      "ko": {
+        "first_name": "Jaehyeon",
+        "last_name": "Ju"
       }
     }
   },
@@ -1659,7 +1677,9 @@
       "fr": "Bonjour, je n’arrive pas à me connecter au Wi-Fi de l’entreprise.",
       "fr-CA": "Bonjour, je n’arrive pas à me connecter au Wi-Fi de l’entreprise.",
       "es": "Hola, no puedo conectarme a la Wi-Fi corporativa.",
-      "de": "Hallo, ich kann mich nicht mit dem Firmen-WLAN verbinden."
+      "de": "Hallo, ich kann mich nicht mit dem Firmen-WLAN verbinden.",
+      "hi": "नमस्ते, मैं corporate Wi-Fi से connect नहीं कर पा रहा/रही हूँ।",
+      "ko": "안녕하세요, corporate Wi-Fi에 연결이 안 돼요."
     },
     "culture_overrides": {
       "en": {
@@ -1681,6 +1701,14 @@
       "de": {
         "first_name": "Heike",
         "last_name": "Meyer"
+      },
+      "hi": {
+        "first_name": "श्वेता",
+        "last_name": "सक्सेना"
+      },
+      "ko": {
+        "first_name": "지윤",
+        "last_name": "황"
       }
     },
     "romanized_culture_overrides": {
@@ -1703,6 +1731,14 @@
       "de": {
         "first_name": "Heike",
         "last_name": "Meyer"
+      },
+      "hi": {
+        "first_name": "Shweta",
+        "last_name": "Saxena"
+      },
+      "ko": {
+        "first_name": "Jiyun",
+        "last_name": "Hwang"
       }
     }
   },
@@ -2661,7 +2697,9 @@
       "fr": "Bonjour, j’ai besoin de réserver une salle de conférence.",
       "fr-CA": "Bonjour, j’ai besoin de réserver une salle de conférence.",
       "es": "Hola, necesito reservar una sala de reuniones.",
-      "de": "Hallo, ich muss einen Konferenzraum buchen."
+      "de": "Hallo, ich muss einen Konferenzraum buchen.",
+      "hi": "नमस्ते, मुझे एक conference room book करना है।",
+      "ko": "안녕하세요, conference room을 예약해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -2683,6 +2721,14 @@
       "de": {
         "first_name": "Christoph",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "राजेश",
+        "last_name": "खन्ना"
+      },
+      "ko": {
+        "first_name": "현준",
+        "last_name": "양"
       }
     },
     "romanized_culture_overrides": {
@@ -2705,6 +2751,14 @@
       "de": {
         "first_name": "Christoph",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "Rajesh",
+        "last_name": "Khanna"
+      },
+      "ko": {
+        "first_name": "Hyeonjun",
+        "last_name": "Yang"
       }
     }
   },
@@ -3618,7 +3672,9 @@
       "fr": "Bonjour, j’ai besoin d’un accès à Datadog.",
       "fr-CA": "Bonjour, j’ai besoin d’avoir accès à Datadog.",
       "es": "Hola, necesito acceso a Datadog.",
-      "de": "Hallo, ich brauche Zugriff auf Datadog."
+      "de": "Hallo, ich brauche Zugriff auf Datadog.",
+      "hi": "नमस्ते, मुझे Datadog का access चाहिए।",
+      "ko": "안녕하세요, Datadog 접근 권한이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -3640,6 +3696,14 @@
       "de": {
         "first_name": "Helga",
         "last_name": "Krause"
+      },
+      "hi": {
+        "first_name": "मीरा",
+        "last_name": "सैनी"
+      },
+      "ko": {
+        "first_name": "지원",
+        "last_name": "원"
       }
     },
     "romanized_culture_overrides": {
@@ -3662,6 +3726,14 @@
       "de": {
         "first_name": "Helga",
         "last_name": "Krause"
+      },
+      "hi": {
+        "first_name": "Meera",
+        "last_name": "Saini"
+      },
+      "ko": {
+        "first_name": "Jiwon",
+        "last_name": "Won"
       }
     }
   },
@@ -4474,7 +4546,9 @@
       "fr": "Bonjour, j’ai besoin de faire remplacer mon ordinateur portable.",
       "fr-CA": "Bonjour, j’ai besoin de faire remplacer mon portable.",
       "es": "Hola, necesito que me reemplacen el portátil.",
-      "de": "Hallo, ich muss meinen Laptop austauschen lassen."
+      "de": "Hallo, ich muss meinen Laptop austauschen lassen.",
+      "hi": "नमस्ते, मुझे अपना laptop replace करवाना है।",
+      "ko": "안녕하세요, laptop을 교체해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -4496,6 +4570,14 @@
       "de": {
         "first_name": "Benedikt",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "दीपक",
+        "last_name": "सेठ"
+      },
+      "ko": {
+        "first_name": "민준",
+        "last_name": "현"
       }
     },
     "romanized_culture_overrides": {
@@ -4518,6 +4600,14 @@
       "de": {
         "first_name": "Benedikt",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "Deepak",
+        "last_name": "Seth"
+      },
+      "ko": {
+        "first_name": "Minjun",
+        "last_name": "Hyeon"
       }
     }
   },
@@ -5579,7 +5669,9 @@
       "fr": "Bonjour, j’ai besoin de faire provisionner un nouvel employé.",
       "fr-CA": "Bonjour, j’ai besoin de faire provisionner un nouvel employé.",
       "es": "Hola, necesito dar de alta a una nueva incorporación.",
-      "de": "Hallo, ich muss einen neuen Mitarbeiter einrichten lassen."
+      "de": "Hallo, ich muss einen neuen Mitarbeiter einrichten lassen.",
+      "hi": "नमस्ते, मुझे एक new hire को provision करवाना है।",
+      "ko": "안녕하세요, new hire 프로비저닝을 해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -5601,6 +5693,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Scholz"
+      },
+      "hi": {
+        "first_name": "राहुल",
+        "last_name": "कुमार"
+      },
+      "ko": {
+        "first_name": "준혁",
+        "last_name": "최"
       }
     },
     "romanized_culture_overrides": {
@@ -5623,6 +5723,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Scholz"
+      },
+      "hi": {
+        "first_name": "Rahul",
+        "last_name": "Kumar"
+      },
+      "ko": {
+        "first_name": "Junhyeok",
+        "last_name": "Choe"
       }
     }
   },
@@ -6459,7 +6567,9 @@
       "fr": "Bonjour, mon VPN n’arrête pas de se déconnecter et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon VPN n’arrête pas de se déconnecter et j’ai besoin d’aide avec ça.",
       "es": "Hola, la VPN se me desconecta continuamente y necesito ayuda con eso.",
-      "de": "Hallo, meine VPN-Verbindung bricht ständig ab und ich brauche Hilfe dabei."
+      "de": "Hallo, meine VPN-Verbindung bricht ständig ab und ich brauche Hilfe dabei.",
+      "hi": "नमस्ते, मेरा VPN बार-बार disconnect हो रहा है और मुझे इसमें मदद चाहिए।",
+      "ko": "안녕하세요, VPN 연결이 계속 끊겨서 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -6481,6 +6591,14 @@
       "de": {
         "first_name": "Mats",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "प्रकाश",
+        "last_name": "शुक्ला"
+      },
+      "ko": {
+        "first_name": "하준",
+        "last_name": "손"
       }
     },
     "romanized_culture_overrides": {
@@ -6503,6 +6621,14 @@
       "de": {
         "first_name": "Mats",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "Prakash",
+        "last_name": "Shukla"
+      },
+      "ko": {
+        "first_name": "Hajun",
+        "last_name": "Son"
       }
     }
   },
@@ -7477,7 +7603,9 @@
       "fr": "Bonjour, j’ai besoin de remplacer mon ordinateur portable parce qu’il est devenu vraiment vieux et lent.",
       "fr-CA": "Bonjour, j’ai besoin de remplacer mon portable parce qu’il est vraiment rendu vieux et lent.",
       "es": "Hola, necesito reemplazar mi portátil porque ya está muy viejo y lento.",
-      "de": "Hallo, ich muss meinen Laptop ersetzen, weil er wirklich alt und langsam geworden ist."
+      "de": "Hallo, ich muss meinen Laptop ersetzen, weil er wirklich alt und langsam geworden ist.",
+      "hi": "नमस्ते, मुझे अपना laptop replace करवाना है क्योंकि यह बहुत पुराना और slow हो गया है।",
+      "ko": "안녕하세요, laptop이 너무 오래되고 느려져서 교체해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -7499,6 +7627,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Schwarz"
+      },
+      "hi": {
+        "first_name": "विजय",
+        "last_name": "जोशी"
+      },
+      "ko": {
+        "first_name": "우진",
+        "last_name": "문"
       }
     },
     "romanized_culture_overrides": {
@@ -7521,6 +7657,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Schwarz"
+      },
+      "hi": {
+        "first_name": "Vijay",
+        "last_name": "Joshi"
+      },
+      "ko": {
+        "first_name": "Ujin",
+        "last_name": "Mun"
       }
     }
   },
@@ -8201,7 +8345,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour obtenir un écran externe pour mon poste de travail.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir un moniteur externe pour mon poste de travail.",
       "es": "Hola, necesito ayuda para conseguir un monitor externo para mi puesto de trabajo.",
-      "de": "Hallo, ich brauche Hilfe, um einen externen Monitor für meinen Arbeitsplatz zu bekommen."
+      "de": "Hallo, ich brauche Hilfe, um einen externen Monitor für meinen Arbeitsplatz zu bekommen.",
+      "hi": "नमस्ते, मुझे अपने workstation के लिए external monitor लेने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 workstation에 사용할 external monitor를 받는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -8223,6 +8369,14 @@
       "de": {
         "first_name": "Julia",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "श्वेता",
+        "last_name": "अग्रवाल"
+      },
+      "ko": {
+        "first_name": "시은",
+        "last_name": "구"
       }
     },
     "romanized_culture_overrides": {
@@ -8245,6 +8399,14 @@
       "de": {
         "first_name": "Julia",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "Shweta",
+        "last_name": "Agrawal"
+      },
+      "ko": {
+        "first_name": "Sieun",
+        "last_name": "Gu"
       }
     }
   },
@@ -9113,7 +9275,9 @@
       "fr": "Bonjour, j’ai besoin d’un accès à Confluence.",
       "fr-CA": "Bonjour, j’ai besoin d’avoir accès à Confluence.",
       "es": "Hola, necesito acceso a Confluence.",
-      "de": "Hallo, ich brauche Zugriff auf Confluence."
+      "de": "Hallo, ich brauche Zugriff auf Confluence.",
+      "hi": "नमस्ते, मुझे Confluence का access चाहिए।",
+      "ko": "안녕하세요, Confluence 접근 권한이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -9135,6 +9299,14 @@
       "de": {
         "first_name": "Sarah",
         "last_name": "Walter"
+      },
+      "hi": {
+        "first_name": "कृतिका",
+        "last_name": "मिश्रा"
+      },
+      "ko": {
+        "first_name": "예진",
+        "last_name": "진"
       }
     },
     "romanized_culture_overrides": {
@@ -9157,6 +9329,14 @@
       "de": {
         "first_name": "Sarah",
         "last_name": "Walter"
+      },
+      "hi": {
+        "first_name": "Kritika",
+        "last_name": "Mishra"
+      },
+      "ko": {
+        "first_name": "Yejin",
+        "last_name": "Jin"
       }
     }
   },
@@ -10178,7 +10358,9 @@
       "fr": "Bonjour, j’ai besoin d’un accès à Datadog.",
       "fr-CA": "Bonjour, j’ai besoin d’avoir accès à Datadog.",
       "es": "Hola, necesito acceso a Datadog.",
-      "de": "Hallo, ich brauche Zugriff auf Datadog."
+      "de": "Hallo, ich brauche Zugriff auf Datadog.",
+      "hi": "नमस्ते, मुझे Datadog का access चाहिए।",
+      "ko": "안녕하세요, Datadog 접근 권한이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -10200,6 +10382,14 @@
       "de": {
         "first_name": "Lara",
         "last_name": "Hofmann"
+      },
+      "hi": {
+        "first_name": "स्वाति",
+        "last_name": "मल्होत्रा"
+      },
+      "ko": {
+        "first_name": "하린",
+        "last_name": "천"
       }
     },
     "romanized_culture_overrides": {
@@ -10222,6 +10412,14 @@
       "de": {
         "first_name": "Lara",
         "last_name": "Hofmann"
+      },
+      "hi": {
+        "first_name": "Swati",
+        "last_name": "Malhotra"
+      },
+      "ko": {
+        "first_name": "Harin",
+        "last_name": "Cheon"
       }
     }
   },
@@ -11064,7 +11262,9 @@
       "fr": "Bonjour, j’ai besoin d’obtenir une licence IntelliJ pour mon travail de développement.",
       "fr-CA": "Bonjour, j’ai besoin d’obtenir une licence IntelliJ pour mon travail de développement.",
       "es": "Hola, necesito conseguir una licencia de IntelliJ para mi trabajo de desarrollo.",
-      "de": "Hallo, ich brauche eine IntelliJ-Lizenz für meine Entwicklungsarbeit."
+      "de": "Hallo, ich brauche eine IntelliJ-Lizenz für meine Entwicklungsarbeit.",
+      "hi": "नमस्ते, मुझे अपने development work के लिए IntelliJ license लेना है।",
+      "ko": "안녕하세요, 개발 업무용 IntelliJ license가 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -11086,6 +11286,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Lange"
+      },
+      "hi": {
+        "first_name": "तरुण",
+        "last_name": "जोशी"
+      },
+      "ko": {
+        "first_name": "예준",
+        "last_name": "최"
       }
     },
     "romanized_culture_overrides": {
@@ -11108,6 +11316,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Lange"
+      },
+      "hi": {
+        "first_name": "Tarun",
+        "last_name": "Joshi"
+      },
+      "ko": {
+        "first_name": "Yejun",
+        "last_name": "Choe"
       }
     }
   },
@@ -11925,7 +12141,9 @@
       "fr": "Bonjour, j’ai besoin d’une licence Figma temporaire pour un projet.",
       "fr-CA": "Bonjour, j’ai besoin d’une licence Figma temporaire pour un projet.",
       "es": "Hola, necesito una licencia temporal de Figma para un proyecto.",
-      "de": "Hallo, ich brauche eine temporäre Figma-Lizenz für ein Projekt."
+      "de": "Hallo, ich brauche eine temporäre Figma-Lizenz für ein Projekt.",
+      "hi": "नमस्ते, मुझे एक project के लिए temporary Figma license चाहिए।",
+      "ko": "안녕하세요, 프로젝트용 임시 Figma license가 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -11947,6 +12165,14 @@
       "de": {
         "first_name": "Maria",
         "last_name": "Vogel"
+      },
+      "hi": {
+        "first_name": "सविता",
+        "last_name": "कपूर"
+      },
+      "ko": {
+        "first_name": "시은",
+        "last_name": "성"
       }
     },
     "romanized_culture_overrides": {
@@ -11969,6 +12195,14 @@
       "de": {
         "first_name": "Maria",
         "last_name": "Vogel"
+      },
+      "hi": {
+        "first_name": "Savita",
+        "last_name": "Kapoor"
+      },
+      "ko": {
+        "first_name": "Sieun",
+        "last_name": "Seong"
       }
     }
   },
@@ -12693,7 +12927,9 @@
       "fr": "Bonjour, j’ai besoin de renouveler ma licence IntelliJ IDEA.",
       "fr-CA": "Bonjour, j’ai besoin de renouveler ma licence IntelliJ IDEA.",
       "es": "Hola, necesito renovar mi licencia de IntelliJ IDEA.",
-      "de": "Hallo, ich muss meine IntelliJ IDEA-Lizenz verlängern."
+      "de": "Hallo, ich muss meine IntelliJ IDEA-Lizenz verlängern.",
+      "hi": "नमस्ते, मुझे अपना IntelliJ IDEA license renew करना है।",
+      "ko": "안녕하세요, IntelliJ IDEA license를 갱신해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -12715,6 +12951,14 @@
       "de": {
         "first_name": "Christoph",
         "last_name": "Scholz"
+      },
+      "hi": {
+        "first_name": "अमन",
+        "last_name": "बोस"
+      },
+      "ko": {
+        "first_name": "지환",
+        "last_name": "문"
       }
     },
     "romanized_culture_overrides": {
@@ -12737,6 +12981,14 @@
       "de": {
         "first_name": "Christoph",
         "last_name": "Scholz"
+      },
+      "hi": {
+        "first_name": "Aman",
+        "last_name": "Bose"
+      },
+      "ko": {
+        "first_name": "Jihwan",
+        "last_name": "Mun"
       }
     }
   },
@@ -13524,7 +13776,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour obtenir l’attribution d’un bureau.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir une attribution de bureau.",
       "es": "Hola, necesito ayuda para que me asignen una mesa.",
-      "de": "Hallo, ich brauche Hilfe, einen Schreibtisch zugewiesen zu bekommen."
+      "de": "Hallo, ich brauche Hilfe, einen Schreibtisch zugewiesen zu bekommen.",
+      "hi": "नमस्ते, मुझे desk assignment लेने में मदद चाहिए।",
+      "ko": "안녕하세요, desk assignment 받는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -13546,6 +13800,14 @@
       "de": {
         "first_name": "Clara",
         "last_name": "Neumann"
+      },
+      "hi": {
+        "first_name": "पूजा",
+        "last_name": "शर्मा"
+      },
+      "ko": {
+        "first_name": "하영",
+        "last_name": "권"
       }
     },
     "romanized_culture_overrides": {
@@ -13568,6 +13830,14 @@
       "de": {
         "first_name": "Clara",
         "last_name": "Neumann"
+      },
+      "hi": {
+        "first_name": "Pooja",
+        "last_name": "Sharma"
+      },
+      "ko": {
+        "first_name": "Hayeong",
+        "last_name": "Gwon"
       }
     }
   },
@@ -14507,7 +14777,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour réinitialiser mon mot de passe VPN.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour réinitialiser mon mot de passe VPN.",
       "es": "Hola, necesito ayuda para restablecer mi contraseña de la VPN.",
-      "de": "Hallo, ich brauche Hilfe beim Zurücksetzen meines VPN-Passworts."
+      "de": "Hallo, ich brauche Hilfe beim Zurücksetzen meines VPN-Passworts.",
+      "hi": "नमस्ते, मुझे अपना VPN password reset करने में मदद चाहिए।",
+      "ko": "안녕하세요, VPN password 재설정하는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -14529,6 +14801,14 @@
       "de": {
         "first_name": "Lea",
         "last_name": "Weiß"
+      },
+      "hi": {
+        "first_name": "दीपा",
+        "last_name": "अय्यर"
+      },
+      "ko": {
+        "first_name": "다은",
+        "last_name": "김"
       }
     },
     "romanized_culture_overrides": {
@@ -14551,6 +14831,14 @@
       "de": {
         "first_name": "Lea",
         "last_name": "Weiss"
+      },
+      "hi": {
+        "first_name": "Deepa",
+        "last_name": "Iyer"
+      },
+      "ko": {
+        "first_name": "Daeun",
+        "last_name": "Kim"
       }
     }
   },
@@ -15372,7 +15660,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour obtenir un bureau à East Campus.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir un bureau à East Campus.",
       "es": "Hola, necesito ayuda para conseguir una mesa en East Campus.",
-      "de": "Hallo, ich brauche Hilfe, einen Schreibtisch am East Campus zu bekommen."
+      "de": "Hallo, ich brauche Hilfe, einen Schreibtisch am East Campus zu bekommen.",
+      "hi": "नमस्ते, मुझे East Campus में desk लेने में मदद चाहिए।",
+      "ko": "안녕하세요, East Campus에서 desk를 받는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -15394,6 +15684,14 @@
       "de": {
         "first_name": "Moritz",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "गौरव",
+        "last_name": "खन्ना"
+      },
+      "ko": {
+        "first_name": "승민",
+        "last_name": "조"
       }
     },
     "romanized_culture_overrides": {
@@ -15416,6 +15714,14 @@
       "de": {
         "first_name": "Moritz",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "Gaurav",
+        "last_name": "Khanna"
+      },
+      "ko": {
+        "first_name": "Seungmin",
+        "last_name": "Jo"
       }
     }
   },
@@ -16241,7 +16547,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour obtenir une place de parking dans l’Executive Garage.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir une place de stationnement dans l’Executive Garage.",
       "es": "Hola, necesito ayuda para conseguir aparcamiento en el Executive Garage.",
-      "de": "Hallo, ich brauche Hilfe, einen Parkplatz im Parkhaus für Führungskräfte zu bekommen."
+      "de": "Hallo, ich brauche Hilfe, einen Parkplatz im Parkhaus für Führungskräfte zu bekommen.",
+      "hi": "नमस्ते, मुझे Executive Garage में parking लेने में मदद चाहिए।",
+      "ko": "안녕하세요, Executive Garage 주차 권한을 받는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -16263,6 +16571,14 @@
       "de": {
         "first_name": "Petra",
         "last_name": "Peters"
+      },
+      "hi": {
+        "first_name": "मीना",
+        "last_name": "दास"
+      },
+      "ko": {
+        "first_name": "현서",
+        "last_name": "안"
       }
     },
     "romanized_culture_overrides": {
@@ -16285,6 +16601,14 @@
       "de": {
         "first_name": "Petra",
         "last_name": "Peters"
+      },
+      "hi": {
+        "first_name": "Meena",
+        "last_name": "Das"
+      },
+      "ko": {
+        "first_name": "Hyeonseo",
+        "last_name": "An"
       }
     }
   },
@@ -17063,7 +17387,9 @@
       "fr": "Bonjour, j’ai besoin de demander une chaise ergonomique pour mon poste de travail.",
       "fr-CA": "Bonjour, j’ai besoin de demander une chaise ergonomique pour mon poste de travail.",
       "es": "Hola, necesito solicitar una silla ergonómica para mi puesto de trabajo.",
-      "de": "Hallo, ich möchte einen ergonomischen Stuhl für meinen Arbeitsplatz beantragen."
+      "de": "Hallo, ich möchte einen ergonomischen Stuhl für meinen Arbeitsplatz beantragen.",
+      "hi": "नमस्ते, मुझे अपने workstation के लिए ergonomic chair request करनी है।",
+      "ko": "안녕하세요, 제 workstation용 ergonomic chair를 요청해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -17085,6 +17411,14 @@
       "de": {
         "first_name": "Leon",
         "last_name": "Klein"
+      },
+      "hi": {
+        "first_name": "मोहित",
+        "last_name": "मल्होत्रा"
+      },
+      "ko": {
+        "first_name": "예준",
+        "last_name": "하"
       }
     },
     "romanized_culture_overrides": {
@@ -17107,6 +17441,14 @@
       "de": {
         "first_name": "Leon",
         "last_name": "Klein"
+      },
+      "hi": {
+        "first_name": "Mohit",
+        "last_name": "Malhotra"
+      },
+      "ko": {
+        "first_name": "Yejun",
+        "last_name": "Ha"
       }
     }
   },
@@ -17865,7 +18207,9 @@
       "fr": "Bonjour, j’ai besoin de demander un repose-pieds pour mon bureau.",
       "fr-CA": "Bonjour, j’ai besoin de demander un repose-pieds pour mon bureau.",
       "es": "Hola, necesito solicitar un reposapiés para mi mesa.",
-      "de": "Hallo, ich möchte eine Fußstütze für meinen Schreibtisch beantragen."
+      "de": "Hallo, ich möchte eine Fußstütze für meinen Schreibtisch beantragen.",
+      "hi": "नमस्ते, मुझे अपने desk के लिए footrest request करना है।",
+      "ko": "안녕하세요, 제 desk용 footrest를 요청해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -17887,6 +18231,14 @@
       "de": {
         "first_name": "Anja",
         "last_name": "Walter"
+      },
+      "hi": {
+        "first_name": "नंदिनी",
+        "last_name": "शर्मा"
+      },
+      "ko": {
+        "first_name": "예진",
+        "last_name": "지"
       }
     },
     "romanized_culture_overrides": {
@@ -17909,6 +18261,14 @@
       "de": {
         "first_name": "Anja",
         "last_name": "Walter"
+      },
+      "hi": {
+        "first_name": "Nandini",
+        "last_name": "Sharma"
+      },
+      "ko": {
+        "first_name": "Yejin",
+        "last_name": "Ji"
       }
     }
   },
@@ -18819,7 +19179,9 @@
       "fr": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion mardi prochain.",
       "fr-CA": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion mardi prochain.",
       "es": "Hola, necesito reservar una sala de reuniones para una reunión el próximo martes.",
-      "de": "Hallo, ich muss einen Konferenzraum für ein Meeting nächsten Dienstag buchen."
+      "de": "Hallo, ich muss einen Konferenzraum für ein Meeting nächsten Dienstag buchen.",
+      "hi": "नमस्ते, मुझे अगले Tuesday की meeting के लिए conference room book करना है।",
+      "ko": "안녕하세요, 다음 주 화요일 회의용 conference room을 예약해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -18841,6 +19203,14 @@
       "de": {
         "first_name": "Moritz",
         "last_name": "Kaiser"
+      },
+      "hi": {
+        "first_name": "सचिन",
+        "last_name": "दुबे"
+      },
+      "ko": {
+        "first_name": "시윤",
+        "last_name": "최"
       }
     },
     "romanized_culture_overrides": {
@@ -18863,6 +19233,14 @@
       "de": {
         "first_name": "Moritz",
         "last_name": "Kaiser"
+      },
+      "hi": {
+        "first_name": "Sachin",
+        "last_name": "Dubey"
+      },
+      "ko": {
+        "first_name": "Siyun",
+        "last_name": "Choe"
       }
     }
   },
@@ -19674,7 +20052,9 @@
       "fr": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion.",
       "fr-CA": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion.",
       "es": "Hola, necesito reservar una sala de reuniones para una reunión.",
-      "de": "Hallo, ich muss einen Konferenzraum für ein Meeting buchen."
+      "de": "Hallo, ich muss einen Konferenzraum für ein Meeting buchen.",
+      "hi": "नमस्ते, मुझे एक meeting के लिए conference room book करना है।",
+      "ko": "안녕하세요, 회의용 conference room을 예약해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -19696,6 +20076,14 @@
       "de": {
         "first_name": "Sophie",
         "last_name": "Klein"
+      },
+      "hi": {
+        "first_name": "राधा",
+        "last_name": "रस्तोगी"
+      },
+      "ko": {
+        "first_name": "지유",
+        "last_name": "황"
       }
     },
     "romanized_culture_overrides": {
@@ -19718,6 +20106,14 @@
       "de": {
         "first_name": "Sophie",
         "last_name": "Klein"
+      },
+      "hi": {
+        "first_name": "Radha",
+        "last_name": "Rastogi"
+      },
+      "ko": {
+        "first_name": "Jiyu",
+        "last_name": "Hwang"
       }
     }
   },
@@ -20582,7 +20978,9 @@
       "fr": "Bonjour, j’ai besoin de créer des comptes pour un nouveau membre de l’équipe qui commence la semaine prochaine.",
       "fr-CA": "Bonjour, j’ai besoin de configurer des comptes pour un nouveau membre de l’équipe qui commence la semaine prochaine.",
       "es": "Hola, necesito configurar cuentas para un nuevo miembro del equipo que empieza la semana que viene.",
-      "de": "Hallo, ich muss Konten für ein neues Teammitglied einrichten lassen, das nächste Woche anfängt."
+      "de": "Hallo, ich muss Konten für ein neues Teammitglied einrichten lassen, das nächste Woche anfängt.",
+      "hi": "नमस्ते, मुझे अगले week शुरू होने वाले नए team member के लिए accounts set up करने हैं।",
+      "ko": "안녕하세요, 다음 주에 시작하는 새 팀원 계정을 설정해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -20604,6 +21002,14 @@
       "de": {
         "first_name": "Hannah",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "राधा",
+        "last_name": "अय्यर"
+      },
+      "ko": {
+        "first_name": "소연",
+        "last_name": "구"
       }
     },
     "romanized_culture_overrides": {
@@ -20626,6 +21032,14 @@
       "de": {
         "first_name": "Hannah",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "Radha",
+        "last_name": "Iyer"
+      },
+      "ko": {
+        "first_name": "Soyeon",
+        "last_name": "Gu"
       }
     }
   },
@@ -21564,7 +21978,9 @@
       "fr": "Bonjour, j’ai besoin d’un accès au groupe de lecture de la base de données pour un problème en production.",
       "fr-CA": "Bonjour, j’ai besoin d’avoir accès au groupe de lecture de la base de données pour un problème en production.",
       "es": "Hola, necesito acceso al grupo de lectura de la base de datos por un problema en producción.",
-      "de": "Hallo, ich brauche Zugriff auf die Datenbank-Lesegruppe wegen eines Produktionsproblems."
+      "de": "Hallo, ich brauche Zugriff auf die Datenbank-Lesegruppe wegen eines Produktionsproblems.",
+      "hi": "नमस्ते, मुझे production issue के लिए database read group का access चाहिए।",
+      "ko": "안녕하세요, production issue 때문에 database read group 접근 권한이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -21586,6 +22002,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Schmitz"
+      },
+      "hi": {
+        "first_name": "साक्षी",
+        "last_name": "गर्ग"
+      },
+      "ko": {
+        "first_name": "유림",
+        "last_name": "신"
       }
     },
     "romanized_culture_overrides": {
@@ -21608,6 +22032,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Schmitz"
+      },
+      "hi": {
+        "first_name": "Sakshi",
+        "last_name": "Garg"
+      },
+      "ko": {
+        "first_name": "Yurim",
+        "last_name": "Sin"
       }
     }
   },
@@ -22509,7 +22941,9 @@
       "fr": "Bonjour, j’ai besoin d’être retiré d’un groupe dont je n’ai plus besoin.",
       "fr-CA": "Bonjour, j’ai besoin d’être retiré d’un groupe dont je n’ai plus besoin.",
       "es": "Hola, necesito que me quiten de un grupo que ya no necesito.",
-      "de": "Hallo, ich muss aus einer Gruppe entfernt werden, die ich nicht mehr brauche."
+      "de": "Hallo, ich muss aus einer Gruppe entfernt werden, die ich nicht mehr brauche.",
+      "hi": "नमस्ते, मुझे एक group से remove किया जाना है जिसकी अब मुझे ज़रूरत नहीं है।",
+      "ko": "안녕하세요, 더 이상 필요 없는 group에서 저를 제거해 주세요."
     },
     "culture_overrides": {
       "en": {
@@ -22531,6 +22965,14 @@
       "de": {
         "first_name": "Finn",
         "last_name": "Lange"
+      },
+      "hi": {
+        "first_name": "यश",
+        "last_name": "मेहता"
+      },
+      "ko": {
+        "first_name": "재민",
+        "last_name": "남"
       }
     },
     "romanized_culture_overrides": {
@@ -22553,6 +22995,14 @@
       "de": {
         "first_name": "Finn",
         "last_name": "Lange"
+      },
+      "hi": {
+        "first_name": "Yash",
+        "last_name": "Mehta"
+      },
+      "ko": {
+        "first_name": "Jaemin",
+        "last_name": "Nam"
       }
     }
   },
@@ -23391,7 +23841,9 @@
       "fr": "Bonjour, j’ai besoin de mettre à jour mes accès en vue d’un prochain changement de poste.",
       "fr-CA": "Bonjour, j’ai besoin de mettre à jour mes accès pour un changement de rôle à venir.",
       "es": "Hola, necesito actualizar mi acceso por un próximo cambio de puesto.",
-      "de": "Hallo, ich muss meine Zugriffsrechte wegen einer bevorstehenden Rollenänderung aktualisieren lassen."
+      "de": "Hallo, ich muss meine Zugriffsrechte wegen einer bevorstehenden Rollenänderung aktualisieren lassen.",
+      "hi": "नमस्ते, मुझे आने वाले role change के लिए अपना access update करना है।",
+      "ko": "안녕하세요, 곧 역할이 변경될 예정이라 제 access를 업데이트해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -23413,6 +23865,14 @@
       "de": {
         "first_name": "David",
         "last_name": "Krüger"
+      },
+      "hi": {
+        "first_name": "दीपक",
+        "last_name": "गर्ग"
+      },
+      "ko": {
+        "first_name": "재현",
+        "last_name": "임"
       }
     },
     "romanized_culture_overrides": {
@@ -23435,6 +23895,14 @@
       "de": {
         "first_name": "David",
         "last_name": "Krueger"
+      },
+      "hi": {
+        "first_name": "Deepak",
+        "last_name": "Garg"
+      },
+      "ko": {
+        "first_name": "Jaehyeon",
+        "last_name": "Im"
       }
     }
   },
@@ -24326,7 +24794,9 @@
       "fr": "Bonjour, j’ai besoin de retirer les accès d’un membre de mon équipe qui s’en va.",
       "fr-CA": "Bonjour, j’ai besoin de retirer les accès d’un membre de mon équipe qui quitte l’entreprise.",
       "es": "Hola, necesito quitar el acceso a un miembro de mi equipo que se va.",
-      "de": "Hallo, ich muss die Zugriffsrechte für ein Teammitglied entfernen lassen, das das Unternehmen verlässt."
+      "de": "Hallo, ich muss die Zugriffsrechte für ein Teammitglied entfernen lassen, das das Unternehmen verlässt.",
+      "hi": "नमस्ते, मुझे अपनी team के एक departing member का access remove करना है।",
+      "ko": "안녕하세요, 제 팀에서 퇴사하는 멤버의 access를 제거해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -24348,6 +24818,14 @@
       "de": {
         "first_name": "Anja",
         "last_name": "Koch"
+      },
+      "hi": {
+        "first_name": "श्वेता",
+        "last_name": "वर्मा"
+      },
+      "ko": {
+        "first_name": "지은",
+        "last_name": "박"
       }
     },
     "romanized_culture_overrides": {
@@ -24370,6 +24848,14 @@
       "de": {
         "first_name": "Anja",
         "last_name": "Koch"
+      },
+      "hi": {
+        "first_name": "Shweta",
+        "last_name": "Verma"
+      },
+      "ko": {
+        "first_name": "Jieun",
+        "last_name": "Bak"
       }
     }
   },
@@ -25134,7 +25620,9 @@
       "fr": "Bonjour, je voulais vérifier l’état de ma demande d’accès à Salesforce.",
       "fr-CA": "Bonjour, je voulais vérifier l’état de ma demande d’accès à Salesforce.",
       "es": "Hola, quería consultar el estado de mi solicitud de acceso a Salesforce.",
-      "de": "Hallo, ich wollte den Status meiner Salesforce-Zugriffsanfrage prüfen."
+      "de": "Hallo, ich wollte den Status meiner Salesforce-Zugriffsanfrage prüfen.",
+      "hi": "नमस्ते, मैं अपने Salesforce access request का status check करना चाहता था।",
+      "ko": "안녕하세요, 제 Salesforce access request 상태를 확인하고 싶습니다."
     },
     "culture_overrides": {
       "en": {
@@ -25156,6 +25644,14 @@
       "de": {
         "first_name": "Mia",
         "last_name": "Vogel"
+      },
+      "hi": {
+        "first_name": "मीना",
+        "last_name": "गुप्ता"
+      },
+      "ko": {
+        "first_name": "지유",
+        "last_name": "황"
       }
     },
     "romanized_culture_overrides": {
@@ -25178,6 +25674,14 @@
       "de": {
         "first_name": "Mia",
         "last_name": "Vogel"
+      },
+      "hi": {
+        "first_name": "Meena",
+        "last_name": "Gupta"
+      },
+      "ko": {
+        "first_name": "Jiyu",
+        "last_name": "Hwang"
       }
     }
   },
@@ -26510,7 +27014,9 @@
       "fr": "Bonjour, mon ordinateur portable professionnel ne s’allume plus et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon portable de travail ne s’allume pas et j’ai besoin d’aide avec ça.",
       "es": "Hola, mi portátil del trabajo no enciende y necesito ayuda con eso.",
-      "de": "Hallo, mein Arbeitslaptop lässt sich nicht einschalten und ich brauche Hilfe damit."
+      "de": "Hallo, mein Arbeitslaptop lässt sich nicht einschalten und ich brauche Hilfe damit.",
+      "hi": "नमस्ते, मेरा work laptop power on नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
+      "ko": "안녕하세요, 제 업무용 laptop이 켜지지 않아서 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -26532,6 +27038,14 @@
       "de": {
         "first_name": "Lennard",
         "last_name": "Becker"
+      },
+      "hi": {
+        "first_name": "अमित",
+        "last_name": "मेहता"
+      },
+      "ko": {
+        "first_name": "지훈",
+        "last_name": "성"
       }
     },
     "romanized_culture_overrides": {
@@ -26554,6 +27068,14 @@
       "de": {
         "first_name": "Lennard",
         "last_name": "Becker"
+      },
+      "hi": {
+        "first_name": "Amit",
+        "last_name": "Mehta"
+      },
+      "ko": {
+        "first_name": "Jihun",
+        "last_name": "Seong"
       }
     }
   },
@@ -27927,7 +28449,9 @@
       "fr": "Bonjour, je n’arrive pas à me connecter à ma messagerie.",
       "fr-CA": "Bonjour, je n’arrive pas à me connecter à mon courriel.",
       "es": "Hola, no puedo iniciar sesión en mi correo electrónico.",
-      "de": "Hallo, ich kann mich nicht bei meiner E-Mail anmelden."
+      "de": "Hallo, ich kann mich nicht bei meiner E-Mail anmelden.",
+      "hi": "नमस्ते, मैं अपने email में log in नहीं कर पा रहा हूँ।",
+      "ko": "안녕하세요, 제 email에 로그인할 수 없습니다."
     },
     "culture_overrides": {
       "en": {
@@ -27949,6 +28473,14 @@
       "de": {
         "first_name": "Alexander",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "देव",
+        "last_name": "रस्तोगी"
+      },
+      "ko": {
+        "first_name": "도현",
+        "last_name": "백"
       }
     },
     "romanized_culture_overrides": {
@@ -27971,6 +28503,14 @@
       "de": {
         "first_name": "Alexander",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "Dev",
+        "last_name": "Rastogi"
+      },
+      "ko": {
+        "first_name": "Dohyeon",
+        "last_name": "Baek"
       }
     }
   },
@@ -28852,7 +29392,9 @@
       "fr": "Bonjour, j’ai quelques trucs pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de cosas con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar Dinge, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Dinge, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -28874,6 +29416,14 @@
       "de": {
         "first_name": "Sebastian",
         "last_name": "Schwarz"
+      },
+      "hi": {
+        "first_name": "नीरज",
+        "last_name": "चौधरी"
+      },
+      "ko": {
+        "first_name": "예준",
+        "last_name": "서"
       }
     },
     "romanized_culture_overrides": {
@@ -28896,6 +29446,14 @@
       "de": {
         "first_name": "Sebastian",
         "last_name": "Schwarz"
+      },
+      "hi": {
+        "first_name": "Neeraj",
+        "last_name": "Chaudhary"
+      },
+      "ko": {
+        "first_name": "Yejun",
+        "last_name": "Seo"
       }
     }
   },
@@ -29832,7 +30390,9 @@
       "fr": "Bonjour, j’ai quelques demandes concernant du matériel informatique pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques demandes de matériel informatique pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de solicitudes de hardware de TI con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar IT-Hardware-Anfragen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar IT-Hardware-Anfragen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ IT hardware requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT hardware request가 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -29854,6 +30414,14 @@
       "de": {
         "first_name": "Emilia",
         "last_name": "Meyer"
+      },
+      "hi": {
+        "first_name": "कृतिका",
+        "last_name": "यादव"
+      },
+      "ko": {
+        "first_name": "하은",
+        "last_name": "장"
       }
     },
     "romanized_culture_overrides": {
@@ -29876,6 +30444,14 @@
       "de": {
         "first_name": "Emilia",
         "last_name": "Meyer"
+      },
+      "hi": {
+        "first_name": "Kritika",
+        "last_name": "Yadav"
+      },
+      "ko": {
+        "first_name": "Haeun",
+        "last_name": "Jang"
       }
     }
   },
@@ -31140,7 +31716,9 @@
       "fr": "Bonjour, ma messagerie est en panne et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon courriel ne fonctionne plus et j’ai besoin d’aide avec ça.",
       "es": "Hola, mi correo electrónico no funciona y necesito ayuda.",
-      "de": "Hallo, meine E-Mail funktioniert nicht und ich brauche Hilfe damit."
+      "de": "Hallo, meine E-Mail funktioniert nicht und ich brauche Hilfe damit.",
+      "hi": "नमस्ते, मेरा email down है और मुझे इसमें मदद चाहिए।",
+      "ko": "안녕하세요, 제 email이 계속 안 돼서 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -31162,6 +31740,14 @@
       "de": {
         "first_name": "Lena",
         "last_name": "Braun"
+      },
+      "hi": {
+        "first_name": "पायल",
+        "last_name": "बोस"
+      },
+      "ko": {
+        "first_name": "서윤",
+        "last_name": "곽"
       }
     },
     "romanized_culture_overrides": {
@@ -31184,6 +31770,14 @@
       "de": {
         "first_name": "Lena",
         "last_name": "Braun"
+      },
+      "hi": {
+        "first_name": "Payal",
+        "last_name": "Bose"
+      },
+      "ko": {
+        "first_name": "Seoyun",
+        "last_name": "Gwak"
       }
     }
   },
@@ -32146,7 +32740,9 @@
       "fr": "Bonjour, j’ai quelques trucs liés à l’informatique pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de cosas de TI con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -32168,6 +32764,14 @@
       "de": {
         "first_name": "Theo",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "आरव",
+        "last_name": "शर्मा"
+      },
+      "ko": {
+        "first_name": "은우",
+        "last_name": "유"
       }
     },
     "romanized_culture_overrides": {
@@ -32190,6 +32794,14 @@
       "de": {
         "first_name": "Theo",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "Aarav",
+        "last_name": "Sharma"
+      },
+      "ko": {
+        "first_name": "Eunu",
+        "last_name": "Yu"
       }
     }
   },
@@ -33111,7 +33723,9 @@
       "fr": "Bonjour, j’ai quelques sujets de licences logicielles pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires de licences de logiciels pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de temas de licencias de software con los que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar Dinge zu Softwarelizenzen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Dinge zu Softwarelizenzen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ software license चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 software license 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -33133,6 +33747,14 @@
       "de": {
         "first_name": "Paula",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "रीना",
+        "last_name": "राणा"
+      },
+      "ko": {
+        "first_name": "윤서",
+        "last_name": "서"
       }
     },
     "romanized_culture_overrides": {
@@ -33155,6 +33777,14 @@
       "de": {
         "first_name": "Paula",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "Reena",
+        "last_name": "Rana"
+      },
+      "ko": {
+        "first_name": "Yunseo",
+        "last_name": "Seo"
       }
     }
   },
@@ -34176,7 +34806,9 @@
       "fr": "Bonjour, j’ai quelques sujets liés aux services généraux pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires liées aux installations pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de temas de instalaciones con los que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar Anliegen bezüglich der Büroeinrichtungen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Anliegen bezüglich der Büroeinrichtungen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ facilities चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 facilities 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -34198,6 +34830,14 @@
       "de": {
         "first_name": "Dominik",
         "last_name": "Schäfer"
+      },
+      "hi": {
+        "first_name": "विनय",
+        "last_name": "रेड्डी"
+      },
+      "ko": {
+        "first_name": "준서",
+        "last_name": "현"
       }
     },
     "romanized_culture_overrides": {
@@ -34220,6 +34860,14 @@
       "de": {
         "first_name": "Dominik",
         "last_name": "Schaefer"
+      },
+      "hi": {
+        "first_name": "Vinay",
+        "last_name": "Reddy"
+      },
+      "ko": {
+        "first_name": "Junseo",
+        "last_name": "Hyeon"
       }
     }
   },
@@ -35219,7 +35867,9 @@
       "fr": "Bonjour, j’ai quelques demandes liées au lieu de travail pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques demandes liées au milieu de travail pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de solicitudes del lugar de trabajo con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ workplace requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 workplace request가 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -35241,6 +35891,14 @@
       "de": {
         "first_name": "Sandra",
         "last_name": "Schäfer"
+      },
+      "hi": {
+        "first_name": "पायल",
+        "last_name": "अय्यर"
+      },
+      "ko": {
+        "first_name": "다현",
+        "last_name": "이"
       }
     },
     "romanized_culture_overrides": {
@@ -35263,6 +35921,14 @@
       "de": {
         "first_name": "Sandra",
         "last_name": "Schaefer"
+      },
+      "hi": {
+        "first_name": "Payal",
+        "last_name": "Iyer"
+      },
+      "ko": {
+        "first_name": "Dahyeon",
+        "last_name": "I"
       }
     }
   },
@@ -36520,7 +37186,9 @@
       "fr": "Bonjour, j’ai quelques problèmes informatiques pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques problèmes informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de problemas de TI con los que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar IT-Probleme, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar IT-Probleme, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ IT issues में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT issue가 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -36542,6 +37210,14 @@
       "de": {
         "first_name": "Emil",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "मोहित",
+        "last_name": "गर्ग"
+      },
+      "ko": {
+        "first_name": "승우",
+        "last_name": "한"
       }
     },
     "romanized_culture_overrides": {
@@ -36564,6 +37240,14 @@
       "de": {
         "first_name": "Emil",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "Mohit",
+        "last_name": "Garg"
+      },
+      "ko": {
+        "first_name": "Seungu",
+        "last_name": "Han"
       }
     }
   },
@@ -37470,7 +38154,9 @@
       "fr": "Bonjour, j’ai quelques trucs liés à l’informatique pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de cosas de TI con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -37492,6 +38178,14 @@
       "de": {
         "first_name": "Nina",
         "last_name": "Weber"
+      },
+      "hi": {
+        "first_name": "निशा",
+        "last_name": "नायर"
+      },
+      "ko": {
+        "first_name": "혜원",
+        "last_name": "이"
       }
     },
     "romanized_culture_overrides": {
@@ -37514,6 +38208,14 @@
       "de": {
         "first_name": "Nina",
         "last_name": "Weber"
+      },
+      "hi": {
+        "first_name": "Nisha",
+        "last_name": "Nair"
+      },
+      "ko": {
+        "first_name": "Hyewon",
+        "last_name": "I"
       }
     }
   },
@@ -38751,7 +39453,9 @@
       "fr": "Bonjour, j’ai quelques trucs liés à l’informatique pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de cosas de TI con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -38773,6 +39477,14 @@
       "de": {
         "first_name": "Lisa",
         "last_name": "Weiß"
+      },
+      "hi": {
+        "first_name": "संगीता",
+        "last_name": "पांडे"
+      },
+      "ko": {
+        "first_name": "유림",
+        "last_name": "채"
       }
     },
     "romanized_culture_overrides": {
@@ -38795,6 +39507,14 @@
       "de": {
         "first_name": "Lisa",
         "last_name": "Weiss"
+      },
+      "hi": {
+        "first_name": "Sangeeta",
+        "last_name": "Pandey"
+      },
+      "ko": {
+        "first_name": "Yurim",
+        "last_name": "Chae"
       }
     }
   },
@@ -39942,7 +40662,9 @@
       "fr": "Bonjour, notre VPN semble être complètement hors service et je voudrais le signaler.",
       "fr-CA": "Bonjour, notre VPN semble être complètement en panne et j’ai besoin de le signaler.",
       "es": "Hola, parece que nuestra VPN se ha caído y necesito notificarlo.",
-      "de": "Hallo, unser VPN scheint komplett ausgefallen zu sein und ich möchte das melden."
+      "de": "Hallo, unser VPN scheint komplett ausgefallen zu sein und ich möchte das melden.",
+      "hi": "नमस्ते, हमारा VPN पूरी तरह down लग रहा है और मुझे इसे report करना है।",
+      "ko": "안녕하세요, 저희 VPN이 완전히 다운된 것 같아서 신고하려고 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -39964,6 +40686,14 @@
       "de": {
         "first_name": "Philipp",
         "last_name": "Schwarz"
+      },
+      "hi": {
+        "first_name": "विनय",
+        "last_name": "भटनागर"
+      },
+      "ko": {
+        "first_name": "민준",
+        "last_name": "손"
       }
     },
     "romanized_culture_overrides": {
@@ -39986,6 +40716,14 @@
       "de": {
         "first_name": "Philipp",
         "last_name": "Schwarz"
+      },
+      "hi": {
+        "first_name": "Vinay",
+        "last_name": "Bhatnagar"
+      },
+      "ko": {
+        "first_name": "Minjun",
+        "last_name": "Son"
       }
     }
   },
@@ -41203,7 +41941,9 @@
       "fr": "Bonjour, j’ai quelques trucs liés à l’informatique pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de cosas de TI con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -41225,6 +41965,14 @@
       "de": {
         "first_name": "Sarah",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "निशा",
+        "last_name": "गोयल"
+      },
+      "ko": {
+        "first_name": "지현",
+        "last_name": "윤"
       }
     },
     "romanized_culture_overrides": {
@@ -41247,6 +41995,14 @@
       "de": {
         "first_name": "Sarah",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "Nisha",
+        "last_name": "Goyal"
+      },
+      "ko": {
+        "first_name": "Jihyeon",
+        "last_name": "Yun"
       }
     }
   },
@@ -42197,7 +42953,9 @@
       "fr": "Bonjour, j’ai quelques demandes informatiques pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques demandes informatiques pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de solicitudes de TI con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar IT-Anfragen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar IT-Anfragen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ IT requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT request가 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -42219,6 +42977,14 @@
       "de": {
         "first_name": "Robin",
         "last_name": "Möller"
+      },
+      "hi": {
+        "first_name": "देव",
+        "last_name": "रावत"
+      },
+      "ko": {
+        "first_name": "승민",
+        "last_name": "손"
       }
     },
     "romanized_culture_overrides": {
@@ -42241,6 +43007,14 @@
       "de": {
         "first_name": "Robin",
         "last_name": "Moeller"
+      },
+      "hi": {
+        "first_name": "Dev",
+        "last_name": "Rawat"
+      },
+      "ko": {
+        "first_name": "Seungmin",
+        "last_name": "Son"
       }
     }
   },
@@ -43354,7 +44128,9 @@
       "fr": "Bonjour, j’ai quelques demandes liées au lieu de travail pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques demandes liées au milieu de travail pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de solicitudes del lugar de trabajo con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ workplace requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 workplace request가 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -43376,6 +44152,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "गीता",
+        "last_name": "बंसल"
+      },
+      "ko": {
+        "first_name": "서연",
+        "last_name": "공"
       }
     },
     "romanized_culture_overrides": {
@@ -43398,6 +44182,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "Geeta",
+        "last_name": "Bansal"
+      },
+      "ko": {
+        "first_name": "Seoyeon",
+        "last_name": "Gong"
       }
     }
   },
@@ -44629,7 +45421,9 @@
       "fr": "Bonjour, j’ai quelques sujets informatiques pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo unas cuantas cosas de TI con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -44651,6 +45445,14 @@
       "de": {
         "first_name": "Alexander",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "हर्ष",
+        "last_name": "यादव"
+      },
+      "ko": {
+        "first_name": "지성",
+        "last_name": "윤"
       }
     },
     "romanized_culture_overrides": {
@@ -44673,6 +45475,14 @@
       "de": {
         "first_name": "Alexander",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "Harsh",
+        "last_name": "Yadav"
+      },
+      "ko": {
+        "first_name": "Jiseong",
+        "last_name": "Yun"
       }
     }
   },
@@ -45904,7 +46714,9 @@
       "fr": "Bonjour, j’ai quelques demandes d’aménagement de poste de travail pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques demandes d’aménagement d’espace de travail pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo unas cuantas solicitudes de configuración del espacio de trabajo con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar Anfragen zur Einrichtung meines Arbeitsplatzes, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Anfragen zur Einrichtung meines Arbeitsplatzes, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ workspace setup requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 workspace setup request가 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -45926,6 +46738,14 @@
       "de": {
         "first_name": "Clara",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "लता",
+        "last_name": "गोयल"
+      },
+      "ko": {
+        "first_name": "서현",
+        "last_name": "윤"
       }
     },
     "romanized_culture_overrides": {
@@ -45948,6 +46768,14 @@
       "de": {
         "first_name": "Clara",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "Lata",
+        "last_name": "Goyal"
+      },
+      "ko": {
+        "first_name": "Seohyeon",
+        "last_name": "Yun"
       }
     }
   },
@@ -46946,7 +47774,9 @@
       "fr": "Bonjour, le portail RH semble être indisponible pour moi.",
       "fr-CA": "Bonjour, le portail RH semble être en panne pour moi.",
       "es": "Hola, parece que el portal de RR. HH. no me funciona.",
-      "de": "Hallo, das HR-Portal scheint bei mir nicht zu funktionieren."
+      "de": "Hallo, das HR-Portal scheint bei mir nicht zu funktionieren.",
+      "hi": "नमस्ते, HR portal मेरे लिए down लग रहा है।",
+      "ko": "안녕하세요, HR portal이 저한테는 다운된 것 같습니다."
     },
     "culture_overrides": {
       "en": {
@@ -46968,6 +47798,14 @@
       "de": {
         "first_name": "Maja",
         "last_name": "Huber"
+      },
+      "hi": {
+        "first_name": "कृतिका",
+        "last_name": "भटनागर"
+      },
+      "ko": {
+        "first_name": "예은",
+        "last_name": "현"
       }
     },
     "romanized_culture_overrides": {
@@ -46990,6 +47828,14 @@
       "de": {
         "first_name": "Maja",
         "last_name": "Huber"
+      },
+      "hi": {
+        "first_name": "Kritika",
+        "last_name": "Bhatnagar"
+      },
+      "ko": {
+        "first_name": "Yeeun",
+        "last_name": "Hyeon"
       }
     }
   },
@@ -48161,7 +49007,9 @@
       "fr": "Bonjour, j’ai quelques petites choses pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques petites choses pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "es": "Hola, tengo unas cuantas cosas con las que necesito ayuda hoy.",
-      "de": "Hallo, ich habe heute ein paar Dinge, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Dinge, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -48183,6 +49031,14 @@
       "de": {
         "first_name": "Sophie",
         "last_name": "Vogel"
+      },
+      "hi": {
+        "first_name": "सोनम",
+        "last_name": "दास"
+      },
+      "ko": {
+        "first_name": "하은",
+        "last_name": "심"
       }
     },
     "romanized_culture_overrides": {
@@ -48205,6 +49061,14 @@
       "de": {
         "first_name": "Sophie",
         "last_name": "Vogel"
+      },
+      "hi": {
+        "first_name": "Sonam",
+        "last_name": "Das"
+      },
+      "ko": {
+        "first_name": "Haeun",
+        "last_name": "Sim"
       }
     }
   },
@@ -49444,7 +50308,9 @@
       "fr": "Bonjour, j’ai quelques demandes d’accès pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques demandes d’accès pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo unas cuantas solicitudes de acceso con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar Zugriffsanfragen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Zugriffsanfragen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ access requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 access request가 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -49466,6 +50332,14 @@
       "de": {
         "first_name": "Christoph",
         "last_name": "Schulz"
+      },
+      "hi": {
+        "first_name": "तरुण",
+        "last_name": "भटनागर"
+      },
+      "ko": {
+        "first_name": "성준",
+        "last_name": "차"
       }
     },
     "romanized_culture_overrides": {
@@ -49488,6 +50362,14 @@
       "de": {
         "first_name": "Christoph",
         "last_name": "Schulz"
+      },
+      "hi": {
+        "first_name": "Tarun",
+        "last_name": "Bhatnagar"
+      },
+      "ko": {
+        "first_name": "Seongjun",
+        "last_name": "Cha"
       }
     }
   },
@@ -50522,7 +51404,9 @@
       "fr": "Bonjour, j’ai quelques petites choses pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques petites choses pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo unas cuantas cosas con las que necesito ayuda.",
-      "de": "Hallo, ich habe ein paar Dinge, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Dinge, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -50544,6 +51428,14 @@
       "de": {
         "first_name": "Johannes",
         "last_name": "Scholz"
+      },
+      "hi": {
+        "first_name": "विजय",
+        "last_name": "दास"
+      },
+      "ko": {
+        "first_name": "지성",
+        "last_name": "황"
       }
     },
     "romanized_culture_overrides": {
@@ -50566,6 +51458,14 @@
       "de": {
         "first_name": "Johannes",
         "last_name": "Scholz"
+      },
+      "hi": {
+        "first_name": "Vijay",
+        "last_name": "Das"
+      },
+      "ko": {
+        "first_name": "Jiseong",
+        "last_name": "Hwang"
       }
     }
   },
@@ -51574,7 +52474,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas.",
-      "de": "Hallo, ich brauche bei ein paar Dingen Hilfe."
+      "de": "Hallo, ich brauche bei ein paar Dingen Hilfe.",
+      "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -51596,6 +52498,14 @@
       "de": {
         "first_name": "Johannes",
         "last_name": "Kaiser"
+      },
+      "hi": {
+        "first_name": "सुरेश",
+        "last_name": "दुबे"
+      },
+      "ko": {
+        "first_name": "승현",
+        "last_name": "서"
       }
     },
     "romanized_culture_overrides": {
@@ -51618,6 +52528,14 @@
       "de": {
         "first_name": "Johannes",
         "last_name": "Kaiser"
+      },
+      "hi": {
+        "first_name": "Suresh",
+        "last_name": "Dubey"
+      },
+      "ko": {
+        "first_name": "Seunghyeon",
+        "last_name": "Seo"
       }
     }
   },
@@ -53046,7 +53964,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
-      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
+      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -53068,6 +53988,14 @@
       "de": {
         "first_name": "Patrick",
         "last_name": "Maier"
+      },
+      "hi": {
+        "first_name": "सौरभ",
+        "last_name": "मल्होत्रा"
+      },
+      "ko": {
+        "first_name": "민성",
+        "last_name": "방"
       }
     },
     "romanized_culture_overrides": {
@@ -53090,6 +54018,14 @@
       "de": {
         "first_name": "Patrick",
         "last_name": "Maier"
+      },
+      "hi": {
+        "first_name": "Saurabh",
+        "last_name": "Malhotra"
+      },
+      "ko": {
+        "first_name": "Minseong",
+        "last_name": "Bang"
       }
     }
   },
@@ -54182,7 +55118,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes de matériel.",
       "fr-CA": "Bonjour, j’ai quelques demandes d’équipement pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de equipo.",
-      "de": "Hallo, ich brauche Hilfe bei ein paar Anfragen zu Ausstattung."
+      "de": "Hallo, ich brauche Hilfe bei ein paar Anfragen zu Ausstattung.",
+      "hi": "नमस्ते, मुझे कुछ equipment requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 장비 요청이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -54204,6 +55142,14 @@
       "de": {
         "first_name": "Emma",
         "last_name": "Köhler"
+      },
+      "hi": {
+        "first_name": "वैष्णवी",
+        "last_name": "खन्ना"
+      },
+      "ko": {
+        "first_name": "시은",
+        "last_name": "진"
       }
     },
     "romanized_culture_overrides": {
@@ -54226,6 +55172,14 @@
       "de": {
         "first_name": "Emma",
         "last_name": "Koehler"
+      },
+      "hi": {
+        "first_name": "Vaishnavi",
+        "last_name": "Khanna"
+      },
+      "ko": {
+        "first_name": "Sieun",
+        "last_name": "Jin"
       }
     }
   },
@@ -55734,7 +56688,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses concernant mon ordinateur portable et une réservation de salle.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide concernant mon portable et une réservation de salle.",
       "es": "Hola, necesito ayuda con mi portátil y una reserva de sala.",
-      "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zu meinem Laptop und einer Raumbuchung."
+      "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zu meinem Laptop und einer Raumbuchung.",
+      "hi": "नमस्ते, मुझे अपने laptop और room booking के बारे में कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 제 노트북이랑 회의실 예약 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -55756,6 +56712,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Braun"
+      },
+      "hi": {
+        "first_name": "वंदना",
+        "last_name": "दास"
+      },
+      "ko": {
+        "first_name": "예원",
+        "last_name": "손"
       }
     },
     "romanized_culture_overrides": {
@@ -55778,6 +56742,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Braun"
+      },
+      "hi": {
+        "first_name": "Vandana",
+        "last_name": "Das"
+      },
+      "ko": {
+        "first_name": "Yewon",
+        "last_name": "Son"
       }
     }
   },
@@ -56891,7 +57863,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes de logiciels.",
       "fr-CA": "Bonjour, j’ai quelques demandes de logiciels pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de software.",
-      "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen."
+      "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen.",
+      "hi": "नमस्ते, मुझे कुछ software requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 소프트웨어 요청이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -56913,6 +57887,14 @@
       "de": {
         "first_name": "Tanja",
         "last_name": "Köhler"
+      },
+      "hi": {
+        "first_name": "स्नेहा",
+        "last_name": "शर्मा"
+      },
+      "ko": {
+        "first_name": "채원",
+        "last_name": "진"
       }
     },
     "romanized_culture_overrides": {
@@ -56935,6 +57917,14 @@
       "de": {
         "first_name": "Tanja",
         "last_name": "Koehler"
+      },
+      "hi": {
+        "first_name": "Sneha",
+        "last_name": "Sharma"
+      },
+      "ko": {
+        "first_name": "Chaewon",
+        "last_name": "Jin"
       }
     }
   },
@@ -57856,7 +58846,9 @@
       "fr": "Bonjour, mon écran externe affiche « pas de signal » et j’ai besoin d’aide pour le faire refonctionner.",
       "fr-CA": "Bonjour, mon moniteur externe indique qu’il n’y a pas de signal et j’aurais besoin d’aide pour le faire fonctionner de nouveau.",
       "es": "Hola, mi monitor externo dice que no hay señal y necesito ayuda para que vuelva a funcionar.",
-      "de": "Hallo, mein externer Monitor zeigt „kein Signal“ an, und ich brauche Hilfe, damit er wieder funktioniert."
+      "de": "Hallo, mein externer Monitor zeigt „kein Signal“ an, und ich brauche Hilfe, damit er wieder funktioniert.",
+      "hi": "नमस्ते, मेरा external monitor no signal दिखा रहा है और मुझे इसे फिर से चालू करवाने में मदद चाहिए।",
+      "ko": "안녕하세요, 외부 모니터에 신호 없음이라고 뜨는데 다시 작동하게 하는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -57878,6 +58870,14 @@
       "de": {
         "first_name": "Julian",
         "last_name": "Schmitt"
+      },
+      "hi": {
+        "first_name": "कबीर",
+        "last_name": "माथुर"
+      },
+      "ko": {
+        "first_name": "준우",
+        "last_name": "지"
       }
     },
     "romanized_culture_overrides": {
@@ -57900,6 +58900,14 @@
       "de": {
         "first_name": "Julian",
         "last_name": "Schmitt"
+      },
+      "hi": {
+        "first_name": "Kabir",
+        "last_name": "Mathur"
+      },
+      "ko": {
+        "first_name": "Junu",
+        "last_name": "Ji"
       }
     }
   },
@@ -59009,7 +60017,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques questions d’aménagement de bureau.",
       "fr-CA": "Bonjour, j’ai quelques trucs d’aménagement de bureau pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de la configuración de la oficina.",
-      "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Büroeinrichtung."
+      "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Büroeinrichtung.",
+      "hi": "नमस्ते, मुझे office setup से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 사무실 세팅 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -59031,6 +60041,14 @@
       "de": {
         "first_name": "Alexander",
         "last_name": "Jung"
+      },
+      "hi": {
+        "first_name": "वरुण",
+        "last_name": "चौहान"
+      },
+      "ko": {
+        "first_name": "지성",
+        "last_name": "현"
       }
     },
     "romanized_culture_overrides": {
@@ -59053,6 +60071,14 @@
       "de": {
         "first_name": "Alexander",
         "last_name": "Jung"
+      },
+      "hi": {
+        "first_name": "Varun",
+        "last_name": "Chauhan"
+      },
+      "ko": {
+        "first_name": "Jiseong",
+        "last_name": "Hyeon"
       }
     }
   },
@@ -60118,7 +61144,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes informatiques.",
       "fr-CA": "Bonjour, j’ai quelques demandes TI pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de informática.",
-      "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen."
+      "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen.",
+      "hi": "नमस्ते, मुझे कुछ IT requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 요청이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -60140,6 +61168,14 @@
       "de": {
         "first_name": "Sarah",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "ईशा",
+        "last_name": "वर्मा"
+      },
+      "ko": {
+        "first_name": "소율",
+        "last_name": "조"
       }
     },
     "romanized_culture_overrides": {
@@ -60162,6 +61198,14 @@
       "de": {
         "first_name": "Sarah",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "Isha",
+        "last_name": "Verma"
+      },
+      "ko": {
+        "first_name": "Soyul",
+        "last_name": "Jo"
       }
     }
   },
@@ -61001,7 +62045,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide aujourd’hui.",
       "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
-      "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe."
+      "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
+      "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -61023,6 +62069,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Schmitz"
+      },
+      "hi": {
+        "first_name": "सिया",
+        "last_name": "राजपूत"
+      },
+      "ko": {
+        "first_name": "서윤",
+        "last_name": "주"
       }
     },
     "romanized_culture_overrides": {
@@ -61045,6 +62099,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Schmitz"
+      },
+      "hi": {
+        "first_name": "Siya",
+        "last_name": "Rajput"
+      },
+      "ko": {
+        "first_name": "Seoyun",
+        "last_name": "Ju"
       }
     }
   },
@@ -62197,7 +63259,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con un par de cosas de informática.",
-      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
+      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 두어 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -62219,6 +63283,14 @@
       "de": {
         "first_name": "Leon",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "दिनेश",
+        "last_name": "चतुर्वेदी"
+      },
+      "ko": {
+        "first_name": "민재",
+        "last_name": "허"
       }
     },
     "romanized_culture_overrides": {
@@ -62241,6 +63313,14 @@
       "de": {
         "first_name": "Leon",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "Dinesh",
+        "last_name": "Chaturvedi"
+      },
+      "ko": {
+        "first_name": "Minjae",
+        "last_name": "Heo"
       }
     }
   },
@@ -63528,7 +64608,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques questions d’aménagement de mon espace de travail.",
       "fr-CA": "Bonjour, j’ai quelques trucs d’aménagement de mon espace de travail pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de la configuración de mi puesto de trabajo.",
-      "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Einrichtung meines Arbeitsplatzes."
+      "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Einrichtung meines Arbeitsplatzes.",
+      "hi": "नमस्ते, मुझे workspace setup से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 업무 공간 세팅 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -63550,6 +64632,14 @@
       "de": {
         "first_name": "Helga",
         "last_name": "Fuchs"
+      },
+      "hi": {
+        "first_name": "रिया",
+        "last_name": "अग्रवाल"
+      },
+      "ko": {
+        "first_name": "채원",
+        "last_name": "진"
       }
     },
     "romanized_culture_overrides": {
@@ -63572,6 +64662,14 @@
       "de": {
         "first_name": "Helga",
         "last_name": "Fuchs"
+      },
+      "hi": {
+        "first_name": "Riya",
+        "last_name": "Agrawal"
+      },
+      "ko": {
+        "first_name": "Chaewon",
+        "last_name": "Jin"
       }
     }
   },
@@ -64702,7 +65800,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
-      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
+      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -64724,6 +65824,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Krause"
+      },
+      "hi": {
+        "first_name": "सुनील",
+        "last_name": "त्रिपाठी"
+      },
+      "ko": {
+        "first_name": "상현",
+        "last_name": "오"
       }
     },
     "romanized_culture_overrides": {
@@ -64746,6 +65854,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Krause"
+      },
+      "hi": {
+        "first_name": "Sunil",
+        "last_name": "Tripathi"
+      },
+      "ko": {
+        "first_name": "Sanghyeon",
+        "last_name": "O"
       }
     }
   },
@@ -66074,7 +67190,9 @@
       "fr": "Bonjour, mon ordinateur portable professionnel est complètement hors service et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon portable de travail est complètement mort et j’aurais besoin d’aide avec ça.",
       "es": "Hola, mi portátil del trabajo está completamente muerto y necesito asistencia.",
-      "de": "Hallo, mein Arbeitslaptop ist komplett tot, und ich brauche Hilfe damit."
+      "de": "Hallo, mein Arbeitslaptop ist komplett tot, und ich brauche Hilfe damit.",
+      "hi": "नमस्ते, मेरा work laptop पूरी तरह dead है और मुझे इसमें मदद चाहिए।",
+      "ko": "안녕하세요, 제 업무용 노트북이 완전히 먹통이라 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -66096,6 +67214,14 @@
       "de": {
         "first_name": "Julian",
         "last_name": "Lange"
+      },
+      "hi": {
+        "first_name": "प्रकाश",
+        "last_name": "अरोड़ा"
+      },
+      "ko": {
+        "first_name": "현준",
+        "last_name": "송"
       }
     },
     "romanized_culture_overrides": {
@@ -66118,6 +67244,14 @@
       "de": {
         "first_name": "Julian",
         "last_name": "Lange"
+      },
+      "hi": {
+        "first_name": "Prakash",
+        "last_name": "Arora"
+      },
+      "ko": {
+        "first_name": "Hyeonjun",
+        "last_name": "Song"
       }
     }
   },
@@ -67300,7 +68434,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses liées à mon déménagement de bureau.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide pour mon déménagement de bureau.",
       "es": "Hola, necesito ayuda con unas cuantas cosas para mi traslado de oficina.",
-      "de": "Hallo, ich brauche Hilfe bei ein paar Dingen für meinen Büroumzug."
+      "de": "Hallo, ich brauche Hilfe bei ein paar Dingen für meinen Büroumzug.",
+      "hi": "नमस्ते, मुझे अपने office move के लिए कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 제 사무실 이전 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -67322,6 +68458,14 @@
       "de": {
         "first_name": "Franziska",
         "last_name": "Müller"
+      },
+      "hi": {
+        "first_name": "सविता",
+        "last_name": "भटनागर"
+      },
+      "ko": {
+        "first_name": "현서",
+        "last_name": "나"
       }
     },
     "romanized_culture_overrides": {
@@ -67344,6 +68488,14 @@
       "de": {
         "first_name": "Franziska",
         "last_name": "Mueller"
+      },
+      "hi": {
+        "first_name": "Savita",
+        "last_name": "Bhatnagar"
+      },
+      "ko": {
+        "first_name": "Hyeonseo",
+        "last_name": "Na"
       }
     }
   },
@@ -68988,7 +70140,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide aujourd’hui.",
       "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
-      "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe."
+      "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
+      "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -69010,6 +70164,14 @@
       "de": {
         "first_name": "Monika",
         "last_name": "Köhler"
+      },
+      "hi": {
+        "first_name": "रुचि",
+        "last_name": "दुबे"
+      },
+      "ko": {
+        "first_name": "지현",
+        "last_name": "지"
       }
     },
     "romanized_culture_overrides": {
@@ -69032,6 +70194,14 @@
       "de": {
         "first_name": "Monika",
         "last_name": "Koehler"
+      },
+      "hi": {
+        "first_name": "Ruchi",
+        "last_name": "Dubey"
+      },
+      "ko": {
+        "first_name": "Jihyeon",
+        "last_name": "Ji"
       }
     }
   },
@@ -69994,7 +71164,9 @@
       "fr": "Bonjour, mon ordinateur portable ne s’allume pas et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon portable ne s’allume pas et j’aurais besoin d’aide avec ça.",
       "es": "Hola, mi portátil no enciende y necesito ayuda al respecto.",
-      "de": "Hallo, mein Laptop lässt sich nicht einschalten, und ich brauche Hilfe damit."
+      "de": "Hallo, mein Laptop lässt sich nicht einschalten, und ich brauche Hilfe damit.",
+      "hi": "नमस्ते, मेरा laptop चालू नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
+      "ko": "안녕하세요, 제 노트북이 켜지지 않아서 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -70016,6 +71188,14 @@
       "de": {
         "first_name": "Ella",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "ईशा",
+        "last_name": "बोस"
+      },
+      "ko": {
+        "first_name": "서현",
+        "last_name": "엄"
       }
     },
     "romanized_culture_overrides": {
@@ -70038,6 +71218,14 @@
       "de": {
         "first_name": "Ella",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "Isha",
+        "last_name": "Bose"
+      },
+      "ko": {
+        "first_name": "Seohyeon",
+        "last_name": "Eom"
       }
     }
   },
@@ -71215,7 +72403,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes de logiciels.",
       "fr-CA": "Bonjour, j’ai quelques demandes de logiciels pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de software.",
-      "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen."
+      "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen.",
+      "hi": "नमस्ते, मुझे कुछ software requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 소프트웨어 요청이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -71237,6 +72427,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Weiß"
+      },
+      "hi": {
+        "first_name": "ईशान",
+        "last_name": "बोस"
+      },
+      "ko": {
+        "first_name": "동욱",
+        "last_name": "현"
       }
     },
     "romanized_culture_overrides": {
@@ -71259,6 +72457,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Weiss"
+      },
+      "hi": {
+        "first_name": "Ishan",
+        "last_name": "Bose"
+      },
+      "ko": {
+        "first_name": "Donguk",
+        "last_name": "Hyeon"
       }
     }
   },
@@ -72431,7 +73637,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas.",
-      "de": "Hallo, ich brauche bei ein paar Dingen Hilfe."
+      "de": "Hallo, ich brauche bei ein paar Dingen Hilfe.",
+      "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -72453,6 +73661,14 @@
       "de": {
         "first_name": "Lea",
         "last_name": "Maier"
+      },
+      "hi": {
+        "first_name": "सीमा",
+        "last_name": "अरोड़ा"
+      },
+      "ko": {
+        "first_name": "유진",
+        "last_name": "조"
       }
     },
     "romanized_culture_overrides": {
@@ -72475,6 +73691,14 @@
       "de": {
         "first_name": "Lea",
         "last_name": "Maier"
+      },
+      "hi": {
+        "first_name": "Seema",
+        "last_name": "Arora"
+      },
+      "ko": {
+        "first_name": "Yujin",
+        "last_name": "Jo"
       }
     }
   },
@@ -73847,7 +75071,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
-      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
+      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -73869,6 +75095,14 @@
       "de": {
         "first_name": "Andreas",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "सचिन",
+        "last_name": "दास"
+      },
+      "ko": {
+        "first_name": "민성",
+        "last_name": "윤"
       }
     },
     "romanized_culture_overrides": {
@@ -73891,6 +75125,14 @@
       "de": {
         "first_name": "Andreas",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "Sachin",
+        "last_name": "Das"
+      },
+      "ko": {
+        "first_name": "Minseong",
+        "last_name": "Yun"
       }
     }
   },
@@ -75062,7 +76304,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide aujourd’hui.",
       "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
-      "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe."
+      "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
+      "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -75084,6 +76328,14 @@
       "de": {
         "first_name": "Andreas",
         "last_name": "Walter"
+      },
+      "hi": {
+        "first_name": "अमित",
+        "last_name": "मेहता"
+      },
+      "ko": {
+        "first_name": "시우",
+        "last_name": "성"
       }
     },
     "romanized_culture_overrides": {
@@ -75106,6 +76358,14 @@
       "de": {
         "first_name": "Andreas",
         "last_name": "Walter"
+      },
+      "hi": {
+        "first_name": "Amit",
+        "last_name": "Mehta"
+      },
+      "ko": {
+        "first_name": "Siu",
+        "last_name": "Seong"
       }
     }
   },
@@ -76239,7 +77499,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques demandes informatiques.",
       "fr-CA": "Bonjour, j’ai quelques demandes TI pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de informática.",
-      "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen."
+      "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen.",
+      "hi": "नमस्ते, मुझे कुछ IT requests में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 요청이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -76261,6 +77523,14 @@
       "de": {
         "first_name": "Lukas",
         "last_name": "Fischer"
+      },
+      "hi": {
+        "first_name": "विनय",
+        "last_name": "बिष्ट"
+      },
+      "ko": {
+        "first_name": "태현",
+        "last_name": "하"
       }
     },
     "romanized_culture_overrides": {
@@ -76283,6 +77553,14 @@
       "de": {
         "first_name": "Lukas",
         "last_name": "Fischer"
+      },
+      "hi": {
+        "first_name": "Vinay",
+        "last_name": "Bisht"
+      },
+      "ko": {
+        "first_name": "Taehyeon",
+        "last_name": "Ha"
       }
     }
   },
@@ -77772,7 +79050,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques sujets informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
-      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
+      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -77794,6 +79074,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "आरव",
+        "last_name": "रस्तोगी"
+      },
+      "ko": {
+        "first_name": "주원",
+        "last_name": "나"
       }
     },
     "romanized_culture_overrides": {
@@ -77816,6 +79104,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "Aarav",
+        "last_name": "Rastogi"
+      },
+      "ko": {
+        "first_name": "Juwon",
+        "last_name": "Na"
       }
     }
   },
@@ -78959,7 +80255,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
-      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
+      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -78981,6 +80279,14 @@
       "de": {
         "first_name": "Maria",
         "last_name": "Müller"
+      },
+      "hi": {
+        "first_name": "संगीता",
+        "last_name": "नेगी"
+      },
+      "ko": {
+        "first_name": "하영",
+        "last_name": "백"
       }
     },
     "romanized_culture_overrides": {
@@ -79003,6 +80309,14 @@
       "de": {
         "first_name": "Maria",
         "last_name": "Mueller"
+      },
+      "hi": {
+        "first_name": "Sangeeta",
+        "last_name": "Negi"
+      },
+      "ko": {
+        "first_name": "Hayeong",
+        "last_name": "Baek"
       }
     }
   },
@@ -80464,7 +81778,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques petites choses aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide aujourd’hui.",
       "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
-      "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe."
+      "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
+      "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -80486,6 +81802,14 @@
       "de": {
         "first_name": "Frieda",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "ईशा",
+        "last_name": "गुप्ता"
+      },
+      "ko": {
+        "first_name": "수연",
+        "last_name": "구"
       }
     },
     "romanized_culture_overrides": {
@@ -80508,6 +81832,14 @@
       "de": {
         "first_name": "Frieda",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "Isha",
+        "last_name": "Gupta"
+      },
+      "ko": {
+        "first_name": "Suyeon",
+        "last_name": "Gu"
       }
     }
   },
@@ -82055,7 +83387,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour quelques soucis informatiques.",
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
-      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe."
+      "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
+      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -82077,6 +83411,14 @@
       "de": {
         "first_name": "Florian",
         "last_name": "Fischer"
+      },
+      "hi": {
+        "first_name": "मुकेश",
+        "last_name": "सक्सेना"
+      },
+      "ko": {
+        "first_name": "진우",
+        "last_name": "임"
       }
     },
     "romanized_culture_overrides": {
@@ -82099,6 +83441,14 @@
       "de": {
         "first_name": "Florian",
         "last_name": "Fischer"
+      },
+      "hi": {
+        "first_name": "Mukesh",
+        "last_name": "Saxena"
+      },
+      "ko": {
+        "first_name": "Jinu",
+        "last_name": "Im"
       }
     }
   },
@@ -82992,7 +84342,9 @@
       "fr": "Bonjour, mon VPN ne fonctionne toujours pas et j’ai besoin d’aide.",
       "fr-CA": "Bonjour, mon VPN ne fonctionne toujours pas et j’ai besoin d’aide avec ça.",
       "es": "Hola, mi VPN sigue sin funcionar y necesito ayuda con eso.",
-      "de": "Hallo, mein VPN funktioniert immer noch nicht, und ich brauche Hilfe dabei."
+      "de": "Hallo, mein VPN funktioniert immer noch nicht, und ich brauche Hilfe dabei.",
+      "hi": "नमस्ते, मेरा VPN अभी भी काम नहीं कर रहा है और मुझे इसमें मदद चाहिए।",
+      "ko": "안녕하세요, 제 VPN이 아직도 작동하지 않아서 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -83014,6 +84366,14 @@
       "de": {
         "first_name": "Jakob",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "नीरज",
+        "last_name": "राजपूत"
+      },
+      "ko": {
+        "first_name": "준서",
+        "last_name": "성"
       }
     },
     "romanized_culture_overrides": {
@@ -83036,6 +84396,14 @@
       "de": {
         "first_name": "Jakob",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "Neeraj",
+        "last_name": "Rajput"
+      },
+      "ko": {
+        "first_name": "Junseo",
+        "last_name": "Seong"
       }
     }
   },
@@ -84069,7 +85437,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour un problème de connexion.",
       "fr-CA": "Bonjour, j’ai besoin d’aide avec un problème de connexion.",
       "es": "Hola, necesito ayuda con un problema de inicio de sesión.",
-      "de": "Hallo, ich brauche Hilfe bei einem Login-Problem."
+      "de": "Hallo, ich brauche Hilfe bei einem Login-Problem.",
+      "hi": "नमस्ते, मुझे login की समस्या में मदद चाहिए।",
+      "ko": "안녕하세요, 로그인 문제로 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -84091,6 +85461,14 @@
       "de": {
         "first_name": "Florian",
         "last_name": "Weiß"
+      },
+      "hi": {
+        "first_name": "रमेश",
+        "last_name": "दुबे"
+      },
+      "ko": {
+        "first_name": "준우",
+        "last_name": "유"
       }
     },
     "romanized_culture_overrides": {
@@ -84113,6 +85491,14 @@
       "de": {
         "first_name": "Florian",
         "last_name": "Weiss"
+      },
+      "hi": {
+        "first_name": "Ramesh",
+        "last_name": "Dubey"
+      },
+      "ko": {
+        "first_name": "Junu",
+        "last_name": "Yu"
       }
     }
   },
@@ -84958,7 +86344,9 @@
       "fr": "Bonjour, j’ai besoin d’aide pour vérifier quelque chose dans le dossier d’un employé.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour vérifier quelque chose dans un dossier d’employé.",
       "es": "Hola, necesito ayuda para comprobar algo en el expediente de un empleado.",
-      "de": "Hallo, ich brauche Hilfe dabei, etwas in einem Mitarbeiterdatensatz zu überprüfen."
+      "de": "Hallo, ich brauche Hilfe dabei, etwas in einem Mitarbeiterdatensatz zu überprüfen.",
+      "hi": "नमस्ते, मुझे एक employee record में कुछ चेक करने में मदद चाहिए।",
+      "ko": "안녕하세요, 직원 기록에서 뭔가 확인하는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -84980,6 +86368,14 @@
       "de": {
         "first_name": "Emil",
         "last_name": "Schröder"
+      },
+      "hi": {
+        "first_name": "सुनील",
+        "last_name": "मल्होत्रा"
+      },
+      "ko": {
+        "first_name": "재민",
+        "last_name": "성"
       }
     },
     "romanized_culture_overrides": {
@@ -85002,6 +86398,14 @@
       "de": {
         "first_name": "Emil",
         "last_name": "Schroeder"
+      },
+      "hi": {
+        "first_name": "Sunil",
+        "last_name": "Malhotra"
+      },
+      "ko": {
+        "first_name": "Jaemin",
+        "last_name": "Seong"
       }
     }
   },
@@ -85913,7 +87317,9 @@
       "fr": "Bonjour, j’ai besoin de remplacer mon ordinateur portable.",
       "fr-CA": "Bonjour, j’ai besoin de remplacer mon ordinateur portable.",
       "es": "Hola, necesito reemplazar mi portátil.",
-      "de": "Hallo, ich muss meinen Laptop ersetzen."
+      "de": "Hallo, ich muss meinen Laptop ersetzen.",
+      "hi": "नमस्ते, मुझे अपना laptop बदलवाना है।",
+      "ko": "안녕하세요, 제 laptop을 교체해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -85935,6 +87341,14 @@
       "de": {
         "first_name": "Jan",
         "last_name": "Maier"
+      },
+      "hi": {
+        "first_name": "रोहन",
+        "last_name": "सिंह"
+      },
+      "ko": {
+        "first_name": "지성",
+        "last_name": "손"
       }
     },
     "romanized_culture_overrides": {
@@ -85957,6 +87371,14 @@
       "de": {
         "first_name": "Jan",
         "last_name": "Maier"
+      },
+      "hi": {
+        "first_name": "Rohan",
+        "last_name": "Singh"
+      },
+      "ko": {
+        "first_name": "Jiseong",
+        "last_name": "Son"
       }
     }
   },
@@ -86904,7 +88326,9 @@
       "fr": "Bonjour, j’ai besoin de remplacer mon ordinateur portable professionnel.",
       "fr-CA": "Bonjour, j’ai besoin de remplacer mon ordinateur portable de travail.",
       "es": "Hola, necesito reemplazar mi portátil del trabajo.",
-      "de": "Hallo, ich muss meinen Arbeitslaptop ersetzen."
+      "de": "Hallo, ich muss meinen Arbeitslaptop ersetzen.",
+      "hi": "नमस्ते, मुझे अपना work laptop बदलवाना है।",
+      "ko": "안녕하세요, 제 업무용 laptop을 교체해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -86926,6 +88350,14 @@
       "de": {
         "first_name": "Anja",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "स्वाति",
+        "last_name": "गोयल"
+      },
+      "ko": {
+        "first_name": "지현",
+        "last_name": "황"
       }
     },
     "romanized_culture_overrides": {
@@ -86948,6 +88380,14 @@
       "de": {
         "first_name": "Anja",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "Swati",
+        "last_name": "Goyal"
+      },
+      "ko": {
+        "first_name": "Jihyeon",
+        "last_name": "Hwang"
       }
     }
   }

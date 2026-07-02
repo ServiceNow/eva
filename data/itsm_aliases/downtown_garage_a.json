@@ -39,6 +39,17 @@
       "parkhaus im zentrum",
       "parkhaus in der city",
       "parkhaus in der innenstadt"
+    ],
+    "hi": [
+      "गैराज ए",
+      "डाउनटाउन गैराज ए",
+      "डाउनटाउन पार्किंग"
+    ],
+    "ko": [
+      "a 주차장",
+      "다운타운 주차동",
+      "다운타운 주차장 a",
+      "다운타운 차고 a"
     ]
   }
 }
