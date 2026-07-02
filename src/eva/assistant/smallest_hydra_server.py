@@ -168,11 +168,12 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
         )
 
         # Hydra silently drops audio output when the session.configure payload
-        # exceeds ~18 KB, and also when total context (instructions + tools +
-        # conversation history) grows too large on subsequent turns.  Cap the
-        # instructions so that instructions + tools JSON fits comfortably in a
-        # single session.configure message and leaves headroom for conversation.
-        _MAX_PAYLOAD_BYTES = 18_000
+        # exceeds its limit (~32 KB as of 2026-07), and also when total context
+        # (instructions + tools + conversation history) grows too large on
+        # subsequent turns.  Cap the instructions so that instructions + tools
+        # JSON fits comfortably in a single session.configure message and leaves
+        # headroom for conversation.
+        _MAX_PAYLOAD_BYTES = 32_000
         _tools_bytes = len(json.dumps(self._hydra_tools)) if self._hydra_tools else 0
         # Reserve room for the greeting steer so it is never truncated away.
         max_prompt_chars = max(1000, _MAX_PAYLOAD_BYTES - _tools_bytes - len(greeting_steer) - 500)

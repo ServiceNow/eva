@@ -569,3 +569,8 @@ Notable points specific to Hydra:
 - **Latency / tokens.** `model_response` latency is emitted on the first audio delta per turn,
   anchored on Hydra's `speech_stopped` (the simulator's `user_speech_stop` races), with a 50 ms
   floor; token usage is read from the `response.done` `usage` block.
+- **Payload ceiling (Smallest-side).** Hydra caps the `session.configure` payload (~32 KB as of
+  2026-07); above it, it silently drops audio output. Instructions are truncated to fit, but for
+  **tool-heavy domains the tool-schema JSON alone can exceed the ceiling** (e.g. ITSM's 59 tools ≈
+  45 KB), which no instruction truncation can fix — those domains stay degraded until the limit
+  clears their tool schemas. Airline (~22 KB total) fits comfortably.
