@@ -247,7 +247,9 @@ def scan(run_dir: Path, out_csv: Path, min_conf: float) -> None:
     print(f"\n{len(rows)} candidate chops across {len(wavs)} files -> {out_csv}")
 
 
-def detect_overlap(user_path: Path, asst_path: Path, speech_rms: float = 0.02, hop_s: float = 0.02, min_run_s: float = 0.20) -> dict:
+def detect_overlap(
+    user_path: Path, asst_path: Path, speech_rms: float = 0.02, hop_s: float = 0.02, min_run_s: float = 0.20
+) -> dict:
     """Measure cross-channel overlap (both user and assistant speaking at once).
 
     Overlap is present in normal conversation (interruptions), so the useful
