@@ -69,6 +69,9 @@ PCM_SAMPLE_WIDTH = 2
 MULAW_CHUNK_SIZE = 160
 MULAW_CHUNK_DURATION_S = 0.02
 TELNYX_USER_AGENT = "EVA-TelnyxWebRTC/0.1"
+# Mirrors DEFAULT_PROD_ICE_SERVERS from @telnyx/webrtc 2.27.4
+# (STUN + TURN UDP/3478 + TURN TCP/3478 + TURNS on 443). The TURNS/443 entry
+# is the last-resort TLS fallback for networks that block both 3478 transports.
 TELNYX_DEFAULT_ICE_SERVERS = [
     {"urls": "stun:stun.telnyx.com:3478"},
     {"urls": "stun:stun.l.google.com:19302"},
@@ -79,6 +82,11 @@ TELNYX_DEFAULT_ICE_SERVERS = [
     },
     {
         "urls": "turn:turn.telnyx.com:3478?transport=tcp",
+        "username": "testuser",
+        "credential": "testpassword",
+    },
+    {
+        "urls": "turns:turn2.telnyx.com:443",
         "username": "testuser",
         "credential": "testpassword",
     },
