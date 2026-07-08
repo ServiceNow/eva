@@ -4,6 +4,8 @@ Debug metric for diagnosing model performance issues, not directly used in
 final evaluation scores.
 """
 
+from collections import Counter
+
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
@@ -68,6 +70,10 @@ class AuthenticationSuccessMetric(CodeMetric):
             mismatches = compute_session_auth_mismatches(context.expected_scenario_db, context.final_scenario_db)
             success = len(mismatches) == 0
 
+            sub_metrics = _build_authentication_success_sub_metrics(
+                self.name, context.tool_responses, context.agent_tools, success
+            )
+
             return MetricScore(
                 name=self.name,
                 score=1.0 if success else 0.0,
@@ -80,7 +86,50 @@ class AuthenticationSuccessMetric(CodeMetric):
                     if success
                     else f"Session mismatch on keys: {list(mismatches)}",
                 },
+                sub_metrics=sub_metrics or None,
             )
 
         except Exception as e:
             return self._handle_error(e, context)
+
+
+def _build_authentication_success_sub_metrics(
+    parent_name: str,
+    tool_responses: list[dict],
+    agent_tools: list[dict],
+    auth_success: bool,
+) -> dict[str, MetricScore]:
+    """Build sub-metrics for authentication tool call behaviour."""
+    auth_tool_names = {t.get("name") for t in agent_tools if t.get("tool_type") == "auth" and t.get("name")}
+    auth_calls = [r for r in tool_responses if r.get("tool_name") in auth_tool_names]
+    if not auth_calls:
+        return {}
+
+    sub_metrics: dict[str, MetricScore] = {}
+
+    counts_per_tool = Counter(r.get("tool_name") for r in auth_calls)
+    avg_calls = sum(counts_per_tool.values()) / len(counts_per_tool) if counts_per_tool else 0.0
+
+    if auth_success:
+        first_try_success = all(count == 1 for count in counts_per_tool.values())
+        sub_metrics["auth_first_try_success"] = MetricScore(
+            name=f"{parent_name}.auth_first_try_success",
+            score=1.0 if first_try_success else 0.0,
+            normalized_score=1.0 if first_try_success else 0.0,
+            details={"calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
+        )
+        sub_metrics["auth_num_calls"] = MetricScore(
+            name=f"{parent_name}.auth_num_calls",
+            score=round(avg_calls, 4),
+            normalized_score=None,
+            details={"calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
+        )
+    else:
+        sub_metrics["auth_num_calls_on_failure"] = MetricScore(
+            name=f"{parent_name}.auth_num_calls_on_failure",
+            score=round(avg_calls, 4),
+            normalized_score=None,
+            details={"calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
+        )
+
+    return sub_metrics
