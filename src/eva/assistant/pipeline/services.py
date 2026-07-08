@@ -282,7 +282,7 @@ def create_stt_service(
         return stt_service
 
     elif model_lower == "smallest":
-        logger.info(f"Using Smallest Pulse STT: {params['model']}")
+        logger.info(f"Using Smallest STT: {params['model']}")
         smallest_stt_settings_kwargs = {
             k: params[k] for f in dataclasses.fields(SmallestSTTService.Settings) if (k := f.name) in params
         }
@@ -518,7 +518,7 @@ def create_tts_service(
         return openai_tts
 
     elif model_lower == "smallest":
-        logger.info(f"Using Smallest Lightning TTS: {params['model']}")
+        logger.info(f"Using Smallest TTS: {params['model']}")
         smallest_tts_settings_kwargs = {
             k: params[k] for f in dataclasses.fields(SmallestTTSService.Settings) if (k := f.name) in params
         }
