@@ -69,6 +69,9 @@ PCM_SAMPLE_WIDTH = 2
 MULAW_CHUNK_SIZE = 160
 MULAW_CHUNK_DURATION_S = 0.02
 TELNYX_USER_AGENT = "EVA-TelnyxWebRTC/0.1"
+# Mirrors DEFAULT_PROD_ICE_SERVERS from @telnyx/webrtc 2.27.4
+# (STUN + TURN UDP/3478 + TURN TCP/3478 + TURNS on 443). The TURNS/443 entry
+# is the last-resort TLS fallback for networks that block both 3478 transports.
 TELNYX_DEFAULT_ICE_SERVERS = [
     {"urls": "stun:stun.telnyx.com:3478"},
     {"urls": "stun:stun.l.google.com:19302"},
@@ -79,6 +82,11 @@ TELNYX_DEFAULT_ICE_SERVERS = [
     },
     {
         "urls": "turn:turn.telnyx.com:3478?transport=tcp",
+        "username": "testuser",
+        "credential": "testpassword",
+    },
+    {
+        "urls": "turns:turn2.telnyx.com:443",
         "username": "testuser",
         "credential": "testpassword",
     },
@@ -708,6 +716,22 @@ class TelnyxWebRTCClient:
                 logger.info("Telnyx WebRTC remote audio track received")
                 self._remote_audio_task = asyncio.create_task(self._receive_remote_audio(track))
 
+        @self._peer.on("iceconnectionstatechange")
+        def on_ice_connection_state_change() -> None:
+            logger.info(
+                "Telnyx WebRTC iceConnectionState=%s",
+                getattr(self._peer, "iceConnectionState", None),
+            )
+
+        @self._peer.on("connectionstatechange")
+        def on_connection_state_change() -> None:
+            state = getattr(self._peer, "connectionState", None)
+            logger.info("Telnyx WebRTC connectionState=%s", state)
+            # A failed/closed transport will never deliver media; surface it
+            # immediately instead of idling until the far end hangs up.
+            if state in {"failed", "closed"}:
+                self.disconnected_event.set()
+
         offer = await self._peer.createOffer()
         await self._peer.setLocalDescription(offer)
         await self._wait_for_ice_gathering_complete()
@@ -853,16 +877,32 @@ class TelnyxWebRTCClient:
         return _QueuedPcmAudioTrack()
 
     async def _receive_remote_audio(self, track: Any) -> None:
+        frames = 0
         try:
             while True:
-                frame = await track.recv()
+                try:
+                    frame = await asyncio.wait_for(track.recv(), timeout=10.0)
+                except TimeoutError:
+                    # recv() blocks when no RTP is arriving. If the media path
+                    # never establishes this repeats until the far end hangs up,
+                    # producing empty audio buffers and a silent conversation.
+                    logger.warning(
+                        "Telnyx WebRTC: no remote audio frame in 10s "
+                        "(iceConnectionState=%s, frames_so_far=%d) — media not flowing",
+                        getattr(self._peer, "iceConnectionState", None),
+                        frames,
+                    )
+                    continue
+                frames += 1
+                if frames == 1:
+                    logger.info("Telnyx WebRTC first remote audio frame received")
                 pcm_16k = self._frame_to_pcm16_16k(frame)
                 if pcm_16k:
                     await self.audio_handler(pcm_16k)
         except asyncio.CancelledError:
             pass
         except Exception as exc:
-            logger.info("Telnyx remote audio track stopped: %s", exc)
+            logger.info("Telnyx remote audio track stopped after %d frames: %s", frames, exc)
             self.disconnected_event.set()
 
     @staticmethod
