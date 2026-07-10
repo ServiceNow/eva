@@ -9,6 +9,7 @@ from eva.metrics.diagnostic.transcription_accuracy_key_entities import (
     TranscriptionAccuracyKeyEntitiesMetric,
 )
 from eva.metrics.utils import aggregate_per_turn_scores
+from eva.models.config import PipelineType
 
 from .conftest import make_judge_metric, make_metric_context
 
@@ -375,3 +376,91 @@ class TestCompute:
 
         assert result.error == "No response from judge"
         assert result.score == 0.0
+
+
+class TestPipelineSupport:
+    def test_supports_cascade_and_audio_native(self):
+        """Metric supports cascade and both audio-native pipeline types."""
+        supported = TranscriptionAccuracyKeyEntitiesMetric.supported_pipeline_types
+        assert PipelineType.CASCADE in supported
+        assert PipelineType.S2S in supported
+        assert PipelineType.AUDIO_LLM in supported
+
+
+class TestAudioNativeCompute:
+    """Audio-native pipelines compare intended user entities against tool-call arguments."""
+
+    @pytest.mark.asyncio
+    async def test_uses_audio_native_prompt_and_intended_turns(self, metric):
+        """Audio-native path builds the tool-call prompt from intended turns + conversation trace."""
+        context = make_metric_context(
+            pipeline_type=PipelineType.S2S,
+            intended_user_turns={1: "My employee id is E M one two three"},
+            transcribed_user_turns={},  # unreliable / absent for audio-native
+            conversation_trace=[
+                {"role": "user", "content": "My employee id is E M one two three", "turn_id": 1},
+                {
+                    "type": "tool_call",
+                    "tool_name": "lookup_employee",
+                    "parameters": {"employee_id": "EMP124"},
+                    "turn_id": 1,
+                },
+            ],
+        )
+        response = _make_judge_response(
+            [
+                {
+                    "turn_id": 1,
+                    "summary": "Misheard employee id",
+                    "entities": [
+                        {"type": "employee_id", "value": "EM123", "correct": False, "skipped": False},
+                    ],
+                }
+            ]
+        )
+        generate_text = AsyncMock(return_value=(response, None))
+        metric.llm_client.generate_text = generate_text
+
+        result = await metric.compute(context)
+
+        assert result.error is None
+        assert result.score == 0.0
+        assert result.normalized_score == 0.0
+        # Prompt must be the audio-native variant fed with tool-call evidence, not STT.
+        sent_prompt = generate_text.call_args[0][0][0]["content"]
+        assert "tool call" in sent_prompt.lower()
+        assert "EMP124" in sent_prompt
+        assert "Transcribed:" not in sent_prompt
+
+    @pytest.mark.asyncio
+    async def test_correct_entity_in_tool_call_scores_one(self, metric):
+        """Entity correctly captured in the tool call → score 1.0."""
+        context = make_metric_context(
+            pipeline_type=PipelineType.AUDIO_LLM,
+            intended_user_turns={1: "Book it for December 15th"},
+            conversation_trace=[
+                {"role": "user", "content": "Book it for December 15th", "turn_id": 1},
+                {
+                    "type": "tool_call",
+                    "tool_name": "create_booking",
+                    "parameters": {"date": "2026-12-15"},
+                    "turn_id": 1,
+                },
+            ],
+        )
+        response = _make_judge_response(
+            [
+                {
+                    "turn_id": 1,
+                    "summary": "Date captured correctly",
+                    "entities": [{"type": "date", "value": "December 15th", "correct": True, "skipped": False}],
+                }
+            ]
+        )
+        metric.llm_client.generate_text = AsyncMock(return_value=(response, None))
+
+        result = await metric.compute(context)
+
+        assert result.error is None
+        assert result.score == 1.0
+        assert result.normalized_score == 1.0
