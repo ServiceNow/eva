@@ -43,6 +43,7 @@ from eva.assistant.audio_bridge import (
     mulaw_8k_to_pcm16_48k,
     parse_twilio_media_message,
     pcm16_48k_to_mulaw_8k,
+    resample_pcm16_soxr,
     sync_buffer_to_position,
 )
 from eva.assistant.base_server import AbstractAssistantServer
@@ -54,8 +55,10 @@ from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
-# Hydra streams 48 kHz PCM16 output; record at that native rate for best
-# fidelity and upsample the 8 kHz user track to match.
+# Canonical recording rate. Both tracks (user + assistant) are kept at this
+# rate for mixing. Hydra's *output* rate varies by model — V1 emits 48 kHz,
+# V1.1 emits 24 kHz — so we read ``output_audio_sample_rate`` from the
+# session.configured handshake and resample the assistant track up to this rate.
 _RECORDING_SAMPLE_RATE = 48000
 # Rate Hydra expects for input audio.
 _HYDRA_INPUT_RATE = 16000
@@ -65,7 +68,11 @@ _HYDRA_INPUT_RATE = 16000
 _MIN_USER_UTTERANCE_BYTES = int(_HYDRA_INPUT_RATE * 0.3) * 2
 
 _HYDRA_WS_URL = "wss://api.smallest.ai/waves/v1/s2s"
-_VALID_VOICES = {"wren", "sloane", "marlowe", "reed", "knox", "tate"}
+# Voice sets differ by model. V1 (model=hydra) and V1.1 (model=hydra-v1.1)
+# expose disjoint voice names.
+_VOICES_V1 = {"wren", "sloane", "marlowe", "reed", "knox", "tate"}
+_VOICES_V11 = {"zoe", "maya", "elena", "ivy", "grace", "alex", "aria", "leo", "sam", "kai"}
+_VALID_VOICES = _VOICES_V1 | _VOICES_V11
 
 # Audio output pacing: 160-byte mulaw chunks (20 ms at 8 kHz) at real-time rate
 # so the user simulator's silence detection works correctly.
@@ -137,6 +144,9 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
         )
 
         self._audio_sample_rate = _RECORDING_SAMPLE_RATE
+        # Hydra's true output rate, learned from session.configured. Default to
+        # the recording rate (no resample) until the handshake tells us otherwise.
+        self._hydra_output_rate = _RECORDING_SAMPLE_RATE
 
         s2s_params = self.pipeline_config.s2s_params or {}
         self._model = s2s_params.get("model", "hydra")
@@ -145,8 +155,11 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
             raise ValueError("Missing Smallest API key in s2s_params['api_key']")
 
         self._voice = s2s_params.get("voice", "wren")
-        if self._voice not in _VALID_VOICES:
-            logger.warning(f"Unknown Hydra voice {self._voice!r}; valid voices: {sorted(_VALID_VOICES)}")
+        expected_voices = _VOICES_V11 if "v1.1" in self._model else _VOICES_V1
+        if self._voice not in expected_voices:
+            logger.warning(
+                f"Voice {self._voice!r} is not a known {self._model} voice; valid voices: {sorted(expected_voices)}"
+            )
         self._generate_initial_response = bool(s2s_params.get("generate_initial_response", True))
 
         # Build system prompt (same pattern as the other realtime/S2S servers).
@@ -339,6 +352,16 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
                     sess = configured_msg.get("session", {})
                     key_fields = {k: v for k, v in sess.items() if k not in ("instructions", "tools")}
                     logger.info(f"Hydra session.configured: {key_fields}, tools_count={len(sess.get('tools', []))}")
+                    # Output rate varies by model (V1=48 kHz, V1.1=24 kHz). Read
+                    # it here so the assistant track is recorded at correct pitch.
+                    reported_rate = sess.get("output_audio_sample_rate")
+                    if reported_rate:
+                        self._hydra_output_rate = int(reported_rate)
+                    if self._hydra_output_rate != _RECORDING_SAMPLE_RATE:
+                        logger.info(
+                            f"Hydra output is {self._hydra_output_rate} Hz; resampling "
+                            f"assistant audio to {_RECORDING_SAMPLE_RATE} Hz for recording."
+                        )
 
                 if self._generate_initial_response:
                     self._fw_log.turn_start()
@@ -510,9 +533,16 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
                                 logger.info(f"Hydra event: {etype} — {json.dumps(msg, ensure_ascii=False)[:500]}")
 
                             if etype == "response.output_audio.delta":
-                                pcm_48k = base64.b64decode(msg.get("delta", ""))
-                                if len(pcm_48k) < 6:
+                                pcm_native = base64.b64decode(msg.get("delta", ""))
+                                if len(pcm_native) < 6:
                                     continue
+                                # Resample from Hydra's true output rate up to the
+                                # canonical recording rate (no-op when they match, e.g.
+                                # V1). Keeps pitch/duration correct and the assistant
+                                # track aligned with the 48 kHz user track.
+                                pcm_48k = resample_pcm16_soxr(
+                                    pcm_native, self._hydra_output_rate, _RECORDING_SAMPLE_RATE
+                                )
 
                                 if not _in_model_turn:
                                     _in_model_turn = True
@@ -535,7 +565,7 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
                                     _user_speech_stop_ts = None
                                     _hydra_speech_stop_wall_ms = None
 
-                                # Record assistant track (48 kHz native).
+                                # Record assistant track (canonical 48 kHz).
                                 if not _user_speaking:
                                     sync_buffer_to_position(self.user_audio_buffer, len(self.assistant_audio_buffer))
                                 self.assistant_audio_buffer.extend(pcm_48k)

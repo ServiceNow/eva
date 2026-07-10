@@ -124,6 +124,19 @@ def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
     return audioop.lin2ulaw(pcm_8k, 2)
 
 
+def resample_pcm16_soxr(pcm_bytes: bytes, from_rate: int, to_rate: int) -> bytes:
+    """Resample 16-bit mono PCM between arbitrary rates using soxr VHQ.
+
+    Anti-aliased (unlike audioop.ratecv), so it is safe for both up- and
+    down-sampling. Returns the input unchanged when the rates already match.
+    """
+    if from_rate == to_rate or not pcm_bytes:
+        return pcm_bytes
+    audio = np.frombuffer(pcm_bytes, dtype=np.int16)
+    resampled = soxr.resample(audio, from_rate, to_rate, quality="VHQ")
+    return bytes(resampled.astype(np.int16).tobytes())
+
+
 def sync_buffer_to_position(buffer: bytearray, target_position: int) -> None:
     """Pad *buffer* with silence bytes so it reaches *target_position*.
 
