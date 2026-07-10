@@ -999,7 +999,9 @@ async def main() -> None:
                     sum(all_call_latencies) / len(all_call_latencies), 3
                 )
 
-        overall_scores = compute_run_level_aggregates(all_record_metrics, num_trials, text_composites, run_seed(output_dir.name))
+        overall_scores = compute_run_level_aggregates(
+            all_record_metrics, num_trials, text_composites, run_seed(output_dir.name)
+        )
         data_quality = MetricsRunner._build_data_quality(all_record_metrics, per_metric)
 
         metrics_summary_data: dict[str, Any] = {
