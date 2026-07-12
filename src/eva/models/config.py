@@ -51,9 +51,14 @@ def _get_all_metrics() -> list[str]:
     return [m for m in get_global_registry().list_metrics() if m not in _VALIDATION_METRIC_NAMES]
 
 
-def _param_alias(params: dict[str, Any]) -> str:
-    """Return the display alias from a params dict."""
-    return params.get("alias") or params["model"]
+def _param_alias(params: dict[str, Any] | None, fallback: str = "") -> str:
+    """Return the display alias from a params dict (``alias`` > ``model``), else ``fallback``.
+
+    AWS Transcribe/Polly have no ``model``/params, so callers pass the provider name as fallback.
+    """
+    if not params:
+        return fallback
+    return params.get("alias") or params.get("model") or fallback
 
 
 _elevenlabs_agent_cache: dict[str, dict[str, str]] = {}
@@ -99,6 +104,13 @@ def _fetch_elevenlabs_agent_models(s2s_params: dict[str, Any]) -> dict[str, str]
     except Exception as e:
         logger.warning(f"Failed to fetch ElevenLabs agent models: {e}")
         return {"stt": "unknown", "llm": "unknown", "tts": "unknown"}
+
+
+# STT/TTS providers that authenticate via the standard AWS credential chain (AWS_ACCESS_KEY_ID /
+# AWS_SECRET_ACCESS_KEY[/AWS_SESSION_TOKEN] + AWS_REGION) instead of an api_key + model in *_PARAMS.
+_AWS_ENV_CREDENTIALED_STT_TTS: frozenset[str] = frozenset(
+    {"aws", "aws_transcribe", "amazon_transcribe", "transcribe", "aws_polly", "amazon_polly", "polly"}
+)
 
 
 class ModelConfig(BaseModel):
@@ -217,8 +229,8 @@ class ModelConfig(BaseModel):
         match self.pipeline_type:
             case PipelineType.AUDIO_LLM:
                 return {
-                    "audio_llm": _param_alias(self.audio_llm_params),
-                    "tts": _param_alias(self.tts_params),
+                    "audio_llm": _param_alias(self.audio_llm_params, self.audio_llm or ""),
+                    "tts": _param_alias(self.tts_params, self.tts or ""),
                 }
             case PipelineType.S2S:
                 if self.s2s == "elevenlabs":
@@ -230,9 +242,9 @@ class ModelConfig(BaseModel):
                 return {"s2s": _param_alias(self.s2s_params)}
             case PipelineType.CASCADE:
                 return {
-                    "stt": _param_alias(self.stt_params),
+                    "stt": _param_alias(self.stt_params, self.stt or ""),
                     "llm": self.llm,
-                    "tts": _param_alias(self.tts_params),
+                    "tts": _param_alias(self.tts_params, self.tts or ""),
                 }
 
     @model_validator(mode="before")
@@ -774,6 +786,11 @@ class RunConfig(BaseSettings):
             message = f"EVA_MODEL__{service} required in {self.model.pipeline_type} mode."
             loc = ("model", service.lower())
             yield InitErrorDetails(type=PydanticCustomError("missing_service", message), loc=loc, input=provider)
+
+        # AWS Transcribe/Polly authenticate via the standard AWS credential chain (env vars), not an
+        # api_key, and have no "model" param — so their *_PARAMS are optional (region/voice/engine only).
+        if provider and provider.lower() in _AWS_ENV_CREDENTIALED_STT_TTS:
+            return
 
         required_keys = ["api_key", "model"]
         missing = [key for key in required_keys if key not in params] if params else required_keys

@@ -159,14 +159,15 @@ class BenchmarkRunner:
 
         # Resolve exact models used (captures defaults from services.py + any alias labels)
         if self.config.model.pipeline_type == PipelineType.CASCADE:
-            stt_params = self.config.model.stt_params
-            tts_params = self.config.model.tts_params
+            # AWS Transcribe/Polly have no model/params; fall back to the provider name.
+            stt_params = self.config.model.stt_params or {}
+            tts_params = self.config.model.tts_params or {}
             self.config.resolved_models = {
                 "stt_provider": self.config.model.stt,
-                "stt_model": stt_params["model"],
+                "stt_model": stt_params.get("model", self.config.model.stt),
                 "stt_alias": stt_params.get("alias"),
                 "tts_provider": self.config.model.tts,
-                "tts_model": tts_params["model"],
+                "tts_model": tts_params.get("model", self.config.model.tts),
                 "tts_alias": tts_params.get("alias"),
                 "llm": self.config.model.llm,
             }

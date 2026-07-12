@@ -21,6 +21,9 @@ license = "MIT"
 dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
+    # AWS Transcribe STT / Polly TTS assistant services (pipecat.services.aws.*) run on `websockets`
+    # + `aiobotocore` (brought in by `aioboto3` below) — no extra needed. Not using pipecat's [aws]
+    # extra because it pins aiobotocore>=3, which conflicts with aioboto3's aiobotocore 2.x.
     "pipecat-ai>=1.4.0",
     "elevenlabs>=2.53.0",
     "openai>=2.36.0",
