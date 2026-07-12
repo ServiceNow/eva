@@ -95,7 +95,7 @@ class BenchmarkRunner:
         return agent
 
     def _filter_records(self, records: list[EvaluationRecord]) -> list[EvaluationRecord]:
-        """Filter records based on debug mode or record_ids.
+        """Filter records based on debug mode, record_ids, and exclude_record_ids.
 
         Args:
             records: All records from dataset
@@ -108,10 +108,12 @@ class BenchmarkRunner:
             logger.info("Debug mode enabled: running only 1 record")
             return records[:1]
 
+        filtered = records
+
         # Filter by specific record IDs if provided
         if self.config.record_ids:
             logger.info(f"Filtering to specific records: {self.config.record_ids}")
-            filtered = [r for r in records if r.id in self.config.record_ids]
+            filtered = [r for r in filtered if r.id in self.config.record_ids]
 
             # Warn if some IDs not found
             found_ids = {r.id for r in filtered}
@@ -119,10 +121,21 @@ class BenchmarkRunner:
             if missing_ids:
                 logger.warning(f"Record IDs not found in dataset: {missing_ids}")
 
-            return filtered
+        # Exclude specific record IDs if provided (applied after the include filter)
+        if self.config.exclude_record_ids:
+            exclude = set(self.config.exclude_record_ids)
+            logger.info(f"Excluding specific records: {sorted(exclude)}")
+            before = len(filtered)
+            filtered = [r for r in filtered if r.id not in exclude]
 
-        # No filtering - return all records
-        return records
+            # Warn about exclude IDs that never matched anything in the current set
+            excluded_ids = {r.id for r in records if r.id in exclude}
+            unknown_exclude_ids = exclude - excluded_ids
+            if unknown_exclude_ids:
+                logger.warning(f"Exclude record IDs not found in dataset: {sorted(unknown_exclude_ids)}")
+            logger.info(f"Excluded {before - len(filtered)} record(s)")
+
+        return filtered
 
     async def run(self, records: list[EvaluationRecord]) -> RunResult:
         """Run all records with validation and reruns.
