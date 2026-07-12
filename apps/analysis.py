@@ -78,12 +78,19 @@ _CATEGORY_COLORS = {
     "Other": "#AAAAAA",
 }
 
-_NON_NORMALIZED_METRICS = {"response_speed", "tool_call_validity__num_tool_calls"}
+_NON_NORMALIZED_METRICS = {
+    "response_speed",
+    "tool_call_validity__num_tool_calls",
+    "time_to_completion",
+    "turns_to_completion",
+}
 
 # Axis title + hover suffix for non-normalized metrics. Sub-metrics fall back to their parent's entry.
 _NON_NORMALIZED_UNITS: dict[str, tuple[str, str]] = {
     "response_speed": ("Seconds", "s"),
     "tool_call_validity__num_tool_calls": ("Count", ""),
+    "time_to_completion": ("Seconds", "s"),
+    "turns_to_completion": ("Turns", ""),
 }
 
 
