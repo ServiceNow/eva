@@ -430,8 +430,53 @@ class OpenAIRealtimeSimulatorConfig(BaseModel):
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
 
+class BedrockS2SSimulatorConfig(BaseModel):
+    """Settings for the native Amazon Bedrock speech-to-speech user simulator.
+
+    EVA plays the caller with **Amazon Nova Sonic**, an audio-native S2S model, over
+    Bedrock's bidirectional streaming API. The agent's audio is streamed straight to
+    Nova Sonic and the caller's spoken reply streams back — no separate STT/LLM/TTS
+    cascade. Nova Sonic also emits both transcripts itself (agent ASR + caller text).
+
+    Requires the optional ``eva[bedrock-s2s]`` dependency (the experimental
+    ``aws-sdk-bedrock-runtime`` client, Python >=3.12) and AWS credentials in the
+    environment (``AWS_ACCESS_KEY_ID`` / ``AWS_SECRET_ACCESS_KEY`` /
+    ``AWS_SESSION_TOKEN``) plus ``AWS_REGION``.
+    """
+
+    provider: Literal["bedrock_s2s"] = "bedrock_s2s"
+    model_id: str = Field(
+        "amazon.nova-2-sonic-v1:0",
+        description="Nova Sonic model id (e.g. 'amazon.nova-2-sonic-v1:0' or 'amazon.nova-sonic-v1:0').",
+    )
+    region: str = Field("us-east-1", description="AWS region for the Bedrock bidirectional stream.")
+    female_voice: str = Field("tiffany", description="Nova Sonic voiceId used for female caller personas.")
+    male_voice: str = Field("matthew", description="Nova Sonic voiceId used for male caller personas.")
+    temperature: float = Field(0.7, description="Sampling temperature for the caller model.")
+    top_p: float = Field(0.9, description="Nucleus sampling top-p for the caller model.")
+    max_tokens: int = Field(1024, description="Max tokens per caller response (sessionStart inferenceConfiguration).")
+    endpointing_sensitivity: Literal["HIGH", "MEDIUM", "LOW"] = Field(
+        "HIGH",
+        description=(
+            "Nova Sonic turn-detection endpointing sensitivity. Higher = quicker to decide the agent "
+            "finished its turn (more responsive, but may cut in on a pausey agent). Lower = waits longer."
+        ),
+    )
+    output_sample_rate: Literal[8000, 16000, 24000] = Field(
+        16000,
+        description=(
+            "Nova Sonic audio output rate (Hz). 16000 matches the audio bridge input rate so no "
+            "resampling is needed on the caller-audio hop."
+        ),
+    )
+    playback_drain_seconds: float = Field(
+        15.0,
+        description="Max seconds to wait for the caller's audio to finish playing before ending its turn.",
+    )
+
+
 UserSimulatorConfig = Annotated[
-    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig | BedrockS2SSimulatorConfig,
     Field(discriminator="provider"),
 ]
 
