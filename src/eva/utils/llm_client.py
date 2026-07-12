@@ -49,11 +49,32 @@ class LLMClient:
         self.params = params or {}
         self.timeout = timeout
 
+        # Cache the resolved OpenAI-ness for param filtering (service_tier). Resolved lazily so the
+        # router is initialized by first call.
+        self._openai_resolved: bool | None = None
+
         # Retry configuration
         self.max_retries = max_retries
         self.retry_min_wait = retry_min_wait
         self.retry_max_wait = retry_max_wait
         self.retry_multiplier = retry_multiplier
+
+    def _resolves_to_openai(self) -> bool:
+        """True if this model routes to an OpenAI/Azure deployment (which accept service_tier)."""
+        if self._openai_resolved is None:
+            from eva.utils import router
+
+            target = self.model
+            try:
+                for d in getattr(router.get(), "model_list", []) or []:
+                    if d.get("model_name") == self.model:
+                        target = d.get("litellm_params", {}).get("model", self.model)
+                        break
+            except Exception:  # noqa: BLE001 — router not initialized (e.g. unit tests): assume OpenAI
+                return True
+            m = target.lower()
+            self._openai_resolved = m.startswith(("openai/", "azure/")) or "/" not in m
+        return self._openai_resolved
 
     def _is_retryable_error(self, error: Exception) -> bool:
         """Determine if an error is retryable using centralized error handling.
@@ -116,6 +137,11 @@ class LLMClient:
                 }
                 # Merge model params (temperature, max_tokens, top_p, etc.)
                 kwargs.update(self.params)
+                # service_tier (e.g. "flex", set by the LLM judges) is an OpenAI/Azure-only param;
+                # Bedrock and others reject it, and litellm's drop_params doesn't strip it. Drop it for
+                # non-OpenAI models so the same judge can route to a Bedrock deployment.
+                if "service_tier" in kwargs and not self._resolves_to_openai():
+                    kwargs.pop("service_tier")
 
                 # Add response format if specified
                 if response_format:
