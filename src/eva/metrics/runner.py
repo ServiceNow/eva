@@ -375,11 +375,17 @@ class MetricsRunner:
         requested_names = {m.name for m in self.metrics}
         if self._is_rerun_mode:
             # Rerun mode: only recompute filter metrics that haven't already succeeded.
+            # A metric "succeeded" only if it is present with no error AND a non-None
+            # score — a None score is just another way a failed computation shows up.
             metrics_to_compute = {
                 name
                 for name in self.record_metric_filter[record_id]
                 if name in requested_names
-                and (name not in existing_metrics or existing_metrics[name].error is not None)
+                and (
+                    name not in existing_metrics
+                    or existing_metrics[name].error is not None
+                    or existing_metrics[name].score is None
+                )
             }
         else:
             # Normal mode: compute all requested if force_rerun, otherwise only missing
@@ -974,12 +980,14 @@ class MetricsRunner:
         )
 
         # Compute metric failures for MetricsRunResult (only for metrics just run)
+        # A metric counts as failed if it errored OR produced a None score — both are
+        # ways a computation can fail to yield a usable value.
         metric_failures: dict[str, list[str]] = {}
         for name in run_metric_names:
             for record_id, record_metrics in all_metrics.items():
                 if name in record_metrics.metrics:
                     score = record_metrics.metrics[name]
-                    if score.error is not None:
+                    if score.error is not None or score.score is None:
                         metric_failures.setdefault(name, []).append(record_id)
 
         # Compute EVA composite run-level aggregates
