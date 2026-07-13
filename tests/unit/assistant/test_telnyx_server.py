@@ -297,6 +297,7 @@ class TestTelnyxServer:
         server._assistant_id = ""
         server._api_key = ""
         server.s2s_params = {}
+        server._webhook_base_url = ""
 
         with pytest.raises(ValueError) as exc:
             server._validate_runtime_config()
@@ -312,7 +313,37 @@ class TestTelnyxServer:
         server._assistant_id = "assistant-123"
         server._api_key = ""
         server.s2s_params = {}
+        server._webhook_base_url = ""
 
+        server._validate_runtime_config()
+
+    def test_validate_runtime_config_call_control_mode_requires_credentials(self) -> None:
+        server = object.__new__(TelnyxAssistantServer)
+        server._api_key = ""
+        server.s2s_params = {"connection_id": "conn-123", "webhook_base_url": "https://public.example.com"}
+        server._webhook_base_url = "https://public.example.com"
+
+        with pytest.raises(ValueError) as exc:
+            server._validate_runtime_config()
+
+        message = str(exc.value)
+        assert "api_key or telnyx_api_key" in message
+        assert "from_number or caller_number" in message
+        assert "to or to_number or destination_number" in message
+        assert "Call Control mode" in message
+
+    def test_validate_runtime_config_call_control_mode_passes_with_all_fields(self) -> None:
+        server = object.__new__(TelnyxAssistantServer)
+        server._api_key = "key0123"
+        server.s2s_params = {
+            "connection_id": "conn-123",
+            "webhook_base_url": "https://public.example.com",
+            "from_number": "+15550001234",
+            "to": "+15550005678",
+        }
+        server._webhook_base_url = "https://public.example.com"
+
+        # Should not raise
         server._validate_runtime_config()
 
     def test_build_direct_session_config_accepts_aliases_and_metadata(self) -> None:

@@ -737,10 +737,15 @@ class TelnyxWebRTCClient:
         await self._wait_for_ice_gathering_complete()
 
         local_description = self._peer.localDescription
+        logger.info("Telnyx WebRTC SDP offer:\n%s", local_description.sdp)
         invite_result = await self._rpc.request("telnyx_rtc.invite", self.build_invite_params(local_description.sdp))
         result_sdp = invite_result.get("sdp")
+        logger.info("Telnyx WebRTC invite result keys: %s", list(invite_result.keys()))
         if isinstance(result_sdp, str) and result_sdp:
+            logger.info("Telnyx WebRTC SDP answer (from invite):\n%s", result_sdp)
             await self._set_remote_description(RTCSessionDescription, result_sdp)
+        else:
+            logger.warning("Telnyx WebRTC invite returned no SDP; waiting for media/answer event")
 
     def _create_peer_connection(self, RTCPeerConnection: Any) -> Any:
         from aiortc import RTCConfiguration, RTCIceServer
@@ -814,8 +819,29 @@ class TelnyxWebRTCClient:
     async def _set_remote_description(self, RTCSessionDescription: Any, sdp: str) -> None:
         if self._peer is None or self._remote_description_set.is_set():
             return
+        logger.info("Telnyx WebRTC SDP answer (setting remote description):\n%s", sdp)
         await self._peer.setRemoteDescription(RTCSessionDescription(sdp=sdp, type="answer"))
         self._remote_description_set.set()
+        logger.info(
+            "Telnyx WebRTC remote description set. "
+            "Receivers: %s, Senders: %s, Transceivers: %s",
+            len(self._peer.getReceivers()),
+            len(self._peer.getSenders()),
+            len(self._peer.getTransceivers()),
+        )
+        for i, t in enumerate(self._peer.getTransceivers()):
+            mid = getattr(t, "mid", None)
+            direction = getattr(t, "currentDirection", None) or getattr(t, "direction", None)
+            stopped = getattr(t, "stopped", False)
+            receiver_track = getattr(t.receiver, "track", None) if t.receiver else None
+            sender_track = getattr(t.sender, "track", None) if t.sender else None
+            logger.info(
+                "  Transceiver[%s] mid=%s direction=%s stopped=%s "
+                "receiver_track=%s sender_track=%s",
+                i, mid, direction, stopped,
+                getattr(receiver_track, "kind", None),
+                getattr(sender_track, "kind", None),
+            )
         self._ensure_remote_audio_task()
 
     def _ensure_remote_audio_task(self) -> None:
@@ -892,10 +918,33 @@ class TelnyxWebRTCClient:
                         getattr(self._peer, "iceConnectionState", None),
                         frames,
                     )
+                    # Log receiver stats to distinguish "no RTP arriving" vs
+                    # "arriving but not decoding".
+                    if self._peer is not None:
+                        for r in self._peer.getReceivers():
+                            try:
+                                stats = await r.getStats()
+                                for report in stats.values():
+                                    if hasattr(report, "packetsReceived"):
+                                        logger.info(
+                                            "  Receiver stats: packetsReceived=%s "
+                                            "bytesReceived=%s packetsLost=%s "
+                                            "jitter=%s kind=%s",
+                                            getattr(report, "packetsReceived", None),
+                                            getattr(report, "bytesReceived", None),
+                                            getattr(report, "packetsLost", None),
+                                            getattr(report, "jitter", None),
+                                            getattr(report, "kind", None),
+                                        )
+                            except Exception as exc:
+                                logger.debug("  Receiver stats error: %s", exc)
                     continue
                 frames += 1
                 if frames == 1:
-                    logger.info("Telnyx WebRTC first remote audio frame received")
+                    logger.info("Telnyx WebRTC first remote audio frame received "
+                                "(sample_rate=%s, samples=%s)",
+                                getattr(frame, "sample_rate", None),
+                                getattr(frame, "samples", None))
                 pcm_16k = self._frame_to_pcm16_16k(frame)
                 if pcm_16k:
                     await self.audio_handler(pcm_16k)
@@ -1302,19 +1351,46 @@ class TelnyxAssistantServer(AbstractAssistantServer):
         self._append_user_events_from_simulator()
         return super().get_conversation_stats()
 
+    @property
+    def _use_call_control(self) -> bool:
+        """Whether to use Call Control transport instead of WebRTC."""
+        return bool(self.s2s_params.get("connection_id") and self._webhook_base_url)
+
     def _validate_runtime_config(self) -> None:
         missing: list[str] = []
-        if not self._assistant_id and not self.s2s_params.get("create_assistant"):
-            missing.append("assistant_id or assistant_agent_id")
-        if self.s2s_params.get("create_assistant") and not self._api_key:
-            missing.append("api_key or telnyx_api_key")
-        if missing:
-            raise ValueError(
-                "Telnyx direct WebRTC mode requires s2s_params: "
-                + ", ".join(missing)
-                + ". Call Control fields such as webhook_base_url, connection_id, from_number, "
-                "and to/sip_uri are not required for direct mode."
-            )
+        if self._use_call_control:
+            if not self._api_key:
+                missing.append("api_key or telnyx_api_key")
+            if not self.s2s_params.get("connection_id"):
+                missing.append("connection_id")
+            if not (self.s2s_params.get("from_number") or self.s2s_params.get("caller_number")):
+                missing.append("from_number or caller_number")
+            if not (
+                self.s2s_params.get("to")
+                or self.s2s_params.get("to_number")
+                or self.s2s_params.get("destination_number")
+            ):
+                missing.append("to or to_number or destination_number")
+            if not self._webhook_base_url:
+                missing.append("webhook_base_url or public_base_url")
+            if missing:
+                raise ValueError(
+                    "Telnyx Call Control mode requires s2s_params: "
+                    + ", ".join(missing)
+                    + "."
+                )
+        else:
+            if not self._assistant_id and not self.s2s_params.get("create_assistant"):
+                missing.append("assistant_id or assistant_agent_id")
+            if self.s2s_params.get("create_assistant") and not self._api_key:
+                missing.append("api_key or telnyx_api_key")
+            if missing:
+                raise ValueError(
+                    "Telnyx direct WebRTC mode requires s2s_params: "
+                    + ", ".join(missing)
+                    + ". Call Control fields such as webhook_base_url, connection_id, from_number, "
+                    "and to/sip_uri are not required for direct mode."
+                )
 
     def _register_routes(self, app: FastAPI) -> None:
         @app.websocket("/ws")
@@ -1383,11 +1459,28 @@ class TelnyxAssistantServer(AbstractAssistantServer):
         async def on_telnyx_audio(pcm_16k: bytes) -> None:
             await self._on_telnyx_audio(pcm_16k, audio_output_queue)
 
-        self._transport = TelnyxWebRTCClient(
-            config=self._build_direct_session_config(),
-            audio_handler=on_telnyx_audio,
-        )
-        self._transport._conversation_event_handler = self._handle_telnyx_conversation_event
+        if self._use_call_control:
+            logger.info(
+                "Using Telnyx Call Control transport (connection_id=%s, to=%s)",
+                self.s2s_params.get("connection_id"),
+                self.s2s_params.get("to") or self.s2s_params.get("to_number") or self._destination_number,
+            )
+            self._transport = TelnyxCallControlTransport(
+                api_key=self._api_key,
+                to=self.s2s_params.get("to") or self.s2s_params.get("to_number") or self._destination_number,
+                connection_id=self.s2s_params["connection_id"],
+                from_number=self._caller_number,
+                conversation_id=self.conversation_id,
+                webhook_base_url=self._webhook_base_url,
+                api_v2_base=self._api_v2_base,
+                audio_handler=on_telnyx_audio,
+            )
+        else:
+            self._transport = TelnyxWebRTCClient(
+                config=self._build_direct_session_config(),
+                audio_handler=on_telnyx_audio,
+            )
+            self._transport._conversation_event_handler = self._handle_telnyx_conversation_event
         self._completed_transport = self._transport
 
         pacer_task = asyncio.create_task(self._pace_audio_output(websocket, audio_output_queue))
