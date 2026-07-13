@@ -69,6 +69,9 @@ RECORDING_SAMPLE_RATE = 24000
 PCM_SAMPLE_WIDTH = 2
 MULAW_CHUNK_SIZE = 160
 MULAW_CHUNK_DURATION_S = 0.02
+# Telnyx's inter-turn frames decode to digital zero; anything at or below this RMS is
+# silence and must not be forwarded, or the user simulator never gets a turn.
+ASSISTANT_SILENCE_RMS = 1
 TELNYX_USER_AGENT = "EVA-TelnyxWebRTC/0.1"
 # Mirrors DEFAULT_PROD_ICE_SERVERS from @telnyx/webrtc 2.27.4
 # (STUN + TURN UDP/3478 + TURN TCP/3478 + TURNS on 443). The TURNS/443 entry
@@ -1680,6 +1683,16 @@ class TelnyxAssistantServer(AbstractAssistantServer):
 
     async def _on_telnyx_audio(self, pcm_16k: bytes, audio_output_queue: asyncio.Queue[bytes]) -> None:
         if not pcm_16k:
+            return
+
+        # Telnyx streams RTP continuously (~50 pps) for the whole call, so between turns we
+        # decode frames of pure silence. The user simulator treats EVERY media frame as
+        # assistant speech -- it never inspects the payload, and infers the turn ended only
+        # from the ABSENCE of frames (audio_bridge._receive_from_assistant). Forwarding the
+        # silence therefore pins is_assistant_playing() on for the entire call: the caller's
+        # turn never settles, it never speaks, and the record fails with zero user turns.
+        # Drop silent frames so the simulator sees a real gap and can take its turn.
+        if audioop.rms(pcm_16k, PCM_SAMPLE_WIDTH) <= ASSISTANT_SILENCE_RMS:
             return
 
         self._last_assistant_audio_monotonic = time.monotonic()
