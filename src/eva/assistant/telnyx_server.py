@@ -774,6 +774,13 @@ class TelnyxWebRTCClient:
         await self._peer.setLocalDescription(offer)
         await self._wait_for_ice_gathering_complete()
 
+        if self._peer is None:
+            # stop() ran while we were gathering ICE (it nulls _peer). The session was torn
+            # down before the invite went out -- e.g. the user simulator failed to start --
+            # so there is nothing to invite. Exit quietly instead of dereferencing None.
+            logger.info("Telnyx WebRTC session stopped during startup; skipping invite")
+            return
+
         local_description = self._peer.localDescription
         logger.info("Telnyx WebRTC SDP offer:\n%s", local_description.sdp)
         invite_result = await self._rpc.request("telnyx_rtc.invite", self.build_invite_params(local_description.sdp))
