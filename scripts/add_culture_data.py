@@ -252,9 +252,12 @@ async def _translate_utterances(utterances: list[str], language_name: str, llm: 
             f"- Preserve the literal tokens {FIRST_NAME_PLACEHOLDER} and {LAST_NAME_PLACEHOLDER} verbatim.\n"
             "- Keep numbers, dates, and currency in their original form unless localization is conventional.\n"
             "- Use natural, conversational phrasing as a caller would speak.\n"
-            "- Preserve all proper nouns, acronyms, and domain-specific technical terms verbatim in English "
-            "(e.g. regulatory acronyms like FMLA, DEA, I-9, H-1B, BLS; airport/airline codes; flight numbers; "
-            "software product names; named facilities). Only translate the natural language around them.\n"
+            "- Translate ALL words into the target language, including medical and HR terminology "
+            "(e.g. 'malpractice insurance', 'medical license', 'on-call', 'timesheet', 'payroll', "
+            "'leave', 'clinical privileges', 'scheduling', 'follow-up appointment', 'reverification').\n"
+            "- Preserve ONLY: (1) regulatory/legal acronyms (FMLA, DEA, I-9, H-1B, BLS, etc.), "
+            "(2) flight/airport codes and flight numbers, (3) named software products "
+            "(e.g. Datadog, Confluence, Salesforce), (4) proper facility or company names.\n"
             '- Return JSON: {"translations": ["...", "..."]} in the same order.\n\n'
             f"Utterances:\n{numbered}"
         )
