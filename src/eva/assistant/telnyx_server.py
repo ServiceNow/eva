@@ -495,6 +495,42 @@ class TelnyxDirectSessionConfig:
     ice_servers: list[dict[str, Any]] = field(default_factory=lambda: list(TELNYX_DEFAULT_ICE_SERVERS))
 
 
+_dtls_session_tickets_disabled = False
+
+
+def _disable_dtls_session_tickets() -> None:
+    """Stop aiortc's DTLS server from emitting a NewSessionTicket.
+
+    OpenSSL's DTLS server sends NewSessionTicket + ChangeCipherSpec + Finished as its
+    final flight. aiortc never sets SSL_OP_NO_TICKET, so that ticket (~1.4 kB) has to be
+    fragmented across several records. Telnyx's FreeSWITCH does not process the fragmented
+    ticket, so it never consumes our Finished: it re-sends its own final flight, never
+    completes the handshake, and never derives SRTP keys. OpenSSL considers the handshake
+    done on our side, so aiortc reports "connected" while media is silently dead in BOTH
+    directions -- the assistant hears nothing and sends us nothing.
+
+    Session resumption is meaningless for a single DTLS-SRTP call, and browsers do not
+    offer tickets here either, so disabling them costs nothing and makes the final flight
+    a single unfragmented CCS + Finished.
+    """
+    global _dtls_session_tickets_disabled
+    if _dtls_session_tickets_disabled:
+        return
+
+    from aiortc.rtcdtlstransport import RTCCertificate
+    from OpenSSL import SSL
+
+    original = RTCCertificate._create_ssl_context
+
+    def _create_ssl_context(self: Any, srtp_profiles: Any) -> Any:
+        ctx = original(self, srtp_profiles)
+        ctx.set_options(SSL.OP_NO_TICKET)
+        return ctx
+
+    RTCCertificate._create_ssl_context = _create_ssl_context  # type: ignore[method-assign]
+    _dtls_session_tickets_disabled = True
+
+
 def _load_aiortc_modules() -> tuple[Any, Any, Any, Any]:
     try:
         from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
@@ -504,6 +540,7 @@ def _load_aiortc_modules() -> tuple[Any, Any, Any, Any]:
             "Direct Telnyx WebRTC mode requires aiortc at runtime. "
             "Install aiortc in the EVA environment to open the Telnyx media session."
         ) from exc
+    _disable_dtls_session_tickets()
     return MediaStreamTrack, RTCPeerConnection, RTCSessionDescription, AudioFrame
 
 
