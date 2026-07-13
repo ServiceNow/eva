@@ -44,8 +44,8 @@
   "ResponseSpeedMetric": {
     "name": "response_speed",
     "prompt_hash": null,
-    "source_hash": "7fecaf5fa24f",
-    "version": "v0.1"
+    "source_hash": "7cd7e8baa3d2",
+    "version": "v0.2"
   },
   "STTWERMetric": {
     "name": "stt_wer",
@@ -85,9 +85,9 @@
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
-    "prompt_hash": "aa1a7fdd6df7",
-    "source_hash": "96271903ded0",
-    "version": "v0.2"
+    "prompt_hash": "877dfa61f232",
+    "source_hash": "70e92b2f7221",
+    "version": "v0.3"
   },
   "TurnTakingMetric": {
     "name": "turn_taking",

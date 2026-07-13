@@ -3,9 +3,13 @@
 import asyncio
 import json
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
+
+from tqdm.asyncio import tqdm
+from tqdm.std import Bar
 
 from eva.metrics.legacy_aliases import rename_metric_keys, rename_metric_list
 from eva.metrics.runner import MetricsRunner, MetricsRunResult
@@ -22,6 +26,25 @@ from eva.utils.logging import get_logger
 from eva.utils.provenance import capture_provenance, resolve_tool_module_file
 
 logger = get_logger(__name__)
+
+# Register a bright blue progress-bar colour.
+Bar.COLOURS["BRIGHT_BLUE"] = "\x1b[94m"
+
+
+class TqdmNewlineStream:
+    """Stream proxy that writes newline-terminated lines rather than tqdm's in-place '\r' redraws."""
+
+    def __init__(self, stream: TextIO) -> None:
+        self._stream = stream
+
+    def write(self, s: str) -> int:
+        s = s.lstrip("\r")
+        if s and not s.endswith("\n"):
+            s += "\n"
+        return self._stream.write(s)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._stream, name)
 
 
 class BenchmarkRunner:
@@ -217,13 +240,6 @@ class BenchmarkRunner:
             if not pending_output_ids:
                 break
 
-            logger.info(
-                f"\n{'=' * 60}\n"
-                f"Attempt {attempt_number}/{max_attempts}: "
-                f"Running {len(pending_output_ids)} tasks\n"
-                f"{'=' * 60}"
-            )
-
             # STEPS 1-3: Per-record pipeline — run, validate, and fire metrics as each
             # conversation completes rather than waiting for the full batch.
             # The semaphore slot is released before audio writes and before LLM validation
@@ -276,8 +292,15 @@ class BenchmarkRunner:
                     logger.error(f"Pipeline error for {output_id}: {exc}", exc_info=True)
                     return output_id, exc, False, None
 
-            pipeline_results = await asyncio.gather(
+            pipeline_results = await tqdm.gather(
                 *(_run_and_pipeline(output_id_to_record[oid], oid) for oid in pending_output_ids),
+                total=len(pending_output_ids),
+                desc=f"Attempt {attempt_number}/{max_attempts}",
+                file=TqdmNewlineStream(sys.stderr),
+                mininterval=0,
+                unit="task",
+                smoothing=0,  # Smoothing would produce unstable estimates because tasks run in parallel.
+                colour="BRIGHT_BLUE",
             )
 
             # Collect per-record outcomes.
@@ -540,7 +563,7 @@ class BenchmarkRunner:
 
         self._save_results_csv(successful_results, list(final_failed_ids))
 
-        logger.info(f"\n{'=' * 60}")
+        logger.info("=" * 60)
         logger.info("Benchmark complete:")
         if total_tasks > 0:
             logger.info(f"  Success: {successful_count}/{total_tasks} ({successful_count / total_tasks * 100:.1f}%)")
@@ -552,7 +575,7 @@ class BenchmarkRunner:
         else:
             logger.info("  No records processed")
         logger.info(f"  Total attempts used: {attempt_number}")
-        logger.info(f"{'=' * 60}\n")
+        logger.info("=" * 60)
 
         return RunResult(
             run_id=self.config.run_id,
@@ -762,10 +785,6 @@ class BenchmarkRunner:
             if not pending_ids:
                 break
 
-            logger.info(
-                f"\n{'=' * 60}\nRerun attempt {attempt_number}/{max_attempts}: {len(pending_ids)} tasks\n{'=' * 60}"
-            )
-
             # Archive failed outputs
             for output_id in pending_ids:
                 self._archive_failed_attempt(output_id, attempt_number)
@@ -930,7 +949,7 @@ class BenchmarkRunner:
             json.dump(eval_summary, f, indent=2, ensure_ascii=False)
 
         # Terminal output — clearly separate simulation from metrics
-        logger.info(f"{'=' * 60}")
+        logger.info("=" * 60)
         logger.info("EVALUATION COMPLETE")
         logger.info("=" * 60)
         logger.info("Simulation:")

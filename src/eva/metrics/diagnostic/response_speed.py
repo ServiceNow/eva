@@ -4,9 +4,36 @@ Debug metric for diagnosing model performance issues, not directly used in
 final evaluation scores.
 """
 
+import json
+from pathlib import Path
+
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.registry import register_metric
 from eva.models.results import MetricScore
+
+
+def _load_component_latencies(output_dir: str) -> dict[str, dict]:
+    """Load per-component latency stats from result.json.
+
+    Returns a dict mapping short keys (e.g. "llm_latency", "stt_latency",
+    "tts_latency") to their stats dicts, only for non-null entries.
+    """
+    result_path = Path(output_dir) / "result.json"
+    if not result_path.exists():
+        return {}
+
+    try:
+        result_data = json.loads(result_path.read_text())
+    except Exception:
+        return {}
+
+    latencies: dict[str, dict] = {}
+    for key in ("llm_latency", "stt_latency", "tts_latency"):
+        value = result_data.get(key)
+        if value is not None and isinstance(value, dict) and value.get("mean_ms") is not None:
+            latencies[key] = value
+
+    return latencies
 
 
 def _split_by_tool_calls(
@@ -60,7 +87,7 @@ class ResponseSpeedMetric(CodeMetric):
     description = "Diagnostic metric: latency between user utterance end and assistant response start"
     exclude_from_pass_at_k = True
     higher_is_better = False  # Score is latency in seconds — lower is better.
-    version = "v0.1"
+    version = "v0.2"
 
     async def compute(self, context: MetricContext) -> MetricScore:
         try:
@@ -101,6 +128,15 @@ class ResponseSpeedMetric(CodeMetric):
                         normalized_score=None,
                         details=stats,
                     )
+
+            # Add per-component latency sub_metrics from result.json
+            for key, latency_stats in _load_component_latencies(context.output_dir).items():
+                sub_metrics[key] = MetricScore(
+                    name=f"{self.name}.{key}",
+                    score=latency_stats["mean_ms"],
+                    normalized_score=None,
+                    details=latency_stats,
+                )
 
             return MetricScore(
                 name=self.name,

@@ -45,7 +45,6 @@ from eva.assistant.elevenlabs_audio_interface import TwilioAudioBridge
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
-from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -156,14 +155,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         self.s2s_params = s2s_params
         self._model = s2s_params.get("model", "elevenlabs")
 
-        # Build system prompt
-        prompt_manager = PromptManager()
-        self._system_prompt = prompt_manager.get_prompt(
-            "realtime_agent.system_prompt",
-            agent_personality=agent.description,
-            agent_instructions=agent.instructions,
-            datetime=self.current_date_time,
-        )
+        self._system_prompt = self._build_system_prompt()
 
         # Build ElevenLabs client tools from agent config
         self._client_tools = _agent_tools_to_client_tools(agent, self.execute_tool)
@@ -254,6 +246,15 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         # channel. Both tracks pad silence relative to this so the mixed output
         # keeps real wall-clock timing (set lazily; see _pad_buffer_to_walltime).
         _record_t0: float | None = None
+        # Pad the USER track to wall-clock only at the start of a user turn, then
+        # append contiguously within the turn (mirrors the assistant pacer's
+        # turn_start handling). Padding on EVERY frame — the previous behavior —
+        # injected silence whenever frames were processed late under concurrency,
+        # fabricating mid-utterance "chops" in audio_user.wav even though the
+        # audio and the conversation were fine. True inter-turn gaps (e.g. the
+        # assistant's speaking period, when the user sim sends no frames) are
+        # still filled by the one pad at the next user-turn start.
+        _pad_user_on_turn_start: bool = True
 
         # Queue of (mulaw_chunk, pcm16k_chunk, turn_start) items; the pacer drains
         # at real-time rate, sends the mulaw and records the PCM at playback time.
@@ -363,7 +364,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                 """Read Twilio WS messages, convert audio, send to ElevenLabs."""
                 nonlocal stream_sid, twilio_connected
                 nonlocal _user_speech_start_ts, _user_speech_stop_ts
-                nonlocal _user_speaking, _in_model_turn, _record_t0
+                nonlocal _user_speaking, _in_model_turn, _record_t0, _pad_user_on_turn_start
                 try:
                     while twilio_connected and self._running:
                         try:
@@ -388,6 +389,11 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                             _user_speech_start_ts = msg.get("timestamp_ms")
                             _user_speaking = True
                             _in_model_turn = False
+                            # New user turn: allow one wall-clock pad to place this
+                            # utterance on the real timeline (fills the assistant's
+                            # speaking gap). Cleared after the first frame so the
+                            # rest of the turn records contiguously.
+                            _pad_user_on_turn_start = True
                             logger.info(f"User speech start: {_user_speech_start_ts}")
                         elif event == "user_speech_stop":
                             _user_speech_stop_ts = msg.get("timestamp_ms")
@@ -403,11 +409,17 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
                             now = time.monotonic()
                             if _record_t0 is None:
                                 _record_t0 = now
-                            _pad_buffer_to_walltime(
-                                self.user_audio_buffer,
-                                now - _record_t0,
-                                self._audio_sample_rate,
-                            )
+                            # Pad to wall-clock only at the start of a user turn;
+                            # within the turn append contiguously so processing-time
+                            # jitter under concurrency cannot inject mid-utterance
+                            # silence (the choppy-audio bug). See _pad_user_on_turn_start.
+                            if _pad_user_on_turn_start:
+                                _pad_buffer_to_walltime(
+                                    self.user_audio_buffer,
+                                    now - _record_t0,
+                                    self._audio_sample_rate,
+                                )
+                                _pad_user_on_turn_start = False
                             self.user_audio_buffer.extend(pcm_16k)
 
                             # Feed raw 8 kHz mulaw to ElevenLabs — the agent

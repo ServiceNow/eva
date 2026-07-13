@@ -23,6 +23,7 @@ from eva.models.config import ModelConfig
 from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.culture import get_initial_message
 from eva.utils.logging import get_logger
+from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -318,6 +319,19 @@ class AbstractAssistantServer(ABC):
             save_pcm_as_wav(assistant_audio, self.output_dir / "audio_assistant.wav", sample_rate, 1)
         if mixed_audio or user_audio or assistant_audio:
             logger.info(f"Saved audio files to {self.output_dir} ({len(mixed_audio)} bytes mixed)")
+
+    def _build_system_prompt(self) -> str:
+        """Build the system prompt for realtime/S2S assistant servers."""
+        prompt_manager = PromptManager()
+        prompt = prompt_manager.get_prompt(
+            "realtime_agent.system_prompt",
+            agent_personality=self.agent.description,
+            agent_instructions=self.agent.instructions,
+            datetime=self.current_date_time,
+        )
+        if self.pipeline_config.pre_tool_speech == "auto":
+            prompt += "\n\n" + prompt_manager.get_prompt("agent.pre_tool_speech")
+        return prompt
 
     def _save_scenario_dbs(self) -> None:
         """Save initial and final scenario database states."""

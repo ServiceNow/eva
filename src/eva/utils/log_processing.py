@@ -93,6 +93,10 @@ def truncate_to_spoken(audit_text: str, pipecat_segments: list[str]) -> str | No
     if any(norm_audit in seg for seg in norm_segments):
         return audit_text
 
+    # Streaming can split one assistant turn across several TTS segments.
+    if norm_audit in "".join(norm_segments):
+        return audit_text
+
     # Find longest word-prefix of the audit text that starts any pipecat
     # segment.  Matching at the START of a segment (not at an arbitrary
     # position) prevents spurious short matches (e.g. "Just to" matching

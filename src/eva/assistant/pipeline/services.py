@@ -19,6 +19,7 @@ from pipecat.frames.frames import (
 from pipecat.services.assemblyai.stt import AssemblyAISTTService
 from pipecat.services.cartesia.stt import CartesiaSTTService
 from pipecat.services.cartesia.tts import CartesiaTTSService
+from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService, DeepgramFluxSTTSettings
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.deepgram.tts import DeepgramTTSService
@@ -36,6 +37,8 @@ from pipecat.services.openai.realtime.events import (
 from pipecat.services.openai.realtime.llm import OpenAIRealtimeLLMService
 from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import OpenAITTSService
+from pipecat.services.smallest.stt import SmallestSTTService
+from pipecat.services.smallest.tts import SmallestTTSService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 from pipecat.services.xai.stt import XAISTTService
@@ -77,7 +80,7 @@ from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
-# Default sample rate for audio
+# Default sample rate for audio (TTS output rate).
 SAMPLE_RATE = 24000
 
 
@@ -117,7 +120,7 @@ def create_stt_service(
     Based on create_stt_service() from chatbot.py.
 
     Args:
-        model: STT model identifier (deepgram, deepgram-flux, openai, assemblyai, cartesia, nvidia)
+        model: STT model identifier (deepgram, deepgram-flux, openai, assemblyai, cartesia, cartesia-multilingual, nvidia)
         params: Model-specific parameters (may include 'alias' key which is ignored here)
         language_code: Language code for transcription
 
@@ -143,9 +146,14 @@ def create_stt_service(
         assemblyai_settings_kwargs = {
             k: params[k] for f in dataclasses.fields(AssemblyAISTTService.Settings) if (k := f.name) in params
         }
+        # vad_force_turn_endpoint is a constructor arg, not a Settings field, so the dataclass
+        # forwarding above won't carry it — thread it explicitly. Default True = Pipecat-mode
+        # (force the endpoint on Silero VAD stop); set False to let AssemblyAI's own server-side
+        # turn detection (min_turn_silence/max_turn_silence) decide turn ends.
         return AssemblyAISTTService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
+            vad_force_turn_endpoint=params.get("vad_force_turn_endpoint", True),
             settings=AssemblyAISTTService.Settings(
                 language=_to_language_enum(language_code),
                 **assemblyai_settings_kwargs,
@@ -153,10 +161,21 @@ def create_stt_service(
         )
 
     elif model_lower == "cartesia":
-        logger.info(f"Using Cartesia STT: {params['model']}")
+        # ink-2 provides its own turn boundaries; ModelConfig selects external endpointing.
+        model_name = params["model"]
+        logger.info(f"Using Cartesia STT: {model_name}")
+        return CartesiaTurnsSTTService(
+            api_key=api_key,
+            sample_rate=params.get("sample_rate", 16000),
+            should_interrupt=params.get("should_interrupt", True),
+            settings=CartesiaTurnsSTTService.Settings(model=model_name),
+        )
+
+    elif model_lower == "cartesia-multilingual":
+        logger.info(f"Using Cartesia multilingual STT: {params['model']}")
         return CartesiaSTTService(
             api_key=api_key,
-            sample_rate=SAMPLE_RATE,
+            sample_rate=16000,
             settings=CartesiaSTTService.Settings(
                 model=params["model"],
                 language=_to_language_enum(language_code),
@@ -262,6 +281,21 @@ def create_stt_service(
             )
         return stt_service
 
+    elif model_lower == "smallest":
+        logger.info(f"Using Smallest STT: {params['model']}")
+        smallest_stt_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(SmallestSTTService.Settings) if (k := f.name) in params
+        }
+        return SmallestSTTService(
+            api_key=api_key,
+            base_url=url or "wss://api.smallest.ai",
+            sample_rate=params.get("sample_rate", SAMPLE_RATE),
+            settings=SmallestSTTService.Settings(
+                language=_to_language_enum(language_code),
+                **smallest_stt_settings_kwargs,
+            ),
+        )
+
     elif model_lower == "xai":
         logger.info("Using xAI STT")
         xai_settings_kwargs = {
@@ -281,8 +315,30 @@ def create_stt_service(
 
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, xai"
+            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cartesia-multilingual, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, smallest, xai"
         )
+
+
+async def update_stt_agent_context(stt: STTService | None, text: str) -> None:
+    """Feed the agent's latest spoken reply back to the STT service as conversation context.
+
+    AssemblyAI's Universal-3 Pro streaming models (e.g. ``u3-rt-pro``, ``universal-3-5-pro``)
+    support *context carryover*: seeding the agent's most recent reply improves transcription
+    of the user's next turn (short answers, spelled-out entities, disambiguation). Pipecat
+    exposes this via ``AssemblyAISTTService.update_agent_context()``.
+
+    In a standard pipecat bot this fires automatically (the assistant context aggregator emits
+    ``LLMContextAssistantTurnFrame`` and the upstream STT picks it up). EVA's cascade pipeline
+    drives the agent turn through a custom processor that pushes ``TTSSpeakFrame`` directly and
+    does not emit the standard LLM response frames, so we trigger the update explicitly from the
+    assistant-response hook instead.
+
+    No-op for STT services without the capability (Deepgram, Cartesia, …) and for non-U3-Pro
+    AssemblyAI models, where pipecat treats the call as a safe no-op.
+    """
+    update = getattr(stt, "update_agent_context", None)
+    if update is not None and text:
+        await update(text)
 
 
 def create_tts_service(
@@ -461,6 +517,25 @@ def create_tts_service(
 
         return openai_tts
 
+    elif model_lower == "smallest":
+        logger.info(f"Using Smallest TTS: {params['model']}")
+        smallest_tts_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(SmallestTTSService.Settings) if (k := f.name) in params
+        }
+        if "voice_id" in params:
+            # Omit "voice" entirely when unset so pipecat's per-model default (e.g. "sophia" for
+            # lightning_v3.1, "meher" for lightning_v3.1_pro) applies instead of a hardcoded EVA default.
+            smallest_tts_settings_kwargs["voice"] = params["voice_id"]
+        return SmallestTTSService(
+            api_key=api_key,
+            base_url=url or "wss://api.smallest.ai",
+            sample_rate=SAMPLE_RATE,
+            settings=SmallestTTSService.Settings(
+                language=_to_language_enum(language_code),
+                **smallest_tts_settings_kwargs,
+            ),
+        )
+
     elif model_lower == "voxtral":
         logger.info(f"Using Voxtral TTS: {params['model']}")
         voxtral_tts = OpenAITTSService(
@@ -518,7 +593,7 @@ def create_tts_service(
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, smallest, voxtral, xai, xtts"
         )
 
 

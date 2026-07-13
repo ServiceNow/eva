@@ -6,6 +6,7 @@ It handles audio streaming via WebSocket with Twilio-style frame serialization.
 
 import asyncio
 import json
+import time
 from pathlib import Path
 
 import uvicorn
@@ -27,8 +28,8 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMUserAggregatorParams,
     UserTurnStoppedMessage,
 )
-from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
 from pipecat.serializers.twilio import TwilioFrameSerializer
+from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
@@ -38,6 +39,7 @@ from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
 
 from eva.assistant.agentic.audit_log import convert_to_epoch_ms, current_timestamp_ms
+from eva.assistant.audio_buffer import ContiguousAudioBufferProcessor
 from eva.assistant.base_server import AbstractAssistantServer
 from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor, UserAudioCollector, UserObserver
 from eva.assistant.pipeline.audio_llm_processor import (
@@ -53,6 +55,7 @@ from eva.assistant.pipeline.services import (
     create_realtime_llm_service,
     create_stt_service,
     create_tts_service,
+    update_stt_agent_context,
 )
 from eva.assistant.pipeline.turn_config import (
     create_turn_start_strategy,
@@ -287,7 +290,14 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     language_code=self.language,
                 )
                 # Create LLM client for agentic system (separate from Pipecat LLM service)
-                llm_client = LiteLLMClient(model=self.pipeline_config.llm)
+                llm_client = LiteLLMClient(
+                    model=self.pipeline_config.llm,
+                    parallel_tool_calls=self.pipeline_config.parallel_tool_calls,
+                )
+
+                # Cartesia ink-2 turn events are logged as diagnostics only.
+                if isinstance(stt, CartesiaTurnsSTTService):
+                    self._register_ink2_diagnostics(stt)
 
             # Create context aggregator with user turn strategies
             messages = []
@@ -392,7 +402,10 @@ class PipecatAssistantServer(AbstractAssistantServer):
 
             # Create processors
             # Configure audio buffer with 1-second buffer size for event triggering
-            audiobuffer = AudioBufferProcessor(
+            # ContiguousAudioBufferProcessor disables pipecat 1.x's wall-clock
+            # silence fabrication, which under concurrency injects choppy silence
+            # into the recorded user track (see eva/assistant/audio_buffer.py).
+            audiobuffer = ContiguousAudioBufferProcessor(
                 sample_rate=SAMPLE_RATE,
                 num_channels=1,  # Mono (mixed user + bot audio)
                 buffer_size=SAMPLE_RATE * 2,  # 1 second of 16-bit audio (2 bytes per sample)
@@ -407,10 +420,19 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     audit_log=self.audit_log,
                     llm_client=llm_client,
                     output_dir=self.output_dir,
+                    pre_tool_speech=self.pipeline_config.pre_tool_speech,
+                    llm_streaming=self.pipeline_config.llm_streaming,
                 )
-                agent_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
-                    role="assistant", content=msg, timestamp=self._current_iso_timestamp()
-                )
+
+                async def on_assistant_response(msg: str) -> None:
+                    await self._save_transcript_message_from_turn(
+                        role="assistant", content=msg, timestamp=self._current_iso_timestamp()
+                    )
+                    # Carry the agent's reply into STT as conversation context so it improves
+                    # transcription of the user's next turn (AssemblyAI Universal-3 Pro; no-op otherwise).
+                    await update_stt_agent_context(stt, msg)
+
+                agent_processor.on_assistant_response = on_assistant_response
                 self.agentic_system = agent_processor.agentic_system
 
             # Create pipeline
@@ -487,6 +509,36 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 self._metrics_observer = None
 
             logger.info("Client disconnected from assistant server")
+
+    def _register_ink2_diagnostics(self, stt: CartesiaTurnsSTTService) -> None:
+        """Log Cartesia ink-2 eager-end / resume events and the eager->final latency delta.
+
+        Diagnostics only: ink-2's committed turn boundaries already drive aggregation through the
+        external turn strategies. The eager->final delta quantifies how much earlier the LLM could
+        have started if speculative execution were enabled (a possible future enhancement).
+        """
+        # monotonic seconds at the last eager-end prediction (None if none pending)
+        eager: dict[str, float | None] = {"ts": None}
+
+        @stt.event_handler("on_turn_eager_end")
+        async def _on_eager_end(_service, transcript: str) -> None:
+            eager["ts"] = time.monotonic()
+            logger.info(f"[ink-2] eager end-of-turn predicted: {transcript!r}")
+
+        @stt.event_handler("on_turn_resume")
+        async def _on_resume(_service) -> None:
+            eager["ts"] = None
+            logger.info("[ink-2] turn resumed after eager end (user kept talking)")
+
+        @stt.event_handler("on_turn_end")
+        async def _on_turn_end(_service, transcript: str) -> None:
+            ts = eager["ts"]
+            if ts is not None:
+                delta_ms = int((time.monotonic() - ts) * 1000)
+                logger.info(f"[ink-2] committed end-of-turn (eager->final +{delta_ms}ms): {transcript!r}")
+            else:
+                logger.info(f"[ink-2] committed end-of-turn (no eager prediction): {transcript!r}")
+            eager["ts"] = None
 
     def _create_transport(self, websocket) -> FastAPIWebsocketTransport:
         """Create the WebSocket transport with Twilio frame serialization."""
