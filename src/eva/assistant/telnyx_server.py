@@ -54,8 +54,9 @@ from eva.assistant.audio_bridge import (
     sync_buffer_to_position,
 )
 from eva.assistant.base_server import AbstractAssistantServer
-from eva.utils.culture import get_initial_message
 from eva.models.agents import AgentConfig, AgentTool
+from eva.utils.conversation_checks import resolve_user_simulator_events_path
+from eva.utils.culture import get_initial_message
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -1723,9 +1724,9 @@ class TelnyxAssistantServer(AbstractAssistantServer):
 
         self._append_user_events_from_simulator()
 
-        events_path = self.output_dir / "elevenlabs_events.jsonl"
+        events_path = resolve_user_simulator_events_path(self.output_dir)
         assistant_messages = await self._fetch_telnyx_intended_speech()
-        if not assistant_messages:
+        if not assistant_messages and events_path is not None:
             assistant_messages = extract_assistant_speech_events(events_path)
 
         for message in assistant_messages:
@@ -1743,7 +1744,12 @@ class TelnyxAssistantServer(AbstractAssistantServer):
             return
         self._user_events_enriched = True
 
-        for user_turn in extract_user_speech_events(self.output_dir / "elevenlabs_events.jsonl"):
+        events_path = resolve_user_simulator_events_path(self.output_dir)
+        if events_path is None:
+            logger.warning("No user simulator events file found in %s; audit log will have no user turns", self.output_dir)
+            return
+
+        for user_turn in extract_user_speech_events(events_path):
             timestamp_ms = user_turn.get("timestamp_ms")
             self.audit_log.append_user_input(user_turn["text"], timestamp_ms=timestamp_ms)
 

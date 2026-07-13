@@ -422,8 +422,14 @@ class TestTelnyxServer:
     def test_worker_registers_telnyx_framework(self) -> None:
         assert _get_server_class("telnyx") is TelnyxAssistantServer
 
-    def test_user_event_enrichment_is_idempotent(self, tmp_path) -> None:
-        (tmp_path / "elevenlabs_events.jsonl").write_text(
+    @pytest.mark.parametrize(
+        "events_filename",
+        # The user simulator writes user_simulator_events.jsonl; elevenlabs_events.jsonl
+        # is the legacy name still accepted by resolve_user_simulator_events_path().
+        ["user_simulator_events.jsonl", "elevenlabs_events.jsonl"],
+    )
+    def test_user_event_enrichment_is_idempotent(self, tmp_path, events_filename: str) -> None:
+        (tmp_path / events_filename).write_text(
             json.dumps(
                 {
                     "timestamp": 1767225600000,
