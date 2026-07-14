@@ -101,6 +101,68 @@ def resample_pcm16(pcm_data: bytes, from_rate: int, to_rate: int) -> bytes:
     return struct.pack(f"<{len(out_samples)}h", *out_samples)
 
 
+class _ToolCallDump:
+    """Minimal tool-call-like object whose model_dump() returns the assembled dict."""
+
+    def __init__(self, d: dict) -> None:
+        self._d = d
+
+    def model_dump(self, exclude_none: bool = False) -> dict:
+        return self._d
+
+
+class _StreamedMessage:
+    """Minimal message-like object returned from complete_stream()."""
+
+    def __init__(self, content: str, tool_calls: list | None) -> None:
+        self.content = content
+        self.tool_calls = tool_calls or None
+
+
+def _assemble_stream_chunks(chunks: list) -> tuple:
+    """Reconstruct (content, finish_reason, usage, tool_calls) from streaming chunks.
+
+    Returns a 4-tuple:
+      - full_content: str — concatenated text deltas
+      - finish_reason: str
+      - usage: usage object or None
+      - assembled_tool_calls: list[_ToolCallDump] or None
+    """
+    full_content = ""
+    finish_reason = "unknown"
+    usage = None
+    tool_calls_by_index: dict[int, dict] = {}
+
+    for chunk in chunks:
+        choices = getattr(chunk, "choices", None) or []
+        if choices:
+            delta = getattr(choices[0], "delta", None)
+            if delta:
+                text = getattr(delta, "content", None) or ""
+                full_content += text
+                for tc in getattr(delta, "tool_calls", None) or []:
+                    idx = getattr(tc, "index", 0)
+                    if idx not in tool_calls_by_index:
+                        tool_calls_by_index[idx] = {
+                            "id": getattr(tc, "id", "") or "",
+                            "type": "function",
+                            "function": {"name": "", "arguments": ""},
+                        }
+                    fn = getattr(tc, "function", None)
+                    if fn:
+                        tool_calls_by_index[idx]["function"]["name"] += getattr(fn, "name", "") or ""
+                        tool_calls_by_index[idx]["function"]["arguments"] += getattr(fn, "arguments", "") or ""
+            fr = getattr(choices[0], "finish_reason", None)
+            if fr:
+                finish_reason = fr
+        chunk_usage = getattr(chunk, "usage", None)
+        if chunk_usage:
+            usage = chunk_usage
+
+    assembled = [_ToolCallDump(d) for d in tool_calls_by_index.values()] if tool_calls_by_index else None
+    return full_content, finish_reason, usage, assembled
+
+
 class BaseALMClient(ABC):
     """Common interface and shared behavior for audio-LLM clients."""
 
@@ -188,6 +250,24 @@ class BaseALMClient(ABC):
         on the response, returns the full message object; otherwise returns
         the content string.
         """
+
+    async def complete_stream(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | None = None,
+    ):
+        """Yield text deltas then the assembled final message and stats.
+
+        Default implementation falls back to complete() for providers that
+        don't support streaming. Subclasses should override for true streaming.
+
+        Yields tuples of ("delta", text_chunk) for each text delta, then
+        ("final", (message, stats)) once when the response is complete.
+        """
+        message_or_content, stats = await self.complete(messages, tools=tools)
+        if isinstance(message_or_content, str) and message_or_content:
+            yield ("delta", message_or_content)
+        yield ("final", (message_or_content, stats))
 
     @abstractmethod
     async def transcribe(

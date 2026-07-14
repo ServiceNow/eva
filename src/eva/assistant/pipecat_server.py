@@ -368,6 +368,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     alm_client=alm_client,
                     audio_collector=audio_llm_audio_collector,
                     output_dir=self.output_dir,
+                    llm_streaming=self.pipeline_config.llm_streaming,
+                    full_audio_context=self.pipeline_config.audio_llm_full_audio_context,
                 )
                 audio_llm_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
                     role="assistant", content=msg, timestamp=self._current_iso_timestamp()
@@ -382,7 +384,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 input_transcription_processor = AudioTranscriptionProcessor(
                     audio_collector=audio_llm_audio_collector,
                     alm_client=alm_client,
-                    sample_rate=SAMPLE_RATE,
                 )
 
                 # Set callback to save user transcription to transcript.jsonl and update audit log
@@ -485,6 +486,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 assistant_aggregator=assistant_aggregator,
                 agent_processor=agent_processor,
                 audio_llm_processor=audio_llm_processor,
+                audio_llm_audio_collector=audio_llm_audio_collector,
                 input_transcription_processor=input_transcription_processor,
             )
 
@@ -637,6 +639,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         assistant_aggregator,
         agent_processor,
         audio_llm_processor=None,
+        audio_llm_audio_collector=None,
         input_transcription_processor=None,
     ) -> None:
         """Setup event handlers for the pipeline."""
@@ -708,10 +711,13 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 )
                 await agent_processor.process_complete_user_turn(message.content)
             elif self.pipeline_config.pipeline_type == PipelineType.AUDIO_LLM and audio_llm_processor:
-                # No STT → message.content is empty.
-                # Processing is triggered by LLMContextFrame flow through ParallelPipeline
-                # (AudioLLMUserAudioCollector pushes LLMContextFrame on UserStoppedSpeakingFrame)
-                pass
+                # No STT → message.content is empty. Finalize the turn now that the
+                # turn-stop strategy has fired. The collector kept appending audio
+                # across VAD blips up to this point; notify_turn_ended() increments the
+                # turn id and pushes LLMContextFrame to trigger the transcription and
+                # audio-LLM branches.
+                assert audio_llm_audio_collector is not None
+                await audio_llm_audio_collector.notify_turn_ended()
             elif self.non_instrumented_realtime_llm:
                 # Non-instrumented realtime fallback (e.g. Ultravox)
                 if message.content:

@@ -29,6 +29,8 @@ from eva.assistant.pipeline.alm_base import (
     DEFAULT_SAMPLE_RATE,
     DEFAULT_SAMPLE_WIDTH,
     BaseALMClient,
+    _StreamedMessage,
+    _assemble_stream_chunks,
 )
 from eva.utils.logging import get_logger
 
@@ -243,6 +245,82 @@ class ALMGeminiClient(BaseALMClient):
                     await asyncio.sleep(delay)
                     continue
                 logger.error(f"ALMGeminiClient completion failed: {e}")
+                raise
+
+        raise last_exception  # type: ignore[misc]
+
+    async def complete_stream(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | None = None,
+    ):
+        """Stream chat completion from Gemini, yielding text deltas then the final message/stats."""
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "stream": True,
+        }
+        extra_body = self._gemini_extra_body()
+        if extra_body:
+            kwargs["extra_body"] = extra_body
+        if tools:
+            kwargs["tools"] = tools
+            kwargs["tool_choice"] = "auto"
+
+        last_exception: Exception | None = None
+        for attempt in range(self.max_retries + 1):
+            chunks: list[Any] = []
+            first_token = False
+            try:
+                self._maybe_refresh_token()
+                start_time = time.time()
+                stream = await self._client.chat.completions.create(**kwargs)
+                async for chunk in stream:
+                    chunks.append(chunk)
+                    choices = getattr(chunk, "choices", None) or []
+                    if choices:
+                        delta = getattr(choices[0], "delta", None)
+                        text = getattr(delta, "content", None) if delta else None
+                        if text:
+                            first_token = True
+                            yield ("delta", text)
+                elapsed = time.time() - start_time
+
+                full_content, finish_reason, usage, assembled_tool_calls = _assemble_stream_chunks(chunks)
+                reasoning_tokens = 0
+                if usage and hasattr(usage, "completion_tokens_details"):
+                    details = usage.completion_tokens_details
+                    if details and hasattr(details, "reasoning_tokens"):
+                        reasoning_tokens = getattr(details, "reasoning_tokens", 0) or 0
+
+                stats = {
+                    "prompt_tokens": usage.prompt_tokens if usage else 0,
+                    "completion_tokens": usage.completion_tokens if usage else 0,
+                    "reasoning_tokens": reasoning_tokens,
+                    "finish_reason": finish_reason,
+                    "model": self.model,
+                    "cost": 0.0,
+                    "cost_source": "gemini_openai_compat",
+                    "latency": round(elapsed, 3),
+                    "reasoning": None,
+                    "reasoning_content": None,
+                }
+                yield ("final", (_StreamedMessage(full_content, assembled_tool_calls), stats))
+                return
+
+            except Exception as e:
+                last_exception = e
+                if self._is_retryable(e) and attempt < self.max_retries and not first_token:
+                    delay = self.initial_delay * (2**attempt)
+                    logger.warning(
+                        f"Retryable streaming error (attempt {attempt + 1}/{self.max_retries + 1}): {e}. "
+                        f"Retrying in {delay:.1f}s..."
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                logger.error(f"ALMGeminiClient streaming completion failed: {e}")
                 raise
 
         raise last_exception  # type: ignore[misc]

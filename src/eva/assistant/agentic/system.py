@@ -235,15 +235,21 @@ class AgenticSystem:
                 if self.llm_streaming and not use_responses_api:
                     response = None
                     llm_stats = {}
+                    delta_count = 0
                     aggregator = SimpleTextAggregator()
                     async for kind, payload in self.llm_client.complete_stream(messages, tools=self.tools):
                         if kind == "delta":
+                            delta_count += 1
                             async for agg in aggregator.aggregate(payload):
                                 content_streamed = True
                                 streamed_chunks.append(agg.text)
                                 yield agg.text
                         else:
                             response, llm_stats = payload
+                    # Proof of real streaming: many raw deltas means token-by-token from the
+                    # provider; exactly 1 means a non-streaming client fell back to a single
+                    # chunk. Safe to ignore / silence on large evals.
+                    logger.debug(f"llm_streaming: received {delta_count} raw delta(s) from complete_stream")
                     remainder = await aggregator.flush()
                     if remainder and remainder.text.strip():
                         content_streamed = True

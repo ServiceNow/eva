@@ -196,6 +196,13 @@ class ModelConfig(BaseModel):
         False,
         description="Stream Chat Completions output to TTS sentence-by-sentence.",
     )
+    audio_llm_full_audio_context: bool = Field(
+        False,
+        description=(
+            "AUDIO_LLM only: send every user turn as audio (full audio context) instead of "
+            "only the current turn. Removes reliance on transcriptions but grows context quickly."
+        ),
+    )
     parallel_tool_calls: bool | None = Field(
         None,
         description="Forward parallel_tool_calls when tools are present; None leaves provider defaults.",
