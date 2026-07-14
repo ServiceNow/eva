@@ -827,8 +827,8 @@
       "fr-CA": "Bonjour, je suis bloqué hors de mon compte et j’ai besoin d’aide pour y accéder de nouveau.",
       "es": "Hola, no puedo acceder a mi cuenta y necesito ayuda para volver a entrar.",
       "de": "Hallo, ich bin ausgesperrt und brauche Hilfe, um wieder an mein Konto zu kommen.",
-      "hi": "नमस्ते, मेरा account lock हो गया है और मुझे अपने account में वापस जाने में मदद चाहिए।",
-      "ko": "안녕하세요, 계정이 잠겨서 다시 들어갈 수 있게 도움을 받고 싶어요."
+      "hi": "नमस्ते, मेरा खाता लॉक हो गया है और मुझे अपने खाते में वापस जाने में मदद चाहिए।",
+      "ko": "안녕하세요, 계정이 잠겨서 다시 들어갈 수 있게 도움을 받아야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -1678,8 +1678,8 @@
       "fr-CA": "Bonjour, je n’arrive pas à me connecter au Wi-Fi de l’entreprise.",
       "es": "Hola, no puedo conectarme a la Wi-Fi corporativa.",
       "de": "Hallo, ich kann mich nicht mit dem Firmen-WLAN verbinden.",
-      "hi": "नमस्ते, मैं corporate Wi-Fi से connect नहीं कर पा रहा/रही हूँ।",
-      "ko": "안녕하세요, corporate Wi-Fi에 연결이 안 돼요."
+      "hi": "नमस्ते, मैं कॉर्पोरेट Wi-Fi से कनेक्ट नहीं कर पा रहा/रही हूँ।",
+      "ko": "안녕하세요, 회사 Wi-Fi에 연결이 안 돼요."
     },
     "culture_overrides": {
       "en": {
@@ -2698,8 +2698,8 @@
       "fr-CA": "Bonjour, j’ai besoin de réserver une salle de conférence.",
       "es": "Hola, necesito reservar una sala de reuniones.",
       "de": "Hallo, ich muss einen Konferenzraum buchen.",
-      "hi": "नमस्ते, मुझे एक conference room book करना है।",
-      "ko": "안녕하세요, conference room을 예약해야 해요."
+      "hi": "नमस्ते, मुझे एक कॉन्फ़्रेंस रूम बुक करना है।",
+      "ko": "안녕하세요, 회의실을 예약해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -3673,7 +3673,7 @@
       "fr-CA": "Bonjour, j’ai besoin d’avoir accès à Datadog.",
       "es": "Hola, necesito acceso a Datadog.",
       "de": "Hallo, ich brauche Zugriff auf Datadog.",
-      "hi": "नमस्ते, मुझे Datadog का access चाहिए।",
+      "hi": "नमस्ते, मुझे Datadog तक पहुँच चाहिए।",
       "ko": "안녕하세요, Datadog 접근 권한이 필요해요."
     },
     "culture_overrides": {
@@ -4547,8 +4547,8 @@
       "fr-CA": "Bonjour, j’ai besoin de faire remplacer mon portable.",
       "es": "Hola, necesito que me reemplacen el portátil.",
       "de": "Hallo, ich muss meinen Laptop austauschen lassen.",
-      "hi": "नमस्ते, मुझे अपना laptop replace करवाना है।",
-      "ko": "안녕하세요, laptop을 교체해야 해요."
+      "hi": "नमस्ते, मुझे अपना लैपटॉप बदलवाना है।",
+      "ko": "안녕하세요, 노트북을 교체해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -5670,8 +5670,8 @@
       "fr-CA": "Bonjour, j’ai besoin de faire provisionner un nouvel employé.",
       "es": "Hola, necesito dar de alta a una nueva incorporación.",
       "de": "Hallo, ich muss einen neuen Mitarbeiter einrichten lassen.",
-      "hi": "नमस्ते, मुझे एक new hire को provision करवाना है।",
-      "ko": "안녕하세요, new hire 프로비저닝을 해야 해요."
+      "hi": "नमस्ते, मुझे एक नए कर्मचारी के लिए प्रावधान करवाना है।",
+      "ko": "안녕하세요, 신규 입사자 프로비저닝을 해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -6568,7 +6568,7 @@
       "fr-CA": "Bonjour, mon VPN n’arrête pas de se déconnecter et j’ai besoin d’aide avec ça.",
       "es": "Hola, la VPN se me desconecta continuamente y necesito ayuda con eso.",
       "de": "Hallo, meine VPN-Verbindung bricht ständig ab und ich brauche Hilfe dabei.",
-      "hi": "नमस्ते, मेरा VPN बार-बार disconnect हो रहा है और मुझे इसमें मदद चाहिए।",
+      "hi": "नमस्ते, मेरा VPN बार-बार डिस्कनेक्ट हो रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, VPN 연결이 계속 끊겨서 도움이 필요해요."
     },
     "culture_overrides": {
@@ -7604,8 +7604,8 @@
       "fr-CA": "Bonjour, j’ai besoin de remplacer mon portable parce qu’il est vraiment rendu vieux et lent.",
       "es": "Hola, necesito reemplazar mi portátil porque ya está muy viejo y lento.",
       "de": "Hallo, ich muss meinen Laptop ersetzen, weil er wirklich alt und langsam geworden ist.",
-      "hi": "नमस्ते, मुझे अपना laptop replace करवाना है क्योंकि यह बहुत पुराना और slow हो गया है।",
-      "ko": "안녕하세요, laptop이 너무 오래되고 느려져서 교체해야 해요."
+      "hi": "नमस्ते, मुझे अपना लैपटॉप बदलवाना है क्योंकि यह बहुत पुराना और धीमा हो गया है।",
+      "ko": "안녕하세요, 노트북이 너무 오래되고 느려져서 교체해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -8346,8 +8346,8 @@
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir un moniteur externe pour mon poste de travail.",
       "es": "Hola, necesito ayuda para conseguir un monitor externo para mi puesto de trabajo.",
       "de": "Hallo, ich brauche Hilfe, um einen externen Monitor für meinen Arbeitsplatz zu bekommen.",
-      "hi": "नमस्ते, मुझे अपने workstation के लिए external monitor लेने में मदद चाहिए।",
-      "ko": "안녕하세요, 제 workstation에 사용할 external monitor를 받는 데 도움이 필요해요."
+      "hi": "नमस्ते, मुझे अपने वर्कस्टेशन के लिए एक बाहरी मॉनिटर लेने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 워크스테이션에 사용할 외부 모니터를 받는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -9276,7 +9276,7 @@
       "fr-CA": "Bonjour, j’ai besoin d’avoir accès à Confluence.",
       "es": "Hola, necesito acceso a Confluence.",
       "de": "Hallo, ich brauche Zugriff auf Confluence.",
-      "hi": "नमस्ते, मुझे Confluence का access चाहिए।",
+      "hi": "नमस्ते, मुझे Confluence तक पहुँच चाहिए।",
       "ko": "안녕하세요, Confluence 접근 권한이 필요해요."
     },
     "culture_overrides": {
@@ -10359,7 +10359,7 @@
       "fr-CA": "Bonjour, j’ai besoin d’avoir accès à Datadog.",
       "es": "Hola, necesito acceso a Datadog.",
       "de": "Hallo, ich brauche Zugriff auf Datadog.",
-      "hi": "नमस्ते, मुझे Datadog का access चाहिए।",
+      "hi": "नमस्ते, मुझे Datadog तक पहुँच चाहिए।",
       "ko": "안녕하세요, Datadog 접근 권한이 필요해요."
     },
     "culture_overrides": {
@@ -11263,8 +11263,8 @@
       "fr-CA": "Bonjour, j’ai besoin d’obtenir une licence IntelliJ pour mon travail de développement.",
       "es": "Hola, necesito conseguir una licencia de IntelliJ para mi trabajo de desarrollo.",
       "de": "Hallo, ich brauche eine IntelliJ-Lizenz für meine Entwicklungsarbeit.",
-      "hi": "नमस्ते, मुझे अपने development work के लिए IntelliJ license लेना है।",
-      "ko": "안녕하세요, 개발 업무용 IntelliJ license가 필요해요."
+      "hi": "नमस्ते, मुझे अपने विकास कार्य के लिए IntelliJ लाइसेंस लेना है।",
+      "ko": "안녕하세요, 개발 업무용 IntelliJ 라이선스가 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -12142,8 +12142,8 @@
       "fr-CA": "Bonjour, j’ai besoin d’une licence Figma temporaire pour un projet.",
       "es": "Hola, necesito una licencia temporal de Figma para un proyecto.",
       "de": "Hallo, ich brauche eine temporäre Figma-Lizenz für ein Projekt.",
-      "hi": "नमस्ते, मुझे एक project के लिए temporary Figma license चाहिए।",
-      "ko": "안녕하세요, 프로젝트용 임시 Figma license가 필요해요."
+      "hi": "नमस्ते, मुझे एक प्रोजेक्ट के लिए अस्थायी Figma लाइसेंस चाहिए।",
+      "ko": "안녕하세요, 프로젝트용 임시 Figma 라이선스가 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -12928,8 +12928,8 @@
       "fr-CA": "Bonjour, j’ai besoin de renouveler ma licence IntelliJ IDEA.",
       "es": "Hola, necesito renovar mi licencia de IntelliJ IDEA.",
       "de": "Hallo, ich muss meine IntelliJ IDEA-Lizenz verlängern.",
-      "hi": "नमस्ते, मुझे अपना IntelliJ IDEA license renew करना है।",
-      "ko": "안녕하세요, IntelliJ IDEA license를 갱신해야 해요."
+      "hi": "नमस्ते, मुझे अपना IntelliJ IDEA लाइसेंस नवीनीकृत करना है।",
+      "ko": "안녕하세요, IntelliJ IDEA 라이선스를 갱신해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -13777,8 +13777,8 @@
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir une attribution de bureau.",
       "es": "Hola, necesito ayuda para que me asignen una mesa.",
       "de": "Hallo, ich brauche Hilfe, einen Schreibtisch zugewiesen zu bekommen.",
-      "hi": "नमस्ते, मुझे desk assignment लेने में मदद चाहिए।",
-      "ko": "안녕하세요, desk assignment 받는 데 도움이 필요해요."
+      "hi": "नमस्ते, मुझे डेस्क असाइनमेंट पाने में मदद चाहिए।",
+      "ko": "안녕하세요, 자리 배정을 받는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -14778,8 +14778,8 @@
       "fr-CA": "Bonjour, j’ai besoin d’aide pour réinitialiser mon mot de passe VPN.",
       "es": "Hola, necesito ayuda para restablecer mi contraseña de la VPN.",
       "de": "Hallo, ich brauche Hilfe beim Zurücksetzen meines VPN-Passworts.",
-      "hi": "नमस्ते, मुझे अपना VPN password reset करने में मदद चाहिए।",
-      "ko": "안녕하세요, VPN password 재설정하는 데 도움이 필요해요."
+      "hi": "नमस्ते, मुझे अपना VPN पासवर्ड रीसेट करने में मदद चाहिए।",
+      "ko": "안녕하세요, VPN 비밀번호 재설정에 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -15661,8 +15661,8 @@
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir un bureau à East Campus.",
       "es": "Hola, necesito ayuda para conseguir una mesa en East Campus.",
       "de": "Hallo, ich brauche Hilfe, einen Schreibtisch am East Campus zu bekommen.",
-      "hi": "नमस्ते, मुझे East Campus में desk लेने में मदद चाहिए।",
-      "ko": "안녕하세요, East Campus에서 desk를 받는 데 도움이 필요해요."
+      "hi": "नमस्ते, मुझे East Campus में डेस्क पाने में मदद चाहिए।",
+      "ko": "안녕하세요, East Campus에 자리를 받는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -16548,8 +16548,8 @@
       "fr-CA": "Bonjour, j’ai besoin d’aide pour obtenir une place de stationnement dans l’Executive Garage.",
       "es": "Hola, necesito ayuda para conseguir aparcamiento en el Executive Garage.",
       "de": "Hallo, ich brauche Hilfe, einen Parkplatz im Parkhaus für Führungskräfte zu bekommen.",
-      "hi": "नमस्ते, मुझे Executive Garage में parking लेने में मदद चाहिए।",
-      "ko": "안녕하세요, Executive Garage 주차 권한을 받는 데 도움이 필요해요."
+      "hi": "नमस्ते, मुझे Executive Garage में पार्किंग पाने में मदद चाहिए।",
+      "ko": "안녕하세요, Executive Garage 주차 이용을 받는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -17388,8 +17388,8 @@
       "fr-CA": "Bonjour, j’ai besoin de demander une chaise ergonomique pour mon poste de travail.",
       "es": "Hola, necesito solicitar una silla ergonómica para mi puesto de trabajo.",
       "de": "Hallo, ich möchte einen ergonomischen Stuhl für meinen Arbeitsplatz beantragen.",
-      "hi": "नमस्ते, मुझे अपने workstation के लिए ergonomic chair request करनी है।",
-      "ko": "안녕하세요, 제 workstation용 ergonomic chair를 요청해야 해요."
+      "hi": "नमस्ते, मुझे अपने वर्कस्टेशन के लिए एर्गोनॉमिक कुर्सी का अनुरोध करना है।",
+      "ko": "안녕하세요, 제 워크스테이션용 인체공학 의자를 요청해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -18208,8 +18208,8 @@
       "fr-CA": "Bonjour, j’ai besoin de demander un repose-pieds pour mon bureau.",
       "es": "Hola, necesito solicitar un reposapiés para mi mesa.",
       "de": "Hallo, ich möchte eine Fußstütze für meinen Schreibtisch beantragen.",
-      "hi": "नमस्ते, मुझे अपने desk के लिए footrest request करना है।",
-      "ko": "안녕하세요, 제 desk용 footrest를 요청해야 해요."
+      "hi": "नमस्ते, मुझे अपनी डेस्क के लिए फुटरेस्ट का अनुरोध करना है।",
+      "ko": "안녕하세요, 제 책상용 발 받침대를 요청해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -19180,8 +19180,8 @@
       "fr-CA": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion mardi prochain.",
       "es": "Hola, necesito reservar una sala de reuniones para una reunión el próximo martes.",
       "de": "Hallo, ich muss einen Konferenzraum für ein Meeting nächsten Dienstag buchen.",
-      "hi": "नमस्ते, मुझे अगले Tuesday की meeting के लिए conference room book करना है।",
-      "ko": "안녕하세요, 다음 주 화요일 회의용 conference room을 예약해야 해요."
+      "hi": "नमस्ते, मुझे अगले मंगलवार की मीटिंग के लिए एक कॉन्फ़्रेंस रूम बुक करना है।",
+      "ko": "안녕하세요, 다음 주 화요일 회의용 회의실을 예약해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -20053,8 +20053,8 @@
       "fr-CA": "Bonjour, j’ai besoin de réserver une salle de conférence pour une réunion.",
       "es": "Hola, necesito reservar una sala de reuniones para una reunión.",
       "de": "Hallo, ich muss einen Konferenzraum für ein Meeting buchen.",
-      "hi": "नमस्ते, मुझे एक meeting के लिए conference room book करना है।",
-      "ko": "안녕하세요, 회의용 conference room을 예약해야 해요."
+      "hi": "नमस्ते, मुझे एक मीटिंग के लिए कॉन्फ़्रेंस रूम बुक करना है।",
+      "ko": "안녕하세요, 회의용 회의실을 예약해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -20979,8 +20979,8 @@
       "fr-CA": "Bonjour, j’ai besoin de configurer des comptes pour un nouveau membre de l’équipe qui commence la semaine prochaine.",
       "es": "Hola, necesito configurar cuentas para un nuevo miembro del equipo que empieza la semana que viene.",
       "de": "Hallo, ich muss Konten für ein neues Teammitglied einrichten lassen, das nächste Woche anfängt.",
-      "hi": "नमस्ते, मुझे अगले week शुरू होने वाले नए team member के लिए accounts set up करने हैं।",
-      "ko": "안녕하세요, 다음 주에 시작하는 새 팀원 계정을 설정해야 해요."
+      "hi": "नमस्ते, मुझे अगले हफ्ते शुरू होने वाले नए टीम सदस्य के लिए खाते सेट अप करने हैं।",
+      "ko": "안녕하세요, 다음 주에 시작하는 새 팀원의 계정을 설정해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -21979,8 +21979,8 @@
       "fr-CA": "Bonjour, j’ai besoin d’avoir accès au groupe de lecture de la base de données pour un problème en production.",
       "es": "Hola, necesito acceso al grupo de lectura de la base de datos por un problema en producción.",
       "de": "Hallo, ich brauche Zugriff auf die Datenbank-Lesegruppe wegen eines Produktionsproblems.",
-      "hi": "नमस्ते, मुझे production issue के लिए database read group का access चाहिए।",
-      "ko": "안녕하세요, production issue 때문에 database read group 접근 권한이 필요해요."
+      "hi": "नमस्ते, मुझे प्रोडक्शन समस्या के लिए डेटाबेस रीड ग्रुप तक पहुँच चाहिए।",
+      "ko": "안녕하세요, 프로덕션 문제 때문에 데이터베이스 읽기 그룹 접근 권한이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -22942,8 +22942,8 @@
       "fr-CA": "Bonjour, j’ai besoin d’être retiré d’un groupe dont je n’ai plus besoin.",
       "es": "Hola, necesito que me quiten de un grupo que ya no necesito.",
       "de": "Hallo, ich muss aus einer Gruppe entfernt werden, die ich nicht mehr brauche.",
-      "hi": "नमस्ते, मुझे एक group से remove किया जाना है जिसकी अब मुझे ज़रूरत नहीं है।",
-      "ko": "안녕하세요, 더 이상 필요 없는 group에서 저를 제거해 주세요."
+      "hi": "नमस्ते, मुझे एक ऐसे ग्रुप से हटाया जाना है जिसकी अब मुझे ज़रूरत नहीं है।",
+      "ko": "안녕하세요, 더 이상 필요 없는 그룹에서 저를 제거해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -23842,8 +23842,8 @@
       "fr-CA": "Bonjour, j’ai besoin de mettre à jour mes accès pour un changement de rôle à venir.",
       "es": "Hola, necesito actualizar mi acceso por un próximo cambio de puesto.",
       "de": "Hallo, ich muss meine Zugriffsrechte wegen einer bevorstehenden Rollenänderung aktualisieren lassen.",
-      "hi": "नमस्ते, मुझे आने वाले role change के लिए अपना access update करना है।",
-      "ko": "안녕하세요, 곧 역할이 변경될 예정이라 제 access를 업데이트해야 합니다."
+      "hi": "नमस्ते, मुझे आने वाले भूमिका बदलाव के लिए अपनी पहुँच अपडेट करनी है।",
+      "ko": "안녕하세요, 곧 있을 역할 변경에 맞춰 제 접근 권한을 업데이트해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -24795,8 +24795,8 @@
       "fr-CA": "Bonjour, j’ai besoin de retirer les accès d’un membre de mon équipe qui quitte l’entreprise.",
       "es": "Hola, necesito quitar el acceso a un miembro de mi equipo que se va.",
       "de": "Hallo, ich muss die Zugriffsrechte für ein Teammitglied entfernen lassen, das das Unternehmen verlässt.",
-      "hi": "नमस्ते, मुझे अपनी team के एक departing member का access remove करना है।",
-      "ko": "안녕하세요, 제 팀에서 퇴사하는 멤버의 access를 제거해야 합니다."
+      "hi": "नमस्ते, मुझे अपनी टीम के एक जाने वाले सदस्य की पहुँच हटानी है।",
+      "ko": "안녕하세요, 퇴사하는 팀원의 접근 권한을 제거해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -25621,8 +25621,8 @@
       "fr-CA": "Bonjour, je voulais vérifier l’état de ma demande d’accès à Salesforce.",
       "es": "Hola, quería consultar el estado de mi solicitud de acceso a Salesforce.",
       "de": "Hallo, ich wollte den Status meiner Salesforce-Zugriffsanfrage prüfen.",
-      "hi": "नमस्ते, मैं अपने Salesforce access request का status check करना चाहता था।",
-      "ko": "안녕하세요, 제 Salesforce access request 상태를 확인하고 싶습니다."
+      "hi": "नमस्ते, मैं अपने Salesforce पहुँच अनुरोध की स्थिति जाँचना चाहता था।",
+      "ko": "안녕하세요, 제 Salesforce 접근 요청 상태를 확인하고 싶습니다."
     },
     "culture_overrides": {
       "en": {
@@ -27015,8 +27015,8 @@
       "fr-CA": "Bonjour, mon portable de travail ne s’allume pas et j’ai besoin d’aide avec ça.",
       "es": "Hola, mi portátil del trabajo no enciende y necesito ayuda con eso.",
       "de": "Hallo, mein Arbeitslaptop lässt sich nicht einschalten und ich brauche Hilfe damit.",
-      "hi": "नमस्ते, मेरा work laptop power on नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
-      "ko": "안녕하세요, 제 업무용 laptop이 켜지지 않아서 도움이 필요합니다."
+      "hi": "नमस्ते, मेरा काम वाला लैपटॉप चालू नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
+      "ko": "안녕하세요, 제 업무용 노트북 전원이 켜지지 않아서 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -28450,8 +28450,8 @@
       "fr-CA": "Bonjour, je n’arrive pas à me connecter à mon courriel.",
       "es": "Hola, no puedo iniciar sesión en mi correo electrónico.",
       "de": "Hallo, ich kann mich nicht bei meiner E-Mail anmelden.",
-      "hi": "नमस्ते, मैं अपने email में log in नहीं कर पा रहा हूँ।",
-      "ko": "안녕하세요, 제 email에 로그인할 수 없습니다."
+      "hi": "नमस्ते, मैं अपने ईमेल में लॉग इन नहीं कर पा रहा हूँ।",
+      "ko": "안녕하세요, 이메일에 로그인할 수 없습니다."
     },
     "culture_overrides": {
       "en": {
@@ -30391,8 +30391,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes de matériel informatique pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de solicitudes de hardware de TI con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar IT-Hardware-Anfragen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ IT hardware requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT hardware request가 몇 가지 있습니다."
+      "hi": "नमस्ते, मुझे IT हार्डवेयर से जुड़े कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 하드웨어 요청이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -31717,8 +31717,8 @@
       "fr-CA": "Bonjour, mon courriel ne fonctionne plus et j’ai besoin d’aide avec ça.",
       "es": "Hola, mi correo electrónico no funciona y necesito ayuda.",
       "de": "Hallo, meine E-Mail funktioniert nicht und ich brauche Hilfe damit.",
-      "hi": "नमस्ते, मेरा email down है और मुझे इसमें मदद चाहिए।",
-      "ko": "안녕하세요, 제 email이 계속 안 돼서 도움이 필요합니다."
+      "hi": "नमस्ते, मेरा ईमेल बंद पड़ा है और मुझे इसमें मदद चाहिए।",
+      "ko": "안녕하세요, 제 이메일이 작동하지 않아서 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -32741,7 +32741,7 @@
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de cosas de TI con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे IT से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
@@ -33724,8 +33724,8 @@
       "fr-CA": "Bonjour, j’ai quelques affaires de licences de logiciels pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de temas de licencias de software con los que necesito ayuda.",
       "de": "Hallo, ich habe ein paar Dinge zu Softwarelizenzen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ software license चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 software license 관련 일이 몇 가지 있습니다."
+      "hi": "नमस्ते, मुझे सॉफ़्टवेयर लाइसेंस से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 소프트웨어 라이선스 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -34807,8 +34807,8 @@
       "fr-CA": "Bonjour, j’ai quelques affaires liées aux installations pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de temas de instalaciones con los que necesito ayuda.",
       "de": "Hallo, ich habe ein paar Anliegen bezüglich der Büroeinrichtungen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ facilities चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 facilities 관련 일이 몇 가지 있습니다."
+      "hi": "नमस्ते, मुझे सुविधाओं से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 시설 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -35868,8 +35868,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes liées au milieu de travail pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de solicitudes del lugar de trabajo con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ workplace requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 workplace request가 몇 가지 있습니다."
+      "hi": "नमस्ते, मुझे कार्यस्थल से जुड़े कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 직장 관련 요청이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -37187,8 +37187,8 @@
       "fr-CA": "Bonjour, j’ai quelques problèmes informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de problemas de TI con los que necesito ayuda.",
       "de": "Hallo, ich habe ein paar IT-Probleme, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ IT issues में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT issue가 몇 가지 있습니다."
+      "hi": "नमस्ते, मुझे IT से जुड़ी कुछ समस्याओं में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 문제가 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -38155,7 +38155,7 @@
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de cosas de TI con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे IT से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
@@ -39454,7 +39454,7 @@
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de cosas de TI con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे IT से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
@@ -40663,7 +40663,7 @@
       "fr-CA": "Bonjour, notre VPN semble être complètement en panne et j’ai besoin de le signaler.",
       "es": "Hola, parece que nuestra VPN se ha caído y necesito notificarlo.",
       "de": "Hallo, unser VPN scheint komplett ausgefallen zu sein und ich möchte das melden.",
-      "hi": "नमस्ते, हमारा VPN पूरी तरह down लग रहा है और मुझे इसे report करना है।",
+      "hi": "नमस्ते, हमारा VPN पूरी तरह से बंद लगता है और मुझे इसकी रिपोर्ट करनी है।",
       "ko": "안녕하세요, 저희 VPN이 완전히 다운된 것 같아서 신고하려고 합니다."
     },
     "culture_overrides": {
@@ -41942,7 +41942,7 @@
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo un par de cosas de TI con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे IT से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
@@ -42954,8 +42954,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes informatiques pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de solicitudes de TI con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar IT-Anfragen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ IT requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT request가 몇 가지 있습니다."
+      "hi": "नमस्ते, मुझे IT से जुड़े कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 요청이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -44129,8 +44129,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes liées au milieu de travail pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo un par de solicitudes del lugar de trabajo con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ workplace requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 workplace request가 몇 가지 있습니다."
+      "hi": "नमस्ते, मुझे कार्यस्थल से जुड़े कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 직장 관련 요청이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -45422,7 +45422,7 @@
       "fr-CA": "Bonjour, j’ai quelques trucs informatiques pour lesquels j’ai besoin d’aide.",
       "es": "Hola, tengo unas cuantas cosas de TI con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे IT से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
@@ -46715,8 +46715,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes d’aménagement d’espace de travail pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo unas cuantas solicitudes de configuración del espacio de trabajo con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar Anfragen zur Einrichtung meines Arbeitsplatzes, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ workspace setup requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 workspace setup request가 몇 가지 있습니다."
+      "hi": "नमस्ते, मुझे कार्यस्थल सेटअप से जुड़े कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 업무 공간 세팅 관련해서 도움이 필요한 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -47775,8 +47775,8 @@
       "fr-CA": "Bonjour, le portail RH semble être en panne pour moi.",
       "es": "Hola, parece que el portal de RR. HH. no me funciona.",
       "de": "Hallo, das HR-Portal scheint bei mir nicht zu funktionieren.",
-      "hi": "नमस्ते, HR portal मेरे लिए down लग रहा है।",
-      "ko": "안녕하세요, HR portal이 저한테는 다운된 것 같습니다."
+      "hi": "नमस्ते, HR पोर्टल मेरे लिए बंद लगता है।",
+      "ko": "안녕하세요, HR 포털이 저한테는 다운된 것 같습니다."
     },
     "culture_overrides": {
       "en": {
@@ -49008,7 +49008,7 @@
       "fr-CA": "Bonjour, j’ai quelques petites choses pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "es": "Hola, tengo unas cuantas cosas con las que necesito ayuda hoy.",
       "de": "Hallo, ich habe heute ein paar Dinge, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
@@ -50309,8 +50309,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes d’accès pour lesquelles j’ai besoin d’aide.",
       "es": "Hola, tengo unas cuantas solicitudes de acceso con las que necesito ayuda.",
       "de": "Hallo, ich habe ein paar Zugriffsanfragen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ access requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 access request가 몇 가지 있습니다."
+      "hi": "नमस्ते, मुझे पहुँच से जुड़े कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 접근 권한 요청이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -52476,7 +52476,7 @@
       "es": "Hola, necesito ayuda con unas cuantas cosas.",
       "de": "Hallo, ich brauche bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있어요."
+      "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -53965,8 +53965,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कुछ आईटी चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -55119,8 +55119,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes d’équipement pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de equipo.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Anfragen zu Ausstattung.",
-      "hi": "नमस्ते, मुझे कुछ equipment requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 장비 요청이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे उपकरणों से जुड़ी कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 장비 요청이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -56689,8 +56689,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide concernant mon portable et une réservation de salle.",
       "es": "Hola, necesito ayuda con mi portátil y una reserva de sala.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zu meinem Laptop und einer Raumbuchung.",
-      "hi": "नमस्ते, मुझे अपने laptop और room booking के बारे में कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 제 노트북이랑 회의실 예약 관련해서 도움이 필요한 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे अपने लैपटॉप और एक कमरे की बुकिंग के बारे में कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 제 노트북과 회의실 예약 관련해서 도움이 필요한 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -57864,8 +57864,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes de logiciels pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de software.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen.",
-      "hi": "नमस्ते, मुझे कुछ software requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 소프트웨어 요청이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे सॉफ़्टवेयर से जुड़े कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 소프트웨어 요청이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -58847,8 +58847,8 @@
       "fr-CA": "Bonjour, mon moniteur externe indique qu’il n’y a pas de signal et j’aurais besoin d’aide pour le faire fonctionner de nouveau.",
       "es": "Hola, mi monitor externo dice que no hay señal y necesito ayuda para que vuelva a funcionar.",
       "de": "Hallo, mein externer Monitor zeigt „kein Signal“ an, und ich brauche Hilfe, damit er wieder funktioniert.",
-      "hi": "नमस्ते, मेरा external monitor no signal दिखा रहा है और मुझे इसे फिर से चालू करवाने में मदद चाहिए।",
-      "ko": "안녕하세요, 외부 모니터에 신호 없음이라고 뜨는데 다시 작동하게 하는 데 도움이 필요해요."
+      "hi": "नमस्ते, मेरा बाहरी मॉनिटर 'नो सिग्नल' दिखा रहा है और मुझे इसे फिर से चालू करवाने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 외부 모니터에 신호 없음이라고 떠서 다시 작동하게 하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -60018,8 +60018,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs d’aménagement de bureau pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de la configuración de la oficina.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Büroeinrichtung.",
-      "hi": "नमस्ते, मुझे office setup से जुड़ी कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 사무실 세팅 관련해서 도움이 필요한 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कार्यालय सेटअप से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 사무실 설치 관련해서 도움이 필요한 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -61145,8 +61145,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes TI pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de informática.",
       "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen.",
-      "hi": "नमस्ते, मुझे कुछ IT requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT 요청이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कुछ आईटी अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 도움이 필요한 IT 요청이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -62047,7 +62047,7 @@
       "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있어요."
+      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있습니다."
     },
     "culture_overrides": {
       "en": {
@@ -63260,8 +63260,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con un par de cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 두어 가지 있어요."
+      "hi": "नमस्ते, मुझे कुछ आईटी चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, IT 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -64609,8 +64609,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs d’aménagement de mon espace de travail pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de la configuración de mi puesto de trabajo.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Einrichtung meines Arbeitsplatzes.",
-      "hi": "नमस्ते, मुझे workspace setup से जुड़ी कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 업무 공간 세팅 관련해서 도움이 필요한 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कार्यस्थल सेटअप से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 업무 공간 설정 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -65801,8 +65801,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कुछ आईटी चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, IT 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -67191,7 +67191,7 @@
       "fr-CA": "Bonjour, mon portable de travail est complètement mort et j’aurais besoin d’aide avec ça.",
       "es": "Hola, mi portátil del trabajo está completamente muerto y necesito asistencia.",
       "de": "Hallo, mein Arbeitslaptop ist komplett tot, und ich brauche Hilfe damit.",
-      "hi": "नमस्ते, मेरा work laptop पूरी तरह dead है और मुझे इसमें मदद चाहिए।",
+      "hi": "नमस्ते, मेरा काम वाला लैपटॉप पूरी तरह बंद हो गया है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 업무용 노트북이 완전히 먹통이라 도움이 필요해요."
     },
     "culture_overrides": {
@@ -68435,8 +68435,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs pour lesquels j’aurais besoin d’aide pour mon déménagement de bureau.",
       "es": "Hola, necesito ayuda con unas cuantas cosas para mi traslado de oficina.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen für meinen Büroumzug.",
-      "hi": "नमस्ते, मुझे अपने office move के लिए कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 제 사무실 이전 관련해서 도움이 필요한 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे अपने कार्यालय स्थानांतरण के लिए कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 사무실 이전 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -70142,7 +70142,7 @@
       "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있어요."
+      "ko": "안녕하세요, 오늘 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -71165,7 +71165,7 @@
       "fr-CA": "Bonjour, mon portable ne s’allume pas et j’aurais besoin d’aide avec ça.",
       "es": "Hola, mi portátil no enciende y necesito ayuda al respecto.",
       "de": "Hallo, mein Laptop lässt sich nicht einschalten, und ich brauche Hilfe damit.",
-      "hi": "नमस्ते, मेरा laptop चालू नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
+      "hi": "नमस्ते, मेरा लैपटॉप चालू नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 노트북이 켜지지 않아서 도움이 필요해요."
     },
     "culture_overrides": {
@@ -72404,8 +72404,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes de logiciels pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de software.",
       "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen.",
-      "hi": "नमस्ते, मुझे कुछ software requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 소프트웨어 요청이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे सॉफ़्टवेयर से जुड़े कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 소프트웨어 요청 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -73639,7 +73639,7 @@
       "es": "Hola, necesito ayuda con unas cuantas cosas.",
       "de": "Hallo, ich brauche bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있어요."
+      "ko": "안녕하세요, 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -75072,8 +75072,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कुछ आईटी चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, IT 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -76306,7 +76306,7 @@
       "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있어요."
+      "ko": "안녕하세요, 오늘 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -77500,8 +77500,8 @@
       "fr-CA": "Bonjour, j’ai quelques demandes TI pour lesquelles j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas solicitudes de informática.",
       "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen.",
-      "hi": "नमस्ते, मुझे कुछ IT requests में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT 요청이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कुछ आईटी अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, IT 요청 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -79051,8 +79051,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कुछ आईटी चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, IT 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -80256,8 +80256,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कुछ आईटी चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, IT 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -81780,7 +81780,7 @@
       "es": "Hola, necesito ayuda con unas cuantas cosas hoy.",
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있어요."
+      "ko": "안녕하세요, 오늘 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -83388,8 +83388,8 @@
       "fr-CA": "Bonjour, j’ai quelques trucs TI pour lesquels j’aurais besoin d’aide.",
       "es": "Hola, necesito ayuda con unas cuantas cosas de informática.",
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
-      "hi": "नमस्ते, मुझे कुछ IT चीज़ों में मदद चाहिए।",
-      "ko": "안녕하세요, 도움이 필요한 IT 관련 일이 몇 가지 있어요."
+      "hi": "नमस्ते, मुझे कुछ आईटी चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, IT 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -85438,7 +85438,7 @@
       "fr-CA": "Bonjour, j’ai besoin d’aide avec un problème de connexion.",
       "es": "Hola, necesito ayuda con un problema de inicio de sesión.",
       "de": "Hallo, ich brauche Hilfe bei einem Login-Problem.",
-      "hi": "नमस्ते, मुझे login की समस्या में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे लॉगिन की समस्या में मदद चाहिए।",
       "ko": "안녕하세요, 로그인 문제로 도움이 필요해요."
     },
     "culture_overrides": {
@@ -86345,7 +86345,7 @@
       "fr-CA": "Bonjour, j’ai besoin d’aide pour vérifier quelque chose dans un dossier d’employé.",
       "es": "Hola, necesito ayuda para comprobar algo en el expediente de un empleado.",
       "de": "Hallo, ich brauche Hilfe dabei, etwas in einem Mitarbeiterdatensatz zu überprüfen.",
-      "hi": "नमस्ते, मुझे एक employee record में कुछ चेक करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे एक कर्मचारी रिकॉर्ड में कुछ जाँचने में मदद चाहिए।",
       "ko": "안녕하세요, 직원 기록에서 뭔가 확인하는 데 도움이 필요해요."
     },
     "culture_overrides": {
@@ -87318,8 +87318,8 @@
       "fr-CA": "Bonjour, j’ai besoin de remplacer mon ordinateur portable.",
       "es": "Hola, necesito reemplazar mi portátil.",
       "de": "Hallo, ich muss meinen Laptop ersetzen.",
-      "hi": "नमस्ते, मुझे अपना laptop बदलवाना है।",
-      "ko": "안녕하세요, 제 laptop을 교체해야 해요."
+      "hi": "नमस्ते, मुझे अपना लैपटॉप बदलना है।",
+      "ko": "안녕하세요, 제 노트북을 교체해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -88327,8 +88327,8 @@
       "fr-CA": "Bonjour, j’ai besoin de remplacer mon ordinateur portable de travail.",
       "es": "Hola, necesito reemplazar mi portátil del trabajo.",
       "de": "Hallo, ich muss meinen Arbeitslaptop ersetzen.",
-      "hi": "नमस्ते, मुझे अपना work laptop बदलवाना है।",
-      "ko": "안녕하세요, 제 업무용 laptop을 교체해야 해요."
+      "hi": "नमस्ते, मुझे अपना काम वाला लैपटॉप बदलना है।",
+      "ko": "안녕하세요, 제 업무용 노트북을 교체해야 해요."
     },
     "culture_overrides": {
       "en": {

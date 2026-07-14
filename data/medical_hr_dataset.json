@@ -687,8 +687,8 @@
       "fr": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence médicale.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de mon permis d’exercice de la médecine.",
       "de": "Hallo, ich brauche Hilfe dabei, eine vorübergehende Verlängerung meiner ärztlichen Zulassung zu beantragen.",
-      "hi": "नमस्ते, मुझे अपने medical license के लिए temporary extension request करने में मदद चाहिए।",
-      "ko": "안녕하세요, 제 medical license 임시 연장을 요청하는 데 도움이 필요합니다."
+      "hi": "नमस्ते, मुझे अपने चिकित्सा लाइसेंस के लिए अस्थायी विस्तार का अनुरोध करने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 의료 면허의 임시 연장을 신청하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -1245,8 +1245,8 @@
       "fr": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de mon permis.",
       "de": "Hallo, ich brauche Hilfe dabei, eine zeitlich begrenzte Verlängerung meiner Lizenz zu beantragen.",
-      "hi": "नमस्ते, मुझे अपने license के लिए temporary extension request करने में मदद चाहिए।",
-      "ko": "안녕하세요, 제 license 임시 연장을 요청하는 데 도움이 필요합니다."
+      "hi": "नमस्ते, मुझे अपने लाइसेंस के लिए अस्थायी विस्तार का अनुरोध करने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 면허 임시 연장을 요청하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -1861,8 +1861,8 @@
       "fr": "Bonjour, j’ai besoin d’aide pour remplir ma vérification I-9.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour remplir ma vérification I-9.",
       "de": "Hallo, ich brauche Hilfe dabei, meine I-9-Verifizierung abzuschließen.",
-      "hi": "नमस्ते, मुझे अपनी I-9 verification पूरी करने में मदद चाहिए।",
-      "ko": "안녕하세요, 제 I-9 verification을 완료하는 데 도움이 필요합니다."
+      "hi": "नमस्ते, मुझे अपना I-9 सत्यापन पूरा करने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 I-9 확인을 완료하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -2407,8 +2407,8 @@
       "fr": "Bonjour, j’ai besoin d’aide pour soumettre mes documents de revérification I-9.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour soumettre mes documents de revérification I-9.",
       "de": "Hallo, ich brauche Hilfe dabei, meine Unterlagen zur I-9-Nachverifizierung einzureichen.",
-      "hi": "नमस्ते, मुझे अपने I-9 reverification documents submit करने में मदद चाहिए।",
-      "ko": "안녕하세요, 제 I-9 reverification documents를 제출하는 데 도움이 필요합니다."
+      "hi": "नमस्ते, मुझे अपने I-9 पुनःसत्यापन दस्तावेज़ जमा करने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 I-9 재확인 서류를 제출하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -3120,8 +3120,8 @@
       "fr": "Bonjour, j’ai besoin d’aide pour ajouter mon conjoint à mon dossier de visa H-1B.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour ajouter mon conjoint ou ma conjointe à mon dossier de visa H-1B.",
       "de": "Hallo, ich brauche Hilfe dabei, meinen Ehepartner zu meinem H-1B-Visum hinzuzufügen.",
-      "hi": "नमस्ते, मुझे अपने spouse को अपने H-1B visa record में add करने में मदद चाहिए।",
-      "ko": "안녕하세요, 제 H-1B visa record에 배우자를 추가하는 데 도움이 필요합니다."
+      "hi": "नमस्ते, मुझे अपने जीवनसाथी को अपने H-1B वीज़ा रिकॉर्ड में जोड़ने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 H-1B 비자 기록에 배우자를 추가하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -3656,8 +3656,8 @@
       "fr": "Bonjour, j’ai besoin d’aide pour ajouter mon enfant à ma demande de visa.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour ajouter mon enfant à ma demande de visa.",
       "de": "Hallo, ich brauche Hilfe dabei, mein Kind zu meinem Visumsantrag hinzuzufügen.",
-      "hi": "नमस्ते, मुझे अपने child को अपनी visa petition में add करने में मदद चाहिए।",
-      "ko": "안녕하세요, 제 visa petition에 자녀를 추가하는 데 도움이 필요합니다."
+      "hi": "नमस्ते, मुझे अपने बच्चे को अपनी वीज़ा याचिका में जोड़ने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 비자 청원서에 자녀를 추가하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -4331,8 +4331,8 @@
       "fr": "Bonjour, j’ai besoin de demander des congés payés pour des vacances à venir.",
       "fr-CA": "Bonjour, j’ai besoin de demander des congés payés pour des vacances à venir.",
       "de": "Hallo, ich muss Urlaub beantragen.",
-      "hi": "नमस्ते, मुझे आने वाली vacation के लिए कुछ PTO request करना है।",
-      "ko": "안녕하세요, 다가오는 휴가를 위해 PTO를 좀 신청해야 합니다."
+      "hi": "नमस्ते, मुझे आने वाली छुट्टी के लिए कुछ PTO का अनुरोध करना है।",
+      "ko": "안녕하세요, 다가오는 휴가에 PTO를 좀 신청하려고 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -4890,8 +4890,8 @@
       "fr": "Bonjour, j’ai besoin d’aide pour faire une demande de congés payés.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour faire une demande de congés payés.",
       "de": "Hallo, ich brauche Hilfe dabei, einen Antrag auf Urlaub einzureichen.",
-      "hi": "नमस्ते, मुझे PTO request डालने में मदद चाहिए।",
-      "ko": "안녕하세요, PTO request를 넣는 데 도움이 필요합니다."
+      "hi": "नमस्ते, मुझे PTO अनुरोध डालने में मदद चाहिए।",
+      "ko": "안녕하세요, PTO 신청을 하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -5559,8 +5559,8 @@
       "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
-      "hi": "नमस्ते, मैं अपनी एक shift swap करने के बारे में call कर रहा/रही हूँ।",
-      "ko": "안녕하세요, 제 shift 중 하나를 교대 변경하려고 전화드렸습니다."
+      "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
+      "ko": "안녕하세요, 제 근무 중 하나를 교대하려고 전화드렸습니다."
     },
     "culture_overrides": {
       "en": {
@@ -6144,8 +6144,8 @@
       "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
-      "hi": "नमस्ते, मैं अपनी एक shift swap करने के बारे में call कर रहा/रही हूँ।",
-      "ko": "안녕하세요, 제 shift 중 하나를 교대 변경하려고 전화드렸습니다."
+      "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
+      "ko": "안녕하세요, 근무 중 하나를 교대하려고 전화드렸습니다."
     },
     "culture_overrides": {
       "en": {
@@ -6761,8 +6761,8 @@
       "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance contre la faute professionnelle médicale.",
       "fr-CA": "Bonjour, je dois mettre à jour mes renseignements d’assurance responsabilité professionnelle médicale.",
       "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren.",
-      "hi": "नमस्ते, मुझे अपनी malpractice insurance information update करनी है।",
-      "ko": "안녕하세요, 제 malpractice insurance information을 업데이트해야 합니다."
+      "hi": "नमस्ते, मुझे अपनी चिकित्सकीय लापरवाही बीमा जानकारी अपडेट करनी है।",
+      "ko": "안녕하세요, 제 의료배상 책임보험 정보를 업데이트해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -7304,8 +7304,8 @@
       "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance contre la faute professionnelle médicale.",
       "fr-CA": "Bonjour, je dois mettre à jour mes renseignements d’assurance responsabilité professionnelle médicale.",
       "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren.",
-      "hi": "नमस्ते, मुझे अपनी malpractice insurance information update करनी है।",
-      "ko": "안녕하세요, 제 malpractice insurance information을 업데이트해야 합니다."
+      "hi": "नमस्ते, मुझे अपनी चिकित्सकीय लापरवाही बीमा जानकारी अपडेट करनी है।",
+      "ko": "안녕하세요, 제 의료배상 책임보험 정보를 업데이트해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -7914,8 +7914,8 @@
       "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments de mon intégration et pour planifier mon rendez-vous de suivi.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments de mon intégration et pour fixer mon rendez-vous de suivi.",
       "de": "Hallo, ich brauche Hilfe dabei, ein paar Onboarding-Punkte zu aktualisieren und meinen Folgetermin zu vereinbaren.",
-      "hi": "नमस्ते, मुझे कुछ onboarding items update करने और अपना follow-up appointment set up करने में मदद चाहिए।",
-      "ko": "안녕하세요, onboarding items 몇 가지를 업데이트하고 follow-up appointment를 잡는 데 도움이 필요합니다."
+      "hi": "नमस्ते, मुझे ऑनबोर्डिंग की कुछ चीज़ें अपडेट करने और अपनी फॉलो-अप अपॉइंटमेंट तय करने में मदद चाहिए।",
+      "ko": "안녕하세요, 온보딩 항목 몇 가지를 업데이트하고 후속 예약을 잡는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -8425,7 +8425,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour marquer quelques-unes de mes tâches d’intégration comme terminées.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour marquer quelques-unes de mes tâches d’intégration comme terminées.",
       "de": "Hallo, ich brauche Hilfe dabei, ein paar meiner Onboarding-Aufgaben als erledigt zu markieren.",
-      "hi": "नमस्ते, मुझे अपने कुछ onboarding tasks को complete mark करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे अपने ऑनबोर्डिंग के कुछ कार्यों को पूरा के रूप में चिह्नित करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 onboarding tasks 몇 가지를 완료로 표시하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
@@ -9093,7 +9093,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA vers un nouvel établissement.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon inscription DEA vers un nouvel établissement.",
       "de": "Hallo, ich brauche Hilfe dabei, meine DEA-Registrierung auf eine neue Einrichtung zu übertragen.",
-      "hi": "नमस्ते, मुझे अपनी DEA registration को एक नई facility में transfer करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे अपना DEA पंजीकरण एक नई सुविधा में स्थानांतरित करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 DEA registration을 새 facility로 이전하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
@@ -9668,7 +9668,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA vers un nouvel établissement.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon inscription DEA vers un nouvel établissement.",
       "de": "Hallo, ich brauche Hilfe dabei, meine DEA-Registrierung auf eine neue Einrichtung zu übertragen.",
-      "hi": "नमस्ते, मुझे अपनी DEA registration को एक नई facility में transfer करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे अपना DEA पंजीकरण एक नई सुविधा में स्थानांतरित करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 DEA registration을 새 facility로 이전하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
@@ -10388,7 +10388,7 @@
       "fr": "Bonjour, j’ai besoin de déposer une demande de congé familial et médical.",
       "fr-CA": "Bonjour, je dois faire une demande de congé familial et médical.",
       "de": "Hallo, ich muss eine Freistellung beantragen.",
-      "hi": "नमस्ते, मुझे FMLA leave के लिए file करना है।",
+      "hi": "नमस्ते, मुझे FMLA अवकाश के लिए आवेदन करना है।",
       "ko": "안녕하세요, FMLA leave를 신청해야 합니다."
     },
     "culture_overrides": {
@@ -10986,7 +10986,7 @@
       "fr": "Bonjour, j’ai besoin de déposer une demande de congé familial et médical.",
       "fr-CA": "Bonjour, je dois faire une demande de congé familial et médical.",
       "de": "Hallo, ich muss eine Freistellung beantragen.",
-      "hi": "नमस्ते, मुझे FMLA leave के लिए file करना है।",
+      "hi": "नमस्ते, मुझे FMLA अवकाश के लिए आवेदन करना है।",
       "ko": "안녕하세요, FMLA leave를 신청해야 합니다."
     },
     "culture_overrides": {
@@ -11636,7 +11636,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour corriger des heures d’astreinte manquantes sur ma feuille de temps.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour corriger des heures de garde manquantes sur ma feuille de temps.",
       "de": "Hallo, ich brauche Hilfe dabei, fehlende Bereitschaftsdienststunden auf meinem Stundenzettel zu korrigieren.",
-      "hi": "नमस्ते, मुझे अपनी timesheet पर missing on-call hours ठीक करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे अपनी टाइमशीट में गायब ऑन-कॉल घंटों को ठीक करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 timesheet에서 누락된 on-call hours를 수정하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
@@ -12203,7 +12203,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour corriger des heures sur un ancien quart de travail dans ma feuille de temps.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour corriger des heures d’un ancien quart de travail sur ma feuille de temps.",
       "de": "Hallo, ich brauche Hilfe dabei, Stunden einer alten Schicht auf meinem Stundenzettel zu korrigieren.",
-      "hi": "नमस्ते, मुझे अपनी timesheet पर एक पुरानी shift के hours ठीक करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे अपनी टाइमशीट में एक पुरानी शिफ्ट के घंटों को ठीक करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 timesheet에서 예전 shift의 hours를 수정하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
@@ -12956,7 +12956,7 @@
       "fr": "Bonjour, j’ai besoin de faire réactiver mes privilèges cliniques après un congé.",
       "fr-CA": "Bonjour, je dois faire réactiver mes privilèges cliniques après un congé.",
       "de": "Hallo, ich muss meine klinischen Berechtigungen nach meiner Abwesenheit wieder aktivieren lassen.",
-      "hi": "नमस्ते, मुझे leave के बाद अपने clinical privileges reactivate करवाने हैं।",
+      "hi": "नमस्ते, मुझे अवकाश के बाद अपने नैदानिक विशेषाधिकार फिर से सक्रिय करवाने हैं।",
       "ko": "안녕하세요, leave 후 제 clinical privileges를 다시 활성화해야 합니다."
     },
     "culture_overrides": {
@@ -13707,7 +13707,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour réactiver mes privilèges cliniques après mon retour de congé.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour réactiver mes privilèges cliniques après mon retour de congé.",
       "de": "Hallo, ich brauche Hilfe dabei, meine klinischen Berechtigungen nach meiner Abwesenheit wieder zu aktivieren.",
-      "hi": "नमस्ते, मुझे leave से वापस आने के बाद अपने clinical privileges reactivate करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे अवकाश से वापस आने के बाद अपने नैदानिक विशेषाधिकार फिर से सक्रिय करने में मदद चाहिए।",
       "ko": "안녕하세요, leave에서 복귀한 후 제 clinical privileges를 다시 활성화하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
@@ -14336,7 +14336,7 @@
       "fr": "Bonjour, j’ai besoin d’enregistrer mes disponibilités d’astreinte.",
       "fr-CA": "Bonjour, je dois inscrire mes disponibilités de garde.",
       "de": "Hallo, ich muss meine Verfügbarkeit für den Bereitschaftsdienst eintragen.",
-      "hi": "नमस्ते, मुझे अपनी on-call availability register करनी है।",
+      "hi": "नमस्ते, मुझे अपनी ऑन-कॉल उपलब्धता दर्ज करनी है।",
       "ko": "안녕하세요, 제 on-call availability를 등록해야 합니다."
     },
     "culture_overrides": {
@@ -14875,7 +14875,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour m’inscrire aux disponibilités d’astreinte de remplacement.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour m’inscrire aux disponibilités de garde de relève.",
       "de": "Hallo, ich brauche Hilfe dabei, meine Verfügbarkeit für den Ersatzbereitschaftsdienst einzutragen.",
-      "hi": "नमस्ते, मुझे backup on-call availability के लिए register करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे बैकअप ऑन-कॉल उपलब्धता के लिए पंजीकरण करने में मदद चाहिए।",
       "ko": "안녕하세요, backup on-call availability 등록에 도움이 필요합니다."
     },
     "culture_overrides": {
@@ -15514,7 +15514,7 @@
       "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
-      "hi": "नमस्ते, मैं अपनी एक shift swap करने के बारे में call कर रहा/रही हूँ।",
+      "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
       "ko": "안녕하세요, 제 shift 중 하나를 교대 변경하려고 전화드렸습니다."
     },
     "culture_overrides": {
@@ -16207,7 +16207,7 @@
       "fr": "Bonjour, je dois faire une demande de congé familial et médical.",
       "fr-CA": "Bonjour, je dois faire une demande de congé familial et médical.",
       "de": "Hallo, ich muss eine Freistellung beantragen.",
-      "hi": "नमस्ते, मुझे FMLA leave के लिए file करना है।",
+      "hi": "नमस्ते, मुझे FMLA छुट्टी के लिए आवेदन करना है।",
       "ko": "안녕하세요, FMLA leave를 신청해야 해서요."
     },
     "culture_overrides": {
@@ -16986,7 +16986,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon inscription DEA.",
       "de": "Hallo, ich brauche Hilfe bei der Übertragung meiner DEA-Registrierung.",
-      "hi": "नमस्ते, मुझे अपना DEA registration transfer करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे अपना DEA पंजीकरण स्थानांतरित करने में मदद चाहिए।",
       "ko": "안녕하세요, DEA registration 이전하는 데 도움이 필요해요."
     },
     "culture_overrides": {
@@ -17632,7 +17632,7 @@
       "fr": "Bonjour, je dois faire réactiver mes privilèges cliniques.",
       "fr-CA": "Bonjour, je dois faire réactiver mes privilèges cliniques.",
       "de": "Hallo, ich muss meine klinischen Berechtigungen wieder aktivieren lassen.",
-      "hi": "नमस्ते, मुझे अपने clinical privileges फिर से reactivate करवाने हैं।",
+      "hi": "नमस्ते, मुझे अपने नैदानिक विशेषाधिकार फिर से सक्रिय करवाने हैं।",
       "ko": "안녕하세요, 제 clinical privileges를 다시 활성화해야 해서요."
     },
     "culture_overrides": {
@@ -18142,7 +18142,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour soumettre une demande de congés payés pour un collègue.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour soumettre une demande de congé payé pour un collègue.",
       "de": "Hallo, ich brauche Hilfe dabei, einen Urlaubsantrag für einen Kollegen einzureichen.",
-      "hi": "नमस्ते, मुझे एक coworker के लिए PTO request डालने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे एक सहकर्मी के लिए PTO अनुरोध डालने में मदद चाहिए।",
       "ko": "안녕하세요, 동료 대신 PTO request를 넣는 데 도움이 필요해요."
     },
     "culture_overrides": {
@@ -18694,7 +18694,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour corriger un problème de paie pour un quart de travail.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour régler un problème de paie pour un quart de travail.",
       "de": "Hallo, ich brauche Hilfe dabei, ein Gehaltsabrechnungsproblem für eine Schicht zu klären.",
-      "hi": "नमस्ते, मुझे एक shift के payroll issue को ठीक करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे एक शिफ्ट के लिए वेतन-प्रक्रिया की समस्या ठीक करने में मदद चाहिए।",
       "ko": "안녕하세요, shift 관련 payroll issue를 해결하는 데 도움이 필요해요."
     },
     "culture_overrides": {
@@ -19424,7 +19424,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour une demande de prolongation de licence supervisée.",
       "fr-CA": "Bonjour, j’ai besoin d’aide avec une demande de prolongation de permis supervisé.",
       "de": "Hallo, ich brauche Hilfe beim Antrag auf Verlängerung meiner eingeschränkten Zulassung unter Supervision.",
-      "hi": "नमस्ते, मुझे supervised license extension request में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे पर्यवेक्षित लाइसेंस विस्तार अनुरोध में मदद चाहिए।",
       "ko": "안녕하세요, supervised license extension request 관련해서 도움이 필요해요."
     },
     "culture_overrides": {
@@ -20028,7 +20028,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour m’inscrire aux gardes.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour m’inscrire à la garde.",
       "de": "Hallo, ich brauche Hilfe bei der Anmeldung zum Bereitschaftsdienst.",
-      "hi": "नमस्ते, मुझे on-call के लिए register करने में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे ऑन-कॉल के लिए पंजीकरण करने में मदद चाहिए।",
       "ko": "안녕하세요, on-call 등록하는 데 도움이 필요해요."
     },
     "culture_overrides": {
@@ -20807,7 +20807,7 @@
       "fr": "Bonjour, je dois faire une demande de congé familial et médical.",
       "fr-CA": "Bonjour, je dois faire une demande de congé familial et médical.",
       "de": "Hallo, ich muss eine Freistellung beantragen.",
-      "hi": "नमस्ते, मुझे FMLA leave के लिए file करना है।",
+      "hi": "नमस्ते, मुझे FMLA छुट्टी के लिए आवेदन करना है।",
       "ko": "안녕하세요, FMLA leave를 신청해야 해서요."
     },
     "culture_overrides": {
@@ -21871,7 +21871,7 @@
       "fr": "Bonjour, j’ai quelques problèmes urgents d’accréditation RH pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques problèmes urgents d’accréditation des RH pour lesquels j’ai besoin d’aide.",
       "de": "Hallo, ich habe einige dringende Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
-      "hi": "नमस्ते, मेरे पास कुछ urgent HR credentialing issues हैं जिनमें मुझे मदद चाहिए।",
+      "hi": "नमस्ते, मेरे पास कुछ जरूरी HR क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 급한 HR credentialing 문제가 몇 가지 있어서 도움이 필요해요."
     },
     "culture_overrides": {
@@ -22707,7 +22707,7 @@
       "fr": "Bonjour, j’ai quelques problèmes d’accréditation RH pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques problèmes d’accréditation des RH pour lesquels j’ai besoin d’aide.",
       "de": "Hallo, ich habe einige Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
-      "hi": "नमस्ते, मेरे पास कुछ HR credentialing issues हैं जिनमें मुझे मदद चाहिए।",
+      "hi": "नमस्ते, मेरे पास कुछ HR क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, HR credentialing 문제가 몇 가지 있어서 도움이 필요해요."
     },
     "culture_overrides": {
@@ -23598,7 +23598,7 @@
       "fr": "Bonjour, j’ai quelques problèmes d’accréditation RH pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques problèmes d’accréditation des RH pour lesquels j’ai besoin d’aide.",
       "de": "Hallo, ich habe einige Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
-      "hi": "नमस्ते, मेरे पास कुछ HR credentialing issues हैं जिनमें मुझे मदद चाहिए।",
+      "hi": "नमस्ते, मेरे पास कुछ HR क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, HR credentialing 문제가 몇 가지 있어서 도움이 필요해요."
     },
     "culture_overrides": {
@@ -24529,7 +24529,7 @@
       "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, आज मुझे कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मेरे पास HR से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -25403,7 +25403,7 @@
       "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, आज मुझे कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मेरे पास HR से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -26170,7 +26170,7 @@
       "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, आज मुझे कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मेरे पास HR से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -27048,7 +27048,7 @@
       "fr": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, आज मुझे कुछ credentialing updates में मदद चाहिए।",
+      "hi": "नमस्ते, आज मेरे पास क्रेडेंशियलिंग से जुड़े कुछ अपडेट हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 credentialing 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -27757,7 +27757,7 @@
       "fr": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ credentialing updates में मदद चाहिए।",
+      "hi": "नमस्ते, मेरे पास क्रेडेंशियलिंग से जुड़े कुछ अपडेट हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, credentialing 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -28387,7 +28387,7 @@
       "fr": "Bonjour, j’ai quelques questions liées à l’accréditation pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires liées à l’accréditation pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Fragen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ credentialing-related चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मेरे पास क्रेडेंशियलिंग से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, credentialing 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -29335,7 +29335,7 @@
       "fr": "Bonjour, j’ai quelques questions d’accréditation RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires d’accréditation des RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Sachen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, आज मुझे कुछ HR credentialing चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मेरे पास HR क्रेडेंशियलिंग से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR credentialing 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -30138,7 +30138,7 @@
       "fr": "Bonjour, j’ai quelques points RH pour lesquels j’ai besoin d’aide alors que je reviens de congé.",
       "fr-CA": "Bonjour, j’ai quelques points de RH pour lesquels j’ai besoin d’aide alors que je reviens de congé.",
       "de": "Hallo, ich habe ein paar HR-Punkte, bei denen ich Hilfe brauche, wenn ich aus dem Urlaub zurückkomme.",
-      "hi": "नमस्ते, leave से वापस आते हुए मुझे कुछ HR items में मदद चाहिए।",
+      "hi": "नमस्ते, छुट्टी से वापस आते हुए मेरे पास HR से जुड़े कुछ मुद्दे हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, leave에서 복귀하면서 HR 관련해서 도움이 필요한 항목이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -30978,7 +30978,7 @@
       "fr": "Bonjour, j’ai quelques points RH concernant les prestataires de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques points de RH pour fournisseurs de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Punkte für Leistungserbringer, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, आज मुझे कुछ provider HR items में मदद चाहिए।",
+      "hi": "नमस्ते, आज मेरे पास प्रदाता HR से जुड़े कुछ मुद्दे हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider HR 관련해서 도움이 필요한 항목이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -31797,7 +31797,7 @@
       "fr": "Bonjour, j’ai quelques mises à jour du dossier de prestataire de soins pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de fournisseur de soins pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ provider record updates में मदद चाहिए।",
+      "hi": "नमस्ते, मेरे पास प्रदाता रिकॉर्ड से जुड़े कुछ अपडेट हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -32712,7 +32712,7 @@
       "fr": "Bonjour, j’ai quelques mises à jour du dossier de prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de fournisseur de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, आज मुझे कुछ provider record updates में मदद चाहिए।",
+      "hi": "नमस्ते, आज मेरे पास प्रदाता रिकॉर्ड से जुड़े कुछ अपडेट हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -33328,7 +33328,7 @@
       "fr": "Bonjour, j’ai quelques mises à jour du dossier de prestataire de soins pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de fournisseur de soins pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ provider record updates में मदद चाहिए।",
+      "hi": "नमस्ते, मेरे पास प्रदाता रिकॉर्ड से जुड़े कुछ अपडेट हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -34195,7 +34195,7 @@
       "fr": "Bonjour, j’ai quelques questions RH de planification des horaires pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires de planification des RH pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Fragen zum Dienstplan, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ HR scheduling चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मेरे पास HR शेड्यूलिंग से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, HR scheduling 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -34978,7 +34978,7 @@
       "fr": "Bonjour, j’ai besoin d’aide pour échanger l’un de mes prochains quarts de travail, et j’ai aussi une autre question sur la planification des horaires.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour échanger un de mes quarts de travail à venir, et j’ai aussi une autre question de planification.",
       "de": "Hallo, ich brauche Hilfe dabei, eine meiner kommenden Schichten zu tauschen, und ich habe außerdem noch eine weitere Frage zum Dienstplan.",
-      "hi": "नमस्ते, मुझे अपनी आने वाली shifts में से एक swap करने में मदद चाहिए, और मेरा एक और scheduling question भी है।",
+      "hi": "नमस्ते, मुझे अपनी आने वाली शिफ्टों में से एक बदलने में मदद चाहिए, और मेरा शेड्यूलिंग से जुड़ा एक और सवाल भी है।",
       "ko": "안녕하세요, 다가오는 shift 중 하나를 바꾸는 데 도움이 필요하고, scheduling 관련 질문도 하나 더 있어요."
     },
     "culture_overrides": {
@@ -35625,7 +35625,7 @@
       "fr": "Bonjour, j’ai deux ou trois questions de planification pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées à l’horaire pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Fragen wegen des Dienstplans, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे scheduling से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे शेड्यूलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 일정 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -36478,7 +36478,7 @@
       "fr": "Bonjour, j’ai quelques démarches RH à régler pour mon intégration et mes accréditations.",
       "fr-CA": "Bonjour, j’ai quelques démarches de ressources humaines à régler pour mon intégration et mes titres de compétence.",
       "de": "Hallo, ich habe ein paar Personalangelegenheiten, die ich für mein Onboarding und meine Zulassung erledigen muss.",
-      "hi": "नमस्ते, मुझे अपने onboarding और credentials के लिए कुछ HR चीज़ें पूरी करनी हैं।",
+      "hi": "नमस्ते, मुझे अपनी ऑनबोर्डिंग और क्रेडेंशियल्स के लिए HR की कुछ चीज़ें पूरी करनी हैं।",
       "ko": "안녕하세요, 온보딩과 credentials 관련해서 처리해야 할 HR 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -37202,7 +37202,7 @@
       "fr": "Bonjour, j’ai deux ou trois démarches d’intégration RH pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées à l’intégration aux ressources humaines pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Onboarding-Sachen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे HR onboarding से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे HR ऑनबोर्डिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, HR 온보딩 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -37815,7 +37815,7 @@
       "fr": "Bonjour, j’ai deux ou trois questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज HR की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -38857,7 +38857,7 @@
       "fr": "Bonjour, j’ai deux ou trois demandes de congé pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois demandes de congé pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Urlaubsanträge, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ leave requests में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे छुट्टी के कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 휴가 요청 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -39669,7 +39669,7 @@
       "fr": "Bonjour, j’ai deux ou trois demandes de congé RH pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois demandes de congé RH pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Urlaubsanträge, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे कुछ HR leave requests में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे HR छुट्टी के कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, HR 휴가 요청 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -40426,7 +40426,7 @@
       "fr": "Bonjour, j’ai deux ou trois choses liées aux congés pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées aux congés pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar urlaubsbezogene Themen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे leave से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे छुट्टी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 휴가 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -41253,7 +41253,7 @@
       "fr": "Bonjour, j’ai deux ou trois questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज HR की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -42024,7 +42024,7 @@
       "fr": "Bonjour, j’ai deux ou trois problèmes RH pour lesquels j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai deux ou trois problèmes de ressources humaines pour lesquels j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Anliegen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR issues में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज HR की कुछ समस्याओं में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 문제 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -42728,7 +42728,7 @@
       "fr": "Bonjour, j’ai deux ou trois problèmes RH de planification et de paie pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois problèmes de ressources humaines liés à l’horaire et à la paie pour lesquels j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Anliegen zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे HR scheduling और payroll से जुड़े कुछ issues में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे HR शेड्यूलिंग और पेरोल से जुड़ी कुछ समस्याओं में मदद चाहिए।",
       "ko": "안녕하세요, HR 일정과 payroll 문제 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -43566,7 +43566,7 @@
       "fr": "Bonjour, j’ai quelques démarches d’intégration RH à régler aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques démarches d’intégration aux ressources humaines à régler aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Onboarding-Sachen, die ich erledigen muss.",
-      "hi": "नमस्ते, मुझे आज HR onboarding से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
+      "hi": "नमस्ते, मुझे आज HR ऑनबोर्डिंग से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
       "ko": "안녕하세요, 오늘 처리해야 할 HR 온보딩 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -44189,7 +44189,7 @@
       "fr": "Bonjour, j’ai deux ou trois démarches d’intégration pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées à l’intégration pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Onboarding-Fragen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे onboarding से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे ऑनबोर्डिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 온보딩 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -45344,7 +45344,7 @@
       "fr": "Bonjour, j’ai quelques démarches d’accréditation et de RH à régler avant de pouvoir revenir au travail.",
       "fr-CA": "Bonjour, j’ai quelques démarches liées à la vérification des titres de compétence et aux ressources humaines à régler avant de pouvoir revenir au travail.",
       "de": "Hallo, ich habe ein paar HR-Fragen und Fragen zur Zulassung, die ich klären muss, bevor ich wieder zur Arbeit kommen kann.",
-      "hi": "नमस्ते, काम पर वापस आने से पहले मुझे credentialing और HR से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
+      "hi": "नमस्ते, काम पर वापस आने से पहले मुझे क्रेडेंशियलिंग और HR से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
       "ko": "안녕하세요, 직장에 복귀하기 전에 처리해야 할 credentialing 및 HR 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -46412,7 +46412,7 @@
       "fr": "Bonjour, j’ai quelques démarches d’accréditation à régler aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques démarches liées à la vérification des titres de compétence à régler aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung, die ich klären muss.",
-      "hi": "नमस्ते, मुझे आज credentialing से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
+      "hi": "नमस्ते, मुझे आज क्रेडेंशियलिंग से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
       "ko": "안녕하세요, 오늘 처리해야 할 credentialing 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -47443,7 +47443,7 @@
       "fr": "Bonjour, j’ai quelques démarches d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques démarches liées à la vérification des titres de compétence pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज credentialing से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -48557,7 +48557,7 @@
       "fr": "Bonjour, j’ai quelques points d’accréditation et de RH pour lesquels j’ai besoin d’aide avant de commencer dans un nouvel établissement.",
       "fr-CA": "Bonjour, j’ai quelques éléments liés à la vérification des titres de compétence et aux ressources humaines pour lesquels j’ai besoin d’aide avant de commencer dans un nouvel établissement.",
       "de": "Hallo, ich habe ein paar Fragen zur Zulassung und zu Personalthemen, bei denen ich Hilfe brauche, bevor ich in einer neuen Einrichtung anfange.",
-      "hi": "नमस्ते, नई facility में शुरू करने से पहले मुझे credentialing और HR से जुड़े कुछ items में मदद चाहिए।",
+      "hi": "नमस्ते, नई सुविधा में शुरू करने से पहले मुझे क्रेडेंशियलिंग और HR से जुड़ी कुछ मदों में मदद चाहिए।",
       "ko": "안녕하세요, 새 facility에서 시작하기 전에 credentialing 및 HR 관련해서 도움받아야 할 항목이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -49686,7 +49686,7 @@
       "fr": "Bonjour, j’ai quelques démarches d’accréditation RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques démarches de ressources humaines liées à la vérification des titres de compétence pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalfragen zur Zulassung, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज HR credentialing से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज HR क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -50687,7 +50687,7 @@
       "fr": "Bonjour, j’ai quelques points RH en tant que prestataire de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques éléments de ressources humaines pour fournisseur de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Fragen als Leistungserbringer, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ provider HR items में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज प्रदाता HR से जुड़ी कुछ मदों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider HR 항목 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -51743,7 +51743,7 @@
       "fr": "Bonjour, j’ai quelques démarches d’accréditation en tant que prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques démarches de vérification des titres de compétence de fournisseur de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज provider credentialing से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज प्रदाता क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -52684,7 +52684,7 @@
       "fr": "Bonjour, j’ai quelques mises à jour d’accréditation en tant que prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour de vérification des titres de compétence de fournisseur de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Änderungen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ provider credentialing updates में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज प्रदाता क्रेडेंशियलिंग से जुड़े कुछ अपडेट्स में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider credentialing 업데이트 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -53729,7 +53729,7 @@
       "fr": "Bonjour, j’ai quelques démarches d’accréditation en tant que prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques démarches de vérification des titres de compétence de fournisseur de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज provider credentialing से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज प्रदाता क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -54909,7 +54909,7 @@
       "fr": "Bonjour, j’ai quelques questions RH liées à mon nouveau bébé pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines liées à mon nouveau bébé pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Fragen im Zusammenhang mit meinem neugeborenen Baby, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे अपने नए बच्चे से जुड़ी कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे अपने नए बच्चे से जुड़ी HR की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 새로 태어난 아기와 관련해서 HR 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -56028,7 +56028,7 @@
       "fr": "Bonjour, j’ai quelques questions RH liées à une adoption récente pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines liées à une adoption récente pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Fragen im Zusammenhang mit einer kürzlich erfolgten Adoption, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे हाल ही में हुए adoption से जुड़ी कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे हाल ही में हुए गोद लेने से जुड़ी HR की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 최근 입양과 관련해서 HR 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -56926,7 +56926,7 @@
       "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज HR की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -58046,7 +58046,7 @@
       "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आज HR की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -59308,7 +59308,7 @@
       "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मुझे HR से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -60364,7 +60364,7 @@
       "fr": "Bonjour, j’ai quelques questions de ressources humaines liées à une opération à venir pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide en lien avec une chirurgie à venir.",
       "de": "Hallo, ich habe ein paar Personalangelegenheiten im Zusammenhang mit einer bevorstehenden Operation, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आने वाली surgery से जुड़ी कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, मुझे आने वाली सर्जरी से जुड़ी HR की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 곧 있을 수술과 관련해서 HR 관련 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -61414,7 +61414,7 @@
       "fr": "Bonjour, j’ai quelques démarches de ressources humaines à régler aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines dont je dois m’occuper aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, die ich erledigen muss.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ें निपटानी हैं।",
+      "hi": "नमस्ते, आज मुझे HR से जुड़ी कुछ चीज़ें निपटानी हैं।",
       "ko": "안녕하세요, 오늘 HR 관련해서 처리해야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -62406,7 +62406,7 @@
       "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मुझे HR से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -63440,7 +63440,7 @@
       "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मुझे HR से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -64393,7 +64393,7 @@
       "fr": "Bonjour, j’ai quelques questions de ressources humaines concernant la planification des horaires et la paie pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de planification des horaires et de paie en ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज HR scheduling और payroll से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मुझे HR की शेड्यूलिंग और पेरोल से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 일정 조정과 payroll 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -65361,7 +65361,7 @@
       "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मुझे HR से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
@@ -66296,7 +66296,7 @@
       "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
-      "hi": "नमस्ते, मुझे आज कुछ HR चीज़ों में मदद चाहिए।",
+      "hi": "नमस्ते, आज मुझे HR से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
