@@ -47,6 +47,7 @@ from typing import Any
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
+from eva.metrics.utils import mean_agent_perf_stat
 from eva.models.results import MetricScore
 
 
@@ -428,6 +429,14 @@ class TurnTakingMetric(CodeMetric):
             sub["user_interruption.mean_yield_score"] = _wrap(
                 "user_interruption.mean_yield_score", round(statistics.mean(yield_scores), 4), True
             )
+
+        # Token usage (from agent_perf_stats.csv)
+        mean_output_tokens = mean_agent_perf_stat(context.output_dir, "output_tokens")
+        mean_reasoning_tokens = mean_agent_perf_stat(context.output_dir, "reasoning_tokens")
+        if mean_output_tokens is not None:
+            sub["mean_output_tokens"] = _wrap("mean_output_tokens", round(mean_output_tokens, 3), False)
+        if mean_reasoning_tokens is not None:
+            sub["mean_reasoning_tokens"] = _wrap("mean_reasoning_tokens", round(mean_reasoning_tokens, 3), False)
 
         return sub
 

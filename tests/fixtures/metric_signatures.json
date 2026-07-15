@@ -44,7 +44,7 @@
   "ResponseSpeedMetric": {
     "name": "response_speed",
     "prompt_hash": null,
-    "source_hash": "7cd7e8baa3d2",
+    "source_hash": "fdac735ba008",
     "version": "v0.2"
   },
   "STTWERMetric": {
@@ -92,7 +92,7 @@
   "TurnTakingMetric": {
     "name": "turn_taking",
     "prompt_hash": null,
-    "source_hash": "0ae7b7f0fc8c",
+    "source_hash": "fee8caa7adc7",
     "version": "v0.1"
   },
   "UserBehavioralFidelityMetric": {
