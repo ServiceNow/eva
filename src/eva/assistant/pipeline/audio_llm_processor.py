@@ -459,9 +459,7 @@ class AudioTranscriptionProcessor(FrameProcessor):
         timestamp = time_now_iso8601()
 
         # Run transcription as background task so it completes even if interrupted
-        task = asyncio.create_task(
-            self._transcribe_audio(audio_data, timestamp, source_sample_rate, turn_id=turn_id)
-        )
+        task = asyncio.create_task(self._transcribe_audio(audio_data, timestamp, source_sample_rate, turn_id=turn_id))
         self._transcription_tasks.append(task)
         # Clean up completed tasks
         self._transcription_tasks = [t for t in self._transcription_tasks if not t.done()]
