@@ -191,6 +191,18 @@ func main() {
 	gather := webrtc.GatheringCompletePromise(pc)
 	must(pc.SetLocalDescription(offer), "set local desc")
 	<-gather
+	// print the non-candidate SDP lines so we can compare Pion's offer to the browser's
+	fmt.Println("---- PION OFFER (non-candidate) ----")
+	for _, ln := range splitLines(pc.LocalDescription().SDP) {
+		if len(ln) >= 11 && ln[:11] == "a=candidate" {
+			continue
+		}
+		if len(ln) >= 13 && ln[:13] == "a=fingerprint" {
+			continue
+		}
+		fmt.Println(ln)
+	}
+	fmt.Println("------------------------------------")
 
 	// --- telnyx_rtc.invite ---
 	send(ws, "telnyx_rtc.invite", map[string]interface{}{
@@ -277,6 +289,22 @@ func replyOK(ws *websocket.Conn, id interface{}, method string) {
 	res, _ := json.Marshal(map[string]string{"method": method})
 	msg, _ := json.Marshal(rpc{JSONRPC: "2.0", ID: id, Result: res})
 	_ = ws.WriteMessage(websocket.TextMessage, msg)
+}
+
+func splitLines(s string) []string {
+	var out, cur = []string{}, ""
+	for _, r := range s {
+		if r == '\n' {
+			out = append(out, cur)
+			cur = ""
+		} else if r != '\r' {
+			cur += string(r)
+		}
+	}
+	if cur != "" {
+		out = append(out, cur)
+	}
+	return out
 }
 
 func must(err error, ctx string) {
