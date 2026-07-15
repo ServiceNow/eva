@@ -24,6 +24,7 @@ import wave
 from abc import ABC, abstractmethod
 from typing import Any
 
+import litellm
 from pipecat.transcriptions.language import Language
 
 from eva.models.config import LANGUAGE_DISPLAY_NAMES
@@ -101,88 +102,24 @@ def resample_pcm16(pcm_data: bytes, from_rate: int, to_rate: int) -> bytes:
     return struct.pack(f"<{len(out_samples)}h", *out_samples)
 
 
-class _StreamedFunction:
-    """Function part of a reconstructed streamed tool call (attribute access)."""
+def _assemble_stream_chunks(chunks: list, messages: list[dict[str, Any]]) -> tuple[Any, Any, str]:
+    """Reconstruct the final message from raw OpenAI-SDK stream chunks.
 
-    def __init__(self, name: str, arguments: str) -> None:
-        self.name = name
-        self.arguments = arguments
+    Delegates to litellm.stream_chunk_builder — the same assembler CASCADE's
+    LiteLLMClient.complete_stream uses (see services/llm.py) — so both pipelines
+    share one chunk-assembly implementation. It expects dict-shaped chunks, so
+    pydantic chunks from the raw AsyncOpenAI client are dumped first.
 
-
-class _ToolCallDump:
-    """Reconstructed streamed tool call.
-
-    Mirrors the shape the tool loop expects from a real OpenAI tool-call object:
-    attribute access (``.id`` / ``.type`` / ``.function.name`` / ``.function.arguments``)
-    used by ``_run_tool_loop`` to execute the call, plus ``model_dump()`` used to
-    serialize it back into assistant-message history.
+    Returns (message, usage, finish_reason). ``message`` has real
+    ``.content`` / ``.tool_calls[i].function.name/arguments`` / ``model_dump()``
+    attributes, matching what AgenticSystem._run_tool_loop expects.
     """
-
-    def __init__(self, d: dict) -> None:
-        self._d = d
-        self.id = d.get("id", "")
-        self.type = d.get("type", "function")
-        fn = d.get("function", {})
-        self.function = _StreamedFunction(fn.get("name", ""), fn.get("arguments", ""))
-
-    def model_dump(self, exclude_none: bool = False) -> dict:
-        return self._d
-
-
-class _StreamedMessage:
-    """Minimal message-like object returned from complete_stream()."""
-
-    def __init__(self, content: str, tool_calls: list | None) -> None:
-        self.content = content
-        self.tool_calls = tool_calls or None
-
-
-def _assemble_stream_chunks(chunks: list) -> tuple:
-    """Reconstruct (content, reasoning, finish_reason, usage, tool_calls) from streaming chunks.
-
-    Returns a 5-tuple:
-      - full_content: str — concatenated text deltas
-      - reasoning_content: str — concatenated reasoning/thinking deltas (empty if none)
-      - finish_reason: str
-      - usage: usage object or None
-      - assembled_tool_calls: list[_ToolCallDump] or None
-    """
-    full_content = ""
-    reasoning_content = ""
-    finish_reason = "unknown"
-    usage = None
-    tool_calls_by_index: dict[int, dict] = {}
-
-    for chunk in chunks:
-        choices = getattr(chunk, "choices", None) or []
-        if choices:
-            delta = getattr(choices[0], "delta", None)
-            if delta:
-                text = getattr(delta, "content", None) or ""
-                full_content += text
-                # vLLM streams thinking either as `reasoning_content` or `reasoning` on the delta.
-                reasoning_content += getattr(delta, "reasoning_content", None) or getattr(delta, "reasoning", None) or ""
-                for tc in getattr(delta, "tool_calls", None) or []:
-                    idx = getattr(tc, "index", 0)
-                    if idx not in tool_calls_by_index:
-                        tool_calls_by_index[idx] = {
-                            "id": getattr(tc, "id", "") or "",
-                            "type": "function",
-                            "function": {"name": "", "arguments": ""},
-                        }
-                    fn = getattr(tc, "function", None)
-                    if fn:
-                        tool_calls_by_index[idx]["function"]["name"] += getattr(fn, "name", "") or ""
-                        tool_calls_by_index[idx]["function"]["arguments"] += getattr(fn, "arguments", "") or ""
-            fr = getattr(choices[0], "finish_reason", None)
-            if fr:
-                finish_reason = fr
-        chunk_usage = getattr(chunk, "usage", None)
-        if chunk_usage:
-            usage = chunk_usage
-
-    assembled = [_ToolCallDump(d) for d in tool_calls_by_index.values()] if tool_calls_by_index else None
-    return full_content, reasoning_content, finish_reason, usage, assembled
+    dict_chunks = [c.model_dump() if hasattr(c, "model_dump") else c for c in chunks]
+    full = litellm.stream_chunk_builder(dict_chunks, messages=messages)
+    message = full.choices[0].message
+    usage = getattr(full, "usage", None)
+    finish_reason = getattr(full.choices[0], "finish_reason", None) or "unknown"
+    return message, usage, finish_reason
 
 
 class BaseALMClient(ABC):

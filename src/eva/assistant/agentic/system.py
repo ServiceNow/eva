@@ -246,9 +246,8 @@ class AgenticSystem:
                                 yield agg.text
                         else:
                             response, llm_stats = payload
-                    # Proof of real streaming: many raw deltas means token-by-token from the
-                    # provider; exactly 1 means a non-streaming client fell back to a single
-                    # chunk. Safe to ignore / silence on large evals.
+                    # delta_count > 1 confirms the provider streamed token-by-token rather
+                    # than a client falling back to a single non-streaming chunk.
                     logger.debug(f"llm_streaming: received {delta_count} raw delta(s) from complete_stream")
                     remainder = await aggregator.flush()
                     if remainder and remainder.text.strip():

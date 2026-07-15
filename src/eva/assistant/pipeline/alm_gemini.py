@@ -29,7 +29,6 @@ from eva.assistant.pipeline.alm_base import (
     DEFAULT_SAMPLE_RATE,
     DEFAULT_SAMPLE_WIDTH,
     BaseALMClient,
-    _StreamedMessage,
     _assemble_stream_chunks,
 )
 from eva.utils.logging import get_logger
@@ -293,7 +292,7 @@ class ALMGeminiClient(BaseALMClient):
 
                 # Gemini's OpenAI-compat endpoint does not surface reasoning content (its
                 # complete() returns reasoning=None), so the reasoning field is ignored here.
-                full_content, _reasoning, finish_reason, usage, assembled_tool_calls = _assemble_stream_chunks(chunks)
+                message, usage, finish_reason = _assemble_stream_chunks(chunks, messages)
                 reasoning_tokens = 0
                 if usage and hasattr(usage, "completion_tokens_details"):
                     details = usage.completion_tokens_details
@@ -312,7 +311,7 @@ class ALMGeminiClient(BaseALMClient):
                     "reasoning": None,
                     "reasoning_content": None,
                 }
-                yield ("final", (_StreamedMessage(full_content, assembled_tool_calls), stats))
+                yield ("final", (message, stats))
                 return
 
             except Exception as e:

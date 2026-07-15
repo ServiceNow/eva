@@ -143,7 +143,12 @@ class ModelConfig(BaseModel):
     tts_params: dict[str, Any] | None = Field(None, description="Additional TTS model parameters (JSON)")
     s2s_params: dict[str, Any] | None = Field(None, description="Additional speech-to-speech model parameters (JSON)")
     audio_llm_params: dict[str, Any] | None = Field(
-        None, description="Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, max_tokens"
+        None,
+        description=(
+            "Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, "
+            "max_tokens, full_audio_context (send every user turn as audio instead of only the "
+            "current turn; removes reliance on transcriptions but grows context quickly)"
+        ),
     )
 
     # Configurable turn start/stop strategies
@@ -195,13 +200,6 @@ class ModelConfig(BaseModel):
     llm_streaming: bool = Field(
         False,
         description="Stream Chat Completions output to TTS sentence-by-sentence.",
-    )
-    audio_llm_full_audio_context: bool = Field(
-        False,
-        description=(
-            "AUDIO_LLM only: send every user turn as audio (full audio context) instead of "
-            "only the current turn. Removes reliance on transcriptions but grows context quickly."
-        ),
     )
     parallel_tool_calls: bool | None = Field(
         None,

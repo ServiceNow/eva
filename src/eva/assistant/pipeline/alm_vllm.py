@@ -15,7 +15,6 @@ from eva.assistant.pipeline.alm_base import (
     DEFAULT_SAMPLE_RATE,
     DEFAULT_SAMPLE_WIDTH,
     BaseALMClient,
-    _StreamedMessage,
     _assemble_stream_chunks,
 )
 from eva.utils.llm_utils import approximate_reasoning_tokens
@@ -291,10 +290,8 @@ class ALMvLLMClient(BaseALMClient):
                             yield ("delta", text)
                 elapsed = time.time() - start_time
 
-                full_content, reasoning_content, finish_reason, usage, assembled_tool_calls = _assemble_stream_chunks(
-                    chunks
-                )
-                reasoning_content = reasoning_content or None
+                message, usage, finish_reason = _assemble_stream_chunks(chunks, messages)
+                reasoning_content = getattr(message, "reasoning_content", None) or None
 
                 # Reasoning tokens from usage if the server reported them; else approximate from
                 # the streamed reasoning text (mirrors the non-streaming complete() path).
@@ -318,7 +315,7 @@ class ALMvLLMClient(BaseALMClient):
                     "reasoning": reasoning_content,
                     "reasoning_content": reasoning_content,
                 }
-                yield ("final", (_StreamedMessage(full_content, assembled_tool_calls), stats))
+                yield ("final", (message, stats))
                 return
 
             except Exception as e:

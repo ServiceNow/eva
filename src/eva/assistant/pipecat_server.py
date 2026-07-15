@@ -369,7 +369,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     audio_collector=audio_llm_audio_collector,
                     output_dir=self.output_dir,
                     llm_streaming=self.pipeline_config.llm_streaming,
-                    full_audio_context=self.pipeline_config.audio_llm_full_audio_context,
+                    full_audio_context=self.pipeline_config.audio_llm_params.get("full_audio_context", False),
                 )
                 audio_llm_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
                     role="assistant", content=msg, timestamp=self._current_iso_timestamp()
