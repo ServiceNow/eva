@@ -37,6 +37,32 @@ class TestFaithfulness:
         variables = self.metric.get_prompt_variables(ctx, "transcript")
         assert "speech-to-speech" in variables["user_turns_disclaimer"]
         assert "raw audio" in variables["disambiguation_context"]
+        # S2S traces show STT-of-audio for assistant turns, so the artifact carve-out applies.
+        assert variables["misrepresentation_pipeline_note"] != ""
+        assert "STT transcriptions of the agent" in variables["assistant_turns_disclaimer"]
+
+    def test_get_prompt_variables_audio_llm(self):
+        # AUDIO_LLM hears user audio directly (so disambiguation is audio-native), but its
+        # assistant turns in the trace are the LLM's literal *text* output, not STT-of-audio.
+        # Character-level slips there are real, so the misrepresentation/info-loss carve-outs
+        # must NOT apply and the assistant-turns disclaimer must be the intended-text one.
+        ctx = make_metric_context(pipeline_type="audio_llm")
+        variables = self.metric.get_prompt_variables(ctx, "transcript")
+        # Audio-native perception → S2S-style user/disambiguation framing.
+        assert "raw audio" in variables["disambiguation_context"]
+        assert "speech-to-speech" in variables["user_turns_disclaimer"]
+        # Trace provenance is text, not audio → no free pass on character-level slips.
+        assert variables["misrepresentation_pipeline_note"] == ""
+        assert "STT transcriptions of the agent" not in variables["assistant_turns_disclaimer"]
+        assert "intended text" in variables["assistant_turns_disclaimer"]
+
+    def test_disambiguation_context_drops_comparative_bar(self):
+        # The bare "bar is higher than a text-based system" clause was removed: it added
+        # severity pressure without an operational criterion. The concrete expectation stays.
+        ctx = make_metric_context(pipeline_type="s2s")
+        variables = self.metric.get_prompt_variables(ctx, "transcript")
+        assert "higher than for a text-based system" not in variables["disambiguation_context"]
+        assert "alphanumeric codes" in variables["disambiguation_context"]
 
     def test_build_metric_score(self):
         ctx = make_metric_context(conversation_trace=[{"role": "user"}, {"role": "assistant"}])
