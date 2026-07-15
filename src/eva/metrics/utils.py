@@ -1,10 +1,11 @@
 """Shared utilities for metrics computation."""
 
 import base64
+import csv
 from io import BytesIO
 from itertools import groupby
 from pathlib import Path
-from statistics import harmonic_mean
+from statistics import harmonic_mean, mean
 from typing import Any
 
 from pydub import AudioSegment
@@ -504,3 +505,38 @@ def aggregate_per_turn_scores(scores: list[float | None], aggregation: str) -> f
         Aggregated score or None if all scores are None
     """
     return compute_aggregation(aggregation, scores)
+
+
+def mean_agent_perf_stat(
+    output_dir: str | Path,
+    column: str,
+) -> float | None:
+    """Mean of one numeric column across the LLM calls in ``agent_perf_stats.csv``.
+
+    Reads the per-LLM-call CSV (written by the agentic system) from the record's
+    ``output_dir`` and averages the values in ``column`` over the rows. Returns
+    ``None`` when the CSV is missing/empty or the column has no numeric values.
+    """
+    csv_path = Path(output_dir) / "agent_perf_stats.csv"
+    if not csv_path.exists():
+        return None, None
+
+    try:
+        with open(csv_path, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+    except OSError:
+        return None, None
+
+    if not rows:
+        return None, None
+
+    values: list[float] = []
+    for row in rows:
+        raw = (row.get(column) or "").strip()
+        if not raw:
+            continue
+        try:
+            values.append(float(raw))
+        except ValueError:
+            continue
+    return mean(values) if values else None
