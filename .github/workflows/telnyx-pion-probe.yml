@@ -1,0 +1,56 @@
+# Runs the Pion WebRTC probe against a Telnyx AI Assistant on a Linux runner.
+#
+# This exists because the probe (a native Go binary) cannot be executed on the macOS dev
+# machine where it was written -- corporate security policy SIGKILLs freshly-built unsigned
+# Mach-O binaries. A Linux GitHub runner has no such restriction, allows the outbound
+# network the probe needs, and needs NO secret: anonymous login uses only the public
+# assistant id.
+#
+# Trigger manually (Actions -> "Telnyx Pion probe" -> Run workflow) with an assistant id.
+name: Telnyx Pion probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      assistant_id:
+        description: "Telnyx AI Assistant id (assistant-...)"
+        required: true
+        default: "assistant-473093df-d97a-4eae-b484-413bcbe2fda4"
+      seconds:
+        description: "Call duration (s)"
+        required: false
+        default: "45"
+  push:
+    paths:
+      - "experiments/pion-probe/**"        # build-check on changes
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: experiments/pion-probe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+      - name: Build (always)
+        run: go build ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Run probe against the assistant (dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          go run . \
+            -assistant "${{ github.event.inputs.assistant_id }}" \
+            -seconds "${{ github.event.inputs.seconds }}" \
+          | tee probe.log
+          echo "----- verdict -----"
+          grep -E "ASSISTANT HEARD US|assistant heard us|ice connection state|inbound RTP" probe.log || true
+      - name: Upload log
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pion-probe-log
+          path: experiments/pion-probe/probe.log
