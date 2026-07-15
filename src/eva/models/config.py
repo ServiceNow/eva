@@ -267,7 +267,14 @@ class ModelConfig(BaseModel):
         "just work", and the forced values are reflected in the persisted config.json / run_id.
         A conflicting user-provided value is overridden with a WARNING; an untouched default is
         logged at INFO. Idempotent: a value already at the target is left untouched (clean reload).
+
+        Only applies to the CASCADE pipeline: in AUDIO_LLM / S2S the ``stt`` field does not
+        instantiate an in-pipeline STT service, so there is nothing to emit the external turn
+        frames. Forcing 'external'/'none' there would disable the local VAD that those pipelines
+        rely on for turn detection, hanging the conversation (no user turn ever finalizes).
         """
+        if self.pipeline_type != PipelineType.CASCADE:
+            return self
         if (self.stt or "").lower() not in self._SELF_ENDPOINTING_STT:
             return self
 
@@ -290,11 +297,13 @@ class ModelConfig(BaseModel):
         allowed = {"off", "auto"}
         if self.pre_tool_speech not in allowed:
             raise ValueError(f"pre_tool_speech must be one of {sorted(allowed)}, got '{self.pre_tool_speech}'")
-        any_set = self.pre_tool_speech != "off" or self.llm_streaming or self.parallel_tool_calls is not None
-        if any_set and self.pipeline_type != PipelineType.CASCADE:
+        # llm_streaming is honored by AUDIO_LLM too (via BaseALMClient.complete_stream); only
+        # pre_tool_speech / parallel_tool_calls remain CASCADE-only.
+        cascade_only_set = self.pre_tool_speech != "off" or self.parallel_tool_calls is not None
+        if cascade_only_set and self.pipeline_type != PipelineType.CASCADE:
             logger.warning(
-                "Cascade LLM flags (pre_tool_speech / llm_streaming / parallel_tool_calls) apply only "
-                f"to the CASCADE pipeline; they will be ignored for pipeline_type={self.pipeline_type}."
+                "Cascade LLM flags (pre_tool_speech / parallel_tool_calls) apply only to the CASCADE "
+                f"pipeline; they will be ignored for pipeline_type={self.pipeline_type}."
             )
         return self
 

@@ -56,22 +56,19 @@ MIN_AUDIO_BYTES = 320
 class AudioLLMUserAudioCollector(FrameProcessor):
     """Buffers raw audio frames during user speech for the audio-LLM pipeline.
 
-    Audio capture is driven by raw VAD events (UserStartedSpeakingFrame /
-    UserStoppedSpeakingFrame), but turn finalization is driven by the
-    smart-turn-aware user aggregator: pipecat_server calls ``notify_turn_ended()``
-    from the ``on_user_turn_stopped`` event (after the turn-stop strategy is
-    satisfied), which increments the turn id and pushes an LLMContextFrame to
-    trigger both branches of the parallel pipeline (transcription + audio-LLM).
+    Collects audio and pushes LLMContextFrame when the user stops speaking, which
+    triggers the parallel pipeline (transcription + audio-LLM processing).
 
-    Because finalization is deferred to the turn-stop verdict, a single turn may
-    span multiple VAD start/stop blips (e.g. natural pauses while spelling out a
-    code). The collector keeps appending audio across those blips instead of
-    fragmenting the buffer, and only starts a fresh buffer once the previous turn
-    has been finalized.
+    Turn boundaries are driven directly by the UserStartedSpeakingFrame /
+    UserStoppedSpeakingFrame frames the transport emits. In the AUDIO_LLM
+    pipeline the user aggregator runs the ``external`` turn-stop strategy with no
+    STT, so ``on_user_turn_stopped`` is transcript-gated and never fires — the
+    collector must finalize on the stop frame itself rather than defer to that
+    event.
 
-    A ring buffer of pre-VAD audio captures the start of speech that occurs before
-    VAD fires UserStartedSpeakingFrame. This mirrors the S2S UserAudioCollector
-    pattern.
+    Uses a ring buffer of pre-VAD audio so that the beginning of the user's
+    speech—before VAD fires UserStartedSpeakingFrame—is not lost. This mirrors
+    the S2S UserAudioCollector pattern.
 
     All frames pass through unchanged.
     """
@@ -92,11 +89,7 @@ class AudioLLMUserAudioCollector(FrameProcessor):
         self._audio_buffer = bytearray()
         self._pre_speech_buffer: list[bytes] = []
         self._user_speaking = False
-        self._current_turn_id = 0  # Incremented on each finalized turn
-        # True between turns. Set False when a new turn starts and back to True by
-        # notify_turn_ended(), so audio is appended continuously across VAD start/stop
-        # blips within a single turn-stop-governed turn instead of being fragmented.
-        self._turn_finalized = True
+        self._current_turn_id = 0  # Incremented on each user turn
         # Pre-speech buffer size (captures audio before VAD fires to avoid cutting off speech)
         self._pre_speech_secs = pre_speech_secs or self.DEFAULT_PRE_SPEECH_SECS
         # Actual sample rate observed on InputAudioRawFrames. The buffer holds raw PCM
@@ -109,35 +102,21 @@ class AudioLLMUserAudioCollector(FrameProcessor):
 
         if isinstance(frame, UserStartedSpeakingFrame):
             self._user_speaking = True
+            # Prepend the pre-speech ring buffer so we don't lose the start of speech
             pre_speech_bytes = b"".join(self._pre_speech_buffer)
             pre_speech_duration_ms = len(pre_speech_bytes) / (self._frame_sample_rate * 2) * 1000
-            if self._turn_finalized:
-                # Fresh turn: pre-speech becomes the start of a new buffer.
-                logger.debug(
-                    f"New turn — prepending {len(pre_speech_bytes)} bytes "
-                    f"({pre_speech_duration_ms:.0f}ms) of pre-speech audio"
-                )
-                self._audio_buffer = bytearray(pre_speech_bytes)
-                self._turn_finalized = False
-            else:
-                # Mid-turn VAD blip (e.g. a pause between spelled-out characters):
-                # append pre-speech so the captured utterance stays continuous.
-                logger.debug(
-                    f"Resuming turn — appending {len(pre_speech_bytes)} bytes "
-                    f"({pre_speech_duration_ms:.0f}ms) of pre-speech audio"
-                )
-                self._audio_buffer.extend(pre_speech_bytes)
+            logger.debug(
+                f"Prepending {len(pre_speech_bytes)} bytes ({pre_speech_duration_ms:.0f}ms) of pre-speech audio"
+            )
+            self._audio_buffer = bytearray(pre_speech_bytes)
             self._pre_speech_buffer.clear()
 
         elif isinstance(frame, UserStoppedSpeakingFrame):
-            # Stop buffering active speech, but do NOT finalize the turn here — the
-            # smart-turn-aware on_user_turn_stopped event drives finalization via
-            # notify_turn_ended(). This lets a turn span multiple VAD segments.
             self._user_speaking = False
-            logger.debug(
-                f"VAD stop — pausing capture (buffer={len(self._audio_buffer)} bytes, "
-                f"turn_id={self._current_turn_id})"
-            )
+            # Increment turn ID BEFORE pushing frame so both parallel branches see the same ID
+            self._current_turn_id += 1
+            # Push LLMContextFrame to trigger parallel pipeline
+            await self._user_context_aggregator.push_frame(LLMContextFrame(context=self._context))
 
         elif isinstance(frame, InputAudioRawFrame):
             self._frame_sample_rate = frame.sample_rate
@@ -153,20 +132,6 @@ class AudioLLMUserAudioCollector(FrameProcessor):
                     total -= len(self._pre_speech_buffer.pop(0))
 
         await self.push_frame(frame, direction)
-
-    async def notify_turn_ended(self) -> None:
-        """Finalize the current turn and trigger downstream processing.
-
-        Called from pipecat_server's ``on_user_turn_stopped`` handler once the
-        turn-stop strategy is satisfied. Increments the turn id (so the
-        transcription branch and the audio-LLM branch observe a consistent
-        boundary) and pushes LLMContextFrame to trigger both branches. Setting
-        ``_turn_finalized`` makes the next UserStartedSpeakingFrame begin a fresh
-        buffer instead of appending to this turn.
-        """
-        self._current_turn_id += 1
-        self._turn_finalized = True
-        await self._user_context_aggregator.push_frame(LLMContextFrame(context=self._context))
 
     def get_buffered_audio(self) -> bytes:
         """Get the buffered audio and clear the buffer."""

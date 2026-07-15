@@ -101,11 +101,29 @@ def resample_pcm16(pcm_data: bytes, from_rate: int, to_rate: int) -> bytes:
     return struct.pack(f"<{len(out_samples)}h", *out_samples)
 
 
+class _StreamedFunction:
+    """Function part of a reconstructed streamed tool call (attribute access)."""
+
+    def __init__(self, name: str, arguments: str) -> None:
+        self.name = name
+        self.arguments = arguments
+
+
 class _ToolCallDump:
-    """Minimal tool-call-like object whose model_dump() returns the assembled dict."""
+    """Reconstructed streamed tool call.
+
+    Mirrors the shape the tool loop expects from a real OpenAI tool-call object:
+    attribute access (``.id`` / ``.type`` / ``.function.name`` / ``.function.arguments``)
+    used by ``_run_tool_loop`` to execute the call, plus ``model_dump()`` used to
+    serialize it back into assistant-message history.
+    """
 
     def __init__(self, d: dict) -> None:
         self._d = d
+        self.id = d.get("id", "")
+        self.type = d.get("type", "function")
+        fn = d.get("function", {})
+        self.function = _StreamedFunction(fn.get("name", ""), fn.get("arguments", ""))
 
     def model_dump(self, exclude_none: bool = False) -> dict:
         return self._d
@@ -120,15 +138,17 @@ class _StreamedMessage:
 
 
 def _assemble_stream_chunks(chunks: list) -> tuple:
-    """Reconstruct (content, finish_reason, usage, tool_calls) from streaming chunks.
+    """Reconstruct (content, reasoning, finish_reason, usage, tool_calls) from streaming chunks.
 
-    Returns a 4-tuple:
+    Returns a 5-tuple:
       - full_content: str — concatenated text deltas
+      - reasoning_content: str — concatenated reasoning/thinking deltas (empty if none)
       - finish_reason: str
       - usage: usage object or None
       - assembled_tool_calls: list[_ToolCallDump] or None
     """
     full_content = ""
+    reasoning_content = ""
     finish_reason = "unknown"
     usage = None
     tool_calls_by_index: dict[int, dict] = {}
@@ -140,6 +160,8 @@ def _assemble_stream_chunks(chunks: list) -> tuple:
             if delta:
                 text = getattr(delta, "content", None) or ""
                 full_content += text
+                # vLLM streams thinking either as `reasoning_content` or `reasoning` on the delta.
+                reasoning_content += getattr(delta, "reasoning_content", None) or getattr(delta, "reasoning", None) or ""
                 for tc in getattr(delta, "tool_calls", None) or []:
                     idx = getattr(tc, "index", 0)
                     if idx not in tool_calls_by_index:
@@ -160,7 +182,7 @@ def _assemble_stream_chunks(chunks: list) -> tuple:
             usage = chunk_usage
 
     assembled = [_ToolCallDump(d) for d in tool_calls_by_index.values()] if tool_calls_by_index else None
-    return full_content, finish_reason, usage, assembled
+    return full_content, reasoning_content, finish_reason, usage, assembled
 
 
 class BaseALMClient(ABC):

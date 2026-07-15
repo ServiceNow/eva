@@ -288,18 +288,32 @@ class ALMvLLMClient(BaseALMClient):
                             yield ("delta", text)
                 elapsed = time.time() - start_time
 
-                full_content, finish_reason, usage, assembled_tool_calls = _assemble_stream_chunks(chunks)
+                full_content, reasoning_content, finish_reason, usage, assembled_tool_calls = _assemble_stream_chunks(
+                    chunks
+                )
+                reasoning_content = reasoning_content or None
+
+                # Reasoning tokens from usage if the server reported them; else approximate from
+                # the streamed reasoning text (mirrors the non-streaming complete() path).
+                reasoning_tokens = 0
+                if usage and hasattr(usage, "completion_tokens_details"):
+                    details = usage.completion_tokens_details
+                    if details and hasattr(details, "reasoning_tokens"):
+                        reasoning_tokens = getattr(details, "reasoning_tokens", 0) or 0
+                if reasoning_content and reasoning_tokens == 0:
+                    reasoning_tokens = approximate_reasoning_tokens(reasoning_content, self.model, self, logger)
+
                 stats = {
                     "prompt_tokens": usage.prompt_tokens if usage else 0,
                     "completion_tokens": usage.completion_tokens if usage else 0,
-                    "reasoning_tokens": 0,
+                    "reasoning_tokens": reasoning_tokens,
                     "finish_reason": finish_reason,
                     "model": self.model,
                     "cost": 0.0,
                     "cost_source": "self_hosted",
                     "latency": round(elapsed, 3),
-                    "reasoning": None,
-                    "reasoning_content": None,
+                    "reasoning": reasoning_content,
+                    "reasoning_content": reasoning_content,
                 }
                 yield ("final", (_StreamedMessage(full_content, assembled_tool_calls), stats))
                 return

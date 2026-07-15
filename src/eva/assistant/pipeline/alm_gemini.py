@@ -288,7 +288,9 @@ class ALMGeminiClient(BaseALMClient):
                             yield ("delta", text)
                 elapsed = time.time() - start_time
 
-                full_content, finish_reason, usage, assembled_tool_calls = _assemble_stream_chunks(chunks)
+                # Gemini's OpenAI-compat endpoint does not surface reasoning content (its
+                # complete() returns reasoning=None), so the reasoning field is ignored here.
+                full_content, _reasoning, finish_reason, usage, assembled_tool_calls = _assemble_stream_chunks(chunks)
                 reasoning_tokens = 0
                 if usage and hasattr(usage, "completion_tokens_details"):
                     details = usage.completion_tokens_details

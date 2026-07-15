@@ -486,7 +486,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 assistant_aggregator=assistant_aggregator,
                 agent_processor=agent_processor,
                 audio_llm_processor=audio_llm_processor,
-                audio_llm_audio_collector=audio_llm_audio_collector,
                 input_transcription_processor=input_transcription_processor,
             )
 
@@ -639,7 +638,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
         assistant_aggregator,
         agent_processor,
         audio_llm_processor=None,
-        audio_llm_audio_collector=None,
         input_transcription_processor=None,
     ) -> None:
         """Setup event handlers for the pipeline."""
@@ -711,13 +709,11 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 )
                 await agent_processor.process_complete_user_turn(message.content)
             elif self.pipeline_config.pipeline_type == PipelineType.AUDIO_LLM and audio_llm_processor:
-                # No STT → message.content is empty. Finalize the turn now that the
-                # turn-stop strategy has fired. The collector kept appending audio
-                # across VAD blips up to this point; notify_turn_ended() increments the
-                # turn id and pushes LLMContextFrame to trigger the transcription and
-                # audio-LLM branches.
-                assert audio_llm_audio_collector is not None
-                await audio_llm_audio_collector.notify_turn_ended()
+                # No STT → message.content is empty, and under the forced 'external'
+                # turn-stop strategy this event is transcript-gated and won't fire anyway.
+                # Turn finalization is driven by the AudioLLMUserAudioCollector, which
+                # pushes LLMContextFrame through the ParallelPipeline on UserStoppedSpeakingFrame.
+                pass
             elif self.non_instrumented_realtime_llm:
                 # Non-instrumented realtime fallback (e.g. Ultravox)
                 if message.content:
