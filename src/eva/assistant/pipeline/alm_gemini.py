@@ -261,6 +261,9 @@ class ALMGeminiClient(BaseALMClient):
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "stream": True,
+            # Ask the server to emit a final usage chunk; without this, streamed
+            # responses carry no usage and completion/prompt tokens come back as 0.
+            "stream_options": {"include_usage": True},
         }
         extra_body = self._gemini_extra_body()
         if extra_body:
