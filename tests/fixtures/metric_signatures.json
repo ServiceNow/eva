@@ -44,7 +44,7 @@
   "ResponseSpeedMetric": {
     "name": "response_speed",
     "prompt_hash": null,
-    "source_hash": "7cd7e8baa3d2",
+    "source_hash": "fdac735ba008",
     "version": "v0.2"
   },
   "STTWERMetric": {
