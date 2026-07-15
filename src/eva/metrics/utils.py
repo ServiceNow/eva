@@ -519,16 +519,16 @@ def mean_agent_perf_stat(
     """
     csv_path = Path(output_dir) / "agent_perf_stats.csv"
     if not csv_path.exists():
-        return None, None
+        return None
 
     try:
         with open(csv_path, newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
     except OSError:
-        return None, None
+        return None
 
     if not rows:
-        return None, None
+        return None
 
     values: list[float] = []
     for row in rows:
