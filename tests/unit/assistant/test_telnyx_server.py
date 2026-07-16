@@ -298,6 +298,8 @@ class TestTelnyxServer:
         server._api_key = ""
         server.s2s_params = {}
         server._webhook_base_url = ""
+        server._transport_pref = ""
+        server._create_assistant = False
 
         with pytest.raises(ValueError) as exc:
             server._validate_runtime_config()
@@ -314,14 +316,19 @@ class TestTelnyxServer:
         server._api_key = ""
         server.s2s_params = {}
         server._webhook_base_url = ""
+        server._transport_pref = ""
+        server._create_assistant = False
 
         server._validate_runtime_config()
 
     def test_validate_runtime_config_call_control_mode_requires_credentials(self) -> None:
         server = object.__new__(TelnyxAssistantServer)
+        server._assistant_id = ""
         server._api_key = ""
         server.s2s_params = {"connection_id": "conn-123", "webhook_base_url": "https://public.example.com"}
         server._webhook_base_url = "https://public.example.com"
+        server._transport_pref = ""
+        server._create_assistant = False
 
         with pytest.raises(ValueError) as exc:
             server._validate_runtime_config()
@@ -334,6 +341,7 @@ class TestTelnyxServer:
 
     def test_validate_runtime_config_call_control_mode_passes_with_all_fields(self) -> None:
         server = object.__new__(TelnyxAssistantServer)
+        server._assistant_id = ""
         server._api_key = "key0123"
         server.s2s_params = {
             "connection_id": "conn-123",
@@ -342,8 +350,35 @@ class TestTelnyxServer:
             "to": "+15550005678",
         }
         server._webhook_base_url = "https://public.example.com"
+        server._transport_pref = ""
+        server._create_assistant = False
 
         # Should not raise
+        server._validate_runtime_config()
+
+    def test_media_streaming_transport_selects_call_control_without_connection_id(self) -> None:
+        server = object.__new__(TelnyxAssistantServer)
+        server._transport_pref = "media_streaming"
+        server.s2s_params = {}
+        server._webhook_base_url = ""
+        assert server._use_call_control is True
+
+    def test_validate_runtime_config_call_control_waives_to_when_creating_assistant(self) -> None:
+        # create_assistant derives the SIP `to` from the freshly-created assistant id, so `to`
+        # is not required up front; connection_id + from_number are filled by auto-provision.
+        server = object.__new__(TelnyxAssistantServer)
+        server._assistant_id = ""
+        server._api_key = "key0123"
+        server.s2s_params = {
+            "connection_id": "conn-123",
+            "webhook_base_url": "https://public.example.com",
+            "from_number": "+15550001234",
+        }
+        server._webhook_base_url = "https://public.example.com"
+        server._transport_pref = "media_streaming"
+        server._create_assistant = True
+
+        # Should not raise even though no `to`/`to_number`/`destination_number` is supplied.
         server._validate_runtime_config()
 
     def test_build_direct_session_config_accepts_aliases_and_metadata(self) -> None:

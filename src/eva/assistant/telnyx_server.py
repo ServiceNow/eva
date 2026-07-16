@@ -1258,6 +1258,7 @@ class TelnyxAssistantServer(AbstractAssistantServer):
         self._audio_sample_rate = RECORDING_SAMPLE_RATE
 
         self.s2s_params = self.pipeline_config.s2s_params or {}
+        self._transport_pref = str(self.s2s_params.get("transport") or "").strip().lower()
         self._api_key = self.s2s_params.get("api_key") or self.s2s_params.get("telnyx_api_key") or ""
         self._api_v2_base = _normalize_api_v2_base(self.s2s_params.get("api_base"))
         self._webhook_base_url = (
@@ -1271,6 +1272,12 @@ class TelnyxAssistantServer(AbstractAssistantServer):
             self._webhook_base_url = ""
         self._tunnel_cm: Any | None = None
         self._assistant_id = self.s2s_params.get("assistant_id") or self.s2s_params.get("assistant_agent_id") or ""
+        # create_assistant defaults to True: on each run EVA provisions a fresh assistant from the
+        # selected domain's agent config (instructions + tools wired to EVA's own /tools webhook) and
+        # deletes it on shutdown. Supplying an explicit assistant_id opts out (reuse that assistant);
+        # create_assistant: false always forces reuse.
+        _create_assistant = self.s2s_params.get("create_assistant")
+        self._create_assistant = (not self._assistant_id) if _create_assistant is None else bool(_create_assistant)
         self._target_version_id = self.s2s_params.get("target_version_id") or self.s2s_params.get("targetVersionId")
         self._websocket_host = (
             self.s2s_params.get("host")
@@ -1313,12 +1320,33 @@ class TelnyxAssistantServer(AbstractAssistantServer):
             logger.warning("Telnyx server already running")
             return
 
-        self._validate_runtime_config()
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._fw_log = FrameworkLogWriter(self.output_dir)
         self._metrics_log = MetricsLogWriter(self.output_dir)
 
-        if self.s2s_params.get("create_assistant"):
+        # Bring the auto-tunnel up first: its public URL must be known before we validate (it
+        # decides Call Control vs WebRTC) and before we create the assistant, whose tool webhooks
+        # and SIP target are built from it. cloudflared assigns the URL immediately; the local
+        # media port need not be listening yet.
+        if self._auto_tunnel and not self._webhook_base_url:
+            await self._start_auto_tunnel()
+
+        # Fold `python -m eva.assistant.telnyx_provisioning` into the run: from just an API key,
+        # discover/create the Call Control connection + a caller-ID number when they aren't supplied.
+        if (
+            self._use_call_control
+            and self._api_key
+            and self.s2s_params.get("auto_provision", True)
+            and not (
+                self.s2s_params.get("connection_id")
+                and (self.s2s_params.get("from_number") or self.s2s_params.get("caller_number"))
+            )
+        ):
+            await self._auto_provision_resources()
+
+        self._validate_runtime_config()
+
+        if self._create_assistant:
             if not self._api_key:
                 raise ValueError("Telnyx create_assistant requires api_key or telnyx_api_key")
             manager = TelnyxAssistantManager(
@@ -1337,6 +1365,15 @@ class TelnyxAssistantServer(AbstractAssistantServer):
                 logger.info("Created Telnyx assistant %s", self._created_assistant_id)
             finally:
                 await manager.close()
+
+        # Call Control dials the assistant's SIP address; derive it from the assistant id (created
+        # just now or supplied) unless the caller pinned `to`/`to_number`.
+        if (
+            self._use_call_control
+            and self._assistant_id
+            and not (self.s2s_params.get("to") or self.s2s_params.get("to_number"))
+        ):
+            self._destination_number = f"sip:anonymous@{self._assistant_id}.sip.telnyx.com"
 
         self._app = FastAPI()
         self._register_routes(self._app)
@@ -1357,8 +1394,31 @@ class TelnyxAssistantServer(AbstractAssistantServer):
 
         logger.info("Telnyx server started on ws://localhost:%s", self.port)
 
-        if self._auto_tunnel and not self._webhook_base_url:
-            await self._start_auto_tunnel()
+    async def _auto_provision_resources(self) -> None:
+        """Discover/create the Call Control connection + caller-ID number from just the API key.
+
+        Reuse-first and idempotent (buys nothing; reuses an unattached number and an existing
+        outbound voice profile). Fills ``connection_id`` and ``from_number`` into ``s2s_params``
+        before validation, and points the connection's webhook at the current public URL.
+        """
+        from eva.assistant.telnyx_provisioning.provision import TelnyxProvisioner
+
+        def _provision() -> Any:
+            with TelnyxProvisioner(self._api_key) as prov:
+                return prov.ensure(
+                    assistant_id=self._assistant_id or "pending",
+                    public_url=self._webhook_base_url,
+                    from_number=self.s2s_params.get("from_number") or self.s2s_params.get("caller_number"),
+                    create=True,
+                )
+
+        result = await asyncio.to_thread(_provision)
+        self.s2s_params["connection_id"] = result.connection_id
+        self.s2s_params["from_number"] = result.from_number
+        self._caller_number = result.from_number
+        if result.created:
+            logger.info("Auto-provisioned Telnyx resources: %s", ", ".join(result.created))
+        logger.info("Using Telnyx connection_id=%s from_number=%s", result.connection_id, result.from_number)
 
     async def _start_auto_tunnel(self) -> None:
         """Bring up a Cloudflare quick tunnel to this run's media port and use its URL."""
@@ -1448,7 +1508,9 @@ class TelnyxAssistantServer(AbstractAssistantServer):
 
     @property
     def _use_call_control(self) -> bool:
-        """Whether to use Call Control transport instead of WebRTC."""
+        """Whether to use Call Control (media streaming) transport instead of WebRTC."""
+        if self._transport_pref == "media_streaming":
+            return True
         return bool(self.s2s_params.get("connection_id") and self._webhook_base_url)
 
     def _validate_runtime_config(self) -> None:
@@ -1464,6 +1526,8 @@ class TelnyxAssistantServer(AbstractAssistantServer):
                 self.s2s_params.get("to")
                 or self.s2s_params.get("to_number")
                 or self.s2s_params.get("destination_number")
+                or self._assistant_id
+                or self._create_assistant
             ):
                 missing.append("to or to_number or destination_number")
             if not self._webhook_base_url:
@@ -1475,9 +1539,9 @@ class TelnyxAssistantServer(AbstractAssistantServer):
                     + "."
                 )
         else:
-            if not self._assistant_id and not self.s2s_params.get("create_assistant"):
+            if not self._assistant_id and not self._create_assistant:
                 missing.append("assistant_id or assistant_agent_id")
-            if self.s2s_params.get("create_assistant") and not self._api_key:
+            if self._create_assistant and not self._api_key:
                 missing.append("api_key or telnyx_api_key")
             if missing:
                 raise ValueError(
