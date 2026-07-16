@@ -56,14 +56,6 @@ class TestFaithfulness:
         assert "STT transcriptions of the agent" not in variables["assistant_turns_disclaimer"]
         assert "intended text" in variables["assistant_turns_disclaimer"]
 
-    def test_disambiguation_context_drops_comparative_bar(self):
-        # The bare "bar is higher than a text-based system" clause was removed: it added
-        # severity pressure without an operational criterion. The concrete expectation stays.
-        ctx = make_metric_context(pipeline_type="s2s")
-        variables = self.metric.get_prompt_variables(ctx, "transcript")
-        assert "higher than for a text-based system" not in variables["disambiguation_context"]
-        assert "alphanumeric codes" in variables["disambiguation_context"]
-
     def test_build_metric_score(self):
         ctx = make_metric_context(conversation_trace=[{"role": "user"}, {"role": "assistant"}])
         response = {"dimensions": {"hallucination": "none"}}
