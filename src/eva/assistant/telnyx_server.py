@@ -1263,6 +1263,13 @@ class TelnyxAssistantServer(AbstractAssistantServer):
         self._webhook_base_url = (
             self.s2s_params.get("webhook_base_url") or self.s2s_params.get("public_base_url") or ""
         ).rstrip("/")
+        # "auto" (or auto_tunnel: true) => bring up a Cloudflare quick tunnel for this run and
+        # use its public URL as webhook_base_url. EVA is one-shot, so the tunnel lives exactly
+        # as long as the run. Needs the `cloudflared` binary; needs no Cloudflare account.
+        self._auto_tunnel = bool(self.s2s_params.get("auto_tunnel")) or self._webhook_base_url == "auto"
+        if self._webhook_base_url == "auto":
+            self._webhook_base_url = ""
+        self._tunnel_cm: Any | None = None
         self._assistant_id = self.s2s_params.get("assistant_id") or self.s2s_params.get("assistant_agent_id") or ""
         self._target_version_id = self.s2s_params.get("target_version_id") or self.s2s_params.get("targetVersionId")
         self._websocket_host = (
@@ -1350,6 +1357,39 @@ class TelnyxAssistantServer(AbstractAssistantServer):
 
         logger.info("Telnyx server started on ws://localhost:%s", self.port)
 
+        if self._auto_tunnel and not self._webhook_base_url:
+            await self._start_auto_tunnel()
+
+    async def _start_auto_tunnel(self) -> None:
+        """Bring up a Cloudflare quick tunnel to this run's media port and use its URL."""
+        from eva.assistant.telnyx_provisioning.tunnel import CloudflaredNotFound, cloudflare_quick_tunnel
+
+        try:
+            self._tunnel_cm = cloudflare_quick_tunnel(self.port)
+            url = await self._tunnel_cm.__aenter__()
+        except CloudflaredNotFound:
+            self._tunnel_cm = None
+            raise
+        self._webhook_base_url = url.rstrip("/")
+        connection_id = self.s2s_params.get("connection_id")
+        if connection_id and self._api_key:
+            await self._point_connection_webhook(connection_id, self._webhook_base_url)
+        logger.info("Auto-tunnel active; webhook_base_url=%s", self._webhook_base_url)
+
+    async def _point_connection_webhook(self, connection_id: str, base_url: str) -> None:
+        """Point the Call Control connection's webhook at the (per-run) tunnel URL."""
+        import aiohttp
+
+        url = f"{self._api_v2_base}/call_control_applications/{connection_id}"
+        payload = {"webhook_event_url": f"{base_url}/call-control-events"}
+        try:
+            async with aiohttp.ClientSession(headers={"Authorization": f"Bearer {self._api_key}"}) as s:
+                async with s.patch(url, json=payload) as r:
+                    if r.status >= 400:
+                        logger.warning("Failed to update connection webhook (%s): %s", r.status, await r.text())
+        except Exception:
+            logger.warning("Error updating connection webhook", exc_info=True)
+
     async def _shutdown(self) -> None:
         if not self._running:
             return
@@ -1359,6 +1399,13 @@ class TelnyxAssistantServer(AbstractAssistantServer):
             await self._transport.stop()
             self._completed_transport = self._transport
             self._transport = None
+
+        if self._tunnel_cm is not None:
+            try:
+                await self._tunnel_cm.__aexit__(None, None, None)
+            except Exception:
+                logger.debug("Error tearing down auto-tunnel", exc_info=True)
+            self._tunnel_cm = None
 
         if self._created_assistant_id:
             manager = TelnyxAssistantManager(

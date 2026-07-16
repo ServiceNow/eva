@@ -120,3 +120,44 @@ def test_idempotent_when_everything_exists():
     assert result.created is None  # nothing created
     assert not prov._client.posts
     assert not prov._client.patches
+
+
+class _FakeStderr:
+    def __init__(self, lines):
+        self._lines=list(lines)
+    async def readline(self):
+        return self._lines.pop(0) if self._lines else b""
+
+
+class _FakeProc:
+    def __init__(self, lines):
+        self.stderr=_FakeStderr(lines)
+        self.returncode=0
+    def terminate(self): pass
+    def kill(self): pass
+    async def wait(self): return 0
+
+
+def test_tunnel_url_parse():
+    import asyncio
+
+    from eva.assistant.telnyx_provisioning.tunnel import _read_url
+    proc=_FakeProc([
+        b"2026-... INF Thank you for trying Cloudflare Tunnel.\n",
+        b"2026-... INF |  https://brave-red-fox-1234.trycloudflare.com  |\n",
+    ])
+    url=asyncio.run(_read_url(proc, timeout=5))
+    assert url=="https://brave-red-fox-1234.trycloudflare.com"
+
+
+def test_tunnel_missing_binary(monkeypatch):
+    import asyncio
+
+    import eva.assistant.telnyx_provisioning.tunnel as tun
+    monkeypatch.setattr(tun.shutil, "which", lambda _: None)
+    async def go():
+        async with tun.cloudflare_quick_tunnel(10000):
+            pass
+    import pytest
+    with pytest.raises(tun.CloudflaredNotFound):
+        asyncio.run(go())
