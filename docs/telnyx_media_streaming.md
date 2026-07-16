@@ -9,6 +9,34 @@ the WebRTC path apply.
 **You provide only a Telnyx API key.** Everything else — the connection, an idle phone
 number for caller ID, the outbound voice profile — is discovered or created for you.
 
+> **Verified end to end.** A live EVA CLI run over this transport graded 1/1 (100%): the
+> assistant heard the caller (2 user turns, real audio), and every metric — including the
+> `user_speech_fidelity` audio judge — scored. See VSDK-277.
+
+## Turnkey: `webhook_base_url: "auto"` (recommended)
+
+Because EVA is one-shot, the transport can bring up its own **Cloudflare quick tunnel** for
+the duration of the run — no account, no manual tunnel, no public URL to arrange. Set
+`"webhook_base_url": "auto"` (or `"auto_tunnel": true`) in `s2s_params`; on start, EVA
+launches `cloudflared` against its media port, uses the assigned `https://…trycloudflare.com`
+URL, points the connection's webhook at it, and tears the tunnel down on exit. Requires the
+`cloudflared` binary on PATH. Then it is just:
+
+```bash
+export TELNYX_API_KEY=KEY... OPENAI_API_KEY=sk-... GEMINI_API_KEY=AQ...
+python -m eva.assistant.telnyx_provisioning --assistant-id assistant-473093df-... \
+  --public-url https://placeholder --provision      # once: fills connection_id/from_number
+uv run python main.py
+```
+
+with `EVA_MODEL__S2S_PARAMS='{"transport":"media_streaming","model":"…","assistant_id":"…","api_key":"KEY…","connection_id":"…","from_number":"…","webhook_base_url":"auto"}'`.
+
+`GEMINI_API_KEY` is used by the audio judge (`user_speech_fidelity`), which calls Gemini
+directly (not the LiteLLM router). `OPENAI_API_KEY` drives the Realtime caller + text judges.
+
+The rest of this doc covers the manual-URL path (explicit tunnel or in-cluster ingress),
+useful for a hosted/persistent deployment.
+
 ## 1. Provision (needs only the API key)
 
 ```bash
