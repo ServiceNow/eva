@@ -20,8 +20,8 @@
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
     "prompt_hash": "174cdf93b398",
-    "source_hash": "4e5f59c32946",
-    "version": "v0.1"
+    "source_hash": "84e43143d00d",
+    "version": "v0.2"
   },
   "ConversationTimeLimitExceededMetric": {
     "name": "conversation_completed_on_time",
@@ -38,13 +38,13 @@
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
     "prompt_hash": "060e3f1f9e7a",
-    "source_hash": "93a559d0a028",
-    "version": "v0.2"
+    "source_hash": "ee9b8ea530a4",
+    "version": "v0.3"
   },
   "ResponseSpeedMetric": {
     "name": "response_speed",
     "prompt_hash": null,
-    "source_hash": "7cd7e8baa3d2",
+    "source_hash": "fdac735ba008",
     "version": "v0.2"
   },
   "STTWERMetric": {
@@ -92,7 +92,7 @@
   "TurnTakingMetric": {
     "name": "turn_taking",
     "prompt_hash": null,
-    "source_hash": "0ae7b7f0fc8c",
+    "source_hash": "fee8caa7adc7",
     "version": "v0.1"
   },
   "UserBehavioralFidelityMetric": {
