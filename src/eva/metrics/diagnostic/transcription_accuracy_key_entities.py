@@ -22,7 +22,6 @@ from eva.metrics.base import MetricContext, TextJudgeMetric
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import (
     aggregate_per_turn_scores,
-    format_transcript_with_tools,
     make_rate_sub_metric,
     parse_judge_response_list,
     resolve_turn_id,
@@ -66,7 +65,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     """
 
     name = "transcription_accuracy_key_entities"
-    version = "v0.4"
+    version = "v0.5"
     description = (
         "Debug metric: LLM judge evaluation of user key entity accuracy (STT in cascade, tool calls in audio-native)"
     )
@@ -238,8 +237,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
             turn_ids = self._get_audio_native_turns(context)
             prompt = self.get_judge_prompt(
                 prompt_key="audio_native_prompt",
-                user_turns=self._format_intended_user_turns(turn_ids, context),
-                conversation=format_transcript_with_tools(context.conversation_trace),
+                conversation=self._format_redacted_conversation(context),
             )
             return prompt, turn_ids
 
@@ -268,9 +266,33 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
         )
 
     @staticmethod
-    def _format_intended_user_turns(turn_ids: list[int], context: MetricContext) -> str:
-        """Format the user's intended utterances for the audio-native prompt."""
-        return "\n\n".join(f'Turn {tid}:\nUser said: "{context.intended_user_turns[tid]}"' for tid in turn_ids)
+    def _format_redacted_conversation(context: MetricContext) -> str:
+        """Format a redacted conversation trace for the audio-native judge.
+
+        User turns and tool calls/responses are shown verbatim — the user turns are
+        the entity source, the tool calls are the evidence of what the agent understood.
+        Assistant turns are redacted to ``[Assistant speaks]`` so the judge cannot use
+        the agent's own (possibly mis-transcribed) speech to penalize an entity: e.g. if
+        the user says "INC462" and the agent asks "Did you say INC463?", that read-back
+        is an artifact of the agent's transcription, not evidence the user was misheard.
+        Only tool-call arguments and explicit user turns should drive the score.
+        """
+        lines: list[str] = []
+        for entry in context.conversation_trace or []:
+            role = entry.get("role")
+            entry_type = entry.get("type")
+            turn_id = entry.get("turn_id", "?")
+            if role == "user":
+                lines.append(f"Turn {turn_id} - User: {entry.get('content', '')}")
+            elif role == "assistant":
+                lines.append(f"Turn {turn_id} - [Assistant speaks]")
+            elif entry_type == "tool_call":
+                params = entry.get("parameters", {})
+                lines.append(f"Turn {turn_id} - Tool Call ({entry.get('tool_name', 'unknown')}): {params}")
+            elif entry_type == "tool_response":
+                resp = entry.get("tool_response", {})
+                lines.append(f"Turn {turn_id} - Tool Response ({entry.get('tool_name', 'unknown')}): {resp}")
+        return "\n".join(lines)
 
     async def _call_judge_raw(self, prompt: str, context: MetricContext) -> str | None:
         """Call LLM judge and return raw response text.

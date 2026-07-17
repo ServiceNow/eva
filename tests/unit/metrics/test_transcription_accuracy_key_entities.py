@@ -431,6 +431,43 @@ class TestAudioNativeCompute:
         assert "tool call" in sent_prompt.lower()
         assert "EMP124" in sent_prompt
         assert "Transcribed:" not in sent_prompt
+        # User turn is shown inline in the single Conversation block (not a separate section).
+        assert "User: My employee id is E M one two three" in sent_prompt
+
+    @pytest.mark.asyncio
+    async def test_assistant_turns_are_redacted(self, metric):
+        """Assistant speech is redacted so a mis-transcribed read-back can't penalize an entity.
+
+        If the user says "QX7710" and the agent's (imperfectly transcribed) reply reads
+        it back as "QX7711", the judge must not see that text and treat it as a mishear.
+        (Sentinel values chosen to not collide with any example in the prompt template.)
+        """
+        context = make_metric_context(
+            pipeline_type=PipelineType.S2S,
+            intended_user_turns={1: "My incident is QX7710"},
+            conversation_trace=[
+                {"role": "user", "content": "My incident is QX7710", "turn_id": 1},
+                {"role": "assistant", "content": "Did you say QX7711?", "turn_id": 1},
+                {
+                    "type": "tool_call",
+                    "tool_name": "get_incident",
+                    "parameters": {"incident_id": "QX7710"},
+                    "turn_id": 1,
+                },
+            ],
+        )
+        response = _make_judge_response(
+            [{"turn_id": 1, "summary": "ok", "entities": [{"type": "incident", "value": "QX7710", "correct": True}]}]
+        )
+        generate_text = AsyncMock(return_value=(response, None))
+        metric.llm_client.generate_text = generate_text
+
+        await metric.compute(context)
+
+        sent_prompt = generate_text.call_args[0][0][0]["content"]
+        assert "[Assistant speaks]" in sent_prompt  # assistant turn present but redacted
+        assert "QX7711" not in sent_prompt  # the mis-transcribed read-back is withheld
+        assert "QX7710" in sent_prompt  # user turn + tool call are visible
 
     @pytest.mark.asyncio
     async def test_correct_entity_in_tool_call_scores_one(self, metric):

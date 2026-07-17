@@ -64,14 +64,19 @@ def _source_hash(cls: type) -> str:
 def _prompt_hash_for_metric(cls: type[BaseMetric]) -> str | None:
     """Return the prompt template hash for judge metrics, or None.
 
-    All judge metrics in this codebase use `judge.{name}.user_prompt`.
-    A judge metric without a corresponding template raises KeyError —
-    that's a configuration bug we want surfaced.
+    Hashes *every* prompt template under ``judge.{name}`` (sorted by key), not just
+    ``user_prompt``, so a metric that ships multiple prompts — e.g. a per-pipeline
+    variant like ``audio_native_prompt`` — has all of them covered by drift detection.
+    A judge metric without any templates raises KeyError — that's a configuration
+    bug we want surfaced.
     """
     if not issubclass(cls, TextJudgeMetric | AudioJudgeMetric):
         return None
-    template = get_prompt_manager().get_template(f"judge.{cls.name}.user_prompt")
-    return hash_prompt_template(template)
+    templates = get_prompt_manager().prompts.get("judge", {}).get(cls.name)
+    if not isinstance(templates, dict):
+        raise KeyError(f"No judge prompts found for metric {cls.name!r}")
+    combined = "\n".join(templates[key] for key in sorted(templates) if isinstance(templates[key], str))
+    return hash_prompt_template(combined)
 
 
 def compute_all_metric_signatures() -> dict[str, dict[str, str | None]]:

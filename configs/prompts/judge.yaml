@@ -1075,13 +1075,15 @@ judge:
     audio_native_prompt: |
       You are an expert evaluator analyzing whether an AI voice agent correctly **understood** the key entities a user provided during a spoken conversation.
 
-      This is a speech-to-speech / audio-native agent: there is no reliable speech-to-text transcript of the user to inspect. Instead, the evidence of what the agent actually understood is what it did with the information — primarily the **arguments it passed to its tool calls**, and secondarily any values it read back to the user. When a user says "my id is EM123" and the agent then calls a tool with "EMP124", the agent misheard the entity.
+      This is a speech-to-speech / audio-native agent: there is no reliable speech-to-text transcript of the user to inspect. Instead, the evidence of what the agent actually understood is the **arguments it passed to its tool calls**. When a user says "my id is EM123" and the agent then calls a tool with "EMP124", the agent misheard the entity.
+
+      You are given a Conversation containing user turns, tool calls, and tool responses. **The assistant's own spoken turns are redacted** (shown as `[Assistant speaks]`) and deliberately withheld: the agent's speech is itself imperfectly transcribed, so it must never be used as evidence. For example, if the user says "INC462" and the agent asks "Did you say INC463?", that read-back may just be a transcription artifact — do not treat it as the agent mishearing the entity. Judge only what the user said (user turns) against what the agent did (tool-call arguments).
 
       Your task:
-      1. For EACH user turn, identify all key entities in what the USER SAID (the "User said" text).
-      2. For each entity, find where the agent used it — a tool call argument (see the Conversation below) or a value the agent read back — and check whether the agent captured it CORRECTLY.
+      1. For EACH user turn in the Conversation, identify all key entities in what the USER SAID.
+      2. For each entity, find whether the agent used it in a tool-call argument and check whether it was captured CORRECTLY.
       3. Mark each entity as correct or incorrect.
-      4. If the agent never used a given entity anywhere (no tool call argument and no read-back reference to it), there is no evidence to judge understanding — include the entity but mark it as skipped.
+      4. If the agent never used a given entity in any tool call, there is no evidence to judge understanding — include the entity but mark it as skipped.
       5. For entities in regions that were likely never spoken aloud (as indicated by interruption tags), still include them in the output but mark them as skipped.
 
       ## What Counts as an Entity
@@ -1097,41 +1099,34 @@ judge:
       - Email addresses: e.g. "john@example.com"
       - Other specific identifiers: seat numbers, loyalty numbers, booking IDs, employee IDs, etc.
 
-      **Not an entity:** vague temporal words ("tomorrow", "next week", "morning"), general descriptors ("the cheap flight", "a long trip"), or open-ended qualifiers ("less than an hour", "around noon").
+      **Not an entity:** vague temporal words ("tomorrow", "next week", "morning"), general descriptors ("the cheap flight", "a long trip"), open-ended qualifiers ("less than an hour", "around noon"), or standalone honorifics/titles ("Mr.", "Ms.").
 
       ## IMPORTANT: What This Metric Measures
-      This measures whether the agent **understood** the entity the user provided, as evidenced by how it used it. It is NOT a faithfulness or tool-correctness metric. Do NOT penalize:
+      This measures whether the agent **understood** the entity the user provided, as evidenced by the value it passed to a tool call. It is NOT a faithfulness or tool-correctness metric. Do NOT penalize:
       - The agent choosing the wrong tool, or omitting a tool call it should have made
       - The agent using an entity that came from a tool RESPONSE rather than from the user (only user-provided entities are evaluated here)
       - Correct values that simply never got reused (mark those skipped, not incorrect)
 
       Only mark an entity incorrect when the agent demonstrably used a **different value** than the user provided (e.g. user "EM123" → tool call "EMP124", user "March 25th" → tool call "2026-03-26").
 
-      ## Understanding Tags in the User Text
-      The user text may contain non-spoken tags and markers. These are metadata — they were never said aloud and must not be treated as entities or evaluated.
+      ## Non-Spoken Tags in the User Text
+      The user text may contain non-spoken tags and markers — metadata that was never said aloud and must not be treated as entities. There are two kinds, and they are handled differently:
 
-      ### Audio-Direction Tags
-      Tags like [slow], [firm], [annoyed] describe how the words were meant to be spoken. Ignore them entirely.
+      - **Audio-direction tags** like [slow], [firm], [annoyed] describe how the words were meant to be spoken. Ignore them entirely; they have no effect on scoring.
+      - **Interruption tags** indicate that part of the user text was likely never spoken, because the user was interrupted or talked over. An entity that was never spoken cannot have been understood, so do NOT penalize entities in these regions — include them but mark them as skipped.
 
-      ### Interruption Tags
       {interruption_tags_reference}
 
-      These markers indicate that parts of the user text may never have been spoken aloud, because the user was interrupted or talked over. An entity that was never spoken cannot have been understood, so you must NOT penalize for entities in regions that were likely not said — mark them as skipped.
+      **Key principle:** Only evaluate entities that were reasonably expected to have been spoken aloud AND that the agent used in a tool call. If a tag indicates the user was interrupted before or during an entity, mark it skipped and explain why.
 
-      **Key principle:** Only evaluate entities that were reasonably expected to have been spoken aloud AND that the agent had an occasion to use. If a tag indicates the user was interrupted before or during an entity, still include the entity but set `skipped: true` and explain why.
-
-      ## User Turns to Evaluate
-      {user_turns}
-
-      ## Conversation (with agent turns and tool calls/responses)
-      Use this to find where each user-provided entity was used by the agent. Tool call arguments are the primary evidence of what the agent understood.
+      ## Conversation
       {conversation}
 
       ## Correctness Criteria
-      - Entity must have been used correctly by the agent — the value passed to the tool call (or read back) must match what the user said.
+      - Entity must have been used correctly by the agent — the value passed to the tool call must match what the user said.
       - Numbers: "150" and "one hundred fifty" are equivalent
       - Dates: "December 15th" and "Dec 15" are equivalent
-      - Names: Case-insensitive match. Phonetically equivalent spelling variants are acceptable on the **first mention** of a name (e.g., German Meyer/Meier/Maier/Mayer — all sound the same when spoken). Once the user has explicitly disambiguated the spelling (e.g., spelled it out letter by letter, corrected a prior spelling, or confirmed a specific spelling after the assistant read it back), subsequent usage must match that clarified spelling exactly. Flag if:
+      - Names: Case-insensitive match. Phonetically equivalent spelling variants are acceptable on the **first mention** of a name (e.g., German Meyer/Meier/Maier/Mayer — all sound the same when spoken). Once the user has explicitly disambiguated the spelling (e.g., spelled it out letter by letter, or corrected a prior spelling), subsequent usage must match that clarified spelling exactly. Flag if:
         - The value the agent used clearly differs (different sound, not just different spelling)
         - The agent used a different spelling variant **after** the user has explicitly clarified the correct spelling
       - Non-Latin scripts: A name or identifier rendered in its native writing system (e.g. Kanji, Hangul, Arabic) is equivalent to its romanized/phonetic form if they represent the same spoken entity. For example, "山田" and "Yamada" should be treated as matching.
@@ -1140,30 +1135,20 @@ judge:
         - Reversed digit order in spoken form (e.g., German "vierundzwanzig" = four-and-twenty = 24)
         - Grammatical gender/agreement variants (e.g., Spanish "veintiún" vs "veintiuna" for 21)
         - Large-unit grouping differences (e.g., Japanese 万-system: "ichi-man go-sen" / 一万五千 = 15,000)
-      - Honorific/title variants: "Ms." vs "Miss", "Mr." vs "Mister", and language equivalents (e.g., French "Madame" vs "Mme", Japanese "様" vs "-san") are acceptable variants of the same title.
 
       Important note: The user text will often feature things formatted like "one two three" instead of "123". Your goal is to evaluate semantic equivalence — these are considered equivalent if the value matches what the agent used.
 
       ## Examples
 
-      **Example Input:**
-      User Turns to Evaluate:
-      Turn 1:
-      User said: `My employee id is E M one two three and my name is John Smith.`
-
-      Turn 2:
-      User said: `Book it for December 15th.`
-
-      Turn 3:
-      User said: `[slow] The code is X X F six O H, with the letter O, [assistant interrupts] not zero.`
-
-      Conversation:
-      Turn 1:
-        user: My employee id is E M one two three and my name is John Smith.
-        tool_call: lookup_employee({{'employee_id': 'EMP124'}})
-      Turn 2:
-        user: Book it for December 15th.
-        tool_call: create_booking({{'date': '2026-12-15'}})
+      **Example Input (Conversation):**
+      Turn 1 - User: My employee id is E M one two three and my name is John Smith.
+      Turn 1 - [Assistant speaks]
+      Turn 1 - Tool Call (lookup_employee): {{'employee_id': 'EMP124'}}
+      Turn 2 - User: Book it for December 15th.
+      Turn 2 - [Assistant speaks]
+      Turn 2 - Tool Call (create_booking): {{'date': '2026-12-15'}}
+      Turn 3 - User: [slow] The code is X X F six O H, with the letter O, [assistant interrupts] not zero.
+      Turn 3 - [Assistant speaks]
 
       **Example Response:**
       [
@@ -1182,7 +1167,7 @@ judge:
               "type": "name",
               "value": "John Smith",
               "captured_value": "not used",
-              "analysis": "The name was never passed to a tool call or read back, so there is no evidence of how the agent understood it.",
+              "analysis": "The name was never passed to a tool call, so there is no evidence of how the agent understood it.",
               "correct": false,
               "skipped": true
           }}
@@ -1210,7 +1195,7 @@ judge:
               "type": "confirmation_code",
               "value": "X X F six O H",
               "captured_value": "not used",
-              "analysis": "Code appears before the [assistant interrupts] tag, but the agent never used it in a tool call — no evidence to judge, skipped.",
+              "analysis": "The agent never used this code in a tool call — no evidence to judge, skipped.",
               "correct": false,
               "skipped": true
           }}
@@ -1220,15 +1205,15 @@ judge:
       ]
 
       ## Response Format
-      Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the User Turns to Evaluate section above:
+      Respond with a JSON object. Each turn entry must include the turn_id matching the user turn number shown in the Conversation above:
       [
       {{
-          "turn_id": <int: the turn number from the User Turns to Evaluate section>,
+          "turn_id": <int: the user turn number from the Conversation>,
           "entities": [
           {{
               "type": "<name|date|time|confirmation_code|flight_number|amount|address|phone|email|employee_id|etc...>",
               "value": "<entity value as the user said it>",
-              "captured_value": "<the value the agent used in a tool call / read-back, or 'not used'>",
+              "captured_value": "<the value the agent used in a tool call, or 'not used'>",
               "analysis": "<brief reason; if skipped, explain why (never used by the agent, or in an interrupted region)>",
               "correct": <true|false>,
               "skipped": <true|false>
