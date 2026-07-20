@@ -35,9 +35,7 @@ _S2S_DISAMBIGUATION_CONTEXT = (
     "audio perception errors — mishearing letters, numbers, names, or codes is common with spoken input. "
     "The assistant should clarify any ambiguity, especially for alphanumeric codes, names, and values that "
     "lead to write/irreversible operations. It's not needed to clarify if the tools called are simple "
-    "lookups, but if the lookups fail, the assistant is expected to clarify the user's intent. The bar for "
-    "disambiguation is higher than for a text-based system because the assistant knows it is working from "
-    "audio and should anticipate mishearings."
+    "lookups, but if the lookups fail, the assistant is expected to clarify the user's intent."
 )
 
 
@@ -54,7 +52,7 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
     """
 
     name = "faithfulness"
-    version = "v0.2"
+    version = "v0.3"
     description = (
         "LLM judge evaluation of whether the assistant remains faithful to information, policies, and instructions"
     )
@@ -77,8 +75,8 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
             "conversation_trace": transcript_text,
             "current_date_time": context.current_date_time,
             "user_turns_disclaimer": get_user_turns_disclaimer(context.is_audio_native),
-            "assistant_turns_disclaimer": get_assistant_turns_disclaimer(context.is_audio_native),
-            "misrepresentation_pipeline_note": get_misrepresentation_pipeline_note(context.is_audio_native),
+            "assistant_turns_disclaimer": get_assistant_turns_disclaimer(context.is_s2s),
+            "misrepresentation_pipeline_note": get_misrepresentation_pipeline_note(context.is_s2s),
             "disambiguation_context": disambiguation_context,
         }
 
