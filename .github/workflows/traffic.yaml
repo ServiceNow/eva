@@ -1,0 +1,39 @@
+name: Traffic
+
+on:
+  schedule:
+    # GitHub only retains 14 days of traffic data. This fetches a snapshot every Thursday, so there is overlap.
+    - cron: "0 12 * * 4"
+  workflow_dispatch:
+
+jobs:
+  traffic:
+    name: Snapshot GitHub traffic data
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Fetch traffic data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          today=$(date -u +%Y-%m-%d)
+          { gh api "repos/${{ github.repository }}/traffic/views"; echo; } > ".github/traffic/${today}_views.json"
+          { gh api "repos/${{ github.repository }}/traffic/clones"; echo; } > ".github/traffic/${today}_clones.json"
+          echo "TODAY=${today}" >> "$GITHUB_ENV"
+
+      - name: Commit and open PR
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: Snapshot GitHub traffic data
+          title: "Snapshot GitHub traffic data (${{ env.TODAY }})"
+          body: Automated weekly traffic snapshot.
+          branch: traffic-snapshot-${{ env.TODAY }}
+          add-paths: .github/traffic/*.json
