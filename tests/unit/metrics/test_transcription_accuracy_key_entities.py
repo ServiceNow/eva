@@ -388,11 +388,11 @@ class TestPipelineSupport:
 
 
 class TestAudioNativeCompute:
-    """Audio-native pipelines compare intended user entities against tool-call arguments."""
+    """Audio-native pipelines rate the agent's tool-call arguments against what the user said."""
 
     @pytest.mark.asyncio
-    async def test_uses_audio_native_prompt_and_intended_turns(self, metric):
-        """Audio-native path builds the tool-call prompt from intended turns + conversation trace."""
+    async def test_uses_audio_native_prompt_with_tool_call_evidence(self, metric):
+        """Audio-native path builds the tool-call prompt from the redacted conversation trace."""
         context = make_metric_context(
             pipeline_type=PipelineType.S2S,
             intended_user_turns={1: "My employee id is E M one two three"},
@@ -410,7 +410,8 @@ class TestAudioNativeCompute:
         response = _make_judge_response(
             [
                 {
-                    "turn_id": 1,
+                    "tool_call_id": 1,
+                    "tool_name": "lookup_employee",
                     "summary": "Misheard employee id",
                     "entities": [
                         {"type": "employee_id", "value": "EM123", "correct": False, "skipped": False},
@@ -431,8 +432,9 @@ class TestAudioNativeCompute:
         assert "tool call" in sent_prompt.lower()
         assert "EMP124" in sent_prompt
         assert "Transcribed:" not in sent_prompt
-        # User turn is shown inline in the single Conversation block (not a separate section).
+        # User turn is shown inline in the single Conversation block, tool call is labelled [1].
         assert "User: My employee id is E M one two three" in sent_prompt
+        assert "Tool Call [1] (lookup_employee)" in sent_prompt
 
     @pytest.mark.asyncio
     async def test_assistant_turns_are_redacted(self, metric):
@@ -457,7 +459,13 @@ class TestAudioNativeCompute:
             ],
         )
         response = _make_judge_response(
-            [{"turn_id": 1, "summary": "ok", "entities": [{"type": "incident", "value": "QX7710", "correct": True}]}]
+            [
+                {
+                    "tool_call_id": 1,
+                    "summary": "ok",
+                    "entities": [{"type": "incident", "value": "QX7710", "correct": True}],
+                }
+            ]
         )
         generate_text = AsyncMock(return_value=(response, None))
         metric.llm_client.generate_text = generate_text
@@ -467,7 +475,9 @@ class TestAudioNativeCompute:
         sent_prompt = generate_text.call_args[0][0][0]["content"]
         assert "[Assistant speaks]" in sent_prompt  # assistant turn present but redacted
         assert "QX7711" not in sent_prompt  # the mis-transcribed read-back is withheld
-        assert "QX7710" in sent_prompt  # user turn + tool call are visible
+        # Both the user turn AND the tool call must be visible to the judge.
+        assert "User: My incident is QX7710" in sent_prompt
+        assert "Tool Call [1] (get_incident): {'incident_id': 'QX7710'}" in sent_prompt
 
     @pytest.mark.asyncio
     async def test_correct_entity_in_tool_call_scores_one(self, metric):
@@ -488,7 +498,7 @@ class TestAudioNativeCompute:
         response = _make_judge_response(
             [
                 {
-                    "turn_id": 1,
+                    "tool_call_id": 1,
                     "summary": "Date captured correctly",
                     "entities": [{"type": "date", "value": "December 15th", "correct": True, "skipped": False}],
                 }
@@ -501,3 +511,113 @@ class TestAudioNativeCompute:
         assert result.error is None
         assert result.score == 1.0
         assert result.normalized_score == 1.0
+
+    @pytest.mark.asyncio
+    async def test_rates_per_tool_call_across_turns_with_correction(self, metric):
+        """Each tool call is rated on its own; a corrected entity is wrong in one call, right in another.
+
+        User states an id in turn 1, corrects it in turn 2; the agent then makes two
+        tool calls (turns 4 and 6). Nothing is rated at the user turns — the two tool
+        calls are keyed 1 and 2 and rated independently.
+        """
+        context = make_metric_context(
+            pipeline_type=PipelineType.S2S,
+            intended_user_turns={1: "My employee id is E M one two three", 2: "Sorry, it's E M four five six"},
+            conversation_trace=[
+                {"role": "user", "content": "My employee id is E M one two three", "turn_id": 1},
+                {"role": "user", "content": "Sorry, it's E M four five six", "turn_id": 2},
+                {
+                    "type": "tool_call",
+                    "tool_name": "lookup_employee",
+                    "parameters": {"employee_id": "EM455"},
+                    "turn_id": 4,
+                },
+                {
+                    "type": "tool_call",
+                    "tool_name": "lookup_employee",
+                    "parameters": {"employee_id": "EM456"},
+                    "turn_id": 6,
+                },
+            ],
+        )
+        response = _make_judge_response(
+            [
+                {
+                    "tool_call_id": 1,
+                    "summary": "wrong",
+                    "entities": [{"type": "employee_id", "value": "EM456", "correct": False}],
+                },
+                {
+                    "tool_call_id": 2,
+                    "summary": "right",
+                    "entities": [{"type": "employee_id", "value": "EM456", "correct": True}],
+                },
+            ]
+        )
+        generate_text = AsyncMock(return_value=(response, None))
+        metric.llm_client.generate_text = generate_text
+
+        result = await metric.compute(context)
+
+        assert result.error is None
+        # Rated units are the two tool calls (ids 1, 2), never the user turns (1, 2 as turns).
+        assert sorted(result.details["per_turn_ratings"].keys()) == [1, 2]
+        assert result.score == 0.5  # one tool call wrong, one right
+        sent_prompt = generate_text.call_args[0][0][0]["content"]
+        assert "Turn 4 - Tool Call [1]" in sent_prompt
+        assert "Turn 6 - Tool Call [2]" in sent_prompt
+
+    @pytest.mark.asyncio
+    async def test_multiple_tool_calls_in_one_turn_rated_separately(self, metric):
+        """Two tool calls in the SAME turn are each labelled and rated individually."""
+        context = make_metric_context(
+            pipeline_type=PipelineType.S2S,
+            intended_user_turns={1: "Confirmation is six V O R J U, last name Thompson"},
+            conversation_trace=[
+                {"role": "user", "content": "Confirmation is six V O R J U, last name Thompson", "turn_id": 1},
+                {
+                    "type": "tool_call",
+                    "tool_name": "get_reservation",
+                    "parameters": {"confirmation_number": "6VORJU", "last_name": "Thompson"},
+                    "turn_id": 1,
+                },
+                {
+                    "type": "tool_call",
+                    "tool_name": "search_options",
+                    "parameters": {"confirmation_number": "6VORXX"},
+                    "turn_id": 1,
+                },
+            ],
+        )
+        response = _make_judge_response(
+            [
+                {
+                    "tool_call_id": 1,
+                    "tool_name": "get_reservation",
+                    "summary": "both correct",
+                    "entities": [
+                        {"type": "confirmation_code", "value": "6VORJU", "correct": True},
+                        {"type": "name", "value": "Thompson", "correct": True},
+                    ],
+                },
+                {
+                    "tool_call_id": 2,
+                    "tool_name": "search_options",
+                    "summary": "code wrong",
+                    "entities": [{"type": "confirmation_code", "value": "6VORJU", "correct": False}],
+                },
+            ]
+        )
+        generate_text = AsyncMock(return_value=(response, None))
+        metric.llm_client.generate_text = generate_text
+
+        result = await metric.compute(context)
+
+        assert result.error is None
+        # Both tool calls in turn 1 are rated as separate units (ids 1 and 2).
+        assert sorted(result.details["per_turn_ratings"].keys()) == [1, 2]
+        # Tool call 1: 2/2 correct = 1.0; tool call 2: 0/1 = 0.0; mean = 0.5.
+        assert result.score == 0.5
+        sent_prompt = generate_text.call_args[0][0][0]["content"]
+        assert "Tool Call [1] (get_reservation)" in sent_prompt
+        assert "Tool Call [2] (search_options)" in sent_prompt

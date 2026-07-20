@@ -85,9 +85,9 @@
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
-    "prompt_hash": "3ed3a2fe7dcb",
-    "source_hash": "2926af63f4da",
-    "version": "v0.5"
+    "prompt_hash": "778c999bc0e5",
+    "source_hash": "adf7083be05b",
+    "version": "v0.6"
   },
   "TurnTakingMetric": {
     "name": "turn_taking",

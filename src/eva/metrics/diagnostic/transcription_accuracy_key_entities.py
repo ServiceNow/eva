@@ -65,7 +65,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     """
 
     name = "transcription_accuracy_key_entities"
-    version = "v0.5"
+    version = "v0.6"
     description = (
         "Debug metric: LLM judge evaluation of user key entity accuracy (STT in cascade, tool calls in audio-native)"
     )
@@ -114,7 +114,14 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
                     error=error,
                 )
 
-            # Compute scores for each turn, keyed by turn_id
+            # Audio-native rates one entry per tool call: normalize the judge's
+            # ``tool_call_id`` onto the shared ``turn_id`` key used by the loop below.
+            if context.is_audio_native:
+                for item in turn_evaluations:
+                    if isinstance(item, dict) and "turn_id" not in item and "tool_call_id" in item:
+                        item["turn_id"] = item["tool_call_id"]
+
+            # Compute scores for each unit (user turn in cascade, tool call in audio-native), keyed by turn_id
             per_turn_ratings: dict[int, float | None] = {}
             per_turn_normalized: dict[int, float | None] = {}
             per_turn_explanations: dict[int, str] = {}
@@ -225,21 +232,18 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     def _build_prompt_and_turns(self, context: MetricContext) -> tuple[str, list[int]]:
         """Select the comparison source and judge prompt based on pipeline type.
 
-        CASCADE compares intended vs STT-transcribed user turns. Audio-native
-        pipelines (S2S / AUDIO_LLM) have no reliable STT, so the user's intended
-        turns are compared against the agent's tool-call arguments (from
-        ``conversation_trace``), which are the evidence of what it understood.
+        CASCADE compares intended vs STT-transcribed user turns, keyed on user
+        turns. Audio-native pipelines (S2S / AUDIO_LLM) have no reliable STT, so the
+        judge instead rates the agent's tool-call arguments against what the user
+        said — keyed on the tool-call turns (see ``_get_audio_native_turns``).
 
         Returns:
             Tuple of (rendered judge prompt, sorted turn IDs to evaluate).
         """
         if context.is_audio_native:
-            turn_ids = self._get_audio_native_turns(context)
-            prompt = self.get_judge_prompt(
-                prompt_key="audio_native_prompt",
-                conversation=self._format_redacted_conversation(context),
-            )
-            return prompt, turn_ids
+            conversation, tool_call_ids = self._build_audio_native_conversation(context)
+            prompt = self.get_judge_prompt(prompt_key="audio_native_prompt", conversation=conversation)
+            return prompt, tool_call_ids
 
         turn_ids = self._get_turns_to_evaluate(context)
         prompt = self.get_judge_prompt(user_turns=self._format_user_turns(turn_ids, context))
@@ -249,11 +253,6 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     def _get_turns_to_evaluate(context: MetricContext) -> list[int]:
         """Return sorted turn IDs present in both intended and transcribed user turns."""
         return sorted(context.intended_user_turns.keys() & context.transcribed_user_turns.keys())
-
-    @staticmethod
-    def _get_audio_native_turns(context: MetricContext) -> list[int]:
-        """Return sorted intended user turn IDs (ground truth for audio-native pipelines)."""
-        return sorted(context.intended_user_turns.keys())
 
     @staticmethod
     def _format_user_turns(turn_ids: list[int], context: MetricContext) -> str:
@@ -266,18 +265,29 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
         )
 
     @staticmethod
-    def _format_redacted_conversation(context: MetricContext) -> str:
-        """Format a redacted conversation trace for the audio-native judge.
+    def _build_audio_native_conversation(context: MetricContext) -> tuple[str, list[int]]:
+        """Build the redacted conversation for the audio-native judge and the tool-call ids.
 
-        User turns and tool calls/responses are shown verbatim — the user turns are
-        the entity source, the tool calls are the evidence of what the agent understood.
+        Audio-native scoring is keyed per **tool call** — the point where the agent
+        commits to a value — not per user turn: a user may state an entity in one turn
+        and the agent may use it in a tool call several turns later, a single turn may
+        contain several tool calls, and the same entity can appear (correctly or not) in
+        more than one. Each tool call is therefore labelled with a stable 1-based id
+        (``Tool Call [N]``) that the judge rates individually.
+
+        User turns and tool calls/responses are shown verbatim — the user turns are the
+        entity source, the tool calls are the evidence of what the agent understood.
         Assistant turns are redacted to ``[Assistant speaks]`` so the judge cannot use
         the agent's own (possibly mis-transcribed) speech to penalize an entity: e.g. if
         the user says "INC462" and the agent asks "Did you say INC463?", that read-back
         is an artifact of the agent's transcription, not evidence the user was misheard.
-        Only tool-call arguments and explicit user turns should drive the score.
+
+        Returns:
+            Tuple of (formatted conversation, ordered list of tool-call ids).
         """
         lines: list[str] = []
+        tool_call_ids: list[int] = []
+        idx = 0
         for entry in context.conversation_trace or []:
             role = entry.get("role")
             entry_type = entry.get("type")
@@ -287,12 +297,14 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
             elif role == "assistant":
                 lines.append(f"Turn {turn_id} - [Assistant speaks]")
             elif entry_type == "tool_call":
+                idx += 1
+                tool_call_ids.append(idx)
                 params = entry.get("parameters", {})
-                lines.append(f"Turn {turn_id} - Tool Call ({entry.get('tool_name', 'unknown')}): {params}")
+                lines.append(f"Turn {turn_id} - Tool Call [{idx}] ({entry.get('tool_name', 'unknown')}): {params}")
             elif entry_type == "tool_response":
                 resp = entry.get("tool_response", {})
                 lines.append(f"Turn {turn_id} - Tool Response ({entry.get('tool_name', 'unknown')}): {resp}")
-        return "\n".join(lines)
+        return "\n".join(lines), tool_call_ids
 
     async def _call_judge_raw(self, prompt: str, context: MetricContext) -> str | None:
         """Call LLM judge and return raw response text.
