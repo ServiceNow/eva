@@ -6828,7 +6828,7 @@
       "fr": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui ?",
       "es": "¿Me podéis cambiar a un vuelo más temprano hoy?",
       "de": "Können Sie mich heute auf einen früheren Flug umbuchen?",
-      "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में कर सकते हैं?",
+      "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -18471,7 +18471,7 @@
       "fr": "Mon vol est retardé — est-ce que je peux avoir un bon de repas ?",
       "es": "Mi vuelo va con retraso. ¿Puedo recibir un vale de comida?",
       "de": "Mein Flug hat Verspätung – kann ich einen Essensgutschein bekommen?",
-      "hi": "मेरी उड़ान में देरी है—क्या मुझे भोजन वाउचर मिल सकता है?",
+      "hi": "मेरी उड़ान में देरी है—क्या मुझे खाने का वाउचर मिल सकता है?",
       "ko": "제 항공편이 지연됐는데요—식사 바우처를 받을 수 있을까요?"
     },
     "culture_overrides": {
@@ -19463,7 +19463,7 @@
       "fr": "Bonjour — l’horaire de mon vol a changé et j’ai besoin d’aide pour tout confirmer.",
       "es": "Hola, han cambiado la hora de mi vuelo y necesito ayuda para confirmarlo todo.",
       "de": "Hallo – meine Flugzeit hat sich geändert und ich brauche Hilfe, um alles zu bestätigen.",
-      "hi": "नमस्ते—मेरी उड़ान का समय बदल गया है और मुझे सब कुछ पुष्टि करने में मदद चाहिए।",
+      "hi": "नमस्ते—मेरी उड़ान का समय बदल गया है और मुझे हर चीज़ की पुष्टि करने में मदद चाहिए।",
       "ko": "안녕하세요—제 항공편 시간이 변경돼서 예약이 제대로 변경됐는지 확인하고 싶어요."
     },
     "culture_overrides": {
@@ -20250,7 +20250,7 @@
       "fr": "Bonjour, l’horaire de mon vol a beaucoup changé et je dois annuler et obtenir un remboursement.",
       "es": "Hola, han cambiado mucho la hora de mi vuelo y necesito cancelarlo y recibir un reembolso.",
       "de": "Hallo, meine Flugzeit wurde wesentlich geändert. Ich muss stornieren und brauche eine Rückerstattung.",
-      "hi": "नमस्ते, मेरी उड़ान का समय बहुत ज़्यादा बदल गया है और मुझे इसे रद्द करके रिफंड लेना है।",
+      "hi": "नमस्ते, मेरी उड़ान का समय काफ़ी बदल गया है और मुझे इसे रद्द करके पैसे वापस लेना है।",
       "ko": "안녕하세요, 제 항공편 시간이 많이 변경돼서 취소하고 환불받아야 해요."
     },
     "culture_overrides": {
@@ -21479,7 +21479,7 @@
       "fr": "Mon vol vient d’être annulé après qu’on a dû faire demi-tour — pouvez-vous me réserver un autre vol ?",
       "es": "Acaban de cancelarme el vuelo después de que tuviéramos que regresarnos. ¿Me puedes volver a reservar?",
       "de": "Mein Flug wurde gerade gestrichen, nachdem wir umkehren mussten – können Sie mich umbuchen?",
-      "hi": "हमारे वापस मुड़ने के बाद मेरी उड़ान अभी-अभी रद्द हो गई—क्या आप मेरी दोबारा बुकिंग कर सकते हैं?",
+      "hi": "हमारे वापस मुड़ने के बाद मेरी उड़ान अभी-अभी रद्द हो गई—क्या आप मुझे रीबुक करवा सकते हैं?",
       "ko": "제 항공편이 회항한 뒤에 방금 취소됐는데요—다시 예약해 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -22307,7 +22307,7 @@
       "fr": "Bonjour — pouvez-vous me dire ce qui se passe avec mon vol qui est revenu à Minneapolis ? Nous avons décollé à l’heure prévue, vers 12:30, puis nous avons dû faire demi-tour.",
       "es": "Hola, ¿me podéis decir qué está pasando con mi vuelo que volvió a Minneapolis? Despegamos a la hora prevista, sobre las 12:30, y luego tuvimos que dar la vuelta.",
       "de": "Hallo – können Sie mir sagen, was mit meinem Flug los ist, der nach Minneapolis zurückgekehrt ist? Wir sind planmäßig gegen 12:30 gestartet und mussten dann umdrehen.",
-      "hi": "नमस्ते—क्या आप मुझे बता सकते हैं कि मेरी उस उड़ान के साथ क्या हो रहा है जो मिनियापोलिस वापस आ गई? हमने निर्धारित समय पर, करीब 12:30 बजे उड़ान भरी थी, और फिर वापस मुड़ना पड़ा।",
+      "hi": "नमस्ते—क्या आप मुझे बता सकते हैं कि मेरी उस उड़ान के साथ क्या हो रहा है जो मिनियापोलिस वापस आ गई? हमने निर्धारित समय पर, करीब 12:30 बजे उड़ान भरी थी, और फिर हमें वापस लौटना पड़ा।",
       "ko": "안녕하세요—제 항공편이 Minneapolis로 회항했는데 어떻게 된 건지 알려 주실 수 있나요? 예정 시간인 12:30쯤 이륙했는데, 이후에 회항했어요."
     },
     "culture_overrides": {
@@ -23261,7 +23261,7 @@
       "fr": "J’ai raté mon vol ce matin — pouvez-vous me trouver l’option la moins chère pour D.C. aujourd’hui ?",
       "es": "He perdido el vuelo esta mañana. ¿Me puedes conseguir la opción más barata a D.C. hoy?",
       "de": "Ich habe meinen Flug heute Morgen verpasst – können Sie mich heute auf die günstigste Option nach D.C. umbuchen?",
-      "hi": "आज सुबह मेरी उड़ान छूट गई—क्या आप मुझे आज D.C. जाने के सबसे सस्ते विकल्प में कर सकते हैं?",
+      "hi": "मेरी उड़ान आज सुबह छूट गई—क्या आप मुझे आज D.C. की सबसे सस्ती विकल्प में डाल सकते हैं?",
       "ko": "오늘 아침 항공편을 놓쳤는데요—오늘 D.C.로 가는 가장 저렴한 옵션으로 잡아 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -25060,7 +25060,7 @@
       "fr": "J’ai raté mon vol ce matin et je dois être replacé sur un vol pour Minneapolis aujourd’hui.",
       "es": "He perdido el vuelo esta mañana y necesito que me vuelvan a reservar a Minneapolis hoy.",
       "de": "Ich habe meinen Flug heute Morgen verpasst und brauche noch heute eine Umbuchung nach Minneapolis.",
-      "hi": "आज सुबह मेरी उड़ान छूट गई और मुझे आज मिनियापोलिस के लिए दोबारा बुकिंग करानी है।",
+      "hi": "मेरी उड़ान आज सुबह छूट गई और मुझे आज मिनियापोलिस के लिए रीबुक करवाना है।",
       "ko": "오늘 아침 항공편을 놓쳐서 오늘 Minneapolis로 다시 예약해야 해요."
     },
     "culture_overrides": {
@@ -26468,7 +26468,7 @@
       "fr": "Bonjour, je dois réserver un autre vol parce qu’on m’a refusé l’embarquement à cause de la date d’expiration de mon passeport.",
       "es": "Hola, necesito volver a reservar mi vuelo porque me negaron el embarque por la fecha de caducidad de mi pasaporte.",
       "de": "Hallo, ich muss meinen Flug umbuchen, weil mir wegen des Ablaufdatums meines Reisepasses das Boarding verweigert wurde.",
-      "hi": "नमस्ते, मुझे अपनी उड़ान दोबारा बुक करनी है क्योंकि मेरे पासपोर्ट की समाप्ति तारीख के कारण मुझे बोर्डिंग से मना कर दिया गया था।",
+      "hi": "नमस्ते, मुझे अपनी उड़ान दोबारा बुक करनी है क्योंकि मेरे पासपोर्ट की समाप्ति तिथि की वजह से मुझे बोर्डिंग नहीं करने दी गई।",
       "ko": "안녕하세요, 여권 만료일 때문에 탑승이 거부돼서 항공편을 다시 예약해야 해요."
     },
     "culture_overrides": {
@@ -27560,7 +27560,7 @@
       "fr": "Pouvez-vous me mettre sur le vol plus tôt aujourd’hui ?",
       "es": "¿Me podéis cambiar al vuelo más temprano de hoy?",
       "de": "Können Sie mich heute auf den früheren Flug umbuchen?",
-      "hi": "क्या आप मुझे आज की पहले वाली उड़ान में कर सकते हैं?",
+      "hi": "क्या आप मुझे किसी पहले की उड़ान में डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -29617,7 +29617,7 @@
       "fr": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui ?",
       "es": "¿Me podéis cambiar a un vuelo más temprano hoy?",
       "de": "Können Sie mich heute auf einen früheren Flug umbuchen?",
-      "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में कर सकते हैं?",
+      "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -30662,7 +30662,7 @@
       "fr": "Bonjour, pouvez-vous me mettre sur le prochain pour rentrer à la maison dès que possible ?",
       "es": "Hola, ¿puede cambiarme al próximo vuelo de vuelta a casa lo antes posible?",
       "de": "Hallo, können Sie mich bitte so schnell wie möglich auf den nächsten Flug nach Hause umbuchen?",
-      "hi": "नमस्ते, क्या आप मुझे जितनी जल्दी हो सके घर जाने वाली अगली उड़ान में शिफ्ट कर सकते हैं?",
+      "hi": "नमस्ते, क्या आप मुझे जल्द से जल्द घर की अगली उड़ान पर डाल सकते हैं?",
       "ko": "안녕하세요, 가능한 한 빨리 집으로 가는 다음 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -32674,7 +32674,7 @@
       "fr": "Pouvez-vous m’ajouter à la liste d’attente pour un vol plus tôt aujourd’hui ?",
       "es": "¿Me pueden añadir a la lista de espera para un vuelo más temprano hoy?",
       "de": "Können Sie mich bitte auf die Warteliste für einen früheren Flug heute setzen?",
-      "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान के लिए स्टैंडबाय में जोड़ सकते हैं?",
+      "hi": "क्या आप मुझे आज की किसी पहले की उड़ान के लिए स्टैंडबाय पर डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편 대기 명단에 올려 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -33465,7 +33465,7 @@
       "fr": "Pouvez-vous me mettre en liste d’attente pour le vol de 10:00 AM ?",
       "es": "¿Puede ponerme en lista de espera para el vuelo de las 10:00 AM?",
       "de": "Können Sie mich bitte auf die Warteliste für den Flug um 10:00 AM setzen?",
-      "hi": "क्या आप मुझे 10:00 AM वाली उड़ान के लिए स्टैंडबाय पर रख सकते हैं?",
+      "hi": "क्या आप मुझे सुबह १० बजे वाली उड़ान के लिए स्टैंडबाय पर रख सकते हैं?",
       "ko": "10:00 AM 항공편 대기 명단에 올려 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -39703,7 +39703,7 @@
       "fr": "Je dois annuler mon vol à cause d’une urgence médicale.",
       "es": "Necesito cancelar mi vuelo por una urgencia médica.",
       "de": "Ich muss meinen Flug wegen eines medizinischen Notfalls stornieren.",
-      "hi": "मुझे एक चिकित्सीय आपात स्थिति की वजह से अपनी उड़ान रद्द करनी है।",
+      "hi": "मुझे मेडिकल इमरजेंसी की वजह से अपनी उड़ान रद्द करनी है।",
       "ko": "의료 응급 상황 때문에 제 항공편을 취소해야 해요."
     },
     "culture_overrides": {
@@ -40573,7 +40573,7 @@
       "fr": "Mon vol est retardé et je suis bloqué à l’aéroport : est-ce que je peux avoir un bon de repas ?",
       "es": "Mi vuelo está retrasado y estoy atrapado en el aeropuerto. ¿Puedo conseguir un vale de comida?",
       "de": "Mein Flug hat Verspätung und ich sitze am Flughafen fest – kann ich einen Essensgutschein bekommen?",
-      "hi": "मेरी उड़ान में देरी हो गई है और मैं हवाई अड्डे पर फँसा हुआ हूँ—क्या मुझे भोजन वाउचर मिल सकता है?",
+      "hi": "मेरी उड़ान में देरी हो गई है और मैं हवाई अड्डे पर फँसा हुआ हूँ—क्या मुझे खाने का वाउचर मिल सकता है?",
       "ko": "제 항공편이 지연돼서 공항에 발이 묶였는데요—식사 바우처를 받을 수 있을까요?"
     },
     "culture_overrides": {
@@ -41858,7 +41858,7 @@
       "fr": "Mon vol pour Seattle a été annulé et j’ai besoin d’aide pour être replacé sur un autre vol.",
       "es": "Mi vuelo a Seattle ha sido cancelado y necesito ayuda para que me reubiquen en otro vuelo.",
       "de": "Mein Flug nach Seattle wurde gestrichen und ich brauche Hilfe bei der Umbuchung.",
-      "hi": "Seattle जाने वाली मेरी उड़ान रद्द हो गई है और मुझे दोबारा बुकिंग कराने में मदद चाहिए।",
+      "hi": "सिएटल जाने वाली मेरी उड़ान रद्द हो गई है और मुझे दोबारा बुकिंग कराने में मदद चाहिए।",
       "ko": "Seattle행 항공편이 취소돼서 재예약하는 데 도움이 필요해요."
     },
     "culture_overrides": {
@@ -44152,7 +44152,7 @@
       "fr": "Mon vol a été annulé et le nouveau vol qu’on m’a attribué ne me convient pas : pouvez-vous m’aider ?",
       "es": "Mi vuelo ha sido cancelado y la alternativa que me han dado no me sirve. ¿Puede ayudarme?",
       "de": "Mein Flug wurde gestrichen und die Umbuchung, die man mir gegeben hat, ist nicht akzeptabel – können Sie mir helfen?",
-      "hi": "मेरी उड़ान रद्द हो गई है और जो दोबारा बुकिंग उन्होंने मुझे दी है वह स्वीकार्य नहीं है—क्या आप मदद कर सकते हैं?",
+      "hi": "मेरी उड़ान रद्द हो गई है और जो दोबारा बुकिंग उन्होंने मुझे दी है वह मुझे मंज़ूर नहीं है—क्या आप मदद कर सकते हैं?",
       "ko": "제 항공편이 취소됐는데, 새로 예약해 준 일정으로는 어려울 것 같아요.—도와주실 수 있을까요?"
     },
     "culture_overrides": {
@@ -46368,7 +46368,7 @@
       "fr": "Bonjour, je dois changer mon vol pour Chicago la semaine prochaine.",
       "es": "Hola, necesito cambiar mi vuelo a Chicago de la semana que viene.",
       "de": "Hallo, ich muss meinen Flug nach Chicago nächste Woche ändern.",
-      "hi": "नमस्ते, मुझे अगले हफ्ते Chicago जाने वाली अपनी उड़ान बदलनी है।",
+      "hi": "नमस्ते, मुझे अगले हफ्ते शिकागो जाने वाली अपनी उड़ान बदलनी है।",
       "ko": "안녕하세요, 다음 주 Chicago행 항공편으로 변경해야 해요."
     },
     "culture_overrides": {
@@ -48759,7 +48759,7 @@
       "fr": "Mon vol a des heures de retard : pouvez-vous m’obtenir un bon de repas et me replacer gratuitement sur un autre vol ?",
       "es": "Mi vuelo lleva horas retrasado. ¿Me puedes conseguir un vale de comida y cambiarme a otro vuelo sin coste?",
       "de": "Mein Flug hat seit Stunden Verspätung – können Sie mir einen Essensgutschein besorgen und mich kostenlos umbuchen?",
-      "hi": "मेरी उड़ान कई घंटों से देरी से चल रही है—क्या आप मुझे भोजन वाउचर दिला सकते हैं और मुझे मुफ्त में दोबारा बुक कर सकते हैं?",
+      "hi": "मेरी उड़ान कई घंटों से देरी से चल रही है—क्या आप मुझे खाने का वाउचर दिला सकते हैं और मुझे मुफ्त में दोबारा बुक कर सकते हैं?",
       "ko": "제 항공편이 몇 시간째 지연되고 있는데요—식사 바우처를 받고 무료로 재예약해 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -50510,7 +50510,7 @@
       "fr": "Je dois annuler mon vol et obtenir un remboursement intégral.",
       "es": "Necesito cancelar mi vuelo y obtener un reembolso completo.",
       "de": "Ich muss meinen Flug stornieren und brauche eine vollständige Rückerstattung.",
-      "hi": "मुझे अपनी उड़ान रद्द करनी है और पूरा रिफंड लेना है।",
+      "hi": "मुझे अपनी उड़ान रद्द करनी है और पूरे पैसे वापस लेने हैं।",
       "ko": "제 항공편을 취소하고 전액 환불을 받아야 해요."
     },
     "culture_overrides": {
@@ -51245,7 +51245,7 @@
       "fr": "On m’a facturé un surclassement alors qu’on m’avait dit qu’il serait gratuit : pouvez-vous corriger ça ?",
       "es": "Me han cobrado por una mejora que me dijeron que sería gratis. ¿Puede arreglarlo?",
       "de": "Mir wurde ein Upgrade berechnet, von dem mir gesagt wurde, dass es kostenlos wäre – können Sie das korrigieren?",
-      "hi": "मुझसे एक अपग्रेड के लिए शुल्क लिया गया, जबकि मुझे बताया गया था कि वह मुफ्त होगा—क्या आप इसे ठीक कर सकते हैं?",
+      "hi": "मुझसे एक अपग्रेड का चार्ज लिया गया है जिसके बारे में मुझे बताया गया था कि यह मुफ़्त होगा—क्या आप इसे ठीक कर सकते हैं?",
       "ko": "무료라고 안내받은 업그레이드에 요금이 청구됐는데요—이거 처리해 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -53728,7 +53728,7 @@
       "fr": "Pouvez-vous m’aider à rechercher le vol de mon mari pour demain ?",
       "es": "¿Me puedes ayudar a buscar el vuelo de mi marido para mañana?",
       "de": "Können Sie mir helfen, den Flug meines Mannes für morgen nachzuschauen?",
-      "hi": "क्या आप कल के लिए मेरे पति की उड़ान ढूँढने में मेरी मदद कर सकते हैं?",
+      "hi": "क्या आप मेरे पति की कल की उड़ान ढूँढने में मेरी मदद कर सकते हैं?",
       "ko": "내일 제 남편 항공편을 확인해 주실 수 있나요?"
     },
     "culture_overrides": {
