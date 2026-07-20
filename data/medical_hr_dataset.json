@@ -4220,7 +4220,7 @@
     "starting_utterances": {
       "en": "Hi, I need to request some PTO for an upcoming vacation.",
       "es": "Hola, necesito solicitar unos días de PTO para mis próximas vacaciones.",
-      "fr": "Bonjour, j’ai besoin de demander des congés payés pour des vacances à venir.",
+      "fr": "Bonjour, j’ai besoin de demander des congés payés pour les vacances à venir.",
       "fr-CA": "Bonjour, j’ai besoin de demander des congés payés pour des vacances à venir.",
       "de": "Hallo, ich muss Urlaub beantragen."
     },
@@ -5412,7 +5412,7 @@
     "starting_utterances": {
       "en": "Hi, I'm calling about swapping one of my shifts.",
       "es": "Hola, llamo para cambiar uno de mis turnos.",
-      "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
+      "fr": "Bonjour, j’appelle au sujet du changement d’un de mes horaires de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an."
     },
@@ -5979,7 +5979,7 @@
     "starting_utterances": {
       "en": "Hi, I'm calling about swapping one of my shifts.",
       "es": "Hola, llamo para cambiar uno de mis turnos.",
-      "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
+      "fr": "Bonjour, j’appelle au sujet du changement d’un de mes horaires de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an."
     },
@@ -6578,7 +6578,7 @@
     "starting_utterances": {
       "en": "Hi, I need to update my malpractice insurance information.",
       "es": "Hola, necesito actualizar la información de mi seguro de negligencia médica.",
-      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance contre la faute professionnelle médicale.",
+      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance concernant la faute professionnelle médicale.",
       "fr-CA": "Bonjour, je dois mettre à jour mes renseignements d’assurance responsabilité professionnelle médicale.",
       "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren."
     },
@@ -7103,7 +7103,7 @@
     "starting_utterances": {
       "en": "Hi, I need to update my malpractice insurance information.",
       "es": "Hola, necesito actualizar la información de mi seguro de mala práctica.",
-      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance contre la faute professionnelle médicale.",
+      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance concernant la faute professionnelle médicale.",
       "fr-CA": "Bonjour, je dois mettre à jour mes renseignements d’assurance responsabilité professionnelle médicale.",
       "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren."
     },
@@ -7695,7 +7695,7 @@
     "starting_utterances": {
       "en": "Hi, I need help updating a couple of onboarding items and setting up my follow-up appointment.",
       "es": "Hola, necesito ayuda para actualizar un par de elementos de onboarding y programar mi cita de seguimiento.",
-      "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments de mon intégration et pour planifier mon rendez-vous de suivi.",
+      "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments pour mon intégration et pour planifier mon rendez-vous de suivi.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments de mon intégration et pour fixer mon rendez-vous de suivi.",
       "de": "Hallo, ich brauche Hilfe dabei, ein paar Onboarding-Punkte zu aktualisieren und meinen Folgetermin zu vereinbaren."
     },
@@ -8188,7 +8188,7 @@
     "starting_utterances": {
       "en": "Hi, I need help marking a couple of my onboarding tasks as complete.",
       "es": "Hola, necesito ayuda para marcar un par de mis tareas de onboarding como completadas.",
-      "fr": "Bonjour, j’ai besoin d’aide pour marquer quelques-unes de mes tâches d’intégration comme terminées.",
+      "fr": "Bonjour, j’ai besoin d’aide pour marquer une partie de mes tâches d’intégration comme terminées.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour marquer quelques-unes de mes tâches d’intégration comme terminées.",
       "de": "Hallo, ich brauche Hilfe dabei, ein paar meiner Onboarding-Aufgaben als erledigt zu markieren."
     },
@@ -15079,7 +15079,7 @@
     "starting_utterances": {
       "en": "Hi, I'm calling about swapping one of my shifts.",
       "es": "Hola, llamo para cambiar uno de mis turnos.",
-      "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
+      "fr": "Bonjour, j’appelle au sujet du changement d’un de mes horaires de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an."
     },
