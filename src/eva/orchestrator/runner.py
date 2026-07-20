@@ -4,6 +4,7 @@ import asyncio
 import json
 import shutil
 import sys
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any, TextIO
@@ -1053,7 +1054,7 @@ class BenchmarkRunner:
                 needs_rerun = (
                     not isinstance(entry, dict)
                     or entry.get("error") is not None
-                    or entry.get("score") is None
+                    or (entry.get("score") is None and not entry.get("skipped", False))
                 )
                 if needs_rerun:
                     record_metric_filter.setdefault(record_id, set()).add(name)
@@ -1073,10 +1074,9 @@ class BenchmarkRunner:
         logger.info(
             f"Rerunning {total_reruns} failed metric computation(s) across {len(record_metric_filter)} record(s)"
         )
-        per_metric_counts: dict[str, int] = {}
-        for metrics in record_metric_filter.values():
-            for name in metrics:
-                per_metric_counts[name] = per_metric_counts.get(name, 0) + 1
+        per_metric_counts = Counter(
+            name for metrics in record_metric_filter.values() for name in metrics
+        )
         for name, count in sorted(per_metric_counts.items()):
             logger.info(f"  {name}: {count} record(s)")
 
@@ -1399,7 +1399,6 @@ class BenchmarkRunner:
         with open(eval_summary_path, "w") as f:
             json.dump(eval_summary, f, indent=2, ensure_ascii=False)
 
-        # Audit trail of exactly what moved.
         with open(run_dir / "reclassification_log.json", "w") as f:
             json.dump(reclassification_log, f, indent=2, ensure_ascii=False)
 
