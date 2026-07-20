@@ -377,8 +377,7 @@ class MetricsRunner:
             metrics_to_compute = {
                 name
                 for name in self.record_metric_filter[record_id]
-                if name in requested_names
-                and (name not in existing_metrics or existing_metrics[name].failed)
+                if name in requested_names and (name not in existing_metrics or existing_metrics[name].failed)
             }
         else:
             # Normal mode: compute all requested if force_rerun, otherwise only missing

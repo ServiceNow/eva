@@ -1074,9 +1074,7 @@ class BenchmarkRunner:
         logger.info(
             f"Rerunning {total_reruns} failed metric computation(s) across {len(record_metric_filter)} record(s)"
         )
-        per_metric_counts = Counter(
-            name for metrics in record_metric_filter.values() for name in metrics
-        )
+        per_metric_counts = Counter(name for metrics in record_metric_filter.values() for name in metrics)
         for name, count in sorted(per_metric_counts.items()):
             logger.info(f"  {name}: {count} record(s)")
 
@@ -1224,9 +1222,7 @@ class BenchmarkRunner:
 
         eval_summary_path = run_dir / "evaluation_summary.json"
         if not eval_summary_path.exists():
-            raise FileNotFoundError(
-                f"evaluation_summary.json not found in {run_dir}. Nothing to reclassify."
-            )
+            raise FileNotFoundError(f"evaluation_summary.json not found in {run_dir}. Nothing to reclassify.")
 
         with open(eval_summary_path) as f:
             eval_summary = json.load(f)
@@ -1362,8 +1358,7 @@ class BenchmarkRunner:
             filled = len(promotions)
             if filled < needed:
                 logger.info(
-                    f"{base}: filled {filled}/{needed} needed trial(s) — "
-                    f"{needed - filled} slot(s) remain failed"
+                    f"{base}: filled {filled}/{needed} needed trial(s) — {needed - filled} slot(s) remain failed"
                 )
             return promotions
 
