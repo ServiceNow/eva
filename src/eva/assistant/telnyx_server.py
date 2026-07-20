@@ -871,8 +871,7 @@ class TelnyxWebRTCClient:
         await self._peer.setRemoteDescription(RTCSessionDescription(sdp=sdp, type="answer"))
         self._remote_description_set.set()
         logger.info(
-            "Telnyx WebRTC remote description set. "
-            "Receivers: %s, Senders: %s, Transceivers: %s",
+            "Telnyx WebRTC remote description set. Receivers: %s, Senders: %s, Transceivers: %s",
             len(self._peer.getReceivers()),
             len(self._peer.getSenders()),
             len(self._peer.getTransceivers()),
@@ -884,9 +883,11 @@ class TelnyxWebRTCClient:
             receiver_track = getattr(t.receiver, "track", None) if t.receiver else None
             sender_track = getattr(t.sender, "track", None) if t.sender else None
             logger.info(
-                "  Transceiver[%s] mid=%s direction=%s stopped=%s "
-                "receiver_track=%s sender_track=%s",
-                i, mid, direction, stopped,
+                "  Transceiver[%s] mid=%s direction=%s stopped=%s receiver_track=%s sender_track=%s",
+                i,
+                mid,
+                direction,
+                stopped,
                 getattr(receiver_track, "kind", None),
                 getattr(sender_track, "kind", None),
             )
@@ -989,10 +990,11 @@ class TelnyxWebRTCClient:
                     continue
                 frames += 1
                 if frames == 1:
-                    logger.info("Telnyx WebRTC first remote audio frame received "
-                                "(sample_rate=%s, samples=%s)",
-                                getattr(frame, "sample_rate", None),
-                                getattr(frame, "samples", None))
+                    logger.info(
+                        "Telnyx WebRTC first remote audio frame received (sample_rate=%s, samples=%s)",
+                        getattr(frame, "sample_rate", None),
+                        getattr(frame, "samples", None),
+                    )
                 pcm_16k = self._frame_to_pcm16_16k(frame)
                 if pcm_16k:
                     await self.audio_handler(pcm_16k)
@@ -1533,11 +1535,7 @@ class TelnyxAssistantServer(AbstractAssistantServer):
             if not self._webhook_base_url:
                 missing.append("webhook_base_url or public_base_url")
             if missing:
-                raise ValueError(
-                    "Telnyx Call Control mode requires s2s_params: "
-                    + ", ".join(missing)
-                    + "."
-                )
+                raise ValueError("Telnyx Call Control mode requires s2s_params: " + ", ".join(missing) + ".")
         else:
             if not self._assistant_id and not self._create_assistant:
                 missing.append("assistant_id or assistant_agent_id")
@@ -1914,7 +1912,9 @@ class TelnyxAssistantServer(AbstractAssistantServer):
 
         events_path = resolve_user_simulator_events_path(self.output_dir)
         if events_path is None:
-            logger.warning("No user simulator events file found in %s; audit log will have no user turns", self.output_dir)
+            logger.warning(
+                "No user simulator events file found in %s; audit log will have no user turns", self.output_dir
+            )
             return
 
         for user_turn in extract_user_speech_events(events_path):

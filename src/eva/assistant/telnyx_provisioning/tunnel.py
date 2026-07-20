@@ -57,8 +57,13 @@ async def cloudflare_quick_tunnel(local_port: int, *, url_timeout: float = 30.0)
             "(https://github.com/cloudflare/cloudflared) or set webhook_base_url explicitly."
         )
     proc = await asyncio.create_subprocess_exec(
-        binary, "tunnel", "--no-autoupdate", "--url", f"http://localhost:{local_port}",
-        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
+        binary,
+        "tunnel",
+        "--no-autoupdate",
+        "--url",
+        f"http://localhost:{local_port}",
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.PIPE,
     )
     try:
         url = await _read_url(proc, url_timeout)

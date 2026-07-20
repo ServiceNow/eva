@@ -1,4 +1,5 @@
 """Unit tests for the Telnyx media-streaming provisioner (no network)."""
+
 from __future__ import annotations
 
 import pytest
@@ -101,8 +102,13 @@ def test_prefers_unattached_number():
             {"id": "a", "phone_number": "+13120000001", "connection_id": "existing-conn"},
             {"id": "b", "phone_number": "+13120000002", "connection_id": None},
         ],
-        apps=[{"id": "app-1", "application_name": MANAGED_APP_NAME,
-               "webhook_event_url": "https://x.example/call-control-events"}],
+        apps=[
+            {
+                "id": "app-1",
+                "application_name": MANAGED_APP_NAME,
+                "webhook_event_url": "https://x.example/call-control-events",
+            }
+        ],
         profiles=[{"id": "prof-1", "name": "existing"}],
     )
     result = prov.ensure(assistant_id="assistant-abc", public_url="https://x.example", create=True)
@@ -112,8 +118,13 @@ def test_prefers_unattached_number():
 def test_idempotent_when_everything_exists():
     prov = _prov(
         numbers=[{"id": "b", "phone_number": "+13120000002", "connection_id": "app-1"}],
-        apps=[{"id": "app-1", "application_name": MANAGED_APP_NAME,
-               "webhook_event_url": "https://x.example/call-control-events"}],
+        apps=[
+            {
+                "id": "app-1",
+                "application_name": MANAGED_APP_NAME,
+                "webhook_event_url": "https://x.example/call-control-events",
+            }
+        ],
         profiles=[{"id": "prof-1", "name": "eva-media-streaming"}],
     )
     result = prov.ensure(assistant_id="assistant-abc", public_url="https://x.example", create=True)
@@ -124,40 +135,54 @@ def test_idempotent_when_everything_exists():
 
 class _FakeStderr:
     def __init__(self, lines):
-        self._lines=list(lines)
+        self._lines = list(lines)
+
     async def readline(self):
         return self._lines.pop(0) if self._lines else b""
 
 
 class _FakeProc:
     def __init__(self, lines):
-        self.stderr=_FakeStderr(lines)
-        self.returncode=0
-    def terminate(self): pass
-    def kill(self): pass
-    async def wait(self): return 0
+        self.stderr = _FakeStderr(lines)
+        self.returncode = 0
+
+    def terminate(self):
+        pass
+
+    def kill(self):
+        pass
+
+    async def wait(self):
+        return 0
 
 
 def test_tunnel_url_parse():
     import asyncio
 
     from eva.assistant.telnyx_provisioning.tunnel import _read_url
-    proc=_FakeProc([
-        b"2026-... INF Thank you for trying Cloudflare Tunnel.\n",
-        b"2026-... INF |  https://brave-red-fox-1234.trycloudflare.com  |\n",
-    ])
-    url=asyncio.run(_read_url(proc, timeout=5))
-    assert url=="https://brave-red-fox-1234.trycloudflare.com"
+
+    proc = _FakeProc(
+        [
+            b"2026-... INF Thank you for trying Cloudflare Tunnel.\n",
+            b"2026-... INF |  https://brave-red-fox-1234.trycloudflare.com  |\n",
+        ]
+    )
+    url = asyncio.run(_read_url(proc, timeout=5))
+    assert url == "https://brave-red-fox-1234.trycloudflare.com"
 
 
 def test_tunnel_missing_binary(monkeypatch):
     import asyncio
 
     import eva.assistant.telnyx_provisioning.tunnel as tun
+
     monkeypatch.setattr(tun.shutil, "which", lambda _: None)
+
     async def go():
         async with tun.cloudflare_quick_tunnel(10000):
             pass
+
     import pytest
+
     with pytest.raises(tun.CloudflaredNotFound):
         asyncio.run(go())

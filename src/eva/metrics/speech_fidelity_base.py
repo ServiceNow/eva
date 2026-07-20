@@ -191,8 +191,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                     used_file_upload = True
                 except Exception as upload_err:
                     self.logger.error(
-                        f"[{context.record_id}] Gemini file upload failed: {upload_err}; "
-                        f"falling back to the router."
+                        f"[{context.record_id}] Gemini file upload failed: {upload_err}; falling back to the router."
                     )
             for attempt in range(1 + self.max_empty_retries):
                 if used_file_upload and uploaded_file is not None:
