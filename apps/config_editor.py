@@ -136,10 +136,7 @@ def _init_state() -> None:
     for tc in TOGGLE_CHECKS:
         if tc.state_key not in st.session_state:
             gated = _gated_vars.get(tc.state_key, [])
-            has_value = any(
-                loaded.active.get(n) or loaded.inactive.get(n)
-                for n in gated
-            )
+            has_value = any(loaded.active.get(n) or loaded.inactive.get(n) for n in gated)
             st.session_state[tc.state_key] = has_value or tc.default
     st.session_state.initialized = True
 

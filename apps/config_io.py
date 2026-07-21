@@ -240,7 +240,7 @@ def parse_env_example(path: str | Path) -> ParsedEnvExample:
 class LoadedEnv:
     """Result of parsing a .env file, split by active/inactive status."""
 
-    active: dict[str, str]    # NAME=value lines
+    active: dict[str, str]  # NAME=value lines
     inactive: dict[str, str]  # #v NAME=value lines (saved-but-disabled)
 
     @property
