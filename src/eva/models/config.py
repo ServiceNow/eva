@@ -117,7 +117,11 @@ class ModelConfig(BaseModel):
         "stt_model": "stt",
         "tts_model": "tts",
     }
-    _LEGACY_DROP: ClassVar[set[str]] = {"realtime_model", "realtime_model_params"}
+    _LEGACY_DROP: ClassVar[set[str]] = {
+        "realtime_model",
+        "realtime_model_params",
+        "audio_llm_full_audio_context",
+    }
 
     # STT models that perform their own (server-side) semantic endpointing. They drive turn
     # boundaries themselves, so they must run with the 'external' turn strategies and no local VAD.
