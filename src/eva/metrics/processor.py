@@ -883,6 +883,52 @@ class MetricsContextProcessor:
         has_tts_text = any(entry.get("type") == "tts_text" for entry in raw_pipecat)
         if has_tts_text:
             raw_pipecat = [entry for entry in raw_pipecat if entry.get("type") != "llm_response"]
+            # Pipecat emits full-phrase batch-preview tts_text events (multiple sharing
+            # the same timestamp) alongside per-word streaming tokens (unique timestamps).
+            # The batch previews duplicate content that appears again word-by-word, which
+            # causes truncate_to_spoken to fail: the joined segment contains duplicate
+            # phrases that break substring matching. Remove batch-preview duplicates by
+            # dropping multi-word tts_text events whose timestamp appears more than once.
+            tts_ts_counts: Counter = Counter(e["timestamp"] for e in raw_pipecat if e.get("type") == "tts_text")
+            raw_pipecat = [
+                e
+                for e in raw_pipecat
+                if not (
+                    e.get("type") == "tts_text"
+                    and tts_ts_counts[e["timestamp"]] > 1
+                    and " " in e.get("data", {}).get("frame", "")
+                )
+            ]
+            # Second pass: drop any multi-word tts_text entry that is an exact preview of
+            # the immediately following single-word token stream. Catches batch-preview
+            # phrases emitted ~1ms before their per-word stream (different timestamp from
+            # the per-word tokens, so the same-timestamp filter above misses them). Without
+            # this, the preview phrase and its word-by-word reconstruction both survive and
+            # get joined into one aggregated segment, creating a duplicate that breaks
+            # truncate_to_spoken substring matching for any audit text that follows it.
+            deduped: list[dict] = []
+            i = 0
+            while i < len(raw_pipecat):
+                e = raw_pipecat[i]
+                if e.get("type") == "tts_text" and " " in e.get("data", {}).get("frame", ""):
+                    phrase_words = e["data"]["frame"].split()
+                    nw = len(phrase_words)
+                    j, following_tts = i + 1, []
+                    while j < len(raw_pipecat) and len(following_tts) < nw:
+                        if raw_pipecat[j].get("type") != "tts_text":
+                            break  # stop at any non-tts boundary (turn_start/end)
+                        following_tts.append(raw_pipecat[j])
+                        j += 1
+                    if (
+                        len(following_tts) == nw
+                        and all(" " not in fw.get("data", {}).get("frame", "") for fw in following_tts)
+                        and " ".join(fw["data"]["frame"] for fw in following_tts) == e["data"]["frame"]
+                    ):
+                        i += 1  # skip: this multi-word entry is a preview of the following words
+                        continue
+                deduped.append(e)
+                i += 1
+            raw_pipecat = deduped
 
         grouped_pipecat = aggregate_pipecat_logs_by_type(raw_pipecat)
         for entry in grouped_pipecat:

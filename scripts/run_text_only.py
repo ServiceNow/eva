@@ -49,6 +49,7 @@ from eva.models.agents import AgentConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, RecordMetrics
 from eva.utils import router
+from eva.utils.bootstrap import run_seed
 from eva.utils.culture import resolve_scenario_db, resolve_user_goal
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.log_processing import (
@@ -948,7 +949,9 @@ async def main() -> None:
 
     if all_record_metrics:
         metric_names = requested_metrics + ["text_response_latency"]
-        per_metric = MetricsRunner._build_per_metric_aggregates(all_record_metrics, metric_names, num_draws=num_trials)
+        per_metric = MetricsRunner._build_per_metric_aggregates(
+            all_record_metrics, metric_names, num_draws=num_trials, seed=run_seed(output_dir.name)
+        )
 
         # Augment text_response_latency with raw latency stats in seconds
         if "text_response_latency" in per_metric:
@@ -996,7 +999,9 @@ async def main() -> None:
                     sum(all_call_latencies) / len(all_call_latencies), 3
                 )
 
-        overall_scores = compute_run_level_aggregates(all_record_metrics, num_trials, text_composites)
+        overall_scores = compute_run_level_aggregates(
+            all_record_metrics, num_trials, text_composites, run_seed(output_dir.name)
+        )
         data_quality = MetricsRunner._build_data_quality(all_record_metrics, per_metric)
 
         metrics_summary_data: dict[str, Any] = {

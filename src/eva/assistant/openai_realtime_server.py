@@ -28,7 +28,6 @@ from eva.assistant.audio_bridge import (
 )
 from eva.assistant.base_server import AbstractAssistantServer
 from eva.utils.logging import get_logger
-from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -39,6 +38,13 @@ OPENAI_SAMPLE_RATE = 24000
 # so the user simulator's silence detection works correctly.
 MULAW_CHUNK_SIZE = 160  # bytes per chunk (20ms at 8kHz, 1 byte per sample)
 MULAW_CHUNK_DURATION_S = 0.02  # 20ms per chunk
+# Don't pad the user track to align with the assistant when real user audio
+# arrived within this window. The speaking-state flag can go stale under
+# event-loop jitter, and padding then injects silence into an active user
+# utterance (the choppy-audio bug). This guard only ever *skips* a pad, so it
+# can never add silence or worsen alignment — during genuine user silence the
+# timestamp is old and padding proceeds normally.
+USER_ACTIVE_GUARD_S = 0.3
 
 
 def _wall_ms() -> str:
@@ -83,14 +89,11 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         super().__init__(**kwargs)
 
         self._audio_sample_rate = OPENAI_SAMPLE_RATE
+        # Monotonic time of the last real user-audio frame appended; used to
+        # guard against padding the user track mid-utterance (see USER_ACTIVE_GUARD_S).
+        self._last_user_audio_mono: float = 0.0
 
-        prompt_manager = PromptManager()
-        self._system_prompt: str = prompt_manager.get_prompt(
-            "realtime_agent.system_prompt",
-            agent_personality=self.agent.description,
-            agent_instructions=self.agent.instructions,
-            datetime=self.current_date_time,
-        )
+        self._system_prompt: str = self._build_system_prompt()
 
         self._realtime_tools: list[dict] = self._build_realtime_tools()
 
@@ -217,6 +220,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         reasoning_effort = s2s.get("reasoning_effort")
         if reasoning_effort:
             session_config["reasoning"] = {"effort": reasoning_effort}
+
+        if self.pipeline_config.parallel_tool_calls is not None:
+            session_config["parallel_tool_calls"] = self.pipeline_config.parallel_tool_calls
 
         return session_config
 
@@ -380,6 +386,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                     sync_buffer_to_position(self.assistant_audio_buffer, sync_target)
                     synced = len(self.assistant_audio_buffer) - asst_before
                 self.user_audio_buffer.extend(pcm16_24k)
+                self._last_user_audio_mono = time.monotonic()
                 self._user_frame_count += 1
                 if self._user_frame_count % 50 == 0:
                     diff = len(self.user_audio_buffer) - len(self.assistant_audio_buffer)
@@ -583,7 +590,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         user_before = len(self.user_audio_buffer)
         synced = 0
-        if not self._user_speaking:
+        # Skip the pad if the user track is actively receiving audio (flag may be
+        # stale under jitter) — padding then would inject a mid-utterance chop.
+        user_recently_active = (time.monotonic() - self._last_user_audio_mono) <= USER_ACTIVE_GUARD_S
+        if not self._user_speaking and not user_recently_active:
             sync_buffer_to_position(self.user_audio_buffer, len(self.assistant_audio_buffer))
             synced = len(self.user_audio_buffer) - user_before
         self.assistant_audio_buffer.extend(pcm16_bytes)

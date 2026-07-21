@@ -1,6 +1,6 @@
 """Tests for assistant/pipeline/services.py — service factory functions."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -9,6 +9,7 @@ from eva.assistant.pipeline.services import (
     _resolve_url,
     create_stt_service,
     create_tts_service,
+    update_stt_agent_context,
 )
 
 
@@ -54,26 +55,54 @@ class TestCreateSttService:
             create_stt_service("nonexistent_provider", params={"api_key": "k"})
 
     def test_assemblyai_service_created(self):
-        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "u3-rt-pro"})
+        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "universal-3-5-pro"})
         assert "AssemblyAI" in type(svc).__name__
-        assert svc._settings.model == "u3-rt-pro"
+        assert svc._settings.model == "universal-3-5-pro"
 
     def test_assemblyai_forwards_optional_settings(self):
         svc = create_stt_service(
             "assemblyai",
             params={
                 "api_key": "k",
-                "model": "u3-rt-pro",
+                "model": "universal-3-5-pro",
                 "vad_threshold": 0.1,
-                "min_turn_silence": 120,
+                "min_turn_silence": 100,
+                "max_turn_silence": 100,
             },
         )
         assert svc._settings.vad_threshold == 0.1
-        assert svc._settings.min_turn_silence == 120
+        assert svc._settings.min_turn_silence == 100
+        assert svc._settings.max_turn_silence == 100
+
+    def test_assemblyai_vad_force_turn_endpoint_defaults_true(self):
+        """Constructor arg (not a Settings field) — defaults to pipecat-mode (True)."""
+        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "universal-3-5-pro"})
+        assert svc._vad_force_turn_endpoint is True
+
+    def test_assemblyai_vad_force_turn_endpoint_overridable(self):
+        svc = create_stt_service(
+            "assemblyai",
+            params={"api_key": "k", "model": "universal-3-5-pro", "vad_force_turn_endpoint": False},
+        )
+        assert svc._vad_force_turn_endpoint is False
+
+    def test_assemblyai_forwards_context_carryover_settings(self):
+        """Conversation-context carryover settings (pipecat >= 1.4.0) forward through."""
+        svc = create_stt_service(
+            "assemblyai",
+            params={
+                "api_key": "k",
+                "model": "universal-3-5-pro",
+                "agent_context": "Booking confirmed for flight AA123.",
+                "previous_context_n_turns": 0,
+            },
+        )
+        assert svc._settings.agent_context == "Booking confirmed for flight AA123."
+        assert svc._settings.previous_context_n_turns == 0
 
     def test_assemblyai_ignores_unspecified_settings(self):
         """Keys absent from params must not be forwarded, so library defaults apply."""
-        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "u3-rt-pro"})
+        svc = create_stt_service("assemblyai", params={"api_key": "k", "model": "universal-3-5-pro"})
         assert svc._settings.vad_threshold is None
 
     def test_nvidia_requires_url(self):
@@ -122,9 +151,74 @@ class TestCreateSttService:
         assert svc._settings.endpointing == 42  # Explicit override wins over the Eva default
         assert svc._settings.interim_results is True  # EVA default preserved
 
-    def test_cartesia_service_created(self):
-        svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink"})
-        assert "Cartesia" in type(svc).__name__
+    def test_smallest_returns_smallest_service(self):
+        svc = create_stt_service("smallest", params={"api_key": "k", "model": "pulse"})
+        assert "Smallest" in type(svc).__name__
+        assert svc._settings.model == "pulse"
+
+    def test_smallest_forwards_optional_settings(self):
+        svc = create_stt_service(
+            "smallest",
+            params={"api_key": "k", "model": "pulse", "word_timestamps": True, "diarize": True},
+        )
+        assert svc._settings.word_timestamps is True
+        assert svc._settings.diarize is True
+
+    def test_cartesia_is_ink2_turns_service(self):
+        svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink-2"})
+        assert "Turns" in type(svc).__name__
+
+    def test_cartesia_multilingual_is_ink_whisper(self):
+        svc = create_stt_service("cartesia-multilingual", params={"api_key": "k", "model": "ink-whisper"})
+        assert "Cartesia" in type(svc).__name__ and "Turns" not in type(svc).__name__
+
+    def test_unknown_stt_error_lists_cartesia_multilingual_and_xai(self):
+        with pytest.raises(ValueError, match="Unknown STT model") as exc:
+            create_stt_service("bogus", params={"api_key": "k"})
+        msg = str(exc.value)
+        assert "cartesia-multilingual" in msg
+        assert "xai" in msg
+
+
+_CARTESIA_STT_PROVIDERS = [
+    ("cartesia", {"api_key": "k", "model": "ink-2"}),
+    ("cartesia-multilingual", {"api_key": "k", "model": "ink-whisper"}),
+]
+
+
+class TestCartesiaSttInputSampleRate:
+    @pytest.mark.parametrize("provider,params", _CARTESIA_STT_PROVIDERS)
+    def test_cartesia_stt_declares_16khz_input(self, provider, params):
+        svc = create_stt_service(provider, params=params)
+        assert svc._init_sample_rate == 16000
+
+    def test_cartesia_caller_can_override_sample_rate(self):
+        svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink-2", "sample_rate": 8000})
+        assert svc._init_sample_rate == 8000
+
+
+class TestUpdateSttAgentContext:
+    """Conversation-context carryover hook (AssemblyAI Universal-3 Pro)."""
+
+    async def test_forwards_text_when_supported(self):
+        stt = MagicMock()
+        stt.update_agent_context = AsyncMock()
+        await update_stt_agent_context(stt, "The agent's latest reply.")
+        stt.update_agent_context.assert_awaited_once_with("The agent's latest reply.")
+
+    async def test_noop_when_capability_absent(self):
+        """STT services without the method (Deepgram, Cartesia, …) are skipped silently."""
+        stt = MagicMock(spec=[])  # no attributes → getattr returns None
+        await update_stt_agent_context(stt, "ignored")  # must not raise
+
+    async def test_noop_for_empty_text(self):
+        stt = MagicMock()
+        stt.update_agent_context = AsyncMock()
+        await update_stt_agent_context(stt, "")
+        stt.update_agent_context.assert_not_awaited()
+
+    async def test_noop_for_none_stt(self):
+        await update_stt_agent_context(None, "anything")  # must not raise
 
 
 class TestCreateTtsService:
@@ -174,6 +268,23 @@ class TestCreateTtsService:
         assert svc._settings.voice == "v1"  # Mapped from EVA's voice_id key
         assert svc._settings.stability == 0.7
         assert svc._settings.speed == 1.1
+
+    def test_smallest_returns_smallest_service(self):
+        svc = create_tts_service("smallest", params={"api_key": "k", "model": "lightning_v3.1"})
+        assert "Smallest" in type(svc).__name__
+
+    def test_smallest_forwards_voice_id_and_speed(self):
+        svc = create_tts_service(
+            "smallest",
+            params={"api_key": "k", "model": "lightning_v3.1", "voice_id": "sophia", "speed": 1.2},
+        )
+        assert svc._settings.voice == "sophia"
+        assert svc._settings.speed == 1.2
+
+    def test_smallest_defaults_voice_per_model_when_unset(self):
+        """Omitting voice_id must not override pipecat's per-model default voice."""
+        svc = create_tts_service("smallest", params={"api_key": "k", "model": "lightning_v3.1_pro"})
+        assert svc._settings.voice == "meher"
 
     def test_openai_respects_voice_param(self):
         svc = create_tts_service("openai", params={"api_key": "k", "model": "tts-1", "voice": "nova"})

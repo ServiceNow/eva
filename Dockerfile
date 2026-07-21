@@ -2,24 +2,24 @@
 # Multi-stage build for smaller final image
 
 # ============================================
-# Stage 1: Deps — only rebuilds when pyproject.toml changes
+# Stage 1: Deps — only rebuilds when uv.lock changes
 # ============================================
 FROM python:3.11-slim AS deps
 
 WORKDIR /app
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml README.md ./
-# Stub src so hatchling can build the package metadata
+COPY pyproject.toml uv.lock README.md ./
+# Stub src so uv can resolve project metadata without the real source
 RUN mkdir -p src/eva && echo '__version__ = "0.0.0"' > src/eva/__init__.py
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
+RUN uv venv /opt/venv && \
+    UV_PROJECT_ENVIRONMENT=/opt/venv uv sync --frozen --no-install-project --no-cache
 
 # ============================================
 # Stage 2: Builder — reinstalls only the eva package on source changes
@@ -28,19 +28,15 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Bring in the heavy deps venv from stage 1 (cached, ~1GB, only busts on pyproject.toml changes)
+# Bring in the heavy deps venv from stage 1 (cached, only busts on uv.lock changes)
 COPY --from=deps /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy real source and reinstall only the eva package (no deps, ~seconds)
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
-RUN pip install --no-cache-dir --no-deps .
+RUN uv pip install --python /opt/venv/bin/python --no-cache --no-deps .
 
 # ============================================
 # Stage 3: Runtime
@@ -72,6 +68,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Overlay only the eva package files that changed (tiny, ~seconds to copy)
 COPY --from=builder /opt/venv/lib/python3.11/site-packages/eva /opt/venv/lib/python3.11/site-packages/eva
+COPY --from=builder /opt/venv/lib/python3.11/site-packages/eva-*.dist-info /opt/venv/lib/python3.11/site-packages/
 COPY --from=builder /opt/venv/bin/eva /opt/venv/bin/eva
 
 # Copy application code

@@ -65,6 +65,11 @@ agent:
     - Ask for clarification only when truly necessary
     - Request one or two details maximum per turn
 
+  pre_tool_speech: |
+    ## Responsiveness
+    Before calling a tool, say one brief sentence first. For lookups, use a short lead-in (e.g. "Let me pull that up."). Before any action that is irreversible or has real-world consequences, state what you'll do, get confirmation, then call the tool. 
+    If calling multiple tools at once, only one lead-in is needed.
+
 audio_llm_agent:
   system_prompt: |
     You are an AI voice assistant on a live phone call.

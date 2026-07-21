@@ -12,6 +12,7 @@ from pydantic_settings import SettingsError
 
 from eva.models.config import (
     ElevenLabsSimulatorConfig,
+    ModelConfig,
     OpenAIRealtimeSimulatorConfig,
     PipelineType,
     RunConfig,
@@ -785,6 +786,84 @@ class TestTurnStrategyConfig:
         assert config.model.turn_stop_strategy == "turn_analyzer"
         assert config.model.vad == "silero"
         assert config.model.vad_params == {}
+
+
+class TestSelfEndpointingSTTAutowire:
+    def test_cartesia_forces_external_and_no_vad(self):
+        m = ModelConfig(stt="cartesia", llm="gpt-5.2")
+        assert m.turn_start_strategy == "external"
+        assert m.turn_stop_strategy == "external"
+        assert m.vad == "none"
+
+    def test_conflicting_user_values_are_overridden(self):
+        m = ModelConfig(
+            stt="cartesia",
+            llm="gpt-5.2",
+            vad="silero",
+            turn_start_strategy="vad",
+            turn_stop_strategy="turn_analyzer",
+        )
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("external", "external", "none")
+
+    def test_non_self_endpointing_stt_untouched(self):
+        m = ModelConfig(stt="cartesia-multilingual", llm="gpt-5.2")
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("vad", "turn_analyzer", "silero")
+
+    def test_persisted_config_roundtrip_is_stable(self):
+        m = ModelConfig(
+            stt="cartesia",
+            llm="gpt-5.2",
+            turn_start_strategy="external",
+            turn_stop_strategy="external",
+            vad="none",
+        )
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("external", "external", "none")
+
+    def test_runconfig_roundtrip(self):
+        c = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_MODEL__STT": "cartesia",
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "ink-2"}),
+            }
+        )
+        assert c.model.stt == "cartesia"
+        assert (c.model.turn_start_strategy, c.model.turn_stop_strategy, c.model.vad) == (
+            "external",
+            "external",
+            "none",
+        )
+
+
+class TestLatencyOptimizationFlags:
+    def test_defaults_off(self):
+        c = _config(env_vars=_BASE_ENV)
+        assert c.model.pre_tool_speech == "off"
+        assert c.model.llm_streaming is False
+
+    def test_set_via_env(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": "auto", "EVA_MODEL__LLM_STREAMING": "true"})
+        assert c.model.pre_tool_speech == "auto"
+        assert c.model.llm_streaming is True
+
+    @pytest.mark.parametrize("value", ["bogus", "force"])
+    def test_invalid_pre_tool_speech_rejected(self, value):
+        with pytest.raises(ValueError):
+            _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": value})
+
+
+class TestParallelToolCallsConfig:
+    def test_default_is_none(self):
+        m = ModelConfig(llm="gpt-5.2")
+        assert m.parallel_tool_calls is None
+
+    def test_false_via_env(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PARALLEL_TOOL_CALLS": "false"})
+        assert c.model.parallel_tool_calls is False
+
+    def test_true_via_env(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PARALLEL_TOOL_CALLS": "true"})
+        assert c.model.parallel_tool_calls is True
 
 
 class TestApiKeyRedactionInPipelineModels:

@@ -40,7 +40,6 @@ from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
-from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -51,6 +50,12 @@ _RECORDING_SAMPLE_RATE = 24000
 # so the user simulator's silence detection works correctly.
 MULAW_CHUNK_SIZE = 160  # bytes per chunk (20ms at 8kHz, 1 byte per sample)
 MULAW_CHUNK_DURATION_S = 0.02  # 20ms per chunk
+# Don't pad the user track to align with the assistant when real user audio
+# arrived within this window. The speaking-state flag can go stale under
+# event-loop jitter, and padding then injects silence into an active user
+# utterance (the choppy-audio bug). This guard only ever *skips* a pad, so it
+# can never add silence or worsen alignment.
+USER_ACTIVE_GUARD_S = 0.3
 
 
 # ---------------------------------------------------------------------------
@@ -177,6 +182,9 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
 
         # Recording sample rate (Gemini outputs 24 kHz)
         self._audio_sample_rate = _RECORDING_SAMPLE_RATE
+        # Monotonic time of the last real user-audio frame appended; guards
+        # against padding the user track mid-utterance (see USER_ACTIVE_GUARD_S).
+        self._last_user_audio_mono: float = 0.0
 
         # Gemini model name from s2s_params or default
         s2s_params = self.pipeline_config.s2s_params or {}
@@ -186,14 +194,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         self._language_code = s2s_params.get("language_code") or self.language
         self._api_key = s2s_params.get("api_key", "")
 
-        # Build system prompt (same pattern as pipecat realtime)
-        prompt_manager = PromptManager()
-        self._system_prompt = prompt_manager.get_prompt(
-            "realtime_agent.system_prompt",
-            agent_personality=agent.description,
-            agent_instructions=agent.instructions,
-            datetime=self.current_date_time,
-        )
+        self._system_prompt = self._build_system_prompt()
 
         # Build Gemini tools
         self._gemini_tools = _agent_tools_to_gemini(agent)
@@ -407,6 +408,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                 if not _in_model_turn:
                                     sync_buffer_to_position(self.assistant_audio_buffer, len(self.user_audio_buffer))
                                 self.user_audio_buffer.extend(pcm_24k)
+                                self._last_user_audio_mono = time.monotonic()
 
                                 # Send to Gemini
                                 await session.send_realtime_input(
@@ -517,7 +519,13 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                             if len(pcm_24k) < 6:
                                                 continue
 
-                                            if not _user_speaking:
+                                            # Skip the pad if the user track is actively receiving
+                                            # audio (flag may be stale under jitter) — padding then
+                                            # would inject a mid-utterance chop.
+                                            user_recently_active = (
+                                                time.monotonic() - self._last_user_audio_mono
+                                            ) <= USER_ACTIVE_GUARD_S
+                                            if not _user_speaking and not user_recently_active:
                                                 sync_buffer_to_position(
                                                     self.user_audio_buffer, len(self.assistant_audio_buffer)
                                                 )
@@ -608,6 +616,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                                 id=fc.id,
                                                 name=fc.name,
                                                 response=result,
+                                                scheduling=types.FunctionResponseScheduling.WHEN_IDLE,
                                             )
                                         ]
                                     )
