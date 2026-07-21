@@ -685,7 +685,7 @@
       "en": "Hi, I need help requesting a temporary extension for my medical license.",
       "es": "Hola, necesito ayuda para solicitar una prórroga temporal de mi licencia médica.",
       "fr": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence médicale.",
-      "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de mon permis d’exercice de la médecine.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une extension temporaire de mon permis d’exercice de la médecine.",
       "de": "Hallo, ich brauche Hilfe dabei, eine vorübergehende Verlängerung meiner ärztlichen Zulassung zu beantragen.",
       "hi": "नमस्ते, मुझे अपने चिकित्सा लाइसेंस के लिए अस्थायी विस्तार का अनुरोध करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 의료 면허의 임시 연장을 신청하는 데 도움이 필요합니다."
@@ -1243,7 +1243,7 @@
       "en": "Hi, I need help requesting a temporary extension for my license.",
       "es": "Hola, necesito ayuda para solicitar una prórroga temporal de mi licencia.",
       "fr": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence.",
-      "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de mon permis.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une extension temporaire de mon permis.",
       "de": "Hallo, ich brauche Hilfe dabei, eine zeitlich begrenzte Verlängerung meiner Lizenz zu beantragen.",
       "hi": "नमस्ते, मुझे अपने लाइसेंस के लिए अस्थायी विस्तार का अनुरोध करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 면허 임시 연장을 요청하는 데 도움이 필요합니다."
@@ -4328,7 +4328,7 @@
     "starting_utterances": {
       "en": "Hi, I need to request some PTO for an upcoming vacation.",
       "es": "Hola, necesito solicitar unos días de PTO para mis próximas vacaciones.",
-      "fr": "Bonjour, j’ai besoin de demander des congés payés pour des vacances à venir.",
+      "fr": "Bonjour, j’ai besoin de demander des congés payés pour les vacances à venir.",
       "fr-CA": "Bonjour, j’ai besoin de demander des congés payés pour des vacances à venir.",
       "de": "Hallo, ich muss Urlaub beantragen.",
       "hi": "नमस्ते, मुझे आने वाली छुट्टी के लिए कुछ PTO का अनुरोध करना है।",
@@ -5556,7 +5556,7 @@
     "starting_utterances": {
       "en": "Hi, I'm calling about swapping one of my shifts.",
       "es": "Hola, llamo para cambiar uno de mis turnos.",
-      "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
+      "fr": "Bonjour, j’appelle au sujet du changement d’un de mes horaires de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
       "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
@@ -6141,7 +6141,7 @@
     "starting_utterances": {
       "en": "Hi, I'm calling about swapping one of my shifts.",
       "es": "Hola, llamo para cambiar uno de mis turnos.",
-      "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
+      "fr": "Bonjour, j’appelle au sujet du changement d’un de mes horaires de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
       "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
@@ -6758,7 +6758,7 @@
     "starting_utterances": {
       "en": "Hi, I need to update my malpractice insurance information.",
       "es": "Hola, necesito actualizar la información de mi seguro de negligencia médica.",
-      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance contre la faute professionnelle médicale.",
+      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance concernant la faute professionnelle médicale.",
       "fr-CA": "Bonjour, je dois mettre à jour mes renseignements d’assurance responsabilité professionnelle médicale.",
       "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren.",
       "hi": "नमस्ते, मुझे अपनी चिकित्सकीय लापरवाही बीमा जानकारी अपडेट करनी है।",
@@ -7301,7 +7301,7 @@
     "starting_utterances": {
       "en": "Hi, I need to update my malpractice insurance information.",
       "es": "Hola, necesito actualizar la información de mi seguro de mala práctica.",
-      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance contre la faute professionnelle médicale.",
+      "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance concernant la faute professionnelle médicale.",
       "fr-CA": "Bonjour, je dois mettre à jour mes renseignements d’assurance responsabilité professionnelle médicale.",
       "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren.",
       "hi": "नमस्ते, मुझे अपनी चिकित्सकीय लापरवाही बीमा जानकारी अपडेट करनी है।",
@@ -7911,8 +7911,8 @@
     "starting_utterances": {
       "en": "Hi, I need help updating a couple of onboarding items and setting up my follow-up appointment.",
       "es": "Hola, necesito ayuda para actualizar un par de elementos de onboarding y programar mi cita de seguimiento.",
-      "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments de mon intégration et pour planifier mon rendez-vous de suivi.",
-      "fr-CA": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments de mon intégration et pour fixer mon rendez-vous de suivi.",
+      "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments pour mon intégration et pour planifier mon rendez-vous de suivi.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments de mon intégration et pour prendre mon rendez-vous de suivi.",
       "de": "Hallo, ich brauche Hilfe dabei, ein paar Onboarding-Punkte zu aktualisieren und meinen Folgetermin zu vereinbaren.",
       "hi": "नमस्ते, मुझे ऑनबोर्डिंग की कुछ चीज़ें अपडेट करने और अपनी फॉलो-अप अपॉइंटमेंट तय करने में मदद चाहिए।",
       "ko": "안녕하세요, 온보딩 항목 몇 가지를 업데이트하고 후속 예약을 잡는 데 도움이 필요합니다."
@@ -8422,7 +8422,7 @@
     "starting_utterances": {
       "en": "Hi, I need help marking a couple of my onboarding tasks as complete.",
       "es": "Hola, necesito ayuda para marcar un par de mis tareas de onboarding como completadas.",
-      "fr": "Bonjour, j’ai besoin d’aide pour marquer quelques-unes de mes tâches d’intégration comme terminées.",
+      "fr": "Bonjour, j’ai besoin d’aide pour marquer une partie de mes tâches d’intégration comme terminées.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour marquer quelques-unes de mes tâches d’intégration comme terminées.",
       "de": "Hallo, ich brauche Hilfe dabei, ein paar meiner Onboarding-Aufgaben als erledigt zu markieren.",
       "hi": "नमस्ते, मुझे अपने ऑनबोर्डिंग के कुछ कार्यों को पूरा के रूप में चिह्नित करने में मदद चाहिए।",
@@ -12200,7 +12200,7 @@
     "starting_utterances": {
       "en": "Hi, I need help fixing hours on an old shift on my timesheet.",
       "es": "Hola, necesito ayuda para corregir las horas de un turno antiguo en mi hoja de horas.",
-      "fr": "Bonjour, j’ai besoin d’aide pour corriger des heures sur un ancien quart de travail dans ma feuille de temps.",
+      "fr": "Bonjour, j’ai besoin d’aide pour corriger des heures d’une ancienne prestation sur ma feuille de présence.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour corriger des heures d’un ancien quart de travail sur ma feuille de temps.",
       "de": "Hallo, ich brauche Hilfe dabei, Stunden einer alten Schicht auf meinem Stundenzettel zu korrigieren.",
       "hi": "नमस्ते, मुझे अपनी टाइमशीट में एक पुरानी शिफ्ट के घंटों को ठीक करने में मदद चाहिए।",
@@ -14872,7 +14872,7 @@
     "starting_utterances": {
       "en": "Hi, I need help registering for backup on-call availability.",
       "es": "Hola, necesito ayuda para registrar mi disponibilidad para guardias de respaldo.",
-      "fr": "Bonjour, j’ai besoin d’aide pour m’inscrire aux disponibilités d’astreinte de remplacement.",
+      "fr": "Bonjour, j’ai besoin d’aide pour l’enregistrement de mes disponibilités de garde de remplacement.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour m’inscrire aux disponibilités de garde de relève.",
       "de": "Hallo, ich brauche Hilfe dabei, meine Verfügbarkeit für den Ersatzbereitschaftsdienst einzutragen.",
       "hi": "नमस्ते, मुझे बैकअप ऑन-कॉल उपलब्धता के लिए पंजीकरण करने में मदद चाहिए।",
@@ -15511,7 +15511,7 @@
     "starting_utterances": {
       "en": "Hi, I'm calling about swapping one of my shifts.",
       "es": "Hola, llamo para cambiar uno de mis turnos.",
-      "fr": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
+      "fr": "Bonjour, j’appelle pour changer un de mes créneaux de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
       "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
@@ -16983,7 +16983,7 @@
     "starting_utterances": {
       "en": "Hi, I need help transferring my DEA registration.",
       "es": "Hola, necesito ayuda para transferir mi registro DEA.",
-      "fr": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA.",
+      "fr": "Bonjour, j’ai besoin d’aide pour transférer mon inscription auprès de la DEA.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon inscription DEA.",
       "de": "Hallo, ich brauche Hilfe bei der Übertragung meiner DEA-Registrierung.",
       "hi": "नमस्ते, मुझे अपना DEA पंजीकरण स्थानांतरित करने में मदद चाहिए।",
@@ -17629,7 +17629,7 @@
     "starting_utterances": {
       "en": "Hi, I need to get my clinical privileges reactivated.",
       "es": "Hola, necesito reactivar mis privilegios clínicos.",
-      "fr": "Bonjour, je dois faire réactiver mes privilèges cliniques.",
+      "fr": "Bonjour, j’ai besoin de réactiver mes autorisations cliniques.",
       "fr-CA": "Bonjour, je dois faire réactiver mes privilèges cliniques.",
       "de": "Hallo, ich muss meine klinischen Berechtigungen wieder aktivieren lassen.",
       "hi": "नमस्ते, मुझे अपने नैदानिक विशेषाधिकार फिर से सक्रिय करवाने हैं।",
@@ -18691,7 +18691,7 @@
     "starting_utterances": {
       "en": "Hi, I need help fixing a payroll issue for a shift.",
       "es": "Hola, necesito ayuda para solucionar un problema de nómina de un turno.",
-      "fr": "Bonjour, j’ai besoin d’aide pour corriger un problème de paie pour un quart de travail.",
+      "fr": "Bonjour, j’ai besoin d’aide pour corriger un problème de paie lié à un créneau de travail.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour régler un problème de paie pour un quart de travail.",
       "de": "Hallo, ich brauche Hilfe dabei, ein Gehaltsabrechnungsproblem für eine Schicht zu klären.",
       "hi": "नमस्ते, मुझे एक शिफ्ट के लिए वेतन-प्रक्रिया की समस्या ठीक करने में मदद चाहिए।",
@@ -19421,8 +19421,8 @@
     "starting_utterances": {
       "en": "Hi, I need help with a supervised license extension request.",
       "es": "Hola, necesito ayuda con una solicitud de extensión de una licencia supervisada.",
-      "fr": "Bonjour, j’ai besoin d’aide pour une demande de prolongation de licence supervisée.",
-      "fr-CA": "Bonjour, j’ai besoin d’aide avec une demande de prolongation de permis supervisé.",
+      "fr": "Bonjour, j’ai besoin d’aide pour une demande de prolongation d’une licence supervisée.",
+      "fr-CA": "Bonjour, j’ai besoin d’aide avec une demande d’extension de permis supervisé.",
       "de": "Hallo, ich brauche Hilfe beim Antrag auf Verlängerung meiner eingeschränkten Zulassung unter Supervision.",
       "hi": "नमस्ते, मुझे पर्यवेक्षित लाइसेंस विस्तार अनुरोध में मदद चाहिए।",
       "ko": "안녕하세요, 감독 면허 연장 신청 관련해서 도움이 필요해요."
@@ -21868,7 +21868,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of urgent HR credentialing issues I need help with.",
       "es": "Hola, tengo un par de asuntos urgentes de RH credentialing con los que necesito ayuda.",
-      "fr": "Bonjour, j’ai quelques problèmes urgents d’accréditation RH pour lesquels j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai besoin d’aide avec quelques problèmes urgents liés aux accréditation RH.",
       "fr-CA": "Bonjour, j’ai quelques problèmes urgents d’accréditation des RH pour lesquels j’ai besoin d’aide.",
       "de": "Hallo, ich habe einige dringende Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
       "hi": "नमस्ते, मेरे पास कुछ जरूरी एचआर क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
@@ -24526,7 +24526,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR things I need help with today.",
       "es": "Hola, tengo un par de cosas de R.H. con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques démarches RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मेरे पास एचआर से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
@@ -25400,7 +25400,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR things I need help with today.",
       "es": "Hola, tengo un par de cosas de RR.HH. con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques démarches RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मेरे पास एचआर से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
@@ -26167,7 +26167,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR things I need help with today.",
       "es": "Hola, tengo un par de cosas de RR.HH. con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques démarches RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मेरे पास एचआर से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
@@ -27045,7 +27045,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of credentialing updates I need help with today.",
       "es": "Hola, tengo un par de actualizaciones de credentialing con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai besoin d’assistance aujourd’hui pour mettre à jour mes accréditations.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मेरे पास क्रेडेंशियलिंग से जुड़े कुछ अपडेट हैं जिनमें मुझे मदद चाहिए।",
@@ -27754,7 +27754,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of credentialing updates I need help with.",
       "es": "Hola, tengo un par de actualizaciones de credentialing con las que necesito ayuda.",
-      "fr": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’aurais besoin d’assistance pour mettre à jour mes accréditations.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मेरे पास क्रेडेंशियलिंग से जुड़े कुछ अपडेट हैं जिनमें मुझे मदद चाहिए।",
@@ -28384,7 +28384,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of credentialing-related things I need help with.",
       "es": "Hola, tengo un par de cosas relacionadas con credentialing con las que necesito ayuda.",
-      "fr": "Bonjour, j’ai quelques questions liées à l’accréditation pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques démarches liées aux accréditations pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires liées à l’accréditation pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Fragen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मेरे पास क्रेडेंशियलिंग से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
@@ -29332,7 +29332,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR credentialing things I need help with today.",
       "es": "Hola, tengo un par de cosas de HR credentialing con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions d’accréditation RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques démarches liées aux accréditations RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires d’accréditation des RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Sachen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मेरे पास एचआर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
@@ -30135,7 +30135,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR items I need help with as I come back from leave.",
       "es": "Hola, tengo un par de temas de RR.HH. con los que necesito ayuda ahora que vuelvo de una baja.",
-      "fr": "Bonjour, j’ai quelques points RH pour lesquels j’ai besoin d’aide alors que je reviens de congé.",
+      "fr": "Bonjour, j’aurais besoin d’aide pour régler quelques points RH dans le cadre de mon retour de congé.",
       "fr-CA": "Bonjour, j’ai quelques points de RH pour lesquels j’ai besoin d’aide alors que je reviens de congé.",
       "de": "Hallo, ich habe ein paar HR-Punkte, bei denen ich Hilfe brauche, wenn ich aus dem Urlaub zurückkomme.",
       "hi": "नमस्ते, छुट्टी से वापस आते हुए मेरे पास एचआर से जुड़े कुछ मुद्दे हैं जिनमें मुझे मदद चाहिए।",
@@ -30975,8 +30975,8 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of provider HR items I need help with today.",
       "es": "Hola, tengo un par de asuntos de proveedor de RR.HH. con los que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques points RH concernant les prestataires de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
-      "fr-CA": "Bonjour, j’ai quelques points de RH pour fournisseurs de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai besoin d’assistance aujourd’hui pour traiter quelques éléments RH relatifs aux soignants.",
+      "fr-CA": "Bonjour, j’ai quelques points de fournisseurs RH pour lesquels j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Punkte für Leistungserbringer, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज प्रोवाइडर से जुड़ी कुछ एचआर चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider HR 관련해서 도움이 필요한 항목이 몇 가지 있어요."
@@ -31794,8 +31794,8 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of provider record updates I need help with.",
       "es": "Hola, tengo un par de actualizaciones del registro de provider con las que necesito ayuda.",
-      "fr": "Bonjour, j’ai quelques mises à jour du dossier de prestataire de soins pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de fournisseur de soins pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour des fiches de prestataires.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de prestataire de soins pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कुछ प्रोवाइडर रिकॉर्ड अपडेट्स में मदद चाहिए।",
       "ko": "안녕하세요, provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
@@ -32709,8 +32709,8 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of provider record updates I need help with today.",
       "es": "Hola, tengo un par de actualizaciones del registro de provider con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques mises à jour du dossier de prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de fournisseur de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai besoin d’aide aujourd’hui pour mettre à jour des fiches de prestataire.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज कुछ प्रोवाइडर रिकॉर्ड अपडेट्स में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
@@ -33325,8 +33325,8 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of provider record updates I need help with.",
       "es": "Hola, tengo un par de actualizaciones del registro de provider con las que necesito ayuda.",
-      "fr": "Bonjour, j’ai quelques mises à jour du dossier de prestataire de soins pour lesquelles j’ai besoin d’aide.",
-      "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de fournisseur de soins pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour des fiches de prestataires.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de prestataire de soins pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कुछ प्रोवाइडर रिकॉर्ड अपडेट्स में मदद चाहिए।",
       "ko": "안녕하세요, provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
@@ -34192,7 +34192,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR scheduling things I need help with.",
       "es": "Hola, tengo un par de cosas de scheduling de RR.HH. con las que necesito ayuda.",
-      "fr": "Bonjour, j’ai quelques questions RH de planification des horaires pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques démarches RH liées à la planification des horaires pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires de planification des RH pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Fragen zum Dienstplan, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एचआर शेड्यूलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -34975,7 +34975,7 @@
     "starting_utterances": {
       "en": "Hi, I need help swapping one of my upcoming shifts and I have one other scheduling question too.",
       "es": "Hola, necesito ayuda para cambiar uno de mis próximos turnos y también tengo otra pregunta sobre scheduling.",
-      "fr": "Bonjour, j’ai besoin d’aide pour échanger l’un de mes prochains quarts de travail, et j’ai aussi une autre question sur la planification des horaires.",
+      "fr": "Bonjour, j’ai besoin d’aide pour changer l’un de mes prochains créneaux de travail, et j’ai également une autre question concernant la planification des horaires.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour échanger un de mes quarts de travail à venir, et j’ai aussi une autre question de planification.",
       "de": "Hallo, ich brauche Hilfe dabei, eine meiner kommenden Schichten zu tauschen, und ich habe außerdem noch eine weitere Frage zum Dienstplan.",
       "hi": "नमस्ते, मुझे अपनी आने वाली शिफ्ट में से एक को बदलने के लिए मदद चाहिए और मेरा शेड्यूलिंग से जुड़ा एक और सवाल भी है।",
@@ -35622,7 +35622,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of scheduling things I need help with.",
       "es": "Hola, necesito ayuda con un par de cosas de programación.",
-      "fr": "Bonjour, j’ai deux ou trois questions de planification pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques questions liées à la planification des horaires pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées à l’horaire pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Fragen wegen des Dienstplans, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे शेड्यूलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -36475,8 +36475,8 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR things I need to take care of for my onboarding and credentials.",
       "es": "Hola, tengo que ocuparme de algunas cosas de RR.HH. para mi onboarding y mis credenciales.",
-      "fr": "Bonjour, j’ai quelques démarches RH à régler pour mon intégration et mes accréditations.",
-      "fr-CA": "Bonjour, j’ai quelques démarches de ressources humaines à régler pour mon intégration et mes titres de compétence.",
+      "fr": "Bonjour, j’ai quelques démarches RH à effectuer pour mon intégration et mes accréditations.",
+      "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines à régler pour mon intégration et mes titres de compétence.",
       "de": "Hallo, ich habe ein paar Personalangelegenheiten, die ich für mein Onboarding und meine Zulassung erledigen muss.",
       "hi": "नमस्ते, मुझे अपनी ऑनबोर्डिंग और क्रेडेंशियल्स से जुड़े कुछ एचआर कार्यों को पूरा करना है।",
       "ko": "안녕하세요, 온보딩과 credentials 관련해서 처리해야 할 HR 일이 몇 가지 있어요."
@@ -37199,7 +37199,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR onboarding things I need help with.",
       "es": "Hola, necesito ayuda con un par de cosas de onboarding de RH.",
-      "fr": "Bonjour, j’ai deux ou trois démarches d’intégration RH pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques démarches d’intégration RH pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées à l’intégration aux ressources humaines pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Onboarding-Sachen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एचआर ऑनबोर्डिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -37812,7 +37812,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR things I need help with today.",
       "es": "Hola, necesito ayuda con un par de cosas de RH hoy.",
-      "fr": "Bonjour, j’ai deux ou trois questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques questions relatives aux ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
@@ -38854,7 +38854,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of leave requests I need help with.",
       "es": "Hola, necesito ayuda con un par de solicitudes de permiso.",
-      "fr": "Bonjour, j’ai deux ou trois demandes de congé pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques demandes de congé pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois demandes de congé pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Urlaubsanträge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे छुट्टी के कुछ अनुरोधों में मदद चाहिए।",
@@ -39666,7 +39666,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR leave requests I need help with.",
       "es": "Hola, necesito ayuda con un par de solicitudes de permiso de RH.",
-      "fr": "Bonjour, j’ai deux ou trois demandes de congé RH pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques demandes de congé liées aux ressources humaines pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois demandes de congé RH pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Urlaubsanträge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एचआर छुट्टी के कुछ अनुरोधों में मदद चाहिए।",
@@ -40423,7 +40423,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of leave-related things I need help with.",
       "es": "Hola, necesito ayuda con un par de cosas relacionadas con permisos.",
-      "fr": "Bonjour, j’ai deux ou trois choses liées aux congés pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques points liées aux demandes de congés pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées aux congés pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar urlaubsbezogene Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे छुट्टी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -41250,7 +41250,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR things I need help with today.",
       "es": "Hola, necesito ayuda con un par de cosas de RH hoy.",
-      "fr": "Bonjour, j’ai deux ou trois questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques questions concernant les ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
@@ -42021,7 +42021,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR issues I need help with today.",
       "es": "Hola, necesito ayuda con un par de problemas de RH hoy.",
-      "fr": "Bonjour, j’ai deux ou trois problèmes RH pour lesquels j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques difficultés liées aux ressources humaines pour lesquels j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai deux ou trois problèmes de ressources humaines pour lesquels j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Anliegen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर की कुछ समस्याओं में मदद चाहिए।",
@@ -42725,7 +42725,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of HR scheduling and payroll issues I need help with.",
       "es": "Hola, necesito ayuda con un par de problemas de programación y nómina de RH.",
-      "fr": "Bonjour, j’ai deux ou trois problèmes RH de planification et de paie pour lesquels j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques problèmes liés à la planification des ressources humaines et à la paie pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois problèmes de ressources humaines liés à l’horaire et à la paie pour lesquels j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Anliegen zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एचआर शेड्यूलिंग और पेरोल से जुड़ी कुछ समस्याओं में मदद चाहिए।",
@@ -43564,7 +43564,7 @@
       "en": "Hi, I have a few HR onboarding things I need to take care of today.",
       "es": "Hola, tengo que ocuparme hoy de algunas cosas de onboarding de RH.",
       "fr": "Bonjour, j’ai quelques démarches d’intégration RH à régler aujourd’hui.",
-      "fr-CA": "Bonjour, j’ai quelques démarches d’intégration aux ressources humaines à régler aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques tâches d’intégration aux ressources humaines à régler aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Onboarding-Sachen, die ich erledigen muss.",
       "hi": "नमस्ते, मुझे आज एचआर ऑनबोर्डिंग से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
       "ko": "안녕하세요, 오늘 처리해야 할 HR 온보딩 관련 일이 몇 가지 있어요."
@@ -44186,7 +44186,7 @@
     "starting_utterances": {
       "en": "Hi, I have a couple of onboarding things I need help with.",
       "es": "Hola, necesito ayuda con un par de cosas de onboarding.",
-      "fr": "Bonjour, j’ai deux ou trois démarches d’intégration pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques formalités d’intégration pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées à l’intégration pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar Onboarding-Fragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे ऑनबोर्डिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -45341,7 +45341,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few credentialing and HR things I need to take care of before I can come back to work.",
       "es": "Hola, tengo que ocuparme de algunas cosas de credenciales y de RH antes de poder volver al trabajo.",
-      "fr": "Bonjour, j’ai quelques démarches d’accréditation et de RH à régler avant de pouvoir revenir au travail.",
+      "fr": "Bonjour, j’ai quelques démarches d’accréditation et RH à régler avant de pouvoir reprendre le travail.",
       "fr-CA": "Bonjour, j’ai quelques démarches liées à la vérification des titres de compétence et aux ressources humaines à régler avant de pouvoir revenir au travail.",
       "de": "Hallo, ich habe ein paar HR-Fragen und Fragen zur Zulassung, die ich klären muss, bevor ich wieder zur Arbeit kommen kann.",
       "hi": "नमस्ते, काम पर वापस आने से पहले मुझे क्रेडेंशियलिंग और एचआर से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
@@ -47441,7 +47441,7 @@
       "en": "Hi, I have a few credentialing things I need help with today.",
       "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales.",
       "fr": "Bonjour, j’ai quelques démarches d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "fr-CA": "Bonjour, j’ai quelques démarches liées à la vérification des titres de compétence pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques tâches d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
@@ -48554,8 +48554,8 @@
     "starting_utterances": {
       "en": "Hi, I have a few credentialing and HR items I need help with before I start at a new facility.",
       "es": "Hola, necesito ayuda con algunas cosas de credenciales y de RH antes de empezar en un nuevo centro.",
-      "fr": "Bonjour, j’ai quelques points d’accréditation et de RH pour lesquels j’ai besoin d’aide avant de commencer dans un nouvel établissement.",
-      "fr-CA": "Bonjour, j’ai quelques éléments liés à la vérification des titres de compétence et aux ressources humaines pour lesquels j’ai besoin d’aide avant de commencer dans un nouvel établissement.",
+      "fr": "Bonjour, j’ai quelques formalités d’accréditation et RH pour lesquels j’aurais besoin d’aide avant de commencer dans un nouvel établissement.",
+      "fr-CA": "Bonjour, j’ai quelques éléments liés à l’accréditation et aux ressources humaines pour lesquels j’ai besoin d’aide avant de commencer dans un nouvel établissement.",
       "de": "Hallo, ich habe ein paar Fragen zur Zulassung und zu Personalthemen, bei denen ich Hilfe brauche, bevor ich in einer neuen Einrichtung anfange.",
       "hi": "नमस्ते, नई फैसिलिटी में शुरू करने से पहले मुझे क्रेडेंशियलिंग और एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 새 facility에서 시작하기 전에 credentialing 및 HR 관련해서 도움받아야 할 항목이 몇 가지 있어요."
@@ -49684,7 +49684,7 @@
       "en": "Hi, I have a few HR credentialing things I need help with today.",
       "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales de RH.",
       "fr": "Bonjour, j’ai quelques démarches d’accréditation RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "fr-CA": "Bonjour, j’ai quelques démarches de ressources humaines liées à la vérification des titres de compétence pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses d’accréditation de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalfragen zur Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
@@ -50685,7 +50685,7 @@
       "en": "Hi, I have a few provider HR items I need help with today.",
       "es": "Hola, necesito ayuda hoy con algunas cosas de RH como proveedor.",
       "fr": "Bonjour, j’ai quelques points RH en tant que prestataire de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
-      "fr-CA": "Bonjour, j’ai quelques éléments de ressources humaines pour fournisseur de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques éléments de ressources humaines pour prestataire de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar HR-Fragen als Leistungserbringer, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज प्रोवाइडर एचआर से जुड़ी कुछ मदों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider HR 항목 관련해서 도움받아야 할 게 몇 가지 있어요."
@@ -51741,7 +51741,7 @@
       "en": "Hi, I have a few provider credentialing things I need help with today.",
       "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales como proveedor.",
       "fr": "Bonjour, j’ai quelques démarches d’accréditation en tant que prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "fr-CA": "Bonjour, j’ai quelques démarches de vérification des titres de compétence de fournisseur de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques choses d’accréditation de prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज प्रोवाइडर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
@@ -52681,8 +52681,8 @@
     "starting_utterances": {
       "en": "Hi, I have a few provider credentialing updates I need help with today.",
       "es": "Hola, necesito ayuda hoy con algunas actualizaciones de credenciales como proveedor.",
-      "fr": "Bonjour, j’ai quelques mises à jour d’accréditation en tant que prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "fr-CA": "Bonjour, j’ai quelques mises à jour de vérification des titres de compétence de fournisseur de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques mises à jour liées à l’accréditation en tant que prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr-CA": "Bonjour, j’ai quelques mises à jour d’accréditation de prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Änderungen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज प्रोवाइडर क्रेडेंशियलिंग से जुड़े कुछ अपडेट्स में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider credentialing 업데이트 관련해서 도움받아야 할 게 몇 가지 있어요."
@@ -54906,7 +54906,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR things I need help with related to my new baby.",
       "es": "Hola, necesito ayuda hoy con algunas cosas de RH relacionadas con mi nuevo bebé.",
-      "fr": "Bonjour, j’ai quelques questions RH liées à mon nouveau bébé pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques questions RH concernant mon nouveau-né et pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines liées à mon nouveau bébé pour lesquelles j’ai besoin d’aide.",
       "de": "Hallo, ich habe ein paar HR-Fragen im Zusammenhang mit meinem neugeborenen Baby, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मेरे नए बच्चे से जुड़े कुछ एचआर कामों में मुझे मदद चाहिए।",
@@ -59305,7 +59305,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR things I need help with today.",
       "es": "Hola, tengo unas cuantas cosas de RH con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -60361,7 +60361,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR things I need help with related to an upcoming surgery.",
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda relacionadas con una próxima cirugía.",
-      "fr": "Bonjour, j’ai quelques questions de ressources humaines liées à une opération à venir pour lesquelles j’ai besoin d’aide.",
+      "fr": "Bonjour, j’ai quelques questions pour les RH liées à une intervention chirurgicale à venir pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide en lien avec une chirurgie à venir.",
       "de": "Hallo, ich habe ein paar Personalangelegenheiten im Zusammenhang mit einer bevorstehenden Operation, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एक आने वाली सर्जरी को लेकर एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -61411,7 +61411,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR things I need to take care of today.",
       "es": "Hola, tengo unas cuantas cosas de HR que necesito gestionar hoy.",
-      "fr": "Bonjour, j’ai quelques démarches de ressources humaines à régler aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques démarches pour les RH à régler aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines dont je dois m’occuper aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, die ich erledigen muss.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ें निपटानी हैं।",
@@ -62403,7 +62403,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR things I need help with today.",
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques questions pour les RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -63437,7 +63437,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR things I need help with today.",
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques questions pour les RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -64390,7 +64390,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR scheduling and payroll things I need help with today.",
       "es": "Hola, tengo unas cuantas cosas de HR sobre horarios y nóminas con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions de ressources humaines concernant la planification des horaires et la paie pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques questions pour les RH liées à la planification des horaires et à la paie pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de planification des horaires et de paie en ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर की शेड्यूलिंग और पेरोल से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -65358,7 +65358,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR things I need help with today.",
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques questions pour les RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
@@ -66293,7 +66293,7 @@
     "starting_utterances": {
       "en": "Hi, I have a few HR things I need help with today.",
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
-      "fr": "Bonjour, j’ai quelques questions de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
+      "fr": "Bonjour, j’ai quelques questions pour les RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
