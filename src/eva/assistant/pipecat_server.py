@@ -372,6 +372,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     alm_client=alm_client,
                     audio_collector=audio_llm_audio_collector,
                     output_dir=self.output_dir,
+                    llm_streaming=self.pipeline_config.llm_streaming,
+                    full_audio_context=self.pipeline_config.audio_llm_params.get("full_audio_context", False),
                 )
                 audio_llm_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
                     role="assistant", content=msg, timestamp=self._current_iso_timestamp()
@@ -386,7 +388,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 input_transcription_processor = AudioTranscriptionProcessor(
                     audio_collector=audio_llm_audio_collector,
                     alm_client=alm_client,
-                    sample_rate=SAMPLE_RATE,
                 )
 
                 # Set callback to save user transcription to transcript.jsonl and update audit log
@@ -713,9 +714,10 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 )
                 await agent_processor.process_complete_user_turn(message.content)
             elif self.pipeline_config.pipeline_type == PipelineType.AUDIO_LLM and audio_llm_processor:
-                # No STT → message.content is empty.
-                # Processing is triggered by LLMContextFrame flow through ParallelPipeline
-                # (AudioLLMUserAudioCollector pushes LLMContextFrame on UserStoppedSpeakingFrame)
+                # No STT → message.content is empty, and under the forced 'external'
+                # turn-stop strategy this event is transcript-gated and won't fire anyway.
+                # Turn finalization is driven by the AudioLLMUserAudioCollector, which
+                # pushes LLMContextFrame through the ParallelPipeline on UserStoppedSpeakingFrame.
                 pass
             elif self.non_instrumented_realtime_llm:
                 # Non-instrumented realtime fallback (e.g. Ultravox)
