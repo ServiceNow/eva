@@ -686,7 +686,9 @@
       "es": "Hola, necesito ayuda para solicitar una prórroga temporal de mi licencia médica.",
       "fr": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence médicale.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une extension temporaire de mon permis d’exercice de la médecine.",
-      "de": "Hallo, ich brauche Hilfe dabei, eine vorübergehende Verlängerung meiner ärztlichen Zulassung zu beantragen."
+      "de": "Hallo, ich brauche Hilfe dabei, eine vorübergehende Verlängerung meiner ärztlichen Zulassung zu beantragen.",
+      "hi": "नमस्ते, मुझे अपने चिकित्सा लाइसेंस की अवधि अस्थायी रूप से बढ़ाने के लिए मांगने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 의료 면허의 임시 연장을 신청하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -708,6 +710,14 @@
       "de": {
         "first_name": "Carla",
         "last_name": "Maier"
+      },
+      "hi": {
+        "first_name": "अनन्या",
+        "last_name": "चतुर्वेदी"
+      },
+      "ko": {
+        "first_name": "가은",
+        "last_name": "구"
       }
     },
     "romanized_culture_overrides": {
@@ -730,6 +740,14 @@
       "de": {
         "first_name": "Carla",
         "last_name": "Maier"
+      },
+      "hi": {
+        "first_name": "Ananya",
+        "last_name": "Chaturvedi"
+      },
+      "ko": {
+        "first_name": "Gaeun",
+        "last_name": "Gu"
       }
     }
   },
@@ -1226,7 +1244,9 @@
       "es": "Hola, necesito ayuda para solicitar una prórroga temporal de mi licencia.",
       "fr": "Bonjour, j’ai besoin d’aide pour demander une prolongation temporaire de ma licence.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour demander une extension temporaire de mon permis.",
-      "de": "Hallo, ich brauche Hilfe dabei, eine zeitlich begrenzte Verlängerung meiner Lizenz zu beantragen."
+      "de": "Hallo, ich brauche Hilfe dabei, eine zeitlich begrenzte Verlängerung meiner Lizenz zu beantragen.",
+      "hi": "नमस्ते, मुझे अपने लाइसेंस की अवधि अस्थायी रूप से बढ़ाने के लिए मांगने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 면허 임시 연장을 요청하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -1248,6 +1268,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Neumann"
+      },
+      "hi": {
+        "first_name": "निखिल",
+        "last_name": "भटनागर"
+      },
+      "ko": {
+        "first_name": "지후",
+        "last_name": "공"
       }
     },
     "romanized_culture_overrides": {
@@ -1270,6 +1298,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Neumann"
+      },
+      "hi": {
+        "first_name": "Nikhil",
+        "last_name": "Bhatnagar"
+      },
+      "ko": {
+        "first_name": "Jihu",
+        "last_name": "Gong"
       }
     }
   },
@@ -1824,7 +1860,9 @@
       "es": "Hola, necesito ayuda para completar mi verificación I-9.",
       "fr": "Bonjour, j’ai besoin d’aide pour remplir ma vérification I-9.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour remplir ma vérification I-9.",
-      "de": "Hallo, ich brauche Hilfe dabei, meine I-9-Verifizierung abzuschließen."
+      "de": "Hallo, ich brauche Hilfe dabei, meine I-9-Verifizierung abzuschließen.",
+      "hi": "नमस्ते, मुझे अपना आइ-नाइन वेरिफिकेशन पूरा करने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 I-9 확인을 완료하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -1846,6 +1884,14 @@
       "de": {
         "first_name": "Kilian",
         "last_name": "Schneider"
+      },
+      "hi": {
+        "first_name": "विवान",
+        "last_name": "मुखर्जी"
+      },
+      "ko": {
+        "first_name": "시윤",
+        "last_name": "차"
       }
     },
     "romanized_culture_overrides": {
@@ -1868,6 +1914,14 @@
       "de": {
         "first_name": "Kilian",
         "last_name": "Schneider"
+      },
+      "hi": {
+        "first_name": "Vivaan",
+        "last_name": "Mukherjee"
+      },
+      "ko": {
+        "first_name": "Siyun",
+        "last_name": "Cha"
       }
     }
   },
@@ -2352,7 +2406,9 @@
       "es": "Hola, necesito ayuda para enviar mis documentos de reverificación I-9.",
       "fr": "Bonjour, j’ai besoin d’aide pour soumettre mes documents de revérification I-9.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour soumettre mes documents de revérification I-9.",
-      "de": "Hallo, ich brauche Hilfe dabei, meine Unterlagen zur I-9-Nachverifizierung einzureichen."
+      "de": "Hallo, ich brauche Hilfe dabei, meine Unterlagen zur I-9-Nachverifizierung einzureichen.",
+      "hi": "नमस्ते, मुझे अपने आइ-नाइन री-वेरिफ़िकेशन दस्तावेज़ जमा करने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 I-9 재확인 서류를 제출하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -2374,6 +2430,14 @@
       "de": {
         "first_name": "Hannah",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "लक्ष्मी",
+        "last_name": "शर्मा"
+      },
+      "ko": {
+        "first_name": "혜원",
+        "last_name": "허"
       }
     },
     "romanized_culture_overrides": {
@@ -2396,6 +2460,14 @@
       "de": {
         "first_name": "Hannah",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "Lakshmi",
+        "last_name": "Sharma"
+      },
+      "ko": {
+        "first_name": "Hyewon",
+        "last_name": "Heo"
       }
     }
   },
@@ -3047,7 +3119,9 @@
       "es": "Hola, necesito ayuda para añadir a mi cónyuge a mi expediente de visa H-1B.",
       "fr": "Bonjour, j’ai besoin d’aide pour ajouter mon conjoint à mon dossier de visa H-1B.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour ajouter mon conjoint ou ma conjointe à mon dossier de visa H-1B.",
-      "de": "Hallo, ich brauche Hilfe dabei, meinen Ehepartner zu meinem H-1B-Visum hinzuzufügen."
+      "de": "Hallo, ich brauche Hilfe dabei, meinen Ehepartner zu meinem H-1B-Visum hinzuzufügen.",
+      "hi": "नमस्ते, मुझे अपने जीवनसाथी को अपने एच-वन बी वीज़ा रिकॉर्ड में जोड़ने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 H-1B 비자 기록에 배우자를 추가하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -3069,6 +3143,14 @@
       "de": {
         "first_name": "Laura",
         "last_name": "Weiß"
+      },
+      "hi": {
+        "first_name": "राधा",
+        "last_name": "कुमार"
+      },
+      "ko": {
+        "first_name": "예나",
+        "last_name": "권"
       }
     },
     "romanized_culture_overrides": {
@@ -3091,6 +3173,14 @@
       "de": {
         "first_name": "Laura",
         "last_name": "Weiss"
+      },
+      "hi": {
+        "first_name": "Radha",
+        "last_name": "Kumar"
+      },
+      "ko": {
+        "first_name": "Yena",
+        "last_name": "Gwon"
       }
     }
   },
@@ -3565,7 +3655,9 @@
       "es": "Hola, necesito ayuda para añadir a mi hijo a mi petición de visa.",
       "fr": "Bonjour, j’ai besoin d’aide pour ajouter mon enfant à ma demande de visa.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour ajouter mon enfant à ma demande de visa.",
-      "de": "Hallo, ich brauche Hilfe dabei, mein Kind zu meinem Visumsantrag hinzuzufügen."
+      "de": "Hallo, ich brauche Hilfe dabei, mein Kind zu meinem Visumsantrag hinzuzufügen.",
+      "hi": "नमस्ते, मुझे अपने बच्चे को अपनी वीज़ा याचिका में जोड़ने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 비자 청원서에 자녀를 추가하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -3587,6 +3679,14 @@
       "de": {
         "first_name": "Luca",
         "last_name": "Meier"
+      },
+      "hi": {
+        "first_name": "अजय",
+        "last_name": "राणा"
+      },
+      "ko": {
+        "first_name": "준서",
+        "last_name": "정"
       }
     },
     "romanized_culture_overrides": {
@@ -3609,6 +3709,14 @@
       "de": {
         "first_name": "Luca",
         "last_name": "Meier"
+      },
+      "hi": {
+        "first_name": "Ajay",
+        "last_name": "Rana"
+      },
+      "ko": {
+        "first_name": "Junseo",
+        "last_name": "Jeong"
       }
     }
   },
@@ -4222,7 +4330,9 @@
       "es": "Hola, necesito solicitar unos días de PTO para mis próximas vacaciones.",
       "fr": "Bonjour, j’ai besoin de demander des congés payés pour les vacances à venir.",
       "fr-CA": "Bonjour, j’ai besoin de demander des congés payés pour des vacances à venir.",
-      "de": "Hallo, ich muss Urlaub beantragen."
+      "de": "Hallo, ich muss Urlaub beantragen.",
+      "hi": "नमस्ते, मुझे आने वाली छुट्टी के लिए कुछ पी टी ओ मांगना है।",
+      "ko": "안녕하세요, 다가오는 휴가에 PTO를 좀 신청하려고 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -4244,6 +4354,14 @@
       "de": {
         "first_name": "Hannah",
         "last_name": "Schmitt"
+      },
+      "hi": {
+        "first_name": "संगीता",
+        "last_name": "अय्यर"
+      },
+      "ko": {
+        "first_name": "윤서",
+        "last_name": "신"
       }
     },
     "romanized_culture_overrides": {
@@ -4266,6 +4384,14 @@
       "de": {
         "first_name": "Hannah",
         "last_name": "Schmitt"
+      },
+      "hi": {
+        "first_name": "Sangeeta",
+        "last_name": "Ayyar"
+      },
+      "ko": {
+        "first_name": "Yunseo",
+        "last_name": "Sin"
       }
     }
   },
@@ -4763,7 +4889,9 @@
       "es": "Hola, necesito ayuda para presentar una solicitud de vacaciones remuneradas.",
       "fr": "Bonjour, j’ai besoin d’aide pour faire une demande de congés payés.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour faire une demande de congés payés.",
-      "de": "Hallo, ich brauche Hilfe dabei, einen Antrag auf Urlaub einzureichen."
+      "de": "Hallo, ich brauche Hilfe dabei, einen Antrag auf Urlaub einzureichen.",
+      "hi": "नमस्ते, मुझे PTO मांग जमा करने में मदद चाहिए।",
+      "ko": "안녕하세요, PTO 신청을 하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -4785,6 +4913,14 @@
       "de": {
         "first_name": "Luca",
         "last_name": "Richter"
+      },
+      "hi": {
+        "first_name": "अमन",
+        "last_name": "दुबे"
+      },
+      "ko": {
+        "first_name": "지훈",
+        "last_name": "양"
       }
     },
     "romanized_culture_overrides": {
@@ -4807,6 +4943,14 @@
       "de": {
         "first_name": "Luca",
         "last_name": "Richter"
+      },
+      "hi": {
+        "first_name": "Aman",
+        "last_name": "Dubey"
+      },
+      "ko": {
+        "first_name": "Jihun",
+        "last_name": "Yang"
       }
     }
   },
@@ -5414,7 +5558,9 @@
       "es": "Hola, llamo para cambiar uno de mis turnos.",
       "fr": "Bonjour, j’appelle au sujet du changement d’un de mes horaires de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
-      "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an."
+      "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
+      "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
+      "ko": "안녕하세요, 제 근무 중 하나를 교대하려고 전화드렸습니다."
     },
     "culture_overrides": {
       "en": {
@@ -5436,6 +5582,14 @@
       "de": {
         "first_name": "Matthias",
         "last_name": "Braun"
+      },
+      "hi": {
+        "first_name": "अजय",
+        "last_name": "राय"
+      },
+      "ko": {
+        "first_name": "승우",
+        "last_name": "곽"
       }
     },
     "romanized_culture_overrides": {
@@ -5458,6 +5612,14 @@
       "de": {
         "first_name": "Matthias",
         "last_name": "Braun"
+      },
+      "hi": {
+        "first_name": "Ajay",
+        "last_name": "Rai"
+      },
+      "ko": {
+        "first_name": "Seungu",
+        "last_name": "Gwak"
       }
     }
   },
@@ -5981,7 +6143,9 @@
       "es": "Hola, llamo para cambiar uno de mis turnos.",
       "fr": "Bonjour, j’appelle au sujet du changement d’un de mes horaires de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
-      "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an."
+      "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
+      "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
+      "ko": "안녕하세요, 근무 중 하나를 교대하려고 전화드렸습니다."
     },
     "culture_overrides": {
       "en": {
@@ -6003,6 +6167,14 @@
       "de": {
         "first_name": "Anna",
         "last_name": "Koch"
+      },
+      "hi": {
+        "first_name": "आरती",
+        "last_name": "जोशी"
+      },
+      "ko": {
+        "first_name": "가은",
+        "last_name": "주"
       }
     },
     "romanized_culture_overrides": {
@@ -6025,6 +6197,14 @@
       "de": {
         "first_name": "Anna",
         "last_name": "Koch"
+      },
+      "hi": {
+        "first_name": "Aarti",
+        "last_name": "Joshi"
+      },
+      "ko": {
+        "first_name": "Gaeun",
+        "last_name": "Ju"
       }
     }
   },
@@ -6580,7 +6760,9 @@
       "es": "Hola, necesito actualizar la información de mi seguro de negligencia médica.",
       "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance concernant la faute professionnelle médicale.",
       "fr-CA": "Bonjour, je dois mettre à jour mes renseignements d’assurance responsabilité professionnelle médicale.",
-      "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren."
+      "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren.",
+      "hi": "नमस्ते, मुझे अपनी मैल्प्रैक्टिस इन्शुरन्स जानकारी अपडेट करनी है।",
+      "ko": "안녕하세요, 제 의료배상 책임보험 정보를 업데이트해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -6602,6 +6784,14 @@
       "de": {
         "first_name": "Melina",
         "last_name": "Krüger"
+      },
+      "hi": {
+        "first_name": "प्रिया",
+        "last_name": "शुक्ला"
+      },
+      "ko": {
+        "first_name": "채원",
+        "last_name": "강"
       }
     },
     "romanized_culture_overrides": {
@@ -6624,6 +6814,14 @@
       "de": {
         "first_name": "Melina",
         "last_name": "Krueger"
+      },
+      "hi": {
+        "first_name": "Priya",
+        "last_name": "Shukla"
+      },
+      "ko": {
+        "first_name": "Chaewon",
+        "last_name": "Gang"
       }
     }
   },
@@ -7105,7 +7303,9 @@
       "es": "Hola, necesito actualizar la información de mi seguro de mala práctica.",
       "fr": "Bonjour, j’ai besoin de mettre à jour mes informations d’assurance concernant la faute professionnelle médicale.",
       "fr-CA": "Bonjour, je dois mettre à jour mes renseignements d’assurance responsabilité professionnelle médicale.",
-      "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren."
+      "de": "Hallo, ich muss meine Informationen zur Berufshaftpflichtversicherung aktualisieren.",
+      "hi": "नमस्ते, मुझे अपनी मैल्प्रैक्टिस इन्शुरन्स जानकारी अपडेट करनी है।",
+      "ko": "안녕하세요, 제 의료배상 책임보험 정보를 업데이트해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -7127,6 +7327,14 @@
       "de": {
         "first_name": "Julian",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "हर्ष",
+        "last_name": "कपूर"
+      },
+      "ko": {
+        "first_name": "민호",
+        "last_name": "하"
       }
     },
     "romanized_culture_overrides": {
@@ -7149,6 +7357,14 @@
       "de": {
         "first_name": "Julian",
         "last_name": "Mayer"
+      },
+      "hi": {
+        "first_name": "Harsh",
+        "last_name": "Kapoor"
+      },
+      "ko": {
+        "first_name": "Minho",
+        "last_name": "Ha"
       }
     }
   },
@@ -7697,7 +7913,9 @@
       "es": "Hola, necesito ayuda para actualizar un par de elementos de onboarding y programar mi cita de seguimiento.",
       "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments pour mon intégration et pour planifier mon rendez-vous de suivi.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour mettre à jour quelques éléments de mon intégration et pour prendre mon rendez-vous de suivi.",
-      "de": "Hallo, ich brauche Hilfe dabei, ein paar Onboarding-Punkte zu aktualisieren und meinen Folgetermin zu vereinbaren."
+      "de": "Hallo, ich brauche Hilfe dabei, ein paar Onboarding-Punkte zu aktualisieren und meinen Folgetermin zu vereinbaren.",
+      "hi": "नमस्ते, मुझे ऑनबोर्डिंग की कुछ चीज़ें अपडेट करने में और अपनी फॉलो-अप अपॉइंटमेंट तय करने में मदद चाहिए।",
+      "ko": "안녕하세요, 온보딩 항목 몇 가지를 업데이트하고 후속 예약을 잡는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -7719,6 +7937,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "महेश",
+        "last_name": "गोयल"
+      },
+      "ko": {
+        "first_name": "성민",
+        "last_name": "차"
       }
     },
     "romanized_culture_overrides": {
@@ -7741,6 +7967,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "Mahesh",
+        "last_name": "Goyal"
+      },
+      "ko": {
+        "first_name": "Seongmin",
+        "last_name": "Cha"
       }
     }
   },
@@ -8190,7 +8424,9 @@
       "es": "Hola, necesito ayuda para marcar un par de mis tareas de onboarding como completadas.",
       "fr": "Bonjour, j’ai besoin d’aide pour marquer une partie de mes tâches d’intégration comme terminées.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour marquer quelques-unes de mes tâches d’intégration comme terminées.",
-      "de": "Hallo, ich brauche Hilfe dabei, ein paar meiner Onboarding-Aufgaben als erledigt zu markieren."
+      "de": "Hallo, ich brauche Hilfe dabei, ein paar meiner Onboarding-Aufgaben als erledigt zu markieren.",
+      "hi": "नमस्ते, मुझे अपने कुछ ऑनबोर्डिंग काम को पूरा होने का संकेत करने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 온보딩 작업 몇 가지를 완료로 표시하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -8212,6 +8448,14 @@
       "de": {
         "first_name": "Charlotte",
         "last_name": "Weber"
+      },
+      "hi": {
+        "first_name": "अर्चना",
+        "last_name": "तिवारी"
+      },
+      "ko": {
+        "first_name": "윤서",
+        "last_name": "임"
       }
     },
     "romanized_culture_overrides": {
@@ -8234,6 +8478,14 @@
       "de": {
         "first_name": "Charlotte",
         "last_name": "Weber"
+      },
+      "hi": {
+        "first_name": "Archana",
+        "last_name": "Tiwari"
+      },
+      "ko": {
+        "first_name": "Yunseo",
+        "last_name": "Im"
       }
     }
   },
@@ -8840,7 +9092,9 @@
       "es": "Hola, necesito ayuda para transferir mi registro DEA a un nuevo centro.",
       "fr": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA vers un nouvel établissement.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon inscription DEA vers un nouvel établissement.",
-      "de": "Hallo, ich brauche Hilfe dabei, meine DEA-Registrierung auf eine neue Einrichtung zu übertragen."
+      "de": "Hallo, ich brauche Hilfe dabei, meine DEA-Registrierung auf eine neue Einrichtung zu übertragen.",
+      "hi": "नमस्ते, मुझे अपना DEA रेजिस्ट्रेशन एक नई केंद्र पर बदलने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 DEA 등록을 새 시설로 이전하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -8862,6 +9116,14 @@
       "de": {
         "first_name": "Anja",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "खुशी",
+        "last_name": "दुबे"
+      },
+      "ko": {
+        "first_name": "민지",
+        "last_name": "김"
       }
     },
     "romanized_culture_overrides": {
@@ -8884,6 +9146,14 @@
       "de": {
         "first_name": "Anja",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "Khushi",
+        "last_name": "Dubey"
+      },
+      "ko": {
+        "first_name": "Minji",
+        "last_name": "Kim"
       }
     }
   },
@@ -9397,7 +9667,9 @@
       "es": "Hola, necesito ayuda para transferir mi registro DEA a un nuevo centro.",
       "fr": "Bonjour, j’ai besoin d’aide pour transférer mon enregistrement DEA vers un nouvel établissement.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon inscription DEA vers un nouvel établissement.",
-      "de": "Hallo, ich brauche Hilfe dabei, meine DEA-Registrierung auf eine neue Einrichtung zu übertragen."
+      "de": "Hallo, ich brauche Hilfe dabei, meine DEA-Registrierung auf eine neue Einrichtung zu übertragen.",
+      "hi": "नमस्ते, मुझे अपना DEA रेजिस्ट्रेशन एक नई केंद्र पर बदलने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 DEA 등록을 새 시설로 이전하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -9419,6 +9691,14 @@
       "de": {
         "first_name": "Luis",
         "last_name": "Scholz"
+      },
+      "hi": {
+        "first_name": "सुनील",
+        "last_name": "शुक्ला"
+      },
+      "ko": {
+        "first_name": "지호",
+        "last_name": "문"
       }
     },
     "romanized_culture_overrides": {
@@ -9441,6 +9721,14 @@
       "de": {
         "first_name": "Luis",
         "last_name": "Scholz"
+      },
+      "hi": {
+        "first_name": "Sunil",
+        "last_name": "Shukla"
+      },
+      "ko": {
+        "first_name": "Jiho",
+        "last_name": "Mun"
       }
     }
   },
@@ -10099,7 +10387,9 @@
       "es": "Hola, necesito solicitar una baja médica y familial.",
       "fr": "Bonjour, j’ai besoin de déposer une demande de congé familial et médical.",
       "fr-CA": "Bonjour, je dois faire une demande de congé familial et médical.",
-      "de": "Hallo, ich muss eine Freistellung beantragen."
+      "de": "Hallo, ich muss eine Freistellung beantragen.",
+      "hi": "नमस्ते, मुझे ऍफ़ एम् एल ए छुट्टी के लिए दर्ज करना है।",
+      "ko": "안녕하세요, FMLA 휴가를 신청해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -10121,6 +10411,14 @@
       "de": {
         "first_name": "Jan",
         "last_name": "Koch"
+      },
+      "hi": {
+        "first_name": "हर्ष",
+        "last_name": "देशमुख"
+      },
+      "ko": {
+        "first_name": "주원",
+        "last_name": "이"
       }
     },
     "romanized_culture_overrides": {
@@ -10143,6 +10441,14 @@
       "de": {
         "first_name": "Jan",
         "last_name": "Koch"
+      },
+      "hi": {
+        "first_name": "Harsh",
+        "last_name": "Deshmukh"
+      },
+      "ko": {
+        "first_name": "Juwon",
+        "last_name": "I"
       }
     }
   },
@@ -10679,7 +10985,9 @@
       "es": "Hola, necesito solicitar una baja médica y familial.",
       "fr": "Bonjour, j’ai besoin de déposer une demande de congé familial et médical.",
       "fr-CA": "Bonjour, je dois faire une demande de congé familial et médical.",
-      "de": "Hallo, ich muss eine Freistellung beantragen."
+      "de": "Hallo, ich muss eine Freistellung beantragen.",
+      "hi": "नमस्ते, मुझे ऍफ़ एम् एल ए छुट्टी के लिए दर्ज करना है।",
+      "ko": "안녕하세요, FMLA 휴가를 신청해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -10701,6 +11009,14 @@
       "de": {
         "first_name": "Annika",
         "last_name": "Schäfer"
+      },
+      "hi": {
+        "first_name": "ममता",
+        "last_name": "वर्मा"
+      },
+      "ko": {
+        "first_name": "지우",
+        "last_name": "양"
       }
     },
     "romanized_culture_overrides": {
@@ -10723,6 +11039,14 @@
       "de": {
         "first_name": "Annika",
         "last_name": "Schaefer"
+      },
+      "hi": {
+        "first_name": "Mamta",
+        "last_name": "Verma"
+      },
+      "ko": {
+        "first_name": "Jiu",
+        "last_name": "Yang"
       }
     }
   },
@@ -11311,7 +11635,9 @@
       "es": "Hola, necesito ayuda para corregir las horas de guardia que faltan en mi hoja de horas.",
       "fr": "Bonjour, j’ai besoin d’aide pour corriger des heures d’astreinte manquantes sur ma feuille de temps.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour corriger des heures de garde manquantes sur ma feuille de temps.",
-      "de": "Hallo, ich brauche Hilfe dabei, fehlende Bereitschaftsdienststunden auf meinem Stundenzettel zu korrigieren."
+      "de": "Hallo, ich brauche Hilfe dabei, fehlende Bereitschaftsdienststunden auf meinem Stundenzettel zu korrigieren.",
+      "hi": "नमस्ते, मुझे अपनी टाइमशीट में गायब ऑन-कॉल घंटों को ठीक करने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 타임시트에서 누락된 온콜 시간을 수정하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -11333,6 +11659,14 @@
       "de": {
         "first_name": "Leon",
         "last_name": "Krause"
+      },
+      "hi": {
+        "first_name": "धीरज",
+        "last_name": "सेठी"
+      },
+      "ko": {
+        "first_name": "재윤",
+        "last_name": "전"
       }
     },
     "romanized_culture_overrides": {
@@ -11355,6 +11689,14 @@
       "de": {
         "first_name": "Leon",
         "last_name": "Krause"
+      },
+      "hi": {
+        "first_name": "Dheeraj",
+        "last_name": "Sethi"
+      },
+      "ko": {
+        "first_name": "Jaeyun",
+        "last_name": "Jeon"
       }
     }
   },
@@ -11860,7 +12202,9 @@
       "es": "Hola, necesito ayuda para corregir las horas de un turno antiguo en mi hoja de horas.",
       "fr": "Bonjour, j’ai besoin d’aide pour corriger des heures d’une ancienne prestation sur ma feuille de présence.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour corriger des heures d’un ancien quart de travail sur ma feuille de temps.",
-      "de": "Hallo, ich brauche Hilfe dabei, Stunden einer alten Schicht auf meinem Stundenzettel zu korrigieren."
+      "de": "Hallo, ich brauche Hilfe dabei, Stunden einer alten Schicht auf meinem Stundenzettel zu korrigieren.",
+      "hi": "नमस्ते, मुझे अपनी टाइमशीट में एक पुरानी शिफ्ट के घंटों को ठीक करने में मदद चाहिए।",
+      "ko": "안녕하세요, 제 타임시트에서 예전 근무의 근무시간을 수정하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -11882,6 +12226,14 @@
       "de": {
         "first_name": "Finn",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "हर्ष",
+        "last_name": "अय्यर"
+      },
+      "ko": {
+        "first_name": "민호",
+        "last_name": "노"
       }
     },
     "romanized_culture_overrides": {
@@ -11904,6 +12256,14 @@
       "de": {
         "first_name": "Finn",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "Harsh",
+        "last_name": "Ayyar"
+      },
+      "ko": {
+        "first_name": "Minho",
+        "last_name": "No"
       }
     }
   },
@@ -12595,7 +12955,9 @@
       "es": "Hola, necesito que se reactiven mis privilegios clínicos después de una baja.",
       "fr": "Bonjour, j’ai besoin de faire réactiver mes privilèges cliniques après un congé.",
       "fr-CA": "Bonjour, je dois faire réactiver mes privilèges cliniques après un congé.",
-      "de": "Hallo, ich muss meine klinischen Berechtigungen nach meiner Abwesenheit wieder aktivieren lassen."
+      "de": "Hallo, ich muss meine klinischen Berechtigungen nach meiner Abwesenheit wieder aktivieren lassen.",
+      "hi": "नमस्ते, मुझे छुट्टी के बाद अपने क्लिनिकल प्रिविलज फिर से चालू करना हैं।",
+      "ko": "안녕하세요, 휴직 후 제 임상 권한을 다시 활성화하려고 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -12617,6 +12979,14 @@
       "de": {
         "first_name": "Paul",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "राकेश",
+        "last_name": "देशमुख"
+      },
+      "ko": {
+        "first_name": "동욱",
+        "last_name": "양"
       }
     },
     "romanized_culture_overrides": {
@@ -12639,6 +13009,14 @@
       "de": {
         "first_name": "Paul",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "Rakesh",
+        "last_name": "Deshmukh"
+      },
+      "ko": {
+        "first_name": "Donguk",
+        "last_name": "Yang"
       }
     }
   },
@@ -13328,7 +13706,9 @@
       "es": "Hola, necesito ayuda para reactivar mis privilegios clínicos después de volver de una baja.",
       "fr": "Bonjour, j’ai besoin d’aide pour réactiver mes privilèges cliniques après mon retour de congé.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour réactiver mes privilèges cliniques après mon retour de congé.",
-      "de": "Hallo, ich brauche Hilfe dabei, meine klinischen Berechtigungen nach meiner Abwesenheit wieder zu aktivieren."
+      "de": "Hallo, ich brauche Hilfe dabei, meine klinischen Berechtigungen nach meiner Abwesenheit wieder zu aktivieren.",
+      "hi": "नमस्ते, मुझे छुट्टी से वापस आने के बाद अपने क्लिनिकल प्रिविलज फिर से चालू करने में मदद चाहिए।",
+      "ko": "안녕하세요, 휴직에서 복귀한 후 제 임상 권한을 다시 활성화하는 데 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -13350,6 +13730,14 @@
       "de": {
         "first_name": "Jana",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "अंजलि",
+        "last_name": "चटर्जी"
+      },
+      "ko": {
+        "first_name": "채원",
+        "last_name": "장"
       }
     },
     "romanized_culture_overrides": {
@@ -13372,6 +13760,14 @@
       "de": {
         "first_name": "Jana",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "Anjali",
+        "last_name": "Chatterjee"
+      },
+      "ko": {
+        "first_name": "Chaewon",
+        "last_name": "Jang"
       }
     }
   },
@@ -13939,7 +14335,9 @@
       "es": "Hola, necesito registrar mi disponibilidad para guardias.",
       "fr": "Bonjour, j’ai besoin d’enregistrer mes disponibilités d’astreinte.",
       "fr-CA": "Bonjour, je dois inscrire mes disponibilités de garde.",
-      "de": "Hallo, ich muss meine Verfügbarkeit für den Bereitschaftsdienst eintragen."
+      "de": "Hallo, ich muss meine Verfügbarkeit für den Bereitschaftsdienst eintragen.",
+      "hi": "नमस्ते, मुझे अपनी ऑन-कॉल उपलब्धता दर्ज करनी है।",
+      "ko": "안녕하세요, 제 온콜 가능 시간을 등록해야 합니다."
     },
     "culture_overrides": {
       "en": {
@@ -13961,6 +14359,14 @@
       "de": {
         "first_name": "Ella",
         "last_name": "Hofmann"
+      },
+      "hi": {
+        "first_name": "निशा",
+        "last_name": "मेहता"
+      },
+      "ko": {
+        "first_name": "지우",
+        "last_name": "방"
       }
     },
     "romanized_culture_overrides": {
@@ -13983,6 +14389,14 @@
       "de": {
         "first_name": "Ella",
         "last_name": "Hofmann"
+      },
+      "hi": {
+        "first_name": "Nisha",
+        "last_name": "Mehta"
+      },
+      "ko": {
+        "first_name": "Jiu",
+        "last_name": "Bang"
       }
     }
   },
@@ -14460,7 +14874,9 @@
       "es": "Hola, necesito ayuda para registrar mi disponibilidad para guardias de respaldo.",
       "fr": "Bonjour, j’ai besoin d’aide pour l’enregistrement de mes disponibilités de garde de remplacement.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour m’inscrire aux disponibilités de garde de relève.",
-      "de": "Hallo, ich brauche Hilfe dabei, meine Verfügbarkeit für den Ersatzbereitschaftsdienst einzutragen."
+      "de": "Hallo, ich brauche Hilfe dabei, meine Verfügbarkeit für den Ersatzbereitschaftsdienst einzutragen.",
+      "hi": "नमस्ते, मुझे बैकअप ऑन-कॉल उपलब्धता दर्ज करने में मदद चाहिए।",
+      "ko": "안녕하세요, 백업 온콜 가능 시간 등록에 도움이 필요합니다."
     },
     "culture_overrides": {
       "en": {
@@ -14482,6 +14898,14 @@
       "de": {
         "first_name": "Jakob",
         "last_name": "Braun"
+      },
+      "hi": {
+        "first_name": "आरव",
+        "last_name": "चतुर्वेदी"
+      },
+      "ko": {
+        "first_name": "건우",
+        "last_name": "문"
       }
     },
     "romanized_culture_overrides": {
@@ -14504,6 +14928,14 @@
       "de": {
         "first_name": "Jakob",
         "last_name": "Braun"
+      },
+      "hi": {
+        "first_name": "Aarav",
+        "last_name": "Chaturvedi"
+      },
+      "ko": {
+        "first_name": "Geonu",
+        "last_name": "Mun"
       }
     }
   },
@@ -15081,7 +15513,9 @@
       "es": "Hola, llamo para cambiar uno de mis turnos.",
       "fr": "Bonjour, j’appelle pour changer un de mes créneaux de travail.",
       "fr-CA": "Bonjour, j’appelle au sujet de l’échange d’un de mes quarts de travail.",
-      "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an."
+      "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
+      "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
+      "ko": "안녕하세요, 제 근무중 하나를 교대하려고 전화드렸습니다."
     },
     "culture_overrides": {
       "en": {
@@ -15103,6 +15537,14 @@
       "de": {
         "first_name": "Emilia",
         "last_name": "Meyer"
+      },
+      "hi": {
+        "first_name": "काव्या",
+        "last_name": "सेठी"
+      },
+      "ko": {
+        "first_name": "시은",
+        "last_name": "원"
       }
     },
     "romanized_culture_overrides": {
@@ -15125,6 +15567,14 @@
       "de": {
         "first_name": "Emilia",
         "last_name": "Meyer"
+      },
+      "hi": {
+        "first_name": "Kavya",
+        "last_name": "Sethi"
+      },
+      "ko": {
+        "first_name": "Sieun",
+        "last_name": "Won"
       }
     }
   },
@@ -15756,7 +16206,9 @@
       "es": "Hola, necesito solicitar una baja médica o familial.",
       "fr": "Bonjour, je dois faire une demande de congé familial et médical.",
       "fr-CA": "Bonjour, je dois faire une demande de congé familial et médical.",
-      "de": "Hallo, ich muss eine Freistellung beantragen."
+      "de": "Hallo, ich muss eine Freistellung beantragen.",
+      "hi": "नमस्ते, मुझे ऍफ़ एम् एल ए छुट्टी के लिए दर्ज करना है।",
+      "ko": "안녕하세요, FMLA 휴가를 신청해야 해서요."
     },
     "culture_overrides": {
       "en": {
@@ -15778,6 +16230,14 @@
       "de": {
         "first_name": "Felix",
         "last_name": "Köhler"
+      },
+      "hi": {
+        "first_name": "विकास",
+        "last_name": "जैन"
+      },
+      "ko": {
+        "first_name": "은우",
+        "last_name": "문"
       }
     },
     "romanized_culture_overrides": {
@@ -15800,6 +16260,14 @@
       "de": {
         "first_name": "Felix",
         "last_name": "Koehler"
+      },
+      "hi": {
+        "first_name": "Vikas",
+        "last_name": "Jain"
+      },
+      "ko": {
+        "first_name": "Eunu",
+        "last_name": "Mun"
       }
     }
   },
@@ -16517,7 +16985,9 @@
       "es": "Hola, necesito ayuda para transferir mi registro DEA.",
       "fr": "Bonjour, j’ai besoin d’aide pour transférer mon inscription auprès de la DEA.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour transférer mon inscription DEA.",
-      "de": "Hallo, ich brauche Hilfe bei der Übertragung meiner DEA-Registrierung."
+      "de": "Hallo, ich brauche Hilfe bei der Übertragung meiner DEA-Registrierung.",
+      "hi": "नमस्ते, मुझे अपना DEA रेजिस्ट्रेशन बदली करने में मदद चाहिए।",
+      "ko": "안녕하세요, DEA 등록을 이전하는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -16539,6 +17009,14 @@
       "de": {
         "first_name": "Helena",
         "last_name": "Fuchs"
+      },
+      "hi": {
+        "first_name": "रश्मि",
+        "last_name": "सक्सेना"
+      },
+      "ko": {
+        "first_name": "나은",
+        "last_name": "오"
       }
     },
     "romanized_culture_overrides": {
@@ -16561,6 +17039,14 @@
       "de": {
         "first_name": "Helena",
         "last_name": "Fuchs"
+      },
+      "hi": {
+        "first_name": "Rashmi",
+        "last_name": "Saxena"
+      },
+      "ko": {
+        "first_name": "Naeun",
+        "last_name": "O"
       }
     }
   },
@@ -17145,7 +17631,9 @@
       "es": "Hola, necesito reactivar mis privilegios clínicos.",
       "fr": "Bonjour, j’ai besoin de réactiver mes autorisations cliniques.",
       "fr-CA": "Bonjour, je dois faire réactiver mes privilèges cliniques.",
-      "de": "Hallo, ich muss meine klinischen Berechtigungen wieder aktivieren lassen."
+      "de": "Hallo, ich muss meine klinischen Berechtigungen wieder aktivieren lassen.",
+      "hi": "नमस्ते, मुझे अपने क्लिनिकल प्रिविलज फिर से चालू करना हैं।",
+      "ko": "안녕하세요, 제 임상 권한을 다시 활성화해야 해서요."
     },
     "culture_overrides": {
       "en": {
@@ -17167,6 +17655,14 @@
       "de": {
         "first_name": "Ella",
         "last_name": "Schäfer"
+      },
+      "hi": {
+        "first_name": "माधुरी",
+        "last_name": "चतुर्वेदी"
+      },
+      "ko": {
+        "first_name": "예은",
+        "last_name": "권"
       }
     },
     "romanized_culture_overrides": {
@@ -17189,6 +17685,14 @@
       "de": {
         "first_name": "Ella",
         "last_name": "Schaefer"
+      },
+      "hi": {
+        "first_name": "Madhuri",
+        "last_name": "Chaturvedi"
+      },
+      "ko": {
+        "first_name": "Yeeun",
+        "last_name": "Gwon"
       }
     }
   },
@@ -17637,7 +18141,9 @@
       "es": "Hola, necesito ayuda para presentar una solicitud de vacaciones pagadas para un compañero de trabajo.",
       "fr": "Bonjour, j’ai besoin d’aide pour soumettre une demande de congés payés pour un collègue.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour soumettre une demande de congé payé pour un collègue.",
-      "de": "Hallo, ich brauche Hilfe dabei, einen Urlaubsantrag für einen Kollegen einzureichen."
+      "de": "Hallo, ich brauche Hilfe dabei, einen Urlaubsantrag für einen Kollegen einzureichen.",
+      "hi": "नमस्ते, मुझे एक साथी की तरफ़ से PTO के लिए अर्जी देने में मदद चाहिए।",
+      "ko": "안녕하세요, 동료 대신 PTO 신청을 하는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -17659,6 +18165,14 @@
       "de": {
         "first_name": "Maximilian",
         "last_name": "Schmitt"
+      },
+      "hi": {
+        "first_name": "गौरव",
+        "last_name": "कपूर"
+      },
+      "ko": {
+        "first_name": "연우",
+        "last_name": "권"
       }
     },
     "romanized_culture_overrides": {
@@ -17681,6 +18195,14 @@
       "de": {
         "first_name": "Maximilian",
         "last_name": "Schmitt"
+      },
+      "hi": {
+        "first_name": "Gaurav",
+        "last_name": "Kapoor"
+      },
+      "ko": {
+        "first_name": "Yeonu",
+        "last_name": "Gwon"
       }
     }
   },
@@ -18171,7 +18693,9 @@
       "es": "Hola, necesito ayuda para solucionar un problema de nómina de un turno.",
       "fr": "Bonjour, j’ai besoin d’aide pour corriger un problème de paie lié à un créneau de travail.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour régler un problème de paie pour un quart de travail.",
-      "de": "Hallo, ich brauche Hilfe dabei, ein Gehaltsabrechnungsproblem für eine Schicht zu klären."
+      "de": "Hallo, ich brauche Hilfe dabei, ein Gehaltsabrechnungsproblem für eine Schicht zu klären.",
+      "hi": "नमस्ते, मुझे एक शिफ्ट के लिए पेरोल की समस्या ठीक करने में मदद चाहिए।",
+      "ko": "안녕하세요, 근무 관련 급여 문제를 해결하는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -18193,6 +18717,14 @@
       "de": {
         "first_name": "Lea",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "सीमा",
+        "last_name": "देशमुख"
+      },
+      "ko": {
+        "first_name": "민지",
+        "last_name": "심"
       }
     },
     "romanized_culture_overrides": {
@@ -18215,6 +18747,14 @@
       "de": {
         "first_name": "Lea",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "Seema",
+        "last_name": "Deshmukh"
+      },
+      "ko": {
+        "first_name": "Minji",
+        "last_name": "Sim"
       }
     }
   },
@@ -18883,7 +19423,9 @@
       "es": "Hola, necesito ayuda con una solicitud de extensión de una licencia supervisada.",
       "fr": "Bonjour, j’ai besoin d’aide pour une demande de prolongation d’une licence supervisée.",
       "fr-CA": "Bonjour, j’ai besoin d’aide avec une demande d’extension de permis supervisé.",
-      "de": "Hallo, ich brauche Hilfe beim Antrag auf Verlängerung meiner eingeschränkten Zulassung unter Supervision."
+      "de": "Hallo, ich brauche Hilfe beim Antrag auf Verlängerung meiner eingeschränkten Zulassung unter Supervision.",
+      "hi": "नमस्ते, मुझे सूपर्वाइज्ड़ लाइसेंस एक्स्टेन्शन मांगने के संबंध में मदद चाहिए।",
+      "ko": "안녕하세요, 감독 면허 연장 신청 관련해서 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -18905,6 +19447,14 @@
       "de": {
         "first_name": "Andreas",
         "last_name": "Kaiser"
+      },
+      "hi": {
+        "first_name": "गौरव",
+        "last_name": "कपूर"
+      },
+      "ko": {
+        "first_name": "지호",
+        "last_name": "정"
       }
     },
     "romanized_culture_overrides": {
@@ -18927,6 +19477,14 @@
       "de": {
         "first_name": "Andreas",
         "last_name": "Kaiser"
+      },
+      "hi": {
+        "first_name": "Gaurav",
+        "last_name": "Kapoor"
+      },
+      "ko": {
+        "first_name": "Jiho",
+        "last_name": "Jeong"
       }
     }
   },
@@ -19469,7 +20027,9 @@
       "es": "Hola, necesito ayuda para registrarme para on-call.",
       "fr": "Bonjour, j’ai besoin d’aide pour m’inscrire aux gardes.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour m’inscrire à la garde.",
-      "de": "Hallo, ich brauche Hilfe bei der Anmeldung zum Bereitschaftsdienst."
+      "de": "Hallo, ich brauche Hilfe bei der Anmeldung zum Bereitschaftsdienst.",
+      "hi": "नमस्ते, मुझे ऑन-कॉल के लिए दर्ज करने में मदद चाहिए।",
+      "ko": "안녕하세요, 온콜 등록하는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -19491,6 +20051,14 @@
       "de": {
         "first_name": "Ida",
         "last_name": "Lang"
+      },
+      "hi": {
+        "first_name": "दीपिका",
+        "last_name": "भटनागर"
+      },
+      "ko": {
+        "first_name": "소율",
+        "last_name": "성"
       }
     },
     "romanized_culture_overrides": {
@@ -19513,6 +20081,14 @@
       "de": {
         "first_name": "Ida",
         "last_name": "Lang"
+      },
+      "hi": {
+        "first_name": "Deepika",
+        "last_name": "Bhatnagar"
+      },
+      "ko": {
+        "first_name": "Soyul",
+        "last_name": "Seong"
       }
     }
   },
@@ -20230,7 +20806,9 @@
       "es": "Hola, necesito solicitar una baja FMLA.",
       "fr": "Bonjour, je dois faire une demande de congé familial et médical.",
       "fr-CA": "Bonjour, je dois faire une demande de congé familial et médical.",
-      "de": "Hallo, ich muss eine Freistellung beantragen."
+      "de": "Hallo, ich muss eine Freistellung beantragen.",
+      "hi": "नमस्ते, मुझे ऍफ़ एम् एल ए छुट्टी के लिए दर्ज करना है।",
+      "ko": "안녕하세요, FMLA 휴가를 신청해야 해서요."
     },
     "culture_overrides": {
       "en": {
@@ -20252,6 +20830,14 @@
       "de": {
         "first_name": "Johanna",
         "last_name": "Schäfer"
+      },
+      "hi": {
+        "first_name": "वंदना",
+        "last_name": "मल्होत्रा"
+      },
+      "ko": {
+        "first_name": "은서",
+        "last_name": "정"
       }
     },
     "romanized_culture_overrides": {
@@ -20274,6 +20860,14 @@
       "de": {
         "first_name": "Johanna",
         "last_name": "Schaefer"
+      },
+      "hi": {
+        "first_name": "Vandana",
+        "last_name": "Malhotra"
+      },
+      "ko": {
+        "first_name": "Eunseo",
+        "last_name": "Jeong"
       }
     }
   },
@@ -21276,7 +21870,9 @@
       "es": "Hola, tengo un par de asuntos urgentes de RH credentialing con los que necesito ayuda.",
       "fr": "Bonjour, j’ai besoin d’aide avec quelques problèmes urgents liés aux accréditation RH.",
       "fr-CA": "Bonjour, j’ai quelques problèmes urgents d’accréditation des RH pour lesquels j’ai besoin d’aide.",
-      "de": "Hallo, ich habe einige dringende Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige."
+      "de": "Hallo, ich habe einige dringende Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
+      "hi": "नमस्ते, मेरे पास कुछ जरूरी एचआर क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
+      "ko": "안녕하세요, 급한 HR credentialing 문제가 몇 가지 있어서 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -21298,6 +21894,14 @@
       "de": {
         "first_name": "Laura",
         "last_name": "Hahn"
+      },
+      "hi": {
+        "first_name": "शालिनी",
+        "last_name": "राय"
+      },
+      "ko": {
+        "first_name": "시은",
+        "last_name": "홍"
       }
     },
     "romanized_culture_overrides": {
@@ -21320,6 +21924,14 @@
       "de": {
         "first_name": "Laura",
         "last_name": "Hahn"
+      },
+      "hi": {
+        "first_name": "Shalini",
+        "last_name": "Rai"
+      },
+      "ko": {
+        "first_name": "Sieun",
+        "last_name": "Hong"
       }
     }
   },
@@ -22094,7 +22706,9 @@
       "es": "Hola, tengo un par de asuntos de HR credentialing con los que necesito ayuda.",
       "fr": "Bonjour, j’ai quelques problèmes d’accréditation RH pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques problèmes d’accréditation des RH pour lesquels j’ai besoin d’aide.",
-      "de": "Hallo, ich habe einige Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige."
+      "de": "Hallo, ich habe einige Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
+      "hi": "नमस्ते, मेरे पास कुछ एचआर क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
+      "ko": "안녕하세요, HR credentialing 문제가 몇 가지 있어서 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -22116,6 +22730,14 @@
       "de": {
         "first_name": "David",
         "last_name": "Neumann"
+      },
+      "hi": {
+        "first_name": "अमन",
+        "last_name": "चौधरी"
+      },
+      "ko": {
+        "first_name": "정우",
+        "last_name": "채"
       }
     },
     "romanized_culture_overrides": {
@@ -22138,6 +22760,14 @@
       "de": {
         "first_name": "David",
         "last_name": "Neumann"
+      },
+      "hi": {
+        "first_name": "Aman",
+        "last_name": "Chaudhary"
+      },
+      "ko": {
+        "first_name": "Jeongu",
+        "last_name": "Chae"
       }
     }
   },
@@ -22967,7 +23597,9 @@
       "es": "Hola, tengo un par de asuntos de HR credentialing con los que necesito ayuda.",
       "fr": "Bonjour, j’ai quelques problèmes d’accréditation RH pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques problèmes d’accréditation des RH pour lesquels j’ai besoin d’aide.",
-      "de": "Hallo, ich habe einige Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige."
+      "de": "Hallo, ich habe einige Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
+      "hi": "नमस्ते, मेरे पास कुछ एचआर क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
+      "ko": "안녕하세요, HR credentialing 문제가 몇 가지 있어서 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -22989,6 +23621,14 @@
       "de": {
         "first_name": "Viktoria",
         "last_name": "Fuchs"
+      },
+      "hi": {
+        "first_name": "वंदना",
+        "last_name": "मित्तल"
+      },
+      "ko": {
+        "first_name": "다현",
+        "last_name": "송"
       }
     },
     "romanized_culture_overrides": {
@@ -23011,6 +23651,14 @@
       "de": {
         "first_name": "Viktoria",
         "last_name": "Fuchs"
+      },
+      "hi": {
+        "first_name": "Vandana",
+        "last_name": "Mittal"
+      },
+      "ko": {
+        "first_name": "Dahyeon",
+        "last_name": "Song"
       }
     }
   },
@@ -23880,7 +24528,9 @@
       "es": "Hola, tengo un par de cosas de R.H. con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques démarches RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मेरे पास एचआर से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -23902,6 +24552,14 @@
       "de": {
         "first_name": "Matthias",
         "last_name": "Schulz"
+      },
+      "hi": {
+        "first_name": "संजय",
+        "last_name": "कुमार"
+      },
+      "ko": {
+        "first_name": "민호",
+        "last_name": "노"
       }
     },
     "romanized_culture_overrides": {
@@ -23924,6 +24582,14 @@
       "de": {
         "first_name": "Matthias",
         "last_name": "Schulz"
+      },
+      "hi": {
+        "first_name": "Sanjay",
+        "last_name": "Kumar"
+      },
+      "ko": {
+        "first_name": "Minho",
+        "last_name": "No"
       }
     }
   },
@@ -24736,7 +25402,9 @@
       "es": "Hola, tengo un par de cosas de RR.HH. con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques démarches RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मेरे पास एचआर से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -24758,6 +25426,14 @@
       "de": {
         "first_name": "Kilian",
         "last_name": "Meyer"
+      },
+      "hi": {
+        "first_name": "संजय",
+        "last_name": "चटर्जी"
+      },
+      "ko": {
+        "first_name": "준영",
+        "last_name": "백"
       }
     },
     "romanized_culture_overrides": {
@@ -24780,6 +25456,14 @@
       "de": {
         "first_name": "Kilian",
         "last_name": "Meyer"
+      },
+      "hi": {
+        "first_name": "Sanjay",
+        "last_name": "Chatterjee"
+      },
+      "ko": {
+        "first_name": "Junyeong",
+        "last_name": "Baek"
       }
     }
   },
@@ -25485,7 +26169,9 @@
       "es": "Hola, tengo un par de cosas de RR.HH. con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques démarches RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मेरे पास एचआर से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -25507,6 +26193,14 @@
       "de": {
         "first_name": "Laura",
         "last_name": "Peters"
+      },
+      "hi": {
+        "first_name": "दिव्या",
+        "last_name": "तिवारी"
+      },
+      "ko": {
+        "first_name": "다인",
+        "last_name": "임"
       }
     },
     "romanized_culture_overrides": {
@@ -25529,6 +26223,14 @@
       "de": {
         "first_name": "Laura",
         "last_name": "Peters"
+      },
+      "hi": {
+        "first_name": "Divya",
+        "last_name": "Tiwari"
+      },
+      "ko": {
+        "first_name": "Dain",
+        "last_name": "Im"
       }
     }
   },
@@ -26345,7 +27047,9 @@
       "es": "Hola, tengo un par de actualizaciones de credentialing con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai besoin d’assistance aujourd’hui pour mettre à jour mes accréditations.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मुझे क्रेडेंशियलिंग से जुड़े कुछ अपडेट के लिए मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 credentialing 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -26367,6 +27071,14 @@
       "de": {
         "first_name": "Luis",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "देवेश",
+        "last_name": "राव"
+      },
+      "ko": {
+        "first_name": "민준",
+        "last_name": "서"
       }
     },
     "romanized_culture_overrides": {
@@ -26389,6 +27101,14 @@
       "de": {
         "first_name": "Luis",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "Devesh",
+        "last_name": "Rao"
+      },
+      "ko": {
+        "first_name": "Minjun",
+        "last_name": "Seo"
       }
     }
   },
@@ -27036,7 +27756,9 @@
       "es": "Hola, tengo un par de actualizaciones de credentialing con las que necesito ayuda.",
       "fr": "Bonjour, j’aurais besoin d’assistance pour mettre à jour mes accréditations.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour d’accréditation pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे क्रेडेंशियलिंग से जुड़े कुछ अपडेट के लिए मदद चाहिए।",
+      "ko": "안녕하세요, credentialing 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -27058,6 +27780,14 @@
       "de": {
         "first_name": "Nele",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "अंजलि",
+        "last_name": "मुखर्जी"
+      },
+      "ko": {
+        "first_name": "민지",
+        "last_name": "천"
       }
     },
     "romanized_culture_overrides": {
@@ -27080,6 +27810,14 @@
       "de": {
         "first_name": "Nele",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "Anjali",
+        "last_name": "Mukherjee"
+      },
+      "ko": {
+        "first_name": "Minji",
+        "last_name": "Cheon"
       }
     }
   },
@@ -27648,7 +28386,9 @@
       "es": "Hola, tengo un par de cosas relacionadas con credentialing con las que necesito ayuda.",
       "fr": "Bonjour, j’ai quelques démarches liées aux accréditations pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires liées à l’accréditation pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar Fragen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Fragen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों के लिए मदद चाहिए।",
+      "ko": "안녕하세요, credentialing 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -27670,6 +28410,14 @@
       "de": {
         "first_name": "Matthias",
         "last_name": "Fischer"
+      },
+      "hi": {
+        "first_name": "मोहन",
+        "last_name": "चौधरी"
+      },
+      "ko": {
+        "first_name": "준영",
+        "last_name": "허"
       }
     },
     "romanized_culture_overrides": {
@@ -27692,6 +28440,14 @@
       "de": {
         "first_name": "Matthias",
         "last_name": "Fischer"
+      },
+      "hi": {
+        "first_name": "Mohan",
+        "last_name": "Chaudhary"
+      },
+      "ko": {
+        "first_name": "Junyeong",
+        "last_name": "Heo"
       }
     }
   },
@@ -28578,7 +29334,9 @@
       "es": "Hola, tengo un par de cosas de HR credentialing con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques démarches liées aux accréditations RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires d’accréditation des RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Sachen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Sachen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मेरे पास एचआर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR credentialing 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -28600,6 +29358,14 @@
       "de": {
         "first_name": "Julia",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "श्रुति",
+        "last_name": "यादव"
+      },
+      "ko": {
+        "first_name": "수민",
+        "last_name": "우"
       }
     },
     "romanized_culture_overrides": {
@@ -28622,6 +29388,14 @@
       "de": {
         "first_name": "Julia",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "Shruti",
+        "last_name": "Yadav"
+      },
+      "ko": {
+        "first_name": "Sumin",
+        "last_name": "U"
       }
     }
   },
@@ -29363,7 +30137,9 @@
       "es": "Hola, tengo un par de temas de RR.HH. con los que necesito ayuda ahora que vuelvo de una baja.",
       "fr": "Bonjour, j’aurais besoin d’aide pour régler quelques points RH dans le cadre de mon retour de congé.",
       "fr-CA": "Bonjour, j’ai quelques points de RH pour lesquels j’ai besoin d’aide alors que je reviens de congé.",
-      "de": "Hallo, ich habe ein paar HR-Punkte, bei denen ich Hilfe brauche, wenn ich aus dem Urlaub zurückkomme."
+      "de": "Hallo, ich habe ein paar HR-Punkte, bei denen ich Hilfe brauche, wenn ich aus dem Urlaub zurückkomme.",
+      "hi": "नमस्ते, छुट्टी से वापस आते हुए मेरे पास एचआर से जुड़े कुछ मुद्दे हैं जिनमें मुझे मदद चाहिए।",
+      "ko": "안녕하세요, 휴직에서 복귀하면서 HR 관련해서 도움이 필요한 항목이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -29385,6 +30161,14 @@
       "de": {
         "first_name": "Theresa",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "माधुरी",
+        "last_name": "अग्रवाल"
+      },
+      "ko": {
+        "first_name": "다현",
+        "last_name": "성"
       }
     },
     "romanized_culture_overrides": {
@@ -29407,6 +30191,14 @@
       "de": {
         "first_name": "Theresa",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "Madhuri",
+        "last_name": "Agrawal"
+      },
+      "ko": {
+        "first_name": "Dahyeon",
+        "last_name": "Seong"
       }
     }
   },
@@ -30185,7 +30977,9 @@
       "es": "Hola, tengo un par de asuntos de proveedor de RR.HH. con los que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai besoin d’assistance aujourd’hui pour traiter quelques éléments RH relatifs aux soignants.",
       "fr-CA": "Bonjour, j’ai quelques points de fournisseurs RH pour lesquels j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Punkte für Leistungserbringer, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Punkte für Leistungserbringer, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज प्रोवाइडर से जुड़ी कुछ एचआर चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 provider HR 관련해서 도움이 필요한 항목이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -30207,6 +31001,14 @@
       "de": {
         "first_name": "Charlotte",
         "last_name": "Schmid"
+      },
+      "hi": {
+        "first_name": "सरिता",
+        "last_name": "सक्सेना"
+      },
+      "ko": {
+        "first_name": "시은",
+        "last_name": "방"
       }
     },
     "romanized_culture_overrides": {
@@ -30229,6 +31031,14 @@
       "de": {
         "first_name": "Charlotte",
         "last_name": "Schmid"
+      },
+      "hi": {
+        "first_name": "Sarita",
+        "last_name": "Saxena"
+      },
+      "ko": {
+        "first_name": "Sieun",
+        "last_name": "Bang"
       }
     }
   },
@@ -30986,7 +31796,9 @@
       "es": "Hola, tengo un par de actualizaciones del registro de provider con las que necesito ayuda.",
       "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour des fiches de prestataires.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de prestataire de soins pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ प्रोवाइडर रिकॉर्ड अपडेट्स में मदद चाहिए।",
+      "ko": "안녕하세요, provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -31008,6 +31820,14 @@
       "de": {
         "first_name": "Philipp",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "विकास",
+        "last_name": "अय्यर"
+      },
+      "ko": {
+        "first_name": "이준",
+        "last_name": "방"
       }
     },
     "romanized_culture_overrides": {
@@ -31030,6 +31850,14 @@
       "de": {
         "first_name": "Philipp",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "Vikas",
+        "last_name": "Ayyar"
+      },
+      "ko": {
+        "first_name": "Ijun",
+        "last_name": "Bang"
       }
     }
   },
@@ -31883,7 +32711,9 @@
       "es": "Hola, tengo un par de actualizaciones del registro de provider con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai besoin d’aide aujourd’hui pour mettre à jour des fiches de prestataire.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज कुछ प्रोवाइडर रिकॉर्ड अपडेट्स में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -31905,6 +32735,14 @@
       "de": {
         "first_name": "Johanna",
         "last_name": "Schäfer"
+      },
+      "hi": {
+        "first_name": "अंजलि",
+        "last_name": "मेहता"
+      },
+      "ko": {
+        "first_name": "서연",
+        "last_name": "이"
       }
     },
     "romanized_culture_overrides": {
@@ -31927,6 +32765,14 @@
       "de": {
         "first_name": "Johanna",
         "last_name": "Schaefer"
+      },
+      "hi": {
+        "first_name": "Anjali",
+        "last_name": "Mehta"
+      },
+      "ko": {
+        "first_name": "Seoyeon",
+        "last_name": "I"
       }
     }
   },
@@ -32481,7 +33327,9 @@
       "es": "Hola, tengo un par de actualizaciones del registro de provider con las que necesito ayuda.",
       "fr": "Bonjour, j’ai besoin d’aide pour mettre à jour des fiches de prestataires.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour de dossier de prestataire de soins pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे कुछ प्रोवाइडर रिकॉर्ड अपडेट्स में मदद चाहिए।",
+      "ko": "안녕하세요, provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -32503,6 +33351,14 @@
       "de": {
         "first_name": "Luisa",
         "last_name": "Müller"
+      },
+      "hi": {
+        "first_name": "ममता",
+        "last_name": "जैन"
+      },
+      "ko": {
+        "first_name": "보민",
+        "last_name": "양"
       }
     },
     "romanized_culture_overrides": {
@@ -32525,6 +33381,14 @@
       "de": {
         "first_name": "Luisa",
         "last_name": "Mueller"
+      },
+      "hi": {
+        "first_name": "Mamta",
+        "last_name": "Jain"
+      },
+      "ko": {
+        "first_name": "Bomin",
+        "last_name": "Yang"
       }
     }
   },
@@ -33330,7 +34194,9 @@
       "es": "Hola, tengo un par de cosas de scheduling de RR.HH. con las que necesito ayuda.",
       "fr": "Bonjour, j’ai quelques démarches RH liées à la planification des horaires pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires de planification des RH pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar HR-Fragen zum Dienstplan, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar HR-Fragen zum Dienstplan, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे एचआर शेड्यूलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, HR scheduling 관련해서 도움이 필요한 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -33352,6 +34218,14 @@
       "de": {
         "first_name": "Isabel",
         "last_name": "König"
+      },
+      "hi": {
+        "first_name": "नेहा",
+        "last_name": "नायडू"
+      },
+      "ko": {
+        "first_name": "지아",
+        "last_name": "나"
       }
     },
     "romanized_culture_overrides": {
@@ -33374,6 +34248,14 @@
       "de": {
         "first_name": "Isabel",
         "last_name": "Koenig"
+      },
+      "hi": {
+        "first_name": "Neha",
+        "last_name": "Naidu"
+      },
+      "ko": {
+        "first_name": "Jia",
+        "last_name": "Na"
       }
     }
   },
@@ -34095,7 +34977,9 @@
       "es": "Hola, necesito ayuda para cambiar uno de mis próximos turnos y también tengo otra pregunta sobre scheduling.",
       "fr": "Bonjour, j’ai besoin d’aide pour changer l’un de mes prochains créneaux de travail, et j’ai également une autre question concernant la planification des horaires.",
       "fr-CA": "Bonjour, j’ai besoin d’aide pour échanger un de mes quarts de travail à venir, et j’ai aussi une autre question de planification.",
-      "de": "Hallo, ich brauche Hilfe dabei, eine meiner kommenden Schichten zu tauschen, und ich habe außerdem noch eine weitere Frage zum Dienstplan."
+      "de": "Hallo, ich brauche Hilfe dabei, eine meiner kommenden Schichten zu tauschen, und ich habe außerdem noch eine weitere Frage zum Dienstplan.",
+      "hi": "नमस्ते, मुझे अपनी आने वाली शिफ्ट में से एक को बदलने के लिए मदद चाहिए और मेरा शेड्यूलिंग से जुड़ा एक और सवाल भी है।",
+      "ko": "안녕하세요, 다가오는 근무 중 하나를 교대하는 데 도움이 필요하고, 근무 일정 관련 질문도 하나 더 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -34117,6 +35001,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "निखिल",
+        "last_name": "वर्मा"
+      },
+      "ko": {
+        "first_name": "선우",
+        "last_name": "권"
       }
     },
     "romanized_culture_overrides": {
@@ -34139,6 +35031,14 @@
       "de": {
         "first_name": "Daniel",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "Nikhil",
+        "last_name": "Verma"
+      },
+      "ko": {
+        "first_name": "Seonu",
+        "last_name": "Gwon"
       }
     }
   },
@@ -34724,7 +35624,9 @@
       "es": "Hola, necesito ayuda con un par de cosas de programación.",
       "fr": "Bonjour, j’ai quelques questions liées à la planification des horaires pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées à l’horaire pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar Fragen wegen des Dienstplans, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Fragen wegen des Dienstplans, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे शेड्यूलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 일정 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -34746,6 +35648,14 @@
       "de": {
         "first_name": "Nele",
         "last_name": "Richter"
+      },
+      "hi": {
+        "first_name": "कविता",
+        "last_name": "मेहता"
+      },
+      "ko": {
+        "first_name": "예나",
+        "last_name": "안"
       }
     },
     "romanized_culture_overrides": {
@@ -34768,6 +35678,14 @@
       "de": {
         "first_name": "Nele",
         "last_name": "Richter"
+      },
+      "hi": {
+        "first_name": "Kavita",
+        "last_name": "Mehta"
+      },
+      "ko": {
+        "first_name": "Yena",
+        "last_name": "An"
       }
     }
   },
@@ -35559,7 +36477,9 @@
       "es": "Hola, tengo que ocuparme de algunas cosas de RR.HH. para mi onboarding y mis credenciales.",
       "fr": "Bonjour, j’ai quelques démarches RH à effectuer pour mon intégration et mes accréditations.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines à régler pour mon intégration et mes titres de compétence.",
-      "de": "Hallo, ich habe ein paar Personalangelegenheiten, die ich für mein Onboarding und meine Zulassung erledigen muss."
+      "de": "Hallo, ich habe ein paar Personalangelegenheiten, die ich für mein Onboarding und meine Zulassung erledigen muss.",
+      "hi": "नमस्ते, मुझे अपनी ऑनबोर्डिंग और क्रेडेंशियल्स से जुड़े कुछ एचआर कार्यों को पूरा करना है।",
+      "ko": "안녕하세요, 온보딩과 credentials 관련해서 처리해야 할 HR 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -35581,6 +36501,14 @@
       "de": {
         "first_name": "Greta",
         "last_name": "Schröder"
+      },
+      "hi": {
+        "first_name": "ममता",
+        "last_name": "देशमुख"
+      },
+      "ko": {
+        "first_name": "서연",
+        "last_name": "안"
       }
     },
     "romanized_culture_overrides": {
@@ -35603,6 +36531,14 @@
       "de": {
         "first_name": "Greta",
         "last_name": "Schroeder"
+      },
+      "hi": {
+        "first_name": "Mamta",
+        "last_name": "Deshmukh"
+      },
+      "ko": {
+        "first_name": "Seoyeon",
+        "last_name": "An"
       }
     }
   },
@@ -36265,7 +37201,9 @@
       "es": "Hola, necesito ayuda con un par de cosas de onboarding de RH.",
       "fr": "Bonjour, j’ai quelques démarches d’intégration RH pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées à l’intégration aux ressources humaines pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar HR-Onboarding-Sachen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar HR-Onboarding-Sachen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे एचआर ऑनबोर्डिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, HR 온보딩 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -36287,6 +37225,14 @@
       "de": {
         "first_name": "Julia",
         "last_name": "Schröder"
+      },
+      "hi": {
+        "first_name": "माधुरी",
+        "last_name": "सेठी"
+      },
+      "ko": {
+        "first_name": "수빈",
+        "last_name": "정"
       }
     },
     "romanized_culture_overrides": {
@@ -36309,6 +37255,14 @@
       "de": {
         "first_name": "Julia",
         "last_name": "Schroeder"
+      },
+      "hi": {
+        "first_name": "Madhuri",
+        "last_name": "Sethi"
+      },
+      "ko": {
+        "first_name": "Subin",
+        "last_name": "Jeong"
       }
     }
   },
@@ -36860,7 +37814,9 @@
       "es": "Hola, necesito ayuda con un par de cosas de RH hoy.",
       "fr": "Bonjour, j’ai quelques questions relatives aux ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -36882,6 +37838,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Herrmann"
+      },
+      "hi": {
+        "first_name": "प्रणव",
+        "last_name": "जोशी"
+      },
+      "ko": {
+        "first_name": "선우",
+        "last_name": "황"
       }
     },
     "romanized_culture_overrides": {
@@ -36904,6 +37868,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Herrmann"
+      },
+      "hi": {
+        "first_name": "Pranav",
+        "last_name": "Joshi"
+      },
+      "ko": {
+        "first_name": "Seonu",
+        "last_name": "Hwang"
       }
     }
   },
@@ -37884,7 +38856,9 @@
       "es": "Hola, necesito ayuda con un par de solicitudes de permiso.",
       "fr": "Bonjour, j’ai quelques demandes de congé pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois demandes de congé pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar Urlaubsanträge, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Urlaubsanträge, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे छुट्टी के कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, 휴가 요청 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -37906,6 +38880,14 @@
       "de": {
         "first_name": "Selina",
         "last_name": "Peters"
+      },
+      "hi": {
+        "first_name": "अंजलि",
+        "last_name": "चौधरी"
+      },
+      "ko": {
+        "first_name": "민아",
+        "last_name": "구"
       }
     },
     "romanized_culture_overrides": {
@@ -37928,6 +38910,14 @@
       "de": {
         "first_name": "Selina",
         "last_name": "Peters"
+      },
+      "hi": {
+        "first_name": "Anjali",
+        "last_name": "Chaudhary"
+      },
+      "ko": {
+        "first_name": "Mina",
+        "last_name": "Gu"
       }
     }
   },
@@ -38678,7 +39668,9 @@
       "es": "Hola, necesito ayuda con un par de solicitudes de permiso de RH.",
       "fr": "Bonjour, j’ai quelques demandes de congé liées aux ressources humaines pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois demandes de congé RH pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar HR-Urlaubsanträge, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar HR-Urlaubsanträge, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे एचआर छुट्टी के कुछ अनुरोधों में मदद चाहिए।",
+      "ko": "안녕하세요, HR 휴가 요청 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -38700,6 +39692,14 @@
       "de": {
         "first_name": "Sebastian",
         "last_name": "Schneider"
+      },
+      "hi": {
+        "first_name": "कुणाल",
+        "last_name": "मल्होत्रा"
+      },
+      "ko": {
+        "first_name": "지훈",
+        "last_name": "천"
       }
     },
     "romanized_culture_overrides": {
@@ -38722,6 +39722,14 @@
       "de": {
         "first_name": "Sebastian",
         "last_name": "Schneider"
+      },
+      "hi": {
+        "first_name": "Kunal",
+        "last_name": "Malhotra"
+      },
+      "ko": {
+        "first_name": "Jihun",
+        "last_name": "Cheon"
       }
     }
   },
@@ -39417,7 +40425,9 @@
       "es": "Hola, necesito ayuda con un par de cosas relacionadas con permisos.",
       "fr": "Bonjour, j’ai quelques points liées aux demandes de congés pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées aux congés pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar urlaubsbezogene Themen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar urlaubsbezogene Themen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे छुट्टी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 휴가 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -39439,6 +40449,14 @@
       "de": {
         "first_name": "Leonie",
         "last_name": "Vogel"
+      },
+      "hi": {
+        "first_name": "भावना",
+        "last_name": "वर्मा"
+      },
+      "ko": {
+        "first_name": "세은",
+        "last_name": "최"
       }
     },
     "romanized_culture_overrides": {
@@ -39461,6 +40479,14 @@
       "de": {
         "first_name": "Leonie",
         "last_name": "Vogel"
+      },
+      "hi": {
+        "first_name": "Bhavana",
+        "last_name": "Verma"
+      },
+      "ko": {
+        "first_name": "Seeun",
+        "last_name": "Choe"
       }
     }
   },
@@ -40226,7 +41252,9 @@
       "es": "Hola, necesito ayuda con un par de cosas de RH hoy.",
       "fr": "Bonjour, j’ai quelques questions concernant les ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -40248,6 +41276,14 @@
       "de": {
         "first_name": "Isabel",
         "last_name": "Schulz"
+      },
+      "hi": {
+        "first_name": "मोनिका",
+        "last_name": "सक्सेना"
+      },
+      "ko": {
+        "first_name": "하윤",
+        "last_name": "조"
       }
     },
     "romanized_culture_overrides": {
@@ -40270,6 +41306,14 @@
       "de": {
         "first_name": "Isabel",
         "last_name": "Schulz"
+      },
+      "hi": {
+        "first_name": "Monika",
+        "last_name": "Saxena"
+      },
+      "ko": {
+        "first_name": "Hayun",
+        "last_name": "Jo"
       }
     }
   },
@@ -40979,7 +42023,9 @@
       "es": "Hola, necesito ayuda con un par de problemas de RH hoy.",
       "fr": "Bonjour, j’ai quelques difficultés liées aux ressources humaines pour lesquels j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai deux ou trois problèmes de ressources humaines pour lesquels j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Anliegen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Anliegen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज एचआर की कुछ समस्याओं में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 문제 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -41001,6 +42047,14 @@
       "de": {
         "first_name": "Mila",
         "last_name": "Schmid"
+      },
+      "hi": {
+        "first_name": "गीता",
+        "last_name": "ठाकुर"
+      },
+      "ko": {
+        "first_name": "예나",
+        "last_name": "고"
       }
     },
     "romanized_culture_overrides": {
@@ -41023,6 +42077,14 @@
       "de": {
         "first_name": "Mila",
         "last_name": "Schmid"
+      },
+      "hi": {
+        "first_name": "Geeta",
+        "last_name": "Thakur"
+      },
+      "ko": {
+        "first_name": "Yena",
+        "last_name": "Go"
       }
     }
   },
@@ -41665,7 +42727,9 @@
       "es": "Hola, necesito ayuda con un par de problemas de programación y nómina de RH.",
       "fr": "Bonjour, j’ai quelques problèmes liés à la planification des ressources humaines et à la paie pour lesquels j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois problèmes de ressources humaines liés à l’horaire et à la paie pour lesquels j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar HR-Anliegen zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar HR-Anliegen zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे एचआर शेड्यूलिंग और पेरोल से जुड़ी कुछ समस्याओं में मदद चाहिए।",
+      "ko": "안녕하세요, HR 일정과 payroll 문제 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -41687,6 +42751,14 @@
       "de": {
         "first_name": "Dominik",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "मनीष",
+        "last_name": "जोशी"
+      },
+      "ko": {
+        "first_name": "시윤",
+        "last_name": "엄"
       }
     },
     "romanized_culture_overrides": {
@@ -41709,6 +42781,14 @@
       "de": {
         "first_name": "Dominik",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "Manish",
+        "last_name": "Joshi"
+      },
+      "ko": {
+        "first_name": "Siyun",
+        "last_name": "Eom"
       }
     }
   },
@@ -42485,7 +43565,9 @@
       "es": "Hola, tengo que ocuparme hoy de algunas cosas de onboarding de RH.",
       "fr": "Bonjour, j’ai quelques démarches d’intégration RH à régler aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques tâches d’intégration aux ressources humaines à régler aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Onboarding-Sachen, die ich erledigen muss."
+      "de": "Hallo, ich habe heute ein paar HR-Onboarding-Sachen, die ich erledigen muss.",
+      "hi": "नमस्ते, मुझे आज एचआर ऑनबोर्डिंग से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
+      "ko": "안녕하세요, 오늘 처리해야 할 HR 온보딩 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -42507,6 +43589,14 @@
       "de": {
         "first_name": "Alina",
         "last_name": "König"
+      },
+      "hi": {
+        "first_name": "अर्चना",
+        "last_name": "यादव"
+      },
+      "ko": {
+        "first_name": "지우",
+        "last_name": "민"
       }
     },
     "romanized_culture_overrides": {
@@ -42529,6 +43619,14 @@
       "de": {
         "first_name": "Alina",
         "last_name": "Koenig"
+      },
+      "hi": {
+        "first_name": "Archana",
+        "last_name": "Yadav"
+      },
+      "ko": {
+        "first_name": "Jiu",
+        "last_name": "Min"
       }
     }
   },
@@ -43090,7 +44188,9 @@
       "es": "Hola, necesito ayuda con un par de cosas de onboarding.",
       "fr": "Bonjour, j’ai quelques formalités d’intégration pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai deux ou trois choses liées à l’intégration pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar Onboarding-Fragen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Onboarding-Fragen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे ऑनबोर्डिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 온보딩 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -43112,6 +44212,14 @@
       "de": {
         "first_name": "Mila",
         "last_name": "Schröder"
+      },
+      "hi": {
+        "first_name": "नैना",
+        "last_name": "पांडे"
+      },
+      "ko": {
+        "first_name": "은서",
+        "last_name": "임"
       }
     },
     "romanized_culture_overrides": {
@@ -43134,6 +44242,14 @@
       "de": {
         "first_name": "Mila",
         "last_name": "Schroeder"
+      },
+      "hi": {
+        "first_name": "Naina",
+        "last_name": "Pandey"
+      },
+      "ko": {
+        "first_name": "Eunseo",
+        "last_name": "Im"
       }
     }
   },
@@ -44227,7 +45343,9 @@
       "es": "Hola, tengo que ocuparme de algunas cosas de credenciales y de RH antes de poder volver al trabajo.",
       "fr": "Bonjour, j’ai quelques démarches d’accréditation et RH à régler avant de pouvoir reprendre le travail.",
       "fr-CA": "Bonjour, j’ai quelques démarches liées à la vérification des titres de compétence et aux ressources humaines à régler avant de pouvoir revenir au travail.",
-      "de": "Hallo, ich habe ein paar HR-Fragen und Fragen zur Zulassung, die ich klären muss, bevor ich wieder zur Arbeit kommen kann."
+      "de": "Hallo, ich habe ein paar HR-Fragen und Fragen zur Zulassung, die ich klären muss, bevor ich wieder zur Arbeit kommen kann.",
+      "hi": "नमस्ते, काम पर वापस आने से पहले मुझे क्रेडेंशियलिंग और एचआर से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
+      "ko": "안녕하세요, 직장에 복귀하기 전에 처리해야 할 credentialing 및 HR 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -44249,6 +45367,14 @@
       "de": {
         "first_name": "Philipp",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "सुमित",
+        "last_name": "अग्रवाल"
+      },
+      "ko": {
+        "first_name": "현준",
+        "last_name": "유"
       }
     },
     "romanized_culture_overrides": {
@@ -44271,6 +45397,14 @@
       "de": {
         "first_name": "Philipp",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "Sumit",
+        "last_name": "Agrawal"
+      },
+      "ko": {
+        "first_name": "Hyeonjun",
+        "last_name": "Yu"
       }
     }
   },
@@ -45277,7 +46411,9 @@
       "es": "Hola, tengo que ocuparme hoy de algunas cosas de credenciales.",
       "fr": "Bonjour, j’ai quelques démarches d’accréditation à régler aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques démarches liées à la vérification des titres de compétence à régler aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung, die ich klären muss."
+      "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung, die ich klären muss.",
+      "hi": "नमस्ते, मुझे आज क्रेडेंशियलिंग से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
+      "ko": "안녕하세요, 오늘 처리해야 할 credentialing 관련 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -45299,6 +46435,14 @@
       "de": {
         "first_name": "Stefan",
         "last_name": "Jung"
+      },
+      "hi": {
+        "first_name": "दिनेश",
+        "last_name": "राणा"
+      },
+      "ko": {
+        "first_name": "민준",
+        "last_name": "천"
       }
     },
     "romanized_culture_overrides": {
@@ -45321,6 +46465,14 @@
       "de": {
         "first_name": "Stefan",
         "last_name": "Jung"
+      },
+      "hi": {
+        "first_name": "Dinesh",
+        "last_name": "Rana"
+      },
+      "ko": {
+        "first_name": "Minjun",
+        "last_name": "Cheon"
       }
     }
   },
@@ -46290,7 +47442,9 @@
       "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales.",
       "fr": "Bonjour, j’ai quelques démarches d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques tâches d’accréditation pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -46312,6 +47466,14 @@
       "de": {
         "first_name": "Julian",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "धीरज",
+        "last_name": "त्रिपाठी"
+      },
+      "ko": {
+        "first_name": "정우",
+        "last_name": "류"
       }
     },
     "romanized_culture_overrides": {
@@ -46334,6 +47496,14 @@
       "de": {
         "first_name": "Julian",
         "last_name": "Schulze"
+      },
+      "hi": {
+        "first_name": "Dheeraj",
+        "last_name": "Tripathi"
+      },
+      "ko": {
+        "first_name": "Jeongu",
+        "last_name": "Ryu"
       }
     }
   },
@@ -47386,7 +48556,9 @@
       "es": "Hola, necesito ayuda con algunas cosas de credenciales y de RH antes de empezar en un nuevo centro.",
       "fr": "Bonjour, j’ai quelques formalités d’accréditation et RH pour lesquels j’aurais besoin d’aide avant de commencer dans un nouvel établissement.",
       "fr-CA": "Bonjour, j’ai quelques éléments liés à l’accréditation et aux ressources humaines pour lesquels j’ai besoin d’aide avant de commencer dans un nouvel établissement.",
-      "de": "Hallo, ich habe ein paar Fragen zur Zulassung und zu Personalthemen, bei denen ich Hilfe brauche, bevor ich in einer neuen Einrichtung anfange."
+      "de": "Hallo, ich habe ein paar Fragen zur Zulassung und zu Personalthemen, bei denen ich Hilfe brauche, bevor ich in einer neuen Einrichtung anfange.",
+      "hi": "नमस्ते, नई फैसिलिटी में शुरू करने से पहले मुझे क्रेडेंशियलिंग और एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 새 facility에서 시작하기 전에 credentialing 및 HR 관련해서 도움받아야 할 항목이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -47408,6 +48580,14 @@
       "de": {
         "first_name": "Mia",
         "last_name": "Becker"
+      },
+      "hi": {
+        "first_name": "नेहा",
+        "last_name": "राणा"
+      },
+      "ko": {
+        "first_name": "유나",
+        "last_name": "조"
       }
     },
     "romanized_culture_overrides": {
@@ -47430,6 +48610,14 @@
       "de": {
         "first_name": "Mia",
         "last_name": "Becker"
+      },
+      "hi": {
+        "first_name": "Neha",
+        "last_name": "Rana"
+      },
+      "ko": {
+        "first_name": "Yuna",
+        "last_name": "Jo"
       }
     }
   },
@@ -48497,7 +49685,9 @@
       "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales de RH.",
       "fr": "Bonjour, j’ai quelques démarches d’accréditation RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques choses d’accréditation de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Personalfragen zur Zulassung, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Personalfragen zur Zulassung, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज एचआर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -48519,6 +49709,14 @@
       "de": {
         "first_name": "Lena",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "दीपिका",
+        "last_name": "सेठी"
+      },
+      "ko": {
+        "first_name": "은서",
+        "last_name": "전"
       }
     },
     "romanized_culture_overrides": {
@@ -48541,6 +49739,14 @@
       "de": {
         "first_name": "Lena",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "Deepika",
+        "last_name": "Sethi"
+      },
+      "ko": {
+        "first_name": "Eunseo",
+        "last_name": "Jeon"
       }
     }
   },
@@ -49480,7 +50686,9 @@
       "es": "Hola, necesito ayuda hoy con algunas cosas de RH como proveedor.",
       "fr": "Bonjour, j’ai quelques points RH en tant que prestataire de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques éléments de ressources humaines pour prestataire de soins pour lesquels j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Fragen als Leistungserbringer, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Fragen als Leistungserbringer, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज प्रोवाइडर एचआर से जुड़ी कुछ मदों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 provider HR 항목 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -49502,6 +50710,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Herrmann"
+      },
+      "hi": {
+        "first_name": "मोनिका",
+        "last_name": "शर्मा"
+      },
+      "ko": {
+        "first_name": "소윤",
+        "last_name": "한"
       }
     },
     "romanized_culture_overrides": {
@@ -49524,6 +50740,14 @@
       "de": {
         "first_name": "Katharina",
         "last_name": "Herrmann"
+      },
+      "hi": {
+        "first_name": "Monika",
+        "last_name": "Sharma"
+      },
+      "ko": {
+        "first_name": "Soyun",
+        "last_name": "Han"
       }
     }
   },
@@ -50518,7 +51742,9 @@
       "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales como proveedor.",
       "fr": "Bonjour, j’ai quelques démarches d’accréditation en tant que prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques choses d’accréditation de prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज प्रोवाइडर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 provider credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -50540,6 +51766,14 @@
       "de": {
         "first_name": "Marlene",
         "last_name": "Müller"
+      },
+      "hi": {
+        "first_name": "स्वाति",
+        "last_name": "नायडू"
+      },
+      "ko": {
+        "first_name": "예나",
+        "last_name": "허"
       }
     },
     "romanized_culture_overrides": {
@@ -50562,6 +51796,14 @@
       "de": {
         "first_name": "Marlene",
         "last_name": "Mueller"
+      },
+      "hi": {
+        "first_name": "Swati",
+        "last_name": "Naidu"
+      },
+      "ko": {
+        "first_name": "Yena",
+        "last_name": "Heo"
       }
     }
   },
@@ -51441,7 +52683,9 @@
       "es": "Hola, necesito ayuda hoy con algunas actualizaciones de credenciales como proveedor.",
       "fr": "Bonjour, j’ai quelques mises à jour liées à l’accréditation en tant que prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques mises à jour d’accréditation de prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Änderungen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Änderungen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज प्रोवाइडर क्रेडेंशियलिंग से जुड़े कुछ अपडेट्स में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 provider credentialing 업데이트 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -51463,6 +52707,14 @@
       "de": {
         "first_name": "Jana",
         "last_name": "Lange"
+      },
+      "hi": {
+        "first_name": "ईशा",
+        "last_name": "पाटिल"
+      },
+      "ko": {
+        "first_name": "소율",
+        "last_name": "한"
       }
     },
     "romanized_culture_overrides": {
@@ -51485,6 +52737,14 @@
       "de": {
         "first_name": "Jana",
         "last_name": "Lange"
+      },
+      "hi": {
+        "first_name": "Isha",
+        "last_name": "Patil"
+      },
+      "ko": {
+        "first_name": "Soyul",
+        "last_name": "Han"
       }
     }
   },
@@ -52468,7 +53728,9 @@
       "es": "Hola, necesito ayuda hoy con algunas cosas de credenciales como proveedor.",
       "fr": "Bonjour, j’ai quelques démarches d’accréditation en tant que prestataire de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques démarches de vérification des titres de compétence de fournisseur de soins pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज प्रोवाइडर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 provider credentialing 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -52490,6 +53752,14 @@
       "de": {
         "first_name": "Mila",
         "last_name": "Walter"
+      },
+      "hi": {
+        "first_name": "अदिति",
+        "last_name": "जोशी"
+      },
+      "ko": {
+        "first_name": "지윤",
+        "last_name": "한"
       }
     },
     "romanized_culture_overrides": {
@@ -52512,6 +53782,14 @@
       "de": {
         "first_name": "Mila",
         "last_name": "Walter"
+      },
+      "hi": {
+        "first_name": "Aditi",
+        "last_name": "Joshi"
+      },
+      "ko": {
+        "first_name": "Jiyun",
+        "last_name": "Han"
       }
     }
   },
@@ -53630,7 +54908,9 @@
       "es": "Hola, necesito ayuda hoy con algunas cosas de RH relacionadas con mi nuevo bebé.",
       "fr": "Bonjour, j’ai quelques questions RH concernant mon nouveau-né et pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines liées à mon nouveau bébé pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar HR-Fragen im Zusammenhang mit meinem neugeborenen Baby, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar HR-Fragen im Zusammenhang mit meinem neugeborenen Baby, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मेरे नए बच्चे से जुड़े कुछ एचआर कामों में मुझे मदद चाहिए।",
+      "ko": "안녕하세요, 새로 태어난 아기와 관련해서 HR 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -53652,6 +54932,14 @@
       "de": {
         "first_name": "Lena",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "निधि",
+        "last_name": "नायडू"
+      },
+      "ko": {
+        "first_name": "지현",
+        "last_name": "신"
       }
     },
     "romanized_culture_overrides": {
@@ -53674,6 +54962,14 @@
       "de": {
         "first_name": "Lena",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "Nidhi",
+        "last_name": "Naidu"
+      },
+      "ko": {
+        "first_name": "Jihyeon",
+        "last_name": "Sin"
       }
     }
   },
@@ -54731,7 +56027,9 @@
       "es": "Hola, necesito ayuda hoy con algunas cosas de RH relacionadas con una adopción reciente.",
       "fr": "Bonjour, j’ai quelques questions RH liées à une adoption récente pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines liées à une adoption récente pour lesquelles j’ai besoin d’aide.",
-      "de": "Hallo, ich habe ein paar HR-Fragen im Zusammenhang mit einer kürzlich erfolgten Adoption, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar HR-Fragen im Zusammenhang mit einer kürzlich erfolgten Adoption, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे एक हाल ही में हुई गोद लेने की प्रक्रिया को लेकर एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 최근 입양과 관련해서 HR 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -54753,6 +56051,14 @@
       "de": {
         "first_name": "Paula",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "श्रुति",
+        "last_name": "सक्सेना"
+      },
+      "ko": {
+        "first_name": "서현",
+        "last_name": "전"
       }
     },
     "romanized_culture_overrides": {
@@ -54775,6 +56081,14 @@
       "de": {
         "first_name": "Paula",
         "last_name": "Werner"
+      },
+      "hi": {
+        "first_name": "Shruti",
+        "last_name": "Saxena"
+      },
+      "ko": {
+        "first_name": "Seohyeon",
+        "last_name": "Jeon"
       }
     }
   },
@@ -55611,7 +56925,9 @@
       "es": "Hola, necesito ayuda hoy con algunas cosas de RH.",
       "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -55633,6 +56949,14 @@
       "de": {
         "first_name": "Theo",
         "last_name": "Lehmann"
+      },
+      "hi": {
+        "first_name": "कुणाल",
+        "last_name": "शर्मा"
+      },
+      "ko": {
+        "first_name": "정우",
+        "last_name": "정"
       }
     },
     "romanized_culture_overrides": {
@@ -55655,6 +56979,14 @@
       "de": {
         "first_name": "Theo",
         "last_name": "Lehmann"
+      },
+      "hi": {
+        "first_name": "Kunal",
+        "last_name": "Sharma"
+      },
+      "ko": {
+        "first_name": "Jeongu",
+        "last_name": "Jeong"
       }
     }
   },
@@ -56713,7 +58045,9 @@
       "es": "Hola, necesito ayuda hoy con algunas cosas de RH.",
       "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques choses de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -56735,6 +58069,14 @@
       "de": {
         "first_name": "Leonie",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "ज्योति",
+        "last_name": "सक्सेना"
+      },
+      "ko": {
+        "first_name": "가은",
+        "last_name": "차"
       }
     },
     "romanized_culture_overrides": {
@@ -56757,6 +58099,14 @@
       "de": {
         "first_name": "Leonie",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "Jyoti",
+        "last_name": "Saxena"
+      },
+      "ko": {
+        "first_name": "Gaeun",
+        "last_name": "Cha"
       }
     }
   },
@@ -57957,7 +59307,9 @@
       "es": "Hola, tengo unas cuantas cosas de RH con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques questions RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -57979,6 +59331,14 @@
       "de": {
         "first_name": "Isabel",
         "last_name": "Schulz"
+      },
+      "hi": {
+        "first_name": "खुशी",
+        "last_name": "मुखर्जी"
+      },
+      "ko": {
+        "first_name": "보민",
+        "last_name": "권"
       }
     },
     "romanized_culture_overrides": {
@@ -58001,6 +59361,14 @@
       "de": {
         "first_name": "Isabel",
         "last_name": "Schulz"
+      },
+      "hi": {
+        "first_name": "Khushi",
+        "last_name": "Mukherjee"
+      },
+      "ko": {
+        "first_name": "Bomin",
+        "last_name": "Gwon"
       }
     }
   },
@@ -58995,7 +60363,9 @@
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda relacionadas con una próxima cirugía.",
       "fr": "Bonjour, j’ai quelques questions pour les RH liées à une intervention chirurgicale à venir pour lesquelles j’ai besoin d’aide.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide en lien avec une chirurgie à venir.",
-      "de": "Hallo, ich habe ein paar Personalangelegenheiten im Zusammenhang mit einer bevorstehenden Operation, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe ein paar Personalangelegenheiten im Zusammenhang mit einer bevorstehenden Operation, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, मुझे एक आने वाली सर्जरी को लेकर एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 곧 있을 수술과 관련해서 HR 관련 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -59017,6 +60387,14 @@
       "de": {
         "first_name": "Oskar",
         "last_name": "Müller"
+      },
+      "hi": {
+        "first_name": "आरव",
+        "last_name": "देशमुख"
+      },
+      "ko": {
+        "first_name": "시우",
+        "last_name": "고"
       }
     },
     "romanized_culture_overrides": {
@@ -59039,6 +60417,14 @@
       "de": {
         "first_name": "Oskar",
         "last_name": "Mueller"
+      },
+      "hi": {
+        "first_name": "Aarav",
+        "last_name": "Deshmukh"
+      },
+      "ko": {
+        "first_name": "Siu",
+        "last_name": "Go"
       }
     }
   },
@@ -60027,7 +61413,9 @@
       "es": "Hola, tengo unas cuantas cosas de HR que necesito gestionar hoy.",
       "fr": "Bonjour, j’ai quelques démarches pour les RH à régler aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines dont je dois m’occuper aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, die ich erledigen muss."
+      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, die ich erledigen muss.",
+      "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ें निपटानी हैं।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 처리해야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -60049,6 +61437,14 @@
       "de": {
         "first_name": "Pia",
         "last_name": "Weber"
+      },
+      "hi": {
+        "first_name": "सरिता",
+        "last_name": "पाटिल"
+      },
+      "ko": {
+        "first_name": "민서",
+        "last_name": "신"
       }
     },
     "romanized_culture_overrides": {
@@ -60071,6 +61467,14 @@
       "de": {
         "first_name": "Pia",
         "last_name": "Weber"
+      },
+      "hi": {
+        "first_name": "Sarita",
+        "last_name": "Patil"
+      },
+      "ko": {
+        "first_name": "Minseo",
+        "last_name": "Sin"
       }
     }
   },
@@ -61001,7 +62405,9 @@
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques questions pour les RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -61023,6 +62429,14 @@
       "de": {
         "first_name": "Lisa",
         "last_name": "Möller"
+      },
+      "hi": {
+        "first_name": "पायल",
+        "last_name": "मिश्रा"
+      },
+      "ko": {
+        "first_name": "민아",
+        "last_name": "한"
       }
     },
     "romanized_culture_overrides": {
@@ -61045,6 +62459,14 @@
       "de": {
         "first_name": "Lisa",
         "last_name": "Moeller"
+      },
+      "hi": {
+        "first_name": "Payal",
+        "last_name": "Mishra"
+      },
+      "ko": {
+        "first_name": "Mina",
+        "last_name": "Han"
       }
     }
   },
@@ -62017,7 +63439,9 @@
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques questions pour les RH pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -62039,6 +63463,14 @@
       "de": {
         "first_name": "Isabel",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "नैना",
+        "last_name": "बनर्जी"
+      },
+      "ko": {
+        "first_name": "수연",
+        "last_name": "최"
       }
     },
     "romanized_culture_overrides": {
@@ -62061,6 +63493,14 @@
       "de": {
         "first_name": "Isabel",
         "last_name": "Hoffmann"
+      },
+      "hi": {
+        "first_name": "Naina",
+        "last_name": "Banerjee"
+      },
+      "ko": {
+        "first_name": "Suyeon",
+        "last_name": "Choe"
       }
     }
   },
@@ -62952,7 +64392,9 @@
       "es": "Hola, tengo unas cuantas cosas de HR sobre horarios y nóminas con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques questions pour les RH liées à la planification des horaires et à la paie pour lesquelles j’ai besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de planification des horaires et de paie en ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मुझे एचआर की शेड्यूलिंग और पेरोल से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 일정 조정과 급여 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -62974,6 +64416,14 @@
       "de": {
         "first_name": "Sebastian",
         "last_name": "Koch"
+      },
+      "hi": {
+        "first_name": "दिनेश",
+        "last_name": "रेड्डी"
+      },
+      "ko": {
+        "first_name": "서준",
+        "last_name": "차"
       }
     },
     "romanized_culture_overrides": {
@@ -62996,6 +64446,14 @@
       "de": {
         "first_name": "Sebastian",
         "last_name": "Koch"
+      },
+      "hi": {
+        "first_name": "Dinesh",
+        "last_name": "Reddy"
+      },
+      "ko": {
+        "first_name": "Seojun",
+        "last_name": "Cha"
       }
     }
   },
@@ -63902,7 +65360,9 @@
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques questions pour les RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -63924,6 +65384,14 @@
       "de": {
         "first_name": "Maximilian",
         "last_name": "Peters"
+      },
+      "hi": {
+        "first_name": "रवि",
+        "last_name": "बंसल"
+      },
+      "ko": {
+        "first_name": "연우",
+        "last_name": "원"
       }
     },
     "romanized_culture_overrides": {
@@ -63946,6 +65414,14 @@
       "de": {
         "first_name": "Maximilian",
         "last_name": "Peters"
+      },
+      "hi": {
+        "first_name": "Ravi",
+        "last_name": "Bansal"
+      },
+      "ko": {
+        "first_name": "Yeonu",
+        "last_name": "Won"
       }
     }
   },
@@ -64819,7 +66295,9 @@
       "es": "Hola, tengo unas cuantas cosas de HR con las que necesito ayuda hoy.",
       "fr": "Bonjour, j’ai quelques questions pour les RH pour lesquelles j’aurais besoin d’aide aujourd’hui.",
       "fr-CA": "Bonjour, j’ai quelques affaires de ressources humaines pour lesquelles j’ai besoin d’aide aujourd’hui.",
-      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche."
+      "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
+      "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
+      "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요."
     },
     "culture_overrides": {
       "en": {
@@ -64841,6 +66319,14 @@
       "de": {
         "first_name": "Jakob",
         "last_name": "Lang"
+      },
+      "hi": {
+        "first_name": "सुरेश",
+        "last_name": "रस्तोगी"
+      },
+      "ko": {
+        "first_name": "시윤",
+        "last_name": "고"
       }
     },
     "romanized_culture_overrides": {
@@ -64863,6 +66349,14 @@
       "de": {
         "first_name": "Jakob",
         "last_name": "Lang"
+      },
+      "hi": {
+        "first_name": "Suresh",
+        "last_name": "Rastogi"
+      },
+      "ko": {
+        "first_name": "Siyun",
+        "last_name": "Go"
       }
     }
   }

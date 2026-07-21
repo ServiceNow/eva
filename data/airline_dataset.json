@@ -1193,7 +1193,9 @@
       "fr-CA": "Bonjour, je dois changer mon vol pour le 25 mars.",
       "fr": "Bonjour, je dois changer mon vol pour le 25 mars.",
       "es": "Hola, necesito cambiar mi vuelo al 25 de marzo.",
-      "de": "Hallo, ich muss meinen Flug auf den 25. März umbuchen."
+      "de": "Hallo, ich muss meinen Flug auf den 25. März umbuchen.",
+      "hi": "नमस्ते, मुझे अपनी उड़ान की तारीख 25 मार्च करनी है।",
+      "ko": "안녕하세요, 제 항공편을 3월 25일로 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -1220,6 +1222,16 @@
         "first_name": "Petra",
         "last_name": "Hartmann",
         "phone": "+49 151 19412770"
+      },
+      "hi": {
+        "first_name": "नीलम",
+        "last_name": "गायकवाड़",
+        "phone": "+91 19412 77095"
+      },
+      "ko": {
+        "first_name": "수민",
+        "last_name": "송",
+        "phone": "+82 10-1941-2770"
       }
     },
     "romanized_culture_overrides": {
@@ -1242,6 +1254,14 @@
       "de": {
         "first_name": "Petra",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "Neelam",
+        "last_name": "Gaikwad"
+      },
+      "ko": {
+        "first_name": "Sumin",
+        "last_name": "Song"
       }
     }
   },
@@ -2380,7 +2400,9 @@
       "fr-CA": "Je dois devancer la date de mon vol.",
       "fr": "Je dois avancer la date de mon vol.",
       "es": "Necesito adelantar mi vuelo.",
-      "de": "Ich muss meinen Flug auf ein früheres Datum umbuchen."
+      "de": "Ich muss meinen Flug auf ein früheres Datum umbuchen.",
+      "hi": "मुझे अपनी उड़ान की तारीख बदलकर पहले की करनी है।",
+      "ko": "제 항공편을 더 이른 날짜로 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -2407,6 +2429,16 @@
         "first_name": "Robert",
         "last_name": "Bauer",
         "phone": "+49 151 02108767"
+      },
+      "hi": {
+        "first_name": "मुकेश",
+        "last_name": "पटेल",
+        "phone": "+91 02108 76783"
+      },
+      "ko": {
+        "first_name": "재현",
+        "last_name": "채",
+        "phone": "+82 10-0210-8767"
       }
     },
     "romanized_culture_overrides": {
@@ -2429,6 +2461,14 @@
       "de": {
         "first_name": "Robert",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "Mukesh",
+        "last_name": "Patel"
+      },
+      "ko": {
+        "first_name": "Jaehyeon",
+        "last_name": "Chae"
       }
     }
   },
@@ -3570,7 +3610,9 @@
       "fr-CA": "Bonjour, je dois changer la date de mon vol de retour.",
       "fr": "Bonjour, je dois changer la date de mon vol de retour.",
       "es": "Hola, necesito cambiar la fecha de mi vuelo de vuelta.",
-      "de": "Hallo, ich muss das Datum meines Rückflugs ändern."
+      "de": "Hallo, ich muss das Datum meines Rückflugs ändern.",
+      "hi": "नमस्ते, मुझे अपनी वापसी की उड़ान की तारीख बदलनी है।",
+      "ko": "안녕하세요, 제 귀국 항공편 날짜를 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -3597,6 +3639,16 @@
         "first_name": "Anja",
         "last_name": "Jung",
         "phone": "+49 151 02683785"
+      },
+      "hi": {
+        "first_name": "सिया",
+        "last_name": "गायकवाड़",
+        "phone": "+91 02683 78567"
+      },
+      "ko": {
+        "first_name": "채원",
+        "last_name": "천",
+        "phone": "+82 10-0268-3785"
       }
     },
     "romanized_culture_overrides": {
@@ -3619,6 +3671,14 @@
       "de": {
         "first_name": "Anja",
         "last_name": "Jung"
+      },
+      "hi": {
+        "first_name": "Siya",
+        "last_name": "Gaikwad"
+      },
+      "ko": {
+        "first_name": "Chaewon",
+        "last_name": "Cheon"
       }
     }
   },
@@ -5417,7 +5477,9 @@
       "fr-CA": "Je dois changer les dates de mon vol aller-retour.",
       "fr": "Je dois changer les dates de mon vol aller-retour.",
       "es": "Necesito cambiar las fechas de mis vuelos de ida y vuelta.",
-      "de": "Ich muss die Daten meines Hin- und Rückflugs ändern."
+      "de": "Ich muss die Daten meines Hin- und Rückflugs ändern.",
+      "hi": "मुझे अपनी आने-जाने की उड़ानों की तारीखें बदलनी हैं।",
+      "ko": "제 왕복 항공편 날짜를 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -5444,6 +5506,16 @@
         "first_name": "Benedikt",
         "last_name": "Fuchs",
         "phone": "+49 151 13557396"
+      },
+      "hi": {
+        "first_name": "मनीष",
+        "last_name": "सेन",
+        "phone": "+91 13557 39651"
+      },
+      "ko": {
+        "first_name": "지호",
+        "last_name": "최",
+        "phone": "+82 10-1355-7396"
       }
     },
     "romanized_culture_overrides": {
@@ -5466,6 +5538,14 @@
       "de": {
         "first_name": "Benedikt",
         "last_name": "Fuchs"
+      },
+      "hi": {
+        "first_name": "Manish",
+        "last_name": "Sen"
+      },
+      "ko": {
+        "first_name": "Jiho",
+        "last_name": "Choe"
       }
     }
   },
@@ -6747,7 +6827,9 @@
       "fr-CA": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui?",
       "fr": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui ?",
       "es": "¿Me podéis cambiar a un vuelo más temprano hoy?",
-      "de": "Können Sie mich heute auf einen früheren Flug umbuchen?"
+      "de": "Können Sie mich heute auf einen früheren Flug umbuchen?",
+      "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में डाल सकते हैं?",
+      "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -6774,6 +6856,16 @@
         "first_name": "Michael",
         "last_name": "Zimmermann",
         "phone": "+49 151 07979789"
+      },
+      "hi": {
+        "first_name": "समीर",
+        "last_name": "राठौर",
+        "phone": "+91 07979 78992"
+      },
+      "ko": {
+        "first_name": "현수",
+        "last_name": "성",
+        "phone": "+82 10-0797-9789"
       }
     },
     "romanized_culture_overrides": {
@@ -6796,6 +6888,14 @@
       "de": {
         "first_name": "Michael",
         "last_name": "Zimmermann"
+      },
+      "hi": {
+        "first_name": "Sameer",
+        "last_name": "Rathore"
+      },
+      "ko": {
+        "first_name": "Hyeonsu",
+        "last_name": "Seong"
       }
     }
   },
@@ -7781,7 +7881,9 @@
       "fr-CA": "Bonjour, je vais manquer mon vol ce matin — pouvez-vous me mettre sur un vol plus tard aujourd’hui?",
       "fr": "Bonjour, je vais rater mon vol ce matin — pouvez-vous me mettre sur un vol plus tard aujourd’hui ?",
       "es": "Hola, voy a perder mi vuelo de esta mañana. ¿Me podéis cambiar a uno más tarde hoy?",
-      "de": "Hallo, ich werde meinen Flug heute Morgen verpassen – können Sie mich heute auf einen späteren Flug umbuchen?"
+      "de": "Hallo, ich werde meinen Flug heute Morgen verpassen – können Sie mich heute auf einen späteren Flug umbuchen?",
+      "hi": "नमस्ते, आज सुबह की मेरी उड़ान छूटने वाली है—क्या आप मुझे आज की किसी बाद वाली उड़ान में डाल सकते हैं?",
+      "ko": "안녕하세요, 오늘 아침 항공편을 놓칠 것 같은데요—오늘 더 늦은 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -7808,6 +7910,16 @@
         "first_name": "Theresa",
         "last_name": "Herrmann",
         "phone": "+49 151 37101148"
+      },
+      "hi": {
+        "first_name": "मोनिका",
+        "last_name": "भोसले",
+        "phone": "+91 37101 14844"
+      },
+      "ko": {
+        "first_name": "서연",
+        "last_name": "지",
+        "phone": "+82 10-3710-1148"
       }
     },
     "romanized_culture_overrides": {
@@ -7830,6 +7942,14 @@
       "de": {
         "first_name": "Theresa",
         "last_name": "Herrmann"
+      },
+      "hi": {
+        "first_name": "Monika",
+        "last_name": "Bhosale"
+      },
+      "ko": {
+        "first_name": "Seoyeon",
+        "last_name": "Ji"
       }
     }
   },
@@ -9155,7 +9275,9 @@
       "fr-CA": "Bonjour, je dois changer mon vol pour un départ plus tôt dans la journée.",
       "fr": "Bonjour, je dois changer mon vol pour un départ plus tôt dans la journée.",
       "es": "Hola, necesito cambiar mi vuelo a una salida más temprana durante el día.",
-      "de": "Hallo, ich muss meinen Flug auf einen früheren Abflug tagsüber umbuchen."
+      "de": "Hallo, ich muss meinen Flug auf einen früheren Abflug tagsüber umbuchen.",
+      "hi": "नमस्ते, मुझे अपनी उड़ान को बदलकर पहले की किसी दिन की उड़ान में करना है।",
+      "ko": "안녕하세요, 제 항공편을 더 이른 낮 시간 출발편으로 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -9182,6 +9304,16 @@
         "first_name": "Niklas",
         "last_name": "Peters",
         "phone": "+49 151 83595620"
+      },
+      "hi": {
+        "first_name": "यश",
+        "last_name": "दास",
+        "phone": "+91 83595 62073"
+      },
+      "ko": {
+        "first_name": "연우",
+        "last_name": "한",
+        "phone": "+82 10-8359-5620"
       }
     },
     "romanized_culture_overrides": {
@@ -9204,6 +9336,14 @@
       "de": {
         "first_name": "Niklas",
         "last_name": "Peters"
+      },
+      "hi": {
+        "first_name": "Yash",
+        "last_name": "Das"
+      },
+      "ko": {
+        "first_name": "Yeonu",
+        "last_name": "Han"
       }
     }
   },
@@ -10565,7 +10705,9 @@
       "fr-CA": "Je dois changer la destination de mon vol pour Detroit.",
       "fr": "Je dois changer la destination de mon vol pour Detroit.",
       "es": "Necesito cambiar el destino de mi vuelo a Detroit.",
-      "de": "Ich muss mein Flugziel auf Detroit ändern."
+      "de": "Ich muss mein Flugziel auf Detroit ändern.",
+      "hi": "मुझे अपनी उड़ान का गंतव्य डेट्रॉइट करना है।",
+      "ko": "제 항공편 목적지를 Detroit로 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -10592,6 +10734,16 @@
         "first_name": "Charlotte",
         "last_name": "Herrmann",
         "phone": "+49 151 82832952"
+      },
+      "hi": {
+        "first_name": "सुनीता",
+        "last_name": "राठौर",
+        "phone": "+91 82832 95279"
+      },
+      "ko": {
+        "first_name": "나은",
+        "last_name": "방",
+        "phone": "+82 10-8283-2952"
       }
     },
     "romanized_culture_overrides": {
@@ -10614,6 +10766,14 @@
       "de": {
         "first_name": "Charlotte",
         "last_name": "Herrmann"
+      },
+      "hi": {
+        "first_name": "Sunita",
+        "last_name": "Rathore"
+      },
+      "ko": {
+        "first_name": "Naeun",
+        "last_name": "Bang"
       }
     }
   },
@@ -11828,7 +11988,9 @@
       "fr-CA": "Je dois changer mon vol pour partir de Newark au lieu de JFK.",
       "fr": "Je dois changer mon vol pour partir de Newark au lieu de JFK.",
       "es": "Necesito cambiar mi vuelo para salir desde Newark en vez de JFK.",
-      "de": "Ich muss meinen Flug so ändern, dass er von Newark statt von JFK abfliegt."
+      "de": "Ich muss meinen Flug so ändern, dass er von Newark statt von JFK abfliegt.",
+      "hi": "मुझे अपनी उड़ान में बदलाव करके जेएफके  के बजाय नेवार्क से प्रस्थान करना है।",
+      "ko": "제 항공편 출발지를 JFK 대신 Newark로 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -11855,6 +12017,16 @@
         "first_name": "Florian",
         "last_name": "Wolf",
         "phone": "+49 151 83210099"
+      },
+      "hi": {
+        "first_name": "ईशान",
+        "last_name": "शर्मा",
+        "phone": "+91 83210 09960"
+      },
+      "ko": {
+        "first_name": "민재",
+        "last_name": "공",
+        "phone": "+82 10-8321-0099"
       }
     },
     "romanized_culture_overrides": {
@@ -11877,6 +12049,14 @@
       "de": {
         "first_name": "Florian",
         "last_name": "Wolf"
+      },
+      "hi": {
+        "first_name": "Ishan",
+        "last_name": "Sharma"
+      },
+      "ko": {
+        "first_name": "Minjae",
+        "last_name": "Gong"
       }
     }
   },
@@ -13013,7 +13193,9 @@
       "fr-CA": "Mon vol pour Chicago a été annulé — pouvez-vous me mettre sur un autre vol aujourd’hui?",
       "fr": "Mon vol pour Chicago a été annulé — pouvez-vous me mettre sur un autre vol aujourd’hui ?",
       "es": "Mi vuelo a Chicago se ha cancelado. ¿Me podéis poner en otro vuelo hoy?",
-      "de": "Mein Flug nach Chicago wurde gestrichen – können Sie mich heute auf einen anderen Flug umbuchen?"
+      "de": "Mein Flug nach Chicago wurde gestrichen – können Sie mich heute auf einen anderen Flug umbuchen?",
+      "hi": "शिकागो जाने वाली मेरी उड़ान रद्द हो गई—क्या आप मुझे आज किसी दूसरी उड़ान में डाल सकते हैं?",
+      "ko": "Chicago행 제 항공편이 취소됐는데요—오늘 다른 항공편으로 잡아 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -13040,6 +13222,16 @@
         "first_name": "Julian",
         "last_name": "Hartmann",
         "phone": "+49 151 90759625"
+      },
+      "hi": {
+        "first_name": "विजय",
+        "last_name": "जैन",
+        "phone": "+91 90759 62591"
+      },
+      "ko": {
+        "first_name": "영준",
+        "last_name": "남",
+        "phone": "+82 10-9075-9625"
       }
     },
     "romanized_culture_overrides": {
@@ -13062,6 +13254,14 @@
       "de": {
         "first_name": "Julian",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "Vijay",
+        "last_name": "Jain"
+      },
+      "ko": {
+        "first_name": "Yeongjun",
+        "last_name": "Nam"
       }
     }
   },
@@ -14240,7 +14440,9 @@
       "fr-CA": "Mon vol a été annulé — pouvez-vous me réserver sur un autre vol et m’aider avec un hôtel?",
       "fr": "Mon vol a été annulé — pouvez-vous me réserver un autre vol et m’aider pour un hôtel ?",
       "es": "Mi vuelo se ha cancelado. ¿Me podéis reubicar y ayudarme con un hotel?",
-      "de": "Mein Flug wurde gestrichen – können Sie mich umbuchen und mir helfen, ein Hotel zu finden?"
+      "de": "Mein Flug wurde gestrichen – können Sie mich umbuchen und mir helfen, ein Hotel zu finden?",
+      "hi": "मेरी उड़ान रद्द हो गई—क्या आप मेरी दोबारा बुकिंग कर सकते हैं और होटल में मदद कर सकते हैं?",
+      "ko": "제 항공편이 취소됐는데요—다시 예약해 주시고 호텔도 도와주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -14267,6 +14469,16 @@
         "first_name": "Luisa",
         "last_name": "Kaiser",
         "phone": "+49 151 59235917"
+      },
+      "hi": {
+        "first_name": "किरण",
+        "last_name": "मुखर्जी",
+        "phone": "+91 59235 91753"
+      },
+      "ko": {
+        "first_name": "하영",
+        "last_name": "구",
+        "phone": "+82 10-5923-5917"
       }
     },
     "romanized_culture_overrides": {
@@ -14289,6 +14501,14 @@
       "de": {
         "first_name": "Luisa",
         "last_name": "Kaiser"
+      },
+      "hi": {
+        "first_name": "Kiran",
+        "last_name": "Mukherjee"
+      },
+      "ko": {
+        "first_name": "Hayeong",
+        "last_name": "Gu"
       }
     }
   },
@@ -14954,7 +15174,9 @@
       "fr-CA": "Mon vol a été annulé et j’ai besoin d’un remboursement.",
       "fr": "Mon vol a été annulé et j’ai besoin d’un remboursement.",
       "es": "Mi vuelo se ha cancelado y necesito un reembolso.",
-      "de": "Mein Flug wurde gestrichen und ich brauche eine Rückerstattung."
+      "de": "Mein Flug wurde gestrichen und ich brauche eine Rückerstattung.",
+      "hi": "मेरी उड़ान रद्द हो गई और मुझे रिफंड चाहिए।",
+      "ko": "제 항공편이 취소돼서 환불이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -14981,6 +15203,16 @@
         "first_name": "Isabel",
         "last_name": "Wolf",
         "phone": "+49 151 70063907"
+      },
+      "hi": {
+        "first_name": "दीपा",
+        "last_name": "अय्यर",
+        "phone": "+91 70063 90708"
+      },
+      "ko": {
+        "first_name": "유정",
+        "last_name": "허",
+        "phone": "+82 10-7006-3907"
       }
     },
     "romanized_culture_overrides": {
@@ -15003,6 +15235,14 @@
       "de": {
         "first_name": "Isabel",
         "last_name": "Wolf"
+      },
+      "hi": {
+        "first_name": "Deepa",
+        "last_name": "Ayyar"
+      },
+      "ko": {
+        "first_name": "Yujeong",
+        "last_name": "Heo"
       }
     }
   },
@@ -16326,7 +16566,9 @@
       "fr-CA": "Mon vol est retardé et je dois changer pour un autre vol.",
       "fr": "Mon vol est retardé et je dois passer sur un autre vol.",
       "es": "Mi vuelo va con retraso y necesito cambiarme a otro vuelo.",
-      "de": "Mein Flug hat Verspätung und ich muss auf einen anderen Flug wechseln."
+      "de": "Mein Flug hat Verspätung und ich muss auf einen anderen Flug wechseln.",
+      "hi": "मेरी उड़ान विलंबित है और मुझे अपनी उड़ान बदलनी है।।",
+      "ko": "제 항공편이 지연돼서 다른 항공편으로 바꿔야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -16353,6 +16595,16 @@
         "first_name": "Gisela",
         "last_name": "Maier",
         "phone": "+49 151 91601184"
+      },
+      "hi": {
+        "first_name": "ज्योति",
+        "last_name": "चौधरी",
+        "phone": "+91 91601 18495"
+      },
+      "ko": {
+        "first_name": "민지",
+        "last_name": "안",
+        "phone": "+82 10-9160-1184"
       }
     },
     "romanized_culture_overrides": {
@@ -16375,6 +16627,14 @@
       "de": {
         "first_name": "Gisela",
         "last_name": "Maier"
+      },
+      "hi": {
+        "first_name": "Jyoti",
+        "last_name": "Chaudhary"
+      },
+      "ko": {
+        "first_name": "Minji",
+        "last_name": "An"
       }
     }
   },
@@ -17352,7 +17612,9 @@
       "fr-CA": "Bonjour, j’appelle au sujet de mon vol retardé — pouvez-vous me donner les détails à jour?",
       "fr": "Bonjour, j’appelle au sujet de mon vol retardé — pouvez-vous me donner les informations mises à jour ?",
       "es": "Hola, llamo por mi vuelo retrasado. ¿Me podéis decir los detalles actualizados?",
-      "de": "Hallo, ich rufe wegen meines verspäteten Flugs an – können Sie mir die neusten Updates nennen?"
+      "de": "Hallo, ich rufe wegen meines verspäteten Flugs an – können Sie mir die neusten Updates nennen?",
+      "hi": "नमस्ते, मैं अपनी विलंबित उड़ान के बारे में कॉल कर रहा/रही हूँ—क्या आप मुझे अपडेटेड जानकारी दे सकते हैं?",
+      "ko": "안녕하세요, 항공편이 지연되서 전화드렸는데요—업데이트된 정보를 알려 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -17379,6 +17641,16 @@
         "first_name": "Ella",
         "last_name": "Jung",
         "phone": "+49 151 51923961"
+      },
+      "hi": {
+        "first_name": "रीना",
+        "last_name": "सेन",
+        "phone": "+91 51923 96106"
+      },
+      "ko": {
+        "first_name": "서현",
+        "last_name": "곽",
+        "phone": "+82 10-5192-3961"
       }
     },
     "romanized_culture_overrides": {
@@ -17401,6 +17673,14 @@
       "de": {
         "first_name": "Ella",
         "last_name": "Jung"
+      },
+      "hi": {
+        "first_name": "Reena",
+        "last_name": "Sen"
+      },
+      "ko": {
+        "first_name": "Seohyeon",
+        "last_name": "Gwak"
       }
     }
   },
@@ -18190,7 +18470,9 @@
       "fr-CA": "Mon vol est retardé — est-ce que je peux avoir un bon de repas?",
       "fr": "Mon vol est retardé — est-ce que je peux avoir un bon de repas ?",
       "es": "Mi vuelo va con retraso. ¿Puedo recibir un vale de comida?",
-      "de": "Mein Flug hat Verspätung – kann ich einen Essensgutschein bekommen?"
+      "de": "Mein Flug hat Verspätung – kann ich einen Essensgutschein bekommen?",
+      "hi": "मेरी उड़ान में देरी है—क्या मुझे खाने का वाउचर मिल सकता है?",
+      "ko": "제 항공편이 지연됐는데요—식사 바우처를 받을 수 있을까요?"
     },
     "culture_overrides": {
       "en": {
@@ -18217,6 +18499,16 @@
         "first_name": "Emilia",
         "last_name": "Fischer",
         "phone": "+49 151 48887724"
+      },
+      "hi": {
+        "first_name": "मीना",
+        "last_name": "राय",
+        "phone": "+91 48887 72414"
+      },
+      "ko": {
+        "first_name": "채은",
+        "last_name": "손",
+        "phone": "+82 10-4888-7724"
       }
     },
     "romanized_culture_overrides": {
@@ -18239,6 +18531,14 @@
       "de": {
         "first_name": "Emilia",
         "last_name": "Fischer"
+      },
+      "hi": {
+        "first_name": "Meena",
+        "last_name": "Rai"
+      },
+      "ko": {
+        "first_name": "Chaeeun",
+        "last_name": "Son"
       }
     }
   },
@@ -19162,7 +19462,9 @@
       "fr-CA": "Bonjour — l’heure de mon vol a changé et j’ai besoin d’aide pour tout confirmer.",
       "fr": "Bonjour — l’horaire de mon vol a changé et j’ai besoin d’aide pour tout confirmer.",
       "es": "Hola, han cambiado la hora de mi vuelo y necesito ayuda para confirmarlo todo.",
-      "de": "Hallo – meine Flugzeit hat sich geändert und ich brauche Hilfe, um alles zu bestätigen."
+      "de": "Hallo – meine Flugzeit hat sich geändert und ich brauche Hilfe, um alles zu bestätigen.",
+      "hi": "नमस्ते—मेरी उड़ान का समय बदल गया है और मुझे हर चीज़ की पुष्टि करने में मदद चाहिए।",
+      "ko": "안녕하세요—제 항공편 시간이 변경돼서 예약이 제대로 변경됐는지 확인하고 싶어요."
     },
     "culture_overrides": {
       "en": {
@@ -19189,6 +19491,16 @@
         "first_name": "Karin",
         "last_name": "Krause",
         "phone": "+49 151 22746437"
+      },
+      "hi": {
+        "first_name": "नैना",
+        "last_name": "चौहान",
+        "phone": "+91 22746 43763"
+      },
+      "ko": {
+        "first_name": "예은",
+        "last_name": "고",
+        "phone": "+82 10-2274-6437"
       }
     },
     "romanized_culture_overrides": {
@@ -19211,6 +19523,14 @@
       "de": {
         "first_name": "Karin",
         "last_name": "Krause"
+      },
+      "hi": {
+        "first_name": "Naina",
+        "last_name": "Chauhan"
+      },
+      "ko": {
+        "first_name": "Yeeun",
+        "last_name": "Go"
       }
     }
   },
@@ -19929,7 +20249,9 @@
       "fr-CA": "Bonjour, l’heure de mon vol a beaucoup changé et je dois annuler et obtenir un remboursement.",
       "fr": "Bonjour, l’horaire de mon vol a beaucoup changé et je dois annuler et obtenir un remboursement.",
       "es": "Hola, han cambiado mucho la hora de mi vuelo y necesito cancelarlo y recibir un reembolso.",
-      "de": "Hallo, meine Flugzeit wurde wesentlich geändert. Ich muss stornieren und brauche eine Rückerstattung."
+      "de": "Hallo, meine Flugzeit wurde wesentlich geändert. Ich muss stornieren und brauche eine Rückerstattung.",
+      "hi": "नमस्ते, मेरी उड़ान का समय काफ़ी बदल गया है और मुझे इसे रद्द करके पैसे वापस लेना है।",
+      "ko": "안녕하세요, 제 항공편 시간이 많이 변경돼서 취소하고 환불받아야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -19956,6 +20278,16 @@
         "first_name": "Julia",
         "last_name": "Lehmann",
         "phone": "+49 151 95936944"
+      },
+      "hi": {
+        "first_name": "अनन्या",
+        "last_name": "मल्होत्रा",
+        "phone": "+91 95936 94424"
+      },
+      "ko": {
+        "first_name": "아린",
+        "last_name": "지",
+        "phone": "+82 10-9593-6944"
       }
     },
     "romanized_culture_overrides": {
@@ -19978,6 +20310,14 @@
       "de": {
         "first_name": "Julia",
         "last_name": "Lehmann"
+      },
+      "hi": {
+        "first_name": "Ananya",
+        "last_name": "Malhotra"
+      },
+      "ko": {
+        "first_name": "Arin",
+        "last_name": "Ji"
       }
     }
   },
@@ -21138,7 +21478,9 @@
       "fr-CA": "Mon vol vient d’être annulé après qu’on a dû faire demi-tour — pouvez-vous me réserver un autre vol?",
       "fr": "Mon vol vient d’être annulé après qu’on a dû faire demi-tour — pouvez-vous me réserver un autre vol ?",
       "es": "Acaban de cancelarme el vuelo después de que tuviéramos que regresarnos. ¿Me puedes volver a reservar?",
-      "de": "Mein Flug wurde gerade gestrichen, nachdem wir umkehren mussten – können Sie mich umbuchen?"
+      "de": "Mein Flug wurde gerade gestrichen, nachdem wir umkehren mussten – können Sie mich umbuchen?",
+      "hi": "हमारे वापस मुड़ने के बाद मेरी उड़ान अभी-अभी रद्द हो गई—क्या आप मुझे रीबुक करवा सकते हैं?",
+      "ko": "제 항공편이 회항한 뒤에 방금 취소됐는데요—다시 예약해 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -21165,6 +21507,16 @@
         "first_name": "Oskar",
         "last_name": "Meier",
         "phone": "+49 151 08180787"
+      },
+      "hi": {
+        "first_name": "विजय",
+        "last_name": "राठौर",
+        "phone": "+91 08180 78714"
+      },
+      "ko": {
+        "first_name": "민준",
+        "last_name": "우",
+        "phone": "+82 10-0818-0787"
       }
     },
     "romanized_culture_overrides": {
@@ -21187,6 +21539,14 @@
       "de": {
         "first_name": "Oskar",
         "last_name": "Meier"
+      },
+      "hi": {
+        "first_name": "Vijay",
+        "last_name": "Rathore"
+      },
+      "ko": {
+        "first_name": "Minjun",
+        "last_name": "U"
       }
     }
   },
@@ -21946,7 +22306,9 @@
       "fr-CA": "Bonjour — pouvez-vous me dire ce qui se passe avec mon vol qui est revenu à Minneapolis? On a décollé à l’heure prévue, vers 12:30, puis on a dû faire demi-tour.",
       "fr": "Bonjour — pouvez-vous me dire ce qui se passe avec mon vol qui est revenu à Minneapolis ? Nous avons décollé à l’heure prévue, vers 12:30, puis nous avons dû faire demi-tour.",
       "es": "Hola, ¿me podéis decir qué está pasando con mi vuelo que volvió a Minneapolis? Despegamos a la hora prevista, sobre las 12:30, y luego tuvimos que dar la vuelta.",
-      "de": "Hallo – können Sie mir sagen, was mit meinem Flug los ist, der nach Minneapolis zurückgekehrt ist? Wir sind planmäßig gegen 12:30 gestartet und mussten dann umdrehen."
+      "de": "Hallo – können Sie mir sagen, was mit meinem Flug los ist, der nach Minneapolis zurückgekehrt ist? Wir sind planmäßig gegen 12:30 gestartet und mussten dann umdrehen.",
+      "hi": "नमस्ते—क्या आप मुझे बता सकते हैं कि मेरी उस उड़ान के साथ क्या हो रहा है जो मिनियापोलिस वापस आ गई? हमने निर्धारित समय पर, करीब 12:30 बजे उड़ान भरी थी, और फिर हमें वापस लौटना पड़ा।",
+      "ko": "안녕하세요—제 항공편이 Minneapolis로 회항했는데 어떻게 된 건지 알려 주실 수 있나요? 예정 시간인 12:30쯤 이륙했는데, 이후에 회항했어요."
     },
     "culture_overrides": {
       "en": {
@@ -21973,6 +22335,16 @@
         "first_name": "Hannah",
         "last_name": "Schneider",
         "phone": "+49 151 05183647"
+      },
+      "hi": {
+        "first_name": "माधुरी",
+        "last_name": "वर्मा",
+        "phone": "+91 05183 64772"
+      },
+      "ko": {
+        "first_name": "민아",
+        "last_name": "우",
+        "phone": "+82 10-0518-3647"
       }
     },
     "romanized_culture_overrides": {
@@ -21995,6 +22367,14 @@
       "de": {
         "first_name": "Hannah",
         "last_name": "Schneider"
+      },
+      "hi": {
+        "first_name": "Madhuri",
+        "last_name": "Verma"
+      },
+      "ko": {
+        "first_name": "Mina",
+        "last_name": "U"
       }
     }
   },
@@ -22880,7 +23260,9 @@
       "fr-CA": "J’ai manqué mon vol ce matin — pouvez-vous me trouver l’option la moins chère pour D.C. aujourd’hui?",
       "fr": "J’ai raté mon vol ce matin — pouvez-vous me trouver l’option la moins chère pour D.C. aujourd’hui ?",
       "es": "He perdido el vuelo esta mañana. ¿Me puedes conseguir la opción más barata a D.C. hoy?",
-      "de": "Ich habe meinen Flug heute Morgen verpasst – können Sie mich heute auf die günstigste Option nach D.C. umbuchen?"
+      "de": "Ich habe meinen Flug heute Morgen verpasst – können Sie mich heute auf die günstigste Option nach D.C. umbuchen?",
+      "hi": "मेरी उड़ान आज सुबह छूट गई—क्या आप मुझे आज D.C. की सबसे सस्ती विकल्प में डाल सकते हैं?",
+      "ko": "오늘 아침 항공편을 놓쳤는데요—오늘 D.C.로 가는 가장 저렴한 옵션으로 잡아 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -22907,6 +23289,16 @@
         "first_name": "Luis",
         "last_name": "Wagner",
         "phone": "+49 151 05025577"
+      },
+      "hi": {
+        "first_name": "विनय",
+        "last_name": "अग्रवाल",
+        "phone": "+91 05025 57706"
+      },
+      "ko": {
+        "first_name": "서진",
+        "last_name": "지",
+        "phone": "+82 10-0502-5577"
       }
     },
     "romanized_culture_overrides": {
@@ -22929,6 +23321,14 @@
       "de": {
         "first_name": "Luis",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "Vinay",
+        "last_name": "Agrawal"
+      },
+      "ko": {
+        "first_name": "Seojin",
+        "last_name": "Ji"
       }
     }
   },
@@ -24659,7 +25059,9 @@
       "fr-CA": "J’ai manqué mon vol ce matin et je dois être réservé sur un autre vol pour Minneapolis aujourd’hui.",
       "fr": "J’ai raté mon vol ce matin et je dois être replacé sur un vol pour Minneapolis aujourd’hui.",
       "es": "He perdido el vuelo esta mañana y necesito que me vuelvan a reservar a Minneapolis hoy.",
-      "de": "Ich habe meinen Flug heute Morgen verpasst und brauche noch heute eine Umbuchung nach Minneapolis."
+      "de": "Ich habe meinen Flug heute Morgen verpasst und brauche noch heute eine Umbuchung nach Minneapolis.",
+      "hi": "मेरी उड़ान आज सुबह छूट गई और मुझे आज मिनियापोलिस के लिए रीबुक करवाना है।",
+      "ko": "오늘 아침 항공편을 놓쳐서 오늘 Minneapolis로 다시 예약해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -24686,6 +25088,16 @@
         "first_name": "Oskar",
         "last_name": "Lange",
         "phone": "+49 151 73554432"
+      },
+      "hi": {
+        "first_name": "सुमित",
+        "last_name": "मुखर्जी",
+        "phone": "+91 73554 43223"
+      },
+      "ko": {
+        "first_name": "지훈",
+        "last_name": "공",
+        "phone": "+82 10-7355-4432"
       }
     },
     "romanized_culture_overrides": {
@@ -24708,6 +25120,14 @@
       "de": {
         "first_name": "Oskar",
         "last_name": "Lange"
+      },
+      "hi": {
+        "first_name": "Sumit",
+        "last_name": "Mukherjee"
+      },
+      "ko": {
+        "first_name": "Jihun",
+        "last_name": "Gong"
       }
     }
   },
@@ -26047,7 +26467,9 @@
       "fr-CA": "Bonjour, je dois réserver un autre vol parce qu’on m’a refusé l’embarquement à cause de la date d’expiration de mon passeport.",
       "fr": "Bonjour, je dois réserver un autre vol parce qu’on m’a refusé l’embarquement à cause de la date d’expiration de mon passeport.",
       "es": "Hola, necesito volver a reservar mi vuelo porque me negaron el embarque por la fecha de caducidad de mi pasaporte.",
-      "de": "Hallo, ich muss meinen Flug umbuchen, weil mir wegen des Ablaufdatums meines Reisepasses das Boarding verweigert wurde."
+      "de": "Hallo, ich muss meinen Flug umbuchen, weil mir wegen des Ablaufdatums meines Reisepasses das Boarding verweigert wurde.",
+      "hi": "नमस्ते, मुझे अपनी उड़ान दोबारा बुक करनी है क्योंकि मेरे पासपोर्ट की समाप्ति तिथि की वजह से मुझे बोर्डिंग नहीं करने दी गई।",
+      "ko": "안녕하세요, 여권 만료일 때문에 탑승이 거부돼서 항공편을 다시 예약해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -26074,6 +26496,16 @@
         "first_name": "Brigitte",
         "last_name": "Herrmann",
         "phone": "+49 151 17156756"
+      },
+      "hi": {
+        "first_name": "सोनम",
+        "last_name": "सिंह",
+        "phone": "+91 17156 75644"
+      },
+      "ko": {
+        "first_name": "예나",
+        "last_name": "민",
+        "phone": "+82 10-1715-6756"
       }
     },
     "romanized_culture_overrides": {
@@ -26096,6 +26528,14 @@
       "de": {
         "first_name": "Brigitte",
         "last_name": "Herrmann"
+      },
+      "hi": {
+        "first_name": "Sonam",
+        "last_name": "Singh"
+      },
+      "ko": {
+        "first_name": "Yena",
+        "last_name": "Min"
       }
     }
   },
@@ -27119,7 +27559,9 @@
       "fr-CA": "Pouvez-vous me mettre sur le vol plus tôt aujourd’hui?",
       "fr": "Pouvez-vous me mettre sur le vol plus tôt aujourd’hui ?",
       "es": "¿Me podéis cambiar al vuelo más temprano de hoy?",
-      "de": "Können Sie mich heute auf den früheren Flug umbuchen?"
+      "de": "Können Sie mich heute auf den früheren Flug umbuchen?",
+      "hi": "क्या आप मुझे किसी पहले की उड़ान में डाल सकते हैं?",
+      "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -27146,6 +27588,16 @@
         "first_name": "Jonas",
         "last_name": "Hahn",
         "phone": "+49 151 32540377"
+      },
+      "hi": {
+        "first_name": "विशाल",
+        "last_name": "चटर्जी",
+        "phone": "+91 32540 37732"
+      },
+      "ko": {
+        "first_name": "이준",
+        "last_name": "엄",
+        "phone": "+82 10-3254-0377"
       }
     },
     "romanized_culture_overrides": {
@@ -27168,6 +27620,14 @@
       "de": {
         "first_name": "Jonas",
         "last_name": "Hahn"
+      },
+      "hi": {
+        "first_name": "Vishal",
+        "last_name": "Chatterjee"
+      },
+      "ko": {
+        "first_name": "Ijun",
+        "last_name": "Eom"
       }
     }
   },
@@ -28122,7 +28582,9 @@
       "fr-CA": "Bonjour, je dois changer mon vol pour un vol plus tard aujourd’hui.",
       "fr": "Bonjour, je dois changer mon vol pour un vol plus tard aujourd’hui.",
       "es": "Hola, necesito cambiar mi vuelo a uno más tarde hoy.",
-      "de": "Hallo, ich muss meinen Flug heute auf einen späteren umbuchen."
+      "de": "Hallo, ich muss meinen Flug heute auf einen späteren umbuchen.",
+      "hi": "नमस्ते, मुझे अपनी उड़ान आज की किसी बाद वाली उड़ान में बदलनी है।",
+      "ko": "안녕하세요, 제 항공편을 오늘 더 늦은 항공편으로 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -28149,6 +28611,16 @@
         "first_name": "Matthias",
         "last_name": "Weber",
         "phone": "+49 151 95953961"
+      },
+      "hi": {
+        "first_name": "कुणाल",
+        "last_name": "यादव",
+        "phone": "+91 95953 96158"
+      },
+      "ko": {
+        "first_name": "서진",
+        "last_name": "채",
+        "phone": "+82 10-9595-3961"
       }
     },
     "romanized_culture_overrides": {
@@ -28171,6 +28643,14 @@
       "de": {
         "first_name": "Matthias",
         "last_name": "Weber"
+      },
+      "hi": {
+        "first_name": "Kunal",
+        "last_name": "Yadav"
+      },
+      "ko": {
+        "first_name": "Seojin",
+        "last_name": "Chae"
       }
     }
   },
@@ -29136,7 +29616,9 @@
       "fr-CA": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui?",
       "fr": "Pouvez-vous me mettre sur un vol plus tôt aujourd’hui ?",
       "es": "¿Me podéis cambiar a un vuelo más temprano hoy?",
-      "de": "Können Sie mich heute auf einen früheren Flug umbuchen?"
+      "de": "Können Sie mich heute auf einen früheren Flug umbuchen?",
+      "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में डाल सकते हैं?",
+      "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -29163,6 +29645,16 @@
         "first_name": "Maximilian",
         "last_name": "Köhler",
         "phone": "+49 151 82517354"
+      },
+      "hi": {
+        "first_name": "आरव",
+        "last_name": "कुमार",
+        "phone": "+91 82517 35413"
+      },
+      "ko": {
+        "first_name": "하준",
+        "last_name": "손",
+        "phone": "+82 10-8251-7354"
       }
     },
     "romanized_culture_overrides": {
@@ -29185,6 +29677,14 @@
       "de": {
         "first_name": "Maximilian",
         "last_name": "Koehler"
+      },
+      "hi": {
+        "first_name": "Aarav",
+        "last_name": "Kumar"
+      },
+      "ko": {
+        "first_name": "Hajun",
+        "last_name": "Son"
       }
     }
   },
@@ -30161,7 +30661,9 @@
       "fr-CA": "Bonjour, est-ce que vous pouvez me mettre sur le prochain vol pour rentrer à la maison dès que possible?",
       "fr": "Bonjour, pouvez-vous me mettre sur le prochain pour rentrer à la maison dès que possible ?",
       "es": "Hola, ¿puede cambiarme al próximo vuelo de vuelta a casa lo antes posible?",
-      "de": "Hallo, können Sie mich bitte so schnell wie möglich auf den nächsten Flug nach Hause umbuchen?"
+      "de": "Hallo, können Sie mich bitte so schnell wie möglich auf den nächsten Flug nach Hause umbuchen?",
+      "hi": "नमस्ते, क्या आप मुझे जल्द से जल्द घर की अगली उड़ान पर डाल सकते हैं?",
+      "ko": "안녕하세요, 가능한 한 빨리 집으로 가는 다음 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -30188,6 +30690,16 @@
         "first_name": "Patrick",
         "last_name": "Lang",
         "phone": "+49 151 20775631"
+      },
+      "hi": {
+        "first_name": "सुमित",
+        "last_name": "भोसले",
+        "phone": "+91 20775 63133"
+      },
+      "ko": {
+        "first_name": "태현",
+        "last_name": "윤",
+        "phone": "+82 10-2077-5631"
       }
     },
     "romanized_culture_overrides": {
@@ -30210,6 +30722,14 @@
       "de": {
         "first_name": "Patrick",
         "last_name": "Lang"
+      },
+      "hi": {
+        "first_name": "Sumit",
+        "last_name": "Bhosale"
+      },
+      "ko": {
+        "first_name": "Taehyeon",
+        "last_name": "Yun"
       }
     }
   },
@@ -30955,7 +31475,9 @@
       "fr-CA": "Est-ce que vous pouvez me mettre sur la liste d’attente pour le vol de midi?",
       "fr": "Pouvez-vous me mettre en liste d’attente pour le vol de midi ?",
       "es": "¿Puede ponerme en lista de espera para el vuelo del mediodía?",
-      "de": "Können Sie mich bitte auf die Warteliste für den Mittagsflug setzen?"
+      "de": "Können Sie mich bitte auf die Warteliste für den Mittagsflug setzen?",
+      "hi": "क्या आप मुझे दोपहर वाली उड़ान के लिए स्टैंडबाय पर रख सकते हैं?",
+      "ko": "정오 항공편 대기 명단에 올려 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -30982,6 +31504,16 @@
         "first_name": "Ursula",
         "last_name": "Krause",
         "phone": "+49 151 98267352"
+      },
+      "hi": {
+        "first_name": "रिया",
+        "last_name": "अग्रवाल",
+        "phone": "+91 98267 35294"
+      },
+      "ko": {
+        "first_name": "나윤",
+        "last_name": "엄",
+        "phone": "+82 10-9826-7352"
       }
     },
     "romanized_culture_overrides": {
@@ -31004,6 +31536,14 @@
       "de": {
         "first_name": "Ursula",
         "last_name": "Krause"
+      },
+      "hi": {
+        "first_name": "Riya",
+        "last_name": "Agrawal"
+      },
+      "ko": {
+        "first_name": "Nayun",
+        "last_name": "Eom"
       }
     }
   },
@@ -32133,7 +32673,9 @@
       "fr-CA": "Est-ce que vous pouvez m’ajouter à la liste d’attente pour un vol plus tôt aujourd’hui?",
       "fr": "Pouvez-vous m’ajouter à la liste d’attente pour un vol plus tôt aujourd’hui ?",
       "es": "¿Me pueden añadir a la lista de espera para un vuelo más temprano hoy?",
-      "de": "Können Sie mich bitte auf die Warteliste für einen früheren Flug heute setzen?"
+      "de": "Können Sie mich bitte auf die Warteliste für einen früheren Flug heute setzen?",
+      "hi": "क्या आप मुझे आज की किसी पहले की उड़ान के लिए स्टैंडबाय पर डाल सकते हैं?",
+      "ko": "오늘 더 이른 항공편 대기 명단에 올려 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -32160,6 +32702,16 @@
         "first_name": "Patrick",
         "last_name": "Köhler",
         "phone": "+49 151 42722132"
+      },
+      "hi": {
+        "first_name": "नितिन",
+        "last_name": "तिवारी",
+        "phone": "+91 42722 13266"
+      },
+      "ko": {
+        "first_name": "영준",
+        "last_name": "배",
+        "phone": "+82 10-4272-2132"
       }
     },
     "romanized_culture_overrides": {
@@ -32182,6 +32734,14 @@
       "de": {
         "first_name": "Patrick",
         "last_name": "Koehler"
+      },
+      "hi": {
+        "first_name": "Nitin",
+        "last_name": "Tiwari"
+      },
+      "ko": {
+        "first_name": "Yeongjun",
+        "last_name": "Bae"
       }
     }
   },
@@ -32904,7 +33464,9 @@
       "fr-CA": "Est-ce que vous pouvez me mettre sur la liste d’attente pour le vol de 10:00 AM?",
       "fr": "Pouvez-vous me mettre en liste d’attente pour le vol de 10:00 AM ?",
       "es": "¿Puede ponerme en lista de espera para el vuelo de las 10:00 AM?",
-      "de": "Können Sie mich bitte auf die Warteliste für den Flug um 10:00 AM setzen?"
+      "de": "Können Sie mich bitte auf die Warteliste für den Flug um 10:00 AM setzen?",
+      "hi": "क्या आप मुझे सुबह १० बजे वाली उड़ान के लिए स्टैंडबाय पर रख सकते हैं?",
+      "ko": "10:00 AM 항공편 대기 명단에 올려 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -32931,6 +33493,16 @@
         "first_name": "Clara",
         "last_name": "Meier",
         "phone": "+49 151 87923653"
+      },
+      "hi": {
+        "first_name": "काव्या",
+        "last_name": "पांडे",
+        "phone": "+91 87923 65372"
+      },
+      "ko": {
+        "first_name": "채원",
+        "last_name": "송",
+        "phone": "+82 10-8792-3653"
       }
     },
     "romanized_culture_overrides": {
@@ -32953,6 +33525,14 @@
       "de": {
         "first_name": "Clara",
         "last_name": "Meier"
+      },
+      "hi": {
+        "first_name": "Kavya",
+        "last_name": "Pandey"
+      },
+      "ko": {
+        "first_name": "Chaewon",
+        "last_name": "Song"
       }
     }
   },
@@ -33796,7 +34376,9 @@
       "fr-CA": "Bonjour, je dois annuler mon vol.",
       "fr": "Bonjour, je dois annuler mon vol.",
       "es": "Hola, necesito cancelar mi vuelo.",
-      "de": "Hallo, ich muss meinen Flug stornieren."
+      "de": "Hallo, ich muss meinen Flug stornieren.",
+      "hi": "नमस्ते, मुझे अपनी उड़ान रद्द करनी है।",
+      "ko": "안녕하세요, 제 항공편을 취소해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -33823,6 +34405,16 @@
         "first_name": "Markus",
         "last_name": "Neumann",
         "phone": "+49 151 53516837"
+      },
+      "hi": {
+        "first_name": "नीरज",
+        "last_name": "चतुर्वेदी",
+        "phone": "+91 53516 83739"
+      },
+      "ko": {
+        "first_name": "태윤",
+        "last_name": "곽",
+        "phone": "+82 10-5351-6837"
       }
     },
     "romanized_culture_overrides": {
@@ -33845,6 +34437,14 @@
       "de": {
         "first_name": "Markus",
         "last_name": "Neumann"
+      },
+      "hi": {
+        "first_name": "Neeraj",
+        "last_name": "Chaturvedi"
+      },
+      "ko": {
+        "first_name": "Taeyun",
+        "last_name": "Gwak"
       }
     }
   },
@@ -34579,7 +35179,9 @@
       "fr-CA": "Bonjour, je dois annuler un vol que je viens de réserver.",
       "fr": "Bonjour, je dois annuler un vol que je viens de réserver.",
       "es": "Hola, necesito cancelar un vuelo que acabo de reservar.",
-      "de": "Hallo, ich muss einen Flug stornieren, den ich gerade gebucht habe."
+      "de": "Hallo, ich muss einen Flug stornieren, den ich gerade gebucht habe.",
+      "hi": "नमस्ते, मुझे अभी-अभी बुक की हुई एक उड़ान रद्द करनी है।",
+      "ko": "안녕하세요, 방금 예약한 항공편을 취소해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -34606,6 +35208,16 @@
         "first_name": "Sarah",
         "last_name": "Vogel",
         "phone": "+49 151 98796810"
+      },
+      "hi": {
+        "first_name": "अनिता",
+        "last_name": "श्रीवास्तव",
+        "phone": "+91 98796 81078"
+      },
+      "ko": {
+        "first_name": "보민",
+        "last_name": "채",
+        "phone": "+82 10-9879-6810"
       }
     },
     "romanized_culture_overrides": {
@@ -34628,6 +35240,14 @@
       "de": {
         "first_name": "Sarah",
         "last_name": "Vogel"
+      },
+      "hi": {
+        "first_name": "Anita",
+        "last_name": "Shrivastav"
+      },
+      "ko": {
+        "first_name": "Bomin",
+        "last_name": "Chae"
       }
     }
   },
@@ -35444,7 +36064,9 @@
       "fr-CA": "Mon vol a été annulé et je veux un remboursement complet.",
       "fr": "Mon vol a été annulé et je veux un remboursement intégral.",
       "es": "Mi vuelo ha sido cancelado y quiero un reembolso completo.",
-      "de": "Mein Flug wurde gestrichen und ich möchte eine vollständige Rückerstattung."
+      "de": "Mein Flug wurde gestrichen und ich möchte eine vollständige Rückerstattung.",
+      "hi": "मेरी उड़ान रद्द हो गई है और मुझे पूरा रिफंड चाहिए।",
+      "ko": "제 항공편이 취소돼서 전액 환불을 받고 싶어요."
     },
     "culture_overrides": {
       "en": {
@@ -35471,6 +36093,16 @@
         "first_name": "Felix",
         "last_name": "Jung",
         "phone": "+49 151 91964861"
+      },
+      "hi": {
+        "first_name": "मोहित",
+        "last_name": "जोशी",
+        "phone": "+91 91964 86118"
+      },
+      "ko": {
+        "first_name": "준혁",
+        "last_name": "박",
+        "phone": "+82 10-9196-4861"
       }
     },
     "romanized_culture_overrides": {
@@ -35493,6 +36125,14 @@
       "de": {
         "first_name": "Felix",
         "last_name": "Jung"
+      },
+      "hi": {
+        "first_name": "Mohit",
+        "last_name": "Joshi"
+      },
+      "ko": {
+        "first_name": "Junhyeok",
+        "last_name": "Bak"
       }
     }
   },
@@ -36381,7 +37021,9 @@
       "fr-CA": "Bonjour, je dois annuler seulement la portion retour de mon voyage.",
       "fr": "Bonjour, je dois annuler seulement le trajet retour de mon voyage.",
       "es": "Hola, necesito cancelar solo la parte de vuelta de mi viaje.",
-      "de": "Hallo, ich muss nur den Rückflug meiner Reise stornieren."
+      "de": "Hallo, ich muss nur den Rückflug meiner Reise stornieren.",
+      "hi": "नमस्ते, मुझे अपनी यात्रा का सिर्फ वापसी वाला हिस्सा रद्द करना है।",
+      "ko": "안녕하세요, 제 여행에서 돌아오는 구간만 취소해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -36408,6 +37050,16 @@
         "first_name": "Dominik",
         "last_name": "Schmidt",
         "phone": "+49 151 00142021"
+      },
+      "hi": {
+        "first_name": "तरुण",
+        "last_name": "घोष",
+        "phone": "+91 00142 02177"
+      },
+      "ko": {
+        "first_name": "재민",
+        "last_name": "우",
+        "phone": "+82 10-0014-2021"
       }
     },
     "romanized_culture_overrides": {
@@ -36430,6 +37082,14 @@
       "de": {
         "first_name": "Dominik",
         "last_name": "Schmidt"
+      },
+      "hi": {
+        "first_name": "Tarun",
+        "last_name": "Ghosh"
+      },
+      "ko": {
+        "first_name": "Jaemin",
+        "last_name": "U"
       }
     }
   },
@@ -37274,7 +37934,9 @@
       "fr-CA": "Bonjour, je dois annuler mon vol.",
       "fr": "Bonjour, je dois annuler mon vol.",
       "es": "Hola, necesito cancelar mi vuelo.",
-      "de": "Hallo, ich muss meinen Flug stornieren."
+      "de": "Hallo, ich muss meinen Flug stornieren.",
+      "hi": "नमस्ते, मुझे अपनी उड़ान रद्द करनी है।",
+      "ko": "안녕하세요, 제 항공편을 취소해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -37301,6 +37963,16 @@
         "first_name": "Laura",
         "last_name": "Bauer",
         "phone": "+49 151 89394811"
+      },
+      "hi": {
+        "first_name": "लता",
+        "last_name": "रेड्डी",
+        "phone": "+91 89394 81129"
+      },
+      "ko": {
+        "first_name": "예나",
+        "last_name": "노",
+        "phone": "+82 10-8939-4811"
       }
     },
     "romanized_culture_overrides": {
@@ -37323,6 +37995,14 @@
       "de": {
         "first_name": "Laura",
         "last_name": "Bauer"
+      },
+      "hi": {
+        "first_name": "Lata",
+        "last_name": "Reddy"
+      },
+      "ko": {
+        "first_name": "Yena",
+        "last_name": "No"
       }
     }
   },
@@ -38160,7 +38840,9 @@
       "fr-CA": "Bonjour, je dois annuler mon vol.",
       "fr": "Bonjour, je dois annuler mon vol.",
       "es": "Hola, necesito cancelar mi vuelo.",
-      "de": "Hallo, ich muss meinen Flug stornieren."
+      "de": "Hallo, ich muss meinen Flug stornieren.",
+      "hi": "नमस्ते, मुझे अपनी उड़ान रद्द करनी है।",
+      "ko": "안녕하세요, 제 항공편을 취소해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -38187,6 +38869,16 @@
         "first_name": "Anton",
         "last_name": "Koch",
         "phone": "+49 151 71859838"
+      },
+      "hi": {
+        "first_name": "नितिन",
+        "last_name": "शुक्ला",
+        "phone": "+91 71859 83889"
+      },
+      "ko": {
+        "first_name": "은우",
+        "last_name": "전",
+        "phone": "+82 10-7185-9838"
       }
     },
     "romanized_culture_overrides": {
@@ -38209,6 +38901,14 @@
       "de": {
         "first_name": "Anton",
         "last_name": "Koch"
+      },
+      "hi": {
+        "first_name": "Nitin",
+        "last_name": "Shukla"
+      },
+      "ko": {
+        "first_name": "Eunu",
+        "last_name": "Jeon"
       }
     }
   },
@@ -39002,7 +39702,9 @@
       "fr-CA": "Je dois annuler mon vol à cause d’une urgence médicale.",
       "fr": "Je dois annuler mon vol à cause d’une urgence médicale.",
       "es": "Necesito cancelar mi vuelo por una urgencia médica.",
-      "de": "Ich muss meinen Flug wegen eines medizinischen Notfalls stornieren."
+      "de": "Ich muss meinen Flug wegen eines medizinischen Notfalls stornieren.",
+      "hi": "मुझे मेडिकल इमरजेंसी की वजह से अपनी उड़ान रद्द करनी है।",
+      "ko": "의료 응급 상황 때문에 제 항공편을 취소해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -39029,6 +39731,16 @@
         "first_name": "Stefanie",
         "last_name": "Schulz",
         "phone": "+49 151 38755090"
+      },
+      "hi": {
+        "first_name": "श्रेया",
+        "last_name": "श्रीवास्तव",
+        "phone": "+91 38755 09004"
+      },
+      "ko": {
+        "first_name": "지원",
+        "last_name": "현",
+        "phone": "+82 10-3875-5090"
       }
     },
     "romanized_culture_overrides": {
@@ -39051,6 +39763,14 @@
       "de": {
         "first_name": "Stefanie",
         "last_name": "Schulz"
+      },
+      "hi": {
+        "first_name": "Shreya",
+        "last_name": "Shrivastav"
+      },
+      "ko": {
+        "first_name": "Jiwon",
+        "last_name": "Hyeon"
       }
     }
   },
@@ -39852,7 +40572,9 @@
       "fr-CA": "Mon vol est retardé et je suis coincé à l’aéroport — est-ce que je peux avoir un bon de repas?",
       "fr": "Mon vol est retardé et je suis bloqué à l’aéroport : est-ce que je peux avoir un bon de repas ?",
       "es": "Mi vuelo está retrasado y estoy atrapado en el aeropuerto. ¿Puedo conseguir un vale de comida?",
-      "de": "Mein Flug hat Verspätung und ich sitze am Flughafen fest – kann ich einen Essensgutschein bekommen?"
+      "de": "Mein Flug hat Verspätung und ich sitze am Flughafen fest – kann ich einen Essensgutschein bekommen?",
+      "hi": "मेरी उड़ान में देरी हो गई है और मैं हवाई अड्डे पर फँसा हुआ हूँ—क्या मुझे खाने का वाउचर मिल सकता है?",
+      "ko": "제 항공편이 지연돼서 공항에 발이 묶였는데요—식사 바우처를 받을 수 있을까요?"
     },
     "culture_overrides": {
       "en": {
@@ -39879,6 +40601,16 @@
         "first_name": "Mats",
         "last_name": "Wagner",
         "phone": "+49 151 68539288"
+      },
+      "hi": {
+        "first_name": "सचिन",
+        "last_name": "पटेल",
+        "phone": "+91 68539 28834"
+      },
+      "ko": {
+        "first_name": "예준",
+        "last_name": "남",
+        "phone": "+82 10-6853-9288"
       }
     },
     "romanized_culture_overrides": {
@@ -39901,6 +40633,14 @@
       "de": {
         "first_name": "Mats",
         "last_name": "Wagner"
+      },
+      "hi": {
+        "first_name": "Sachin",
+        "last_name": "Patel"
+      },
+      "ko": {
+        "first_name": "Yejun",
+        "last_name": "Nam"
       }
     }
   },
@@ -41117,7 +41857,9 @@
       "fr-CA": "Mon vol pour Seattle a été annulé et j’ai besoin d’aide pour être replacé sur un autre vol.",
       "fr": "Mon vol pour Seattle a été annulé et j’ai besoin d’aide pour être replacé sur un autre vol.",
       "es": "Mi vuelo a Seattle ha sido cancelado y necesito ayuda para que me reubiquen en otro vuelo.",
-      "de": "Mein Flug nach Seattle wurde gestrichen und ich brauche Hilfe bei der Umbuchung."
+      "de": "Mein Flug nach Seattle wurde gestrichen und ich brauche Hilfe bei der Umbuchung.",
+      "hi": "सिएटल जाने वाली मेरी उड़ान रद्द हो गई है और मुझे दोबारा बुकिंग कराने में मदद चाहिए।",
+      "ko": "Seattle행 항공편이 취소돼서 재예약하는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -41144,6 +41886,16 @@
         "first_name": "Emil",
         "last_name": "Walter",
         "phone": "+49 151 73561052"
+      },
+      "hi": {
+        "first_name": "अक्षय",
+        "last_name": "सैनी",
+        "phone": "+91 73561 05296"
+      },
+      "ko": {
+        "first_name": "현우",
+        "last_name": "양",
+        "phone": "+82 10-7356-1052"
       }
     },
     "romanized_culture_overrides": {
@@ -41166,6 +41918,14 @@
       "de": {
         "first_name": "Emil",
         "last_name": "Walter"
+      },
+      "hi": {
+        "first_name": "Akshay",
+        "last_name": "Saini"
+      },
+      "ko": {
+        "first_name": "Hyeonu",
+        "last_name": "Yang"
       }
     }
   },
@@ -42211,7 +42971,9 @@
       "fr-CA": "J’ai besoin d’aide pour réserver un autre vol aujourd’hui.",
       "fr": "J’ai besoin d’aide pour modifier ma réservation de vol pour aujourd’hui.",
       "es": "Necesito ayuda para cambiar mi reserva a otro vuelo para hoy.",
-      "de": "Ich brauche Hilfe dabei, meinen Flug für heute umzubuchen."
+      "de": "Ich brauche Hilfe dabei, meinen Flug für heute umzubuchen.",
+      "hi": "मुझे आज के लिए अपनी उड़ान दोबारा बुक कराने में मदद चाहिए।",
+      "ko": "오늘 항공편을 재예약하는 데 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -42238,6 +43000,16 @@
         "first_name": "Annika",
         "last_name": "Meier",
         "phone": "+49 151 59587899"
+      },
+      "hi": {
+        "first_name": "अर्चना",
+        "last_name": "पटेल",
+        "phone": "+91 59587 89949"
+      },
+      "ko": {
+        "first_name": "지윤",
+        "last_name": "배",
+        "phone": "+82 10-5958-7899"
       }
     },
     "romanized_culture_overrides": {
@@ -42260,6 +43032,14 @@
       "de": {
         "first_name": "Annika",
         "last_name": "Meier"
+      },
+      "hi": {
+        "first_name": "Archana",
+        "last_name": "Patel"
+      },
+      "ko": {
+        "first_name": "Jiyun",
+        "last_name": "Bae"
       }
     }
   },
@@ -43371,7 +44151,9 @@
       "fr-CA": "Mon vol a été annulé et le nouveau vol qu’on m’a donné ne me convient pas — est-ce que vous pouvez m’aider?",
       "fr": "Mon vol a été annulé et le nouveau vol qu’on m’a attribué ne me convient pas : pouvez-vous m’aider ?",
       "es": "Mi vuelo ha sido cancelado y la alternativa que me han dado no me sirve. ¿Puede ayudarme?",
-      "de": "Mein Flug wurde gestrichen und die Umbuchung, die man mir gegeben hat, ist nicht akzeptabel – können Sie mir helfen?"
+      "de": "Mein Flug wurde gestrichen und die Umbuchung, die man mir gegeben hat, ist nicht akzeptabel – können Sie mir helfen?",
+      "hi": "मेरी उड़ान रद्द हो गई है और जो दोबारा बुकिंग उन्होंने मुझे दी है वह मुझे मंज़ूर नहीं है—क्या आप मदद कर सकते हैं?",
+      "ko": "제 항공편이 취소됐는데, 새로 예약해 준 일정으로는 어려울 것 같아요.—도와주실 수 있을까요?"
     },
     "culture_overrides": {
       "en": {
@@ -43398,6 +44180,16 @@
         "first_name": "Mila",
         "last_name": "Lehmann",
         "phone": "+49 151 43875774"
+      },
+      "hi": {
+        "first_name": "स्वाति",
+        "last_name": "कपूर",
+        "phone": "+91 43875 77468"
+      },
+      "ko": {
+        "first_name": "지윤",
+        "last_name": "안",
+        "phone": "+82 10-4387-5774"
       }
     },
     "romanized_culture_overrides": {
@@ -43420,6 +44212,14 @@
       "de": {
         "first_name": "Mila",
         "last_name": "Lehmann"
+      },
+      "hi": {
+        "first_name": "Swati",
+        "last_name": "Kapoor"
+      },
+      "ko": {
+        "first_name": "Jiyun",
+        "last_name": "An"
       }
     }
   },
@@ -44425,7 +45225,9 @@
       "fr-CA": "Mon vol est retardé de quatre heures et j’ai besoin d’aide.",
       "fr": "Mon vol a quatre heures de retard et j’ai besoin d’aide.",
       "es": "Mi vuelo lleva cuatro horas de retraso y necesito ayuda.",
-      "de": "Mein Flug hat vier Stunden Verspätung und ich brauche Hilfe."
+      "de": "Mein Flug hat vier Stunden Verspätung und ich brauche Hilfe.",
+      "hi": "मेरी उड़ान चार घंटे देरी से है और मुझे मदद चाहिए।",
+      "ko": "제 항공편이 4시간 지연돼서 도움이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -44452,6 +45254,16 @@
         "first_name": "Stefan",
         "last_name": "Kaiser",
         "phone": "+49 151 33286099"
+      },
+      "hi": {
+        "first_name": "संदीप",
+        "last_name": "पाल",
+        "phone": "+91 33286 09984"
+      },
+      "ko": {
+        "first_name": "성준",
+        "last_name": "배",
+        "phone": "+82 10-3328-6099"
       }
     },
     "romanized_culture_overrides": {
@@ -44474,6 +45286,14 @@
       "de": {
         "first_name": "Stefan",
         "last_name": "Kaiser"
+      },
+      "hi": {
+        "first_name": "Sandeep",
+        "last_name": "Pal"
+      },
+      "ko": {
+        "first_name": "Seongjun",
+        "last_name": "Bae"
       }
     }
   },
@@ -45547,7 +46367,9 @@
       "fr-CA": "Bonjour, je dois changer mon vol pour Chicago la semaine prochaine.",
       "fr": "Bonjour, je dois changer mon vol pour Chicago la semaine prochaine.",
       "es": "Hola, necesito cambiar mi vuelo a Chicago de la semana que viene.",
-      "de": "Hallo, ich muss meinen Flug nach Chicago nächste Woche ändern."
+      "de": "Hallo, ich muss meinen Flug nach Chicago nächste Woche ändern.",
+      "hi": "नमस्ते, मुझे अगले हफ्ते शिकागो जाने वाली अपनी उड़ान बदलनी है।",
+      "ko": "안녕하세요, 다음 주 Chicago행 항공편으로 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -45574,6 +46396,16 @@
         "first_name": "Christian",
         "last_name": "Müller",
         "phone": "+49 151 90416043"
+      },
+      "hi": {
+        "first_name": "विवान",
+        "last_name": "सिंह",
+        "phone": "+91 90416 04352"
+      },
+      "ko": {
+        "first_name": "준우",
+        "last_name": "최",
+        "phone": "+82 10-9041-6043"
       }
     },
     "romanized_culture_overrides": {
@@ -45596,6 +46428,14 @@
       "de": {
         "first_name": "Christian",
         "last_name": "Mueller"
+      },
+      "hi": {
+        "first_name": "Vivaan",
+        "last_name": "Singh"
+      },
+      "ko": {
+        "first_name": "Junu",
+        "last_name": "Choe"
       }
     }
   },
@@ -46946,7 +47786,9 @@
       "fr-CA": "Mon vol de ce matin a été annulé et j’ai besoin d’être replacé sur un autre vol.",
       "fr": "Mon vol de ce matin a été annulé et j’ai besoin d’être replacé sur un autre vol.",
       "es": "Me han cancelado el vuelo de esta mañana y necesito que me reubiquen en otro vuelo.",
-      "de": "Mein Flug heute Morgen wurde gestrichen und ich brauche eine Umbuchung."
+      "de": "Mein Flug heute Morgen wurde gestrichen und ich brauche eine Umbuchung.",
+      "hi": "आज सुबह मेरी उड़ान रद्द हो गई थी और मुझे दोबारा बुक किया जाना है।",
+      "ko": "오늘 아침 제 항공편이 취소돼서 재예약해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -46973,6 +47815,16 @@
         "first_name": "Julius",
         "last_name": "Möller",
         "phone": "+49 151 08032441"
+      },
+      "hi": {
+        "first_name": "हर्ष",
+        "last_name": "कुलकर्णी",
+        "phone": "+91 08032 44111"
+      },
+      "ko": {
+        "first_name": "건우",
+        "last_name": "전",
+        "phone": "+82 10-0803-2441"
       }
     },
     "romanized_culture_overrides": {
@@ -46995,6 +47847,14 @@
       "de": {
         "first_name": "Julius",
         "last_name": "Moeller"
+      },
+      "hi": {
+        "first_name": "Harsh",
+        "last_name": "Kulkarni"
+      },
+      "ko": {
+        "first_name": "Geonu",
+        "last_name": "Jeon"
       }
     }
   },
@@ -47898,7 +48758,9 @@
       "fr-CA": "Mon vol est retardé depuis des heures — est-ce que vous pouvez me donner un bon de repas et me replacer sur un autre vol gratuitement?",
       "fr": "Mon vol a des heures de retard : pouvez-vous m’obtenir un bon de repas et me replacer gratuitement sur un autre vol ?",
       "es": "Mi vuelo lleva horas retrasado. ¿Me puedes conseguir un vale de comida y cambiarme a otro vuelo sin coste?",
-      "de": "Mein Flug hat seit Stunden Verspätung – können Sie mir einen Essensgutschein besorgen und mich kostenlos umbuchen?"
+      "de": "Mein Flug hat seit Stunden Verspätung – können Sie mir einen Essensgutschein besorgen und mich kostenlos umbuchen?",
+      "hi": "मेरी उड़ान कई घंटों से देरी से चल रही है—क्या आप मुझे खाने का वाउचर दिला सकते हैं और मुझे मुफ्त में दोबारा बुक कर सकते हैं?",
+      "ko": "제 항공편이 몇 시간째 지연되고 있는데요—식사 바우처를 받고 무료로 재예약해 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -47925,6 +48787,16 @@
         "first_name": "Franziska",
         "last_name": "Kaiser",
         "phone": "+49 151 90726149"
+      },
+      "hi": {
+        "first_name": "राधिका",
+        "last_name": "राव",
+        "phone": "+91 90726 14914"
+      },
+      "ko": {
+        "first_name": "수민",
+        "last_name": "심",
+        "phone": "+82 10-9072-6149"
       }
     },
     "romanized_culture_overrides": {
@@ -47947,6 +48819,14 @@
       "de": {
         "first_name": "Franziska",
         "last_name": "Kaiser"
+      },
+      "hi": {
+        "first_name": "Radhika",
+        "last_name": "Rao"
+      },
+      "ko": {
+        "first_name": "Sumin",
+        "last_name": "Sim"
       }
     }
   },
@@ -48895,7 +49775,9 @@
       "fr-CA": "Je dois changer mon vol tout de suite à cause d’un décès dans ma famille.",
       "fr": "Je dois changer mon vol tout de suite à cause d’un décès dans ma famille.",
       "es": "Necesito cambiar mi vuelo ahora mismo debido a un fallecimiento.",
-      "de": "Ich muss meinen Flug sofort ändern, weil es einen Todesfall in meiner Familie gab."
+      "de": "Ich muss meinen Flug sofort ändern, weil es einen Todesfall in meiner Familie gab.",
+      "hi": "मुझे अपने परिवार में किसी की मृत्यु के कारण अभी अपनी उड़ान बदलनी है।",
+      "ko": "가족상 때문에 지금 바로 제 항공편을 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -48922,6 +49804,16 @@
         "first_name": "Lina",
         "last_name": "Klein",
         "phone": "+49 151 17050329"
+      },
+      "hi": {
+        "first_name": "अंजलि",
+        "last_name": "सिंह",
+        "phone": "+91 17050 32991"
+      },
+      "ko": {
+        "first_name": "서연",
+        "last_name": "구",
+        "phone": "+82 10-1705-0329"
       }
     },
     "romanized_culture_overrides": {
@@ -48944,6 +49836,14 @@
       "de": {
         "first_name": "Lina",
         "last_name": "Klein"
+      },
+      "hi": {
+        "first_name": "Anjali",
+        "last_name": "Singh"
+      },
+      "ko": {
+        "first_name": "Seoyeon",
+        "last_name": "Gu"
       }
     }
   },
@@ -49609,7 +50509,9 @@
       "fr-CA": "Je dois annuler mon vol et obtenir un remboursement complet.",
       "fr": "Je dois annuler mon vol et obtenir un remboursement intégral.",
       "es": "Necesito cancelar mi vuelo y obtener un reembolso completo.",
-      "de": "Ich muss meinen Flug stornieren und brauche eine vollständige Rückerstattung."
+      "de": "Ich muss meinen Flug stornieren und brauche eine vollständige Rückerstattung.",
+      "hi": "मुझे अपनी उड़ान रद्द करनी है और पूरे पैसे वापस लेने हैं।",
+      "ko": "제 항공편을 취소하고 전액 환불을 받아야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -49636,6 +50538,16 @@
         "first_name": "Benedikt",
         "last_name": "Hartmann",
         "phone": "+49 151 07890360"
+      },
+      "hi": {
+        "first_name": "पंकज",
+        "last_name": "अरोड़ा",
+        "phone": "+91 07890 36058"
+      },
+      "ko": {
+        "first_name": "준영",
+        "last_name": "백",
+        "phone": "+82 10-0789-0360"
       }
     },
     "romanized_culture_overrides": {
@@ -49658,6 +50570,14 @@
       "de": {
         "first_name": "Benedikt",
         "last_name": "Hartmann"
+      },
+      "hi": {
+        "first_name": "Pankaj",
+        "last_name": "Arora"
+      },
+      "ko": {
+        "first_name": "Junyeong",
+        "last_name": "Baek"
       }
     }
   },
@@ -50324,7 +51244,9 @@
       "fr-CA": "On m’a facturé un surclassement qu’on m’avait dit être gratuit — est-ce que vous pouvez corriger ça?",
       "fr": "On m’a facturé un surclassement alors qu’on m’avait dit qu’il serait gratuit : pouvez-vous corriger ça ?",
       "es": "Me han cobrado por una mejora que me dijeron que sería gratis. ¿Puede arreglarlo?",
-      "de": "Mir wurde ein Upgrade berechnet, von dem mir gesagt wurde, dass es kostenlos wäre – können Sie das korrigieren?"
+      "de": "Mir wurde ein Upgrade berechnet, von dem mir gesagt wurde, dass es kostenlos wäre – können Sie das korrigieren?",
+      "hi": "मुझसे एक अपग्रेड का चार्ज लिया गया है जिसके बारे में मुझे बताया गया था कि यह मुफ़्त होगा—क्या आप इसे ठीक कर सकते हैं?",
+      "ko": "무료라고 안내받은 업그레이드에 요금이 청구됐는데요—이거 처리해 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -50351,6 +51273,16 @@
         "first_name": "Jan",
         "last_name": "Schneider",
         "phone": "+49 151 37682662"
+      },
+      "hi": {
+        "first_name": "तरुण",
+        "last_name": "नायडू",
+        "phone": "+91 37682 66245"
+      },
+      "ko": {
+        "first_name": "시윤",
+        "last_name": "권",
+        "phone": "+82 10-3768-2662"
       }
     },
     "romanized_culture_overrides": {
@@ -50373,6 +51305,14 @@
       "de": {
         "first_name": "Jan",
         "last_name": "Schneider"
+      },
+      "hi": {
+        "first_name": "Tarun",
+        "last_name": "Naidu"
+      },
+      "ko": {
+        "first_name": "Siyun",
+        "last_name": "Gwon"
       }
     }
   },
@@ -51654,7 +52594,9 @@
       "fr-CA": "Je dois changer mon vol pour un vol plus tôt aujourd’hui.",
       "fr": "Je dois changer mon vol pour un vol plus tôt aujourd’hui.",
       "es": "Necesito cambiar mi vuelo a uno más temprano hoy.",
-      "de": "Ich muss meinen Flug auf einen früheren Flug heute ändern."
+      "de": "Ich muss meinen Flug auf einen früheren Flug heute ändern.",
+      "hi": "मुझे अपनी उड़ान आज की किसी पहले वाली उड़ान में बदलनी है।",
+      "ko": "오늘 더 이른 항공편으로 변경해야 해요."
     },
     "culture_overrides": {
       "en": {
@@ -51681,6 +52623,16 @@
         "first_name": "Amelie",
         "last_name": "Krüger",
         "phone": "+49 151 48364300"
+      },
+      "hi": {
+        "first_name": "अनिता",
+        "last_name": "अय्यर",
+        "phone": "+91 48364 30099"
+      },
+      "ko": {
+        "first_name": "유나",
+        "last_name": "공",
+        "phone": "+82 10-4836-4300"
       }
     },
     "romanized_culture_overrides": {
@@ -51703,6 +52655,14 @@
       "de": {
         "first_name": "Amelie",
         "last_name": "Krueger"
+      },
+      "hi": {
+        "first_name": "Anita",
+        "last_name": "Ayyar"
+      },
+      "ko": {
+        "first_name": "Yuna",
+        "last_name": "Gong"
       }
     }
   },
@@ -52368,7 +53328,9 @@
       "fr-CA": "J’ai besoin d’un bon d’hôtel et d’un transport jusqu’à l’hôtel pour ce soir.",
       "fr": "J’ai besoin d’un bon d’hôtel et d’un transport jusqu’à l’hôtel pour ce soir.",
       "es": "Necesito un vale de hotel y transporte al hotel para esta noche.",
-      "de": "Ich brauche für heute Nacht einen Hotelgutschein und eine Fahrt zum Hotel."
+      "de": "Ich brauche für heute Nacht einen Hotelgutschein und eine Fahrt zum Hotel.",
+      "hi": "मुझे आज रात के लिए होटल वाउचर और होटल तक जाने के लिए सवारी चाहिए।",
+      "ko": "오늘 밤 호텔 바우처와 호텔까지 갈 교통편이 필요해요."
     },
     "culture_overrides": {
       "en": {
@@ -52395,6 +53357,16 @@
         "first_name": "Lina",
         "last_name": "Lehmann",
         "phone": "+49 151 43523382"
+      },
+      "hi": {
+        "first_name": "आराध्या",
+        "last_name": "घोष",
+        "phone": "+91 43523 38265"
+      },
+      "ko": {
+        "first_name": "서아",
+        "last_name": "류",
+        "phone": "+82 10-4352-3382"
       }
     },
     "romanized_culture_overrides": {
@@ -52417,6 +53389,14 @@
       "de": {
         "first_name": "Lina",
         "last_name": "Lehmann"
+      },
+      "hi": {
+        "first_name": "Aaradhya",
+        "last_name": "Ghosh"
+      },
+      "ko": {
+        "first_name": "Seoa",
+        "last_name": "Ryu"
       }
     }
   },
@@ -52747,7 +53727,9 @@
       "fr-CA": "Est-ce que vous pouvez m’aider à chercher le vol de mon mari pour demain?",
       "fr": "Pouvez-vous m’aider à rechercher le vol de mon mari pour demain ?",
       "es": "¿Me puedes ayudar a buscar el vuelo de mi marido para mañana?",
-      "de": "Können Sie mir helfen, den Flug meines Mannes für morgen nachzuschauen?"
+      "de": "Können Sie mir helfen, den Flug meines Mannes für morgen nachzuschauen?",
+      "hi": "क्या आप मेरे पति की कल की उड़ान ढूँढने में मेरी मदद कर सकते हैं?",
+      "ko": "내일 제 남편 항공편을 확인해 주실 수 있나요?"
     },
     "culture_overrides": {
       "en": {
@@ -52794,6 +53776,24 @@
           "gender": "man"
         },
         "phone": "+49 151 96379348"
+      },
+      "hi": {
+        "first_name": "संगीता",
+        "last_name": "जैन",
+        "companion": {
+          "first_name": "कबीर",
+          "gender": "man"
+        },
+        "phone": "+91 96379 34827"
+      },
+      "ko": {
+        "first_name": "수빈",
+        "last_name": "나",
+        "companion": {
+          "first_name": "태민",
+          "gender": "man"
+        },
+        "phone": "+82 10-9637-9348"
       }
     },
     "romanized_culture_overrides": {
@@ -52830,6 +53830,20 @@
         "last_name": "Vogel",
         "companion": {
           "first_name": "Andreas"
+        }
+      },
+      "hi": {
+        "first_name": "Sangeeta",
+        "last_name": "Jain",
+        "companion": {
+          "first_name": "Kabir"
+        }
+      },
+      "ko": {
+        "first_name": "Subin",
+        "last_name": "Na",
+        "companion": {
+          "first_name": "Taemin"
         }
       }
     }

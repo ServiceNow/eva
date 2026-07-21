@@ -38,6 +38,17 @@
       "firmenzentrale",
       "geschäftszentrale",
       "unternehmenszentrale"
+    ],
+    "hi": [
+      "ऑपरेशंस सेंटर",
+      "ऑप्स सेंटर",
+      "संचालन केंद्र"
+    ],
+    "ko": [
+      "오퍼레이션 센터",
+      "옵스 센터",
+      "운영 본부",
+      "운영 센터"
     ]
   }
 }
