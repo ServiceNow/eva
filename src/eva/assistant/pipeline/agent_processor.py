@@ -419,6 +419,12 @@ class UserObserver(FrameProcessor):
         self._pending_final_transcripts: list[str] = []
         self._latest_interim_transcript = ""
 
+        # True between UserStartedSpeakingFrame and UserStoppedSpeakingFrame. The audio-LLM
+        # pipeline has no STT on the spine, so a trailing BotStoppedSpeakingFrame (from the
+        # assistant's own TTS audio still draining) is otherwise indistinguishable from real
+        # silence and can re-arm the timer while the user is already mid-turn.
+        self._user_speaking = False
+
     def _collect_partial_transcript(self) -> str:
         """Assemble whatever the STT produced since the assistant last stopped speaking."""
         parts = [p for p in self._pending_final_transcripts if p]
@@ -433,6 +439,9 @@ class UserObserver(FrameProcessor):
         # A query already running means a real turn is being processed; don't stack a nudge.
         if self._fallback_processor.query_in_flight:
             logger.debug("Skipping turn-end fallback: a user query is already being processed")
+            return
+        if self._user_speaking:
+            logger.debug("Skipping turn-end fallback: the user is currently speaking")
             return
         if not self._fallback.note_nudge():
             return
@@ -461,6 +470,12 @@ class UserObserver(FrameProcessor):
             # Log interim transcription frames for debugging
             logger.debug(f"Interim transcription received: '{frame.text}'")
             self._latest_interim_transcript = frame.text or ""
+            # An interim is live evidence the user is still speaking. On the eager-EOT STT
+            # path, UserStartedSpeaking may not fire (or a draining BotStoppedSpeaking re-arms
+            # the timer mid-utterance), so without this the nudge fires while the user talks.
+            # Re-arm rather than only cancel so the 2s window measures silence-since-last-
+            # activity: the nudge still fires 2s after the user actually goes quiet.
+            self._fallback.arm()
 
         elif isinstance(frame, TranscriptionFrame):
             transcription_text = frame.text.strip()
@@ -489,13 +504,24 @@ class UserObserver(FrameProcessor):
             self._fallback.cancel()
 
         elif isinstance(frame, BotStoppedSpeakingFrame):
-            # Assistant finished; start the clock waiting for the user to respond.
-            self._fallback.arm()
+            # The transport fires this after ~350ms of silence in the outgoing audio, which
+            # also happens *between* TTS chunks within a single multi-sentence response (the
+            # agent pushes one speak frame per sentence). Only start the clock if the query
+            # that's driving those chunks has actually finished; otherwise more speech is
+            # still coming and arming here just races the assistant's own output. Also skip
+            # if the user is already mid-turn: a trailing BotStoppedSpeakingFrame from the
+            # assistant's own draining TTS audio can land after UserStartedSpeakingFrame and
+            # would otherwise re-arm the timer against a turn that's already in progress.
+            if not self._user_speaking and (
+                self._fallback_processor is None or not self._fallback_processor.query_in_flight
+            ):
+                self._fallback.arm()
 
         elif isinstance(frame, UserStartedSpeakingFrame):
             # The user is speaking: cancel the fallback so it never fires mid-turn. Pipecat's
             # own user_turn_stop_timeout watchdog still finalizes a genuinely stuck-open turn,
             # so cancelling here does not lose that case.
+            self._user_speaking = True
             self._fallback.cancel()
 
         elif isinstance(frame, UserStoppedSpeakingFrame):
@@ -504,6 +530,7 @@ class UserObserver(FrameProcessor):
             # timer via the processor's process_complete_user_turn (fired separately through the
             # on_user_turn_stopped event handler); the query_in_flight guard there prevents this
             # re-arm from racing it into a spurious nudge.
+            self._user_speaking = False
             if self._fallback_processor is None or not self._fallback_processor.query_in_flight:
                 self._fallback.arm()
 

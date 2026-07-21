@@ -372,6 +372,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     alm_client=alm_client,
                     audio_collector=audio_llm_audio_collector,
                     output_dir=self.output_dir,
+                    pre_tool_speech=self.pipeline_config.pre_tool_speech,
                     llm_streaming=self.pipeline_config.llm_streaming,
                     full_audio_context=self.pipeline_config.audio_llm_params.get("full_audio_context", False),
                 )
