@@ -427,7 +427,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     output_dir=self.output_dir,
                     pre_tool_speech=self.pipeline_config.pre_tool_speech,
                     llm_streaming=self.pipeline_config.llm_streaming,
-                    turn_end_fallback_time=self.turn_end_fallback_time,
                 )
 
                 async def on_assistant_response(msg: str) -> None:
@@ -592,14 +591,26 @@ class PipecatAssistantServer(AbstractAssistantServer):
             pipeline_components.append(stt)
             # CRITICAL ORDER: Processors that need to SEE frames must come BEFORE user_aggregator
             # because user_aggregator CONSUMES frames (doesn't pass through)
-            pipeline_components.append(UserObserver())  # For metrics
+            # UserObserver also hosts the turn-end fallback timer (arms/cancels on the bot/user
+            # speaking frames it sees here on the spine) and drives agent_processor's nudge.
+            pipeline_components.append(
+                UserObserver(
+                    turn_end_fallback_time=self.turn_end_fallback_time,
+                    fallback_processor=agent_processor,
+                )
+            )
             pipeline_components.append(user_aggregator)  # Aggregates & fires turn events
             # Add agent processor (receives turn events via event handler)
             pipeline_components.append(agent_processor)
         elif audio_llm_processor:
             # Audio-LLM pipeline: collector buffers audio, processor handles turns
             pipeline_components.append(audio_llm_audio_collector)  # Buffers audio frames
-            pipeline_components.append(UserObserver())  # For metrics
+            pipeline_components.append(
+                UserObserver(
+                    turn_end_fallback_time=self.turn_end_fallback_time,
+                    fallback_processor=audio_llm_processor,
+                )
+            )
             pipeline_components.append(user_aggregator)  # Aggregates & fires turn events
             pipeline_components.append(
                 ParallelPipeline(

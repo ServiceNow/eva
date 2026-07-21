@@ -39,6 +39,7 @@ from pipecat.utils.time import time_now_iso8601
 from eva.assistant.agentic.audio_llm_system import AudioLLMAgenticSystem
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.pipeline.alm_base import BaseALMClient
+from eva.assistant.pipeline.fallback import TurnEndFallbackTimer, build_fallback_nudge
 from eva.assistant.pipeline.frames import LLMMessageFrame
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
@@ -215,8 +216,17 @@ class AudioLLMProcessor(FrameProcessor):
         self._current_query_task: asyncio.Task | None = None
         self._interrupted = asyncio.Event()
 
+        # Turn-end fallback timer, owned and driven by UserObserver (set there during pipeline
+        # wiring); used here to cancel/reset on a real completed user turn.
+        self.fallback_timer: TurnEndFallbackTimer | None = None
+
         # Optional callback for transcript saving (set by pipecat_server.py)
         self.on_assistant_response: Awaitable | None = None
+
+    @property
+    def query_in_flight(self) -> bool:
+        """True while a real or nudge query is being processed (used by the fallback timer)."""
+        return self._current_query_task is not None and not self._current_query_task.done()
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
         if isinstance(frame, (EndFrame, CancelFrame)):
@@ -273,6 +283,11 @@ class AudioLLMProcessor(FrameProcessor):
             except asyncio.CancelledError:
                 pass
 
+        # A real user turn landed: cancel any pending nudge and reset the give-up counter.
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
+            self.fallback_timer.reset_counter()
+
         self._interrupted.clear()
         logger.info(f"Processing audio-LLM user turn ({len(audio_bytes)} bytes)")
 
@@ -317,6 +332,50 @@ class AudioLLMProcessor(FrameProcessor):
             except Exception:
                 logger.debug("Failed to send error message (pipeline may be closed)")
 
+    async def process_turn_fallback(self, timeout_seconds: int | None, partial: str = "") -> None:
+        """Nudge the assistant when turn-end detection times out without a completed user turn.
+
+        Called by ``UserObserver`` when the fallback timer fires. Unlike a real turn (which
+        sends buffered audio via ``process_query_with_audio``), this injects a **text** nudge
+        through the inherited ``process_query`` — there is no user audio to attach. A marker is
+        logged with ``message_type="turn_fallback"`` so metrics can skip/zero it.
+
+        Args:
+            timeout_seconds: The configured ``EVA_TURN_END_FALLBACK_TIME`` value.
+            partial: Best-effort partial transcript (typically empty for audio-LLM, which has
+                no STT transcript on the pipeline spine).
+        """
+        self._interrupted.clear()
+        marker, nudge = build_fallback_nudge(timeout_seconds, partial)
+        self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=nudge)
+
+        self._current_query_task = asyncio.create_task(self._process_text_query(nudge))
+        try:
+            await self._current_query_task
+        except asyncio.CancelledError:
+            logger.info("Turn-end fallback processing interrupted")
+        finally:
+            self._current_query_task = None
+
+    async def _process_text_query(self, text: str) -> None:
+        """Drive the audio-LLM with a text-only query (used for fallback nudges).
+
+        Uses the inherited text ``process_query`` rather than the audio path; ``log_user_input``
+        is False because the marker was already recorded by ``process_turn_fallback``.
+        """
+        try:
+            async for response in self.agentic_system.process_query(text, log_user_input=False):
+                if self._interrupted.is_set():
+                    logger.info("Skipping response - interrupted")
+                    return
+                if response:
+                    await self._handle_response(response)
+        except asyncio.CancelledError:
+            logger.debug("Fallback text query cancelled during pipeline shutdown")
+            raise
+        except Exception as e:
+            logger.error(f"Error processing fallback text query: {e}", exc_info=True)
+
     async def _handle_response(self, message: str) -> None:
         """Push response to TTS. Mirrors BenchmarkAgentProcessor._handle_response."""
         if self._interrupted.is_set():
@@ -347,6 +406,10 @@ class AudioLLMProcessor(FrameProcessor):
     async def stop(self):
         """Stop the processor and cleanup."""
         logger.info("Stopping AudioLLMProcessor...")
+
+        # Cancel any pending turn-end fallback timer (owned by UserObserver)
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
 
         self._interrupted.set()
         if self._current_query_task and not self._current_query_task.done():
@@ -497,6 +560,7 @@ class AudioTranscriptionProcessor(FrameProcessor):
         Args:
             audio_data: Raw PCM audio bytes to transcribe.
             timestamp: ISO8601 timestamp for the transcription.
+            source_sample_rate: Sample rate of the input audio.
             turn_id: Optional turn identifier for associating with audit log entry.
 
         Returns:

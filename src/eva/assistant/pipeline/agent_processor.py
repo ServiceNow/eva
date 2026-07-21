@@ -22,6 +22,7 @@ from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.agentic.system import AgenticSystem
+from eva.assistant.pipeline.fallback import TurnEndFallbackTimer, build_fallback_nudge
 from eva.assistant.pipeline.frames import (
     LLMMessageFrame,
     SpokenMessageFrame,
@@ -64,7 +65,6 @@ class BenchmarkAgentProcessor(FrameProcessor):
         output_dir=None,
         pre_tool_speech: str = "off",
         llm_streaming: bool = False,
-        turn_end_fallback_time: int | None = None,
         **kwargs,
     ) -> None:
         """Initialize the agent processor.
@@ -78,10 +78,10 @@ class BenchmarkAgentProcessor(FrameProcessor):
             output_dir: Optional output directory for saving performance stats
             pre_tool_speech: Lead-in mode ('off'|'auto')
             llm_streaming: Stream LLM output sentence-by-sentence
-            turn_end_fallback_time: Seconds of silence after the assistant stops speaking
-                before nudging it to retry (VAD-driven). ``None`` disables the fallback and
-                preserves the old behavior of waiting for the provider's inactivity timeout.
             **kwargs: Additional keyword arguments passed to FrameProcessor
+
+        The turn-end fallback timer is hosted by ``UserObserver`` (on the pipeline spine), which
+        calls this processor's ``process_turn_fallback`` when it fires; see ``fallback.py``.
         """
         super().__init__(**kwargs)
 
@@ -109,18 +109,9 @@ class BenchmarkAgentProcessor(FrameProcessor):
         self._user_speaking = False
         self._bot_speaking = False
 
-        # Turn-end fallback: a fresh timer is armed each time the assistant stops speaking
-        # and fires `turn_end_fallback_time` seconds later REGARDLESS of what VAD reports.
-        # The fallback exists precisely for when VAD is wrong (e.g. it never closes the
-        # user's turn), so it deliberately does not defer to VAD speech-start signals.
-        self._turn_end_fallback_time = turn_end_fallback_time
-        self._fallback_timer_task: asyncio.Task | None = None
-        self._consecutive_fallback_nudges = 0
-        self._max_consecutive_fallback_nudges = 3
-        # Best-effort partial user transcription captured since the assistant last spoke,
-        # so a fallback nudge can forward whatever we have instead of claiming silence.
-        self._pending_final_transcripts: list[str] = []
-        self._latest_interim_transcript = ""
+        # Turn-end fallback timer, owned and driven by UserObserver. Set there during pipeline
+        # wiring; used here to cancel/reset on a real completed user turn.
+        self.fallback_timer: TurnEndFallbackTimer | None = None
 
         # Interruption handling
         self._current_query_task: asyncio.Task | None = None
@@ -138,30 +129,18 @@ class BenchmarkAgentProcessor(FrameProcessor):
             await self.push_frame(frame, direction)
             return
 
-        # Capture in-progress transcription so a turn-end fallback can forward it.
-        if isinstance(frame, InterimTranscriptionFrame):
-            self._latest_interim_transcript = frame.text or ""
-
         # Check if frame type requires special processing
         if any(isinstance(frame, frame_type) for frame_type in WEBSOCKET_FRAME_TYPES):
             if isinstance(frame, TranscriptionFrame):
                 # Log transcription but don't process it
                 # Processing happens via on_user_turn_stopped event handler
                 logger.info(f"TranscriptionFrame (partial): {frame.text}")
-                # Buffer finalized segments so a fallback nudge can forward whatever the
-                # STT has produced so far; a finalized segment supersedes stale interim text.
-                if frame.text:
-                    self._pending_final_transcripts.append(frame.text)
-                    self._latest_interim_transcript = ""
                 # Frame will be aggregated by Pipecat's turn management
                 # and processed when on_user_turn_stopped fires
 
             elif isinstance(frame, UserStartedSpeakingFrame):
                 logger.info("User started speaking")
                 self._user_speaking = True
-                # NOTE: deliberately do NOT cancel the fallback timer here. VAD detecting
-                # speech does not mean the turn will ever complete; the fallback must still
-                # fire if VAD gets stuck. Only a fully completed turn cancels it.
 
             elif isinstance(frame, UserStoppedSpeakingFrame):
                 logger.info("User stopped speaking")
@@ -171,14 +150,10 @@ class BenchmarkAgentProcessor(FrameProcessor):
             elif isinstance(frame, BotStartedSpeakingFrame):
                 logger.info("Bot started speaking")
                 self._bot_speaking = True
-                # The assistant is talking; don't count this window toward the fallback.
-                self._cancel_fallback_timer()
 
             elif isinstance(frame, BotStoppedSpeakingFrame):
                 logger.info("Bot stopped speaking")
                 self._bot_speaking = False
-                # Assistant finished; start the clock waiting for the user to respond.
-                self._arm_fallback_timer()
 
             elif isinstance(frame, TurnTimestampFrame):
                 if frame.role == "assistant":
@@ -204,34 +179,11 @@ class BenchmarkAgentProcessor(FrameProcessor):
             self._current_query_task = None
         await super()._start_interruption()
 
-    def _arm_fallback_timer(self) -> None:
-        """Start a fresh turn-end fallback timer once the assistant stops speaking.
-
-        No-op when the fallback is disabled. Any previously armed timer is cancelled first
-        so only one window is ever pending.
-        """
-        if self._turn_end_fallback_time is None:
-            return
-        self._cancel_fallback_timer()
-        self._fallback_timer_task = asyncio.create_task(self._fallback_timer_loop())
-
-    def _cancel_fallback_timer(self) -> None:
-        """Cancel a pending turn-end fallback timer, if any."""
-        if self._fallback_timer_task and not self._fallback_timer_task.done():
-            self._fallback_timer_task.cancel()
-        self._fallback_timer_task = None
-
-    async def _fallback_timer_loop(self) -> None:
-        """Wait out the fallback window, then nudge the assistant to retry.
-
-        Cancelled (via ``_cancel_fallback_timer``) the instant the user starts speaking or
-        the assistant speaks again, so it only fires on genuine user silence.
-        """
-        try:
-            await asyncio.sleep(self._turn_end_fallback_time)
-        except asyncio.CancelledError:
-            return
-        await self.process_turn_fallback(self._turn_end_fallback_time)
+    def _reset_fallback_on_real_turn(self) -> None:
+        """A real user turn landed: cancel any pending nudge and reset the give-up counter."""
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
+            self.fallback_timer.reset_counter()
 
     async def process_complete_user_turn(self, text: str) -> None:
         """Process a complete user turn from Pipecat's turn management.
@@ -246,12 +198,9 @@ class BenchmarkAgentProcessor(FrameProcessor):
             logger.debug("Ignoring empty user turn")
             return
 
-        # A real user turn landed: cancel any pending nudge, reset the give-up counter so
-        # each true turn gets a fresh allowance, and clear the partial-transcript buffer.
-        self._cancel_fallback_timer()
-        self._consecutive_fallback_nudges = 0
-        self._pending_final_transcripts.clear()
-        self._latest_interim_transcript = ""
+        # A real user turn landed: cancel any pending nudge and reset the give-up counter so
+        # each true turn gets a fresh allowance.
+        self._reset_fallback_on_real_turn()
 
         # Cancel any previous query still running
         if self._current_query_task and not self._current_query_task.done():
@@ -276,72 +225,26 @@ class BenchmarkAgentProcessor(FrameProcessor):
         finally:
             self._current_query_task = None
 
-    def _collect_partial_transcript(self) -> str:
-        """Assemble whatever the STT produced since the assistant last stopped speaking.
+    @property
+    def query_in_flight(self) -> bool:
+        """True while a real or nudge query is being processed (used by the fallback timer)."""
+        return self._current_query_task is not None and not self._current_query_task.done()
 
-        Combines finalized segments with the most recent (still un-finalized) interim text,
-        so a turn-end fallback can forward it instead of claiming no audio was received.
-        """
-        parts = [p for p in self._pending_final_transcripts if p]
-        if self._latest_interim_transcript:
-            parts.append(self._latest_interim_transcript)
-        return " ".join(parts).strip()
-
-    async def process_turn_fallback(self, timeout_seconds: int | None) -> None:
+    async def process_turn_fallback(self, timeout_seconds: int | None, partial: str = "") -> None:
         """Nudge the agent when turn-end detection times out without a completed user turn.
 
-        The fallback does not defer to VAD: it fires once the window elapses even if VAD
-        thinks the user is still speaking. Any partial transcription captured so far is
-        forwarded to the model (flagged as possibly incomplete) rather than claiming
-        silence. A marker is logged (flagged as a fallback turn) so metrics can skip/zero it.
+        Called by ``UserObserver`` when the fallback timer fires (which owns the give-up
+        counter and query-in-flight guard). Any partial transcription captured so far is
+        forwarded to the model (flagged as possibly incomplete) rather than claiming silence.
+        A marker is logged (``message_type="turn_fallback"``) so metrics can skip/zero it.
 
         Args:
-            timeout_seconds: The configured `EVA_TURN_END_FALLBACK_TIME` value.
+            timeout_seconds: The configured ``EVA_TURN_END_FALLBACK_TIME`` value.
+            partial: Best-effort partial user transcription captured since the assistant last
+                spoke; empty string if none.
         """
-        # A query already running means a real turn is being processed; don't stack a nudge.
-        if self._current_query_task and not self._current_query_task.done():
-            logger.debug("Skipping turn-end fallback: a user query is already being processed")
-            return
-
-        # Give up after too many nudges in a row without the user coming back. Stop nudging
-        # and let the provider's inactivity backstop end the call (the pre-fallback behavior).
-        self._consecutive_fallback_nudges += 1
-        if self._consecutive_fallback_nudges > self._max_consecutive_fallback_nudges:
-            logger.warning(
-                f"Turn-end fallback exhausted after {self._max_consecutive_fallback_nudges} "
-                "consecutive nudges without a user turn; leaving the call to the inactivity backstop"
-            )
-            return
-
         self._interrupted.clear()
-        partial = self._collect_partial_transcript()
-        # Consume the buffer so the next window starts fresh.
-        self._pending_final_transcripts.clear()
-        self._latest_interim_transcript = ""
-
-        if partial:
-            marker = (
-                f"turn-end not detected within {timeout_seconds}s; partial user speech: {partial!r}"
-            )
-            nudge = (
-                f"[Turn-end detection timed out after {timeout_seconds}s. The user may not have "
-                f"finished speaking and this transcription may be incomplete: {partial!r}. "
-                "If it is clear enough, respond to it; otherwise briefly ask the caller to finish "
-                "or repeat, continuing in the same language and tone as the conversation so far. "
-                "Do not mention this system note.]"
-            )
-        else:
-            marker = f"no user speech detected within {timeout_seconds}s"
-            nudge = (
-                f"[Turn-end detection timed out after {timeout_seconds}s with no user speech "
-                "captured. Briefly ask the caller to repeat what they said, continuing in the "
-                "same language and tone as the conversation so far. Do not mention this system note.]"
-            )
-
-        logger.info(
-            f"Turn-end fallback nudge "
-            f"({self._consecutive_fallback_nudges}/{self._max_consecutive_fallback_nudges}): {marker}"
-        )
+        marker, nudge = build_fallback_nudge(timeout_seconds, partial)
         self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=nudge)
 
         self._current_query_task = asyncio.create_task(self._process_user_query(nudge, log_user_input=False))
@@ -426,8 +329,9 @@ class BenchmarkAgentProcessor(FrameProcessor):
         """Stop the processor and cleanup."""
         logger.info("Stopping AgentProcessor...")
 
-        # Cancel any pending turn-end fallback timer
-        self._cancel_fallback_timer()
+        # Cancel any pending turn-end fallback timer (owned by UserObserver)
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
 
         # Cancel any in-progress query
         self._interrupted.set()
@@ -469,27 +373,94 @@ class BenchmarkAgentProcessor(FrameProcessor):
 
 
 class UserObserver(FrameProcessor):
-    """Observes STT transcription frames and VAD events to track latency metrics and emit user messages."""
+    """Observes STT/VAD frames on the pipeline spine to track latency metrics and host the turn-end fallback timer.
 
-    def __init__(self, **kwargs):
-        """Initialize the user observer."""
+    Sits before ``user_aggregator`` (which consumes turn frames) in every pipeline flavor, so
+    it sees both the user turn frames and the TTS-originated ``Bot*SpeakingFrame`` frames that
+    flow upstream. That makes it the natural home for the turn-end fallback timer, which must
+    arm/cancel on those frames and works identically for the cascade and audio-LLM pipelines.
+    The nudge itself is injected by the pipeline-specific ``fallback_processor`` (which owns the
+    model/query machinery); this observer only owns the timer, the give-up counter, and the
+    best-effort partial-transcript buffer.
+    """
+
+    def __init__(
+        self,
+        turn_end_fallback_time: int | None = None,
+        fallback_processor=None,
+        **kwargs,
+    ):
+        """Initialize the user observer.
+
+        Args:
+            turn_end_fallback_time: Seconds of undetected user silence after the assistant
+                stops speaking before nudging it to reprompt. ``None`` disables the fallback.
+            fallback_processor: The pipeline-specific processor whose ``process_turn_fallback``
+                injects the nudge (cascade ``BenchmarkAgentProcessor`` or audio-LLM
+                ``AudioLLMProcessor``). It is given a back-reference to the timer so a real
+                completed user turn can cancel/reset it.
+            kwargs: args to be sent to the parent FrameProcessor
+        """
         super().__init__(**kwargs)
         self._last_transcription_time: float | None = None
         self._user_context = []
 
+        # Turn-end fallback timer. Armed when the assistant stops speaking; cancelled when the
+        # assistant or the user starts speaking; re-armed when the user stops speaking without a
+        # completed turn. On fire, forwards any captured partial transcript to the processor.
+        self._fallback = TurnEndFallbackTimer(turn_end_fallback_time, self._on_fallback_fire)
+        self._fallback_processor = fallback_processor
+        if fallback_processor is not None:
+            fallback_processor.fallback_timer = self._fallback
+
+        # Best-effort partial user transcription captured since the assistant last spoke, so a
+        # fallback nudge can forward whatever we have instead of claiming silence. Only populated
+        # in the cascade pipeline (audio-LLM has no STT transcript on the spine).
+        self._pending_final_transcripts: list[str] = []
+        self._latest_interim_transcript = ""
+
+    def _collect_partial_transcript(self) -> str:
+        """Assemble whatever the STT produced since the assistant last stopped speaking."""
+        parts = [p for p in self._pending_final_transcripts if p]
+        if self._latest_interim_transcript:
+            parts.append(self._latest_interim_transcript)
+        return " ".join(parts).strip()
+
+    async def _on_fallback_fire(self, timeout_seconds: int | None) -> None:
+        """Timer callback: nudge the assistant to reprompt on undetected user silence."""
+        if self._fallback_processor is None:
+            return
+        # A query already running means a real turn is being processed; don't stack a nudge.
+        if self._fallback_processor.query_in_flight:
+            logger.debug("Skipping turn-end fallback: a user query is already being processed")
+            return
+        if not self._fallback.note_nudge():
+            return
+        partial = self._collect_partial_transcript()
+        self._pending_final_transcripts.clear()
+        self._latest_interim_transcript = ""
+        logger.info(
+            f"Turn-end fallback nudge "
+            f"({self._fallback.consecutive_nudges}/{self._fallback.max_consecutive_nudges}): "
+            f"{'partial: ' + partial if partial else 'no user speech'} within {timeout_seconds}s"
+        )
+        await self._fallback_processor.process_turn_fallback(timeout_seconds, partial)
+
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> Awaitable[Frame]:
-        """Process frames to track transcription timing and VAD events.
+        """Process frames to track transcription timing, VAD events, and the fallback timer.
 
         - Tracks the timing between STT responses and VAD firing to calculate the "VAD buffer" -
           how much latency exists between the last transcription chunk and when speech detection ends.
         - Emits UserMessageFrame for each TranscriptionFrame to allow other processors to observe
           user transcriptions without interfering with the context aggregator.
+        - Arms/cancels the turn-end fallback timer on bot/user speaking frames.
         """
         await super().process_frame(frame, direction)
 
         if isinstance(frame, InterimTranscriptionFrame):
             # Log interim transcription frames for debugging
             logger.debug(f"Interim transcription received: '{frame.text}'")
+            self._latest_interim_transcript = frame.text or ""
 
         elif isinstance(frame, TranscriptionFrame):
             transcription_text = frame.text.strip()
@@ -497,6 +468,11 @@ class UserObserver(FrameProcessor):
                 # Track final transcription time for VAD buffer calculation
                 self._last_transcription_time = time.time()
                 self._user_context.append({"role": "user", "content": transcription_text})
+
+                # Buffer finalized segments so a fallback nudge can forward whatever the STT
+                # has produced so far; a finalized segment supersedes stale interim text.
+                self._pending_final_transcripts.append(transcription_text)
+                self._latest_interim_transcript = ""
 
                 # Log partial transcription (buffered by user_aggregator, not processed immediately)
                 logger.info(f"TranscriptionFrame (buffered): '{transcription_text}'")
@@ -508,7 +484,29 @@ class UserObserver(FrameProcessor):
                 # NOTE: Do NOT push UserContextFrame here - it triggers immediate LLM processing!
                 # The on_user_turn_stopped event handler will process the complete turn.
 
+        elif isinstance(frame, BotStartedSpeakingFrame):
+            # The assistant is talking; this window does not count toward the fallback.
+            self._fallback.cancel()
+
+        elif isinstance(frame, BotStoppedSpeakingFrame):
+            # Assistant finished; start the clock waiting for the user to respond.
+            self._fallback.arm()
+
+        elif isinstance(frame, UserStartedSpeakingFrame):
+            # The user is speaking: cancel the fallback so it never fires mid-turn. Pipecat's
+            # own user_turn_stop_timeout watchdog still finalizes a genuinely stuck-open turn,
+            # so cancelling here does not lose that case.
+            self._fallback.cancel()
+
         elif isinstance(frame, UserStoppedSpeakingFrame):
+            # Re-arm so a turn that never completes (e.g. empty transcript, and the bot never
+            # speaks again) still eventually nudges. A real completed turn cancels/resets the
+            # timer via the processor's process_complete_user_turn (fired separately through the
+            # on_user_turn_stopped event handler); the query_in_flight guard there prevents this
+            # re-arm from racing it into a spurious nudge.
+            if self._fallback_processor is None or not self._fallback_processor.query_in_flight:
+                self._fallback.arm()
+
             # Track VAD events (when user stops speaking)
             if self._last_transcription_time is not None:
                 current_time = time.time()
@@ -524,8 +522,6 @@ class UserObserver(FrameProcessor):
 
                 # Reset for next turn
                 self._last_transcription_time = None
-            else:
-                logger.warning("VAD fired but no previous transcription timestamp found")
 
         await self.push_frame(frame, direction)
 

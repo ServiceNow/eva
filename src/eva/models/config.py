@@ -629,9 +629,11 @@ class RunConfig(BaseSettings):
         None,
         ge=1,
         description=(
-            "Seconds of user-turn inactivity after which the assistant is nudged to retry "
-            "('try again, I didn't catch that') instead of waiting for the old hard "
-            "inactivity timeout. When unset, falls back to the old behavior of ending the "
+            "Seconds of user silence after the assistant stops speaking before nudging it to "
+            "reprompt the caller ('sorry, I didn't catch that'), instead of waiting for the old "
+            "hard inactivity timeout. Cancelled the moment the user starts speaking, so it only "
+            "fires when turn detection drops a user turn. Applies to the Pipecat cascade and "
+            "audio-LLM pipelines. When unset, falls back to the old behavior of ending the "
             "conversation after the provider's inactivity timeout elapses."
         ),
     )
