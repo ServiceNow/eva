@@ -295,13 +295,12 @@ class ModelConfig(BaseModel):
         allowed = {"off", "auto"}
         if self.pre_tool_speech not in allowed:
             raise ValueError(f"pre_tool_speech must be one of {sorted(allowed)}, got '{self.pre_tool_speech}'")
-        # llm_streaming is honored by AUDIO_LLM too (via BaseALMClient.complete_stream); only
-        # pre_tool_speech / parallel_tool_calls remain CASCADE-only.
-        cascade_only_set = self.pre_tool_speech != "off" or self.parallel_tool_calls is not None
-        if cascade_only_set and self.pipeline_type != PipelineType.CASCADE:
+        # pre_tool_speech is honored by both CASCADE and AUDIO_LLM; llm_streaming by both
+        # (via BaseALMClient.complete_stream); only parallel_tool_calls remains CASCADE-only.
+        if self.parallel_tool_calls is not None and self.pipeline_type != PipelineType.CASCADE:
             logger.warning(
-                "Cascade LLM flags (pre_tool_speech / parallel_tool_calls) apply only to the CASCADE "
-                f"pipeline; they will be ignored for pipeline_type={self.pipeline_type}."
+                "parallel_tool_calls applies only to the CASCADE pipeline; it will be ignored "
+                f"for pipeline_type={self.pipeline_type}."
             )
         return self
 
