@@ -1194,7 +1194,7 @@
       "fr": "Bonjour, je dois changer mon vol pour le 25 mars.",
       "es": "Hola, necesito cambiar mi vuelo al 25 de marzo.",
       "de": "Hallo, ich muss meinen Flug auf den 25. März umbuchen.",
-      "hi": "नमस्ते, मुझे अपनी उड़ान 25 मार्च के लिए बदलनी है।",
+      "hi": "नमस्ते, मुझे अपनी उड़ान की तारीख 25 मार्च करनी है।",
       "ko": "안녕하세요, 제 항공편을 3월 25일로 변경해야 해요."
     },
     "culture_overrides": {
@@ -2401,7 +2401,7 @@
       "fr": "Je dois avancer la date de mon vol.",
       "es": "Necesito adelantar mi vuelo.",
       "de": "Ich muss meinen Flug auf ein früheres Datum umbuchen.",
-      "hi": "मुझे अपनी उड़ान किसी पहले की तारीख पर बदलनी है।",
+      "hi": "मुझे अपनी उड़ान की तारीख बदलकर पहले की करनी है।",
       "ko": "제 항공편을 더 이른 날짜로 변경해야 해요."
     },
     "culture_overrides": {
@@ -7882,7 +7882,7 @@
       "fr": "Bonjour, je vais rater mon vol ce matin — pouvez-vous me mettre sur un vol plus tard aujourd’hui ?",
       "es": "Hola, voy a perder mi vuelo de esta mañana. ¿Me podéis cambiar a uno más tarde hoy?",
       "de": "Hallo, ich werde meinen Flug heute Morgen verpassen – können Sie mich heute auf einen späteren Flug umbuchen?",
-      "hi": "नमस्ते, आज सुबह मेरी उड़ान छूटने वाली है—क्या आप मुझे आज की किसी बाद वाली उड़ान में कर सकते हैं?",
+      "hi": "नमस्ते, आज सुबह की मेरी उड़ान छूटने वाली है—क्या आप मुझे आज की किसी बाद वाली उड़ान में डाल सकते हैं?",
       "ko": "안녕하세요, 오늘 아침 항공편을 놓칠 것 같은데요—오늘 더 늦은 항공편으로 바꿔 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -9276,7 +9276,7 @@
       "fr": "Bonjour, je dois changer mon vol pour un départ plus tôt dans la journée.",
       "es": "Hola, necesito cambiar mi vuelo a una salida más temprana durante el día.",
       "de": "Hallo, ich muss meinen Flug auf einen früheren Abflug tagsüber umbuchen.",
-      "hi": "नमस्ते, मुझे अपनी उड़ान दिन के समय की किसी पहले वाली रवानगी में बदलनी है।",
+      "hi": "नमस्ते, मुझे अपनी उड़ान को बदलकर पहले की किसी दिन की उड़ान में करना है।",
       "ko": "안녕하세요, 제 항공편을 더 이른 낮 시간 출발편으로 변경해야 해요."
     },
     "culture_overrides": {
@@ -10706,7 +10706,7 @@
       "fr": "Je dois changer la destination de mon vol pour Detroit.",
       "es": "Necesito cambiar el destino de mi vuelo a Detroit.",
       "de": "Ich muss mein Flugziel auf Detroit ändern.",
-      "hi": "मुझे अपनी उड़ान का गंतव्य डेट्रॉइट में बदलना है।",
+      "hi": "मुझे अपनी उड़ान का गंतव्य डेट्रॉइट करना है।",
       "ko": "제 항공편 목적지를 Detroit로 변경해야 해요."
     },
     "culture_overrides": {
@@ -11989,7 +11989,7 @@
       "fr": "Je dois changer mon vol pour partir de Newark au lieu de JFK.",
       "es": "Necesito cambiar mi vuelo para salir desde Newark en vez de JFK.",
       "de": "Ich muss meinen Flug so ändern, dass er von Newark statt von JFK abfliegt.",
-      "hi": "मुझे अपनी उड़ान JFK के बजाय नेवार्क से रवाना होने वाली करनी है।",
+      "hi": "मुझे अपनी उड़ान में बदलाव करके जेएफके  के बजाय नेवार्क से प्रस्थान करना है।",
       "ko": "제 항공편 출발지를 JFK 대신 Newark로 변경해야 해요."
     },
     "culture_overrides": {
@@ -13194,7 +13194,7 @@
       "fr": "Mon vol pour Chicago a été annulé — pouvez-vous me mettre sur un autre vol aujourd’hui ?",
       "es": "Mi vuelo a Chicago se ha cancelado. ¿Me podéis poner en otro vuelo hoy?",
       "de": "Mein Flug nach Chicago wurde gestrichen – können Sie mich heute auf einen anderen Flug umbuchen?",
-      "hi": "शिकागो जाने वाली मेरी उड़ान रद्द हो गई—क्या आप मुझे आज किसी दूसरी उड़ान में कर सकते हैं?",
+      "hi": "शिकागो जाने वाली मेरी उड़ान रद्द हो गई—क्या आप मुझे आज किसी दूसरी उड़ान में डाल सकते हैं?",
       "ko": "Chicago행 제 항공편이 취소됐는데요—오늘 다른 항공편으로 잡아 주실 수 있나요?"
     },
     "culture_overrides": {
@@ -16567,7 +16567,7 @@
       "fr": "Mon vol est retardé et je dois passer sur un autre vol.",
       "es": "Mi vuelo va con retraso y necesito cambiarme a otro vuelo.",
       "de": "Mein Flug hat Verspätung und ich muss auf einen anderen Flug wechseln.",
-      "hi": "मेरी उड़ान में देरी है और मुझे किसी दूसरी उड़ान में बदलना है।",
+      "hi": "मेरी उड़ान विलंबित है और मुझे अपनी उड़ान बदलनी है।।",
       "ko": "제 항공편이 지연돼서 다른 항공편으로 바꿔야 해요."
     },
     "culture_overrides": {
@@ -17613,7 +17613,7 @@
       "fr": "Bonjour, j’appelle au sujet de mon vol retardé — pouvez-vous me donner les informations mises à jour ?",
       "es": "Hola, llamo por mi vuelo retrasado. ¿Me podéis decir los detalles actualizados?",
       "de": "Hallo, ich rufe wegen meines verspäteten Flugs an – können Sie mir die neusten Updates nennen?",
-      "hi": "नमस्ते, मैं अपनी देरी वाली उड़ान के बारे में कॉल कर रहा/रही हूँ—क्या आप मुझे अपडेट की हुई जानकारी बता सकते हैं?",
+      "hi": "नमस्ते, मैं अपनी विलंबित उड़ान के बारे में कॉल कर रहा/रही हूँ—क्या आप मुझे अपडेटेड जानकारी दे सकते हैं?",
       "ko": "안녕하세요, 항공편이 지연되서 전화드렸는데요—업데이트된 정보를 알려 주실 수 있나요?"
     },
     "culture_overrides": {
