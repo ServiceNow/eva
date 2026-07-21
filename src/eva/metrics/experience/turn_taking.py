@@ -35,6 +35,8 @@ Flat headline sub-metrics (one number each — show up as columns in analysis vi
                         user_interruption.mean_yield_ms,
                         user_interruption.mean_yield_score
                         (the latter two only when rate > 0)
+  Fallback nudges:      fallback_nudge.rate (nudged assistant turns / total assistant turns),
+                        fallback_nudge.count (raw count; None when zero)
 
 All reported sub-metrics are consistent with the main score: ``mean_overlap_score``,
 ``mean_count_score``, and ``mean_yield_score`` aggregate exactly the per-turn scores
@@ -429,6 +431,20 @@ class TurnTakingMetric(CodeMetric):
             sub["user_interruption.mean_yield_score"] = _wrap(
                 "user_interruption.mean_yield_score", round(statistics.mean(yield_scores), 4), True
             )
+
+        # --- Turn-end fallback nudges ---
+        # Denominator is all assistant turns (not turn_keys/total_turns), since a fallback nudge
+        # produces an assistant turn with no paired user turn and so is never in turn_keys.
+        total_assistant_turns = len(context.audio_timestamps_assistant_turns)
+        if total_assistant_turns:
+            sub["fallback_nudge.rate"] = _wrap(
+                "fallback_nudge.rate", round(len(context.fallback_turn_ids) / total_assistant_turns, 4), True
+            )
+        sub["fallback_nudge.count"] = MetricScore(
+            name=f"{cls.name}.fallback_nudge.count",
+            score=float(len(context.fallback_turn_ids)) if context.fallback_turn_ids else None,
+            normalized_score=None,
+        )
 
         # Token usage (from agent_perf_stats.csv)
         mean_output_tokens = mean_agent_perf_stat(context.output_dir, "output_tokens")
