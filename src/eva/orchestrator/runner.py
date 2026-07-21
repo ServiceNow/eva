@@ -154,8 +154,7 @@ class BenchmarkRunner:
         # Apply record filtering (debug mode or specific record IDs)
         filtered_records = self._filter_records(records)
 
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        (self.output_dir / "records").mkdir(exist_ok=True)
+        (self.output_dir / "records").mkdir(parents=True, exist_ok=True)
 
         # Resolve exact models used (captures defaults from services.py + any alias labels)
         if self.config.model.pipeline_type == PipelineType.CASCADE:
@@ -207,10 +206,10 @@ class BenchmarkRunner:
 
         # Pre-create ValidationRunner for per-record pipelining. Its shared MetricsRunner
         # for validation metrics is lazily initialized on first use.
-        _all_unique_records = list({id(r): r for r in output_id_to_record.values()}.values())
+        all_unique_records = list({id(r): r for r in output_id_to_record.values()}.values())
         pipeline_validation_runner = ValidationRunner(
             run_dir=self.output_dir,
-            dataset=_all_unique_records,
+            dataset=all_unique_records,
             thresholds=self.config.validation_thresholds,
             metric_configs=self._metric_configs,
         )
@@ -221,7 +220,6 @@ class BenchmarkRunner:
         metrics_background_tasks: list[asyncio.Task] = []
 
         if self.config.metrics:
-            all_unique_records = list({id(r): r for r in output_id_to_record.values()}.values())
             try:
                 metrics_runner = MetricsRunner(
                     run_dir=self.output_dir,
@@ -512,15 +510,12 @@ class BenchmarkRunner:
         # Build final_failures from the last rerun_history entry for each failed record
         final_failures: dict[str, dict] = {}
         for oid in final_failed_ids:
-            if oid in rerun_history and rerun_history[oid]:
+            if rerun_history.get(oid):
                 final_failures[oid] = rerun_history[oid][-1]
+            elif check_conversation_finished(self.output_dir / "records" / oid):
+                final_failures[oid] = {"reason": "validation_failed"}
             else:
-                # Failed on initial validation (no rerun history)
-                record_dir = self.output_dir / "records" / oid
-                if not check_conversation_finished(record_dir):
-                    final_failures[oid] = {"reason": "not_finished"}
-                else:
-                    final_failures[oid] = {"reason": "validation_failed"}
+                final_failures[oid] = {"reason": "not_finished"}
 
         llm_generic_error_record_ids = find_records_with_llm_generic_error(self.output_dir, successful_ids)
         eval_summary_path = self.output_dir / "evaluation_summary.json"
@@ -566,8 +561,8 @@ class BenchmarkRunner:
         logger.info("=" * 60)
         logger.info("Benchmark complete:")
         if total_tasks > 0:
-            logger.info(f"  Success: {successful_count}/{total_tasks} ({successful_count / total_tasks * 100:.1f}%)")
-            logger.info(f"  Failed: {failed_count}/{total_tasks} ({failed_count / total_tasks * 100:.1f}%)")
+            logger.info(f"  Success: {successful_count}/{total_tasks} ({successful_count / total_tasks:.1%})")
+            logger.info(f"  Failed: {failed_count}/{total_tasks} ({failed_count / total_tasks:.1%})")
             if not_finished_count > 0:
                 logger.info(f"    Not finished: {not_finished_count}")
             if validation_failed_count > 0:
