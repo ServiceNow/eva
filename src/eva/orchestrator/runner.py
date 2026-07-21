@@ -305,7 +305,6 @@ class BenchmarkRunner:
             # vr=None → crash/incomplete (not_finished).
             # vr.passed=False + empty failed_metrics → gate rejected (not_finished).
             # vr.passed=False + non-empty failed_metrics → LLM metrics failed (validation_failed).
-            finished_ids: list[str] = []
             not_finished_ids: list[str] = []
             failed_validation_ids: list[str] = []
             validation_results: dict[str, ValidationResult] = {}
@@ -316,11 +315,9 @@ class BenchmarkRunner:
                     result_map[output_id] = _result
                 if vr is None or (not vr.passed and not vr.failed_metrics):
                     not_finished_ids.append(output_id)
-                else:
-                    finished_ids.append(output_id)
-                    if not passed:
-                        failed_validation_ids.append(output_id)
-                        validation_results[output_id] = vr
+                elif not passed:
+                    failed_validation_ids.append(output_id)
+                    validation_results[output_id] = vr
 
             if not_finished_ids:
                 logger.info(
@@ -381,7 +378,6 @@ class BenchmarkRunner:
                     self._accept_time_limit_record(
                         oid,
                         failed_this_attempt,
-                        finished_ids,
                         newly_time_limit_accepted,
                         metrics_runner,
                         metrics_background_tasks,
@@ -412,7 +408,6 @@ class BenchmarkRunner:
                             self._accept_time_limit_record(
                                 oid,
                                 failed_this_attempt,
-                                finished_ids,
                                 newly_time_limit_accepted,
                                 metrics_runner,
                                 metrics_background_tasks,
@@ -1156,14 +1151,12 @@ class BenchmarkRunner:
         self,
         oid: str,
         failed_this_attempt: list[str],
-        finished_ids: list[str],
         newly_time_limit_accepted: list[str],
         metrics_runner: MetricsRunner | None,
         metrics_background_tasks: list[asyncio.Task],
     ) -> None:
         """Accept a time-limit record by updating result.json and scheduling metrics."""
         failed_this_attempt.remove(oid)
-        finished_ids.append(oid)
         newly_time_limit_accepted.append(oid)
         # Update result.json with time_limit_accepted flag
         result_path = self.output_dir / "records" / oid / "result.json"
