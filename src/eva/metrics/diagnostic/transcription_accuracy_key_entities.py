@@ -65,7 +65,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     """
 
     name = "transcription_accuracy_key_entities"
-    version = "v0.6"
+    version = "v0.4"
     description = (
         "Debug metric: LLM judge evaluation of user key entity accuracy (STT in cascade, tool calls in audio-native)"
     )
@@ -114,13 +114,6 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
                     error=error,
                 )
 
-            # Audio-native rates one entry per tool call: normalize the judge's
-            # ``tool_call_id`` onto the shared ``turn_id`` key used by the loop below.
-            if context.is_audio_native:
-                for item in turn_evaluations:
-                    if isinstance(item, dict) and "turn_id" not in item and "tool_call_id" in item:
-                        item["turn_id"] = item["tool_call_id"]
-
             # Compute scores for each unit (user turn in cascade, tool call in audio-native), keyed by turn_id
             per_turn_ratings: dict[int, float | None] = {}
             per_turn_normalized: dict[int, float | None] = {}
@@ -128,6 +121,9 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
             per_turn_entity_details: dict[int, dict] = {}
 
             for turn_eval in turn_evaluations:
+                # Cascade keys results on ``turn_id``, audio-native on ``tool_call_id`` — accept either.
+                if isinstance(turn_eval, dict):
+                    turn_eval.setdefault("turn_id", turn_eval.get("tool_call_id"))
                 turn_id = resolve_turn_id(turn_eval, turns_to_evaluate, self.name)
                 if turn_id is None:
                     continue
