@@ -153,7 +153,7 @@ class AgenticSystem:
         logger.info(f"Recording partial streamed assistant output after {reason}")
         self.audit_log.append_assistant_output(partial)
 
-    async def process_query(self, query: str) -> AsyncGenerator[str, None]:
+    async def process_query(self, query: str, log_user_input: bool = True) -> AsyncGenerator[str, None]:
         """Process a user query and yield response messages.
 
         This is the main entry point for handling user input.
@@ -161,6 +161,10 @@ class AgenticSystem:
 
         Args:
             query: User's input text
+            log_user_input: Whether to record `query` as a user_input audit log entry.
+                Set to False when the caller already logged its own marker entry for this
+                turn (e.g. a turn-end fallback nudge) and only wants the LLM call driven
+                by `query` without a duplicate audit log entry.
 
         Yields:
             Text responses to be sent to TTS
@@ -168,7 +172,8 @@ class AgenticSystem:
         logger.info(f"Processing query: {query}")
 
         # Record user input
-        self.audit_log.append_user_input(query)
+        if log_user_input:
+            self.audit_log.append_user_input(query)
 
         # Execute agent interaction
         async for response in self._execute_agent(self.agent):

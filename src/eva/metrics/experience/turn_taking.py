@@ -59,7 +59,7 @@ class TurnTakingMetric(CodeMetric):
     description = "Turn-taking evaluation based on per-turn latency and interruption behavior"
     category = "experience"
     pass_at_k_threshold = 0.8
-    version = "v0.1"
+    version = "v0.2"
 
     # --- Latency curve (piecewise linear). 0 outside [LATENCY_HARD_EARLY_MS, LATENCY_HARD_LATE_MS]. ---
     # Ramp up 0 → 1 from LATENCY_HARD_EARLY_MS to LATENCY_SWEET_SPOT_LOW_MS.
@@ -456,11 +456,25 @@ class TurnTakingMetric(CodeMetric):
             per_turn_evidence: dict[int, dict[str, Any]] = {}
             for t in turn_keys:
                 _has_tool = t in turns_with_tool_calls
+                if t in context.fallback_turn_ids:
+                    # No real user turn was ever detected within the fallback window on this
+                    # turn - always a failure, regardless of any later latency/interrupt signal.
+                    per_turn_score[t] = 0.0
+                    per_turn_reason[t] = "turn_end_fallback"
+                    per_turn_evidence[t] = {"has_tool_call": _has_tool}
+                    continue
                 score, reason, evidence = self._per_turn_score_and_reason(context, t, has_tool_call=_has_tool)
                 evidence["has_tool_call"] = _has_tool
                 per_turn_score[t] = round(score, 4)
                 per_turn_reason[t] = reason
                 per_turn_evidence[t] = evidence
+
+            # Fallback turns that never got a real (user, assistant) audio pairing at all still
+            # count as a turn-taking failure for that turn.
+            for t in sorted(context.fallback_turn_ids - set(per_turn_score)):
+                per_turn_score[t] = 0.0
+                per_turn_reason[t] = "turn_end_fallback"
+                per_turn_evidence[t] = {"has_tool_call": t in turns_with_tool_calls}
 
             total_turns = max(
                 max(context.audio_timestamps_user_turns, default=0),

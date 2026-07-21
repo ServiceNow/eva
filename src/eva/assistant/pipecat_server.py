@@ -99,6 +99,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         port: int,
         conversation_id: str,
         language: str = "en",
+        turn_end_fallback_time: int | None = None,
     ):
         """Initialize the assistant server.
 
@@ -112,6 +113,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
             port: Port to listen on
             conversation_id: Unique ID for this conversation
             language: BCP 47 language tag for STT/TTS services (e.g. 'en', 'fr', 'es-MX')
+            turn_end_fallback_time: Seconds of user-turn silence after the assistant stops
+                speaking before nudging it to retry. ``None`` disables the fallback.
         """
         super().__init__(
             current_date_time=current_date_time,
@@ -126,6 +129,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         )
 
         self.agentic_system = None  # Will be set in _handle_session
+        self.turn_end_fallback_time = turn_end_fallback_time
 
         # Wall-clock captured at on_user_turn_started for non-instrumented S2S models
         self._user_turn_started_wall_ms: str | None = None
@@ -422,6 +426,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     output_dir=self.output_dir,
                     pre_tool_speech=self.pipeline_config.pre_tool_speech,
                     llm_streaming=self.pipeline_config.llm_streaming,
+                    turn_end_fallback_time=self.turn_end_fallback_time,
                 )
 
                 async def on_assistant_response(msg: str) -> None:

@@ -611,6 +611,16 @@ class RunConfig(BaseSettings):
         le=10000,
         description="Max conversation duration in seconds",
     )
+    turn_end_fallback_time: int | None = Field(
+        None,
+        ge=1,
+        description=(
+            "Seconds of user-turn inactivity after which the assistant is nudged to retry "
+            "('try again, I didn't catch that') instead of waiting for the old hard "
+            "inactivity timeout. When unset, falls back to the old behavior of ending the "
+            "conversation after the provider's inactivity timeout elapses."
+        ),
+    )
 
     # Output
     output_dir: Path = Field(

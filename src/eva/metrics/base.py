@@ -90,6 +90,7 @@ class MetricContext:
         latency_assistant_turns: dict[int, float] | None = None,
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
+        fallback_turn_ids: set[int] | None = None,
         pipeline_type: PipelineType = PipelineType.CASCADE,
         language: str = "en",
     ):
@@ -143,6 +144,8 @@ class MetricContext:
         self.latency_assistant_turns = latency_assistant_turns or {}
         self.assistant_interrupted_turns = assistant_interrupted_turns or set()
         self.user_interrupted_turns = user_interrupted_turns or set()
+        # Turn ids with no real user speech - the assistant was nudged via EVA_TURN_END_FALLBACK_TIME.
+        self.fallback_turn_ids = fallback_turn_ids or set()
         self.pipeline_type = pipeline_type
 
     @property

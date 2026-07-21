@@ -314,6 +314,11 @@ def _handle_audit_log_event(
             }
         )
 
+    elif event["event_type"] == "turn_fallback":
+        # No real user speech arrived within the fallback window - the pending turn hasn't
+        # advanced, so this marks the still-open user turn as one with no real transcript/audio.
+        context.fallback_turn_ids.add(state.turn_num)
+
     elif event["event_type"] in ("tool_call", "tool_response"):
         state.assistant_processed_in_turn = True
         conversation_trace.append(get_entry_for_audit_log(event, state.turn_num))
@@ -772,6 +777,10 @@ class _ProcessorContext:
         # Interruption data
         self.assistant_interrupted_turns: set[int] = set()
         self.user_interrupted_turns: set[int] = set()
+
+        # Turn ids where no real user speech arrived within EVA_TURN_END_FALLBACK_TIME and the
+        # assistant was nudged to retry instead. No real transcript/audio exists for these turns.
+        self.fallback_turn_ids: set[int] = set()
 
         # Conversation metadata
         self.conversation_ended_reason: str | None = None

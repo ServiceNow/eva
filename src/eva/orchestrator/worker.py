@@ -307,6 +307,11 @@ class ConversationWorker:
         """Start the assistant server using the configured framework."""
         server_cls = _get_server_class(self.config.framework)
         resolved_db_path = self._materialize_resolved_scenario_db()
+        # The turn-end fallback is a cascade/Pipecat concept (VAD-driven turn detection).
+        # S2S servers handle turn-taking natively and don't accept this kwarg.
+        server_kwargs: dict[str, Any] = {}
+        if self.config.framework == "pipecat":
+            server_kwargs["turn_end_fallback_time"] = self.config.turn_end_fallback_time
         self._assistant_server = server_cls(
             current_date_time=self.record.current_date_time,
             pipeline_config=self.config.model,
@@ -317,6 +322,7 @@ class ConversationWorker:
             port=self.port,
             conversation_id=self.record.id,
             language=self.config.language,
+            **server_kwargs,
         )
 
         await self._assistant_server.start()
