@@ -36,6 +36,58 @@ def _load_component_latencies(output_dir: str) -> dict[str, dict]:
     return latencies
 
 
+def _load_audit_stats(output_dir: str) -> dict | None:
+    """Read audit_log.json once and compute LLM-call / tool-call stats.
+
+    - ``num_llm_calls``: number of LLM completions (``llm_prompts`` entries)
+    - ``num_turns``: user turns (``transcript`` entries with ``message_type == "user"``)
+    - ``num_tool_calls``: total tool calls across all completions
+      (sum of each completion's ``response_message.tool_calls`` length)
+    - ``calls_with_tool_calls`` / ``parallel_tool_call_completions``: completions
+      emitting >=1 / >1 tool call (the latter reveals parallel/batched tool calls)
+
+    Uses the same LLM-call and turn definitions as the cross-run scan so numbers
+    are comparable. Returns a stats dict, or None if the audit log is
+    missing/unreadable, has no user turns, or has no ``llm_prompts`` — the last
+    case covers models (e.g. GPT realtime / speech-to-speech) that don't log
+    prompt-level calls, for which these stats are undefined and must be omitted
+    rather than reported as zero.
+    """
+    audit_path = Path(output_dir) / "audit_log.json"
+    if not audit_path.exists():
+        return None
+
+    try:
+        audit = json.loads(audit_path.read_text())
+    except Exception:
+        return None
+
+    prompts = audit.get("llm_prompts")
+    prompts = prompts if isinstance(prompts, list) else []
+    num_calls = len(prompts)
+    num_turns = sum(1 for e in audit.get("transcript", []) if isinstance(e, dict) and e.get("message_type") == "user")
+    if num_turns <= 0 or num_calls <= 0:
+        return None
+
+    per_call_tools = []
+    for c in prompts:
+        rm = c.get("response_message") if isinstance(c, dict) else None
+        tool_calls = rm.get("tool_calls") if isinstance(rm, dict) else None
+        per_call_tools.append(len(tool_calls) if isinstance(tool_calls, list) else 0)
+    num_tool_calls = sum(per_call_tools)
+
+    return {
+        "num_llm_calls": num_calls,
+        "num_turns": num_turns,
+        "llm_calls_per_turn": round(num_calls / num_turns, 3),
+        "num_tool_calls": num_tool_calls,
+        "tools_per_llm_call": round(num_tool_calls / num_calls, 3),
+        "calls_with_tool_calls": sum(1 for n in per_call_tools if n >= 1),
+        "parallel_tool_call_completions": sum(1 for n in per_call_tools if n > 1),
+        "max_tools_per_call": max(per_call_tools) if per_call_tools else 0,
+    }
+
+
 def _split_by_tool_calls(
     context: MetricContext,
 ) -> tuple[list[float], list[float]]:
@@ -87,7 +139,7 @@ class ResponseSpeedMetric(CodeMetric):
     description = "Diagnostic metric: latency between user utterance end and assistant response start"
     exclude_from_pass_at_k = True
     higher_is_better = False  # Score is latency in seconds — lower is better.
-    version = "v0.2"
+    version = "v0.3"
 
     async def compute(self, context: MetricContext) -> MetricScore:
         try:
@@ -128,6 +180,24 @@ class ResponseSpeedMetric(CodeMetric):
                         normalized_score=None,
                         details=stats,
                     )
+
+            # LLM-call / tool-call efficiency diagnostics from audit_log.json.
+            audit_stats = _load_audit_stats(context.output_dir)
+            if audit_stats is not None:
+                # LLM completions per user turn (tool-loop / model efficiency).
+                sub_metrics["llm_calls_per_turn"] = MetricScore(
+                    name=f"{self.name}.llm_calls_per_turn",
+                    score=audit_stats["llm_calls_per_turn"],
+                    normalized_score=None,
+                    details=audit_stats,
+                )
+                # Tool calls per LLM completion (reveals sequential vs batched tool calls).
+                sub_metrics["tools_per_llm_call"] = MetricScore(
+                    name=f"{self.name}.tools_per_llm_call",
+                    score=audit_stats["tools_per_llm_call"],
+                    normalized_score=None,
+                    details=audit_stats,
+                )
 
             # Add per-component latency sub_metrics from result.json.
             # result.json stores these in milliseconds; convert to seconds here
