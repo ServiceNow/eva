@@ -131,11 +131,14 @@ def test_load_env_reads_existing_file(tmp_path: Path) -> None:
     p = tmp_path / ".env"
     p.write_text("FOO=bar\n#v COMMENTED=skipme\nQUOTED='hello world'\nJSON='[{\"a\": 1}]'\n")
     out = load_env(p)
-    assert out == {"FOO": "bar", "QUOTED": "hello world", "JSON": '[{"a": 1}]'}
+    assert out.active == {"FOO": "bar", "QUOTED": "hello world", "JSON": '[{"a": 1}]'}
+    assert out.inactive == {"COMMENTED": "skipme"}
 
 
 def test_load_env_missing_file_returns_empty(tmp_path: Path) -> None:
-    assert load_env(tmp_path / "does-not-exist") == {}
+    result = load_env(tmp_path / "does-not-exist")
+    assert result.active == {}
+    assert result.inactive == {}
 
 
 def test_round_trip_through_load_env(tmp_path: Path) -> None:
@@ -151,6 +154,6 @@ def test_round_trip_through_load_env(tmp_path: Path) -> None:
     p = tmp_path / ".env"
     p.write_text(written)
     loaded = load_env(p)
-    assert loaded["OPENAI_API_KEY"] == "sk-abc"
-    assert loaded["EVA_DEBUG"] == "true"
-    assert loaded["EVA_MAX_CONCURRENT_CONVERSATIONS"] == "8"
+    assert loaded.active["OPENAI_API_KEY"] == "sk-abc"
+    assert loaded.active["EVA_DEBUG"] == "true"
+    assert loaded.active["EVA_MAX_CONCURRENT_CONVERSATIONS"] == "8"
