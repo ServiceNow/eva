@@ -100,15 +100,16 @@ def _build_authentication_success_sub_metrics(
     auth_success: bool,
 ) -> dict[str, MetricScore]:
     """Build sub-metrics for authentication tool call behaviour."""
-    auth_tool_names = {t.get("name") for t in agent_tools if t.get("tool_type") == "auth" and t.get("name")}
-    auth_calls = [r for r in tool_responses if r.get("tool_name") in auth_tool_names]
-    if not auth_calls:
-        return {}
+    auth_tool_names = {t["name"] for t in agent_tools if t.get("tool_type") == "auth"}
+
+    counts_per_tool = Counter(r.get("tool_name") for r in tool_responses if r.get("tool_name") in auth_tool_names)
 
     sub_metrics: dict[str, MetricScore] = {}
 
-    counts_per_tool = Counter(r.get("tool_name") for r in auth_calls)
-    avg_calls = sum(counts_per_tool.values()) / len(counts_per_tool) if counts_per_tool else 0.0
+    if not counts_per_tool:
+        return sub_metrics
+
+    avg_calls = sum(counts_per_tool.values()) / len(counts_per_tool)
 
     if auth_success:
         first_try_success = all(count == 1 for count in counts_per_tool.values())
@@ -116,20 +117,20 @@ def _build_authentication_success_sub_metrics(
             name=f"{parent_name}.auth_first_try_success",
             score=1.0 if first_try_success else 0.0,
             normalized_score=1.0 if first_try_success else 0.0,
-            details={"calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
+            details={"num_auth_calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
         )
-        sub_metrics["auth_num_calls"] = MetricScore(
-            name=f"{parent_name}.auth_num_calls",
+        sub_metrics["num_auth_calls"] = MetricScore(
+            name=f"{parent_name}.num_auth_calls",
             score=round(avg_calls, 4),
             normalized_score=None,
-            details={"calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
+            details={"num_auth_calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
         )
     else:
-        sub_metrics["auth_num_calls_on_failure"] = MetricScore(
-            name=f"{parent_name}.auth_num_calls_on_failure",
+        sub_metrics["num_auth_calls_on_failure"] = MetricScore(
+            name=f"{parent_name}.num_auth_calls_on_failure",
             score=round(avg_calls, 4),
             normalized_score=None,
-            details={"calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
+            details={"num_auth_calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
         )
 
     return sub_metrics
