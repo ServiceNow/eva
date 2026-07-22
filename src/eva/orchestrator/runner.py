@@ -324,7 +324,7 @@ class BenchmarkRunner:
             pipeline_results = await tqdm.gather(
                 *(_run_and_pipeline(output_id_to_record[oid], oid) for oid in pending_output_ids),
                 total=len(pending_output_ids),
-                desc=f"Attempt {attempt_number}/{max_attempts}",
+                desc=f"Progress on {self.config.run_id} attempt {attempt_number}/{max_attempts}",
                 file=TqdmNewlineStream(sys.stderr),
                 mininterval=0,
                 unit="task",
