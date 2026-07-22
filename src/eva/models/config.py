@@ -239,11 +239,11 @@ class ModelConfig(BaseModel):
                     # expose its component models. The `llm` part uses the short `alias`
                     # if provided (else the Deepgram model id), so the run_id/folder
                     # stays readable.
-                    p = self.s2s_params or {}
+                    # s2s_params is guaranteed non-None by _check_companion_services().
                     return {
-                        "stt": p.get("listen_model", DEFAULT_LISTEN_MODEL),
-                        "llm": _param_alias(p),
-                        "tts": p.get("speak_model", DEFAULT_SPEAK_MODEL),
+                        "stt": self.s2s_params.get("listen_model", DEFAULT_LISTEN_MODEL),
+                        "llm": _param_alias(self.s2s_params),
+                        "tts": self.s2s_params.get("speak_model", DEFAULT_SPEAK_MODEL),
                     }
                 return {"s2s": _param_alias(self.s2s_params)}
             case PipelineType.CASCADE:
