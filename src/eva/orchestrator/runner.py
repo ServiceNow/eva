@@ -447,14 +447,10 @@ class BenchmarkRunner:
         successful_ids = set(all_output_ids) - final_failed_ids
 
         # Categorize failures
-        not_finished_count = 0
-        validation_failed_count = 0
-        for oid in final_failed_ids:
-            record_dir = self.output_dir / "records" / oid
-            if not check_conversation_finished(record_dir):
-                not_finished_count += 1
-            else:
-                validation_failed_count += 1
+        not_finished_count = sum(
+            1 for oid in final_failed_ids if not check_conversation_finished(self.output_dir / "records" / oid)
+        )
+        validation_failed_count = len(final_failed_ids) - not_finished_count
 
         # STEP 7: Await background metrics, then run final aggregation pass.
         # Background tasks already wrote metrics.json for records validated during the loop.
