@@ -77,20 +77,18 @@ def _agent_tools_to_deepgram(agent: AgentConfig) -> list[dict[str, Any]] | None:
     if not agent.tools:
         return None
 
-    functions: list[dict[str, Any]] = []
-    for tool in agent.tools:
-        functions.append(
-            {
-                "name": tool.function_name,
-                "description": f"{tool.name}: {tool.description}",
-                "parameters": {
-                    "type": "object",
-                    "properties": tool.get_parameter_properties(),
-                    "required": tool.get_required_param_names(),
-                },
-            }
-        )
-    return functions or None
+    return [
+        {
+            "name": tool.function_name,
+            "description": f"{tool.name}: {tool.description}",
+            "parameters": {
+                "type": "object",
+                "properties": tool.get_parameter_properties(),
+                "required": tool.get_required_param_names(),
+            },
+        }
+        for tool in agent.tools
+    ]
 
 
 class DeepgramAssistantServer(AbstractAssistantServer):
@@ -103,7 +101,7 @@ class DeepgramAssistantServer(AbstractAssistantServer):
         self._audio_sample_rate = _RECORDING_SAMPLE_RATE
 
         s2s_params = self.pipeline_config.s2s_params or {}
-        self._api_key: str = s2s_params.get("api_key", "")
+        self._api_key: str = s2s_params["api_key"]
         # ``model`` is the exact LLM id sent to Deepgram (required).
         self._think_model: str = s2s_params["model"]
         # Metrics/run_id label, decoupled from the (often long) Deepgram model id:
