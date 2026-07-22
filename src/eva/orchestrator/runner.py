@@ -256,8 +256,11 @@ class BenchmarkRunner:
                     async with semaphore:
                         result, audio_task = await self._run_conversation(record, output_id)
 
-                    # result.json is now written by the worker itself (inside the
-                    # semaphore) so it survives task cancellation and process signals.
+                    if isinstance(result, ConversationResult):
+                        result_path = self.output_dir / "records" / output_id / "result.json"
+                        if not result_path.exists():
+                            result_path.parent.mkdir(parents=True, exist_ok=True)
+                            result_path.write_text(result.model_dump_json(indent=2))
 
                     # Phase 4: Await audio task (needed for audio-based validation metrics)
                     if audio_task is not None:
