@@ -28,13 +28,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from eva.backend.capabilities import BackendCapabilities
 
 
-class BackendEventType(str, Enum):
+class BackendEventType(StrEnum):
     """Kinds of events a ``Backend`` can surface via ``receive()``.
 
     Not every ``Backend`` implementation will emit every event type -- a thin,
@@ -92,8 +92,11 @@ class ToolCallRequest:
 
 @dataclass
 class ToolCallResult:
-    """The outcome of executing a ``ToolCallRequest``, to be sent back to the
-    backend so its underlying model can continue the tool-calling loop."""
+    """The outcome of executing a ``ToolCallRequest``.
+
+    To be sent back to the backend so its underlying model can continue the
+    tool-calling loop.
+    """
 
     call_id: str
     """Must match the ``call_id`` of the originating ``ToolCallRequest``."""

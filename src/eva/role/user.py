@@ -54,9 +54,12 @@ class UserRole(Role):
         persona_config: dict[str, Any],
         current_date_time: str,
     ) -> None:
-        """See ``Role.__init__`` for the backend-construction args.
+        """Initialize the user role.
 
         Args:
+            backend_factory: Factory used to construct the backend.
+            backend_name: Key passed to the factory to select a backend.
+            backend_config: Provider-specific configuration for the backend.
             goal: User goal / decision-tree data -- mirrors
                 ``AbstractUserSimulator.goal``.
             persona_config: Persona/voice/behavior configuration -- mirrors

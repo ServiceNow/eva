@@ -67,9 +67,12 @@ class AssistantRole(Role):
         current_date_time: str,
         self_nudge_timeout_seconds: float | None = None,
     ) -> None:
-        """See ``Role.__init__`` for the backend-construction args.
+        """Initialize the assistant role.
 
         Args:
+            backend_factory: Factory used to construct the backend.
+            backend_name: Key passed to the factory to select a backend.
+            backend_config: Provider-specific configuration for the backend.
             agent_config_path: Path to the agent YAML (role, instructions,
                 tool schemas) -- mirrors ``AbstractAssistantServer.agent`` /
                 ``agent_config_path``.
