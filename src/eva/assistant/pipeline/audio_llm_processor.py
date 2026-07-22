@@ -497,6 +497,7 @@ class AudioTranscriptionProcessor(FrameProcessor):
         Args:
             audio_data: Raw PCM audio bytes to transcribe.
             timestamp: ISO8601 timestamp for the transcription.
+            source_sample_rate: Sample rate (Hz) of the provided audio data.
             turn_id: Optional turn identifier for associating with audit log entry.
 
         Returns:
