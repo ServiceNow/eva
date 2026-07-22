@@ -26,11 +26,13 @@ Sub-metrics (flat, one number each):
                         user_interruption.mean_yield_score (only when rate > 0)
 """
 
+import json
 import logging
 
 import pytest
 
 from eva.metrics.experience.turn_taking import TurnTakingMetric
+from eva.models.config import PipelineType
 
 from .conftest import make_metric_context
 
@@ -778,3 +780,276 @@ class TestDualInterrupt:
         assert sub["user_interruption.rate"].score == pytest.approx(1 / 3, abs=1e-4)
         assert sub["user_interruption.mean_yield_ms"].score == pytest.approx(500, abs=1)
         assert sub["user_interruption.mean_yield_score"].score == pytest.approx(0.75, abs=1e-3)
+
+
+# ---------- Pre-tool-speech lead-in rate ----------
+
+
+def _audit_assistant(ts, content):
+    return {"message_type": "assistant", "timestamp": ts, "value": content}
+
+
+def _audit_user(ts, content="hi"):
+    return {"message_type": "user", "timestamp": ts, "value": content}
+
+
+def _audit_tool_call(ts, tool="lookup"):
+    return {"message_type": "tool_call", "timestamp": ts, "value": {"tool": tool, "parameters": {}}}
+
+
+def _audit_tool_response(ts, tool="lookup"):
+    return {"message_type": "tool_response", "timestamp": ts, "value": {"tool": tool, "response": {}}}
+
+
+def _audit_llm_call(ts, response=""):
+    """An llm_call event — present in real audit logs but must not affect grouping."""
+    return {"message_type": "llm_call", "timestamp": ts, "value": {"agent": "Test Agent", "response": response}}
+
+
+def _write_audit_log(tmp_path, transcript):
+    (tmp_path / "audit_log.json").write_text(json.dumps({"transcript": transcript}))
+    return str(tmp_path)
+
+
+class TestPreToolSpeechGroups:
+    def test_no_lead_in_before_tool_call(self, metric, tmp_path):
+        """Empty assistant speech immediately before a tool call → group is False."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_user(1),
+                _audit_assistant(2, ""),
+                _audit_tool_call(3),
+                _audit_tool_response(3),
+            ],
+        )
+        context = make_metric_context(output_dir=output_dir)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups == [False]
+
+    def test_lead_in_before_tool_call(self, metric, tmp_path):
+        """Non-empty assistant speech before a tool call → group is True."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_user(1),
+                _audit_assistant(2, "Let me pull that up."),
+                _audit_tool_call(3),
+                _audit_tool_response(3),
+            ],
+        )
+        context = make_metric_context(output_dir=output_dir)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups == [True]
+
+    def test_multiple_tools_from_one_lead_in_count_as_one_group(self, metric, tmp_path):
+        """Two tool_call/tool_response pairs with no intervening speech → single group."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_user(1),
+                _audit_assistant(2, ""),
+                _audit_tool_call(3, "confirm_swap"),
+                _audit_tool_response(3, "confirm_swap"),
+                _audit_tool_call(4, "notify_manager"),
+                _audit_tool_response(4, "notify_manager"),
+                _audit_assistant(5, "All done."),
+            ],
+        )
+        context = make_metric_context(output_dir=output_dir)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups == [False]
+
+    def test_llm_call_events_do_not_break_a_group(self, metric, tmp_path):
+        """Split llm_call events should not break a tool call group.
+
+        llm_call entries (present in real audit logs) between two tool batches must be ignored,
+        not treated as a group-breaking event — regression guard for the bug where an intervening
+        llm_call incorrectly split one contiguous tool-call group into two.
+        """
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_user(1),
+                _audit_llm_call(2, ""),
+                _audit_tool_call(2, "confirm_swap"),
+                _audit_tool_response(2, "confirm_swap"),
+                _audit_llm_call(3, ""),
+                _audit_tool_call(3, "notify_manager"),
+                _audit_tool_response(3, "notify_manager"),
+                _audit_llm_call(4, "All done."),
+                _audit_assistant(4, "All done."),
+            ],
+        )
+        context = make_metric_context(output_dir=output_dir)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups == [False]
+
+    def test_user_speech_resets_lead_in_flag(self, metric, tmp_path):
+        """Assistant speech in an earlier turn doesn't count as a lead-in once the user speaks again."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_assistant(1, "Hello, how can I help?"),
+                _audit_user(2),
+                _audit_assistant(3, ""),
+                _audit_tool_call(4),
+                _audit_tool_response(4),
+            ],
+        )
+        context = make_metric_context(output_dir=output_dir)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups == [False]
+
+    def test_multiple_turns_multiple_groups(self, metric, tmp_path):
+        """Mix of lead-in and no-lead-in tool groups across turns."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_user(1),
+                _audit_assistant(2, ""),
+                _audit_tool_call(3),
+                _audit_tool_response(3),
+                _audit_assistant(4, "Verified."),
+                _audit_user(5),
+                _audit_assistant(6, "One moment."),
+                _audit_tool_call(7),
+                _audit_tool_response(7),
+            ],
+        )
+        context = make_metric_context(output_dir=output_dir)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups == [False, True]
+
+    def test_out_of_order_transcript_is_sorted_by_timestamp(self, metric, tmp_path):
+        """Transcript entries out of file order are re-sorted by timestamp before grouping."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_tool_call(3),
+                _audit_user(1),
+                _audit_tool_response(3),
+                _audit_assistant(2, "Let me check."),
+            ],
+        )
+        context = make_metric_context(output_dir=output_dir)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups == [True]
+
+    def test_no_tool_calls_returns_empty_list(self, metric, tmp_path):
+        output_dir = _write_audit_log(
+            tmp_path,
+            [_audit_user(1), _audit_assistant(2, "Just chatting, no tools needed.")],
+        )
+        context = make_metric_context(output_dir=output_dir)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups == []
+
+    def test_missing_audit_log_returns_none(self, metric, tmp_path):
+        context = make_metric_context(output_dir=str(tmp_path))
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups is None
+
+    def test_empty_transcript_returns_none(self, metric, tmp_path):
+        output_dir = _write_audit_log(tmp_path, [])
+        context = make_metric_context(output_dir=output_dir)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups is None
+
+    def test_works_for_s2s_pipeline_type(self, metric, tmp_path):
+        """Audit-log-based computation works the same regardless of pipeline_type."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_user(1),
+                _audit_assistant(2, "Let me pull that up."),
+                _audit_tool_call(3),
+                _audit_tool_response(3),
+            ],
+        )
+        context = make_metric_context(output_dir=output_dir, pipeline_type=PipelineType.S2S)
+        groups = metric._compute_pre_tool_speech_groups(context)
+        assert groups == [True]
+
+
+class TestPreToolSpeechSubMetric:
+    @pytest.mark.asyncio
+    async def test_sub_metric_reflects_lead_in_rate(self, metric, tmp_path):
+        """2 of 4 tool-call groups have a lead-in → pretoolspeech_rate = 0.5."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_user(1),
+                _audit_assistant(2, ""),
+                _audit_tool_call(3, "a"),
+                _audit_tool_response(3, "a"),
+                _audit_assistant(4, "Got it."),
+                _audit_user(5),
+                _audit_assistant(6, "Let me check."),
+                _audit_tool_call(7, "b"),
+                _audit_tool_response(7, "b"),
+                _audit_user(8),
+                _audit_assistant(9, "One sec."),
+                _audit_tool_call(10, "c"),
+                _audit_tool_response(10, "c"),
+                _audit_user(11),
+                _audit_assistant(12, ""),
+                _audit_tool_call(13, "d"),
+                _audit_tool_response(13, "d"),
+            ],
+        )
+        context = make_metric_context(
+            output_dir=output_dir,
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(context)
+        sub = result.sub_metrics
+        assert sub["pretoolspeech_rate"].score == pytest.approx(0.5)
+        assert sub["pretoolspeech_rate"].normalized_score == pytest.approx(0.5)
+
+    @pytest.mark.asyncio
+    async def test_sub_metric_omitted_when_no_tool_calls(self, metric, tmp_path):
+        output_dir = _write_audit_log(
+            tmp_path,
+            [_audit_user(1), _audit_assistant(2, "No tools here.")],
+        )
+        context = make_metric_context(
+            output_dir=output_dir,
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(context)
+        assert "pretoolspeech_rate" not in result.sub_metrics
+
+    @pytest.mark.asyncio
+    async def test_sub_metric_omitted_when_audit_log_missing(self, metric, tmp_path):
+        context = make_metric_context(
+            output_dir=str(tmp_path),
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(context)
+        assert "pretoolspeech_rate" not in result.sub_metrics
+
+    @pytest.mark.asyncio
+    async def test_sub_metric_populated_for_s2s(self, metric, tmp_path):
+        """Unlike the old trace-based approach, S2S now gets a real pretoolspeech_rate."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_user(1),
+                _audit_assistant(2, "Let me check."),
+                _audit_tool_call(3),
+                _audit_tool_response(3),
+            ],
+        )
+        context = make_metric_context(
+            output_dir=output_dir,
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+            pipeline_type=PipelineType.S2S,
+        )
+        result = await metric.compute(context)
+        sub = result.sub_metrics
+        assert sub["pretoolspeech_rate"].score == pytest.approx(1.0)
