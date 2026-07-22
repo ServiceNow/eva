@@ -528,9 +528,6 @@ class BenchmarkRunner:
                         "validation_failed_count": validation_failed_count,
                         "records_with_llm_generic_error": len(llm_generic_error_record_ids),
                         "llm_generic_error_record_ids": llm_generic_error_record_ids,
-                        "success_rate": successful_count / total_tasks if total_tasks > 0 else 0.0,
-                        "failure_rate": failed_count / total_tasks if total_tasks > 0 else 0.0,
-                        "total_attempts": attempt_number,
                         "failed_record_ids": sorted(final_failed_ids),
                         "successful_record_ids": sorted(successful_ids),
                         "time_limit_accepted_record_ids": sorted(time_limit_accepted_ids),
@@ -539,6 +536,7 @@ class BenchmarkRunner:
                     "final_failures": final_failures,
                 },
                 f,
+                ensure_ascii=False,
                 indent=2,
             )
 
@@ -916,23 +914,12 @@ class BenchmarkRunner:
                 "validation_failed_count": validation_failed_count,
                 "records_with_llm_generic_error": len(llm_generic_error_record_ids),
                 "llm_generic_error_record_ids": llm_generic_error_record_ids,
-                "total_rerun_attempts": max(len(v) for v in rerun_history.values()) if rerun_history else 0,
                 "failed_record_ids": sorted(final_failed_ids),
                 "successful_record_ids": sorted(successful_ids),
             },
             "rerun_history": rerun_history,
             "final_failures": final_failures,
         }
-
-        if metrics_result is not None:
-            eval_summary["metrics"] = {
-                "records_evaluated": metrics_result.total_records,
-                "metrics_computed": self.config.metrics,
-                "total_metric_failures": metrics_result.total_metric_failures,
-                "metric_failures": {
-                    name: sorted(record_ids) for name, record_ids in metrics_result.metric_failures.items()
-                },
-            }
 
         eval_summary_path = self.output_dir / "evaluation_summary.json"
         with open(eval_summary_path, "w") as f:
