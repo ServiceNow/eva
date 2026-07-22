@@ -456,11 +456,6 @@ class BenchmarkRunner:
             else:
                 validation_failed_count += 1
 
-        # Archive the final failing attempts so the directory layout reflects the
-        # failure (downstream tools key off the `_failed_attempt_` suffix).
-        for oid in final_failed_ids:
-            self._archive_failed_attempt(oid, attempt_number)
-
         # STEP 7: Await background metrics, then run final aggregation pass.
         # Background tasks already wrote metrics.json for records validated during the loop.
         # IMPORTANT: Must await all background tasks BEFORE mutating metrics_runner.record_ids
@@ -511,6 +506,11 @@ class BenchmarkRunner:
                 final_failures[oid] = {"reason": "validation_failed"}
             else:
                 final_failures[oid] = {"reason": "not_finished"}
+
+        # Archive the final failing attempts so the directory layout reflects the
+        # failure (downstream tools key off the `_failed_attempt_` suffix).
+        for oid in final_failed_ids:
+            self._archive_failed_attempt(oid, attempt_number)
 
         llm_generic_error_record_ids = find_records_with_llm_generic_error(self.output_dir, successful_ids)
         eval_summary_path = self.output_dir / "evaluation_summary.json"
