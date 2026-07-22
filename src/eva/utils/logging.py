@@ -26,6 +26,50 @@ class RecordFilter(logging.Filter):
         return current_record_id.get() == self.record_id
 
 
+def _bridge_loguru_to_stdlib() -> None:
+    """Route pipecat's loguru logs into the stdlib ``pipecat`` logger.
+
+    Pipecat logs through loguru (a separate logging system), so its records never
+    reach the stdlib handlers configured here — including the smart-turn analyzer's
+    ``End of Turn complete due to stop_secs`` / ``End of Turn result`` debug lines.
+    This installs a loguru sink that re-emits every loguru record as a stdlib log
+    record under the ``pipecat`` logger, preserving the original level and source
+    location. Called once from ``setup_logging`` so per-record file handlers (which
+    attach to the ``pipecat`` logger) capture these lines.
+
+    No-op if loguru is not installed.
+    """
+    try:
+        from loguru import logger as _loguru_logger
+    except ImportError:
+        return
+
+    class _InterceptHandler:
+        def write(self, message) -> None:  # loguru sink protocol
+            record = message.record
+            # Map loguru level name to a stdlib level number (fallback to the numeric no).
+            level = logging.getLevelName(record["level"].name)
+            if not isinstance(level, int):
+                level = record["level"].no
+            std_logger = logging.getLogger("pipecat")
+            log_record = std_logger.makeRecord(
+                "pipecat",
+                level,
+                record["file"].path,
+                record["line"],
+                record["message"],
+                (),
+                None,
+                func=record["function"],
+            )
+            std_logger.handle(log_record)
+
+    # Replace loguru's default stderr sink with our stdlib bridge at DEBUG so the
+    # smart-turn debug lines are captured; the stdlib handlers do the final filtering.
+    _loguru_logger.remove()
+    _loguru_logger.add(_InterceptHandler(), level="DEBUG", format="{message}")
+
+
 def get_logger(name: str) -> logging.Logger:
     """Get a logger under the ``eva`` hierarchy.
 
@@ -82,6 +126,16 @@ def setup_logging(
 
     # Don't propagate to root logger
     root_logger.propagate = False
+
+    # Bridge pipecat's loguru logs into the stdlib ``pipecat`` logger so framework
+    # diagnostics (e.g. smart-turn end-of-turn reasons) land in the same sinks.
+    _bridge_loguru_to_stdlib()
+    pipecat_logger = logging.getLogger("pipecat")
+    pipecat_logger.setLevel(logging.DEBUG)
+    pipecat_logger.addHandler(console_handler)
+    if log_file:
+        pipecat_logger.addHandler(file_handler)
+    pipecat_logger.propagate = False
 
     root_logger.debug(f"Logging configured: level={level}, file={log_file}")
 
