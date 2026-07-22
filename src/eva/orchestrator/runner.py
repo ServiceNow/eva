@@ -259,12 +259,6 @@ class BenchmarkRunner:
                     # result.json is now written by the worker itself (inside the
                     # semaphore) so it survives task cancellation and process signals.
 
-                    # Phase 2: If the conversation didn't complete, skip validation.
-                    # validate_one() handles the gate (conversation_valid_end); returning
-                    # vr=None signals "not_finished" to the classification loop below.
-                    if not (isinstance(result, ConversationResult) and result.completed):
-                        return output_id, result, False, None
-
                     # Phase 4: Await audio task (needed for audio-based validation metrics)
                     if audio_task is not None:
                         try:
