@@ -51,6 +51,13 @@ def _get_all_metrics() -> list[str]:
     return [m for m in get_global_registry().list_metrics() if m not in _VALIDATION_METRIC_NAMES]
 
 
+# Defaults for the Deepgram Voice Agent listen/speak providers (overridable via s2s_params).
+# Defined here (rather than in the assistant layer) so pipeline_parts can reference them
+# without importing deepgram_server.py — which would pull the heavy deepgram SDK import.
+DEFAULT_LISTEN_MODEL = "nova-3"
+DEFAULT_SPEAK_MODEL = "aura-2-thalia-en"
+
+
 def _param_alias(params: dict[str, Any]) -> str:
     """Return the display alias from a params dict."""
     return params.get("alias") or params["model"]
@@ -229,14 +236,14 @@ class ModelConfig(BaseModel):
                     }
                 if self.s2s == "deepgram":
                     # Deepgram Voice Agent is a cascade internally (STT -> LLM -> TTS);
-                    # expose its component models. The `llm` part uses the short
-                    # `think_label` if provided (else the Deepgram model id), so the
-                    # run_id/folder stays readable; defaults mirror deepgram_server.py.
+                    # expose its component models. The `llm` part uses the short `alias`
+                    # if provided (else the Deepgram model id), so the run_id/folder
+                    # stays readable.
                     p = self.s2s_params or {}
                     return {
-                        "stt": p.get("listen_model", "nova-3"),
-                        "llm": p.get("think_label") or p.get("model") or p.get("think_model", ""),
-                        "tts": p.get("speak_model", "aura-2-thalia-en"),
+                        "stt": p.get("listen_model", DEFAULT_LISTEN_MODEL),
+                        "llm": _param_alias(p),
+                        "tts": p.get("speak_model", DEFAULT_SPEAK_MODEL),
                     }
                 return {"s2s": _param_alias(self.s2s_params)}
             case PipelineType.CASCADE:

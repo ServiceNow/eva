@@ -45,6 +45,7 @@ from eva.assistant.audio_bridge import (
 )
 from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
+from eva.models.config import DEFAULT_LISTEN_MODEL, DEFAULT_SPEAK_MODEL
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
 
@@ -62,10 +63,10 @@ MULAW_CHUNK_DURATION_S = 0.02  # 20ms per chunk
 # fires during user silence (e.g. while the agent is speaking).
 KEEPALIVE_INTERVAL_S = 5.0
 
-# Defaults for the Voice Agent listen/think/speak providers (overridable via s2s_params).
-_DEFAULT_LISTEN_MODEL = "nova-3"
+# Default think provider for the Voice Agent (overridable via s2s_params).
+# Listen/speak model defaults are shared with config.py (DEFAULT_LISTEN_MODEL /
+# DEFAULT_SPEAK_MODEL) so pipeline_parts and this server stay in sync.
 _DEFAULT_THINK_PROVIDER = "open_ai"
-_DEFAULT_SPEAK_MODEL = "aura-2-thalia-en"
 
 
 def _agent_tools_to_deepgram(agent: AgentConfig) -> list[dict[str, Any]] | None:
@@ -105,11 +106,11 @@ class DeepgramAssistantServer(AbstractAssistantServer):
         # ``model`` is the exact LLM id sent to Deepgram (required).
         self._think_model: str = s2s_params["model"]
         # Metrics/run_id label, decoupled from the (often long) Deepgram model id:
-        # an explicit ``think_label`` if provided, else the model id itself.
-        self._model = s2s_params.get("think_label") or self._think_model
+        # an explicit ``alias`` if provided, else the model id itself.
+        self._model = s2s_params.get("alias") or self._think_model
         self._think_provider: str = s2s_params.get("think_provider", _DEFAULT_THINK_PROVIDER)
-        self._listen_model: str = s2s_params.get("listen_model", _DEFAULT_LISTEN_MODEL)
-        self._speak_model: str = s2s_params.get("speak_model", _DEFAULT_SPEAK_MODEL)
+        self._listen_model: str = s2s_params.get("listen_model", DEFAULT_LISTEN_MODEL)
+        self._speak_model: str = s2s_params.get("speak_model", DEFAULT_SPEAK_MODEL)
 
         # --- BYO ("bring your own") think configuration (all optional) ---
         # By default the think step uses Deepgram's *managed* provider. Supply any of

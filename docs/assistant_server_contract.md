@@ -550,7 +550,7 @@ Notable points specific to Deepgram:
 - **Config.** `framework: deepgram`, `model: {s2s: deepgram, s2s_params: {...}}`. Recognised
   `s2s_params`: `api_key` and `model` (both **required**; `model` is the exact Deepgram LLM id,
   e.g. `gpt-4o-mini` or `claude-haiku-4-5`), `think_provider` (default `open_ai`; use `anthropic`
-  for Claude models, `aws_bedrock`/`google`/`groq` for the others), `think_label` (optional short
+  for Claude models, `aws_bedrock`/`google`/`groq` for the others), `alias` (optional short
   metrics/run_id label — Deepgram still receives `model`), `listen_model` (STT, default `nova-3`),
   `speak_model` (TTS, default `aura-2-thalia-en`). The conversation language comes from the run's
   `language` (base server), not `s2s_params`.
