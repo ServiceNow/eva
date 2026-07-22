@@ -238,6 +238,11 @@ class BenchmarkRunner:
             if not pending_output_ids:
                 break
 
+            # Archive each record's prior output (numbered for the attempt that produced it,
+            # attempt_number - 1, keeping _failed_attempt_N aligned with the time-limit cache).
+            for oid in pending_output_ids:
+                self._archive_failed_attempt(oid, attempt_number - 1)
+
             # STEPS 1-3: Per-record pipeline — run, validate, and fire metrics as each
             # conversation completes rather than waiting for the full batch.
             # The semaphore slot is released before audio writes and before LLM validation
@@ -435,12 +440,9 @@ class BenchmarkRunner:
             if not pending_output_ids:
                 logger.info("All tasks passed validation!")
                 break
-            elif attempt_number < max_attempts:
-                logger.info(f"Archiving {len(pending_output_ids)} failed tasks for rerun...")
-                for output_id in pending_output_ids:
-                    self._archive_failed_attempt(output_id, attempt_number)
-            else:
-                logger.warning(f"{len(pending_output_ids)} tasks still failing after {max_attempts} attempts")
+
+        if pending_output_ids:
+            logger.warning(f"{len(pending_output_ids)} tasks still failing after {max_attempts} attempts")
 
         # STEP 6: Compute final success/failure sets
         final_failed_ids = set(pending_output_ids)
