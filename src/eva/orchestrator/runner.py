@@ -12,7 +12,7 @@ from tqdm.asyncio import tqdm
 from tqdm.std import Bar
 
 from eva.metrics.legacy_aliases import rename_metric_keys, rename_metric_list
-from eva.metrics.runner import MetricsRunner, MetricsRunResult
+from eva.metrics.runner import MetricsRunner
 from eva.models.agents import AgentConfig
 from eva.models.config import PipelineType, RunConfig
 from eva.models.record import EvaluationRecord
@@ -189,13 +189,41 @@ class BenchmarkRunner:
                 output_id_to_record[record.id] = record
 
         all_output_ids = list(output_id_to_record.keys())
-        pending_output_ids = list(all_output_ids)
+        started_at = datetime.now()
+
+        return await self._run(
+            pending_ids=all_output_ids,
+            all_output_ids=all_output_ids,
+            output_id_to_record=output_id_to_record,
+            started_at=started_at,
+        )
+
+    async def _run(
+        self,
+        *,
+        pending_ids: list[str],
+        all_output_ids: list[str],
+        output_id_to_record: dict[str, EvaluationRecord],
+        started_at: datetime,
+        already_passed_ids: frozenset[str] = frozenset(),
+    ) -> RunResult:
+        """Run/validate/rerun every pending record, then compute metrics and write all outputs.
+
+        Single flat loop per output_id, up to max_rerun_attempts total:
+        1. Run conversation
+        2. Check conversation_finished — if not finished, retry
+        3. Run validation metrics
+        4. If validation passes → done; if not → retry
+        5. After all attempts exhausted → record is failed
+        6. Run full metrics on successful records only
+        """
+        max_attempts = self.config.max_rerun_attempts
+        pending_output_ids = list(pending_ids)
         rerun_history: dict[str, list[dict]] = {}
         time_limit_attempt_counts: dict[str, int] = {}
         time_limit_validation_cache: dict[str, dict[int, ValidationResult]] = {}
         max_time_limit_attempts = int(self.config.validation_thresholds.get("max_time_limit_attempts", 1))
         time_limit_accepted_ids: set[str] = set()
-        started_at = datetime.now()
 
         # Initialize port pool once before the attempt loop.
         await self.port_pool.initialize()
@@ -234,6 +262,7 @@ class BenchmarkRunner:
                 metrics_runner = None
 
         # LOOP: Run and validate, up to max_attempts total
+        attempt_number = 0
         for attempt_number in range(1, max_attempts + 1):
             if not pending_output_ids:
                 break
@@ -443,7 +472,7 @@ class BenchmarkRunner:
 
         # STEP 6: Compute final success/failure sets
         final_failed_ids = set(pending_output_ids)
-        successful_ids = set(all_output_ids) - final_failed_ids
+        successful_ids = (set(all_output_ids) - final_failed_ids) | already_passed_ids
 
         # Categorize failures
         not_finished_count = sum(
@@ -608,57 +637,6 @@ class BenchmarkRunner:
             # Always release port
             await self.port_pool.release(port)
 
-    async def _run_targeted(
-        self, tasks: list[tuple[EvaluationRecord, str]]
-    ) -> dict[str, ConversationResult | Exception]:
-        """Run specific (record, output_id) pairs — single attempt each, no retry.
-
-        Unlike run(), this does NOT expand records into trials
-        and does NOT retry on failure. The caller (_run_with_validation) owns
-        all retry logic via its flat loop.
-
-        Args:
-            tasks: List of (record, output_id) pairs to run.
-
-        Returns:
-            Dict mapping output_id -> ConversationResult or Exception.
-        """
-        if not tasks:
-            return {}
-
-        # Ensure output directory and port pool are ready
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        (self.output_dir / "records").mkdir(exist_ok=True)
-        await self.port_pool.initialize()
-
-        semaphore = asyncio.Semaphore(self.config.max_concurrent_conversations)
-
-        async def run_with_semaphore(record: EvaluationRecord, output_id: str) -> ConversationResult:
-            async with semaphore:
-                result, audio_task = await self._run_conversation(record, output_id)
-            # Semaphore released; await audio task outside it so the slot is free sooner.
-            if audio_task is not None:
-                try:
-                    await audio_task
-                except Exception as e:
-                    logger.warning(f"Audio save failed for {output_id}: {e}")
-            return result
-
-        coros = [run_with_semaphore(record, oid) for record, oid in tasks]
-        results = await asyncio.gather(*coros, return_exceptions=True)
-
-        output: dict[str, ConversationResult | Exception] = {}
-        for (_record, output_id), result in zip(tasks, results):
-            output[output_id] = result
-
-            # Save result.json for successful ConversationResults
-            if isinstance(result, ConversationResult):
-                result_path = self.output_dir / "records" / output_id / "result.json"
-                result_path.parent.mkdir(parents=True, exist_ok=True)
-                result_path.write_text(result.model_dump_json(indent=2))
-
-        return output
-
     async def validate_existing(
         self, run_dir: Path, records: list[EvaluationRecord], force_revalidation: bool = False
     ) -> RunResult:
@@ -688,7 +666,6 @@ class BenchmarkRunner:
         filtered_records = self._filter_records(records)
 
         # Build output_id list from config (matches _run_with_validation logic)
-        records_dir = self.output_dir / "records"
         num_trials = self.config.num_trials
         output_id_to_record: dict[str, EvaluationRecord] = {}
 
@@ -714,7 +691,7 @@ class BenchmarkRunner:
             )
 
         # Load previously successful record IDs from evaluation_summary.json
-        already_passed_ids: set[str] = set()
+        already_passed_ids: frozenset[str] = frozenset()
         if not force_revalidation:
             eval_summary_path = self.output_dir / "evaluation_summary.json"
             if eval_summary_path.exists():
@@ -722,9 +699,9 @@ class BenchmarkRunner:
                     prev_summary = json.load(f)
                 # Support both new format (nested under "simulation") and legacy flat format
                 sim = prev_summary.get("simulation", prev_summary)
-                prev_successful = set(sim.get("successful_record_ids", []))
+                prev_successful = frozenset(sim.get("successful_record_ids", []))
                 # Only skip IDs that are still present in the current output
-                already_passed_ids = prev_successful & set(all_output_ids)
+                already_passed_ids = prev_successful.intersection(all_output_ids)
                 if already_passed_ids:
                     logger.info(
                         f"Skipping validation for {len(already_passed_ids)} already-passed records "
@@ -759,197 +736,12 @@ class BenchmarkRunner:
         total_passed = newly_passed_count + len(already_passed_ids)
         logger.info(f"Validation results: {total_passed} passed, {len(failed_ids)} failed")
 
-        # STEP 3: Rerun failures using the same flat loop as _run_with_validation
-        max_attempts = self.config.max_rerun_attempts
-        rerun_history: dict[str, list[dict]] = {}
-        pending_ids = list(failed_ids)
-
-        for attempt_number in range(1, max_attempts + 1):
-            if not pending_ids:
-                break
-
-            # Archive failed outputs
-            for output_id in pending_ids:
-                self._archive_failed_attempt(output_id, attempt_number)
-
-            tasks = [(output_id_to_record[oid], oid) for oid in pending_ids]
-            run_results = await self._run_targeted(tasks)
-
-            still_not_finished: list[str] = []
-            to_validate_ids: list[str] = []
-            for output_id in pending_ids:
-                result = run_results.get(output_id)
-                if isinstance(result, Exception) or (isinstance(result, ConversationResult) and not result.completed):
-                    still_not_finished.append(output_id)
-                else:
-                    to_validate_ids.append(output_id)
-
-            failed_validation: list[str] = []
-            new_results: dict = {}
-            if to_validate_ids:
-                to_validate_records = list(
-                    {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in to_validate_ids}.values()
-                )
-                vr_runner = ValidationRunner(
-                    run_dir=self.output_dir,
-                    dataset=to_validate_records,
-                    thresholds=self.config.validation_thresholds,
-                    metric_configs=self._metric_configs,
-                    output_ids=to_validate_ids,
-                )
-                new_results = await vr_runner.run_validation()
-                for output_id in to_validate_ids:
-                    vr = new_results.get(output_id)
-                    if vr is None or (not vr.passed and not vr.failed_metrics):
-                        still_not_finished.append(output_id)
-                    elif not vr.passed:
-                        failed_validation.append(output_id)
-
-            pending_ids = still_not_finished + failed_validation
-            for oid in still_not_finished:
-                rerun_history.setdefault(oid, []).append(
-                    {
-                        "attempt": attempt_number,
-                        "reason": "not_finished",
-                    }
-                )
-            for oid in failed_validation:
-                vr = new_results[oid]
-                entry: dict = {
-                    "attempt": attempt_number,
-                    "reason": "validation_failed",
-                    "failed_metrics": vr.failed_metrics,
-                    "scores": vr.scores,
-                }
-                if vr.details:
-                    failure_details = {name: vr.details[name] for name in vr.failed_metrics if name in vr.details}
-                    if failure_details:
-                        entry["failure_details"] = failure_details
-                rerun_history.setdefault(oid, []).append(entry)
-
-            if not pending_ids:
-                logger.info("All rerun records now pass validation!")
-                break
-
-        if pending_ids:
-            logger.warning(f"{len(pending_ids)} tasks still failing after {max_attempts} attempts")
-
-        # STEP 4: Optionally run metrics
-        final_failed_ids = set(pending_ids)
-        successful_ids = (set(all_output_ids) - final_failed_ids) | already_passed_ids
-
-        metrics_result: MetricsRunResult | None = None
-        if self.config.metrics and successful_ids:
-            logger.info(f"Running metrics on {len(successful_ids)} successful records...")
-            successful_records = list(
-                {id(output_id_to_record[oid]): output_id_to_record[oid] for oid in successful_ids}.values()
-            )
-            metrics_runner = MetricsRunner(
-                run_dir=self.output_dir,
-                dataset=successful_records,
-                metric_names=self.config.metrics,
-                metric_configs=self._metric_configs,
-                record_ids=list(successful_ids),
-                num_draws=self.config.num_trials,
-                force_rerun=self.config.force_rerun_metrics,
-            )
-            metrics_result = await metrics_runner.run()
-        elif self.config.metrics and not successful_ids:
-            logger.info("Skipping metrics: no records passed validation")
-
-        # STEP 5: Generate summary
-        ended_at = datetime.now()
-        total = len(all_output_ids)
-
-        # Categorize final failures
-        not_finished_count = sum(1 for oid in final_failed_ids if not check_conversation_finished(records_dir / oid))
-        validation_failed_count = len(final_failed_ids) - not_finished_count
-
-        # Build final_failures from the last rerun_history entry for each failed record
-        final_failures: dict[str, dict] = {}
-        for oid in final_failed_ids:
-            if oid in rerun_history and rerun_history[oid]:
-                final_failures[oid] = rerun_history[oid][-1]
-            else:
-                # Failed on initial validation (no rerun history)
-                if not check_conversation_finished(records_dir / oid):
-                    final_failures[oid] = {"reason": "not_finished"}
-                else:
-                    vr = validation_results.get(oid)
-                    entry: dict = {
-                        "reason": "validation_failed",
-                        "failed_metrics": vr.failed_metrics if vr else [],
-                        "scores": vr.scores if vr else {},
-                    }
-                    if vr and vr.details:
-                        failure_details = {}
-                        for metric_name in vr.failed_metrics:
-                            if metric_name in vr.details:
-                                failure_details[metric_name] = vr.details[metric_name]
-                        if failure_details:
-                            entry["failure_details"] = failure_details
-                    final_failures[oid] = entry
-
-        # Archive the final failing attempts so the directory layout reflects the
-        # failure (downstream tools key off the `_failed_attempt_` suffix).
-        for oid in final_failed_ids:
-            self._archive_failed_attempt(oid, max_attempts)
-
-        # Build evaluation summary with separate simulation and metrics sections
-        llm_generic_error_record_ids = find_records_with_llm_generic_error(self.output_dir, successful_ids)
-        eval_summary: dict[str, Any] = {
-            "started_at": started_at.isoformat(),
-            "ended_at": ended_at.isoformat(),
-            "duration_seconds": (ended_at - started_at).total_seconds(),
-            "simulation": {
-                "total_records": total,
-                "successful_records": len(successful_ids),
-                "failed_records": len(final_failed_ids),
-                "not_finished_count": not_finished_count,
-                "validation_failed_count": validation_failed_count,
-                "records_with_llm_generic_error": len(llm_generic_error_record_ids),
-                "llm_generic_error_record_ids": llm_generic_error_record_ids,
-                "failed_record_ids": sorted(final_failed_ids),
-                "successful_record_ids": sorted(successful_ids),
-            },
-            "rerun_history": rerun_history,
-            "final_failures": final_failures,
-        }
-
-        eval_summary_path = self.output_dir / "evaluation_summary.json"
-        with open(eval_summary_path, "w") as f:
-            json.dump(eval_summary, f, indent=2, ensure_ascii=False)
-
-        # Terminal output — clearly separate simulation from metrics
-        logger.info("=" * 60)
-        logger.info("EVALUATION COMPLETE")
-        logger.info("=" * 60)
-        logger.info("Simulation:")
-        logger.info(f"  Successful: {len(successful_ids)}/{total}")
-        if final_failed_ids:
-            logger.info(f"  Failed: {len(final_failed_ids)}/{total}")
-
-        if self.config.metrics:
-            logger.info("Metrics:")
-            if metrics_result is None:
-                logger.info("  Skipped (no records passed simulation validation)")
-            elif metrics_result.has_metric_failures:
-                logger.error(
-                    f"  {metrics_result.total_metric_failures} metric computation(s) failed "
-                    f"across {len(metrics_result.metric_failures)} metric(s): "
-                    f"{', '.join(metrics_result.metric_failures.keys())}"
-                )
-                logger.info("  See METRICS RESULTS above and metrics_summary.json for details.")
-            else:
-                logger.info(f"  All metrics computed successfully on {metrics_result.total_records} records.")
-        logger.info("=" * 60)
-
-        return RunResult(
-            run_id=self.config.run_id,
-            total_records=total,
-            successful_records=len(successful_ids),
-            failed_records=len(final_failed_ids),
-            duration_seconds=(ended_at - started_at).total_seconds(),
+        return await self._run(
+            pending_ids=failed_ids,
+            all_output_ids=all_output_ids,
+            output_id_to_record=output_id_to_record,
+            started_at=started_at,
+            already_passed_ids=already_passed_ids,
         )
 
     async def rerun_failed_metrics(
