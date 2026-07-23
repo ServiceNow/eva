@@ -495,8 +495,7 @@ class TurnTakingMetric(CodeMetric):
             )
 
         # --- Pre-tool-speech lead-in rate ---
-        # None (omitted) for S2S — see _compute_pre_tool_speech_groups docstring for why trace
-        # order can't be trusted there yet.
+        # Reads audit_log.json directly so it works uniformly across cascade, S2S, and audio-LLM
         pre_tool_groups = cls._compute_pre_tool_speech_groups(context)
         if pre_tool_groups:
             sub["pretoolspeech_rate"] = _wrap(
