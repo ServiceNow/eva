@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from collections.abc import Generator
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -53,3 +54,22 @@ def extract_and_load_json(text: str) -> dict | list | None:
     if json_object is None:
         logger.warning(f"Error extracting JSON from text: {text}")
     return json_object
+
+
+def load_jsonl(path: Path) -> list[dict]:
+    """Parse a JSONL file into dicts, skipping blank/malformed lines; empty if absent.
+
+    For known-format ``.jsonl`` logs (not free-form LLM output), so ``json.loads`` per line is the
+    right tool — use ``extract_and_load_json`` only for LLM-generated JSON.
+    """
+    out: list[dict] = []
+    if not path.exists():
+        return out
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line:
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return out

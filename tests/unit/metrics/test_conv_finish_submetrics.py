@@ -33,7 +33,7 @@ def _fail_ctx(tmp_path, **overrides):
 
 @pytest.mark.asyncio
 async def test_success_emits_zero_cause_rates(metric):
-    from eva.metrics.diagnostic.conv_finish_classifier import CATEGORY_PRIORITY
+    from eva.utils.conversation_correctly_finished import CATEGORY_PRIORITY
 
     ctx = make_metric_context(
         conversation_ended_reason="goodbye",
@@ -65,7 +65,7 @@ async def test_failure_reasoning_only_sub_metric_fires(metric, tmp_path):
     assert subs["stt_empty_transcription_rate"].score == 0.0
     assert subs["unknown_reason_rate"].score == 0.0
     # exactly one *cause* flag is hot (input-characteristic flags are orthogonal, excluded here)
-    from eva.metrics.diagnostic.conv_finish_classifier import CATEGORY_PRIORITY
+    from eva.utils.conversation_correctly_finished import CATEGORY_PRIORITY
 
     assert sum(subs[f"{c}_rate"].score for c in CATEGORY_PRIORITY) == 1.0
     # fired sub-metric name is namespaced under the parent

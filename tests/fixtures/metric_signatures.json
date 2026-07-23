@@ -14,7 +14,7 @@
   "ConversationCorrectlyFinishedMetric": {
     "name": "conversation_correctly_finished",
     "prompt_hash": null,
-    "source_hash": "cee94b5782ac",
+    "source_hash": "9cf0a1d26e80",
     "version": "v0.2"
   },
   "ConversationProgressionJudgeMetric": {

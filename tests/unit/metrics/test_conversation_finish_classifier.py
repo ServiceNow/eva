@@ -2,7 +2,7 @@
 
 import pytest
 
-from eva.metrics.diagnostic.conv_finish_classifier import (
+from eva.utils.conversation_correctly_finished import (
     ConvFinishSignals,
     classify_conv_finish_failure,
 )
@@ -215,7 +215,7 @@ def test_infra_details_flag_invalid_run():
 
 
 # --- final-turn input flags (orthogonal to the cause classifier) ------------
-from eva.metrics.diagnostic.conv_finish_classifier import final_turn_input_flags  # noqa: E402
+from eva.utils.conversation_correctly_finished import final_turn_input_flags  # noqa: E402
 
 
 @pytest.mark.parametrize(

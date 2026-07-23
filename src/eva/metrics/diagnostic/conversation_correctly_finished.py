@@ -1,16 +1,16 @@
 """Conversation-correctly-finished diagnostic metric."""
 
 from eva.metrics.base import CodeMetric, MetricContext
-from eva.metrics.diagnostic.conv_finish_classifier import (
+from eva.metrics.processor import is_agent_timeout_on_user_turn, last_audio_speaker
+from eva.metrics.registry import register_metric
+from eva.models.results import MetricScore
+from eva.utils.conversation_correctly_finished import (
     Classification,
     build_conv_finish_sub_metrics,
     build_final_turn_flag_sub_metrics,
     classify_conv_finish_failure,
     extract_conv_finish_signals,
 )
-from eva.metrics.processor import is_agent_timeout_on_user_turn, last_audio_speaker
-from eva.metrics.registry import register_metric
-from eva.models.results import MetricScore
 
 
 @register_metric
@@ -23,7 +23,7 @@ class ConversationCorrectlyFinishedMetric(CodeMetric):
     so their cross-record mean reads as "fraction of all conversations with this cause" —
     matching how faithfulness dimension rates aggregate (denominator = all records, not just
     failures). The orthogonal input-characteristic flags (``final_turn_*``) stay failure-only,
-    since they describe the unanswered final turn. See ``docs/metrics/conv_finish_submetrics.md``.
+    since they describe the unanswered final turn.
     """
 
     name = "conversation_correctly_finished"

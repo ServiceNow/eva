@@ -2,7 +2,7 @@
 
 import json
 
-from eva.metrics.diagnostic.conv_finish_classifier import (
+from eva.utils.conversation_correctly_finished import (
     classify_conv_finish_failure,
     extract_conv_finish_signals,
 )
