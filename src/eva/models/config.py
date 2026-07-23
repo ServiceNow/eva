@@ -51,6 +51,13 @@ def _get_all_metrics() -> list[str]:
     return [m for m in get_global_registry().list_metrics() if m not in _VALIDATION_METRIC_NAMES]
 
 
+# Defaults for the Deepgram Voice Agent listen/speak providers (overridable via s2s_params).
+# Defined here (rather than in the assistant layer) so pipeline_parts can reference them
+# without importing deepgram_server.py — which would pull the heavy deepgram SDK import.
+DEFAULT_LISTEN_MODEL = "nova-3"
+DEFAULT_SPEAK_MODEL = "aura-2-thalia-en"
+
+
 def _param_alias(params: dict[str, Any]) -> str:
     """Return the display alias from a params dict."""
     return params.get("alias") or params["model"]
@@ -232,6 +239,17 @@ class ModelConfig(BaseModel):
                         "s2s": _param_alias(self.s2s_params) or self.s2s,
                         **_fetch_elevenlabs_agent_models(self.s2s_params),
                     }
+                if self.s2s == "deepgram":
+                    # Deepgram Voice Agent is a cascade internally (STT -> LLM -> TTS);
+                    # expose its component models. The `llm` part uses the short `alias`
+                    # if provided (else the Deepgram model id), so the run_id/folder
+                    # stays readable.
+                    # s2s_params is guaranteed non-None by _check_companion_services().
+                    return {
+                        "stt": self.s2s_params.get("listen_model", DEFAULT_LISTEN_MODEL),
+                        "llm": _param_alias(self.s2s_params),
+                        "tts": self.s2s_params.get("speak_model", DEFAULT_SPEAK_MODEL),
+                    }
                 return {"s2s": _param_alias(self.s2s_params)}
             case PipelineType.CASCADE:
                 return {
@@ -322,8 +340,9 @@ def get_pipeline_type(model_data: dict) -> PipelineType:
     ``llm_model`` in a flat dict.
     """
     if s2s_value := model_data.get("s2s"):
-        # ElevenLabs uses s2s_params for configuration but is a cascade pipeline internally
-        if s2s_value == "elevenlabs":
+        # ElevenLabs and Deepgram use s2s_params for configuration but are cascade
+        # pipelines internally (STT -> LLM -> TTS), so they're scored as cascade.
+        if s2s_value in ("elevenlabs", "deepgram"):
             return PipelineType.CASCADE
         # Ultravox uses s2s_params for plumbing but is an audio-LLM (audio in, text out, separate TTS)
         if s2s_value == "ultravox":
@@ -498,7 +517,7 @@ class RunConfig(BaseSettings):
     )
 
     # Framework selection
-    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice"] = Field(
+    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "deepgram"] = Field(
         "pipecat",
         description=(
             "Agent framework to use for the assistant server."
@@ -507,6 +526,7 @@ class RunConfig(BaseSettings):
             "'gemini_live': Gemini Live API via google-genai."
             "'elevenlabs': ElevenLabs Conversational AI API."
             "'grok_voice': xAI Grok voice realtime API."
+            "'deepgram': Deepgram Voice Agent API."
         ),
     )
 
