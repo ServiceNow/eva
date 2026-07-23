@@ -399,10 +399,11 @@ async def test_evaluation_mode_with_unresolved_errors(eval_config, mock_dataset)
     def completed_fn(record_id, per_record_attempt):
         return record_id != "fail_record_1"
 
-    validation_results = create_mock_validation_results(
-        pass_ids=["pass_record_1"],
-        fail_ids=[],
-    )
+    # An incomplete conversation is rejected by validate_one's gate, which it signals as passed=False with empty failed_metrics.
+    validation_results = {
+        "pass_record_1": ValidationResult(passed=True),
+        "fail_record_1": ValidationResult(passed=False),
+    }
 
     with patch.object(
         runner, "_run_conversation", side_effect=_mock_run_conversation_helper(runner, call_counts, completed_fn)
