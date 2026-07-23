@@ -316,7 +316,7 @@ class AgenticSystem:
                     "tool_calls": json.dumps(response_tool_calls_for_stats, ensure_ascii=False)
                     if response_tool_calls_for_stats
                     else "",
-                    "reasoning": f'"{reasoning_content_for_csv}"',
+                    "reasoning": reasoning_content_for_csv or None,
                     "reasoning_tokens": reasoning_tokens,
                 }
                 self.agent_perf_stats.append(perf_stat)
