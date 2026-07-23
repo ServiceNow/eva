@@ -2,7 +2,7 @@
   "AuthenticationSuccessMetric": {
     "name": "authentication_success",
     "prompt_hash": null,
-    "source_hash": "ecce31785d0d",
+    "source_hash": "5021c8eaa095",
     "version": "v0.1"
   },
   "ConcisenessJudgeMetric": {
