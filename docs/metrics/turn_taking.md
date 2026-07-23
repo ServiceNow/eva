@@ -190,13 +190,6 @@ Sub-metric aggregation reads the raw per-turn values from `per_turn_evidence` ra
 | `user_interruption.mean_yield_ms` | no | rate > 0 | Arithmetic mean of `yield_ms` across user-interrupt turns. |
 | `user_interruption.mean_yield_score` | yes | rate > 0 | Mean of the per-turn yield scores that feed the main score. |
 
-**Turn-end fallback nudges**
-
-| Key | Normalized? | When present | Meaning |
-| --- | --- | --- | --- |
-| `fallback_nudge.rate` | yes | at least one assistant turn | `len(fallback_turn_ids) / total_assistant_turns`. Denominator is all assistant turns (`audio_timestamps_assistant_turns`), not the evaluable-turn count, since a fallback nudge produces an assistant turn with no paired user turn and so is never in the evaluable set. |
-| `fallback_nudge.count` | no (raw count) | always, but `score=None` when zero | Total number of fallback-nudge turns. `None` on clean runs so cross-record aggregates exclude them rather than averaging in zeros. |
-
 **Pre-tool-speech lead-in rate**
 
 | Key | Normalized? | When present | Meaning |
