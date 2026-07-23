@@ -35,13 +35,19 @@ Flat headline sub-metrics (one number each — show up as columns in analysis vi
                         user_interruption.mean_yield_ms,
                         user_interruption.mean_yield_score
                         (the latter two only when rate > 0)
+  Pre-tool speech:      pretoolspeech_rate (lead-in tool-call groups / total tool-call groups;
+                        computed from audit_log.json directly so it works uniformly across
+                        cascade/S2S/audio-LLM; omitted when there are no tool calls or the
+                        audit log is unavailable — see ``_compute_pre_tool_speech_groups``)
 
 All reported sub-metrics are consistent with the main score: ``mean_overlap_score``,
 ``mean_count_score``, and ``mean_yield_score`` aggregate exactly the per-turn scores
 that feed into ``turn_taking.score``.
 """
 
+import json
 import statistics
+from pathlib import Path
 from typing import Any
 
 from eva.metrics.base import CodeMetric, MetricContext
@@ -59,7 +65,7 @@ class TurnTakingMetric(CodeMetric):
     description = "Turn-taking evaluation based on per-turn latency and interruption behavior"
     category = "experience"
     pass_at_k_threshold = 0.8
-    version = "v0.1"
+    version = "v0.2"
 
     # --- Latency curve (piecewise linear). 0 outside [LATENCY_HARD_EARLY_MS, LATENCY_HARD_LATE_MS]. ---
     # Ramp up 0 → 1 from LATENCY_HARD_EARLY_MS to LATENCY_SWEET_SPOT_LOW_MS.
@@ -234,6 +240,64 @@ class TurnTakingMetric(CodeMetric):
         user_barge_in = u_segs[0][0]
         agent_stopped = prev_a_segs[-1][1]
         return max(0.0, agent_stopped - user_barge_in) * 1000
+
+    @staticmethod
+    def _compute_pre_tool_speech_groups(context: MetricContext) -> list[bool] | None:
+        """Return one bool per contiguous run ("group") of tool_call/tool_response entries.
+
+        True when the assistant spoke (non-empty content) since the previous group ended (or
+        since the start of the conversation) — i.e. it gave a pre-tool-speech lead-in before this
+        group of tool calls. Consecutive tool calls with no intervening speech (e.g. two tools
+        invoked back-to-back off one lead-in) count as a single group, matching the
+        "one lead-in per batch" prompt instruction (``agent.pre_tool_speech`` in
+        configs/prompts/simulation.yaml) — a multi-tool turn with one lead-in isn't penalized for
+        the tools that didn't get their own.
+
+        Reads ``audit_log.json`` directly from ``context.output_dir`` instead of
+        ``context.conversation_trace``. The audit log carries every event's true, original
+        timestamp (when the assistant actually generated/spoke the text), whereas for S2S
+        ``conversation_trace`` assistant entries come from the user simulator's STT transcription
+        of the spoken audio — timestamped only after the audio finishes playing. That transcription
+        can sort *after* a subsequent tool_call in the timestamp-ordered trace even when the agent
+        actually spoke first (confirmed against a real S2S transcript), so ``conversation_trace``
+        order cannot be trusted for this signal on S2S. Reading the audit log directly sidesteps
+        that entirely and works uniformly across cascade, S2S, and audio-LLM.
+
+        Returns None when ``audit_log.json`` is missing, unreadable, or has no transcript — callers
+        should treat that as "unknown" rather than "no lead-ins".
+        """
+        audit_log_path = Path(context.output_dir) / "audit_log.json"
+        try:
+            with open(audit_log_path) as f:
+                audit_log = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return None
+        transcript = audit_log.get("transcript")
+        if not transcript:
+            return None
+
+        groups: list[bool] = []
+        in_group = False
+        spoke_since_group = False
+        for entry in sorted(transcript, key=lambda e: int(e["timestamp"])):
+            message_type = entry.get("message_type")
+            if message_type in ("tool_call", "tool_response"):
+                if not in_group:
+                    groups.append(spoke_since_group)
+                    in_group = True
+                continue
+            # Ignore other event types (e.g. llm_call) without breaking the current group —
+            # only assistant/user speech should reset or extend the "spoke since group" state.
+            if message_type not in ("assistant", "user"):
+                continue
+            in_group = False
+            if message_type == "assistant":
+                content = entry.get("value", "")
+                if isinstance(content, str) and content.strip():
+                    spoke_since_group = True
+            else:
+                spoke_since_group = False
+        return groups
 
     @classmethod
     def _per_turn_score_and_reason(
@@ -428,6 +492,16 @@ class TurnTakingMetric(CodeMetric):
             )
             sub["user_interruption.mean_yield_score"] = _wrap(
                 "user_interruption.mean_yield_score", round(statistics.mean(yield_scores), 4), True
+            )
+
+        # --- Pre-tool-speech lead-in rate ---
+        # Reads audit_log.json directly so it works uniformly across cascade, S2S, and audio-LLM
+        pre_tool_groups = cls._compute_pre_tool_speech_groups(context)
+        if pre_tool_groups:
+            sub["pretoolspeech_rate"] = _wrap(
+                "pretoolspeech_rate",
+                round(sum(pre_tool_groups) / len(pre_tool_groups), 4),
+                True,
             )
 
         # Token usage (from agent_perf_stats.csv)
