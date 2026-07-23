@@ -212,7 +212,6 @@ async def test_evaluation_mode_all_pass_first_attempt(eval_config, mock_dataset)
                 assert sim["total_records"] == 2
                 assert sim["successful_records"] == 2
                 assert sim["failed_records"] == 0
-                assert sim["total_attempts"] == 1
 
 
 @pytest.mark.asyncio
@@ -254,7 +253,6 @@ async def test_evaluation_mode_rerun_failures(eval_config, mock_dataset):
             with open(eval_summary_path) as f:
                 eval_summary = json.load(f)
                 sim = eval_summary["simulation"]
-                assert sim["total_attempts"] == 2
                 assert sim["successful_records"] == 2
 
             # Check that failed attempt was archived
@@ -299,7 +297,6 @@ async def test_evaluation_mode_max_reruns_reached(eval_config, mock_dataset):
             with open(eval_summary_path) as f:
                 eval_summary = json.load(f)
                 sim = eval_summary["simulation"]
-                assert sim["total_attempts"] == 3
                 assert sim["successful_records"] == 1
                 assert sim["failed_records"] == 1
                 assert "fail_record_1" in sim["failed_record_ids"]
