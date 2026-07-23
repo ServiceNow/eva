@@ -1000,7 +1000,7 @@ async def main() -> None:
                 )
 
         overall_scores = compute_run_level_aggregates(
-            all_record_metrics, num_trials, text_composites, run_seed(output_dir.name)
+            all_record_metrics, num_trials, text_composites, seed=run_seed(output_dir.name)
         )
         data_quality = MetricsRunner._build_data_quality(all_record_metrics, per_metric)
 

@@ -190,6 +190,7 @@ class AudioLLMProcessor(FrameProcessor):
         alm_client: BaseALMClient,
         audio_collector: AudioLLMUserAudioCollector,
         output_dir: Path | None = None,
+        pre_tool_speech: str = "off",
         llm_streaming: bool = False,
         full_audio_context: bool = False,
         **kwargs,
@@ -207,6 +208,7 @@ class AudioLLMProcessor(FrameProcessor):
             audit_log=audit_log,
             alm_client=alm_client,
             output_dir=output_dir,
+            pre_tool_speech=pre_tool_speech,
             llm_streaming=llm_streaming,
             full_audio_context=full_audio_context,
         )
@@ -497,6 +499,7 @@ class AudioTranscriptionProcessor(FrameProcessor):
         Args:
             audio_data: Raw PCM audio bytes to transcribe.
             timestamp: ISO8601 timestamp for the transcription.
+            source_sample_rate: Sample rate (Hz) of the provided audio data.
             turn_id: Optional turn identifier for associating with audit log entry.
 
         Returns:

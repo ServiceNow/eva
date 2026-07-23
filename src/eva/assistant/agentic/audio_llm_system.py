@@ -39,6 +39,7 @@ class AudioLLMAgenticSystem(AgenticSystem):
         audit_log: AuditLog,
         alm_client: BaseALMClient,
         output_dir: Path | None = None,
+        pre_tool_speech: str = "off",
         llm_streaming: bool = False,
         full_audio_context: bool = False,
     ):
@@ -49,6 +50,7 @@ class AudioLLMAgenticSystem(AgenticSystem):
             audit_log=audit_log,
             llm_client=alm_client,
             output_dir=output_dir,
+            pre_tool_speech=pre_tool_speech,
             llm_streaming=llm_streaming,
         )
         self.alm_client: BaseALMClient = alm_client
@@ -64,6 +66,9 @@ class AudioLLMAgenticSystem(AgenticSystem):
             agent_instructions=agent.instructions,
             datetime=current_date_time,
         )
+        # Reuse the shared pre-tool lead-in prompt appended to the system prompt.
+        if self.pre_tool_speech == "auto":
+            self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
 
         # Per-turn audio history: list of (audio_bytes, sample_rate)
         self._turn_audio_history: list[tuple[bytes, int]] = []
