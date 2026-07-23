@@ -37,7 +37,7 @@ def test_parent_gate_false_on_goodbye(tmp_path):
     assert classify_conv_finish_failure(s).category is None
 
 
-def test_answer_lost_from_perf_csv(tmp_path):
+def test_reasoning_only_from_perf_csv(tmp_path):
     csv = 'response,tool_calls,reasoning\n,,"Great. I booked room 201 for you."\n'
     _write(
         tmp_path,
@@ -50,7 +50,56 @@ def test_answer_lost_from_perf_csv(tmp_path):
     assert s.last_perf_response_empty is True
     assert s.last_perf_has_tool_call is False
     assert "booked room 201" in s.last_perf_reasoning.lower()
-    assert classify_conv_finish_failure(s).category == "answer_lost_in_reasoning"
+    assert classify_conv_finish_failure(s).category == "reasoning_only"
+
+
+def _write_perf_csv(tmp_path, reasoning_value, reasoning_tokens="0", stop_reason="stop"):
+    # Mirrors the writer (system.py) which stores reasoning as f'"{content}"' — so empty reasoning
+    # content lands in the CSV as the literal 2-char string '""'. Use csv.writer so the parsed cell
+    # equals reasoning_value exactly.
+    import csv as _csv
+
+    with (tmp_path / "agent_perf_stats.csv").open("w", newline="") as f:
+        w = _csv.writer(f)
+        w.writerow(["response", "tool_calls", "reasoning", "reasoning_tokens", "stop_reason"])
+        w.writerow(["", "", reasoning_value, reasoning_tokens, stop_reason])
+    (tmp_path / "audit_log.json").write_text(
+        json.dumps({"conversation_messages": [{"role": "assistant", "content": ""}]})
+    )
+
+
+def test_reasoning_too_long_when_stop_reason_length(tmp_path):
+    # gemma-4 rec 40: huge reasoning, hit the token cap (stop_reason=length), empty response.
+    _write_perf_csv(tmp_path, '"lots of thinking…"', reasoning_tokens="2047", stop_reason="length")
+    s = extract_conv_finish_signals(_ctx(tmp_path))
+    assert s.last_perf_stop_reason == "length"
+    assert classify_conv_finish_failure(s).category == "reasoning_too_long"
+
+
+def test_hidden_reasoning_tokens_still_reasoning_only(tmp_path):
+    # gemini-3.5-flash-lite / gpt-5: reasoning_tokens>0 but NO reasoning text (writer stores '""').
+    # The model DID reason, the answer just never reached TTS → still reasoning_only.
+    _write_perf_csv(tmp_path, '""', reasoning_tokens="26")
+    s = extract_conv_finish_signals(_ctx(tmp_path))
+    assert s.last_perf_reasoning == ""  # text unwrapped to empty
+    assert s.last_perf_reasoning_tokens == 26
+    assert classify_conv_finish_failure(s).category == "reasoning_only"
+
+
+def test_truly_empty_generation_is_not_reasoning_only(tmp_path):
+    # No reasoning text AND 0 reasoning tokens → the model did not reason; not reasoning_only.
+    _write_perf_csv(tmp_path, '""', reasoning_tokens="0")
+    s = extract_conv_finish_signals(_ctx(tmp_path))
+    assert classify_conv_finish_failure(s).category != "reasoning_only"
+
+
+def test_quote_wrapped_real_reasoning_still_fires(tmp_path):
+    _write_perf_csv(tmp_path, '"Booked room 201."')  # writer-wrapped real content, 0 tokens
+    s = extract_conv_finish_signals(_ctx(tmp_path))
+    assert s.last_perf_reasoning == "Booked room 201."  # outer wrapper stripped
+    r = classify_conv_finish_failure(s)
+    assert r.category == "reasoning_only"
+    assert r.details["reasoning_preview"] == "Booked room 201."
 
 
 def test_tts_service_error_from_pipecat_frames(tmp_path):

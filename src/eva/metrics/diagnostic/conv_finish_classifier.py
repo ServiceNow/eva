@@ -29,7 +29,8 @@ CATEGORY_PRIORITY = [
     "tts_api_error",
     "stt_api_error",
     "llm_api_error",
-    "answer_lost_in_reasoning",
+    "reasoning_too_long",
+    "reasoning_only",
     "stt_empty_transcription",
     "stt_missing_transcription",
     "ended_with_user_interruption",
@@ -54,10 +55,12 @@ class ConvFinishSignals:
     is_cascade: bool = True  # CASCADE stack (vs S2S / AUDIO_LLM)
     last_conv_message_role: str | None = "assistant"
 
-    # --- #1 answer_lost_in_reasoning (agent_perf_stats last row) -----------
+    # --- #1 reasoning_only / reasoning_too_long (agent_perf_stats last row) -----------
     last_perf_response_empty: bool = False
     last_perf_has_tool_call: bool = False
     last_perf_reasoning: str = ""
+    last_perf_reasoning_tokens: int = 0  # hidden-reasoning models report tokens but no text
+    last_perf_stop_reason: str = ""  # 'length' ⇒ hit the token cap (reasoning_too_long)
     num_llm_calls: int = 0
 
     # --- #5 llm_api_error (logs.log litellm patterns) ----------------------
@@ -129,19 +132,30 @@ def classify_conv_finish_failure(s: ConvFinishSignals) -> Classification:
             },
         )
 
-    # 4. Answer trapped in the reasoning field (reasoning stacks).
-    if s.last_perf_response_empty and not s.last_perf_has_tool_call and s.last_perf_reasoning.strip():
-        return Classification(
-            "answer_lost_in_reasoning",
-            {
-                **base,
-                "final_response_empty": True,
-                "final_row_had_tool_call": False,
-                "recovered_answer": s.last_perf_reasoning[:300],
-                "reasoning_chars": len(s.last_perf_reasoning),
-                "num_llm_calls": s.num_llm_calls,
-            },
-        )
+    # 4. The model reasoned but produced no spoken answer / tool call. Reasoning is evidenced by
+    #    visible text OR a hidden-reasoning token count (gemini/gpt-5 report reasoning_tokens
+    #    without returning the thinking text). A truly empty generation (no text AND 0 tokens) is
+    #    NOT this — it falls through. Split by whether it hit the token cap:
+    #      - stop_reason == 'length' → `reasoning_too_long` (ran out of tokens mid-reasoning)
+    #      - otherwise             → `reasoning_only` (finished, but only reasoning came out; we
+    #                                 can't assume the answer was actually in the reasoning)
+    if (
+        s.last_perf_response_empty
+        and not s.last_perf_has_tool_call
+        and (s.last_perf_reasoning.strip() or s.last_perf_reasoning_tokens > 0)
+    ):
+        details = {
+            **base,
+            "final_response_empty": True,
+            "final_row_had_tool_call": False,
+            "reasoning_preview": s.last_perf_reasoning[:300],  # empty when reasoning is hidden
+            "reasoning_chars": len(s.last_perf_reasoning),
+            "reasoning_tokens": s.last_perf_reasoning_tokens,
+            "stop_reason": s.last_perf_stop_reason,
+            "num_llm_calls": s.num_llm_calls,
+        }
+        category = "reasoning_too_long" if s.last_perf_stop_reason == "length" else "reasoning_only"
+        return Classification(category, details)
 
     # 5-6. STT gave no usable transcription for a turn VAD detected.
     if s.is_cascade and s.last_conv_message_role == "assistant" and s.vad_no_tx_warning_after_last_response:
@@ -255,7 +269,7 @@ def extract_conv_finish_signals(context) -> ConvFinishSignals:  # noqa: ANN001 (
         except (json.JSONDecodeError, KeyError):
             s.notes.append("audit_log unreadable")
 
-    # agent_perf_stats.csv → last row (answer_lost signals)
+    # agent_perf_stats.csv → last row (reasoning_only / reasoning_too_long signals)
     perf = out / "agent_perf_stats.csv"
     if perf.exists():
         try:
@@ -265,7 +279,15 @@ def extract_conv_finish_signals(context) -> ConvFinishSignals:  # noqa: ANN001 (
                 last = rows[-1]
                 s.last_perf_response_empty = not (last.get("response") or "").strip()
                 s.last_perf_has_tool_call = bool((last.get("tool_calls") or "").strip())
-                s.last_perf_reasoning = (last.get("reasoning") or "").strip()
+                # The perf-stats writer wraps non-empty reasoning as f'"{content}"' and stores empty
+                # reasoning as an empty cell. Strip any wrapping quotes; both cases read as expected.
+                # (Older runs may still contain the literal '""' — stripping handles those too.)
+                s.last_perf_reasoning = (last.get("reasoning") or "").strip().strip('"').strip()
+                try:
+                    s.last_perf_reasoning_tokens = int(float(last.get("reasoning_tokens") or 0))
+                except (TypeError, ValueError):
+                    s.last_perf_reasoning_tokens = 0
+                s.last_perf_stop_reason = (last.get("stop_reason") or "").strip()
         except (OSError, csv.Error):
             s.notes.append("agent_perf_stats unreadable")
 

@@ -26,19 +26,41 @@ def test_clean_parent_failure_is_unknown():
     assert cat() == "unknown_reason"
 
 
-# --- #1 answer_lost_in_reasoning -------------------------------------------
-def test_answer_lost_in_reasoning():
-    assert cat(last_perf_response_empty=True, last_perf_reasoning="Great, I booked it.") == ("answer_lost_in_reasoning")
+# --- #1 reasoning_only -------------------------------------------
+def test_reasoning_only():
+    assert cat(last_perf_response_empty=True, last_perf_reasoning="Great, I booked it.") == ("reasoning_only")
 
 
-def test_empty_response_but_no_reasoning_is_not_answer_lost():
-    # genuine empty generation, not answer-lost
-    assert cat(last_perf_response_empty=True, last_perf_reasoning="") == "unknown_reason"
+def test_empty_response_but_no_reasoning_is_not_reasoning_only():
+    # genuine empty generation (no text AND 0 reasoning tokens) → not reasoning-only
+    assert cat(last_perf_response_empty=True, last_perf_reasoning="", last_perf_reasoning_tokens=0) == "unknown_reason"
 
 
-def test_empty_response_with_tool_call_is_not_answer_lost():
+def test_hidden_reasoning_tokens_is_reasoning_only():
+    # reasoning text hidden (gemini/gpt-5) but token count proves the model reasoned → reasoning-only
+    assert cat(last_perf_response_empty=True, last_perf_reasoning="", last_perf_reasoning_tokens=26) == (
+        "reasoning_only"
+    )
+
+
+def test_empty_response_with_tool_call_is_not_reasoning_only():
     assert cat(last_perf_response_empty=True, last_perf_reasoning="x", last_perf_has_tool_call=True) == (
         "unknown_reason"
+    )
+
+
+# --- reasoning_too_long (reasoned + hit the token cap) ----------------------
+def test_reasoning_too_long_when_stop_reason_length():
+    assert (
+        cat(last_perf_response_empty=True, last_perf_reasoning="thinking a lot…", last_perf_stop_reason="length")
+        == "reasoning_too_long"
+    )
+
+
+def test_reasoning_only_when_stop_reason_not_length():
+    assert (
+        cat(last_perf_response_empty=True, last_perf_reasoning="thinking…", last_perf_stop_reason="stop")
+        == "reasoning_only"
     )
 
 
@@ -180,10 +202,10 @@ def test_tts_error_outranks_everything():
 
 
 # --- details carried ---------------------------------------------------------
-def test_details_include_evidence_for_answer_lost():
+def test_details_include_evidence_for_reasoning_only():
     r = classify_conv_finish_failure(sig(last_perf_response_empty=True, last_perf_reasoning="Booked room 201."))
-    assert r.category == "answer_lost_in_reasoning"
-    assert r.details.get("recovered_answer", "").startswith("Booked room 201")
+    assert r.category == "reasoning_only"
+    assert r.details.get("reasoning_preview", "").startswith("Booked room 201")
 
 
 def test_infra_details_flag_invalid_run():
