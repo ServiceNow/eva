@@ -537,8 +537,10 @@ def build_conv_finish_sub_metrics(
     """Per-cause binary-flag sub-metrics (framework convention: ``1.0`` = this cause occurred).
 
     One flag per category in ``CATEGORY_PRIORITY``, keyed ``<cause>_rate`` (the ``_rate`` suffix
-    signals lower-is-better to ``direction_for_sub_metric`` and makes the cross-record mean read
-    as "fraction of failures with this cause"). The fired cause carries the evidence details.
+    signals lower-is-better to ``direction_for_sub_metric``). Emitted on every record (all 0.0
+    when ``classification.category`` is None, i.e. a clean finish), so the cross-record mean reads
+    as "fraction of all conversations with this cause" — an all-records denominator matching
+    faithfulness. The fired cause carries the evidence details.
     """
     subs: dict[str, MetricScore] = {}
     for cause in CATEGORY_PRIORITY:

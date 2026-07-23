@@ -1,4 +1,10 @@
-"""conversation_correctly_finished emits per-cause sub-metrics on failures only."""
+"""conversation_correctly_finished emits per-cause rate sub-metrics on every record.
+
+Cause rates are emitted on all records (0.0 when the conversation finished correctly) so
+their cross-record mean reads as "fraction of all conversations with this cause" — matching
+how faithfulness dimension rates aggregate. The orthogonal input-characteristic flags
+(``final_turn_*``) remain failure-only, since they characterize the unanswered final turn.
+"""
 
 import json
 
@@ -26,7 +32,9 @@ def _fail_ctx(tmp_path, **overrides):
 
 
 @pytest.mark.asyncio
-async def test_success_has_no_cause_sub_metrics(metric):
+async def test_success_emits_zero_cause_rates(metric):
+    from eva.metrics.diagnostic.conv_finish_classifier import CATEGORY_PRIORITY
+
     ctx = make_metric_context(
         conversation_ended_reason="goodbye",
         audio_timestamps_user_turns={0: [(0.0, 1.0)]},
@@ -34,11 +42,18 @@ async def test_success_has_no_cause_sub_metrics(metric):
     )
     result = await metric.compute(ctx)
     assert result.score == 1.0
-    assert not result.sub_metrics  # None or empty — causes only classified on failures
+    # Cause rates are present on every record now (denominator = all records, like faithfulness),
+    # all 0.0 on a clean finish.
+    subs = result.sub_metrics
+    assert subs is not None
+    assert all(subs[f"{c}_rate"].score == 0.0 for c in CATEGORY_PRIORITY)
+    assert sum(subs[f"{c}_rate"].score for c in CATEGORY_PRIORITY) == 0.0
+    # Input-characteristic flags remain failure-only.
+    assert not any(k.startswith("final_turn_") for k in subs)
 
 
 @pytest.mark.asyncio
-async def test_failure_answer_lost_sub_metric_fires(metric, tmp_path):
+async def test_failure_reasoning_only_sub_metric_fires(metric, tmp_path):
     (tmp_path / "agent_perf_stats.csv").write_text('response,tool_calls,reasoning\n,,"Booked room 201."\n')
     (tmp_path / "audit_log.json").write_text(
         json.dumps({"conversation_messages": [{"role": "assistant", "content": ""}]})
@@ -46,7 +61,7 @@ async def test_failure_answer_lost_sub_metric_fires(metric, tmp_path):
     result = await metric.compute(_fail_ctx(tmp_path))
     assert result.score == 0.0
     subs = result.sub_metrics
-    assert subs["answer_lost_in_reasoning_rate"].score == 1.0
+    assert subs["reasoning_only_rate"].score == 1.0
     assert subs["stt_empty_transcription_rate"].score == 0.0
     assert subs["unknown_reason_rate"].score == 0.0
     # exactly one *cause* flag is hot (input-characteristic flags are orthogonal, excluded here)
@@ -54,7 +69,7 @@ async def test_failure_answer_lost_sub_metric_fires(metric, tmp_path):
 
     assert sum(subs[f"{c}_rate"].score for c in CATEGORY_PRIORITY) == 1.0
     # fired sub-metric name is namespaced under the parent
-    assert subs["answer_lost_in_reasoning_rate"].name == "conversation_correctly_finished.answer_lost_in_reasoning_rate"
+    assert subs["reasoning_only_rate"].name == "conversation_correctly_finished.reasoning_only_rate"
 
 
 @pytest.mark.asyncio
@@ -116,4 +131,5 @@ async def test_input_flags_absent_on_success(metric):
         audio_timestamps_assistant_turns={0: [(1.5, 3.0)]},
     )
     result = await metric.compute(ctx)
-    assert not result.sub_metrics  # only computed on failures
+    # Input-characteristic flags are only emitted on failures; cause rates are still present (all 0.0).
+    assert not any(k.startswith("final_turn_") for k in result.sub_metrics)
