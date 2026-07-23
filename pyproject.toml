@@ -21,6 +21,9 @@ license = "MIT"
 dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
+    # AWS Transcribe STT / Polly TTS assistant services (pipecat.services.aws.*) run on `websockets`
+    # + `aiobotocore` (brought in by `aioboto3` below) — no extra needed. Not using pipecat's [aws]
+    # extra because it pins aiobotocore>=3, which conflicts with aioboto3's aiobotocore 2.x.
     "pipecat-ai>=1.4.0",
     "elevenlabs>=2.53.0",
     "openai>=2.36.0",
@@ -56,6 +59,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Audio-native Nova Sonic (bedrock_s2s) caller. Isolated because the bidirectional
+# streaming client is experimental (pre-1.0) and requires Python >=3.12, while EVA
+# itself supports 3.11+. Install with: pip install 'eva[bedrock-s2s]' (Python >=3.12).
+bedrock-s2s = [
+    "aws-sdk-bedrock-runtime>=0.7.0; python_version >= '3.12'",
+]
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
@@ -104,3 +113,17 @@ ignore = ["D203", "D206", "D213", "D400", "D401", "D413", "D415", "E1", "E501"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
+# The optional 'bedrock-s2s' extra pulls the experimental, untyped aws-sdk-bedrock-runtime
+# and its smithy deps, which are Python >=3.12-only (they use `type X = ...` syntax mypy
+# rejects under python_version 3.11). Skip following into them; the imports are lazy and
+# guarded at the factory. Only relevant when the extra is installed.
+[[tool.mypy.overrides]]
+module = [
+    "aws_sdk_bedrock_runtime.*",
+    "smithy_aws_core.*",
+    "smithy_core.*",
+    "smithy_http.*",
+]
+follow_imports = "skip"
+ignore_missing_imports = true
