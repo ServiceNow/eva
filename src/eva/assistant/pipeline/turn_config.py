@@ -94,7 +94,7 @@ def create_turn_stop_strategy(
     """Create a user turn stop strategy from configuration.
 
     Args:
-        strategy_type: Strategy type ('speech_timeout', 'turn_analyzer', 'external')
+        strategy_type: Strategy type ('speech_timeout', 'turn_analyzer', 'krisp_viva_turn', 'external')
         strategy_params: Strategy-specific parameters
         smart_turn_stop_secs: stop_secs for SmartTurnParams (used with turn_analyzer strategy)
 
@@ -117,11 +117,26 @@ def create_turn_stop_strategy(
         smart_params = SmartTurnParams(stop_secs=stop_secs) if stop_secs is not None else None
         turn_analyzer = LocalSmartTurnAnalyzerV3(params=smart_params)
         return TurnAnalyzerUserTurnStopStrategy(turn_analyzer=turn_analyzer, **params)
+    elif strategy_type_lower == "krisp_viva_turn":
+        # KrispVivaTurn uses Krisp's VIVA SDK turn detection v3 (Tt) API, processing audio
+        # frame-by-frame in real time with an external VAD flag. It depends on the proprietary
+        # krisp_audio SDK plus a .kef model file (KRISP_VIVA_TURN_MODEL_PATH) and license key
+        # (KRISP_VIVA_API_KEY), so import lazily to keep the SDK optional.
+        from pipecat.audio.turn.krisp_viva_turn import KrispTurnParams, KrispVivaTurn
+
+        params = dict(strategy_params)
+        # Krisp analyzer tuning params; fall back to KrispTurnParams defaults when absent.
+        krisp_kwargs = {k: params.pop(k) for k in ("threshold", "frame_duration_ms") if k in params}
+        krisp_params = KrispTurnParams(**krisp_kwargs) if krisp_kwargs else None
+        # Constructor kwargs; model_path/api_key fall back to their env vars when omitted.
+        analyzer_kwargs = {k: params.pop(k) for k in ("model_path", "api_key", "sample_rate") if k in params}
+        krisp_analyzer = KrispVivaTurn(params=krisp_params, **analyzer_kwargs)
+        return TurnAnalyzerUserTurnStopStrategy(turn_analyzer=krisp_analyzer, **params)
     elif strategy_type_lower == "external":
         # ExternalUserTurnStopStrategy has no required parameters
         return ExternalUserTurnStopStrategy(**strategy_params)
     else:
         raise ValueError(
             f"Unsupported turn stop strategy: {strategy_type}. "
-            f"Supported types: 'speech_timeout', 'turn_analyzer', 'external'"
+            f"Supported types: 'speech_timeout', 'turn_analyzer', 'krisp_viva_turn', 'external'"
         )

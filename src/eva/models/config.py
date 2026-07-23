@@ -168,8 +168,10 @@ class ModelConfig(BaseModel):
     turn_stop_strategy: str = Field(
         "turn_analyzer",
         description=(
-            "User turn stop strategy: 'speech_timeout', 'turn_analyzer', or 'external'. "
+            "User turn stop strategy: 'speech_timeout', 'turn_analyzer', 'krisp_viva_turn', or 'external'. "
             "Defaults to 'turn_analyzer' (TurnAnalyzerUserTurnStopStrategy with LocalSmartTurnAnalyzerV3). "
+            "'krisp_viva_turn' uses Krisp's VIVA SDK (requires the krisp_audio SDK, "
+            "KRISP_VIVA_TURN_MODEL_PATH, and KRISP_VIVA_API_KEY). "
             "Set via EVA_MODEL__TURN_STOP_STRATEGY."
         ),
     )
