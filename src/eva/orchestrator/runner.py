@@ -4,6 +4,7 @@ import asyncio
 import json
 import shutil
 import sys
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any, TextIO
@@ -23,6 +24,7 @@ from eva.orchestrator.worker import ConversationWorker
 from eva.utils.conversation_checks import check_conversation_finished, find_records_with_llm_generic_error
 from eva.utils.culture import get_language_addendum
 from eva.utils.logging import get_logger
+from eva.utils.pass_at_k import ATTEMPT_SUFFIX_PATTERN, parse_trial_record_id
 from eva.utils.provenance import capture_provenance, resolve_tool_module_file
 
 logger = get_logger(__name__)
@@ -1020,19 +1022,7 @@ class BenchmarkRunner:
         successful_ids = sim.get("successful_record_ids", [])
 
         metrics_section = eval_summary.get("metrics", {})
-        metric_failures = metrics_section.get("metric_failures", {})
         metrics_computed = metrics_section.get("metrics_computed", [])
-
-        if not metric_failures:
-            logger.info("No metric failures found in evaluation_summary.json — nothing to rerun")
-            ended_at = datetime.now()
-            return RunResult(
-                run_id=self.config.run_id,
-                total_records=len(successful_ids),
-                successful_records=len(successful_ids),
-                failed_records=0,
-                duration_seconds=(ended_at - started_at).total_seconds(),
-            )
 
         # Use explicit CLI --metrics if provided, otherwise prefer metrics_computed
         # from evaluation_summary.json (reflects actual metric names from the last run),
@@ -1043,17 +1033,34 @@ class BenchmarkRunner:
                 "No metrics to run. Specify --metrics or ensure evaluation_summary.json has metrics_computed."
             )
 
-        # Build record_metric_filter: record_id -> set of metric names to rerun
-        successful_set = set(successful_ids)
+        # Build record_metric_filter by scanning each successful record's metrics.json on
+        # disk, rather than trusting the (possibly stale) metric_failures snapshot from
+        # the original run. A metric needs rerunning if it is missing, errored, OR has a
+        # None score — all three mean it never produced a usable value. Scanning disk also
+        # picks up records newly added by reclassification, which the old snapshot missed.
+        records_dir = run_dir / "records"
+        metric_names_set = set(metric_names)
         record_metric_filter: dict[str, set[str]] = {}
-        for metric_name, failed_record_ids in metric_failures.items():
-            if metric_name in metric_names:
-                for record_id in failed_record_ids:
-                    if record_id in successful_set:
-                        record_metric_filter.setdefault(record_id, set()).add(metric_name)
+        for record_id in successful_ids:
+            metrics_path = records_dir / record_id / "metrics.json"
+            existing: dict[str, Any] = {}
+            if metrics_path.exists():
+                try:
+                    existing = json.loads(metrics_path.read_text()).get("metrics", {})
+                except Exception as e:
+                    logger.warning(f"Could not read {metrics_path}: {e}")
+            for name in metric_names_set:
+                entry = existing.get(name)
+                needs_rerun = (
+                    not isinstance(entry, dict)
+                    or entry.get("error") is not None
+                    or (entry.get("score") is None and not entry.get("skipped", False))
+                )
+                if needs_rerun:
+                    record_metric_filter.setdefault(record_id, set()).add(name)
 
         if not record_metric_filter:
-            logger.info("No applicable metric failures to rerun")
+            logger.info("No missing/failed/none-score metrics to rerun")
             ended_at = datetime.now()
             return RunResult(
                 run_id=self.config.run_id,
@@ -1067,11 +1074,9 @@ class BenchmarkRunner:
         logger.info(
             f"Rerunning {total_reruns} failed metric computation(s) across {len(record_metric_filter)} record(s)"
         )
-        for metric_name, failed_ids in metric_failures.items():
-            if metric_name in metric_names:
-                applicable = [rid for rid in failed_ids if rid in record_metric_filter]
-                if applicable:
-                    logger.info(f"  {metric_name}: {len(applicable)} record(s)")
+        per_metric_counts = Counter(name for metrics in record_metric_filter.values() for name in metrics)
+        for name, count in sorted(per_metric_counts.items()):
+            logger.info(f"  {name}: {count} record(s)")
 
         # Create MetricsRunner with all metrics but filter per-record.
         # Records not in record_metric_filter will read existing metrics from disk.
@@ -1120,6 +1125,317 @@ class BenchmarkRunner:
             total_records=len(successful_ids),
             successful_records=len(successful_ids),
             failed_records=0,
+            duration_seconds=(ended_at - started_at).total_seconds(),
+        )
+
+    @staticmethod
+    def _errored_validation_metrics(record_dir: Path) -> list[str]:
+        """Return validation metrics whose stored value carries an ``error``.
+
+        A non-empty result means the prior judging "did not go smoothly" (e.g. the
+        judge hit a transient/config error), which is what makes an archived attempt a
+        promotion candidate. An attempt whose validation metrics were all cleanly scored
+        — a genuine failure — returns an empty list and is not a candidate.
+        """
+        metrics_path = record_dir / "metrics.json"
+        if not metrics_path.exists():
+            return []
+        try:
+            metrics = json.loads(metrics_path.read_text()).get("metrics", {})
+        except Exception as e:
+            logger.warning(f"Could not read {metrics_path} to inspect errored metrics: {e}")
+            return []
+        return [
+            name
+            for name in ValidationRunner.VALIDATION_METRICS
+            if isinstance(metrics.get(name), dict) and metrics[name].get("error") is not None
+        ]
+
+    @staticmethod
+    def _clear_metrics(record_dir: Path, names: list[str]) -> None:
+        """Drop the named metric entries from a record's metrics.json.
+
+        Removed metrics are treated as "missing" by MetricsRunner, forcing a fresh
+        re-judge on the next validation pass. Genuine (non-errored) scores are left in
+        place so they are reused rather than recomputed.
+        """
+        metrics_path = record_dir / "metrics.json"
+        if not metrics_path.exists() or not names:
+            return
+        try:
+            data = json.loads(metrics_path.read_text())
+        except Exception as e:
+            logger.warning(f"Could not read {metrics_path} to clear metrics: {e}")
+            return
+        metrics = data.get("metrics", {})
+        removed = [n for n in names if n in metrics]
+        if not removed:
+            return
+        for n in removed:
+            del metrics[n]
+        metrics_path.write_text(json.dumps(data, indent=2, ensure_ascii=False))
+        logger.info(f"{record_dir.name}: cleared errored validation metrics for re-judge: {removed}")
+
+    async def reclassify_run(
+        self,
+        run_dir: Path,
+        records: list[EvaluationRecord],
+        cli_metrics: list[str] | None = None,
+    ) -> RunResult:
+        """Reclassify failed records by re-judging archived attempts that erred.
+
+        Goal: bring each record up to ``num_trials`` successful trials by reusing its own
+        already-run simulations. A record that is short of ``num_trials`` draws on the
+        pool of *all* its archived failed attempts (across every trial index), not just
+        the attempts tied to one slot.
+
+        Candidate rule — the key to not being wasteful and to never "forcing" a pass: an
+        archived attempt is a promotion candidate only if its prior judging *did not go
+        smoothly*, i.e. a validation metric was stored with an ``error`` (e.g. the judge
+        hit a bad API key). Attempts that were cleanly scored as genuine failures are
+        left alone. For a candidate, only the errored validation metrics are re-judged;
+        cleanly-scored ones are reused.
+
+        Per record, candidates are re-judged serially and the record stops as soon as it
+        reaches ``num_trials`` — so a record may inspect many attempts, but never more
+        than it needs. Different records are processed concurrently, bounded by the run's
+        concurrency limit; the LiteLLM Router further bounds judge API calls.
+
+        Each passing candidate is promoted (moved) into a free ``trial_{N}`` slot. Then
+        evaluation_summary.json and results.csv are reconciled, the full metric suite is
+        computed on promoted slots (reusing existing metrics), and every promotion is
+        recorded in reclassification_log.json.
+
+        Args:
+            run_dir: Path to existing run directory.
+            records: Full list of evaluation records.
+            cli_metrics: Metrics to compute on promoted records (defaults to config).
+
+        Returns:
+            RunResult with post-reclassification counts and duration.
+        """
+        logger.info(f"Reclassifying failed records in {run_dir}")
+        started_at = datetime.now()
+        self.output_dir = run_dir
+        records_dir = run_dir / "records"
+        num_trials = self.config.num_trials
+
+        eval_summary_path = run_dir / "evaluation_summary.json"
+        if not eval_summary_path.exists():
+            raise FileNotFoundError(f"evaluation_summary.json not found in {run_dir}. Nothing to reclassify.")
+
+        with open(eval_summary_path) as f:
+            eval_summary = json.load(f)
+
+        sim = eval_summary.get("simulation", eval_summary)
+        failed_ids: list[str] = list(sim.get("failed_record_ids", []))
+        successful_ids: list[str] = list(sim.get("successful_record_ids", []))
+
+        def _no_op_result() -> RunResult:
+            ended = datetime.now()
+            return RunResult(
+                run_id=self.config.run_id,
+                total_records=len(successful_ids) + len(failed_ids),
+                successful_records=len(successful_ids),
+                failed_records=len(failed_ids),
+                duration_seconds=(ended - started_at).total_seconds(),
+            )
+
+        if not failed_ids:
+            logger.info("No failed records in evaluation_summary.json — nothing to reclassify")
+            return _no_op_result()
+
+        # ── Group by base record; compute how many trials each still needs ──
+        record_id_filter = set(self.config.record_ids) if self.config.record_ids else None
+
+        # Records that appear in failed_ids are the ones potentially short of num_trials.
+        needy_records: set[str] = set()
+        for oid in failed_ids:
+            base, _ = parse_trial_record_id(oid)
+            if record_id_filter is None or base in record_id_filter:
+                needy_records.add(base)
+
+        if not needy_records:
+            logger.info("No failed records match the requested --record-ids — nothing to reclassify")
+            return _no_op_result()
+
+        all_records = list({id(r): r for r in records}.values())
+        validation_runner = ValidationRunner(
+            run_dir=run_dir,
+            dataset=all_records,
+            thresholds=self.config.validation_thresholds,
+            metric_configs=self._metric_configs,
+        )
+
+        # Different records run concurrently; candidates within a record run serially so
+        # we stop the moment num_trials is reached (no wasted judge compute).
+        semaphore = asyncio.Semaphore(self.config.max_concurrent_conversations)
+        successful_set = set(successful_ids)
+
+        def _slot_output_id(base: str, i: int) -> str:
+            return f"{base}/trial_{i}" if num_trials > 1 else base
+
+        def _free_slots(base: str) -> list[int]:
+            """Trial indices NOT yet backed by a *successful* trial.
+
+            A slot is satisfied only if its output id is in the successful set from the
+            summary — NOT merely because a canonical dir exists on disk. A canonical dir
+            can be a leftover from an interrupted prior promotion (moved into place but
+            never recorded); such a slot is still free and its dir is re-judged below.
+            """
+            return [i for i in range(num_trials) if _slot_output_id(base, i) not in successful_set]
+
+        def _candidate_pool(base: str, free: list[int]) -> list[Path]:
+            """Re-judge candidates for a record, newest attempt first.
+
+            Includes archived ``_failed_attempt_`` dirs AND any leftover/failed canonical
+            ``trial_{i}`` dir for a free slot (from an interrupted prior run).
+            """
+            base_dir = records_dir / base
+            if num_trials > 1:
+                archived = base_dir.glob("trial_*_failed_attempt_*") if base_dir.exists() else []
+            else:
+                archived = records_dir.glob(f"{base}_failed_attempt_*")
+            cands = [d for d in archived if d.is_dir() and ATTEMPT_SUFFIX_PATTERN.search(d.name)]
+            cands.sort(key=lambda d: int(ATTEMPT_SUFFIX_PATTERN.search(d.name).group(2)), reverse=True)
+            # Prepend leftover canonical dirs for free slots so an already-in-place
+            # attempt is tried first (and, if it passes, needs no move).
+            leftovers = [
+                records_dir / _slot_output_id(base, i)
+                for i in free
+                if (records_dir / _slot_output_id(base, i)).exists()
+            ]
+            return leftovers + cands
+
+        async def _reclassify_record(base: str) -> list[dict]:
+            free = _free_slots(base)
+            if not free:
+                logger.info(f"{base}: already has {num_trials} successful trial(s) — skipping")
+                return []
+            needed = len(free)
+            candidates = _candidate_pool(base, free)
+            if not candidates:
+                logger.info(f"{base}: no attempts to re-judge — leaving failed")
+                return []
+
+            promotions: list[dict] = []
+            async with semaphore:
+                for cand in candidates:
+                    if not free:
+                        break
+                    # Candidate rule: only attempts whose prior judging erred. Cleanly
+                    # scored genuine failures are skipped — never re-judged or forced.
+                    errored = self._errored_validation_metrics(cand)
+                    if not errored:
+                        continue
+                    self._clear_metrics(cand, errored)
+                    cand_output_id = str(cand.relative_to(records_dir))
+                    vr = await validation_runner.validate_one(cand_output_id)
+                    if not vr.passed:
+                        logger.info(f"{base}: re-judged '{cand.name}' still fails validation")
+                        continue
+
+                    slot_idx = free.pop(0)
+                    target = records_dir / _slot_output_id(base, slot_idx)
+                    if cand.resolve() != target.resolve():
+                        # A leftover/failed canonical dir may be occupying the target slot;
+                        # archive it aside before moving the winning candidate into place.
+                        if target.exists():
+                            self._archive_failed_attempt(_slot_output_id(base, slot_idx), 1)
+                        shutil.move(str(cand), str(target))
+                    logger.info(
+                        f"{base}: promoted '{cand.name}' into 'trial_{slot_idx}' — now passes "
+                        f"validation (scores={vr.scores})"
+                    )
+                    promotions.append(
+                        {
+                            "output_id": _slot_output_id(base, slot_idx),
+                            "record_id": base,
+                            "promoted_from": cand.name,
+                            "reclassified_at": started_at.isoformat(),
+                        }
+                    )
+            filled = len(promotions)
+            if filled < needed:
+                logger.info(
+                    f"{base}: filled {filled}/{needed} needed trial(s) — {needed - filled} slot(s) remain failed"
+                )
+            return promotions
+
+        record_results = await asyncio.gather(*(_reclassify_record(b) for b in sorted(needy_records)))
+        reclassification_log = [p for record_promos in record_results for p in record_promos]
+        promoted = [p["output_id"] for p in reclassification_log]
+
+        if not promoted:
+            logger.info("No candidate attempts passed re-judging — nothing promoted")
+            return _no_op_result()
+
+        # ── Reconcile evaluation_summary.json ──
+        promoted_set = set(promoted)
+        new_successful = sorted(set(successful_ids) | promoted_set)
+        new_failed = sorted(set(sim.get("failed_record_ids", [])) - promoted_set)
+        total = len(new_successful) + len(new_failed)
+
+        sim["successful_record_ids"] = new_successful
+        sim["failed_record_ids"] = new_failed
+        sim["successful_records"] = len(new_successful)
+        sim["failed_records"] = len(new_failed)
+        sim["success_rate"] = len(new_successful) / total if total > 0 else 0.0
+        sim["failure_rate"] = len(new_failed) / total if total > 0 else 0.0
+
+        final_failures = eval_summary.get("final_failures", {})
+        for oid in promoted_set:
+            final_failures.pop(oid, None)
+        eval_summary["final_failures"] = final_failures
+        eval_summary["reclassification_history"] = (
+            eval_summary.get("reclassification_history", []) + reclassification_log
+        )
+
+        with open(eval_summary_path, "w") as f:
+            json.dump(eval_summary, f, indent=2, ensure_ascii=False)
+
+        with open(run_dir / "reclassification_log.json", "w") as f:
+            json.dump(reclassification_log, f, indent=2, ensure_ascii=False)
+
+        # ── Rebuild results.csv from the reconciled successful set ──
+        successful_results: list[tuple[str, ConversationResult]] = []
+        for output_id in new_successful:
+            result_path = records_dir / output_id / "result.json"
+            if result_path.exists():
+                with open(result_path) as rf:
+                    successful_results.append((output_id, ConversationResult(**json.load(rf))))
+        self._save_results_csv(successful_results, new_failed)
+
+        logger.info(f"Promoted {len(promoted)} slot(s): {', '.join(promoted)}")
+
+        # ── Compute full metrics on promoted slots (reuses existing validation metrics) ──
+        metric_names = cli_metrics or self.config.metrics
+        if metric_names:
+            logger.info(f"Computing metrics on {len(promoted)} promoted slot(s)...")
+            metrics_runner = MetricsRunner(
+                run_dir=run_dir,
+                dataset=records,
+                metric_names=metric_names,
+                metric_configs=self._metric_configs,
+                record_ids=promoted,
+                num_draws=self.config.num_trials,
+            )
+            await metrics_runner.run()
+        else:
+            logger.info("No metrics configured — skipping metric computation on promoted slots")
+
+        logger.info("=" * 60)
+        logger.info("RECLASSIFICATION COMPLETE")
+        logger.info(f"  Promoted: {len(promoted)}")
+        logger.info(f"  Remaining failed: {len(new_failed)}")
+        logger.info("=" * 60)
+
+        ended_at = datetime.now()
+        return RunResult(
+            run_id=self.config.run_id,
+            total_records=total,
+            successful_records=len(new_successful),
+            failed_records=len(new_failed),
             duration_seconds=(ended_at - started_at).total_seconds(),
         )
 

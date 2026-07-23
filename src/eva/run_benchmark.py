@@ -63,6 +63,18 @@ async def run_benchmark(config: RunConfig) -> int:
             logger.error(f"Failed to load dataset: {e}")
             return 1
 
+        if config.reclassify_run:
+            # ── Reclassify failed trial slots from reusable archived attempts ──
+            try:
+                await runner.reclassify_run(resolved_dir, records, cli_metrics=config.metrics)
+                return 0
+            except KeyboardInterrupt:
+                logger.warning("Reclassification interrupted by user")
+                return 130
+            except Exception as e:
+                logger.error(f"Reclassification failed: {e}", exc_info=True)
+                return 1
+
         if config.rerun_failed_metrics:
             # ── Rerun only previously failed metric computations ──
             try:
@@ -90,6 +102,10 @@ async def run_benchmark(config: RunConfig) -> int:
 
     if config.rerun_failed_metrics:
         logger.error("--rerun-failed-metrics requires --run-id pointing to an existing run")
+        return 1
+
+    if config.reclassify_run:
+        logger.error("--reclassify-run requires --run-id pointing to an existing run")
         return 1
 
     # Load dataset

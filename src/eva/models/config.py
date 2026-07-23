@@ -534,6 +534,13 @@ class RunConfig(BaseSettings):
         False,
         description="Force rerun all requested metrics, overwriting existing successful results (requires --run-id)",
     )
+    reclassify_run: bool = Field(
+        False,
+        description="Reclassify previously-failed trial slots by re-validating archived failed attempts "
+        "(reusing their existing simulation) and promoting any that now pass. Only re-validates the "
+        "minimum needed to fill each failed slot; never re-runs simulations. Requires --run-id. "
+        "Respects --record-ids to limit which records are reclassified.",
+    )
     tool_module_path: str | None = Field(
         None,
         description="Python module path with tool functions (e.g., 'eva.assistant.tools.airline_tools'). "
