@@ -197,6 +197,12 @@ class ModelConfig(BaseModel):
         "off",
         description="Prompt a model-generated lead-in before tool calls: 'off' or 'auto'.",
     )
+
+    @field_validator("pre_tool_speech", mode="before")
+    @classmethod
+    def _normalize_pre_tool_speech(cls, value: str) -> str:
+        return value.lower() if isinstance(value, str) else value
+
     llm_streaming: bool = Field(
         False,
         description="Stream Chat Completions output to TTS sentence-by-sentence.",
