@@ -99,6 +99,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         port: int,
         conversation_id: str,
         language: str = "en",
+        turn_end_fallback_time: int | None = None,
     ):
         """Initialize the assistant server.
 
@@ -112,6 +113,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
             port: Port to listen on
             conversation_id: Unique ID for this conversation
             language: BCP 47 language tag for STT/TTS services (e.g. 'en', 'fr', 'es-MX')
+            turn_end_fallback_time: Seconds of user-turn silence after the assistant stops
+                speaking before nudging it to retry. ``None`` disables the fallback.
         """
         super().__init__(
             current_date_time=current_date_time,
@@ -126,6 +129,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         )
 
         self.agentic_system = None  # Will be set in _handle_session
+        self.turn_end_fallback_time = turn_end_fallback_time
 
         # Wall-clock captured at on_user_turn_started for non-instrumented S2S models
         self._user_turn_started_wall_ms: str | None = None
@@ -452,6 +456,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 audio_llm_audio_collector=audio_llm_audio_collector,
                 input_transcription_context_filter=input_transcription_context_filter,
                 input_transcription_processor=input_transcription_processor,
+                turn_stop_strategy=turn_stop_strategy,
             )
 
             metrics_log_path = self.output_dir / "pipecat_metrics.jsonl"
@@ -572,6 +577,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         audio_llm_audio_collector=None,
         input_transcription_context_filter=None,
         input_transcription_processor=None,
+        turn_stop_strategy=None,
     ) -> Pipeline:
         """Create the Pipecat pipeline.
 
@@ -588,14 +594,28 @@ class PipecatAssistantServer(AbstractAssistantServer):
             pipeline_components.append(stt)
             # CRITICAL ORDER: Processors that need to SEE frames must come BEFORE user_aggregator
             # because user_aggregator CONSUMES frames (doesn't pass through)
-            pipeline_components.append(UserObserver())  # For metrics
+            # UserObserver also hosts the turn-end fallback timer (arms/cancels on the bot/user
+            # speaking frames it sees here on the spine) and drives agent_processor's nudge.
+            pipeline_components.append(
+                UserObserver(
+                    turn_end_fallback_time=self.turn_end_fallback_time,
+                    fallback_processor=agent_processor,
+                    # Cascade: fallback rides the standard turn flow via a native turn-stop.
+                    turn_stop_strategy=turn_stop_strategy,
+                )
+            )
             pipeline_components.append(user_aggregator)  # Aggregates & fires turn events
             # Add agent processor (receives turn events via event handler)
             pipeline_components.append(agent_processor)
         elif audio_llm_processor:
             # Audio-LLM pipeline: collector buffers audio, processor handles turns
             pipeline_components.append(audio_llm_audio_collector)  # Buffers audio frames
-            pipeline_components.append(UserObserver())  # For metrics
+            pipeline_components.append(
+                UserObserver(
+                    turn_end_fallback_time=self.turn_end_fallback_time,
+                    fallback_processor=audio_llm_processor,
+                )
+            )
             pipeline_components.append(user_aggregator)  # Aggregates & fires turn events
             pipeline_components.append(
                 ParallelPipeline(

@@ -89,6 +89,17 @@ class TestAuditLog:
         self.log.append_user_input("Hi", timestamp_ms="1234567890000")
         assert self.log.transcript[0]["timestamp"] == "1234567890000"
 
+    def test_append_user_input_turn_fallback_uses_llm_content(self):
+        # Fallback markers show a plain marker in the transcript but send the nudge to the LLM.
+        self.log.append_user_input(
+            "no user speech detected within 4s",
+            message_type="turn_fallback",
+            llm_content="[please ask again]",
+        )
+        assert self.log.transcript[0]["message_type"] == "turn_fallback"
+        assert self.log.transcript[0]["value"] == "no user speech detected within 4s"
+        assert self.log.conversation_messages[0].content == "[please ask again]"
+
     def test_append_assistant_output_text(self):
         self.log.append_assistant_output("Hello!")
         assert len(self.log.transcript) == 1
