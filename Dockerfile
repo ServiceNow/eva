@@ -81,6 +81,24 @@ COPY configs/ ./configs/
 COPY data/ ./data/
 COPY assets/ ./assets/
 
+# Optionally bake in the licensed Krisp VIVA SDK + turn model for the
+# krisp_viva_turn turn-stop strategy. The wheel/model are proprietary (not public,
+# not on PyPI) so they are git-ignored and provisioned into vendor/krisp/ before the
+# build — see vendor/krisp/README.md. If they are absent the build still succeeds and
+# krisp_viva_turn is simply unavailable at runtime. KRISP_VIVA_API_KEY is NOT baked in;
+# it is supplied as a runtime env var/secret.
+COPY vendor/krisp/ /tmp/krisp/
+RUN if ls /tmp/krisp/*.whl >/dev/null 2>&1; then \
+        pip install --no-cache-dir /tmp/krisp/*.whl && \
+        mkdir -p /opt/krisp/models && \
+        cp /tmp/krisp/*.kef /opt/krisp/models/ && \
+        echo "Krisp VIVA SDK baked into image"; \
+    else \
+        echo "No Krisp SDK in vendor/krisp/ — krisp_viva_turn will be unavailable"; \
+    fi && \
+    rm -rf /tmp/krisp
+ENV KRISP_VIVA_TURN_MODEL_PATH=/opt/krisp/models/krisp-viva-tp-v3.kef
+
 # Create non-root user for runtime security
 RUN groupadd --gid 1000 eva && \
     useradd --uid 1000 --gid eva --create-home eva
