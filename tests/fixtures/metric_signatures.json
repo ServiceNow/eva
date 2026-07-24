@@ -14,8 +14,8 @@
   "ConversationCorrectlyFinishedMetric": {
     "name": "conversation_correctly_finished",
     "prompt_hash": null,
-    "source_hash": "3f495631946f",
-    "version": "v0.1"
+    "source_hash": "da7a915516e1",
+    "version": "v0.3"
   },
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
@@ -44,8 +44,8 @@
   "ResponseSpeedMetric": {
     "name": "response_speed",
     "prompt_hash": null,
-    "source_hash": "fdac735ba008",
-    "version": "v0.2"
+    "source_hash": "3b0926903322",
+    "version": "v0.4"
   },
   "STTWERMetric": {
     "name": "stt_wer",

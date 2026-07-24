@@ -53,6 +53,38 @@ Uses the following MetricContext fields:
 }
 ```
 
+## Diagnostic Sub-Metrics
+
+When a record fails (score 0.0), a deterministic classifier assigns **exactly one primary cause** for why the agent went silent, emitted as sub-metrics keyed `conversation_correctly_finished.<cause>_rate`.
+
+**General logic:**
+- **One cause per failure.** Causes are checked in a fixed priority order (infra errors first, since they invalidate the run) and the first match wins — causes never double-count. `unknown_reason` is the residual when nothing else matches.
+- **Score convention (`_rate`)**: `1.0` = this cause occurred, `0.0` = it did not (lower is better). Every cause flag is emitted on every record (all `0.0` on a clean finish), so the cross-record mean reads as "fraction of conversations with this cause".
+- **Signals come from the raw record files** (`agent_perf_stats.csv`, `logs.log`, `pipecat_logs.jsonl`, `user_simulator_events.jsonl`, `audit_log.json`). A missing file just means that cause can't fire — it's noted in `details.notes`, never an error.
+
+**Causes** (in priority order):
+
+| Cause | Detected when |
+|-------|---------------|
+| `tts_api_error` | `pipecat_logs.jsonl` error frame naming a `*TTSService` (infra → `invalid_run`) |
+| `stt_api_error` | `pipecat_logs.jsonl` error frame naming a `*STTService` (infra → `invalid_run`) |
+| `llm_api_error` | fatal LLM error line in `logs.log` (allowlist) with no response after it (infra → `invalid_run`) |
+| `reasoning_too_long` | last `agent_perf_stats.csv` row: empty `response`, no tool call, model reasoned, `stop_reason == length` (ran out of tokens mid-reasoning) |
+| `reasoning_only` | same, but `stop_reason != length` — reasoned (visible text **or** `reasoning_tokens > 0`) yet emitted no answer |
+| `stt_empty_transcription` | cascade, last message from assistant, `VAD fired but no transcription` after the last response, plus a `User turn stopped - complete transcript: ''` line (turn closed empty) |
+| `stt_missing_transcription` | same, but **no** `User turn stopped` line (turn never closed) |
+| `ended_with_user_interruption` | an accepted non-empty user turn, then an interruption, with no response after it |
+| `vad_no_turn_detected` | the user's final utterance came after the agent, but no VAD onset fired in its ±1.5s window |
+| `unknown_reason` | none of the above (residual; a discovery queue for new causes) |
+
+**Input-characteristic flags** are also emitted on failures. These are *orthogonal* — they describe the user's final utterance, not a cause, so they overlap each other and the causes and do **not** sum to 1.0.
+
+| Flag (`…_rate`) | Fires when |
+|-----------------|-----------|
+| `final_turn_short` | 1–2 words, after stripping `[annotation]` tags |
+| `final_turn_acknowledgement` | leads with `yes/no/ok/sure/…` **and** ≤ 6 words |
+| `final_turn_spelled_entity` | a spelled ID/code/name (letter/digit runs ≥3 chars, NATO, "X as in Y", caps codes) that dominates the turn |
+
 ## Related Metrics
 
 - [conversation_valid_end.md](conversation_valid_end.md) - Validates the conversation ended via the `end_call` tool (simulator-side quality gate).
@@ -66,3 +98,4 @@ Uses the following MetricContext fields:
 - **Category**: `diagnostic`
 - **`exclude_from_pass_at_k`**: `True`
 - **Configuration**: None (deterministic)
+- **Sub-metric classifier**: `src/eva/utils/conversation_correctly_finished/` — `classifier.py` (extract raw files into signals → fixed-priority cause selection → build sub-metric flags), `causes/*` (per-cause detect + extract), `final_turn.py` (input-characteristic flags).
