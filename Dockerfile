@@ -74,13 +74,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY --from=builder /opt/venv/lib/python3.11/site-packages/eva /opt/venv/lib/python3.11/site-packages/eva
 COPY --from=builder /opt/venv/bin/eva /opt/venv/bin/eva
 
-# Copy application code
-COPY src/ ./src/
-COPY scripts/ ./scripts/
-COPY configs/ ./configs/
-COPY data/ ./data/
-COPY assets/ ./assets/
-
 # Optionally bake in the licensed Krisp VIVA SDK + turn model for the
 # krisp_viva_turn turn-stop strategy. The wheel/model are proprietary (not public,
 # not on PyPI) so they are git-ignored and provisioned into vendor/krisp/ before the
@@ -98,6 +91,13 @@ RUN if ls /tmp/krisp/*.whl >/dev/null 2>&1; then \
     fi && \
     rm -rf /tmp/krisp
 ENV KRISP_VIVA_TURN_MODEL_PATH=/opt/krisp/models/krisp-viva-tp-v3.kef
+
+# Copy application code
+COPY src/ ./src/
+COPY scripts/ ./scripts/
+COPY configs/ ./configs/
+COPY data/ ./data/
+COPY assets/ ./assets/
 
 # Create non-root user for runtime security
 RUN groupadd --gid 1000 eva && \
