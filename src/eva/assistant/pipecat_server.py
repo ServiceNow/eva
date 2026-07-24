@@ -456,6 +456,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 audio_llm_audio_collector=audio_llm_audio_collector,
                 input_transcription_context_filter=input_transcription_context_filter,
                 input_transcription_processor=input_transcription_processor,
+                turn_stop_strategy=turn_stop_strategy,
             )
 
             metrics_log_path = self.output_dir / "pipecat_metrics.jsonl"
@@ -576,6 +577,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         audio_llm_audio_collector=None,
         input_transcription_context_filter=None,
         input_transcription_processor=None,
+        turn_stop_strategy=None,
     ) -> Pipeline:
         """Create the Pipecat pipeline.
 
@@ -598,6 +600,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 UserObserver(
                     turn_end_fallback_time=self.turn_end_fallback_time,
                     fallback_processor=agent_processor,
+                    # Cascade: fallback rides the standard turn flow via a native turn-stop.
+                    turn_stop_strategy=turn_stop_strategy,
                 )
             )
             pipeline_components.append(user_aggregator)  # Aggregates & fires turn events

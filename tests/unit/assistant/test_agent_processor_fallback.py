@@ -38,16 +38,29 @@ SETTLE = FALLBACK_TIME + 0.03  # wait past the window for the timer to fire
 
 def test_build_fallback_nudge_no_partial():
     marker, nudge = build_fallback_nudge(4, "")
-    assert marker == "no user speech detected within 4s"
-    assert "no user speech captured" in nudge
-    assert "Do not mention this system note" in nudge
+    assert "TURN-END FALLBACK" in marker  # audit marker makes the fallback abundantly clear
+    assert "no user speech captured" in marker
+    assert "acknowledge you may not have heard" in nudge
+    assert "repeat" in nudge
+    assert "system note" in nudge
 
 
 def test_build_fallback_nudge_with_partial():
     marker, nudge = build_fallback_nudge(4, "ten o'clock")
-    assert "partial user speech" in marker
+    assert "TURN-END FALLBACK" in marker
     assert "ten o'clock" in marker
+    # The model is told to acknowledge it may have misheard, then address the partial.
+    assert "acknowledging you may not have heard" in nudge
     assert "ten o'clock" in nudge
+
+
+def test_build_fallback_nudge_audio_partial():
+    # Audio-LLM: no transcript but audio captured -> acknowledge-and-answer (not "please repeat").
+    marker, nudge = build_fallback_nudge(20, "", has_audio=True)
+    assert "TURN-END FALLBACK" in marker
+    assert "audio" in marker
+    assert "acknowledging you may not have heard" in nudge
+    assert "answer or address what you did hear" in nudge
 
 
 # --------------------------------------------------------------------------------------------
@@ -111,12 +124,17 @@ async def test_timer_reset_counter():
 # --------------------------------------------------------------------------------------------
 
 
-def _make_observer(fallback_time=FALLBACK_TIME):
+def _make_observer(fallback_time=FALLBACK_TIME, turn_stop_strategy=None):
     """Build a UserObserver with a mock fallback processor, bypassing pipecat push_frame."""
     proc = MagicMock()
     proc.query_in_flight = False
     proc.process_turn_fallback = AsyncMock()
-    obs = UserObserver(turn_end_fallback_time=fallback_time, fallback_processor=proc)
+    proc.arm_fallback = MagicMock()
+    obs = UserObserver(
+        turn_end_fallback_time=fallback_time,
+        fallback_processor=proc,
+        turn_stop_strategy=turn_stop_strategy,
+    )
     # Stub the FrameProcessor plumbing so process_frame can run outside a real pipeline.
     obs.push_frame = AsyncMock()
 
@@ -149,6 +167,44 @@ async def test_observer_fires_nudge_on_silence(monkeypatch):
     args = proc.process_turn_fallback.await_args
     assert args.args[0] == FALLBACK_TIME
     assert args.args[1] == ""
+
+
+async def test_observer_triggers_native_turn_stop_when_strategy_present(monkeypatch):
+    """Cascade prototype: with a turn_stop_strategy, the fallback rides the standard flow.
+
+    It arms the processor and fires the strategy's native turn-stop instead of the bypass
+    process_turn_fallback path.
+    """
+    strategy = MagicMock()
+    strategy.trigger_user_turn_stopped = AsyncMock()
+    obs, proc = _make_observer(turn_stop_strategy=strategy)
+    monkeypatch.setattr(
+        "pipecat.processors.frame_processor.FrameProcessor.process_frame",
+        AsyncMock(),
+    )
+    await _send(obs, BotStoppedSpeakingFrame())  # arm
+    await asyncio.sleep(SETTLE)
+    strategy.trigger_user_turn_stopped.assert_awaited_once()
+    proc.arm_fallback.assert_called_once()
+    # The bypass path is not used when riding the standard flow.
+    proc.process_turn_fallback.assert_not_awaited()
+
+
+async def test_observer_clears_pending_fallback_on_real_turn_start(monkeypatch):
+    """Cascade: a real turn start discards a fallback armed by a prior no-op'd native turn-stop.
+
+    Guards the leak where trigger_user_turn_stopped no-ops (no open user turn), leaving
+    _pending_fallback armed to mis-frame the next genuine turn.
+    """
+    strategy = MagicMock()
+    strategy.trigger_user_turn_stopped = AsyncMock()
+    obs, proc = _make_observer(turn_stop_strategy=strategy)
+    monkeypatch.setattr(
+        "pipecat.processors.frame_processor.FrameProcessor.process_frame",
+        AsyncMock(),
+    )
+    await _send(obs, UserStartedSpeakingFrame())
+    proc.clear_pending_fallback.assert_called_once()
 
 
 async def test_observer_user_started_speaking_cancels(monkeypatch):
@@ -237,12 +293,78 @@ async def test_observer_forwards_partial_transcript(monkeypatch):
 # --------------------------------------------------------------------------------------------
 
 
-async def test_audio_llm_process_turn_fallback_injects_text_nudge():
-    """The audio-LLM nudge logs a turn_fallback marker and drives a text query to TTS.
+async def test_process_complete_user_turn_frames_fallback(monkeypatch):
+    """Cascade prototype: an armed fallback turn is framed as a nudge via the standard handler.
 
-    Exercises the real AudioLLMProcessor.process_turn_fallback with a mocked agentic system,
-    since the example/7 end-to-end path needs a remote model endpoint not available in tests.
+    Records a turn_fallback marker, drives the model with the nudge (not as normal user input),
+    and does NOT reset the give-up counter (a fallback still counts toward the cap).
     """
+    from eva.assistant.agentic.audit_log import AuditLog
+    from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor
+
+    proc = object.__new__(BenchmarkAgentProcessor)
+    proc._pending_fallback = (20, "buffered partial")
+    proc._current_query_task = None
+    proc._interrupted = asyncio.Event()
+    proc._user_message_aggregator = []
+    proc.audit_log = AuditLog()
+    timer = TurnEndFallbackTimer(FALLBACK_TIME, AsyncMock())
+    timer.note_nudge()  # this fallback was counted by the observer
+    proc.fallback_timer = timer
+
+    captured = {}
+
+    async def fake_process_user_query(text, log_user_input=True):
+        captured["text"] = text
+        captured["log_user_input"] = log_user_input
+
+    proc._process_user_query = fake_process_user_query
+
+    await proc.process_complete_user_turn("partial words")  # aggregator transcript
+
+    fb = [e for e in proc.audit_log.transcript if e.get("message_type") == "turn_fallback"]
+    assert len(fb) == 1
+    assert "partial words" in fb[0]["llm_content"]  # aggregator content preferred over buffered
+    assert captured["log_user_input"] is False  # driven as a nudge, not logged as normal user input
+    assert timer.consecutive_nudges == 1  # counter NOT reset for a fallback turn
+    assert proc._pending_fallback is None  # pending consumed
+
+
+async def test_process_complete_user_turn_normal_turn_unaffected(monkeypatch):
+    """A normal (non-fallback) completed turn still behaves as before."""
+    from eva.assistant.agentic.audit_log import AuditLog
+    from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor
+
+    proc = object.__new__(BenchmarkAgentProcessor)
+    proc._pending_fallback = None
+    proc._current_query_task = None
+    proc._interrupted = asyncio.Event()
+    proc._user_message_aggregator = []
+    proc.audit_log = AuditLog()
+    timer = TurnEndFallbackTimer(FALLBACK_TIME, AsyncMock())
+    timer.note_nudge()
+    proc.fallback_timer = timer
+
+    captured = {}
+
+    async def fake_process_user_query(text, log_user_input=True):
+        captured["text"] = text
+        captured["log_user_input"] = log_user_input
+
+    proc._process_user_query = fake_process_user_query
+
+    await proc.process_complete_user_turn("Hello there")
+
+    assert captured["text"] == "Hello there"
+    assert captured["log_user_input"] is True
+    assert timer.consecutive_nudges == 0  # real turn resets the counter
+    assert proc._user_message_aggregator == [{"role": "user", "content": "Hello there"}]
+    # No fallback marker for a normal turn.
+    assert [e for e in proc.audit_log.transcript if e.get("message_type") == "turn_fallback"] == []
+
+
+def _make_audio_llm_proc(buffered_audio=b""):
+    """Build a bare AudioLLMProcessor with a mock audio collector for fallback tests."""
     from eva.assistant.agentic.audit_log import AuditLog
     from eva.assistant.pipeline.audio_llm_processor import AudioLLMProcessor
 
@@ -253,20 +375,67 @@ async def test_audio_llm_process_turn_fallback_injects_text_nudge():
     proc.audit_log = AuditLog()
     proc.on_assistant_response = None
     proc.push_frame = AsyncMock()
+    proc.audio_collector = MagicMock()
+    # The fallback consumes the buffer via get_buffered_audio (clear-on-read); peek is kept for
+    # the normal-turn / transcription readers.
+    proc.audio_collector.peek_buffered_audio.return_value = buffered_audio
+    proc.audio_collector.get_buffered_audio.return_value = buffered_audio
+    proc.audio_collector.frame_sample_rate = 24000
+    proc.agentic_system = MagicMock()
+    return proc
+
+
+async def test_audio_llm_fallback_text_reprompt_when_no_audio():
+    """No buffered audio -> the fallback reprompts via a text nudge (marker + acknowledge/repeat)."""
+    proc = _make_audio_llm_proc(buffered_audio=b"")
 
     async def fake_process_query(text, log_user_input=True):
         assert log_user_input is False  # marker already logged separately
-        yield "Sorry, I didn't catch that. Could you repeat?"
+        yield "Sorry, I may not have caught that. Could you repeat?"
 
-    proc.agentic_system = MagicMock()
     proc.agentic_system.process_query = fake_process_query
 
     await proc.process_turn_fallback(4, "")
 
-    # A turn_fallback marker was recorded with the richer nudge as llm_content.
     fb = [e for e in proc.audit_log.transcript if e.get("message_type") == "turn_fallback"]
     assert len(fb) == 1
-    assert fb[0]["value"] == "no user speech detected within 4s"
+    assert "TURN-END FALLBACK" in fb[0]["value"]
     assert "repeat" in fb[0]["llm_content"].lower()
-    # The response was pushed toward TTS (LLMMessageFrame + TTSSpeakFrame).
-    assert proc.push_frame.await_count >= 1
+    # Emulated boundary emitted first, then the response toward TTS.
+    from pipecat.frames.frames import UserStartedSpeakingFrame, UserStoppedSpeakingFrame
+
+    pushed = [call.args[0] for call in proc.push_frame.await_args_list]
+    assert [type(f) for f in pushed[:2]] == [UserStartedSpeakingFrame, UserStoppedSpeakingFrame]
+    assert len(pushed) > 2  # response frames followed
+
+
+async def test_audio_llm_fallback_forwards_partial_audio_with_hint():
+    """Buffered audio present -> the fallback forwards the partial AUDIO with an acknowledgment hint.
+
+    Mirrors the cascade path forwarding the partial transcript: the model gets the audio plus a
+    text hint to acknowledge it may not have heard perfectly. A clear turn_fallback marker is
+    still recorded.
+    """
+    proc = _make_audio_llm_proc(buffered_audio=b"x" * 100_000)  # well above MIN_AUDIO_BYTES
+
+    captured = {}
+    proc.agentic_system.set_turn_audio = MagicMock()
+    proc.agentic_system.set_turn_text_hint = lambda h: captured.setdefault("hint", h)
+
+    async def fake_process_query_with_audio(text):
+        yield "I may not have caught all of that, but let me help with the change."
+
+    proc.agentic_system.process_query_with_audio = fake_process_query_with_audio
+
+    await proc.process_turn_fallback(20, "")
+
+    fb = [e for e in proc.audit_log.transcript if e.get("message_type") == "turn_fallback"]
+    assert len(fb) == 1
+    assert "TURN-END FALLBACK" in fb[0]["value"]  # clear audit marker retained
+    # The partial audio was sent and an acknowledgment hint was set on the audio turn.
+    proc.agentic_system.set_turn_audio.assert_called_once()
+    assert "acknowledging you may not have heard" in captured["hint"]
+    # The buffer was consumed (cleared) so a later nudge/turn can't re-forward the same audio.
+    proc.audio_collector.get_buffered_audio.assert_called_once()
+    # A response reached TTS (boundary pushed first, then the reply).
+    assert proc.push_frame.await_count > 2

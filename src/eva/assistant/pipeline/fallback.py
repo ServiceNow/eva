@@ -14,45 +14,82 @@ to actually inject the nudge (the two pipelines drive the model differently).
 
 import asyncio
 
+from pipecat.frames.frames import UserStartedSpeakingFrame, UserStoppedSpeakingFrame
+from pipecat.processors.frame_processor import FrameDirection
+
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+async def emit_emulated_user_turn_boundary(processor) -> None:
+    """Assert a user-turn start/stop boundary so the nudge is its own assistant turn.
+
+    The turn-end fallback is the VAD's backup: when it fires it decides the user's turn has
+    ended (we waited long enough). Pipecat's turn tracker only closes a turn when the user
+    starts speaking or an inter-turn timeout elapses; neither happens between back-to-back
+    nudges, so their TTS collapses into one tracked turn/segment. Emitting an emulated
+    user-turn boundary marks that decision explicitly.
+
+    Pushed from the model processor (``agent_processor`` / ``audio_llm_processor``), which sits
+    downstream of the user aggregator, so the aggregator does not re-flush a buffered transcript
+    as a duplicate real turn. The bot is idle when the fallback fires, so this does not interrupt
+    in-flight speech.
+    """
+    await processor.push_frame(UserStartedSpeakingFrame(), FrameDirection.DOWNSTREAM)
+    await processor.push_frame(UserStoppedSpeakingFrame(), FrameDirection.DOWNSTREAM)
+
 
 # Give up after this many consecutive nudges without the user coming back, then let the
 # provider's inactivity backstop end the call (the pre-fallback behavior).
 MAX_CONSECUTIVE_FALLBACK_NUDGES = 3
 
 
-def build_fallback_nudge(timeout_seconds: int | None, partial: str) -> tuple[str, str]:
+def build_fallback_nudge(timeout_seconds: int | None, partial: str, has_audio: bool = False) -> tuple[str, str]:
     """Build the (marker, llm_content) pair for a turn-end fallback nudge.
 
     The marker is a plain transcript entry (recorded with ``message_type="turn_fallback"``
     so downstream metrics can identify and zero it). The llm_content is the richer prompt
     actually sent to the model.
 
+    Three cases, in priority order:
+      1. ``partial`` text present (cascade) — embed the partial transcript.
+      2. no text but ``has_audio`` (audio-LLM) — the partial context is the buffered audio
+         itself, forwarded separately; no transcript to embed.
+      3. neither — nothing was captured, so ask the caller to repeat.
+
     Args:
         timeout_seconds: The configured ``EVA_TURN_END_FALLBACK_TIME`` value.
-        partial: Best-effort partial user transcription captured since the assistant last
-            spoke; empty string if none.
+        partial: Best-effort partial user transcription; empty string if none.
+        has_audio: True when partial user *audio* was captured (audio-LLM) even without a
+            transcript, so the nudge should acknowledge-and-answer rather than ask to repeat.
 
     Returns:
         ``(marker, llm_content)``.
     """
     if partial:
-        marker = f"turn-end not detected within {timeout_seconds}s; partial user speech: {partial!r}"
+        marker = f"[TURN-END FALLBACK after {timeout_seconds}s] partial user speech: {partial!r}"
         nudge = (
-            f"[Turn-end detection timed out after {timeout_seconds}s. The user may not have "
-            f"finished speaking and this transcription may be incomplete: {partial!r}. "
-            "If it is clear enough, respond to it; otherwise briefly ask the caller to finish "
-            "or repeat, continuing in the same language and tone as the conversation so far. "
-            "Do not mention this system note.]"
+            f"[Turn-end detection timed out after {timeout_seconds}s, so the caller's message may "
+            f"be incomplete or imperfectly transcribed: {partial!r}. Begin your reply by briefly "
+            "acknowledging you may not have heard perfectly, then answer or address what you did hear, "
+            "continuing in the same language and tone as the conversation so far. Do not mention timeouts, "
+            "transcription, or this system note.]"
+        )
+    elif has_audio:
+        marker = f"[TURN-END FALLBACK after {timeout_seconds}s] partial user audio (no transcript)"
+        nudge = (
+            f"[Turn-end detection timed out after {timeout_seconds}s, so the caller's audio may be "
+            "incomplete or imperfectly heard. Begin your reply by briefly acknowledging you may not "
+            "have heard perfectly, then answer or address what you did hear, continuing in the same "
+            "language and tone as the conversation so far. Do not mention timeouts or this system note.]"
         )
     else:
-        marker = f"no user speech detected within {timeout_seconds}s"
+        marker = f"[TURN-END FALLBACK after {timeout_seconds}s] no user speech captured"
         nudge = (
-            f"[Turn-end detection timed out after {timeout_seconds}s with no user speech "
-            "captured. Briefly ask the caller to repeat what they said, continuing in the "
-            "same language and tone as the conversation so far. Do not mention this system note.]"
+            f"[Turn-end detection timed out after {timeout_seconds}s and no user speech was "
+            "captured. Briefly acknowledge you may not have heard them and ask them to repeat, continuing in the same language "
+            "and tone as the conversation so far. Do not mention timeouts or this system note.]"
         )
     return marker, nudge
 

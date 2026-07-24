@@ -155,6 +155,11 @@ class _TurnExtractionState:
     # the user is interrupting the assistant (assistant_audio_open), this is the same utterance — skip the advance so
     # user_speech lands at the same turn.
     rollback_advance_consumed_by_user: bool = False
+    # Set when a turn_fallback marker is seen so the next assistant entry (the nudge reprompt)
+    # is tagged as a fallback utterance. Such entries are preserved in the conversation trace
+    # even when TTS-segment validation fails — consecutive nudges can share one merged pipecat
+    # segment, which would otherwise drop the second nudge and collapse two user turns together.
+    next_assistant_is_fallback: bool = False
 
     def advance_turn_if_needed(self, from_audio_start: bool = False, bypass_hold: bool = False) -> None:
         """Advance turn if the assistant responded since the last user event.
@@ -303,21 +308,28 @@ def _handle_audit_log_event(
                 annotate_last_entry(
                     conversation_trace, turn, "user", user_entry_type, AnnotationLabel.CUT_OFF_BY_ASSISTANT
                 )
-        conversation_trace.append(
-            {
-                "role": "assistant",
-                "content": content,
-                "timestamp": event["timestamp_ms"],
-                "type": "intended",
-                "turn_id": turn,
-                "_audit_source": True,
-            }
-        )
+        entry = {
+            "role": "assistant",
+            "content": content,
+            "timestamp": event["timestamp_ms"],
+            "type": "intended",
+            "turn_id": turn,
+            "_audit_source": True,
+        }
+        # A turn-end fallback nudge is a real assistant utterance (the reprompt). Tag it so
+        # validation keeps it even if its TTS segments were merged onto a neighboring turn.
+        if state.next_assistant_is_fallback:
+            entry["_fallback_nudge"] = True
+            state.next_assistant_is_fallback = False
+        conversation_trace.append(entry)
 
     elif event["event_type"] == "turn_fallback":
         # No real user speech arrived within the fallback window - the pending turn hasn't
         # advanced, so this marks the still-open user turn as one with no real transcript/audio.
+        # The nudge reprompt that follows is a genuine assistant turn: flag it so it is not
+        # dropped in trace validation.
         context.fallback_turn_ids.add(state.turn_num)
+        state.next_assistant_is_fallback = True
 
     elif event["event_type"] in ("tool_call", "tool_response"):
         state.assistant_processed_in_turn = True
@@ -575,6 +587,7 @@ def _validate_conversation_trace(
         pipecat_segments = context._intended_assistant_segments.get(turn_id, [])
         audit_text = entry.get("content", "")
         truncated = truncate_to_spoken(audit_text, pipecat_segments)
+        is_fallback = entry.pop("_fallback_nudge", False)
         if truncated is not None:
             if truncated != audit_text:
                 logger.warning(
@@ -582,6 +595,13 @@ def _validate_conversation_trace(
                     f"at turn {turn_id}/{len(context.intended_assistant_turns)}: {audit_text[:80]!r} -> {truncated[:80]!r}"
                 )
             entry["content"] = truncated
+            entry.pop("_audit_source")
+            validated_trace.append(entry)
+        elif is_fallback:
+            # A fallback nudge that reached this stage was actually spoken (unspoken nudges are
+            # rolled out of the audit log upstream). Consecutive nudges can share one merged
+            # pipecat segment on a neighboring turn, so segment validation may find no match here.
+            # Keep the nudge rather than dropping it and collapsing the surrounding user turns.
             entry.pop("_audit_source")
             validated_trace.append(entry)
         else:

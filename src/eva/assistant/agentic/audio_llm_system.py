@@ -72,6 +72,9 @@ class AudioLLMAgenticSystem(AgenticSystem):
 
         # Per-turn audio history: list of (audio_bytes, sample_rate)
         self._turn_audio_history: list[tuple[bytes, int]] = []
+        # Optional text prepended to the current turn's audio message (consumed once). Used by the
+        # turn-end fallback to have the model acknowledge it may not have heard the audio perfectly.
+        self._turn_text_hint: str = ""
 
     def set_turn_audio(self, audio_bytes: bytes, sample_rate: int) -> None:
         """Record audio data for the current user turn.
@@ -80,6 +83,14 @@ class AudioLLMAgenticSystem(AgenticSystem):
         Audio is appended to the history and retained for all future LLM calls.
         """
         self._turn_audio_history.append((audio_bytes, sample_rate))
+
+    def set_turn_text_hint(self, hint: str) -> None:
+        """Set a text hint prepended to the next audio user message (consumed once).
+
+        Used by the turn-end fallback so the model is told the audio may be incomplete /
+        imperfectly heard and should acknowledge that before answering.
+        """
+        self._turn_text_hint = hint
 
     async def process_query_with_audio(self, user_text: str) -> AsyncGenerator[str, None]:
         """Process a user turn that has audio data.
@@ -120,6 +131,11 @@ class AudioLLMAgenticSystem(AgenticSystem):
         conversation_history = self.audit_log.get_conversation_messages(max_messages=30)
         history_dicts = [msg.to_dict() for msg in conversation_history]
 
+        # Text hint for the CURRENT turn's audio (e.g. a turn-end fallback acknowledgment).
+        # Consumed once so it only applies to this turn.
+        turn_text_hint = self._turn_text_hint
+        self._turn_text_hint = ""
+
         if self._turn_audio_history:
             if self.full_audio_context:
                 # Replace ALL user messages with their corresponding audio
@@ -127,9 +143,12 @@ class AudioLLMAgenticSystem(AgenticSystem):
                 for turn_idx, msg_idx in enumerate(user_indices):
                     if turn_idx < len(self._turn_audio_history):
                         audio_bytes, sample_rate = self._turn_audio_history[turn_idx]
+                        # Only the current (last) turn gets the hint.
+                        hint = turn_text_hint if turn_idx == len(user_indices) - 1 else ""
                         history_dicts[msg_idx] = self.alm_client.build_audio_user_message(
                             audio_bytes=audio_bytes,
                             source_sample_rate=sample_rate,
+                            text_hint=hint,
                         )
             else:
                 # Replace only the LAST user message with audio (current turn)
@@ -144,6 +163,7 @@ class AudioLLMAgenticSystem(AgenticSystem):
                     history_dicts[last_user_idx] = self.alm_client.build_audio_user_message(
                         audio_bytes=audio_bytes,
                         source_sample_rate=sample_rate,
+                        text_hint=turn_text_hint,
                     )
 
         messages.extend(history_dicts)

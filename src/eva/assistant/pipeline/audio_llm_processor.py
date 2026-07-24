@@ -39,7 +39,11 @@ from pipecat.utils.time import time_now_iso8601
 from eva.assistant.agentic.audio_llm_system import AudioLLMAgenticSystem
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.pipeline.alm_base import BaseALMClient
-from eva.assistant.pipeline.fallback import TurnEndFallbackTimer, build_fallback_nudge
+from eva.assistant.pipeline.fallback import (
+    TurnEndFallbackTimer,
+    build_fallback_nudge,
+    emit_emulated_user_turn_boundary,
+)
 from eva.assistant.pipeline.frames import LLMMessageFrame
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
@@ -335,23 +339,49 @@ class AudioLLMProcessor(FrameProcessor):
                 logger.debug("Failed to send error message (pipeline may be closed)")
 
     async def process_turn_fallback(self, timeout_seconds: int | None, partial: str = "") -> None:
-        """Nudge the assistant when turn-end detection times out without a completed user turn.
+        """End the user turn on the backstop timer and reply, framed as a fallback.
 
-        Called by ``UserObserver`` when the fallback timer fires. Unlike a real turn (which
-        sends buffered audio via ``process_query_with_audio``), this injects a **text** nudge
-        through the inherited ``process_query`` — there is no user audio to attach. A marker is
-        logged with ``message_type="turn_fallback"`` so metrics can skip/zero it.
+        Called by ``UserObserver`` when the fallback timer fires. The fallback is the VAD's
+        backup turn-end decision: it takes whatever the user actually said and treats it as the
+        (possibly incomplete) user utterance. To mirror the cascade path — which forwards the
+        partial *transcript* — audio-LLM forwards the buffered partial **audio** with an
+        acknowledgment hint, so the model owns that it may not have heard perfectly before
+        answering. Only when no audio was captured at all does it fall back to a text reprompt.
+
+        Audio-LLM finalizes turns via the collector's ``LLMContextFrame`` (its
+        ``on_user_turn_stopped`` is a no-op), so it can't use the cascade's native turn-stop
+        trigger; the emulated boundary provides the turn bracketing instead.
 
         Args:
             timeout_seconds: The configured ``EVA_TURN_END_FALLBACK_TIME`` value.
-            partial: Best-effort partial transcript (typically empty for audio-LLM, which has
-                no STT transcript on the pipeline spine).
+            partial: Best-effort partial transcript (usually empty for audio-LLM; the audio is
+                the real partial context).
         """
         self._interrupted.clear()
-        marker, nudge = build_fallback_nudge(timeout_seconds, partial)
-        self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=nudge)
+        # Emulated boundary brackets this nudge as its own turn (see emit_emulated_user_turn_boundary).
+        await emit_emulated_user_turn_boundary(self)
 
-        self._current_query_task = asyncio.create_task(self._process_text_query(nudge))
+        # The fallback IS the backup end-of-utterance decision, so consume the buffer like a real
+        # turn (get_buffered_audio clears it). Otherwise consecutive nudges would re-forward the
+        # same audio, since the buffer only clears on the next UserStartedSpeakingFrame. Safe to
+        # clear: the transcription branch only reads on a real LLMContextFrame, which the fallback
+        # never emits.
+        audio_bytes = self.audio_collector.get_buffered_audio()
+        has_audio = bool(audio_bytes) and len(audio_bytes) >= MIN_AUDIO_BYTES
+        marker, nudge = build_fallback_nudge(timeout_seconds, partial, has_audio=has_audio)
+
+        if has_audio:
+            # Forward the partial audio with the acknowledgment hint. The visible audit value is
+            # the clear fallback marker; llm_content is the placeholder that _execute_agent_with_audio
+            # swaps for the audio. No turn_id, so a late transcription can't overwrite the marker.
+            self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=self._USER_PLACEHOLDER)
+            self.agentic_system.set_turn_text_hint(nudge)
+            source_sample_rate = self.audio_collector.frame_sample_rate
+            self._current_query_task = asyncio.create_task(self._process_audio_turn(audio_bytes, source_sample_rate))
+        else:
+            # No audio captured at all — reprompt via text.
+            self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=nudge)
+            self._current_query_task = asyncio.create_task(self._process_text_query(nudge))
         try:
             await self._current_query_task
         except asyncio.CancelledError:
