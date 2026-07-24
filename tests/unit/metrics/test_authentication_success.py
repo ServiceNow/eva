@@ -242,6 +242,91 @@ async def test_num_auth_calls_success_multiple_tools(metric):
 
 
 @pytest.mark.asyncio
+async def test_authentication_success_rate_single_tool_first_try(metric):
+    """Auth succeeding with a single tool called once should score authentication_success_rate=1.0."""
+    ctx = make_metric_context(
+        expected_scenario_db={"session": {"confirmation_number": "ABC123"}},
+        final_scenario_db={"session": {"confirmation_number": "ABC123"}},
+        agent_tools=[{"name": "get_reservation", "tool_type": "auth"}],
+        tool_responses=[{"tool_name": "get_reservation", "tool_response": SUCCESS_RESPONSE}],
+    )
+    result = await metric.compute(ctx)
+
+    assert result.sub_metrics is not None
+    sub = result.sub_metrics["authentication_success_rate"]
+    assert sub.score == 1.0
+    assert sub.normalized_score == 1.0
+    assert sub.skipped is False
+    assert sub.details["num_auth_calls_per_tool"] == {"get_reservation": 1}
+    assert sub.details["num_auth_tools"] == 1
+
+
+@pytest.mark.asyncio
+async def test_authentication_success_rate_single_tool_with_retries(metric):
+    """Auth succeeding after 3 calls to one tool should score authentication_success_rate=1/3."""
+    ctx = make_metric_context(
+        expected_scenario_db={"session": {"confirmation_number": "ABC123"}},
+        final_scenario_db={"session": {"confirmation_number": "ABC123"}},
+        agent_tools=[{"name": "get_reservation", "tool_type": "auth"}],
+        tool_responses=[
+            {"tool_name": "get_reservation", "tool_response": FAILURE_RESPONSE},
+            {"tool_name": "get_reservation", "tool_response": FAILURE_RESPONSE},
+            {"tool_name": "get_reservation", "tool_response": SUCCESS_RESPONSE},
+        ],
+    )
+    result = await metric.compute(ctx)
+
+    assert result.sub_metrics is not None
+    sub = result.sub_metrics["authentication_success_rate"]
+    assert sub.score == pytest.approx(0.3333, abs=1e-4)
+    assert sub.normalized_score == pytest.approx(0.3333, abs=1e-4)
+    assert sub.skipped is False
+
+
+@pytest.mark.asyncio
+async def test_authentication_success_rate_multiple_tools(metric):
+    """Auth succeeding across 2 tools with 6 total calls should score authentication_success_rate=2/6."""
+    ctx = make_metric_context(
+        expected_scenario_db={"session": {"confirmation_number": "ABC123"}},
+        final_scenario_db={"session": {"confirmation_number": "ABC123"}},
+        agent_tools=[
+            {"name": "get_reservation", "tool_type": "auth"},
+            {"name": "verify", "tool_type": "auth"},
+        ],
+        tool_responses=[
+            {"tool_name": "get_reservation", "tool_response": SUCCESS_RESPONSE},
+            {"tool_name": "get_reservation", "tool_response": SUCCESS_RESPONSE},
+            {"tool_name": "verify", "tool_response": FAILURE_RESPONSE},
+            {"tool_name": "verify", "tool_response": FAILURE_RESPONSE},
+            {"tool_name": "verify", "tool_response": FAILURE_RESPONSE},
+            {"tool_name": "verify", "tool_response": SUCCESS_RESPONSE},
+        ],
+    )
+    result = await metric.compute(ctx)
+
+    assert result.sub_metrics is not None
+    sub = result.sub_metrics["authentication_success_rate"]
+    assert sub.score == pytest.approx(0.3333, abs=1e-4)
+    assert sub.normalized_score == pytest.approx(0.3333, abs=1e-4)
+    assert sub.skipped is False
+
+
+@pytest.mark.asyncio
+async def test_authentication_success_rate_absent_on_failure(metric):
+    """Auth failing should not produce an authentication_success_rate sub-metric."""
+    ctx = make_metric_context(
+        expected_scenario_db={"session": {"confirmation_number": "ABC123"}},
+        final_scenario_db={"session": {"confirmation_number": "WRONG1"}},
+        agent_tools=[{"name": "get_reservation", "tool_type": "auth"}],
+        tool_responses=[{"tool_name": "get_reservation", "tool_response": FAILURE_RESPONSE}],
+    )
+    result = await metric.compute(ctx)
+
+    assert result.sub_metrics is not None
+    assert "authentication_success_rate" not in result.sub_metrics
+
+
+@pytest.mark.asyncio
 async def test_num_auth_calls_on_failure_single_tool(metric):
     """Auth failing with a single auth tool called once should score num_auth_calls_on_failure=1.0."""
     ctx = make_metric_context(

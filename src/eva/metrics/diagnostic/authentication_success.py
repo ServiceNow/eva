@@ -125,6 +125,13 @@ def _build_authentication_success_sub_metrics(
             normalized_score=None,
             details={"num_auth_calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
         )
+        success_rate = len(counts_per_tool) / sum(counts_per_tool.values())
+        sub_metrics["authentication_success_rate"] = MetricScore(
+            name=f"{parent_name}.authentication_success_rate",
+            score=round(success_rate, 4),
+            normalized_score=round(success_rate, 4),
+            details={"num_auth_calls_per_tool": counts_per_tool, "num_auth_tools": len(counts_per_tool)},
+        )
     else:
         sub_metrics["num_auth_calls_on_failure"] = MetricScore(
             name=f"{parent_name}.num_auth_calls_on_failure",
