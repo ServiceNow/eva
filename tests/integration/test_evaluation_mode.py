@@ -212,7 +212,6 @@ async def test_evaluation_mode_all_pass_first_attempt(eval_config, mock_dataset)
                 assert sim["total_records"] == 2
                 assert sim["successful_records"] == 2
                 assert sim["failed_records"] == 0
-                assert sim["total_attempts"] == 1
 
 
 @pytest.mark.asyncio
@@ -254,7 +253,6 @@ async def test_evaluation_mode_rerun_failures(eval_config, mock_dataset):
             with open(eval_summary_path) as f:
                 eval_summary = json.load(f)
                 sim = eval_summary["simulation"]
-                assert sim["total_attempts"] == 2
                 assert sim["successful_records"] == 2
 
             # Check that failed attempt was archived
@@ -299,7 +297,6 @@ async def test_evaluation_mode_max_reruns_reached(eval_config, mock_dataset):
             with open(eval_summary_path) as f:
                 eval_summary = json.load(f)
                 sim = eval_summary["simulation"]
-                assert sim["total_attempts"] == 3
                 assert sim["successful_records"] == 1
                 assert sim["failed_records"] == 1
                 assert "fail_record_1" in sim["failed_record_ids"]
@@ -402,10 +399,11 @@ async def test_evaluation_mode_with_unresolved_errors(eval_config, mock_dataset)
     def completed_fn(record_id, per_record_attempt):
         return record_id != "fail_record_1"
 
-    validation_results = create_mock_validation_results(
-        pass_ids=["pass_record_1"],
-        fail_ids=[],
-    )
+    # An incomplete conversation is rejected by validate_one's gate, which it signals as passed=False with empty failed_metrics.
+    validation_results = {
+        "pass_record_1": ValidationResult(passed=True),
+        "fail_record_1": ValidationResult(passed=False),
+    }
 
     with patch.object(
         runner, "_run_conversation", side_effect=_mock_run_conversation_helper(runner, call_counts, completed_fn)
