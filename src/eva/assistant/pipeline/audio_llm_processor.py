@@ -379,8 +379,11 @@ class AudioLLMProcessor(FrameProcessor):
             source_sample_rate = self.audio_collector.frame_sample_rate
             self._current_query_task = asyncio.create_task(self._process_audio_turn(audio_bytes, source_sample_rate))
         else:
-            # No audio captured at all — reprompt via text.
+            # No audio captured at all (genuine silence) — reprompt via text. Record a no-audio
+            # turn so _turn_audio_history stays aligned 1:1 with user messages (full_audio_context
+            # relies on that alignment); this turn is left as its text reprompt in the prompt.
             self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=nudge)
+            self.agentic_system.note_non_audio_turn()
             self._current_query_task = asyncio.create_task(self._process_text_query(nudge))
         try:
             await self._current_query_task

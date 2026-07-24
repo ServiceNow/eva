@@ -71,7 +71,11 @@ class AudioLLMAgenticSystem(AgenticSystem):
             self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
 
         # Per-turn audio history: list of (audio_bytes, sample_rate)
-        self._turn_audio_history: list[tuple[bytes, int]] = []
+        # One entry per user turn, aligned 1:1 with the user messages in the conversation history
+        # so full_audio_context maps audio to the right turn. The user can only speak audio, but a
+        # turn may carry no audio (genuine silence hitting the turn-end fallback); that turn is
+        # recorded as ``None`` so the reprompt stays text and later turns' audio doesn't shift.
+        self._turn_audio_history: list[tuple[bytes, int] | None] = []
         # Optional text prepended to the current turn's audio message (consumed once). Used by the
         # turn-end fallback to have the model acknowledge it may not have heard the audio perfectly.
         self._turn_text_hint: str = ""
@@ -83,6 +87,14 @@ class AudioLLMAgenticSystem(AgenticSystem):
         Audio is appended to the history and retained for all future LLM calls.
         """
         self._turn_audio_history.append((audio_bytes, sample_rate))
+
+    def note_non_audio_turn(self) -> None:
+        """Record a user turn that carried no audio (genuine silence hitting the turn-end fallback).
+
+        Keeps ``_turn_audio_history`` aligned 1:1 with user messages so ``full_audio_context``
+        maps audio to the correct turns; this turn stays as its text reprompt in the prompt.
+        """
+        self._turn_audio_history.append(None)
 
     def set_turn_text_hint(self, hint: str) -> None:
         """Set a text hint prepended to the next audio user message (consumed once).
@@ -138,18 +150,24 @@ class AudioLLMAgenticSystem(AgenticSystem):
 
         if self._turn_audio_history:
             if self.full_audio_context:
-                # Replace ALL user messages with their corresponding audio
+                # Replace each user message with its corresponding audio. _turn_audio_history is
+                # aligned 1:1 with user messages; a None entry is a no-audio turn (silence hit the
+                # fallback), so it's left as its text reprompt and audio stays on the right turn.
                 user_indices = [i for i, msg in enumerate(history_dicts) if msg.get("role") == "user"]
                 for turn_idx, msg_idx in enumerate(user_indices):
-                    if turn_idx < len(self._turn_audio_history):
-                        audio_bytes, sample_rate = self._turn_audio_history[turn_idx]
-                        # Only the current (last) turn gets the hint.
-                        hint = turn_text_hint if turn_idx == len(user_indices) - 1 else ""
-                        history_dicts[msg_idx] = self.alm_client.build_audio_user_message(
-                            audio_bytes=audio_bytes,
-                            source_sample_rate=sample_rate,
-                            text_hint=hint,
-                        )
+                    if turn_idx >= len(self._turn_audio_history):
+                        break
+                    entry = self._turn_audio_history[turn_idx]
+                    if entry is None:
+                        continue  # no-audio turn stays as text
+                    audio_bytes, sample_rate = entry
+                    # Only the current (last) turn gets the hint.
+                    hint = turn_text_hint if turn_idx == len(user_indices) - 1 else ""
+                    history_dicts[msg_idx] = self.alm_client.build_audio_user_message(
+                        audio_bytes=audio_bytes,
+                        source_sample_rate=sample_rate,
+                        text_hint=hint,
+                    )
             else:
                 # Replace only the LAST user message with audio (current turn)
                 last_user_idx = None
@@ -158,8 +176,9 @@ class AudioLLMAgenticSystem(AgenticSystem):
                         last_user_idx = i
                         break
 
-                if last_user_idx is not None:
-                    audio_bytes, sample_rate = self._turn_audio_history[-1]
+                entry = self._turn_audio_history[-1]
+                if last_user_idx is not None and entry is not None:
+                    audio_bytes, sample_rate = entry
                     history_dicts[last_user_idx] = self.alm_client.build_audio_user_message(
                         audio_bytes=audio_bytes,
                         source_sample_rate=sample_rate,
