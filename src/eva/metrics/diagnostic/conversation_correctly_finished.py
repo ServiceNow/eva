@@ -27,7 +27,7 @@ class ConversationCorrectlyFinishedMetric(CodeMetric):
     """
 
     name = "conversation_correctly_finished"
-    version = "v0.2"
+    version = "v0.3"
     description = "Diagnostic metric: 0.0 when agent failed to respond to the user's final turn"
     category = "diagnostic"
     exclude_from_pass_at_k = True
