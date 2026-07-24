@@ -67,7 +67,7 @@ class TurnTakingMetric(CodeMetric):
     description = "Turn-taking evaluation based on per-turn latency and interruption behavior"
     category = "experience"
     pass_at_k_threshold = 0.8
-    version = "v0.3"
+    version = "v0.2"
 
     # --- Latency curve (piecewise linear). 0 outside [LATENCY_HARD_EARLY_MS, LATENCY_HARD_LATE_MS]. ---
     # Ramp up 0 → 1 from LATENCY_HARD_EARLY_MS to LATENCY_SWEET_SPOT_LOW_MS.
@@ -511,8 +511,7 @@ class TurnTakingMetric(CodeMetric):
         )
 
         # --- Pre-tool-speech lead-in rate ---
-        # None (omitted) for S2S — see _compute_pre_tool_speech_groups docstring for why trace
-        # order can't be trusted there yet.
+        # Reads audit_log.json directly so it works uniformly across cascade, S2S, and audio-LLM
         pre_tool_groups = cls._compute_pre_tool_speech_groups(context)
         if pre_tool_groups:
             sub["pretoolspeech_rate"] = _wrap(

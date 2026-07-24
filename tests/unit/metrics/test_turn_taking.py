@@ -892,9 +892,8 @@ class TestPreToolSpeechGroups:
             [
                 _audit_assistant(1, "Hello, how can I help?"),
                 _audit_user(2),
-                _audit_assistant(3, ""),
-                _audit_tool_call(4),
-                _audit_tool_response(4),
+                _audit_tool_call(3),
+                _audit_tool_response(3),
             ],
         )
         context = make_metric_context(output_dir=output_dir)
@@ -907,14 +906,13 @@ class TestPreToolSpeechGroups:
             tmp_path,
             [
                 _audit_user(1),
-                _audit_assistant(2, ""),
-                _audit_tool_call(3),
-                _audit_tool_response(3),
-                _audit_assistant(4, "Verified."),
-                _audit_user(5),
-                _audit_assistant(6, "One moment."),
-                _audit_tool_call(7),
-                _audit_tool_response(7),
+                _audit_tool_call(2),
+                _audit_tool_response(2),
+                _audit_assistant(3, "Verified."),
+                _audit_user(4),
+                _audit_assistant(5, "One moment."),
+                _audit_tool_call(6),
+                _audit_tool_response(6),
             ],
         )
         context = make_metric_context(output_dir=output_dir)
