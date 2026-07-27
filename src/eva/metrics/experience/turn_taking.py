@@ -35,6 +35,8 @@ Flat headline sub-metrics (one number each — show up as columns in analysis vi
                         user_interruption.mean_yield_ms,
                         user_interruption.mean_yield_score
                         (the latter two only when rate > 0)
+  Fallback nudges:      fallback_nudge.rate (nudged assistant turns / total assistant turns),
+                        fallback_nudge.count (raw count; None when zero)
   Pre-tool speech:      pretoolspeech_rate (lead-in tool-call groups / total tool-call groups;
                         computed from audit_log.json directly so it works uniformly across
                         cascade/S2S/audio-LLM; omitted when there are no tool calls or the
@@ -494,6 +496,20 @@ class TurnTakingMetric(CodeMetric):
                 "user_interruption.mean_yield_score", round(statistics.mean(yield_scores), 4), True
             )
 
+        # --- Turn-end fallback nudges ---
+        # Denominator is all assistant turns (not turn_keys/total_turns), since a fallback nudge
+        # produces an assistant turn with no paired user turn and so is never in turn_keys.
+        total_assistant_turns = len(context.audio_timestamps_assistant_turns)
+        if total_assistant_turns:
+            sub["fallback_nudge.rate"] = _wrap(
+                "fallback_nudge.rate", round(len(context.fallback_turn_ids) / total_assistant_turns, 4), True
+            )
+        sub["fallback_nudge.count"] = MetricScore(
+            name=f"{cls.name}.fallback_nudge.count",
+            score=float(len(context.fallback_turn_ids)) if context.fallback_turn_ids else None,
+            normalized_score=None,
+        )
+
         # --- Pre-tool-speech lead-in rate ---
         # Reads audit_log.json directly so it works uniformly across cascade, S2S, and audio-LLM
         pre_tool_groups = cls._compute_pre_tool_speech_groups(context)
@@ -530,11 +546,25 @@ class TurnTakingMetric(CodeMetric):
             per_turn_evidence: dict[int, dict[str, Any]] = {}
             for t in turn_keys:
                 _has_tool = t in turns_with_tool_calls
+                if t in context.fallback_turn_ids:
+                    # No real user turn was ever detected within the fallback window on this
+                    # turn - always a failure, regardless of any later latency/interrupt signal.
+                    per_turn_score[t] = 0.0
+                    per_turn_reason[t] = "turn_end_fallback"
+                    per_turn_evidence[t] = {"has_tool_call": _has_tool}
+                    continue
                 score, reason, evidence = self._per_turn_score_and_reason(context, t, has_tool_call=_has_tool)
                 evidence["has_tool_call"] = _has_tool
                 per_turn_score[t] = round(score, 4)
                 per_turn_reason[t] = reason
                 per_turn_evidence[t] = evidence
+
+            # Fallback turns that never got a real (user, assistant) audio pairing at all still
+            # count as a turn-taking failure for that turn.
+            for t in sorted(context.fallback_turn_ids - set(per_turn_score)):
+                per_turn_score[t] = 0.0
+                per_turn_reason[t] = "turn_end_fallback"
+                per_turn_evidence[t] = {"has_tool_call": t in turns_with_tool_calls}
 
             total_turns = max(
                 max(context.audio_timestamps_user_turns, default=0),

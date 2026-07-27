@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 
@@ -69,6 +70,13 @@ class AbstractUserSimulator(ABC):
         self._end_reason = "unknown"
         self._conversation_done = asyncio.Event()
 
+        # Set by the worker to the assistant server's notify_conversation_ending. Invoked as
+        # soon as the call is known to be over — before the STT grace period and any post-hoc
+        # provider API polling, which can keep the transport open well past that point. See
+        # signal_conversation_ending.
+        self.on_conversation_ending: Callable[[str | None], None] | None = None
+        self._ending_signaled = False
+
         self.event_logger = UserSimulatorEventLogger(
             self.output_dir / "user_simulator_events.jsonl",
             provider=provider,
@@ -113,11 +121,30 @@ class AbstractUserSimulator(ABC):
             current_date_time=self.current_date_time,
         )
 
+    def signal_conversation_ending(self, reason: str | None = None) -> None:
+        """Tell the assistant the call is over, before transport teardown begins.
+
+        Idempotent and never raises: teardown paths call this best-effort, and the assistant
+        side treats it as advisory. Call it from *every* terminal path (end_call, timeout,
+        error), since the assistant's silence-triggered behavior doesn't care why the call
+        ended — only that no further user speech is coming.
+        """
+        if self._ending_signaled:
+            return
+        self._ending_signaled = True
+        if self.on_conversation_ending is None:
+            return
+        try:
+            self.on_conversation_ending(reason or self._end_reason)
+        except Exception as e:
+            logger.warning(f"Failed to signal conversation ending to the assistant: {e}")
+
     def _on_conversation_end(self, reason: str = "goodbye") -> None:
         if not self._conversation_done.is_set():
             self._end_reason = reason
             self._conversation_done.set()
             logger.info(f"Conversation end signaled: {reason}")
+            self.signal_conversation_ending(reason)
 
     def _on_user_speaks(self, response: str) -> None:
         current_record_id.set(self._record_id)

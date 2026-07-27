@@ -9,7 +9,12 @@ from pathlib import Path
 
 import pytest
 
-from eva.metrics.processor import MetricsContextProcessor, _normalize_event_for_processor, _ProcessorContext
+from eva.metrics.processor import (
+    MetricsContextProcessor,
+    _normalize_event_for_processor,
+    _ProcessorContext,
+    _validate_conversation_trace,
+)
 from eva.models.config import PipelineType
 
 FIXTURES_PATH = Path(__file__).parent.parent.parent / "fixtures" / "processor_histories.json"
@@ -69,6 +74,52 @@ class TestExtractTurnsFromHistory:
             assert actual == expected, (
                 f"Case '{case['id']}', attribute '{key}':\n  expected: {expected}\n  actual:   {actual}"
             )
+
+
+class TestValidateConversationTraceFallback:
+    """_validate_conversation_trace preserves fallback nudge entries with no matching TTS segment.
+
+    Consecutive turn-end fallback nudges can share a single merged pipecat segment on a
+    neighboring turn, leaving the second nudge's turn with no segments. Without preservation
+    the nudge is dropped, collapsing the two surrounding user turns together.
+    """
+
+    def _ctx(self, segments):
+        ctx = _ProcessorContext()
+        ctx.record_id = "test"
+        ctx._intended_assistant_segments = segments
+        ctx.intended_assistant_turns = {k: " ".join(v) for k, v in segments.items()}
+        return ctx
+
+    def test_fallback_entry_kept_when_no_segment_match(self):
+        ctx = self._ctx({4: ["I'm sorry, I didn't quite catch that."]})  # turn 5 has no segments
+        trace = [
+            {
+                "role": "assistant",
+                "content": "I'm sorry, I didn't quite catch that.",
+                "turn_id": 4,
+                "_audit_source": True,
+            },
+            {
+                "role": "assistant",
+                "content": "Are you still there?",
+                "turn_id": 5,
+                "_audit_source": True,
+                "_fallback_nudge": True,
+            },
+        ]
+        out = _validate_conversation_trace(trace, ctx)
+        assert [e["content"] for e in out] == ["I'm sorry, I didn't quite catch that.", "Are you still there?"]
+        # Bookkeeping keys are stripped from the output.
+        assert all("_fallback_nudge" not in e and "_audit_source" not in e for e in out)
+
+    def test_non_fallback_entry_still_dropped_when_unsaid(self):
+        ctx = self._ctx({4: ["I'm sorry, I didn't quite catch that."]})
+        trace = [
+            {"role": "assistant", "content": "Some text never spoken.", "turn_id": 5, "_audit_source": True},
+        ]
+        out = _validate_conversation_trace(trace, ctx)
+        assert out == []
 
 
 class TestNormalizeEventForProcessor:

@@ -630,6 +630,18 @@ class RunConfig(BaseSettings):
         le=10000,
         description="Max conversation duration in seconds",
     )
+    turn_end_fallback_time: int | None = Field(
+        None,
+        ge=1,
+        description=(
+            "Seconds of user silence after the assistant stops speaking before nudging it to "
+            "reprompt the caller ('sorry, I didn't catch that'), instead of waiting for the old "
+            "hard inactivity timeout. Cancelled the moment the user starts speaking, so it only "
+            "fires when turn detection drops a user turn. Applies to the Pipecat cascade and "
+            "audio-LLM pipelines. When unset, falls back to the old behavior of ending the "
+            "conversation after the provider's inactivity timeout elapses."
+        ),
+    )
 
     # Output
     output_dir: Path = Field(
