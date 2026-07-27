@@ -116,6 +116,12 @@ class BenchmarkAgentProcessor(FrameProcessor):
         # resulting process_complete_user_turn frames this turn as a fallback. (timeout, partial)
         self._pending_fallback: tuple[int | None, str] | None = None
 
+        # Best-effort partial user transcription captured since the assistant last spoke, so a
+        # fallback nudge can forward whatever we have instead of claiming silence. Only populated
+        # in the cascade pipeline (audio-LLM has no STT transcript on the spine).
+        self._pending_final_transcripts: list[str] = []
+        self._latest_interim_transcript = ""
+
         # Interruption handling
         self._current_query_task: asyncio.Task | None = None
         self._interrupted = asyncio.Event()
@@ -496,12 +502,6 @@ class UserObserver(FrameProcessor):
         if fallback_processor is not None:
             fallback_processor.fallback_timer = self._fallback
 
-        # Best-effort partial user transcription captured since the assistant last spoke, so a
-        # fallback nudge can forward whatever we have instead of claiming silence. Only populated
-        # in the cascade pipeline (audio-LLM has no STT transcript on the spine).
-        self._pending_final_transcripts: list[str] = []
-        self._latest_interim_transcript = ""
-
         # True between UserStartedSpeakingFrame and UserStoppedSpeakingFrame. The audio-LLM
         # pipeline has no STT on the spine, so a trailing BotStoppedSpeakingFrame (from the
         # assistant's own TTS audio still draining) is otherwise indistinguishable from real
@@ -510,9 +510,11 @@ class UserObserver(FrameProcessor):
 
     def _collect_partial_transcript(self) -> str:
         """Assemble whatever the STT produced since the assistant last stopped speaking."""
-        parts = [p for p in self._pending_final_transcripts if p]
-        if self._latest_interim_transcript:
-            parts.append(self._latest_interim_transcript)
+        if self._fallback_processor is None:
+            return ""
+        parts = [p for p in self._fallback_processor._pending_final_transcripts if p]
+        if self._fallback_processor._latest_interim_transcript:
+            parts.append(self._fallback_processor._latest_interim_transcript)
         return " ".join(parts).strip()
 
     def shutdown_fallback(self) -> None:
@@ -545,8 +547,9 @@ class UserObserver(FrameProcessor):
         if not self._fallback.note_nudge():
             return
         partial = self._collect_partial_transcript()
-        self._pending_final_transcripts.clear()
-        self._latest_interim_transcript = ""
+        if self._fallback_processor is not None:
+            self._fallback_processor._pending_final_transcripts.clear()
+            self._fallback_processor._latest_interim_transcript = ""
         logger.info(
             f"Turn-end fallback nudge "
             f"({self._fallback.consecutive_nudges}/{self._fallback.max_consecutive_nudges}): "
@@ -583,7 +586,8 @@ class UserObserver(FrameProcessor):
         elif isinstance(frame, InterimTranscriptionFrame):
             # Log interim transcription frames for debugging
             logger.debug(f"Interim transcription received: '{frame.text}'")
-            self._latest_interim_transcript = frame.text or ""
+            if self._fallback_processor is not None:
+                self._fallback_processor._latest_interim_transcript = frame.text or ""
             # An interim is live evidence the user is still speaking. On the eager-EOT STT
             # path, UserStartedSpeaking may not fire (or a draining BotStoppedSpeaking re-arms
             # the timer mid-utterance), so without this the nudge fires while the user talks.
@@ -600,8 +604,9 @@ class UserObserver(FrameProcessor):
 
                 # Buffer finalized segments so a fallback nudge can forward whatever the STT
                 # has produced so far; a finalized segment supersedes stale interim text.
-                self._pending_final_transcripts.append(transcription_text)
-                self._latest_interim_transcript = ""
+                if self._fallback_processor is not None:
+                    self._fallback_processor._pending_final_transcripts.append(transcription_text)
+                    self._fallback_processor._latest_interim_transcript = ""
 
                 # Log partial transcription (buffered by user_aggregator, not processed immediately)
                 logger.info(f"TranscriptionFrame (buffered): '{transcription_text}'")

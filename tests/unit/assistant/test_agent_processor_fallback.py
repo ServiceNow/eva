@@ -168,6 +168,8 @@ def _make_observer(fallback_time=FALLBACK_TIME, turn_stop_strategy=None):
     proc.query_in_flight = False
     proc.process_turn_fallback = AsyncMock()
     proc.arm_fallback = MagicMock()
+    proc._pending_final_transcripts = []
+    proc._latest_interim_transcript = ""
     obs = UserObserver(
         turn_end_fallback_time=fallback_time,
         fallback_processor=proc,
