@@ -77,9 +77,12 @@ COPY --from=builder /opt/venv/bin/eva /opt/venv/bin/eva
 # build — see vendor/krisp/README.md. If they are absent the build still succeeds and
 # krisp_viva_turn is simply unavailable at runtime. KRISP_VIVA_API_KEY is NOT baked in;
 # it is supplied as a runtime env var/secret.
+# Install with uv into the venv explicitly: /opt/venv is a `uv venv` (no seeded pip),
+# so a bare `pip install` would miss the venv. This mirrors the builder stage.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY vendor/krisp/ /tmp/krisp/
 RUN if ls /tmp/krisp/*.whl >/dev/null 2>&1; then \
-        pip install --no-cache-dir /tmp/krisp/*.whl && \
+        uv pip install --python /opt/venv/bin/python --no-cache /tmp/krisp/*.whl && \
         mkdir -p /opt/krisp/models && \
         cp /tmp/krisp/*.kef /opt/krisp/models/ && \
         echo "Krisp VIVA SDK baked into image"; \
