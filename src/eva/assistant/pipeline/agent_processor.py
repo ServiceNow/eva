@@ -443,6 +443,8 @@ class BenchmarkAgentProcessor(FrameProcessor):
         marker, nudge = build_fallback_nudge(timeout_seconds, partial, has_audio=False)
         logger.info(f"Processing fallback (direct): {marker[:60]}...")
         self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=nudge)
+        # Clear any prior interruption so the fallback response can be spoken.
+        self._interrupted.clear()
         try:
             async for response in self.agentic_system.process_query(nudge, log_user_input=False):
                 if response:
