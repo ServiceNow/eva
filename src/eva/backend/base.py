@@ -126,15 +126,19 @@ class BackendEvent:
     being present across providers.
 
     Convention (not enforced by this contract): a backend that proactively
-    re-engages after an idle period (see ``AssistantRole``'s
-    ``self_nudge_timeout_seconds``) may set ``metadata["is_nudge"] = True`` on
-    the ``AUDIO_OUTPUT``/``TRANSCRIPT`` event it emits for that turn, purely
-    so callers that want to distinguish a self-initiated nudge from an
-    ordinary model turn (e.g. for audit logging) can do so. This is *not* a
-    new event type -- a nudge is just an ordinary turn from the backend's
-    model, triggered by the backend noticing its own idle timeout rather than
-    by new input; it flows through the same ``receive()`` surface as
-    anything else."""
+    re-engages after a dropped user turn (the turn-end fallback; see
+    ``AssistantRole``'s ``turn_end_fallback_seconds`` and the shipped
+    ``eva.assistant.pipeline.fallback``) tags the ``AUDIO_OUTPUT``/
+    ``TRANSCRIPT`` event it emits for that turn so callers can distinguish a
+    fallback nudge from an ordinary model turn (e.g. for audit logging and so
+    downstream metrics can zero it). The shipped feature records the transcript
+    marker with ``message_type="turn_fallback"``; a backend surfacing the same
+    turn here should carry an equivalent flag in ``metadata`` (e.g.
+    ``metadata["turn_fallback"] = True``). This is *not* a new event type -- a
+    nudge is just an ordinary turn from the backend's model, triggered by the
+    backend noticing that a user turn was never detected within the fallback
+    window rather than by new input; it flows through the same ``receive()``
+    surface as anything else."""
 
 
 class Backend(ABC):
@@ -199,11 +203,11 @@ class Backend(ABC):
                 validates its own config shape; the abstract contract does
                 not prescribe one, since a native S2S config and a cascade
                 config share little structure. An ``AssistantRole`` backend
-                configured to self-nudge (see
-                ``AssistantRole.self_nudge_timeout_seconds``) reads its
+                configured for the turn-end fallback (see
+                ``AssistantRole.turn_end_fallback_seconds``) reads its
                 threshold from this blob (e.g. a
-                ``config["self_nudge_timeout_seconds"]`` key) the same way --
-                self-nudging needs no dedicated typed parameter or new
+                ``config["turn_end_fallback_seconds"]`` key) the same way --
+                the fallback needs no dedicated typed parameter or new
                 ``Backend`` method, since the resulting nudge is just an
                 ordinary outbound turn (see ``BackendEvent.metadata``).
 
