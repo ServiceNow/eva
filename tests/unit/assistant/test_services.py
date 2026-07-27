@@ -151,6 +151,19 @@ class TestCreateSttService:
         assert svc._settings.endpointing == 42  # Explicit override wins over the Eva default
         assert svc._settings.interim_results is True  # EVA default preserved
 
+    def test_smallest_returns_smallest_service(self):
+        svc = create_stt_service("smallest", params={"api_key": "k", "model": "pulse"})
+        assert "Smallest" in type(svc).__name__
+        assert svc._settings.model == "pulse"
+
+    def test_smallest_forwards_optional_settings(self):
+        svc = create_stt_service(
+            "smallest",
+            params={"api_key": "k", "model": "pulse", "word_timestamps": True, "diarize": True},
+        )
+        assert svc._settings.word_timestamps is True
+        assert svc._settings.diarize is True
+
     def test_cartesia_is_ink2_turns_service(self):
         svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink-2"})
         assert "Turns" in type(svc).__name__
@@ -255,6 +268,23 @@ class TestCreateTtsService:
         assert svc._settings.voice == "v1"  # Mapped from EVA's voice_id key
         assert svc._settings.stability == 0.7
         assert svc._settings.speed == 1.1
+
+    def test_smallest_returns_smallest_service(self):
+        svc = create_tts_service("smallest", params={"api_key": "k", "model": "lightning_v3.1"})
+        assert "Smallest" in type(svc).__name__
+
+    def test_smallest_forwards_voice_id_and_speed(self):
+        svc = create_tts_service(
+            "smallest",
+            params={"api_key": "k", "model": "lightning_v3.1", "voice_id": "sophia", "speed": 1.2},
+        )
+        assert svc._settings.voice == "sophia"
+        assert svc._settings.speed == 1.2
+
+    def test_smallest_defaults_voice_per_model_when_unset(self):
+        """Omitting voice_id must not override pipecat's per-model default voice."""
+        svc = create_tts_service("smallest", params={"api_key": "k", "model": "lightning_v3.1_pro"})
+        assert svc._settings.voice == "meher"
 
     def test_openai_respects_voice_param(self):
         svc = create_tts_service("openai", params={"api_key": "k", "model": "tts-1", "voice": "nova"})

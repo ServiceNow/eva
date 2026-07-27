@@ -19,6 +19,7 @@ Code-based metric (no LLM) that scores each user→assistant transition on a con
 - `latency_assistant_turns` — per-turn latency (`first_asst_start - last_user_end`) in seconds. Drives the latency curve.
 - `assistant_interrupted_turns` / `user_interrupted_turns` — turn-level interruption flags set by the processor.
 - `conversation_trace` — used to detect which turns contain a tool call (`type == "tool_call"`). Tool-call turns get a more lenient upper end of the latency curve and a higher `late` threshold, since tool execution adds inherent latency.
+- `output_dir` — read directly (not via `conversation_trace`) to load `audit_log.json` for the `pretoolspeech_rate` sub-metric (see below).
 
 ## Per-turn Score
 
@@ -189,7 +190,19 @@ Sub-metric aggregation reads the raw per-turn values from `per_turn_evidence` ra
 | `user_interruption.mean_yield_ms` | no | rate > 0 | Arithmetic mean of `yield_ms` across user-interrupt turns. |
 | `user_interruption.mean_yield_score` | yes | rate > 0 | Mean of the per-turn yield scores that feed the main score. |
 
-Rate sub-metrics are emitted as `normalized_score` (they already live on `[0, 1]`). Raw-ms sub-metrics have `normalized_score = None` so they don't corrupt cross-metric averages.
+**Pre-tool-speech lead-in rate**
+
+| Key | Normalized? | When present | Meaning |
+| --- | --- | --- | --- |
+| `pretoolspeech_rate` | yes | at least one tool-call group and `audit_log.json` is readable | Fraction of tool-call groups preceded by a non-empty assistant utterance since the previous group ended (or since the conversation started). Measures how often the agent gives a spoken lead-in (per `agent.pre_tool_speech` in `configs/prompts/simulation.yaml`) before invoking a tool. |
+
+Computed by `_compute_pre_tool_speech_groups`, which reads `audit_log.json` directly from `context.output_dir` **instead of** `conversation_trace`. A "tool-call group" is a maximal contiguous run of `tool_call`/`tool_response` entries in the raw audit-log transcript (sorted by `timestamp`) — consecutive tool calls fired off one lead-in (e.g. two tools called back-to-back with no intervening speech) count as a single group, matching the prompt's "one lead-in per batch" instruction. Assistant speech only counts if it has non-empty, non-whitespace content; a `user` event resets the "spoke since last group" flag so a lead-in from a previous turn can't be credited to a later turn's tool calls. Event types other than `assistant`/`user`/`tool_call`/`tool_response` (e.g. `llm_call`) are ignored rather than treated as group-breaking — see the regression test guarding this.
+
+**Why not `conversation_trace`?** For S2S, `conversation_trace` assistant entries come from the user simulator's STT transcription of the spoken audio, timestamped only after the audio finishes playing — not the audit log's true (early) LLM-generation timestamp used to build the trace for cascade/audio-LLM. That transcription can sort *after* a subsequent tool call in the timestamp-ordered trace even when the agent actually spoke first (confirmed against a real S2S transcript), so trace order can't be trusted for this signal on S2S. Reading `audit_log.json` directly sidesteps the issue and gives one code path across cascade, S2S, and audio-LLM.
+
+`pretoolspeech_rate` is omitted (not emitted) when there are no tool-call groups, or when `audit_log.json` is missing/unreadable/empty at `context.output_dir` — treated as "unknown", not "no lead-ins".
+
+Rate sub-metrics are emitted as `normalized_score` (they already live on `[0, 1]`). Raw-ms/count sub-metrics have `normalized_score = None` so they don't corrupt cross-metric averages.
 
 ## Tunable Constants
 

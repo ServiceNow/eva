@@ -24,6 +24,7 @@ import wave
 from abc import ABC, abstractmethod
 from typing import Any
 
+import litellm
 from pipecat.transcriptions.language import Language
 
 from eva.models.config import LANGUAGE_DISPLAY_NAMES
@@ -99,6 +100,26 @@ def resample_pcm16(pcm_data: bytes, from_rate: int, to_rate: int) -> bytes:
         val = max(-32768, min(32767, val))
         out_samples.append(val)
     return struct.pack(f"<{len(out_samples)}h", *out_samples)
+
+
+def _assemble_stream_chunks(chunks: list, messages: list[dict[str, Any]]) -> tuple[Any, Any, str]:
+    """Reconstruct the final message from raw OpenAI-SDK stream chunks.
+
+    Delegates to litellm.stream_chunk_builder — the same assembler CASCADE's
+    LiteLLMClient.complete_stream uses (see services/llm.py) — so both pipelines
+    share one chunk-assembly implementation. It expects dict-shaped chunks, so
+    pydantic chunks from the raw AsyncOpenAI client are dumped first.
+
+    Returns (message, usage, finish_reason). ``message`` has real
+    ``.content`` / ``.tool_calls[i].function.name/arguments`` / ``model_dump()``
+    attributes, matching what AgenticSystem._run_tool_loop expects.
+    """
+    dict_chunks = [c.model_dump() if hasattr(c, "model_dump") else c for c in chunks]
+    full = litellm.stream_chunk_builder(dict_chunks, messages=messages)
+    message = full.choices[0].message
+    usage = getattr(full, "usage", None)
+    finish_reason = getattr(full.choices[0], "finish_reason", None) or "unknown"
+    return message, usage, finish_reason
 
 
 class BaseALMClient(ABC):
@@ -188,6 +209,24 @@ class BaseALMClient(ABC):
         on the response, returns the full message object; otherwise returns
         the content string.
         """
+
+    async def complete_stream(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | None = None,
+    ):
+        """Yield text deltas then the assembled final message and stats.
+
+        Default implementation falls back to complete() for providers that
+        don't support streaming. Subclasses should override for true streaming.
+
+        Yields tuples of ("delta", text_chunk) for each text delta, then
+        ("final", (message, stats)) once when the response is complete.
+        """
+        message_or_content, stats = await self.complete(messages, tools=tools)
+        if isinstance(message_or_content, str) and message_or_content:
+            yield ("delta", message_or_content)
+        yield ("final", (message_or_content, stats))
 
     @abstractmethod
     async def transcribe(

@@ -28,7 +28,6 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMUserAggregatorParams,
     UserTurnStoppedMessage,
 )
-from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
 from pipecat.serializers.twilio import TwilioFrameSerializer
 from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
 from pipecat.transports.websocket.fastapi import (
@@ -40,6 +39,7 @@ from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
 
 from eva.assistant.agentic.audit_log import convert_to_epoch_ms, current_timestamp_ms
+from eva.assistant.audio_buffer import ContiguousAudioBufferProcessor
 from eva.assistant.base_server import AbstractAssistantServer
 from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor, UserAudioCollector, UserObserver
 from eva.assistant.pipeline.audio_llm_processor import (
@@ -368,6 +368,9 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     alm_client=alm_client,
                     audio_collector=audio_llm_audio_collector,
                     output_dir=self.output_dir,
+                    pre_tool_speech=self.pipeline_config.pre_tool_speech,
+                    llm_streaming=self.pipeline_config.llm_streaming,
+                    full_audio_context=self.pipeline_config.audio_llm_params.get("full_audio_context", False),
                 )
                 audio_llm_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
                     role="assistant", content=msg, timestamp=self._current_iso_timestamp()
@@ -382,7 +385,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 input_transcription_processor = AudioTranscriptionProcessor(
                     audio_collector=audio_llm_audio_collector,
                     alm_client=alm_client,
-                    sample_rate=SAMPLE_RATE,
                 )
 
                 # Set callback to save user transcription to transcript.jsonl and update audit log
@@ -402,7 +404,10 @@ class PipecatAssistantServer(AbstractAssistantServer):
 
             # Create processors
             # Configure audio buffer with 1-second buffer size for event triggering
-            audiobuffer = AudioBufferProcessor(
+            # ContiguousAudioBufferProcessor disables pipecat 1.x's wall-clock
+            # silence fabrication, which under concurrency injects choppy silence
+            # into the recorded user track (see eva/assistant/audio_buffer.py).
+            audiobuffer = ContiguousAudioBufferProcessor(
                 sample_rate=SAMPLE_RATE,
                 num_channels=1,  # Mono (mixed user + bot audio)
                 buffer_size=SAMPLE_RATE * 2,  # 1 second of 16-bit audio (2 bytes per sample)
@@ -705,9 +710,10 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 )
                 await agent_processor.process_complete_user_turn(message.content)
             elif self.pipeline_config.pipeline_type == PipelineType.AUDIO_LLM and audio_llm_processor:
-                # No STT → message.content is empty.
-                # Processing is triggered by LLMContextFrame flow through ParallelPipeline
-                # (AudioLLMUserAudioCollector pushes LLMContextFrame on UserStoppedSpeakingFrame)
+                # No STT → message.content is empty, and under the forced 'external'
+                # turn-stop strategy this event is transcript-gated and won't fire anyway.
+                # Turn finalization is driven by the AudioLLMUserAudioCollector, which
+                # pushes LLMContextFrame through the ParallelPipeline on UserStoppedSpeakingFrame.
                 pass
             elif self.non_instrumented_realtime_llm:
                 # Non-instrumented realtime fallback (e.g. Ultravox)

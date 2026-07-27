@@ -129,13 +129,23 @@ class ResponseSpeedMetric(CodeMetric):
                         details=stats,
                     )
 
-            # Add per-component latency sub_metrics from result.json
+            # Add per-component latency sub_metrics from result.json.
+            # result.json stores these in milliseconds; convert to seconds here
+            # to match the top-level response_speed score (already in seconds).
             for key, latency_stats in _load_component_latencies(context.output_dir).items():
+                seconds_details = {
+                    (f"{stat_key[:-3]}_seconds" if stat_key.endswith("_ms") else stat_key): (
+                        round(stat_value / 1000, 3)
+                        if stat_key.endswith("_ms") and stat_value is not None
+                        else stat_value
+                    )
+                    for stat_key, stat_value in latency_stats.items()
+                }
                 sub_metrics[key] = MetricScore(
                     name=f"{self.name}.{key}",
-                    score=latency_stats["mean_ms"],
+                    score=round(latency_stats["mean_ms"] / 1000, 3),
                     normalized_score=None,
-                    details=latency_stats,
+                    details=seconds_details,
                 )
 
             return MetricScore(

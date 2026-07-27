@@ -143,7 +143,12 @@ class ModelConfig(BaseModel):
     tts_params: dict[str, Any] | None = Field(None, description="Additional TTS model parameters (JSON)")
     s2s_params: dict[str, Any] | None = Field(None, description="Additional speech-to-speech model parameters (JSON)")
     audio_llm_params: dict[str, Any] | None = Field(
-        None, description="Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, max_tokens"
+        None,
+        description=(
+            "Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, "
+            "max_tokens, full_audio_context (send every user turn as audio instead of only the "
+            "current turn; removes reliance on transcriptions but grows context quickly)"
+        ),
     )
 
     # Configurable turn start/stop strategies
@@ -194,6 +199,12 @@ class ModelConfig(BaseModel):
         "off",
         description="Prompt a model-generated lead-in before tool calls: 'off' or 'auto'.",
     )
+
+    @field_validator("pre_tool_speech", mode="before")
+    @classmethod
+    def _normalize_pre_tool_speech(cls, value: str) -> str:
+        return value.lower() if isinstance(value, str) else value
+
     llm_streaming: bool = Field(
         False,
         description="Stream Chat Completions output to TTS sentence-by-sentence.",
@@ -262,7 +273,14 @@ class ModelConfig(BaseModel):
         "just work", and the forced values are reflected in the persisted config.json / run_id.
         A conflicting user-provided value is overridden with a WARNING; an untouched default is
         logged at INFO. Idempotent: a value already at the target is left untouched (clean reload).
+
+        Only applies to the CASCADE pipeline: in AUDIO_LLM / S2S the ``stt`` field does not
+        instantiate an in-pipeline STT service, so there is nothing to emit the external turn
+        frames. Forcing 'external'/'none' there would disable the local VAD that those pipelines
+        rely on for turn detection, hanging the conversation (no user turn ever finalizes).
         """
+        if self.pipeline_type != PipelineType.CASCADE:
+            return self
         if (self.stt or "").lower() not in self._SELF_ENDPOINTING_STT:
             return self
 
@@ -285,11 +303,12 @@ class ModelConfig(BaseModel):
         allowed = {"off", "auto"}
         if self.pre_tool_speech not in allowed:
             raise ValueError(f"pre_tool_speech must be one of {sorted(allowed)}, got '{self.pre_tool_speech}'")
-        any_set = self.pre_tool_speech != "off" or self.llm_streaming or self.parallel_tool_calls is not None
-        if any_set and self.pipeline_type != PipelineType.CASCADE:
+        # pre_tool_speech is honored by both CASCADE and AUDIO_LLM; llm_streaming by both
+        # (via BaseALMClient.complete_stream); only parallel_tool_calls remains CASCADE-only.
+        if self.parallel_tool_calls is not None and self.pipeline_type != PipelineType.CASCADE:
             logger.warning(
-                "Cascade LLM flags (pre_tool_speech / llm_streaming / parallel_tool_calls) apply only "
-                f"to the CASCADE pipeline; they will be ignored for pipeline_type={self.pipeline_type}."
+                "parallel_tool_calls applies only to the CASCADE pipeline; it will be ignored "
+                f"for pipeline_type={self.pipeline_type}."
             )
         return self
 
