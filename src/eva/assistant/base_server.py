@@ -17,7 +17,7 @@ from fastapi import FastAPI
 
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.audio_bridge import FrameworkLogWriter, MetricsLogWriter
-from eva.assistant.tools.tool_executor import ToolExecutor
+from eva.assistant.tools.tool_executor import ToolExecutor, execute_and_log_tool
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils.audio_utils import save_pcm_as_wav
@@ -225,19 +225,16 @@ class AbstractAssistantServer(ABC):
     async def execute_tool(self, tool_name: str, arguments: dict) -> Any:
         """Execute a tool call and record it in the audit log.
 
-        Logs the call and response as separate timestamped entries so latency
-        between them is preserved.  Use this whenever the server handles tool
-        calls directly (s2s/realtime events, or any custom cascade that
-        doesn't delegate to AgenticSystem).
+        Thin wrapper over the shared ``execute_and_log_tool`` helper (the single
+        assistant-side tool-execution path). Use this whenever the server
+        handles tool calls directly (s2s/realtime events, or any custom cascade
+        that doesn't delegate to AgenticSystem).
 
-        Note: AgenticSystem has its own tool execution + logging loop
-        (``append_tool_call``), so Pipecat cascade pipelines that use
-        AgenticSystem should *not* also call this method.
+        Note: AgenticSystem routes through the same ``execute_and_log_tool``
+        helper, so Pipecat cascade pipelines that use AgenticSystem should
+        *not* also call this method (it would double-log).
         """
-        self.audit_log.append_realtime_tool_call(tool_name, arguments)
-        result = await self.tool_handler.execute(tool_name, arguments)
-        self.audit_log.append_tool_response(tool_name, result)
-        return result
+        return await execute_and_log_tool(self.tool_handler, self.audit_log, tool_name, arguments)
 
     # ── Shared output helpers ──────────────────────────────────────────
 

@@ -207,12 +207,6 @@ class TestAuditLog:
         self.log.append_tool_call("book", {})
         assert self.log._last_tool_call == "book"
 
-    def test_append_realtime_tool_call(self):
-        self.log.append_realtime_tool_call("get_flight", {"id": "123"})
-        assert len(self.log.transcript) == 1
-        assert self.log._tool_calls_count == 1
-        assert self.log._tools_called == ["get_flight"]
-
     def test_get_conversation_messages_empty(self):
         result = self.log.get_conversation_messages()
         assert result == []

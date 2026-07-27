@@ -17,7 +17,7 @@ from eva.assistant.agentic.audit_log import (
     LLMCall,
     MessageRole,
 )
-from eva.assistant.tools.tool_executor import ToolExecutor
+from eva.assistant.tools.tool_executor import ToolExecutor, execute_and_log_tool
 from eva.models.agents import AgentConfig
 from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
 from eva.utils.error_handler import categorize_error
@@ -450,19 +450,13 @@ class AgenticSystem:
                     self.audit_log.append_assistant_output(transfer_message, reasoning=reasoning_content)
                     return
 
-                result = await self.tool_handler.execute(tool_name, params)
+                result = await execute_and_log_tool(self.tool_handler, self.audit_log, tool_name, params)
 
                 if result.get("status") == "error":
                     logger.warning(f"❌ Tool error: {tool_name} - {result.get('message', 'Unknown error')}")
                 else:
                     logger.info(f"✅ Tool response: {tool_name}")
                     logger.info(f"   Result: {json.dumps(result, indent=2, ensure_ascii=False)}")
-
-                self.audit_log.append_tool_call(
-                    tool_name=tool_name,
-                    parameters=params,
-                    response=result,
-                )
 
                 # Add tool response to messages
                 tool_content = json.dumps(result, ensure_ascii=False)
