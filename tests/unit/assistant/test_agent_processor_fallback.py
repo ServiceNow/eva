@@ -210,8 +210,8 @@ async def test_observer_fires_nudge_on_silence(monkeypatch):
 async def test_observer_triggers_native_turn_stop_when_strategy_present(monkeypatch):
     """Cascade prototype: with a turn_stop_strategy, the fallback rides the standard flow.
 
-    It arms the processor and fires the strategy's native turn-stop instead of the bypass
-    process_turn_fallback path.
+    It calls process_turn_fallback with the strategy, which arms the processor and fires
+    the strategy's native turn-stop. If the native path succeeds, it returns early.
     """
     strategy = MagicMock()
     strategy.trigger_user_turn_stopped = AsyncMock()
@@ -222,10 +222,9 @@ async def test_observer_triggers_native_turn_stop_when_strategy_present(monkeypa
     )
     await _send(obs, BotStoppedSpeakingFrame())  # arm
     await asyncio.sleep(SETTLE)
-    strategy.trigger_user_turn_stopped.assert_awaited_once()
-    proc.arm_fallback.assert_called_once()
-    # The bypass path is not used when riding the standard flow.
-    proc.process_turn_fallback.assert_not_awaited()
+    # Now process_turn_fallback is always called, and it internally calls trigger_user_turn_stopped
+    # if a strategy is present.
+    proc.process_turn_fallback.assert_awaited_once()
 
 
 async def test_observer_clears_pending_fallback_on_real_turn_start(monkeypatch):
@@ -464,6 +463,8 @@ async def test_process_complete_user_turn_normal_turn_unaffected(monkeypatch):
     proc._interrupted = asyncio.Event()
     proc._user_message_aggregator = []
     proc.audit_log = AuditLog()
+    proc._pending_final_transcripts = []
+    proc._latest_interim_transcript = ""
     timer = TurnEndFallbackTimer(FALLBACK_TIME, AsyncMock())
     timer.note_nudge()
     proc.fallback_timer = timer

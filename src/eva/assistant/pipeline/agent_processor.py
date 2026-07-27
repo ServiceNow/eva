@@ -232,6 +232,10 @@ class BenchmarkAgentProcessor(FrameProcessor):
             # A real user turn landed: cancel any pending nudge and reset the give-up counter so
             # each true turn gets a fresh allowance.
             self._reset_fallback_on_real_turn()
+            # Clear the pending transcripts so the next fallback only includes transcriptions
+            # since the assistant responds to this turn.
+            self._pending_final_transcripts.clear()
+            self._latest_interim_transcript = ""
             query_text = text
             log_user_input = True
         else:
@@ -393,6 +397,56 @@ class BenchmarkAgentProcessor(FrameProcessor):
             finally:
                 self._aggregator_flush_task = None
 
+    async def process_turn_fallback(
+        self, timeout_seconds: int | None, partial: str = "", turn_stop_strategy=None
+    ) -> None:
+        """Fallback path when native turn-stop is a no-op (no open user turn in Pipecat).
+
+        This is called when the cascade's ``trigger_user_turn_stopped()`` fails to close a turn
+        because there's no open turn in Pipecat's turn management. This can happen when:
+        - A VAD fragment arrives after the previous turn has already completed and been processed
+        - The fragment is not long enough to trigger a new turn in Pipecat's aggregator
+        - The fallback timer fires, but the turn-stop is silently dropped
+
+        For the cascade path, this method first tries the native turn-stop (via arm_fallback +
+        trigger_user_turn_stopped), and if that's available. If it fails or times out, it falls
+        back to directly processing the nudge as a synthetic turn.
+
+        Args:
+            timeout_seconds: The configured ``EVA_TURN_END_FALLBACK_TIME`` value.
+            partial: Best-effort partial transcript from the incomplete turn.
+            turn_stop_strategy: When provided (cascade), try the native turn-stop first.
+        """
+        # For cascade: try the native turn-stop path first. If it succeeds, we're done.
+        if turn_stop_strategy is not None:
+            self.arm_fallback(timeout_seconds, partial)
+            await turn_stop_strategy.trigger_user_turn_stopped()
+            # Give Pipecat's turn management a brief window to process. If _pending_fallback
+            # is still set after this, the turn-stop was a no-op and we'll fall through to
+            # the direct processing path below.
+            await asyncio.sleep(0.1)
+            if self._pending_fallback is None:
+                # Turn-stop succeeded and was processed
+                logger.debug("Native turn-stop for fallback succeeded")
+                return
+            # Turn-stop was a no-op: fall through to direct processing
+            logger.debug("Native turn-stop for fallback was a no-op; using direct processing")
+            self.clear_pending_fallback()
+
+        # Direct fallback path: process the nudge immediately without waiting for turn-stop.
+        marker, nudge = build_fallback_nudge(timeout_seconds, partial, has_audio=False)
+        logger.info(f"Processing fallback (direct): {marker[:60]}...")
+        self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=nudge)
+        try:
+            async for response in self.agentic_system.process_query(nudge, log_user_input=False):
+                if response:
+                    await self._handle_response(response)
+        except asyncio.CancelledError:
+            logger.debug("Fallback query cancelled during pipeline shutdown")
+            raise
+        except Exception as e:
+            logger.error(f"Error processing fallback query: {e}", exc_info=True)
+
 
 class UserObserver(FrameProcessor):
     """Observes STT/VAD frames on the pipeline spine to track latency metrics and host the turn-end fallback timer.
@@ -498,21 +552,15 @@ class UserObserver(FrameProcessor):
             f"({self._fallback.consecutive_nudges}/{self._fallback.max_consecutive_nudges}): "
             f"{'partial: ' + partial if partial else 'no user speech'} within {timeout_seconds}s"
         )
-        if self._turn_stop_strategy is not None:
-            # PROTOTYPE (cascade): the fallback is the VAD's backup turn-end decision. Arm the
-            # processor with this turn's fallback context, then programmatically fire the native
-            # turn-stop so the turn rides Pipecat's standard flow (on_user_turn_stopped →
-            # process_complete_user_turn), producing native turn boundaries without the emulated
-            # boundary / rollback / metrics-preservation machinery the bypass path needs.
-            self._fallback_processor.arm_fallback(timeout_seconds, partial)
-            await self._turn_stop_strategy.trigger_user_turn_stopped()
-            # Shutdown can land during the await above. Drop the arm if it was never
-            # consumed, so it can't mis-frame a transcript flushed during teardown.
-            if self._fallback.shutting_down:
-                self._fallback_processor.clear_pending_fallback()
-            return
-        # Legacy bypass path (audio-LLM): inject the nudge directly.
-        await self._fallback_processor.process_turn_fallback(timeout_seconds, partial)
+        # Process the fallback nudge. For cascade, this will try the native turn-stop first
+        # and fall back to direct processing if that's a no-op. For audio-LLM, it goes
+        # straight to direct processing.
+        await self._fallback_processor.process_turn_fallback(
+            timeout_seconds, partial, turn_stop_strategy=self._turn_stop_strategy
+        )
+        # Shutdown can land during processing. Drop any pending fallback that wasn't consumed.
+        if self._fallback.shutting_down and self._fallback_processor is not None:
+            self._fallback_processor.clear_pending_fallback()
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> Awaitable[Frame]:
         """Process frames to track transcription timing, VAD events, and the fallback timer.

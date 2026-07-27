@@ -338,7 +338,9 @@ class AudioLLMProcessor(FrameProcessor):
             except Exception:
                 logger.debug("Failed to send error message (pipeline may be closed)")
 
-    async def process_turn_fallback(self, timeout_seconds: int | None, partial: str = "") -> None:
+    async def process_turn_fallback(
+        self, timeout_seconds: int | None, partial: str = "", turn_stop_strategy=None
+    ) -> None:
         """End the user turn on the backstop timer and reply, framed as a fallback.
 
         Called by ``UserObserver`` when the fallback timer fires. The fallback is the VAD's
@@ -356,6 +358,7 @@ class AudioLLMProcessor(FrameProcessor):
             timeout_seconds: The configured ``EVA_TURN_END_FALLBACK_TIME`` value.
             partial: Best-effort partial transcript (usually empty for audio-LLM; the audio is
                 the real partial context).
+            turn_stop_strategy: Unused for audio-LLM (cascade-only parameter for compatibility).
         """
         self._interrupted.clear()
         # Emulated boundary brackets this nudge as its own turn (see emit_emulated_user_turn_boundary).
