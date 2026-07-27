@@ -127,17 +127,42 @@ class TurnEndFallbackTimer:
         self._max_consecutive_nudges = max_consecutive_nudges
         self._timer_task: asyncio.Task | None = None
         self._consecutive_nudges = 0
+        self._shutting_down = False
 
     @property
     def enabled(self) -> bool:
         return self._fallback_time is not None
 
+    @property
+    def shutting_down(self) -> bool:
+        """True once the call is ending; no further nudge may be armed or fired."""
+        return self._shutting_down
+
     def arm(self) -> None:
-        """Start a fresh timer. No-op when disabled. Cancels any previously armed timer."""
-        if self._fallback_time is None:
+        """Start a fresh timer. No-op when disabled or shutting down.
+
+        Cancels any previously armed timer.
+        """
+        if self._fallback_time is None or self._shutting_down:
             return
         self.cancel()
         self._timer_task = asyncio.create_task(self._run())
+
+    def shutdown(self) -> None:
+        """Latch the call as ending: cancel any pending timer and refuse to arm again.
+
+        The nudge exists to rescue a *live* call whose turn detection dropped a user
+        utterance. Once the call is ending, remaining silence is terminal — the user
+        simulator is gone and will never speak again — so a nudge here produces a
+        phantom assistant turn after the conversation is logically closed (scored 0).
+
+        This is a one-way latch rather than a plain ``cancel()`` because teardown keeps
+        producing frames that would otherwise re-arm: the assistant's own TTS is still
+        draining, so a trailing ``BotStoppedSpeakingFrame`` typically lands *after* the
+        end/cancel frame.
+        """
+        self._shutting_down = True
+        self.cancel()
 
     def cancel(self) -> None:
         """Cancel a pending timer, if any."""
@@ -177,5 +202,9 @@ class TurnEndFallbackTimer:
         try:
             await asyncio.sleep(self._fallback_time)
         except asyncio.CancelledError:
+            return
+        # Re-check: shutdown may have latched while this timer was sleeping, in the window
+        # between the sleep waking and cancel() reaching us.
+        if self._shutting_down:
             return
         await self._on_fire(self._fallback_time)

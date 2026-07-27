@@ -461,9 +461,25 @@ class UserObserver(FrameProcessor):
             parts.append(self._latest_interim_transcript)
         return " ".join(parts).strip()
 
+    def shutdown_fallback(self) -> None:
+        """Latch the fallback off for good: the call is ending.
+
+        Also discards any fallback armed on the cascade processor. On that path
+        ``_on_fallback_fire`` sets ``_pending_fallback`` and then *awaits* a native turn-stop,
+        so a shutdown landing in between would otherwise leave the flag set — and a
+        transcript flushed during teardown would be mis-framed as a fallback turn.
+        """
+        self._fallback.shutdown()
+        if self._fallback_processor is not None and self._turn_stop_strategy is not None:
+            self._fallback_processor.clear_pending_fallback()
+
     async def _on_fallback_fire(self, timeout_seconds: int | None) -> None:
         """Timer callback: nudge the assistant to reprompt on undetected user silence."""
         if self._fallback_processor is None:
+            return
+        # The call is ending; remaining silence is terminal, not a dropped user turn.
+        if self._fallback.shutting_down:
+            logger.debug("Skipping turn-end fallback: the conversation is ending")
             return
         # A query already running means a real turn is being processed; don't stack a nudge.
         if self._fallback_processor.query_in_flight:
@@ -490,6 +506,10 @@ class UserObserver(FrameProcessor):
             # boundary / rollback / metrics-preservation machinery the bypass path needs.
             self._fallback_processor.arm_fallback(timeout_seconds, partial)
             await self._turn_stop_strategy.trigger_user_turn_stopped()
+            # Shutdown can land during the await above. Drop the arm if it was never
+            # consumed, so it can't mis-frame a transcript flushed during teardown.
+            if self._fallback.shutting_down:
+                self._fallback_processor.clear_pending_fallback()
             return
         # Legacy bypass path (audio-LLM): inject the nudge directly.
         await self._fallback_processor.process_turn_fallback(timeout_seconds, partial)
@@ -502,10 +522,17 @@ class UserObserver(FrameProcessor):
         - Emits UserMessageFrame for each TranscriptionFrame to allow other processors to observe
           user transcriptions without interfering with the context aggregator.
         - Arms/cancels the turn-end fallback timer on bot/user speaking frames.
+        - Latches the fallback off on End/Cancel so teardown silence can't trigger a nudge.
         """
         await super().process_frame(frame, direction)
 
-        if isinstance(frame, InterimTranscriptionFrame):
+        if isinstance(frame, (EndFrame, CancelFrame)):
+            # The call is over: latch the fallback off. Without this the timer armed by the
+            # assistant's last BotStoppedSpeakingFrame survives teardown and fires into a
+            # closed conversation, producing a phantom turn that scores 0.
+            self.shutdown_fallback()
+
+        elif isinstance(frame, InterimTranscriptionFrame):
             # Log interim transcription frames for debugging
             logger.debug(f"Interim transcription received: '{frame.text}'")
             self._latest_interim_transcript = frame.text or ""

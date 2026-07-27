@@ -14,6 +14,8 @@ from unittest.mock import AsyncMock, MagicMock
 from pipecat.frames.frames import (
     BotStartedSpeakingFrame,
     BotStoppedSpeakingFrame,
+    CancelFrame,
+    EndFrame,
     TranscriptionFrame,
     UserStartedSpeakingFrame,
     UserStoppedSpeakingFrame,
@@ -117,6 +119,42 @@ async def test_timer_reset_counter():
     timer.note_nudge()
     timer.reset_counter()
     assert timer.consecutive_nudges == 0
+
+
+async def test_timer_shutdown_cancels_pending():
+    on_fire = AsyncMock()
+    timer = TurnEndFallbackTimer(FALLBACK_TIME, on_fire)
+    timer.arm()
+    timer.shutdown()
+    await asyncio.sleep(SETTLE)
+    on_fire.assert_not_awaited()
+    assert timer.shutting_down
+
+
+async def test_timer_shutdown_blocks_rearm():
+    """The end-of-call regression: teardown frames must not re-arm after shutdown.
+
+    The assistant's TTS is still draining when the call ends, so a trailing
+    BotStoppedSpeakingFrame typically lands *after* the end/cancel frame. A plain cancel()
+    would be undone by it; the latch must make arm() a permanent no-op.
+    """
+    on_fire = AsyncMock()
+    timer = TurnEndFallbackTimer(FALLBACK_TIME, on_fire)
+    timer.shutdown()
+    timer.arm()  # simulates the late BotStoppedSpeakingFrame
+    await asyncio.sleep(SETTLE)
+    on_fire.assert_not_awaited()
+
+
+async def test_timer_shutdown_during_sleep_suppresses_fire():
+    """Shutdown landing while the window is already elapsing must still suppress the nudge."""
+    on_fire = AsyncMock()
+    timer = TurnEndFallbackTimer(FALLBACK_TIME, on_fire)
+    timer.arm()
+    await asyncio.sleep(FALLBACK_TIME / 2)  # mid-window
+    timer._shutting_down = True  # latch without cancelling, to exercise the _run re-check
+    await asyncio.sleep(SETTLE)
+    on_fire.assert_not_awaited()
 
 
 # --------------------------------------------------------------------------------------------
@@ -286,6 +324,91 @@ async def test_observer_forwards_partial_transcript(monkeypatch):
     proc.process_turn_fallback.assert_awaited_once()
     args = proc.process_turn_fallback.await_args
     assert args.args[1] == "ten o'clock"
+
+
+# --------------------------------------------------------------------------------------------
+# End-of-call shutdown (the phantom-turn regression)
+# --------------------------------------------------------------------------------------------
+
+
+async def test_observer_cancel_frame_disarms_fallback(monkeypatch):
+    """A CancelFrame must kill a timer armed by the assistant's last utterance.
+
+    Regression: the nudge fired ~10s after the assistant's final TTS drained, past end_call,
+    producing a phantom assistant turn in a closed conversation that scores 0.
+    """
+    obs, proc = _make_observer()
+    monkeypatch.setattr(
+        "pipecat.processors.frame_processor.FrameProcessor.process_frame",
+        AsyncMock(),
+    )
+    await _send(obs, BotStoppedSpeakingFrame())  # arm, as the final TTS drains
+    await _send(obs, CancelFrame())
+    await asyncio.sleep(SETTLE)
+    proc.process_turn_fallback.assert_not_awaited()
+
+
+async def test_observer_end_frame_disarms_fallback(monkeypatch):
+    obs, proc = _make_observer()
+    monkeypatch.setattr(
+        "pipecat.processors.frame_processor.FrameProcessor.process_frame",
+        AsyncMock(),
+    )
+    await _send(obs, BotStoppedSpeakingFrame())
+    await _send(obs, EndFrame())
+    await asyncio.sleep(SETTLE)
+    proc.process_turn_fallback.assert_not_awaited()
+
+
+async def test_observer_late_bot_stopped_after_cancel_does_not_rearm(monkeypatch):
+    """Draining TTS after the cancel frame must not resurrect the nudge."""
+    obs, proc = _make_observer()
+    monkeypatch.setattr(
+        "pipecat.processors.frame_processor.FrameProcessor.process_frame",
+        AsyncMock(),
+    )
+    await _send(obs, CancelFrame())
+    await _send(obs, BotStoppedSpeakingFrame())  # trailing frame from draining audio
+    await asyncio.sleep(SETTLE)
+    proc.process_turn_fallback.assert_not_awaited()
+
+
+async def test_observer_shutdown_clears_pending_fallback_cascade(monkeypatch):
+    """Cascade: shutdown must also discard an armed-but-unconsumed fallback.
+
+    On this path the fire handler sets _pending_fallback then awaits a native turn-stop, so a
+    shutdown landing in between would leave the flag set to mis-frame a transcript flushed
+    during teardown as a fallback turn.
+    """
+    strategy = MagicMock()
+    strategy.trigger_user_turn_stopped = AsyncMock()
+    obs, proc = _make_observer(turn_stop_strategy=strategy)
+    monkeypatch.setattr(
+        "pipecat.processors.frame_processor.FrameProcessor.process_frame",
+        AsyncMock(),
+    )
+    await _send(obs, CancelFrame())
+    proc.clear_pending_fallback.assert_called_once()
+
+
+async def test_observer_cascade_no_native_turn_stop_after_shutdown(monkeypatch):
+    """Cascade: no phantom *user* turn may be injected once the call is ending.
+
+    Worse than the audio-LLM case: trigger_user_turn_stopped would fabricate a user turn
+    during teardown, not just an assistant reply.
+    """
+    strategy = MagicMock()
+    strategy.trigger_user_turn_stopped = AsyncMock()
+    obs, proc = _make_observer(turn_stop_strategy=strategy)
+    monkeypatch.setattr(
+        "pipecat.processors.frame_processor.FrameProcessor.process_frame",
+        AsyncMock(),
+    )
+    await _send(obs, BotStoppedSpeakingFrame())  # arm
+    await _send(obs, CancelFrame())
+    await asyncio.sleep(SETTLE)
+    strategy.trigger_user_turn_stopped.assert_not_awaited()
+    proc.arm_fallback.assert_not_called()
 
 
 # --------------------------------------------------------------------------------------------

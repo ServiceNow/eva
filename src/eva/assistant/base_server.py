@@ -117,6 +117,24 @@ class AbstractAssistantServer(ABC):
         """
         ...
 
+    def notify_conversation_ending(self, reason: str | None = None) -> None:
+        """Tell the assistant the conversation is over, ahead of transport teardown.
+
+        The user simulator calls this the moment it knows the call has ended (``end_call``,
+        timeout, or error) — *before* its STT grace period and any post-hoc API polling, which
+        together can hold the WebSocket open for 10s or more. Without this early signal the
+        assistant only learns of the end via transport disconnect, long enough after the fact
+        that silence-triggered behavior (e.g. the turn-end fallback nudge) can fire into an
+        already-closed conversation.
+
+        Default is a no-op: only frameworks with such behavior need to react. Must be safe to
+        call more than once, and must not raise — teardown paths call it best-effort.
+
+        Args:
+            reason: End reason if known (``"goodbye"``, ``"timeout"``, ``"error"``), for logging.
+        """
+        return None
+
     async def stop(self) -> asyncio.Task | None:
         """Stop the server: shut down framework, extract audio, save outputs.
 

@@ -379,6 +379,13 @@ class ConversationWorker:
             language=language,
         )
 
+        # Let the simulator tell the assistant the moment the call ends, rather than leaving it
+        # to infer that from transport disconnect — which lands after the simulator's STT grace
+        # period and provider API polling, late enough for silence-triggered assistant behavior
+        # (the turn-end fallback nudge) to fire into an already-closed conversation.
+        if self._assistant_server is not None:
+            self._user_simulator.on_conversation_ending = self._assistant_server.notify_conversation_ending
+
     def _conversation_guard_timeout_seconds(self) -> int:
         """Keep the worker guard outside the provider's timeout and cleanup window."""
         return self.config.conversation_time_limit_seconds + USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS
