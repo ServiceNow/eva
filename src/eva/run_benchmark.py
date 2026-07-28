@@ -51,6 +51,8 @@ async def run_benchmark(config: RunConfig) -> int:
         # Apply CLI overrides
         runner.config.max_rerun_attempts = config.max_rerun_attempts
         runner.config.force_rerun_metrics = config.force_rerun_metrics
+        runner.config.preflight = config.preflight
+        runner.config.preflight_timeout_seconds = config.preflight_timeout_seconds
         if config.metrics is not None:
             runner.config.metrics = config.metrics
 
