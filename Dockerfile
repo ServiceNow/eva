@@ -82,6 +82,7 @@ COPY --from=builder /opt/venv/bin/eva /opt/venv/bin/eva
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY vendor/krisp/ /tmp/krisp/
 RUN if ls /tmp/krisp/*.whl >/dev/null 2>&1; then \
+        echo "Installing Krisp VIVA SDK..." && \
         uv pip install --python /opt/venv/bin/python --no-cache /tmp/krisp/*.whl && \
         mkdir -p /opt/krisp/models && \
         cp /tmp/krisp/*.kef /opt/krisp/models/ && \
