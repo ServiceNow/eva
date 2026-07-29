@@ -3,6 +3,7 @@
 | Document | Description |
 |---|---|
 | [Assistant Server Contract](assistant_server_contract.md) | How to implement a new framework integration (s2s model or custom pipeline) |
+| [aai Integration](aai_integration.md) | Evaluating the aai voice-agent framework via host mode |
 | [Metrics](metrics/README.md) | Metric definitions, scoring rubrics, and judge prompts |
 | [MetricContext](metric_context.md) | Data structures passed to metrics during evaluation |
 | [LLM Configuration](llm_configuration.md) | LLM provider setup and LiteLLM routing |

@@ -8,9 +8,11 @@ silence detection state machine, audio state transitions, and WebSocket lifecycl
 import asyncio
 import base64
 import json
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from websockets.protocol import State as WebSocketState
 
 from eva.user_simulator.audio_bridge import (
     ASSISTANT_SAMPLE_RATE,
@@ -393,3 +395,79 @@ class TestStopAsync:
         iface = _make_interface()
         await iface.stop_async()
         assert iface._stopping is True
+
+
+class TestSpeechEventClockDomain:
+    """user_speech_start/stop must share one clock.
+
+    Assistant servers diff these stamps against ``time.time()`` to compute
+    model_response latency.
+    """
+
+    @staticmethod
+    def _open_ws():
+        ws = AsyncMock()
+        ws.state = WebSocketState.OPEN
+        return ws
+
+    @staticmethod
+    def _sent_events(ws) -> dict:
+        return {
+            frame["event"]: frame
+            for frame in (json.loads(call.args[0]) for call in ws.send.call_args_list)
+            if "event" in frame
+        }
+
+    @pytest.mark.asyncio
+    async def test_user_speech_stop_timestamp_is_wall_clock(self):
+        """A monotonic loop time must not leak onto the wire."""
+        iface = _make_interface()
+        iface.websocket = self._open_ws()
+        iface._user_audio_active = True
+        # A plausible monotonic reading: seconds since boot, nowhere near epoch.
+        monotonic_now = 159_381.0
+        iface._last_user_audio_send_time = monotonic_now - 0.6
+
+        before_ms = time.time() * 1000
+        await iface._on_user_audio_end(monotonic_now)
+        after_ms = time.time() * 1000
+
+        stamp = int(self._sent_events(iface.websocket)["user_speech_stop"]["timestamp_ms"])
+        # Stamped at the last real chunk, ~600ms before now.
+        assert before_ms - 2000 <= stamp <= after_ms
+        assert stamp != int(round(monotonic_now * 1000))
+
+    @pytest.mark.asyncio
+    async def test_start_and_stop_are_in_the_same_clock_domain(self):
+        """The two stamps must be differenceable — a real latency, not a clock gap."""
+        iface = _make_interface()
+        iface.websocket = self._open_ws()
+
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
+            mock_loop.return_value.time.return_value = 159_380.0
+            await iface._on_user_audio_start()
+        iface._user_audio_active = True
+        iface._last_user_audio_send_time = 159_381.0
+        await iface._on_user_audio_end(159_381.0)
+
+        events = self._sent_events(iface.websocket)
+        start = int(events["user_speech_start"]["timestamp_ms"])
+        stop = int(events["user_speech_stop"]["timestamp_ms"])
+        # Same domain => the gap is a real utterance duration, not ~1.8e12 ms.
+        assert 0 <= stop - start < 30_000
+
+    @pytest.mark.asyncio
+    async def test_stop_timestamp_survives_a_missing_send_time(self):
+        """No prior chunk send: fall back to now rather than emitting monotonic."""
+        iface = _make_interface()
+        iface.websocket = self._open_ws()
+        iface._user_audio_active = True
+        iface._last_user_audio_send_time = None
+
+        before_ms = time.time() * 1000
+        await iface._on_user_audio_end(159_381.0)
+        after_ms = time.time() * 1000
+
+        stamp = int(self._sent_events(iface.websocket)["user_speech_stop"]["timestamp_ms"])
+        # 1ms slack: the stamp is rounded to whole milliseconds.
+        assert before_ms - 1 <= stamp <= after_ms + 1

@@ -453,13 +453,19 @@ class BotToBotAudioBridge:
         self._user_audio_active = False
         # Consume the end-of-turn cue so it doesn't carry into the next turn.
         self._user_turn_complete = False
+        # *current_time* is the event loop's monotonic clock, which shares no
+        # origin with wall time. Convert once here: assistant servers subtract
+        # this stamp from a ``time.time()`` reading to get model_response
+        # latency, and ``user_speech_start`` is already wall-clock, so emitting
+        # the raw monotonic value made every latency ~the clock gap (~1.8e12 ms)
+        # and get discarded as implausible.
+        # Detection lags the real end by ~600ms; stamp at the last real chunk.
+        real_end_unix = (
+            time.time() - (current_time - self._last_user_audio_send_time)
+            if self._last_user_audio_send_time is not None
+            else time.time()
+        )
         if self.event_logger:
-            # Detection lags the real end by ~600ms; stamp at the last real chunk.
-            real_end_unix = (
-                time.time() - (current_time - self._last_user_audio_send_time)
-                if self._last_user_audio_send_time is not None
-                else time.time()
-            )
             self.event_logger.log_audio_end("simulated_user", real_end_unix)
         logger.info("🎤 User audio END")
 
@@ -471,7 +477,7 @@ class BotToBotAudioBridge:
                         {
                             "event": "user_speech_stop",
                             "conversation_id": self.conversation_id,
-                            "timestamp_ms": str(int(round(current_time * 1000))),
+                            "timestamp_ms": str(int(round(real_end_unix * 1000))),
                         }
                     )
                 )
