@@ -41,6 +41,17 @@
       "entwicklungszentrum in der innenstadt",
       "technikzentrum in der innenstadt",
       "technisches zentrum in der innenstadt"
+    ],
+    "hi": [
+      "इंजीनियरिंग सेंटर",
+      "डाउनटाउन इंजीनियरिंग सेंटर",
+      "डाउनटाउन सेंटर"
+    ],
+    "ko": [
+      "다운타운",
+      "다운타운 기술센터",
+      "다운타운 엔지니어링 센터",
+      "엔지니어링 센터"
     ]
   }
 }
