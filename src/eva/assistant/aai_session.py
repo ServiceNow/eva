@@ -69,6 +69,26 @@ def with_host_flag(url: str) -> str:
     return urlunparse(parsed._replace(query=urlencode(params, doseq=True)))
 
 
+def _explain_connect_error(exc: Exception) -> str:
+    """Append a cause to the HTTP rejections a host-mode upgrade can hit.
+
+    The platform answers a host-mode upgrade with 401 when the bearer token is
+    absent and 403 when it is valid but does not own the slug; both arrive as an
+    opaque ``InvalidStatus`` otherwise.
+    """
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    hints = {
+        401: (
+            "host mode on a deployed agent requires the owner's API key — set "
+            'EVA_MODEL__S2S_PARAMS \'{"api_key": "..."}\' or AAI_API_KEY '
+            "(a local `aai dev` host uses AAI_ALLOW_HOST instead)"
+        ),
+        403: "the API key is valid but does not own this agent slug",
+    }
+    hint = hints.get(status) if isinstance(status, int) else None
+    return f"{exc} — {hint}" if hint else str(exc)
+
+
 def build_host_config_message(
     *,
     system_prompt: str,
@@ -141,20 +161,31 @@ class AAIHostSession:
         greeting: str | None = None,
         input_rate: int = DEFAULT_AAI_INPUT_SAMPLE_RATE,
         output_rate: int = DEFAULT_AAI_OUTPUT_SAMPLE_RATE,
+        api_key: str | None = None,
     ) -> "AAIHostSession":
         """Open a host-mode session and complete the handshake.
+
+        *api_key* is the agent owner's platform API key, sent as a bearer token
+        on the upgrade. A deployed agent's WebSocket is otherwise
+        unauthenticated, so the platform requires proof of slug ownership before
+        honoring prompt and tool overrides — without it, host mode would turn
+        any deployed agent into an open LLM proxy billed to its owner. A local
+        ``aai dev`` host gates on ``AAI_ALLOW_HOST`` instead and needs no key.
 
         Raises:
             AAIHostSessionError: the host rejected the handshake, or did not
                 acknowledge it within ``CONFIG_ACK_TIMEOUT_S``.
         """
         url = with_host_flag(ws_url)
-        logger.info(f"Connecting to aai host at {url} ({len(tools)} tools)")
+        logger.info(f"Connecting to aai host at {url} ({len(tools)} tools, api_key={'yes' if api_key else 'no'})")
+        # Header only: a query parameter would leak the caller's whole platform
+        # credential into proxy logs and Referer headers.
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else None
         try:
             # max_size=None: TTS audio frames can exceed the 1 MiB default.
-            ws = await websockets.connect(url, max_size=None)
+            ws = await websockets.connect(url, max_size=None, additional_headers=headers)
         except Exception as e:
-            raise AAIHostSessionError(f"Could not connect to aai host at {url}: {e}") from e
+            raise AAIHostSessionError(f"Could not connect to aai host at {url}: {_explain_connect_error(e)}") from e
 
         try:
             await ws.send(

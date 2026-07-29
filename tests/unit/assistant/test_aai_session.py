@@ -218,3 +218,73 @@ class TestHandshake:
             await AAIHostSession._await_config_ack(ws, timeout_s=1.0)
 
         assert "AAI_ALLOW_HOST" in str(excinfo.value)
+
+
+class _FakeResponse:
+    """Carries the status code websockets attaches to an InvalidStatus."""
+
+    def __init__(self, status_code: int):
+        self.status_code = status_code
+
+
+class TestConnectAuth:
+    """Host mode on a deployed agent authenticates with the owner's API key."""
+
+    async def _connect(self, monkeypatch, *, api_key=None, raises=None):
+        captured: dict = {}
+
+        async def fake_connect(url, **kwargs):
+            captured["url"] = url
+            captured.update(kwargs)
+            if raises is not None:
+                raise raises
+            return _FakeWebSocket([json.dumps({"type": "config"})])
+
+        monkeypatch.setattr("eva.assistant.aai_session.websockets.connect", fake_connect)
+        session = await AAIHostSession.connect(
+            ws_url="wss://host.example/agent/websocket",
+            system_prompt="be helpful",
+            tools=[],
+            api_key=api_key,
+        )
+        return session, captured
+
+    async def test_api_key_is_sent_as_a_bearer_header(self, monkeypatch):
+        _, captured = await self._connect(monkeypatch, api_key="secret-key")
+
+        assert captured["additional_headers"] == {"Authorization": "Bearer secret-key"}
+
+    async def test_api_key_never_travels_in_the_url(self, monkeypatch):
+        _, captured = await self._connect(monkeypatch, api_key="secret-key")
+
+        assert "secret-key" not in captured["url"]
+
+    async def test_no_api_key_sends_no_headers(self, monkeypatch):
+        """A local `aai dev` host gates on AAI_ALLOW_HOST and takes no key."""
+        _, captured = await self._connect(monkeypatch)
+
+        assert captured["additional_headers"] is None
+
+    async def test_401_explains_the_missing_owner_key(self, monkeypatch):
+        error = Exception("server rejected WebSocket connection: HTTP 401")
+        error.response = _FakeResponse(401)  # type: ignore[attr-defined]
+
+        with pytest.raises(AAIHostSessionError) as excinfo:
+            await self._connect(monkeypatch, raises=error)
+
+        assert "owner's API key" in str(excinfo.value)
+
+    async def test_403_explains_the_key_does_not_own_the_slug(self, monkeypatch):
+        error = Exception("server rejected WebSocket connection: HTTP 403")
+        error.response = _FakeResponse(403)  # type: ignore[attr-defined]
+
+        with pytest.raises(AAIHostSessionError) as excinfo:
+            await self._connect(monkeypatch, api_key="wrong-owner", raises=error)
+
+        assert "does not own this agent slug" in str(excinfo.value)
+
+    async def test_other_connect_errors_pass_through_unembellished(self, monkeypatch):
+        with pytest.raises(AAIHostSessionError) as excinfo:
+            await self._connect(monkeypatch, raises=OSError("connection refused"))
+
+        assert "connection refused" in str(excinfo.value)

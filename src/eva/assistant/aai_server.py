@@ -35,6 +35,8 @@ class AAIAssistantServer(WebSocketBridgeAssistantServer):
         self._ws_url: str = s2s_params.get("ws_url") or os.environ.get("AAI_WS_URL") or DEFAULT_AAI_WS_URL
         self._input_rate: int = int(s2s_params.get("input_sample_rate") or DEFAULT_AAI_INPUT_SAMPLE_RATE)
         self._output_rate: int = int(s2s_params.get("output_sample_rate") or DEFAULT_AAI_OUTPUT_SAMPLE_RATE)
+        # Only a deployed agent needs this; a local `aai dev` host takes no key.
+        self._api_key: str | None = s2s_params.get("api_key") or os.environ.get("AAI_API_KEY")
 
     @property
     def model_name(self) -> str:
@@ -71,4 +73,5 @@ class AAIAssistantServer(WebSocketBridgeAssistantServer):
             greeting=self.initial_message,
             input_rate=self._input_rate,
             output_rate=self._output_rate,
+            api_key=self._api_key,
         )

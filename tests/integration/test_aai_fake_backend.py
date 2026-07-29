@@ -109,6 +109,7 @@ def _make_server() -> AAIAssistantServer:
     srv._ws_url = f"ws://localhost:{FAKE_AAI_PORT}/websocket"
     srv._input_rate = 16000
     srv._output_rate = 24000
+    srv._api_key = None  # The fake host is unauthenticated, like `aai dev`.
     srv._session = None
     srv._to_backend = None
     srv._from_backend = None
