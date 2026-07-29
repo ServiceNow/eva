@@ -5,6 +5,7 @@ inactivity detection, end_call API polling with backoff, and error handling.
 """
 
 import asyncio
+import wave
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -357,16 +358,35 @@ class TestKeepAliveTask:
                 await sim._keep_alive_task()
 
 
-class TestRecordAndRetrieveAudio:
-    """Test the full record → retrieve flow with interleaved audio."""
+class TestRecordAndSaveCleanAudio:
+    """Test the clean-user-track record → save flow."""
 
-    def test_interleaved_audio_preserved_in_order(self, tmp_path):
+    def test_only_clean_source_is_retained(self, tmp_path):
         sim = _make_simulator(tmp_path)
+        # Non-clean sources are no longer persisted by the simulator.
         sim._record_audio("user", b"\x01\x02")
         sim._record_audio("assistant", b"\xaa")
-        sim._record_audio("user", b"\x03")
-        sim._record_audio("assistant", b"\xbb\xcc")
+        sim._record_audio("user_clean", b"\x03\x04")
+        sim._record_audio("user_clean", b"\x05\x06")
 
-        user_audio, assistant_audio = sim.get_recorded_audio()
-        assert user_audio == b"\x01\x02\x03"
-        assert assistant_audio == b"\xaa\xbb\xcc"
+        assert sim._user_clean_audio_chunks == [b"\x03\x04", b"\x05\x06"]
+
+    def test_save_clean_user_audio_writes_wav(self, tmp_path):
+        sim = _make_simulator(tmp_path)
+        sim._record_audio("user_clean", b"\x01\x02\x03\x04")
+
+        sim._save_clean_user_audio(sample_rate=16000)
+
+        wav_path = tmp_path / "audio_user_clean.wav"
+        assert wav_path.exists()
+        with wave.open(str(wav_path), "rb") as wav_file:
+            assert wav_file.getframerate() == 16000
+            assert wav_file.getnchannels() == 1
+            assert wav_file.readframes(wav_file.getnframes()) == b"\x01\x02\x03\x04"
+
+    def test_save_clean_user_audio_skips_when_empty(self, tmp_path):
+        sim = _make_simulator(tmp_path)
+
+        sim._save_clean_user_audio(sample_rate=16000)
+
+        assert not (tmp_path / "audio_user_clean.wav").exists()

@@ -25,3 +25,23 @@ def save_pcm_as_wav(
         logger.debug(f"Audio saved to {file_path} ({len(audio_data)} bytes)")
     except Exception as e:
         logger.error(f"Error saving audio to {file_path}: {e}")
+
+
+def save_audio_track(
+    data: bytes | list[bytes],
+    file_path: Path,
+    sample_rate: int,
+    num_channels: int = 1,
+) -> bool:
+    """Save a single-track PCM recording to a WAV file, skipping empty audio.
+
+    Accepts either raw PCM bytes or a list of PCM chunks (which are joined).
+    Returns True if a file was written, False if there was no audio to save.
+    This is the shared entry point for both the assistant server's deferred
+    audio saving and the user simulator's clean-track saving.
+    """
+    audio_bytes = b"".join(data) if isinstance(data, list) else data
+    if not audio_bytes:
+        return False
+    save_pcm_as_wav(audio_bytes, file_path, sample_rate, num_channels)
+    return True
