@@ -49,10 +49,14 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
         from eva.assistant.grok_voice_server import GrokVoiceAssistantServer
 
         return GrokVoiceAssistantServer
+    elif framework == "deepgram":
+        from eva.assistant.deepgram_server import DeepgramAssistantServer
+
+        return DeepgramAssistantServer
     else:
         raise ValueError(
             f"Unknown framework: {framework!r}. "
-            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice"
+            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, deepgram"
         )
 
 

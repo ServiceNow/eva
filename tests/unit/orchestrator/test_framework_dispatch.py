@@ -2,6 +2,7 @@
 
 import pytest
 
+from eva.assistant.deepgram_server import DeepgramAssistantServer
 from eva.assistant.grok_voice_server import GrokVoiceAssistantServer
 from eva.assistant.openai_realtime_server import OpenAIRealtimeAssistantServer
 from eva.orchestrator.worker import _get_server_class
@@ -10,6 +11,11 @@ from eva.orchestrator.worker import _get_server_class
 def test_grok_voice_dispatch_returns_grok_class():
     cls = _get_server_class("grok_voice")
     assert cls is GrokVoiceAssistantServer
+
+
+def test_deepgram_dispatch_returns_deepgram_class():
+    cls = _get_server_class("deepgram")
+    assert cls is DeepgramAssistantServer
 
 
 def test_grok_voice_is_subclass_of_openai_realtime():
