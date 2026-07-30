@@ -5,6 +5,7 @@ Creates Pipecat services with proper configuration.
 
 import dataclasses
 import datetime
+import os
 from collections.abc import AsyncGenerator
 from typing import Any
 
@@ -108,6 +109,20 @@ def _to_language_enum(tag: str) -> Language:
 _tts_url_counter: int = 0
 _stt_url_counter: int = 0
 _audio_llm_url_counter: int = 0
+
+
+def _aws_credentials(params: dict[str, Any]) -> dict[str, Any]:
+    """Resolve AWS creds/region for the pipecat AWS services from params, then the env chain.
+
+    pipecat's AWS services take the secret access key as ``api_key``. Any value left as None
+    lets the underlying SDK fall back to its own default resolution.
+    """
+    return {
+        "api_key": params.get("aws_secret_access_key") or os.environ.get("AWS_SECRET_ACCESS_KEY"),
+        "aws_access_key_id": params.get("aws_access_key_id") or os.environ.get("AWS_ACCESS_KEY_ID"),
+        "aws_session_token": params.get("aws_session_token") or os.environ.get("AWS_SESSION_TOKEN"),
+        "region": params.get("region") or os.environ.get("AWS_REGION", "us-east-1"),
+    }
 
 
 def create_stt_service(
@@ -313,9 +328,19 @@ def create_stt_service(
             ),
         )
 
+    elif model_lower in {"aws", "aws_transcribe", "amazon_transcribe", "transcribe"}:
+        from pipecat.services.aws.stt import AWSTranscribeSTTService, AWSTranscribeSTTSettings
+
+        logger.info("Using AWS Transcribe STT")
+        return AWSTranscribeSTTService(
+            sample_rate=params.get("sample_rate", SAMPLE_RATE),
+            settings=AWSTranscribeSTTSettings(language=_to_language_enum(language_code)),
+            **_aws_credentials(params),
+        )
+
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cartesia-multilingual, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, smallest, xai"
+            f"Unknown STT model: {model}. Available: assemblyai, aws_transcribe, cartesia, cartesia-multilingual, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, smallest, xai"
         )
 
 
@@ -591,9 +616,31 @@ def create_tts_service(
         xtts_tts._settings.language = language_code
         return xtts_tts
 
+    elif model_lower in {"aws", "aws_polly", "amazon_polly", "polly"}:
+        from pipecat.services.aws.tts import AWSPollyTTSService, AWSPollyTTSSettings
+
+        logger.info("Using AWS Polly TTS")
+        # Forward optional Polly tuning (engine, pitch, rate, volume, lexicon_names); voice and
+        # language are passed explicitly below.
+        polly_settings_kwargs = {
+            k: params[k]
+            for f in dataclasses.fields(AWSPollyTTSSettings)
+            if (k := f.name) in params and k not in {"voice", "language", "model"}
+        }
+        polly_settings_kwargs.setdefault("engine", "neural")
+        return AWSPollyTTSService(
+            sample_rate=SAMPLE_RATE,
+            settings=AWSPollyTTSSettings(
+                voice=params.get("voice_id", "Joanna"),
+                language=_to_language_enum(language_code),
+                **polly_settings_kwargs,
+            ),
+            **_aws_credentials(params),
+        )
+
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, smallest, voxtral, xai, xtts"
+            f"Unknown TTS model: {model}. Available: aws_polly, cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, smallest, voxtral, xai, xtts"
         )
 
 

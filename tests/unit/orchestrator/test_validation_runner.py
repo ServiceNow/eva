@@ -466,3 +466,45 @@ class TestRunValidation:
             await runner.run_validation()
 
         assert calls[0]["record_ids"] == output_ids
+
+
+class TestAudioJudgeSkip:
+    """The audio judge (user_speech_fidelity) is skipped unless its model is a router deployment.
+
+    Bedrock has no audio-input model, so an all-AWS EVA_MODEL_LIST omits the audio judge's model
+    and validation should run only the Bedrock-capable judges instead of erroring.
+    """
+
+    @staticmethod
+    def _runner() -> ValidationRunner:
+        return ValidationRunner(run_dir=Path("/tmp/fake"), dataset=[], thresholds={})
+
+    def test_skipped_when_audio_model_absent(self):
+        from eva.utils import router
+
+        router.reset()
+        router.init([{"model_name": "us.anthropic.claude-opus-4-6-v1", "litellm_params": {"model": "bedrock/x"}}])
+        try:
+            vr = self._runner()
+            assert "user_speech_fidelity" not in vr._llm_metrics
+            assert "user_behavioral_fidelity" in vr._llm_metrics  # text judge still runs (on Bedrock)
+        finally:
+            router.reset()
+
+    def test_kept_when_audio_model_present(self):
+        from eva.utils import router
+
+        router.reset()
+        router.init(
+            [{"model_name": "gemini-3-flash-preview", "litellm_params": {"model": "gemini/gemini-3-flash-preview"}}]
+        )
+        try:
+            assert "user_speech_fidelity" in self._runner()._llm_metrics
+        finally:
+            router.reset()
+
+    def test_skipped_when_router_uninitialized(self):
+        from eva.utils import router
+
+        router.reset()
+        assert "user_speech_fidelity" not in self._runner()._llm_metrics

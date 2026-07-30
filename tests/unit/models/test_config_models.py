@@ -476,6 +476,23 @@ class TestRunConfig:
                 }
             )
 
+    def test_aws_stt_tts_need_no_api_key_or_model_params(self):
+        """AWS Transcribe/Polly authenticate via the AWS env chain, so their *_PARAMS are optional.
+
+        A full all-AWS cascade (Bedrock LLM from MODEL_LIST + aws_transcribe + aws_polly) with no
+        STT/TTS params must validate.
+        """
+        config = _config(
+            env_vars=_EVA_MODEL_LIST_ENV
+            | {
+                "EVA_MODEL__LLM": "us.anthropic.claude-opus-4-6",  # bedrock/... deployment in MODEL_LIST
+                "EVA_MODEL__STT": "aws_transcribe",
+                "EVA_MODEL__TTS": "aws_polly",
+            }
+        )
+        assert config.model.stt == "aws_transcribe"
+        assert config.model.tts == "aws_polly"
+
 
 class TestMaxRerunAttemptsZeroSkipsConflictCheck:
     """When max_rerun_attempts=0, multiple pipeline modes don't raise."""

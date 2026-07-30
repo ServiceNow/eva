@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from eva.models.config import ElevenLabsSimulatorConfig, OpenAIRealtimeSimulatorConfig
+from eva.models.config import (
+    BedrockS2SSimulatorConfig,
+    ElevenLabsSimulatorConfig,
+    OpenAIRealtimeSimulatorConfig,
+)
+from eva.user_simulator.bedrock_s2s import BedrockS2SUserSimulator
 from eva.user_simulator.elevenlabs import ElevenLabsUserSimulator
 from eva.user_simulator.factory import create_user_simulator
 from eva.user_simulator.openai_realtime import OpenAIRealtimeUserSimulator
@@ -43,3 +48,13 @@ def test_factory_selects_openai_realtime(tmp_path):
 
     assert isinstance(simulator, OpenAIRealtimeUserSimulator)
     assert simulator.caller_model == "gpt-realtime-1.5"
+
+
+def test_factory_selects_bedrock_s2s(tmp_path):
+    # The simulator module imports the experimental SDK lazily (inside client-creation
+    # methods), so construction works without aws-sdk-bedrock-runtime installed.
+    config = BedrockS2SSimulatorConfig()
+    simulator = create_user_simulator(config, **_kwargs(tmp_path))
+
+    assert isinstance(simulator, BedrockS2SUserSimulator)
+    assert simulator.provider == "bedrock_s2s"

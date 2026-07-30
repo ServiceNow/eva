@@ -14,6 +14,9 @@ logger = get_logger(__name__)
 
 GATE_METRIC = "conversation_valid_end"
 LLM_METRICS = ["user_behavioral_fidelity", "user_speech_fidelity"]
+# Needs an audio-capable judge (e.g. Gemini); no Bedrock model accepts audio input, so on an
+# all-AWS (Bedrock) setup this judge has no runnable model and is skipped (see _audio_judge_available).
+AUDIO_JUDGE_METRIC = "user_speech_fidelity"
 
 
 @dataclass
@@ -50,16 +53,45 @@ class ValidationRunner:
         self.metric_configs = metric_configs or {}
         self.output_ids = output_ids
 
+        # Drop the audio judge when its model isn't a router deployment (it needs an audio-capable
+        # model such as Gemini; Bedrock has none). Skipping beats erroring on a model that can't run.
+        self._llm_metrics = list(LLM_METRICS)
+        if AUDIO_JUDGE_METRIC in self._llm_metrics and not self._audio_judge_available():
+            self._llm_metrics = [m for m in LLM_METRICS if m != AUDIO_JUDGE_METRIC]
+            logger.warning(
+                f"Validation: skipping audio judge '{AUDIO_JUDGE_METRIC}' — its judge model is not a "
+                "deployment in EVA_MODEL_LIST (audio judging needs an audio-capable model, e.g. Gemini; "
+                "Bedrock has none)."
+            )
+
         # Shared MetricsRunners for validate_one() — lazily initialized on first call.
         # Safe for concurrent calls on different output_ids (asyncio single-threaded).
         self._shared_gate_runner: MetricsRunner | None = None
         self._shared_llm_runner: MetricsRunner | None = None
         self._runner_init_lock = asyncio.Lock()
 
+    def _audio_judge_available(self) -> bool:
+        """True if the audio judge's model is a deployment in the LiteLLM router.
+
+        The audio judge resolves its model from ``audio_judge_model`` config or the metric's
+        default; if that model isn't in ``EVA_MODEL_LIST`` it can never run (no healthy deployment),
+        so validation skips it instead of erroring.
+        """
+        from eva.metrics.validation.user_speech_fidelity import UserSpeechFidelityMetric
+        from eva.utils import router
+
+        cfg = self.metric_configs.get(AUDIO_JUDGE_METRIC, {})
+        model = cfg.get("audio_judge_model") or UserSpeechFidelityMetric.default_model
+        try:
+            deployments = getattr(router.get(), "model_list", []) or []
+        except Exception:  # noqa: BLE001 — router not initialized (e.g. some unit tests)
+            return False
+        return model in {d.get("model_name") for d in deployments}
+
     async def run_validation(self) -> dict[str, ValidationResult]:
         validation_results: dict[str, ValidationResult] = {}
         check_ids = self.output_ids if self.output_ids is not None else [r.id for r in self.dataset]
-        logger.info(f"Validation: processing {len(check_ids)} records, metrics={self.VALIDATION_METRICS}")
+        logger.info(f"Validation: processing {len(check_ids)} records, metrics={[GATE_METRIC, *self._llm_metrics]}")
         logger.info(f"Thresholds: {self.thresholds}")
 
         gate_runner = MetricsRunner(
@@ -104,7 +136,7 @@ class ValidationRunner:
             metrics_runner = MetricsRunner(
                 run_dir=self.run_dir,
                 dataset=self.dataset,
-                metric_names=LLM_METRICS,
+                metric_names=self._llm_metrics,
                 metric_configs=self.metric_configs,
                 record_ids=ids_to_judge,
             )
@@ -113,7 +145,7 @@ class ValidationRunner:
 
             gate_passed_set = set(gate_passed)
             for record_id, record_metrics in metrics_run.all_metrics.items():
-                vr = self._evaluate_record(record_id, record_metrics, LLM_METRICS)
+                vr = self._evaluate_record(record_id, record_metrics, self._llm_metrics)
                 if record_id in gate_passed_set:
                     vr.scores[GATE_METRIC] = 1.0
                 validation_results[record_id] = vr
@@ -161,7 +193,7 @@ class ValidationRunner:
                     self._shared_llm_runner = MetricsRunner(
                         run_dir=self.run_dir,
                         dataset=self.dataset,
-                        metric_names=LLM_METRICS,
+                        metric_names=self._llm_metrics,
                         metric_configs=self.metric_configs,
                     )
 
@@ -181,9 +213,9 @@ class ValidationRunner:
         # Phase 2: LLM metrics (gate passed or skipped)
         llm_metrics = await self._shared_llm_runner.run_and_save_record(output_id, record_dir)
         if llm_metrics is None:
-            return ValidationResult(passed=False, failed_metrics=list(LLM_METRICS))
+            return ValidationResult(passed=False, failed_metrics=list(self._llm_metrics))
 
-        vr = self._evaluate_record(output_id, llm_metrics, LLM_METRICS)
+        vr = self._evaluate_record(output_id, llm_metrics, self._llm_metrics)
         if not skip_gate:
             vr.scores[GATE_METRIC] = 1.0
         return vr

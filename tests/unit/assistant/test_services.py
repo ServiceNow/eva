@@ -179,6 +179,19 @@ class TestCreateSttService:
         assert "cartesia-multilingual" in msg
         assert "xai" in msg
 
+    @pytest.mark.parametrize("alias", ["aws_transcribe", "aws", "transcribe", "amazon_transcribe"])
+    def test_aws_transcribe_created_without_api_key_or_model(self, alias, monkeypatch):
+        # AWS creds come from the env chain; no api_key/model params required.
+        monkeypatch.setenv("AWS_ACCESS_KEY_ID", "AKIA_TEST")
+        monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
+        monkeypatch.setenv("AWS_REGION", "us-east-1")
+        svc = create_stt_service(alias)
+        assert "AWSTranscribe" in type(svc).__name__
+
+    def test_aws_transcribe_listed_in_unknown_error(self):
+        with pytest.raises(ValueError, match="aws_transcribe"):
+            create_stt_service("definitely_not_a_provider", params={"api_key": "k"})
+
 
 _CARTESIA_STT_PROVIDERS = [
     ("cartesia", {"api_key": "k", "model": "ink-2"}),
@@ -297,6 +310,23 @@ class TestCreateTtsService:
         )
         # Azure URL should trigger AsyncAzureOpenAI client
         assert "Azure" in type(svc._client).__name__
+
+    def test_aws_polly_created_with_voice_and_engine(self, monkeypatch):
+        monkeypatch.setenv("AWS_ACCESS_KEY_ID", "AKIA_TEST")
+        monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
+        monkeypatch.setenv("AWS_REGION", "us-east-1")
+        svc = create_tts_service("aws_polly", params={"voice_id": "Matthew", "engine": "generative"})
+        assert "AWSPolly" in type(svc).__name__
+        assert svc._settings.voice == "Matthew"
+        assert svc._settings.engine == "generative"
+
+    def test_aws_polly_defaults_voice_and_engine(self, monkeypatch):
+        monkeypatch.setenv("AWS_ACCESS_KEY_ID", "AKIA_TEST")
+        monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
+        # 'aws' alias, no params — creds from env, defaults applied.
+        svc = create_tts_service("aws")
+        assert svc._settings.voice == "Joanna"
+        assert svc._settings.engine == "neural"
 
 
 class TestCreateRealtimeLlmService:

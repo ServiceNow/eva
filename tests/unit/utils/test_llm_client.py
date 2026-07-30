@@ -318,3 +318,36 @@ class TestLitellmParamsForwarding:
         )
 
         router.reset()
+
+
+class TestServiceTierProviderResolution:
+    """service_tier is an OpenAI/Azure-only param; it must be dropped for other providers (Bedrock)."""
+
+    @staticmethod
+    def _client(model: str, deployments: list[dict]) -> LLMClient:
+        mock_router = MagicMock(spec=Router)
+        mock_router.model_list = deployments
+        router._router = mock_router
+        return LLMClient(model=model)
+
+    def test_bedrock_is_not_openai(self):
+        try:
+            client = self._client(
+                "claude", [{"model_name": "claude", "litellm_params": {"model": "bedrock/us.anthropic.x"}}]
+            )
+            assert client._resolves_to_openai() is False
+        finally:
+            router.reset()
+
+    def test_openai_bare_and_azure_are_openai(self):
+        try:
+            bare = self._client("gpt", [{"model_name": "gpt", "litellm_params": {"model": "gpt-5.2"}}])
+            azure = self._client("az", [{"model_name": "az", "litellm_params": {"model": "azure/gpt-5.2"}}])
+            assert bare._resolves_to_openai() is True
+            assert azure._resolves_to_openai() is True
+        finally:
+            router.reset()
+
+    def test_uninitialized_router_assumes_openai(self):
+        router.reset()
+        assert LLMClient(model="anything")._resolves_to_openai() is True
