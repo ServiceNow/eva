@@ -62,36 +62,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy uv to allow for `uv pip install --python /opt/venv/bin/python` (bare `pip install` would miss the venv).
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
 # Copy deps venv separately so it stays cached when only source changes
 COPY --from=deps /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
 
 # Overlay only the eva package files that changed (tiny, ~seconds to copy)
 COPY --from=builder /opt/venv/lib/python3.11/site-packages/eva /opt/venv/lib/python3.11/site-packages/eva
 COPY --from=builder /opt/venv/lib/python3.11/site-packages/eva-*.dist-info /opt/venv/lib/python3.11/site-packages/
 COPY --from=builder /opt/venv/bin/eva /opt/venv/bin/eva
 
-# Optionally bake in the licensed Krisp VIVA SDK + turn model for the
-# krisp_viva_turn turn-stop strategy. The wheel/model are proprietary (not public,
-# not on PyPI) so they are git-ignored and provisioned into vendor/krisp/ before the
-# build — see vendor/krisp/README.md. If they are absent the build still succeeds and
-# krisp_viva_turn is simply unavailable at runtime. KRISP_VIVA_API_KEY is NOT baked in;
-# it is supplied as a runtime env var/secret.
-# Install with uv into the venv explicitly: /opt/venv is a `uv venv` (no seeded pip),
-# so a bare `pip install` would miss the venv. This mirrors the builder stage.
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-COPY vendor/krisp/ /tmp/krisp/
-RUN if ls /tmp/krisp/*.whl >/dev/null 2>&1; then \
-        echo "Installing Krisp VIVA SDK..." && \
-        uv pip install --python /opt/venv/bin/python --no-cache /tmp/krisp/*.whl && \
-        mkdir -p /opt/krisp/models && \
-        cp /tmp/krisp/*.kef /opt/krisp/models/ && \
-        echo "Krisp VIVA SDK baked into image"; \
-    else \
-        echo "No Krisp SDK in vendor/krisp/ — krisp_viva_turn will be unavailable"; \
-    fi && \
-    rm -rf /tmp/krisp
-ENV KRISP_VIVA_TURN_MODEL_PATH=/opt/krisp/models/krisp-viva-tp-v3.kef
+# Copy `scripts/docker_eva_wrapper.sh` as `/usr/local/bin/eva`, which precedes the real `/opt/venv/bin/eva` in `PATH`.
+# That wrapper tries to install Krisp on every invocation of `eva`.
+COPY scripts/docker_eva_wrapper.sh /usr/local/bin/eva
+RUN chmod +x /usr/local/bin/eva
+ENV PATH="/usr/local/bin:/opt/venv/bin:$PATH"
 
 # Copy application code
 COPY src/ ./src/
@@ -106,6 +92,9 @@ RUN groupadd --gid 1000 eva && \
 
 # Create directory for output with correct ownership
 RUN mkdir -p /app/output && chown eva:eva /app/output
+
+# /opt/venv must be writable by the runtime user to install the Krisp SDK into it at container start.
+RUN chown -R eva:eva /opt/venv
 
 # Python runtime settings
 ENV PYTHONPATH="/app/src"

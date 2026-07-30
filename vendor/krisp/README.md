@@ -1,43 +1,40 @@
-# Krisp VIVA SDK — build-time vendor files
+# Krisp VIVA SDK — vendor files
 
 The `krisp_viva_turn` turn-stop strategy needs Krisp's **licensed** VIVA SDK, which
 is **not** on PyPI and **not** public — it is downloaded per-account from the Krisp
 developer portal. The binaries are therefore **git-ignored** (see `.gitignore`) and
-must be placed here manually before building the Docker image.
+must be placed here manually before running the container.
 
-The image only publishes to our private Toolkit registry, so baking the licensed
-files into the image is acceptable; committing them to git is not.
+## Download Krisp files
 
-## What to put here
+1. Log in to https://developers.krisp.ai/versions
+2. Download the VIVA Python SDK zip file as well as the model zip files
+3. Extract the necessary files
+    ```sh
+    cd vendor/krisp
+    for file in ~/Downloads/krisp-viva-*-models*.zip; do unzip -jo "$file"; done
+    for file in ~/Downloads/krisp-viva-uar-python-sdk-*.zip; do unzip -jo "$file" '*/dist/krisp_audio-*-cp311-cp311-linux_x86_64.whl'; done
+    ```
 
-Download from https://developers.krisp.ai (log in with your Krisp account):
-
-- **VIVA UAR Python SDK** zip → unzip → copy the **Linux x86_64** wheel matching the
-  image's Python (3.11) into this directory:
-  `krisp_audio-<ver>-cp311-cp311-linux_x86_64.whl`
-  (The image is `linux/amd64` — do **not** use the macOS wheel you may have installed
-  locally.)
-- **Turn-Taking models** zip → unzip → copy the turn model here:
-  `krisp-viva-tp-v3.kef`
-
-Result:
+Result (wheel version and `.kef` set will vary by download):
 
 ```
 vendor/krisp/
 ├── README.md                                          (tracked)
-├── krisp_audio-1.10.0-cp311-cp311-linux_x86_64.whl    (git-ignored)
+├── krisp_audio-1.11.0-cp311-cp311-linux_x86_64.whl    (git-ignored)
 └── krisp-viva-tp-v3.kef                               (git-ignored)
 ```
 
+> [!WARNING]
+> At most one `.whl` may be present here. The `eva` wrapper skips installing Krisp if it doesn't find one, and it errors out if it finds more than one, since it wouldn't know which to install.
+
 ## How it's used
 
-The `Dockerfile` runtime stage installs the wheel and copies the `.kef` into the
-image, setting `KRISP_VIVA_TURN_MODEL_PATH`. If this directory has no wheel, the build
-still succeeds — Krisp is simply unavailable and `krisp_viva_turn` cannot be selected
-at runtime.
-
-`KRISP_VIVA_API_KEY` is **not** baked in — it is supplied as a runtime env var/secret,
-like the other provider API keys.
+In the Docker container:
+- This directory is mounted to `/app/vendor/krisp`.
+- The `eva` command (which is actually `scripts/docker_eva_wrapper.sh`) installs the `.whl`, if present.
+- The `KRISP_VIVA_TURN_MODEL_PATH` env var points at the `.kef` file directly on that mount, e.g. `vendor/krisp/krisp-viva-tp-v3.kef`.
+- The `KRISP_VIVA_API_KEY` env var provides the API key.
 
 ## Runtime requirement
 
