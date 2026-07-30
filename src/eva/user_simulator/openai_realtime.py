@@ -424,4 +424,3 @@ class OpenAIRealtimeUserSimulator(AbstractUserSimulator):
         if self._caller_audio_seen and self._audio_interface is not None:
             self._audio_interface.output(b"\x00\x00")
             self._caller_audio_seen = False
-
