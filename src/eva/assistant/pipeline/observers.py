@@ -348,3 +348,105 @@ class MetricsFileObserver(BaseObserver):
     def __del__(self):
         """Fallback cleanup — prefer calling close() explicitly."""
         self.close()
+
+
+# ── Non-Pipecat log writers ──────────────────────────────────────────
+#
+# The observers above are Pipecat-native. The writers below are their
+# equivalents for frameworks that manage their own session loop (OpenAI
+# Realtime, Gemini Live, ElevenLabs) and therefore can't use the observers.
+
+
+class FrameworkLogWriter:
+    """Write framework_logs.jsonl (replacement for pipecat_logs.jsonl).
+
+    Capture turn boundaries, TTS text, and LLM responses with accurate
+    wall-clock timestamps.
+    """
+
+    def __init__(self, output_dir: Path):
+        self.log_file = output_dir / "framework_logs.jsonl"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    def write(self, event_type: str, data: dict, timestamp_ms: int | None = None) -> None:
+        """Write a single log entry.
+
+        Args:
+            event_type: One of 'turn_start', 'turn_end', 'tts_text', 'llm_response'
+            data: Event data dict. Must contain a 'frame' key for tts_text/llm_response.
+            timestamp_ms: Wall-clock timestamp in milliseconds. Defaults to now.
+        """
+        if timestamp_ms is None:
+            timestamp_ms = int(time.time() * 1000)
+
+        entry = {
+            "timestamp": timestamp_ms,
+            "type": event_type,
+            "data": data,
+        }
+        try:
+            with open(self.log_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception as e:
+            logger.error(f"Error writing framework log: {e}")
+
+
+class MetricsLogWriter:
+    """Writes pipecat_metrics.jsonl for non-Pipecat frameworks.
+
+    Pipecat writes its own metrics natively via MetricsFileObserver.  This
+    writer covers OpenAI Realtime, Gemini Live, and any other framework that
+    manages its own session loop.
+    """
+
+    def __init__(self, output_dir: Path):
+        self.log_file = output_dir / "pipecat_metrics.jsonl"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    def write_latency(self, stage: str, value_seconds: float, model: str = "") -> None:
+        """Write a LatencyMetric entry.
+
+        Args:
+            stage: Semantic label for the stage being measured. Use ``"stt"``
+                for STT processing time, ``"tts"`` for TTS time-to-first-byte,
+                ``"model_response"`` for s2s/realtime time from user speech end
+                to first model audio chunk.
+            value_seconds: Latency in seconds.
+            model: Model identifier (optional).
+        """
+        entry = {
+            "timestamp": int(time.time() * 1000),
+            "type": "LatencyMetric",
+            "stage": stage,
+            "model": model,
+            "value": value_seconds,
+        }
+        self._append(entry)
+
+    def write_token_usage(
+        self,
+        processor: str,
+        model: str,
+        prompt_tokens: int,
+        completion_tokens: int,
+    ) -> None:
+        """Write an LLMTokenUsageMetricsData entry."""
+        entry = {
+            "timestamp": int(time.time() * 1000),
+            "type": "LLMTokenUsageMetricsData",
+            "processor": processor,
+            "model": model,
+            "value": {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            },
+        }
+        self._append(entry)
+
+    def _append(self, entry: dict) -> None:
+        try:
+            with open(self.log_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except Exception as e:
+            logger.error(f"Error writing metrics log: {e}")

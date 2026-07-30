@@ -1,4 +1,4 @@
-"""Tests for shared audio bridge utilities.
+"""Tests for shared audio format-conversion utilities in eva.utils.audio_utils.
 
 Covers: PCM↔mulaw round-trip fidelity, PCM16 mixing with clipping,
 and Twilio WebSocket protocol message round-trips.
@@ -11,7 +11,7 @@ import struct
 
 import pytest
 
-from eva.assistant.audio_bridge import (
+from eva.utils.audio_utils import (
     create_twilio_media_message,
     mulaw_8k_to_pcm16_24k,
     parse_twilio_media_message,

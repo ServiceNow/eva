@@ -17,16 +17,15 @@ import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from openai import AsyncOpenAI
 
-from eva.assistant.audio_bridge import (
-    FrameworkLogWriter,
-    MetricsLogWriter,
+from eva.assistant.base_server import AbstractAssistantServer
+from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWriter
+from eva.utils.audio_utils import (
     create_twilio_media_message,
     mulaw_8k_to_pcm16_24k,
     parse_twilio_media_message,
     pcm16_24k_to_mulaw_8k,
     sync_buffer_to_position,
 )
-from eva.assistant.base_server import AbstractAssistantServer
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)

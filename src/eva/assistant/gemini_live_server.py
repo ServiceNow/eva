@@ -26,9 +26,11 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from google import genai
 from google.genai import types
 
-from eva.assistant.audio_bridge import (
-    FrameworkLogWriter,
-    MetricsLogWriter,
+from eva.assistant.base_server import AbstractAssistantServer
+from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWriter
+from eva.models.agents import AgentConfig
+from eva.models.config import ModelConfig
+from eva.utils.audio_utils import (
     create_twilio_media_message,
     mulaw_8k_to_pcm16_16k,
     mulaw_8k_to_pcm16_24k,
@@ -36,9 +38,6 @@ from eva.assistant.audio_bridge import (
     pcm16_24k_to_mulaw_8k,
     sync_buffer_to_position,
 )
-from eva.assistant.base_server import AbstractAssistantServer
-from eva.models.agents import AgentConfig
-from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
