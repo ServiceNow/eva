@@ -391,6 +391,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     pre_tool_speech=self.pipeline_config.pre_tool_speech,
                     llm_streaming=self.pipeline_config.llm_streaming,
                     full_audio_context=self.pipeline_config.audio_llm_params.get("full_audio_context", False),
+                    assistant_gender=self.pipeline_config.assistant_gender,
                 )
                 audio_llm_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
                     role="assistant", content=msg, timestamp=self._current_iso_timestamp()
@@ -444,6 +445,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     output_dir=self.output_dir,
                     pre_tool_speech=self.pipeline_config.pre_tool_speech,
                     llm_streaming=self.pipeline_config.llm_streaming,
+                    assistant_gender=self.pipeline_config.assistant_gender,
                 )
 
                 async def on_assistant_response(msg: str) -> None:

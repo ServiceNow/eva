@@ -211,6 +211,20 @@ class ModelConfig(BaseModel):
         None,
         description="Forward parallel_tool_calls when tools are present; None leaves provider defaults.",
     )
+    assistant_gender: Literal["M", "F"] | None = Field(
+        None,
+        description=(
+            "Assistant speaking gender ('M' or 'F'), appended as a small system prompt "
+            "instruction so gendered languages (e.g. Hindi) produce grammatically consistent "
+            "speech. CASCADE/AUDIO_LLM only — S2S providers manage their own voice/gender. "
+            "None (default) adds no instruction, for gender-neutral languages like English."
+        ),
+    )
+
+    @field_validator("assistant_gender", mode="before")
+    @classmethod
+    def _normalize_assistant_gender(cls, value: Any) -> Any:
+        return value.upper() if isinstance(value, str) else value
 
     @property
     def pipeline_type(self) -> "PipelineType":
@@ -307,6 +321,11 @@ class ModelConfig(BaseModel):
             logger.warning(
                 "parallel_tool_calls applies only to the CASCADE pipeline; it will be ignored "
                 f"for pipeline_type={self.pipeline_type}."
+            )
+        if self.assistant_gender is not None and self.pipeline_type == PipelineType.S2S:
+            logger.warning(
+                "assistant_gender applies only to CASCADE/AUDIO_LLM pipelines; it will be "
+                "ignored for pipeline_type=s2s (S2S providers manage their own voice/gender)."
             )
         return self
 
