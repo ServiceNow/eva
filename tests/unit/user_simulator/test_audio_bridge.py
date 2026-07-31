@@ -10,12 +10,16 @@ import base64
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import numpy as np
 import pytest
 
 from eva.user_simulator.audio_bridge import (
     ASSISTANT_SAMPLE_RATE,
     SEND_CHUNK_SIZE_PCM,
+    USER_TRAILING_NOISE_SNR_DB,
+    USER_TRAILING_SILENCE_CHUNKS,
     ElevenLabsAudioInterface,
+    _white_noise_pcm,
 )
 
 
@@ -393,3 +397,86 @@ class TestStopAsync:
         iface = _make_interface()
         await iface.stop_async()
         assert iface._stopping is True
+
+
+class TestTrailingWhiteNoise:
+    """Trailing white-noise block streamed to the assistant after each user turn.
+
+    Only the wire receives white noise; the saved user_clean track records plain
+    silence, so end-of-speech detection improves without polluting audio used by
+    speech-fidelity metrics.
+    """
+
+    def test_noise_chunk_size_and_level(self):
+        """Noise chunk matches the send size and sits at ~-45 dBFS (reads as silence to VAD)."""
+        noise = _white_noise_pcm()
+        assert len(noise) == SEND_CHUNK_SIZE_PCM
+        arr = np.frombuffer(noise, dtype=np.int16).astype(np.float64)
+        rms = float(np.sqrt((arr**2).mean()))
+        expected_rms = 32768.0 * (10 ** (-USER_TRAILING_NOISE_SNR_DB / 20.0))
+        assert rms == pytest.approx(expected_rms, rel=0.1)
+
+    def test_noise_is_deterministic_and_not_silence(self):
+        """Fixed seed → identical cached buffer; and it differs from digital silence."""
+        assert _white_noise_pcm() == _white_noise_pcm()
+        assert _white_noise_pcm() != b"\x00" * SEND_CHUNK_SIZE_PCM
+
+    @pytest.mark.asyncio
+    async def test_user_end_schedules_trailing_noise(self):
+        """Ending a user turn queues a fixed block of trailing noise frames."""
+        iface = _make_interface()
+        iface._user_audio_active = True
+        await iface._on_user_audio_end(150.0)
+        assert iface._pending_trailing_noise_chunks == USER_TRAILING_SILENCE_CHUNKS
+
+    @pytest.mark.asyncio
+    async def test_new_user_turn_cancels_pending_noise(self):
+        """A new user turn supersedes any trailing noise still queued."""
+        iface = _make_interface()
+        iface._pending_trailing_noise_chunks = 42
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
+            mock_loop.return_value.time.return_value = 100.0
+            await iface._on_user_audio_start()
+        assert iface._pending_trailing_noise_chunks == 0
+
+    @pytest.mark.asyncio
+    async def test_wire_gets_noise(self):
+        """_send_white_noise_frame puts non-silent μ-law on the wire."""
+        iface = _make_interface()
+        sent: list[bytes] = []
+        iface._send_audio_frame = AsyncMock(side_effect=lambda frame: sent.append(frame) or True)
+        assert await iface._send_white_noise_frame() is True
+        silence_mulaw = ElevenLabsAudioInterface._convert_pcm_to_mulaw(b"\x00" * SEND_CHUNK_SIZE_PCM)
+        assert sent and sent[0] != silence_mulaw
+
+    @pytest.mark.asyncio
+    async def test_drain_records_silence_not_noise_into_user_clean(self):
+        """Draining the noise block sends noise to the wire but records only silence."""
+        recorded: list[tuple[str, bytes]] = []
+        iface = _make_interface(record_callback=lambda source, data: recorded.append((source, data)))
+        iface.websocket = MagicMock()
+        iface.running = True
+        # One frame queued; user finished and assistant has not spoken yet.
+        iface._pending_trailing_noise_chunks = 1
+        iface._user_audio_active = False
+        iface._user_audio_ended_time = 10.0
+
+        wire: list[bytes] = []
+        iface._send_audio_frame = AsyncMock(side_effect=lambda frame: wire.append(frame) or True)
+
+        async def stop_after_one_frame():
+            await asyncio.sleep(0.05)
+            iface.running = False
+
+        await asyncio.gather(iface._send_to_assistant(), stop_after_one_frame())
+
+        # Exactly the scheduled frame drained.
+        assert iface._pending_trailing_noise_chunks == 0
+        # Wire carried noise, not silence.
+        silence_mulaw = ElevenLabsAudioInterface._convert_pcm_to_mulaw(b"\x00" * SEND_CHUNK_SIZE_PCM)
+        assert wire and any(frame != silence_mulaw for frame in wire)
+        # Every recorded user_clean frame is pure silence (never the noise buffer).
+        user_clean = [data for source, data in recorded if source == "user_clean"]
+        assert user_clean, "expected user_clean frames recorded for alignment"
+        assert all(data == b"\x00" * SEND_CHUNK_SIZE_PCM for data in user_clean)
+        assert _white_noise_pcm() not in user_clean
