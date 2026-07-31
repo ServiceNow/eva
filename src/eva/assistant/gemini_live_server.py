@@ -139,7 +139,7 @@ def _agent_tools_to_gemini(agent: AgentConfig) -> list[types.Tool] | None:
                 name=tool.function_name,
                 description=f"{tool.name}: {tool.description}",
                 parameters=params_schema,
-                behavior=types.Behavior.BLOCKING,
+                # behavior=types.Behavior.BLOCKING,
             )
         )
 
@@ -189,6 +189,8 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         # Gemini model name from s2s_params or default
         s2s_params = self.pipeline_config.s2s_params or {}
         self._model = s2s_params["model"]
+        # Optional Vertex endpoint override; when unset the SDK uses its default.
+        self._endpoint = s2s_params.get("endpoint")
         self._voice = s2s_params.get("voice", "Kore")
         # s2s_params["language_code"] takes precedence; fall back to EVA_LANGUAGE
         self._language_code = s2s_params.get("language_code") or self.language
@@ -279,7 +281,13 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
         if project:
             logger.info(f"Using Vertex AI (project={project}, location={location})")
-            return genai.Client(vertexai=True, project=project, location=location)
+            http_options = types.HttpOptions(base_url=f"wss://{self._endpoint}") if self._endpoint else None
+            return genai.Client(
+                vertexai=True,
+                project=project,
+                location=location,
+                http_options=http_options,
+            )
 
         # Fallback: let the SDK resolve credentials (e.g. ADC)
         logger.warning(msg="No explicit credentials; relying on google-genai default resolution")
