@@ -94,7 +94,7 @@ RUN groupadd --gid 1000 eva && \
 RUN mkdir -p /app/output && chown eva:eva /app/output
 
 # /opt/venv must be writable by the runtime user to install the Krisp SDK into it at container start.
-RUN chown -R eva:eva /opt/venv
+RUN chmod -R a+rwX /opt/venv
 
 # Python runtime settings
 ENV PYTHONPATH="/app/src"
