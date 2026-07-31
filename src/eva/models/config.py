@@ -670,7 +670,7 @@ class RunConfig(BaseSettings):
     )
     dry_run: bool = Field(False, description="Validate configuration without running")
     preflight: bool = Field(
-        True,
+        True,  # Pydantic automatically creates the `--no-preflight` flag, to which description below applies.
         description="Skip the preflight model check. By default, probe each configured model "
         "(STT/LLM/TTS/audio-LLM) before the run starts, aborting early on credential/connectivity failures.",
     )
