@@ -671,10 +671,10 @@ class RunConfig(BaseSettings):
     dry_run: bool = Field(False, description="Validate configuration without running")
     preflight: bool = Field(
         True,
-        description="Skip the pre-flight model check. By default, probe each configured model "
+        description="Skip the preflight model check. By default, probe each configured model "
         "(STT/LLM/TTS/audio-LLM) before the run starts, aborting early on credential/connectivity failures.",
     )
-    preflight_timeout_seconds: float = Field(20.0, gt=0, description="Per-model timeout for the pre-flight probe")
+    preflight_timeout_seconds: float = Field(20.0, gt=0, description="Per-model timeout for the preflight probe")
 
     @computed_field
     @property

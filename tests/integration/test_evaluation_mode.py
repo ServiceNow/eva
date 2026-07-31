@@ -427,7 +427,7 @@ async def test_evaluation_mode_with_unresolved_errors(eval_config, mock_dataset)
 
 @pytest.mark.asyncio
 async def test_preflight_failure_aborts_run_before_conversations(eval_config, mock_dataset):
-    """A failing pre-flight check aborts the run before any conversation is launched."""
+    """A failing preflight check aborts the run before any conversation is launched."""
     eval_config.preflight = True  # exercise the real gate (fixture default skips it)
     runner = BenchmarkRunner(eval_config)
 

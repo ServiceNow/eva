@@ -51,7 +51,7 @@ _SILENCE_PCM = b"\x00\x00" * (_SILENCE_SAMPLE_RATE // 3)
 
 
 class PreflightError(RuntimeError):
-    """Raised when a pre-flight probe fails, to abort before any simulations run."""
+    """Raised when a preflight probe fails, to abort before any simulations run."""
 
 
 @dataclass
@@ -192,4 +192,4 @@ async def run_preflight(config: RunConfig) -> None:
     failed = [r for r in results if not r.ok]
     if failed:
         detail = "\n".join(f"{r.model_type} ({r.model_alias}): {r.detail}" for r in failed)
-        raise PreflightError(f"pre-flight check failed:\n{detail}")
+        raise PreflightError(f"preflight check failed:\n{detail}")

@@ -1,4 +1,4 @@
-"""Tests for orchestrator/preflight.py — pre-flight model probes."""
+"""Tests for orchestrator/preflight.py — preflight model probes."""
 
 import asyncio
 import json
