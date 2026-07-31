@@ -21,7 +21,7 @@ Result (wheel version and `.kef` set will vary by download):
 ```
 vendor/krisp/
 ├── README.md                                          (tracked)
-├── krisp_audio-1.11.0-cp311-cp311-linux_x86_64.whl    (git-ignored)
+├── krisp_audio-1.10.0-cp311-cp311-linux_x86_64.whl    (git-ignored)
 └── krisp-viva-tp-v3.kef                               (git-ignored)
 ```
 
