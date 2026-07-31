@@ -196,6 +196,27 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         self._language_code = s2s_params.get("language_code") or self.language
         self._api_key = s2s_params.get("api_key", "")
 
+        # Thinking config: controls Gemini's internal reasoning budget.
+        # Accepts a dict with optional keys:
+        #   "thinking_budget": int  (0=disabled, -1=auto, or token count)
+        #   "include_thoughts": bool
+        #   "thinking_level": str   ("MINIMAL", "LOW", "MEDIUM", "HIGH")
+        # Example: {"thinking_budget": 1024, "include_thoughts": false}
+        # If not set, defaults to ThinkingConfig() (model-dependent defaults).
+        thinking_raw = s2s_params.get("thinking_config", {})
+        if isinstance(thinking_raw, dict) and thinking_raw:
+            tc_kwargs: dict[str, Any] = {}
+            if "thinking_budget" in thinking_raw:
+                tc_kwargs["thinking_budget"] = int(thinking_raw["thinking_budget"])
+            if "include_thoughts" in thinking_raw:
+                tc_kwargs["include_thoughts"] = bool(thinking_raw["include_thoughts"])
+            if "thinking_level" in thinking_raw:
+                tc_kwargs["thinking_level"] = thinking_raw["thinking_level"]
+            self._thinking_config = types.ThinkingConfig(**tc_kwargs)
+            logger.info(f"Thinking config: {tc_kwargs}")
+        else:
+            self._thinking_config = types.ThinkingConfig()
+
         self._system_prompt = self._build_system_prompt()
 
         # Build Gemini tools
@@ -321,6 +342,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
             ),
             "input_audio_transcription": types.AudioTranscriptionConfig(),
             "output_audio_transcription": types.AudioTranscriptionConfig(),
+            "thinking_config": self._thinking_config,
         }
         if self._gemini_tools:
             config_kwargs["tools"] = self._gemini_tools
