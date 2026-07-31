@@ -90,9 +90,6 @@ COPY assets/ ./assets/
 RUN groupadd --gid 1000 eva && \
     useradd --uid 1000 --gid eva --create-home eva
 
-# Create directory for output with correct ownership
-RUN mkdir -p /app/output && chown eva:eva /app/output
-
 # /opt/venv must be writable by the runtime user to install the Krisp SDK into it at container start.
 RUN chmod -R a+rwX /opt/venv
 
