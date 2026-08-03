@@ -10,9 +10,11 @@ This module provides the common infrastructure.
 
 import audioop
 import base64
+import io
 import json
 import struct
 import time
+import wave
 from pathlib import Path
 
 import numpy as np
@@ -51,6 +53,56 @@ def mulaw_8k_to_pcm16_24k(mulaw_bytes: bytes) -> bytes:
     return pcm_24k
 
 
+def mulaw_8k_to_pcm16_48k(mulaw_bytes: bytes) -> bytes:
+    """Convert 8kHz mu-law audio to 48kHz 16-bit PCM.
+
+    Used by the Smallest Hydra S2S server, which records at 48 kHz (its native
+    output rate) and must upsample the 8 kHz user track to match.
+    """
+    pcm_8k = audioop.ulaw2lin(mulaw_bytes, 2)
+    pcm_48k, _ = audioop.ratecv(pcm_8k, 2, 1, 8000, 48000, None)
+    # Clamp to exactly 6× input length so tracks stay positionally aligned.
+    expected_bytes = len(pcm_8k) * 6
+    if len(pcm_48k) < expected_bytes:
+        pcm_48k = pcm_48k + b"\x00" * (expected_bytes - len(pcm_48k))
+    elif len(pcm_48k) > expected_bytes:
+        pcm_48k = pcm_48k[:expected_bytes]
+    return pcm_48k
+
+
+def pcm16_48k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
+    """Convert 48kHz 16-bit PCM to 8kHz mu-law.
+
+    Uses soxr VHQ resampling for proper anti-aliasing during the 6:1
+    downsampling (audioop.ratecv lacks an anti-aliasing filter and sounds
+    muffled). Mirrors ``pcm16_24k_to_mulaw_8k`` for Hydra's 48 kHz output.
+    """
+    audio_data = np.frombuffer(pcm_bytes, dtype=np.int16)
+    resampled = soxr.resample(audio_data, 48000, 8000, quality="VHQ")
+    expected_samples = round(len(audio_data) * 8000 / 48000)
+    if len(resampled) < expected_samples:
+        resampled = np.pad(resampled, (0, expected_samples - len(resampled)))
+    elif len(resampled) > expected_samples:
+        resampled = resampled[:expected_samples]
+    pcm_8k = resampled.astype(np.int16).tobytes()
+    return audioop.lin2ulaw(pcm_8k, 2)
+
+
+def pcm16_to_wav_bytes(pcm_bytes: bytes, sample_rate: int) -> bytes:
+    """Wrap raw 16-bit mono PCM in an in-memory WAV container.
+
+    Used to hand a recorded utterance to a batch STT endpoint without touching
+    disk. 16-bit mono => 2 bytes/sample.
+    """
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(sample_rate)
+        wav.writeframes(pcm_bytes)
+    return buf.getvalue()
+
+
 def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
     """Convert 24kHz 16-bit PCM to 8kHz mu-law.
 
@@ -70,6 +122,19 @@ def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
     pcm_8k = resampled.astype(np.int16).tobytes()
     # Encode to mu-law
     return audioop.lin2ulaw(pcm_8k, 2)
+
+
+def resample_pcm16_soxr(pcm_bytes: bytes, from_rate: int, to_rate: int) -> bytes:
+    """Resample 16-bit mono PCM between arbitrary rates using soxr VHQ.
+
+    Anti-aliased (unlike audioop.ratecv), so it is safe for both up- and
+    down-sampling. Returns the input unchanged when the rates already match.
+    """
+    if from_rate == to_rate or not pcm_bytes:
+        return pcm_bytes
+    audio = np.frombuffer(pcm_bytes, dtype=np.int16)
+    resampled = soxr.resample(audio, from_rate, to_rate, quality="VHQ")
+    return bytes(resampled.astype(np.int16).tobytes())
 
 
 def sync_buffer_to_position(buffer: bytearray, target_position: int) -> None:
