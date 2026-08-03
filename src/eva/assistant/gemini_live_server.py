@@ -195,6 +195,11 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         # preview models are Vertex-only and may require a specific version; when
         # unset the SDK's default is used.
         self._api_version = s2s_params.get("api_version")
+        # Optional FunctionResponse scheduling ("WHEN_IDLE" | "INTERRUPT" |
+        # "SILENT"). Newer Live models (e.g. gemini-3.5-flash-live-preview) do
+        # NOT support a scheduling field and close the socket with 1007 if one is
+        # set, so it is OMITTED by default; older models can opt back in.
+        self._fc_scheduling = s2s_params.get("function_response_scheduling")
         self._voice = s2s_params.get("voice", "Kore")
         # s2s_params["language_code"] takes precedence; fall back to EVA_LANGUAGE
         self._language_code = s2s_params.get("language_code") or self.language
@@ -695,16 +700,18 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                         f"Tool result: {tool_name} -> {json.dumps(result, ensure_ascii=False)}"
                                     )
 
-                                    # Send result back to Gemini
+                                    # Send result back to Gemini. Only set the
+                                    # scheduling field when explicitly configured
+                                    # — newer Live models reject it (1007).
+                                    fr_kwargs: dict[str, Any] = {
+                                        "id": fc.id,
+                                        "name": fc.name,
+                                        "response": result,
+                                    }
+                                    if self._fc_scheduling:
+                                        fr_kwargs["scheduling"] = types.FunctionResponseScheduling[self._fc_scheduling]
                                     await session.send_tool_response(
-                                        function_responses=[
-                                            types.FunctionResponse(
-                                                id=fc.id,
-                                                name=fc.name,
-                                                response=result,
-                                                scheduling=types.FunctionResponseScheduling.WHEN_IDLE,
-                                            )
-                                        ]
+                                        function_responses=[types.FunctionResponse(**fr_kwargs)]
                                     )
 
                             # --- Usage metadata ---
