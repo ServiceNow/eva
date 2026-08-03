@@ -566,6 +566,12 @@ class BotToBotAudioBridge:
         if self._assistant_audio_ended_time is not None:
             self._assistant_audio_ended_time = None
         self._assistant_audio_active = True
+        # The trailing white-noise block exists only to nudge the assistant's VAD
+        # into detecting end-of-speech. Once the assistant actually responds it
+        # has done its job, so cancel any remaining frames — otherwise noise would
+        # bleed into the assistant's own turn (and could trip barge-in detection
+        # on models with server-side interruption).
+        self._pending_trailing_noise_chunks = 0
         if self.event_logger:
             self.event_logger.log_audio_start("assistant")
         logger.info("🔊 Assistant audio START")

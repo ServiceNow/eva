@@ -439,6 +439,15 @@ class TestTrailingWhiteNoise:
             await iface._on_user_audio_start()
         assert iface._pending_trailing_noise_chunks == 0
 
+    def test_assistant_response_cancels_pending_noise(self):
+        """Once the assistant starts responding, trailing noise stops (no bleed into its turn)."""
+        iface = _make_interface(event_logger=MagicMock())
+        iface._pending_trailing_noise_chunks = 42
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
+            mock_loop.return_value.time.return_value = 100.0
+            iface._on_assistant_audio_start()
+        assert iface._pending_trailing_noise_chunks == 0
+
     @pytest.mark.asyncio
     async def test_wire_gets_noise(self):
         """_send_white_noise_frame puts non-silent μ-law on the wire."""
