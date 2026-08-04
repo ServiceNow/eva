@@ -20,12 +20,12 @@ const paretoInsights = [
   {
     title: 'No system clears 0.6 on both axes pass@1',
     description:
-      'Across 18 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
+      'Across 20 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
   },
   {
     title: 'Peak and reliable performance diverge',
     description:
-      'Peak (pass@k) and reliable (pass^k) performance diverge substantially: the median pass@k–pass^k gap is 0.44 on EVA-A and 0.24 on EVA-X, indicating single-trial scores systematically overstate deployment-grade reliability.',
+      'Peak (pass@k) and reliable (pass^k) performance diverge substantially: the median pass@k–pass^k gap is 0.44 on EVA-A and 0.43 on EVA-X, indicating single-trial scores systematically overstate deployment-grade reliability.',
   },
   {
     title: 'Architecture and SDK implementation both shape results',
