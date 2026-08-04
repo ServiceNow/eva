@@ -115,7 +115,7 @@ The user simulator always connects to `ws://localhost:{port}/ws`, so both `/ws` 
 
 The user simulator sends and receives audio in the
 [Twilio Media Streams](https://www.twilio.com/docs/voice/media-streams) format: JSON
-envelopes over WebSocket. Helper functions in `audio_bridge.py` handle all encoding
+envelopes over WebSocket. Helper functions in `utils/audio_utils.py` handle all encoding
 and decoding.
 
 ### Incoming messages from the simulator
@@ -136,7 +136,7 @@ events.
 ### Sending audio back to the simulator
 
 ```python
-from eva.assistant.audio_bridge import create_twilio_media_message
+from eva.utils.audio_utils import create_twilio_media_message
 msg = create_twilio_media_message(stream_sid, mulaw_chunk)
 await websocket.send_text(msg)
 ```
@@ -147,7 +147,7 @@ dedicated `_pace_audio_output` asyncio task to drain a queue at this rate — co
 pattern. If audio is sent too fast or too slow, the user simulator's may incorrectly detect
 turn boundaries.
 
-### Audio conversion utilities (`audio_bridge.py`)
+### Audio conversion utilities (`utils/audio_utils.py`)
 
 | Function | Converts |
 |---|---|
@@ -172,7 +172,7 @@ resulting mixed WAV will have the audio offset by Δ. Before extending either bu
 pad the *other* buffer to the same position:
 
 ```python
-from eva.assistant.audio_bridge import sync_buffer_to_position
+from eva.utils.audio_utils import sync_buffer_to_position
 
 # When user audio arrives and the model is not speaking:
 if not model_is_speaking:
@@ -381,17 +381,16 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI, WebSocket
 
-from eva.assistant.audio_bridge import (
-    FrameworkLogWriter,
-    MetricsLogWriter,
+from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
+from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWriter
+from eva.models.config import ModelConfig
+from eva.utils.audio_utils import (
     create_twilio_media_message,
     mulaw_8k_to_pcm16_24k,
     parse_twilio_media_message,
     pcm16_24k_to_mulaw_8k,
     sync_buffer_to_position,
 )
-from eva.assistant.base_server import INITIAL_MESSAGE, AbstractAssistantServer
-from eva.models.config import ModelConfig
 
 
 class MyFrameworkAssistantServer(AbstractAssistantServer):
