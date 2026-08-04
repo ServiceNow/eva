@@ -20,7 +20,6 @@ except ImportError:
 from eva.models.config import OpenAIRealtimeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.audio_bridge import BotToBotAudioBridge
 from eva.user_simulator.base import AbstractUserSimulator
-from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -214,7 +213,7 @@ class OpenAIRealtimeUserSimulator(AbstractUserSimulator):
                     await self._cancel_background_task(task)
             await client.close()
             await self._audio_interface.stop_async()
-            self._save_user_audio()
+            self._save_clean_user_audio(BRIDGE_SAMPLE_RATE)
             self.event_logger.log_connection_state("session_ended", {"reason": self._end_reason})
 
     @staticmethod
@@ -425,13 +424,3 @@ class OpenAIRealtimeUserSimulator(AbstractUserSimulator):
         if self._caller_audio_seen and self._audio_interface is not None:
             self._audio_interface.output(b"\x00\x00")
             self._caller_audio_seen = False
-
-    def _save_user_audio(self) -> None:
-        if not self._user_clean_audio_chunks:
-            return
-        save_pcm_as_wav(
-            b"".join(self._user_clean_audio_chunks),
-            self.output_dir / "audio_user_clean.wav",
-            sample_rate=BRIDGE_SAMPLE_RATE,
-            num_channels=1,
-        )

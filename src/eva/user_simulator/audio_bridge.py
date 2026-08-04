@@ -256,7 +256,6 @@ class BotToBotAudioBridge:
                     audio = self._perturbator.apply(audio)
                 self.send_queue.put_nowait(audio)
                 if self.record_callback:
-                    self.record_callback("user", audio)
                     self.record_callback("user_clean", clean_audio)
             except asyncio.QueueFull:
                 logger.warning("Send queue full, dropping audio")
@@ -796,7 +795,6 @@ class BotToBotAudioBridge:
                             next_send_time = silence_start_time + (silence_chunks_sent * send_interval)
                             # Record only after successful send to prevent double-recording on retry
                             if self.record_callback:
-                                self.record_callback("assistant", silence_pcm)
                                 self.record_callback("user_clean", silence_pcm)
                             if silence_chunks_sent % LOG_INTERVAL_SILENCE == 0:
                                 actual_elapsed = current_time - silence_start_time
