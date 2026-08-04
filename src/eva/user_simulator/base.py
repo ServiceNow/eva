@@ -83,7 +83,7 @@ class AbstractUserSimulator(ABC):
             provider=provider,
         )
 
-        self._user_clean_audio_chunks: list[bytes] = []
+        self._user_clean_audio = bytearray()
         self._record_id = current_record_id.get()
 
     @abstractmethod
@@ -171,16 +171,12 @@ class AbstractUserSimulator(ABC):
             audio_data: Raw audio bytes
         """
         if source == "user_clean":
-            self._user_clean_audio_chunks.append(audio_data)
+            self._user_clean_audio.extend(audio_data)
 
     def _save_clean_user_audio(self, sample_rate: int) -> None:
         """Persist the recorded clean user track to ``audio_user_clean.wav``.
 
         Shared by all providers; skips writing when no clean audio was recorded.
         """
-        if save_audio_track(
-            self._user_clean_audio_chunks,
-            self.output_dir / "audio_user_clean.wav",
-            sample_rate,
-        ):
+        if save_audio_track(bytes(self._user_clean_audio), self.output_dir / "audio_user_clean.wav", sample_rate):
             logger.info(f"Saved clean user audio to {self.output_dir / 'audio_user_clean.wav'}")

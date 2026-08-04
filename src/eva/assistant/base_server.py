@@ -16,11 +16,11 @@ import uvicorn
 from fastapi import FastAPI
 
 from eva.assistant.agentic.audit_log import AuditLog
-from eva.assistant.audio_bridge import FrameworkLogWriter, MetricsLogWriter
+from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWriter
 from eva.assistant.tools.tool_executor import ToolExecutor, execute_and_log_tool
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
-from eva.utils.audio_utils import save_audio_track
+from eva.utils.audio_utils import pcm16_mix, save_audio_track
 from eva.utils.culture import get_initial_message
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
@@ -272,8 +272,6 @@ class AbstractAssistantServer(ABC):
                     f"assistant={len(self.assistant_audio_buffer)} "
                     f"diff={diff_ms:.0f}ms — mixed recording may be temporally skewed"
                 )
-            from eva.assistant.audio_bridge import pcm16_mix  # lazy: avoids circular import at module load
-
             self._audio_buffer = bytearray(pcm16_mix(bytes(self.user_audio_buffer), bytes(self.assistant_audio_buffer)))
         elif self.user_audio_buffer:
             self._audio_buffer = bytearray(self.user_audio_buffer)

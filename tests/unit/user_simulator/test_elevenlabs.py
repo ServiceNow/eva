@@ -369,7 +369,7 @@ class TestRecordAndSaveCleanAudio:
         sim._record_audio("user_clean", b"\x03\x04")
         sim._record_audio("user_clean", b"\x05\x06")
 
-        assert sim._user_clean_audio_chunks == [b"\x03\x04", b"\x05\x06"]
+        assert sim._user_clean_audio == b"\x03\x04\x05\x06"
 
     def test_save_clean_user_audio_writes_wav(self, tmp_path):
         sim = _make_simulator(tmp_path)

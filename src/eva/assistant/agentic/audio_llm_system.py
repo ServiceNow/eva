@@ -42,6 +42,7 @@ class AudioLLMAgenticSystem(AgenticSystem):
         pre_tool_speech: str = "off",
         llm_streaming: bool = False,
         full_audio_context: bool = False,
+        assistant_gender: str | None = None,
     ):
         super().__init__(
             current_date_time=current_date_time,
@@ -52,6 +53,7 @@ class AudioLLMAgenticSystem(AgenticSystem):
             output_dir=output_dir,
             pre_tool_speech=pre_tool_speech,
             llm_streaming=llm_streaming,
+            assistant_gender=assistant_gender,
         )
         self.alm_client: BaseALMClient = alm_client
         # When True, every user turn is sent as audio (full audio context). When False
@@ -69,6 +71,12 @@ class AudioLLMAgenticSystem(AgenticSystem):
         # Reuse the shared pre-tool lead-in prompt appended to the system prompt.
         if self.pre_tool_speech == "auto":
             self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
+        # Reuse the shared gender instruction appended to the system prompt.
+        if self.assistant_gender is not None:
+            gender_word = "male" if self.assistant_gender == "M" else "female"
+            self.system_prompt += "\n\n" + self.prompt_manager.get_prompt(
+                "agent.gender_instruction", gender_word=gender_word
+            )
 
         # Per-turn audio history: list of (audio_bytes, sample_rate)
         # One entry per user turn, aligned 1:1 with the user messages in the conversation history

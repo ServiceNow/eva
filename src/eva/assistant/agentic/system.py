@@ -106,6 +106,7 @@ class AgenticSystem:
         output_dir: Path | None = None,  # Output directory for performance stats
         pre_tool_speech: str = "off",
         llm_streaming: bool = False,
+        assistant_gender: str | None = None,
     ):
         """Initialize the agentic system.
 
@@ -118,6 +119,8 @@ class AgenticSystem:
             output_dir: Optional output directory for saving performance stats
             pre_tool_speech: Lead-in mode ('off'|'auto')
             llm_streaming: Stream LLM output sentence-by-sentence
+            assistant_gender: Speaking gender for the assistant ('M'|'F'); None adds no
+                gender instruction (for gender-neutral languages like English)
         """
         self.agent = agent
         self.tool_handler = tool_handler
@@ -127,6 +130,7 @@ class AgenticSystem:
         self.current_date_time = current_date_time
         self.pre_tool_speech = pre_tool_speech
         self.llm_streaming = llm_streaming
+        self.assistant_gender = assistant_gender
         self._warned_responses_streaming_fallback = False
 
         self.prompt_manager = PromptManager()
@@ -143,6 +147,11 @@ class AgenticSystem:
         )
         if self.pre_tool_speech == "auto":
             self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
+        if self.assistant_gender is not None:
+            gender_word = "male" if self.assistant_gender == "M" else "female"
+            self.system_prompt += "\n\n" + self.prompt_manager.get_prompt(
+                "agent.gender_instruction", gender_word=gender_word
+            )
         # Build tools for the LLM
         self.tools = agent.build_tools_for_agent()
 

@@ -51,7 +51,7 @@ def _get_all_metrics() -> list[str]:
     return [m for m in get_global_registry().list_metrics() if m not in _VALIDATION_METRIC_NAMES]
 
 
-def _param_alias(params: dict[str, Any]) -> str:
+def get_model_alias_from_params(params: dict[str, Any]) -> str:
     """Return the display alias from a params dict."""
     return params.get("alias") or params["model"]
 
@@ -211,6 +211,20 @@ class ModelConfig(BaseModel):
         None,
         description="Forward parallel_tool_calls when tools are present; None leaves provider defaults.",
     )
+    assistant_gender: Literal["M", "F"] | None = Field(
+        None,
+        description=(
+            "Assistant speaking gender ('M' or 'F'), appended as a small system prompt "
+            "instruction so gendered languages (e.g. Hindi) produce grammatically consistent "
+            "speech. CASCADE/AUDIO_LLM only — S2S providers manage their own voice/gender. "
+            "None (default) adds no instruction, which is perfect for gender-neutral languages like English."
+        ),
+    )
+
+    @field_validator("assistant_gender", mode="before")
+    @classmethod
+    def _normalize_assistant_gender(cls, value: Any) -> Any:
+        return value.upper() if isinstance(value, str) else value
 
     @property
     def pipeline_type(self) -> "PipelineType":
@@ -228,22 +242,22 @@ class ModelConfig(BaseModel):
         match self.pipeline_type:
             case PipelineType.AUDIO_LLM:
                 return {
-                    "audio_llm": _param_alias(self.audio_llm_params),
-                    "tts": _param_alias(self.tts_params),
+                    "audio_llm": get_model_alias_from_params(self.audio_llm_params),
+                    "tts": get_model_alias_from_params(self.tts_params),
                 }
             case PipelineType.S2S:
                 if self.s2s == "elevenlabs":
                     # hardcoded for now. Models are set on the agent UI
                     return {
-                        "s2s": _param_alias(self.s2s_params) or self.s2s,
+                        "s2s": get_model_alias_from_params(self.s2s_params) or self.s2s,
                         **_fetch_elevenlabs_agent_models(self.s2s_params),
                     }
-                return {"s2s": _param_alias(self.s2s_params)}
+                return {"s2s": get_model_alias_from_params(self.s2s_params)}
             case PipelineType.CASCADE:
                 return {
-                    "stt": _param_alias(self.stt_params),
+                    "stt": get_model_alias_from_params(self.stt_params),
                     "llm": self.llm,
-                    "tts": _param_alias(self.tts_params),
+                    "tts": get_model_alias_from_params(self.tts_params),
                 }
 
     @model_validator(mode="before")
@@ -307,6 +321,11 @@ class ModelConfig(BaseModel):
             logger.warning(
                 "parallel_tool_calls applies only to the CASCADE pipeline; it will be ignored "
                 f"for pipeline_type={self.pipeline_type}."
+            )
+        if self.assistant_gender is not None and self.pipeline_type == PipelineType.S2S:
+            logger.warning(
+                "assistant_gender applies only to CASCADE/AUDIO_LLM pipelines; it will be "
+                "ignored for pipeline_type=s2s (S2S providers manage their own voice/gender)."
             )
         return self
 
@@ -380,6 +399,8 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.FR_CA: "Canadian French",
     Language.ES: "European Spanish",
     Language.DE: "German",
+    Language.HI: "Hindi",
+    Language.KO: "Korean",
 }
 
 
@@ -669,6 +690,12 @@ class RunConfig(BaseSettings):
         description="Logging level",
     )
     dry_run: bool = Field(False, description="Validate configuration without running")
+    preflight: bool = Field(
+        True,  # Pydantic automatically creates the `--no-preflight` flag, to which description below applies.
+        description="Skip the preflight model check. By default, probe each configured model "
+        "(STT/LLM/TTS/audio-LLM) before the run starts, aborting early on credential/connectivity failures.",
+    )
+    preflight_timeout_seconds: float = Field(20.0, gt=0, description="Per-model timeout for the preflight probe")
 
     @computed_field
     @property

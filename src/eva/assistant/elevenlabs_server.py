@@ -33,17 +33,16 @@ from elevenlabs.conversational_ai.conversation import (
 )
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
-from eva.assistant.audio_bridge import (
-    FrameworkLogWriter,
-    MetricsLogWriter,
+from eva.assistant.base_server import AbstractAssistantServer
+from eva.assistant.elevenlabs_audio_interface import TwilioAudioBridge
+from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWriter
+from eva.models.agents import AgentConfig
+from eva.models.config import ModelConfig
+from eva.utils.audio_utils import (
     create_twilio_media_message,
     mulaw_8k_to_pcm16_16k,
     parse_twilio_media_message,
 )
-from eva.assistant.base_server import AbstractAssistantServer
-from eva.assistant.elevenlabs_audio_interface import TwilioAudioBridge
-from eva.models.agents import AgentConfig
-from eva.models.config import ModelConfig
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
