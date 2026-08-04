@@ -18,6 +18,7 @@ from eva.models.config import PipelineType, RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, RunResult
 from eva.orchestrator.port_pool import PortPool
+from eva.orchestrator.preflight import run_preflight
 from eva.orchestrator.validation_runner import ValidationResult, ValidationRunner
 from eva.orchestrator.worker import ConversationWorker
 from eva.utils.conversation_checks import check_conversation_finished, find_records_with_llm_generic_error
@@ -219,6 +220,11 @@ class BenchmarkRunner:
         """
         max_attempts = self.config.max_rerun_attempts
         pending_output_ids = list(pending_ids)
+
+        # If there are conversations to run, probe models before running any conversation.
+        if pending_output_ids and max_attempts > 0:
+            await run_preflight(self.config)
+
         rerun_history: dict[str, list[dict]] = {}
         time_limit_attempt_counts: dict[str, int] = {}
         time_limit_validation_cache: dict[str, dict[int, ValidationResult]] = {}

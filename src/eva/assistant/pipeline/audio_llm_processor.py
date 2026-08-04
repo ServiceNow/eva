@@ -198,6 +198,7 @@ class AudioLLMProcessor(FrameProcessor):
         pre_tool_speech: str = "off",
         llm_streaming: bool = False,
         full_audio_context: bool = False,
+        assistant_gender: str | None = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -216,6 +217,7 @@ class AudioLLMProcessor(FrameProcessor):
             pre_tool_speech=pre_tool_speech,
             llm_streaming=llm_streaming,
             full_audio_context=full_audio_context,
+            assistant_gender=assistant_gender,
         )
 
         # State tracking (mirrors BenchmarkAgentProcessor)

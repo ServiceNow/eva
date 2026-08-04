@@ -19,8 +19,7 @@ from pipecat.frames.frames import (
 from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
 from pipecat.pipeline.parallel_pipeline import ParallelPipeline
 from pipecat.pipeline.pipeline import Pipeline
-from pipecat.pipeline.runner import PipelineRunner
-from pipecat.pipeline.task import PipelineParams, PipelineTask
+from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.aggregators.llm_response_universal import (
     AssistantTurnStoppedMessage,
@@ -37,6 +36,7 @@ from pipecat.transports.websocket.fastapi import (
 from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
 from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
+from pipecat.workers.runner import WorkerRunner
 
 from eva.assistant.agentic.audit_log import convert_to_epoch_ms, current_timestamp_ms
 from eva.assistant.audio_buffer import ContiguousAudioBufferProcessor
@@ -145,8 +145,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
         self._app = None
         self._server = None
         self._server_task = None
-        self._runner: PipelineRunner | None = None
-        self._task: PipelineTask | None = None
+        self._runner: WorkerRunner | None = None
+        self._task: PipelineWorker | None = None
         self._running = False
         self.num_seconds = 0
         self._metrics_observer: MetricsFileObserver | None = None
@@ -391,6 +391,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     pre_tool_speech=self.pipeline_config.pre_tool_speech,
                     llm_streaming=self.pipeline_config.llm_streaming,
                     full_audio_context=self.pipeline_config.audio_llm_params.get("full_audio_context", False),
+                    assistant_gender=self.pipeline_config.assistant_gender,
                 )
                 audio_llm_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
                     role="assistant", content=msg, timestamp=self._current_iso_timestamp()
@@ -444,6 +445,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     output_dir=self.output_dir,
                     pre_tool_speech=self.pipeline_config.pre_tool_speech,
                     llm_streaming=self.pipeline_config.llm_streaming,
+                    assistant_gender=self.pipeline_config.assistant_gender,
                 )
 
                 async def on_assistant_response(msg: str) -> None:
@@ -488,7 +490,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 self._metrics_observer,  # Write metrics to JSONL file
             ]
 
-            self._task = PipelineTask(
+            self._task = PipelineWorker(
                 pipeline,
                 params=PipelineParams(
                     enable_metrics=True,  # Enable TTFB and ProcessingMetricsData
@@ -512,8 +514,9 @@ class PipecatAssistantServer(AbstractAssistantServer):
             )
 
             # Run the pipeline
-            self._runner = PipelineRunner(handle_sigint=False, force_gc=True)
-            await self._runner.run(self._task)
+            self._runner = WorkerRunner(handle_sigint=False, force_gc=True)
+            await self._runner.add_workers(self._task)
+            await self._runner.run()
 
         except Exception as e:
             logger.error(f"Session error: {e}", exc_info=True)
