@@ -217,7 +217,7 @@ class ModelConfig(BaseModel):
             "Assistant speaking gender ('M' or 'F'), appended as a small system prompt "
             "instruction so gendered languages (e.g. Hindi) produce grammatically consistent "
             "speech. CASCADE/AUDIO_LLM only — S2S providers manage their own voice/gender. "
-            "None (default) adds no instruction, for gender-neutral languages like English."
+            "None (default) adds no instruction, which is perfect for gender-neutral languages like English."
         ),
     )
 
