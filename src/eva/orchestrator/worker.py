@@ -8,10 +8,15 @@ from pathlib import Path
 from typing import Any
 
 from eva.assistant.base_server import AbstractAssistantServer
+from eva.backend.default_factory import DefaultBackendFactory
+from eva.backend.factory import BackendFactory
 from eva.models.agents import AgentConfig
-from eva.models.config import RunConfig
+from eva.models.config import OpenAIRealtimeSimulatorConfig, RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, ErrorDetails, LatencyStats
+from eva.role.assistant import AssistantRole
+from eva.role.user import UserRole
+from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.factory import create_user_simulator
 from eva.utils.culture import resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.error_handler import create_error_details
@@ -21,6 +26,17 @@ from eva.utils.logging import add_record_log_file, current_record_id, get_logger
 logger = get_logger(__name__)
 
 USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS = 20
+
+# TEMPORARY migration gate: route the OpenAI Realtime path through the new
+# Role/Backend classes instead of the legacy server/simulator. Applies only when
+# the selected assistant framework / user simulator is openai_realtime; every
+# other provider is untouched. Remove once all providers are migrated.
+USE_ROLE_BACKEND_OPENAI_REALTIME = True
+
+# The backend factory is stateless (pure dispatch + lazy per-provider imports), so
+# a single shared instance serves every worker. Kept as an instance (not static
+# methods) so the BackendFactory interface stays swappable/injectable.
+_BACKEND_FACTORY: BackendFactory = DefaultBackendFactory()
 
 
 def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
@@ -116,9 +132,9 @@ class ConversationWorker:
         self.port = port
         self.output_id = output_id
 
-        # Will be set during run
-        self._assistant_server = None
-        self._user_simulator = None
+        # Will be set during run (legacy server/simulator, or new Role — see the gate).
+        self._assistant_server: AbstractAssistantServer | AssistantRole | None = None
+        self._user_simulator: AbstractUserSimulator | UserRole | None = None
         self._conversation_stats: dict[str, Any] = {}
         self._log_file_handler = None
         self.deferred_audio_task: asyncio.Task | None = None
@@ -305,26 +321,47 @@ class ConversationWorker:
 
     async def _start_assistant(self) -> None:
         """Start the assistant server using the configured framework."""
-        server_cls = _get_server_class(self.config.framework)
         resolved_db_path = self._materialize_resolved_scenario_db()
-        # The turn-end fallback applies to the Pipecat pipelines (cascade + audio-LLM), whose
-        # turn detection can drop a user turn. S2S servers handle turn-taking natively and
-        # don't accept this kwarg.
-        server_kwargs: dict[str, Any] = {}
-        if self.config.framework == "pipecat":
-            server_kwargs["turn_end_fallback_time"] = self.config.turn_end_fallback_time
-        self._assistant_server = server_cls(
-            current_date_time=self.record.current_date_time,
-            pipeline_config=self.config.model,
-            agent=self.agent,
-            agent_config_path=self.agent_config_path,
-            scenario_db_path=str(resolved_db_path),
-            output_dir=self.output_dir,
-            port=self.port,
-            conversation_id=self.record.id,
-            language=self.config.language,
-            **server_kwargs,
-        )
+
+        if USE_ROLE_BACKEND_OPENAI_REALTIME and self.config.framework == "openai_realtime":
+            # New path: a generic AssistantRole over a factory-built backend. The
+            # backend is selected by the configured framework name; its args are
+            # the S2S provider params passed through (the backend reads what it
+            # needs and assembles its own session).
+            s2s = self.config.model.s2s_params or {}
+            backend_args = {**s2s, "parallel_tool_calls": self.config.model.parallel_tool_calls}
+            self._assistant_server = AssistantRole(
+                backend=_BACKEND_FACTORY.create(self.config.framework, backend_args),
+                current_date_time=self.record.current_date_time,
+                pipeline_config=self.config.model,
+                agent=self.agent,
+                agent_config_path=self.agent_config_path,
+                scenario_db_path=str(resolved_db_path),
+                output_dir=self.output_dir,
+                port=self.port,
+                conversation_id=self.record.id,
+                language=self.config.language,
+            )
+        else:
+            server_cls = _get_server_class(self.config.framework)
+            # The turn-end fallback applies to the Pipecat pipelines (cascade + audio-LLM), whose
+            # turn detection can drop a user turn. S2S servers handle turn-taking natively and
+            # don't accept this kwarg.
+            server_kwargs: dict[str, Any] = {}
+            if self.config.framework == "pipecat":
+                server_kwargs["turn_end_fallback_time"] = self.config.turn_end_fallback_time
+            self._assistant_server = server_cls(
+                current_date_time=self.record.current_date_time,
+                pipeline_config=self.config.model,
+                agent=self.agent,
+                agent_config_path=self.agent_config_path,
+                scenario_db_path=str(resolved_db_path),
+                output_dir=self.output_dir,
+                port=self.port,
+                conversation_id=self.record.id,
+                language=self.config.language,
+                **server_kwargs,
+            )
 
         await self._assistant_server.start()
 
@@ -366,18 +403,49 @@ class ConversationWorker:
             language,
             self.record.romanized_culture_overrides,
         )
-        self._user_simulator = create_user_simulator(
-            self.config.user_simulator,
-            current_date_time=self.record.current_date_time,
-            persona_config=resolved_persona,
-            goal=resolved_goal,
-            server_url=f"ws://localhost:{self.port}/ws",
-            output_dir=self.output_dir,
-            agent_id=self.agent.id,
-            timeout=self._conversation_guard_timeout_seconds(),
-            perturbation_config=self.config.perturbation,
-            language=language,
-        )
+        if USE_ROLE_BACKEND_OPENAI_REALTIME and isinstance(self.config.user_simulator, OpenAIRealtimeSimulatorConfig):
+            # New path: a generic UserRole over a factory-built backend, selected by the
+            # user simulator's provider name. Assemble a generic caller-config blob (a
+            # stand-in for a future top-level user JSON) and dump it wholesale to the
+            # factory; the backend reads the keys it recognizes and ignores the rest.
+            # No api_key here -- the backend falls back to OPENAI_API_KEY. This keeps
+            # worker construction backend-invariant: later phases add backends/options
+            # in the factory, not here.
+            sim = self.config.user_simulator
+            gender = {1: "F", 2: "M"}.get(resolved_persona.get("user_persona_id"))
+            backend_args = {
+                **sim.model_dump(),
+                **UserRole.CALLER_BACKEND_DEFAULTS,
+                "voice": sim.male_voice if gender == "M" else sim.female_voice,
+                "transcription_language": language,
+                "accent": self.config.perturbation.accent if self.config.perturbation else None,
+            }
+            self._user_simulator = UserRole(
+                backend=_BACKEND_FACTORY.create(sim.provider, backend_args),
+                current_date_time=self.record.current_date_time,
+                persona_config=resolved_persona,
+                goal=resolved_goal,
+                server_url=f"ws://localhost:{self.port}/ws",
+                output_dir=self.output_dir,
+                agent_id=self.agent.id,
+                provider=sim.provider,
+                timeout=self._conversation_guard_timeout_seconds(),
+                perturbation_config=self.config.perturbation,
+                language=language,
+            )
+        else:
+            self._user_simulator = create_user_simulator(
+                self.config.user_simulator,
+                current_date_time=self.record.current_date_time,
+                persona_config=resolved_persona,
+                goal=resolved_goal,
+                server_url=f"ws://localhost:{self.port}/ws",
+                output_dir=self.output_dir,
+                agent_id=self.agent.id,
+                timeout=self._conversation_guard_timeout_seconds(),
+                perturbation_config=self.config.perturbation,
+                language=language,
+            )
 
         # Let the simulator tell the assistant the moment the call ends, rather than leaving it
         # to infer that from transport disconnect — which lands after the simulator's STT grace
@@ -399,7 +467,11 @@ class ConversationWorker:
         if self._user_simulator is None:
             raise RuntimeError("User simulator not initialized")
 
-        ended_reason = await self._user_simulator.run_conversation()
+        # UserRole (new path) drives via run(); the legacy simulator via run_conversation().
+        if isinstance(self._user_simulator, UserRole):
+            ended_reason = await self._user_simulator.run()
+        else:
+            ended_reason = await self._user_simulator.run_conversation()
 
         return ended_reason
 

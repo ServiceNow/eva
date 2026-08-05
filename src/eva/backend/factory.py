@@ -1,6 +1,7 @@
 """Factory interface for constructing ``Backend`` instances by name.
 
-DESIGN ONLY (Step 1 of the refactor). Mirrors the shape of today's
+Step 1 of the refactor; implemented by
+``eva.backend.default_factory.DefaultBackendFactory``. Mirrors the shape of today's
 ``eva.user_simulator.factory.create_user_simulator`` (lazy per-provider
 imports keyed off config type) but is provider-and-role-agnostic: the same
 factory is meant to be usable to build a backend for either an

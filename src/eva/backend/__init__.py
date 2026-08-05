@@ -7,8 +7,16 @@ package is wired into the existing ``eva.assistant`` / ``eva.user_simulator``
 code yet -- these are new, additive, currently-unused types.
 """
 
-from eva.backend.base import Backend, BackendEvent, BackendEventType, ToolCallRequest, ToolCallResult
+from eva.backend.base import (
+    Backend,
+    BackendEvent,
+    BackendEventType,
+    BackendSession,
+    ToolCallRequest,
+    ToolCallResult,
+)
 from eva.backend.capabilities import BackendCapabilities
+from eva.backend.default_factory import DefaultBackendFactory
 from eva.backend.factory import BackendFactory
 
 __all__ = [
@@ -17,6 +25,8 @@ __all__ = [
     "BackendEvent",
     "BackendEventType",
     "BackendFactory",
+    "BackendSession",
+    "DefaultBackendFactory",
     "ToolCallRequest",
     "ToolCallResult",
 ]
