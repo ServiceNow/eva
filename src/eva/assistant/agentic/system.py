@@ -9,13 +9,15 @@ from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 
+from pipecat.utils.text.simple_text_aggregator import SimpleTextAggregator
+
 from eva.assistant.agentic.audit_log import (
     AuditLog,
     ConversationMessage,
     LLMCall,
     MessageRole,
 )
-from eva.assistant.tools.tool_executor import ToolExecutor
+from eva.assistant.tools.tool_executor import ToolExecutor, execute_and_log_tool
 from eva.models.agents import AgentConfig
 from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
 from eva.utils.error_handler import categorize_error
@@ -44,6 +46,46 @@ def _clean_tool_name(name: str) -> str:
     return name
 
 
+def _pair_orphaned_tool_calls(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Add neutral tool results for tool calls left unanswered by interruption or transfer paths."""
+    repaired: list[dict[str, Any]] = []
+    i = 0
+    n = len(messages)
+    while i < n:
+        msg = messages[i]
+        repaired.append(msg)
+        tool_calls = msg.get("tool_calls") if msg.get("role") == "assistant" else None
+        if tool_calls:
+            call_ids = [
+                cid for tc in tool_calls if isinstance(tc, dict) and isinstance((cid := tc.get("id")), str) and cid
+            ]
+            answered: set[str] = set()
+            j = i + 1
+            while j < n and messages[j].get("role") == "tool":
+                repaired.append(messages[j])
+                if isinstance(tool_call_id := messages[j].get("tool_call_id"), str):
+                    answered.add(tool_call_id)
+                j += 1
+            for cid in call_ids:
+                if cid not in answered:
+                    logger.warning(
+                        f"Pairing orphaned tool_call {cid} with a synthetic result (interrupted/transferred)"
+                    )
+                    repaired.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": cid,
+                            "content": json.dumps(
+                                {"status": "no_result", "note": "tool result unavailable (interrupted or transferred)"}
+                            ),
+                        }
+                    )
+            i = j
+            continue
+        i += 1
+    return repaired
+
+
 class AgenticSystem:
     """Orchestrates the interaction between users and a single agent.
 
@@ -62,6 +104,9 @@ class AgenticSystem:
         audit_log: AuditLog,
         llm_client: Any,  # LLM client for model calls
         output_dir: Path | None = None,  # Output directory for performance stats
+        pre_tool_speech: str = "off",
+        llm_streaming: bool = False,
+        assistant_gender: str | None = None,
     ):
         """Initialize the agentic system.
 
@@ -72,6 +117,10 @@ class AgenticSystem:
             audit_log: Audit log for conversation tracking
             llm_client: Client for LLM calls
             output_dir: Optional output directory for saving performance stats
+            pre_tool_speech: Lead-in mode ('off'|'auto')
+            llm_streaming: Stream LLM output sentence-by-sentence
+            assistant_gender: Speaking gender for the assistant ('M'|'F'); None adds no
+                gender instruction (for gender-neutral languages like English)
         """
         self.agent = agent
         self.tool_handler = tool_handler
@@ -79,6 +128,10 @@ class AgenticSystem:
         self.llm_client = llm_client
         self.output_dir = output_dir
         self.current_date_time = current_date_time
+        self.pre_tool_speech = pre_tool_speech
+        self.llm_streaming = llm_streaming
+        self.assistant_gender = assistant_gender
+        self._warned_responses_streaming_fallback = False
 
         self.prompt_manager = PromptManager()
 
@@ -92,10 +145,24 @@ class AgenticSystem:
             agent_instructions=agent.instructions,
             datetime=self.current_date_time,
         )
+        if self.pre_tool_speech == "auto":
+            self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
+        if self.assistant_gender is not None:
+            gender_word = "male" if self.assistant_gender == "M" else "female"
+            self.system_prompt += "\n\n" + self.prompt_manager.get_prompt(
+                "agent.gender_instruction", gender_word=gender_word
+            )
         # Build tools for the LLM
         self.tools = agent.build_tools_for_agent()
 
-    async def process_query(self, query: str) -> AsyncGenerator[str, None]:
+    def _record_partial_streamed_output(self, chunks: list[str], reason: str) -> None:
+        partial = " ".join(chunk.strip() for chunk in chunks if chunk.strip())
+        if not partial:
+            return
+        logger.info(f"Recording partial streamed assistant output after {reason}")
+        self.audit_log.append_assistant_output(partial)
+
+    async def process_query(self, query: str, log_user_input: bool = True) -> AsyncGenerator[str, None]:
         """Process a user query and yield response messages.
 
         This is the main entry point for handling user input.
@@ -103,6 +170,10 @@ class AgenticSystem:
 
         Args:
             query: User's input text
+            log_user_input: Whether to record `query` as a user_input audit log entry.
+                Set to False when the caller already logged its own marker entry for this
+                turn (e.g. a turn-end fallback nudge) and only wants the LLM call driven
+                by `query` without a duplicate audit log entry.
 
         Yields:
             Text responses to be sent to TTS
@@ -110,7 +181,8 @@ class AgenticSystem:
         logger.info(f"Processing query: {query}")
 
         # Record user input
-        self.audit_log.append_user_input(query)
+        if log_user_input:
+            self.audit_log.append_user_input(query)
 
         # Execute agent interaction
         async for response in self._execute_agent(self.agent):
@@ -135,6 +207,7 @@ class AgenticSystem:
         # Add conversation history (includes current query since we already called append_user_input)
         conversation_history = self.audit_log.get_conversation_messages(max_messages=30)
         messages.extend(msg.to_dict() for msg in conversation_history)
+        messages = _pair_orphaned_tool_calls(messages)
 
         async for response in self._run_tool_loop(messages, agent):
             yield response
@@ -159,15 +232,47 @@ class AgenticSystem:
         # Tool calling loop (no max iterations)
         while True:
             start_time = str(int(time.time() * 1000))
+            streamed_chunks: list[str] = []
             try:
                 # Truncate data URIs for logging only (full audio stays in `messages`)
                 messages_for_log = truncate_data_uris(messages)
                 prompt_str = json.dumps(messages_for_log, indent=2, ensure_ascii=False)
 
-                response, llm_stats = await self.llm_client.complete(
-                    messages,
-                    tools=self.tools,
-                )
+                content_streamed = False
+                use_responses_api = getattr(self.llm_client, "use_responses_api", False)
+                if self.llm_streaming and use_responses_api and not self._warned_responses_streaming_fallback:
+                    logger.warning(
+                        "llm_streaming is not supported for Responses API deployments; using non-streaming completion."
+                    )
+                    self._warned_responses_streaming_fallback = True
+
+                if self.llm_streaming and not use_responses_api:
+                    response = None
+                    llm_stats = {}
+                    delta_count = 0
+                    aggregator = SimpleTextAggregator()
+                    async for kind, payload in self.llm_client.complete_stream(messages, tools=self.tools):
+                        if kind == "delta":
+                            delta_count += 1
+                            async for agg in aggregator.aggregate(payload):
+                                content_streamed = True
+                                streamed_chunks.append(agg.text)
+                                yield agg.text
+                        else:
+                            response, llm_stats = payload
+                    # delta_count > 1 confirms the provider streamed token-by-token rather
+                    # than a client falling back to a single non-streaming chunk.
+                    logger.debug(f"llm_streaming: received {delta_count} raw delta(s) from complete_stream")
+                    remainder = await aggregator.flush()
+                    if remainder and remainder.text.strip():
+                        content_streamed = True
+                        streamed_chunks.append(remainder.text)
+                        yield remainder.text
+                else:
+                    response, llm_stats = await self.llm_client.complete(
+                        messages,
+                        tools=self.tools,
+                    )
                 end_time = str(int(time.time() * 1000))
 
                 # Convert tool calls to dicts if present and extract content as string
@@ -256,6 +361,7 @@ class AgenticSystem:
 
             except asyncio.CancelledError:
                 # Pipeline is shutting down - log at debug and exit gracefully
+                self._record_partial_streamed_output(streamed_chunks, "cancellation")
                 logger.debug("LLM call cancelled during pipeline shutdown")
                 return  # Don't yield error message, just exit
             except Exception as e:
@@ -291,10 +397,13 @@ class AgenticSystem:
                         retry_attempt=0,
                     )
                     self.audit_log.append_llm_call(failed_llm_call, agent_name=agent.name)
-                    yield GENERIC_ERROR
+                    if streamed_chunks:
+                        self._record_partial_streamed_output(streamed_chunks, "streaming failure")
+                    else:
+                        yield GENERIC_ERROR
                 return
 
-            if response_content:
+            if response_content and not content_streamed:
                 logger.info(f"💬 Assistant LLM response: {response_content}")
                 yield response_content
 
@@ -350,19 +459,13 @@ class AgenticSystem:
                     self.audit_log.append_assistant_output(transfer_message, reasoning=reasoning_content)
                     return
 
-                result = await self.tool_handler.execute(tool_name, params)
+                result = await execute_and_log_tool(self.tool_handler, self.audit_log, tool_name, params)
 
                 if result.get("status") == "error":
                     logger.warning(f"❌ Tool error: {tool_name} - {result.get('message', 'Unknown error')}")
                 else:
                     logger.info(f"✅ Tool response: {tool_name}")
                     logger.info(f"   Result: {json.dumps(result, indent=2, ensure_ascii=False)}")
-
-                self.audit_log.append_tool_call(
-                    tool_name=tool_name,
-                    parameters=params,
-                    response=result,
-                )
 
                 # Add tool response to messages
                 tool_content = json.dumps(result, ensure_ascii=False)

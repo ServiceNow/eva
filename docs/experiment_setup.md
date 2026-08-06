@@ -68,11 +68,24 @@ The table below lists all the other API-hosted models.
 | nova-3                                      | Deepgram    | STT  | --                          |
 | aura-2-helena-en                            | Deepgram    | TTS  | voice: helena; language: en |
 
+### Cascade latency optimizations
+
+The CASCADE pipeline exposes three optional latency levers. They are off or unset by default and affect only STT -> LLM -> TTS runs:
+
+| Flag | Values | Effect |
+|------|--------|--------|
+| `EVA_MODEL__PRE_TOOL_SPEECH` | `off` / `auto` | Ask the model to speak a brief lead-in before running a tool. The lead-in is model-generated, not templated. |
+| `EVA_MODEL__LLM_STREAMING` | `true` / `false` | Stream Chat Completions output to TTS sentence-by-sentence. Responses API deployments warn and use non-streaming completion. |
+| `EVA_MODEL__PARALLEL_TOOL_CALLS` | unset / `true` / `false` | Forward the provider's `parallel_tool_calls` setting when tools are present. Leave unset for provider defaults; set `false` to match the ElevenAgents assistant config. |
+
+Streaming still records one assistant audit entry per completed turn. If streaming is interrupted after speech starts, the spoken prefix is recorded so scored transcripts match emitted audio.
+
 ### Turn Detection Configurations
 
 We use the default turn detection configurations for most framework in our experiments. Each framework offers varying levels of configurability, making it difficult to standardize exact parameters and turn strategies across evaluations.
 
 - **Pipecat.** The default start strategy uses VAD (voice activity detection) or transcription receipt to determine when the user begins speaking, and the stop strategy uses AI-powered turn detection via `LocalSmartTurnAnalyzerV3` to determine when the user finishes speaking.
+- **Cartesia STT.** `EVA_MODEL__STT=cartesia` uses ink-2 self-endpointing and auto-selects `TURN_START_STRATEGY=external`, `TURN_STOP_STRATEGY=external`, and `VAD=none`; `cartesia-multilingual` keeps the ink-whisper VAD/smart-turn path.
 - **OpenAI Realtime.** We use the default server VAD, which uses periods of silence to detect turn boundaries. Default values are used for `threshold`, `prefix_padding_ms`, and `silence_duration`.
 - **ElevenAgents.** The turn "eagerness" parameter was set to `eager`.
 - **Gemini Live.** We use the default automatic VAD provided.

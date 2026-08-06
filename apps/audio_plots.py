@@ -22,7 +22,7 @@ Turn data source (primary → fallback):
          → dict[turn_id → list[[abs_start, abs_end]]]  (may be multi-segment)
        context.transcribed_*/intended_*_turns → dict[turn_id → str]
        latency_s = asst.segments[0][0] − user.segments[-1][1]  (per turn_id, same formula)
-  2. elevenlabs_events.jsonl  — fallback when metrics.json is absent or has no timestamps:
+  2. user_simulator_events.jsonl  — fallback when metrics.json is absent or has no timestamps:
        one turn per completed audio_start/audio_end session
        latency_s computed by temporal proximity (next assistant after this user)
 
@@ -51,6 +51,8 @@ import streamlit.components.v1 as components
 from plotly.subplots import make_subplots
 from pydub import AudioSegment
 
+from eva.utils.conversation_checks import resolve_user_simulator_events_path
+
 # Cap on embedded audio size: base64 inflates ~33%, so 30MB raw → 40MB payload,
 # which is comfortable for modern browsers but large enough to hold typical runs.
 _MAX_EMBED_AUDIO_BYTES = 30_000_000
@@ -69,7 +71,7 @@ PAUSE_FILL = "rgba(140,140,140,0.18)"
 # =============================================================================
 # Turn data loading
 # Primary: metrics.json context (MetricContext fields, same as turn_taking.py)
-# Fallback: elevenlabs_events.jsonl (when metrics.json absent or has no timestamps)
+# Fallback: user_simulator_events.jsonl (when metrics.json absent or has no timestamps)
 # =============================================================================
 
 
@@ -162,8 +164,8 @@ def _build_turns_from_metrics(metrics_data: dict) -> list[dict] | None:
     return turns
 
 
-def _parse_elevenlabs_events(events_file: Path) -> list[dict]:
-    """Parse elevenlabs_events.jsonl into a flat list of audio-session turns.
+def _parse_user_simulator_events(events_file: Path) -> list[dict]:
+    """Parse user_simulator_events.jsonl into a flat list of audio-session turns.
 
     Each completed audio_start/audio_end pair for a participant becomes one
     turn dict.  Turn IDs are sequential integers across all participants (not
@@ -238,7 +240,7 @@ def _patch_fallback_transcripts(turns: list[dict], transcript_file: Path) -> Non
 
     Matches transcripts to turns by sequential order per speaker role
     (first user turn gets user transcript[0], second gets [1], etc.).
-    Called after _parse_elevenlabs_events, before _compute_and_patch_latencies.
+    Called after _parse_user_simulator_events, before _compute_and_patch_latencies.
     """
     tx: dict[str, list[str]] = {"user": [], "assistant": []}
     if transcript_file.exists():
@@ -564,13 +566,14 @@ def _prepare_data(record_dir: Path) -> dict:
     audio_user = record_dir / "audio_user.wav"
     audio_asst = record_dir / "audio_assistant.wav"
     audio_el = record_dir / "elevenlabs_audio_recording.mp3"
-    events_file = record_dir / "elevenlabs_events.jsonl"
+    events_path = resolve_user_simulator_events_path(record_dir)
+    events_file = Path(events_path) if events_path else None
     transcript = record_dir / "transcript.jsonl"
 
     # --- Turn data ---
     # Primary: metrics.json context — same fields turn_taking.py uses, with
     # multi-segment turns, matched transcripts, and turn_id-based latency.
-    # Fallback: elevenlabs_events.jsonl — one entry per audio session, latency
+    # Fallback: user_simulator_events.jsonl — one entry per audio session, latency
     # computed by temporal proximity when metrics.json is absent.
     turns_rel: list[dict] = []
     metrics_data = _load_metrics_context(record_dir)
@@ -579,8 +582,8 @@ def _prepare_data(record_dir: Path) -> dict:
         if built:
             turns_rel = built
 
-    if not turns_rel and events_file.exists():
-        turns_rel = _parse_elevenlabs_events(events_file)
+    if not turns_rel and events_file and events_file.exists():
+        turns_rel = _parse_user_simulator_events(events_file)
         _patch_fallback_transcripts(turns_rel, transcript)
         _compute_and_patch_latencies(turns_rel)
 
@@ -1492,9 +1495,9 @@ def preload_audio_data(record_dir: Path) -> None:
     while the rest of the page is being built, rather than on first tab open.
     Silently skips records that have no audio files.
     """
-    events_file = record_dir / "elevenlabs_events.jsonl"
+    events_path = resolve_user_simulator_events_path(record_dir)
     audio_mixed = next(record_dir.glob("audio_mixed*.wav"), record_dir / "audio_mixed.wav")
-    if events_file.exists() or audio_mixed.exists():
+    if events_path or audio_mixed.exists():
         _cache_audio_data(str(record_dir), _audio_mtime(record_dir))
 
 
@@ -1507,10 +1510,10 @@ def render_audio_analysis_tab(record_dir: Path) -> None:
     """Render the Audio Analysis tab for a given record / trial directory."""
     st.markdown("### Audio Analysis")
 
-    events_file = record_dir / "elevenlabs_events.jsonl"
+    events_path = resolve_user_simulator_events_path(record_dir)
     audio_mixed = next(record_dir.glob("audio_mixed*.wav"), record_dir / "audio_mixed.wav")
 
-    if not events_file.exists() and not audio_mixed.exists():
+    if not events_path and not audio_mixed.exists():
         st.info("No audio files found in this record directory.")
         return
 

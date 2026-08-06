@@ -68,6 +68,7 @@ class TestConversationResult:
         assert result.num_tool_calls == 0
         assert result.tools_called == []
         assert result.audio_assistant_path is None
+        assert result.user_simulator_logs_path is None
 
 
 class TestMetricScore:

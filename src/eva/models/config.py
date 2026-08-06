@@ -19,7 +19,7 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 import yaml
 from litellm.types.router import DeploymentTypedDict
@@ -51,7 +51,7 @@ def _get_all_metrics() -> list[str]:
     return [m for m in get_global_registry().list_metrics() if m not in _VALIDATION_METRIC_NAMES]
 
 
-def _param_alias(params: dict[str, Any]) -> str:
+def get_model_alias_from_params(params: dict[str, Any]) -> str:
     """Return the display alias from a params dict."""
     return params.get("alias") or params["model"]
 
@@ -106,7 +106,7 @@ class ModelConfig(BaseModel):
 
     Exactly one mode selector (``llm``, ``s2s``, or ``audio_llm``) should be set.
     Mode exclusivity is enforced by ``RunConfig``, not here, so that
-    ``max_rerun_attempts == 0`` can freely construct a config with mixed env vars.
+    ``max_rerun_attempts == 0 or self.aggregate_only`` can freely construct a config with mixed env vars.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -118,6 +118,10 @@ class ModelConfig(BaseModel):
         "tts_model": "tts",
     }
     _LEGACY_DROP: ClassVar[set[str]] = {"realtime_model", "realtime_model_params"}
+
+    # STT models that perform their own (server-side) semantic endpointing. They drive turn
+    # boundaries themselves, so they must run with the 'external' turn strategies and no local VAD.
+    _SELF_ENDPOINTING_STT: ClassVar[set[str]] = {"cartesia"}
 
     # ── Mode selectors (exactly one group must be set for a real run) ──
     llm: str | None = Field(
@@ -139,7 +143,12 @@ class ModelConfig(BaseModel):
     tts_params: dict[str, Any] | None = Field(None, description="Additional TTS model parameters (JSON)")
     s2s_params: dict[str, Any] | None = Field(None, description="Additional speech-to-speech model parameters (JSON)")
     audio_llm_params: dict[str, Any] | None = Field(
-        None, description="Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, max_tokens"
+        None,
+        description=(
+            "Audio-LLM parameters (JSON): base_url (required), api_key, model, temperature, "
+            "max_tokens, full_audio_context (send every user turn as audio instead of only the "
+            "current turn; removes reliance on transcriptions but grows context quickly)"
+        ),
     )
 
     # Configurable turn start/stop strategies
@@ -159,8 +168,10 @@ class ModelConfig(BaseModel):
     turn_stop_strategy: str = Field(
         "turn_analyzer",
         description=(
-            "User turn stop strategy: 'speech_timeout', 'turn_analyzer', or 'external'. "
+            "User turn stop strategy: 'speech_timeout', 'turn_analyzer', 'krisp_viva_turn', or 'external'. "
             "Defaults to 'turn_analyzer' (TurnAnalyzerUserTurnStopStrategy with LocalSmartTurnAnalyzerV3). "
+            "'krisp_viva_turn' uses Krisp's VIVA SDK (requires the krisp_audio SDK, "
+            "KRISP_VIVA_TURN_MODEL_PATH (for local dev), and KRISP_VIVA_API_KEY). "
             "Set via EVA_MODEL__TURN_STOP_STRATEGY."
         ),
     )
@@ -183,6 +194,40 @@ class ModelConfig(BaseModel):
         ),
     )
 
+    # CASCADE-only latency controls.
+    pre_tool_speech: str = Field(
+        "off",
+        description="Prompt a model-generated lead-in before tool calls: 'off' or 'auto'.",
+    )
+
+    @field_validator("pre_tool_speech", mode="before")
+    @classmethod
+    def _normalize_pre_tool_speech(cls, value: str) -> str:
+        return value.lower() if isinstance(value, str) else value
+
+    llm_streaming: bool = Field(
+        False,
+        description="Stream Chat Completions output to TTS sentence-by-sentence.",
+    )
+    parallel_tool_calls: bool | None = Field(
+        None,
+        description="Forward parallel_tool_calls when tools are present; None leaves provider defaults.",
+    )
+    assistant_gender: Literal["M", "F"] | None = Field(
+        None,
+        description=(
+            "Assistant speaking gender ('M' or 'F'), appended as a small system prompt "
+            "instruction so gendered languages (e.g. Hindi) produce grammatically consistent "
+            "speech. CASCADE/AUDIO_LLM only — S2S providers manage their own voice/gender. "
+            "None (default) adds no instruction, which is perfect for gender-neutral languages like English."
+        ),
+    )
+
+    @field_validator("assistant_gender", mode="before")
+    @classmethod
+    def _normalize_assistant_gender(cls, value: Any) -> Any:
+        return value.upper() if isinstance(value, str) else value
+
     @property
     def pipeline_type(self) -> "PipelineType":
         """Detected pipeline mode based on which selector is set."""
@@ -199,22 +244,22 @@ class ModelConfig(BaseModel):
         match self.pipeline_type:
             case PipelineType.AUDIO_LLM:
                 return {
-                    "audio_llm": _param_alias(self.audio_llm_params),
-                    "tts": _param_alias(self.tts_params),
+                    "audio_llm": get_model_alias_from_params(self.audio_llm_params),
+                    "tts": get_model_alias_from_params(self.tts_params),
                 }
             case PipelineType.S2S:
                 if self.s2s == "elevenlabs":
                     # hardcoded for now. Models are set on the agent UI
                     return {
-                        "s2s": _param_alias(self.s2s_params) or self.s2s,
+                        "s2s": get_model_alias_from_params(self.s2s_params) or self.s2s,
                         **_fetch_elevenlabs_agent_models(self.s2s_params),
                     }
-                return {"s2s": _param_alias(self.s2s_params)}
+                return {"s2s": get_model_alias_from_params(self.s2s_params)}
             case PipelineType.CASCADE:
                 return {
-                    "stt": _param_alias(self.stt_params),
+                    "stt": get_model_alias_from_params(self.stt_params),
                     "llm": self.llm,
-                    "tts": _param_alias(self.tts_params),
+                    "tts": get_model_alias_from_params(self.tts_params),
                 }
 
     @model_validator(mode="before")
@@ -231,6 +276,60 @@ class ModelConfig(BaseModel):
         for key in cls._LEGACY_DROP:
             data.pop(key, None)
         return data
+
+    @model_validator(mode="after")
+    def _autowire_self_endpointing_stt(self) -> "ModelConfig":
+        """Auto-configure turn-taking for self-endpointing STT models (e.g. Cartesia ink-2).
+
+        These models drive turn boundaries themselves (the service pushes its own speech
+        start/stop and transcription frames), so they require the 'external' turn strategies
+        with local VAD disabled. Forcing it here lets a bare ``EVA_MODEL__STT=cartesia``
+        "just work", and the forced values are reflected in the persisted config.json / run_id.
+        A conflicting user-provided value is overridden with a WARNING; an untouched default is
+        logged at INFO. Idempotent: a value already at the target is left untouched (clean reload).
+
+        Only applies to the CASCADE pipeline: in AUDIO_LLM / S2S the ``stt`` field does not
+        instantiate an in-pipeline STT service, so there is nothing to emit the external turn
+        frames. Forcing 'external'/'none' there would disable the local VAD that those pipelines
+        rely on for turn detection, hanging the conversation (no user turn ever finalizes).
+        """
+        if self.pipeline_type != PipelineType.CASCADE:
+            return self
+        if (self.stt or "").lower() not in self._SELF_ENDPOINTING_STT:
+            return self
+
+        forced = {"turn_start_strategy": "external", "turn_stop_strategy": "external", "vad": "none"}
+        for field, target in forced.items():
+            if getattr(self, field) == target:
+                continue
+            if field in self.model_fields_set:
+                logger.warning(
+                    f"STT '{self.stt}' performs its own endpointing; overriding "
+                    f"{field}='{getattr(self, field)}' -> '{target}'."
+                )
+            else:
+                logger.info(f"STT '{self.stt}': auto-setting {field}='{target}' (self-endpointing).")
+            setattr(self, field, target)
+        return self
+
+    @model_validator(mode="after")
+    def _validate_latency_optimizations(self) -> "ModelConfig":
+        allowed = {"off", "auto"}
+        if self.pre_tool_speech not in allowed:
+            raise ValueError(f"pre_tool_speech must be one of {sorted(allowed)}, got '{self.pre_tool_speech}'")
+        # pre_tool_speech is honored by both CASCADE and AUDIO_LLM; llm_streaming by both
+        # (via BaseALMClient.complete_stream); only parallel_tool_calls remains CASCADE-only.
+        if self.parallel_tool_calls is not None and self.pipeline_type != PipelineType.CASCADE:
+            logger.warning(
+                "parallel_tool_calls applies only to the CASCADE pipeline; it will be ignored "
+                f"for pipeline_type={self.pipeline_type}."
+            )
+        if self.assistant_gender is not None and self.pipeline_type == PipelineType.S2S:
+            logger.warning(
+                "assistant_gender applies only to CASCADE/AUDIO_LLM pipelines; it will be "
+                "ignored for pipeline_type=s2s (S2S providers manage their own voice/gender)."
+            )
+        return self
 
 
 class PipelineType(StrEnum):
@@ -300,6 +399,10 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.EN: "English",
     Language.FR: "European French",
     Language.FR_CA: "Canadian French",
+    Language.ES: "European Spanish",
+    Language.DE: "German",
+    Language.HI: "Hindi",
+    Language.KO: "Korean",
 }
 
 
@@ -340,6 +443,39 @@ class PerturbationConfig(BaseModel):
                 "accent and behavior cannot both be set — they each require exclusive use of the ElevenLabs agent ID"
             )
         return self
+
+
+class ElevenLabsSimulatorConfig(BaseModel):
+    """ElevenLabs Conversational AI settings for the user simulator."""
+
+    provider: Literal["elevenlabs"] = "elevenlabs"
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_extra_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            extra = [k for k in data if k not in cls.model_fields and k != "provider"]
+            if extra:
+                logger.warning(
+                    f"ElevenLabsSimulatorConfig received unrecognised fields that will be ignored: "
+                    f"{', '.join(sorted(extra))}"
+                )
+        return data
+
+
+class OpenAIRealtimeSimulatorConfig(BaseModel):
+    """OpenAI Realtime-specific settings for the user simulator."""
+
+    provider: Literal["openai_realtime"] = "openai_realtime"
+    model: str = Field("gpt-realtime-1.5", description="OpenAI Realtime model.")
+    female_voice: str = Field("marin", description="Voice used for female caller personas.")
+    male_voice: str = Field("cedar", description="Voice used for male caller personas.")
+
+
+UserSimulatorConfig = Annotated[
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    Field(discriminator="provider"),
+]
 
 
 class RunConfig(BaseSettings):
@@ -480,6 +616,10 @@ class RunConfig(BaseSettings):
         ),
     )
 
+    user_simulator: UserSimulatorConfig = Field(
+        default_factory=ElevenLabsSimulatorConfig,
+        description="Configuration for the provider that simulates the caller.",
+    )
     # User simulator language — picks per-language ElevenLabs agent IDs
     language: Language = Field(
         Language.EN,
@@ -513,6 +653,18 @@ class RunConfig(BaseSettings):
         le=10000,
         description="Max conversation duration in seconds",
     )
+    turn_end_fallback_time: int | None = Field(
+        None,
+        ge=1,
+        description=(
+            "Seconds of user silence after the assistant stops speaking before nudging it to "
+            "reprompt the caller ('sorry, I didn't catch that'), instead of waiting for the old "
+            "hard inactivity timeout. Cancelled the moment the user starts speaking, so it only "
+            "fires when turn detection drops a user turn. Applies to the Pipecat cascade and "
+            "audio-LLM pipelines. When unset, falls back to the old behavior of ending the "
+            "conversation after the provider's inactivity timeout elapses."
+        ),
+    )
 
     # Output
     output_dir: Path = Field(
@@ -540,6 +692,12 @@ class RunConfig(BaseSettings):
         description="Logging level",
     )
     dry_run: bool = Field(False, description="Validate configuration without running")
+    preflight: bool = Field(
+        True,  # Pydantic automatically creates the `--no-preflight` flag, to which description below applies.
+        description="Skip the preflight model check. By default, probe each configured model "
+        "(STT/LLM/TTS/audio-LLM) before the run starts, aborting early on credential/connectivity failures.",
+    )
+    preflight_timeout_seconds: float = Field(20.0, gt=0, description="Per-model timeout for the preflight probe")
 
     @computed_field
     @property
@@ -565,10 +723,20 @@ class RunConfig(BaseSettings):
     def _check_companion_services(self) -> "RunConfig":
         """Validate pipeline mode mutual exclusivity and required companion services.
 
-        Skipped entirely when ``max_rerun_attempts == 0`` where the model
+        Skipped entirely when ``max_rerun_attempts == 0 or self.aggregate_only`` where the model
         config is unused and conflicting env vars are harmless.
         """
-        if self.max_rerun_attempts == 0:
+        if (
+            isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig)
+            and self.perturbation is not None
+            and self.perturbation.accent is not None
+        ):
+            raise ValueError(
+                "Accent perturbations require the ElevenLabs user simulator; "
+                "OpenAI Realtime supports behavior, noise, and connection perturbations."
+            )
+
+        if self.max_rerun_attempts == 0 or self.aggregate_only:
             return self
 
         # ── Validate pipeline mode mutual exclusivity ──
@@ -608,7 +776,8 @@ class RunConfig(BaseSettings):
         if "run_id" not in self.model_fields_set:
             suffix = "_".join(v for v in self.model.pipeline_parts.values() if v)
             lang = self.language.value
-            self.run_id = f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}_{lang}_{suffix}"
+            domain = self.domain.replace("_", "-")
+            self.run_id = f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}_{domain}_{lang}_{suffix}"
 
         return self
 
@@ -636,7 +805,7 @@ class RunConfig(BaseSettings):
     @model_validator(mode="after")
     def _check_language_personas(self) -> "RunConfig":
         """When a non-English language is set, validate matching agent IDs and mutual exclusivity."""
-        if self.language == Language.EN:
+        if self.language == Language.EN or not isinstance(self.user_simulator, ElevenLabsSimulatorConfig):
             return self
 
         key = self.language.value.upper().replace("-", "_")
@@ -662,6 +831,15 @@ class RunConfig(BaseSettings):
                 f"({', '.join(conflicts)}) — they each require exclusive use of the ElevenLabs agent ID."
             )
 
+        return self
+
+    @model_validator(mode="after")
+    def _check_openai_realtime_simulator(self) -> "RunConfig":
+        """When openai_realtime user simulator is selected, OPENAI_API_KEY must be present."""
+        if not isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig):
+            return self
+        if not os.environ.get("OPENAI_API_KEY"):
+            raise ValueError("EVA_USER_SIMULATOR__PROVIDER=openai_realtime requires OPENAI_API_KEY to be set.")
         return self
 
     @model_validator(mode="before")

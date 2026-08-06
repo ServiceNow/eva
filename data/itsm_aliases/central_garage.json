@@ -16,6 +16,29 @@
       "parc central",
       "parking central",
       "stationnement central"
+    ],
+    "es": [
+      "aparcamiento central",
+      "garaje central",
+      "parking central"
+    ],
+    "de": [
+      "parkhaus im zentrum",
+      "parkhaus in der city",
+      "parkhaus in der innenstadt",
+      "zentralen parkhaus",
+      "zentrales parkhaus"
+    ],
+    "hi": [
+      "केंद्रीय पार्किंग",
+      "सेंट्रल गैराज",
+      "सेंट्रल पार्किंग"
+    ],
+    "ko": [
+      "센트럴 주차장",
+      "중앙 주차동",
+      "중앙 주차장",
+      "중앙 차고"
     ]
   }
 }

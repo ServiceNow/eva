@@ -1,0 +1,519 @@
+{
+  "code": "es",
+  "zeros": [
+    "cero"
+  ],
+  "cardinals": {
+    "un": 1,
+    "uno": 1,
+    "dos": 2,
+    "tres": 3,
+    "cuatro": 4,
+    "cinco": 5,
+    "seis": 6,
+    "siete": 7,
+    "ocho": 8,
+    "nueve": 9,
+    "diez": 10,
+    "once": 11,
+    "doce": 12,
+    "trece": 13,
+    "catorce": 14,
+    "quince": 15,
+    "dieciséis": 16,
+    "dieciseis": 16,
+    "diecisiete": 17,
+    "dieciocho": 18,
+    "diecinueve": 19,
+    "veintiuno": 21,
+    "veintiún": 21,
+    "veintiun": 21,
+    "veintidós": 22,
+    "veintidos": 22,
+    "veintitrés": 23,
+    "veintitres": 23,
+    "veinticuatro": 24,
+    "veinticinco": 25,
+    "veintiséis": 26,
+    "veintiseis": 26,
+    "veintisiete": 27,
+    "veintiocho": 28,
+    "veintinueve": 29,
+    "doscientos": 200,
+    "trescientos": 300,
+    "cuatrocientos": 400,
+    "quinientos": 500,
+    "seiscientos": 600,
+    "setecientos": 700,
+    "ochocientos": 800,
+    "novecientos": 900
+  },
+  "cardinal_variants": {
+    "una": 1,
+    "veintiuna": 21,
+    "doscientas": 200,
+    "trescientas": 300,
+    "cuatrocientas": 400,
+    "quinientas": 500,
+    "seiscientas": 600,
+    "setecientas": 700,
+    "ochocientas": 800,
+    "novecientas": 900
+  },
+  "cardinals_suffixed": {
+    "primero": [
+      1,
+      "º"
+    ],
+    "primer": [
+      1,
+      "º"
+    ],
+    "primera": [
+      1,
+      "ª"
+    ],
+    "segundo": [
+      2,
+      "º"
+    ],
+    "segunda": [
+      2,
+      "ª"
+    ],
+    "tercero": [
+      3,
+      "º"
+    ],
+    "tercer": [
+      3,
+      "º"
+    ],
+    "tercera": [
+      3,
+      "ª"
+    ],
+    "cuarto": [
+      4,
+      "º"
+    ],
+    "cuarta": [
+      4,
+      "ª"
+    ],
+    "quinto": [
+      5,
+      "º"
+    ],
+    "quinta": [
+      5,
+      "ª"
+    ],
+    "sexto": [
+      6,
+      "º"
+    ],
+    "sexta": [
+      6,
+      "ª"
+    ],
+    "séptimo": [
+      7,
+      "º"
+    ],
+    "septimo": [
+      7,
+      "º"
+    ],
+    "séptima": [
+      7,
+      "ª"
+    ],
+    "septima": [
+      7,
+      "ª"
+    ],
+    "octavo": [
+      8,
+      "º"
+    ],
+    "octava": [
+      8,
+      "ª"
+    ],
+    "noveno": [
+      9,
+      "º"
+    ],
+    "novena": [
+      9,
+      "ª"
+    ],
+    "décimo": [
+      10,
+      "º"
+    ],
+    "decimo": [
+      10,
+      "º"
+    ],
+    "décima": [
+      10,
+      "ª"
+    ],
+    "decima": [
+      10,
+      "ª"
+    ],
+    "undécimo": [
+      11,
+      "º"
+    ],
+    "undecimo": [
+      11,
+      "º"
+    ],
+    "undécima": [
+      11,
+      "ª"
+    ],
+    "undecima": [
+      11,
+      "ª"
+    ],
+    "duodécimo": [
+      12,
+      "º"
+    ],
+    "duodecimo": [
+      12,
+      "º"
+    ],
+    "duodécima": [
+      12,
+      "ª"
+    ],
+    "duodecima": [
+      12,
+      "ª"
+    ],
+    "decimotercero": [
+      13,
+      "º"
+    ],
+    "decimotercer": [
+      13,
+      "º"
+    ],
+    "decimotercera": [
+      13,
+      "ª"
+    ],
+    "decimocuarto": [
+      14,
+      "º"
+    ],
+    "decimocuarta": [
+      14,
+      "ª"
+    ],
+    "decimoquinto": [
+      15,
+      "º"
+    ],
+    "decimoquinta": [
+      15,
+      "ª"
+    ],
+    "decimosexto": [
+      16,
+      "º"
+    ],
+    "decimosexta": [
+      16,
+      "ª"
+    ],
+    "decimoséptimo": [
+      17,
+      "º"
+    ],
+    "decimoseptimo": [
+      17,
+      "º"
+    ],
+    "decimoséptima": [
+      17,
+      "ª"
+    ],
+    "decimoseptima": [
+      17,
+      "ª"
+    ],
+    "decimoctavo": [
+      18,
+      "º"
+    ],
+    "decimoctava": [
+      18,
+      "ª"
+    ],
+    "decimonoveno": [
+      19,
+      "º"
+    ],
+    "decimonovena": [
+      19,
+      "ª"
+    ]
+  },
+  "tens": {
+    "veinte": 20,
+    "treinta": 30,
+    "cuarenta": 40,
+    "cincuenta": 50,
+    "sesenta": 60,
+    "setenta": 70,
+    "ochenta": 80,
+    "noventa": 90
+  },
+  "tens_suffixed": {
+    "vigésimo": [
+      20,
+      "º"
+    ],
+    "vigesimo": [
+      20,
+      "º"
+    ],
+    "vigésima": [
+      20,
+      "ª"
+    ],
+    "vigesima": [
+      20,
+      "ª"
+    ],
+    "trigésimo": [
+      30,
+      "º"
+    ],
+    "trigesimo": [
+      30,
+      "º"
+    ],
+    "trigésima": [
+      30,
+      "ª"
+    ],
+    "trigesima": [
+      30,
+      "ª"
+    ],
+    "cuadragésimo": [
+      40,
+      "º"
+    ],
+    "cuadragesimo": [
+      40,
+      "º"
+    ],
+    "cuadragésima": [
+      40,
+      "ª"
+    ],
+    "cuadragesima": [
+      40,
+      "ª"
+    ],
+    "quincuagésimo": [
+      50,
+      "º"
+    ],
+    "quincuagesimo": [
+      50,
+      "º"
+    ],
+    "quincuagésima": [
+      50,
+      "ª"
+    ],
+    "quincuagesima": [
+      50,
+      "ª"
+    ],
+    "sexagésimo": [
+      60,
+      "º"
+    ],
+    "sexagesimo": [
+      60,
+      "º"
+    ],
+    "sexagésima": [
+      60,
+      "ª"
+    ],
+    "sexagesima": [
+      60,
+      "ª"
+    ],
+    "septuagésimo": [
+      70,
+      "º"
+    ],
+    "septuagesimo": [
+      70,
+      "º"
+    ],
+    "septuagésima": [
+      70,
+      "ª"
+    ],
+    "septuagesima": [
+      70,
+      "ª"
+    ],
+    "octogésimo": [
+      80,
+      "º"
+    ],
+    "octogesimo": [
+      80,
+      "º"
+    ],
+    "octogésima": [
+      80,
+      "ª"
+    ],
+    "octogesima": [
+      80,
+      "ª"
+    ],
+    "nonagésimo": [
+      90,
+      "º"
+    ],
+    "nonagesimo": [
+      90,
+      "º"
+    ],
+    "nonagésima": [
+      90,
+      "ª"
+    ],
+    "nonagesima": [
+      90,
+      "ª"
+    ]
+  },
+  "scaling_units": {
+    "cien": 100,
+    "ciento": 100,
+    "mil": 1000,
+    "millón": 1000000,
+    "millon": 1000000,
+    "millones": 1000000,
+    "billón": 1000000000000,
+    "billon": 1000000000000,
+    "billones": 1000000000000,
+    "trillón": 1000000000000000000,
+    "trillon": 1000000000000000000,
+    "trillones": 1000000000000000000
+  },
+  "scaling_units_suffixed": {
+    "centésimo": [
+      100,
+      "º"
+    ],
+    "centesimo": [
+      100,
+      "º"
+    ],
+    "centésima": [
+      100,
+      "ª"
+    ],
+    "centesima": [
+      100,
+      "ª"
+    ],
+    "milésimo": [
+      1000,
+      "º"
+    ],
+    "milesimo": [
+      1000,
+      "º"
+    ],
+    "milésima": [
+      1000,
+      "ª"
+    ],
+    "milesima": [
+      1000,
+      "ª"
+    ],
+    "millonésimo": [
+      1000000,
+      "º"
+    ],
+    "millonesimo": [
+      1000000,
+      "º"
+    ],
+    "millonésima": [
+      1000000,
+      "ª"
+    ],
+    "millonesima": [
+      1000000,
+      "ª"
+    ]
+  },
+  "conjunction_word": "y",
+  "decimal_word": "coma",
+  "reversed_units": false,
+  "split_hyphenated_numbers": false,
+  "vigesimal_trigger_words": [],
+  "vigesimal_multiplier": 20,
+  "vigesimal_residuals": [],
+  "additive_teen_residuals": [
+    0
+  ],
+  "cardinal_continuation_on_prev_cardinal": false,
+  "conjunction_ignore_prev": [
+    "scaling_units",
+    "tens"
+  ],
+  "repeat_words": {},
+  "half_pattern": null,
+  "half_replacement": null,
+  "one_word": null,
+  "one_plural_suffix": "",
+  "cents_connector": null,
+  "preceding_prefixers": {},
+  "following_prefixers": {},
+  "suffixers": {},
+  "ignore_patterns": "\\b(eh|em|mmm|hm|hum|pues|bueno|o sea|esto)\\b",
+  "replacers": {
+    "\\bsr\\b": "senor",
+    "\\bsra\\b": "senora",
+    "\\bsrta\\b": "senorita",
+    "\\bdr\\b": "doctor",
+    "\\bdra\\b": "doctora",
+    "\\bprof\\b": "profesor",
+    "\\bprofa\\b": "profesora",
+    "\\bd\\b": "don",
+    "\\bda\\b": "dona"
+  },
+  "strip_space_before_apostrophe": false,
+  "ordinal_suffix_pattern": "",
+  "spelling_map_path": null,
+  "letter_class": "a-zà-öø-ÿœæ",
+  "preserve_combining_marks": false,
+  "decimal_separator": "comma",
+  "thousand_separators": [
+    "dot",
+    "space"
+  ]
+}

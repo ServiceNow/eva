@@ -19,6 +19,28 @@
       "parking du campus est",
       "parking est",
       "stationnement du campus est"
+    ],
+    "es": [
+      "aparcamiento del campus este",
+      "garaje del campus este",
+      "garaje este",
+      "parking del campus este"
+    ],
+    "de": [
+      "ost-parkhaus",
+      "ostcampus-parkhaus",
+      "parkhaus am ostcampus"
+    ],
+    "hi": [
+      "ईस्ट कैंपस गैराज",
+      "ईस्ट गैराज",
+      "पूर्वी कैंपस पार्किंग"
+    ],
+    "ko": [
+      "동쪽 주차장",
+      "동쪽 캠퍼스 주차장",
+      "동캠 주차장",
+      "이스트 캠퍼스 주차장"
     ]
   }
 }

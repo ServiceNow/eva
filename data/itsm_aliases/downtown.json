@@ -24,6 +24,32 @@
       "site centre-ville",
       "site du centre-ville",
       "édifice du centre-ville"
+    ],
+    "es": [
+      "centro",
+      "edificio del centro",
+      "oficina del centro",
+      "sede de ventas"
+    ],
+    "de": [
+      "büro in der stadt",
+      "gebäude in der innenstadt",
+      "headquarter in der city",
+      "innenstadt",
+      "innenstadtbüro",
+      "vertriebszentrale"
+    ],
+    "hi": [
+      "डाउनटाउन",
+      "डाउनटाउन ऑफिस",
+      "डाउनटाउन बिल्डिंग",
+      "सेल्स मुख्यालय"
+    ],
+    "ko": [
+      "다운타운",
+      "다운타운 빌딩",
+      "다운타운 사무실",
+      "영업 본부"
     ]
   }
 }

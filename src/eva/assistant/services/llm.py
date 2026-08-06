@@ -27,13 +27,15 @@ class LiteLLMClient:
     ``litellm_params.model`` in the ``EVA_MODEL_LIST`` deployment config.
     """
 
-    def __init__(self, model: str):
+    def __init__(self, model: str, parallel_tool_calls: bool | None = None):
         """Initialize LiteLLM client.
 
         Args:
             model: Model name matching a model_name in EVA_MODEL_LIST (e.g., 'gpt-5.2', 'gemini-3-pro')
+            parallel_tool_calls: Optional provider pass-through for tool calls.
         """
         self.model = model
+        self.parallel_tool_calls = parallel_tool_calls
         self.use_responses_api = self._lookup_use_responses_api_from_router()
         self._reasoning_token_fallback_warned = False
 
@@ -84,6 +86,8 @@ class LiteLLMClient:
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
+            if self.parallel_tool_calls is not None:
+                kwargs["parallel_tool_calls"] = self.parallel_tool_calls
 
         last_exception = None
         for attempt in range(max_retries + 1):
@@ -274,6 +278,88 @@ class LiteLLMClient:
             if deployment.get("model_name") == self.model:
                 return deployment.get("litellm_params", {})
         return {}
+
+    async def complete_stream(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | None = None,
+        max_retries: int = 5,
+        initial_delay: float = 1.0,
+    ):
+        """Yield text deltas, then the assembled final message and stats."""
+        kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
+        if tools:
+            kwargs["tools"] = tools
+            kwargs["tool_choice"] = "auto"
+            if self.parallel_tool_calls is not None:
+                kwargs["parallel_tool_calls"] = self.parallel_tool_calls
+
+        last_exception = None
+        for attempt in range(max_retries + 1):
+            chunks: list[Any] = []
+            first_token = False
+            try:
+                start_time = time.time()
+                stream = await router.get().acompletion(**kwargs)
+                async for chunk in stream:
+                    chunks.append(chunk)
+                    choices = getattr(chunk, "choices", None) or []
+                    if choices:
+                        delta = getattr(choices[0], "delta", None)
+                        text = getattr(delta, "content", None) if delta else None
+                        if text:
+                            first_token = True
+                            yield ("delta", text)
+                elapsed_time = time.time() - start_time
+
+                full = litellm.stream_chunk_builder(chunks, messages=messages)
+                message = full.choices[0].message
+                usage = getattr(full, "usage", None)
+                reasoning_content = getattr(message, "reasoning_content", None)
+                thinking_blocks = (
+                    getattr(message, "thinking_blocks", None) if hasattr(message, "thinking_blocks") else None
+                )
+                hidden_params = getattr(full, "_hidden_params", {}) or {}
+                # Reasoning tokens arrive in the final usage chunk.
+                reasoning_tokens = 0
+                if usage and hasattr(usage, "completion_tokens_details"):
+                    details = usage.completion_tokens_details
+                    if details and hasattr(details, "reasoning_tokens"):
+                        reasoning_tokens = getattr(details, "reasoning_tokens", 0) or 0
+                stats = {
+                    "prompt_tokens": getattr(usage, "prompt_tokens", 0) if usage else 0,
+                    "completion_tokens": getattr(usage, "completion_tokens", 0) if usage else 0,
+                    "reasoning_tokens": reasoning_tokens,
+                    "finish_reason": getattr(full.choices[0], "finish_reason", "unknown"),
+                    "model": getattr(full, "model", self.model),
+                    "cost": hidden_params.get("response_cost"),
+                    "cost_source": "litellm",
+                    "latency": round(elapsed_time, 3),
+                    "reasoning": reasoning_content,
+                    "reasoning_content": reasoning_content,
+                    "thinking_blocks": thinking_blocks,
+                    "responses_output_items": None,
+                }
+                yield ("final", (message, stats))
+                return
+            except Exception as e:
+                last_exception = e
+                if is_retryable_error(e) and attempt < max_retries and not first_token:
+                    delay = initial_delay * (2**attempt)
+                    logger.warning(
+                        f"Retryable streaming error on attempt {attempt + 1}/{max_retries + 1}: {e}. "
+                        f"Retrying in {delay:.1f}s..."
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                logger.exception(f"LiteLLM streaming completion failed: {e}")
+                raise
+        raise last_exception
 
     async def _complete_via_responses_api(
         self,

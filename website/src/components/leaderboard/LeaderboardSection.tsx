@@ -4,6 +4,7 @@ import { Section } from '../layout/Section';
 import { ScatterPlot } from './ScatterPlot';
 import { MetricHeatmap } from './MetricHeatmap';
 import { Perturbations } from './Perturbations';
+import { SttTranscription } from './SttTranscription';
 import type { AggregateColumn } from './MetricHeatmap';
 import {
   systems,
@@ -19,7 +20,7 @@ const paretoInsights = [
   {
     title: 'No system clears 0.6 on both axes pass@1',
     description:
-      'Across 17 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
+      'Across 18 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
   },
   {
     title: 'Peak and reliable performance diverge',
@@ -166,6 +167,7 @@ export function LeaderboardSection() {
         </div>
 
         <Perturbations systems={systems} />
+        <SttTranscription systems={systems} />
       </div>
     </Section>
   );

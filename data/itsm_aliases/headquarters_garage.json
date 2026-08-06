@@ -22,6 +22,27 @@
       "parking du siège",
       "parking siège",
       "stationnement du siège social"
+    ],
+    "es": [
+      "aparcamiento de la sede",
+      "garaje de la sede",
+      "garaje de la sede central",
+      "parking de la sede"
+    ],
+    "de": [
+      "hauptsitzparkhaus",
+      "parkhaus der zentrale"
+    ],
+    "hi": [
+      "एच क्यू गैराज",
+      "मुख्यालय गैराज",
+      "हेडक्वार्टर पार्किंग"
+    ],
+    "ko": [
+      "본부 주차장",
+      "본사 주차동",
+      "본사 주차장",
+      "본사 차고"
     ]
   }
 }

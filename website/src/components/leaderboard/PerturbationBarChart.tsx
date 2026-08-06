@@ -1,7 +1,8 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, Customized, LabelList, useXAxisScale, useYAxisScale } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ErrorBar, ReferenceLine, Customized, LabelList } from 'recharts';
 import type { SystemStats } from '../../data/leaderboardData';
 import { getPertValue, perturbations, perturbationLabels, groupedSystems } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
+import { tierLabel, colorFor, CustomTick, type CustomTickProps, SeparatorsLayer, StarMark } from './perturbationChartUtils';
 
 interface PerturbationBarChartProps {
   metric: string;
@@ -61,126 +62,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   );
 }
 
-const PERT_COLORS: Record<string, keyof ReturnType<typeof useThemeColors>['accent']> = {
-  accent: 'amber',
-  background_noise: 'cyan',
-  both: 'purple',
-};
 
-function colorFor(pert: string, colors: ReturnType<typeof useThemeColors>): string {
-  const key = PERT_COLORS[pert];
-  if (key) return colors.accent[key];
-  // Fallback rotation
-  return colors.accent.blue;
-}
-
-function tierLabel(p: number | null | undefined): string {
-  if (p == null || !Number.isFinite(p)) return '';
-  if (p < 0.001) return '***';
-  if (p < 0.01) return '**';
-  if (p < 0.05) return '*';
-  return '';
-}
-
-/** Renders dashed vertical separators between architecture groups. Uses the
- *  XAxis scale hook to look up category positions; falls back to interpolating
- *  the gap between adjacent left-edge positions when bandwidth/step methods
- *  aren't exposed by recharts. */
-function SeparatorsLayer({
-  separators,
-  strokeColor,
-}: {
-  separators: { name: string; prevName: string }[];
-  strokeColor: string;
-}) {
-  const xScale = useXAxisScale() as
-    | (((v: string) => number | undefined) & {
-        bandwidth?: () => number;
-        step?: () => number;
-      })
-    | undefined;
-  const yScale = useYAxisScale() as ((v: number) => number | undefined) | undefined;
-  if (!xScale || !yScale) return null;
-  const top = yScale(0.5);
-  const bottom = yScale(-0.5);
-  if (top == null || bottom == null) return null;
-  const bandwidth = typeof xScale.bandwidth === 'function' ? xScale.bandwidth() : undefined;
-  return (
-    <g>
-      {separators.map(({ name, prevName }) => {
-        const curr = xScale(name);
-        const prev = xScale(prevName);
-        if (curr == null || prev == null) return null;
-        // Place line at the center of the gap between the previous band's
-        // right edge and the current band's left edge.
-        const step = curr - prev;
-        const bw = bandwidth ?? step * 0.9;
-        const x = curr - (step - bw) / 2;
-        return (
-          <line
-            key={`sep-${name}`}
-            x1={x}
-            x2={x}
-            y1={top}
-            y2={bottom}
-            stroke={strokeColor}
-            strokeDasharray="4 4"
-            strokeOpacity={0.7}
-          />
-        );
-      })}
-    </g>
-  );
-}
-
-/** Renders a single significance marker just outside a bar+CI structure in
- *  the bar's direction (above for positive deltas, below for negative). Font
- *  size scales with bar width so "***" always fits. */
-function StarMark({
-  vb,
-  label,
-  point,
-  ciLower,
-  ciUpper,
-  amberColor,
-}: {
-  vb: { x: number; width: number };
-  label: string;
-  point: number;
-  ciLower: number;
-  ciUpper: number;
-  amberColor: string;
-}) {
-  const yScale = useYAxisScale() as ((v: number) => number | undefined) | undefined;
-  if (!yScale) return null;
-  // "***" width ≈ 3 chars × 0.6 × fontSize. Solve for fontSize that fits vb.width.
-  const fontSize = Math.max(7, Math.min(13, Math.floor(vb.width / (3 * 0.6))));
-  const clearance = 5;
-  const above = point >= 0;
-  const capPx = yScale(above ? ciUpper : ciLower);
-  if (capPx == null) return null;
-  // SVG text y is the baseline. For above-bar placement, baseline sits just
-  // above the cap so the glyphs hover over the cap; for below-bar placement,
-  // baseline sits one fontSize below the cap so the glyphs hover under it.
-  let y = above ? capPx - clearance : capPx + clearance + fontSize;
-  // Clamp inside the plot area in case the cap is outside the visible domain.
-  const topPx = yScale(0.5);
-  const bottomPx = yScale(-0.5);
-  if (topPx != null) y = Math.max(y, topPx + fontSize);
-  if (bottomPx != null) y = Math.min(y, bottomPx - 2);
-  return (
-    <text
-      x={vb.x + vb.width / 2}
-      y={y}
-      fill={amberColor}
-      fontSize={fontSize}
-      fontWeight={700}
-      textAnchor="middle"
-    >
-      {label}
-    </text>
-  );
-}
 
 export function PerturbationBarChart({ metric, metricLabel, systems }: PerturbationBarChartProps) {
   const colors = useThemeColors();
@@ -238,15 +120,17 @@ export function PerturbationBarChart({ metric, metricLabel, systems }: Perturbat
               <XAxis
                 dataKey="name"
                 stroke={colors.text.muted}
-                tick={{ fill: colors.text.secondary, fontSize: 10 }}
-                tickFormatter={(v: string) =>
-                  v.startsWith('Scribe v2.2 Realtime')
-                    ? 'Scribe + Gemini 3 Flash + Conversational v3'
-                    : v
-                }
+                tick={(props: unknown) => (
+                  <CustomTick
+                    {...(props as CustomTickProps)}
+                    fill={colors.text.secondary}
+                    fontSize={10}
+                    angle={-30}
+                    textAnchor="end"
+
+                  />
+                )}
                 interval={0}
-                angle={-30}
-                textAnchor="end"
                 height={80}
               />
               <YAxis
@@ -262,7 +146,7 @@ export function PerturbationBarChart({ metric, metricLabel, systems }: Perturbat
               <ReferenceLine y={0} stroke={colors.text.muted} />
               <Customized
                 component={() => (
-                  <SeparatorsLayer separators={separators} strokeColor={colors.text.secondary} />
+                  <SeparatorsLayer separators={separators} strokeColor={colors.text.secondary} yTop={0.5} yBottom={-0.5} />
                 )}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: colors.bg.hover, opacity: 0.3 }} />
@@ -301,6 +185,8 @@ export function PerturbationBarChart({ metric, metricLabel, systems }: Perturbat
                           ciLower={point - errLo}
                           ciUpper={point + errHi}
                           amberColor={colors.accent.amber}
+                          yTop={0.5}
+                          yBottom={-0.5}
                         />
                       );
                     }}

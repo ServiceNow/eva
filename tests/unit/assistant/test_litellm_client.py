@@ -275,3 +275,96 @@ class TestCompleteViaResponsesApiReasoning:
         assert output_items is not None
         assert any(it["type"] == "reasoning" for it in output_items)
         assert any(it["type"] == "function_call" for it in output_items)
+
+
+def _standard_chat_response():
+    msg = SimpleNamespace(content="ok", tool_calls=None, reasoning_content=None, thinking_blocks=None)
+    return SimpleNamespace(
+        choices=[SimpleNamespace(message=msg, finish_reason="stop")],
+        usage=SimpleNamespace(prompt_tokens=1, completion_tokens=1),
+        model="gpt-5.2",
+        _hidden_params={},
+    )
+
+
+_A_TOOL = [
+    {
+        "type": "function",
+        "function": {"name": "f", "description": "d", "parameters": {"type": "object", "properties": {}}},
+    }
+]
+
+
+async def _empty_stream():
+    for chunk in ():
+        yield chunk
+
+
+class TestParallelToolCallsForwarding:
+    @pytest.fixture(autouse=True, scope="class")
+    def _init_router(self):
+        router.init(
+            model_list=[{"model_name": "gpt-5.2", "litellm_params": {"model": "openai/gpt-5.2", "api_key": "test-key"}}]
+        )
+        yield
+        router.reset()
+
+    def _mock_router(self):
+        r = MagicMock()
+        r.model_list = []
+        r.acompletion = AsyncMock(return_value=_standard_chat_response())
+        return r
+
+    @pytest.mark.asyncio
+    async def test_forwarded_when_set_with_tools(self):
+        client = LiteLLMClient(model="gpt-5.2", parallel_tool_calls=False)
+        r = self._mock_router()
+        with patch("eva.assistant.services.llm.router.get", return_value=r):
+            await client.complete([{"role": "user", "content": "hi"}], tools=_A_TOOL)
+        assert r.acompletion.call_args.kwargs["parallel_tool_calls"] is False
+
+    @pytest.mark.asyncio
+    async def test_absent_when_none(self):
+        client = LiteLLMClient(model="gpt-5.2")
+        r = self._mock_router()
+        with patch("eva.assistant.services.llm.router.get", return_value=r):
+            await client.complete([{"role": "user", "content": "hi"}], tools=_A_TOOL)
+        assert "parallel_tool_calls" not in r.acompletion.call_args.kwargs
+
+    @pytest.mark.asyncio
+    async def test_absent_when_no_tools(self):
+        client = LiteLLMClient(model="gpt-5.2", parallel_tool_calls=True)
+        r = self._mock_router()
+        with patch("eva.assistant.services.llm.router.get", return_value=r):
+            await client.complete([{"role": "user", "content": "hi"}])
+        assert "parallel_tool_calls" not in r.acompletion.call_args.kwargs
+
+    @pytest.mark.asyncio
+    async def test_streaming_forwards_when_set(self):
+        client = LiteLLMClient(model="gpt-5.2", parallel_tool_calls=False)
+
+        r = MagicMock()
+        r.model_list = []
+        r.acompletion = AsyncMock(return_value=_empty_stream())
+        with (
+            patch("eva.assistant.services.llm.router.get", return_value=r),
+            patch("litellm.stream_chunk_builder", return_value=_standard_chat_response()),
+        ):
+            async for _kind, _payload in client.complete_stream([{"role": "user", "content": "hi"}], tools=_A_TOOL):
+                pass
+        assert r.acompletion.call_args.kwargs["parallel_tool_calls"] is False
+
+    @pytest.mark.asyncio
+    async def test_streaming_absent_when_no_tools(self):
+        client = LiteLLMClient(model="gpt-5.2", parallel_tool_calls=True)
+
+        r = MagicMock()
+        r.model_list = []
+        r.acompletion = AsyncMock(return_value=_empty_stream())
+        with (
+            patch("eva.assistant.services.llm.router.get", return_value=r),
+            patch("litellm.stream_chunk_builder", return_value=_standard_chat_response()),
+        ):
+            async for _kind, _payload in client.complete_stream([{"role": "user", "content": "hi"}]):
+                pass
+        assert "parallel_tool_calls" not in r.acompletion.call_args.kwargs

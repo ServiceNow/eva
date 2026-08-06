@@ -27,6 +27,30 @@
       "qg ingénierie",
       "site du port",
       "site ingénierie harbor"
+    ],
+    "es": [
+      "centro de ingeniería del puerto",
+      "ingeniería del puerto",
+      "puerto",
+      "sede de ingeniería"
+    ],
+    "de": [
+      "engineering-zentrale",
+      "entwicklungszentrum am hafen",
+      "entwicklungszentrum hafen",
+      "hafen",
+      "technikzentrum am hafen"
+    ],
+    "hi": [
+      "इंजीनियरिंग मुख्यालय",
+      "हार्बर",
+      "हार्बर इंजीनियरिंग सेंटर"
+    ],
+    "ko": [
+      "엔지니어링 본부",
+      "하버",
+      "하버 엔지니어링 센터",
+      "항만 기술센터"
     ]
   }
 }

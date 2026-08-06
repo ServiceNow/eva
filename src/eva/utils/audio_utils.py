@@ -1,11 +1,138 @@
-"""Shared audio I/O helpers."""
+"""Shared audio I/O and format-conversion helpers."""
 
+import audioop
+import base64
+import json
+import struct
 import wave
 from pathlib import Path
+
+import numpy as np
+import soxr
 
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+# ── Audio format conversion ──────────────────────────────────────────
+
+
+def mulaw_8k_to_pcm16_16k(mulaw_bytes: bytes) -> bytes:
+    """Convert 8kHz mu-law audio to 16kHz 16-bit PCM."""
+    # Decode mu-law to 16-bit PCM at 8kHz
+    pcm_8k = audioop.ulaw2lin(mulaw_bytes, 2)
+    # Upsample from 8kHz to 16kHz
+    pcm_16k, _ = audioop.ratecv(pcm_8k, 2, 1, 8000, 16000, None)
+    return pcm_16k
+
+
+def mulaw_8k_to_pcm16_24k(mulaw_bytes: bytes) -> bytes:
+    """Convert 8kHz mu-law audio to 24kHz 16-bit PCM."""
+    # Decode mu-law to 16-bit PCM at 8kHz
+    pcm_8k = audioop.ulaw2lin(mulaw_bytes, 2)
+    # Upsample from 8kHz to 24kHz
+    pcm_24k, _ = audioop.ratecv(pcm_8k, 2, 1, 8000, 24000, None)
+    # audioop.ratecv can produce ±2 samples; clamp to exact 3× input length
+    # so that the inverse conversion recovers the original sample count.
+    expected_bytes = len(pcm_8k) * 3
+    if len(pcm_24k) < expected_bytes:
+        pcm_24k = pcm_24k + b"\x00" * (expected_bytes - len(pcm_24k))
+    elif len(pcm_24k) > expected_bytes:
+        pcm_24k = pcm_24k[:expected_bytes]
+    return pcm_24k
+
+
+def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
+    """Convert 24kHz 16-bit PCM to 8kHz mu-law.
+
+    Uses soxr VHQ resampling (same as Pipecat) for proper anti-aliasing during the 3:1 downsampling.
+    audioop.ratecv produces muffled audio because it lacks an anti-aliasing filter.
+    """
+    # Downsample from 24kHz to 8kHz using high-quality resampler
+    audio_data = np.frombuffer(pcm_bytes, dtype=np.int16)
+    resampled = soxr.resample(audio_data, 24000, 8000, quality="VHQ")
+    # Both audioop.ratecv (upstream) and soxr can produce ±1 sample due to filter rounding.
+    # Use round() so that e.g. 2399 input samples → round(2399/3) = 800, not 799.
+    expected_samples = round(len(audio_data) * 8000 / 24000)
+    if len(resampled) < expected_samples:
+        resampled = np.pad(resampled, (0, expected_samples - len(resampled)))
+    elif len(resampled) > expected_samples:
+        resampled = resampled[:expected_samples]
+    pcm_8k = resampled.astype(np.int16).tobytes()
+    # Encode to mu-law
+    return audioop.lin2ulaw(pcm_8k, 2)
+
+
+def sync_buffer_to_position(buffer: bytearray, target_position: int) -> None:
+    """Pad *buffer* with silence bytes so it reaches *target_position*.
+
+    Mirrors pipecat's ``AudioBufferProcessor._sync_buffer_to_position``.
+    Call this **before** extending the *other* track so both tracks stay
+    positionally aligned.
+    """
+    current_len = len(buffer)
+    if current_len < target_position:
+        buffer.extend(b"\x00" * (target_position - current_len))
+
+
+def pcm16_mix(track_a: bytes, track_b: bytes) -> bytes:
+    """Mix two 16-bit PCM tracks by sample-wise addition with clipping.
+
+    Both tracks must be the same sample rate. If lengths differ,
+    the shorter track is zero-padded.
+    """
+    len_a, len_b = len(track_a), len(track_b)
+    max_len = max(len_a, len_b)
+
+    # Zero-pad shorter track
+    if len_a < max_len:
+        track_a = track_a + b"\x00" * (max_len - len_a)
+    if len_b < max_len:
+        track_b = track_b + b"\x00" * (max_len - len_b)
+
+    # Mix with clipping
+    n_samples = max_len // 2
+    fmt = f"<{n_samples}h"
+    samples_a = struct.unpack(fmt, track_a)
+    samples_b = struct.unpack(fmt, track_b)
+    mixed = struct.pack(fmt, *(max(-32768, min(32767, a + b)) for a, b in zip(samples_a, samples_b)))
+    return mixed
+
+
+# ── Twilio WebSocket Protocol ────────────────────────────────────────
+
+
+def parse_twilio_media_message(message: str) -> bytes | None:
+    """Parse a Twilio media WebSocket message and extract raw audio bytes.
+
+    Returns None if the message is not a media message.
+    """
+    try:
+        data = json.loads(message)
+        if data.get("event") == "media":
+            payload = data["media"]["payload"]
+            return base64.b64decode(payload)
+    except (json.JSONDecodeError, KeyError):
+        pass
+    return None
+
+
+def create_twilio_media_message(stream_sid: str, audio_bytes: bytes) -> str:
+    """Create a Twilio media WebSocket message with the given audio bytes."""
+    payload = base64.b64encode(audio_bytes).decode("ascii")
+    return json.dumps(
+        {
+            "event": "media",
+            "streamSid": stream_sid,
+            "media": {
+                "payload": payload,
+            },
+        }
+    )
+
+
+# ── WAV I/O ──────────────────────────────────────────────────────────
 
 
 def save_pcm_as_wav(
@@ -25,3 +152,21 @@ def save_pcm_as_wav(
         logger.debug(f"Audio saved to {file_path} ({len(audio_data)} bytes)")
     except Exception as e:
         logger.error(f"Error saving audio to {file_path}: {e}")
+
+
+def save_audio_track(
+    audio_bytes: bytes,
+    file_path: Path,
+    sample_rate: int,
+    num_channels: int = 1,
+) -> bool:
+    """Save a single-track PCM recording to a WAV file, skipping empty audio.
+
+    Returns True if a file was written, False if there was no audio to save.
+    This is the shared entry point for both the assistant server's deferred
+    audio saving and the user simulator's clean-track saving.
+    """
+    if not audio_bytes:
+        return False
+    save_pcm_as_wav(audio_bytes, file_path, sample_rate, num_channels)
+    return True

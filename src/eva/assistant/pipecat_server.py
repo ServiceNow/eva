@@ -6,6 +6,7 @@ It handles audio streaming via WebSocket with Twilio-style frame serialization.
 
 import asyncio
 import json
+import time
 from pathlib import Path
 
 import uvicorn
@@ -18,8 +19,7 @@ from pipecat.frames.frames import (
 from pipecat.observers.loggers.metrics_log_observer import MetricsLogObserver
 from pipecat.pipeline.parallel_pipeline import ParallelPipeline
 from pipecat.pipeline.pipeline import Pipeline
-from pipecat.pipeline.runner import PipelineRunner
-from pipecat.pipeline.task import PipelineParams, PipelineTask
+from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.aggregators.llm_response_universal import (
     AssistantTurnStoppedMessage,
@@ -27,8 +27,8 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMUserAggregatorParams,
     UserTurnStoppedMessage,
 )
-from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
 from pipecat.serializers.twilio import TwilioFrameSerializer
+from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
 from pipecat.transports.websocket.fastapi import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
@@ -36,8 +36,10 @@ from pipecat.transports.websocket.fastapi import (
 from pipecat.turns.user_stop import TurnAnalyzerUserTurnStopStrategy
 from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat.utils.time import time_now_iso8601
+from pipecat.workers.runner import WorkerRunner
 
 from eva.assistant.agentic.audit_log import convert_to_epoch_ms, current_timestamp_ms
+from eva.assistant.audio_buffer import ContiguousAudioBufferProcessor
 from eva.assistant.base_server import AbstractAssistantServer
 from eva.assistant.pipeline.agent_processor import BenchmarkAgentProcessor, UserAudioCollector, UserObserver
 from eva.assistant.pipeline.audio_llm_processor import (
@@ -53,6 +55,7 @@ from eva.assistant.pipeline.services import (
     create_realtime_llm_service,
     create_stt_service,
     create_tts_service,
+    update_stt_agent_context,
 )
 from eva.assistant.pipeline.turn_config import (
     create_turn_start_strategy,
@@ -96,6 +99,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         port: int,
         conversation_id: str,
         language: str = "en",
+        turn_end_fallback_time: int | None = None,
     ):
         """Initialize the assistant server.
 
@@ -109,6 +113,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
             port: Port to listen on
             conversation_id: Unique ID for this conversation
             language: BCP 47 language tag for STT/TTS services (e.g. 'en', 'fr', 'es-MX')
+            turn_end_fallback_time: Seconds of user-turn silence after the assistant stops
+                speaking before nudging it to retry. ``None`` disables the fallback.
         """
         super().__init__(
             current_date_time=current_date_time,
@@ -123,6 +129,11 @@ class PipecatAssistantServer(AbstractAssistantServer):
         )
 
         self.agentic_system = None  # Will be set in _handle_session
+        self.turn_end_fallback_time = turn_end_fallback_time
+
+        # Set in _create_pipeline for the cascade / audio-LLM flavors; hosts the turn-end
+        # fallback timer so notify_conversation_ending() can latch it off at session end.
+        self._user_observer: UserObserver | None = None
 
         # Wall-clock captured at on_user_turn_started for non-instrumented S2S models
         self._user_turn_started_wall_ms: str | None = None
@@ -134,8 +145,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
         self._app = None
         self._server = None
         self._server_task = None
-        self._runner: PipelineRunner | None = None
-        self._task: PipelineTask | None = None
+        self._runner: WorkerRunner | None = None
+        self._task: PipelineWorker | None = None
         self._running = False
         self.num_seconds = 0
         self._metrics_observer: MetricsFileObserver | None = None
@@ -183,6 +194,18 @@ class PipecatAssistantServer(AbstractAssistantServer):
             await asyncio.sleep(0.01)
 
         logger.info(f"Assistant server started on ws://localhost:{self.port}")
+
+    def notify_conversation_ending(self, reason: str | None = None) -> None:
+        """Latch the turn-end fallback off as soon as the simulator knows the call ended.
+
+        See ``AbstractAssistantServer.notify_conversation_ending``. The pipeline's own
+        End/Cancel handling also latches the fallback, but that only arrives on transport
+        disconnect — after the simulator's STT grace period and end_call API polling, by which
+        point a 10s nudge timer armed on the assistant's last utterance has already fired.
+        """
+        if self._user_observer is not None:
+            self._user_observer.shutdown_fallback()
+            logger.debug(f"Turn-end fallback disarmed: conversation ending (reason: {reason})")
 
     async def _shutdown(self) -> None:
         """Stop the Pipecat pipeline and uvicorn server."""
@@ -287,7 +310,14 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     language_code=self.language,
                 )
                 # Create LLM client for agentic system (separate from Pipecat LLM service)
-                llm_client = LiteLLMClient(model=self.pipeline_config.llm)
+                llm_client = LiteLLMClient(
+                    model=self.pipeline_config.llm,
+                    parallel_tool_calls=self.pipeline_config.parallel_tool_calls,
+                )
+
+                # Cartesia ink-2 turn events are logged as diagnostics only.
+                if isinstance(stt, CartesiaTurnsSTTService):
+                    self._register_ink2_diagnostics(stt)
 
             # Create context aggregator with user turn strategies
             messages = []
@@ -358,6 +388,10 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     alm_client=alm_client,
                     audio_collector=audio_llm_audio_collector,
                     output_dir=self.output_dir,
+                    pre_tool_speech=self.pipeline_config.pre_tool_speech,
+                    llm_streaming=self.pipeline_config.llm_streaming,
+                    full_audio_context=self.pipeline_config.audio_llm_params.get("full_audio_context", False),
+                    assistant_gender=self.pipeline_config.assistant_gender,
                 )
                 audio_llm_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
                     role="assistant", content=msg, timestamp=self._current_iso_timestamp()
@@ -372,7 +406,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 input_transcription_processor = AudioTranscriptionProcessor(
                     audio_collector=audio_llm_audio_collector,
                     alm_client=alm_client,
-                    sample_rate=SAMPLE_RATE,
                 )
 
                 # Set callback to save user transcription to transcript.jsonl and update audit log
@@ -392,7 +425,10 @@ class PipecatAssistantServer(AbstractAssistantServer):
 
             # Create processors
             # Configure audio buffer with 1-second buffer size for event triggering
-            audiobuffer = AudioBufferProcessor(
+            # ContiguousAudioBufferProcessor disables pipecat 1.x's wall-clock
+            # silence fabrication, which under concurrency injects choppy silence
+            # into the recorded user track (see eva/assistant/audio_buffer.py).
+            audiobuffer = ContiguousAudioBufferProcessor(
                 sample_rate=SAMPLE_RATE,
                 num_channels=1,  # Mono (mixed user + bot audio)
                 buffer_size=SAMPLE_RATE * 2,  # 1 second of 16-bit audio (2 bytes per sample)
@@ -407,10 +443,20 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     audit_log=self.audit_log,
                     llm_client=llm_client,
                     output_dir=self.output_dir,
+                    pre_tool_speech=self.pipeline_config.pre_tool_speech,
+                    llm_streaming=self.pipeline_config.llm_streaming,
+                    assistant_gender=self.pipeline_config.assistant_gender,
                 )
-                agent_processor.on_assistant_response = lambda msg: self._save_transcript_message_from_turn(
-                    role="assistant", content=msg, timestamp=self._current_iso_timestamp()
-                )
+
+                async def on_assistant_response(msg: str) -> None:
+                    await self._save_transcript_message_from_turn(
+                        role="assistant", content=msg, timestamp=self._current_iso_timestamp()
+                    )
+                    # Carry the agent's reply into STT as conversation context so it improves
+                    # transcription of the user's next turn (AssemblyAI Universal-3 Pro; no-op otherwise).
+                    await update_stt_agent_context(stt, msg)
+
+                agent_processor.on_assistant_response = on_assistant_response
                 self.agentic_system = agent_processor.agentic_system
 
             # Create pipeline
@@ -428,6 +474,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 audio_llm_audio_collector=audio_llm_audio_collector,
                 input_transcription_context_filter=input_transcription_context_filter,
                 input_transcription_processor=input_transcription_processor,
+                turn_stop_strategy=turn_stop_strategy,
             )
 
             metrics_log_path = self.output_dir / "pipecat_metrics.jsonl"
@@ -443,7 +490,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 self._metrics_observer,  # Write metrics to JSONL file
             ]
 
-            self._task = PipelineTask(
+            self._task = PipelineWorker(
                 pipeline,
                 params=PipelineParams(
                     enable_metrics=True,  # Enable TTFB and ProcessingMetricsData
@@ -467,8 +514,9 @@ class PipecatAssistantServer(AbstractAssistantServer):
             )
 
             # Run the pipeline
-            self._runner = PipelineRunner(handle_sigint=False, force_gc=True)
-            await self._runner.run(self._task)
+            self._runner = WorkerRunner(handle_sigint=False, force_gc=True)
+            await self._runner.add_workers(self._task)
+            await self._runner.run()
 
         except Exception as e:
             logger.error(f"Session error: {e}", exc_info=True)
@@ -487,6 +535,36 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 self._metrics_observer = None
 
             logger.info("Client disconnected from assistant server")
+
+    def _register_ink2_diagnostics(self, stt: CartesiaTurnsSTTService) -> None:
+        """Log Cartesia ink-2 eager-end / resume events and the eager->final latency delta.
+
+        Diagnostics only: ink-2's committed turn boundaries already drive aggregation through the
+        external turn strategies. The eager->final delta quantifies how much earlier the LLM could
+        have started if speculative execution were enabled (a possible future enhancement).
+        """
+        # monotonic seconds at the last eager-end prediction (None if none pending)
+        eager: dict[str, float | None] = {"ts": None}
+
+        @stt.event_handler("on_turn_eager_end")
+        async def _on_eager_end(_service, transcript: str) -> None:
+            eager["ts"] = time.monotonic()
+            logger.info(f"[ink-2] eager end-of-turn predicted: {transcript!r}")
+
+        @stt.event_handler("on_turn_resume")
+        async def _on_resume(_service) -> None:
+            eager["ts"] = None
+            logger.info("[ink-2] turn resumed after eager end (user kept talking)")
+
+        @stt.event_handler("on_turn_end")
+        async def _on_turn_end(_service, transcript: str) -> None:
+            ts = eager["ts"]
+            if ts is not None:
+                delta_ms = int((time.monotonic() - ts) * 1000)
+                logger.info(f"[ink-2] committed end-of-turn (eager->final +{delta_ms}ms): {transcript!r}")
+            else:
+                logger.info(f"[ink-2] committed end-of-turn (no eager prediction): {transcript!r}")
+            eager["ts"] = None
 
     def _create_transport(self, websocket) -> FastAPIWebsocketTransport:
         """Create the WebSocket transport with Twilio frame serialization."""
@@ -518,6 +596,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         audio_llm_audio_collector=None,
         input_transcription_context_filter=None,
         input_transcription_processor=None,
+        turn_stop_strategy=None,
     ) -> Pipeline:
         """Create the Pipecat pipeline.
 
@@ -534,14 +613,26 @@ class PipecatAssistantServer(AbstractAssistantServer):
             pipeline_components.append(stt)
             # CRITICAL ORDER: Processors that need to SEE frames must come BEFORE user_aggregator
             # because user_aggregator CONSUMES frames (doesn't pass through)
-            pipeline_components.append(UserObserver())  # For metrics
+            # UserObserver also hosts the turn-end fallback timer (arms/cancels on the bot/user
+            # speaking frames it sees here on the spine) and drives agent_processor's nudge.
+            self._user_observer = UserObserver(
+                turn_end_fallback_time=self.turn_end_fallback_time,
+                fallback_processor=agent_processor,
+                # Cascade: fallback rides the standard turn flow via a native turn-stop.
+                turn_stop_strategy=turn_stop_strategy,
+            )
+            pipeline_components.append(self._user_observer)
             pipeline_components.append(user_aggregator)  # Aggregates & fires turn events
             # Add agent processor (receives turn events via event handler)
             pipeline_components.append(agent_processor)
         elif audio_llm_processor:
             # Audio-LLM pipeline: collector buffers audio, processor handles turns
             pipeline_components.append(audio_llm_audio_collector)  # Buffers audio frames
-            pipeline_components.append(UserObserver())  # For metrics
+            self._user_observer = UserObserver(
+                turn_end_fallback_time=self.turn_end_fallback_time,
+                fallback_processor=audio_llm_processor,
+            )
+            pipeline_components.append(self._user_observer)
             pipeline_components.append(user_aggregator)  # Aggregates & fires turn events
             pipeline_components.append(
                 ParallelPipeline(
@@ -656,9 +747,10 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 )
                 await agent_processor.process_complete_user_turn(message.content)
             elif self.pipeline_config.pipeline_type == PipelineType.AUDIO_LLM and audio_llm_processor:
-                # No STT → message.content is empty.
-                # Processing is triggered by LLMContextFrame flow through ParallelPipeline
-                # (AudioLLMUserAudioCollector pushes LLMContextFrame on UserStoppedSpeakingFrame)
+                # No STT → message.content is empty, and under the forced 'external'
+                # turn-stop strategy this event is transcript-gated and won't fire anyway.
+                # Turn finalization is driven by the AudioLLMUserAudioCollector, which
+                # pushes LLMContextFrame through the ParallelPipeline on UserStoppedSpeakingFrame.
                 pass
             elif self.non_instrumented_realtime_llm:
                 # Non-instrumented realtime fallback (e.g. Ultravox)

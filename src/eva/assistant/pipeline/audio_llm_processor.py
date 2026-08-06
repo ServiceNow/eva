@@ -39,6 +39,11 @@ from pipecat.utils.time import time_now_iso8601
 from eva.assistant.agentic.audio_llm_system import AudioLLMAgenticSystem
 from eva.assistant.agentic.audit_log import AuditLog
 from eva.assistant.pipeline.alm_base import BaseALMClient
+from eva.assistant.pipeline.fallback import (
+    TurnEndFallbackTimer,
+    build_fallback_nudge,
+    emit_emulated_user_turn_boundary,
+)
 from eva.assistant.pipeline.frames import LLMMessageFrame
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
@@ -56,8 +61,15 @@ MIN_AUDIO_BYTES = 320
 class AudioLLMUserAudioCollector(FrameProcessor):
     """Buffers raw audio frames during user speech for the audio-LLM pipeline.
 
-    Collects audio and pushes LLMContextFrame when user stops speaking, which
+    Collects audio and pushes LLMContextFrame when the user stops speaking, which
     triggers the parallel pipeline (transcription + audio-LLM processing).
+
+    Turn boundaries are driven directly by the UserStartedSpeakingFrame /
+    UserStoppedSpeakingFrame frames the transport emits. In the AUDIO_LLM
+    pipeline the user aggregator runs the ``external`` turn-stop strategy with no
+    STT, so ``on_user_turn_stopped`` is transcript-gated and never fires — the
+    collector must finalize on the stop frame itself rather than defer to that
+    event.
 
     Uses a ring buffer of pre-VAD audio so that the beginning of the user's
     speech—before VAD fires UserStartedSpeakingFrame—is not lost. This mirrors
@@ -85,6 +97,10 @@ class AudioLLMUserAudioCollector(FrameProcessor):
         self._current_turn_id = 0  # Incremented on each user turn
         # Pre-speech buffer size (captures audio before VAD fires to avoid cutting off speech)
         self._pre_speech_secs = pre_speech_secs or self.DEFAULT_PRE_SPEECH_SECS
+        # Actual sample rate observed on InputAudioRawFrames. The buffer holds raw PCM
+        # at whatever rate the transport delivered; falls back to PIPELINE_SAMPLE_RATE
+        # until the first audio frame arrives.
+        self._frame_sample_rate: int = PIPELINE_SAMPLE_RATE
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
         await super().process_frame(frame, direction)
@@ -93,7 +109,7 @@ class AudioLLMUserAudioCollector(FrameProcessor):
             self._user_speaking = True
             # Prepend the pre-speech ring buffer so we don't lose the start of speech
             pre_speech_bytes = b"".join(self._pre_speech_buffer)
-            pre_speech_duration_ms = len(pre_speech_bytes) / (PIPELINE_SAMPLE_RATE * 2) * 1000
+            pre_speech_duration_ms = len(pre_speech_bytes) / (self._frame_sample_rate * 2) * 1000
             logger.debug(
                 f"Prepending {len(pre_speech_bytes)} bytes ({pre_speech_duration_ms:.0f}ms) of pre-speech audio"
             )
@@ -108,13 +124,14 @@ class AudioLLMUserAudioCollector(FrameProcessor):
             await self._user_context_aggregator.push_frame(LLMContextFrame(context=self._context))
 
         elif isinstance(frame, InputAudioRawFrame):
+            self._frame_sample_rate = frame.sample_rate
             if self._user_speaking:
                 self._audio_buffer.extend(frame.audio)
             else:
                 # Ring buffer: keep a rolling window of pre-speech audio
                 self._pre_speech_buffer.append(frame.audio)
                 # 16-bit mono → 2 bytes per sample
-                max_bytes = int(self._pre_speech_secs * PIPELINE_SAMPLE_RATE * 2)
+                max_bytes = int(self._pre_speech_secs * self._frame_sample_rate * 2)
                 total = sum(len(chunk) for chunk in self._pre_speech_buffer)
                 while total > max_bytes and self._pre_speech_buffer:
                     total -= len(self._pre_speech_buffer.pop(0))
@@ -143,6 +160,15 @@ class AudioLLMUserAudioCollector(FrameProcessor):
         """Get the current turn ID for associating transcriptions with entries."""
         return self._current_turn_id
 
+    @property
+    def frame_sample_rate(self) -> int:
+        """Sample rate observed on the most recent InputAudioRawFrame.
+
+        The audio buffer holds raw PCM at whatever rate the transport delivered;
+        downstream consumers should use this rather than assuming PIPELINE_SAMPLE_RATE.
+        """
+        return self._frame_sample_rate
+
 
 class AudioLLMProcessor(FrameProcessor):
     """Processes complete user turns using the audio-LLM model.
@@ -169,6 +195,10 @@ class AudioLLMProcessor(FrameProcessor):
         alm_client: BaseALMClient,
         audio_collector: AudioLLMUserAudioCollector,
         output_dir: Path | None = None,
+        pre_tool_speech: str = "off",
+        llm_streaming: bool = False,
+        full_audio_context: bool = False,
+        assistant_gender: str | None = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -184,14 +214,27 @@ class AudioLLMProcessor(FrameProcessor):
             audit_log=audit_log,
             alm_client=alm_client,
             output_dir=output_dir,
+            pre_tool_speech=pre_tool_speech,
+            llm_streaming=llm_streaming,
+            full_audio_context=full_audio_context,
+            assistant_gender=assistant_gender,
         )
 
         # State tracking (mirrors BenchmarkAgentProcessor)
         self._current_query_task: asyncio.Task | None = None
         self._interrupted = asyncio.Event()
 
+        # Turn-end fallback timer, owned and driven by UserObserver (set there during pipeline
+        # wiring); used here to cancel/reset on a real completed user turn.
+        self.fallback_timer: TurnEndFallbackTimer | None = None
+
         # Optional callback for transcript saving (set by pipecat_server.py)
         self.on_assistant_response: Awaitable | None = None
+
+    @property
+    def query_in_flight(self) -> bool:
+        """True while a real or nudge query is being processed (used by the fallback timer)."""
+        return self._current_query_task is not None and not self._current_query_task.done()
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
         if isinstance(frame, (EndFrame, CancelFrame)):
@@ -248,6 +291,11 @@ class AudioLLMProcessor(FrameProcessor):
             except asyncio.CancelledError:
                 pass
 
+        # A real user turn landed: cancel any pending nudge and reset the give-up counter.
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
+            self.fallback_timer.reset_counter()
+
         self._interrupted.clear()
         logger.info(f"Processing audio-LLM user turn ({len(audio_bytes)} bytes)")
 
@@ -257,7 +305,8 @@ class AudioLLMProcessor(FrameProcessor):
         turn_id = self.audio_collector.current_turn_id
         self.audit_log.append_user_input(self._USER_PLACEHOLDER, turn_id=turn_id)
 
-        self._current_query_task = asyncio.create_task(self._process_audio_turn(audio_bytes))
+        source_sample_rate = self.audio_collector.frame_sample_rate
+        self._current_query_task = asyncio.create_task(self._process_audio_turn(audio_bytes, source_sample_rate))
         try:
             await self._current_query_task
         except asyncio.CancelledError:
@@ -268,11 +317,11 @@ class AudioLLMProcessor(FrameProcessor):
     # Placeholder used in audit_log / transcript since no real transcription is available
     _USER_PLACEHOLDER = "[user audio]"
 
-    async def _process_audio_turn(self, audio_bytes: bytes) -> None:
+    async def _process_audio_turn(self, audio_bytes: bytes, source_sample_rate: int) -> None:
         """Process a user turn with audio data."""
         try:
             # Send audio to the agentic system and process
-            self.agentic_system.set_turn_audio(audio_bytes, PIPELINE_SAMPLE_RATE)
+            self.agentic_system.set_turn_audio(audio_bytes, source_sample_rate)
 
             async for response in self.agentic_system.process_query_with_audio(self._USER_PLACEHOLDER):
                 if self._interrupted.is_set():
@@ -290,6 +339,82 @@ class AudioLLMProcessor(FrameProcessor):
                 await self._handle_response("I'm sorry, I encountered an error. Please try again.")
             except Exception:
                 logger.debug("Failed to send error message (pipeline may be closed)")
+
+    async def process_turn_fallback(
+        self, timeout_seconds: int | None, partial: str = "", turn_stop_strategy=None
+    ) -> None:
+        """End the user turn on the backstop timer and reply, framed as a fallback.
+
+        Called by ``UserObserver`` when the fallback timer fires. The fallback is the VAD's
+        backup turn-end decision: it takes whatever the user actually said and treats it as the
+        (possibly incomplete) user utterance. To mirror the cascade path — which forwards the
+        partial *transcript* — audio-LLM forwards the buffered partial **audio** with an
+        acknowledgment hint, so the model owns that it may not have heard perfectly before
+        answering. Only when no audio was captured at all does it fall back to a text reprompt.
+
+        Audio-LLM finalizes turns via the collector's ``LLMContextFrame`` (its
+        ``on_user_turn_stopped`` is a no-op), so it can't use the cascade's native turn-stop
+        trigger; the emulated boundary provides the turn bracketing instead.
+
+        Args:
+            timeout_seconds: The configured ``EVA_TURN_END_FALLBACK_TIME`` value.
+            partial: Best-effort partial transcript (usually empty for audio-LLM; the audio is
+                the real partial context).
+            turn_stop_strategy: Unused for audio-LLM (cascade-only parameter for compatibility).
+        """
+        self._interrupted.clear()
+        # Emulated boundary brackets this nudge as its own turn (see emit_emulated_user_turn_boundary).
+        await emit_emulated_user_turn_boundary(self)
+
+        # The fallback IS the backup end-of-utterance decision, so consume the buffer like a real
+        # turn (get_buffered_audio clears it). Otherwise consecutive nudges would re-forward the
+        # same audio, since the buffer only clears on the next UserStartedSpeakingFrame. Safe to
+        # clear: the transcription branch only reads on a real LLMContextFrame, which the fallback
+        # never emits.
+        audio_bytes = self.audio_collector.get_buffered_audio()
+        has_audio = bool(audio_bytes) and len(audio_bytes) >= MIN_AUDIO_BYTES
+        marker, nudge = build_fallback_nudge(timeout_seconds, partial, has_audio=has_audio)
+
+        if has_audio:
+            # Forward the partial audio with the acknowledgment hint. The visible audit value is
+            # the clear fallback marker; llm_content is the placeholder that _execute_agent_with_audio
+            # swaps for the audio. No turn_id, so a late transcription can't overwrite the marker.
+            self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=self._USER_PLACEHOLDER)
+            self.agentic_system.set_turn_text_hint(nudge)
+            source_sample_rate = self.audio_collector.frame_sample_rate
+            self._current_query_task = asyncio.create_task(self._process_audio_turn(audio_bytes, source_sample_rate))
+        else:
+            # No audio captured at all (genuine silence) — reprompt via text. Record a no-audio
+            # turn so _turn_audio_history stays aligned 1:1 with user messages (full_audio_context
+            # relies on that alignment); this turn is left as its text reprompt in the prompt.
+            self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=nudge)
+            self.agentic_system.note_non_audio_turn()
+            self._current_query_task = asyncio.create_task(self._process_text_query(nudge))
+        try:
+            await self._current_query_task
+        except asyncio.CancelledError:
+            logger.info("Turn-end fallback processing interrupted")
+        finally:
+            self._current_query_task = None
+
+    async def _process_text_query(self, text: str) -> None:
+        """Drive the audio-LLM with a text-only query (used for fallback nudges).
+
+        Uses the inherited text ``process_query`` rather than the audio path; ``log_user_input``
+        is False because the marker was already recorded by ``process_turn_fallback``.
+        """
+        try:
+            async for response in self.agentic_system.process_query(text, log_user_input=False):
+                if self._interrupted.is_set():
+                    logger.info("Skipping response - interrupted")
+                    return
+                if response:
+                    await self._handle_response(response)
+        except asyncio.CancelledError:
+            logger.debug("Fallback text query cancelled during pipeline shutdown")
+            raise
+        except Exception as e:
+            logger.error(f"Error processing fallback text query: {e}", exc_info=True)
 
     async def _handle_response(self, message: str) -> None:
         """Push response to TTS. Mirrors BenchmarkAgentProcessor._handle_response."""
@@ -321,6 +446,10 @@ class AudioLLMProcessor(FrameProcessor):
     async def stop(self):
         """Stop the processor and cleanup."""
         logger.info("Stopping AudioLLMProcessor...")
+
+        # Cancel any pending turn-end fallback timer (owned by UserObserver)
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
 
         self._interrupted.set()
         if self._current_query_task and not self._current_query_task.done():
@@ -392,14 +521,12 @@ class AudioTranscriptionProcessor(FrameProcessor):
         audio_collector: AudioLLMUserAudioCollector,
         alm_client: BaseALMClient,
         system_prompt: str | None = None,
-        sample_rate: int = PIPELINE_SAMPLE_RATE,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._audio_collector = audio_collector
         self._alm_client = alm_client
         self._system_prompt = system_prompt or alm_client.default_transcription_prompt
-        self._sample_rate = sample_rate
 
         # Callback for when transcription is ready (set by pipecat_server.py)
         self.on_transcription: Any | None = None
@@ -428,13 +555,14 @@ class AudioTranscriptionProcessor(FrameProcessor):
 
         # Capture turn_id and audio at the moment we receive the frame
         turn_id = self._audio_collector.current_turn_id
-        # Capture audio NOW before it gets overwritten by the next turn
+        # Capture audio + sample rate NOW before they get overwritten by the next turn
         audio_data = self._audio_collector.peek_buffered_audio()
+        source_sample_rate = self._audio_collector.frame_sample_rate
         logger.info(f"transcribe (turn_id={turn_id})")
         timestamp = time_now_iso8601()
 
         # Run transcription as background task so it completes even if interrupted
-        task = asyncio.create_task(self._transcribe_audio(audio_data, timestamp, turn_id=turn_id))
+        task = asyncio.create_task(self._transcribe_audio(audio_data, timestamp, source_sample_rate, turn_id=turn_id))
         self._transcription_tasks.append(task)
         # Clean up completed tasks
         self._transcription_tasks = [t for t in self._transcription_tasks if not t.done()]
@@ -453,9 +581,16 @@ class AudioTranscriptionProcessor(FrameProcessor):
             The transcription text, or None if transcription failed or audio was empty.
         """
         audio_data = self._audio_collector.peek_buffered_audio()
-        return await self._transcribe_audio(audio_data, timestamp, turn_id)
+        source_sample_rate = self._audio_collector.frame_sample_rate
+        return await self._transcribe_audio(audio_data, timestamp, source_sample_rate, turn_id)
 
-    async def _transcribe_audio(self, audio_data: bytes, timestamp: str, turn_id: int | None = None) -> str | None:
+    async def _transcribe_audio(
+        self,
+        audio_data: bytes,
+        timestamp: str,
+        source_sample_rate: int,
+        turn_id: int | None = None,
+    ) -> str | None:
         """Transcribe pre-captured audio data using chat completions.
 
         This method takes audio data directly instead of reading from the collector,
@@ -465,6 +600,7 @@ class AudioTranscriptionProcessor(FrameProcessor):
         Args:
             audio_data: Raw PCM audio bytes to transcribe.
             timestamp: ISO8601 timestamp for the transcription.
+            source_sample_rate: Sample rate of the input audio.
             turn_id: Optional turn identifier for associating with audit log entry.
 
         Returns:
@@ -478,7 +614,7 @@ class AudioTranscriptionProcessor(FrameProcessor):
             start_time = time.time()
             text = await self._alm_client.transcribe(
                 audio_bytes=audio_data,
-                source_sample_rate=self._sample_rate,
+                source_sample_rate=source_sample_rate,
                 system_prompt=self._system_prompt,
             )
             elapsed = time.time() - start_time
