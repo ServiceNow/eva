@@ -11,7 +11,10 @@ from unittest.mock import patch
 
 import pytest
 
-from eva.assistant.gemini_live_server import GeminiLiveAssistantServer
+from eva.assistant.gemini_live_server import (
+    GeminiLiveAssistantServer,
+    _model_supports_fc_scheduling,
+)
 
 
 def _make_server(**attrs) -> GeminiLiveAssistantServer:
@@ -110,3 +113,19 @@ class TestCreateGenaiClient:
         _, kwargs = mock_client.call_args
         assert kwargs.get("api_key") == "AIzaSyDEVKEY"
         assert "vertexai" not in kwargs
+
+
+class TestFunctionResponseSchedulingGate:
+    """Binary, model-gated behavior: send WHEN_IDLE (old) or omit (new)."""
+
+    def test_3_5_flash_unsupported(self):
+        """3.5 Flash does not support scheduling -> omit."""
+        assert _model_supports_fc_scheduling("gemini-3.5-flash-live-preview") is False
+
+    def test_3_5_flash_lite_supported(self):
+        """3.5 Flash Lite DOES support scheduling -> send WHEN_IDLE."""
+        assert _model_supports_fc_scheduling("gemini-3.5-flash-lite-live-preview") is True
+
+    def test_older_model_supported(self):
+        """Older models keep the old behavior (WHEN_IDLE)."""
+        assert _model_supports_fc_scheduling("gemini-2.0-flash-live-001") is True

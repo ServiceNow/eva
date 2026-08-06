@@ -56,6 +56,23 @@ MULAW_CHUNK_DURATION_S = 0.02  # 20ms per chunk
 # can never add silence or worsen alignment.
 USER_ACTIVE_GUARD_S = 0.3
 
+def _model_supports_fc_scheduling(model: str) -> bool:
+    """Whether a Gemini Live model accepts a FunctionResponse ``scheduling`` field.
+
+    Binary, model-gated behavior:
+      - supported  -> send the historical scheduling=WHEN_IDLE (old behavior)
+      - unsupported -> omit scheduling (new behavior)
+
+    Google does NOT support function scheduling on 3.5 Flash (its turn lifecycle
+    decouples function calls), but DOES on 3.5 Flash Lite and on older models.
+    Sending ``scheduling`` to a model that lacks support closes the socket with a
+    1007 error.
+    """
+    m = model.lower()
+    if "3.5-flash" in m and "lite" not in m:
+        return False
+    return True
+
 
 # ---------------------------------------------------------------------------
 # Tool schema helpers
@@ -194,11 +211,15 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         # preview models are Vertex-only and may require a specific version; when
         # unset the SDK's default is used.
         self._api_version = s2s_params.get("api_version")
-        # Optional FunctionResponse scheduling ("WHEN_IDLE" | "INTERRUPT" |
-        # "SILENT"). Newer Live models (e.g. gemini-3.5-flash-live-preview) do
-        # NOT support a scheduling field and close the socket with 1007 if one is
-        # set, so it is OMITTED by default; older models can opt back in.
-        self._fc_scheduling = s2s_params.get("function_response_scheduling")
+        # Whether to send scheduling=WHEN_IDLE on tool (FunctionResponse) results.
+        # Binary, gated by model only: models that support scheduling get the old
+        # behavior (WHEN_IDLE); 3.5 Flash does not, so we omit it (sending it
+        # closes the socket with 1007).
+        self._send_fc_scheduling = _model_supports_fc_scheduling(self._model)
+        logger.info(
+            f"FunctionResponse scheduling: {'WHEN_IDLE' if self._send_fc_scheduling else 'omitted'} "
+            f"(model={self._model})"
+        )
         self._voice = s2s_params.get("voice", "Kore")
         # s2s_params["language_code"] takes precedence; fall back to EVA_LANGUAGE
         self._language_code = s2s_params.get("language_code") or self.language
@@ -699,16 +720,17 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                         f"Tool result: {tool_name} -> {json.dumps(result, ensure_ascii=False)}"
                                     )
 
-                                    # Send result back to Gemini. Only set the
-                                    # scheduling field when explicitly configured
-                                    # — newer Live models reject it (1007).
+                                    # Send result back to Gemini. Scheduling is set
+                                    # only when supported by the model (resolved once
+                                    # in __init__); models that reject it (3.5 Flash)
+                                    # get no scheduling field to avoid a 1007 close.
                                     fr_kwargs: dict[str, Any] = {
                                         "id": fc.id,
                                         "name": fc.name,
                                         "response": result,
                                     }
-                                    if self._fc_scheduling:
-                                        fr_kwargs["scheduling"] = types.FunctionResponseScheduling[self._fc_scheduling]
+                                    if self._send_fc_scheduling:
+                                        fr_kwargs["scheduling"] = types.FunctionResponseScheduling.WHEN_IDLE
                                     await session.send_tool_response(
                                         function_responses=[types.FunctionResponse(**fr_kwargs)]
                                     )
