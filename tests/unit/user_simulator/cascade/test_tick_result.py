@@ -1,4 +1,14 @@
+import pytest
+
 from eva.user_simulator.cascade.tick_result import TickResult, split_tick_audio
+
+
+@pytest.mark.parametrize("input_length", [0, 1, 7, 8, 9, 17])
+def test_split_chunk_is_always_bytes_per_tick(input_length):
+    chunk, overflow = split_tick_audio(b"\x01" * input_length, bytes_per_tick=8)
+
+    assert len(chunk) == 8
+    assert len(overflow) == max(0, input_length - 8)
 
 
 def test_split_pads_short_audio_with_silence():

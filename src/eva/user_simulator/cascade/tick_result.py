@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import NamedTuple
 
-from eva.user_simulator.cascade.constants import SILENCE_BYTE
+from eva.user_simulator.cascade.constants import BYTES_PER_TICK, SILENCE_BYTE
 
 
 @dataclass(frozen=True)
@@ -12,6 +13,8 @@ class TickResult:
     """What one tick of the conversation produced."""
 
     tick_number: int
+    """Monotonic simulation-clock index; the ordering key for events, unlike wall_clock_ms."""
+
     assistant_audio: bytes
     """Exactly one tick's worth of PCM16, silence-padded when the assistant was quiet."""
 
@@ -27,8 +30,18 @@ class TickResult:
         return self.assistant_audio_raw_bytes > 0
 
 
-def split_tick_audio(audio: bytes, bytes_per_tick: int) -> tuple[bytes, bytes]:
+class TickAudioSplit(NamedTuple):
+    """Result of splitting audio at a tick boundary."""
+
+    chunk: bytes
+    """Always exactly bytes_per_tick, silence-padded when the input was short."""
+
+    overflow: bytes
+    """Any remainder past bytes_per_tick, carried to the next tick."""
+
+
+def split_tick_audio(audio: bytes, bytes_per_tick: int = BYTES_PER_TICK) -> TickAudioSplit:
     """Split audio into exactly one tick's worth plus overflow, padding short input with silence."""
     if len(audio) >= bytes_per_tick:
-        return audio[:bytes_per_tick], audio[bytes_per_tick:]
-    return audio + SILENCE_BYTE * (bytes_per_tick - len(audio)), b""
+        return TickAudioSplit(audio[:bytes_per_tick], audio[bytes_per_tick:])
+    return TickAudioSplit(audio + SILENCE_BYTE * (bytes_per_tick - len(audio)), b"")
