@@ -478,13 +478,22 @@ class CascadeSimulatorConfig(BaseModel):
     provider: Literal["cascade"] = "cascade"
 
     stt: str = Field("elevenlabs", description="Streaming STT provider for transcribing assistant audio.")
-    stt_params: dict[str, Any] = Field(default_factory=lambda: {"model": "scribe_v2_realtime"})
+    stt_params: dict[str, Any] = Field(
+        default_factory=lambda: {"model": "scribe_v2_realtime"},
+        description="Provider-native keyword arguments passed through to the STT client.",
+    )
 
     llm: str = Field("gpt-5.5", description="Caller LLM, resolved via the same EVA_MODEL_LIST router as the assistant.")
-    llm_params: dict[str, Any] = Field(default_factory=dict)
+    llm_params: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Provider-native keyword arguments passed through to the caller LLM client.",
+    )
 
     tts: str = Field("cartesia", description="TTS provider for the simulated caller's speech.")
-    tts_params: dict[str, Any] = Field(default_factory=lambda: {"model": "sonic-3.5"})
+    tts_params: dict[str, Any] = Field(
+        default_factory=lambda: {"model": "sonic-3.5"},
+        description="Provider-native keyword arguments passed through to the TTS client.",
+    )
 
 
 UserSimulatorConfig = Annotated[
@@ -742,13 +751,13 @@ class RunConfig(BaseSettings):
         config is unused and conflicting env vars are harmless.
         """
         if (
-            isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig)
+            not isinstance(self.user_simulator, ElevenLabsSimulatorConfig)
             and self.perturbation is not None
             and self.perturbation.accent is not None
         ):
             raise ValueError(
                 "Accent perturbations require the ElevenLabs user simulator; "
-                "OpenAI Realtime supports behavior, noise, and connection perturbations."
+                "other providers support behavior, noise, and connection perturbations."
             )
 
         if self.max_rerun_attempts == 0 or self.aggregate_only:

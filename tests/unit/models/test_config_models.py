@@ -1226,6 +1226,28 @@ class TestUserSimulatorConfig:
                 perturbation={"accent": "french"},
             )
 
+    def test_cascade_rejects_accent_perturbation_during_config_load(self):
+        with pytest.raises(ValidationError, match="Accent perturbations require the ElevenLabs user simulator"):
+            _config(
+                env_vars=_BASE_ENV,
+                user_simulator={"provider": "cascade"},
+                perturbation={"accent": "french"},
+            )
+
+    def test_cascade_nested_environment_configuration(self):
+        from eva.models.config import CascadeSimulatorConfig
+
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_USER_SIMULATOR__PROVIDER": "cascade",
+                "EVA_USER_SIMULATOR__STT_PARAMS": json.dumps({"model": "x"}),
+            }
+        )
+
+        assert isinstance(config.user_simulator, CascadeSimulatorConfig)
+        assert config.user_simulator.stt_params == {"model": "x"}
+
 
 def test_cascade_simulator_config_defaults():
     from eva.models.config import CascadeSimulatorConfig
