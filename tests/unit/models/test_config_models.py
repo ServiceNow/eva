@@ -1225,3 +1225,26 @@ class TestUserSimulatorConfig:
                 user_simulator={"provider": "openai_realtime"},
                 perturbation={"accent": "french"},
             )
+
+
+def test_cascade_simulator_config_defaults():
+    from eva.models.config import CascadeSimulatorConfig
+
+    config = CascadeSimulatorConfig()
+
+    assert config.provider == "cascade"
+    assert config.stt == "elevenlabs"
+    assert config.stt_params["model"] == "scribe_v2_realtime"
+    assert config.tts == "cartesia"
+    assert config.tts_params["model"] == "sonic-3.5"
+    assert config.llm == "gpt-5.5"
+
+
+def test_user_simulator_union_discriminates_cascade():
+    from pydantic import TypeAdapter
+
+    from eva.models.config import CascadeSimulatorConfig, UserSimulatorConfig
+
+    parsed = TypeAdapter(UserSimulatorConfig).validate_python({"provider": "cascade"})
+
+    assert isinstance(parsed, CascadeSimulatorConfig)

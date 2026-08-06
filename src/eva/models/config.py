@@ -472,8 +472,23 @@ class OpenAIRealtimeSimulatorConfig(BaseModel):
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
 
+class CascadeSimulatorConfig(BaseModel):
+    """Self-hosted STT/LLM/TTS caller pipeline with tick-based turn-taking."""
+
+    provider: Literal["cascade"] = "cascade"
+
+    stt: str = Field("elevenlabs", description="Streaming STT provider for transcribing assistant audio.")
+    stt_params: dict[str, Any] = Field(default_factory=lambda: {"model": "scribe_v2_realtime"})
+
+    llm: str = Field("gpt-5.5", description="Caller LLM, resolved via the same EVA_MODEL_LIST router as the assistant.")
+    llm_params: dict[str, Any] = Field(default_factory=dict)
+
+    tts: str = Field("cartesia", description="TTS provider for the simulated caller's speech.")
+    tts_params: dict[str, Any] = Field(default_factory=lambda: {"model": "sonic-3.5"})
+
+
 UserSimulatorConfig = Annotated[
-    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig | CascadeSimulatorConfig,
     Field(discriminator="provider"),
 ]
 
