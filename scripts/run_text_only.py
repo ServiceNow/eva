@@ -520,6 +520,7 @@ async def run_record(
         audit_log=audit_log,
         llm_client=agent_llm_client,
         output_dir=record_output_dir,
+        prompts_path=os.getenv("EVA_PROMPTS_DIR") or None,
     )
 
     user_prompt = build_user_sim_prompt(record, language)
@@ -659,6 +660,7 @@ async def run_record(
         num_user_turns=len(user_turns),
         tool_params=tool_params,
         tool_responses=tool_responses,
+        language=language,
     )
 
     # ---- Run metrics ----

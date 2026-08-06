@@ -1,0 +1,116 @@
+{
+  "1": {
+    "2": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "EMP048271",
+        "new_value": "EMP048274"
+      },
+      "original_text": "Merci. J'ai noté : EMP048271. Maintenant, pouvez-vous me donner les quatre derniers chiffres du numéro de téléphone enregistré dans notre système, s'il vous plaît ? de téléphone enregistré dans notre système, s'il vous plaît ?",
+      "edited_text": "Merci. J'ai noté : EMP048274. Maintenant, pouvez-vous me donner les quatre derniers chiffres du numéro de téléphone enregistré dans notre système, s'il vous plaît ? de téléphone enregistré dans notre système, s'il vous plaît ?"
+    }
+  },
+  "10": {
+    "1": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Si vous ne les avez pas sous la main, je peux vous proposer une autre méthode de vérification."
+      },
+      "original_text": "Bonjour ! Je vais vous aider à résoudre ce problème de connexion Wi-Fi. Pour commencer, je dois vérifier votre identité. Pouvez-vous me donner votre numéro d'employé et les quatre derniers chiffres du numéro de téléphone associé à votre compte ? votre identité. Pouvez-vous me donner votre numéro d'employé et les quatre derniers chiffres du numéro de téléphone associé à votre compte ?",
+      "edited_text": "Bonjour ! Je vais vous aider à résoudre ce problème de connexion Wi-Fi. Pour commencer, je dois vérifier votre identité. Pouvez-vous me donner votre numéro d'employé et les quatre derniers chiffres du numéro de téléphone associé à votre compte ? votre identité. Pouvez-vous me donner votre numéro d'employé et les quatre derniers chiffres du numéro de téléphone associé à votre compte ? Si vous ne les avez pas sous la main, je peux vous proposer une autre méthode de vérification."
+    }
+  },
+  "19": {
+    "11": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "D301",
+        "new_value": "D303"
+      },
+      "original_text": "D'accord, je comprends. Vous préférez un bureau au siège social, étage trois, de préférence près d'une fenêtre.\n\nLaissez-moi vérifier la disponibilité à cet étage. fenêtre. Laissez-moi vérifier la disponibilité à cet étage. Parfait ! J'ai trouvé deux bureaux disponibles au siège social, étage trois : 1. Bureau D301 dans la zone est, près d'une fenêtre\n2. Bureau D302 dans la zone centrale, sans fenêtre\n\nPuisque vous préférez un bureau près d'une fenêtre, le bureau D301 serait idéal pour vous. Souhaitez-vous que je vous l'assigne ? zone est, près d'une fenêtre. 2. Bureau D302 dans la zone centrale, sans fenêtre. Puisque vous préférez un bureau près d'une fenêtre, le bureau D301 serait idéal pour vous. Souhaitez-vous que je vous l'assigne ?",
+      "edited_text": "D'accord, je comprends. Vous préférez un bureau au siège social, étage trois, de préférence près d'une fenêtre.\n\nLaissez-moi vérifier la disponibilité à cet étage. fenêtre. Laissez-moi vérifier la disponibilité à cet étage. Parfait ! J'ai trouvé deux bureaux disponibles au siège social, étage trois : 1. Bureau D303 dans la zone est, près d'une fenêtre\n2. Bureau D302 dans la zone centrale, sans fenêtre\n\nPuisque vous préférez un bureau près d'une fenêtre, le bureau D301 serait idéal pour vous. Souhaitez-vous que je vous l'assigne ? zone est, près d'une fenêtre. 2. Bureau D302 dans la zone centrale, sans fenêtre. Puisque vous préférez un bureau près d'une fenêtre, le bureau D301 serait idéal pour vous. Souhaitez-vous que je vous l'assigne ?"
+    }
+  },
+  "20": {
+    "8": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Merci de votre appel et bonne journée à vous aussi !"
+      },
+      "original_text": "De rien, Alain ! Merci de votre appel et bonne journée à vous aussi ! [speaker likely cut itself off]",
+      "edited_text": "De rien, Alain ! [speaker likely cut itself off]"
+    }
+  },
+  "30": {
+    "3": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "me donner les quatre derniers chiffres de votre numéro de téléphone enregistré dans le système ?"
+      },
+      "original_text": "Parfait, merci Marion. J'ai bien noté : E, N, P, zéro, trois, un, quatre, huit, deux. Maintenant, pouvez-vous me donner les quatre derniers chiffres de votre numéro de téléphone enregistré dans le système ? me donner les quatre derniers chiffres de votre numéro de téléphone enregistré dans le système ?",
+      "edited_text": "Parfait, merci Marion. J'ai bien noté : E, N, P, zéro, trois, un, quatre, huit, deux. Maintenant, pouvez-vous me donner les quatre derniers chiffres de votre numéro de téléphone enregistré dans le système ?"
+    }
+  },
+  "52": {
+    "3": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Donc les quatre derniers chiffres sont 3, 8, 4, 2."
+      },
+      "original_text": "Oui, bien sûr — pardon pour la confusion. Donc les quatre derniers chiffres sont 3, 8, 4, 2. C'est bien ça ? ça ?",
+      "edited_text": "Oui, bien sûr — pardon pour la confusion. C'est bien ça ? ça ?"
+    }
+  },
+  "65": {
+    "6": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "3815",
+        "new_value": "3816"
+      },
+      "original_text": "Merci pour ces précisions. Je comprends : le CRM ne charge pas, et votre annuaire des contacts vous indique que votre compte est verrouillé. Commençons par déverrouiller votre compte d'annuaire.\n\nAvant de procéder, j'ai besoin de vous envoyer un code à usage unique par SMS pour vérifier votre identité. Ce code vous permettra aussi de demander l'accès à l'application Confiance. Êtes-vous prêt à recevoir ce code sur le numéro qui se termine par 3815 ? indique que votre compte est verrouillé. Commençons par déverrouiller votre compte d'annuaire. Avant de procéder, j'ai besoin de vous envoyer un code à usage unique par SMS pour vérifier votre identité. Ce code vous permettra aussi de demander l'accès à l'application Confiance. Êtes-vous prêt à recevoir ce code sur le numéro qui se termine par 3815 ?",
+      "edited_text": "Merci pour ces précisions. Je comprends : le CRM ne charge pas, et votre annuaire des contacts vous indique que votre compte est verrouillé. Commençons par déverrouiller votre compte d'annuaire.\n\nAvant de procéder, j'ai besoin de vous envoyer un code à usage unique par SMS pour vérifier votre identité. Ce code vous permettra aussi de demander l'accès à l'application Confiance. Êtes-vous prêt à recevoir ce code sur le numéro qui se termine par 3816 ? indique que votre compte est verrouillé. Commençons par déverrouiller votre compte d'annuaire. Avant de procéder, j'ai besoin de vous envoyer un code à usage unique par SMS pour vérifier votre identité. Ce code vous permettra aussi de demander l'accès à l'application Confiance. Êtes-vous prêt à recevoir ce code sur le numéro qui se termine par 3815 ?"
+    }
+  },
+  "78": {
+    "6": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Avez-vous également un numéro de bureau ou un contact sur place à préciser pour la livraison ?"
+      },
+      "original_text": "Parfait, le garage Eglicutis. Je vais noter ça. Avant de continuer, j'ai besoin de quelques informations pour vos demandes. Commençons par le poste de travail et le remplacement de PC portable :\n\nPour quel bâtiment et quel étage souhaitez-vous que ces équipements soient livrés ? pour vos demandes. Commençons par le poste de travail et le remplacement de PC portable : Pour quel bâtiment et quel étage souhaitez-vous que ces équipements soient livrés ?",
+      "edited_text": "Parfait, le garage Eglicutis. Je vais noter ça. Avant de continuer, j'ai besoin de quelques informations pour vos demandes. Commençons par le poste de travail et le remplacement de PC portable :\n\nPour quel bâtiment et quel étage souhaitez-vous que ces équipements soient livrés ? pour vos demandes. Commençons par le poste de travail et le remplacement de PC portable : Pour quel bâtiment et quel étage souhaitez-vous que ces équipements soient livrés ? Avez-vous également un numéro de bureau ou un contact sur place à préciser pour la livraison ?"
+    }
+  },
+  "90": {
+    "11": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Parfait !"
+      },
+      "original_text": "D'accord, merci de clarifier. Donc votre numéro d'employé est EMP031482. Parfait ! Maintenant, j'ai besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système pour compléter la vérification. besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système pour compléter la vérification.",
+      "edited_text": "D'accord, merci de clarifier. Donc votre numéro d'employé est EMP031482. Maintenant, j'ai besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système pour compléter la vérification. besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système pour compléter la vérification."
+    }
+  },
+  "101": {
+    "4": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "EMP 0 7 4 2 8 1",
+        "new_value": "EMP 0 7 4 2 9 1"
+      },
+      "original_text": "Merci de cette clarification. Alors votre numéro d'employé est EMP 0 7 4 2 8 1, et les quatre derniers chiffres de votre téléphone sont 5 8 3 4.\n\nLaissez-moi vérifier cela dans le système. chiffres de votre téléphone sont 5 8 3 4. Laissez-moi vérifier cela dans le système. Parfait, Inès ! Vous êtes authentifiée. Maintenant, concernant l'accès à Datadio : je dois vérifier si cette application nécessite une approbation de votre manager. Laissez-moi consulter les détails. si cette application nécessite une approbation de votre manager. Laissez-moi consulter les détails. Je n'ai pas trouvé d'application portant le nom exact « Datadio » dans notre catalogue. Pouvez-vous me confirmer le nom exact de l'application ? Il est possible qu'il soit écrit légèrement différemment ou qu'il ait un alias connu. confirmer le nom exact de l'application ? Il est possible qu'il soit écrit légèrement différemment ou qu'il ait un alias connu.",
+      "edited_text": "Merci de cette clarification. Alors votre numéro d'employé est EMP 0 7 4 2 9 1, et les quatre derniers chiffres de votre téléphone sont 5 8 3 4.\n\nLaissez-moi vérifier cela dans le système. chiffres de votre téléphone sont 5 8 3 4. Laissez-moi vérifier cela dans le système. Parfait, Inès ! Vous êtes authentifiée. Maintenant, concernant l'accès à Datadio : je dois vérifier si cette application nécessite une approbation de votre manager. Laissez-moi consulter les détails. si cette application nécessite une approbation de votre manager. Laissez-moi consulter les détails. Je n'ai pas trouvé d'application portant le nom exact « Datadio » dans notre catalogue. Pouvez-vous me confirmer le nom exact de l'application ? Il est possible qu'il soit écrit légèrement différemment ou qu'il ait un alias connu. confirmer le nom exact de l'application ? Il est possible qu'il soit écrit légèrement différemment ou qu'il ait un alias connu."
+    }
+  }
+}

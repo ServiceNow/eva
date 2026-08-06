@@ -106,6 +106,7 @@ class AgenticSystem:
         output_dir: Path | None = None,  # Output directory for performance stats
         pre_tool_speech: str = "off",
         llm_streaming: bool = False,
+        prompts_path: Path | str | None = None,
     ):
         """Initialize the agentic system.
 
@@ -118,6 +119,10 @@ class AgenticSystem:
             output_dir: Optional output directory for saving performance stats
             pre_tool_speech: Lead-in mode ('off'|'auto')
             llm_streaming: Stream LLM output sentence-by-sentence
+            prompts_path: Optional override for the agent system-prompt directory
+                (defaults to configs/prompts/). Lets callers swap in a variant
+                agent prompt (e.g. for conciseness-distribution experiments)
+                without touching the shared prompts used by concurrent runs.
         """
         self.agent = agent
         self.tool_handler = tool_handler
@@ -129,7 +134,7 @@ class AgenticSystem:
         self.llm_streaming = llm_streaming
         self._warned_responses_streaming_fallback = False
 
-        self.prompt_manager = PromptManager()
+        self.prompt_manager = PromptManager(prompts_path) if prompts_path else PromptManager()
 
         # Track agent performance stats
         self.agent_perf_stats: list[dict[str, Any]] = []
