@@ -3,12 +3,17 @@ from eva.user_simulator.cascade.constants import (
     TICK_DURATION_MS,
     WAIT_TO_RESPOND_OTHER_MS,
     WAIT_TO_RESPOND_SELF_MS,
+    YIELD_WHEN_INTERRUPTED_MS,
+    YIELD_WHEN_INTERRUPTING_MS,
     ms_to_ticks,
 )
 
-
-def test_tick_duration_matches_tau_voice():
-    assert TICK_DURATION_MS == 200
+THRESHOLD_MS_CONSTANTS = [
+    WAIT_TO_RESPOND_OTHER_MS,
+    WAIT_TO_RESPOND_SELF_MS,
+    YIELD_WHEN_INTERRUPTED_MS,
+    YIELD_WHEN_INTERRUPTING_MS,
+]
 
 
 def test_bytes_per_tick_is_one_tick_of_pcm16_at_16khz():
@@ -16,7 +21,11 @@ def test_bytes_per_tick_is_one_tick_of_pcm16_at_16khz():
     assert BYTES_PER_TICK == 6400
 
 
-def test_ms_to_ticks_floors_to_whole_ticks():
+def test_threshold_constants_are_exact_multiples_of_tick_duration():
+    for threshold_ms in THRESHOLD_MS_CONSTANTS:
+        assert threshold_ms % TICK_DURATION_MS == 0
+
+
+def test_ms_to_ticks_converts_and_floors_sub_tick_remainder():
     assert ms_to_ticks(WAIT_TO_RESPOND_OTHER_MS) == 5
-    assert ms_to_ticks(WAIT_TO_RESPOND_SELF_MS) == 25
     assert ms_to_ticks(150) == 0

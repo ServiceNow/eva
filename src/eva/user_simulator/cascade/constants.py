@@ -7,7 +7,8 @@ make their metrics incomparable.
 """
 
 TICK_DURATION_MS = 200
-"""One simulation tick. Carries ten 20ms mulaw frames on the wire."""
+"""One simulation tick: 200ms of PCM16 audio at CALLER_SAMPLE_RATE, converted by
+the adapter into ten 20ms mulaw frames when written to the wire."""
 
 WAIT_TO_RESPOND_OTHER_MS = 1000
 """Silence required from the assistant before the caller starts a turn."""
@@ -30,6 +31,7 @@ BYTES_PER_TICK = CALLER_SAMPLE_RATE * TICK_DURATION_MS // 1000 * _BYTES_PER_SAMP
 """PCM16 bytes carried per tick at CALLER_SAMPLE_RATE."""
 
 SILENCE_BYTE = b"\x00"
+"""PCM16 silence, used to pad partial ticks."""
 
 
 def ms_to_ticks(milliseconds: int) -> int:
