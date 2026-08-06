@@ -17,7 +17,7 @@ from eva.assistant.agentic.audit_log import (
     LLMCall,
     MessageRole,
 )
-from eva.assistant.tools.tool_executor import ToolExecutor
+from eva.assistant.tools.tool_executor import ToolExecutor, execute_and_log_tool
 from eva.models.agents import AgentConfig
 from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
 from eva.utils.error_handler import categorize_error
@@ -106,6 +106,7 @@ class AgenticSystem:
         output_dir: Path | None = None,  # Output directory for performance stats
         pre_tool_speech: str = "off",
         llm_streaming: bool = False,
+        assistant_gender: str | None = None,
     ):
         """Initialize the agentic system.
 
@@ -118,6 +119,8 @@ class AgenticSystem:
             output_dir: Optional output directory for saving performance stats
             pre_tool_speech: Lead-in mode ('off'|'auto')
             llm_streaming: Stream LLM output sentence-by-sentence
+            assistant_gender: Speaking gender for the assistant ('M'|'F'); None adds no
+                gender instruction (for gender-neutral languages like English)
         """
         self.agent = agent
         self.tool_handler = tool_handler
@@ -127,6 +130,7 @@ class AgenticSystem:
         self.current_date_time = current_date_time
         self.pre_tool_speech = pre_tool_speech
         self.llm_streaming = llm_streaming
+        self.assistant_gender = assistant_gender
         self._warned_responses_streaming_fallback = False
 
         self.prompt_manager = PromptManager()
@@ -143,6 +147,11 @@ class AgenticSystem:
         )
         if self.pre_tool_speech == "auto":
             self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
+        if self.assistant_gender is not None:
+            gender_word = "male" if self.assistant_gender == "M" else "female"
+            self.system_prompt += "\n\n" + self.prompt_manager.get_prompt(
+                "agent.gender_instruction", gender_word=gender_word
+            )
         # Build tools for the LLM
         self.tools = agent.build_tools_for_agent()
 
@@ -153,7 +162,7 @@ class AgenticSystem:
         logger.info(f"Recording partial streamed assistant output after {reason}")
         self.audit_log.append_assistant_output(partial)
 
-    async def process_query(self, query: str) -> AsyncGenerator[str, None]:
+    async def process_query(self, query: str, log_user_input: bool = True) -> AsyncGenerator[str, None]:
         """Process a user query and yield response messages.
 
         This is the main entry point for handling user input.
@@ -161,6 +170,10 @@ class AgenticSystem:
 
         Args:
             query: User's input text
+            log_user_input: Whether to record `query` as a user_input audit log entry.
+                Set to False when the caller already logged its own marker entry for this
+                turn (e.g. a turn-end fallback nudge) and only wants the LLM call driven
+                by `query` without a duplicate audit log entry.
 
         Yields:
             Text responses to be sent to TTS
@@ -168,7 +181,8 @@ class AgenticSystem:
         logger.info(f"Processing query: {query}")
 
         # Record user input
-        self.audit_log.append_user_input(query)
+        if log_user_input:
+            self.audit_log.append_user_input(query)
 
         # Execute agent interaction
         async for response in self._execute_agent(self.agent):
@@ -235,15 +249,20 @@ class AgenticSystem:
                 if self.llm_streaming and not use_responses_api:
                     response = None
                     llm_stats = {}
+                    delta_count = 0
                     aggregator = SimpleTextAggregator()
                     async for kind, payload in self.llm_client.complete_stream(messages, tools=self.tools):
                         if kind == "delta":
+                            delta_count += 1
                             async for agg in aggregator.aggregate(payload):
                                 content_streamed = True
                                 streamed_chunks.append(agg.text)
                                 yield agg.text
                         else:
                             response, llm_stats = payload
+                    # delta_count > 1 confirms the provider streamed token-by-token rather
+                    # than a client falling back to a single non-streaming chunk.
+                    logger.debug(f"llm_streaming: received {delta_count} raw delta(s) from complete_stream")
                     remainder = await aggregator.flush()
                     if remainder and remainder.text.strip():
                         content_streamed = True
@@ -440,19 +459,13 @@ class AgenticSystem:
                     self.audit_log.append_assistant_output(transfer_message, reasoning=reasoning_content)
                     return
 
-                result = await self.tool_handler.execute(tool_name, params)
+                result = await execute_and_log_tool(self.tool_handler, self.audit_log, tool_name, params)
 
                 if result.get("status") == "error":
                     logger.warning(f"❌ Tool error: {tool_name} - {result.get('message', 'Unknown error')}")
                 else:
                     logger.info(f"✅ Tool response: {tool_name}")
                     logger.info(f"   Result: {json.dumps(result, indent=2, ensure_ascii=False)}")
-
-                self.audit_log.append_tool_call(
-                    tool_name=tool_name,
-                    parameters=params,
-                    response=result,
-                )
 
                 # Add tool response to messages
                 tool_content = json.dumps(result, ensure_ascii=False)

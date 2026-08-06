@@ -19,7 +19,6 @@ from elevenlabs.conversational_ai.conversation import (
 from eva.models.config import PerturbationConfig
 from eva.user_simulator.audio_bridge import ELEVENLABS_OUTPUT_RATE, ElevenLabsAudioInterface
 from eva.user_simulator.base import AbstractUserSimulator
-from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import current_record_id, get_logger
 
 logger = get_logger(__name__)
@@ -185,6 +184,8 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
                 logger.info(f"Conversation timed out after {self.timeout}s")
                 self._end_reason = "timeout"
                 self.event_logger.log_event("timeout", {"duration": self.timeout})
+                # _on_conversation_end never fired on this path, so signal here too.
+                self.signal_conversation_ending("timeout")
             finally:
                 # Cancel keep-alive task when conversation ends
                 keep_alive_task.cancel()
@@ -193,7 +194,11 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
                 except asyncio.CancelledError:
                     pass
 
-            # End the session
+            # End the session. Signal first (idempotent): everything below — end_session, the
+            # end_call API polling, and the STT grace sleep in the finally block — can take 10s
+            # or more, during which the transport stays open and the assistant would otherwise
+            # still consider the call live.
+            self.signal_conversation_ending()
             logger.info("Ending ElevenLabs session...")
             self._conversation.end_session()
 
@@ -221,6 +226,10 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
             self._end_reason = "error"
             raise
         finally:
+            # Backstop for paths that reached teardown without signalling (e.g. an exception
+            # raised before the normal end-of-session point). Idempotent.
+            self.signal_conversation_ending()
+
             # Save response latencies from audio interface before cleanup
             if self._audio_interface:
                 latencies = self._audio_interface.get_latencies()
@@ -239,15 +248,7 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
                         )
                     logger.info(f"Saved {len(latencies)} response latencies to {latency_file}")
 
-            if self._user_clean_audio_chunks:
-                clean_audio_path = self.output_dir / "audio_user_clean.wav"
-                save_pcm_as_wav(
-                    b"".join(self._user_clean_audio_chunks),
-                    clean_audio_path,
-                    sample_rate=ELEVENLABS_OUTPUT_RATE,
-                    num_channels=1,
-                )
-                logger.info(f"Saved clean user audio to {clean_audio_path}")
+            self._save_clean_user_audio(ELEVENLABS_OUTPUT_RATE)
 
             # Grace period: keep the WebSocket open so the assistant pipeline
             # (Pipecat STT) can finish processing the last user utterance.

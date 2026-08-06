@@ -2,7 +2,7 @@
   "AuthenticationSuccessMetric": {
     "name": "authentication_success",
     "prompt_hash": null,
-    "source_hash": "ecce31785d0d",
+    "source_hash": "5021c8eaa095",
     "version": "v0.1"
   },
   "ConcisenessJudgeMetric": {
@@ -92,8 +92,8 @@
   "TurnTakingMetric": {
     "name": "turn_taking",
     "prompt_hash": null,
-    "source_hash": "fee8caa7adc7",
-    "version": "v0.1"
+    "source_hash": "5f654debef13",
+    "version": "v0.2"
   },
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
