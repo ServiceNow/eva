@@ -12,13 +12,14 @@ from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
 from eva.user_simulator.cascade.constants import (
+    CALLER_SAMPLE_RATE,
     TICK_DURATION_MS,
     TRANSCRIPT_WAIT_MS,
-    CALLER_SAMPLE_RATE,
     ms_to_ticks,
 )
 from eva.user_simulator.cascade.scheduler import TickScheduler
 from eva.user_simulator.cascade.stt_livekit import LiveKitStreamingSTT
+from eva.user_simulator.cascade.tick_result import TickResult
 from eva.user_simulator.cascade.tts import CartesiaTTS
 
 # Shared with the OpenAI Realtime provider so both simulators hang up on the same rules.
@@ -134,6 +135,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
         max_ticks = self.timeout * 1000 // TICK_DURATION_MS
         assistant_was_speaking = False
+        caller_was_speaking = False
         try:
             while scheduler.tick < max_ticks and not self._conversation_done.is_set():
                 result = await scheduler.run_tick()
@@ -148,6 +150,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
                         f"(raw={result.assistant_audio_raw_bytes}B)"
                     )
                 await self._stt.feed(result.assistant_audio, commit=commit)
+                self._log_audio_boundaries(scheduler, result, assistant_was_speaking, caller_was_speaking)
+                caller_was_speaking = scheduler.caller_spoke_this_tick
                 assistant_was_speaking = result.has_assistant_speech
                 if result.has_assistant_speech:
                     continue
@@ -165,6 +169,31 @@ class CascadeUserSimulator(AbstractUserSimulator):
             await self._stt.stop()
             await adapter.stop()
             self.event_logger.log_connection_state("session_ended", {"reason": self._end_reason})
+
+    def _log_audio_boundaries(
+        self,
+        scheduler: TickScheduler,
+        result: TickResult,
+        assistant_was_speaking: bool,
+        caller_was_speaking: bool,
+    ) -> None:
+        """Emit audio_start/audio_end for both roles, which is how metrics number turns.
+
+        The caller's boundaries are authored rather than detected: the playout queue
+        drains on a known tick, so these stamp the real edges instead of a
+        silence-threshold estimate that has to be back-dated (see
+        BotToBotAudioBridge, whose end detection lags by ~600ms).
+        """
+        seconds = result.wall_clock_ms / 1000
+        caller_speaking = scheduler.caller_spoke_this_tick
+        if caller_speaking and not caller_was_speaking:
+            self.event_logger.log_audio_start("simulated_user", seconds)
+        elif not caller_speaking and caller_was_speaking:
+            self.event_logger.log_audio_end("simulated_user", seconds)
+        if result.has_assistant_speech and not assistant_was_speaking:
+            self.event_logger.log_audio_start("assistant", seconds)
+        elif not result.has_assistant_speech and assistant_was_speaking:
+            self.event_logger.log_audio_end("assistant", seconds)
 
     def _collect_heard_text(self, scheduler: TickScheduler) -> tuple[str, bool]:
         """Return what the assistant said and whether to keep waiting for it.

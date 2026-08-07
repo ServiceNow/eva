@@ -34,6 +34,7 @@ class TickScheduler:
         self._ticks_since_caller_speech = _NEVER_SPOKE
         self._assistant_has_spoken = False
         self._awaiting_reply = False
+        self._caller_spoke_this_tick = False
 
     @property
     def tick(self) -> int:
@@ -53,6 +54,16 @@ class TickScheduler:
     def caller_is_speaking(self) -> bool:
         """Whether caller audio is still queued for playout."""
         return bool(self._playout)
+
+    @property
+    def caller_spoke_this_tick(self) -> bool:
+        """Whether real caller audio went out on the most recent tick.
+
+        Distinct from `caller_is_speaking`, which is true as soon as an utterance is
+        queued. This flips exactly on the ticks audio enters and leaves the wire, so
+        it dates the authored turn boundary rather than estimating it from silence.
+        """
+        return self._caller_spoke_this_tick
 
     def may_take_turn(self) -> bool:
         """Whether both silence thresholds are satisfied (tau: streaming.py:2590-2606).
@@ -86,6 +97,7 @@ class TickScheduler:
         result = await self._adapter.run_tick(self._tick, outgoing)
         del self._playout[:consumed]
 
+        self._caller_spoke_this_tick = outgoing is not None
         self._ticks_since_caller_speech = 0 if outgoing else self._ticks_since_caller_speech + 1
         self._ticks_since_assistant_speech = (
             0 if result.has_assistant_speech else self._ticks_since_assistant_speech + 1

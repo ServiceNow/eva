@@ -165,3 +165,83 @@ def test_missed_utterance_directive_forbids_repeating():
 
     assert "not repeat" in MISSED_UTTERANCE_DIRECTIVE.lower()
     assert "repeat it" in MISSED_UTTERANCE_DIRECTIVE.lower()
+
+
+def _boundary_simulator():
+    """Bare simulator exposing only what _log_audio_boundaries touches."""
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim.event_logger = _FakeAudioEventLogger()
+    return sim
+
+
+class _FakeAudioEventLogger:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str, float]] = []
+
+    def log_audio_start(self, role, timestamp=None):
+        self.calls.append(("audio_start", role, timestamp))
+
+    def log_audio_end(self, role, timestamp=None):
+        self.calls.append(("audio_end", role, timestamp))
+
+
+class _Sched:
+    def __init__(self, spoke: bool) -> None:
+        self.caller_spoke_this_tick = spoke
+
+
+def _tick(assistant_speech: bool, ms: int = 2000):
+    from eva.user_simulator.cascade.tick_result import TickResult
+
+    return TickResult(
+        tick_number=0,
+        assistant_audio=b"\x00" * 8,
+        assistant_audio_raw_bytes=8 if assistant_speech else 0,
+        wall_clock_ms=ms,
+    )
+
+
+def test_caller_audio_start_is_logged_on_the_first_tick_of_playout():
+    sim = _boundary_simulator()
+
+    sim._log_audio_boundaries(_Sched(True), _tick(False), False, False)
+
+    assert sim.event_logger.calls == [("audio_start", "simulated_user", 2.0)]
+
+
+def test_caller_audio_end_is_logged_when_playout_stops():
+    sim = _boundary_simulator()
+
+    sim._log_audio_boundaries(_Sched(False), _tick(False), False, True)
+
+    assert sim.event_logger.calls == [("audio_end", "simulated_user", 2.0)]
+
+
+def test_no_event_while_the_caller_keeps_speaking():
+    sim = _boundary_simulator()
+
+    sim._log_audio_boundaries(_Sched(True), _tick(False), False, True)
+
+    assert sim.event_logger.calls == []
+
+
+def test_assistant_boundaries_are_logged_too():
+    # The metrics processor expects both roles, not just the user.
+    sim = _boundary_simulator()
+
+    sim._log_audio_boundaries(_Sched(False), _tick(True), False, False)
+    sim._log_audio_boundaries(_Sched(False), _tick(False), True, False)
+
+    assert sim.event_logger.calls == [
+        ("audio_start", "assistant", 2.0),
+        ("audio_end", "assistant", 2.0),
+    ]
+
+
+def test_timestamp_is_unix_seconds_not_milliseconds():
+    # log_audio_* store the value as audio_timestamp, which metrics read as seconds.
+    sim = _boundary_simulator()
+
+    sim._log_audio_boundaries(_Sched(True), _tick(False, ms=1786127928923), False, False)
+
+    assert sim.event_logger.calls[0][2] == 1786127928.923
