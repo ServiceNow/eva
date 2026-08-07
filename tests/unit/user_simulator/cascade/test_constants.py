@@ -25,3 +25,24 @@ def test_threshold_constants_are_exact_multiples_of_tick_duration():
 def test_ms_to_ticks_converts_and_floors_sub_tick_remainder():
     assert ms_to_ticks(WAIT_TO_RESPOND_OTHER_MS) == 5
     assert ms_to_ticks(150) == 0
+
+
+def test_listener_check_interval_is_two_seconds_in_ticks():
+    from eva.user_simulator.cascade.constants import LISTENER_CHECK_INTERVAL_MS, ms_to_ticks
+
+    assert LISTENER_CHECK_INTERVAL_MS == 2000
+    assert ms_to_ticks(LISTENER_CHECK_INTERVAL_MS) == 10
+
+
+def test_fixed_vocabularies_are_non_empty():
+    from eva.user_simulator.cascade.constants import BACKCHANNEL_PHRASES, BARGE_IN_OPENERS
+
+    assert BACKCHANNEL_PHRASES == ["uh-huh", "mm-hmm"]
+    assert len(BARGE_IN_OPENERS) >= 2
+
+
+def test_self_correction_delay_is_shorter_than_the_check_interval():
+    from eva.user_simulator.cascade.constants import LISTENER_CHECK_INTERVAL_MS, SELF_CORRECTION_DELAY_MS
+
+    # The correction should land while the assistant is still on its first reply.
+    assert SELF_CORRECTION_DELAY_MS < LISTENER_CHECK_INTERVAL_MS

@@ -35,6 +35,24 @@ BYTES_PER_TICK = CALLER_SAMPLE_RATE * TICK_DURATION_MS // 1000 * _BYTES_PER_SAMP
 SILENCE_BYTE = b"\x00"
 """PCM16 silence, used to pad partial ticks."""
 
+LISTENER_CHECK_INTERVAL_MS = 2000
+"""How often the interrupt and backchannel checks run while the assistant speaks."""
+
+MAX_INTERRUPT_SLIP_MS = 1500
+"""Drop a reactive barge-in whose audio arrived this far past its intended tick."""
+
+SELF_CORRECTION_DELAY_MS = 1200
+"""How long after the assistant starts replying to play a pre-authored correction."""
+
+SELF_CORRECTION_RATE = 0.15
+"""Fraction of caller turns generated with a self-correction attached."""
+
+BACKCHANNEL_PHRASES = ["uh-huh", "mm-hmm"]
+"""Fixed continuer vocabulary (tau: voice_config.py:126). Pre-rendered at init."""
+
+BARGE_IN_OPENERS = ["Wait—", "Sorry—", "Hold on—", "Actually—"]
+"""Fixed barge-in openers. Pre-rendered so a decision can be voiced at zero latency."""
+
 
 def ms_to_ticks(milliseconds: int) -> int:
     """Convert milliseconds to whole ticks, flooring."""
