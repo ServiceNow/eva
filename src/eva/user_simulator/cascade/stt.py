@@ -66,6 +66,7 @@ class ScribeStreamingSTT:
         self._ws: Any = None
         self._receive_task: asyncio.Task | None = None
         self._error: Exception | None = None
+        self._closed = False
 
     async def start(self) -> None:
         """Open the transcription socket and begin consuming results."""
@@ -79,9 +80,15 @@ class ScribeStreamingSTT:
         self._receive_task = asyncio.create_task(self._receive_loop())
 
     async def feed(self, pcm: bytes, *, commit: bool = False) -> None:
-        """Send one tick of assistant audio, optionally closing the utterance."""
+        """Send one tick of assistant audio, optionally closing the utterance.
+
+        Raises once the session has closed, instead of repeating a swallowed warning every
+        tick while the caller goes silently deaf for the rest of the call.
+        """
         if self._ws is None:
             return
+        if self._closed:
+            raise RuntimeError("Scribe session is closed; caller can no longer hear the assistant")
         message: dict[str, Any] = {
             "message_type": "input_audio_chunk",
             "audio_base_64": base64.b64encode(pcm).decode(),
@@ -91,7 +98,9 @@ class ScribeStreamingSTT:
         try:
             await self._ws.send(json.dumps(message))
         except Exception as exc:
-            logger.warning(f"Scribe send failed: {exc}")
+            self._closed = True
+            logger.error(f"Scribe session closed unexpectedly; caller is now deaf: {exc}")
+            raise RuntimeError("Scribe session closed unexpectedly") from exc
 
     async def stop(self) -> None:
         """Close the socket and stop consuming. Safe to call twice."""

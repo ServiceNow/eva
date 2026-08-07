@@ -522,3 +522,6 @@ user_simulator:
     - If you have nothing to add but the call is not over, say a short natural acknowledgement.
 
     To hang up, call the end_call tool. Do not describe hanging up in "utterance".
+
+  cascade_role_reminder: |
+    REMINDER: You are the CUSTOMER calling for help. Respond as the customer would - with questions, requests, or information about your issue. Do NOT respond as the customer service agent.

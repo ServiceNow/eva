@@ -2,6 +2,8 @@ import asyncio
 import base64
 import json
 
+import pytest
+
 from eva.user_simulator.cascade.stt import ScribeStreamingSTT, TranscriptBuffer
 
 
@@ -148,4 +150,39 @@ async def test_recv_error_is_recorded_and_object_stays_usable():
     assert isinstance(stt._error, RuntimeError)
     await stt.feed(b"\x00\x00")
     assert fake.sent
+    await stt.stop()
+
+
+class ClosingFakeWebSocket(SuspendingFakeWebSocket):
+    """Fake websocket whose send() fails, as a server-side close does."""
+
+    async def send(self, raw: str) -> None:
+        raise ConnectionClosedError()
+
+
+class ConnectionClosedError(Exception):
+    pass
+
+
+async def test_feed_raises_and_marks_closed_when_the_socket_send_fails():
+    stt = ScribeStreamingSTT({"api_key": "test-key"})
+    fake = ClosingFakeWebSocket([])
+    stt._ws = fake
+    stt._receive_task = asyncio.create_task(stt._receive_loop())
+
+    with pytest.raises(RuntimeError, match="Scribe session closed"):
+        await stt.feed(b"\x00\x00")
+
+    assert stt._closed is True
+    await stt.stop()
+
+
+async def test_feed_raises_immediately_once_closed_without_resending():
+    stt, fake = await _make_stt([])
+    stt._closed = True
+
+    with pytest.raises(RuntimeError, match="Scribe session is closed"):
+        await stt.feed(b"\x00\x00")
+
+    assert fake.sent == []
     await stt.stop()

@@ -78,3 +78,35 @@ def test_warn_unsupported_perturbation_is_silent_for_none(caplog):
     with caplog.at_level(logging.WARNING):
         CascadeUserSimulator._warn_unsupported_perturbation(None)
     assert caplog.records == []
+
+
+def _make_bare_simulator() -> CascadeUserSimulator:
+    """Build a CascadeUserSimulator without running __init__, for pure _messages() testing."""
+    sim = object.__new__(CascadeUserSimulator)
+    sim._build_prompt = lambda: "SYSTEM PROMPT"
+    sim._history = []
+    return sim
+
+
+def test_messages_flips_roles_so_the_caller_llm_sees_its_own_lines_as_assistant():
+    sim = _make_bare_simulator()
+    sim._history = [
+        {"role": "assistant", "content": "What is your email?"},
+        {"role": "user", "content": "It's jane@example.com."},
+    ]
+
+    messages = sim._messages()
+
+    assert messages[0]["role"] == "system"
+    assert messages[1] == {"role": "user", "content": "What is your email?"}
+    assert messages[2] == {"role": "assistant", "content": "It's jane@example.com."}
+
+
+def test_messages_appends_a_trailing_role_reminder():
+    sim = _make_bare_simulator()
+
+    messages = sim._messages()
+
+    assert messages[-1]["role"] == "system"
+    assert "CUSTOMER" in messages[-1]["content"]
+    assert "Do NOT respond as the customer service agent" in messages[-1]["content"]

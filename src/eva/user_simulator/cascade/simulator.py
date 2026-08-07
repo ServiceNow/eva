@@ -67,6 +67,11 @@ def parse_turn_response(raw: str) -> str:
     return utterance
 
 
+def _flip_role(role: str) -> str:
+    """Swap user/assistant so the caller LLM sees its own lines tagged assistant."""
+    return "assistant" if role == "user" else "user"
+
+
 def extract_turn(message: object) -> tuple[str, bool]:
     """Read (utterance, end_call) from whatever LiteLLMClient returned.
 
@@ -149,17 +154,13 @@ class CascadeUserSimulator(AbstractUserSimulator):
         try:
             while scheduler.tick < max_ticks and not self._conversation_done.is_set():
                 result = await scheduler.run_tick()
+                # Fed on every tick, speech or silence, so Scribe sees a continuous stream
+                # and never idles out; committed exactly on the speech->silence transition,
+                # which is what closes the utterance so take_committed() below isn't starved.
+                commit = assistant_was_speaking and not result.has_assistant_speech
+                await self._stt.feed(result.assistant_audio, commit=commit)
+                assistant_was_speaking = result.has_assistant_speech
                 if result.has_assistant_speech:
-                    await self._stt.feed(result.assistant_audio)
-                    assistant_was_speaking = True
-                    continue
-                if assistant_was_speaking:
-                    # Assistant just stopped: close the utterance so Scribe emits a
-                    # committed_transcript. With commit_strategy=manual nothing is
-                    # ever finalized unless we say so, and take_committed() below
-                    # would return empty forever.
-                    await self._stt.feed(result.assistant_audio, commit=True)
-                    assistant_was_speaking = False
                     continue
                 if scheduler.caller_is_speaking or not scheduler.may_take_turn():
                     continue
@@ -219,6 +220,14 @@ class CascadeUserSimulator(AbstractUserSimulator):
             )
 
     def _messages(self) -> list[dict[str, str]]:
-        """Build the caller LLM message list: persona/goal prompt, JSON contract, history."""
+        """Build the caller LLM message list: persona/goal prompt, JSON contract, flipped history.
+
+        `self._history` is kept in conversation-truth roles (assistant said by the agent, user
+        said by the caller) since it also feeds logging. The caller LLM is itself the assistant
+        in its own frame, so that history must be flipped here or a message tagged "assistant"
+        reads to the model as its own prior output and it echoes it back.
+        """
         system = self._build_prompt() + "\n\n" + PromptManager().get_prompt("user_simulator.cascade_turn_contract")
-        return [{"role": "system", "content": system}, *self._history]
+        flipped = [{"role": _flip_role(turn["role"]), "content": turn["content"]} for turn in self._history]
+        reminder = PromptManager().get_prompt("user_simulator.cascade_role_reminder")
+        return [{"role": "system", "content": system}, *flipped, {"role": "system", "content": reminder}]
