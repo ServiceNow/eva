@@ -138,7 +138,8 @@ def test_wait_expires_into_the_in_flight_partial():
 
 def test_the_wait_counter_resets_after_a_successful_read():
     sim = _simulator_with_buffer()
-    sim._collect_heard_text(_FakeScheduler())
+    for _ in range(3):
+        sim._collect_heard_text(_FakeScheduler())
     sim._stt.buffer.committed = "Thanks, Marcus."
 
     sim._collect_heard_text(_FakeScheduler())
@@ -272,3 +273,12 @@ def test_inactivity_does_not_fire_before_the_assistant_ever_speaks():
     sim._ticks_assistant_silent = 0
     for _ in range(ms_to_ticks(INACTIVITY_TIMEOUT_MS) + 5):
         assert sim._assistant_is_inactive(_NeverSpoke(), _tick(False)) is False
+
+
+def test_tick_counters_exist_without_manual_setup():
+    # The unit tests build bare instances, so a counter initialised only inside __init__
+    # would still pass them and then AttributeError on the first live tick.
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+
+    assert sim._ticks_assistant_silent == 0
+    assert sim._ticks_awaiting_transcript == 0

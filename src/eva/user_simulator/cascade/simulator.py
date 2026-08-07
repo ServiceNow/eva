@@ -68,6 +68,9 @@ def extract_turn(message: object) -> tuple[str, bool]:
 class CascadeUserSimulator(AbstractUserSimulator):
     """Simulated caller built from independently chosen STT, LLM, and TTS models."""
 
+    _ticks_awaiting_transcript = 0
+    _ticks_assistant_silent = 0
+
     def __init__(
         self,
         current_date_time: str,
@@ -101,7 +104,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._llm = LiteLLMClient(model=simulator_config.llm)
         self._voice_id = self._tts.voice_for_persona(persona_config)
         self._history: list[dict[str, str]] = []
-        self._ticks_awaiting_transcript = 0
 
     async def run_conversation(self) -> str:
         """Run the tick loop until the call ends, and return the end reason."""
@@ -228,7 +230,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
         if self._ticks_awaiting_transcript <= ms_to_ticks(TRANSCRIPT_WAIT_MS):
             return "", True
 
-        self._ticks_awaiting_transcript = 0
         partial = self._stt.buffer.in_flight
         self._stt.buffer.in_flight = ""
         if partial:
