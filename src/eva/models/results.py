@@ -116,6 +116,11 @@ class MetricScore(BaseModel):
         None, description="Optional sub-metric breakdowns, aggregated generically by the runner"
     )
 
+    @property
+    def failed(self) -> bool:
+        """True when the metric produced no usable value (errored or None score without being skipped)."""
+        return self.error is not None or (self.score is None and not self.skipped)
+
     @model_validator(mode="after")
     def _auto_stamp_version_and_hash(self) -> "MetricScore":
         # Only fill if unset, so deserialization from disk preserves historical values
