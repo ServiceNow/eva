@@ -1,6 +1,3 @@
-import logging
-
-from eva.models.config import PerturbationConfig
 from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn, parse_turn_response
 
 
@@ -46,22 +43,10 @@ def test_extract_turn_ignores_an_unrelated_tool_call():
     assert extract_turn(_Message()) == ("Go on.", False)
 
 
-def test_warn_unsupported_perturbation_fires_for_background_noise(caplog):
-    with caplog.at_level(logging.WARNING):
-        CascadeUserSimulator._warn_unsupported_perturbation(PerturbationConfig(background_noise="road_noise"))
-    assert any("background_noise" in record.message for record in caplog.records)
-
-
-def test_warn_unsupported_perturbation_is_silent_for_a_default_config(caplog):
-    with caplog.at_level(logging.WARNING):
-        CascadeUserSimulator._warn_unsupported_perturbation(PerturbationConfig())
-    assert caplog.records == []
-
-
-def test_warn_unsupported_perturbation_is_silent_for_none(caplog):
-    with caplog.at_level(logging.WARNING):
-        CascadeUserSimulator._warn_unsupported_perturbation(None)
-    assert caplog.records == []
+def test_outbound_perturbation_reaches_the_adapter():
+    # background_noise / connection_degradation are applied per tick by RealtimeWSAdapter,
+    # so the cascade simulator no longer warns that it drops them.
+    assert not hasattr(CascadeUserSimulator, "_warn_unsupported_perturbation")
 
 
 def _make_bare_simulator() -> CascadeUserSimulator:

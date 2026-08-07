@@ -44,10 +44,18 @@ class RealtimeWSAdapter(Adapter):
     `audio_utils` cannot express that and are not reused here for that reason.
     """
 
-    def __init__(self, *, websocket, conversation_id: str, bytes_per_tick: int = BYTES_PER_TICK) -> None:
+    def __init__(
+        self,
+        *,
+        websocket,
+        conversation_id: str,
+        bytes_per_tick: int = BYTES_PER_TICK,
+        perturbator=None,
+    ) -> None:
         self._ws = websocket
         self._conversation_id = conversation_id
         self._bytes_per_tick = bytes_per_tick
+        self._perturbator = perturbator
         self._inbound = bytearray()
         self._receive_task: asyncio.Task | None = None
         self._inbound_resample_state = None
@@ -74,7 +82,8 @@ class RealtimeWSAdapter(Adapter):
             await self._send_speech_event("user_speech_stop")
         self._caller_speaking = is_speaking
 
-        await self._send_tick_audio(outgoing_audio or SILENCE_BYTE * self._bytes_per_tick)
+        outgoing = self._apply_perturbation(outgoing_audio)
+        await self._send_tick_audio(outgoing or SILENCE_BYTE * self._bytes_per_tick)
 
         raw = bytes(self._inbound[: self._bytes_per_tick])
         del self._inbound[: len(raw)]
@@ -95,6 +104,23 @@ class RealtimeWSAdapter(Adapter):
             await asyncio.sleep(remaining)
 
         return result
+
+    def _apply_perturbation(self, outgoing_audio: bytes | None) -> bytes | None:
+        """Mix ambient noise into this tick's outgoing audio.
+
+        Real-time path: the mic is always open, so noise is emitted even when the
+        caller is silent — it replaces the silence this adapter already sends every
+        tick rather than adding frames. Never call this for a tick that emits nothing
+        on the tick-driven path (Plan 3): audio sent during a stall would advance the
+        assistant's VAD and break the freeze.
+        """
+        if self._perturbator is None:
+            return outgoing_audio
+        if outgoing_audio:
+            return self._perturbator.apply(outgoing_audio)
+        if getattr(self._perturbator, "has_ambient_noise", False):
+            return self._perturbator.get_ambient_chunk(self._bytes_per_tick)
+        return outgoing_audio
 
     async def stop(self) -> None:
         """Send stop, cancel the receive loop, and close the socket. Safe to call twice."""

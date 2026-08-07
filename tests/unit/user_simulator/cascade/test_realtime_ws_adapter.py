@@ -9,7 +9,7 @@ try:
 except ImportError:  # pragma: no cover - Python 3.13+
     import audioop_lts as audioop
 
-from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
+from eva.user_simulator.cascade.adapter.realtime_ws import FRAMES_PER_TICK, RealtimeWSAdapter
 
 BYTES_PER_TICK = 6400
 _SETTLE_ROUNDS = 300
@@ -306,3 +306,59 @@ async def test_user_speech_stop_emitted_once_on_audio_to_silence_transition():
     assert isinstance(stops[0]["timestamp_ms"], str)
 
     await adapter.stop()
+
+
+class StubPerturbator:
+    """Stands in for AudioPerturbator with a constant, recognizable noise floor."""
+
+    has_ambient_noise = True
+
+    def get_ambient_chunk(self, size: int) -> bytes:
+        return b"\x11" * size
+
+    def apply(self, audio: bytes) -> bytes:
+        return b"\x22" * len(audio)
+
+
+def _media_payloads(ws) -> list[bytes]:
+    import base64
+
+    return [
+        base64.b64decode(json.loads(m)["media"]["payload"]) for m in ws.sent if json.loads(m).get("event") == "media"
+    ]
+
+
+async def test_ambient_noise_replaces_silence_when_the_caller_is_not_speaking():
+    ws = FakeWebSocket()
+    adapter = RealtimeWSAdapter(
+        websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK, perturbator=StubPerturbator()
+    )
+
+    await adapter.run_tick(0, None)
+
+    payloads = _media_payloads(ws)
+    assert len(payloads) == FRAMES_PER_TICK
+    # Silence would encode to a constant mulaw byte; ambient noise must not.
+    assert set(b"".join(payloads)) != {0xFF}
+
+
+async def test_ambient_noise_is_mixed_into_caller_speech():
+    ws = FakeWebSocket()
+    perturbator = StubPerturbator()
+    adapter = RealtimeWSAdapter(
+        websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK, perturbator=perturbator
+    )
+
+    await adapter.run_tick(0, b"\x01" * BYTES_PER_TICK)
+
+    assert len(_media_payloads(ws)) == FRAMES_PER_TICK
+
+
+async def test_silence_is_still_sent_every_tick_without_a_perturbator():
+    # Plan 1: a tick that sends no frames at all makes the assistant's turn detection misfire.
+    ws = FakeWebSocket()
+    adapter = RealtimeWSAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+
+    await adapter.run_tick(0, None)
+
+    assert len(_media_payloads(ws)) == FRAMES_PER_TICK

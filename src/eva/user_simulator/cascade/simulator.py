@@ -157,7 +157,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
             language=language,
             provider="cascade",
         )
-        self._warn_unsupported_perturbation(perturbation_config)
         self._config = simulator_config
         self._stt = LiveKitStreamingSTT(simulator_config.stt, simulator_config.stt_params, language=language)
         self._tts = CartesiaTTS(simulator_config.tts_params, language=language)
@@ -191,6 +190,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         adapter = RealtimeWSAdapter(
             websocket=websocket,
             conversation_id=self._record_id or "cascade",
+            perturbator=self._perturbator,
         )
         scheduler = TickScheduler(adapter)
 
@@ -495,28 +495,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._armed_correction_text = utterance
         self.event_logger.log_event("self_correction_armed", {"slip": slip, "correction": utterance})
         return slip
-
-    @staticmethod
-    def _warn_unsupported_perturbation(perturbation_config: PerturbationConfig | None) -> None:
-        """Warn when outbound-audio perturbations are configured but unsupported by cascade.
-
-        `RealtimeWSAdapter` does not yet apply perturbation to outbound audio, so
-        `background_noise` and `connection_degradation` are silently dropped without this.
-        `snr_db` only has an effect alongside `background_noise` and defaults to 15.0, so it
-        is flagged only when `background_noise` is also set, not on its default value alone.
-        """
-        if perturbation_config is None:
-            return
-        unsupported = []
-        if perturbation_config.background_noise is not None:
-            unsupported.extend(["background_noise", "snr_db"])
-        if perturbation_config.connection_degradation:
-            unsupported.append("connection_degradation")
-        if unsupported:
-            logger.warning(
-                f"Cascade simulator does not yet apply audio perturbation: ignoring {', '.join(unsupported)}. "
-                "Behavior and accent perturbations are unaffected."
-            )
 
     def _messages(self) -> list[dict[str, str]]:
         """Build the message list: the shared per-domain caller prompt plus flipped history.
