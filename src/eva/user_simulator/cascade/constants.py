@@ -20,9 +20,9 @@ TRANSCRIPT_WAIT_MS = 1500
 """How long the caller waits for the assistant's transcript to finalize before falling back
 to the in-flight partial, sized above the slowest measured finalization (ink-2, 1.2s)."""
 
-ASSISTANT_UNRESPONSIVE_MS = 90000
-"""Assistant silence after which the caller stops waiting for a reply, set above the longest
-legitimate inter-utterance gap measured live (220 ticks) and below the server's idle timeout."""
+INACTIVITY_TIMEOUT_MS = 120000
+"""Assistant silence that ends the conversation, matching ElevenLabsUserSimulator's 12
+keep-alives so both providers record the same inactivity_timeout terminal state."""
 
 CALLER_SAMPLE_RATE = 16000
 """PCM16 sample rate for the caller's own audio track."""

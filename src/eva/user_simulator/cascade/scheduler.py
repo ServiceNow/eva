@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from eva.user_simulator.cascade.adapter.base import Adapter
 from eva.user_simulator.cascade.constants import (
-    ASSISTANT_UNRESPONSIVE_MS,
     BYTES_PER_TICK,
     WAIT_TO_RESPOND_OTHER_MS,
     WAIT_TO_RESPOND_SELF_MS,
@@ -56,6 +55,11 @@ class TickScheduler:
         return bool(self._playout)
 
     @property
+    def assistant_has_spoken(self) -> bool:
+        """Whether the assistant has produced audio at any point in the call."""
+        return self._assistant_has_spoken
+
+    @property
     def caller_spoke_this_tick(self) -> bool:
         """Whether real caller audio went out on the most recent tick.
 
@@ -75,13 +79,10 @@ class TickScheduler:
         Also gated on the assistant having replied since the caller's last turn:
         the silence thresholds alone are satisfied a fixed time after the caller
         stops talking regardless of whether a reply ever arrived, which lets the
-        caller repeat itself into a slow assistant. That gate releases only after
-        ASSISTANT_UNRESPONSIVE_MS, so an assistant that stops answering entirely
-        cannot strand the caller before it reaches its end_call turn.
+        caller repeat itself into a slow assistant. An assistant that stops replying
+        altogether is an inactivity timeout, which the simulator ends the call on.
         """
-        if not self._assistant_has_spoken:
-            return False
-        if self._awaiting_reply and self._ticks_since_assistant_speech <= ms_to_ticks(ASSISTANT_UNRESPONSIVE_MS):
+        if not self._assistant_has_spoken or self._awaiting_reply:
             return False
         return self._ticks_since_assistant_speech > ms_to_ticks(
             WAIT_TO_RESPOND_OTHER_MS

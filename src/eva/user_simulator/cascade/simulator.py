@@ -13,6 +13,7 @@ from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
 from eva.user_simulator.cascade.constants import (
     CALLER_SAMPLE_RATE,
+    INACTIVITY_TIMEOUT_MS,
     TICK_DURATION_MS,
     TRANSCRIPT_WAIT_MS,
     ms_to_ticks,
@@ -29,10 +30,6 @@ from eva.utils.logging import get_logger
 logger = get_logger(__name__)
 
 _FENCE = re.compile(r"^```[a-z]*\s*|\s*```$", re.MULTILINE)
-
-MISSED_UTTERANCE_DIRECTIVE = """You did not hear what the agent just said — the audio did not
-come through. Do NOT repeat your previous message. Say briefly that you did not catch that and
-ask them to repeat it, the way anyone would on a bad phone line."""
 
 END_CALL_TOOL = {
     "type": "function",
@@ -105,7 +102,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._voice_id = self._tts.voice_for_persona(persona_config)
         self._history: list[dict[str, str]] = []
         self._ticks_awaiting_transcript = 0
-        self._missed_transcripts = 0
 
     async def run_conversation(self) -> str:
         """Run the tick loop until the call ends, and return the end reason."""
@@ -155,6 +151,13 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 assistant_was_speaking = result.has_assistant_speech
                 if result.has_assistant_speech:
                     continue
+                if self._assistant_is_inactive(scheduler, result):
+                    logger.warning(
+                        f"tick {scheduler.tick}: assistant silent for "
+                        f"{INACTIVITY_TIMEOUT_MS // 1000}s; ending the conversation"
+                    )
+                    self._on_conversation_end("inactivity_timeout")
+                    break
                 if scheduler.caller_is_speaking or not scheduler.may_take_turn():
                     continue
                 heard, waiting = self._collect_heard_text(scheduler)
@@ -169,6 +172,19 @@ class CascadeUserSimulator(AbstractUserSimulator):
             await self._stt.stop()
             await adapter.stop()
             self.event_logger.log_connection_state("session_ended", {"reason": self._end_reason})
+
+    def _assistant_is_inactive(self, scheduler: TickScheduler, result: TickResult) -> bool:
+        """Whether the assistant has produced no audio for INACTIVITY_TIMEOUT_MS.
+
+        Mirrors ElevenLabsUserSimulator's keep-alive rule so both providers record the
+        same terminal state: conversation_valid_end treats inactivity_timeout with the
+        user speaking last as a definitive end, not a failure.
+        """
+        if result.has_assistant_speech:
+            self._ticks_assistant_silent = 0
+            return False
+        self._ticks_assistant_silent += 1
+        return scheduler.assistant_has_spoken and self._ticks_assistant_silent > ms_to_ticks(INACTIVITY_TIMEOUT_MS)
 
     def _log_audio_boundaries(
         self,
@@ -223,13 +239,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
             self.event_logger.log_event("transcript_partial_fallback", {"text": partial, "tick_index": scheduler.tick})
             return partial, False
 
-        self._missed_transcripts += 1
-        logger.error(
-            f"tick {scheduler.tick}: heard nothing at all from the assistant this turn "
-            f"(missed {self._missed_transcripts} so far); asking it to repeat"
-        )
-        self.event_logger.log_event("transcript_missed", {"tick_index": scheduler.tick})
-        return "", False
+        # Nothing was heard at all. Keep waiting rather than speaking into the void:
+        # an assistant that never replies is an inactivity timeout, handled in _run.
+        return "", True
 
     async def _take_turn(self, scheduler: TickScheduler, heard: str) -> bool:
         """Generate, synthesize, and queue one caller turn. Returns True to hang up."""
@@ -237,9 +249,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             self._history.append({"role": "assistant", "content": heard})
             self._on_assistant_speaks(heard)
 
-        message, _stats = await self._llm.complete(
-            messages=self._messages(missed_utterance=not heard), tools=[END_CALL_TOOL]
-        )
+        message, _stats = await self._llm.complete(messages=self._messages(), tools=[END_CALL_TOOL])
         utterance, end_call = extract_turn(message)
 
         if utterance:
@@ -277,7 +287,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 "Behavior and accent perturbations are unaffected."
             )
 
-    def _messages(self, *, missed_utterance: bool = False) -> list[dict[str, str]]:
+    def _messages(self) -> list[dict[str, str]]:
         """Build the message list: the shared per-domain caller prompt plus flipped history.
 
         The system prompt is `_build_prompt()` unmodified — the same per-domain prompt the other
@@ -290,8 +300,4 @@ class CascadeUserSimulator(AbstractUserSimulator):
         """
         messages = [{"role": "system", "content": self._build_prompt()}]
         messages += [{"role": _flip_role(turn["role"]), "content": turn["content"]} for turn in self._history]
-        if missed_utterance:
-            # History is unchanged since the last turn, so without this the model would
-            # regenerate its previous utterance verbatim.
-            messages.append({"role": "system", "content": MISSED_UTTERANCE_DIRECTIVE})
         return messages

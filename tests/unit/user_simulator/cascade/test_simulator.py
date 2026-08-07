@@ -136,20 +136,6 @@ def test_wait_expires_into_the_in_flight_partial():
     assert sim._stt.buffer.in_flight == ""
 
 
-def test_hearing_nothing_at_all_is_reported_and_never_reuses_stale_history():
-    from eva.user_simulator.cascade.constants import TRANSCRIPT_WAIT_MS, ms_to_ticks
-
-    sim = _simulator_with_buffer()
-    for _ in range(ms_to_ticks(TRANSCRIPT_WAIT_MS)):
-        sim._collect_heard_text(_FakeScheduler())
-
-    heard, waiting = sim._collect_heard_text(_FakeScheduler())
-
-    assert (heard, waiting) == ("", False)
-    assert sim._missed_transcripts == 1
-    assert [name for name, _ in sim.event_logger.events] == ["transcript_missed"]
-
-
 def test_the_wait_counter_resets_after_a_successful_read():
     sim = _simulator_with_buffer()
     sim._collect_heard_text(_FakeScheduler())
@@ -158,13 +144,6 @@ def test_the_wait_counter_resets_after_a_successful_read():
     sim._collect_heard_text(_FakeScheduler())
 
     assert sim._ticks_awaiting_transcript == 0
-
-
-def test_missed_utterance_directive_forbids_repeating():
-    from eva.user_simulator.cascade.simulator import MISSED_UTTERANCE_DIRECTIVE
-
-    assert "not repeat" in MISSED_UTTERANCE_DIRECTIVE.lower()
-    assert "repeat it" in MISSED_UTTERANCE_DIRECTIVE.lower()
 
 
 def _boundary_simulator():
@@ -245,3 +224,51 @@ def test_timestamp_is_unix_seconds_not_milliseconds():
     sim._log_audio_boundaries(_Sched(True), _tick(False, ms=1786127928923), False, False)
 
     assert sim.event_logger.calls[0][2] == 1786127928.923
+
+
+def test_hearing_nothing_keeps_waiting_instead_of_speaking_into_the_void():
+    # An assistant that never replies is an inactivity timeout, not a cue to talk again.
+    from eva.user_simulator.cascade.constants import TRANSCRIPT_WAIT_MS, ms_to_ticks
+
+    sim = _simulator_with_buffer()
+    for _ in range(ms_to_ticks(TRANSCRIPT_WAIT_MS) + 3):
+        assert sim._collect_heard_text(_FakeScheduler()) == ("", True)
+
+
+class _SilenceScheduler:
+    tick = 0
+    assistant_has_spoken = True
+
+
+def test_inactivity_ends_the_call_after_the_shared_two_minute_threshold():
+    from eva.user_simulator.cascade.constants import INACTIVITY_TIMEOUT_MS, ms_to_ticks
+
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._ticks_assistant_silent = 0
+    silent = _tick(False)
+    for _ in range(ms_to_ticks(INACTIVITY_TIMEOUT_MS)):
+        assert sim._assistant_is_inactive(_SilenceScheduler(), silent) is False
+
+    assert sim._assistant_is_inactive(_SilenceScheduler(), silent) is True
+
+
+def test_assistant_speech_resets_the_inactivity_counter():
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._ticks_assistant_silent = 500
+
+    assert sim._assistant_is_inactive(_SilenceScheduler(), _tick(True)) is False
+    assert sim._ticks_assistant_silent == 0
+
+
+def test_inactivity_does_not_fire_before_the_assistant_ever_speaks():
+    # The assistant opens the call; waiting for its greeting is not inactivity.
+    from eva.user_simulator.cascade.constants import INACTIVITY_TIMEOUT_MS, ms_to_ticks
+
+    class _NeverSpoke:
+        tick = 0
+        assistant_has_spoken = False
+
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._ticks_assistant_silent = 0
+    for _ in range(ms_to_ticks(INACTIVITY_TIMEOUT_MS) + 5):
+        assert sim._assistant_is_inactive(_NeverSpoke(), _tick(False)) is False

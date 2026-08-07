@@ -1,5 +1,4 @@
 from eva.user_simulator.cascade.adapter.base import Adapter
-from eva.user_simulator.cascade.constants import ASSISTANT_UNRESPONSIVE_MS, ms_to_ticks
 from eva.user_simulator.cascade.scheduler import TickScheduler
 from eva.user_simulator.cascade.tick_result import TickResult
 
@@ -101,29 +100,6 @@ async def test_caller_cannot_take_a_second_turn_while_awaiting_a_reply():
     for _ in range(100):
         await scheduler.run_tick()
         assert scheduler.may_take_turn() is False
-
-
-async def test_caller_stops_waiting_once_the_assistant_goes_unresponsive():
-    # The assistant that never answers a goodbye would otherwise hold the caller
-    # in awaiting-reply forever, so it could never reach its end_call turn.
-    scheduler = _scheduler([True])
-    await scheduler.run_tick()
-    scheduler.enqueue_utterance(b"\x02" * BYTES_PER_TICK)
-    await scheduler.run_tick()
-
-    for _ in range(ms_to_ticks(ASSISTANT_UNRESPONSIVE_MS) - 5):
-        await scheduler.run_tick()
-    assert scheduler.may_take_turn() is False
-
-    for _ in range(10):
-        await scheduler.run_tick()
-    assert scheduler.may_take_turn() is True
-
-
-async def test_unresponsive_threshold_clears_the_longest_observed_real_gap():
-    # Longest legitimate assistant gap measured across live runs was 220 ticks;
-    # firing inside that would make the caller talk over a merely slow assistant.
-    assert ms_to_ticks(ASSISTANT_UNRESPONSIVE_MS) > 220
 
 
 async def test_caller_may_take_a_second_turn_once_the_assistant_replies():
