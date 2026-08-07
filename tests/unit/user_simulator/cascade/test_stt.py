@@ -3,8 +3,9 @@ import base64
 import json
 
 import pytest
+from websockets.exceptions import ConnectionClosedOK
 
-from eva.user_simulator.cascade.stt import ScribeStreamingSTT, TranscriptBuffer
+from eva.user_simulator.cascade.stt import MAX_RECONNECT_ATTEMPTS, ScribeStreamingSTT, TranscriptBuffer
 
 
 def test_partial_updates_replace_the_in_flight_text():
@@ -185,4 +186,63 @@ async def test_feed_raises_immediately_once_closed_without_resending():
         await stt.feed(b"\x00\x00")
 
     assert fake.sent == []
+    await stt.stop()
+
+
+def _connect_stub(sockets):
+    remaining = list(sockets)
+
+    async def _connect():
+        return remaining.pop(0)
+
+    return _connect
+
+
+async def test_reconnects_after_a_clean_close_and_keeps_transcribing():
+    stt = ScribeStreamingSTT({"api_key": "test-key"})
+    stt.buffer.commit("Heard before the close.")
+    stt._ws = SuspendingFakeWebSocket([ConnectionClosedOK(None, None)])
+    second_socket = SuspendingFakeWebSocket(
+        [{"message_type": "committed_transcript", "text": "Heard after reconnecting."}]
+    )
+    stt._connect = _connect_stub([second_socket])
+    stt._receive_task = asyncio.create_task(stt._receive_loop())
+
+    await asyncio.sleep(0.05)
+
+    assert stt.buffer.committed == "Heard before the close. Heard after reconnecting."
+    assert stt._ws is second_socket
+    assert stt._error is None
+    assert stt._closed is False
+    await stt.stop()
+
+
+async def test_reconnect_drops_in_flight_partial_but_keeps_committed_text():
+    stt = ScribeStreamingSTT({"api_key": "test-key"})
+    stt.buffer.commit("Already committed.")
+    stt.buffer.apply_partial("mid-utterance when the close happened")
+    stt._ws = SuspendingFakeWebSocket([ConnectionClosedOK(None, None)])
+    stt._connect = _connect_stub([SuspendingFakeWebSocket([])])
+    stt._receive_task = asyncio.create_task(stt._receive_loop())
+
+    await asyncio.sleep(0.05)
+
+    assert stt.buffer.committed == "Already committed."
+    assert stt.buffer.in_flight == ""
+    await stt.stop()
+
+
+async def test_persistent_clean_closes_exhaust_the_cap_and_surface_an_error():
+    stt = ScribeStreamingSTT({"api_key": "test-key"})
+    sockets = [SuspendingFakeWebSocket([ConnectionClosedOK(None, None)]) for _ in range(MAX_RECONNECT_ATTEMPTS + 1)]
+    stt._ws = sockets[0]
+    stt._connect = _connect_stub(sockets[1:])
+    stt._receive_task = asyncio.create_task(stt._receive_loop())
+
+    await asyncio.sleep(0.05)
+
+    assert isinstance(stt._error, ConnectionClosedOK)
+    assert stt._closed is True
+    with pytest.raises(RuntimeError, match="Scribe session is closed"):
+        await stt.feed(b"\x00\x00")
     await stt.stop()

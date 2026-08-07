@@ -9,6 +9,7 @@ import os
 from typing import Any
 
 import websockets
+from websockets.exceptions import ConnectionClosedOK
 
 from eva.user_simulator.cascade.constants import CALLER_SAMPLE_RATE
 from eva.utils.logging import get_logger
@@ -18,6 +19,9 @@ logger = get_logger(__name__)
 SCRIBE_URL = "wss://api.elevenlabs.io/v1/speech-to-text/realtime"
 
 INCOMPLETE_MARKER = "[CURRENTLY SPEAKING, INCOMPLETE]"
+
+MAX_RECONNECT_ATTEMPTS = 3
+"""Consecutive clean closes tolerated before giving up; resets on any message received."""
 
 
 class TranscriptBuffer:
@@ -67,17 +71,22 @@ class ScribeStreamingSTT:
         self._receive_task: asyncio.Task | None = None
         self._error: Exception | None = None
         self._closed = False
+        self._reconnect_attempts = 0
 
     async def start(self) -> None:
         """Open the transcription socket and begin consuming results."""
-        self._ws = await websockets.connect(
+        self._ws = await self._connect()
+        self._receive_task = asyncio.create_task(self._receive_loop())
+
+    async def _connect(self) -> Any:
+        """Open a fresh Scribe socket with this instance's configuration."""
+        return await websockets.connect(
             f"{SCRIBE_URL}?model_id={self._model}"
             f"&audio_format=pcm_{CALLER_SAMPLE_RATE}"
             f"&language_code={self._language}"
             "&commit_strategy=manual",
             additional_headers={"xi-api-key": self._api_key},
         )
-        self._receive_task = asyncio.create_task(self._receive_loop())
 
     async def feed(self, pcm: bytes, *, commit: bool = False) -> None:
         """Send one tick of assistant audio, optionally closing the utterance.
@@ -97,6 +106,8 @@ class ScribeStreamingSTT:
             message["commit"] = True
         try:
             await self._ws.send(json.dumps(message))
+        except ConnectionClosedOK:
+            logger.warning("Scribe socket closed mid-send; this tick's audio was dropped, reconnect in progress")
         except Exception as exc:
             self._closed = True
             logger.error(f"Scribe session closed unexpectedly; caller is now deaf: {exc}")
@@ -114,14 +125,19 @@ class ScribeStreamingSTT:
                 self._ws = None
 
     async def _receive_loop(self) -> None:
-        """Fold partial and committed transcripts into the buffer as they arrive."""
+        """Fold partial and committed transcripts into the buffer as they arrive, reconnecting on a clean close."""
         while True:
             try:
                 raw = await self._ws.recv()
+            except ConnectionClosedOK as exc:
+                if await self._reconnect_after_clean_close(exc):
+                    continue
+                return
             except Exception as exc:
                 self._error = exc
                 logger.exception("Scribe receive loop failed")
                 return
+            self._reconnect_attempts = 0
             try:
                 message = json.loads(raw)
             except json.JSONDecodeError:
@@ -134,3 +150,29 @@ class ScribeStreamingSTT:
                 self.buffer.apply_partial(text)
             elif kind.startswith("committed_transcript") or kind.startswith("final_transcript"):
                 self.buffer.commit(text)
+
+    async def _reconnect_after_clean_close(self, exc: ConnectionClosedOK) -> bool:
+        """Reopen the socket after a server-initiated clean close, preserving committed transcript.
+
+        Returns False once reconnect attempts are exhausted, at which point the caller must stop.
+        """
+        self._reconnect_attempts += 1
+        if self._reconnect_attempts > MAX_RECONNECT_ATTEMPTS:
+            self._error = exc
+            self._closed = True
+            logger.error(f"Scribe closed cleanly {self._reconnect_attempts} times in a row; giving up")
+            return False
+        self.buffer.in_flight = ""
+        try:
+            self._ws = await self._connect()
+        except Exception as reconnect_exc:
+            self._error = reconnect_exc
+            self._closed = True
+            logger.exception("Scribe reconnect failed")
+            return False
+        logger.info(
+            "Scribe session closed cleanly (code 1000, likely a max-session-duration cap); "
+            f"reconnected (attempt {self._reconnect_attempts}/{MAX_RECONNECT_ATTEMPTS}); "
+            "committed transcript preserved, in-flight partial dropped"
+        )
+        return True
