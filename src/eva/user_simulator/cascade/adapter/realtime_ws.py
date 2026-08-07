@@ -30,9 +30,10 @@ class RealtimeWSAdapter(Adapter):
     """Exchanges tick-sized audio with an assistant server over the Twilio WS protocol.
 
     Outbound audio is paced at the real 20ms cadence the assistant expects
-    (docs/assistant_server_contract.md section 3). Inbound audio is buffered and
-    released exactly one tick at a time, so a provider that generates faster than
-    real time cannot run ahead of the simulation clock.
+    (docs/assistant_server_contract.md section 3). A background task continuously
+    drains inbound frames into an adapter-owned buffer; `run_tick` releases exactly
+    one tick's worth per call, so a provider that generates faster than real time
+    cannot run ahead of the simulation clock.
 
     Each direction resamples a continuous stream, so each carries its own
     `audioop.ratecv` filter state across calls; the stateless helpers in
@@ -44,24 +45,39 @@ class RealtimeWSAdapter(Adapter):
         self._conversation_id = conversation_id
         self._bytes_per_tick = bytes_per_tick
         self._inbound = bytearray()
-        self._pending_recv: asyncio.Task | None = None
+        self._receive_task: asyncio.Task | None = None
         self._inbound_resample_state = None
         self._outbound_resample_state = None
+        self._caller_speaking = False
+        self._error: BaseException | None = None
 
     async def start(self) -> None:
-        """Send the connect/start handshake."""
+        """Send the connect/start handshake and begin buffering inbound audio."""
         for event in ("connected", "start"):
             await self._ws.send(json.dumps({"event": event, "conversation_id": self._conversation_id}))
+        self._receive_task = asyncio.create_task(self._receive_loop())
 
     async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
         """Send one tick of caller audio at wire cadence and collect one tick of assistant audio."""
+        if self._error is not None:
+            raise RuntimeError("RealtimeWSAdapter receive loop failed") from self._error
+
+        is_speaking = bool(outgoing_audio)
+        if is_speaking and not self._caller_speaking:
+            await self._send_speech_event("user_speech_start")
+        elif not is_speaking and self._caller_speaking:
+            await self._send_speech_event("user_speech_stop")
+        self._caller_speaking = is_speaking
+
         if outgoing_audio:
             await self._send_tick_audio(outgoing_audio)
 
-        await self._drain_pending()
         raw = bytes(self._inbound[: self._bytes_per_tick])
         del self._inbound[: len(raw)]
         chunk, _ = split_tick_audio(raw, self._bytes_per_tick)
+
+        if self._error is not None:
+            raise RuntimeError("RealtimeWSAdapter receive loop failed") from self._error
 
         return TickResult(
             tick_number=tick_number,
@@ -71,24 +87,46 @@ class RealtimeWSAdapter(Adapter):
         )
 
     async def stop(self) -> None:
-        """Send stop, cancel any in-flight receive, and close the socket. Safe to call twice."""
-        if self._pending_recv is not None:
-            self._pending_recv.cancel()
-            with contextlib.suppress(asyncio.CancelledError, Exception):
-                await self._pending_recv
-            self._pending_recv = None
+        """Send stop, cancel the receive loop, and close the socket. Safe to call twice."""
+        if self._receive_task is not None:
+            task = self._receive_task
+            self._receive_task = None
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                if not task.cancelled():
+                    raise
+            except Exception:
+                pass
         with contextlib.suppress(Exception):
             await self._ws.send(json.dumps({"event": "stop", "conversation_id": self._conversation_id}))
         with contextlib.suppress(Exception):
             await self._ws.close()
 
+    async def _send_speech_event(self, event: str) -> None:
+        """Emit a user_speech_start/stop event matching the existing bridge's payload shape."""
+        await self._ws.send(
+            json.dumps(
+                {
+                    "event": event,
+                    "conversation_id": self._conversation_id,
+                    "timestamp_ms": str(int(round(time.time() * 1000))),
+                }
+            )
+        )
+
     async def _send_tick_audio(self, pcm: bytes) -> None:
         """Split one tick of PCM16 into 20ms mulaw frames and send them at real-time pace."""
         mulaw = self._pcm16k_to_mulaw8k(pcm)
-        frame_size = len(mulaw) // FRAMES_PER_TICK or len(mulaw)
+        if not mulaw:
+            return
+        frame_size = len(mulaw) // FRAMES_PER_TICK
+        frames = [mulaw[index : index + frame_size] for index in range(0, len(mulaw), frame_size)]
         interval = WIRE_FRAME_MS / 1000
-        for index in range(0, len(mulaw), frame_size):
-            payload = base64.b64encode(mulaw[index : index + frame_size]).decode()
+        start_time = asyncio.get_event_loop().time()
+        for frame_index, frame in enumerate(frames):
+            payload = base64.b64encode(frame).decode()
             await self._ws.send(
                 json.dumps(
                     {
@@ -98,34 +136,25 @@ class RealtimeWSAdapter(Adapter):
                     }
                 )
             )
-            await asyncio.sleep(interval)
+            if frame_index == len(frames) - 1:
+                break
+            deadline = start_time + (frame_index + 1) * interval
+            sleep_for = deadline - asyncio.get_event_loop().time()
+            if sleep_for > 0:
+                await asyncio.sleep(sleep_for)
 
-    async def _drain_pending(self) -> None:
-        """Pull any inbound frames that have already arrived, without blocking on new ones.
-
-        A single ``recv()`` call is always in flight, tracked as ``_pending_recv``. Each
-        tick, we yield control once so an already-arrived frame (queued before this call,
-        as in tests that never start a background loop) can complete that task, then keep
-        harvesting completed tasks and re-arming a fresh one until none are ready. If the
-        pending task is still waiting on the wire, we leave it in place for the next tick
-        to pick up rather than cancelling it — a websocket has only one live recv() at a
-        time. This makes the drain path identical whether `start()` launched anything or
-        not, so there is no test-only branch in production code.
-        """
-        if self._pending_recv is None:
-            self._pending_recv = asyncio.ensure_future(self._ws.recv())
-
-        await asyncio.sleep(0)
-        while self._pending_recv is not None and self._pending_recv.done():
-            task = self._pending_recv
-            self._pending_recv = None
+    async def _receive_loop(self) -> None:
+        """Continuously buffer inbound assistant audio as PCM16 at the caller sample rate."""
+        while True:
             try:
-                raw = task.result()
-            except Exception:
+                raw = await self._ws.recv()
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                logger.exception("RealtimeWSAdapter receive loop failed")
+                self._error = exc
                 return
             self._ingest(raw)
-            self._pending_recv = asyncio.ensure_future(self._ws.recv())
-            await asyncio.sleep(0)
 
     def _ingest(self, raw: str) -> None:
         """Decode one inbound frame, keeping only media payloads."""
