@@ -33,3 +33,23 @@ async def test_missing_api_key_raises_a_clear_error(monkeypatch):
 
     with pytest.raises(ValueError, match="Cartesia API key"):
         await tts.synthesize("hello", voice_id="voice-f")
+
+
+async def test_stream_yields_nothing_for_empty_text():
+    tts = CartesiaTTS({"model": "sonic-3.5", "api_key": "k"})
+
+    chunks = [chunk async for chunk in tts.stream("", voice_id="voice-f")]
+
+    assert chunks == []
+
+
+async def test_synthesize_concatenates_the_stream(monkeypatch):
+    tts = CartesiaTTS({"model": "sonic-3.5", "api_key": "k"})
+
+    async def fake_stream(text, *, voice_id):
+        for piece in (b"ab", b"cd"):
+            yield piece
+
+    monkeypatch.setattr(tts, "stream", fake_stream)
+
+    assert await tts.synthesize("hello", voice_id="voice-f") == b"abcd"

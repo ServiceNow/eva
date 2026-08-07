@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -37,10 +38,10 @@ class CartesiaTTS:
             return self._female_voice
         return self._male_voice
 
-    async def synthesize(self, text: str, *, voice_id: str) -> bytes:
-        """Render text to raw PCM16 mono at CALLER_SAMPLE_RATE."""
+    async def stream(self, text: str, *, voice_id: str) -> AsyncIterator[bytes]:
+        """Yield PCM16 chunks as they render, so playout can start before the tail exists."""
         if not text:
-            return b""
+            return
         if not self._api_key:
             raise ValueError("Cartesia API key missing: set tts_params.api_key or CARTESIA_API_KEY")
 
@@ -58,6 +59,12 @@ class CartesiaTTS:
         headers = {"X-API-Key": self._api_key, "Cartesia-Version": CARTESIA_VERSION}
 
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(CARTESIA_URL, json=body, headers=headers)
-            response.raise_for_status()
-            return response.content
+            async with client.stream("POST", CARTESIA_URL, json=body, headers=headers) as response:
+                response.raise_for_status()
+                async for chunk in response.aiter_bytes():
+                    if chunk:
+                        yield chunk
+
+    async def synthesize(self, text: str, *, voice_id: str) -> bytes:
+        """Render text to raw PCM16 mono at CALLER_SAMPLE_RATE."""
+        return b"".join([chunk async for chunk in self.stream(text, voice_id=voice_id)])
