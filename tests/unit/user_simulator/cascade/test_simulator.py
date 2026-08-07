@@ -1,8 +1,10 @@
 import json
+import logging
 
 import pytest
 
-from eva.user_simulator.cascade.simulator import extract_turn, parse_turn_response
+from eva.models.config import PerturbationConfig
+from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn, parse_turn_response
 
 
 def test_parse_turn_response_reads_a_clean_json_object():
@@ -58,3 +60,21 @@ def test_extract_turn_ignores_an_unrelated_tool_call():
         tool_calls = [_Call()]
 
     assert extract_turn(_Message()) == ("Go on.", False)
+
+
+def test_warn_unsupported_perturbation_fires_for_background_noise(caplog):
+    with caplog.at_level(logging.WARNING):
+        CascadeUserSimulator._warn_unsupported_perturbation(PerturbationConfig(background_noise="road_noise"))
+    assert any("background_noise" in record.message for record in caplog.records)
+
+
+def test_warn_unsupported_perturbation_is_silent_for_a_default_config(caplog):
+    with caplog.at_level(logging.WARNING):
+        CascadeUserSimulator._warn_unsupported_perturbation(PerturbationConfig())
+    assert caplog.records == []
+
+
+def test_warn_unsupported_perturbation_is_silent_for_none(caplog):
+    with caplog.at_level(logging.WARNING):
+        CascadeUserSimulator._warn_unsupported_perturbation(None)
+    assert caplog.records == []
