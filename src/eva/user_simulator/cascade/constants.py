@@ -1,4 +1,4 @@
-"""Timing constants for the tick-based cascade user simulator.
+"""Timing constants for the tick-based cascade caller.
 
 Values mirror tau-voice (tau2-bench/src/tau2/config.py:104-113). These are
 module constants rather than config fields on purpose: there is no run-level
@@ -16,11 +16,13 @@ WAIT_TO_RESPOND_OTHER_MS = 1000
 WAIT_TO_RESPOND_SELF_MS = 5000
 """Silence required from the caller itself before it starts another turn."""
 
-YIELD_WHEN_INTERRUPTED_MS = 1000
-"""How long the caller keeps talking after the assistant barges in."""
+TRANSCRIPT_WAIT_MS = 1500
+"""How long the caller waits for the assistant's transcript to finalize before falling back
+to the in-flight partial, sized above the slowest measured finalization (ink-2, 1.2s)."""
 
-YIELD_WHEN_INTERRUPTING_MS = 5000
-"""How long the caller holds the floor after barging in itself."""
+ASSISTANT_UNRESPONSIVE_MS = 90000
+"""Assistant silence after which the caller stops waiting for a reply, set above the longest
+legitimate inter-utterance gap measured live (220 ticks) and below the server's idle timeout."""
 
 CALLER_SAMPLE_RATE = 16000
 """PCM16 sample rate for the caller's own audio track."""

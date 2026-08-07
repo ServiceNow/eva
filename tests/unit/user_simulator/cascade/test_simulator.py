@@ -1,21 +1,10 @@
-import json
 import logging
-
-import pytest
 
 from eva.models.config import PerturbationConfig
 from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn, parse_turn_response
 
 
-def test_parse_turn_response_reads_a_clean_json_object():
-    assert parse_turn_response('{"utterance": "Hi there."}') == "Hi there."
-
-
-def test_parse_turn_response_tolerates_markdown_fences():
-    assert parse_turn_response('```json\n{"utterance": "Bye."}\n```') == "Bye."
-
-
-def test_parse_turn_response_falls_back_to_raw_text_when_not_json():
+def test_parse_turn_response_returns_the_spoken_line_unchanged():
     assert parse_turn_response("I need to reset my password.") == "I need to reset my password."
 
 
@@ -24,14 +13,9 @@ def test_parse_turn_response_returns_empty_for_a_toolcall_only_turn():
     assert parse_turn_response("") == ""
 
 
-def test_parse_turn_response_rejects_a_non_string_utterance():
-    with pytest.raises(ValueError, match="utterance"):
-        parse_turn_response(json.dumps({"utterance": 42}))
-
-
 def test_extract_turn_reads_a_plain_string_as_no_hangup():
     # LiteLLMClient returns a bare str when the model made no tool call.
-    assert extract_turn('{"utterance": "Still here."}') == ("Still here.", False)
+    assert extract_turn("Still here.") == ("Still here.", False)
 
 
 def test_extract_turn_detects_the_end_call_tool():
@@ -56,7 +40,7 @@ def test_extract_turn_ignores_an_unrelated_tool_call():
         function = _Fn()
 
     class _Message:
-        content = '{"utterance": "Go on."}'
+        content = "Go on."
         tool_calls = [_Call()]
 
     assert extract_turn(_Message()) == ("Go on.", False)
@@ -88,7 +72,7 @@ def _make_bare_simulator() -> CascadeUserSimulator:
     return sim
 
 
-def test_messages_flips_roles_so_the_caller_llm_sees_its_own_lines_as_assistant():
+def test_messages_flips_roles_so_the_user_simulator_llm_sees_its_own_lines_as_assistant():
     sim = _make_bare_simulator()
     sim._history = [
         {"role": "assistant", "content": "What is your email?"},
@@ -102,11 +86,82 @@ def test_messages_flips_roles_so_the_caller_llm_sees_its_own_lines_as_assistant(
     assert messages[2] == {"role": "assistant", "content": "It's jane@example.com."}
 
 
-def test_messages_appends_a_trailing_role_reminder():
-    sim = _make_bare_simulator()
+class _FakeEventLogger:
+    def __init__(self) -> None:
+        self.events: list[tuple[str, dict]] = []
 
-    messages = sim._messages()
+    def log_event(self, name, data):
+        self.events.append((name, data))
 
-    assert messages[-1]["role"] == "system"
-    assert "CUSTOMER" in messages[-1]["content"]
-    assert "Do NOT respond as the customer service agent" in messages[-1]["content"]
+
+class _FakeScheduler:
+    tick = 7
+
+
+def _simulator_with_buffer(committed: str = "", in_flight: str = ""):
+    """Build a bare simulator with just the attributes _collect_heard_text touches."""
+    from eva.user_simulator.cascade.stt import TranscriptBuffer
+
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    buffer = TranscriptBuffer()
+    buffer.committed, buffer.in_flight = committed, in_flight
+    sim._stt = type("_Stt", (), {"buffer": buffer})()
+    sim._ticks_awaiting_transcript = 0
+    sim._missed_transcripts = 0
+    sim.event_logger = _FakeEventLogger()
+    return sim
+
+
+def test_committed_transcript_is_taken_immediately():
+    sim = _simulator_with_buffer(committed="I can help with that.")
+
+    assert sim._collect_heard_text(_FakeScheduler()) == ("I can help with that.", False)
+
+
+def test_empty_buffer_waits_rather_than_generating_a_turn():
+    # Finalization is not instant; the first empty read means "not ready yet".
+    sim = _simulator_with_buffer()
+
+    assert sim._collect_heard_text(_FakeScheduler()) == ("", True)
+
+
+def test_wait_expires_into_the_in_flight_partial():
+    from eva.user_simulator.cascade.constants import TRANSCRIPT_WAIT_MS, ms_to_ticks
+
+    sim = _simulator_with_buffer(in_flight="Please confirm your username")
+    for _ in range(ms_to_ticks(TRANSCRIPT_WAIT_MS)):
+        assert sim._collect_heard_text(_FakeScheduler()) == ("", True)
+
+    assert sim._collect_heard_text(_FakeScheduler()) == ("Please confirm your username", False)
+    assert sim._stt.buffer.in_flight == ""
+
+
+def test_hearing_nothing_at_all_is_reported_and_never_reuses_stale_history():
+    from eva.user_simulator.cascade.constants import TRANSCRIPT_WAIT_MS, ms_to_ticks
+
+    sim = _simulator_with_buffer()
+    for _ in range(ms_to_ticks(TRANSCRIPT_WAIT_MS)):
+        sim._collect_heard_text(_FakeScheduler())
+
+    heard, waiting = sim._collect_heard_text(_FakeScheduler())
+
+    assert (heard, waiting) == ("", False)
+    assert sim._missed_transcripts == 1
+    assert [name for name, _ in sim.event_logger.events] == ["transcript_missed"]
+
+
+def test_the_wait_counter_resets_after_a_successful_read():
+    sim = _simulator_with_buffer()
+    sim._collect_heard_text(_FakeScheduler())
+    sim._stt.buffer.committed = "Thanks, Marcus."
+
+    sim._collect_heard_text(_FakeScheduler())
+
+    assert sim._ticks_awaiting_transcript == 0
+
+
+def test_missed_utterance_directive_forbids_repeating():
+    from eva.user_simulator.cascade.simulator import MISSED_UTTERANCE_DIRECTIVE
+
+    assert "not repeat" in MISSED_UTTERANCE_DIRECTIVE.lower()
+    assert "repeat it" in MISSED_UTTERANCE_DIRECTIVE.lower()

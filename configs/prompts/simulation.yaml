@@ -507,21 +507,3 @@ user_simulator:
     For languages that use non-Latin scripts, spell out characters using their standard phonetic names in your language.
     
     IMPORTANT: Before ending the conversation, confirm with the agent that there are no outstanding actions. The end_call tool should only be called in a turn that is a brief goodbye — never in the same turn where you are providing the agent with data, an identifier, a request to transfer to a live agent, an approval to proceed, or any kind of additional information.
-
-  cascade_turn_contract: |
-    Respond with a single JSON object and nothing else. It must have exactly this field:
-
-    {{
-      "utterance": "<what you say out loud on this turn, as natural spoken speech>"
-    }}
-
-    Rules for "utterance":
-    - Write it the way a person speaks on a phone call, not the way they write.
-    - One turn only. Do not script the agent's reply or your own next turn.
-    - Never include stage directions, names, labels, or quotation marks around the whole line.
-    - If you have nothing to add but the call is not over, say a short natural acknowledgement.
-
-    To hang up, call the end_call tool. Do not describe hanging up in "utterance".
-
-  cascade_role_reminder: |
-    REMINDER: You are the CUSTOMER calling for help. Respond as the customer would - with questions, requests, or information about your issue. Do NOT respond as the customer service agent.

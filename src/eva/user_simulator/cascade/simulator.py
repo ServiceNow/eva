@@ -1,8 +1,7 @@
-"""Self-hosted STT/LLM/TTS caller simulator driven by the tick scheduler."""
+"""Self-hosted STT/LLM/TTS caller driven by the tick scheduler."""
 
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 
@@ -12,29 +11,27 @@ from eva.assistant.services.llm import LiteLLMClient
 from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
-from eva.user_simulator.cascade.constants import CALLER_SAMPLE_RATE, TICK_DURATION_MS
+from eva.user_simulator.cascade.constants import (
+    TICK_DURATION_MS,
+    TRANSCRIPT_WAIT_MS,
+    CALLER_SAMPLE_RATE,
+    ms_to_ticks,
+)
 from eva.user_simulator.cascade.scheduler import TickScheduler
-from eva.user_simulator.cascade.stt import ScribeStreamingSTT
+from eva.user_simulator.cascade.stt_livekit import LiveKitStreamingSTT
 from eva.user_simulator.cascade.tts import CartesiaTTS
+
+# Shared with the OpenAI Realtime provider so both simulators hang up on the same rules.
+from eva.user_simulator.openai_realtime import END_CALL_DESCRIPTION
 from eva.utils.logging import get_logger
-from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
-_FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
+_FENCE = re.compile(r"^```[a-z]*\s*|\s*```$", re.MULTILINE)
 
-END_CALL_DESCRIPTION = """Use this to end the phone call and hang up.
-
-Call this function when it is time to end the call and one of the following is true:
-1. The agent has confirmed your request is resolved, all steps are completed, and you have said goodbye.
-2. The agent has initiated a transfer to a live agent.
-3. The agent has been unable to make progress for at least 5 consecutive turns.
-4. The agent says goodbye or indicates the conversation is over.
-5. The agent indicates that the remainder of your request cannot be fulfilled.
-6. The assistant reports an unrecoverable processing error.
-
-Never call this tool in the same turn that you provide the agent with data, an identifier,
-an approval to proceed, a transfer request, or any other information. Say a brief goodbye first."""
+MISSED_UTTERANCE_DIRECTIVE = """You did not hear what the agent just said — the audio did not
+come through. Do NOT repeat your previous message. Say briefly that you did not catch that and
+ask them to repeat it, the way anyone would on a bad phone line."""
 
 END_CALL_TOOL = {
     "type": "function",
@@ -47,24 +44,8 @@ END_CALL_TOOL = {
 
 
 def parse_turn_response(raw: str) -> str:
-    """Extract the utterance from the caller LLM's JSON reply.
-
-    Falls back to treating the whole response as the utterance when it is not
-    JSON, so a malformed reply degrades into a plain turn rather than silence.
-    """
-    stripped = _FENCE.sub("", raw).strip()
-    if not stripped:
-        return ""
-    try:
-        payload = json.loads(stripped)
-    except json.JSONDecodeError:
-        return stripped
-    if not isinstance(payload, dict):
-        return stripped
-    utterance = payload.get("utterance", "")
-    if not isinstance(utterance, str):
-        raise ValueError(f"Caller LLM returned a non-string utterance: {utterance!r}")
-    return utterance
+    """Return the spoken line from the model's reply, stripping any stray code fence."""
+    return _FENCE.sub("", raw).strip()
 
 
 def _flip_role(role: str) -> str:
@@ -117,11 +98,13 @@ class CascadeUserSimulator(AbstractUserSimulator):
         )
         self._warn_unsupported_perturbation(perturbation_config)
         self._config = simulator_config
-        self._stt = ScribeStreamingSTT(simulator_config.stt_params, language=language)
+        self._stt = LiveKitStreamingSTT(simulator_config.stt, simulator_config.stt_params, language=language)
         self._tts = CartesiaTTS(simulator_config.tts_params, language=language)
         self._llm = LiteLLMClient(model=simulator_config.llm)
         self._voice_id = self._tts.voice_for_persona(persona_config)
         self._history: list[dict[str, str]] = []
+        self._ticks_awaiting_transcript = 0
+        self._missed_transcripts = 0
 
     async def run_conversation(self) -> str:
         """Run the tick loop until the call ends, and return the end reason."""
@@ -158,13 +141,22 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 # and never idles out; committed exactly on the speech->silence transition,
                 # which is what closes the utterance so take_committed() below isn't starved.
                 commit = assistant_was_speaking and not result.has_assistant_speech
+                if result.has_assistant_speech != assistant_was_speaking:
+                    logger.debug(
+                        f"tick {scheduler.tick}: assistant speech "
+                        f"{'started' if result.has_assistant_speech else 'ended'} "
+                        f"(raw={result.assistant_audio_raw_bytes}B)"
+                    )
                 await self._stt.feed(result.assistant_audio, commit=commit)
                 assistant_was_speaking = result.has_assistant_speech
                 if result.has_assistant_speech:
                     continue
                 if scheduler.caller_is_speaking or not scheduler.may_take_turn():
                     continue
-                if await self._take_turn(scheduler):
+                heard, waiting = self._collect_heard_text(scheduler)
+                if waiting:
+                    continue
+                if await self._take_turn(scheduler, heard):
                     break
             else:
                 if not self._conversation_done.is_set():
@@ -174,14 +166,51 @@ class CascadeUserSimulator(AbstractUserSimulator):
             await adapter.stop()
             self.event_logger.log_connection_state("session_ended", {"reason": self._end_reason})
 
-    async def _take_turn(self, scheduler: TickScheduler) -> bool:
-        """Generate, synthesize, and queue one caller turn. Returns True to hang up."""
+    def _collect_heard_text(self, scheduler: TickScheduler) -> tuple[str, bool]:
+        """Return what the assistant said and whether to keep waiting for it.
+
+        Finalization is not instantaneous, so an empty buffer at the first turn
+        opportunity usually means "not ready yet" rather than "nothing was said".
+        Retrying on later ticks is the wait; the in-flight partial is the fallback
+        once that budget is spent.
+        """
         heard = self._stt.buffer.take_committed()
+        if heard:
+            self._ticks_awaiting_transcript = 0
+            return heard, False
+
+        self._ticks_awaiting_transcript += 1
+        if self._ticks_awaiting_transcript <= ms_to_ticks(TRANSCRIPT_WAIT_MS):
+            return "", True
+
+        self._ticks_awaiting_transcript = 0
+        partial = self._stt.buffer.in_flight
+        self._stt.buffer.in_flight = ""
+        if partial:
+            logger.warning(
+                f"tick {scheduler.tick}: no final transcript after {TRANSCRIPT_WAIT_MS}ms; "
+                f"falling back to the in-flight partial: {partial[:120]!r}"
+            )
+            self.event_logger.log_event("transcript_partial_fallback", {"text": partial, "tick_index": scheduler.tick})
+            return partial, False
+
+        self._missed_transcripts += 1
+        logger.error(
+            f"tick {scheduler.tick}: heard nothing at all from the assistant this turn "
+            f"(missed {self._missed_transcripts} so far); asking it to repeat"
+        )
+        self.event_logger.log_event("transcript_missed", {"tick_index": scheduler.tick})
+        return "", False
+
+    async def _take_turn(self, scheduler: TickScheduler, heard: str) -> bool:
+        """Generate, synthesize, and queue one caller turn. Returns True to hang up."""
         if heard:
             self._history.append({"role": "assistant", "content": heard})
             self._on_assistant_speaks(heard)
 
-        message, _stats = await self._llm.complete(messages=self._messages(), tools=[END_CALL_TOOL])
+        message, _stats = await self._llm.complete(
+            messages=self._messages(missed_utterance=not heard), tools=[END_CALL_TOOL]
+        )
         utterance, end_call = extract_turn(message)
 
         if utterance:
@@ -219,15 +248,21 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 "Behavior and accent perturbations are unaffected."
             )
 
-    def _messages(self) -> list[dict[str, str]]:
-        """Build the caller LLM message list: persona/goal prompt, JSON contract, flipped history.
+    def _messages(self, *, missed_utterance: bool = False) -> list[dict[str, str]]:
+        """Build the message list: the shared per-domain caller prompt plus flipped history.
+
+        The system prompt is `_build_prompt()` unmodified — the same per-domain prompt the other
+        providers use, which already carries the persona, goal, and end_call rules.
 
         `self._history` is kept in conversation-truth roles (assistant said by the agent, user
-        said by the caller) since it also feeds logging. The caller LLM is itself the assistant
+        said by the caller) since it also feeds logging. This LLM is itself the assistant
         in its own frame, so that history must be flipped here or a message tagged "assistant"
         reads to the model as its own prior output and it echoes it back.
         """
-        system = self._build_prompt() + "\n\n" + PromptManager().get_prompt("user_simulator.cascade_turn_contract")
-        flipped = [{"role": _flip_role(turn["role"]), "content": turn["content"]} for turn in self._history]
-        reminder = PromptManager().get_prompt("user_simulator.cascade_role_reminder")
-        return [{"role": "system", "content": system}, *flipped, {"role": "system", "content": reminder}]
+        messages = [{"role": "system", "content": self._build_prompt()}]
+        messages += [{"role": _flip_role(turn["role"]), "content": turn["content"]} for turn in self._history]
+        if missed_utterance:
+            # History is unchanged since the last turn, so without this the model would
+            # regenerate its previous utterance verbatim.
+            messages.append({"role": "system", "content": MISSED_UTTERANCE_DIRECTIVE})
+        return messages
