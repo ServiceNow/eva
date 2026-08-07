@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from eva.models.config import ElevenLabsSimulatorConfig
 from eva.orchestrator.worker import USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS, ConversationWorker, _percentile
 
 
@@ -222,8 +223,10 @@ class TestRunConversation:
 class TestUserSimulatorSelection:
     @pytest.mark.asyncio
     async def test_worker_uses_configured_factory_and_timeout(self, tmp_path, monkeypatch):
+        # A non-factory (legacy) provider falls through to create_user_simulator; a
+        # factory-backed provider (openai_realtime/grok_voice) takes the Role/Backend path.
         worker = _make_worker(tmp_path)
-        worker.config.user_simulator = MagicMock(provider="openai_realtime")
+        worker.config.user_simulator = ElevenLabsSimulatorConfig()
         worker.config.perturbation = None
         worker.config.language = "en"
         worker.config.conversation_time_limit_seconds = 60

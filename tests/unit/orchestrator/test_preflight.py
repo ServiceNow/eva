@@ -11,7 +11,7 @@ from pipecat.frames.frames import ErrorFrame, Frame, TTSAudioRawFrame
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 
-from eva.models.config import ModelConfig, RunConfig
+from eva.models.config import ModelConfig, RunConfig, S2SSimulatorConfig
 from eva.orchestrator import preflight
 from eva.orchestrator.preflight import (
     PreflightError,
@@ -118,6 +118,59 @@ async def test_s2s_is_skipped(tmp_path):
         )
     results = await _run_preflight(cfg)
     assert results == []
+
+
+# ── Cheap backend-construction validation (_preflight_backends) ──────────────
+
+
+def test_backend_construction_validates_s2s_assistant_missing_key(tmp_path):
+    # S2S key is no longer validated at config load (removed); construction catches it.
+    with patch.dict(os.environ, _BASE_ENV, clear=True):  # no OPENAI_API_KEY
+        cfg = RunConfig(
+            model=ModelConfig(s2s="gpt-realtime", s2s_params={"model": "gpt-realtime"}),
+            framework="openai_realtime",
+            output_dir=tmp_path / "out",
+            run_id="r",
+        )
+        with pytest.raises(PreflightError, match="assistant framework 'openai_realtime'"):
+            preflight._preflight_backends(cfg)
+
+
+def test_backend_construction_passes_with_key(tmp_path):
+    with patch.dict(os.environ, _BASE_ENV | {"OPENAI_API_KEY": "k"}, clear=True):
+        cfg = RunConfig(
+            model=ModelConfig(s2s="gpt-realtime", s2s_params={"api_key": "k", "model": "gpt-realtime"}),
+            framework="openai_realtime",
+            output_dir=tmp_path / "out",
+            run_id="r",
+        )
+        preflight._preflight_backends(cfg)  # no raise
+
+
+def test_backend_construction_skips_legacy_user_sim(tmp_path):
+    # ElevenLabs (the default user sim) isn't factory-backed -> skipped, no raise.
+    with patch.dict(os.environ, _BASE_ENV, clear=True):
+        preflight._preflight_backends(_cascade_config(tmp_path))
+
+
+def test_backend_construction_validates_factory_user_sim(tmp_path):
+    with patch.dict(os.environ, _BASE_ENV, clear=True):  # no OPENAI_API_KEY
+        cfg = _cascade_config(tmp_path)
+        cfg.user_simulator = S2SSimulatorConfig(provider="openai_realtime")
+        with pytest.raises(PreflightError, match="user simulator 'openai_realtime'"):
+            preflight._preflight_backends(cfg)
+
+
+@pytest.mark.asyncio
+async def test_backend_construction_runs_even_when_preflight_disabled(tmp_path):
+    # --no-preflight skips only the live model probes; the cheap construction check still
+    # runs. Use the user-sim provider, whose key isn't validated at config load.
+    with patch.dict(os.environ, _BASE_ENV, clear=True):  # no OPENAI_API_KEY
+        cfg = _cascade_config(tmp_path)
+        cfg.user_simulator = S2SSimulatorConfig(provider="openai_realtime")
+        cfg.preflight = False
+        with pytest.raises(PreflightError, match="user simulator 'openai_realtime'"):
+            await run_preflight(cfg)
 
 
 @pytest.mark.asyncio
