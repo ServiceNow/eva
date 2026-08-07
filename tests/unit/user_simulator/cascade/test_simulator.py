@@ -282,3 +282,43 @@ def test_tick_counters_exist_without_manual_setup():
 
     assert sim._ticks_assistant_silent == 0
     assert sim._ticks_awaiting_transcript == 0
+
+
+class RecordingScheduler:
+    """Captures what the simulator queues for playout."""
+
+    def __init__(self) -> None:
+        self.queued: list[bytes] = []
+        self.tick = 0
+
+    def enqueue_utterance(self, audio: bytes) -> None:
+        self.queued.append(audio)
+
+
+class StubCache:
+    """Phrase cache stand-in that always picks the first phrase."""
+
+    def choose(self, phrases):
+        return phrases[0]
+
+    def get(self, phrase):
+        return b"CACHED"
+
+
+async def test_backchannel_queues_cached_audio_without_synthesis():
+    from eva.user_simulator.cascade import simulator as module
+
+    scheduler = RecordingScheduler()
+    played = module.play_backchannel(scheduler, StubCache(), ["uh-huh", "mm-hmm"])
+
+    assert played == "uh-huh"
+    assert scheduler.queued == [b"CACHED"]
+
+
+def test_verdict_with_no_action_queues_nothing():
+    from eva.user_simulator.cascade.decisions import ListenerVerdict
+
+    verdict = ListenerVerdict(should_interrupt=False, should_backchannel=False)
+
+    assert verdict.should_interrupt is False
+    assert verdict.should_backchannel is False

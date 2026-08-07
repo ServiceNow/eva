@@ -12,12 +12,16 @@ from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
 from eva.user_simulator.cascade.constants import (
+    BACKCHANNEL_PHRASES,
+    BARGE_IN_OPENERS,
     CALLER_SAMPLE_RATE,
     INACTIVITY_TIMEOUT_MS,
     TICK_DURATION_MS,
     TRANSCRIPT_WAIT_MS,
     ms_to_ticks,
 )
+from eva.user_simulator.cascade.decisions import ListenerDecisions
+from eva.user_simulator.cascade.phrase_cache import PhraseCache
 from eva.user_simulator.cascade.scheduler import TickScheduler
 from eva.user_simulator.cascade.stt_livekit import LiveKitStreamingSTT
 from eva.user_simulator.cascade.tick_result import TickResult
@@ -26,6 +30,7 @@ from eva.user_simulator.cascade.tts import CartesiaTTS
 # Shared with the OpenAI Realtime provider so both simulators hang up on the same rules.
 from eva.user_simulator.openai_realtime import END_CALL_DESCRIPTION
 from eva.utils.logging import get_logger
+from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -63,6 +68,27 @@ def extract_turn(message: object) -> tuple[str, bool]:
     calls = getattr(message, "tool_calls", None) or []
     end_call = any(getattr(call.function, "name", "") == "end_call" for call in calls)
     return parse_turn_response(content), end_call
+
+
+def play_backchannel(scheduler, cache, phrases: list[str]) -> str:
+    """Queue a cached continuer and return the phrase that was chosen."""
+    phrase = cache.choose(phrases)
+    scheduler.enqueue_utterance(cache.get(phrase))
+    return phrase
+
+
+class _DecisionClient:
+    """Adapts LiteLLMClient to the single-prompt interface the checks expect."""
+
+    def __init__(self, client: LiteLLMClient) -> None:
+        self._client = client
+
+    async def decide(self, prompt: str) -> str:
+        """Ask one YES/NO question and return the raw reply."""
+        message, _stats = await self._client.complete(messages=[{"role": "user", "content": prompt}])
+        if isinstance(message, str):
+            return message
+        return getattr(message, "content", None) or ""
 
 
 class CascadeUserSimulator(AbstractUserSimulator):
@@ -104,6 +130,10 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._llm = LiteLLMClient(model=simulator_config.llm)
         self._voice_id = self._tts.voice_for_persona(persona_config)
         self._history: list[dict[str, str]] = []
+        # Shared by the listener checks and the relevance gate so both cost one client.
+        self._decision_client = _DecisionClient(LiteLLMClient(model=simulator_config.decision_llm))
+        self._phrase_cache: PhraseCache | None = None
+        self._decisions: ListenerDecisions | None = None
 
     async def run_conversation(self) -> str:
         """Run the tick loop until the call ends, and return the end reason."""
@@ -129,6 +159,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
         await adapter.start()
         await self._stt.start()
+        await self._prepare_listener_behaviors()
         self.event_logger.log_connection_state("connected", {"server_url": self.server_url})
 
         max_ticks = self.timeout * 1000 // TICK_DURATION_MS
@@ -152,6 +183,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 caller_was_speaking = scheduler.caller_spoke_this_tick
                 assistant_was_speaking = result.has_assistant_speech
                 if result.has_assistant_speech:
+                    if scheduler.is_check_tick():
+                        await self._run_checks(scheduler)
                     continue
                 if self._assistant_is_inactive(scheduler, result):
                     logger.warning(
@@ -174,6 +207,44 @@ class CascadeUserSimulator(AbstractUserSimulator):
             await self._stt.stop()
             await adapter.stop()
             self.event_logger.log_connection_state("session_ended", {"reason": self._end_reason})
+
+    async def _prepare_listener_behaviors(self) -> None:
+        """Pre-render the fixed vocabularies and build the checks, when any is enabled.
+
+        Rendering happens once at connect time rather than on demand: a cached phrase
+        is the only way a 300ms reaction lands on the tick its check chose.
+        """
+        vocabulary: list[str] = []
+        if self._config.enable_backchannel:
+            vocabulary += BACKCHANNEL_PHRASES
+        if self._config.enable_interruptions:
+            vocabulary += BARGE_IN_OPENERS
+        if not vocabulary:
+            return
+
+        self._phrase_cache = PhraseCache(self._tts, voice_id=self._voice_id)
+        await self._phrase_cache.prerender(vocabulary)
+        prompts = PromptManager()
+        self._decisions = ListenerDecisions(
+            self._decision_client,
+            interrupt_prompt=prompts.get_template("user_simulator.interruption_decision"),
+            backchannel_prompt=prompts.get_template("user_simulator.backchannel_decision"),
+        )
+
+    async def _run_checks(self, scheduler: TickScheduler) -> None:
+        """Run the listener-reaction checks and act on the verdict."""
+        if self._decisions is None or self._phrase_cache is None:
+            return
+        verdict = await self._decisions.evaluate(
+            self._stt.buffer.current_text(),
+            allow_interrupt=self._config.enable_interruptions,
+            allow_backchannel=self._config.enable_backchannel,
+        )
+        if verdict.should_backchannel:
+            phrase = play_backchannel(scheduler, self._phrase_cache, BACKCHANNEL_PHRASES)
+            # Recorded too, or the saved clean track diverges from what went on the wire.
+            self._record_audio("user_clean", self._phrase_cache.get(phrase))
+            self.event_logger.log_event("backchannel", {"text": phrase, "tick_index": scheduler.tick})
 
     def _assistant_is_inactive(self, scheduler: TickScheduler, result: TickResult) -> bool:
         """Whether the assistant has produced no audio for INACTIVITY_TIMEOUT_MS.
