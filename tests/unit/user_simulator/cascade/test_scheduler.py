@@ -62,15 +62,18 @@ async def test_assistant_speech_resets_the_silence_counter():
 
 
 async def test_caller_must_also_wait_out_its_own_silence_threshold():
-    scheduler = _scheduler([True])  # assistant greets on tick 0
-    await scheduler.run_tick()
+    scheduler = _scheduler([True, False, True] + [False] * 30)  # greet, caller turn, quick reply, then silence
+    await scheduler.run_tick()  # tick 0: assistant greets
     scheduler.enqueue_utterance(b"\x02" * BYTES_PER_TICK)
 
-    await scheduler.run_tick()  # caller speaks this tick
+    await scheduler.run_tick()  # tick 1: caller speaks this tick
+    assert scheduler.may_take_turn() is False
+
+    await scheduler.run_tick()  # tick 2: assistant replies, clearing the awaiting-reply gate
     assert scheduler.may_take_turn() is False
 
     # Assistant silence is satisfied almost immediately, self-silence needs 25 ticks.
-    for _ in range(25):
+    for _ in range(24):
         await scheduler.run_tick()
     assert scheduler.may_take_turn() is False
 
@@ -86,6 +89,30 @@ async def test_caller_does_not_speak_before_the_assistant_has_greeted():
         await scheduler.run_tick()
 
     assert scheduler.may_take_turn() is False
+
+
+async def test_caller_cannot_take_a_second_turn_while_awaiting_a_reply():
+    scheduler = _scheduler([True])  # assistant greets on tick 0, then never speaks again
+    await scheduler.run_tick()
+    scheduler.enqueue_utterance(b"\x02" * BYTES_PER_TICK)
+    await scheduler.run_tick()  # caller takes its turn
+
+    for _ in range(100):
+        await scheduler.run_tick()
+        assert scheduler.may_take_turn() is False
+
+
+async def test_caller_may_take_a_second_turn_once_the_assistant_replies():
+    scheduler = _scheduler([True, False, True] + [False] * 30)
+    await scheduler.run_tick()  # tick 0: assistant greets
+    scheduler.enqueue_utterance(b"\x02" * BYTES_PER_TICK)
+    await scheduler.run_tick()  # tick 1: caller takes its turn
+    await scheduler.run_tick()  # tick 2: assistant replies
+
+    for _ in range(25):
+        await scheduler.run_tick()
+
+    assert scheduler.may_take_turn() is True
 
 
 async def test_queued_utterance_drains_one_tick_at_a_time():

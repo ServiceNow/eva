@@ -32,6 +32,7 @@ class TickScheduler:
         self._ticks_since_assistant_speech = _NEVER_SPOKE
         self._ticks_since_caller_speech = _NEVER_SPOKE
         self._assistant_has_spoken = False
+        self._awaiting_reply = False
 
     @property
     def tick(self) -> int:
@@ -58,8 +59,14 @@ class TickScheduler:
         Gated on the assistant having spoken at least once: the assistant opens
         the call with a greeting, and without this the caller would talk over it
         on tick 0, since neither silence counter has anything to measure yet.
+
+        Also gated on the assistant having replied since the caller's last turn:
+        the silence thresholds alone are satisfied a fixed time after the caller
+        stops talking regardless of whether a reply ever arrived, which lets the
+        caller repeat itself into a slow assistant. This gate is strict — there is
+        no impatience escape hatch here.
         """
-        if not self._assistant_has_spoken:
+        if not self._assistant_has_spoken or self._awaiting_reply:
             return False
         return self._ticks_since_assistant_speech > ms_to_ticks(
             WAIT_TO_RESPOND_OTHER_MS
@@ -80,6 +87,10 @@ class TickScheduler:
             0 if result.has_assistant_speech else self._ticks_since_assistant_speech + 1
         )
         self._assistant_has_spoken = self._assistant_has_spoken or result.has_assistant_speech
+        if result.has_assistant_speech:
+            self._awaiting_reply = False
+        if outgoing:
+            self._awaiting_reply = True
 
         self._tick += 1
         return result
