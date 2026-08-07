@@ -4,6 +4,11 @@ import json
 
 import pytest
 
+try:
+    import audioop
+except ImportError:  # pragma: no cover - Python 3.13+
+    import audioop_lts as audioop
+
 from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
 
 BYTES_PER_TICK = 6400
@@ -159,6 +164,39 @@ async def test_outgoing_caller_audio_is_sent_as_twilio_media_frames():
     media_frames = [json.loads(m) for m in ws.sent if json.loads(m).get("event") == "media"]
     # One tick (200ms) is ten 20ms wire frames.
     assert len(media_frames) == 10
+
+    await adapter.stop()
+
+
+async def test_silent_tick_emits_a_full_tick_of_silence_frames():
+    ws = FakeWebSocket()
+    adapter = RealtimeWSAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+    await adapter.start()
+
+    await adapter.run_tick(0, None)
+
+    media_frames = [json.loads(m) for m in ws.sent if json.loads(m).get("event") == "media"]
+    assert len(media_frames) == 10
+    for frame in media_frames:
+        mulaw = base64.b64decode(frame["media"]["payload"])
+        pcm = audioop.ulaw2lin(mulaw, 2)
+        assert audioop.max(pcm, 2) == 0
+
+    await adapter.stop()
+
+
+async def test_mixed_speak_silent_sequence_has_no_gaps_in_outbound_stream():
+    """Regression test: a stall between speech ticks must still send silence, not nothing."""
+    ws = FakeWebSocket()
+    adapter = RealtimeWSAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+    await adapter.start()
+
+    outgoing_sequence = [b"\x00" * BYTES_PER_TICK, None, None, b"\x00" * BYTES_PER_TICK]
+    for tick_number, outgoing in enumerate(outgoing_sequence):
+        await adapter.run_tick(tick_number, outgoing)
+
+    media_frames = [json.loads(m) for m in ws.sent if json.loads(m).get("event") == "media"]
+    assert len(media_frames) == len(outgoing_sequence) * 10
 
     await adapter.stop()
 

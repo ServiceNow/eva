@@ -14,7 +14,7 @@ except ImportError:  # pragma: no cover - Python 3.13+
     import audioop_lts as audioop
 
 from eva.user_simulator.cascade.adapter.base import Adapter
-from eva.user_simulator.cascade.constants import BYTES_PER_TICK, CALLER_SAMPLE_RATE, TICK_DURATION_MS
+from eva.user_simulator.cascade.constants import BYTES_PER_TICK, CALLER_SAMPLE_RATE, SILENCE_BYTE, TICK_DURATION_MS
 from eva.user_simulator.cascade.tick_result import TickResult, split_tick_audio
 from eva.utils.logging import get_logger
 
@@ -30,12 +30,14 @@ class RealtimeWSAdapter(Adapter):
     """Exchanges tick-sized audio with an assistant server over the Twilio WS protocol.
 
     Outbound audio is paced at the real 20ms cadence the assistant expects
-    (docs/assistant_server_contract.md section 3). A background task continuously
-    drains inbound frames into an adapter-owned buffer; `run_tick` releases exactly
-    one tick's worth per call, so a provider that generates faster than real time
-    cannot run ahead of the simulation clock. `run_tick` also enforces a minimum
-    tick duration as a safety net for silent ticks, which otherwise return with no
-    I/O at all and would let the simulation race ahead of wall-clock time.
+    (docs/assistant_server_contract.md section 3), and every tick sends a full
+    tick's worth of frames — real audio or synthesized silence — so the assistant's
+    STT/VAD always sees an unbroken stream, the way a real phone line would; gaps
+    with no frames at all are what caused turn detection to misfire. A background
+    task continuously drains inbound frames into an adapter-owned buffer; `run_tick`
+    releases exactly one tick's worth per call, so a provider that generates faster
+    than real time cannot run ahead of the simulation clock. `run_tick` also enforces
+    a minimum tick duration as a safety net for ticks that send quickly.
 
     Each direction resamples a continuous stream, so each carries its own
     `audioop.ratecv` filter state across calls; the stateless helpers in
@@ -72,8 +74,7 @@ class RealtimeWSAdapter(Adapter):
             await self._send_speech_event("user_speech_stop")
         self._caller_speaking = is_speaking
 
-        if outgoing_audio:
-            await self._send_tick_audio(outgoing_audio)
+        await self._send_tick_audio(outgoing_audio or SILENCE_BYTE * self._bytes_per_tick)
 
         raw = bytes(self._inbound[: self._bytes_per_tick])
         del self._inbound[: len(raw)]
