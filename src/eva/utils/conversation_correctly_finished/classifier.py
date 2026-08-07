@@ -14,7 +14,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.models.results import MetricScore
 from eva.utils.conversation_correctly_finished.causes import api_errors, interruption, reasoning, transcript_vad
 from eva.utils.conversation_correctly_finished.final_turn import final_turn_input_flags
@@ -32,8 +31,6 @@ _RE_RESP = re.compile(r"complete response: '(.*)'$")
 
 def _extract_audit_log(audit: Path, s: ConvFinishSignals) -> None:
     """Last conversation message role, from audit_log.json."""
-    if not audit.exists():
-        return
     data = load_audit_log(audit)
     if data is None:
         s.notes.append("audit_log unreadable")
@@ -73,14 +70,10 @@ def _extract_log_signals(lines: list[str], s: ConvFinishSignals) -> None:
     interruption.extract_log_signals(lines, resp_idx, s)
 
 
-def extract_conv_finish_signals(context) -> ConvFinishSignals:  # noqa: ANN001 (MetricContext)
+def extract_conv_finish_signals(context, is_parent_failure: bool) -> ConvFinishSignals:  # noqa: ANN001 (MetricContext)
     """Read a record's raw files and build the signals the classifier needs."""
     s = ConvFinishSignals()
-    s.is_parent_failure = is_agent_timeout_on_user_turn(
-        context.conversation_ended_reason,
-        context.audio_timestamps_user_turns,
-        context.audio_timestamps_assistant_turns,
-    )
+    s.is_parent_failure = is_parent_failure
     s.is_cascade = not context.is_audio_native
     out = Path(context.output_dir) if context.output_dir else None
     if out is None:

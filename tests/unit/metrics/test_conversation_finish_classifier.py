@@ -241,7 +241,11 @@ from eva.utils.conversation_correctly_finished import final_turn_input_flags  # 
         ("Room two zero one on the second floor.", False, False, True),
         ("The clearance code is C L R dash O C C dash nine five.", False, False, True),
         ("The state abbreviation is G A.", False, False, False),  # only 2 single letters → not a run (≥3)
-        ("My confirmation is Alpha Bravo Charlie.", False, False, True),  # NATO
+        ("My confirmation is Alpha Bravo Charlie.", False, False, True),  # NATO run
+        # a lone NATO word is ordinary English, not spelling
+        ("I am waiting in the hotel lobby.", False, False, False),
+        ("I need a flight that leaves November sixth.", False, False, False),
+        ("H as in Hotel.", False, False, True),  # ...unless it comes with a phonetic cue
         ("My ID is EMP358.", False, False, True),  # caps alnum code
         ("V as in Victor.", False, False, True),  # phonetic "as in"
         # length caps: long sentences that merely start with an acknowledgement / contain a spell fragment

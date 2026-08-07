@@ -55,7 +55,11 @@ _NATO_WORDS = (
     "yankee",
     "zulu",
 )
-_NATO_WORD_RE = re.compile(r"\b(?:" + "|".join(re.escape(w) for w in _NATO_WORDS) + r")\b", re.IGNORECASE)
+_NATO_ALT = r"(?:" + "|".join(re.escape(w) for w in _NATO_WORDS) + r")"
+# A *single* NATO word is ordinary English ("waiting in the hotel lobby", "leaves November 6th"),
+# so require a run of ≥2 adjacent ones — spelling out a code never uses just one in isolation.
+# The one-word case that *is* spelling ("H as in Hotel") is already covered by ``_AS_IN_RE``.
+_NATO_RUN_RE = re.compile(rf"(?:\b{_NATO_ALT}\b{_SEPS}){{1,}}\b{_NATO_ALT}\b", re.IGNORECASE)
 _NATO_SET = set(_NATO_WORDS)
 # Length caps (annotation-stripped word counts). A genuine acknowledgement is short; a long sentence
 # that merely starts "yeah …" isn't one. A spelled entity must *dominate* the turn — so we cap the
@@ -96,7 +100,7 @@ def _looks_spelled(text: str) -> bool:
         _SINGLE_LETTER_RUN_RE.search(text)
         or _SINGLE_DIGIT_RUN_RE.search(text)
         or _AS_IN_RE.search(text)
-        or _NATO_WORD_RE.search(text)
+        or _NATO_RUN_RE.search(text)
         or _CAPS_ALNUM_CODE_RE.search(text)
         or _CAPS_ACRONYM_RE.search(text)
         or _SPOKEN_DIGIT_RUN_RE.search(text)
@@ -119,7 +123,8 @@ def final_turn_input_flags(text: str | None) -> dict[str, bool]:
     - ``spelled_entity``: letter/digit spell-out of an ID/code/name ("E M P eight nine …", NATO,
       "V as in Victor", caps codes like EMP358) that **dominates** the turn (≤ ``_SPELL_MAX_EXTRA_WORDS``
       non-spelled words) — a long sentence with a small spelled fragment is not counted. Single-char
-      runs need ≥3 chars, so 2-letter words like "IT" ("I T") don't count.
+      runs need ≥3 chars, so 2-letter words like "IT" ("I T") don't count, and NATO words need a run
+      of ≥2, so ordinary English uses ("the hotel lobby", "November 6th") don't count.
     """
     if not text or not text.strip():
         return {"short": False, "acknowledgement": False, "spelled_entity": False}

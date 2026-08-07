@@ -48,22 +48,31 @@ class ConversationCorrectlyFinishedMetric(CodeMetric):
 
             # Classify the cause only when the conversation actually failed. Emit the per-cause
             # rate sub-metrics on every record regardless (all 0.0 on a clean finish) so the
-            # cross-record mean has an all-records denominator, matching faithfulness.
+            # cross-record mean has an all-records denominator.
+            diagnosis_error: str | None = None
             if missed_turn:
                 human_reason = "conversation ended with inactivity_timeout and user was the last speaker"
-                signals = extract_conv_finish_signals(context)
-                classification = classify_conv_finish_failure(signals)
-                sub_metrics = build_conv_finish_sub_metrics(classification, self.name)
-                # Orthogonal input-characteristic flags (short / acknowledgement / spelled final turn).
-                sub_metrics.update(build_final_turn_flag_sub_metrics(signals.user_final_words, self.name))
+                # Diagnosis reads raw record files and is best-effort: a failure here must not cost
+                # us the parent score or its details, so it gets its own guard.
+                try:
+                    signals = extract_conv_finish_signals(context, missed_turn)
+                    classification = classify_conv_finish_failure(signals)
+                    sub_metrics = build_conv_finish_sub_metrics(classification, self.name)
+                    # Orthogonal input-characteristic flags (short / acknowledgement / spelled final turn).
+                    sub_metrics.update(build_final_turn_flag_sub_metrics(signals.user_final_words, self.name))
+                except Exception as e:
+                    diagnosis_error = f"{type(e).__name__}: {e}"
+                    self.logger.warning(f"conv_finish diagnosis failed for {context.record_id}: {e}")
+                    sub_metrics = build_conv_finish_sub_metrics(Classification(None, {}), self.name)
             else:
                 # Clean finish: no cause fired, but emit every cause flag at 0.0 so this record
                 # counts toward the rate denominator.
                 sub_metrics = build_conv_finish_sub_metrics(Classification(None, {}), self.name)
-                if reason == "inactivity_timeout":
-                    human_reason = f"inactivity_timeout but last speaker was {speaker!r}"
-                else:
-                    human_reason = f"conversation ended with reason={reason!r}"
+                human_reason = (
+                    f"inactivity_timeout but last speaker was {speaker!r}"
+                    if reason == "inactivity_timeout"
+                    else f"conversation ended with reason={reason!r}"
+                )
 
             return MetricScore(
                 name=self.name,
@@ -73,6 +82,7 @@ class ConversationCorrectlyFinishedMetric(CodeMetric):
                     "conversation_ended_reason": reason,
                     "last_audio_speaker": speaker,
                     "reason": human_reason,
+                    **({"diagnosis_error": diagnosis_error} if diagnosis_error else {}),
                 },
                 sub_metrics=sub_metrics,
             )

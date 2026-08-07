@@ -133,3 +133,20 @@ async def test_input_flags_absent_on_success(metric):
     result = await metric.compute(ctx)
     # Input-characteristic flags are only emitted on failures; cause rates are still present (all 0.0).
     assert not any(k.startswith("final_turn_") for k in result.sub_metrics)
+
+
+@pytest.mark.asyncio
+async def test_diagnosis_failure_keeps_parent_score_and_details(metric, tmp_path, monkeypatch):
+    # Diagnosis reads raw record files; if that blows up we must still report the parent verdict.
+    monkeypatch.setattr(
+        "eva.metrics.diagnostic.conversation_correctly_finished.extract_conv_finish_signals",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("boom")),
+    )
+    result = await metric.compute(_fail_ctx(tmp_path))
+    assert result.score == 0.0
+    assert result.error is None
+    assert result.details["last_audio_speaker"] == "user"
+    assert "inactivity_timeout" in result.details["reason"]
+    assert result.details["diagnosis_error"] == "ValueError: boom"
+    # Cause rates are still emitted (all 0.0) so the record counts toward the denominator.
+    assert result.sub_metrics["unknown_reason_rate"].score == 0.0
