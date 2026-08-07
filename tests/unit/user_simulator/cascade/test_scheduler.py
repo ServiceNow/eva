@@ -222,3 +222,41 @@ async def test_failed_adapter_call_leaves_queue_and_tick_unadvanced():
 
     assert scheduler.tick == 0
     assert bytes(scheduler._playout) == utterance
+
+
+async def test_check_tick_only_while_assistant_speaks_and_caller_is_silent():
+    scheduler = _scheduler([True] * 40)
+
+    # Tick 0..9 consumed; tick index 10 is the first multiple of the interval.
+    for _ in range(10):
+        await scheduler.run_tick()
+
+    assert scheduler.is_check_tick() is True
+
+
+async def test_not_a_check_tick_between_intervals():
+    scheduler = _scheduler([True] * 40)
+
+    for _ in range(11):
+        await scheduler.run_tick()
+
+    assert scheduler.is_check_tick() is False
+
+
+async def test_not_a_check_tick_when_the_assistant_is_silent():
+    scheduler = _scheduler([True] + [False] * 40)
+
+    for _ in range(10):
+        await scheduler.run_tick()
+
+    assert scheduler.is_check_tick() is False
+
+
+async def test_not_a_check_tick_while_the_caller_is_speaking():
+    scheduler = _scheduler([True] * 40)
+    for _ in range(9):
+        await scheduler.run_tick()
+    scheduler.enqueue_utterance(b"\x02" * (BYTES_PER_TICK * 5))
+    await scheduler.run_tick()
+
+    assert scheduler.is_check_tick() is False

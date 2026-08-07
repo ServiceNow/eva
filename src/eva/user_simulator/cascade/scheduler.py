@@ -5,6 +5,7 @@ from __future__ import annotations
 from eva.user_simulator.cascade.adapter.base import Adapter
 from eva.user_simulator.cascade.constants import (
     BYTES_PER_TICK,
+    LISTENER_CHECK_INTERVAL_MS,
     WAIT_TO_RESPOND_OTHER_MS,
     WAIT_TO_RESPOND_SELF_MS,
     ms_to_ticks,
@@ -68,6 +69,17 @@ class TickScheduler:
         it dates the authored turn boundary rather than estimating it from silence.
         """
         return self._caller_spoke_this_tick
+
+    @property
+    def assistant_is_speaking(self) -> bool:
+        """Whether the assistant produced audio on the most recent tick."""
+        return self._ticks_since_assistant_speech == 0
+
+    def is_check_tick(self) -> bool:
+        """Whether the listener-reaction checks should run now (tau: streaming.py:2514-2521)."""
+        if not self.assistant_is_speaking or self.caller_is_speaking:
+            return False
+        return self.tick % ms_to_ticks(LISTENER_CHECK_INTERVAL_MS) == 0
 
     def may_take_turn(self) -> bool:
         """Whether both silence thresholds are satisfied (tau: streaming.py:2590-2606).
