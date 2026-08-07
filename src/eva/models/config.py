@@ -474,7 +474,9 @@ class S2SSimulatorConfig(BaseModel):
     """
 
     provider: Literal["openai_realtime", "grok_voice"] = "openai_realtime"
-    model: str = Field("gpt-realtime-1.5", description="Native S2S model (OpenAI Realtime default; override per provider).")
+    model: str = Field(
+        "gpt-realtime-1.5", description="Native S2S model (OpenAI Realtime default; override per provider)."
+    )
     female_voice: str = Field("marin", description="Voice used for female caller personas.")
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
