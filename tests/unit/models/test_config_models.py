@@ -1270,3 +1270,31 @@ def test_user_simulator_union_discriminates_cascade():
     parsed = TypeAdapter(UserSimulatorConfig).validate_python({"provider": "cascade"})
 
     assert isinstance(parsed, CascadeSimulatorConfig)
+
+
+def test_cascade_behaviors_default_off():
+    from eva.models.config import CascadeSimulatorConfig
+
+    config = CascadeSimulatorConfig()
+
+    assert config.enable_backchannel is False
+    assert config.enable_interruptions is False
+    assert config.enable_self_correction is False
+    assert config.speculative_generation is False
+
+
+def test_cascade_behaviors_can_be_enabled_independently():
+    from eva.models.config import CascadeSimulatorConfig
+
+    config = CascadeSimulatorConfig(enable_backchannel=True)
+
+    assert config.enable_backchannel is True
+    assert config.enable_interruptions is False
+
+
+def test_cascade_decision_llm_defaults_to_the_caller_llm():
+    from eva.models.config import CascadeSimulatorConfig
+
+    config = CascadeSimulatorConfig()
+
+    assert config.decision_llm == config.llm
