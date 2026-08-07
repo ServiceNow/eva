@@ -20,8 +20,8 @@ events.
 
 Plug-in point: ``run()`` mirrors ``AbstractUserSimulator.run_conversation()``
 (drives to completion, returns the end-reason) and exposes the same
-``on_conversation_ending`` hook, so the worker swap is 1:1. Wired behind the
-``USE_ROLE_BACKEND_OPENAI_REALTIME`` gate in the worker.
+``on_conversation_ending`` hook, so the worker swap is 1:1. The worker takes
+this path for every provider the ``BackendFactory`` supports.
 """
 
 from __future__ import annotations

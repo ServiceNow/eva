@@ -463,17 +463,24 @@ class ElevenLabsSimulatorConfig(BaseModel):
         return data
 
 
-class OpenAIRealtimeSimulatorConfig(BaseModel):
-    """OpenAI Realtime-specific settings for the user simulator."""
+class S2SSimulatorConfig(BaseModel):
+    """Native speech-to-speech settings for the user simulator.
 
-    provider: Literal["openai_realtime"] = "openai_realtime"
-    model: str = Field("gpt-realtime-1.5", description="OpenAI Realtime model.")
+    Shared by all OpenAI-Realtime-compatible S2S providers (``openai_realtime``,
+    ``grok_voice``). Defaults target OpenAI Realtime; other providers should
+    override ``model`` and the voices (e.g. Grok's ``eve``/``ara``). The backend
+    resolves the API key from the environment per provider (OPENAI_API_KEY /
+    XAI_API_KEY).
+    """
+
+    provider: Literal["openai_realtime", "grok_voice"] = "openai_realtime"
+    model: str = Field("gpt-realtime-1.5", description="Native S2S model (OpenAI Realtime default; override per provider).")
     female_voice: str = Field("marin", description="Voice used for female caller personas.")
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
 
 UserSimulatorConfig = Annotated[
-    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    ElevenLabsSimulatorConfig | S2SSimulatorConfig,
     Field(discriminator="provider"),
 ]
 
@@ -727,13 +734,13 @@ class RunConfig(BaseSettings):
         config is unused and conflicting env vars are harmless.
         """
         if (
-            isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig)
+            isinstance(self.user_simulator, S2SSimulatorConfig)
             and self.perturbation is not None
             and self.perturbation.accent is not None
         ):
             raise ValueError(
                 "Accent perturbations require the ElevenLabs user simulator; "
-                "OpenAI Realtime supports behavior, noise, and connection perturbations."
+                "native S2S simulators support behavior, noise, and connection perturbations."
             )
 
         if self.max_rerun_attempts == 0 or self.aggregate_only:
@@ -766,8 +773,12 @@ class RunConfig(BaseSettings):
                 errors.extend(
                     self._validate_service_params("AUDIO_LLM", self.model.audio_llm, self.model.audio_llm_params)
                 )
-            case PipelineType.S2S:
-                errors.extend(self._validate_service_params("S2S", self.model.s2s, self.model.s2s_params))
+            # S2S is intentionally not validated here: an S2S run uses a native backend,
+            # and that backend's construction (via the BackendFactory, exercised in
+            # orchestrator.preflight) is the single source of truth for its required
+            # fields/keys. Keeping it out of config avoids duplicating backend knowledge
+            # (the trade-off: a missing S2S key surfaces as a PreflightError, not a
+            # pydantic ValidationError).
         if errors:
             raise ValidationError.from_exception_data(title=type(self).__name__, line_errors=errors)
 
@@ -833,14 +844,12 @@ class RunConfig(BaseSettings):
 
         return self
 
-    @model_validator(mode="after")
-    def _check_openai_realtime_simulator(self) -> "RunConfig":
-        """When openai_realtime user simulator is selected, OPENAI_API_KEY must be present."""
-        if not isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig):
-            return self
-        if not os.environ.get("OPENAI_API_KEY"):
-            raise ValueError("EVA_USER_SIMULATOR__PROVIDER=openai_realtime requires OPENAI_API_KEY to be set.")
-        return self
+    # NOTE: no backend-specific credential validation here. A native S2S user
+    # simulator's credentials are validated by constructing its backend via the
+    # BackendFactory (see orchestrator.worker): the backend raises its own precise
+    # reason (e.g. missing api_key naming OPENAI_API_KEY / XAI_API_KEY). Config-side
+    # validation stays limited to non-backend concerns (perturbation compatibility,
+    # companion services, etc.); provider validity is enforced by the Literal types.
 
     @model_validator(mode="before")
     @classmethod

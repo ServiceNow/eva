@@ -14,7 +14,7 @@ from types import SimpleNamespace
 import pytest
 
 from eva.backend.base import BackendEventType, ToolCallResult
-from eva.backend.default_factory import DefaultBackendFactory
+from eva.backend.factory import BackendFactory
 from eva.backend.openai_realtime import OpenAIRealtimeBackend, OpenAIRealtimeSession
 
 
@@ -284,7 +284,7 @@ async def test_close_is_idempotent_and_network_free():
 
 
 def test_factory_dispatch_builds_backend_from_flat_config():
-    backend = DefaultBackendFactory().create(
+    backend = BackendFactory().create(
         "openai_realtime", {"model": "gpt-realtime", "api_key": "k", "input_format": "pcmu"}
     )
     assert isinstance(backend, OpenAIRealtimeBackend)
@@ -292,6 +292,5 @@ def test_factory_dispatch_builds_backend_from_flat_config():
     assert backend.input_sample_rate == 8000
 
 
-def test_factory_unknown_provider_raises():
-    with pytest.raises(ValueError):
-        DefaultBackendFactory().create("does_not_exist", {})
+def test_factory_unknown_provider_returns_none():
+    assert BackendFactory().create("does_not_exist", {}) is None

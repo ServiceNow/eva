@@ -1,8 +1,8 @@
 """Abstract ``Role`` base contract: prompt/tools/goal ownership over a ``Backend``.
 
-Step 1 of the refactor (see docs/refactor-step1.md). Abstract base shared by
-the concrete ``AssistantRole`` / ``UserRole``, which the worker constructs
-behind the ``USE_ROLE_BACKEND_OPENAI_REALTIME`` gate.
+See docs/refactor-step1.md. Abstract base shared by the concrete
+``AssistantRole`` / ``UserRole``, which the worker constructs for any provider
+the ``BackendFactory`` supports.
 
 This module holds only the shared ``Role`` base. The two concrete roles live
 in sibling modules -- ``AssistantRole`` in ``eva.role.assistant`` and
@@ -42,10 +42,10 @@ from eva.backend.base import Backend, ToolCallRequest, ToolCallResult
 class Role(ABC):
     """Owns prompt, tools/goal, and drives a worker-injected ``Backend``.
 
-    A ``Role`` is the thing that used to be split across
-    ``AbstractAssistantServer`` (assistant side) and ``AbstractUserSimulator``
-    (user side): everything that is *not* pure provider API exchange lives
-    here instead of in ``Backend``. In particular:
+    A ``Role`` consolidates what the legacy ``AbstractAssistantServer``
+    (assistant side) and ``AbstractUserSimulator`` (user side) each duplicated:
+    everything that is *not* pure provider API exchange lives here instead of
+    in ``Backend``. In particular:
 
     - Tool execution stays role-side (per docs/refactor-step1.md): a ``Role``
       is responsible for turning a ``ToolCallRequest`` surfaced by its

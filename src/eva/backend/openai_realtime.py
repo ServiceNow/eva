@@ -33,7 +33,7 @@ import json
 import os
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 from openai import AsyncOpenAI
 
@@ -108,16 +108,26 @@ class OpenAIRealtimeBackend(Backend):
         owns_playout_clock=False,
     )
 
+    # Session handle class ``open()`` instantiates. Subclasses for API-compatible
+    # providers (e.g. Grok Voice) override this to carry extra per-turn state.
+    _SESSION_CLS: ClassVar[type[OpenAIRealtimeSession]] = OpenAIRealtimeSession
+
+    # Env var the api_key falls back to when not supplied in config. Subclasses
+    # for other OpenAI-compatible providers override it (e.g. Grok -> XAI_API_KEY).
+    _API_KEY_ENV: ClassVar[str] = "OPENAI_API_KEY"
+
     # Extra turn-detection fields when the caller gates responses manually.
     _MANUAL_TURN_DETECTION = {"create_response": False, "interrupt_response": False, "idle_timeout_ms": 15_000}
 
     def __init__(self, *, config: dict[str, Any]) -> None:
-        api_key = config.get("api_key") or os.environ.get("OPENAI_API_KEY")
+        api_key = config.get("api_key") or os.environ.get(self._API_KEY_ENV)
         if not api_key:
-            raise ValueError("OpenAIRealtimeBackend requires an api_key (config['api_key'] or OPENAI_API_KEY)")
+            raise ValueError(f"{type(self).__name__} requires an api_key (config['api_key'] or {self._API_KEY_ENV})")
         if config.get("accent") is not None:
             raise ValueError("OpenAI Realtime backend does not support accent variants")
-        self._model = config["model"]
+        self._model: str = config.get("model") or ""
+        if not self._model:
+            raise ValueError(f"{type(self).__name__} requires a 'model' (config['model'])")
         self._api_key = api_key
         self._base_url = config.get("base_url")
         self._input_format: str = config.get("input_format", "pcm")
@@ -190,7 +200,7 @@ class OpenAIRealtimeBackend(Backend):
         session_update = self._build_session_update(system_prompt, tools)
         await conn.session.update(session=session_update)  # type: ignore[arg-type]
         logger.info(f"OpenAI Realtime session opened (model={self._model})")
-        return OpenAIRealtimeSession(client=client, conn_cm=conn_cm, conn=conn)
+        return self._SESSION_CLS(client=client, conn_cm=conn_cm, conn=conn)
 
     def _build_session_update(self, system_prompt: str, tools: list[dict[str, Any]] | None) -> dict[str, Any]:
         """Finalize the ``session.update`` payload for ``open()``.

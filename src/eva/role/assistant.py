@@ -22,8 +22,8 @@ Plug-in point: mirrors ``AbstractAssistantServer``'s surface (``start`` /
 ``stop`` / ``get_conversation_stats`` / ``get_final_scenario_db`` /
 ``notify_conversation_ending``) so the worker swap is 1:1 -- construct
 ``AssistantRole(backend=factory.create(...), ...)`` instead of
-``server_cls(...)`` and keep every downstream call. Wired behind the
-``USE_ROLE_BACKEND_OPENAI_REALTIME`` gate in the worker.
+``server_cls(...)`` and keep every downstream call. The worker takes this path
+for every provider the ``BackendFactory`` supports.
 """
 
 from __future__ import annotations

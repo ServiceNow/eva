@@ -1,9 +1,9 @@
 """Abstract ``Backend`` contract: pure API/session exchange, no role knowledge.
 
-Step 1 of the refactor (see docs/refactor-step1.md). This is the live
-``Backend`` contract -- implemented by ``eva.backend.openai_realtime`` and
-driven by ``AssistantRole`` / ``UserRole``, wired behind the
-``USE_ROLE_BACKEND_OPENAI_REALTIME`` gate in ``eva.orchestrator.worker``.
+See docs/refactor-step1.md. This is the live ``Backend`` contract --
+implemented by ``eva.backend.openai_realtime`` and driven by ``AssistantRole``
+/ ``UserRole``. The worker builds one per conversation via ``BackendFactory``
+for every provider the factory supports.
 
 A ``Backend`` wraps exactly one provider integration (OpenAI Realtime, Gemini
 Live, ElevenLabs Agents, a cascade STT->LLM->TTS pipeline, ...) and exposes a
