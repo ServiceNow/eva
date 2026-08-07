@@ -33,6 +33,10 @@ class RealtimeWSAdapter(Adapter):
     (docs/assistant_server_contract.md section 3). Inbound audio is buffered and
     released exactly one tick at a time, so a provider that generates faster than
     real time cannot run ahead of the simulation clock.
+
+    Each direction resamples a continuous stream, so each carries its own
+    `audioop.ratecv` filter state across calls; the stateless helpers in
+    `audio_utils` cannot express that and are not reused here for that reason.
     """
 
     def __init__(self, *, websocket, conversation_id: str, bytes_per_tick: int = BYTES_PER_TICK) -> None:
@@ -41,6 +45,8 @@ class RealtimeWSAdapter(Adapter):
         self._bytes_per_tick = bytes_per_tick
         self._inbound = bytearray()
         self._pending_recv: asyncio.Task | None = None
+        self._inbound_resample_state = None
+        self._outbound_resample_state = None
 
     async def start(self) -> None:
         """Send the connect/start handshake."""
@@ -133,22 +139,17 @@ class RealtimeWSAdapter(Adapter):
         if payload:
             self._inbound.extend(self._mulaw8k_to_pcm16k(base64.b64decode(payload)))
 
-    @staticmethod
-    def _mulaw8k_to_pcm16k(mulaw: bytes) -> bytes:
+    def _mulaw8k_to_pcm16k(self, mulaw: bytes) -> bytes:
         """Convert 8kHz mulaw from the wire to PCM16 at the caller sample rate."""
         pcm_8k = audioop.ulaw2lin(mulaw, _PCM_WIDTH)
-        pcm_16k, _ = audioop.ratecv(pcm_8k, _PCM_WIDTH, 1, WIRE_SAMPLE_RATE, CALLER_SAMPLE_RATE, None)
-        # audioop.ratecv can produce a few bytes short/long of the exact 2x count;
-        # clamp so downstream byte-count math (tick sizing, overflow) stays exact.
-        expected_bytes = len(pcm_8k) * (CALLER_SAMPLE_RATE // WIRE_SAMPLE_RATE)
-        if len(pcm_16k) < expected_bytes:
-            pcm_16k = pcm_16k + b"\x00" * (expected_bytes - len(pcm_16k))
-        elif len(pcm_16k) > expected_bytes:
-            pcm_16k = pcm_16k[:expected_bytes]
+        pcm_16k, self._inbound_resample_state = audioop.ratecv(
+            pcm_8k, _PCM_WIDTH, 1, WIRE_SAMPLE_RATE, CALLER_SAMPLE_RATE, self._inbound_resample_state
+        )
         return pcm_16k
 
-    @staticmethod
-    def _pcm16k_to_mulaw8k(pcm: bytes) -> bytes:
+    def _pcm16k_to_mulaw8k(self, pcm: bytes) -> bytes:
         """Convert caller PCM16 to the 8kHz mulaw the assistant expects."""
-        pcm_8k, _ = audioop.ratecv(pcm, _PCM_WIDTH, 1, CALLER_SAMPLE_RATE, WIRE_SAMPLE_RATE, None)
+        pcm_8k, self._outbound_resample_state = audioop.ratecv(
+            pcm, _PCM_WIDTH, 1, CALLER_SAMPLE_RATE, WIRE_SAMPLE_RATE, self._outbound_resample_state
+        )
         return audioop.lin2ulaw(pcm_8k, _PCM_WIDTH)

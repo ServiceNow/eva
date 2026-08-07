@@ -44,12 +44,12 @@ async def test_tick_with_no_inbound_audio_yields_padded_silence():
 async def test_inbound_mulaw_is_converted_and_reported_as_speech():
     ws = FakeWebSocket()
     adapter = RealtimeWSAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
-    # 160 mulaw bytes @8kHz == 20ms == 640 PCM16 bytes @16kHz.
+    # 160 mulaw bytes @8kHz == 20ms, resampled to roughly 640 PCM16 bytes @16kHz.
     await ws.inbound.put(_media_frame(b"\xff" * 160))
 
     result = await adapter.run_tick(0, None)
 
-    assert result.assistant_audio_raw_bytes == 640
+    assert result.assistant_audio_raw_bytes > 0
     assert result.has_assistant_speech is True
     assert len(result.assistant_audio) == BYTES_PER_TICK
 
@@ -68,11 +68,35 @@ async def test_outgoing_caller_audio_is_sent_as_twilio_media_frames():
 async def test_overflow_audio_carries_into_the_next_tick():
     ws = FakeWebSocket()
     adapter = RealtimeWSAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
-    # 400ms of assistant audio arrives at once: 3200 mulaw bytes -> 12800 PCM bytes.
+    # 400ms of assistant audio arrives at once: 3200 mulaw bytes -> ~12800 PCM bytes,
+    # more than one tick's worth, so it must span both ticks with real audio in each.
     await ws.inbound.put(_media_frame(b"\xff" * 3200))
 
     first = await adapter.run_tick(0, None)
     second = await adapter.run_tick(1, None)
 
+    assert len(first.assistant_audio) == BYTES_PER_TICK
+    assert len(second.assistant_audio) == BYTES_PER_TICK
     assert first.assistant_audio_raw_bytes == BYTES_PER_TICK
-    assert second.assistant_audio_raw_bytes == BYTES_PER_TICK
+    assert second.assistant_audio_raw_bytes > 0
+    assert first.has_assistant_speech is True
+    assert second.has_assistant_speech is True
+
+
+async def test_per_frame_resampling_does_not_accumulate_drift():
+    ws = FakeWebSocket()
+    adapter = RealtimeWSAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+    frame_count = 50
+    for _ in range(frame_count):
+        await ws.inbound.put(_media_frame(b"\xff" * 160))
+
+    ideal_bytes = frame_count * 640
+    ticks_needed = ideal_bytes // BYTES_PER_TICK + 2
+    total_raw_bytes = 0
+    for tick_number in range(ticks_needed):
+        result = await adapter.run_tick(tick_number, None)
+        total_raw_bytes += result.assistant_audio_raw_bytes
+
+    # 1 sample (2 bytes) of PCM16 warm-up loss is expected for the whole
+    # stream; per-frame loss must not accumulate beyond that.
+    assert abs(total_raw_bytes - ideal_bytes) <= 2
