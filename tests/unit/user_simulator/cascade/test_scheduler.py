@@ -11,12 +11,14 @@ class FakeAdapter(Adapter):
     def __init__(self, speech_ticks: list[bool]) -> None:
         self.speech_ticks = speech_ticks
         self.sent: list[bytes | None] = []
+        self.received_ticks: list[int] = []
 
     async def start(self) -> None:
         pass
 
     async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
         self.sent.append(outgoing_audio)
+        self.received_ticks.append(tick_number)
         speaking = self.speech_ticks[tick_number] if tick_number < len(self.speech_ticks) else False
         return TickResult(
             tick_number=tick_number,
@@ -122,3 +124,74 @@ async def test_caller_is_speaking_while_audio_remains_queued():
     assert scheduler.caller_is_speaking is True
     await scheduler.run_tick()
     assert scheduler.caller_is_speaking is False
+
+
+async def test_simultaneous_speech_resets_both_counters_and_blocks_the_turn():
+    scheduler = _scheduler([True])
+    scheduler.enqueue_utterance(b"\x02" * BYTES_PER_TICK)
+
+    await scheduler.run_tick()  # both sides speak on tick 0
+
+    assert scheduler.may_take_turn() is False
+
+
+async def test_tick_number_reaches_the_adapter_and_increments():
+    adapter = FakeAdapter([])
+    scheduler = TickScheduler(adapter, bytes_per_tick=BYTES_PER_TICK)
+
+    for _ in range(3):
+        await scheduler.run_tick()
+
+    assert adapter.received_ticks == [0, 1, 2]
+    assert scheduler.tick == 3
+
+
+async def test_consecutive_enqueues_drain_contiguously_with_no_silence_gap():
+    adapter = FakeAdapter([])
+    scheduler = TickScheduler(adapter, bytes_per_tick=BYTES_PER_TICK)
+    scheduler.enqueue_utterance(b"\x02" * BYTES_PER_TICK)
+    scheduler.enqueue_utterance(b"\x03" * BYTES_PER_TICK)
+
+    await scheduler.run_tick()
+    await scheduler.run_tick()
+
+    assert adapter.sent[0] == b"\x02" * BYTES_PER_TICK
+    assert adapter.sent[1] == b"\x03" * BYTES_PER_TICK
+
+
+class RaisingAdapter(Adapter):
+    """Raises on a chosen tick to exercise the peek-then-commit failure path."""
+
+    def __init__(self, fail_on_tick: int) -> None:
+        self.fail_on_tick = fail_on_tick
+
+    async def start(self) -> None:
+        pass
+
+    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
+        if tick_number == self.fail_on_tick:
+            raise RuntimeError("adapter failure")
+        return TickResult(
+            tick_number=tick_number,
+            assistant_audio=b"\x00" * BYTES_PER_TICK,
+            assistant_audio_raw_bytes=0,
+            wall_clock_ms=tick_number,
+        )
+
+    async def stop(self) -> None:
+        pass
+
+
+async def test_failed_adapter_call_leaves_queue_and_tick_unadvanced():
+    adapter = RaisingAdapter(fail_on_tick=0)
+    scheduler = TickScheduler(adapter, bytes_per_tick=BYTES_PER_TICK)
+    utterance = b"\x02" * BYTES_PER_TICK
+    scheduler.enqueue_utterance(utterance)
+
+    try:
+        await scheduler.run_tick()
+    except RuntimeError:
+        pass
+
+    assert scheduler.tick == 0
+    assert bytes(scheduler._playout) == utterance
