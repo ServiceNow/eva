@@ -90,8 +90,10 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
         try:
             prompt, turns_to_evaluate = self._build_prompt_and_turns(context)
 
-            response_text = await self._call_judge_raw(prompt, context)
-            turn_evaluations = parse_judge_response_list(response_text)
+            # Audio-native conversations with no tool calls have nothing to judge — skip the
+            # call and fall through to the same skipped-result path used when no turn has entities.
+            response_text = await self._call_judge_raw(prompt, context) if turns_to_evaluate else None
+            turn_evaluations = parse_judge_response_list(response_text) if response_text else []
 
             # Handle LLM wrapping array in a dict under a known key
             if (
@@ -105,7 +107,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
                         turn_evaluations = item[key]
                         break
 
-            if not turn_evaluations:
+            if not turn_evaluations and turns_to_evaluate:
                 error = "No response from judge" if not response_text else "Failed to parse judge response"
                 return MetricScore(
                     name=self.name,
@@ -146,6 +148,13 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
 
             # All turns had no entities to evaluate — not an error, just nothing to score
             skipped = not applicable_normalized
+            skipped_reason = None
+            if skipped:
+                skipped_reason = (
+                    "No tool calls to evaluate"
+                    if not turns_to_evaluate and context.is_audio_native
+                    else "No key entities found in any evaluated turn"
+                )
 
             # num_evaluated includes both scored turns and not-applicable turns
             # (judge responded for all of them — -1 means no entities, not a failure)
@@ -163,7 +172,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
                     "num_turns": len(turns_to_evaluate),
                     "num_evaluated": num_evaluated,
                     "num_not_applicable": len(not_applicable),
-                    "skipped_reason": "No key entities found in any evaluated turn" if skipped else None,
+                    "skipped_reason": skipped_reason,
                     "per_turn_ratings": per_turn_ratings,
                     "per_turn_normalized": per_turn_normalized,
                     "per_turn_explanations": per_turn_explanations,

@@ -437,6 +437,30 @@ class TestAudioNativeCompute:
         assert "Tool Call [1] (lookup_employee)" in sent_prompt
 
     @pytest.mark.asyncio
+    async def test_no_tool_calls_is_skipped_not_error(self, metric):
+        """A conversation with no tool calls has nothing to judge — skip, don't call the judge or error."""
+        context = make_metric_context(
+            pipeline_type=PipelineType.S2S,
+            intended_user_turns={1: "Hello, I have a question"},
+            transcribed_user_turns={},
+            conversation_trace=[
+                {"role": "user", "content": "Hello, I have a question", "turn_id": 1},
+                {"role": "assistant", "content": "Sure, go ahead", "turn_id": 1},
+            ],
+        )
+        generate_text = AsyncMock(return_value=("[]", None))
+        metric.llm_client.generate_text = generate_text
+
+        result = await metric.compute(context)
+
+        assert result.skipped is True
+        assert result.error is None
+        assert result.score is None
+        assert result.normalized_score is None
+        assert result.details["skipped_reason"] == "No tool calls to evaluate"
+        generate_text.assert_not_called()
+
+    @pytest.mark.asyncio
     async def test_assistant_turns_are_redacted(self, metric):
         """Assistant speech is redacted so a mis-transcribed read-back can't penalize an entity.
 
