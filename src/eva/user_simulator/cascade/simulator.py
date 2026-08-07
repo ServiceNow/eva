@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 import re
 from pathlib import Path
 
@@ -17,6 +18,8 @@ from eva.user_simulator.cascade.constants import (
     CALLER_SAMPLE_RATE,
     INACTIVITY_TIMEOUT_MS,
     MAX_INTERRUPT_SLIP_MS,
+    SELF_CORRECTION_DELAY_MS,
+    SELF_CORRECTION_RATE,
     TICK_DURATION_MS,
     TRANSCRIPT_WAIT_MS,
     ms_to_ticks,
@@ -71,6 +74,25 @@ def extract_turn(message: object) -> tuple[str, bool]:
     return parse_turn_response(content), end_call
 
 
+def extract_correction(message: object) -> str:
+    """Read the self-correction line from its own dedicated call.
+
+    It is a bare spoken line, not a JSON field: the caller's turn call keeps the
+    plain-text contract Plan 1 settled on, since demanding JSON there suppressed
+    the end_call tool call entirely.
+    """
+    content = message if isinstance(message, str) else (getattr(message, "content", None) or "")
+    line = _FENCE.sub("", content).strip()
+    return "" if line.upper() == "NONE" else line
+
+
+def should_fire_self_correction(*, ticks_since_assistant_started: int, assistant_speaking: bool) -> bool:
+    """Whether an armed correction should play now."""
+    if not assistant_speaking:
+        return False
+    return ticks_since_assistant_started >= ms_to_ticks(SELF_CORRECTION_DELAY_MS)
+
+
 def interrupt_slip_ms(*, intended_tick: int, actual_tick: int) -> int:
     """How far past its intended tick a barge-in actually landed."""
     return max(0, actual_tick - intended_tick) * TICK_DURATION_MS
@@ -107,6 +129,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
     _ticks_awaiting_transcript = 0
     _ticks_assistant_silent = 0
+    _ticks_since_assistant_started = 0
 
     def __init__(
         self,
@@ -145,6 +168,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._decision_client = _DecisionClient(LiteLLMClient(model=simulator_config.decision_llm))
         self._phrase_cache: PhraseCache | None = None
         self._decisions: ListenerDecisions | None = None
+        self._rng = random.Random(0)
+        self._armed_correction: bytes = b""
+        self._armed_correction_text = ""
 
     async def run_conversation(self) -> str:
         """Run the tick loop until the call ends, and return the end reason."""
@@ -194,9 +220,17 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 caller_was_speaking = scheduler.caller_spoke_this_tick
                 assistant_was_speaking = result.has_assistant_speech
                 if result.has_assistant_speech:
+                    self._ticks_since_assistant_started += 1
+                    if self._armed_correction and should_fire_self_correction(
+                        ticks_since_assistant_started=self._ticks_since_assistant_started,
+                        assistant_speaking=True,
+                    ):
+                        self._fire_self_correction(scheduler)
+                        continue
                     if scheduler.is_check_tick():
                         await self._run_checks(scheduler)
                     continue
+                self._ticks_since_assistant_started = 0
                 if self._assistant_is_inactive(scheduler, result):
                     logger.warning(
                         f"tick {scheduler.tick}: assistant silent for "
@@ -384,8 +418,12 @@ class CascadeUserSimulator(AbstractUserSimulator):
             self._history.append({"role": "assistant", "content": heard})
             self._on_assistant_speaks(heard)
 
+        self._drop_stale_correction()
         message, _stats = await self._llm.complete(messages=self._messages(), tools=[END_CALL_TOOL])
         utterance, end_call = extract_turn(message)
+
+        if utterance and not end_call:
+            utterance = await self._maybe_arm_self_correction(utterance)
 
         if utterance:
             self._history.append({"role": "user", "content": utterance})
@@ -399,6 +437,64 @@ class CascadeUserSimulator(AbstractUserSimulator):
             self._on_conversation_end("goodbye")
             return True
         return False
+
+    def _fire_self_correction(self, scheduler: TickScheduler) -> None:
+        """Play the armed correction over the assistant's reply and clear the arming."""
+        scheduler.enqueue_utterance(self._armed_correction)
+        self._record_audio("user_clean", self._armed_correction)
+        self._history.append({"role": "user", "content": self._armed_correction_text})
+        self._on_user_speaks(self._armed_correction_text)
+        self.event_logger.log_event(
+            "self_correction",
+            {"text": self._armed_correction_text, "tick_index": scheduler.tick},
+        )
+        self._armed_correction = b""
+        self._armed_correction_text = ""
+
+    def _drop_stale_correction(self) -> None:
+        """Abandon an armed correction whose assistant turn never arrived.
+
+        Carrying it into a later turn would read as a non-sequitur, since it refers
+        to an utterance that is now several exchanges back.
+        """
+        if not self._armed_correction:
+            return
+        self.event_logger.log_event("self_correction_dropped", {"text": self._armed_correction_text})
+        self._armed_correction = b""
+        self._armed_correction_text = ""
+
+    async def _maybe_arm_self_correction(self, utterance: str) -> str:
+        """Maybe misspeak: return a wrong variant to say now, arming `utterance` as the fix.
+
+        The wrong-then-right ordering is the design, not a detail. The generated slip
+        is spoken first and the model's own goal-consistent line lands as the
+        correction, so the conversation's end state still satisfies must_have_criteria
+        by construction and this behavior cannot make a record unachievable.
+
+        Asked as its own call rather than as an extra JSON field on the turn call: a
+        JSON contract there suppressed the end_call tool entirely (Plan 1), and this
+        way a failure degrades to an ordinary turn instead of a broken one.
+        """
+        if not self._config.enable_self_correction or self._rng.random() >= SELF_CORRECTION_RATE:
+            return utterance
+
+        prompt = PromptManager().get_prompt("user_simulator.cascade_self_correction", utterance=utterance)
+        try:
+            message, _stats = await self._llm.complete(
+                messages=[*self._messages(), {"role": "user", "content": prompt}]
+            )
+        except Exception as exc:
+            logger.warning(f"Self-correction generation failed, speaking the turn unchanged: {exc}")
+            return utterance
+
+        slip = extract_correction(message)
+        if not slip or slip == utterance:
+            return utterance
+
+        self._armed_correction = await self._tts.synthesize(utterance, voice_id=self._voice_id)
+        self._armed_correction_text = utterance
+        self.event_logger.log_event("self_correction_armed", {"slip": slip, "correction": utterance})
+        return slip
 
     @staticmethod
     def _warn_unsupported_perturbation(perturbation_config: PerturbationConfig | None) -> None:
