@@ -468,3 +468,30 @@ async def test_self_correction_is_skipped_when_the_behavior_is_disabled():
     sim._config = CascadeSimulatorConfig()
 
     assert await sim._maybe_arm_self_correction("Book me Friday.") == "Book me Friday."
+
+
+async def test_relevance_gate_allows_a_still_relevant_candidate():
+    from eva.user_simulator.cascade.simulator import candidate_is_relevant
+    from tests.unit.user_simulator.cascade.test_decisions import FakeLLM
+
+    llm = FakeLLM(["YES"])
+
+    assert await candidate_is_relevant(llm, candidate="I wanted Friday.", heard="Booking Thursday now") is True
+
+
+async def test_relevance_gate_rejects_a_stale_candidate():
+    from eva.user_simulator.cascade.simulator import candidate_is_relevant
+    from tests.unit.user_simulator.cascade.test_decisions import FakeLLM
+
+    llm = FakeLLM(["NO"])
+
+    assert await candidate_is_relevant(llm, candidate="I wanted Friday.", heard="What is your name?") is False
+
+
+async def test_relevance_gate_fails_closed():
+    from eva.user_simulator.cascade.simulator import candidate_is_relevant
+    from tests.unit.user_simulator.cascade.test_decisions import FakeLLM
+
+    llm = FakeLLM(error=RuntimeError("down"))
+
+    assert await candidate_is_relevant(llm, candidate="x", heard="y") is False

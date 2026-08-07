@@ -24,7 +24,7 @@ from eva.user_simulator.cascade.constants import (
     TRANSCRIPT_WAIT_MS,
     ms_to_ticks,
 )
-from eva.user_simulator.cascade.decisions import ListenerDecisions
+from eva.user_simulator.cascade.decisions import ListenerDecisions, parse_yes_no
 from eva.user_simulator.cascade.phrase_cache import PhraseCache
 from eva.user_simulator.cascade.scheduler import TickScheduler
 from eva.user_simulator.cascade.stt_livekit import LiveKitStreamingSTT
@@ -103,6 +103,21 @@ def should_drop_interrupt(*, slip_ms: int, assistant_still_speaking: bool) -> bo
     return slip_ms > MAX_INTERRUPT_SLIP_MS or not assistant_still_speaking
 
 
+async def candidate_is_relevant(llm, *, candidate: str, heard: str) -> bool:
+    """Whether a pre-generated interruption still fits what the assistant is saying.
+
+    Fails closed: an unusable answer means we fall back to generating fresh
+    content rather than firing something that may have gone stale.
+    """
+    prompt = PromptManager().get_prompt("user_simulator.cascade_relevance_gate", candidate=candidate, heard=heard)
+    try:
+        reply = await llm.decide(prompt)
+    except Exception as exc:
+        logger.warning(f"Relevance gate failed, discarding candidate: {exc}")
+        return False
+    return parse_yes_no(reply)
+
+
 def play_backchannel(scheduler, cache, phrases: list[str]) -> str:
     """Queue a cached continuer and return the phrase that was chosen."""
     phrase = cache.choose(phrases)
@@ -170,6 +185,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._rng = random.Random(0)
         self._armed_correction: bytes = b""
         self._armed_correction_text = ""
+        self._candidate_text = ""
+        self._candidate_audio = b""
 
     async def run_conversation(self) -> str:
         """Run the tick loop until the call ends, and return the end reason."""
@@ -310,6 +327,31 @@ class CascadeUserSimulator(AbstractUserSimulator):
         scheduler.enqueue_utterance(opener_audio)
         self._record_audio("user_clean", opener_audio)
 
+        if self._config.speculative_generation and self._candidate_audio:
+            candidate, audio = self._candidate_text, self._candidate_audio
+            self._candidate_text, self._candidate_audio = "", b""
+            if await candidate_is_relevant(
+                self._decision_client, candidate=candidate, heard=self._stt.buffer.current_text()
+            ):
+                scheduler.enqueue_utterance(audio)
+                self._record_audio("user_clean", audio)
+                self._history.append({"role": "user", "content": candidate})
+                self._on_user_speaks(candidate)
+                self.event_logger.log_event(
+                    "interruption",
+                    {
+                        "text": candidate,
+                        "opener": opener,
+                        "intended_tick": intended_tick,
+                        "actual_tick": scheduler.tick,
+                        "slip_ms": interrupt_slip_ms(intended_tick=intended_tick, actual_tick=scheduler.tick),
+                        "speculative": True,
+                        "dropped": False,
+                    },
+                )
+                return
+            self.event_logger.log_event("interruption_candidate_rejected", {"text": candidate})
+
         # Consumed, not peeked: leaving it in the buffer would re-append the same
         # assistant prefix at the next ordinary turn and duplicate it in the history.
         heard = self._stt.buffer.current_text()
@@ -436,6 +478,11 @@ class CascadeUserSimulator(AbstractUserSimulator):
         if end_call:
             self._on_conversation_end("goodbye")
             return True
+
+        # After the audio is queued: the caller is now speaking, so this generation
+        # runs behind its own outgoing audio and costs no conversational latency.
+        if utterance:
+            await self._prerender_candidate(utterance)
         return False
 
     def _fire_self_correction(self, scheduler: TickScheduler) -> None:
@@ -450,6 +497,31 @@ class CascadeUserSimulator(AbstractUserSimulator):
         )
         self._armed_correction = b""
         self._armed_correction_text = ""
+
+    async def _prerender_candidate(self, utterance: str) -> None:
+        """Pre-generate and pre-render the line the caller would barge in with.
+
+        Done on the caller's own turn, where the latency is already hidden behind
+        its outgoing audio, so a later barge-in can fire without waiting on
+        generation. The relevance gate is what keeps this from degrading into a
+        scripted interruption that lands as a non-sequitur.
+        """
+        self._candidate_text, self._candidate_audio = "", b""
+        if not self._config.speculative_generation:
+            return
+        prompt = PromptManager().get_prompt("user_simulator.cascade_next_interruption", utterance=utterance)
+        try:
+            message, _stats = await self._llm.complete(
+                messages=[*self._messages(), {"role": "user", "content": prompt}]
+            )
+        except Exception as exc:
+            logger.warning(f"Speculative interruption generation failed: {exc}")
+            return
+        candidate = extract_correction(message)
+        if not candidate:
+            return
+        self._candidate_text = candidate
+        self._candidate_audio = await self._tts.synthesize(candidate, voice_id=self._voice_id)
 
     def _drop_stale_correction(self) -> None:
         """Abandon an armed correction whose assistant turn never arrived.

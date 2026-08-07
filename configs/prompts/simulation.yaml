@@ -613,3 +613,41 @@ user_simulator:
     - Reply with ONLY the spoken line, nothing else. No quotes, no labels.
     - If the intended line contains no detail that could plausibly be misspoken
       (a greeting, a thank-you, a yes/no acknowledgement), reply with exactly NONE.
+
+  cascade_next_interruption: |
+    You just said this line to the agent:
+
+    <what_you_just_said>
+    {utterance}
+    </what_you_just_said>
+
+    Write the single line you would say to cut the agent off mid-reply, if its
+    answer turns out to need correcting or clarifying.
+
+    Rules:
+    - Write it as a natural interruption, not a full turn. Short.
+    - It must follow from your own goal, not from any specific thing the agent
+      might say — you have not heard the reply yet.
+    - Reply with ONLY the spoken line, nothing else. No quotes, no labels.
+    - If you would have no reason to interrupt whatever the agent says next,
+      reply with exactly NONE.
+
+  cascade_relevance_gate: |
+    The caller prepared this line a moment ago, before hearing the rest of what
+    the agent is currently saying:
+
+    <prepared_line>
+    {candidate}
+    </prepared_line>
+
+    Here is what the agent has said so far in its current turn:
+
+    <heard_so_far>
+    {heard}
+    </heard_so_far>
+
+    Would saying the prepared line right now still make sense as a natural
+    interruption? Answer NO if it has become irrelevant, already been addressed,
+    or would read as a non-sequitur.
+
+    Respond with ONLY "YES" or "NO".
