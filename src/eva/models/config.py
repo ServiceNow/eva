@@ -483,10 +483,13 @@ class CascadeSimulatorConfig(BaseModel):
         description="Provider-native keyword arguments passed through to the STT client.",
     )
 
-    llm: str = Field("gpt-5.5", description="Caller LLM, resolved via the same EVA_MODEL_LIST router as the assistant.")
-    llm_params: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Provider-native keyword arguments passed through to the caller LLM client.",
+    llm: str = Field(
+        "user-llm",
+        description=(
+            "Caller LLM, resolved via the same EVA_MODEL_LIST router as the assistant. Defaults to a "
+            "deployment named 'user-llm' so the caller's model/params (e.g. reasoning_effort) can differ "
+            "from whatever the assistant under test uses."
+        ),
     )
 
     tts: str = Field("cartesia", description="TTS provider for the simulated caller's speech.")

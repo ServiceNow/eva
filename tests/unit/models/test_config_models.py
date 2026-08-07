@@ -1259,7 +1259,7 @@ def test_cascade_simulator_config_defaults():
     assert config.stt_params["model"] == "scribe_v2_realtime"
     assert config.tts == "cartesia"
     assert config.tts_params["model"] == "sonic-3.5"
-    assert config.llm == "gpt-5.5"
+    assert config.llm == "user-llm"
 
 
 def test_user_simulator_union_discriminates_cascade():
