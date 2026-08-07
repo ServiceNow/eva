@@ -507,3 +507,80 @@ user_simulator:
     For languages that use non-Latin scripts, spell out characters using their standard phonetic names in your language.
     
     IMPORTANT: Before ending the conversation, confirm with the agent that there are no outstanding actions. The end_call tool should only be called in a turn that is a brief goodbye — never in the same turn where you are providing the agent with data, an identifier, a request to transfer to a live agent, an approval to proceed, or any kind of additional information.
+
+  interruption_decision: |
+    You are analyzing a conversation to decide if the user should interrupt the agent.
+
+    Conversation history (most recent at bottom):
+
+    <conversation_history>
+    {conversation_history}
+    </conversation_history>
+
+    The agent is CURRENTLY speaking (you can see their ongoing speech in the conversation above).
+
+    Based on the conversation so far, should the user interrupt the agent NOW?
+
+    Consider:
+    - Has the user heard enough to understand what the agent is asking or saying?
+    - Has the user heard enough to have a response, question, or correction ready?
+    - Did the agent just complete the sentence which has all the pertinent information the user was looking for?
+    - Do NOT repeatedly interrupt the agent if it has spoken only a few words (say less than 5 words).
+
+    Respond with ONLY "YES" if the user should interrupt now, or "NO" if they should keep listening.
+
+  backchannel_decision: |
+    You simulate a natural listener who occasionally says "uh-huh" or "mm-hmm" to show they're following along.
+
+    <conversation_history>
+    {conversation_history}
+    </conversation_history>
+
+    The agent is still speaking [CURRENTLY SPEAKING, INCOMPLETE]. Ignore the trailing incomplete word/phrase — focus only on the COMPLETE sentences delivered so far in the agent's current turn.
+
+    Continuers ("uh-huh", "mm-hmm", "yeah") are brief sounds that mean "I'm listening, keep going." They:
+    - Happen naturally during extended speech
+    - Show engagement without interrupting
+    - Are NOT responses to specific content — just signals of attention
+
+    Say YES if:
+    - The agent has completed at least 2 full, substantive sentences in their current turn
+      (Short phrases like "Thanks for your patience" or "Let me check on that" don't count as substantive)
+    - The user hasn't spoken or backchanneled recently (check the last 3 exchanges for ANY user sound including "mm-hmm", "uh-huh", "okay")
+    - It would feel natural to briefly signal "I'm still here"
+
+    Say NO if:
+    - The agent just started speaking (fewer than 2 substantive sentences)
+    - The user spoke OR backchanneled within the last 2-3 exchanges
+    - The agent's current turn contains or ends with a question
+    - The agent is wrapping up or about to finish their thought
+
+    Frequency guidance:
+    - Continuers are occasional, not constant
+    - Even when conditions seem right, real listeners only backchannel sometimes
+    - Aim for roughly 1 continuer per 4-6 sentences of extended agent speech
+    - When in doubt, say NO — silence is also natural
+    - Too few continuers is better than too many
+
+    Examples:
+
+    AGENT: "Hi there! How can I hel [CURRENTLY SPEAKING, INCOMPLETE]"
+    → NO (just started)
+
+    AGENT: "Thanks for your patience. [CURRENTLY SPEAKING, INCOMPLETE]"
+    → NO (only 1 short sentence, not substantive enough)
+
+    AGENT: "Sure, I can help with that. First I'll need to verify your account. Could you provide your email or your name and zi [CURRENTLY SPEAKING, INCOMPLETE]"
+    → NO (agent is asking a question)
+
+    AGENT: "No problem. We can use your name and zip code instead. Let me look that up for you. I'll check our system now and see if I can fin [CURRENTLY SPEAKING, INCOMPLETE]"
+    → YES (3 substantive sentences, agent explaining process)
+
+    AGENT: "I found your order. It includes a keyboard, thermostat, and headphones. The order was delivered last Tuesday. Now for the exchange, we have a few opti [CURRENTLY SPEAKING, INCOMPLETE]"
+    → YES (extended explanation with specific details)
+
+    [If user said "mm-hmm" 2 exchanges ago]
+    AGENT: "...and those are the available options. Now I'll need your input on which [CURRENTLY SPEAKING, INCOMPLETE]"
+    → NO (user backchanneled recently, don't do it again so soon)
+
+    Respond with ONLY "YES" or "NO".

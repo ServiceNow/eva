@@ -36,3 +36,27 @@ def test_take_committed_drains_the_buffer():
 
     assert buffer.take_committed() == "All done."
     assert buffer.committed == ""
+
+
+def test_current_text_marks_the_in_flight_partial_as_incomplete():
+    buffer = TranscriptBuffer()
+    buffer.commit("I found your order.")
+    buffer.apply_partial("It includes a keyboa")
+
+    assert buffer.current_text() == "I found your order. It includes a keyboa [CURRENTLY SPEAKING, INCOMPLETE]"
+
+
+def test_current_text_omits_the_marker_when_nothing_is_in_flight():
+    buffer = TranscriptBuffer()
+    buffer.commit("I found your order.")
+
+    assert buffer.current_text() == "I found your order."
+
+
+def test_current_text_does_not_consume_the_committed_text():
+    buffer = TranscriptBuffer()
+    buffer.commit("hello")
+
+    buffer.current_text()
+
+    assert buffer.take_committed() == "hello"

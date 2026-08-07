@@ -19,6 +19,17 @@ class TranscriptBuffer:
         self.committed = f"{self.committed} {text}".strip() if self.committed else text
         self.in_flight = ""
 
+    def current_text(self) -> str:
+        """Return everything heard so far, marking the partial as still in progress.
+
+        The marker is load-bearing: the backchannel prompt's few-shot examples all
+        end in it, and it is what tells the check to judge only the complete
+        sentences rather than the truncated trailing word.
+        """
+        if not self.in_flight:
+            return self.committed
+        return f"{self.committed} {self.in_flight} [CURRENTLY SPEAKING, INCOMPLETE]".strip()
+
     def take_committed(self) -> str:
         """Return and clear the committed text."""
         text = self.committed
