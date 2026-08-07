@@ -16,6 +16,7 @@ from eva.user_simulator.cascade.constants import (
     BARGE_IN_OPENERS,
     CALLER_SAMPLE_RATE,
     INACTIVITY_TIMEOUT_MS,
+    MAX_INTERRUPT_SLIP_MS,
     TICK_DURATION_MS,
     TRANSCRIPT_WAIT_MS,
     ms_to_ticks,
@@ -68,6 +69,16 @@ def extract_turn(message: object) -> tuple[str, bool]:
     calls = getattr(message, "tool_calls", None) or []
     end_call = any(getattr(call.function, "name", "") == "end_call" for call in calls)
     return parse_turn_response(content), end_call
+
+
+def interrupt_slip_ms(*, intended_tick: int, actual_tick: int) -> int:
+    """How far past its intended tick a barge-in actually landed."""
+    return max(0, actual_tick - intended_tick) * TICK_DURATION_MS
+
+
+def should_drop_interrupt(*, slip_ms: int, assistant_still_speaking: bool) -> bool:
+    """Whether a barge-in has gone stale and should be abandoned."""
+    return slip_ms > MAX_INTERRUPT_SLIP_MS or not assistant_still_speaking
 
 
 def play_backchannel(scheduler, cache, phrases: list[str]) -> str:
@@ -240,11 +251,63 @@ class CascadeUserSimulator(AbstractUserSimulator):
             allow_interrupt=self._config.enable_interruptions,
             allow_backchannel=self._config.enable_backchannel,
         )
+        if verdict.should_interrupt:
+            await self._play_interruption(scheduler)
+            return
         if verdict.should_backchannel:
             phrase = play_backchannel(scheduler, self._phrase_cache, BACKCHANNEL_PHRASES)
             # Recorded too, or the saved clean track diverges from what went on the wire.
             self._record_audio("user_clean", self._phrase_cache.get(phrase))
             self.event_logger.log_event("backchannel", {"text": phrase, "tick_index": scheduler.tick})
+
+    async def _play_interruption(self, scheduler: TickScheduler) -> None:
+        """Voice a cached opener immediately, then stream the real content behind it.
+
+        The opener buys the lead time the content generation costs. If the content
+        still arrives too late to be a barge-in, it is dropped rather than emitted
+        stale — and both ticks are logged either way, because that gap is the
+        empirical risk this design carries.
+        """
+        if self._phrase_cache is None:
+            return
+        intended_tick = scheduler.tick
+        opener = self._phrase_cache.choose(BARGE_IN_OPENERS)
+        opener_audio = self._phrase_cache.get(opener)
+        scheduler.enqueue_utterance(opener_audio)
+        self._record_audio("user_clean", opener_audio)
+
+        # Consumed, not peeked: leaving it in the buffer would re-append the same
+        # assistant prefix at the next ordinary turn and duplicate it in the history.
+        heard = self._stt.buffer.current_text()
+        self._stt.buffer.take_committed()
+        self._stt.buffer.in_flight = ""
+        if heard:
+            self._history.append({"role": "assistant", "content": heard})
+            self._on_assistant_speaks(heard)
+        message, _stats = await self._llm.complete(messages=self._messages(), tools=[END_CALL_TOOL])
+        utterance, _end_call = extract_turn(message)
+
+        slip = interrupt_slip_ms(intended_tick=intended_tick, actual_tick=scheduler.tick)
+        dropped = should_drop_interrupt(slip_ms=slip, assistant_still_speaking=scheduler.assistant_is_speaking)
+        self.event_logger.log_event(
+            "interruption",
+            {
+                "text": utterance,
+                "opener": opener,
+                "intended_tick": intended_tick,
+                "actual_tick": scheduler.tick,
+                "slip_ms": slip,
+                "dropped": dropped,
+            },
+        )
+        if dropped or not utterance:
+            return
+
+        self._history.append({"role": "user", "content": utterance})
+        self._on_user_speaks(utterance)
+        async for chunk in self._tts.stream(utterance, voice_id=self._voice_id):
+            self._record_audio("user_clean", chunk)
+            scheduler.enqueue_utterance(chunk)
 
     def _assistant_is_inactive(self, scheduler: TickScheduler, result: TickResult) -> bool:
         """Whether the assistant has produced no audio for INACTIVITY_TIMEOUT_MS.

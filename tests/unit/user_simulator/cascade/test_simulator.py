@@ -322,3 +322,34 @@ def test_verdict_with_no_action_queues_nothing():
 
     assert verdict.should_interrupt is False
     assert verdict.should_backchannel is False
+
+
+def test_slip_is_measured_in_ticks_converted_to_ms():
+    from eva.user_simulator.cascade.simulator import interrupt_slip_ms
+
+    assert interrupt_slip_ms(intended_tick=10, actual_tick=15) == 1000
+
+
+def test_no_slip_when_the_interrupt_lands_on_its_intended_tick():
+    from eva.user_simulator.cascade.simulator import interrupt_slip_ms
+
+    assert interrupt_slip_ms(intended_tick=10, actual_tick=10) == 0
+
+
+def test_interrupt_kept_when_slip_is_within_budget():
+    from eva.user_simulator.cascade.simulator import should_drop_interrupt
+
+    assert should_drop_interrupt(slip_ms=800, assistant_still_speaking=True) is False
+
+
+def test_interrupt_dropped_when_slip_exceeds_budget():
+    from eva.user_simulator.cascade.simulator import should_drop_interrupt
+
+    assert should_drop_interrupt(slip_ms=2000, assistant_still_speaking=True) is True
+
+
+def test_interrupt_dropped_when_the_assistant_already_stopped():
+    # No longer an interruption — it would land as an ordinary reply.
+    from eva.user_simulator.cascade.simulator import should_drop_interrupt
+
+    assert should_drop_interrupt(slip_ms=100, assistant_still_speaking=False) is True
