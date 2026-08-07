@@ -225,6 +225,34 @@ async def test_user_speech_start_emitted_once_on_silence_to_audio_transition():
     await adapter.stop()
 
 
+async def test_silent_tick_paces_to_approximately_one_tick_duration():
+    ws = FakeWebSocket()
+    adapter = RealtimeWSAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+    await adapter.start()
+
+    start = asyncio.get_event_loop().time()
+    await adapter.run_tick(0, None)
+    elapsed = asyncio.get_event_loop().time() - start
+
+    assert 0.15 < elapsed < 0.4
+
+    await adapter.stop()
+
+
+async def test_speaking_tick_paces_to_approximately_one_tick_duration_not_double():
+    ws = FakeWebSocket()
+    adapter = RealtimeWSAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+    await adapter.start()
+
+    start = asyncio.get_event_loop().time()
+    await adapter.run_tick(0, b"\x00" * BYTES_PER_TICK)
+    elapsed = asyncio.get_event_loop().time() - start
+
+    assert 0.15 < elapsed < 0.4
+
+    await adapter.stop()
+
+
 async def test_user_speech_stop_emitted_once_on_audio_to_silence_transition():
     ws = FakeWebSocket()
     adapter = RealtimeWSAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)

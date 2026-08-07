@@ -33,7 +33,9 @@ class RealtimeWSAdapter(Adapter):
     (docs/assistant_server_contract.md section 3). A background task continuously
     drains inbound frames into an adapter-owned buffer; `run_tick` releases exactly
     one tick's worth per call, so a provider that generates faster than real time
-    cannot run ahead of the simulation clock.
+    cannot run ahead of the simulation clock. `run_tick` also enforces a minimum
+    tick duration as a safety net for silent ticks, which otherwise return with no
+    I/O at all and would let the simulation race ahead of wall-clock time.
 
     Each direction resamples a continuous stream, so each carries its own
     `audioop.ratecv` filter state across calls; the stateless helpers in
@@ -59,6 +61,7 @@ class RealtimeWSAdapter(Adapter):
 
     async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
         """Send one tick of caller audio at wire cadence and collect one tick of assistant audio."""
+        tick_start = asyncio.get_event_loop().time()
         if self._error is not None:
             raise RuntimeError("RealtimeWSAdapter receive loop failed") from self._error
 
@@ -79,12 +82,18 @@ class RealtimeWSAdapter(Adapter):
         if self._error is not None:
             raise RuntimeError("RealtimeWSAdapter receive loop failed") from self._error
 
-        return TickResult(
+        result = TickResult(
             tick_number=tick_number,
             assistant_audio=chunk,
             assistant_audio_raw_bytes=len(raw),
             wall_clock_ms=int(time.time() * 1000),
         )
+
+        remaining = TICK_DURATION_MS / 1000 - (asyncio.get_event_loop().time() - tick_start)
+        if remaining > 0:
+            await asyncio.sleep(remaining)
+
+        return result
 
     async def stop(self) -> None:
         """Send stop, cancel the receive loop, and close the socket. Safe to call twice."""
