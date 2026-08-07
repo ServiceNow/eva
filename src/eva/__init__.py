@@ -3,7 +3,7 @@
 End-to-end evaluation framework for voice assistants using Pipecat and ElevenLabs.
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 # Bump simulation_version when changes affect benchmark outputs (agent code,
 # user simulator, orchestrator, simulation prompts, agent configs, tool mocks).
