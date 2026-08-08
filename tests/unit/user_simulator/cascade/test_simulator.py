@@ -274,10 +274,14 @@ class RecordingScheduler:
 
     def __init__(self) -> None:
         self.queued: list[bytes] = []
+        self.backchannels: list[bytes] = []
         self.tick = 0
 
     def enqueue_utterance(self, audio: bytes) -> None:
         self.queued.append(audio)
+
+    def enqueue_backchannel(self, audio: bytes) -> None:
+        self.backchannels.append(audio)
 
 
 class StubCache:
@@ -297,7 +301,9 @@ async def test_backchannel_queues_cached_audio_without_synthesis():
     played = module.play_backchannel(scheduler, StubCache(), ["uh-huh", "mm-hmm"])
 
     assert played == "uh-huh"
-    assert scheduler.queued == [b"CACHED"]
+    # Queued as a backchannel so it does not consume the caller's turn.
+    assert scheduler.backchannels == [b"CACHED"]
+    assert scheduler.queued == []
 
 
 def test_verdict_with_no_action_queues_nothing():

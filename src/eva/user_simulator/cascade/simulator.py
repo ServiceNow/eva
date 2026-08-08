@@ -119,9 +119,13 @@ async def candidate_is_relevant(llm, *, candidate: str, heard: str) -> bool:
 
 
 def play_backchannel(scheduler, cache, phrases: list[str]) -> str:
-    """Queue a cached continuer and return the phrase that was chosen."""
+    """Queue a cached continuer and return the phrase that was chosen.
+
+    Queued as a backchannel, not an utterance: it must not consume the caller's
+    turn, or the caller waits for a reply the continuer never earns.
+    """
     phrase = cache.choose(phrases)
-    scheduler.enqueue_utterance(cache.get(phrase))
+    scheduler.enqueue_backchannel(cache.get(phrase))
     return phrase
 
 

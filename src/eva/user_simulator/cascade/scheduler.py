@@ -35,6 +35,7 @@ class TickScheduler:
         self._assistant_has_spoken = False
         self._awaiting_reply = False
         self._caller_spoke_this_tick = False
+        self._backchannel_bytes = 0
 
     @property
     def tick(self) -> int:
@@ -48,6 +49,16 @@ class TickScheduler:
         Queuing a logically separate utterance while one is still draining is the
         caller's responsibility to avoid.
         """
+        self._playout.extend(audio)
+
+    def enqueue_backchannel(self, audio: bytes) -> None:
+        """Append a continuer, which sounds but does not take the caller's turn.
+
+        A backchannel earns no reply, so counting it as a turn leaves the caller
+        waiting for one that never comes and the call dies at the inactivity
+        timeout instead of reaching a goodbye.
+        """
+        self._backchannel_bytes += len(audio)
         self._playout.extend(audio)
 
     @property
@@ -110,6 +121,11 @@ class TickScheduler:
         result = await self._adapter.run_tick(self._tick, outgoing)
         del self._playout[:consumed]
 
+        # Backchannel bytes sit at the head of the queue, so this tick is a continuer
+        # only while they remain. Anything past them is real speech and takes the turn.
+        was_backchannel = consumed > 0 and self._backchannel_bytes > 0
+        self._backchannel_bytes = max(0, self._backchannel_bytes - consumed)
+
         self._caller_spoke_this_tick = outgoing is not None
         self._ticks_since_caller_speech = 0 if outgoing else self._ticks_since_caller_speech + 1
         self._ticks_since_assistant_speech = (
@@ -118,7 +134,7 @@ class TickScheduler:
         self._assistant_has_spoken = self._assistant_has_spoken or result.has_assistant_speech
         if result.has_assistant_speech:
             self._awaiting_reply = False
-        if outgoing:
+        if outgoing and not was_backchannel:
             self._awaiting_reply = True
 
         self._tick += 1

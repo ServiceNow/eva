@@ -260,3 +260,41 @@ async def test_not_a_check_tick_while_the_caller_is_speaking():
     await scheduler.run_tick()
 
     assert scheduler.is_check_tick() is False
+
+
+async def test_a_backchannel_does_not_consume_the_callers_turn():
+    # A continuer earns no reply, so treating it as a turn deadlocks may_take_turn()
+    # until the inactivity timeout — 7/8 live conversations died this way.
+    scheduler = _scheduler([True] + [False] * 60)
+    await scheduler.run_tick()  # tick 0: assistant greets
+    scheduler.enqueue_backchannel(b"\x02" * BYTES_PER_TICK)
+    await scheduler.run_tick()  # caller says "mm-hmm"
+
+    for _ in range(40):
+        await scheduler.run_tick()
+
+    assert scheduler.may_take_turn() is True
+
+
+async def test_a_real_utterance_still_consumes_the_turn():
+    scheduler = _scheduler([True] + [False] * 60)
+    await scheduler.run_tick()
+    scheduler.enqueue_utterance(b"\x02" * BYTES_PER_TICK)
+    await scheduler.run_tick()
+
+    for _ in range(40):
+        await scheduler.run_tick()
+
+    assert scheduler.may_take_turn() is False
+
+
+async def test_an_utterance_queued_after_a_backchannel_still_consumes_the_turn():
+    scheduler = _scheduler([True] + [False] * 60)
+    await scheduler.run_tick()
+    scheduler.enqueue_backchannel(b"\x02" * BYTES_PER_TICK)
+    scheduler.enqueue_utterance(b"\x03" * BYTES_PER_TICK)
+
+    for _ in range(40):
+        await scheduler.run_tick()
+
+    assert scheduler.may_take_turn() is False
