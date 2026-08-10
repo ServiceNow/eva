@@ -42,13 +42,24 @@ logger = get_logger(__name__)
 METRIC_NAME = "tts_fidelity"
 
 
-def build_context(record: dict[str, Any], audio_dir: Path) -> MetricContext:
+def build_context(record: dict[str, Any], audio_dir: Path) -> tuple[MetricContext, bool]:
     """Build a minimal MetricContext — tts_fidelity only reads intended_assistant_turns,
     audio_assistant_path, and language/language_display_name (via context.language).
     Everything else is a harmless placeholder since this judge never touches it.
+
+    Prefers the pre-generated "{audio_base}_trimmed.wav" (scripts/generate_trimmed_audio.py)
+    over the full audio when it exists, so the judge sees byte-identical audio to what a
+    human labeler hears in the app. Returns (context, used_pretrimmed) — callers must set
+    metric.trim_silence = False when used_pretrimmed is True, otherwise the judge would
+    re-trim an already-trimmed file.
     """
+    audio_base = record["audio_id"].removesuffix(".wav")
+    trimmed_path = audio_dir / f"{audio_base}_trimmed.wav"
+    used_pretrimmed = trimmed_path.exists()
+    audio_path = trimmed_path if used_pretrimmed else audio_dir / record["audio_id"]
+
     intended_turns = {int(tid): text for tid, text in record["intended_assistant_turns"].items()}
-    return MetricContext(
+    context = MetricContext(
         record_id=str(record["original_id"]),
         user_goal="",
         user_persona="",
@@ -64,10 +75,11 @@ def build_context(record: dict[str, Any], audio_dir: Path) -> MetricContext:
         current_date_time="",
         intended_assistant_turns=intended_turns,
         num_assistant_turns=len(intended_turns),
-        audio_assistant_path=str(audio_dir / record["audio_id"]),
+        audio_assistant_path=str(audio_path),
         language=record.get("language", "fr"),
         pipeline_type=PipelineType.CASCADE,
     )
+    return context, used_pretrimmed
 
 
 def is_judged(record: dict[str, Any]) -> bool:
@@ -116,8 +128,10 @@ async def main() -> None:
             logger.info(f"  skip (already judged): {oid}")
             continue
 
-        context = build_context(record, audio_dir)
+        context, used_pretrimmed = build_context(record, audio_dir)
         metric = registry.create(METRIC_NAME)
+        if used_pretrimmed:
+            metric.trim_silence = False  # already trimmed — don't re-trim an already-trimmed file
         score = await metric.compute(context)
         record["judge_1"] = score.model_dump(mode="json")
         n_judged += 1

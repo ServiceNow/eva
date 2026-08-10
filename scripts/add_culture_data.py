@@ -641,7 +641,7 @@ def _all_airline_records_have_phone(language: str, record_id: str | None) -> boo
 
 
 async def amain(args: argparse.Namespace) -> int:
-    llm = LLMClient(model=args.llm_model, params={"temperature": 0.0})
+    llm = LLMClient(model=args.llm_model, params={"temperature": 1.0})
 
     domains = args.domains or [p.stem.removesuffix("_dataset") for p in sorted(DATA_DIR.glob("*_dataset.json"))]
 

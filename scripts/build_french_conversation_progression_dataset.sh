@@ -54,22 +54,27 @@ AGENT_MODEL="${AGENT_MODEL:-gpt-5.4}"                   # fixed across all varia
 # target 2: combined_mild (light redundancy + verification)
 # target 3: default (no failure steering)
 RUNS=(
-  # --- airline  (18 total: 8×t1, 5×t2, 5×t3) ---
-  "airline    | combined_severe | 1 | 1.1.2 1.1.3 2.1.2 2.1.6"
-  "airline    | forgetful       | 1 | 1.1.4 2.2.2"
-  "airline    | tool_caller     | 1 | 1.1.5 2.2.4"
+  # --- airline  (24 total: 14×t1, 5×t2, 5×t3) ---
+  # t1 batch 2 (added to expand the target-1 category, using the tightened
+  # variant prompts): 2.4.2 4.1.1 (combined_severe), 4.2.1 5.1.1 (forgetful),
+  # 5.2.1 6.1.1 (tool_caller) — new, previously-unused record IDs.
+  "airline    | combined_severe | 1 | 1.1.2 1.1.3 2.1.2 2.1.6 2.4.2 4.1.1"
+  "airline    | forgetful       | 1 | 1.1.4 2.2.2 4.2.1 5.1.1"
+  "airline    | tool_caller     | 1 | 1.1.5 2.2.4 5.2.1 6.1.1"
   "airline    | combined_mild   | 2 | 1.2.1 1.2.2 1.2.3 2.2.5 2.3.2"
   "airline    | default         | 3 | 1.3.1 1.3.2 2.1.1 2.3.4 2.4.1"
-  # --- itsm  (19 total: 7×t1, 7×t2, 5×t3) ---
-  "itsm       | combined_severe | 1 | 1 15 16"
-  "itsm       | forgetful       | 1 | 10 17"
-  "itsm       | tool_caller     | 1 | 100 18"
+  # --- itsm  (25 total: 13×t1, 7×t2, 5×t3) ---
+  # t1 batch 2: 24 40 (combined_severe), 51 65 (forgetful), 72 85 (tool_caller)
+  "itsm       | combined_severe | 1 | 1 15 16 24 40"
+  "itsm       | forgetful       | 1 | 10 17 51 65"
+  "itsm       | tool_caller     | 1 | 100 18 72 85"
   "itsm       | combined_mild   | 2 | 101 102 103 11 19 20 21"
   "itsm       | default         | 3 | 12 13 14 22 23"
-  # --- medical_hr  (20 total: 7×t1, 6×t2, 7×t3) ---
-  "medical_hr | combined_severe | 1 | 1.1 4.1 4.2"
-  "medical_hr | forgetful       | 1 | 1.2 5.1"
-  "medical_hr | tool_caller     | 1 | 10.1 5.2"
+  # --- medical_hr  (26 total: 13×t1, 6×t2, 7×t3) ---
+  # t1 batch 2: 12.1 D2.1 (combined_severe), 9.1 D5.1 (forgetful), A2 T3.1 (tool_caller)
+  "medical_hr | combined_severe | 1 | 1.1 4.1 4.2 12.1 D2.1"
+  "medical_hr | forgetful       | 1 | 1.2 5.1 9.1 D5.1"
+  "medical_hr | tool_caller     | 1 | 10.1 5.2 A2 T3.1"
   "medical_hr | combined_mild   | 2 | 10.2 11.1 11.2 6.1 6.2 7.1"
   "medical_hr | default         | 3 | 2.1 2.2 3.1 3.2 7.2 8.1 8.2"
 )

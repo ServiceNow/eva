@@ -67,6 +67,15 @@ RUNS=(
   "airline    | wordy    | 1 | 1.1.2 1.1.3 2.1.2 2.2.2 2.4.1 2.4.2"
   "itsm       | wordy    | 1 | 1 10 11 12 15 16"
   "medical_hr | wordy    | 1 | 1.1 1.2 2.1 2.2 4.1 4.2"
+  # additional wordy batch, generated after fixing the prompt to force stacked
+  # failure modes per turn (verified: reliably lands at mode=1 now)
+  "airline    | wordy    | 1 | 4.1.3 4.2.1 4.2.4"
+  "itsm       | wordy    | 1 | 27 28 29"
+  "medical_hr | wordy    | 1 | A1 A2 A3"
+  # third wordy batch, pushing rating-1 count closer to ~18-20
+  "airline    | wordy    | 1 | 7.1.1 7.2.1 7.2.2"
+  "itsm       | wordy    | 1 | 35 37 38"
+  "medical_hr | wordy    | 1 | A4 A5 A6"
 
   # --- target 2 (adequate) — moderate variant ---
   "airline    | moderate | 2 | 1.1.4 1.1.5 2.1.1 2.2.5 3.1.3 3.1.5"
@@ -158,10 +167,22 @@ generate() {
 judge() {
   echo "=== Stage 2: re-running the $METRIC judge ${N_JUDGES}x per trace ==="
   local RUN_ARGS=()
+  # dedup (bash-3.2 compatible, no associative arrays — macOS ships bash 3.2):
+  # multiple RUNS rows (e.g. several "wordy" batches) can share the same
+  # (domain, target) -> same run_dir. Without this, each row re-globs and
+  # re-adds the same directories, multiplying rerun_judge.py's
+  # discover_records() filesystem scans needlessly (correctness is unaffected
+  # either way — its own Python-level dedup handles duplicates — this is
+  # purely to avoid wasted I/O).
+  local seen_run_dirs=""
   for row in "${RUNS[@]}"; do
     IFS='|' read -r domain variant target ids <<< "$row"
     domain=$(trim "$domain"); target=$(trim "$target")
     local run_dir; run_dir=$(run_dir_for "$domain" "$target")
+    case "$seen_run_dirs" in
+      *"|${run_dir}|"*) continue ;;
+    esac
+    seen_run_dirs="${seen_run_dirs}|${run_dir}|"
     for gen in "$run_dir"/*/; do
       [ -d "$gen" ] || continue
       RUN_ARGS+=(--run "${gen%/}:${domain}:${target}")

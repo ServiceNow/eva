@@ -35,7 +35,7 @@ METRICS = {
     "conciseness": {
         "dataset": {
             "en": REPO / "eva_conciseness_test_set.jsonl",
-            "fr": REPO / "eva_conciseness_test_set_fr.jsonl",
+            "fr": REPO / "eva_conciseness_test_set_fr_balanced.jsonl",
         },
         "labels": {
             "en": REPO / "conciseness_labels.json",
@@ -46,7 +46,7 @@ METRICS = {
     "conversation_progression": {
         "dataset": {
             "en": REPO / "eva_conversation_progression_test_set.jsonl",
-            "fr": REPO / "eva_conversation_progression_test_set_fr.jsonl",
+            "fr": REPO / "eva_conversation_progression_test_set_fr_balanced.jsonl",
         },
         "labels": {
             "en": REPO / "conversation_progression_labels.json",
@@ -57,7 +57,7 @@ METRICS = {
     "faithfulness": {
         "dataset": {
             "en": REPO / "eva_faithfulness_test_set.jsonl",
-            "fr": REPO / "eva_faithfulness_test_set_fr.jsonl",
+            "fr": REPO / "eva_faithfulness_test_set_fr_balanced.jsonl",
         },
         "labels": {
             "en": REPO / "faithfulness_labels.json",
@@ -68,7 +68,7 @@ METRICS = {
     "agent_speech_fidelity": {
         "dataset": {
             "en": REPO / "agent_speech_fidelity_test_set.jsonl",
-            "fr": REPO / "agent_speech_fidelity_test_set_fr.jsonl",
+            "fr": REPO / "agent_speech_fidelity_test_set_fr_balanced.jsonl",
         },
         "labels": {
             "en": REPO / "agent_speech_fidelity_labels.json",

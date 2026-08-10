@@ -45,6 +45,36 @@
       "edited_text": "De rien, Alain ! [speaker likely cut itself off]"
     }
   },
+  "25": {
+    "11": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "6814",
+        "new_value": "6841"
+      },
+      "original_text": "Merci. Laissez-moi confirmer : - **Numéro d'employé** : EMP043965. - **Quatre derniers chiffres du téléphone** : 6814\n\nEst-ce correct ? 6814. Est-ce correct ?",
+      "edited_text": "Merci. Laissez-moi confirmer : - **Numéro d'employé** : EMP043965. - **Quatre derniers chiffres du téléphone** : 6841\n\nEst-ce correct ? 6814. Est-ce correct ?"
+    },
+    "1": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Si vous le souhaitez, je peux aussi vérifier la disponibilité d’un service de restauration."
+      },
+      "original_text": "Bonjour ! Je serais ravi de vous aider à réserver une salle de conférence. Pour trouver la salle qui vous convient, j'aurais besoin de quelques informations :\n\n1. **Quel bâtiment** préférez-vous ? Par exemple, le siège social, le centre-ville, ou un autre lieu ?\n2. **Quelle date** souhaitez-vous réserver ?\n3. **À quelle heure** commence et finit votre réunion ?\n4. **Combien de personnes** seront présentes ?\n\nY a-t-il aussi un étage spécifique que vous préférez, ou des équipements particuliers dont vous aurez besoin, comme un projecteur ou une vidéoconférence ? vous convient, j'aurais besoin de quelques informations : 1. **Quel bâtiment** préférez-vous ? Par exemple, le siège social, le centre-ville, ou un autre lieu ? 2. **Quelle date** souhaitez-vous réserver ? 3. **À quelle heure** commence et finit votre réunion ? 4. **Combien de personnes** seront présentes ? Y a-t-il aussi un étage spécifique que vous préférez, ou des équipements particuliers dont vous aurez besoin, comme un projecteur ou une vidéoconférence ?",
+      "edited_text": "Bonjour ! Je serais ravi de vous aider à réserver une salle de conférence. Pour trouver la salle qui vous convient, j'aurais besoin de quelques informations :\n\n1. **Quel bâtiment** préférez-vous ? Par exemple, le siège social, le centre-ville, ou un autre lieu ?\n2. **Quelle date** souhaitez-vous réserver ?\n3. **À quelle heure** commence et finit votre réunion ?\n4. **Combien de personnes** seront présentes ?\n\nY a-t-il aussi un étage spécifique que vous préférez, ou des équipements particuliers dont vous aurez besoin, comme un projecteur ou une vidéoconférence ? vous convient, j'aurais besoin de quelques informations : 1. **Quel bâtiment** préférez-vous ? Par exemple, le siège social, le centre-ville, ou un autre lieu ? 2. **Quelle date** souhaitez-vous réserver ? 3. **À quelle heure** commence et finit votre réunion ? 4. **Combien de personnes** seront présentes ? Y a-t-il aussi un étage spécifique que vous préférez, ou des équipements particuliers dont vous aurez besoin, comme un projecteur ou une vidéoconférence ? Si vous le souhaitez, je peux aussi vérifier la disponibilité d’un service de restauration."
+    },
+    "5": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Ou bien souhaitez-vous préciser les heures de début et de fin différemment ?"
+      },
+      "original_text": "Merci pour ces informations. Laissez-moi clarifier quelques points : **La date** : le vingt octobre deux mille vingt-six — c'est bien noté.\n\n**L'horaire** : vous avez dit « dix zéro onze cinquante ». Est-ce que cela signifie de **dix heures onze à cinquante minutes** ? Ou bien souhaitez-vous préciser les heures de début et de fin différemment ?\n\nEt pour **le nombre de personnes**, vous avez mentionné « vite à peine » — pouvez-vous me dire combien de personnes seront présentes à la réunion ? deux mille vingt-six — c'est bien noté. **L'horaire** : vous avez dit « dix zéro onze cinquante ». Est-ce que cela signifie de **dix heures onze à cinquante minutes** ? Ou bien souhaitez-vous préciser les heures de début et de fin différemment ? Et pour **le nombre de personnes**, vous avez mentionné « vite à peine » — pouvez-vous me dire combien de personnes seront présentes à la réunion ?",
+      "edited_text": "Merci pour ces informations. Laissez-moi clarifier quelques points : **La date** : le vingt octobre deux mille vingt-six — c'est bien noté.\n\n**L'horaire** : vous avez dit « dix zéro onze cinquante ». Est-ce que cela signifie de **dix heures onze à cinquante minutes** ?\n\nEt pour **le nombre de personnes**, vous avez mentionné « vite à peine » — pouvez-vous me dire combien de personnes seront présentes à la réunion ? deux mille vingt-six — c'est bien noté. **L'horaire** : vous avez dit « dix zéro onze cinquante ». Est-ce que cela signifie de **dix heures onze à cinquante minutes** ? Et pour **le nombre de personnes**, vous avez mentionné « vite à peine » — pouvez-vous me dire combien de personnes seront présentes à la réunion ?"
+    }
+  },
   "30": {
     "3": {
       "corruption_type": "insertion",
@@ -56,6 +86,125 @@
       "edited_text": "Parfait, merci Marion. J'ai bien noté : E, N, P, zéro, trois, un, quatre, huit, deux. Maintenant, pouvez-vous me donner les quatre derniers chiffres de votre numéro de téléphone enregistré dans le système ?"
     }
   },
+  "35": {
+    "11": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Je peux aussi utiliser le numéro de l'appartement si vous l'avez."
+      },
+      "original_text": "[assistant interrupts] D'accord, vous êtes au troisième étage. Quel est le code du bâtiment, ou pouvez-vous me donner le nom du bâtiment ? du bâtiment ?",
+      "edited_text": "[assistant interrupts] D'accord, vous êtes au troisième étage. Quel est le code du bâtiment, ou pouvez-vous me donner le nom du bâtiment ? du bâtiment ? Je peux aussi utiliser le numéro de l'appartement si vous l'avez."
+    },
+    "3": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "j'aurais besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système."
+      },
+      "original_text": "Parfait. Maintenant, j'aurais besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système. dans le système.",
+      "edited_text": "Parfait. Maintenant, dans le système."
+    },
+    "17": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "le quatre mai deux mille vingt-six",
+        "new_value": "le cinq mai deux mille vingt-six"
+      },
+      "original_text": "[assistant interrupts] Excellent. Je vais soumettre votre demande de remplacement maintenant. Parfait ! Votre demande de remplacement a été acceptée. Maintenant, je dois initier le retour de votre ancien ordinateur portable.\n\nJuste pour vous confirmer : vous recevrez une étiquette d'expédition prépayée par courrier. Vous aurez quatorze jours pour retourner votre ancien Dell Latitude. Vous pouvez l'envoyer par courrier ou le retourner en personne si vous préférez.\n\nLaissez-moi finaliser cela. ancien ordinateur portable. Juste pour vous confirmer : vous recevrez une étiquette d'expédition prépayée par courrier. Vous aurez quatorze jours pour retourner votre ancien Dell Latitude. Vous pouvez l'envoyer par courrier ou le retourner en personne si vous préférez. Laissez-moi finaliser cela. Excellent, Arthur ! Voici le résumé complet : **Demande de remplacement :** REQ tiret HW tiret 707b583c1eaa. Votre nouvel ordinateur portable Windows quatorze pouces sera livré au siège social, troisième étage.\n\n**Retour de l'ancien ordinateur :** Vous devrez retourner votre Dell Latitude avant le quatre mai deux mille vingt-six. Une étiquette d'expédition prépayée vous sera envoyée.\n\nVous avez également votre ticket d'incident INC a 7087 cd 64494 pour la visite du technicien le vingt-deux avril au matin, au cas où le nouveau portable arriverait après cette date.\n\nY a-t-il autre chose que je puisse faire pour vous ? nouvel ordinateur portable Windows quatorze pouces sera livré au siège social, troisième étage. **Retour de l'ancien ordinateur :** Vous devrez retourner votre Dell Latitude avant le quatre mai deux mille vingt-six. Une étiquette d'expédition prépayée vous sera envoyée. Vous avez également votre ticket d'incident INC a 7087 cd 64494 pour la visite du technicien le vingt-deux avril au matin, au cas où le nouveau portable arriverait après cette date. Y a-t-il autre chose que je puisse faire pour vous ?",
+      "edited_text": "[assistant interrupts] Excellent. Je vais soumettre votre demande de remplacement maintenant. Parfait ! Votre demande de remplacement a été acceptée. Maintenant, je dois initier le retour de votre ancien ordinateur portable.\n\nJuste pour vous confirmer : vous recevrez une étiquette d'expédition prépayée par courrier. Vous aurez quatorze jours pour retourner votre ancien Dell Latitude. Vous pouvez l'envoyer par courrier ou le retourner en personne si vous préférez.\n\nLaissez-moi finaliser cela. ancien ordinateur portable. Juste pour vous confirmer : vous recevrez une étiquette d'expédition prépayée par courrier. Vous aurez quatorze jours pour retourner votre ancien Dell Latitude. Vous pouvez l'envoyer par courrier ou le retourner en personne si vous préférez. Laissez-moi finaliser cela. Excellent, Arthur ! Voici le résumé complet : **Demande de remplacement :** REQ tiret HW tiret 707b583c1eaa. Votre nouvel ordinateur portable Windows quatorze pouces sera livré au siège social, troisième étage.\n\n**Retour de l'ancien ordinateur :** Vous devrez retourner votre Dell Latitude avant le cinq mai deux mille vingt-six. Une étiquette d'expédition prépayée vous sera envoyée.\n\nVous avez également votre ticket d'incident INC a 7087 cd 64494 pour la visite du technicien le vingt-deux avril au matin, au cas où le nouveau portable arriverait après cette date.\n\nY a-t-il autre chose que je puisse faire pour vous ? nouvel ordinateur portable Windows quatorze pouces sera livré au siège social, troisième étage. **Retour de l'ancien ordinateur :** Vous devrez retourner votre Dell Latitude avant le quatre mai deux mille vingt-six. Une étiquette d'expédition prépayée vous sera envoyée. Vous avez également votre ticket d'incident INC a 7087 cd 64494 pour la visite du technicien le vingt-deux avril au matin, au cas où le nouveau portable arriverait après cette date. Y a-t-il autre chose que je puisse faire pour vous ?"
+    }
+  },
+  "38": {
+    "13": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Notre équipe vous répondra dans une heure et résoudra le problème dans les quatre heures."
+      },
+      "original_text": "Parfait ! Laissez-moi résumer ce qu'on a fait :\n\n**Ticket VPN** : I-N-C sept D B A un A neuf zéro C sept D huit. Notre équipe vous répondra dans une heure et résoudra le problème dans les quatre heures.\n\n**Bureau attribué** : B L D deux tiret F L deux tiret D deux zéro trois au siège, étage deux.\n\nBonne journée à vous, Monsieur Bernard, et merci d'avoir contacté le service d'assistance ! [speaker likely cut itself off]",
+      "edited_text": "Parfait ! Laissez-moi résumer ce qu'on a fait :\n\n**Ticket VPN** : I-N-C sept D B A un A neuf zéro C sept D huit.\n\n**Bureau attribué** : B L D deux tiret F L deux tiret D deux zéro trois au siège, étage deux.\n\nBonne journée à vous, Monsieur Bernard, et merci d'avoir contacté le service d'assistance ! [speaker likely cut itself off]"
+    },
+    "12": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "52 E F deux un sept F huit A T C",
+        "new_value": "52 E F deux un huit F huit A T C"
+      },
+      "original_text": "Ah d'accord, merci pour la correction ! Donc le code correct est D-I-A-G D-X-M-F cinq P L Q. Je vais noter ça.\n\nEt parfait pour le bureau ! Je vais vous l'attribuer maintenant. noter ça. Et parfait pour le bureau ! Je vais vous l'attribuer maintenant. Super ! Votre bureau est attribué. Numéro de demande : R E Q tiret F A C tiret 52 E F deux un sept F huit A T C.\n\nVous aviez d'autres demandes aussi ? huit A T C. Vous aviez d'autres demandes aussi ?",
+      "edited_text": "Ah d'accord, merci pour la correction ! Donc le code correct est D-I-A-G D-X-M-F cinq P L Q. Je vais noter ça.\n\nEt parfait pour le bureau ! Je vais vous l'attribuer maintenant. noter ça. Et parfait pour le bureau ! Je vais vous l'attribuer maintenant. Super ! Votre bureau est attribué. Numéro de demande : R E Q tiret F A C tiret 52 E F deux un huit F huit A T C.\n\nVous aviez d'autres demandes aussi ? huit A T C. Vous aviez d'autres demandes aussi ?"
+    },
+    "2": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Si vous préférez, vous pouvez aussi me les épeler chiffre par chiffre."
+      },
+      "original_text": "Parfait, merci. Donc votre numéro d'employé est E-M-P zéro neuf trois quatre sept un. C'est bien ça ? Et maintenant, les quatre derniers chiffres de votre numéro de téléphone enregistré, s'il vous plaît ? maintenant, les quatre derniers chiffres de votre numéro de téléphone enregistré, s'il vous plaît ?",
+      "edited_text": "Parfait, merci. Donc votre numéro d'employé est E-M-P zéro neuf trois quatre sept un. C'est bien ça ? Et maintenant, les quatre derniers chiffres de votre numéro de téléphone enregistré, s'il vous plaît ? maintenant, les quatre derniers chiffres de votre numéro de téléphone enregistré, s'il vous plaît ? Si vous préférez, vous pouvez aussi me les épeler chiffre par chiffre."
+    },
+    "3": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Parfait, Monsieur Bernard !"
+      },
+      "original_text": "Merci ! Je vais vérifier vos informations maintenant. Parfait, Monsieur Bernard ! Vous êtes bien authentifié. Alors, dites-moi — quels sont ces trucs pour lesquels vous avez besoin d'aide aujourd'hui ? lesquels vous avez besoin d'aide aujourd'hui ?",
+      "edited_text": "Merci ! Je vais vérifier vos informations maintenant. Vous êtes bien authentifié. Alors, dites-moi — quels sont ces trucs pour lesquels vous avez besoin d'aide aujourd'hui ? lesquels vous avez besoin d'aide aujourd'hui ?"
+    }
+  },
+  "41": {
+    "3": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "EMP081247",
+        "new_value": "EMP081267"
+      },
+      "original_text": "Ah, merci pour cette clarification, David. Donc votre numéro d'employé complet est **EMP081247**. Et pour le numéro de téléphone, les quatre derniers chiffres sont toujours **9563**, c'est bien cela ? pour le numéro de téléphone, les quatre derniers chiffres sont toujours **9563**, c'est bien cela ?",
+      "edited_text": "Ah, merci pour cette clarification, David. Donc votre numéro d'employé complet est **EMP081267**. Et pour le numéro de téléphone, les quatre derniers chiffres sont toujours **9563**, c'est bien cela ? pour le numéro de téléphone, les quatre derniers chiffres sont toujours **9563**, c'est bien cela ?"
+    },
+    "9": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Je peux aussi vérifier les disponibilités selon votre profil utilisateur."
+      },
+      "original_text": "Bonjour David. Je suis toujours là pour vous aider avec votre demande de licence Adobe Creative Cloud. Pour la licence temporaire, avez-vous besoin de trente, soixante, ou quatre-vingt-dix jours ? la licence temporaire, avez-vous besoin de trente, soixante, ou quatre-vingt-dix jours ?",
+      "edited_text": "Bonjour David. Je suis toujours là pour vous aider avec votre demande de licence Adobe Creative Cloud. Pour la licence temporaire, avez-vous besoin de trente, soixante, ou quatre-vingt-dix jours ? la licence temporaire, avez-vous besoin de trente, soixante, ou quatre-vingt-dix jours ? Je peux aussi vérifier les disponibilités selon votre profil utilisateur."
+    },
+    "8": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Vous aviez besoin de trente, soixante, ou quatre-vingt-dix jours pour la licence temporaire ?"
+      },
+      "original_text": "Pardon ? Je n'ai pas bien compris votre réponse. Pouvez-vous répéter ? Vous aviez besoin de trente, soixante, ou quatre-vingt-dix jours pour la licence temporaire ? soixante, ou quatre-vingt-dix jours pour la licence temporaire ?",
+      "edited_text": "Pardon ? Je n'ai pas bien compris votre réponse. Pouvez-vous répéter ? soixante, ou quatre-vingt-dix jours pour la licence temporaire ?"
+    }
+  },
+  "42": {
+    "4": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Vous pouvez aussi me donner un exemple précis de ce que vous cherchez."
+      },
+      "original_text": "Je n'ai pas bien compris votre question. Pouviez-vous reformuler, s'il vous plaît ?",
+      "edited_text": "Je n'ai pas bien compris votre question. Pouviez-vous reformuler, s'il vous plaît ? Vous pouvez aussi me donner un exemple précis de ce que vous cherchez."
+    },
+    "6": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Malheureusement, il n'y a aucun bureau disponible à cet étage du bâtiment siège pour le moment."
+      },
+      "original_text": "D'accord, bâtiment siège, étage F L deux. Parfait. Laissez-moi vérifier la disponibilité des bureaux à cet endroit. à cet endroit. Malheureusement, il n'y a aucun bureau disponible à cet étage du bâtiment siège pour le moment. Je peux vous placer sur une liste d'attente pour ce bâtiment et cet étage, ou bien je peux vérifier la disponibilité dans d'autres bâtiments ou étages si vous le souhaitez. Qu'en pensez-vous ? peux vous placer sur une liste d'attente pour ce bâtiment et cet étage, ou bien je peux vérifier la disponibilité dans d'autres bâtiments ou étages si vous le souhaitez. Qu'en pensez-vous ?",
+      "edited_text": "D'accord, bâtiment siège, étage F L deux. Parfait. Laissez-moi vérifier la disponibilité des bureaux à cet endroit. à cet endroit. Je peux vous placer sur une liste d'attente pour ce bâtiment et cet étage, ou bien je peux vérifier la disponibilité dans d'autres bâtiments ou étages si vous le souhaitez. Qu'en pensez-vous ? peux vous placer sur une liste d'attente pour ce bâtiment et cet étage, ou bien je peux vérifier la disponibilité dans d'autres bâtiments ou étages si vous le souhaitez. Qu'en pensez-vous ?"
+    }
+  },
   "52": {
     "3": {
       "corruption_type": "insertion",
@@ -65,6 +214,17 @@
       },
       "original_text": "Oui, bien sûr — pardon pour la confusion. Donc les quatre derniers chiffres sont 3, 8, 4, 2. C'est bien ça ? ça ?",
       "edited_text": "Oui, bien sûr — pardon pour la confusion. C'est bien ça ? ça ?"
+    }
+  },
+  "62": {
+    "4": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Excellent ! Votre identité est confirmée."
+      },
+      "original_text": "Parfait, merci. Je vais vérifier le code 105927. Excellent ! Votre identité est confirmée. Maintenant, dites-moi quelles demandes d'accès je peux vous aider à traiter. aider à traiter.",
+      "edited_text": "Parfait, merci. Je vais vérifier le code 105927. Maintenant, dites-moi quelles demandes d'accès je peux vous aider à traiter. aider à traiter."
     }
   },
   "65": {
@@ -79,6 +239,77 @@
       "edited_text": "Merci pour ces précisions. Je comprends : le CRM ne charge pas, et votre annuaire des contacts vous indique que votre compte est verrouillé. Commençons par déverrouiller votre compte d'annuaire.\n\nAvant de procéder, j'ai besoin de vous envoyer un code à usage unique par SMS pour vérifier votre identité. Ce code vous permettra aussi de demander l'accès à l'application Confiance. Êtes-vous prêt à recevoir ce code sur le numéro qui se termine par 3816 ? indique que votre compte est verrouillé. Commençons par déverrouiller votre compte d'annuaire. Avant de procéder, j'ai besoin de vous envoyer un code à usage unique par SMS pour vérifier votre identité. Ce code vous permettra aussi de demander l'accès à l'application Confiance. Êtes-vous prêt à recevoir ce code sur le numéro qui se termine par 3815 ?"
     }
   },
+  "71": {
+    "15": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "RM301",
+        "new_value": "RM302"
+      },
+      "original_text": "Parfait ! Vous choisissez le bureau BLD3 tiret FL3 tiret D303, près de la fenêtre, en zone C. Je vais confirmer cette affectation maintenant. Magnifique ! Votre affectation de bureau est confirmée. Le numéro de demande est REQ tiret FAC tiret d sept quatre cinq un sept deux trois neuf a sept f.\n\nVous êtes assigné au bureau BLD3 tiret FL3 tiret D303, au siège social, étage 3, zone C, près d'une fenêtre.\n\nRécapitulons vos trois demandes : chaise ergonomique livrée au siège social étage 3, réservation de salle BLD3 tiret FL3 tiret RM301 mercredi 3 juin de 11 heures à midi, et affectation de bureau BLD3 tiret FL3 tiret D303. Tout est en place ! Y a-t-il autre chose que je puisse faire pour vous ? confirmer cette affectation maintenant. Magnifique ! Votre affectation de bureau est confirmée. Le numéro de demande est REQ tiret FAC tiret d sept quatre cinq un sept deux trois neuf a sept f. Vous êtes assigné au bureau BLD3 tiret FL3 tiret D303, au siège social, étage 3, zone C, près d'une fenêtre. Récapitulons vos trois demandes : chaise ergonomique livrée au siège social étage 3, réservation de salle BLD3 tiret FL3 tiret RM301 mercredi 3 juin de 11 heures à midi, et affectation de bureau BLD3 tiret FL3 tiret D303. Tout est en place ! Y a-t-il autre chose que je puisse faire pour vous ?",
+      "edited_text": "Parfait ! Vous choisissez le bureau BLD3 tiret FL3 tiret D303, près de la fenêtre, en zone C. Je vais confirmer cette affectation maintenant. Magnifique ! Votre affectation de bureau est confirmée. Le numéro de demande est REQ tiret FAC tiret d sept quatre cinq un sept deux trois neuf a sept f.\n\nVous êtes assigné au bureau BLD3 tiret FL3 tiret D303, au siège social, étage 3, zone C, près d'une fenêtre.\n\nRécapitulons vos trois demandes : chaise ergonomique livrée au siège social étage 3, réservation de salle BLD3 tiret FL3 tiret RM302 mercredi 3 juin de 11 heures à midi, et affectation de bureau BLD3 tiret FL3 tiret D303. Tout est en place ! Y a-t-il autre chose que je puisse faire pour vous ? confirmer cette affectation maintenant. Magnifique ! Votre affectation de bureau est confirmée. Le numéro de demande est REQ tiret FAC tiret d sept quatre cinq un sept deux trois neuf a sept f. Vous êtes assigné au bureau BLD3 tiret FL3 tiret D303, au siège social, étage 3, zone C, près d'une fenêtre. Récapitulons vos trois demandes : chaise ergonomique livrée au siège social étage 3, réservation de salle BLD3 tiret FL3 tiret RM301 mercredi 3 juin de 11 heures à midi, et affectation de bureau BLD3 tiret FL3 tiret D303. Tout est en place ! Y a-t-il autre chose que je puisse faire pour vous ?"
+    }
+  },
+  "75": {
+    "4": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Je peux aussi vous expliquer la procédure pour faire une nouvelle demande si besoin."
+      },
+      "original_text": "D'accord, merci. Donc les quatre derniers chiffres de votre téléphone sont neuf deux quatre six. Laissez-moi vérifier cela pour vous. vérifier cela pour vous. Excellent, Clémence. Vous êtes bien authentifiée. Maintenant, dites-moi, quelles sont vos questions concernant votre aménagement de travail ? concernant votre aménagement de travail ?",
+      "edited_text": "D'accord, merci. Donc les quatre derniers chiffres de votre téléphone sont neuf deux quatre six. Laissez-moi vérifier cela pour vous. vérifier cela pour vous. Excellent, Clémence. Vous êtes bien authentifiée. Maintenant, dites-moi, quelles sont vos questions concernant votre aménagement de travail ? concernant votre aménagement de travail ? Je peux aussi vous expliquer la procédure pour faire une nouvelle demande si besoin."
+    },
+    "6": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "je vérifie ce qui est disponible à tous les étages du siège pour vous montrer les options ?"
+      },
+      "original_text": "Vous aimeriez rester au siège dans un autre étage ? Quel étage vous conviendrait, ou préférez-vous que je vérifie ce qui est disponible à tous les étages du siège pour vous montrer les options ? je vérifie ce qui est disponible à tous les étages du siège pour vous montrer les options ?",
+      "edited_text": "Vous aimeriez rester au siège dans un autre étage ? Quel étage vous conviendrait, ou préférez-vous que je vérifie ce qui est disponible à tous les étages du siège pour vous montrer les options ?"
+    }
+  },
+  "77": {
+    "13": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Visite technique programmée le vingt-sept mai au matin."
+      },
+      "original_text": "De rien, Olivier ! Voici un résumé de tout ce qui a été fait pour vous aujourd'hui :\n\n**Ticket d'incident panne matérielle :** I N C 5 0 5 7 C C 2 C 6 7 B 1\nVisite technique programmée le vingt-sept mai au matin.\n\n**Remplacement de portable :** R E Q H W D C 8 5 B 7 D 6 1 2 A 4\nMacBook Pro seize pouces, Mac OS. Retour de l'ancien avant le huit juin.\n\n**Écran vingt-sept pouces :** R E Q H W 3 9 A 2 B 5 C B E 7 B 3\n\n**Convertisseur assis debout :** R E Q F A C F 5 3 D 4 3 C B 9 1 D 1\n\nTout est en cours de traitement. Bonne journée à vous aussi, et à bientôt ! [speaker likely cut itself off]",
+      "edited_text": "De rien, Olivier ! Voici un résumé de tout ce qui a été fait pour vous aujourd'hui :\n\n**Ticket d'incident panne matérielle :** I N C 5 0 5 7 C C 2 C 6 7 B 1\n\n**Remplacement de portable :** R E Q H W D C 8 5 B 7 D 6 1 2 A 4\nMacBook Pro seize pouces, Mac OS. Retour de l'ancien avant le huit juin.\n\n**Écran vingt-sept pouces :** R E Q H W 3 9 A 2 B 5 C B E 7 B 3\n\n**Convertisseur assis debout :** R E Q F A C F 5 3 D 4 3 C B 9 1 D 1\n\nTout est en cours de traitement. Bonne journée à vous aussi, et à bientôt ! [speaker likely cut itself off]"
+    },
+    "10": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "R M A 2 8 4 7 1 9",
+        "new_value": "R M A 2 8 4 7 1 8"
+      },
+      "original_text": "D'accord, livraison au bâtiment East Campus, étage un. Je vais soumettre votre demande de remplacement de portable maintenant. de portable maintenant. Super ! Votre demande de remplacement a été soumise. Maintenant je dois initier le retour de votre ancien portable. portable. Parfait ! Voici les détails de votre demande de remplacement : **Numéro de demande :** R E Q H W D C 8 5 B 7 D 6 1 2 A 4\n\n**Spécifications :** MacBook Pro seize pouces, Mac OS\n\n**Livraison :** East Campus, étage un\n\n**Retour de votre ancien portable :** Vous recevrez une étiquette d'expédition prépayée. Vous avez jusqu'au huit juin pour le retourner. Le numéro d'autorisation de retour est R M A 2 8 4 7 1 9.\n\nVous allez recevoir votre nouveau portable très bientôt. Y a-t-il autre chose que je puisse faire pour vous aujourd'hui ? 8 5 B 7 D 6 1 2 A 4. **Spécifications :** MacBook Pro seize pouces, Mac OS. **Livraison :** East Campus, étage un. **Retour de votre ancien portable :** Vous recevrez une étiquette d'expédition prépayée. Vous avez jusqu'au huit juin pour le retourner. Le numéro d'autorisation de retour est R M A 2 8 4 7 1 9. Vous allez recevoir votre nouveau portable très bientôt. Y a-t-il autre chose que je puisse faire pour vous aujourd'hui ?",
+      "edited_text": "D'accord, livraison au bâtiment East Campus, étage un. Je vais soumettre votre demande de remplacement de portable maintenant. de portable maintenant. Super ! Votre demande de remplacement a été soumise. Maintenant je dois initier le retour de votre ancien portable. portable. Parfait ! Voici les détails de votre demande de remplacement : **Numéro de demande :** R E Q H W D C 8 5 B 7 D 6 1 2 A 4\n\n**Spécifications :** MacBook Pro seize pouces, Mac OS\n\n**Livraison :** East Campus, étage un\n\n**Retour de votre ancien portable :** Vous recevrez une étiquette d'expédition prépayée. Vous avez jusqu'au huit juin pour le retourner. Le numéro d'autorisation de retour est R M A 2 8 4 7 1 8.\n\nVous allez recevoir votre nouveau portable très bientôt. Y a-t-il autre chose que je puisse faire pour vous aujourd'hui ? 8 5 B 7 D 6 1 2 A 4. **Spécifications :** MacBook Pro seize pouces, Mac OS. **Livraison :** East Campus, étage un. **Retour de votre ancien portable :** Vous recevrez une étiquette d'expédition prépayée. Vous avez jusqu'au huit juin pour le retourner. Le numéro d'autorisation de retour est R M A 2 8 4 7 1 9. Vous allez recevoir votre nouveau portable très bientôt. Y a-t-il autre chose que je puisse faire pour vous aujourd'hui ?"
+    },
+    "9": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Je peux aussi noter un numéro de bureau si besoin."
+      },
+      "original_text": "[assistant interrupts] Parfait, MacOS seize pouces. Maintenant, où souhaitez-vous que le nouveau portable soit livré ? Quel bâtiment et quel étage ? bâtiment et quel étage ?",
+      "edited_text": "[assistant interrupts] Parfait, MacOS seize pouces. Maintenant, où souhaitez-vous que le nouveau portable soit livré ? Quel bâtiment et quel étage ? bâtiment et quel étage ? Je peux aussi noter un numéro de bureau si besoin."
+    },
+    "12": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Excellentes nouvelles ! Vous avez une évaluation ergonomique à jour, donc je peux soumettre votre demande de convertisseur assis debout."
+      },
+      "original_text": "Parfait, un nouvel écran vingt-sept pouces pour votre setup. Je vais vérifier le budget et soumettre cette demande. cette demande. Excellentes nouvelles ! Vous avez une évaluation ergonomique à jour, donc je peux soumettre votre demande de convertisseur assis debout.\n\nAttendez, je dois corriger : vous m'aviez demandé un écran, mais j'ai soumis un bras d'écran. Laissez-moi soumettre la bonne demande pour un nouvel écran vingt-sept pouces. de convertisseur assis debout. Attendez, je dois corriger : vous m'aviez demandé un écran, mais j'ai soumis un bras d'écran. Laissez-moi soumettre la bonne demande pour un nouvel écran vingt-sept pouces. Parfait ! Voici vos deux demandes : **Écran vingt-sept pouces (nouveau setup) :**. Numéro de demande : R E Q H W 3 9 A 2 B 5 C B E 7 B 3\nLivraison : East Campus, étage un\n\n**Convertisseur de bureau assis debout :**\nNuméro de demande : R E Q F A C F 5 3 D 4 3 C B 9 1 D 1\nLivraison : East Campus, étage un\n\nLes deux sont en cours de traitement et vous les recevrez bientôt. Vous avez aussi votre ancien bras d'écran commandé par erreur, mais nous allons annuler cette demande.\n\nY a-t-il autre chose que je puisse faire pour vous ? R E Q H W 3 9 A 2 B 5 C B E 7 B 3. Livraison : East Campus, étage un. **Convertisseur de bureau assis debout :**. Numéro de demande : R E Q F A C F 5 3 D 4 3 C B 9 1 D 1. Livraison : East Campus, étage un. Les deux sont en cours de traitement et vous les recevrez bientôt. Vous avez aussi votre ancien bras d'écran commandé par erreur, mais nous allons annuler cette demande. Y a-t-il autre chose que je puisse faire pour vous ?",
+      "edited_text": "Parfait, un nouvel écran vingt-sept pouces pour votre setup. Je vais vérifier le budget et soumettre cette demande. cette demande.\n\nAttendez, je dois corriger : vous m'aviez demandé un écran, mais j'ai soumis un bras d'écran. Laissez-moi soumettre la bonne demande pour un nouvel écran vingt-sept pouces. de convertisseur assis debout. Attendez, je dois corriger : vous m'aviez demandé un écran, mais j'ai soumis un bras d'écran. Laissez-moi soumettre la bonne demande pour un nouvel écran vingt-sept pouces. Parfait ! Voici vos deux demandes : **Écran vingt-sept pouces (nouveau setup) :**. Numéro de demande : R E Q H W 3 9 A 2 B 5 C B E 7 B 3\nLivraison : East Campus, étage un\n\n**Convertisseur de bureau assis debout :**\nNuméro de demande : R E Q F A C F 5 3 D 4 3 C B 9 1 D 1\nLivraison : East Campus, étage un\n\nLes deux sont en cours de traitement et vous les recevrez bientôt. Vous avez aussi votre ancien bras d'écran commandé par erreur, mais nous allons annuler cette demande.\n\nY a-t-il autre chose que je puisse faire pour vous ? R E Q H W 3 9 A 2 B 5 C B E 7 B 3. Livraison : East Campus, étage un. **Convertisseur de bureau assis debout :**. Numéro de demande : R E Q F A C F 5 3 D 4 3 C B 9 1 D 1. Livraison : East Campus, étage un. Les deux sont en cours de traitement et vous les recevrez bientôt. Vous avez aussi votre ancien bras d'écran commandé par erreur, mais nous allons annuler cette demande. Y a-t-il autre chose que je puisse faire pour vous ?"
+    }
+  },
   "78": {
     "6": {
       "corruption_type": "truncation",
@@ -90,6 +321,57 @@
       "edited_text": "Parfait, le garage Eglicutis. Je vais noter ça. Avant de continuer, j'ai besoin de quelques informations pour vos demandes. Commençons par le poste de travail et le remplacement de PC portable :\n\nPour quel bâtiment et quel étage souhaitez-vous que ces équipements soient livrés ? pour vos demandes. Commençons par le poste de travail et le remplacement de PC portable : Pour quel bâtiment et quel étage souhaitez-vous que ces équipements soient livrés ? Avez-vous également un numéro de bureau ou un contact sur place à préciser pour la livraison ?"
     }
   },
+  "82": {
+    "3": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "6158",
+        "new_value": "6159"
+      },
+      "original_text": "[assistant interrupts] D'accord. Vous avez dit cent six un cinq huit. Laissez-moi confirmer : les quatre derniers chiffres sont 6158, c'est bien ça ? 6158, c'est bien ça ?",
+      "edited_text": "[assistant interrupts] D'accord. Vous avez dit cent six un cinq huit. Laissez-moi confirmer : les quatre derniers chiffres sont 6159, c'est bien ça ? 6158, c'est bien ça ?"
+    },
+    "1": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Vous le trouverez sur votre badge professionnel."
+      },
+      "original_text": "[assistant interrupts] Bonjour ! Je suis là pour vous aider. Avant de commencer, j'ai besoin de vérifier votre identité. Pouvez-vous me donner votre numéro d'employé, s'il vous plaît ? me donner votre numéro d'employé, s'il vous plaît ?",
+      "edited_text": "[assistant interrupts] Bonjour ! Je suis là pour vous aider. Avant de commencer, j'ai besoin de vérifier votre identité. Pouvez-vous me donner votre numéro d'employé, s'il vous plaît ? me donner votre numéro d'employé, s'il vous plaît ? Vous le trouverez sur votre badge professionnel."
+    }
+  },
+  "88": {
+    "6": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Je peux aussi vous aider pour un problème de mot de passe ou d'accès à votre compte."
+      },
+      "original_text": "Excellent. Je vais vérifier vos identifiants maintenant. Parfait, Mathieu ! Votre identité est vérifiée. Quels sont les sujets informatiques avec lesquels je peux vous aider aujourd'hui ? peux vous aider aujourd'hui ?",
+      "edited_text": "Excellent. Je vais vérifier vos identifiants maintenant. Parfait, Mathieu ! Votre identité est vérifiée. Quels sont les sujets informatiques avec lesquels je peux vous aider aujourd'hui ? peux vous aider aujourd'hui ? Je peux aussi vous aider pour un problème de mot de passe ou d'accès à votre compte."
+    },
+    "13": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Laissez-moi confirmer : le numéro d'employé de la nouvelle embauche est E M P 0 9 8 7 1 2."
+      },
+      "original_text": "Merci. Laissez-moi confirmer : le numéro d'employé de la nouvelle embauche est E M P 0 9 8 7 1 2. C'est correct ? correct ?",
+      "edited_text": "Merci. C'est correct ? correct ?"
+    },
+    "3": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "9 0 2 3",
+        "new_value": "9 0 2 8"
+      },
+      "original_text": "Merci de la correction. Donc votre numéro d'employé est N T 0 7 7 7 7 — avec cinq zéros à la fin, c'est bien ça ?\n\nEt pour le numéro de téléphone, les quatre derniers chiffres restent bien 9 0 2 3 ? bien ça ? Et pour le numéro de téléphone, les quatre derniers chiffres restent bien 9 0 2 3 ?",
+      "edited_text": "Merci de la correction. Donc votre numéro d'employé est N T 0 7 7 7 7 — avec cinq zéros à la fin, c'est bien ça ?\n\nEt pour le numéro de téléphone, les quatre derniers chiffres restent bien 9 0 2 8 ? bien ça ? Et pour le numéro de téléphone, les quatre derniers chiffres restent bien 9 0 2 3 ?"
+    }
+  },
   "90": {
     "11": {
       "corruption_type": "insertion",
@@ -99,6 +381,57 @@
       },
       "original_text": "D'accord, merci de clarifier. Donc votre numéro d'employé est EMP031482. Parfait ! Maintenant, j'ai besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système pour compléter la vérification. besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système pour compléter la vérification.",
       "edited_text": "D'accord, merci de clarifier. Donc votre numéro d'employé est EMP031482. Maintenant, j'ai besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système pour compléter la vérification. besoin des quatre derniers chiffres de votre numéro de téléphone enregistré dans le système pour compléter la vérification."
+    }
+  },
+  "91": {
+    "15": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Pour la plateforme CRM, vous pouvez utiliser l'application mobile en attendant."
+      },
+      "original_text": "Parfait, merci Vincent. Juste pour récapituler :\n\nVous avez deux tickets d'incident en priorité maximale — le VPN et la plateforme CRM. Vous recevrez une première réponse en moins d'une heure. Pour la plateforme CRM, vous pouvez utiliser l'application mobile en attendant.\n\nUne fois que vous aurez mis à jour votre numéro de téléphone à la sécurité informatique, vous pourrez relancer vos demandes pour Confluence et Figma.\n\nBon courage, et n'hésitez pas à nous recontacter! [speaker likely cut itself off]",
+      "edited_text": "Parfait, merci Vincent. Juste pour récapituler :\n\nVous avez deux tickets d'incident en priorité maximale — le VPN et la plateforme CRM. Vous recevrez une première réponse en moins d'une heure.\n\nUne fois que vous aurez mis à jour votre numéro de téléphone à la sécurité informatique, vous pourrez relancer vos demandes pour Confluence et Figma.\n\nBon courage, et n'hésitez pas à nous recontacter! [speaker likely cut itself off]"
+    },
+    "12": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "INC346d35f2ef15",
+        "new_value": "INC346d35f2ef16"
+      },
+      "original_text": "D'accord, je comprends. Vous êtes bloqué sur ces deux fronts. Laissez-moi créer deux tickets d'incident pour vous — un pour le VPN et un pour la plateforme CRM. Après ça, je vous aiderai avec vos demandes d'accès à Confluence et la licence Figma. pour vous — un pour le VPN et un pour la plateforme CRM. Après ça, je vous aiderai avec vos demandes d'accès à Confluence et la licence Figma. Bien. J'ai créé vos deux tickets. Maintenant je vais assigner les niveaux de priorité et ensuite vérifier la base de données des erreurs connues pour la plateforme CRM. la base de données des erreurs connues pour la plateforme CRM. Excellentes nouvelles pour la plateforme CRM. J'ai trouvé une erreur connue dans notre base de données. En attendant que nos équipes corrigent le problème, vous pouvez utiliser l'application mobile CRM si vous l'avez. L'accès par navigateur devrait être rétabli une fois que les équipes d'ingénierie auront terminé la migration du cache.\n\nVoici vos numéros de ticket :\n\n**VPN qui se déconnecte :** INC546d524deb8c\n**Plateforme CRM :** INC346d35f2ef15\n\nLes deux ont une priorité maximale. Vous devriez recevoir une première réponse en moins d'une heure et une résolution en moins de quatre heures.\n\nMaintenant, passons à vos demandes d'accès. Pour Confluence et Figma, je vais vous envoyer un code de vérification par SMS. Vous êtes prêt? En attendant que nos équipes corrigent le problème, vous pouvez utiliser l'application mobile CRM si vous l'avez. L'accès par navigateur devrait être rétabli une fois que les équipes d'ingénierie auront terminé la migration du cache. Voici vos numéros de ticket : **VPN qui se déconnecte :** INC546d524deb8c. **Plateforme CRM :** INC346d35f2ef15. Les deux ont une priorité maximale. Vous devriez recevoir une première réponse en moins d'une heure et une résolution en moins de quatre heures. Maintenant, passons à vos demandes d'accès. Pour Confluence et Figma, je vais vous envoyer un code de vérification par SMS. Vous êtes prêt?",
+      "edited_text": "D'accord, je comprends. Vous êtes bloqué sur ces deux fronts. Laissez-moi créer deux tickets d'incident pour vous — un pour le VPN et un pour la plateforme CRM. Après ça, je vous aiderai avec vos demandes d'accès à Confluence et la licence Figma. pour vous — un pour le VPN et un pour la plateforme CRM. Après ça, je vous aiderai avec vos demandes d'accès à Confluence et la licence Figma. Bien. J'ai créé vos deux tickets. Maintenant je vais assigner les niveaux de priorité et ensuite vérifier la base de données des erreurs connues pour la plateforme CRM. la base de données des erreurs connues pour la plateforme CRM. Excellentes nouvelles pour la plateforme CRM. J'ai trouvé une erreur connue dans notre base de données. En attendant que nos équipes corrigent le problème, vous pouvez utiliser l'application mobile CRM si vous l'avez. L'accès par navigateur devrait être rétabli une fois que les équipes d'ingénierie auront terminé la migration du cache.\n\nVoici vos numéros de ticket :\n\n**VPN qui se déconnecte :** INC546d524deb8c\n**Plateforme CRM :** INC346d35f2ef16\n\nLes deux ont une priorité maximale. Vous devriez recevoir une première réponse en moins d'une heure et une résolution en moins de quatre heures.\n\nMaintenant, passons à vos demandes d'accès. Pour Confluence et Figma, je vais vous envoyer un code de vérification par SMS. Vous êtes prêt? En attendant que nos équipes corrigent le problème, vous pouvez utiliser l'application mobile CRM si vous l'avez. L'accès par navigateur devrait être rétabli une fois que les équipes d'ingénierie auront terminé la migration du cache. Voici vos numéros de ticket : **VPN qui se déconnecte :** INC546d524deb8c. **Plateforme CRM :** INC346d35f2ef15. Les deux ont une priorité maximale. Vous devriez recevoir une première réponse en moins d'une heure et une résolution en moins de quatre heures. Maintenant, passons à vos demandes d'accès. Pour Confluence et Figma, je vais vous envoyer un code de vérification par SMS. Vous êtes prêt?"
+    },
+    "6": {
+      "corruption_type": "truncation",
+      "expected_failure_mode": "truncation",
+      "detail": {
+        "added_sentence": "Depuis quand ce problème a-t-il commencé ?"
+      },
+      "original_text": "D'accord, elle ne s'ouvre pas du tout. Et concernant le VPN — quand vous essayez de vous connecter, est-ce que la connexion refuse complètement, ou bien vous réussissez à vous connecter mais c'est très lent? que la connexion refuse complètement, ou bien vous réussissez à vous connecter mais c'est très lent?",
+      "edited_text": "D'accord, elle ne s'ouvre pas du tout. Et concernant le VPN — quand vous essayez de vous connecter, est-ce que la connexion refuse complètement, ou bien vous réussissez à vous connecter mais c'est très lent? que la connexion refuse complètement, ou bien vous réussissez à vous connecter mais c'est très lent? Depuis quand ce problème a-t-il commencé ?"
+    },
+    "4": {
+      "corruption_type": "insertion",
+      "expected_failure_mode": "insertion_hallucination",
+      "detail": {
+        "removed_sentence": "Excellent, Vincent!"
+      },
+      "original_text": "D'accord, je vais vérifier vos informations avec les quatre derniers chiffres 2753. Excellent, Vincent! Vous êtes bien identifié. Maintenant, dites-moi quels sont les problèmes informatiques pour lesquels vous avez besoin d'aide? pour lesquels vous avez besoin d'aide?",
+      "edited_text": "D'accord, je vais vérifier vos informations avec les quatre derniers chiffres 2753. Vous êtes bien identifié. Maintenant, dites-moi quels sont les problèmes informatiques pour lesquels vous avez besoin d'aide? pour lesquels vous avez besoin d'aide?"
+    }
+  },
+  "95": {
+    "5": {
+      "corruption_type": "entity",
+      "expected_failure_mode": "entity_error",
+      "detail": {
+        "original_value": "EMP0617488",
+        "new_value": "EMP0617489"
+      },
+      "original_text": "Je m'excuse pour la confusion. Laissez-moi clarifier : vous dites E-N-P (E comme Édouard, N comme Nicolas, P comme Pierre), puis 0-6-1-7-4-8-8.\n\nDonc votre numéro d'employé est EMP061748 avec un 8 supplémentaire à la fin, c'est EMP0617488 ? Ou bien les derniers chiffres sont 0-6-1-7-4-8-8 ? P comme Pierre), puis 0-6-1-7-4-8-8. Donc votre numéro d'employé est EMP061748 avec un 8 supplémentaire à la fin, c'est EMP0617488 ? Ou bien les derniers chiffres sont 0-6-1-7-4-8-8 ?",
+      "edited_text": "Je m'excuse pour la confusion. Laissez-moi clarifier : vous dites E-N-P (E comme Édouard, N comme Nicolas, P comme Pierre), puis 0-6-1-7-4-8-8.\n\nDonc votre numéro d'employé est EMP061748 avec un 8 supplémentaire à la fin, c'est EMP0617489 ? Ou bien les derniers chiffres sont 0-6-1-7-4-8-8 ? P comme Pierre), puis 0-6-1-7-4-8-8. Donc votre numéro d'employé est EMP061748 avec un 8 supplémentaire à la fin, c'est EMP0617488 ? Ou bien les derniers chiffres sont 0-6-1-7-4-8-8 ?"
     }
   },
   "101": {

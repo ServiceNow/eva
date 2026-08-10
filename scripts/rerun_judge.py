@@ -164,18 +164,24 @@ async def main() -> None:
 
     runs = [parse_run_arg(r) for r in args.run]
 
-    # Gather candidate traces, then dedup by (domain, target, original_id), keeping the
-    # newest metrics.json. A resumed run that regenerated a record leaves multiple
-    # timestamped dirs for it; without this we'd emit duplicate dataset records.
+    # Gather candidate traces, then dedup by (domain, original_id), keeping the newest
+    # metrics.json. Identity is (domain, original_id) — NOT target — because target is a
+    # mutable derived label (e.g. recompute_conciseness_target.py rewrites it from the
+    # judge's actual per-turn output), while (domain, original_id) always identifies the
+    # same underlying generated trace regardless of what target it's currently labeled with.
+    # A resumed run that regenerated a record leaves multiple timestamped dirs for it;
+    # without this dedup we'd emit duplicate dataset records.
     best: dict[tuple, tuple] = {}
+    run_target_by_key: dict[tuple, int] = {}
     for run_dir, domain, target in runs:
         for record_id, metrics_path in discover_records(run_dir):
-            key = (domain, target, record_id)
+            key = (domain, record_id)
             prev = best.get(key)
             if prev is None or metrics_path.stat().st_mtime > prev.stat().st_mtime:
                 if prev is not None:
-                    logger.info(f"  dedup {domain}/{record_id} t={target}: keeping newer trace")
+                    logger.info(f"  dedup {domain}/{record_id}: keeping newer trace")
                 best[key] = metrics_path
+                run_target_by_key[key] = target  # generation-intent target for NEW records only
 
     ordered = sorted(best.items(), key=lambda kv: kv[0])
     logger.info(f"{len(ordered)} unique trace(s) after dedup")
@@ -183,6 +189,10 @@ async def main() -> None:
     # Load any existing dataset so already-judged traces are skipped by default.
     # Judges run at non-zero temperature, so blindly re-judging on every invocation
     # would silently overwrite (possibly already-labeled) judge scores.
+    # Completeness is checked via the metric-agnostic top-level `score` field, NOT
+    # details.rating — per-turn metrics (e.g. conciseness) have no details.rating, only
+    # details.per_turn_ratings, so a rating-based check would (and previously did) treat
+    # every already-judged conciseness record as incomplete and silently re-judge it.
     existing_by_key: dict[tuple, dict] = {}
     out_path = Path(args.out)
     if out_path.exists() and not args.force:
@@ -192,10 +202,10 @@ async def main() -> None:
                 if not line:
                     continue
                 rec = json.loads(line)
-                key = (rec.get("domain"), rec.get("target"), rec.get("original_id"))
+                key = (rec.get("domain"), rec.get("original_id"))
                 judge_keys = [f"judge_{i}" for i in range(1, args.n + 1)]
                 complete = all(
-                    rec.get(jk) and rec[jk].get("error") is None and (rec[jk].get("details") or {}).get("rating") is not None
+                    rec.get(jk) and rec[jk].get("error") is None and rec[jk].get("score") is not None
                     for jk in judge_keys
                 )
                 if complete:
@@ -204,14 +214,16 @@ async def main() -> None:
             logger.info(f"Found {len(existing_by_key)} already-judged trace(s) in {out_path} — will skip these.")
 
     dataset: list[dict] = []
-    for next_id, ((domain, target, record_id), metrics_path) in enumerate(ordered, start=1):
-        key = (domain, target, record_id)
+    for next_id, ((domain, record_id), metrics_path) in enumerate(ordered, start=1):
+        key = (domain, record_id)
         reused = existing_by_key.get(key)
         if reused is not None:
-            logger.info(f"  skip (already judged): {domain}/{record_id} t={target}")
+            logger.info(f"  skip (already judged): {domain}/{record_id}")
             record = {**reused, "id": next_id}
             dataset.append(record)
             continue
+
+        target = run_target_by_key[key]
 
         saved = json.loads(metrics_path.read_text())
         ctx_dict = saved.get("context") or {}
@@ -235,11 +247,16 @@ async def main() -> None:
     logger.info(f"Wrote {len(dataset)} records to {out_path}")
 
     # Distribution summary: how many landed at each judge_1 rating vs their target.
+    # Uses the top-level `score` (metric-agnostic) rather than details.rating, which
+    # doesn't exist for per-turn metrics like conciseness (see completeness check above).
     from collections import Counter
 
     by_target = Counter(r["target"] for r in dataset)
     logger.info(f"Target distribution: {dict(sorted(by_target.items()))}")
-    matched = sum(1 for r in dataset if (r["judge_1"].get("details") or {}).get("rating") == r["target"])
+    matched = sum(
+        1 for r in dataset
+        if r["judge_1"].get("score") is not None and round(r["judge_1"]["score"]) == r["target"]
+    )
     logger.info(f"judge_1 rating == target for {matched}/{len(dataset)} records")
 
     if args.make_labels:
