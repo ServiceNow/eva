@@ -136,6 +136,10 @@ Before relying on it for large-scale evaluation, the following should be kept in
 
 ### Running EVA
 
+#### Pre-flight model check
+
+Before a run starts, EVA sends one cheap real request to each configured model (LLM / STT / TTS / audio-LLM) and aborts immediately if any is unreachable or has bad credentials. Pass `--no-preflight` or `EVA_PREFLIGHT=false` to bypass it, and `--preflight-timeout-seconds` or `EVA_PREFLIGHT_TIMEOUT_SECONDS` to tune the per-model timeout (default 20).
+
 #### OpenAI Realtime Caller Smoke Test
 
 A smoke test is easier to perform with the OpenAI Realtime caller, as it does not require an ElevenLabs agent ID.

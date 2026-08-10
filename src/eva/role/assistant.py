@@ -40,20 +40,37 @@ class AssistantRole(Role):
     (constructed by subclasses, not by this contract) to fulfill
     ``handle_tool_call_request``.
 
-    Self-nudge: if the caller goes quiet for too long mid-call, the assistant
-    itself proactively re-engages ("are you still there?") rather than
-    waiting forever -- this is assistant-initiated, unlike a caller nudging an
-    unresponsive agent. Unlike the tool-call/idle-detection seams elsewhere in
-    this contract, self-nudging needs no new ``Role`` method and no new
-    ``Backend`` event type: the nudge is just an ordinary outbound turn that
-    this role's backend produces on its own after
-    ``self_nudge_timeout_seconds`` of inactivity, using the same
-    ``system_prompt``/instructions already established at ``open()`` time
-    (see ``Backend.open``'s ``config`` docstring). Whether the *other* side
-    (a ``UserRole``) needs to do anything special upon receiving it, versus
-    just treating it as an ordinary assistant turn through its existing
-    ``run()`` loop, is left open -- see docs/refactor-step1.md discussion;
-    nothing here requires ``UserRole`` changes to handle it correctly today.
+    Turn-end fallback (self-nudge): the assistant's backstop for a *dropped
+    user turn*. When VAD / turn detection silently fails to fire for a real
+    user utterance, the call would otherwise hang until the provider's
+    inactivity timeout ends it. After the assistant stops speaking, if no user
+    turn is detected within ``turn_end_fallback_seconds``, the assistant
+    proactively re-engages with a nudge (acknowledge-and-answer if partial
+    user speech/audio was captured, otherwise ask the caller to repeat). This
+    is the seam already shipped as the pipeline-side ``TurnEndFallbackTimer``
+    (see ``eva.assistant.pipeline.fallback`` and ``EVA_TURN_END_FALLBACK_TIME``);
+    it works for both cascade and audio-LLM pipelines.
+
+    Two policies the backend owns, carried over from the shipped feature:
+    - Give up after a small number of *consecutive* nudges without a real user
+      turn resetting the count (``MAX_CONSECUTIVE_FALLBACK_NUDGES``), then let
+      the provider's inactivity backstop end the call.
+    - Never nudge once the call is ending (a nudge during teardown produces a
+      phantom assistant turn after the conversation is logically closed).
+
+    Unlike the tool-call/idle-detection seams elsewhere in this contract, the
+    fallback needs no new ``Role`` method and no new ``Backend`` event type:
+    the nudge is just an ordinary outbound turn that this role's backend
+    produces on its own after the timeout, using the same
+    ``system_prompt``/instructions already established at ``open()`` time (see
+    ``Backend.open``'s ``config`` docstring). It is surfaced through the normal
+    ``receive()`` stream and tagged so downstream metrics can identify and zero
+    it (the shipped feature records the transcript marker with
+    ``message_type="turn_fallback"``; see ``BackendEvent.metadata``). Whether
+    the *other* side (a ``UserRole``) needs to do anything special upon
+    receiving it, versus just treating it as an ordinary assistant turn through
+    its existing ``run()`` loop, is left open -- see docs/refactor-step1.md
+    discussion; nothing here requires ``UserRole`` changes to handle it today.
     """
 
     def __init__(
@@ -65,7 +82,7 @@ class AssistantRole(Role):
         agent_config_path: str,
         scenario_db_path: str,
         current_date_time: str,
-        self_nudge_timeout_seconds: float | None = None,
+        turn_end_fallback_seconds: float | None = None,
     ) -> None:
         """Initialize the assistant role.
 
@@ -83,25 +100,28 @@ class AssistantRole(Role):
                 prompt construction and tool execution (mirrors existing
                 ``current_date_time`` plumbing throughout the assistant
                 stack).
-            self_nudge_timeout_seconds: How long the assistant backend should
-                wait without hearing from the caller before proactively
-                speaking again, or ``None`` to disable self-nudging entirely.
-                This is an ``AssistantRole``-level knob, not a
+            turn_end_fallback_seconds: How long after the assistant stops
+                speaking to wait for a user turn before firing a turn-end
+                fallback nudge, or ``None`` to disable the fallback entirely
+                (preserving the old behavior of waiting for the provider's
+                inactivity timeout). Mirrors the shipped
+                ``EVA_TURN_END_FALLBACK_TIME`` knob. This is an
+                ``AssistantRole``-level tuning value, not a
                 ``BackendCapabilities`` flag (capabilities describe what a
-                backend *can* do, statically; this is a per-run tuning
-                value). Wiring it into the constructed ``self.backend``'s own
-                config (via ``backend_config`` / ``Backend.open(config=...)``)
-                is left to the concrete subclass's constructor, same as
-                elsewhere in this contract -- a ``Role`` does not otherwise
-                reach into backend config after construction. A backend with
-                no notion of provider-driven idle timing (e.g. a thin
-                end-to-end backend) may simply ignore this value.
+                backend *can* do, statically). Wiring it into the constructed
+                ``self.backend``'s own config (via ``backend_config`` /
+                ``Backend.open(config=...)``) is left to the concrete
+                subclass's constructor, same as elsewhere in this contract --
+                a ``Role`` does not otherwise reach into backend config after
+                construction. A backend with no notion of idle timing (e.g. a
+                thin end-to-end backend that relies on its own provider
+                backstop) may simply ignore this value.
         """
         super().__init__(backend_factory=backend_factory, backend_name=backend_name, backend_config=backend_config)
         self.agent_config_path = agent_config_path
         self.scenario_db_path = scenario_db_path
         self.current_date_time = current_date_time
-        self.self_nudge_timeout_seconds = self_nudge_timeout_seconds
+        self.turn_end_fallback_seconds = turn_end_fallback_seconds
 
     @abstractmethod
     def get_final_scenario_db(self) -> dict[str, Any]:

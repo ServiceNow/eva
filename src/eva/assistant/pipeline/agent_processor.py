@@ -65,6 +65,7 @@ class BenchmarkAgentProcessor(FrameProcessor):
         output_dir=None,
         pre_tool_speech: str = "off",
         llm_streaming: bool = False,
+        assistant_gender: str | None = None,
         **kwargs,
     ) -> None:
         """Initialize the agent processor.
@@ -78,6 +79,8 @@ class BenchmarkAgentProcessor(FrameProcessor):
             output_dir: Optional output directory for saving performance stats
             pre_tool_speech: Lead-in mode ('off'|'auto')
             llm_streaming: Stream LLM output sentence-by-sentence
+            assistant_gender: Speaking gender for the assistant ('M'|'F'); None adds no
+                gender instruction
             **kwargs: Additional keyword arguments passed to FrameProcessor
 
         The turn-end fallback timer is hosted by ``UserObserver`` (on the pipeline spine), which
@@ -101,6 +104,7 @@ class BenchmarkAgentProcessor(FrameProcessor):
             output_dir=output_dir,
             pre_tool_speech=pre_tool_speech,
             llm_streaming=llm_streaming,
+            assistant_gender=assistant_gender,
         )
 
         # State tracking

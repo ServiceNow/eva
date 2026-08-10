@@ -19,7 +19,6 @@ from elevenlabs.conversational_ai.conversation import (
 from eva.models.config import PerturbationConfig
 from eva.user_simulator.audio_bridge import ELEVENLABS_OUTPUT_RATE, ElevenLabsAudioInterface
 from eva.user_simulator.base import AbstractUserSimulator
-from eva.utils.audio_utils import save_pcm_as_wav
 from eva.utils.logging import current_record_id, get_logger
 
 logger = get_logger(__name__)
@@ -249,15 +248,7 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
                         )
                     logger.info(f"Saved {len(latencies)} response latencies to {latency_file}")
 
-            if self._user_clean_audio_chunks:
-                clean_audio_path = self.output_dir / "audio_user_clean.wav"
-                save_pcm_as_wav(
-                    b"".join(self._user_clean_audio_chunks),
-                    clean_audio_path,
-                    sample_rate=ELEVENLABS_OUTPUT_RATE,
-                    num_channels=1,
-                )
-                logger.info(f"Saved clean user audio to {clean_audio_path}")
+            self._save_clean_user_audio(ELEVENLABS_OUTPUT_RATE)
 
             # Grace period: keep the WebSocket open so the assistant pipeline
             # (Pipecat STT) can finish processing the last user utterance.

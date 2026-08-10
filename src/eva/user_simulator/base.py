@@ -14,6 +14,7 @@ from pipecat.transcriptions.language import Language
 from eva.models.config import LANGUAGE_DISPLAY_NAMES, PerturbationConfig
 from eva.user_simulator.event_logger import UserSimulatorEventLogger
 from eva.user_simulator.perturbation import AudioPerturbator
+from eva.utils.audio_utils import save_audio_track
 from eva.utils.culture import add_user_language_directive
 from eva.utils.logging import current_record_id, get_logger
 from eva.utils.prompt_manager import PromptManager
@@ -82,9 +83,7 @@ class AbstractUserSimulator(ABC):
             provider=provider,
         )
 
-        self._user_audio_chunks: list[bytes] = []
-        self._assistant_audio_chunks: list[bytes] = []
-        self._user_clean_audio_chunks: list[bytes] = []
+        self._user_clean_audio = bytearray()
         self._record_id = current_record_id.get()
 
     @abstractmethod
@@ -163,21 +162,21 @@ class AbstractUserSimulator(ABC):
     def _record_audio(self, source: str, audio_data: bytes) -> None:
         """Record audio for later analysis.
 
+        Only the clean (unperturbed) user track is persisted — it is the one
+        artifact the assistant server never sees and therefore cannot record.
+        Other sources are captured by the assistant server's own recording path.
+
         Args:
-            source: "user", "assistant", or "user_clean"
+            source: recording channel; only "user_clean" is retained
             audio_data: Raw audio bytes
         """
-        if source == "user":
-            self._user_audio_chunks.append(audio_data)
-        elif source == "assistant":
-            self._assistant_audio_chunks.append(audio_data)
-        elif source == "user_clean":
-            self._user_clean_audio_chunks.append(audio_data)
+        if source == "user_clean":
+            self._user_clean_audio.extend(audio_data)
 
-    def get_recorded_audio(self) -> tuple[bytes, bytes]:
-        """Get the recorded audio.
+    def _save_clean_user_audio(self, sample_rate: int) -> None:
+        """Persist the recorded clean user track to ``audio_user_clean.wav``.
 
-        Returns:
-            Tuple of (user_audio, assistant_audio) as raw bytes
+        Shared by all providers; skips writing when no clean audio was recorded.
         """
-        return b"".join(self._user_audio_chunks), b"".join(self._assistant_audio_chunks)
+        if save_audio_track(bytes(self._user_clean_audio), self.output_dir / "audio_user_clean.wav", sample_rate):
+            logger.info(f"Saved clean user audio to {self.output_dir / 'audio_user_clean.wav'}")
