@@ -13,9 +13,9 @@ from pydantic_settings import SettingsError
 from eva.models.config import (
     ElevenLabsSimulatorConfig,
     ModelConfig,
-    OpenAIRealtimeSimulatorConfig,
     PipelineType,
     RunConfig,
+    S2SSimulatorConfig,
 )
 
 MODEL_LIST = [
@@ -1168,7 +1168,7 @@ class TestUserSimulatorConfig:
         assert config.provider == "elevenlabs"
 
     def test_openai_realtime_defaults(self):
-        config = OpenAIRealtimeSimulatorConfig()
+        config = S2SSimulatorConfig()
 
         assert config.model == "gpt-realtime-1.5"
         assert config.female_voice == "marin"
@@ -1186,7 +1186,7 @@ class TestUserSimulatorConfig:
             }
         )
 
-        assert config.user_simulator == OpenAIRealtimeSimulatorConfig(
+        assert config.user_simulator == S2SSimulatorConfig(
             model="gpt-realtime-2",
             female_voice="coral",
             male_voice="verse",

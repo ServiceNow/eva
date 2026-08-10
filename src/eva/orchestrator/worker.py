@@ -8,10 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from eva.assistant.base_server import AbstractAssistantServer
-from eva.backend.default_factory import DefaultBackendFactory
 from eva.backend.factory import BackendFactory
 from eva.models.agents import AgentConfig
-from eva.models.config import OpenAIRealtimeSimulatorConfig, RunConfig
+from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, ErrorDetails, LatencyStats
 from eva.role.assistant import AssistantRole
@@ -27,16 +26,11 @@ logger = get_logger(__name__)
 
 USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS = 20
 
-# TEMPORARY migration gate: route the OpenAI Realtime path through the new
-# Role/Backend classes instead of the legacy server/simulator. Applies only when
-# the selected assistant framework / user simulator is openai_realtime; every
-# other provider is untouched. Remove once all providers are migrated.
-USE_ROLE_BACKEND_OPENAI_REALTIME = True
-
 # The backend factory is stateless (pure dispatch + lazy per-provider imports), so
-# a single shared instance serves every worker. Kept as an instance (not static
-# methods) so the BackendFactory interface stays swappable/injectable.
-_BACKEND_FACTORY: BackendFactory = DefaultBackendFactory()
+# a single shared instance serves every worker. Providers it can build run on the
+# Role/Backend path; for the rest create() returns None and we fall back to the
+# legacy server/simulator (see _start_assistant / _start_user_simulator).
+_BACKEND_FACTORY = BackendFactory()
 
 
 def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
@@ -132,7 +126,8 @@ class ConversationWorker:
         self.port = port
         self.output_id = output_id
 
-        # Will be set during run (legacy server/simulator, or new Role — see the gate).
+        # Set during run: a Role (for factory-supported providers) or the legacy
+        # server/simulator (for the rest).
         self._assistant_server: AbstractAssistantServer | AssistantRole | None = None
         self._user_simulator: AbstractUserSimulator | UserRole | None = None
         self._conversation_stats: dict[str, Any] = {}
@@ -323,15 +318,16 @@ class ConversationWorker:
         """Start the assistant server using the configured framework."""
         resolved_db_path = self._materialize_resolved_scenario_db()
 
-        if USE_ROLE_BACKEND_OPENAI_REALTIME and self.config.framework == "openai_realtime":
-            # New path: a generic AssistantRole over a factory-built backend. The
-            # backend is selected by the configured framework name; its args are
-            # the S2S provider params passed through (the backend reads what it
-            # needs and assembles its own session).
-            s2s = self.config.model.s2s_params or {}
-            backend_args = {**s2s, "parallel_tool_calls": self.config.model.parallel_tool_calls}
+        s2s = self.config.model.s2s_params or {}
+        backend_args = {**s2s, "parallel_tool_calls": self.config.model.parallel_tool_calls}
+        if backend := _BACKEND_FACTORY.create(self.config.framework, backend_args):
+            # A generic AssistantRole over a factory-built backend. The backend is
+            # selected by the configured framework name; its args are the S2S
+            # provider params passed through (the backend reads what it needs and
+            # assembles its own session). Providers not yet on the factory fall
+            # through to the legacy server below.
             self._assistant_server = AssistantRole(
-                backend=_BACKEND_FACTORY.create(self.config.framework, backend_args),
+                backend=backend,
                 current_date_time=self.record.current_date_time,
                 pipeline_config=self.config.model,
                 agent=self.agent,
@@ -403,25 +399,34 @@ class ConversationWorker:
             language,
             self.record.romanized_culture_overrides,
         )
-        if USE_ROLE_BACKEND_OPENAI_REALTIME and isinstance(self.config.user_simulator, OpenAIRealtimeSimulatorConfig):
-            # New path: a generic UserRole over a factory-built backend, selected by the
-            # user simulator's provider name. Assemble a generic caller-config blob (a
-            # stand-in for a future top-level user JSON) and dump it wholesale to the
-            # factory; the backend reads the keys it recognizes and ignores the rest.
-            # No api_key here -- the backend falls back to OPENAI_API_KEY. This keeps
-            # worker construction backend-invariant: later phases add backends/options
-            # in the factory, not here.
-            sim = self.config.user_simulator
-            gender = {1: "F", 2: "M"}.get(resolved_persona.get("user_persona_id"))
-            backend_args = {
-                **sim.model_dump(),
-                **UserRole.CALLER_BACKEND_DEFAULTS,
-                "voice": sim.male_voice if gender == "M" else sim.female_voice,
-                "transcription_language": language,
-                "accent": self.config.perturbation.accent if self.config.perturbation else None,
-            }
+        # Dispatch generically on provider, not on config type: dump the config
+        # wholesale into a caller-config blob and ask the factory to build a backend
+        # for sim.provider. If it can (a migrated provider), drive it with a UserRole;
+        # otherwise create() returns None and we fall through to the legacy simulator.
+        # This keeps the worker config-type-agnostic -- new providers just register a
+        # backend in the factory. No api_key here: the backend resolves it from the
+        # environment per provider.
+        #
+        # The blob is read only by backends, which pick the keys they recognize and
+        # ignore the rest (voice fields are present but unused by, e.g., ElevenLabs,
+        # which isn't factory-backed anyway). Reading voices from the dumped dict --
+        # not attribute access -- is what avoids coupling to a concrete config type.
+        sim = self.config.user_simulator
+        caller_config = sim.model_dump()
+        gender = {1: "F", 2: "M"}.get(resolved_persona.get("user_persona_id"))
+        voice = caller_config.get("male_voice") if gender == "M" else caller_config.get("female_voice")
+        backend_args = {
+            **caller_config,
+            **UserRole.CALLER_BACKEND_DEFAULTS,
+            "transcription_language": language,
+            "accent": self.config.perturbation.accent if self.config.perturbation else None,
+        }
+        if voice is not None:
+            backend_args["voice"] = voice
+
+        if backend := _BACKEND_FACTORY.create(sim.provider, backend_args):
             self._user_simulator = UserRole(
-                backend=_BACKEND_FACTORY.create(sim.provider, backend_args),
+                backend=backend,
                 current_date_time=self.record.current_date_time,
                 persona_config=resolved_persona,
                 goal=resolved_goal,
@@ -467,7 +472,7 @@ class ConversationWorker:
         if self._user_simulator is None:
             raise RuntimeError("User simulator not initialized")
 
-        # UserRole (new path) drives via run(); the legacy simulator via run_conversation().
+        # UserRole drives via run(); the legacy simulator via run_conversation().
         if isinstance(self._user_simulator, UserRole):
             ended_reason = await self._user_simulator.run()
         else:
