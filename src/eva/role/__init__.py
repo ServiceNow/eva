@@ -1,13 +1,10 @@
-"""Provider-agnostic ``Role`` abstraction (design-only, Step 1 of the refactor).
+"""Provider-agnostic ``Role`` abstraction (see ``docs/refactor-step1.md``).
 
-A ``Role`` owns everything that today is duplicated across the assistant and
+A ``Role`` owns everything that was duplicated across the assistant and
 user-simulator stacks per-provider: prompt construction, tool ownership, and
 goal/persona/agent-config data. Each ``Role`` holds exactly one
 ``eva.backend.Backend`` instance, created at runtime via a
 ``eva.backend.BackendFactory``.
-
-Nothing in this package is wired into the existing ``eva.assistant`` /
-``eva.user_simulator`` code yet.
 """
 
 from eva.role.assistant import AssistantRole

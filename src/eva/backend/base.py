@@ -1,9 +1,9 @@
 """Abstract ``Backend`` contract: pure API/session exchange, no role knowledge.
 
-Step 1 of the refactor (see docs/refactor-step1.md). This is the live
-``Backend`` contract -- implemented by ``eva.backend.openai_realtime`` and
-driven by ``AssistantRole`` / ``UserRole``, wired behind the
-``USE_ROLE_BACKEND_OPENAI_REALTIME`` gate in ``eva.orchestrator.worker``.
+This is the live ``Backend`` contract --
+implemented by ``eva.backend.openai_realtime`` and driven by ``AssistantRole``
+/ ``UserRole``. The worker builds one per conversation via ``BackendFactory``
+for every provider the factory supports.
 
 A ``Backend`` wraps exactly one provider integration (OpenAI Realtime, Gemini
 Live, ElevenLabs Agents, a cascade STT->LLM->TTS pipeline, ...) and exposes a
@@ -64,23 +64,11 @@ class BackendEventType(StrEnum):
     These are normalized scalars, not raw provider payloads."""
 
     TOOL_CALL_REQUEST = "tool_call_request"
-    """The backend's model wants to invoke a tool. Only emitted by backends
-    that expose a separable tool-calling seam (native S2S realtime APIs,
-    cascade LLM backends). The owning ``Role`` is responsible for executing
-    the tool and returning the result via ``send(tool_result=...)`` -- the
-    ``Backend`` never executes tools itself (see docs/refactor-step1.md,
-    "tool execution stays role-side")."""
+    """The backend's model wants to invoke a tool. The owning ``Role`` is responsible for executing
+    the tool and returning the result via ``send(tool_result=...)``"""
 
     TURN_END = "turn_end"
-    """The backend's model finished a response turn. ``transcript`` holds the
-    backend's best final text for the turn (the backend does any
-    provider-specific text selection internally). ``metadata`` carries
-    normalized scalars: ``cancelled`` (the turn was cancelled/interrupted before
-    completing), ``interrupted`` (the inbound party barged in over a partial
-    turn -- ``transcript`` is then the partial), ``has_function_calls`` (the
-    turn produced tool calls), and ``usage`` (``{"prompt_tokens", "completion_tokens"}``
-    or ``None``). A consumer decides from these whether/how to record the turn;
-    no raw provider payload is exposed."""
+    """The backend's model finished a response turn. informs whether turn was cancelled, interrupted, etc."""
 
     INPUT_SPEECH_STARTED = "input_speech_started"
     """The backend's VAD detected that the *inbound* party (whoever is talking
@@ -88,20 +76,14 @@ class BackendEventType(StrEnum):
     ``AssistantRole`` backend the inbound party is the caller, for a
     ``UserRole`` backend it is the assistant. Emitted only by backends whose
     provider surfaces input-side voice-activity boundaries (native S2S realtime
-    APIs). Added by the OpenAI Realtime migration (docs/refactor-step1.md): the
-    assistant side needs these for user-turn timestamping, audio-track
-    alignment, and interrupted-response flushing, and the later turn-taking /
-    mediator work is built directly on input speech boundaries -- so they are
-    first-class events rather than ``metadata`` extras. Consumers that don't
-    care may ignore them like any other event type."""
+    APIs)."""
 
     INPUT_SPEECH_STOPPED = "input_speech_stopped"
     """The backend's VAD detected that the inbound party stopped speaking. The
     end-of-speech counterpart to ``INPUT_SPEECH_STARTED`` (see its docstring)."""
 
     OUTPUT_TURN_STARTED = "output_turn_started"
-    """The backend's model began a response turn. The normalized counterpart to
-    ``TURN_END`` at the start of a turn. Needed by a manually-sequencing
+    """The backend's model began a response turn. Needed by a manually-sequencing
     consumer (e.g. a ``UserRole`` gating replies) to know a response is now in
     flight; consumers that don't care ignore it."""
 
@@ -112,9 +94,7 @@ class BackendEventType(StrEnum):
     flush trailing output; ignorable otherwise."""
 
     ERROR = "error"
-    """A provider-level error occurred (connection drop, API error, etc.).
-    ``error`` holds the message; ``metadata["code"]`` carries a normalized
-    error code when the provider supplies one."""
+    """A provider-level error occurred (connection drop, API error, etc.)"""
 
 
 @dataclass

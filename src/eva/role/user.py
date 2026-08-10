@@ -20,8 +20,8 @@ events.
 
 Plug-in point: ``run()`` mirrors ``AbstractUserSimulator.run_conversation()``
 (drives to completion, returns the end-reason) and exposes the same
-``on_conversation_ending`` hook, so the worker swap is 1:1. Wired behind the
-``USE_ROLE_BACKEND_OPENAI_REALTIME`` gate in the worker.
+``on_conversation_ending`` hook, so the worker swap is 1:1. The worker takes
+this path for every provider the ``BackendFactory`` supports.
 """
 
 from __future__ import annotations
@@ -82,6 +82,7 @@ class UserRole(Role):
     CALLER_BACKEND_DEFAULTS: dict[str, Any] = {
         "input_format": "pcmu",
         "manual_turn_taking": True,
+        "interruptible": False,
         "vad_settings": {"threshold": 0.5, "prefix_padding_ms": 300, "silence_duration_ms": 500},
         "parallel_tool_calls": False,
     }
@@ -102,6 +103,9 @@ class UserRole(Role):
         language: str = "en",
     ) -> None:
         super().__init__(backend=backend)
+        # Manual-capable backends (OpenAI Realtime) are driven by our "respond now"
+        # gating; native-VAD backends (e.g. Grok) self-drive and use the alternate path.
+        self._manual_response = backend.capabilities.supports_manual_response
         self.persona_config = persona_config
         self.goal = goal
         self.current_date_time = current_date_time
@@ -374,7 +378,11 @@ class UserRole(Role):
         meta = event.metadata
         match event.event_type:
             case BackendEventType.INPUT_SPEECH_STOPPED:
-                self._schedule_caller_response(session, trigger="vad_speech_stopped")
+                # Manual-capable backends: we drive "respond now" once the assistant
+                # settles. Native-VAD backends self-drive -- don't trigger; we consume the
+                # responses they auto-produce (OUTPUT_TURN_STARTED / AUDIO_OUTPUT / TURN_END).
+                if self._manual_response:
+                    self._schedule_caller_response(session, trigger="vad_speech_stopped")
 
             case BackendEventType.TRANSCRIPT:
                 if meta.get("stream") == "input":
