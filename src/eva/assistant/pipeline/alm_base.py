@@ -102,6 +102,72 @@ def resample_pcm16(pcm_data: bytes, from_rate: int, to_rate: int) -> bytes:
     return struct.pack(f"<{len(out_samples)}h", *out_samples)
 
 
+# Keys litellm.stream_chunk_builder itself understands when merging a streamed
+# tool_call delta (see get_combined_tool_content in
+# litellm/litellm_core_utils/streaming_chunk_builder_utils.py). Anything else a
+# provider puts on the delta gets silently dropped during reassembly. This bites
+# Gemini's raw OpenAI-compatible endpoint (used directly by ALMGeminiClient,
+# bypassing litellm's own Gemini transport): it carries the thought signature
+# required for multi-turn function calling under an `extra_content` key that
+# litellm's merge doesn't recognize. CASCADE's LiteLLMClient doesn't hit this
+# because it talks to Gemini through litellm's native transport, which stamps
+# signatures onto `provider_specific_fields` itself before chunks reach here.
+_KNOWN_STREAMED_TOOL_CALL_KEYS = {"id", "type", "function", "index", "provider_specific_fields"}
+
+
+def _merge_streamed_tool_call_extras(dict_chunks: list[dict]) -> list[Any] | None:
+    """Rebuild tool_calls from raw stream chunks, preserving extra keys.
+
+    E.g. Gemini's `extra_content`, that litellm.stream_chunk_builder's merge drops.
+    Returns None if no such extra keys are present anywhere in the chunks (the
+    common case for other providers), so the caller can leave litellm's own
+    reconstruction untouched.
+    """
+    tool_call_map: dict[int, dict[str, Any]] = {}
+    for chunk in dict_chunks:
+        for choice in chunk.get("choices") or []:
+            delta = choice.get("delta") or {}
+            for tc in delta.get("tool_calls") or []:
+                if not isinstance(tc, dict):
+                    continue
+                index = tc.get("index", 0)
+                entry = tool_call_map.setdefault(
+                    index, {"id": None, "type": None, "name": None, "arguments": [], "extra": {}}
+                )
+                if tc.get("id"):
+                    entry["id"] = tc["id"]
+                if tc.get("type"):
+                    entry["type"] = tc["type"]
+                function = tc.get("function") or {}
+                if function.get("name"):
+                    entry["name"] = function["name"]
+                if function.get("arguments"):
+                    entry["arguments"].append(function["arguments"])
+                for key, value in tc.items():
+                    if key not in _KNOWN_STREAMED_TOOL_CALL_KEYS and value is not None:
+                        entry["extra"][key] = value
+
+    if not any(entry["extra"] for entry in tool_call_map.values()):
+        return None
+
+    from litellm.types.utils import ChatCompletionMessageToolCall, Function
+
+    tool_calls = []
+    for index in sorted(tool_call_map):
+        entry = tool_call_map[index]
+        if not (entry["id"] and entry["name"]):
+            continue
+        tc_obj = ChatCompletionMessageToolCall(
+            id=entry["id"],
+            type=entry["type"] or "function",
+            function=Function(name=entry["name"], arguments="".join(entry["arguments"]) or "{}"),
+        )
+        for key, value in entry["extra"].items():
+            setattr(tc_obj, key, value)
+        tool_calls.append(tc_obj)
+    return tool_calls or None
+
+
 def _assemble_stream_chunks(chunks: list, messages: list[dict[str, Any]]) -> tuple[Any, Any, str]:
     """Reconstruct the final message from raw OpenAI-SDK stream chunks.
 
@@ -117,6 +183,13 @@ def _assemble_stream_chunks(chunks: list, messages: list[dict[str, Any]]) -> tup
     dict_chunks = [c.model_dump() if hasattr(c, "model_dump") else c for c in chunks]
     full = litellm.stream_chunk_builder(dict_chunks, messages=messages)
     message = full.choices[0].message
+    # See _merge_streamed_tool_call_extras: litellm's own merge drops provider-
+    # specific extra keys (e.g. Gemini's extra_content.thought_signature).
+    # Rebuild tool_calls ourselves when present so the field survives into the
+    # message handed back to AgenticSystem._run_tool_loop.
+    merged_tool_calls = _merge_streamed_tool_call_extras(dict_chunks)
+    if merged_tool_calls is not None:
+        message.tool_calls = merged_tool_calls
     usage = getattr(full, "usage", None)
     finish_reason = getattr(full.choices[0], "finish_reason", None) or "unknown"
     return message, usage, finish_reason
