@@ -35,6 +35,11 @@
       "남쪽 차고",
       "남측 주차장",
       "사우스 주차장"
+    ],
+    "it": [
+      "autorimessa sud",
+      "garage sud",
+      "parcheggio sud"
     ]
   }
 }

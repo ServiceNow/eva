@@ -41,6 +41,11 @@
       "북쪽 주차장",
       "북쪽 차고",
       "북측 주차장"
+    ],
+    "it": [
+      "autorimessa nord",
+      "garage nord",
+      "parcheggio nord"
     ]
   }
 }

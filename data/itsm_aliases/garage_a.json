@@ -32,6 +32,11 @@
       "a 주차장",
       "a 차고",
       "주차장 a"
+    ],
+    "it": [
+      "area a",
+      "autorimessa a",
+      "parcheggio a"
     ]
   }
 }

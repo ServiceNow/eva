@@ -52,6 +52,11 @@
       "다운타운 기술센터",
       "다운타운 엔지니어링 센터",
       "엔지니어링 센터"
+    ],
+    "it": [
+      "centro ingegneria in centro",
+      "centro tecnico del centro",
+      "ingegneria in centro"
     ]
   }
 }

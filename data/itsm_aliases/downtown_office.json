@@ -53,6 +53,12 @@
       "다운타운 오피스",
       "인사팀 본사",
       "재무 빌딩"
+    ],
+    "it": [
+      "sede del centro",
+      "sede finanza",
+      "ufficio in centro",
+      "ufficio risorse umane"
     ]
   }
 }

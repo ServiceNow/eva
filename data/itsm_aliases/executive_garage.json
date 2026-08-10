@@ -53,6 +53,12 @@
       "임원 주차동",
       "임원 주차장",
       "임원용 차고"
+    ],
+    "it": [
+      "autorimessa dirigenti",
+      "garage direzione",
+      "parcheggio della direzione",
+      "parcheggio dirigenti"
     ]
   }
 }
