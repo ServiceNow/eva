@@ -39,6 +39,11 @@
       "알파 주차동",
       "알파 주차장",
       "알파 차고"
+    ],
+    "nl": [
+      "alpha-garage",
+      "garage alpha",
+      "hoofdgarage alpha"
     ]
   }
 }

@@ -43,6 +43,11 @@
       "본사 주차동",
       "본사 주차장",
       "본사 차고"
+    ],
+    "nl": [
+      "garage hoofdkantoor",
+      "hoofdkantoorgarage",
+      "parkeergarage hoofdkantoor"
     ]
   }
 }

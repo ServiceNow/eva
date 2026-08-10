@@ -50,6 +50,11 @@
       "다운타운 빌딩",
       "다운타운 사무실",
       "영업 본부"
+    ],
+    "nl": [
+      "centrumlocatie",
+      "kantoor in het centrum",
+      "verkoopkantoor centrum"
     ]
   }
 }
