@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from eva.assistant.audio_bridge import (
+from eva.utils.audio_utils import (
     mulaw_8k_to_pcm16_48k,
     pcm16_48k_to_mulaw_8k,
     pcm16_to_wav_bytes,
@@ -63,7 +63,7 @@ class TestAudioHelpers:
         assert len(back) == 160  # exact inverse sample count
 
     def test_pcm16_to_wav_has_riff_header(self):
-        wav = pcm16_to_wav_bytes(b"\x00\x00" * 100, 48000)
+        wav = pcm16_to_wav_bytes(b"\x00\x00" * 100, 48000, 1, 2)
         assert wav[:4] == b"RIFF"
         assert wav[8:12] == b"WAVE"
 

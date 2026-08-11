@@ -24,6 +24,8 @@ services:
       - ./output:/app/output
       # Mount configs for easy customization (includes prompts)
       - ./configs:/app/configs:ro
+      # Krisp SDK and models
+      - ./vendor/krisp:/app/vendor/krisp:ro
 
     # Resource limits (adjust based on your system)
     deploy:

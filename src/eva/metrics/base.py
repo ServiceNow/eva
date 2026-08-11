@@ -90,6 +90,7 @@ class MetricContext:
         latency_assistant_turns: dict[int, float] | None = None,
         assistant_interrupted_turns: set[int] | None = None,
         user_interrupted_turns: set[int] | None = None,
+        fallback_turn_ids: set[int] | None = None,
         pipeline_type: PipelineType = PipelineType.CASCADE,
         language: str = "en",
     ):
@@ -143,11 +144,33 @@ class MetricContext:
         self.latency_assistant_turns = latency_assistant_turns or {}
         self.assistant_interrupted_turns = assistant_interrupted_turns or set()
         self.user_interrupted_turns = user_interrupted_turns or set()
+        # Turn ids with no real user speech - the assistant was nudged via EVA_TURN_END_FALLBACK_TIME.
+        self.fallback_turn_ids = fallback_turn_ids or set()
         self.pipeline_type = pipeline_type
 
     @property
     def is_audio_native(self) -> bool:
+        """True when the assistant hears user audio directly (S2S or AudioLLMs).
+
+        Use for judge fragments about *audio perception* (e.g. disambiguation
+        expectations): both S2S and AUDIO_LLM take raw audio in, so both own their
+        mishearings. Do NOT use for fragments that reason about how assistant turns
+        were captured in the trace — see ``is_s2s``.
+        """
         return self.pipeline_type in (PipelineType.S2S, PipelineType.AUDIO_LLM)
+
+    @property
+    def is_s2s(self) -> bool:
+        """True only for speech-to-speech models not AudioLLMs.
+
+        AUDIO_LLM emits text before a separate TTS step, so its assistant turns are
+        the model's literal output — character-level slips there are real, not
+        transcription artifacts. Judge fragments that excuse token-level
+        discrepancies as TTS/STT artifacts (misrepresentation / information-loss
+        carve-outs, the assistant-turns disclaimer) must gate on this, not on
+        ``is_audio_native``.
+        """
+        return self.pipeline_type == PipelineType.S2S
 
     def to_dict(self) -> dict[str, Any]:
         """Convert MetricContext to a serializable dictionary."""

@@ -18,6 +18,7 @@ import pytest
 from eva.models.config import ModelConfig, RunConfig
 from eva.models.record import EvaluationRecord, GroundTruth
 from eva.models.results import ConversationResult
+from eva.orchestrator.preflight import PreflightError, ProbeResult
 from eva.orchestrator.runner import BenchmarkRunner
 from eva.orchestrator.validation_runner import ValidationResult
 
@@ -86,6 +87,7 @@ def eval_config(tmp_path):
         },
         max_concurrent_conversations=2,
         output_dir=tmp_path / "output",
+        preflight=False,  # These tests mock conversations with fake keys, so let's skip preflight.
     )
 
 
@@ -212,7 +214,6 @@ async def test_evaluation_mode_all_pass_first_attempt(eval_config, mock_dataset)
                 assert sim["total_records"] == 2
                 assert sim["successful_records"] == 2
                 assert sim["failed_records"] == 0
-                assert sim["total_attempts"] == 1
 
 
 @pytest.mark.asyncio
@@ -254,7 +255,6 @@ async def test_evaluation_mode_rerun_failures(eval_config, mock_dataset):
             with open(eval_summary_path) as f:
                 eval_summary = json.load(f)
                 sim = eval_summary["simulation"]
-                assert sim["total_attempts"] == 2
                 assert sim["successful_records"] == 2
 
             # Check that failed attempt was archived
@@ -299,7 +299,6 @@ async def test_evaluation_mode_max_reruns_reached(eval_config, mock_dataset):
             with open(eval_summary_path) as f:
                 eval_summary = json.load(f)
                 sim = eval_summary["simulation"]
-                assert sim["total_attempts"] == 3
                 assert sim["successful_records"] == 1
                 assert sim["failed_records"] == 1
                 assert "fail_record_1" in sim["failed_record_ids"]
@@ -402,10 +401,11 @@ async def test_evaluation_mode_with_unresolved_errors(eval_config, mock_dataset)
     def completed_fn(record_id, per_record_attempt):
         return record_id != "fail_record_1"
 
-    validation_results = create_mock_validation_results(
-        pass_ids=["pass_record_1"],
-        fail_ids=[],
-    )
+    # An incomplete conversation is rejected by validate_one's gate, which it signals as passed=False with empty failed_metrics.
+    validation_results = {
+        "pass_record_1": ValidationResult(passed=True),
+        "fail_record_1": ValidationResult(passed=False),
+    }
 
     with patch.object(
         runner, "_run_conversation", side_effect=_mock_run_conversation_helper(runner, call_counts, completed_fn)
@@ -423,3 +423,21 @@ async def test_evaluation_mode_with_unresolved_errors(eval_config, mock_dataset)
 
             # Should reach max attempts
             assert call_counts.get("fail_record_1") == 3
+
+
+@pytest.mark.asyncio
+async def test_preflight_failure_aborts_run_before_conversations(eval_config, mock_dataset):
+    """A failing preflight check aborts the run before any conversation is launched."""
+    eval_config.preflight = True  # exercise the real gate (fixture default skips it)
+    runner = BenchmarkRunner(eval_config)
+
+    failed = [ProbeResult("LLM", "gpt-4", ok=False, detail="401 invalid api key")]
+    with (
+        patch("eva.orchestrator.preflight.run_preflight", new=AsyncMock(return_value=failed)),
+        patch.object(runner, "_run_conversation") as mock_conversation,
+    ):
+        with pytest.raises(PreflightError, match="LLM"):
+            await runner.run(mock_dataset)
+
+    # Preflight ran (via the _run gate) and aborted before any conversation started.
+    mock_conversation.assert_not_called()

@@ -685,6 +685,18 @@ class TestExecutionSettings:
         c = _config(env_vars=_BASE_ENV | {"EVA_NUM_TRIALS": "10"})
         assert c.num_trials == 10
 
+    def test_preflight_default(self):
+        c = _config(env_vars=_BASE_ENV)
+        assert c.preflight is True
+
+    def test_preflight_disabled_via_env(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_PREFLIGHT": "false"})
+        assert c.preflight is False
+
+    def test_preflight_timeout_seconds(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_PREFLIGHT_TIMEOUT_SECONDS": "5"})
+        assert c.preflight_timeout_seconds == 5.0
+
     def test_validation_thresholds(self):
         thresholds = {"conversation_valid_end": 0.9, "user_behavioral_fidelity": 0.8}
         c = _config(env_vars=_BASE_ENV | {"EVA_VALIDATION_THRESHOLDS": json.dumps(thresholds)})

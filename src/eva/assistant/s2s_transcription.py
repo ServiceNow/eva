@@ -28,7 +28,7 @@ from typing import Any
 
 import httpx
 
-from eva.assistant.audio_bridge import pcm16_to_wav_bytes
+from eva.utils.audio_utils import pcm16_to_wav_bytes
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -74,7 +74,7 @@ class BatchTranscriber:
         """
         if not pcm:
             return ""
-        wav = pcm16_to_wav_bytes(pcm, sample_rate)
+        wav = pcm16_to_wav_bytes(pcm, sample_rate, num_channels=1, sample_width=2)
         try:
             if self.provider == "smallest":
                 return await self._transcribe_smallest(wav)
