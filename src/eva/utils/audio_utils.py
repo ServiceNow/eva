@@ -43,6 +43,7 @@ def mulaw_8k_to_pcm16_24k(mulaw_bytes: bytes) -> bytes:
         pcm_24k = pcm_24k[:expected_bytes]
     return pcm_24k
 
+
 def mulaw_8k_to_pcm16_48k(mulaw_bytes: bytes) -> bytes:
     """Convert 8kHz mu-law audio to 48kHz 16-bit PCM.
 
@@ -58,6 +59,7 @@ def mulaw_8k_to_pcm16_48k(mulaw_bytes: bytes) -> bytes:
     elif len(pcm_48k) > expected_bytes:
         pcm_48k = pcm_48k[:expected_bytes]
     return pcm_48k
+
 
 def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
     """Convert 24kHz 16-bit PCM to 8kHz mu-law.
@@ -79,6 +81,7 @@ def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
     # Encode to mu-law
     return audioop.lin2ulaw(pcm_8k, 2)
 
+
 def pcm16_48k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
     """Convert 48kHz 16-bit PCM to 8kHz mu-law.
 
@@ -96,6 +99,7 @@ def pcm16_48k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
     pcm_8k = resampled.astype(np.int16).tobytes()
     return audioop.lin2ulaw(pcm_8k, 2)
 
+
 def pcm16_to_wav_bytes(
     pcm_data: bytes,
     sample_rate: int,
@@ -110,6 +114,7 @@ def pcm16_to_wav_bytes(
         wf.setframerate(sample_rate)
         wf.writeframes(pcm_data)
     return buf.getvalue()
+
 
 def sync_buffer_to_position(buffer: bytearray, target_position: int) -> None:
     """Pad *buffer* with silence bytes so it reaches *target_position*.
@@ -146,6 +151,7 @@ def pcm16_mix(track_a: bytes, track_b: bytes) -> bytes:
     mixed = struct.pack(fmt, *(max(-32768, min(32767, a + b)) for a, b in zip(samples_a, samples_b)))
     return mixed
 
+
 def resample_pcm16_soxr(pcm_bytes: bytes, from_rate: int, to_rate: int) -> bytes:
     """Resample 16-bit mono PCM between arbitrary rates using soxr VHQ.
 
@@ -157,6 +163,7 @@ def resample_pcm16_soxr(pcm_bytes: bytes, from_rate: int, to_rate: int) -> bytes
     audio = np.frombuffer(pcm_bytes, dtype=np.int16)
     resampled = soxr.resample(audio, from_rate, to_rate, quality="VHQ")
     return bytes(resampled.astype(np.int16).tobytes())
+
 
 # ── Twilio WebSocket Protocol ────────────────────────────────────────
 

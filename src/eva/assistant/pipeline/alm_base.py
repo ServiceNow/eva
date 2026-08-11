@@ -24,9 +24,9 @@ from typing import Any
 
 import litellm
 from pipecat.transcriptions.language import Language
-from eva.utils.audio_utils import pcm16_to_wav_bytes
 
 from eva.models.config import LANGUAGE_DISPLAY_NAMES
+from eva.utils.audio_utils import pcm16_to_wav_bytes
 
 # Default audio parameters (Ultravox: 16kHz PCM16 mono)
 DEFAULT_SAMPLE_RATE = 16000
@@ -61,9 +61,6 @@ def build_transcription_prompt(language: str | None = None) -> str:
         display_name = LANGUAGE_DISPLAY_NAMES.get(Language(language), language)
         prompt += f"\n- The audio is primarily in {display_name}. Transcribe in that language."
     return prompt
-
-
-
 
 
 def resample_pcm16(pcm_data: bytes, from_rate: int, to_rate: int) -> bytes:

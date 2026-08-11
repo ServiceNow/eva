@@ -4,14 +4,14 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from eva.assistant.s2s_transcription import BatchTranscriber, create_transcriber
+from eva.assistant.smallest_hydra_server import _agent_tools_to_hydra
+from eva.models.agents import AgentConfig, AgentTool, AgentToolParameter
 from eva.utils.audio_utils import (
     mulaw_8k_to_pcm16_48k,
     pcm16_48k_to_mulaw_8k,
     pcm16_to_wav_bytes,
 )
-from eva.assistant.s2s_transcription import BatchTranscriber, create_transcriber
-from eva.assistant.smallest_hydra_server import _agent_tools_to_hydra
-from eva.models.agents import AgentConfig, AgentTool, AgentToolParameter
 
 
 def _agent_with_tools() -> AgentConfig:
