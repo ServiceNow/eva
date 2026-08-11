@@ -181,6 +181,18 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
         used_file_upload = False
         uploaded_file = None  # google.genai File object, set on fallback upload
         try:
+            # The audio judge is Gemini-only. When a Gemini key is available, call Gemini
+            # DIRECTLY via google.genai (upload the audio, use _generate_with_file) and never
+            # the LiteLLM router: the router has no Gemini deployment here and mis-transforms
+            # audio/file_id messages for Gemini. Only fall back to the router if no key is set.
+            if os.getenv("GEMINI_API_KEY"):
+                try:
+                    uploaded_file = await self._upload_audio_file(audio_segment, context)
+                    used_file_upload = True
+                except Exception as upload_err:
+                    self.logger.error(
+                        f"[{context.record_id}] Gemini file upload failed: {upload_err}; falling back to the router."
+                    )
             for attempt in range(1 + self.max_empty_retries):
                 if used_file_upload and uploaded_file is not None:
                     # Call Gemini directly via google.genai SDK — litellm's file_id
