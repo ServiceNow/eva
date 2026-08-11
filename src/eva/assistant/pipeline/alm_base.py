@@ -18,9 +18,7 @@ The methods used by the audio-LLM pipeline:
 """
 
 import base64
-import io
 import struct
-import wave
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -28,6 +26,7 @@ import litellm
 from pipecat.transcriptions.language import Language
 
 from eva.models.config import LANGUAGE_DISPLAY_NAMES
+from eva.utils.audio_utils import pcm16_to_wav_bytes
 
 # Default audio parameters (Ultravox: 16kHz PCM16 mono)
 DEFAULT_SAMPLE_RATE = 16000
@@ -62,22 +61,6 @@ def build_transcription_prompt(language: str | None = None) -> str:
         display_name = LANGUAGE_DISPLAY_NAMES.get(Language(language), language)
         prompt += f"\n- The audio is primarily in {display_name}. Transcribe in that language."
     return prompt
-
-
-def pcm16_to_wav_bytes(
-    pcm_data: bytes,
-    sample_rate: int = DEFAULT_SAMPLE_RATE,
-    num_channels: int = DEFAULT_NUM_CHANNELS,
-    sample_width: int = DEFAULT_SAMPLE_WIDTH,
-) -> bytes:
-    """Wrap raw PCM bytes in a WAV container."""
-    buf = io.BytesIO()
-    with wave.open(buf, "wb") as wf:
-        wf.setnchannels(num_channels)
-        wf.setsampwidth(sample_width)
-        wf.setframerate(sample_rate)
-        wf.writeframes(pcm_data)
-    return buf.getvalue()
 
 
 def resample_pcm16(pcm_data: bytes, from_rate: int, to_rate: int) -> bytes:
