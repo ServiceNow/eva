@@ -310,10 +310,10 @@ class TestCreateTtsService:
         svc = create_tts_service("soniox", params={"api_key": "k", "model": "tts-rt-v1"})
         assert "Soniox" in type(svc).__name__
 
-    def test_soniox_forwards_voice_id(self):
+    def test_soniox_forwards_voice(self):
         svc = create_tts_service(
             "soniox",
-            params={"api_key": "k", "model": "tts-rt-v1", "voice_id": "Sarah"},
+            params={"api_key": "k", "model": "tts-rt-v1", "voice": "Sarah"},
         )
         assert svc._settings.voice == "Sarah"
 
