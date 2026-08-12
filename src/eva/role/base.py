@@ -1,8 +1,8 @@
 """Abstract ``Role`` base contract: prompt/tools/goal ownership over a ``Backend``.
 
-DESIGN ONLY (Step 1 of the refactor, see docs/refactor-step1.md). Every
-method body here is a stub -- this module defines shapes, not behavior, and
-is not imported by any existing code path.
+See docs/refactor-step1.md. Abstract base shared by the concrete
+``AssistantRole`` / ``UserRole``, which the worker constructs for any provider
+the ``BackendFactory`` supports.
 
 This module holds only the shared ``Role`` base. The two concrete roles live
 in sibling modules -- ``AssistantRole`` in ``eva.role.assistant`` and
@@ -12,40 +12,37 @@ is expected to grow its own implementation in later phases; keeping them in
 separate files keeps each phase's diff scoped to one role.
 
 Design choice -- one ``Role`` base with ``AssistantRole``/``UserRole``
-subclasses, rather than two unrelated ABCs:
-    Both roles share an identical *control loop* shape: construct a backend
-    via ``BackendFactory``, ``build_prompt()`` before opening it, drive
-    ``backend.receive()`` and dispatch tool-call requests to
-    ``handle_tool_call_request()``, and record recorded audio/transcript for
-    output. What differs between them is only the *data* they carry (agent
-    config + tool catalog for the assistant; goal + persona + starting
-    utterance for the user) and how they decide the conversation is over.
-    That's a difference in constructor args and a couple of abstract methods,
-    not in control flow -- so one shared base with two thin subclasses avoids
-    duplicating the event loop, while still keeping tool-ownership and
-    prompt-building role-specific via abstract methods. If the two roles'
-    control loops diverge significantly in a later phase, splitting them
-    apart is a mechanical extraction of ``Role`` into two ABCs -- nothing
-    here should make that harder.
+subclasses:
+    The two roles share the *seams* that don't depend on transport direction:
+    ``build_prompt()`` (instructions handed to the backend at open-time),
+    ``handle_tool_call_request()`` (role-side tool execution), and
+    ``record_audio()`` (accumulating audio for output). Those live here.
+
+    Their *lifecycle* does differ today, and deliberately so: the assistant is
+    a WebSocket **server** the user connects to (passive; ``start()`` /
+    ``stop()``), while the user is the **driver** that dials in and runs the
+    conversation to completion (``run()``). That asymmetry is a consequence of
+    there being no mediator yet (docs/refactor-step1.md keeps ``Backend``
+    direction-agnostic precisely so a later mediator can absorb the transport
+    and re-symmetrize the two roles). Rather than force an ill-fitting uniform
+    ``run()`` onto the server-shaped assistant, the lifecycle entry points live
+    on the subclasses (``AssistantRole`` / ``UserRole``); the scaffold
+    anticipated this ("if the two roles' control loops diverge, splitting is a
+    mechanical extraction"). When the mediator lands, both sides can converge
+    on a single driven loop.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any
 
 from eva.backend.base import Backend, ToolCallRequest, ToolCallResult
-from eva.backend.factory import BackendFactory
 
 
 class Role(ABC):
-    """Owns prompt, tools/goal, and a runtime-created ``Backend``.
+    """Owns prompt, tools/goal, and drives a worker-injected ``Backend``.
 
-    A ``Role`` is the thing that used to be split across
-    ``AbstractAssistantServer`` (assistant side) and ``AbstractUserSimulator``
-    (user side): everything that is *not* pure provider API exchange lives
-    here instead of in ``Backend``. In particular:
+    A ``Role`` controls everything that is *not* pure provider API exchange but is specific to a side of the conversation.
 
     - Tool execution stays role-side (per docs/refactor-step1.md): a ``Role``
       is responsible for turning a ``ToolCallRequest`` surfaced by its
@@ -65,20 +62,22 @@ class Role(ABC):
       not implement the shared helper itself; that helper is later work.
     """
 
-    def __init__(self, *, backend_factory: BackendFactory, backend_name: str, backend_config: dict[str, Any]) -> None:
-        """Construct the role's backend (but do not open its session yet).
+    def __init__(self, *, backend: Backend) -> None:
+        """Take the (not-yet-opened) backend the role will drive.
+
+        The role does **not** construct its own backend and knows nothing about
+        the ``BackendFactory``. The worker owns the factory, calls
+        ``factory.create(name, config)``, and injects the resulting ``Backend``
+        here. This keeps backend selection/configuration a worker concern and
+        lets the same backend be wired to either role.
 
         Args:
-            backend_factory: Factory used to construct ``self.backend``.
-            backend_name: Provider name passed through to
-                ``BackendFactory.create``.
-            backend_config: Provider-specific config passed through to
-                ``BackendFactory.create`` (not to be confused with the
-                ``config`` argument of ``Backend.open``, which is also
-                provider-specific but may be augmented by the role at
-                open-time, e.g. with a resolved sample rate).
+            backend: A constructed, not-yet-opened ``Backend`` (see
+                ``BackendFactory.create``). The role opens a session on it in
+                ``run()`` and holds the returned ``BackendSession`` handle;
+                per-exchange state lives on that handle, not on the backend.
         """
-        self.backend: Backend = backend_factory.create(backend_name, backend_config)
+        self.backend = backend
 
     @abstractmethod
     def build_prompt(self) -> str:
@@ -105,30 +104,6 @@ class Role(ABC):
         ...
 
     @abstractmethod
-    async def run(self) -> str:
-        """Drive the conversation for this role until it reaches a terminal state.
-
-        Expected shape (left to subclasses to implement, not prescribed in
-        detail here since the exact loop depends on the backend's
-        capabilities -- see ``BackendCapabilities``):
-        1. ``await self.backend.open(system_prompt=self.build_prompt(), ...)``
-        2. Iterate ``self.backend.receive()``, dispatching
-           ``TOOL_CALL_REQUEST`` events to ``handle_tool_call_request`` and
-           feeding the ``ToolCallResult`` back via
-           ``self.backend.send(tool_result=...)``.
-        3. Record audio/transcript events as they arrive (see
-           ``record_audio``).
-        4. On a terminal event (hangup, timeout, transfer, error), call
-           ``await self.backend.close()`` and return an end-reason string.
-
-        Returns:
-            A short end-reason string (e.g. ``"goodbye"``, ``"transfer"``,
-            ``"timeout"``, ``"error"``) -- mirrors the return contract of
-            today's ``AbstractUserSimulator.run_conversation()``.
-        """
-        ...
-
-    @abstractmethod
     def record_audio(self, source: str, audio_data: bytes) -> None:
         """Accumulate a chunk of audio for later persistence.
 
@@ -140,20 +115,5 @@ class Role(ABC):
                 set of valid labels is left to subclasses/shared helper, not
                 fixed by this contract.
             audio_data: Raw PCM16 bytes at this role's recording sample rate.
-        """
-        ...
-
-    @abstractmethod
-    async def save_outputs(self, output_dir: Path) -> None:
-        """Persist this role's output artifacts to ``output_dir``.
-
-        For ``AssistantRole`` this covers ``audit_log.json``,
-        ``transcript.jsonl``, scenario DB snapshots (mirrors
-        ``AbstractAssistantServer.save_outputs``). For ``UserRole`` this
-        covers ``user_simulator_events.jsonl`` (mirrors the event logger in
-        ``AbstractUserSimulator``). Audio WAV files are expected to be
-        written by the shared audio-recording helper referenced in
-        ``record_audio``, not necessarily by this method -- exact division of
-        labor is left to the later implementation phase.
         """
         ...

@@ -1,13 +1,19 @@
-"""Provider-agnostic ``Backend`` abstraction (design-only, Step 1 of the refactor).
+"""Provider-agnostic ``Backend`` abstraction (see ``docs/refactor-step1.md``).
 
-This package defines the contracts described in ``docs/refactor-step1.md``:
-pure API/session objects (``Backend``) that know nothing about role
-(assistant vs. user), plus a factory to construct them. Nothing in this
-package is wired into the existing ``eva.assistant`` / ``eva.user_simulator``
-code yet -- these are new, additive, currently-unused types.
+This package defines pure API/session objects (``Backend``) that know nothing
+about role (assistant vs. user), plus a ``BackendFactory`` to construct them.
+The worker builds a backend per conversation and drives it through an
+``AssistantRole`` / ``UserRole`` for every provider the factory supports.
 """
 
-from eva.backend.base import Backend, BackendEvent, BackendEventType, ToolCallRequest, ToolCallResult
+from eva.backend.base import (
+    Backend,
+    BackendEvent,
+    BackendEventType,
+    BackendSession,
+    ToolCallRequest,
+    ToolCallResult,
+)
 from eva.backend.capabilities import BackendCapabilities
 from eva.backend.factory import BackendFactory
 
@@ -17,6 +23,7 @@ __all__ = [
     "BackendEvent",
     "BackendEventType",
     "BackendFactory",
+    "BackendSession",
     "ToolCallRequest",
     "ToolCallResult",
 ]
