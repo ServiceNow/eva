@@ -20,6 +20,27 @@
       "parking a",
       "parking a du siège",
       "stationnement a du siège social"
+    ],
+    "es": [
+      "aparcamiento a de la sede",
+      "garaje a",
+      "garaje a de la sede",
+      "parking a de la sede"
+    ],
+    "de": [
+      "parkhaus a am hauptsitz",
+      "parkhaus a der zentrale"
+    ],
+    "hi": [
+      "एच क्यू गैराज ए",
+      "गैराज ए",
+      "मुख्यालय गैराज ए"
+    ],
+    "ko": [
+      "a 주차장",
+      "본부 주차장 a",
+      "본사 a 주차동",
+      "본사 주차장 a"
     ]
   }
 }

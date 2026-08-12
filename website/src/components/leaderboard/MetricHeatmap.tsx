@@ -102,6 +102,10 @@ function getComponentColorMap(systems: SystemStats[], isDark: boolean): Map<stri
 }
 
 function SystemName({ system, componentColors }: { system: SystemStats; componentColors: Map<string, string> }) {
+  const elevenAgentsSuffix = system.name.includes('(ElevenAgents)')
+    ? <span className="text-text-muted whitespace-nowrap">&nbsp;(ElevenAgents)</span>
+    : null;
+
   if (system.type === 's2s' || system.type === '2-part') {
     if (system.tts !== '-') {
       return (
@@ -109,11 +113,12 @@ function SystemName({ system, componentColors }: { system: SystemStats; componen
           <span className="whitespace-nowrap" style={{ color: componentColors.get(system.llm) }}>{system.llm}</span>
           <span className="text-text-muted whitespace-nowrap">&nbsp;+&nbsp;</span>
           <span className="whitespace-nowrap" style={{ color: componentColors.get(system.tts) }}>{system.tts}</span>
+          {elevenAgentsSuffix}
         </span>
       );
     }
     const color = componentColors.get(system.llm) || '#F1F5F9';
-    return <span style={{ color }}>{system.llm}</span>;
+    return <span style={{ color }}>{system.llm}{elevenAgentsSuffix}</span>;
   }
   return (
     <span className="text-sm leading-relaxed inline-flex flex-wrap items-baseline">
@@ -122,6 +127,7 @@ function SystemName({ system, componentColors }: { system: SystemStats; componen
       <span className="whitespace-nowrap" style={{ color: componentColors.get(system.llm) }}>{system.llm}</span>
       <span className="text-text-muted whitespace-nowrap">&nbsp;+&nbsp;</span>
       <span className="whitespace-nowrap" style={{ color: componentColors.get(system.tts) }}>{system.tts}</span>
+      {elevenAgentsSuffix}
     </span>
   );
 }

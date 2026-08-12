@@ -82,20 +82,39 @@ S2S_INFORMATION_LOSS_NOTE = (
 
 
 def get_user_turns_disclaimer(is_audio_native: bool) -> str:
-    """Return the user-turns disclaimer matching the pipeline type."""
+    """Return the user-turns disclaimer matching how the assistant received user speech.
+
+    Keys on audio-native: both S2S and AUDIO_LLM take raw user audio, so user turns
+    in the trace are *intended* text and the assistant owns any mishearing. Cascade
+    receives an STT transcript instead.
+    """
     return S2S_USER_TURNS_DISCLAIMER if is_audio_native else CASCADE_USER_TURNS_DISCLAIMER
 
 
-def get_assistant_turns_disclaimer(is_audio_native: bool) -> str:
-    """Return the assistant-turns disclaimer matching the pipeline type."""
-    return S2S_ASSISTANT_TURNS_DISCLAIMER if is_audio_native else CASCADE_ASSISTANT_TURNS_DISCLAIMER
+def get_assistant_turns_disclaimer(is_s2s: bool) -> str:
+    """Return the assistant-turns disclaimer matching how assistant turns were captured.
+
+    Only S2S traces show STT transcriptions of the agent's audio, so only S2S gets the
+    "don't penalize TTS/STT artifacts" disclaimer. Cascade and AUDIO_LLM both surface
+    the LLM's *intended* text in the trace, so their turns are the model's literal output.
+    """
+    return S2S_ASSISTANT_TURNS_DISCLAIMER if is_s2s else CASCADE_ASSISTANT_TURNS_DISCLAIMER
 
 
-def get_misrepresentation_pipeline_note(is_audio_native: bool) -> str:
-    """Return the pipeline-specific scoping note for the misrepresenting_tool_result dimension."""
-    return S2S_MISREPRESENTATION_NOTE if is_audio_native else ""
+def get_misrepresentation_pipeline_note(is_s2s: bool) -> str:
+    """Return the scoping note for the misrepresenting_tool_result dimension.
+
+    S2S only: the carve-out excuses token-level slips as TTS/STT artifacts, which is
+    valid only when the assistant turn is an STT transcription of audio. AUDIO_LLM
+    emits text directly, so its character-level slips are real model output and must
+    not be excused.
+    """
+    return S2S_MISREPRESENTATION_NOTE if is_s2s else ""
 
 
-def get_information_loss_pipeline_note(is_audio_native: bool) -> str:
-    """Return the pipeline-specific scoping note for the information_loss dimension."""
-    return S2S_INFORMATION_LOSS_NOTE if is_audio_native else ""
+def get_information_loss_pipeline_note(is_s2s: bool) -> str:
+    """Return the scoping note for the information_loss dimension.
+
+    S2S only, for the same reason as ``get_misrepresentation_pipeline_note``.
+    """
+    return S2S_INFORMATION_LOSS_NOTE if is_s2s else ""

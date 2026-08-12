@@ -1,6 +1,7 @@
 """Unit tests for RunConfig model."""
 
 import json
+import logging
 import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -9,7 +10,13 @@ import pytest
 from pydantic import ValidationError
 from pydantic_settings import SettingsError
 
-from eva.models.config import PipelineType, RunConfig
+from eva.models.config import (
+    ElevenLabsSimulatorConfig,
+    ModelConfig,
+    OpenAIRealtimeSimulatorConfig,
+    PipelineType,
+    RunConfig,
+)
 
 MODEL_LIST = [
     {
@@ -678,6 +685,18 @@ class TestExecutionSettings:
         c = _config(env_vars=_BASE_ENV | {"EVA_NUM_TRIALS": "10"})
         assert c.num_trials == 10
 
+    def test_preflight_default(self):
+        c = _config(env_vars=_BASE_ENV)
+        assert c.preflight is True
+
+    def test_preflight_disabled_via_env(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_PREFLIGHT": "false"})
+        assert c.preflight is False
+
+    def test_preflight_timeout_seconds(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_PREFLIGHT_TIMEOUT_SECONDS": "5"})
+        assert c.preflight_timeout_seconds == 5.0
+
     def test_validation_thresholds(self):
         thresholds = {"conversation_valid_end": 0.9, "user_behavioral_fidelity": 0.8}
         c = _config(env_vars=_BASE_ENV | {"EVA_VALIDATION_THRESHOLDS": json.dumps(thresholds)})
@@ -779,6 +798,84 @@ class TestTurnStrategyConfig:
         assert config.model.turn_stop_strategy == "turn_analyzer"
         assert config.model.vad == "silero"
         assert config.model.vad_params == {}
+
+
+class TestSelfEndpointingSTTAutowire:
+    def test_cartesia_forces_external_and_no_vad(self):
+        m = ModelConfig(stt="cartesia", llm="gpt-5.2")
+        assert m.turn_start_strategy == "external"
+        assert m.turn_stop_strategy == "external"
+        assert m.vad == "none"
+
+    def test_conflicting_user_values_are_overridden(self):
+        m = ModelConfig(
+            stt="cartesia",
+            llm="gpt-5.2",
+            vad="silero",
+            turn_start_strategy="vad",
+            turn_stop_strategy="turn_analyzer",
+        )
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("external", "external", "none")
+
+    def test_non_self_endpointing_stt_untouched(self):
+        m = ModelConfig(stt="cartesia-multilingual", llm="gpt-5.2")
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("vad", "turn_analyzer", "silero")
+
+    def test_persisted_config_roundtrip_is_stable(self):
+        m = ModelConfig(
+            stt="cartesia",
+            llm="gpt-5.2",
+            turn_start_strategy="external",
+            turn_stop_strategy="external",
+            vad="none",
+        )
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("external", "external", "none")
+
+    def test_runconfig_roundtrip(self):
+        c = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_MODEL__STT": "cartesia",
+                "EVA_MODEL__STT_PARAMS": json.dumps({"api_key": "k", "model": "ink-2"}),
+            }
+        )
+        assert c.model.stt == "cartesia"
+        assert (c.model.turn_start_strategy, c.model.turn_stop_strategy, c.model.vad) == (
+            "external",
+            "external",
+            "none",
+        )
+
+
+class TestLatencyOptimizationFlags:
+    def test_defaults_off(self):
+        c = _config(env_vars=_BASE_ENV)
+        assert c.model.pre_tool_speech == "off"
+        assert c.model.llm_streaming is False
+
+    def test_set_via_env(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": "auto", "EVA_MODEL__LLM_STREAMING": "true"})
+        assert c.model.pre_tool_speech == "auto"
+        assert c.model.llm_streaming is True
+
+    @pytest.mark.parametrize("value", ["bogus", "force"])
+    def test_invalid_pre_tool_speech_rejected(self, value):
+        with pytest.raises(ValueError):
+            _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": value})
+
+
+class TestParallelToolCallsConfig:
+    def test_default_is_none(self):
+        m = ModelConfig(llm="gpt-5.2")
+        assert m.parallel_tool_calls is None
+
+    def test_false_via_env(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PARALLEL_TOOL_CALLS": "false"})
+        assert c.model.parallel_tool_calls is False
+
+    def test_true_via_env(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PARALLEL_TOOL_CALLS": "true"})
+        assert c.model.parallel_tool_calls is True
 
 
 class TestApiKeyRedactionInPipelineModels:
@@ -1062,3 +1159,69 @@ class TestSpeechToSpeechConfig:
         )
         assert config.model.pipeline_type == PipelineType.S2S
         assert config.model.s2s_params == {"voice": "alloy", "api_key": "key_1", "model": "gpt-realtime-mini"}
+
+
+class TestUserSimulatorConfig:
+    def test_defaults_preserve_elevenlabs(self):
+        config = ElevenLabsSimulatorConfig()
+
+        assert config.provider == "elevenlabs"
+
+    def test_openai_realtime_defaults(self):
+        config = OpenAIRealtimeSimulatorConfig()
+
+        assert config.model == "gpt-realtime-1.5"
+        assert config.female_voice == "marin"
+        assert config.male_voice == "cedar"
+
+    def test_nested_environment_configuration(self):
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_USER_SIMULATOR__PROVIDER": "openai_realtime",
+                "EVA_USER_SIMULATOR__MODEL": "gpt-realtime-2",
+                "EVA_USER_SIMULATOR__FEMALE_VOICE": "coral",
+                "EVA_USER_SIMULATOR__MALE_VOICE": "verse",
+                "OPENAI_API_KEY": "test-key",
+            }
+        )
+
+        assert config.user_simulator == OpenAIRealtimeSimulatorConfig(
+            model="gpt-realtime-2",
+            female_voice="coral",
+            male_voice="verse",
+        )
+
+    def test_elevenlabs_warns_on_unrecognised_fields(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            config = ElevenLabsSimulatorConfig(
+                **{"provider": "elevenlabs", "model": "gpt-realtime-1.5", "female_voice": "marin"}
+            )
+
+        assert "model" in caplog.text
+        assert "female_voice" in caplog.text
+        assert not hasattr(config, "model")
+        assert not hasattr(config, "female_voice")
+        assert config.provider == "elevenlabs"
+
+    def test_elevenlabs_warns_on_unrecognised_env_vars(self, caplog):
+        with caplog.at_level(logging.WARNING):
+            run_config = _config(
+                env_vars=_BASE_ENV
+                | {
+                    "EVA_USER_SIMULATOR__PROVIDER": "elevenlabs",
+                    "EVA_USER_SIMULATOR__MODEL": "gpt-realtime-1.5",
+                }
+            )
+
+        assert "model" in caplog.text
+        assert not hasattr(run_config.user_simulator, "model")
+        assert isinstance(run_config.user_simulator, ElevenLabsSimulatorConfig)
+
+    def test_openai_realtime_rejects_accent_perturbation_during_config_load(self):
+        with pytest.raises(ValidationError, match="Accent perturbations require the ElevenLabs user simulator"):
+            _config(
+                env_vars=_BASE_ENV,
+                user_simulator={"provider": "openai_realtime"},
+                perturbation={"accent": "french"},
+            )

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from eva.assistant.agentic.audit_log import AuditLog
-from eva.assistant.agentic.system import GENERIC_ERROR, AgenticSystem
+from eva.assistant.agentic.system import GENERIC_ERROR, AgenticSystem, _pair_orphaned_tool_calls
 from eva.models.agents import AgentConfig, AgentTool, AgentToolParameter
 
 
@@ -487,3 +487,75 @@ class TestProcessQueryLLMError:
         assert _conv_to_dicts(audit_log.get_conversation_messages()) == [
             {"role": "user", "content": "Hello"},
         ]
+
+
+class TestPairOrphanedToolCalls:
+    @staticmethod
+    def _asst(tool_call_ids, content=""):
+        return {
+            "role": "assistant",
+            "content": content,
+            "tool_calls": [
+                {"id": cid, "type": "function", "function": {"name": "get_x", "arguments": "{}"}}
+                for cid in tool_call_ids
+            ],
+        }
+
+    @staticmethod
+    def _tool(cid, content="{}"):
+        return {"role": "tool", "tool_call_id": cid, "content": content}
+
+    def test_transfer_dangling_call_gets_synthetic_result(self):
+        messages = [
+            {"role": "user", "content": "human please"},
+            self._asst(["call_t"]),
+            {"role": "assistant", "content": "Transferring you to a live agent. Please wait."},
+            {"role": "user", "content": "no, hanging up"},
+        ]
+        out = _pair_orphaned_tool_calls(messages)
+
+        assert out[1] == messages[1]
+        assert out[2]["role"] == "tool" and out[2]["tool_call_id"] == "call_t"
+        assert json.loads(out[2]["content"])["status"] == "no_result"
+        assert out[3]["content"] == "Transferring you to a live agent. Please wait."
+        assert out[4] == messages[3]
+
+        called = [tc["id"] for m in out if m.get("role") == "assistant" for tc in (m.get("tool_calls") or [])]
+        answered = [m["tool_call_id"] for m in out if m.get("role") == "tool"]
+        assert set(called) <= set(answered)
+
+    def test_properly_answered_call_is_unchanged(self):
+        messages = [
+            {"role": "user", "content": "hi"},
+            self._asst(["call_1"]),
+            self._tool("call_1", '{"ok": true}'),
+            {"role": "assistant", "content": "Done."},
+        ]
+        assert _pair_orphaned_tool_calls(messages) == messages
+
+    def test_partial_parallel_calls_only_unanswered_get_synthetic(self):
+        messages = [
+            {"role": "user", "content": "hi"},
+            self._asst(["call_1", "call_2"]),
+            self._tool("call_1"),
+        ]
+        out = _pair_orphaned_tool_calls(messages)
+        answered = [m["tool_call_id"] for m in out if m.get("role") == "tool"]
+        assert answered == ["call_1", "call_2"]
+
+    def test_malformed_tool_result_id_does_not_answer_call(self):
+        messages = [
+            {"role": "user", "content": "hi"},
+            self._asst(["call_1"]),
+            {"role": "tool", "tool_call_id": None, "content": "{}"},
+        ]
+        out = _pair_orphaned_tool_calls(messages)
+        answered = [m.get("tool_call_id") for m in out if m.get("role") == "tool"]
+        assert answered == [None, "call_1"]
+
+    def test_no_tool_calls_is_identity(self):
+        messages = [
+            {"role": "user", "content": "hi"},
+            {"role": "assistant", "content": "hello"},
+        ]
+        assert _pair_orphaned_tool_calls(messages) == messages

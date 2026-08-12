@@ -252,6 +252,12 @@ async def _translate_utterances(utterances: list[str], language_name: str, llm: 
             f"- Preserve the literal tokens {FIRST_NAME_PLACEHOLDER} and {LAST_NAME_PLACEHOLDER} verbatim.\n"
             "- Keep numbers, dates, and currency in their original form unless localization is conventional.\n"
             "- Use natural, conversational phrasing as a caller would speak.\n"
+            "- Translate ALL words into the target language, including medical and HR terminology "
+            "(e.g. 'malpractice insurance', 'medical license', 'on-call', 'timesheet', 'payroll', "
+            "'leave', 'clinical privileges', 'scheduling', 'follow-up appointment', 'reverification').\n"
+            "- Preserve ONLY: (1) regulatory/legal acronyms (FMLA, DEA, I-9, H-1B, BLS, etc.), "
+            "(2) flight/airport codes and flight numbers, (3) named software products "
+            "(e.g. Datadog, Confluence, Salesforce), (4) proper facility or company names.\n"
             '- Return JSON: {"translations": ["...", "..."]} in the same order.\n\n'
             f"Utterances:\n{numbered}"
         )
@@ -311,12 +317,12 @@ def _load_names_file(path: Path) -> dict[str, list[str]]:
     return data
 
 
-async def _translate_initial_message(language: str, language_name: str, llm: LLMClient) -> str:
+async def _translate_initial_message(language: str, language_name: str, llm: LLMClient, overwrite: bool = False) -> str:
     """Translate the English initial message into ``language``."""
     existing: dict[str, str] = {}
     if INITIAL_MESSAGES_PATH.exists():
         existing = yaml.safe_load(INITIAL_MESSAGES_PATH.read_text(encoding="utf-8")) or {}
-    if language in existing:
+    if language in existing and not overwrite:
         return existing[language]
     en_message = existing.get("en", "Hello! How can I help you today?")
     prompt = (
@@ -403,6 +409,7 @@ async def add_scenario_aliases(
     language_name: str,
     llm: LLMClient,
     dry_run: bool,
+    overwrite: bool = False,
 ) -> None:
     """Translate name_aliases into the per-object alias files at ``data/<domain>_aliases/``.
 
@@ -429,7 +436,7 @@ async def add_scenario_aliases(
         data = json.loads(path.read_text(encoding="utf-8"))
         if not data.get("translatable"):
             continue
-        if data.get("translations", {}).get(language):
+        if data.get("translations", {}).get(language) and not overwrite:
             continue
         name_to_base[data["name"]] = data.get("base", [])
         file_by_name[data["name"]] = path
@@ -465,6 +472,9 @@ async def add_culture(
     dry_run: bool,
     record_id: str | None = None,
     phone_spec: dict | None = None,
+    overwrite: bool = False,
+    overwrite_utterances: bool = False,
+    pin_file: Path | None = None,
 ) -> None:
     dataset_path = DATA_DIR / f"{domain}_dataset.json"
     if not dataset_path.exists():
@@ -482,9 +492,20 @@ async def add_culture(
     else:
         target_ids = {r["id"] for r in records}
 
+    # Load reviewer-approved translation pins (en_utterance → pinned_translation).
+    # Pins are always applied in place of LLM output and are never overwritten by regeneration.
+    pins: dict[str, str] = {}
+    if pin_file is not None:
+        all_pins = json.loads(pin_file.read_text(encoding="utf-8"))
+        pins = all_pins.get(language, {})
+        if pins:
+            logger.info(f"Loaded {len(pins)} translation pin(s) for {language!r} from {pin_file}")
+
     # 1. Assign names per record (deterministic).
     to_translate_idx: list[int] = []
     to_translate_text: list[str] = []
+    to_pin_idx: list[int] = []
+    to_pin_values: list[str] = []
     for idx, rec in enumerate(records):
         if rec.get("id") not in target_ids:
             continue
@@ -499,7 +520,7 @@ async def add_culture(
             raise ValueError(f"Record {rec.get('id')!r} missing user_config.gender")
         bucket = _gender_to_bucket(gender)
 
-        if language not in rec["culture_overrides"]:
+        if overwrite or language not in rec["culture_overrides"]:
             if names is None or romanized_names is None:
                 raise ValueError(
                     f"Record {rec.get('id')!r} missing culture_overrides[{language!r}] but no name arrays available — "
@@ -551,11 +572,24 @@ async def add_culture(
             raise ValueError(
                 f"Record {rec.get('id')!r} missing starting_utterances.en — run migrate_to_culture_schema.py first"
             )
-        if language not in rec["starting_utterances"]:
-            to_translate_idx.append(idx)
-            to_translate_text.append(rec["starting_utterances"]["en"])
+        en_text = rec["starting_utterances"]["en"]
+        if language not in rec["starting_utterances"] or overwrite or overwrite_utterances:
+            if en_text in pins:
+                to_pin_idx.append(idx)
+                to_pin_values.append(pins[en_text])
+            else:
+                to_translate_idx.append(idx)
+                to_translate_text.append(en_text)
+        elif en_text in pins:
+            # Re-apply pin even if the utterance already exists (guards against manual edits).
+            to_pin_idx.append(idx)
+            to_pin_values.append(pins[en_text])
 
-    # 2. Translate utterances in batch.
+    # 2. Apply pins and translate remaining utterances in batch.
+    for idx, val in zip(to_pin_idx, to_pin_values):
+        records[idx]["starting_utterances"][language] = val
+    if to_pin_idx:
+        logger.info(f"Applied {len(to_pin_idx)} translation pin(s) for {language!r}")
     if to_translate_text:
         logger.info(f"Translating {len(to_translate_text)} utterances to {language_name}")
         translated = await _translate_utterances(to_translate_text, language_name, llm)
@@ -612,7 +646,7 @@ async def amain(args: argparse.Namespace) -> int:
     domains = args.domains or [p.stem.removesuffix("_dataset") for p in sorted(DATA_DIR.glob("*_dataset.json"))]
 
     if args.auto_generate_names:
-        if _all_records_have_language(args.language, domains, args.record_id):
+        if not args.overwrite_all and _all_records_have_language(args.language, domains, args.record_id):
             logger.info(f"All records already have {args.language} names — skipping name generation")
             names = None
             romanized_names = None
@@ -640,7 +674,7 @@ async def amain(args: argparse.Namespace) -> int:
             logger.info(f"Wrote romanized names to {rom_out}")
 
     logger.info(f"Translating initial message to {args.language_name}")
-    initial_message = await _translate_initial_message(args.language, args.language_name, llm)
+    initial_message = await _translate_initial_message(args.language, args.language_name, llm, args.overwrite_all)
     logger.info(f"Initial message for {args.language}: {initial_message}")
     if not args.dry_run:
         _update_initial_messages(args.language, initial_message)
@@ -649,7 +683,7 @@ async def amain(args: argparse.Namespace) -> int:
     for domain in domains:
         logger.info(f"=== Domain: {domain} ===")
         if domain == "airline":
-            if _all_airline_records_have_phone(args.language, args.record_id):
+            if not args.overwrite_all and _all_airline_records_have_phone(args.language, args.record_id):
                 logger.info(
                     f"All airline records already have {args.language} phone — skipping phone format generation"
                 )
@@ -670,12 +704,19 @@ async def amain(args: argparse.Namespace) -> int:
             args.dry_run,
             args.record_id,
             phone_spec,
+            args.overwrite_all,
+            args.overwrite,
+            Path(args.pin_file) if args.pin_file else None,
         )
-        await add_scenario_aliases(domain, args.language, args.language_name, llm, args.dry_run)
+        await add_scenario_aliases(domain, args.language, args.language_name, llm, args.dry_run, args.overwrite_all)
 
     update_env_example(args.language, args.language_name, REPO_ROOT / ".env.example", args.dry_run)
     update_language_display_names(
-        args.language, args.language_name, REPO_ROOT / "src" / "eva" / "models" / "config.py", args.dry_run
+        args.language,
+        args.language_name,
+        REPO_ROOT / "src" / "eva" / "models" / "config.py",
+        args.dry_run,
+        args.overwrite_all,
     )
     await update_wer_normalizer_config(
         args.language,
@@ -684,6 +725,7 @@ async def amain(args: argparse.Namespace) -> int:
         llm,
         args.dry_run,
         args.include_spelling_variation,
+        args.overwrite_all,
     )
     return 0
 
@@ -1085,11 +1127,13 @@ async def _generate_wer_config(
     family = llm_data.get("family")
     if family in {"cjk", "unsupported"}:
         reason = llm_data.get("reason", "no reason given")
-        raise ValueError(
+        logger.warning(
             f"LLM classified {language_name!r} as {family!r} — this script only "
-            f"supports alphabetic families. Reason: {reason}. "
-            f"For CJK languages, add a dedicated normalizer class in cjk.py."
+            f"supports alphabetic families. Reason: {reason}. Skipping WER config "
+            f"generation for {language_name!r} (for CJK languages, add a dedicated "
+            f"normalizer class in cjk.py)."
         )
+        return
     if family not in {"alphabetic_ltr", "alphabetic_reversed_units", "lexicalized_below_100"}:
         raise ValueError(f"LLM returned unexpected family {family!r}")
 
@@ -1256,6 +1300,7 @@ async def update_wer_normalizer_config(
     llm: LLMClient,
     dry_run: bool,
     include_spelling_variation: bool,
+    overwrite: bool = False,
 ) -> None:
     """Generate the WER normalizer JSON config for *language*.
 
@@ -1264,13 +1309,15 @@ async def update_wer_normalizer_config(
     2. Optionally generate ``configs/{language}_spelling.json`` when --include-spelling-variation.
     """
     config_path = configs_dir / f"{language}.json"
-    if config_path.exists():
+    if config_path.exists() and not overwrite:
         logger.info(f"WER config already exists at {config_path} — skipping generation")
     else:
         logger.info(f"Generating WER normalizer config for {language_name}")
         await _generate_wer_config(language, language_name, configs_dir, llm, dry_run)
 
-    if include_spelling_variation:
+    if include_spelling_variation and not config_path.exists():
+        logger.info(f"No WER config for {language_name} — skipping spelling-variation map")
+    elif include_spelling_variation:
         spelling_path = configs_dir / f"{language}_spelling.json"
         if spelling_path.exists():
             logger.info(f"Spelling map already exists at {spelling_path} — skipping")
@@ -1285,11 +1332,14 @@ async def update_wer_normalizer_config(
                 logger.info(f"Patched spelling_map_path in {config_path.name}")
 
 
-def update_language_display_names(language: str, language_name: str, config_path: Path, dry_run: bool) -> None:
+def update_language_display_names(
+    language: str, language_name: str, config_path: Path, dry_run: bool, overwrite: bool = False
+) -> None:
     """Add the new language to LANGUAGE_DISPLAY_NAMES in config.py if not already present.
 
     Locates the dict by searching for its opening line, then finds the closing
-    brace and inserts a new entry before it.
+    brace and inserts a new entry before it. When ``overwrite`` is set and the key
+    is already present, its display name is replaced in place.
     """
     if not config_path.exists():
         logger.warning(f"{config_path} not found — skipping LANGUAGE_DISPLAY_NAMES update")
@@ -1301,8 +1351,25 @@ def update_language_display_names(language: str, language_name: str, config_path
     lines = config_path.read_text(encoding="utf-8").splitlines()
 
     # Idempotency check
-    if any(new_key in line for line in lines):
-        logger.info(f"{new_key} already present in LANGUAGE_DISPLAY_NAMES")
+    existing_idx = next(
+        (i for i, line in enumerate(lines) if re.match(rf"\s*{re.escape(new_key)}\s*:", line)),
+        None,
+    )
+    if existing_idx is not None:
+        if not overwrite:
+            logger.info(f"{new_key} already present in LANGUAGE_DISPLAY_NAMES")
+            return
+        indent = "    "
+        new_line = f'{indent}{new_key}: "{language_name}",'
+        if lines[existing_idx] == new_line:
+            logger.info(f"{new_key} already set to {language_name!r} in LANGUAGE_DISPLAY_NAMES")
+            return
+        if dry_run:
+            logger.info(f"[dry-run] would update {new_key} to {language_name!r} in LANGUAGE_DISPLAY_NAMES")
+            return
+        lines[existing_idx] = new_line
+        config_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        logger.info(f"Updated {new_key} to {language_name!r} in LANGUAGE_DISPLAY_NAMES in {config_path}")
         return
 
     # Find the opening line of LANGUAGE_DISPLAY_NAMES
@@ -1377,13 +1444,12 @@ def update_env_example(language: str, language_name: str, env_example_path: Path
         existing_opts = [o.strip() for o in lines[enum_line_idx].split(" ", 1)[1].split(",") if o.strip()]
         # Use the base language code (e.g. 'es' from 'es-MX') for the enum option
         # because the #e list holds the values the selectbox will show.
-        lang_code = language.lower()
-        if lang_code not in existing_opts:
-            existing_opts.append(lang_code)
+        if language not in existing_opts:
+            existing_opts.append(language)
             lines[enum_line_idx] = "#e " + ",".join(existing_opts)
-            logger.info(f"Added '{lang_code}' to EVA_LANGUAGE options in .env.example")
+            logger.info(f"Added '{language}' to EVA_LANGUAGE options in .env.example")
         else:
-            logger.info(f"'{lang_code}' already present in EVA_LANGUAGE options")
+            logger.info(f"'{language}' already present in EVA_LANGUAGE options")
 
     # ── 2. Insert agent ID pair before "Default user simulator agents" ───────
     var_f = f"EVA_{prefix}_USER_F"
@@ -1413,13 +1479,13 @@ def update_env_example(language: str, language_name: str, env_example_path: Path
             f"#i ElevenLabs agent ID — {language_name}, female voice.",
             "#d string",
             "#x perturbation_mode=Language",
-            f"#x EVA_LANGUAGE={language.lower()}",
+            f"#x EVA_LANGUAGE={language}",
             f"#v {var_f}=",
             "",
             f"#i ElevenLabs agent ID — {language_name}, male voice.",
             "#d string",
             "#x perturbation_mode=Language",
-            f"#x EVA_LANGUAGE={language.lower()}",
+            f"#x EVA_LANGUAGE={language}",
             f"#v {var_m}=",
             "",
         ]
@@ -1446,12 +1512,40 @@ def main() -> int:
     ap.add_argument("--llm-model", default=DEFAULT_MODEL)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "Regenerate only the starting utterances for --language even if they already exist. "
+            "All other components (names, WER config, initial greeting, aliases) are left untouched. "
+            "Use this when a translation review finds issues with the utterances only."
+        ),
+    )
+    ap.add_argument(
+        "--overwrite-all",
+        action="store_true",
+        help=(
+            "Regenerate ALL content for --language even if it already exists: names, "
+            "phone numbers, starting utterances, scenario alias translations, initial "
+            "greeting, WER config, and the LANGUAGE_DISPLAY_NAMES entry. Use to fully "
+            "re-localise after changing the language display name or prompt."
+        ),
+    )
+    ap.add_argument(
         "--include-spelling-variation",
         action="store_true",
         help=(
             "Also generate a {lang}_spelling.json mapping for regional spelling variants "
             "(e.g. colour→color). Only needed for languages with significant orthographic "
             "divergence between dialects. English already ships one; most others don't need it."
+        ),
+    )
+    ap.add_argument(
+        "--pin-file",
+        help=(
+            "Path to a JSON file of reviewer-approved translations that must not be overwritten by LLM regeneration. "
+            'Format: {"<lang>": {"<english utterance>": "<approved translation>", ...}}. '
+            "Pinned utterances are applied directly (skipping the LLM) on every run, including --overwrite runs. "
+            "The file is not stored in the repo — pass it temporarily during regeneration reviews."
         ),
     )
     ap.add_argument(

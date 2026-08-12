@@ -34,6 +34,28 @@ GROUPS: list[str] = [
 
 
 @dataclass
+class ToggleCheck:
+    """A standalone checkbox that gates visibility of related vars via #x conditions."""
+
+    state_key: str  # st.session_state key; #x conditions reference this key with value "true"
+    group: str
+    label: str
+    help: str = ""
+    default: bool = False
+
+
+TOGGLE_CHECKS: list[ToggleCheck] = [
+    ToggleCheck(
+        state_key="background_noise_enabled",
+        group=GROUP_PERTURBATIONS,
+        label="Enable background noise",
+        help="Mix ambient audio into user speech. Requires assets — see scripts/download_noise_assets.py.",
+        default=False,
+    ),
+]
+
+
+@dataclass
 class MutexRadio:
     """A UI radio button that enforces mutual exclusion among a set of vars."""
 

@@ -115,3 +115,19 @@ class TestTruncateToSpoken:
         result = truncate_to_spoken(audit_text, [pipecat_text])
 
         assert result is None
+
+    def test_multi_segment_fully_spoken_returns_full(self):
+        audit_text = "Let me pull that up. The change fee is seventy-five dollars. Shall I proceed?"
+        segments = ["Let me pull that up.", "The change fee is seventy-five dollars.", "Shall I proceed?"]
+        assert truncate_to_spoken(audit_text, segments) == audit_text
+
+    def test_multi_segment_interrupted_returns_prefix(self):
+        audit_text = (
+            "Let me pull up your reservation and check the fees. "
+            "The total is one hundred fifteen dollars. Shall I proceed?"
+        )
+        segments = ["Let me pull up your reservation and check the fees."]
+        result = truncate_to_spoken(audit_text, segments)
+        assert result is not None and result != audit_text
+        assert "pull up your reservation" in result
+        assert "Shall I proceed" not in result

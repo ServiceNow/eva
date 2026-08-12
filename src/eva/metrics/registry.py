@@ -71,8 +71,8 @@ class MetricRegistry:
         return metric_class(config=config)
 
     def list_metrics(self) -> list[str]:
-        """Get list of all registered metric names."""
-        return list(self._metrics.keys())
+        """Get the names of metrics that run by default."""
+        return [name for name, cls in self._metrics.items() if not cls.exclude_from_default_metrics]
 
     def get_all(self) -> dict[str, type[BaseMetric]]:
         """Get all registered metrics."""

@@ -8,6 +8,7 @@ from . import speakability  # noqa
 from . import stt_wer  # noqa
 from . import tool_call_validity  # noqa
 from . import transcription_accuracy_key_entities  # noqa
+from . import tts_fidelity  # noqa
 
 __all__ = [
     "authentication_success",
@@ -18,4 +19,5 @@ __all__ = [
     "stt_wer",
     "tool_call_validity",
     "transcription_accuracy_key_entities",
+    "tts_fidelity",
 ]

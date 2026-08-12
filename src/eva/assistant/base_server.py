@@ -16,13 +16,14 @@ import uvicorn
 from fastapi import FastAPI
 
 from eva.assistant.agentic.audit_log import AuditLog
-from eva.assistant.audio_bridge import FrameworkLogWriter, MetricsLogWriter
-from eva.assistant.tools.tool_executor import ToolExecutor
+from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWriter
+from eva.assistant.tools.tool_executor import ToolExecutor, execute_and_log_tool
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
-from eva.utils.audio_utils import save_pcm_as_wav
+from eva.utils.audio_utils import pcm16_mix, save_audio_track
 from eva.utils.culture import get_initial_message
 from eva.utils.logging import get_logger
+from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -116,6 +117,24 @@ class AbstractAssistantServer(ABC):
         """
         ...
 
+    def notify_conversation_ending(self, reason: str | None = None) -> None:
+        """Tell the assistant the conversation is over, ahead of transport teardown.
+
+        The user simulator calls this the moment it knows the call has ended (``end_call``,
+        timeout, or error) — *before* its STT grace period and any post-hoc API polling, which
+        together can hold the WebSocket open for 10s or more. Without this early signal the
+        assistant only learns of the end via transport disconnect, long enough after the fact
+        that silence-triggered behavior (e.g. the turn-end fallback nudge) can fire into an
+        already-closed conversation.
+
+        Default is a no-op: only frameworks with such behavior need to react. Must be safe to
+        call more than once, and must not raise — teardown paths call it best-effort.
+
+        Args:
+            reason: End reason if known (``"goodbye"``, ``"timeout"``, ``"error"``), for logging.
+        """
+        return None
+
     async def stop(self) -> asyncio.Task | None:
         """Stop the server: shut down framework, extract audio, save outputs.
 
@@ -137,25 +156,7 @@ class AbstractAssistantServer(ABC):
 
         # Auto-compute mixed audio from tracks if not already populated (S2S servers
         # populate user/assistant tracks but not the mixed buffer directly).
-        if not self._audio_buffer:
-            if self.user_audio_buffer and self.assistant_audio_buffer:
-                diff_bytes = abs(len(self.user_audio_buffer) - len(self.assistant_audio_buffer))
-                diff_ms = diff_bytes / (2 * self._audio_sample_rate) * 1000
-                if diff_ms > 500:
-                    logger.warning(
-                        f"Audio buffer length mismatch: user={len(self.user_audio_buffer)} "
-                        f"assistant={len(self.assistant_audio_buffer)} "
-                        f"diff={diff_ms:.0f}ms — mixed recording may be temporally skewed"
-                    )
-                from eva.assistant.audio_bridge import pcm16_mix  # lazy: avoids circular import at module load
-
-                self._audio_buffer = bytearray(
-                    pcm16_mix(bytes(self.user_audio_buffer), bytes(self.assistant_audio_buffer))
-                )
-            elif self.user_audio_buffer:
-                self._audio_buffer = bytearray(self.user_audio_buffer)
-            elif self.assistant_audio_buffer:
-                self._audio_buffer = bytearray(self.assistant_audio_buffer)
+        self._ensure_mixed_audio()
 
         # Extract bytes and clear in-memory buffers so the caller can release its
         # concurrency slot while audio writes happen in a background thread.
@@ -206,19 +207,16 @@ class AbstractAssistantServer(ABC):
     async def execute_tool(self, tool_name: str, arguments: dict) -> Any:
         """Execute a tool call and record it in the audit log.
 
-        Logs the call and response as separate timestamped entries so latency
-        between them is preserved.  Use this whenever the server handles tool
-        calls directly (s2s/realtime events, or any custom cascade that
-        doesn't delegate to AgenticSystem).
+        Thin wrapper over the shared ``execute_and_log_tool`` helper (the single
+        assistant-side tool-execution path). Use this whenever the server
+        handles tool calls directly (s2s/realtime events, or any custom cascade
+        that doesn't delegate to AgenticSystem).
 
-        Note: AgenticSystem has its own tool execution + logging loop
-        (``append_tool_call``), so Pipecat cascade pipelines that use
-        AgenticSystem should *not* also call this method.
+        Note: AgenticSystem routes through the same ``execute_and_log_tool``
+        helper, so Pipecat cascade pipelines that use AgenticSystem should
+        *not* also call this method (it would double-log).
         """
-        self.audit_log.append_realtime_tool_call(tool_name, arguments)
-        result = await self.tool_handler.execute(tool_name, arguments)
-        self.audit_log.append_tool_response(tool_name, result)
-        return result
+        return await execute_and_log_tool(self.tool_handler, self.audit_log, tool_name, arguments)
 
     # ── Shared output helpers ──────────────────────────────────────────
 
@@ -250,20 +248,22 @@ class AbstractAssistantServer(ABC):
         """
         self.audit_log.save_transcript_jsonl(self.output_dir / "transcript.jsonl")
 
-    def _save_audio(self) -> None:
-        """Save accumulated audio buffers to WAV files.
+    def _ensure_mixed_audio(self) -> None:
+        """Populate ``_audio_buffer`` (mixed track) from the per-channel tracks.
 
-        If _audio_buffer (mixed) is empty but user and assistant buffers are
-        available, compute mixed audio automatically via sample-wise addition.
+        No-op if the mixed buffer is already populated. When only user + assistant
+        tracks exist (S2S/realtime servers populate those, not the mixed buffer),
+        mix them sample-wise; when only one track exists, use it as-is.
 
         NOTE: user_audio_buffer and assistant_audio_buffer must be time-aligned
-        (same total length in samples) before this method is called.  S2s/realtime
-        servers are responsible for calling ``sync_buffer_to_position`` during
-        streaming so the two tracks stay aligned.  A length mismatch produces a
-        usable but temporally skewed mixed recording.
+        (same total length in samples) before mixing. S2S/realtime servers are
+        responsible for calling ``sync_buffer_to_position`` during streaming so the
+        two tracks stay aligned. A length mismatch produces a usable but temporally
+        skewed mixed recording.
         """
-        # Auto-compute mixed audio from user + assistant tracks when not populated
-        if not self._audio_buffer and self.user_audio_buffer and self.assistant_audio_buffer:
+        if self._audio_buffer:
+            return
+        if self.user_audio_buffer and self.assistant_audio_buffer:
             diff_bytes = abs(len(self.user_audio_buffer) - len(self.assistant_audio_buffer))
             diff_ms = diff_bytes / (2 * self._audio_sample_rate) * 1000  # 16-bit PCM → 2 bytes/sample
             if diff_ms > 500:
@@ -272,35 +272,11 @@ class AbstractAssistantServer(ABC):
                     f"assistant={len(self.assistant_audio_buffer)} "
                     f"diff={diff_ms:.0f}ms — mixed recording may be temporally skewed"
                 )
-            from eva.assistant.audio_bridge import pcm16_mix
-
             self._audio_buffer = bytearray(pcm16_mix(bytes(self.user_audio_buffer), bytes(self.assistant_audio_buffer)))
-        elif not self._audio_buffer and self.user_audio_buffer:
+        elif self.user_audio_buffer:
             self._audio_buffer = bytearray(self.user_audio_buffer)
-        elif not self._audio_buffer and self.assistant_audio_buffer:
+        elif self.assistant_audio_buffer:
             self._audio_buffer = bytearray(self.assistant_audio_buffer)
-
-        if self._audio_buffer:
-            save_pcm_as_wav(
-                bytes(self._audio_buffer),
-                self.output_dir / "audio_mixed.wav",
-                self._audio_sample_rate,
-                1,
-            )
-        if self.user_audio_buffer:
-            save_pcm_as_wav(
-                bytes(self.user_audio_buffer),
-                self.output_dir / "audio_user.wav",
-                self._audio_sample_rate,
-                1,
-            )
-        if self.assistant_audio_buffer:
-            save_pcm_as_wav(
-                bytes(self.assistant_audio_buffer),
-                self.output_dir / "audio_assistant.wav",
-                self._audio_sample_rate,
-                1,
-            )
 
     def _save_audio_deferred(
         self,
@@ -310,14 +286,24 @@ class AbstractAssistantServer(ABC):
         sample_rate: int,
     ) -> None:
         """Write pre-extracted audio bytes to WAV files off the event loop."""
-        if mixed_audio:
-            save_pcm_as_wav(mixed_audio, self.output_dir / "audio_mixed.wav", sample_rate, 1)
-        if user_audio:
-            save_pcm_as_wav(user_audio, self.output_dir / "audio_user.wav", sample_rate, 1)
-        if assistant_audio:
-            save_pcm_as_wav(assistant_audio, self.output_dir / "audio_assistant.wav", sample_rate, 1)
+        save_audio_track(mixed_audio, self.output_dir / "audio_mixed.wav", sample_rate)
+        save_audio_track(user_audio, self.output_dir / "audio_user.wav", sample_rate)
+        save_audio_track(assistant_audio, self.output_dir / "audio_assistant.wav", sample_rate)
         if mixed_audio or user_audio or assistant_audio:
             logger.info(f"Saved audio files to {self.output_dir} ({len(mixed_audio)} bytes mixed)")
+
+    def _build_system_prompt(self) -> str:
+        """Build the system prompt for realtime/S2S assistant servers."""
+        prompt_manager = PromptManager()
+        prompt = prompt_manager.get_prompt(
+            "realtime_agent.system_prompt",
+            agent_personality=self.agent.description,
+            agent_instructions=self.agent.instructions,
+            datetime=self.current_date_time,
+        )
+        if self.pipeline_config.pre_tool_speech == "auto":
+            prompt += "\n\n" + prompt_manager.get_prompt("agent.pre_tool_speech")
+        return prompt
 
     def _save_scenario_dbs(self) -> None:
         """Save initial and final scenario database states."""

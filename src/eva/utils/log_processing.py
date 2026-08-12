@@ -2,8 +2,26 @@
 
 import copy
 import itertools
+import json
 from enum import StrEnum
+from pathlib import Path
 from typing import Any
+
+
+def parse_log_message(line: str) -> str:
+    """The message portion of a ``logs.log`` line ('… | msg'), or the whole line."""
+    return line.rsplit(" | ", 1)[-1]
+
+
+def load_audit_log(path: Path) -> dict | None:
+    """Parse ``audit_log.json`` into a dict; ``None`` if missing, unparseable, or not a JSON object."""
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
 
 
 class AnnotationLabel(StrEnum):
@@ -91,6 +109,10 @@ def truncate_to_spoken(audit_text: str, pipecat_segments: list[str]) -> str | No
 
     # Full match — entire audit text appears in any segment
     if any(norm_audit in seg for seg in norm_segments):
+        return audit_text
+
+    # Streaming can split one assistant turn across several TTS segments.
+    if norm_audit in "".join(norm_segments):
         return audit_text
 
     # Find longest word-prefix of the audit text that starts any pipecat

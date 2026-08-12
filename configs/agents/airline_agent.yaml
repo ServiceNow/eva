@@ -192,7 +192,7 @@ tools:
 - id: get_reservation
   name: get_reservation
   description: Retrieve flight reservation using confirmation number and passenger last name. This is typically the first tool called to authenticate the caller and load their flight numbers.
-  tool_type: read
+  tool_type: auth
   domain: flight
   required_parameters:
   - name: confirmation_number

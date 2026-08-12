@@ -13,6 +13,25 @@
     "fr-CA": [
       "parking a",
       "stationnement a"
+    ],
+    "es": [
+      "aparcamiento a",
+      "garaje a",
+      "parking a"
+    ],
+    "de": [
+      "a-parkhaus",
+      "parkhaus a"
+    ],
+    "hi": [
+      "ए गैराज",
+      "गैराज ए"
+    ],
+    "ko": [
+      "a 주차동",
+      "a 주차장",
+      "a 차고",
+      "주차장 a"
     ]
   }
 }

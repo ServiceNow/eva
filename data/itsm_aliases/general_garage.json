@@ -20,6 +20,26 @@
       "parking principal",
       "stationnement général",
       "stationnement principal"
+    ],
+    "es": [
+      "aparcamiento general",
+      "garaje general",
+      "garaje principal",
+      "parking general"
+    ],
+    "de": [
+      "hauptparkhaus"
+    ],
+    "hi": [
+      "जनरल गैराज",
+      "मुख्य गैराज",
+      "सामान्य पार्किंग"
+    ],
+    "ko": [
+      "공용 주차장",
+      "메인 주차장",
+      "일반 주차장",
+      "일반 차고"
     ]
   }
 }

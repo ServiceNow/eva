@@ -26,6 +26,30 @@
       "quartier général",
       "siège",
       "siège social"
+    ],
+    "es": [
+      "campus central",
+      "oficina central",
+      "sede central",
+      "sede principal"
+    ],
+    "de": [
+      "hauptbüro",
+      "hauptquartier",
+      "hauptsitz",
+      "zentrale"
+    ],
+    "hi": [
+      "मुख्य ऑफिस",
+      "मुख्यालय",
+      "हेड ऑफिस",
+      "हेडक्वार्टर"
+    ],
+    "ko": [
+      "메인 오피스",
+      "본부",
+      "본사",
+      "본사 캠퍼스"
     ]
   }
 }

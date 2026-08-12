@@ -96,11 +96,13 @@ class AuditLog:
         content: str,
         timestamp_ms: str | None = None,
         turn_id: int | None = None,
+        message_type: str = "user",
+        llm_content: str | None = None,
     ) -> None:
         """Record user input.
 
         Args:
-            content: User message text.
+            content: User message text, as recorded in the transcript/audit log.
             timestamp_ms: Epoch-millisecond string to use as the entry
                 timestamp.  When *None* (default), ``current_timestamp_ms()``
                 is used.  The realtime instrumented LLM service passes the
@@ -109,6 +111,12 @@ class AuditLog:
             turn_id: Optional turn identifier for associating transcription
                 updates with the correct entry when transcription runs in
                 parallel with processing.
+            message_type: Transcript entry type, e.g. "user" (default) or
+                "turn_fallback" for a synthetic turn-end fallback nudge, so
+                downstream metrics can identify and skip/zero it.
+            llm_content: When set, used as the message sent to the LLM instead of
+                ``content``. Lets the audit log show a plain marker while the LLM
+                sees a more instructive prompt (e.g. a turn-end fallback nudge).
         """
         entry = {
             "value": content,
@@ -116,17 +124,22 @@ class AuditLog:
             "type": "text",
             "isBotMessage": False,
             "timestamp": timestamp_ms or current_timestamp_ms(),
-            "message_type": "user",
+            "message_type": message_type,
         }
         if turn_id is not None:
             entry["turn_id"] = turn_id
+        # When the transcript value differs from what the model actually received (e.g. a
+        # turn-end fallback marker vs. the nudge + partial context), record the sent text so
+        # the audit log captures exactly what context was forwarded to the model.
+        if llm_content is not None:
+            entry["llm_content"] = llm_content
         self.transcript.append(entry)
 
         # Also add to conversation messages (with turn_id for matching)
         self.conversation_messages.append(
             ConversationMessage(
                 role=MessageRole.USER,
-                content=content,
+                content=llm_content if llm_content is not None else content,
                 turn_id=turn_id,
             )
         )
@@ -329,33 +342,6 @@ class AuditLog:
         }
         self.transcript.append(tool_response_entry)
         logger.debug(f"Audit: tool response for {tool_name}")
-
-    def append_realtime_tool_call(
-        self,
-        tool_name: str,
-        parameters: dict[str, Any],
-    ) -> None:
-        """Record a tool call from the realtime pipeline (no AgentConfig/AgentTool required).
-
-        Note: the S2S model processes raw audio and can call tools *before* transcription.completed fires,
-        so this may be appended before the corresponding user entry.  Correct chronological order is guaranteed
-        by ``save()`` sorting the transcript by timestamp — the user entry carries the ``speech_started`` wall-clock
-        which is always earlier than the tool call's ``current_timestamp_ms()``.
-        """
-        tool_call_entry = {
-            "value": {"tool": tool_name, "parameters": parameters},
-            "displayName": "Tool",
-            "type": "tool_call",
-            "isBotMessage": True,
-            "timestamp": current_timestamp_ms(),
-            "message_type": "tool_call",
-        }
-        self.transcript.append(tool_call_entry)
-        self._tool_calls_count += 1
-        if tool_name not in self._tools_called:
-            self._tools_called.append(tool_name)
-        self._last_tool_call = tool_name
-        logger.debug(f"Audit: realtime tool call - {tool_name}")
 
     def get_conversation_messages(
         self,

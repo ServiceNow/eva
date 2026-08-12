@@ -95,3 +95,7 @@ scripts/extract_and_generate_leaderboard.py
 
 # Website data generation scripts (local only)
 website/scripts/
+
+# Krisp VIVA SDK — licensed binaries, provisioned locally before Docker build (not public)
+vendor/krisp/*.whl
+vendor/krisp/*.kef
