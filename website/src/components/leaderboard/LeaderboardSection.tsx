@@ -20,7 +20,7 @@ const paretoInsights = [
   {
     title: 'No system clears 0.6 on both axes pass@1',
     description:
-      'Across 18 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
+      'Across 20 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
   },
   {
     title: 'Peak and reliable performance diverge',
@@ -49,7 +49,7 @@ const keyInsights = [
   {
     title: 'Named-entity transcription bottlenecks cascades',
     description:
-      'Across nine cascade systems, mean key-entity transcription accuracy is strongly correlated with mean task completion. Cascades below 70% key-entity transcription accuracy show substantially lower task completion than those above it.',
+      'Across eight cascade systems, mean key-entity transcription accuracy is strongly correlated with mean task completion. Cascades below 70% key-entity transcription accuracy show substantially lower task completion than those above it.',
   },
   {
     title: 'Faithfulness is decoupled from task completion',
