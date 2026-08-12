@@ -164,6 +164,26 @@ class TestCreateSttService:
         assert svc._settings.word_timestamps is True
         assert svc._settings.diarize is True
 
+    def test_soniox_returns_soniox_service(self):
+        svc = create_stt_service("soniox", params={"api_key": "k", "model": "stt-rt-v5"})
+        assert "Soniox" in type(svc).__name__
+        assert svc._settings.model == "stt-rt-v5"
+
+    def test_soniox_forwards_optional_settings(self):
+        svc = create_stt_service(
+            "soniox",
+            params={
+                "api_key": "k",
+                "model": "stt-rt-v5",
+                "language_hints": ["en", "es"],
+                "enable_speaker_diarization": True,
+                "enable_language_identification": True,
+            },
+        )
+        assert svc._settings.enable_speaker_diarization is True
+        assert svc._settings.enable_language_identification is True
+        assert {lang.value for lang in svc._settings.language_hints} == {"en", "es"}
+
     def test_cartesia_is_ink2_turns_service(self):
         svc = create_stt_service("cartesia", params={"api_key": "k", "model": "ink-2"})
         assert "Turns" in type(svc).__name__
@@ -285,6 +305,21 @@ class TestCreateTtsService:
         """Omitting voice_id must not override pipecat's per-model default voice."""
         svc = create_tts_service("smallest", params={"api_key": "k", "model": "lightning_v3.1_pro"})
         assert svc._settings.voice == "meher"
+
+    def test_soniox_returns_soniox_service(self):
+        svc = create_tts_service("soniox", params={"api_key": "k", "model": "tts-rt-v1"})
+        assert "Soniox" in type(svc).__name__
+
+    def test_soniox_forwards_voice_id(self):
+        svc = create_tts_service(
+            "soniox",
+            params={"api_key": "k", "model": "tts-rt-v1", "voice_id": "Sarah"},
+        )
+        assert svc._settings.voice == "Sarah"
+
+    def test_soniox_defaults_voice_when_unset(self):
+        svc = create_tts_service("soniox", params={"api_key": "k", "model": "tts-rt-v1"})
+        assert svc._settings.voice == "Adrian"
 
     def test_openai_respects_voice_param(self):
         svc = create_tts_service("openai", params={"api_key": "k", "model": "tts-1", "voice": "nova"})

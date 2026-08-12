@@ -39,6 +39,8 @@ from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import OpenAITTSService
 from pipecat.services.smallest.stt import SmallestSTTService
 from pipecat.services.smallest.tts import SmallestTTSService
+from pipecat.services.soniox.stt import SonioxSTTService
+from pipecat.services.soniox.tts import SonioxTTSService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 from pipecat.services.xai.stt import XAISTTService
@@ -296,6 +298,28 @@ def create_stt_service(
             ),
         )
 
+    elif model_lower == "soniox":
+        logger.info(f"Using Soniox STT: {params['model']}")
+        soniox_stt_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(SonioxSTTService.Settings) if (k := f.name) in params
+        }
+        if "language_hints" in soniox_stt_settings_kwargs:
+            soniox_stt_settings_kwargs["language_hints"] = [
+                _to_language_enum(tag) for tag in soniox_stt_settings_kwargs["language_hints"]
+            ]
+        return SonioxSTTService(
+            api_key=api_key,
+            url=url or "wss://stt-rt.soniox.com/transcribe-websocket",
+            sample_rate=params.get("sample_rate", SAMPLE_RATE),
+            audio_format=params.get("audio_format", "pcm_s16le"),
+            num_channels=params.get("num_channels", 1),
+            vad_force_turn_endpoint=params.get("vad_force_turn_endpoint", True),
+            settings=SonioxSTTService.Settings(
+                language=_to_language_enum(language_code),
+                **soniox_stt_settings_kwargs,
+            ),
+        )
+
     elif model_lower == "xai":
         logger.info("Using xAI STT")
         xai_settings_kwargs = {
@@ -315,7 +339,7 @@ def create_stt_service(
 
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cartesia-multilingual, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, smallest, xai"
+            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cartesia-multilingual, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, smallest, soniox, xai"
         )
 
 
@@ -536,6 +560,25 @@ def create_tts_service(
             ),
         )
 
+    elif model_lower == "soniox":
+        logger.info(f"Using Soniox TTS: {params['model']}")
+        soniox_tts_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(SonioxTTSService.Settings) if (k := f.name) in params
+        }
+        if "voice_id" in params:
+            # Omit "voice" entirely when unset so pipecat's default ("Adrian") applies instead of
+            # a hardcoded EVA default.
+            soniox_tts_settings_kwargs["voice"] = params["voice_id"]
+        return SonioxTTSService(
+            api_key=api_key,
+            url=url or "wss://tts-rt.soniox.com/tts-websocket",
+            sample_rate=SAMPLE_RATE,
+            settings=SonioxTTSService.Settings(
+                language=_to_language_enum(language_code),
+                **soniox_tts_settings_kwargs,
+            ),
+        )
+
     elif model_lower == "voxtral":
         logger.info(f"Using Voxtral TTS: {params['model']}")
         voxtral_tts = OpenAITTSService(
@@ -593,7 +636,7 @@ def create_tts_service(
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, smallest, voxtral, xai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, smallest, soniox, voxtral, xai, xtts"
         )
 
 
