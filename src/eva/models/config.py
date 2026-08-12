@@ -463,26 +463,17 @@ class ElevenLabsSimulatorConfig(BaseModel):
         return data
 
 
-class S2SSimulatorConfig(BaseModel):
-    """Native speech-to-speech settings for the user simulator.
+class OpenAIRealtimeSimulatorConfig(BaseModel):
+    """OpenAI Realtime-specific settings for the user simulator."""
 
-    Shared by all OpenAI-Realtime-compatible S2S providers (``openai_realtime``,
-    ``grok_voice``). Defaults target OpenAI Realtime; other providers should
-    override ``model`` and the voices (e.g. Grok's ``eve``/``ara``). The backend
-    resolves the API key from the environment per provider (OPENAI_API_KEY /
-    XAI_API_KEY).
-    """
-
-    provider: Literal["openai_realtime", "grok_voice"] = "openai_realtime"
-    model: str = Field(
-        "gpt-realtime-1.5", description="Native S2S model (OpenAI Realtime default; override per provider)."
-    )
+    provider: Literal["openai_realtime"] = "openai_realtime"
+    model: str = Field("gpt-realtime-1.5", description="OpenAI Realtime model.")
     female_voice: str = Field("marin", description="Voice used for female caller personas.")
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
 
 UserSimulatorConfig = Annotated[
-    ElevenLabsSimulatorConfig | S2SSimulatorConfig,
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
     Field(discriminator="provider"),
 ]
 
@@ -736,13 +727,13 @@ class RunConfig(BaseSettings):
         config is unused and conflicting env vars are harmless.
         """
         if (
-            isinstance(self.user_simulator, S2SSimulatorConfig)
+            isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig)
             and self.perturbation is not None
             and self.perturbation.accent is not None
         ):
             raise ValueError(
                 "Accent perturbations require the ElevenLabs user simulator; "
-                "native S2S simulators support behavior, noise, and connection perturbations."
+                "OpenAI Realtime supports behavior, noise, and connection perturbations."
             )
 
         if self.max_rerun_attempts == 0 or self.aggregate_only:
@@ -846,12 +837,14 @@ class RunConfig(BaseSettings):
 
         return self
 
-    # NOTE: no backend-specific credential validation here. A native S2S user
-    # simulator's credentials are validated by constructing its backend via the
-    # BackendFactory (see orchestrator.worker): the backend raises its own precise
-    # reason (e.g. missing api_key naming OPENAI_API_KEY / XAI_API_KEY). Config-side
-    # validation stays limited to non-backend concerns (perturbation compatibility,
-    # companion services, etc.); provider validity is enforced by the Literal types.
+    @model_validator(mode="after")
+    def _check_openai_realtime_simulator(self) -> "RunConfig":
+        """When openai_realtime user simulator is selected, OPENAI_API_KEY must be present."""
+        if not isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig):
+            return self
+        if not os.environ.get("OPENAI_API_KEY"):
+            raise ValueError("EVA_USER_SIMULATOR__PROVIDER=openai_realtime requires OPENAI_API_KEY to be set.")
+        return self
 
     @model_validator(mode="before")
     @classmethod

@@ -80,24 +80,20 @@ def test_assemble_assistant_session_defaults():
     assert sc["audio"]["input"]["transcription"] == {"model": "whisper-1"}
 
 
-def test_assemble_caller_session_manual_turn_taking():
+def test_assemble_session_auto_turn_taking():
     sc = _backend(
-        input_format="pcmu",
         voice="ballad",
         vad_settings={"threshold": 0.5, "prefix_padding_ms": 300, "silence_duration_ms": 500},
-        manual_turn_taking=True,
         transcription_language="en",
         parallel_tool_calls=False,
     )._session_config
-    assert sc["audio"]["input"]["format"] == {"type": "audio/pcmu"}
+    assert sc["audio"]["output"]["voice"] == "ballad"
+    # Auto turn-taking: no create_response/interrupt_response override.
     assert sc["audio"]["input"]["turn_detection"] == {
         "type": "server_vad",
         "threshold": 0.5,
         "prefix_padding_ms": 300,
         "silence_duration_ms": 500,
-        "create_response": False,
-        "interrupt_response": False,
-        "idle_timeout_ms": 15000,
     }
     assert sc["audio"]["input"]["transcription"] == {"model": "whisper-1", "language": "en"}
     assert sc["parallel_tool_calls"] is False

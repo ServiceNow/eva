@@ -9,7 +9,6 @@ input-transcription behavior. Everything else is inherited and covered by
 from __future__ import annotations
 
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -55,84 +54,6 @@ def test_explicit_config_wins_over_defaults():
     b = _backend(base_url="https://custom/v1", voice="ara")
     assert b._base_url == "https://custom/v1"
     assert b._session_config["audio"]["output"]["voice"] == "ara"
-
-
-def test_grok_caller_widens_silence_window():
-    from eva.backend.grok_voice import GROK_CALLER_MIN_SILENCE_MS
-
-    # As a caller (manual_turn_taking) grok's VAD silence is widened so it doesn't
-    # segment mid-turn; a shorter configured value is raised to the minimum.
-    td = _backend(manual_turn_taking=True, vad_settings={"silence_duration_ms": 500})._session_config["audio"]["input"][
-        "turn_detection"
-    ]
-    assert td["silence_duration_ms"] == GROK_CALLER_MIN_SILENCE_MS
-    # As an assistant (no manual_turn_taking) its own tuning is kept.
-    td_asst = _backend(vad_settings={"silence_duration_ms": 200})._session_config["audio"]["input"]["turn_detection"]
-    assert td_asst["silence_duration_ms"] == 200
-
-
-def test_grok_declares_no_manual_response_support():
-    # xAI ignores manual turn-taking, so it declares supports_manual_response=False,
-    # routing a UserRole to the native-VAD path. OpenAI keeps manual support.
-    from eva.backend.openai_realtime import OpenAIRealtimeBackend
-
-    assert _backend().capabilities.supports_manual_response is False
-    assert OpenAIRealtimeBackend(config={"model": "rt", "api_key": "k"}).capabilities.supports_manual_response is True
-
-
-def test_grok_inherits_role_declared_interruptibility():
-    # Grok does not force the flag (xAI ignores interrupt_response anyway); it honors the
-    # role-declared value like any backend. Non-interruptibility is enforced at the audio
-    # layer instead (see the suppression tests below).
-    td = _backend(manual_turn_taking=True, interruptible=False)._session_config["audio"]["input"]["turn_detection"]
-    assert td["create_response"] is False
-    assert td["interrupt_response"] is False
-
-
-@pytest.mark.asyncio
-async def test_grok_suppresses_input_audio_while_responding():
-    # Non-interruptibility enforced in the backend: while a response is in flight, inbound
-    # audio is dropped so xAI's VAD can't re-trigger and wedge the response.
-    b = _backend()
-    conn = SimpleNamespace(input_audio_buffer=SimpleNamespace(append=AsyncMock()))
-    s = GrokVoiceSession(client=None, conn_cm=None, conn=conn)  # type: ignore[arg-type]
-
-    await b.send(s, audio=b"\x00\x01")  # not responding -> forwarded
-    assert conn.input_audio_buffer.append.await_count == 1
-
-    s.responding = True
-    await b.send(s, audio=b"\x00\x01")  # responding -> dropped
-    assert conn.input_audio_buffer.append.await_count == 1
-
-
-@pytest.mark.asyncio
-async def test_grok_trigger_response_marks_responding():
-    b = _backend()
-    conn = SimpleNamespace(response=SimpleNamespace(create=AsyncMock()))
-    s = GrokVoiceSession(client=None, conn_cm=None, conn=conn)  # type: ignore[arg-type]
-    await b.trigger_response(s)
-    assert s.responding is True
-    conn.response.create.assert_awaited_once()
-
-
-def test_interruptible_is_a_uniform_config_flag_on_the_base():
-    # The mechanism isn't grok-specific: the base backend reads the role-declared
-    # `interruptible` flag. OpenAI honors False (its proven caller behavior) and, if a
-    # role ever declared True, would honor that too.
-    from eva.backend.openai_realtime import OpenAIRealtimeBackend
-
-    off = OpenAIRealtimeBackend(config={"model": "rt", "api_key": "k", "manual_turn_taking": True})
-    on = OpenAIRealtimeBackend(
-        config={"model": "rt", "api_key": "k", "manual_turn_taking": True, "interruptible": True}
-    )
-    assert off._session_config["audio"]["input"]["turn_detection"]["interrupt_response"] is False
-    assert on._session_config["audio"]["input"]["turn_detection"]["interrupt_response"] is True
-
-
-def test_caller_role_declares_non_interruptible_intent():
-    from eva.role.user import UserRole
-
-    assert UserRole.CALLER_BACKEND_DEFAULTS["interruptible"] is False
 
 
 def test_open_uses_grok_session_class():

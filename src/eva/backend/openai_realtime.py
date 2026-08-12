@@ -89,17 +89,11 @@ class OpenAIRealtimeBackend(Backend):
       are realized via ElevenLabs agent IDs). Fails loud, mirroring the old
       ``OpenAIRealtimeUserSimulator`` guard, now backend-side.
     - ``voice`` (default ``"marin"``), ``output_sample_rate`` (default 24000).
-    - ``input_format``: ``"pcm"`` (default) or ``"pcmu"`` (telephony/caller).
+    - ``input_format``: ``"pcm"`` (default) or ``"pcmu"``.
     - ``vad_settings``: turn-detection tunables (``type`` / ``threshold`` /
       ``prefix_padding_ms`` / ``silence_duration_ms``), defaults applied. Named
       to match EVA's ``s2s_params["vad_settings"]`` so an assistant can pass its
       provider params straight through.
-    - ``manual_turn_taking``: when True, the model does not auto-create responses
-      (``create_response`` false + an idle timeout); a caller gates replies itself
-      via ``trigger_response``.
-    - ``interruptible`` (default False, only meaningful with ``manual_turn_taking``):
-      whether inbound speech may interrupt an in-flight response. Role-declared
-      intent (caller = False so it completes its utterance); applied uniformly.
     - ``transcription_model`` (default ``"whisper-1"``),
       ``transcription_language`` (optional).
     - ``reasoning_effort`` (optional), ``parallel_tool_calls`` (optional).
@@ -116,10 +110,6 @@ class OpenAIRealtimeBackend(Backend):
     # Env var the api_key falls back to when not supplied in config. Subclasses
     # for other OpenAI-compatible providers override it (e.g. Grok -> XAI_API_KEY).
     _API_KEY_ENV: ClassVar[str] = "OPENAI_API_KEY"
-
-    # Extra turn-detection fields when the caller gates responses manually.
-    # Manual turn-taking: the model does not auto-create responses (caller triggers them).
-    _MANUAL_TURN_DETECTION: ClassVar[dict[str, Any]] = {"create_response": False, "idle_timeout_ms": 15_000}
 
     def __init__(self, *, config: dict[str, Any]) -> None:
         api_key = config.get("api_key") or os.environ.get(self._API_KEY_ENV)
@@ -164,12 +154,6 @@ class OpenAIRealtimeBackend(Backend):
             "prefix_padding_ms": vad.get("prefix_padding_ms", 300),
             "silence_duration_ms": vad.get("silence_duration_ms", 200),
         }
-        if config.get("manual_turn_taking"):
-            turn_detection.update(self._MANUAL_TURN_DETECTION)
-            # Interruptibility is a role-declared intent (the caller sets ``interruptible``
-            # in UserRole.CALLER_BACKEND_DEFAULTS), applied uniformly to every backend.
-            turn_detection["interrupt_response"] = bool(config.get("interruptible", False))
-
         transcription: dict[str, Any] = {"model": config.get("transcription_model", "whisper-1")}
         if config.get("transcription_language"):
             transcription["language"] = config["transcription_language"]
@@ -267,10 +251,6 @@ class OpenAIRealtimeBackend(Backend):
             }
         )
         await conn.response.create()
-
-    async def trigger_response(self, session: BackendSession) -> None:
-        """Manually request a model response (caller-gated turn-taking)."""
-        await self._conn(session).response.create()
 
     async def receive(self, session: BackendSession) -> AsyncIterator[BackendEvent]:
         """Yield normalized events from ``session``'s connection until it ends."""

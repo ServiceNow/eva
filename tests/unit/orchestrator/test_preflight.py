@@ -11,7 +11,7 @@ from pipecat.frames.frames import ErrorFrame, Frame, TTSAudioRawFrame
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 
-from eva.models.config import ModelConfig, RunConfig, S2SSimulatorConfig
+from eva.models.config import ModelConfig, RunConfig
 from eva.orchestrator import preflight
 from eva.orchestrator.preflight import (
     PreflightError,
@@ -147,29 +147,25 @@ def test_backend_construction_passes_with_key(tmp_path):
         preflight._preflight_backends(cfg)  # no raise
 
 
-def test_backend_construction_skips_legacy_user_sim(tmp_path):
-    # ElevenLabs (the default user sim) isn't factory-backed -> skipped, no raise.
+def test_backend_construction_skips_non_s2s_assistant(tmp_path):
+    # A cascade assistant isn't a native backend -> no construction check, no raise.
     with patch.dict(os.environ, _BASE_ENV, clear=True):
         preflight._preflight_backends(_cascade_config(tmp_path))
 
 
-def test_backend_construction_validates_factory_user_sim(tmp_path):
-    with patch.dict(os.environ, _BASE_ENV, clear=True):  # no OPENAI_API_KEY
-        cfg = _cascade_config(tmp_path)
-        cfg.user_simulator = S2SSimulatorConfig(provider="openai_realtime")
-        with pytest.raises(PreflightError, match="user simulator 'openai_realtime'"):
-            preflight._preflight_backends(cfg)
-
-
 @pytest.mark.asyncio
 async def test_backend_construction_runs_even_when_preflight_disabled(tmp_path):
-    # --no-preflight skips only the live model probes; the cheap construction check still
-    # runs. Use the user-sim provider, whose key isn't validated at config load.
+    # --no-preflight skips only the live model probes; the cheap S2S-assistant construction
+    # check still runs (S2S key isn't validated at config load).
     with patch.dict(os.environ, _BASE_ENV, clear=True):  # no OPENAI_API_KEY
-        cfg = _cascade_config(tmp_path)
-        cfg.user_simulator = S2SSimulatorConfig(provider="openai_realtime")
+        cfg = RunConfig(
+            model=ModelConfig(s2s="gpt-realtime", s2s_params={"model": "gpt-realtime"}),
+            framework="openai_realtime",
+            output_dir=tmp_path / "out",
+            run_id="r",
+        )
         cfg.preflight = False
-        with pytest.raises(PreflightError, match="user simulator 'openai_realtime'"):
+        with pytest.raises(PreflightError, match="assistant framework 'openai_realtime'"):
             await run_preflight(cfg)
 
 

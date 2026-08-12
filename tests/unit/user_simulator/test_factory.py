@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from eva.models.config import ElevenLabsSimulatorConfig, S2SSimulatorConfig
+from eva.models.config import ElevenLabsSimulatorConfig, OpenAIRealtimeSimulatorConfig
 from eva.user_simulator.elevenlabs import ElevenLabsUserSimulator
 from eva.user_simulator.factory import create_user_simulator
 from eva.user_simulator.openai_realtime import OpenAIRealtimeUserSimulator
@@ -38,7 +38,7 @@ def test_factory_keeps_elevenlabs_as_default(tmp_path):
 
 
 def test_factory_selects_openai_realtime(tmp_path):
-    config = S2SSimulatorConfig()
+    config = OpenAIRealtimeSimulatorConfig()
     simulator = create_user_simulator(config, **_kwargs(tmp_path))
 
     assert isinstance(simulator, OpenAIRealtimeUserSimulator)

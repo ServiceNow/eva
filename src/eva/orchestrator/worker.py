@@ -14,8 +14,6 @@ from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, ErrorDetails, LatencyStats
 from eva.role.assistant import AssistantRole
-from eva.role.user import UserRole
-from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.factory import create_user_simulator
 from eva.utils.culture import resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.error_handler import create_error_details
@@ -129,7 +127,7 @@ class ConversationWorker:
         # Set during run: a Role (for factory-supported providers) or the legacy
         # server/simulator (for the rest).
         self._assistant_server: AbstractAssistantServer | AssistantRole | None = None
-        self._user_simulator: AbstractUserSimulator | UserRole | None = None
+        self._user_simulator = None
         self._conversation_stats: dict[str, Any] = {}
         self._log_file_handler = None
         self.deferred_audio_task: asyncio.Task | None = None
@@ -399,58 +397,18 @@ class ConversationWorker:
             language,
             self.record.romanized_culture_overrides,
         )
-        # Dispatch generically on provider, not on config type: dump the config
-        # wholesale into a caller-config blob and ask the factory to build a backend
-        # for sim.provider. If it can (a migrated provider), drive it with a UserRole;
-        # otherwise create() returns None and we fall through to the legacy simulator.
-        # This keeps the worker config-type-agnostic -- new providers just register a
-        # backend in the factory. No api_key here: the backend resolves it from the
-        # environment per provider.
-        #
-        # The blob is read only by backends, which pick the keys they recognize and
-        # ignore the rest (voice fields are present but unused by, e.g., ElevenLabs,
-        # which isn't factory-backed anyway). Reading voices from the dumped dict --
-        # not attribute access -- is what avoids coupling to a concrete config type.
-        sim = self.config.user_simulator
-        caller_config = sim.model_dump()
-        gender = {1: "F", 2: "M"}.get(resolved_persona.get("user_persona_id"))
-        voice = caller_config.get("male_voice") if gender == "M" else caller_config.get("female_voice")
-        backend_args = {
-            **caller_config,
-            **UserRole.CALLER_BACKEND_DEFAULTS,
-            "transcription_language": language,
-            "accent": self.config.perturbation.accent if self.config.perturbation else None,
-        }
-        if voice is not None:
-            backend_args["voice"] = voice
-
-        if backend := _BACKEND_FACTORY.create(sim.provider, backend_args):
-            self._user_simulator = UserRole(
-                backend=backend,
-                current_date_time=self.record.current_date_time,
-                persona_config=resolved_persona,
-                goal=resolved_goal,
-                server_url=f"ws://localhost:{self.port}/ws",
-                output_dir=self.output_dir,
-                agent_id=self.agent.id,
-                provider=sim.provider,
-                timeout=self._conversation_guard_timeout_seconds(),
-                perturbation_config=self.config.perturbation,
-                language=language,
-            )
-        else:
-            self._user_simulator = create_user_simulator(
-                self.config.user_simulator,
-                current_date_time=self.record.current_date_time,
-                persona_config=resolved_persona,
-                goal=resolved_goal,
-                server_url=f"ws://localhost:{self.port}/ws",
-                output_dir=self.output_dir,
-                agent_id=self.agent.id,
-                timeout=self._conversation_guard_timeout_seconds(),
-                perturbation_config=self.config.perturbation,
-                language=language,
-            )
+        self._user_simulator = create_user_simulator(
+            self.config.user_simulator,
+            current_date_time=self.record.current_date_time,
+            persona_config=resolved_persona,
+            goal=resolved_goal,
+            server_url=f"ws://localhost:{self.port}/ws",
+            output_dir=self.output_dir,
+            agent_id=self.agent.id,
+            timeout=self._conversation_guard_timeout_seconds(),
+            perturbation_config=self.config.perturbation,
+            language=language,
+        )
 
         # Let the simulator tell the assistant the moment the call ends, rather than leaving it
         # to infer that from transport disconnect — which lands after the simulator's STT grace
@@ -472,11 +430,7 @@ class ConversationWorker:
         if self._user_simulator is None:
             raise RuntimeError("User simulator not initialized")
 
-        # UserRole drives via run(); the legacy simulator via run_conversation().
-        if isinstance(self._user_simulator, UserRole):
-            ended_reason = await self._user_simulator.run()
-        else:
-            ended_reason = await self._user_simulator.run_conversation()
+        ended_reason = await self._user_simulator.run_conversation()
 
         return ended_reason
 

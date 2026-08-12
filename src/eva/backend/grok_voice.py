@@ -25,8 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from eva.backend.base import BackendEvent, BackendEventType, BackendSession, ToolCallResult
-from eva.backend.capabilities import BackendCapabilities
+from eva.backend.base import BackendEvent, BackendEventType
 from eva.backend.openai_realtime import OpenAIRealtimeBackend, OpenAIRealtimeSession
 from eva.utils.logging import get_logger
 
@@ -34,11 +33,6 @@ logger = get_logger(__name__)
 
 XAI_REALTIME_BASE_URL = "https://api.x.ai/v1"
 DEFAULT_VOICE = "eve"
-# Minimum VAD silence (ms) for the Grok caller. Grok can't be manually gated (it
-# auto-responds via native VAD), so if its VAD ends the turn on a short pause *inside*
-# the assistant's utterance it auto-responds while audio is still streaming in and wedges.
-# A longer silence window makes it end the turn only at the real end, into actual silence.
-GROK_CALLER_MIN_SILENCE_MS = 1200
 
 
 @dataclass
@@ -62,50 +56,11 @@ class GrokVoiceBackend(OpenAIRealtimeBackend):
     _SESSION_CLS: ClassVar[type[OpenAIRealtimeSession]] = GrokVoiceSession
     _API_KEY_ENV: ClassVar[str] = "XAI_API_KEY"
 
-    # xAI ignores manual turn-taking (create_response:false / interrupt_response) -- it
-    # always auto-responds via its own VAD. So it declares no manual-response support,
-    # and a UserRole drives it via the native-VAD path instead of pressing "respond now".
-    _CAPABILITIES = BackendCapabilities(
-        emits_continuous_audio=True,
-        supports_streaming_interruption=True,
-        owns_playout_clock=False,
-        supports_manual_response=False,
-    )
-
     def __init__(self, *, config: dict[str, Any]) -> None:
         # base_url / voice are xAI defaults any explicit config overrides; api_key falls
         # back to XAI_API_KEY in the parent (via _API_KEY_ENV).
         merged = {"base_url": XAI_REALTIME_BASE_URL, "voice": DEFAULT_VOICE, **config}
-        # As a caller (manual_turn_taking in the config) grok self-drives via native VAD;
-        # widen its silence window so it doesn't segment mid-turn and auto-respond into
-        # still-arriving audio. Assistant use (no manual_turn_taking) keeps its own tuning.
-        if merged.get("manual_turn_taking"):
-            vad = dict(merged.get("vad_settings") or {})
-            vad["silence_duration_ms"] = max(int(vad.get("silence_duration_ms", 0)), GROK_CALLER_MIN_SILENCE_MS)
-            merged["vad_settings"] = vad
         super().__init__(config=merged)
-
-    # xAI ignores ``interrupt_response``: with a manually-created response
-    # (``create_response: false``) it re-fires ``speech_started`` on inbound audio the
-    # instant it emits ``response.created`` and then never emits ``response.done``,
-    # wedging the caller. So non-interruptibility is enforced here instead: while a
-    # response is in flight, inbound audio is dropped so xAI's VAD can't re-trigger.
-
-    async def trigger_response(self, session: BackendSession) -> None:
-        self._session(session).responding = True
-        await super().trigger_response(session)
-
-    async def send(
-        self,
-        session: BackendSession,
-        *,
-        audio: bytes | None = None,
-        text: str | None = None,
-        tool_result: ToolCallResult | None = None,
-    ) -> None:
-        if audio is not None and self._session(session).responding:
-            return  # drop inbound audio while responding (non-interruptible)
-        await super().send(session, audio=audio, text=text, tool_result=tool_result)
 
     @staticmethod
     def _map_event(session: OpenAIRealtimeSession, event: Any) -> list[BackendEvent]:

@@ -17,7 +17,7 @@ try:
 except ImportError:
     import audioop_lts as audioop
 
-from eva.models.config import PerturbationConfig, S2SSimulatorConfig
+from eva.models.config import OpenAIRealtimeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.audio_bridge import BotToBotAudioBridge
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.utils.logging import get_logger
@@ -71,7 +71,7 @@ class OpenAIRealtimeUserSimulator(AbstractUserSimulator):
         perturbation_config: PerturbationConfig | None = None,
         language: str = "en",
         *,
-        simulator_config: S2SSimulatorConfig,
+        simulator_config: OpenAIRealtimeSimulatorConfig,
     ) -> None:
         super().__init__(
             current_date_time=current_date_time,

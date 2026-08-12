@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from eva.models.config import ElevenLabsSimulatorConfig, S2SSimulatorConfig, UserSimulatorConfig
+from eva.models.config import ElevenLabsSimulatorConfig, OpenAIRealtimeSimulatorConfig, UserSimulatorConfig
 from eva.user_simulator.base import AbstractUserSimulator
 
 
@@ -17,7 +17,7 @@ def create_user_simulator(
         from eva.user_simulator.elevenlabs import ElevenLabsUserSimulator
 
         return ElevenLabsUserSimulator(**kwargs)
-    if isinstance(simulator_config, S2SSimulatorConfig):
+    if isinstance(simulator_config, OpenAIRealtimeSimulatorConfig):
         from eva.user_simulator.openai_realtime import OpenAIRealtimeUserSimulator
 
         return OpenAIRealtimeUserSimulator(simulator_config=simulator_config, **kwargs)

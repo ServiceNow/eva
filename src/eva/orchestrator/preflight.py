@@ -207,25 +207,21 @@ def _check_backend_construction(label: str, name: str, backend_args: dict[str, A
 
 
 def _preflight_backends(config: RunConfig) -> None:
-    """Cheap, network-free validation that configured native-S2S backends construct.
+    """Cheap, network-free validation that the configured S2S assistant backend constructs.
 
-    Only native-S2S providers run through the ``BackendFactory``: an S2S assistant
-    framework, and the user-simulator provider. Cascade/audio-LLM assistants (pipecat
-    services) and non-factory user providers are left to the live probes / legacy paths.
+    Only the S2S assistant framework runs through the ``BackendFactory``; constructing it
+    validates required fields/keys with no API call. Cascade/audio-LLM assistants (pipecat
+    services) are left to the live probes. The user simulator is on its legacy stack and
+    validated by config (not a backend), so it is not checked here.
     """
-    errors: list[str] = []
-    if config.model.pipeline_type == PipelineType.S2S:
-        assistant_args = {
-            **(config.model.s2s_params or {}),
-            "parallel_tool_calls": config.model.parallel_tool_calls,
-        }
-        if err := _check_backend_construction("assistant framework", config.framework, assistant_args):
-            errors.append(err)
-    sim = config.user_simulator
-    if err := _check_backend_construction("user simulator", sim.provider, sim.model_dump()):
-        errors.append(err)
-    if errors:
-        raise PreflightError("backend configuration invalid:\n" + "\n".join(errors))
+    if config.model.pipeline_type != PipelineType.S2S:
+        return
+    assistant_args = {
+        **(config.model.s2s_params or {}),
+        "parallel_tool_calls": config.model.parallel_tool_calls,
+    }
+    if err := _check_backend_construction("assistant framework", config.framework, assistant_args):
+        raise PreflightError(f"backend configuration invalid:\n{err}")
 
 
 async def run_preflight(config: RunConfig) -> None:

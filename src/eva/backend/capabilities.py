@@ -1,10 +1,8 @@
 """Capability flags describing what a ``Backend`` implementation can do.
 
 These flags let a role / turn-taking layer branch on backend shape without every
-``Backend`` implementation exposing the same granular seams. ``supports_manual_response``
-is consumed by ``UserRole`` to choose between caller-driven manual turn-taking and a
-native-VAD path; the others are still informational, reserved for the later
-mediator/interruption work.
+``Backend`` implementation exposing the same granular seams. Informational for now,
+reserved for the later mediator/interruption work.
 """
 
 from dataclasses import dataclass
@@ -41,16 +39,8 @@ class BackendCapabilities:
             to the caller/mediator, or if the backend has no continuous
             playout concept at all (e.g. a fully end-to-end provider that
             hands back a finished audio blob).
-        supports_manual_response: True if the provider honors caller-driven manual turn-taking -- i.e. it will
-            hold responses when told (``create_response: false``) and only respond when the
-            caller explicitly asks (``response.create``). OpenAI Realtime does. Some providers
-            (e.g. Grok Voice) ignore this and always auto-respond via their own VAD; they set
-            this False so a ``UserRole`` drives them via the native-VAD path (no manual trigger)
-            instead of the manual response-gating scheme. Defaults True (manual is preferred
-            where available; the alternate path is only for providers that can't do it).
     """
 
     emits_continuous_audio: bool
     supports_streaming_interruption: bool
     owns_playout_clock: bool
-    supports_manual_response: bool = True
