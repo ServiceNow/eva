@@ -565,10 +565,6 @@ def create_tts_service(
         soniox_tts_settings_kwargs = {
             k: params[k] for f in dataclasses.fields(SonioxTTSService.Settings) if (k := f.name) in params
         }
-        if "voice_id" in params:
-            # Omit "voice" entirely when unset so pipecat's default ("Adrian") applies instead of
-            # a hardcoded EVA default.
-            soniox_tts_settings_kwargs["voice"] = params["voice_id"]
         return SonioxTTSService(
             api_key=api_key,
             url=url or "wss://tts-rt.soniox.com/tts-websocket",
