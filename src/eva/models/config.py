@@ -56,51 +56,6 @@ def get_model_alias_from_params(params: dict[str, Any]) -> str:
     return params.get("alias") or params["model"]
 
 
-_elevenlabs_agent_cache: dict[str, dict[str, str]] = {}
-
-
-def _fetch_elevenlabs_agent_models(s2s_params: dict[str, Any]) -> dict[str, str]:
-    """Fetch STT, LLM, and TTS model names from the ElevenLabs agent API.
-
-    Results are cached per agent ID so repeated calls (e.g. run_id generation)
-    don't hit the API multiple times.
-    """
-    agent_id = s2s_params.get("assistant_agent_id", "")
-    if not agent_id:
-        logger.warning("No assistant_agent_id in s2s_params, cannot fetch ElevenLabs agent models")
-        return {"stt": "unknown", "llm": "unknown", "tts": "unknown"}
-
-    if agent_id in _elevenlabs_agent_cache:
-        return _elevenlabs_agent_cache[agent_id]
-
-    try:
-        from elevenlabs.client import ElevenLabs
-
-        client = ElevenLabs(api_key=s2s_params.get("api_key"))
-        agent = client.conversational_ai.agents.get(agent_id=agent_id)
-        cc = agent.conversation_config
-
-        stt = "unknown"
-        if cc.asr and cc.asr.provider:
-            stt = cc.asr.provider
-
-        llm = "unknown"
-        if cc.agent and cc.agent.prompt and cc.agent.prompt.llm:
-            llm = cc.agent.prompt.llm
-
-        tts = "unknown"
-        if cc.tts and cc.tts.model_id:
-            tts = cc.tts.model_id
-
-        result = {"stt": stt, "llm": llm, "tts": tts}
-        _elevenlabs_agent_cache[agent_id] = result
-        logger.info(f"Fetched ElevenLabs agent models: {result}")
-        return result
-    except Exception as e:
-        logger.warning(f"Failed to fetch ElevenLabs agent models: {e}")
-        return {"stt": "unknown", "llm": "unknown", "tts": "unknown"}
-
-
 class ModelConfig(BaseModel):
     """Flat model configuration covering all pipeline modes.
 
@@ -248,13 +203,12 @@ class ModelConfig(BaseModel):
                     "tts": get_model_alias_from_params(self.tts_params),
                 }
             case PipelineType.S2S:
-                if self.s2s == "elevenlabs":
-                    # hardcoded for now. Models are set on the agent UI
-                    return {
-                        "s2s": get_model_alias_from_params(self.s2s_params) or self.s2s,
-                        **_fetch_elevenlabs_agent_models(self.s2s_params),
-                    }
-                return {"s2s": get_model_alias_from_params(self.s2s_params)}
+                # Every native S2S backend is labeled uniformly by its model/alias,
+                # falling back to the provider name. ElevenLabs is no longer special-
+                # cased: its agent's internal STT/LLM/TTS are an agent-UI detail we
+                # don't fetch at config time, and its model is optional (so fall back).
+                alias = self.s2s_params.get("alias") or self.s2s_params.get("model") or self.s2s
+                return {"s2s": alias}
             case PipelineType.CASCADE:
                 return {
                     "stt": get_model_alias_from_params(self.stt_params),

@@ -12,11 +12,16 @@ Design notes:
 - Probes are conservative: a component is reported as failed only on a definitive error
   (an exception or an ``ErrorFrame``). Ambiguity — no output, an unexpected-but-benign
   frame — is treated as a pass, so preflight never blocks an otherwise-valid run.
-- Native-S2S backends (OpenAI Realtime, Grok Voice) are validated cheaply by
-  *constructing* them via the ``BackendFactory`` (``_preflight_backends``): the backend's
-  own ``__init__`` checks that required fields/keys are present, with no API call. This
-  is the home for that validation (config-side validation was removed). Live S2S probing
-  (an actual session) is still not supported.
+- The assistant runs on the Role/Backend path ONLY, so the configured framework must be
+  one the ``BackendFactory`` backs. ``_preflight_backends`` validates it cheaply by
+  *constructing* the backend (its ``__init__`` checks required fields/keys, no API call)
+  and rejects a framework the factory doesn't back yet (unported = unusable; the legacy
+  server survives only as reference). This is the home for that validation (config-side
+  validation was removed). A live backend-session probe is still not supported.
+- The live model probes below (LLM/STT/TTS/audio-LLM) validate a cascade/audio-LLM
+  *assistant pipeline*. They are dormant while those frameworks are unported (rejected at
+  ``_preflight_backends``) and light up again once such a provider becomes a native
+  backend — kept as the reference wiring for that.
 """
 
 import asyncio
@@ -180,8 +185,8 @@ async def _run_preflight(config: RunConfig) -> list[ProbeResult]:
             probes.append(("AUDIO_LLM", get_model_alias_from_params(model.audio_llm_params), _probe_audio_llm(config)))
             probes.append(("TTS", get_model_alias_from_params(model.tts_params), _probe_tts(config)))
         case PipelineType.S2S:
-            # Backend construction is validated separately (_preflight_backends); a live
-            # S2S session probe is not yet supported.
+            # Native S2S backends are validated by construction in _preflight_backends;
+            # there is no live session probe yet, so nothing to probe here.
             logger.info("Pre-flight: S2S live probe not yet supported (construction validated)")
             return []
 
@@ -189,39 +194,33 @@ async def _run_preflight(config: RunConfig) -> list[ProbeResult]:
     return await asyncio.gather(*(_guard(model_type, alias, probe, timeout) for model_type, alias, probe in probes))
 
 
-def _check_backend_construction(label: str, name: str, backend_args: dict[str, Any]) -> str | None:
-    """Validate a native-S2S provider by constructing its backend (no network).
-
-    The backend's own ``__init__`` checks that required fields/keys resolve, so a
-    successful construction means the run's construction path works. Returns an error
-    string for a *misconfigured factory backend* (missing key, absent model), or
-    ``None`` when it's fine — including when the factory doesn't back this provider
-    (``create()`` -> ``None``): that's a legacy/non-factory provider (e.g. ElevenLabs
-    Conversational AI, or a cascade pipeline) validated elsewhere, not here.
-    """
-    try:
-        _BACKEND_FACTORY.create(name, backend_args)
-    except Exception as e:
-        return f"{label} {name!r}: {str(e).strip()[:200] or type(e).__name__}"
-    return None
-
-
-def _preflight_backends(config: RunConfig) -> None:
-    """Cheap, network-free validation that the configured S2S assistant backend constructs.
-
-    Only the S2S assistant framework runs through the ``BackendFactory``; constructing it
-    validates required fields/keys with no API call. Cascade/audio-LLM assistants (pipecat
-    services) are left to the live probes. The user simulator is on its legacy stack and
-    validated by config (not a backend), so it is not checked here.
-    """
-    if config.model.pipeline_type != PipelineType.S2S:
-        return
-    assistant_args = {
+def _assistant_backend_args(config: RunConfig) -> dict[str, Any]:
+    """The config blob the worker/factory builds a native assistant backend from."""
+    return {
         **(config.model.s2s_params or {}),
         "parallel_tool_calls": config.model.parallel_tool_calls,
     }
-    if err := _check_backend_construction("assistant framework", config.framework, assistant_args):
-        raise PreflightError(f"backend configuration invalid:\n{err}")
+
+
+def _preflight_backends(config: RunConfig) -> None:
+    """Cheap, network-free validation that the assistant's native backend constructs.
+
+    The assistant runs on the Role/Backend path only, so the configured framework MUST
+    be one the ``BackendFactory`` backs. Constructing it validates required fields/keys
+    (api_key, model, speaker_id, ...) with no API call — the single source of truth for
+    backend config. A framework the factory doesn't back yet is unusable (its legacy
+    server survives only as reference), so it fails here rather than falling through.
+    The user simulator is on its legacy stack and validated by config, not here.
+    """
+    try:
+        backend = _BACKEND_FACTORY.create(config.framework, _assistant_backend_args(config))
+    except Exception as e:
+        detail = str(e).strip()[:400] or type(e).__name__
+        raise PreflightError(f"assistant framework {config.framework!r} config invalid:\n{detail}") from e
+    if backend is None:
+        raise PreflightError(
+            f"assistant framework {config.framework!r} is not available as a native backend yet."
+        )
 
 
 async def run_preflight(config: RunConfig) -> None:

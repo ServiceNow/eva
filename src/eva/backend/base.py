@@ -26,11 +26,12 @@ requiring either side to be "the server."
 
 from __future__ import annotations
 
+import os
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any
+from typing import Any, ClassVar
 
 from eva.backend.capabilities import BackendCapabilities
 
@@ -206,7 +207,66 @@ class Backend(ABC):
 
     Symmetry: this contract says nothing about which side dials out and
     which side is dialed into -- see the module docstring.
+
+    Construction/config: every concrete backend is built from a single flat
+    ``config`` dict (assembled by the worker/factory) and validates it in its own
+    ``__init__`` -- there is no per-provider pydantic schema, so config validation
+    lives entirely here and can be run cheaply/early (see
+    ``orchestrator.preflight``). To keep that validation *identical* across
+    providers, the shared pieces of the config contract live on this base:
+
+    - ``api_key``: every backend resolves it the same way via
+      ``_resolve_api_key`` -- explicit ``config['api_key']`` first, else the
+      provider's ``_API_KEY_ENV`` environment variable.
+    - ``speaker_id``: the single, provider-agnostic speaker identifier (an OpenAI/
+      Grok *voice* name, or an ElevenLabs *agent id*) -- one key name so callers
+      learn it once. Backends read it with ``_require`` (mandatory) or
+      ``config.get("speaker_id", <default>)`` (optional with a provider default).
+
+    ``model`` and any provider-specific extras are read directly by each backend;
+    the extras are optional and need no shared naming.
+
+    Validation is *cumulative*: the shared helpers below collect problems into an
+    ``errors`` list instead of raising on the first one, and the backend calls
+    ``_raise_config_errors(errors)`` once at the end -- so a caller who got two
+    fields wrong sees both at once rather than fixing-and-rerunning.
     """
+
+    _API_KEY_ENV: ClassVar[str | None] = None
+    """Environment variable the api_key falls back to when ``config['api_key']`` is
+    absent. Each concrete backend sets it (``OPENAI_API_KEY`` / ``XAI_API_KEY`` /
+    ``ELEVENLABS_API_KEY``); ``None`` disables the fallback (key must be explicit)."""
+
+    @classmethod
+    def _resolve_api_key(cls, config: dict[str, Any], errors: list[str]) -> str:
+        """Resolve the api_key uniformly: explicit config, else ``_API_KEY_ENV``.
+
+        Records a problem in ``errors`` (returning ``""``) rather than raising, so
+        api-key validation aggregates with the rest -- the single api-key path
+        every backend shares.
+        """
+        key = config.get("api_key") or (os.environ.get(cls._API_KEY_ENV) if cls._API_KEY_ENV else None)
+        if not key:
+            hint = "config['api_key']" + (f" or {cls._API_KEY_ENV}" if cls._API_KEY_ENV else "")
+            errors.append(f"missing api_key ({hint})")
+            return ""
+        return str(key)
+
+    @classmethod
+    def _require(cls, config: dict[str, Any], key: str, errors: list[str]) -> str:
+        """Return a required non-empty ``config[key]``, or record a problem in ``errors``."""
+        value = config.get(key)
+        if not value:
+            errors.append(f"missing '{key}' (config['{key}'])")
+            return ""
+        return str(value)
+
+    @classmethod
+    def _raise_config_errors(cls, errors: list[str]) -> None:
+        """Raise a single ``ValueError`` listing every collected config problem, if any."""
+        if errors:
+            joined = "\n".join(f"  - {e}" for e in errors)
+            raise ValueError(f"{cls.__name__} config invalid:\n{joined}")
 
     @property
     @abstractmethod

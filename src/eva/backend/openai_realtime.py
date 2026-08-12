@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import base64
 import json
-import os
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -88,7 +87,9 @@ class OpenAIRealtimeBackend(Backend):
     - ``accent``: if set, rejected -- this backend can't honor accents (they
       are realized via ElevenLabs agent IDs). Fails loud, mirroring the old
       ``OpenAIRealtimeUserSimulator`` guard, now backend-side.
-    - ``voice`` (default ``"marin"``), ``output_sample_rate`` (default 24000).
+    - ``speaker_id`` (default ``"marin"``): the shared speaker-identifier key (an
+      OpenAI voice name here), mapped onto the provider's ``voice`` field.
+    - ``output_sample_rate`` (default 24000).
     - ``input_format``: ``"pcm"`` (default) or ``"pcmu"``.
     - ``vad_settings``: turn-detection tunables (``type`` / ``threshold`` /
       ``prefix_padding_ms`` / ``silence_duration_ms``), defaults applied. Named
@@ -112,15 +113,12 @@ class OpenAIRealtimeBackend(Backend):
     _API_KEY_ENV: ClassVar[str] = "OPENAI_API_KEY"
 
     def __init__(self, *, config: dict[str, Any]) -> None:
-        api_key = config.get("api_key") or os.environ.get(self._API_KEY_ENV)
-        if not api_key:
-            raise ValueError(f"{type(self).__name__} requires an api_key (config['api_key'] or {self._API_KEY_ENV})")
+        errors: list[str] = []
+        self._api_key = self._resolve_api_key(config, errors)
         if config.get("accent") is not None:
-            raise ValueError("OpenAI Realtime backend does not support accent variants")
-        self._model: str = config.get("model") or ""
-        if not self._model:
-            raise ValueError(f"{type(self).__name__} requires a 'model' (config['model'])")
-        self._api_key = api_key
+            errors.append("accent variants are not supported (accents are realized via ElevenLabs agents)")
+        self._model: str = self._require(config, "model", errors)
+        self._raise_config_errors(errors)
         self._base_url = config.get("base_url")
         self._input_format: str = config.get("input_format", "pcm")
         self._output_sample_rate = int(config.get("output_sample_rate", DEFAULT_SAMPLE_RATE))
@@ -162,7 +160,7 @@ class OpenAIRealtimeBackend(Backend):
             "output_modalities": ["audio"],
             "audio": {
                 "output": {
-                    "voice": config.get("voice", "marin"),
+                    "voice": config.get("speaker_id", "marin"),
                     "format": {"type": "audio/pcm", "rate": self._output_sample_rate},
                 },
                 "input": {"format": input_fmt, "turn_detection": turn_detection, "transcription": transcription},

@@ -1,22 +1,37 @@
-"""Verify framework dispatcher returns the right server class."""
+"""Assistant framework dispatch: backend-only via the BackendFactory.
 
-import pytest
+The assistant runs on the Role/Backend path exclusively — the legacy
+``_get_server_class`` wiring is gone. A framework the factory backs is usable;
+anything else is unported (its legacy server survives only as reference) and the
+factory returns ``None`` for it.
+"""
 
-from eva.assistant.grok_voice_server import GrokVoiceAssistantServer
-from eva.assistant.openai_realtime_server import OpenAIRealtimeAssistantServer
-from eva.orchestrator.worker import _get_server_class
+from eva.backend.elevenlabs import ElevenLabsBackend
+from eva.backend.factory import BackendFactory
+from eva.backend.grok_voice import GrokVoiceBackend
+from eva.backend.openai_realtime import OpenAIRealtimeBackend
+
+_PORTED = {
+    "openai_realtime": OpenAIRealtimeBackend,
+    "grok_voice": GrokVoiceBackend,
+    "elevenlabs": ElevenLabsBackend,
+}
+
+_MINIMAL_CONFIG = {
+    "openai_realtime": {"model": "gpt-realtime", "api_key": "k"},
+    "grok_voice": {"model": "grok-voice", "api_key": "k"},
+    "elevenlabs": {"api_key": "k", "speaker_id": "ag_1"},
+}
 
 
-def test_grok_voice_dispatch_returns_grok_class():
-    cls = _get_server_class("grok_voice")
-    assert cls is GrokVoiceAssistantServer
+def test_create_builds_each_ported_backend():
+    factory = BackendFactory()
+    for name, cls in _PORTED.items():
+        assert isinstance(factory.create(name, _MINIMAL_CONFIG[name]), cls)
 
 
-def test_grok_voice_is_subclass_of_openai_realtime():
-    assert issubclass(GrokVoiceAssistantServer, OpenAIRealtimeAssistantServer)
-
-
-def test_unknown_framework_error_lists_grok_voice():
-    with pytest.raises(ValueError) as exc_info:
-        _get_server_class("nope")
-    assert "grok_voice" in str(exc_info.value)
+def test_create_returns_none_for_unported_frameworks():
+    # pipecat cascade and gemini_live are not yet native backends -> unusable as assistant.
+    factory = BackendFactory()
+    assert factory.create("pipecat", {}) is None
+    assert factory.create("gemini_live", {}) is None

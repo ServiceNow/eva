@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from eva.assistant.base_server import AbstractAssistantServer
 from eva.backend.factory import BackendFactory
 from eva.models.agents import AgentConfig
 from eva.models.config import RunConfig
@@ -25,43 +24,11 @@ logger = get_logger(__name__)
 USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS = 20
 
 # The backend factory is stateless (pure dispatch + lazy per-provider imports), so
-# a single shared instance serves every worker. Providers it can build run on the
-# Role/Backend path; for the rest create() returns None and we fall back to the
-# legacy server/simulator (see _start_assistant / _start_user_simulator).
+# a single shared instance serves every worker. The assistant runs on the Role/Backend
+# path ONLY: the factory builds the backend for the configured framework, and a
+# framework it doesn't yet back is unusable (see _start_assistant). The legacy
+# assistant servers survive as reference but are no longer wired.
 _BACKEND_FACTORY = BackendFactory()
-
-
-def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
-    """Return the server class for the given framework name.
-
-    Uses lazy imports to avoid importing heavy dependencies (pipecat, openai, etc.)
-    unless the framework is actually selected.
-    """
-    if framework == "pipecat":
-        from eva.assistant.pipecat_server import PipecatAssistantServer
-
-        return PipecatAssistantServer
-    elif framework == "openai_realtime":
-        from eva.assistant.openai_realtime_server import OpenAIRealtimeAssistantServer
-
-        return OpenAIRealtimeAssistantServer
-    elif framework == "gemini_live":
-        from eva.assistant.gemini_live_server import GeminiLiveAssistantServer
-
-        return GeminiLiveAssistantServer
-    elif framework == "elevenlabs":
-        from eva.assistant.elevenlabs_server import ElevenLabsAssistantServer
-
-        return ElevenLabsAssistantServer
-    elif framework == "grok_voice":
-        from eva.assistant.grok_voice_server import GrokVoiceAssistantServer
-
-        return GrokVoiceAssistantServer
-    else:
-        raise ValueError(
-            f"Unknown framework: {framework!r}. "
-            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice"
-        )
 
 
 def _percentile(sorted_data: list[float], p: float) -> float:
@@ -126,7 +93,7 @@ class ConversationWorker:
 
         # Set during run: a Role (for factory-supported providers) or the legacy
         # server/simulator (for the rest).
-        self._assistant_server: AbstractAssistantServer | AssistantRole | None = None
+        self._assistant_server: AssistantRole | None = None
         self._user_simulator = None
         self._conversation_stats: dict[str, Any] = {}
         self._log_file_handler = None
@@ -318,44 +285,30 @@ class ConversationWorker:
 
         s2s = self.config.model.s2s_params or {}
         backend_args = {**s2s, "parallel_tool_calls": self.config.model.parallel_tool_calls}
-        if backend := _BACKEND_FACTORY.create(self.config.framework, backend_args):
-            # A generic AssistantRole over a factory-built backend. The backend is
-            # selected by the configured framework name; its args are the S2S
-            # provider params passed through (the backend reads what it needs and
-            # assembles its own session). Providers not yet on the factory fall
-            # through to the legacy server below.
-            self._assistant_server = AssistantRole(
-                backend=backend,
-                current_date_time=self.record.current_date_time,
-                pipeline_config=self.config.model,
-                agent=self.agent,
-                agent_config_path=self.agent_config_path,
-                scenario_db_path=str(resolved_db_path),
-                output_dir=self.output_dir,
-                port=self.port,
-                conversation_id=self.record.id,
-                language=self.config.language,
+        backend = _BACKEND_FACTORY.create(self.config.framework, backend_args)
+        if backend is None:
+            # Assistant runs on the Role/Backend path only. A framework the factory
+            # doesn't back yet is unusable (its legacy server survives as reference,
+            # but is no longer wired); add it to the factory to enable it.
+            raise ValueError(
+                f"Framework {self.config.framework!r} is not available as a native backend yet."
             )
-        else:
-            server_cls = _get_server_class(self.config.framework)
-            # The turn-end fallback applies to the Pipecat pipelines (cascade + audio-LLM), whose
-            # turn detection can drop a user turn. S2S servers handle turn-taking natively and
-            # don't accept this kwarg.
-            server_kwargs: dict[str, Any] = {}
-            if self.config.framework == "pipecat":
-                server_kwargs["turn_end_fallback_time"] = self.config.turn_end_fallback_time
-            self._assistant_server = server_cls(
-                current_date_time=self.record.current_date_time,
-                pipeline_config=self.config.model,
-                agent=self.agent,
-                agent_config_path=self.agent_config_path,
-                scenario_db_path=str(resolved_db_path),
-                output_dir=self.output_dir,
-                port=self.port,
-                conversation_id=self.record.id,
-                language=self.config.language,
-                **server_kwargs,
-            )
+
+        # A generic AssistantRole over a factory-built backend, selected by the
+        # configured framework name; its args are the S2S provider params passed
+        # through (the backend reads what it needs and assembles its own session).
+        self._assistant_server = AssistantRole(
+            backend=backend,
+            current_date_time=self.record.current_date_time,
+            pipeline_config=self.config.model,
+            agent=self.agent,
+            agent_config_path=self.agent_config_path,
+            scenario_db_path=str(resolved_db_path),
+            output_dir=self.output_dir,
+            port=self.port,
+            conversation_id=self.record.id,
+            language=self.config.language,
+        )
 
         await self._assistant_server.start()
 

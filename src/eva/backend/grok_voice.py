@@ -12,9 +12,11 @@ subclasses the OpenAI Realtime server:
   the wrong key for x.ai) when not supplied in config;
 - input transcription: xAI fires
   ``conversation.item.input_audio_transcription.completed`` multiple times per
-  turn, each carrying the *cumulative* text so far rather than a delta, so
-  each event is diffed against the last one emitted and only the new suffix
-  is surfaced as a ``TRANSCRIPT``.
+  turn, each carrying the *cumulative* text so far rather than a delta. Only the
+  latest cumulative is buffered on the session and emitted as ONE input
+  ``TRANSCRIPT`` at the turn boundary (next ``speech_started`` / ``response.done``),
+  matching the legacy ``grok_voice_server``'s deferred flush -- so the role logs a
+  single user turn instead of one per fragment.
 
 Everything else -- session assembly, audio, tool round-trip, interruption,
 usage, the rest of the event normalization -- is inherited unchanged.
@@ -37,17 +39,16 @@ DEFAULT_VOICE = "eve"
 
 @dataclass
 class GrokVoiceSession(OpenAIRealtimeSession):
-    """OpenAI Realtime session state plus xAI's last cumulative input transcript.
+    """OpenAI Realtime session state plus xAI's buffered cumulative input transcript.
 
     xAI streams ``input_audio_transcription.completed`` repeatedly, each carrying the
     *cumulative* text so far (it does NOT emit incremental ``.delta`` events like
-    OpenAI). Emitting each cumulative event directly repeats text that then double-
-    concatenates downstream. ``last_input_transcript`` records the cumulative text we
-    last emitted so each ``completed`` surfaces only its new suffix -- a mutually-
-    exclusive piece that the postprocessor re-joins with a space.
+    OpenAI). Emitting each ``completed`` directly makes the role log one user turn per
+    fragment. Instead ``pending_input_transcript`` holds the latest cumulative text,
+    which is flushed as a single input ``TRANSCRIPT`` at the turn boundary.
     """
 
-    last_input_transcript: str = ""
+    pending_input_transcript: str = ""
 
 
 class GrokVoiceBackend(OpenAIRealtimeBackend):
@@ -56,48 +57,49 @@ class GrokVoiceBackend(OpenAIRealtimeBackend):
     _SESSION_CLS: ClassVar[type[OpenAIRealtimeSession]] = GrokVoiceSession
     _API_KEY_ENV: ClassVar[str] = "XAI_API_KEY"
 
+    # Turn boundaries at which the buffered cumulative input transcript is flushed
+    # (mirrors the legacy server flushing on _on_speech_started / _on_response_done).
+    _FLUSH_ON: ClassVar[tuple[str, ...]] = ("input_audio_buffer.speech_started", "response.done")
+
     def __init__(self, *, config: dict[str, Any]) -> None:
-        # base_url / voice are xAI defaults any explicit config overrides; api_key falls
-        # back to XAI_API_KEY in the parent (via _API_KEY_ENV).
-        merged = {"base_url": XAI_REALTIME_BASE_URL, "voice": DEFAULT_VOICE, **config}
+        # base_url / speaker_id are xAI defaults any explicit config overrides; api_key
+        # falls back to XAI_API_KEY in the parent (via _API_KEY_ENV).
+        merged = {"base_url": XAI_REALTIME_BASE_URL, "speaker_id": DEFAULT_VOICE, **config}
         super().__init__(config=merged)
 
     @staticmethod
     def _map_event(session: OpenAIRealtimeSession, event: Any) -> list[BackendEvent]:
-        """Normalize one xAI event, de-duplicating its cumulative input transcripts.
+        """Normalize one xAI event, buffering its cumulative input transcript.
 
-        Defers to ``OpenAIRealtimeBackend._map_event`` for everything except
-        ``input_audio_transcription.completed``: xAI re-sends the whole cumulative
-        transcript each time, so we emit only the part that extends what we already
-        emitted (see ``_emit_input_delta``). xAI sends no ``.delta`` events, so diffing
-        the cumulative text is the only incremental signal available.
+        ``input_audio_transcription.completed`` is cumulative (xAI re-sends the whole
+        text, no ``.delta`` events), so it is buffered rather than emitted; the buffer
+        is flushed as one input ``TRANSCRIPT`` just before the parent's events at a turn
+        boundary (``_FLUSH_ON``). Everything else defers to ``OpenAIRealtimeBackend``.
         """
-        if getattr(event, "type", "") == "conversation.item.input_audio_transcription.completed":
-            return GrokVoiceBackend._emit_input_delta(session, event)
-        return OpenAIRealtimeBackend._map_event(session, event)
+        etype = getattr(event, "type", "")
+        if etype == "conversation.item.input_audio_transcription.completed":
+            text = (getattr(event, "transcript", "") or "").strip()
+            if isinstance(session, GrokVoiceSession) and text:
+                session.pending_input_transcript = text
+            return []
+
+        events: list[BackendEvent] = []
+        if etype in GrokVoiceBackend._FLUSH_ON:
+            events.extend(GrokVoiceBackend._flush_input_transcript(session))
+        events.extend(OpenAIRealtimeBackend._map_event(session, event))
+        return events
 
     @staticmethod
-    def _emit_input_delta(session: OpenAIRealtimeSession, event: Any) -> list[BackendEvent]:
-        """Emit only the new suffix of xAI's cumulative input transcript."""
-        if not isinstance(session, GrokVoiceSession):
+    def _flush_input_transcript(session: OpenAIRealtimeSession) -> list[BackendEvent]:
+        """Emit the buffered cumulative input transcript once, then clear it."""
+        if not isinstance(session, GrokVoiceSession) or not session.pending_input_transcript:
             return []
-        transcript = (getattr(event, "transcript", "") or "").strip()
-        if not transcript:
-            return []
-
-        last = session.last_input_transcript
-        if last and transcript.startswith(last):
-            piece = transcript[len(last) :].strip()  # extends the current utterance
-        else:
-            piece = transcript  # a fresh utterance (doesn't extend the last)
-        session.last_input_transcript = transcript
-
-        if not piece:
-            return []
+        text = session.pending_input_transcript
+        session.pending_input_transcript = ""
         return [
             BackendEvent(
                 event_type=BackendEventType.TRANSCRIPT,
-                transcript=piece,
+                transcript=text,
                 metadata={"stream": "input", "final": True},
             )
         ]

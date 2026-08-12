@@ -51,7 +51,7 @@ def test_xai_defaults_applied():
 
 
 def test_explicit_config_wins_over_defaults():
-    b = _backend(base_url="https://custom/v1", voice="ara")
+    b = _backend(base_url="https://custom/v1", speaker_id="ara")
     assert b._base_url == "https://custom/v1"
     assert b._session_config["audio"]["output"]["voice"] == "ara"
 
@@ -70,37 +70,66 @@ def _completed(text=""):
     return SimpleNamespace(type="conversation.item.input_audio_transcription.completed", transcript=text)
 
 
+def _speech_started():
+    return SimpleNamespace(type="input_audio_buffer.speech_started")
+
+
+def _response_done(status="completed"):
+    response = SimpleNamespace(status=status, usage=None, output=[])
+    return SimpleNamespace(type="response.done", response=response)
+
+
 def _transcripts(events):
     return [e.transcript for e in events if e.event_type == BackendEventType.TRANSCRIPT]
 
 
-def test_cumulative_completed_emits_only_new_suffix():
-    # xAI re-sends the whole cumulative transcript each time; we emit only the new part
-    # so pieces are mutually exclusive and the postprocessor re-joins them with a space.
+def test_cumulative_completed_is_buffered_not_emitted():
+    # xAI re-sends the whole cumulative transcript each time; nothing is emitted until
+    # the turn boundary flush, so the role logs one user turn (not one per fragment).
     s = _session()
-    assert _transcripts(_map(s, _completed("Yes, but only show options."))) == ["Yes, but only show options."]
-    assert _transcripts(_map(s, _completed("Yes, but only show options. And the total cost."))) == [
-        "And the total cost."
-    ]
-    assert _transcripts(_map(s, _completed("Yes, but only show options. And the total cost. By 4 PM."))) == ["By 4 PM."]
-    assert s.last_input_transcript == "Yes, but only show options. And the total cost. By 4 PM."
+    assert _map(s, _completed("Hi, I need to change my")) == []
+    assert _map(s, _completed("Hi, I need to change my flight to March 20")) == []
+    assert _map(s, _completed("Hi, I need to change my flight to March 25th.")) == []
+    assert s.pending_input_transcript == "Hi, I need to change my flight to March 25th."
 
 
-def test_repeated_identical_completed_emits_nothing():
+def test_flush_on_response_done_emits_latest_cumulative_once():
     s = _session()
-    assert _transcripts(_map(s, _completed("hello"))) == ["hello"]
-    assert _map(s, _completed("hello")) == []  # no new text -> no duplicate
+    _map(s, _completed("Hi, I need to change my"))
+    _map(s, _completed("Hi, I need to change my flight to March 25th."))
+    events = _map(s, _response_done())
+    # The buffered transcript is flushed once, before the parent's TURN_END.
+    assert _transcripts(events) == ["Hi, I need to change my flight to March 25th."]
+    assert events[0].event_type == BackendEventType.TRANSCRIPT
+    assert events[-1].event_type == BackendEventType.TURN_END
+    assert s.pending_input_transcript == ""  # cleared after flush
 
 
-def test_fresh_utterance_not_extending_is_emitted_whole():
+def test_flush_on_speech_started_emits_and_precedes_speech_signal():
     s = _session()
     _map(s, _completed("First utterance."))
-    assert _transcripts(_map(s, _completed("Completely different."))) == ["Completely different."]
+    events = _map(s, _speech_started())
+    assert _transcripts(events) == ["First utterance."]
+    assert events[0].event_type == BackendEventType.TRANSCRIPT
+    assert events[-1].event_type == BackendEventType.INPUT_SPEECH_STARTED
 
 
-def test_empty_completed_emits_nothing():
+def test_flush_without_buffer_emits_no_transcript():
     s = _session()
-    assert _map(s, _completed("")) == []
+    assert _transcripts(_map(s, _response_done())) == []
+
+
+def test_flush_is_not_repeated_after_clear():
+    s = _session()
+    _map(s, _completed("only once"))
+    assert _transcripts(_map(s, _response_done())) == ["only once"]
+    assert _transcripts(_map(s, _speech_started())) == []  # buffer already cleared
+
+
+def test_empty_completed_buffers_nothing():
+    s = _session()
+    _map(s, _completed(""))
+    assert s.pending_input_transcript == ""
 
 
 def test_other_events_delegate_to_parent():

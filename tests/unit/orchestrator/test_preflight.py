@@ -147,10 +147,45 @@ def test_backend_construction_passes_with_key(tmp_path):
         preflight._preflight_backends(cfg)  # no raise
 
 
-def test_backend_construction_skips_non_s2s_assistant(tmp_path):
-    # A cascade assistant isn't a native backend -> no construction check, no raise.
+def test_backend_construction_rejects_unported_assistant(tmp_path):
+    # The assistant is backend-only now: a cascade (pipecat) framework isn't a native
+    # backend, so it's unusable and rejected up front rather than silently skipped.
     with patch.dict(os.environ, _BASE_ENV, clear=True):
-        preflight._preflight_backends(_cascade_config(tmp_path))
+        with pytest.raises(PreflightError, match="not available as a native backend"):
+            preflight._preflight_backends(_cascade_config(tmp_path))
+
+
+def _elevenlabs_config(tmp_path, s2s_params) -> RunConfig:
+    with patch.dict(os.environ, _BASE_ENV, clear=True):
+        return RunConfig(
+            model=ModelConfig(s2s="elevenlabs", s2s_params=s2s_params),
+            framework="elevenlabs",
+            output_dir=tmp_path / "out",
+            run_id="r",
+        )
+
+
+def test_backend_construction_validates_elevenlabs_missing_agent_id(tmp_path):
+    # ElevenLabs is CASCADE-typed internally but factory-backed -> construction validates it.
+    cfg = _elevenlabs_config(tmp_path, {"api_key": "k"})  # no speaker_id
+    with patch.dict(os.environ, _BASE_ENV, clear=True):
+        with pytest.raises(PreflightError, match="assistant framework 'elevenlabs'"):
+            preflight._preflight_backends(cfg)
+
+
+def test_backend_construction_passes_for_elevenlabs_with_agent_id(tmp_path):
+    cfg = _elevenlabs_config(tmp_path, {"api_key": "k", "speaker_id": "ag_1"})
+    with patch.dict(os.environ, _BASE_ENV, clear=True):
+        preflight._preflight_backends(cfg)  # no raise
+
+
+@pytest.mark.asyncio
+async def test_elevenlabs_skips_live_probes(tmp_path):
+    # ElevenLabs' pipeline_type property is S2S, so _run_preflight skips live model
+    # probes (native backends are validated by construction, not a live session probe).
+    cfg = _elevenlabs_config(tmp_path, {"api_key": "k", "speaker_id": "ag_1"})
+    results = await _run_preflight(cfg)
+    assert results == []
 
 
 @pytest.mark.asyncio
@@ -180,10 +215,15 @@ async def test_guard_times_out():
     assert "timed out" in result.detail
 
 
+# These exercise run_preflight's or-raise wrapper over the live model probes. The
+# cascade probe path is only reachable once a cascade provider is a native backend
+# (it's rejected at _preflight_backends until then), so the backend gate is stubbed
+# to isolate the wrapper/probe behavior.
 @pytest.mark.asyncio
 async def test_or_raise_passes_when_all_ok(tmp_path):
     cfg = _cascade_config(tmp_path)
     with (
+        patch.object(preflight, "_preflight_backends", lambda c: None),
         patch.object(preflight, "create_stt_service", return_value=_GoodSTT()) as stt,
         patch.object(preflight, "create_tts_service", return_value=_GoodTTS()) as tts,
         patch.object(preflight, "LiteLLMClient") as llm,
@@ -199,6 +239,7 @@ async def test_or_raise_passes_when_all_ok(tmp_path):
 async def test_or_raise_raises_on_failure(tmp_path):
     cfg = _cascade_config(tmp_path)
     with (
+        patch.object(preflight, "_preflight_backends", lambda c: None),
         patch.object(preflight, "create_stt_service", return_value=_GoodSTT()),
         patch.object(preflight, "create_tts_service", return_value=_GoodTTS()),
         patch.object(preflight, "LiteLLMClient") as llm,
@@ -210,8 +251,15 @@ async def test_or_raise_raises_on_failure(tmp_path):
 
 @pytest.mark.asyncio
 async def test_or_raise_noop_when_disabled(tmp_path):
-    cfg = _cascade_config(tmp_path)
+    # Disabled preflight skips the live probes (but backend construction still runs).
+    with patch.dict(os.environ, _BASE_ENV | {"OPENAI_API_KEY": "k"}, clear=True):
+        cfg = RunConfig(
+            model=ModelConfig(s2s="gpt-realtime", s2s_params={"api_key": "k", "model": "gpt-realtime"}),
+            framework="openai_realtime",
+            output_dir=tmp_path / "out",
+            run_id="r",
+        )
     cfg.preflight = False
-    with patch.object(preflight, "run_preflight") as probe:
+    with patch.object(preflight, "_run_preflight") as probe:
         await run_preflight(cfg)
         probe.assert_not_called()

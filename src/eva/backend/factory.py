@@ -26,11 +26,12 @@ class BackendFactory:
     Providers are added as their backends are migrated onto the ``Backend``
     contract: add a lazy-import branch in ``create``. Each provider's SDK is
     imported only when that provider is selected, so unused providers need not
-    be importable.
+    be importable. ``create`` returning ``None`` is the single signal for "not a
+    native backend" -- there is no parallel list of supported names to maintain.
     """
 
     def create(self, name: str, config: dict[str, Any]) -> Backend | None:
-        """Construct a not-yet-opened ``Backend``, or ``None`` if unsupported.
+        """Construct a not-yet-opened ``Backend``, or ``None`` if not yet migrated.
 
         Args:
             name: Provider identifier (e.g. ``"openai_realtime"``,
@@ -46,7 +47,8 @@ class BackendFactory:
             ``open()``ed (construction and session establishment are separate
             steps, so a ``Role`` can build its backend early and open the
             session later). ``None`` if ``name`` is not a migrated provider --
-            the worker then falls back to the legacy server/simulator.
+            the assistant path treats that as an error (unported = unusable);
+            the (unported) legacy server survives only as reference.
         """
         if name == "openai_realtime":
             from eva.backend.openai_realtime import OpenAIRealtimeBackend
@@ -56,4 +58,8 @@ class BackendFactory:
             from eva.backend.grok_voice import GrokVoiceBackend
 
             return GrokVoiceBackend(config=config)
+        if name == "elevenlabs":
+            from eva.backend.elevenlabs import ElevenLabsBackend
+
+            return ElevenLabsBackend(config=config)
         return None

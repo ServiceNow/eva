@@ -67,7 +67,7 @@ def test_sample_rates_from_input_format():
 
 def test_assemble_assistant_session_defaults():
     # pcm input, auto turn-taking: no manual create_response fields; whisper, no language.
-    sc = _backend(voice="marin", vad_settings={})._session_config
+    sc = _backend(speaker_id="marin", vad_settings={})._session_config
     assert sc["output_modalities"] == ["audio"]
     assert sc["audio"]["output"] == {"voice": "marin", "format": {"type": "audio/pcm", "rate": 24000}}
     assert sc["audio"]["input"]["format"] == {"type": "audio/pcm", "rate": 24000}
@@ -82,7 +82,7 @@ def test_assemble_assistant_session_defaults():
 
 def test_assemble_session_auto_turn_taking():
     sc = _backend(
-        voice="ballad",
+        speaker_id="ballad",
         vad_settings={"threshold": 0.5, "prefix_padding_ms": 300, "silence_duration_ms": 500},
         transcription_language="en",
         parallel_tool_calls=False,
