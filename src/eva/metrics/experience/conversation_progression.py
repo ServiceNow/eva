@@ -32,7 +32,7 @@ class ConversationProgressionJudgeMetric(ConversationTextJudgeMetric):
     """
 
     name = "conversation_progression"
-    version = "v0.1"
+    version = "v0.2"
     description = "LLM judge evaluation of whether the assistant moved the conversation forward productively"
     category = "experience"
     rating_scale = (1, 3)
@@ -42,8 +42,8 @@ class ConversationProgressionJudgeMetric(ConversationTextJudgeMetric):
         return {
             "conversation_trace": transcript_text,
             "user_turns_disclaimer": get_user_turns_disclaimer(context.is_audio_native),
-            "assistant_turns_disclaimer": get_assistant_turns_disclaimer(context.is_audio_native),
-            "information_loss_pipeline_note": get_information_loss_pipeline_note(context.is_audio_native),
+            "assistant_turns_disclaimer": get_assistant_turns_disclaimer(context.is_s2s),
+            "information_loss_pipeline_note": get_information_loss_pipeline_note(context.is_s2s),
         }
 
     def build_metric_score(

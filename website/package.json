@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "rm -rf ../docs/assets",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

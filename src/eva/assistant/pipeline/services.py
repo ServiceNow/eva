@@ -3,6 +3,7 @@
 Creates Pipecat services with proper configuration.
 """
 
+import dataclasses
 import datetime
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -18,7 +19,8 @@ from pipecat.frames.frames import (
 from pipecat.services.assemblyai.stt import AssemblyAISTTService
 from pipecat.services.cartesia.stt import CartesiaSTTService
 from pipecat.services.cartesia.tts import CartesiaTTSService
-from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
+from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
+from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService, DeepgramFluxSTTSettings
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.deepgram.tts import DeepgramTTSService
 from pipecat.services.elevenlabs.stt import CommitStrategy, ElevenLabsRealtimeSTTService
@@ -35,10 +37,13 @@ from pipecat.services.openai.realtime.events import (
 from pipecat.services.openai.realtime.llm import OpenAIRealtimeLLMService
 from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import OpenAITTSService
+from pipecat.services.smallest.stt import SmallestSTTService
+from pipecat.services.smallest.tts import SmallestTTSService
 from pipecat.services.stt_service import STTService
 from pipecat.services.tts_service import TTSService
 from pipecat.services.xai.stt import XAISTTService
 from pipecat.services.xai.tts import XAITTSService
+from pipecat.transcriptions.language import Language
 from pipecat.utils.text.base_text_filter import BaseTextFilter
 from websockets.asyncio.client import connect as websocket_connect
 
@@ -75,7 +80,7 @@ from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
-# Default sample rate for audio
+# Default sample rate for audio (TTS output rate).
 SAMPLE_RATE = 24000
 
 
@@ -85,6 +90,18 @@ def _base_language(tag: str) -> str:
     Used for providers that only accept the two-letter base code (e.g. Whisper/OpenAI STT).
     """
     return tag.split("-")[0].split("_")[0]
+
+
+def _to_language_enum(tag: str) -> Language:
+    """Convert a BCP 47 tag to a pipecat Language enum.
+
+    Tries the full tag first, falls back to the base code (e.g. 'fr-CA' → 'fr').
+    Used for pipecat-native services whose Settings accept Language enum values.
+    """
+    try:
+        return Language(tag)
+    except ValueError:
+        return Language(_base_language(tag))
 
 
 # Round-robin counters for load-balanced URLs (one per service type)
@@ -103,7 +120,7 @@ def create_stt_service(
     Based on create_stt_service() from chatbot.py.
 
     Args:
-        model: STT model identifier (deepgram, deepgram-flux, openai, assemblyai, cartesia, nvidia)
+        model: STT model identifier (deepgram, deepgram-flux, openai, assemblyai, cartesia, cartesia-multilingual, nvidia)
         params: Model-specific parameters (may include 'alias' key which is ignored here)
         language_code: Language code for transcription
 
@@ -126,23 +143,42 @@ def create_stt_service(
 
     if model_lower == "assemblyai":
         logger.info(f"Using AssemblyAI STT: {params['model']}")
+        assemblyai_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(AssemblyAISTTService.Settings) if (k := f.name) in params
+        }
+        # vad_force_turn_endpoint is a constructor arg, not a Settings field, so the dataclass
+        # forwarding above won't carry it — thread it explicitly. Default True = Pipecat-mode
+        # (force the endpoint on Silero VAD stop); set False to let AssemblyAI's own server-side
+        # turn detection (min_turn_silence/max_turn_silence) decide turn ends.
         return AssemblyAISTTService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
+            vad_force_turn_endpoint=params.get("vad_force_turn_endpoint", True),
             settings=AssemblyAISTTService.Settings(
-                language=language_code,
-                model=params["model"],
+                language=_to_language_enum(language_code),
+                **assemblyai_settings_kwargs,
             ),
         )
 
     elif model_lower == "cartesia":
-        logger.info(f"Using Cartesia STT: {params['model']}")
+        # ink-2 provides its own turn boundaries; ModelConfig selects external endpointing.
+        model_name = params["model"]
+        logger.info(f"Using Cartesia STT: {model_name}")
+        return CartesiaTurnsSTTService(
+            api_key=api_key,
+            sample_rate=params.get("sample_rate", 16000),
+            should_interrupt=params.get("should_interrupt", True),
+            settings=CartesiaTurnsSTTService.Settings(model=model_name),
+        )
+
+    elif model_lower == "cartesia-multilingual":
+        logger.info(f"Using Cartesia multilingual STT: {params['model']}")
         return CartesiaSTTService(
             api_key=api_key,
-            sample_rate=SAMPLE_RATE,
+            sample_rate=16000,
             settings=CartesiaSTTService.Settings(
                 model=params["model"],
-                language=language_code,
+                language=_to_language_enum(language_code),
             ),
         )
 
@@ -160,30 +196,44 @@ def create_stt_service(
         # Check if using Flux model
         if "flux" in model_lower:
             logger.info(f"Using Deepgram Flux STT: {params['model']}")
+            flux_settings_kwargs: dict[str, Any] = {"model": params["model"]}
+            # Flux ignores `language`; only `flux-general-multi` honors `language_hints`.
+            if params["model"] == "flux-general-multi":
+                if params.get("language_hints"):
+                    flux_settings_kwargs["language_hints"] = params["language_hints"]
+                else:
+                    logger.warning("No Language hint provided. Auto detecting language for Deepgram Flux")
             return DeepgramFluxSTTService(
                 api_key=api_key,
-                model=params["model"],
                 sample_rate=SAMPLE_RATE,
+                settings=DeepgramFluxSTTSettings(**flux_settings_kwargs),
             )
         logger.info(f"Using Deepgram STT: {params['model']}")
+        deepgram_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(DeepgramSTTService.Settings) if (k := f.name) in params
+        }
+        deepgram_settings_kwargs.setdefault("interim_results", True)
         return DeepgramSTTService(
             api_key=api_key,
             settings=DeepgramSTTService.Settings(
-                language=language_code,
-                model=params["model"],
-                interim_results=True,
+                language=_to_language_enum(language_code),
+                **deepgram_settings_kwargs,
             ),
             sample_rate=SAMPLE_RATE,
         )
 
     elif model_lower == "elevenlabs":
-        logger.info("Using ElevenLabs STT")
+        logger.info(f"Using ElevenLabs STT {params['model']}")
+        elevenlabs_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(ElevenLabsRealtimeSTTService.Settings) if (k := f.name) in params
+        }
         return ElevenLabsRealtimeSTTService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
             commit_strategy=CommitStrategy.VAD,
             settings=ElevenLabsRealtimeSTTService.Settings(
-                language=language_code,
+                language=_base_language(language_code),
+                **elevenlabs_settings_kwargs,
             ),
         )
 
@@ -231,23 +281,64 @@ def create_stt_service(
             )
         return stt_service
 
+    elif model_lower == "smallest":
+        logger.info(f"Using Smallest STT: {params['model']}")
+        smallest_stt_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(SmallestSTTService.Settings) if (k := f.name) in params
+        }
+        return SmallestSTTService(
+            api_key=api_key,
+            base_url=url or "wss://api.smallest.ai",
+            sample_rate=params.get("sample_rate", SAMPLE_RATE),
+            settings=SmallestSTTService.Settings(
+                language=_to_language_enum(language_code),
+                **smallest_stt_settings_kwargs,
+            ),
+        )
+
     elif model_lower == "xai":
         logger.info("Using xAI STT")
+        xai_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(XAISTTService.Settings) if (k := f.name) in params
+        }
+        xai_settings_kwargs.setdefault("interim_results", True)
+        xai_settings_kwargs.setdefault("endpointing", 200)
         return XAISTTService(
             api_key=api_key,
             sample_rate=params.get("sample_rate", 16000),
             encoding=params.get("encoding", "pcm"),
             settings=XAISTTService.Settings(
-                language=language_code,
-                interim_results=params.get("interim_results", True),
-                endpointing=params.get("endpointing", 200),
+                language=_to_language_enum(language_code),
+                **xai_settings_kwargs,
             ),
         )
 
     else:
         raise ValueError(
-            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, xai"
+            f"Unknown STT model: {model}. Available: assemblyai, cartesia, cartesia-multilingual, cohere, deepgram, deepgram-flux, elevenlabs, nvidia, nvidia-baseten, openai, smallest, xai"
         )
+
+
+async def update_stt_agent_context(stt: STTService | None, text: str) -> None:
+    """Feed the agent's latest spoken reply back to the STT service as conversation context.
+
+    AssemblyAI's Universal-3 Pro streaming models (e.g. ``u3-rt-pro``, ``universal-3-5-pro``)
+    support *context carryover*: seeding the agent's most recent reply improves transcription
+    of the user's next turn (short answers, spelled-out entities, disambiguation). Pipecat
+    exposes this via ``AssemblyAISTTService.update_agent_context()``.
+
+    In a standard pipecat bot this fires automatically (the assistant context aggregator emits
+    ``LLMContextAssistantTurnFrame`` and the upstream STT picks it up). EVA's cascade pipeline
+    drives the agent turn through a custom processor that pushes ``TTSSpeakFrame`` directly and
+    does not emit the standard LLM response frames, so we trigger the update explicitly from the
+    assistant-response hook instead.
+
+    No-op for STT services without the capability (Deepgram, Cartesia, …) and for non-U3-Pro
+    AssemblyAI models, where pipecat treats the call as a safe no-op.
+    """
+    update = getattr(stt, "update_agent_context", None)
+    if update is not None and text:
+        await update(text)
 
 
 def create_tts_service(
@@ -283,14 +374,17 @@ def create_tts_service(
 
     if model_lower == "cartesia":
         logger.info(f"Using Cartesia TTS: {params['model']}")
+        cartesia_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(CartesiaTTSService.Settings) if (k := f.name) in params
+        }
         return CartesiaTTSService(
             url=url or "wss://api.cartesia.ai/tts/websocket",
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
             settings=CartesiaTTSService.Settings(
-                model=params["model"],
                 voice=params.get("voice_id", "f786b574-daa5-4673-aa0c-cbe3e8534c02"),
-                language=language_code,
+                language=_to_language_enum(language_code),
+                **cartesia_settings_kwargs,
             ),
         )
 
@@ -320,19 +414,27 @@ def create_tts_service(
             settings=DeepgramTTSService.Settings(
                 model=params["model"],
                 voice=params.get("voice", "aura-2-helena-en"),
-                language=language_code,
+                language=_to_language_enum(language_code),
             ),
         )
 
     elif model_lower == "elevenlabs":
         logger.info(f"Using ElevenLabs TTS: {params['model']}")
+        if (
+            params["model"] not in ("eleven_multilingual_v2", "eleven_flash_v2_5", "eleven_turbo_v2_5")
+            and language_code != "en"
+        ):
+            raise ValueError(f"ElevenLabs model {params['model']} only supports English language")
+        elevenlabs_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(ElevenLabsTTSService.Settings) if (k := f.name) in params
+        }
         return ElevenLabsTTSService(
             api_key=api_key,
             sample_rate=SAMPLE_RATE,
             settings=ElevenLabsTTSService.Settings(
-                model=params["model"],
                 voice=params.get("voice_id", "hpp4J3VqNfWAUOO0d1Us"),
-                language=language_code,
+                language=_base_language(language_code),
+                **elevenlabs_settings_kwargs,
             ),
         )
 
@@ -351,7 +453,7 @@ def create_tts_service(
             settings=GeminiTTSService.Settings(
                 model=params["model"],
                 voice=params.get("voice_id", params.get("voice_name", "Kore")),
-                language=language_code,
+                language=_to_language_enum(language_code),
             ),
         )
 
@@ -368,7 +470,7 @@ def create_tts_service(
         supported = ["en-us", "en-gb", "es", "fr-fr", "hi", "it", "pt-br", "ja", "zh"]
         if language_code not in supported:
             logger.warning(f"Language code {language_code} not supported by Kokoro, trying to convert to 4 char code")
-            two_to_four = {"en": "en-us", "fr": "fr-fr", "pt": "pt-br"}
+            two_to_four = {"en": "en-us", "fr": "fr-fr", "fr-CA": "fr-fr", "pt": "pt-br"}
             language_code = two_to_four.get(language_code, language_code)
             if language_code not in supported:
                 raise ValueError(f"Language code {language_code} not supported by Kokoro")
@@ -415,6 +517,25 @@ def create_tts_service(
 
         return openai_tts
 
+    elif model_lower == "smallest":
+        logger.info(f"Using Smallest TTS: {params['model']}")
+        smallest_tts_settings_kwargs = {
+            k: params[k] for f in dataclasses.fields(SmallestTTSService.Settings) if (k := f.name) in params
+        }
+        if "voice_id" in params:
+            # Omit "voice" entirely when unset so pipecat's per-model default (e.g. "sophia" for
+            # lightning_v3.1, "meher" for lightning_v3.1_pro) applies instead of a hardcoded EVA default.
+            smallest_tts_settings_kwargs["voice"] = params["voice_id"]
+        return SmallestTTSService(
+            api_key=api_key,
+            base_url=url or "wss://api.smallest.ai",
+            sample_rate=SAMPLE_RATE,
+            settings=SmallestTTSService.Settings(
+                language=_to_language_enum(language_code),
+                **smallest_tts_settings_kwargs,
+            ),
+        )
+
     elif model_lower == "voxtral":
         logger.info(f"Using Voxtral TTS: {params['model']}")
         voxtral_tts = OpenAITTSService(
@@ -438,7 +559,7 @@ def create_tts_service(
             codec=params.get("codec", "pcm"),
             settings=XAITTSService.Settings(
                 voice=params.get("voice", "eve"),
-                language=language_code,
+                language=_to_language_enum(language_code),
             ),
         )
         _orig_build_url = xai_tts._build_url
@@ -472,7 +593,7 @@ def create_tts_service(
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, xai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, smallest, voxtral, xai, xtts"
         )
 
 
@@ -723,6 +844,8 @@ def create_audio_llm_client(
             num_channels=params.get("num_channels", 1),
             sample_width=params.get("sample_width", 2),
             language=language,
+            enable_thinking=params.get("enable_thinking", False),
+            sampling_params=params.get("sampling_params"),
         )
         logger.info(f"Using {model} vLLM audio-LLM: {base_url}")
         return client

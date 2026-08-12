@@ -64,6 +64,17 @@ agent:
     - Use only information from the current conversation
     - Ask for clarification only when truly necessary
     - Request one or two details maximum per turn
+    - Never re-ask for information the caller has already provided in this conversation. Before asking for anything, check the conversation history — if you already have the value, use it.
+    - If a tool call fails or returns no result, do not retry with the same parameters and do not ask the caller to provide the same information from scratch. Instead, read back exactly what you used ("I tried looking up confirmation number A B C one two three for Smith — I'm not finding anything. Did I get that right?"), and if the caller corrects it, retry once with the corrected value. If you still cannot find a match, ask the user to spell it out for you letter by letter.
+
+  pre_tool_speech: |
+    ## Responsiveness
+    Before calling a tool, say one brief sentence first. For lookups, use a short lead-in (e.g. "Let me pull that up."). Before any action that is irreversible or has real-world consequences, state what you'll do, get confirmation, then call the tool.
+    If calling multiple tools at once, only one lead-in is needed.
+
+  gender_instruction: |
+    ## Speaking Gender
+    You are speaking as a {gender_word} voice. In languages with grammatical gender, consistently use {gender_word} forms (verb conjugations, adjectives, self-references) for yourself throughout the conversation.
 
 audio_llm_agent:
   system_prompt: |
@@ -122,6 +133,8 @@ audio_llm_agent:
     - Use only information from the current conversation
     - Ask for clarification only when truly necessary
     - Request one or two details maximum per turn
+    - Never re-ask for information the caller has already provided in this conversation. Before asking for anything, check the conversation history — if you already have the value, use it.
+    - If a tool call fails or returns no result, do not retry with the same parameters and do not ask the caller to provide the same information from scratch. Instead, read back exactly what you used ("I tried looking up confirmation number A B C one two three for Smith — I'm not finding anything. Did I get that right?"), and if the caller corrects it, retry once with the corrected value. If you still cannot find a match, ask the user to spell it out for you letter by letter.
 
 realtime_agent:
   system_prompt: |
@@ -182,6 +195,8 @@ realtime_agent:
     - Use only information from the current conversation
     - Ask for clarification only when truly necessary
     - Request one or two details maximum per turn
+    - Never re-ask for information the caller has already provided in this conversation. Before asking for anything, check the conversation history — if you already have the value, use it.
+    - If a tool call fails or returns no result, do not retry with the same parameters and do not ask the caller to provide the same information from scratch. Instead, read back exactly what you used ("I tried looking up confirmation number A B C one two three for Smith — I'm not finding anything. Did I get that right?"), and if the caller corrects it, retry once with the corrected value. If you still cannot find a match, ask the user to spell it out for you letter by letter.
 
 # ==============================================
 # User Simulator Prompts

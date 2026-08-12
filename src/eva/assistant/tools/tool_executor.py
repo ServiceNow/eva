@@ -5,13 +5,40 @@ import importlib
 import json
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
 from pipecat.services.llm_service import FunctionCallParams
 
 from eva.utils.logging import get_logger
 
+if TYPE_CHECKING:
+    from eva.assistant.agentic.audit_log import AuditLog
+
 logger = get_logger(__name__)
+
+
+async def execute_and_log_tool(
+    tool_handler: "ToolExecutor",
+    audit_log: "AuditLog",
+    tool_name: str,
+    params: dict,
+) -> dict:
+    """Single assistant-side tool-execution path: log call, execute, log response.
+
+    Logs the call entry *before* execution and the response entry *after* it, so
+    the audit log preserves the call→response latency. This is the one place a
+    tool is executed and recorded on the assistant side; both the cascade
+    (``AgenticSystem``) and the realtime/S2S servers route through it so they
+    produce identical audit entries.
+
+    In a later refactor phase (see docs/refactor-step1.md) this function becomes
+    the body of ``AssistantRole.handle_tool_call_request``.
+    """
+    audit_log.append_tool_call(tool_name, params)
+    result = await tool_handler.execute(tool_name, params)
+    audit_log.append_tool_response(tool_name, result)
+    return result
 
 
 class ToolExecutor:

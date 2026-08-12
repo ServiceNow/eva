@@ -1,4 +1,4 @@
-"""Tests for agent_speech_fidelity and user_speech_fidelity metrics."""
+"""Tests for tts_fidelity and user_speech_fidelity metrics."""
 
 import json
 import logging
@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from google.api_core import exceptions as google_exceptions
 
-from eva.metrics.accuracy.agent_speech_fidelity import AgentSpeechFidelityMetric
+from eva.metrics.diagnostic.tts_fidelity import TTSFidelityMetric
 from eva.metrics.validation.user_speech_fidelity import UserSpeechFidelityMetric
 
 from .conftest import make_judge_metric, make_metric_context
@@ -21,7 +21,7 @@ def make_judge_response(turns: list[dict]) -> str:
 @pytest.fixture
 def agent_metric():
     return make_judge_metric(
-        AgentSpeechFidelityMetric,
+        TTSFidelityMetric,
         mock_llm=True,
         logger_name="test_agent_speech_fidelity",
     )
@@ -54,11 +54,11 @@ class TestClassAttributes:
     """Verify subclass metadata is set correctly."""
 
     def test_agent_metric_attributes(self, agent_metric):
-        assert agent_metric.name == "agent_speech_fidelity"
-        assert agent_metric.category == "accuracy"
+        assert agent_metric.name == "tts_fidelity"
+        assert agent_metric.category == "diagnostic"
         assert agent_metric.role == "assistant"
         assert agent_metric.rating_scale == (0, 1)
-        assert agent_metric.pass_at_k_threshold == 0.95
+        assert agent_metric.exclude_from_pass_at_k is True
 
     def test_user_metric_attributes(self, user_metric):
         assert user_metric.name == "user_speech_fidelity"
@@ -244,7 +244,7 @@ class TestAgentFailureModeSubMetrics:
         assert result.sub_metrics["garbled_hallucination_rate"].score == 0.0
         assert result.sub_metrics["insertion_hallucination_rate"].score == 0.0
         assert result.sub_metrics["wrong_language_rate"].score == 0.0
-        assert result.sub_metrics["entity_error_rate"].name == "agent_speech_fidelity.entity_error_rate"
+        assert result.sub_metrics["entity_error_rate"].name == "tts_fidelity.entity_error_rate"
         assert result.sub_metrics["entity_error_rate"].details == {
             "count": 1,
             "num_rated": 2,

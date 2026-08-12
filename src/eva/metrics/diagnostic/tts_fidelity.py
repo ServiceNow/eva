@@ -1,9 +1,10 @@
-"""Agent speech fidelity metric using audio + LLM judge (Gemini)."""
+"""TTS fidelity diagnostic metric using audio + LLM judge (Gemini)."""
 
 from eva.metrics.base import MetricContext
 from eva.metrics.registry import register_metric
 from eva.metrics.speech_fidelity_base import SpeechFidelityBaseMetric
 from eva.metrics.utils import build_per_category_rate_sub_metrics
+from eva.models.config import PipelineType
 from eva.models.results import MetricScore
 
 _SPEECH_FIDELITY_FAILURE_MODES = (
@@ -16,7 +17,7 @@ _SPEECH_FIDELITY_FAILURE_MODES = (
 
 
 @register_metric
-class AgentSpeechFidelityMetric(SpeechFidelityBaseMetric):
+class TTSFidelityMetric(SpeechFidelityBaseMetric):
     """Audio-based speech fidelity metric for agent using Gemini.
 
     Evaluates whether the agent's spoken audio accurately represents the intended text.
@@ -24,13 +25,15 @@ class AgentSpeechFidelityMetric(SpeechFidelityBaseMetric):
     Evaluates each agent turn for missing, added, or incorrect words.
     """
 
-    name = "agent_speech_fidelity"
+    name = "tts_fidelity"
     version = "v0.3"
-    description = "Audio-based evaluation of agent speech fidelity to the intended text"
-    category = "accuracy"
+    description = "Diagnostic metric: TTS fidelity to the intended text"
+    category = "diagnostic"
     role = "assistant"
+    exclude_from_pass_at_k = True
+    exclude_from_default_metrics = True
+    supported_pipeline_types = frozenset({PipelineType.CASCADE, PipelineType.AUDIO_LLM})
     rating_scale = (0, 1)
-    pass_at_k_threshold = 0.95
 
     def build_sub_metrics(
         self,

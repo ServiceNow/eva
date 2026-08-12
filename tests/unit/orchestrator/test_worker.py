@@ -2,11 +2,11 @@
 
 import json
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from eva.orchestrator.worker import ConversationWorker, _percentile
+from eva.orchestrator.worker import USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS, ConversationWorker, _percentile
 
 
 class TestPercentile:
@@ -218,19 +218,127 @@ class TestRunConversation:
         with pytest.raises(RuntimeError, match="User simulator not initialized"):
             await worker._run_conversation()
 
+
+class TestUserSimulatorSelection:
     @pytest.mark.asyncio
-    async def test_returns_ended_reason_and_captures_stats(self, tmp_path):
+    async def test_worker_uses_configured_factory_and_timeout(self, tmp_path, monkeypatch):
+        worker = _make_worker(tmp_path)
+        worker.config.user_simulator = MagicMock(provider="openai_realtime")
+        worker.config.perturbation = None
+        worker.config.language = "en"
+        worker.config.conversation_time_limit_seconds = 60
+        worker.agent.id = "agent_itsm"
+
+        resolved_goal = {"high_level_user_goal": "test goal", "starting_utterance": "Hi"}
+        resolved_persona = {"user_persona_id": 1}
+        monkeypatch.setattr("eva.orchestrator.worker.resolve_user_goal", MagicMock(return_value=resolved_goal))
+        monkeypatch.setattr("eva.orchestrator.worker.resolve_user_config", MagicMock(return_value=resolved_persona))
+
+        simulator = MagicMock()
+        factory = MagicMock(return_value=simulator)
+        monkeypatch.setattr("eva.orchestrator.worker.create_user_simulator", factory)
+
+        await worker._start_user_simulator()
+
+        assert worker._user_simulator is simulator
+        factory.assert_called_once_with(
+            worker.config.user_simulator,
+            current_date_time=worker.record.current_date_time,
+            persona_config=resolved_persona,
+            goal=resolved_goal,
+            server_url="ws://localhost:9999/ws",
+            output_dir=worker.output_dir,
+            agent_id="agent_itsm",
+            timeout=worker._conversation_guard_timeout_seconds(),
+            perturbation_config=None,
+            language="en",
+        )
+
+    def test_worker_timeout_reserves_provider_cleanup_window(self, tmp_path):
+        worker = _make_worker(tmp_path)
+
+        assert worker._conversation_guard_timeout_seconds() == 80
+        assert USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS == 20
+
+    @pytest.mark.asyncio
+    async def test_returns_ended_reason(self, tmp_path):
         worker = _make_worker(tmp_path)
         mock_sim = MagicMock()
         mock_sim.run_conversation = AsyncMock(return_value="goodbye")
         worker._user_simulator = mock_sim
 
-        stats = {"num_turns": 5, "num_tool_calls": 2, "tools_called": ["get_reservation"]}
-        mock_server = MagicMock()
-        mock_server.get_conversation_stats.return_value = stats
-        worker._assistant_server = mock_server
-
         result = await worker._run_conversation()
 
         assert result == "goodbye"
-        assert worker._conversation_stats == stats
+
+
+def _setup_run_mocks(worker: ConversationWorker, stats: dict, run_conversation_side_effect=None):
+    """Wire up the mocks needed to run worker.run() in isolation.
+
+    Sets worker._assistant_server to a mock that returns *stats* from
+    get_conversation_stats(), writes the two DB files run() expects on disk,
+    and returns a context manager that patches the expensive internal methods.
+    """
+    worker.output_dir.mkdir(parents=True, exist_ok=True)
+    (worker.output_dir / "initial_scenario_db.json").write_text(json.dumps({}))
+    (worker.output_dir / "final_scenario_db.json").write_text(json.dumps({}))
+
+    mock_server = MagicMock()
+    mock_server.get_conversation_stats.return_value = stats
+    worker._assistant_server = mock_server
+
+    run_conv_mock = AsyncMock(
+        side_effect=run_conversation_side_effect,
+        return_value="goodbye" if run_conversation_side_effect is None else None,
+    )
+
+    patches = [
+        patch.object(worker, "_start_assistant", AsyncMock()),
+        patch.object(worker, "_start_user_simulator", AsyncMock()),
+        patch.object(worker, "_cleanup", AsyncMock()),
+        patch.object(worker, "_run_conversation", run_conv_mock),
+        patch.object(worker, "_calculate_llm_latency", return_value=None),
+        patch.object(worker, "_calculate_stt_latency", return_value=None),
+        patch.object(worker, "_calculate_tts_latency", return_value=None),
+        patch.object(worker, "_calculate_model_response_latency", return_value=None),
+        patch("eva.orchestrator.worker.add_record_log_file", return_value=MagicMock()),
+    ]
+
+    class _Ctx:
+        async def __aenter__(self_):
+            for p in patches:
+                p.start()
+            return self_
+
+        async def __aexit__(self_, *_args):
+            for p in reversed(patches):
+                p.stop()
+
+    return _Ctx()
+
+
+class TestConversationStatsInRun:
+    @pytest.mark.asyncio
+    async def test_stats_captured_on_normal_completion(self, tmp_path):
+        worker = _make_worker(tmp_path)
+        stats = {"num_turns": 4, "num_tool_calls": 2, "tools_called": ["lookup_user"]}
+
+        async with _setup_run_mocks(worker, stats):
+            result = await worker.run()
+
+        assert result.num_turns == 4
+        assert result.num_tool_calls == 2
+        assert result.conversation_ended_reason != "error"
+
+    @pytest.mark.asyncio
+    async def test_stats_captured_on_time_limit_exceeded(self, tmp_path):
+        """Regression test: num_turns must be non-zero even when the conversation times out."""
+        worker = _make_worker(tmp_path)
+        stats = {"num_turns": 3, "num_tool_calls": 1, "tools_called": ["lookup_user"]}
+
+        async with _setup_run_mocks(worker, stats, run_conversation_side_effect=TimeoutError()):
+            result = await worker.run()
+
+        assert result.num_turns == 3
+        assert result.num_tool_calls == 1
+        assert result.conversation_ended_reason == "time_limit_exceeded"

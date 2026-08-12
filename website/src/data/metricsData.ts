@@ -50,7 +50,7 @@ export const metrics: MetricDefinition[] = [
     passThreshold: '1.0',
   },
   {
-    id: 'agent_tts_fidelity',
+    id: 'agent_speech_fidelity',
     displayName: 'Speech Fidelity',
     badge: 'beta',
     category: 'eva-a',
@@ -67,80 +67,84 @@ export const metrics: MetricDefinition[] = [
       ci: [0.704, 0.835],
       notes: 'Binary metric',
     },
-    description: 'Measures whether the agent correctly spoke the information it intended to communicate. TTS systems can mispronounce, skip, or distort words \u2014 in a voice context, if a confirmation code is not spoken correctly, the user cannot act on it regardless of whether the LLM produced the right answer.',
-    inputs: 'Agent audio recording, intended assistant text (what LLM generated)',
-    outputRange: 'Binary per turn (0=low fidelity, 1=high fidelity), aggregated as mean across turns',
+    description: 'Measures whether the agent\'s spoken audio accurately represents the key entities (dates, names, numbers, codes, addresses, etc.), using an audio LLM for multimodal analysis. If the agent garbles or misstates key information, the user receives incorrect information regardless of how good the text reasoning was. To keep the EVA score apples-to-apples across all pipeline setups, the same entity-focused metric runs for every pipeline type — cascade, S2S, and audio-LLM. It does not require any intended text.',
+    inputs: 'Agent audio recording, conversation trace (user utterances and tool responses as the source of entities to listen for; assistant turns are redacted to a placeholder)',
+    outputRange: 'Binary per turn (0=low fidelity, 1=high fidelity), aggregated as mean across scored turns (turns with no entities are skipped)',
     passThreshold: '≥ 0.95',
-    judgePrompt: `You are an expert evaluator judging the fidelity of this audio file against the intended text.
-You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
-The audio provided is a recording of the agent's side of a conversation, and contains only the agent responses, not the user.
+    judgePrompt: `You are an expert evaluator checking the **speech clarity and articulation** of entities spoken by an AI voice agent.
 
-## Intended Turns
-{intended_turns_formatted}
+You will receive:
+1. A conversation trace showing what the user said and what data the agent retrieved via tools. Assistant responses are redacted — you must listen to the audio to hear what the agent actually said.
+2. An audio recording of the agent's side of the conversation only (the user is not audible).
 
-## IMPORTANT: Comparison Rules
+## Conversation Trace
+{conversation_trace_formatted}
 
-Your task is to compare the **exact intended text** word-for-word against what you hear in the audio. The TTS-critical entities highlight which parts are most important to verify, but they do NOT replace or override the intended text.
+## IMPORTANT: What This Metric Measures
 
-## Understanding the Intended Text
+This metric measures **speech fidelity** — whether entities are clearly and correctly articulated in the audio. The conversation trace is provided so you know which entities to listen for, NOT so you can judge whether the agent gave the right answer.
 
-The intended text may contain non-spoken tags and markers. You must understand these to evaluate fairly.
+**This is NOT a faithfulness or correctness metric.** Do NOT evaluate:
+- Whether the agent used the right entity from a tool response (e.g., agent says "$315" but tool says $300 — this is a faithfulness issue, NOT a speech fidelity issue)
+- Whether the agent fabricated or hallucinated information not in the trace
+- Whether the agent omitted information it should have mentioned
+- Whether the agent's response is logical, helpful, or correct
 
-### Audio-Direction Tags
-Tags like [slow], [firm], [annoyed] describe how the words were meant to be spoken. They are NOT spoken aloud and should never be expected in the audio.
+**What this metric DOES evaluate:**
+When the agent speaks an entity that appears in the conversation trace (user utterances or tool responses), is it **clearly articulated** in the audio? Specifically:
+- Can you clearly hear the entity as spoken?
+- Does the spoken form sound like the correct entity, or is it garbled, mispronounced, or distorted?
+- If the agent spells out a code letter by letter, is each letter/digit clearly distinguishable?
+- Did the agent communicate in the right language? The expected language is **{expected_language}** — if the audio is clearly spoken in a different language, set rating = 0 for that turn.
 
-### Interruption Tags
-{interruption_tags_reference}
-
-The tags tell you that certain portions of the intended text were likely never spoken, because the speaker was interrupted or cut themselves off. Do NOT penalize for missing words that fall in a region the tags indicate was not spoken.
-
-**Key principle:** If a tag indicates that a section of text was likely not spoken aloud (due to interruption or cut-off), do NOT penalize for those words being missing from the audio. Only evaluate fidelity for words that were reasonably expected to have been spoken.
-
-## Evaluation Criteria
-
-For each intended turn, compare what you hear in the audio against the intended text. Focus especially on **TTS-critical entities** listed for each turn.
-
-**Entity categories to watch:**
-- Confirmation codes (e.g., ZK3FFW, FAR0UM, 8JVSDF)
-- Flight numbers (e.g., SkyWay 410, SW302)
-- Dollar amounts (e.g., $15, $1,285.00)
-- Seat numbers (e.g., 21C, 14A)
-- Spelled-out codes (e.g., "Z K three F F W") \u2014 verify EVERY letter and digit individually; "K O L T S F" vs "K O L T S S F" is an error
-- Reference/voucher IDs (e.g., REF-8JVSDF-001, MEAL-FAR0UM-PAX0) \u2014 verify each segment; "M E L" vs "M E A L" is an error
+## Entity Categories to Listen For
+- Confirmation codes (e.g., ZK3FFW, FAR0UM) — especially when spelled out letter by letter
+- Domain-specific record identifiers (e.g., flight numbers like SkyWay 410, ticket/incident numbers like INC-4821, employee IDs like EMP-092)
+- Dollar amounts (e.g., $15, $1,285.00) — "fifteen" vs "fifty" matters
+- Short alphanumeric codes (e.g., seat numbers like 21C, room codes like B-204, extension numbers like x4521)
+- Reference/voucher IDs (e.g., REF-8JVSDF-001) — verify each segment is distinguishable
 - Times (e.g., 3:55 PM, 10:30 AM)
 - Dates (e.g., March 25th, February 3rd)
 - Names (e.g., Mr. Rivera, Rodriguez)
 
-**What constitutes an error (rating = 0):**
-- Any entity spoken incorrectly (wrong digits, letters, amounts, numbers)
-- Missing words that change the meaning or omit an entity
-- Added words that introduce a factually incorrect entity
-- Substituted words that alter an entity value
+## Examples
+
+**High fidelity (rating = 1):**
+- Tool response contains confirmation code "YTM924". Agent says "Y T M nine two four" — each character is clearly audible. ✓
+- User says "last name Patel". Agent says "Patel" — clearly articulated. ✓
+- Tool response says fare is $300. Agent says "$315" — the amount is clearly spoken even though it doesn't match the tool response. This is a faithfulness issue, not a speech fidelity issue. Rate 1. ✓
+- Agent mentions "Dallas" which is not in the tool response — this is a hallucination, not a speech issue. Rate 1. ✓
+
+**Low fidelity (rating = 0):**
+- Tool response contains "YTM924". Agent tries to spell it out but audio sounds like "Y T N nine two four" — "M" sounds like "N". ✗
+- Agent says a dollar amount but the audio is garbled and you cannot tell if it's "fifty" or "fifteen". ✗
+- Agent spells a code but skips or slurs a letter so the spoken code has fewer characters than expected. ✗
 
 **What to ignore (does NOT cause rating = 0):**
-- Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss" is acceptable)
-- Filler words ("um", "uh", "so") added or omitted
-- End-of-audio cut-off: if the audio cuts off at the very END of the last turn, missing trailing words is acceptable as long as all entities in that turn were spoken correctly before the cut-off
+- Entities the agent mentions that are NOT in the conversation trace — do not evaluate these
+- Minor pronunciation variations that do not change identity (e.g., "Ms." vs "Miss")
+- Filler words, phrasing, word choice, sentence structure
 - Slight pacing or prosody differences
-- Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
-- Words in regions flagged by interruption tags as likely not spoken
 
 ## Rating Scale (per turn)
-- **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
-- **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn.
+- **1 (High Fidelity)**: Every entity from the conversation trace that the agent speaks in this turn is clearly and correctly articulated.
+- **0 (Low Fidelity)**: One or more entities from the conversation trace are garbled, mispronounced, or indistinguishable in the audio.
+
+If the assistant does not speak any entities from the conversation trace in a turn (e.g., a greeting, filler, or turn where it only mentions entities not in the trace), set \`has_entities\` to false. These turns are excluded from scoring.
 
 ## Response Format
-Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Intended Turns above:
+Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Conversation Trace above:
 {{
   "turns": [
     {{
-      "turn_id": <int: the turn number from the Intended Turns>,
-      "transcript": <string: your transcription of the audio for this turn, use only the audio for this not the intended text>
-      "explanation": "<string: 1-3 sentence analysis of fidelity for this turn, citing specific intended vs actual mismatches, noting any regions skipped due to interruption flags>",
+      "turn_id": <int: the turn number from the Conversation Trace>,
+      "language": "<string: the language spoken in this turn, e.g. English, French, Spanish>",
+      "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the conversation trace>,
+      "has_entities": <boolean: true if the assistant speaks entities from the conversation trace in this turn, false otherwise>,
+      "explanation": "<string: 1-3 sentence analysis in English listing which trace entities were spoken and whether they are clearly articulated>",
       "rating": <0 or 1>
     }}
-  ],
-  "explanation": "<string: overall summary of fidelity assessment>"
+  ]
 }}`,
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/agent_speech_fidelity_development.md',
   },
@@ -676,51 +680,6 @@ Respond in JSON format. The "evidence" field must ALWAYS contain 1-2 sentences r
 
   // ─── Debug Metrics (6) ───
   {
-    id: 'authentication_success',
-    displayName: 'Authentication Success',
-    category: 'debug',
-    type: 'deterministic',
-    description: 'Checks whether the agent successfully authenticated the user by verifying identity through required credentials (e.g., confirmation number, last name).',
-    inputs: 'Audit log tool calls, expected authentication parameters',
-    outputRange: 'Binary: 0 (fail) or 1 (pass)',
-  },
-  {
-    id: 'response_speed',
-    displayName: 'Response Speed',
-    category: 'debug',
-    type: 'deterministic',
-    description: 'Measures the elapsed time in seconds between the user\'s last audio and the agent\'s first audio response. A direct measurement of end-to-end latency.',
-    inputs: 'Audio timestamp data from pipeline events',
-    outputRange: 'Seconds (lower is better). Normalized: (5.0 - clamped_speed) / 3.0 for scores in 0-1 range',
-  },
-  {
-    id: 'conversation_correctly_finished',
-    displayName: 'Conversation Correctly Finished',
-    category: 'debug',
-    type: 'deterministic',
-    description: 'Reports whether the conversation reached a clean close — both sides exchanged proper goodbyes and the user simulator invoked the end-call tool — rather than terminating because the agent went silent or otherwise failed to drive the call to completion. Useful for surfacing systems who systematically fail to respond to user turns leading the conversation to hang.',
-    inputs: 'Transcript, audit log, end-call tool invocations',
-    outputRange: 'Binary: 0 (agent failed to respond / conversation timed out) or 1 (user-driven close)',
-  },
-  {
-    id: 'stt_wer',
-    displayName: 'STT Accuracy (WER)',
-    category: 'debug',
-    type: 'deterministic',
-    description: 'Speech-to-Text Word Error Rate computed using jiwer. Measures overall transcription quality by comparing what the user intended to say against what the agent\'s STT system actually transcribed. Score is reported as accuracy (1 - WER, clamped to 0-1).',
-    inputs: 'Intended user turns (TTS text), transcribed user turns (STT output)',
-    outputRange: 'Accuracy 0-1 (1.0 = perfect transcription, 0.0 = completely wrong)',
-  },
-  {
-    id: 'tool_call_validity',
-    displayName: 'Tool Call Validity',
-    category: 'debug',
-    type: 'deterministic',
-    description: 'Checks whether all tool calls made by the agent used valid tool names and provided required parameters according to the tool schema.',
-    inputs: 'Audit log tool calls, agent tool definitions',
-    outputRange: 'Binary: 0 (invalid calls present) or 1 (all calls valid)',
-  },
-  {
     id: 'transcription_accuracy_key_entities',
     displayName: 'Key Entity Transcription',
     category: 'debug',
@@ -897,6 +856,168 @@ Transcribed: \`My phone number is 404-555.\`
 }}
 ]`,
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/transcription_accuracy_key_entities.md',
+  },
+  {
+    id: 'tts_fidelity',
+    displayName: 'TTS Fidelity',
+    category: 'debug',
+    type: 'lalm_judge',
+    judgeModel: 'Gemini 3 Flash',
+    judgeAccuracy: 0.8957,
+    judgeScores: [
+      { label: 'accuracy', value: 0.8957, std: 0.0258 },
+      { label: 'macro_f1', value: 0.856, std: 0.024 },
+    ],
+    judgeAlignment: {
+      measure: "Unweighted Cohen's κ",
+      value: 0.777,
+      ci: [0.704, 0.835],
+      notes: 'Binary metric',
+    },
+    description: 'Measures whether the agent correctly spoke the information it intended to communicate. TTS systems can mispronounce, skip, or distort words \u2014 in a voice context, if a confirmation code is not spoken correctly, the user cannot act on it regardless of whether the LLM produced the right answer.',
+    inputs: 'Agent audio recording, intended assistant text (what LLM generated)',
+    outputRange: 'Binary per turn (0=low fidelity, 1=high fidelity), aggregated as mean across turns',
+    judgePrompt: `You are an expert evaluator judging the fidelity of this audio file against the intended text. 
+You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
+The audio provided is a recording of the agent's side of a conversation, and contains only the agent responses, not the user.
+
+## Intended Turns
+{intended_turns_formatted}
+
+## IMPORTANT: Comparison Rules
+
+Your task is to compare the **exact intended text** word-for-word against what you hear in the audio. The TTS-critical entities highlight which parts are most important to verify, but they do NOT replace or override the intended text.
+
+## Understanding the Intended Text
+
+The intended text may contain non-spoken tags and markers. You must understand these to evaluate fairly.
+
+### Audio-Direction Tags
+Tags like [slow], [firm], [annoyed] describe how the words were meant to be spoken. They are NOT spoken aloud and should never be expected in the audio.
+
+### Interruption Tags
+{interruption_tags_reference}
+
+The tags tell you that certain portions of the intended text were likely never spoken, because the speaker was interrupted or cut themselves off. Do NOT penalize for missing words that fall in a region the tags indicate was not spoken.
+
+**Key principle:** If a tag indicates that a section of text was likely not spoken aloud (due to interruption or cut-off), do NOT penalize for those words being missing from the audio — **including entity words** (confirmation codes, dollar amounts, names, etc.). A turn where the only missing content falls inside a cut-off region is rating = 1, even if that missing content contains critical entities.
+
+## Evaluation Criteria
+
+For each intended turn, compare what you hear in the audio against the intended text. Focus especially on **TTS-critical entities** listed for each turn.
+
+**Entity categories to watch:**
+- Confirmation codes (e.g., ZK3FFW, FAR0UM, 8JVSDF)
+- Domain-specific identifiers (e.g., flight numbers like "SkyWay 410", ticket or incident numbers, order numbers, case IDs)
+- Dollar amounts (e.g., $15, $1,285.00)
+- Short alphanumeric codes (e.g., seat numbers like "21C", room numbers, extension numbers)
+- Spelled-out codes (e.g., "Z K three F F W") — verify EVERY letter and digit individually; "K O L T S F" vs "K O L T S S F" is an error
+- Reference IDs with segments (e.g., REF-8JVSDF-001,  MEAL-FAR0UM-PAX0) — verify each segment; "M E L" vs "M E A L" is an error
+- Times (e.g., 3:55 PM, 10:30 AM)
+- Dates (e.g., March 25th, February 3rd)
+- Names (e.g., Mr. Rivera, Rodriguez)
+
+**What constitutes an error (rating = 0):**
+- Any entity spoken incorrectly (wrong digits, letters, amounts, numbers)
+- Missing words that change the meaning or omit an entity
+- Added words that introduce a factually incorrect entity
+- Substituted words that alter an entity value
+- Audio spoken in the wrong language (We expect audio in {expected_language})
+
+**What to ignore (does NOT cause rating = 0):**
+- Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss", "Mr." vs "Mister", or language-equivalent honorific forms such as French "Madame" vs "Mme" or Japanese "様" vs "-san")
+- Filler words ("um", "uh", "so") added or omitted
+- End-of-audio cut-off: if the audio cuts off at the very END of the last turn, missing trailing words is acceptable as long as all entities in that turn were spoken correctly before the cut-off
+- Slight pacing or prosody differences
+- Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
+- Words in regions flagged by interruption tags as likely not spoken
+- **Adjacent-turn drift:** turn boundaries are derived from imperfect timing/event heuristics, so a sentence may land in the wrong adjacent turn (turn N's intended text actually spoken in turn N-1 or N+1, or vice versa). If content from turn N appears to have been spoken in an adjacent turn, treat it as fidelity-preserved rather than missing. Only mark missing if the content does not appear in this turn **or** in either neighboring turn's audio.
+- Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form of those letters in that language
+- Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
+- Name spelling variants that are phonetically identical (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
+
+## Rating Scale (per turn)
+- **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
+- **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn.
+
+## Failure Modes (only when rating = 0)
+For each low-fidelity turn, tag every failure mode that applies. A turn may have multiple failure modes. Leave the list empty when rating = 1.
+
+- **entity_error** — A TTS-critical entity (confirmation code, dollar amount, name, date, time, flight/seat number, reference ID, etc.) was rendered incorrectly in the audio. Use this whenever the intended text shows an entity at that position, regardless of *how* it went wrong: a wrong digit/letter, a missing character in a spelled-out code, a value swapped for a different one, OR sounds that are garbled / slurred / unintelligible in place of an entity. The intended text tells you whether a given position is an entity — if it is, any defect there is \`entity_error\`, not \`garbled_hallucination\`.
+
+- **truncation** — Expected content from the intended text is missing in the audio, and the missing region is **NOT** covered by an interruption tag (\`[likely cut off ...]\`, \`[user interrupts]\`, \`[speaker likely cut itself off]\`, \`[likely interruption]\`). Apply only when the speaker silently dropped content that the tags do not explain. Missing content before a tag is fidelity-preserved by design and should NOT be flagged here.
+
+- **garbled_hallucination** — The audio contains speech-like sounds in place of expected **non-entity** words, but the sounds are distorted, slurred, or unintelligible enough that the listener cannot reliably parse what was said. The TTS produced noise/non-words rather than a clean rendering of the intended text. Use this category only for non-entity regions — if the garbled region corresponds to an entity in the intended text, use \`entity_error\` instead.
+
+- **insertion_hallucination** — The audio contains words or phrases that were NOT in the intended text. The TTS added content on its own — extra sentences, repeated phrases, or filler that the script did not contain.
+
+- **wrong_language** — The audio is spoken in a language different from the expected language ({expected_language}). Use this when the language mismatch is clear and affects a meaningful portion of the turn, not for individual foreign loanwords or proper nouns that are expected to be pronounced natively.
+
+Tagging guidance:
+- If a turn has both an entity error and missing/dropped content outside tagged regions, list both \`entity_error\` and \`truncation\`.
+- Garbled audio at an entity position is \`entity_error\`, not \`garbled_hallucination\` — check the intended text first to decide whether the affected region is an entity.
+- Do NOT use \`truncation\` for content lost to interruption tags, even if the interruption tags are not at the exact location where the truncation occured — that is expected behavior, not an error.
+
+## Response Format
+Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Intended Turns above:
+{{
+  "turns": [
+    {{
+      "turn_id": <int: the turn number from the Intended Turns>,
+      "language": "<string: the language spoken in this turn, e.g. English, French, Spanish>",
+      "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the intended text>
+      "explanation": "<string: 1-3 sentence analysis in English of fidelity for this turn, citing specific intended vs actual mismatches in the original language, and noting any regions skipped due to interruption flags, if applicable>",
+      "rating": <0 or 1>,
+      "failure_modes": <list of strings: zero or more of "entity_error", "truncation", "garbled_hallucination", "insertion_hallucination", "wrong_language". Must be [] when rating = 1.>
+    }}
+  ]
+}}`,
+    developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/tts_fidelity.md',
+  },
+  {
+    id: 'authentication_success',
+    displayName: 'Authentication Success',
+    category: 'debug',
+    type: 'deterministic',
+    description: 'Checks whether the agent successfully authenticated the user by verifying identity through required credentials (e.g., confirmation number, last name).',
+    inputs: 'Audit log tool calls, expected authentication parameters',
+    outputRange: 'Binary: 0 (fail) or 1 (pass)',
+  },
+  {
+    id: 'response_speed',
+    displayName: 'Response Speed',
+    category: 'debug',
+    type: 'deterministic',
+    description: 'Measures the elapsed time in seconds between the user\'s last audio and the agent\'s first audio response. A direct measurement of end-to-end latency.',
+    inputs: 'Audio timestamp data from pipeline events',
+    outputRange: 'Seconds (lower is better). Normalized: (5.0 - clamped_speed) / 3.0 for scores in 0-1 range',
+  },
+  {
+    id: 'conversation_correctly_finished',
+    displayName: 'Conversation Correctly Finished',
+    category: 'debug',
+    type: 'deterministic',
+    description: 'Reports whether the conversation reached a clean close — both sides exchanged proper goodbyes and the user simulator invoked the end-call tool — rather than terminating because the agent went silent or otherwise failed to drive the call to completion. Useful for surfacing systems who systematically fail to respond to user turns leading the conversation to hang.',
+    inputs: 'Transcript, audit log, end-call tool invocations',
+    outputRange: 'Binary: 0 (agent failed to respond / conversation timed out) or 1 (user-driven close)',
+  },
+  {
+    id: 'stt_wer',
+    displayName: 'STT Accuracy (WER)',
+    category: 'debug',
+    type: 'deterministic',
+    description: 'Speech-to-Text Word Error Rate computed using jiwer. Measures overall transcription quality by comparing what the user intended to say against what the agent\'s STT system actually transcribed. Score is reported as accuracy (1 - WER, clamped to 0-1).',
+    inputs: 'Intended user turns (TTS text), transcribed user turns (STT output)',
+    outputRange: 'Accuracy 0-1 (1.0 = perfect transcription, 0.0 = completely wrong)',
+  },
+  {
+    id: 'tool_call_validity',
+    displayName: 'Tool Call Validity',
+    category: 'debug',
+    type: 'deterministic',
+    description: 'Checks whether all tool calls made by the agent used valid tool names and provided required parameters according to the tool schema.',
+    inputs: 'Audit log tool calls, agent tool definitions',
+    outputRange: 'Binary: 0 (invalid calls present) or 1 (all calls valid)',
   },
 
   // ─── Validation Metrics (3) ───

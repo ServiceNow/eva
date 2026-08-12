@@ -43,6 +43,7 @@ export interface SystemStats {
   tts: string;
   clean: Record<string, MetricBlock>;
   perturbation_delta: Record<string, Record<string, PerturbationBlock>>;
+  metric_values?: Record<string, Record<string, MetricBlock>>;
 }
 
 const stats = statsRaw as { systems: SystemStats[] };
@@ -79,6 +80,19 @@ export function getPertValue(
   domain: DomainOrPooled,
 ): CIPointWithSig | null {
   const block = system.perturbation_delta[metric]?.[perturbation];
+  if (!block) return null;
+  if (domain === 'pooled') return block.pooled;
+  return block.per_domain[domain] ?? null;
+}
+
+/** Metric-value (not delta) CIPoint for `metric`/`condition` on `system`. */
+export function getPertMetricValue(
+  system: SystemStats,
+  metric: string,
+  condition: string,
+  domain: DomainOrPooled,
+): CIPoint | null {
+  const block = system.metric_values?.[metric]?.[condition];
   if (!block) return null;
   if (domain === 'pooled') return block.pooled;
   return block.per_domain[domain] ?? null;

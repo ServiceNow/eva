@@ -8,8 +8,6 @@ Two audio-level perturbation modes are supported:
   applied to both speech and silence periods
 - connection_degradation: compound VoIP degradation (codec quantisation, packet
   loss, volume fluctuation) applied on top of any background noise
-
-Accent and behavior perturbations are handled in client.py (agent ID / persona).
 """
 
 from __future__ import annotations
@@ -105,7 +103,6 @@ class AudioPerturbator:
 
     Handles background_noise mixing (file-based or synthetic static) and
     optional connection_degradation (codec, packet loss, volume fluctuation).
-    Accent and behavior perturbations are handled separately in client.py.
     """
 
     def __init__(self, config: PerturbationConfig) -> None:

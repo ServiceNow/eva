@@ -226,5 +226,71 @@ class TestCreateTurnStopStrategy:
 
     def test_unsupported_strategy_error_lists_supported(self):
         """ValueError message lists supported strategies."""
-        with pytest.raises(ValueError, match="speech_timeout.*turn_analyzer.*external"):
+        with pytest.raises(ValueError, match="speech_timeout.*turn_analyzer.*krisp_viva_turn.*external"):
             create_turn_stop_strategy("unknown", {})
+
+
+# ---------------------------------------------------------------------------
+# create_turn_stop_strategy — krisp_viva_turn
+# ---------------------------------------------------------------------------
+
+
+class TestCreateTurnStopStrategyKrispViva:
+    """Tests for the 'krisp_viva_turn' branch of create_turn_stop_strategy.
+
+    KrispVivaTurn depends on the proprietary ``krisp_audio`` SDK, which is not a
+    project dependency. The factory imports ``pipecat.audio.turn.krisp_viva_turn``
+    lazily, so these tests inject a fake module into ``sys.modules``.
+    """
+
+    @staticmethod
+    def _install_fake_krisp(monkeypatch):
+        """Inject a fake pipecat.audio.turn.krisp_viva_turn module and return it."""
+        import sys
+
+        fake_module = MagicMock()
+        fake_module.KrispVivaTurn.return_value = MagicMock()
+        monkeypatch.setitem(sys.modules, "pipecat.audio.turn.krisp_viva_turn", fake_module)
+        return fake_module
+
+    def test_krisp_viva_turn_strategy(self, monkeypatch):
+        """'krisp_viva_turn' returns a TurnAnalyzerUserTurnStopStrategy with a KrispVivaTurn."""
+        fake_module = self._install_fake_krisp(monkeypatch)
+
+        result = create_turn_stop_strategy("krisp_viva_turn", {})
+
+        assert isinstance(result, TurnAnalyzerUserTurnStopStrategy)
+        # No tuning params given -> KrispTurnParams left at its defaults (params=None).
+        fake_module.KrispVivaTurn.assert_called_once_with(params=None)
+        fake_module.KrispTurnParams.assert_not_called()
+
+    def test_krisp_viva_turn_case_insensitive(self, monkeypatch):
+        """Strategy type is matched case-insensitively."""
+        self._install_fake_krisp(monkeypatch)
+        assert isinstance(create_turn_stop_strategy("KRISP_VIVA_TURN", {}), TurnAnalyzerUserTurnStopStrategy)
+
+    def test_krisp_viva_turn_tuning_params(self, monkeypatch):
+        """Tuning params threshold / frame_duration_ms are forwarded to KrispTurnParams."""
+        fake_module = self._install_fake_krisp(monkeypatch)
+
+        create_turn_stop_strategy("krisp_viva_turn", {"threshold": 0.7, "frame_duration_ms": 30})
+
+        fake_module.KrispTurnParams.assert_called_once_with(threshold=0.7, frame_duration_ms=30)
+        # The constructed params object is passed to the analyzer.
+        assert fake_module.KrispVivaTurn.call_args.kwargs["params"] is fake_module.KrispTurnParams.return_value
+
+    def test_krisp_viva_turn_constructor_params(self, monkeypatch):
+        """model_path / api_key / sample_rate are forwarded to the KrispVivaTurn constructor."""
+        fake_module = self._install_fake_krisp(monkeypatch)
+
+        create_turn_stop_strategy(
+            "krisp_viva_turn",
+            {"model_path": "/models/turn.kef", "api_key": "secret", "sample_rate": 16000},
+        )
+
+        call_kwargs = fake_module.KrispVivaTurn.call_args.kwargs
+        assert call_kwargs["model_path"] == "/models/turn.kef"
+        assert call_kwargs["api_key"] == "secret"
+        assert call_kwargs["sample_rate"] == 16000
+        # None of these should leak into the strategy as tuning params.
+        fake_module.KrispTurnParams.assert_not_called()

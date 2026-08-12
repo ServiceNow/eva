@@ -1,21 +1,22 @@
-"""Unit tests for UserSimulator client.
+"""Unit tests for ElevenLabsUserSimulator.
 
 Focuses on non-trivial logic: conversation end idempotency, keep-alive
 inactivity detection, end_call API polling with backoff, and error handling.
 """
 
 import asyncio
+import wave
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from eva.user_simulator.client import UserSimulator
+from eva.user_simulator.elevenlabs import ElevenLabsUserSimulator
 
 
-def _make_simulator(tmp_path: Path, **overrides) -> UserSimulator:
-    """Create a UserSimulator with minimal config for testing."""
+def _make_simulator(tmp_path: Path, **overrides) -> ElevenLabsUserSimulator:
+    """Create an ElevenLabsUserSimulator with minimal config for testing."""
     defaults = {
         "current_date_time": "2026-03-23 10:00:00",
         "persona_config": {
@@ -42,7 +43,7 @@ def _make_simulator(tmp_path: Path, **overrides) -> UserSimulator:
         "timeout": 60,
     }
     defaults.update(overrides)
-    return UserSimulator(**defaults)
+    return ElevenLabsUserSimulator(**defaults)
 
 
 def _make_conv_details(transcript=None, status="done"):
@@ -110,7 +111,7 @@ class TestCallbacksResetKeepalive:
         sim._on_user_speaks("I need help")
         sim.event_logger.log_event.assert_called_once_with(
             "user_speech",
-            {"text": "I need help", "source": "elevenlabs_agent"},
+            {"text": "I need help", "source": "simulated_user"},
         )
 
     def test_assistant_speech_logs_correct_event_structure(self, tmp_path):
@@ -119,7 +120,7 @@ class TestCallbacksResetKeepalive:
         sim._on_assistant_speaks("Sure thing")
         sim.event_logger.log_event.assert_called_once_with(
             "assistant_speech",
-            {"text": "Sure thing", "source": "pipecat_assistant"},
+            {"text": "Sure thing", "source": "assistant"},
         )
 
 
@@ -162,7 +163,7 @@ class TestCheckEndCallViaApi:
         details = _make_conv_details(transcript=[turn_with_end_call])
         sim._client.conversational_ai.conversations.get.return_value = details
 
-        with patch("eva.user_simulator.client.asyncio.sleep", new_callable=AsyncMock):
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
             result = await sim._check_end_call_via_api("conv-123")
 
         assert result is True
@@ -178,7 +179,7 @@ class TestCheckEndCallViaApi:
         details = _make_conv_details(transcript=[turn])
         sim._client.conversational_ai.conversations.get.return_value = details
 
-        with patch("eva.user_simulator.client.asyncio.sleep", new_callable=AsyncMock):
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
             result = await sim._check_end_call_via_api("conv-123")
 
         assert result is False
@@ -193,7 +194,7 @@ class TestCheckEndCallViaApi:
         details = _make_conv_details(transcript=[turn])
         sim._client.conversational_ai.conversations.get.return_value = details
 
-        with patch("eva.user_simulator.client.asyncio.sleep", new_callable=AsyncMock):
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
             result = await sim._check_end_call_via_api("conv-123")
 
         assert result is False
@@ -220,7 +221,7 @@ class TestCheckEndCallViaApi:
         async def track_sleep(duration):
             sleep_delays.append(duration)
 
-        with patch("eva.user_simulator.client.asyncio.sleep", side_effect=track_sleep):
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", side_effect=track_sleep):
             result = await sim._check_end_call_via_api("conv-123")
 
         assert result is True
@@ -237,7 +238,7 @@ class TestCheckEndCallViaApi:
         empty_details = _make_conv_details(transcript=None, status="in-progress")
         sim._client.conversational_ai.conversations.get.return_value = empty_details
 
-        with patch("eva.user_simulator.client.asyncio.sleep", new_callable=AsyncMock):
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
             result = await sim._check_end_call_via_api("conv-123")
 
         assert result is False
@@ -258,7 +259,7 @@ class TestCheckEndCallViaApi:
         async def track_sleep(duration):
             sleep_delays.append(duration)
 
-        with patch("eva.user_simulator.client.asyncio.sleep", side_effect=track_sleep):
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", side_effect=track_sleep):
             await sim._check_end_call_via_api("conv-123")
 
         # Delays: 2.0, 4.0, 8.0, 10.0 (capped), 10.0 (capped)
@@ -274,7 +275,7 @@ class TestCheckEndCallViaApi:
         details = _make_conv_details(transcript=[turn])
         sim._client.conversational_ai.conversations.get.return_value = details
 
-        with patch("eva.user_simulator.client.asyncio.sleep", new_callable=AsyncMock):
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
             await sim._check_end_call_via_api("conv-123")
 
         details_path = tmp_path / "elevenlabs_conversation_details.json"
@@ -303,8 +304,8 @@ class TestKeepAliveTask:
         async def fake_run_in_executor(*args):
             return None
 
-        with patch("eva.user_simulator.client.asyncio.sleep", side_effect=fake_sleep):
-            with patch("eva.user_simulator.client.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", side_effect=fake_sleep):
+            with patch("eva.user_simulator.elevenlabs.asyncio.get_event_loop") as mock_loop:
                 mock_loop.return_value.run_in_executor = fake_run_in_executor
                 await sim._keep_alive_task()
 
@@ -339,8 +340,8 @@ class TestKeepAliveTask:
         async def fake_run_in_executor(*args):
             return None
 
-        with patch("eva.user_simulator.client.asyncio.sleep", side_effect=fake_sleep):
-            with patch("eva.user_simulator.client.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", side_effect=fake_sleep):
+            with patch("eva.user_simulator.elevenlabs.asyncio.get_event_loop") as mock_loop:
                 mock_loop.return_value.run_in_executor = fake_run_in_executor
                 await sim._keep_alive_task()
 
@@ -352,21 +353,40 @@ class TestKeepAliveTask:
         sim = _make_simulator(tmp_path)
         sim._conversation = MagicMock()
 
-        with patch("eva.user_simulator.client.asyncio.sleep", side_effect=asyncio.CancelledError):
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", side_effect=asyncio.CancelledError):
             with pytest.raises(asyncio.CancelledError):
                 await sim._keep_alive_task()
 
 
-class TestRecordAndRetrieveAudio:
-    """Test the full record → retrieve flow with interleaved audio."""
+class TestRecordAndSaveCleanAudio:
+    """Test the clean-user-track record → save flow."""
 
-    def test_interleaved_audio_preserved_in_order(self, tmp_path):
+    def test_only_clean_source_is_retained(self, tmp_path):
         sim = _make_simulator(tmp_path)
+        # Non-clean sources are no longer persisted by the simulator.
         sim._record_audio("user", b"\x01\x02")
         sim._record_audio("assistant", b"\xaa")
-        sim._record_audio("user", b"\x03")
-        sim._record_audio("assistant", b"\xbb\xcc")
+        sim._record_audio("user_clean", b"\x03\x04")
+        sim._record_audio("user_clean", b"\x05\x06")
 
-        user_audio, assistant_audio = sim.get_recorded_audio()
-        assert user_audio == b"\x01\x02\x03"
-        assert assistant_audio == b"\xaa\xbb\xcc"
+        assert sim._user_clean_audio == b"\x03\x04\x05\x06"
+
+    def test_save_clean_user_audio_writes_wav(self, tmp_path):
+        sim = _make_simulator(tmp_path)
+        sim._record_audio("user_clean", b"\x01\x02\x03\x04")
+
+        sim._save_clean_user_audio(sample_rate=16000)
+
+        wav_path = tmp_path / "audio_user_clean.wav"
+        assert wav_path.exists()
+        with wave.open(str(wav_path), "rb") as wav_file:
+            assert wav_file.getframerate() == 16000
+            assert wav_file.getnchannels() == 1
+            assert wav_file.readframes(wav_file.getnframes()) == b"\x01\x02\x03\x04"
+
+    def test_save_clean_user_audio_skips_when_empty(self, tmp_path):
+        sim = _make_simulator(tmp_path)
+
+        sim._save_clean_user_audio(sample_rate=16000)
+
+        assert not (tmp_path / "audio_user_clean.wav").exists()

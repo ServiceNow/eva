@@ -1,8 +1,8 @@
-"""Unit tests for BotToBotAudioInterface.
+"""Unit tests for BotToBotAudioBridge and ElevenLabsAudioInterface.
 
-Focuses on: PCM→μ-law conversion correctness, silence detection state machine,
-_receive_from_assistant message dispatch, audio state transitions, and
-WebSocket lifecycle.
+Tests are written against ElevenLabsAudioInterface (the concrete subclass) but
+most exercise logic defined in BotToBotAudioBridge: PCM→μ-law conversion,
+silence detection state machine, audio state transitions, and WebSocket lifecycle.
 """
 
 import asyncio
@@ -12,15 +12,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from eva.user_simulator.audio_interface import (
+from eva.user_simulator.audio_bridge import (
     ASSISTANT_SAMPLE_RATE,
     SEND_CHUNK_SIZE_PCM,
-    BotToBotAudioInterface,
+    ElevenLabsAudioInterface,
 )
 
 
-def _make_interface(**overrides) -> BotToBotAudioInterface:
-    """Create a BotToBotAudioInterface with defaults for testing."""
+def _make_interface(**overrides) -> ElevenLabsAudioInterface:
+    """Create a ElevenLabsAudioInterface with defaults for testing."""
     defaults = {
         "websocket_uri": "ws://localhost:9999",
         "conversation_id": "test-conv-123",
@@ -29,7 +29,7 @@ def _make_interface(**overrides) -> BotToBotAudioInterface:
         "conversation_done_callback": None,
     }
     defaults.update(overrides)
-    return BotToBotAudioInterface(**defaults)
+    return ElevenLabsAudioInterface(**defaults)
 
 
 class TestConvertPcmToMulaw:
@@ -38,7 +38,7 @@ class TestConvertPcmToMulaw:
     def test_20ms_chunk_produces_correct_output_size(self):
         """640 bytes PCM (20ms @ 16kHz) → 160 bytes μ-law (20ms @ 8kHz)."""
         pcm_20ms = b"\x00" * SEND_CHUNK_SIZE_PCM  # 640 bytes
-        result = BotToBotAudioInterface._convert_pcm_to_mulaw(pcm_20ms)
+        result = ElevenLabsAudioInterface._convert_pcm_to_mulaw(pcm_20ms)
         expected_mulaw_len = int(ASSISTANT_SAMPLE_RATE * 0.02)  # 160
         assert len(result) == expected_mulaw_len
 
@@ -47,15 +47,15 @@ class TestConvertPcmToMulaw:
         silence = b"\x00" * SEND_CHUNK_SIZE_PCM
         # Sawtooth-ish pattern (loud enough to differ from silence in μ-law)
         loud = bytes([(i * 50) % 256 for i in range(SEND_CHUNK_SIZE_PCM)])
-        mulaw_silence = BotToBotAudioInterface._convert_pcm_to_mulaw(silence)
-        mulaw_loud = BotToBotAudioInterface._convert_pcm_to_mulaw(loud)
+        mulaw_silence = ElevenLabsAudioInterface._convert_pcm_to_mulaw(silence)
+        mulaw_loud = ElevenLabsAudioInterface._convert_pcm_to_mulaw(loud)
         assert mulaw_silence != mulaw_loud
 
     def test_odd_size_input_does_not_crash(self):
         """Gracefully handles misaligned input (odd byte count)."""
         # 3 bytes is not sample-aligned (16-bit = 2 bytes per sample)
         # audioop may truncate or error; we just want no crash
-        result = BotToBotAudioInterface._convert_pcm_to_mulaw(b"\x01\x02\x03")
+        result = ElevenLabsAudioInterface._convert_pcm_to_mulaw(b"\x01\x02\x03")
         assert isinstance(result, bytes)
 
 
@@ -118,7 +118,7 @@ class TestAudioStateTransitions:
         iface = _make_interface(event_logger=event_logger)
         iface._assistant_audio_ended_time = 50.0  # Was waiting for user
 
-        with patch("eva.user_simulator.audio_interface.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.time.return_value = 100.0
             await iface._on_user_audio_start()
 
@@ -132,7 +132,7 @@ class TestAudioStateTransitions:
         iface = _make_interface(event_logger=event_logger)
         iface._user_audio_ended_time = 50.0
 
-        with patch("eva.user_simulator.audio_interface.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.time.return_value = 100.0
             iface._on_assistant_audio_start()
 
@@ -149,7 +149,9 @@ class TestAudioStateTransitions:
 
         assert iface._user_audio_active is False
         assert iface._user_audio_ended_time == 150.0
-        event_logger.log_audio_end.assert_called_once_with("elevenlabs_user")
+        args, _ = event_logger.log_audio_end.call_args
+        assert args[0] == "simulated_user"
+        assert isinstance(args[1], float)
 
     @pytest.mark.asyncio
     async def test_assistant_end_records_timestamp(self):
@@ -157,7 +159,7 @@ class TestAudioStateTransitions:
         iface = _make_interface(event_logger=event_logger)
         iface._assistant_audio_active = True
 
-        with patch("eva.user_simulator.audio_interface.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.time.return_value = 200.0
             await iface._on_assistant_audio_end()
 
@@ -188,7 +190,7 @@ class TestReceiveFromAssistant:
         mock_ws.__aiter__ = lambda self: ws_messages()
         iface.websocket = mock_ws
 
-        with patch("eva.user_simulator.audio_interface.asyncio.get_event_loop") as mock_loop:
+        with patch("eva.user_simulator.audio_bridge.asyncio.get_event_loop") as mock_loop:
             mock_loop.return_value.time.return_value = 100.0
             await iface._receive_from_assistant()
 
@@ -199,7 +201,7 @@ class TestReceiveFromAssistant:
         # _on_assistant_audio_start was called (audio_start logged)
         # Note: _assistant_audio_active is reset in the finally block on disconnect,
         # so we verify the start event was logged instead
-        event_logger.log_audio_start.assert_called_once_with("framework_agent")
+        event_logger.log_audio_start.assert_called_once_with("assistant")
 
     @pytest.mark.asyncio
     async def test_empty_payload_ignored(self):
@@ -262,6 +264,27 @@ class TestReceiveFromAssistant:
         callback.assert_called_once_with("elevenlabs_disconnect")
 
     @pytest.mark.asyncio
+    async def test_disconnect_reason_is_provider_configurable(self):
+        callback = MagicMock()
+        iface = _make_interface(
+            conversation_done_callback=callback,
+            disconnect_reason="assistant_disconnect",
+        )
+        iface.running = True
+
+        async def ws_messages():
+            return
+            yield
+
+        mock_ws = MagicMock()
+        mock_ws.__aiter__ = lambda self: ws_messages()
+        iface.websocket = mock_ws
+
+        await iface._receive_from_assistant()
+
+        callback.assert_called_once_with("assistant_disconnect")
+
+    @pytest.mark.asyncio
     async def test_disconnect_closes_active_assistant_audio(self):
         """If assistant was speaking when WS closes, audio_end is logged."""
         event_logger = MagicMock()
@@ -280,7 +303,7 @@ class TestReceiveFromAssistant:
         await iface._receive_from_assistant()
 
         assert iface._assistant_audio_active is False
-        event_logger.log_audio_end.assert_called_once_with("framework_agent")
+        event_logger.log_audio_end.assert_called_once_with("assistant")
 
 
 class TestSendAudioFrame:

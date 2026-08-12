@@ -29,6 +29,30 @@
       "parking direction",
       "parking exécutif",
       "stationnement exécutif"
+    ],
+    "es": [
+      "aparcamiento ejecutivo",
+      "garaje de dirección",
+      "garaje ejecutivo",
+      "garaje principal",
+      "parking ejecutivo"
+    ],
+    "de": [
+      "managerparkhaus",
+      "parkhaus der geschäftsleitung",
+      "parkhaus für führungskräfte"
+    ],
+    "hi": [
+      "एक्जेक गैराज",
+      "एग्जीक्यूटिव गैराज",
+      "एग्जीक्यूटिव पार्किंग",
+      "मुख्य गैराज"
+    ],
+    "ko": [
+      "메인 주차장",
+      "임원 주차동",
+      "임원 주차장",
+      "임원용 차고"
     ]
   }
 }
