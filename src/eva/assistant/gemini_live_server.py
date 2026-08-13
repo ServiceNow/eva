@@ -138,7 +138,7 @@ def _agent_tools_to_gemini(agent: AgentConfig) -> list[types.Tool] | None:
                 name=tool.function_name,
                 description=f"{tool.name}: {tool.description}",
                 parameters=params_schema,
-                behavior=types.Behavior.BLOCKING,
+                # behavior=types.Behavior.BLOCKING,
             )
         )
 
@@ -188,10 +188,63 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         # Gemini model name from s2s_params or default
         s2s_params = self.pipeline_config.s2s_params or {}
         self._model = s2s_params["model"]
+        # Optional Vertex endpoint override; when unset the SDK uses its default.
+        self._endpoint = s2s_params.get("endpoint")
+        # Optional Vertex API version override (e.g. "v1beta1", "v1"). Live/S2S
+        # preview models are Vertex-only and may require a specific version; when
+        # unset the SDK's default is used.
+        self._api_version = s2s_params.get("api_version")
+        # Optional FunctionResponse scheduling ("WHEN_IDLE" | "INTERRUPT" |
+        # "SILENT"). Newer Live models (e.g. gemini-3.5-flash-live-preview) do
+        # NOT support a scheduling field and close the socket with 1007 if one is
+        # set, so it is OMITTED by default; older models can opt back in.
+        self._fc_scheduling = s2s_params.get("function_response_scheduling")
         self._voice = s2s_params.get("voice", "Kore")
         # s2s_params["language_code"] takes precedence; fall back to EVA_LANGUAGE
         self._language_code = s2s_params.get("language_code") or self.language
         self._api_key = s2s_params.get("api_key", "")
+
+        # Vertex project/location resolution. Accept both the google-genai names
+        # (GOOGLE_CLOUD_*) and the LiteLLM/Vertex names (VERTEXAI_*) so a single
+        # set of credentials works for both the judge and the Live server.
+        self._vertex_project = (
+            s2s_params.get("project") or os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("VERTEXAI_PROJECT")
+        )
+        # Gemini Live/S2S requires a REGIONAL endpoint; "global" (fine for the
+        # text judge) is not supported for bidiGenerateContent, so it is never
+        # used here — an explicit region wins, otherwise we fall back to a region.
+        location = (
+            s2s_params.get("location") or os.environ.get("GOOGLE_CLOUD_LOCATION") or os.environ.get("VERTEXAI_LOCATION")
+        )
+        if not location or location == "global":
+            if location == "global":
+                logger.warning(
+                    "Gemini Live does not support location='global'; using 'us-central1' instead. "
+                    "Set s2s_params['location'] or GOOGLE_CLOUD_LOCATION to the region the model is enabled in."
+                )
+            location = "us-central1"
+        self._vertex_location = location
+
+        # Thinking config: controls Gemini's internal reasoning budget.
+        # Accepts a dict with optional keys:
+        #   "thinking_budget": int  (0=disabled, -1=auto, or token count)
+        #   "include_thoughts": bool
+        #   "thinking_level": str   ("MINIMAL", "LOW", "MEDIUM", "HIGH")
+        # Example: {"thinking_budget": 1024, "include_thoughts": false}
+        # If not set, defaults to ThinkingConfig() (model-dependent defaults).
+        thinking_raw = s2s_params.get("thinking_config", {})
+        if isinstance(thinking_raw, dict) and thinking_raw:
+            tc_kwargs: dict[str, Any] = {}
+            if "thinking_budget" in thinking_raw:
+                tc_kwargs["thinking_budget"] = int(thinking_raw["thinking_budget"])
+            if "include_thoughts" in thinking_raw:
+                tc_kwargs["include_thoughts"] = bool(thinking_raw["include_thoughts"])
+            if "thinking_level" in thinking_raw:
+                tc_kwargs["thinking_level"] = thinking_raw["thinking_level"]
+            self._thinking_config = types.ThinkingConfig(**tc_kwargs)
+            logger.info(f"Thinking config: {tc_kwargs}")
+        else:
+            self._thinking_config = types.ThinkingConfig()
 
         self._system_prompt = self._build_system_prompt()
 
@@ -269,16 +322,53 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
     # ------------------------------------------------------------------
 
     def _create_genai_client(self) -> genai.Client:
-        """Create a google-genai Client using Vertex AI or API key."""
-        if self._api_key:
-            logger.info("Using Gemini API key for authentication")
-            return genai.Client(api_key=self._api_key)
+        """Create a google-genai Client for Vertex AI or the Developer API.
 
-        project = os.environ.get("GOOGLE_CLOUD_PROJECT")
-        location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
-        if project:
-            logger.info(f"Using Vertex AI (project={project}, location={location})")
-            return genai.Client(vertexai=True, project=project, location=location)
+        Vertex-only models (e.g. gemini-*-live-preview) must route through
+        aiplatform.googleapis.com with ``vertexai=True``; a Developer API key
+        (AIza…) would send them to generativelanguage.googleapis.com/v1beta,
+        where they 404. We therefore prefer Vertex whenever a project is
+        resolvable (or GOOGLE_GENAI_USE_VERTEXAI is set) and ignore any
+        Developer API key in that mode.
+        """
+        flag = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI")
+        if flag is not None:
+            use_vertex = flag.strip().lower() in ("1", "true", "yes")
+        else:
+            use_vertex = bool(self._vertex_project)
+
+        if use_vertex:
+            if not self._vertex_project:
+                raise ValueError(
+                    "Vertex mode requested but no project found. Set GOOGLE_CLOUD_PROJECT / "
+                    "VERTEXAI_PROJECT or s2s_params['project']."
+                )
+            http_kwargs: dict[str, Any] = {}
+            if self._endpoint:
+                http_kwargs["base_url"] = f"wss://{self._endpoint}"
+            if self._api_version:
+                http_kwargs["api_version"] = self._api_version
+            http_options = types.HttpOptions(**http_kwargs) if http_kwargs else None
+
+            if self._api_key:
+                logger.warning(
+                    "Ignoring s2s_params api_key in Vertex mode (Vertex uses ADC / service-account "
+                    "credentials via GOOGLE_APPLICATION_CREDENTIALS)."
+                )
+            logger.info(
+                f"Using Vertex AI (project={self._vertex_project}, location={self._vertex_location}, "
+                f"api_version={self._api_version or 'sdk-default'})"
+            )
+            return genai.Client(
+                vertexai=True,
+                project=self._vertex_project,
+                location=self._vertex_location,
+                http_options=http_options,
+            )
+
+        if self._api_key:
+            logger.info("Using Gemini Developer API key for authentication")
+            return genai.Client(api_key=self._api_key)
 
         # Fallback: let the SDK resolve credentials (e.g. ADC)
         logger.warning(msg="No explicit credentials; relying on google-genai default resolution")
@@ -312,6 +402,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
             ),
             "input_audio_transcription": types.AudioTranscriptionConfig(),
             "output_audio_transcription": types.AudioTranscriptionConfig(),
+            "thinking_config": self._thinking_config,
         }
         if self._gemini_tools:
             config_kwargs["tools"] = self._gemini_tools
@@ -608,16 +699,18 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                         f"Tool result: {tool_name} -> {json.dumps(result, ensure_ascii=False)}"
                                     )
 
-                                    # Send result back to Gemini
+                                    # Send result back to Gemini. Only set the
+                                    # scheduling field when explicitly configured
+                                    # — newer Live models reject it (1007).
+                                    fr_kwargs: dict[str, Any] = {
+                                        "id": fc.id,
+                                        "name": fc.name,
+                                        "response": result,
+                                    }
+                                    if self._fc_scheduling:
+                                        fr_kwargs["scheduling"] = types.FunctionResponseScheduling[self._fc_scheduling]
                                     await session.send_tool_response(
-                                        function_responses=[
-                                            types.FunctionResponse(
-                                                id=fc.id,
-                                                name=fc.name,
-                                                response=result,
-                                                scheduling=types.FunctionResponseScheduling.WHEN_IDLE,
-                                            )
-                                        ]
+                                        function_responses=[types.FunctionResponse(**fr_kwargs)]
                                     )
 
                             # --- Usage metadata ---

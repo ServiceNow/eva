@@ -593,6 +593,10 @@ class RunConfig(BaseSettings):
         None,
         description="Specific record IDs to run",
     )
+    exclude_record_ids: list[str] | None = Field(
+        None,
+        description="Specific record IDs to skip (applied after record_ids)",
+    )
 
     # Execution
     max_concurrent_conversations: int = Field(
@@ -809,7 +813,7 @@ class RunConfig(BaseSettings):
                 return rest
         return data
 
-    @field_validator("metrics", "record_ids", mode="before")
+    @field_validator("metrics", "record_ids", "exclude_record_ids", mode="before")
     @classmethod
     def _parse_comma_separated(cls, v: Any) -> list[str] | None:
         """Accept comma-separated strings from env vars."""

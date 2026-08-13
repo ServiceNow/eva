@@ -32,6 +32,13 @@ class EVACompositeDefinition:
 
 
 # ── Composite definitions ────────────────────────────────────────────
+# Diagnostic efficiency metrics reported (as raw means) in the run-level summary
+# alongside the EVA composites. These are lower-is-better raw values (not 0-1
+# normalized) and are only recorded for conversations that completed the task, so
+# they answer "when the agent succeeds, how long / how many turns does it take?".
+EFFICIENCY_METRICS: list[str] = ["time_to_completion", "turns_to_completion"]
+
+
 EVA_COMPOSITES: list[EVACompositeDefinition] = [
     EVACompositeDefinition(
         name="EVA-A_pass",
@@ -264,11 +271,57 @@ def compute_run_level_aggregates(
 
         result[comp.name] = entry
 
+    # Efficiency diagnostics (time/turns to completion): raw means over the
+    # records where the metric was recorded (i.e. the task was completed).
+    efficiency = _compute_efficiency_aggregates(all_metrics)
+    if efficiency:
+        result["efficiency"] = efficiency
+
     # pass_k for aggregate metrics if multi-trial
     if num_draws > 1:
         pass_k_data = _compute_aggregate_pass_k(all_metrics, num_draws, composites, seed=seed)
         if pass_k_data:
             result["pass_k"] = pass_k_data
+
+    return result
+
+
+def _compute_efficiency_aggregates(all_metrics: dict[str, RecordMetrics]) -> dict:
+    """Aggregate completion-gated efficiency metrics for the run-level summary.
+
+    For each metric in ``EFFICIENCY_METRICS``, computes the mean/min/max raw
+    score across the records where it was recorded (skipped/None records are
+    excluded — those are conversations that did not complete the task, so their
+    time/turn counts are not meaningful "to-completion" values).
+
+    Returns:
+        Dict mapping metric name to {mean, min, max, count, total_records}.
+        Empty dict if no efficiency metrics were recorded.
+    """
+    total_records = len(all_metrics)
+    result: dict = {}
+
+    for name in EFFICIENCY_METRICS:
+        values: list[float] = []
+        for record_metrics in all_metrics.values():
+            score = record_metrics.metrics.get(name)
+            if score is None or score.error or score.skipped:
+                continue
+            value = score.score
+            if value is not None:
+                values.append(value)
+
+        if not values:
+            continue
+
+        result[name] = {
+            "mean": round(sum(values) / len(values), 4),
+            "min": round(min(values), 4),
+            "max": round(max(values), 4),
+            "count": len(values),
+            "total_records": total_records,
+            "higher_is_better": False,
+        }
 
     return result
 

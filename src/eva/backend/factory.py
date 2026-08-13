@@ -62,4 +62,8 @@ class BackendFactory:
             from eva.backend.elevenlabs import ElevenLabsBackend
 
             return ElevenLabsBackend(config=config)
+        if name == "gemini_live":
+            from eva.backend.gemini_live import GeminiLiveBackend
+
+            return GeminiLiveBackend(config=config)
         return None

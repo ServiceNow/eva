@@ -284,7 +284,13 @@ class ConversationWorker:
         resolved_db_path = self._materialize_resolved_scenario_db()
 
         s2s = self.config.model.s2s_params or {}
-        backend_args = {**s2s, "parallel_tool_calls": self.config.model.parallel_tool_calls}
+        # `language` is passed through for backends that localize speech synthesis
+        # (e.g. Gemini's language_code); backends that don't need it ignore it.
+        backend_args = {
+            "language": self.config.language,
+            **s2s,
+            "parallel_tool_calls": self.config.model.parallel_tool_calls,
+        }
         backend = _BACKEND_FACTORY.create(self.config.framework, backend_args)
         if backend is None:
             # Assistant runs on the Role/Backend path only. A framework the factory

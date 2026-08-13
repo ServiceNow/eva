@@ -97,6 +97,7 @@ EVA_DOMAIN=airline
 EVA_MAX_CONCURRENT_CONVERSATIONS=5
 EVA_DEBUG=false                       # Run only 1 record for testing when enabled
 EVA_RECORD_IDS=1.2.1,1.2.2            # Run specific records only (remove to run all records)
+EVA_EXCLUDE_RECORD_IDS=6.1.1          # Skip specific records (applied after EVA_RECORD_IDS)
 
 # User Simulator Configuration
 EVA_USER_SIMULATOR__PROVIDER=elevenlabs      # elevenlabs | openai_realtime

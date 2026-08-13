@@ -8,6 +8,7 @@ factory returns ``None`` for it.
 
 from eva.backend.elevenlabs import ElevenLabsBackend
 from eva.backend.factory import BackendFactory
+from eva.backend.gemini_live import GeminiLiveBackend
 from eva.backend.grok_voice import GrokVoiceBackend
 from eva.backend.openai_realtime import OpenAIRealtimeBackend
 
@@ -15,12 +16,14 @@ _PORTED = {
     "openai_realtime": OpenAIRealtimeBackend,
     "grok_voice": GrokVoiceBackend,
     "elevenlabs": ElevenLabsBackend,
+    "gemini_live": GeminiLiveBackend,
 }
 
 _MINIMAL_CONFIG = {
     "openai_realtime": {"model": "gpt-realtime", "api_key": "k"},
     "grok_voice": {"model": "grok-voice", "api_key": "k"},
     "elevenlabs": {"api_key": "k", "speaker_id": "ag_1"},
+    "gemini_live": {"model": "gemini-live-2.5-flash", "api_key": "k"},
 }
 
 
@@ -31,7 +34,5 @@ def test_create_builds_each_ported_backend():
 
 
 def test_create_returns_none_for_unported_frameworks():
-    # pipecat cascade and gemini_live are not yet native backends -> unusable as assistant.
-    factory = BackendFactory()
-    assert factory.create("pipecat", {}) is None
-    assert factory.create("gemini_live", {}) is None
+    # pipecat cascade is the last framework not yet a native backend -> unusable as assistant.
+    assert BackendFactory().create("pipecat", {}) is None

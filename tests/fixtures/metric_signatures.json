@@ -74,7 +74,7 @@
   "TaskCompletion": {
     "name": "task_completion",
     "prompt_hash": null,
-    "source_hash": "01aed1a552f4",
+    "source_hash": "8d9872e60b10",
     "version": "v0.1"
   },
   "ToolCallValidity": {
