@@ -119,6 +119,28 @@ EVA_MODEL__TTS_PARAMS={"api_key":"", "alias": "cartesia-sonic-3", "model": "soni
 EVA_LOG_LEVEL=INFO                    # DEBUG | INFO | WARNING | ERROR
 ```
 
+To evaluate an AURION Realtime endpoint through its OpenAI-compatible API, keep the
+shared Realtime framework and point both SDK base URLs at AURION's `/v1` base. The
+OpenAI SDK appends `/realtime` itself.
+
+```bash
+EVA_FRAMEWORK=openai_realtime
+EVA_MODEL__S2S=aurion
+EVA_MODEL__S2S_PARAMS='{
+  "model": "aurion-endpoint",
+  "api_key": "aur_sk_...",
+  "base_url": "http://aurion:8000/v1",
+  "websocket_base_url": "ws://aurion:8000/v1",
+  "voice": "auto",
+  "transcription_model": null,
+  "pre_tool_speech": true,
+  "aurion": {"tts_input_streaming": "token"}
+}'
+```
+
+AURION must be started with `AURION_RT_ENABLED=true`, and the API key must be
+minted by that AURION deployment. Use `https://` and `wss://` for a TLS endpoint.
+
 See `.env.example` for the complete list of configuration options.
 
 **ElevenLabs Agents is the recommended user simulator.** The OpenAI Realtime caller is available as an experimental alternative for those who want to try it, but has not yet been validated at scale and should be treated as beta.

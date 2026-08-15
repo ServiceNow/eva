@@ -141,7 +141,14 @@ class ModelConfig(BaseModel):
     # ── Params dicts ──
     stt_params: dict[str, Any] | None = Field(None, description="Additional STT model parameters (JSON)")
     tts_params: dict[str, Any] | None = Field(None, description="Additional TTS model parameters (JSON)")
-    s2s_params: dict[str, Any] | None = Field(None, description="Additional speech-to-speech model parameters (JSON)")
+    s2s_params: dict[str, Any] | None = Field(
+        None,
+        description=(
+            "Additional speech-to-speech model parameters (JSON). OpenAI-compatible Realtime providers may "
+            "set base_url, websocket_base_url, voice, and transcription_model; AURION additionally accepts "
+            "pre_tool_speech, enable_thinking, and a nested aurion configuration object."
+        ),
+    )
     audio_llm_params: dict[str, Any] | None = Field(
         None,
         description=(
