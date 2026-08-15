@@ -319,6 +319,41 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
 
         return types.LiveConnectConfig(**config_kwargs)
 
+    async def _handle_tool_call(self, tool_call: Any, session: Any) -> None:
+        """Execute a Gemini blocking tool batch and return all results together."""
+        function_responses: list[types.FunctionResponse] = []
+        for fc in tool_call.function_calls or []:
+            tool_name = fc.name
+            tool_args = dict(fc.args) if fc.args else {}
+            logger.info(f"Tool call: {tool_name}({json.dumps(tool_args, ensure_ascii=False)})")
+
+            try:
+                result = await self.execute_tool(tool_name, tool_args)
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                logger.error(f"Tool execution failed for {tool_name}: {exc}", exc_info=True)
+                result = {
+                    "status": "error",
+                    "error_type": "execution_error",
+                    "message": f"Tool execution failed: {exc}",
+                }
+                self.audit_log.append_tool_response(tool_name, result)
+            logger.debug(f"Tool result: {tool_name} -> {json.dumps(result, ensure_ascii=False)}")
+            function_responses.append(
+                types.FunctionResponse(
+                    id=fc.id,
+                    name=fc.name,
+                    response=result,
+                )
+            )
+
+        if function_responses:
+            # Function declarations use Behavior.BLOCKING, so Gemini waits for
+            # this complete batch before continuing the model turn. Scheduling
+            # is a NON_BLOCKING-only option and is intentionally omitted.
+            await session.send_tool_response(function_responses=function_responses)
+
     # ------------------------------------------------------------------
     # Session handler
     # ------------------------------------------------------------------
@@ -598,28 +633,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
 
                             # --- Tool calls ---
                             if response.tool_call:
-                                for fc in response.tool_call.function_calls:
-                                    tool_name = fc.name
-                                    tool_args = dict(fc.args) if fc.args else {}
-                                    logger.info(f"Tool call: {tool_name}({json.dumps(tool_args, ensure_ascii=False)})")
-
-                                    # Execute tool and record in audit log
-                                    result = await self.execute_tool(tool_name, tool_args)
-                                    logger.debug(
-                                        f"Tool result: {tool_name} -> {json.dumps(result, ensure_ascii=False)}"
-                                    )
-
-                                    # Send result back to Gemini
-                                    await session.send_tool_response(
-                                        function_responses=[
-                                            types.FunctionResponse(
-                                                id=fc.id,
-                                                name=fc.name,
-                                                response=result,
-                                                scheduling=types.FunctionResponseScheduling.WHEN_IDLE,
-                                            )
-                                        ]
-                                    )
+                                await self._handle_tool_call(response.tool_call, session)
 
                             # --- Usage metadata ---
                             if response.usage_metadata:

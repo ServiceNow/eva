@@ -33,15 +33,26 @@ class GrokVoiceAssistantServer(OpenAIRealtimeAssistantServer):
     _metrics_processor_name: str = "grok_voice"
 
     def _create_client(self) -> AsyncOpenAI:
-        api_key = self.pipeline_config.s2s_params.get("api_key")
+        s2s = self.pipeline_config.s2s_params or {}
+        api_key = s2s.get("api_key")
         if not api_key:
             raise ValueError(f"API key required for {self._service_name}")
-        return AsyncOpenAI(
-            api_key=api_key, base_url=self.pipeline_config.s2s_params.get("base_url", XAI_REALTIME_BASE_URL)
-        )
+        client_kwargs: dict[str, Any] = {
+            "api_key": api_key,
+            "base_url": s2s.get("base_url", XAI_REALTIME_BASE_URL),
+        }
+        if websocket_base_url := s2s.get("websocket_base_url"):
+            client_kwargs["websocket_base_url"] = websocket_base_url
+        return AsyncOpenAI(**client_kwargs)
 
     def _default_voice(self) -> str:
         return "eve"
+
+    def _build_session_config(self) -> dict[str, Any]:
+        """Drop OpenAI's selectable ASR model; xAI transcribes implicitly."""
+        config = super()._build_session_config()
+        config["audio"]["input"].pop("transcription", None)
+        return config
 
     # ── Deferred transcription (xAI sends incremental completed events) ──
 
@@ -66,8 +77,9 @@ class GrokVoiceAssistantServer(OpenAIRealtimeAssistantServer):
         if not transcript:
             return
 
-        if self._user_turn:
-            self._user_turn.transcript = transcript
+        user_turn = self._user_turn_for_event(event, create=True)
+        if user_turn:
+            user_turn.transcript = transcript
             # Do NOT set flushed or write to audit_log yet
         logger.debug(f"Buffered user transcription: {transcript[:60]}...")
 
@@ -76,7 +88,7 @@ class GrokVoiceAssistantServer(OpenAIRealtimeAssistantServer):
         self._flush_pending_user_transcript()
         await super()._on_speech_started(event)
 
-    async def _on_response_done(self, event: Any) -> None:
+    async def _on_response_done(self, event: Any, conn: Any | None = None) -> None:
         """Flush any pending transcript before recording assistant output."""
         self._flush_pending_user_transcript()
-        await super()._on_response_done(event)
+        await super()._on_response_done(event, conn)

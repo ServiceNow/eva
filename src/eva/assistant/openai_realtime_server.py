@@ -56,6 +56,7 @@ def _wall_ms() -> str:
 class _UserTurnRecord:
     """Tracks state for a single user speech turn."""
 
+    item_id: str = ""
     speech_started_wall_ms: str = ""
     speech_stopped_wall_ms: str = ""
     transcript: str = ""
@@ -71,6 +72,17 @@ class _AssistantResponseState:
     first_audio_wall_ms: str | None = None
     responding: bool = False
     has_function_calls: bool = False
+
+
+@dataclass
+class _PendingToolCall:
+    """A function call being executed for one Realtime response."""
+
+    call_id: str
+    response_id: str = ""
+    name: str = ""
+    arguments: dict[str, Any] = field(default_factory=dict)
+    task: asyncio.Task[Any] | None = None
 
 
 class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
@@ -98,6 +110,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._realtime_tools: list[dict] = self._build_realtime_tools()
 
         self._user_turn: _UserTurnRecord | None = None
+        self._user_turns_by_item_id: dict[str, _UserTurnRecord] = {}
         self._assistant_state = _AssistantResponseState()
         self._stream_sid: str = ""
 
@@ -105,6 +118,14 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._bot_speaking: bool = False
         self._user_frame_count: int = 0
         self._delta_count: int = 0
+
+        # Tool calls are streamed before response.done. Execute them as soon as
+        # their arguments are complete, but do not append their results or ask
+        # for a continuation until the originating response is complete.
+        self._active_response_id: str | None = None
+        self._pending_tool_calls: dict[str, _PendingToolCall] = {}
+        self._tool_execution_tasks: set[asyncio.Task[Any]] = set()
+        self._tool_finalizer_tasks: set[asyncio.Task[Any]] = set()
 
         # User speech start timestamp from audio_interface (source of truth)
         self._audio_interface_speech_start_ts: str | None = None
@@ -191,6 +212,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         """
         s2s = self.pipeline_config.s2s_params or {}
         vad = s2s.get("vad_settings", {}) or {}
+        transcription_model = s2s.get("transcription_model", "whisper-1")
 
         session_config: dict[str, Any] = {
             "type": "realtime",
@@ -209,9 +231,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                         "prefix_padding_ms": vad.get("prefix_padding_ms", 300),
                         "silence_duration_ms": vad.get("silence_duration_ms", 200),
                     },
-                    "transcription": {
-                        "model": s2s.get("transcription_model", "whisper-1"),
-                    },
+                    "transcription": {"model": transcription_model} if transcription_model else None,
                 },
             },
             "tools": self._realtime_tools,
@@ -224,6 +244,15 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         if self.pipeline_config.parallel_tool_calls is not None:
             session_config["parallel_tool_calls"] = self.pipeline_config.parallel_tool_calls
 
+        # OpenAI-compatible providers can expose additional session controls.
+        # Only forward explicitly configured fields so the default OpenAI
+        # payload remains unchanged.
+        for field_name in ("enable_thinking", "pre_tool_speech"):
+            if field_name in s2s:
+                session_config[field_name] = bool(s2s[field_name])
+        if "aurion" in s2s:
+            session_config["aurion"] = s2s["aurion"]
+
         return session_config
 
     def _create_client(self) -> AsyncOpenAI:
@@ -232,10 +261,16 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         Subclasses override to point at a different base_url (e.g. xAI's
         realtime endpoint, which is OpenAI-Realtime-API-compatible).
         """
-        api_key = self.pipeline_config.s2s_params.get("api_key")
+        s2s = self.pipeline_config.s2s_params or {}
+        api_key = s2s.get("api_key")
         if not api_key:
             raise ValueError(f"API key required for {self._service_name}")
-        return AsyncOpenAI(api_key=api_key)
+
+        client_kwargs: dict[str, Any] = {"api_key": api_key}
+        for field_name in ("base_url", "websocket_base_url"):
+            if value := s2s.get(field_name):
+                client_kwargs[field_name] = value
+        return AsyncOpenAI(**client_kwargs)
 
     async def _handle_session(self, websocket: WebSocket) -> None:
         """Handle a single WebSocket session.
@@ -253,10 +288,12 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         # Reset per-session state
         self._user_turn = None
+        self._user_turns_by_item_id = {}
         self._assistant_state = _AssistantResponseState()
         self._stream_sid = self.conversation_id
         self._user_speaking = False
         self._bot_speaking = False
+        self._reset_tool_tracking()
 
         client = self._create_client()
 
@@ -307,6 +344,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         except Exception as e:
             logger.error(f"{self._service_name} session error: {e}", exc_info=True)
         finally:
+            await self._cancel_pending_tool_work()
             logger.info(f"Client disconnected from {self._service_name} server")
 
     # ── Audio output pacer (OpenAI -> Twilio WS at real-time rate) ───
@@ -439,6 +477,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             case "session.updated":
                 logger.debug(f"{self._service_name} session updated")
 
+            case "response.created":
+                response = getattr(event, "response", None)
+                self._active_response_id = getattr(response, "id", None)
+
             case "input_audio_buffer.speech_started":
                 await self._on_speech_started(event)
 
@@ -457,13 +499,14 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 # Gracefully handle transcription failure (e.g. API key lacks
                 # whisper-1 access).  If a user turn was active but has no
                 # transcript yet, record a placeholder so the turn is not lost.
-                if self._user_turn and not self._user_turn.flushed:
-                    timestamp_ms = self._user_turn.speech_started_wall_ms or None
+                user_turn = self._user_turn_for_event(event)
+                if user_turn and not user_turn.flushed:
+                    timestamp_ms = user_turn.speech_started_wall_ms or None
                     self.audit_log.append_user_input(
                         "[user speech - transcription unavailable]",
                         timestamp_ms=timestamp_ms,
                     )
-                    self._user_turn.flushed = True
+                    user_turn.flushed = True
 
             case "response.output_audio.delta":
                 await self._on_audio_delta(event, audio_output_queue)
@@ -474,11 +517,17 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             case "response.output_audio_transcript.done":
                 self._on_transcript_done(event)
 
+            case "response.output_item.added":
+                self._on_response_output_item(event, start_tool=False)
+
+            case "response.output_item.done":
+                self._on_response_output_item(event, start_tool=True)
+
             case "response.function_call_arguments.done":
-                await self._on_function_call_done(event, conn)
+                await self._on_function_call_done(event)
 
             case "response.done":
-                await self._on_response_done(event)
+                await self._on_response_done(event, conn)
 
             case "error":
                 error_data = getattr(event, "error", None)
@@ -488,6 +537,39 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 logger.debug(f"Unhandled {self._service_name} event: {event_type}")
 
     # ── Event handlers ────────────────────────────────────────────────
+
+    @staticmethod
+    def _event_item_id(event: Any) -> str:
+        """Return the conversation item ID carried by a speech/ASR event."""
+        return getattr(event, "item_id", "") or ""
+
+    def _user_turn_for_event(self, event: Any, *, create: bool = False) -> _UserTurnRecord | None:
+        """Resolve a speech/ASR event to its user turn without relying on ASR timing.
+
+        Realtime input transcription can finish after a later speech event, and
+        compatible providers such as AURION may emit no input transcription at
+        all. Conversation item IDs provide the provider-neutral association.
+        """
+        item_id = self._event_item_id(event)
+        if not item_id:
+            return self._user_turn
+
+        if turn := self._user_turns_by_item_id.get(item_id):
+            return turn
+
+        if self._user_turn and not self._user_turn.item_id:
+            self._user_turn.item_id = item_id
+            self._user_turns_by_item_id[item_id] = self._user_turn
+            return self._user_turn
+
+        if not create:
+            return None
+
+        turn = _UserTurnRecord(item_id=item_id)
+        self._user_turns_by_item_id[item_id] = turn
+        if self._user_turn is None:
+            self._user_turn = turn
+        return turn
 
     async def _on_speech_started(self, event: Any) -> None:
         """Handle input_audio_buffer.speech_started."""
@@ -514,21 +596,34 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             logger.debug(f"Flushed interrupted assistant response: {partial_text[:60]}...")
             self._assistant_state = _AssistantResponseState()
 
-        # Start new user turn only if previous one was flushed (or doesn't exist)
-        # This preserves the original timestamp when VAD fires multiple speech_started
-        # events during a single logical user utterance (due to brief pauses)
-        if not self._user_turn or self._user_turn.flushed:
+        item_id = self._event_item_id(event)
+        known_turn = self._user_turns_by_item_id.get(item_id) if item_id else None
+        starts_new_turn = known_turn is None and (
+            not self._user_turn
+            or self._user_turn.flushed
+            or (bool(item_id) and item_id != self._user_turn.item_id)
+            # Fallback for compatible providers that omit item_id: a VAD stop
+            # closes the prior speech item even when no ASR event follows.
+            or (not item_id and bool(self._user_turn.speech_stopped_wall_ms))
+        )
+
+        if starts_new_turn:
             # Use timestamp from audio_interface if available (source of truth)
             start_ts = self._audio_interface_speech_start_ts or wall
-            self._user_turn = _UserTurnRecord(speech_started_wall_ms=start_ts)
+            self._user_turn = _UserTurnRecord(item_id=item_id, speech_started_wall_ms=start_ts)
+            if item_id:
+                self._user_turns_by_item_id[item_id] = self._user_turn
             if self._fw_log:
                 self._fw_log.turn_start(timestamp_ms=int(start_ts))
             logger.debug(
                 f"Speech started at {start_ts} (new turn, from_audio_interface={self._audio_interface_speech_start_ts is not None})"
             )
-            self._audio_interface_speech_start_ts = None  # Reset for next turn
+        elif known_turn is not None:
+            self._user_turn = known_turn
+            logger.debug(f"Speech started at {wall} (continuing item {item_id})")
         else:
             logger.debug(f"Speech started at {wall} (continuing existing turn)")
+        self._audio_interface_speech_start_ts = None  # Reset for next turn
 
     async def _on_speech_stopped(self, event: Any) -> None:
         """Handle input_audio_buffer.speech_stopped."""
@@ -541,10 +636,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             f"bot_spk={self._bot_speaking}"
         )
         wall = _wall_ms()
-        if self._user_turn:
-            self._user_turn.speech_stopped_wall_ms = wall
-        else:
-            self._user_turn = _UserTurnRecord(speech_stopped_wall_ms=wall)
+        user_turn = self._user_turn_for_event(event, create=True)
+        if user_turn:
+            self._user_turn = user_turn
+            user_turn.speech_stopped_wall_ms = wall
 
         logger.debug(f"Speech stopped at {wall}")
 
@@ -558,10 +653,11 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             return
 
         timestamp_ms = None
-        if self._user_turn:
-            timestamp_ms = self._user_turn.speech_started_wall_ms or None
-            self._user_turn.transcript = transcript
-            self._user_turn.flushed = True
+        user_turn = self._user_turn_for_event(event, create=True)
+        if user_turn:
+            timestamp_ms = user_turn.speech_started_wall_ms or None
+            user_turn.transcript = transcript
+            user_turn.flushed = True
 
         self.audit_log.append_user_input(transcript, timestamp_ms=timestamp_ms)
         logger.debug(f"User transcription: {transcript}...")
@@ -638,47 +734,74 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             self._assistant_state.transcript_done_text = transcript.strip()
             logger.debug(f"Assistant transcript done: {transcript}...")
 
-    async def _on_function_call_done(self, event: Any, conn: Any) -> None:
-        """Handle response.function_call_arguments.done - execute tool call."""
-        call_id = getattr(event, "call_id", "")
-        func_name = getattr(event, "name", "")
-        arguments_str = getattr(event, "arguments", "{}") or "{}"
+    def _on_response_output_item(self, event: Any, *, start_tool: bool) -> None:
+        """Capture function metadata from response.output_item events.
 
-        try:
-            arguments = json.loads(arguments_str)
-        except json.JSONDecodeError:
-            arguments = {}
+        OpenAI's function-call-arguments-done event contains the call ID and
+        arguments but not the function name. The surrounding output item is
+        therefore the authoritative source for the name. Compatible providers
+        may include the name on both events; registering is idempotent.
+        """
+        item = getattr(event, "item", None)
+        if not item or getattr(item, "type", "") != "function_call":
+            return
 
-        logger.info(f"Tool call: {func_name}({json.dumps(arguments, ensure_ascii=False)})")
-        self._assistant_state.has_function_calls = True
-
-        # Execute tool and record in audit log
-        result = await self.execute_tool(func_name, arguments)
-
-        if self._fw_log:
-            self._fw_log.write(
-                "tool_call",
-                {
-                    "frame": "tool_call",
-                    "tool_name": func_name,
-                    "arguments": arguments,
-                    "result": result,
-                },
-            )
-
-        # Send function call output back to OpenAI
-        await conn.conversation.item.create(
-            item={
-                "type": "function_call_output",
-                "call_id": call_id,
-                "output": json.dumps(result, ensure_ascii=False),
-            }
+        call = self._register_tool_call(
+            call_id=getattr(item, "call_id", ""),
+            response_id=getattr(event, "response_id", "") or self._active_response_id or "",
+            name=getattr(item, "name", ""),
+            arguments_raw=getattr(item, "arguments", None),
         )
+        self._assistant_state.has_function_calls = True
+        if start_tool and call:
+            self._start_tool_execution(call)
 
-        # Trigger next response after tool result
-        await conn.response.create()
+    async def _on_function_call_done(self, event: Any) -> None:
+        """Start a tool as soon as its complete arguments are available."""
+        call = self._register_tool_call(
+            call_id=getattr(event, "call_id", ""),
+            response_id=getattr(event, "response_id", "") or self._active_response_id or "",
+            # Grok/AURION may include name here; OpenAI supplies it on the output item.
+            name=getattr(event, "name", ""),
+            arguments_raw=getattr(event, "arguments", "{}") or "{}",
+        )
+        self._assistant_state.has_function_calls = True
+        if call:
+            self._start_tool_execution(call)
 
-    async def _on_response_done(self, event: Any) -> None:
+    async def _on_response_done(self, event: Any, conn: Any | None = None) -> None:
+        """Record a completed response and continue after all of its tools finish."""
+        response_id, tool_calls = self._take_response_tool_calls(event)
+        response = getattr(event, "response", None)
+        status = getattr(response, "status", None)
+
+        await self._record_response_done(event)
+
+        if self._active_response_id == response_id:
+            self._active_response_id = None
+
+        if not tool_calls:
+            return
+
+        if status != "completed":
+            logger.warning(
+                f"Discarding {len(tool_calls)} tool call(s) from {self._service_name} "
+                f"response {response_id or '<unknown>'} with status={status!r}"
+            )
+            for call in tool_calls:
+                if call.task and not call.task.done():
+                    call.task.cancel()
+            return
+
+        if conn is None:
+            logger.error("Cannot return Realtime tool results without an active connection")
+            return
+
+        finalizer = asyncio.create_task(self._finalize_tool_response(response_id, tool_calls, conn))
+        self._tool_finalizer_tasks.add(finalizer)
+        finalizer.add_done_callback(self._on_tool_finalizer_done)
+
+    async def _record_response_done(self, event: Any) -> None:
         """Handle response.done - assistant response complete.
 
         Following the pipecat InstrumentedRealtimeLLMService pattern:
@@ -754,6 +877,185 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         logger.debug(f"response_done: '{content[:60]}...'")
         self._reset_assistant_state()
+
+    def _register_tool_call(
+        self,
+        *,
+        call_id: str,
+        response_id: str,
+        name: str,
+        arguments_raw: Any = None,
+    ) -> _PendingToolCall | None:
+        """Create or enrich a pending tool call from a streamed event."""
+        if not call_id:
+            logger.warning(f"Ignoring {self._service_name} function call without call_id")
+            return None
+
+        call = self._pending_tool_calls.get(call_id)
+        if call is None:
+            call = _PendingToolCall(call_id=call_id)
+            self._pending_tool_calls[call_id] = call
+
+        if response_id:
+            call.response_id = response_id
+        if name:
+            call.name = name
+        if arguments_raw is not None:
+            call.arguments = self._parse_tool_arguments(arguments_raw)
+        return call
+
+    @staticmethod
+    def _parse_tool_arguments(arguments_raw: Any) -> dict[str, Any]:
+        """Parse function arguments while preserving the previous empty-object fallback."""
+        if isinstance(arguments_raw, dict):
+            return arguments_raw
+        if not isinstance(arguments_raw, str):
+            return {}
+        try:
+            arguments = json.loads(arguments_raw)
+        except json.JSONDecodeError:
+            return {}
+        return arguments if isinstance(arguments, dict) else {}
+
+    def _start_tool_execution(self, call: _PendingToolCall) -> None:
+        """Start one tool exactly once after its name and arguments are known."""
+        if call.task is not None:
+            return
+        if not call.name:
+            # response.done contains complete output items and supplies a final
+            # chance to resolve the name before the tool must be executed.
+            return
+
+        call.task = asyncio.create_task(self._execute_pending_tool(call))
+        self._tool_execution_tasks.add(call.task)
+        call.task.add_done_callback(self._tool_execution_tasks.discard)
+
+    async def _execute_pending_tool(self, call: _PendingToolCall) -> Any:
+        """Execute and audit one pending tool, converting unexpected failures to output."""
+        logger.info(f"Tool call: {call.name}({json.dumps(call.arguments, ensure_ascii=False)})")
+        try:
+            result = await self.execute_tool(call.name, call.arguments)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.error(f"Tool execution failed for {call.name}: {exc}", exc_info=True)
+            result = {
+                "status": "error",
+                "error_type": "execution_error",
+                "message": f"Tool execution failed: {exc}",
+            }
+            # execute_tool records the call before invoking the handler. Complete
+            # the audit pair when the handler itself raises unexpectedly.
+            self.audit_log.append_tool_response(call.name, result)
+
+        if self._fw_log:
+            self._fw_log.write(
+                "tool_call",
+                {
+                    "frame": "tool_call",
+                    "tool_name": call.name,
+                    "arguments": call.arguments,
+                    "result": result,
+                },
+            )
+        return result
+
+    def _take_response_tool_calls(self, event: Any) -> tuple[str, list[_PendingToolCall]]:
+        """Return pending calls in response output order and remove them from tracking."""
+        response = getattr(event, "response", None)
+        response_id = getattr(response, "id", "") or self._active_response_id or ""
+        ordered: list[_PendingToolCall] = []
+        seen_call_ids: set[str] = set()
+
+        for item in getattr(response, "output", None) or []:
+            if getattr(item, "type", "") != "function_call":
+                continue
+            call = self._register_tool_call(
+                call_id=getattr(item, "call_id", ""),
+                response_id=response_id,
+                name=getattr(item, "name", ""),
+                arguments_raw=getattr(item, "arguments", None),
+            )
+            if not call:
+                continue
+            self._start_tool_execution(call)
+            ordered.append(call)
+            seen_call_ids.add(call.call_id)
+
+        # Compatible providers may omit output items from response.done. Include
+        # calls already associated with this response in their arrival order.
+        for call in self._pending_tool_calls.values():
+            if call.call_id in seen_call_ids:
+                continue
+            if call.response_id == response_id or (not call.response_id and not response_id):
+                self._start_tool_execution(call)
+                ordered.append(call)
+                seen_call_ids.add(call.call_id)
+
+        for call in ordered:
+            self._pending_tool_calls.pop(call.call_id, None)
+        return response_id, ordered
+
+    async def _finalize_tool_response(
+        self,
+        response_id: str,
+        tool_calls: list[_PendingToolCall],
+        conn: Any,
+    ) -> None:
+        """Append a complete tool batch, then request exactly one continuation."""
+        results: list[Any] = []
+        for call in tool_calls:
+            if call.task is None:
+                logger.error(f"Cannot execute Realtime tool call {call.call_id}: function name was unavailable")
+                results.append(
+                    {
+                        "status": "error",
+                        "error_type": "function_not_found",
+                        "message": "Function name was unavailable in the Realtime response",
+                    }
+                )
+                continue
+            results.append(await call.task)
+
+        for call, result in zip(tool_calls, results, strict=True):
+            await conn.conversation.item.create(
+                item={
+                    "type": "function_call_output",
+                    "call_id": call.call_id,
+                    "output": json.dumps(result, ensure_ascii=False),
+                }
+            )
+
+        await conn.response.create()
+        logger.debug(
+            f"Returned {len(tool_calls)} tool result(s) for {self._service_name} "
+            f"response {response_id or '<unknown>'} and requested one continuation"
+        )
+
+    def _on_tool_finalizer_done(self, task: asyncio.Task[Any]) -> None:
+        """Remove a finalizer from tracking and retrieve any exception."""
+        self._tool_finalizer_tasks.discard(task)
+        if task.cancelled():
+            return
+        if exc := task.exception():
+            logger.error(f"Failed to finalize {self._service_name} tool response: {exc}", exc_info=exc)
+
+    def _reset_tool_tracking(self) -> None:
+        """Reset per-session tool bookkeeping after prior work has been cancelled."""
+        self._active_response_id = None
+        self._pending_tool_calls = {}
+        self._tool_execution_tasks = set()
+        self._tool_finalizer_tasks = set()
+
+    async def _cancel_pending_tool_work(self) -> None:
+        """Cancel tool work that outlived a disconnected Realtime session."""
+        tasks = self._tool_execution_tasks | self._tool_finalizer_tasks
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        self._reset_tool_tracking()
 
     # ── Helpers ───────────────────────────────────────────────────────
 
