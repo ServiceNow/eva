@@ -11,8 +11,10 @@ import pytest
 
 from eva.metrics.processor import (
     MetricsContextProcessor,
+    _finalize_extraction,
     _normalize_event_for_processor,
     _ProcessorContext,
+    _TurnExtractionState,
     _validate_conversation_trace,
 )
 from eva.models.config import PipelineType
@@ -74,6 +76,31 @@ class TestExtractTurnsFromHistory:
             assert actual == expected, (
                 f"Case '{case['id']}', attribute '{key}':\n  expected: {expected}\n  actual:   {actual}"
             )
+
+
+class TestS2STranscriptionOptional:
+    def test_intended_speech_drives_user_turn_count_without_provider_transcript(self):
+        ctx = _ProcessorContext()
+        ctx.record_id = "s2s-no-input-transcript"
+        ctx.pipeline_type = PipelineType.S2S
+        ctx.intended_user_turns = {1: "I need to change my flight.", 2: ""}
+        ctx.audio_timestamps_user_turns = {1: [(1.0, 2.0)], 2: [(3.0, 3.1)]}
+        ctx.transcribed_assistant_turns = {0: "How can I help?", 1: "Certainly."}
+        ctx.conversation_trace = [
+            {"role": "assistant", "content": "How can I help?", "type": "transcribed", "turn_id": 0},
+            {
+                "role": "user",
+                "content": "I need to change my flight.",
+                "type": "intended",
+                "turn_id": 1,
+            },
+        ]
+
+        _finalize_extraction(ctx, _TurnExtractionState(), ctx.conversation_trace)
+        MetricsContextProcessor._reconcile_transcript_with_tools(ctx)
+
+        assert ctx.num_user_turns == 1
+        assert ctx.transcribed_user_turns == {1: "", 2: ""}
 
 
 class TestValidateConversationTraceFallback:

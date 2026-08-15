@@ -969,6 +969,26 @@ class TestPreToolSpeechGroups:
         groups = metric._compute_pre_tool_speech_groups(context)
         assert groups == [True]
 
+    def test_s2s_user_audio_boundary_does_not_require_provider_transcript(self, metric, tmp_path):
+        """User audio resets prior assistant speech even when the provider emits no ASR entry."""
+        output_dir = _write_audit_log(
+            tmp_path,
+            [
+                _audit_assistant(1000, "How can I help?"),
+                _audit_tool_call(3000),
+                _audit_tool_response(3100),
+            ],
+        )
+        context = make_metric_context(
+            output_dir=output_dir,
+            audio_timestamps_user_turns={1: [(2.0, 2.5)]},
+            pipeline_type=PipelineType.S2S,
+        )
+
+        groups = metric._compute_pre_tool_speech_groups(context)
+
+        assert groups == [False]
+
 
 class TestPreToolSpeechSubMetric:
     @pytest.mark.asyncio

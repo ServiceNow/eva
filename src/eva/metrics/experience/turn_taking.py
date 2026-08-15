@@ -38,9 +38,9 @@ Flat headline sub-metrics (one number each — show up as columns in analysis vi
   Fallback nudges:      fallback_nudge.rate (nudged assistant turns / total assistant turns),
                         fallback_nudge.count (raw count; None when zero)
   Pre-tool speech:      pretoolspeech_rate (lead-in tool-call groups / total tool-call groups;
-                        computed from audit_log.json directly so it works uniformly across
-                        cascade/S2S/audio-LLM; omitted when there are no tool calls or the
-                        audit log is unavailable — see ``_compute_pre_tool_speech_groups``)
+                        computed from audit-log assistant/tool events plus recorded user-audio
+                        boundaries; omitted when there are no tool calls or the audit log is
+                        unavailable — see ``_compute_pre_tool_speech_groups``)
 
 All reported sub-metrics are consistent with the main score: ``mean_overlap_score``,
 ``mean_count_score``, and ``mean_yield_score`` aggregate exactly the per-turn scores
@@ -67,7 +67,7 @@ class TurnTakingMetric(CodeMetric):
     description = "Turn-taking evaluation based on per-turn latency and interruption behavior"
     category = "experience"
     pass_at_k_threshold = 0.8
-    version = "v0.2"
+    version = "v0.3"
 
     # --- Latency curve (piecewise linear). 0 outside [LATENCY_HARD_EARLY_MS, LATENCY_HARD_LATE_MS]. ---
     # Ramp up 0 → 1 from LATENCY_HARD_EARLY_MS to LATENCY_SWEET_SPOT_LOW_MS.
@@ -255,15 +255,10 @@ class TurnTakingMetric(CodeMetric):
         configs/prompts/simulation.yaml) — a multi-tool turn with one lead-in isn't penalized for
         the tools that didn't get their own.
 
-        Reads ``audit_log.json`` directly from ``context.output_dir`` instead of
-        ``context.conversation_trace``. The audit log carries every event's true, original
-        timestamp (when the assistant actually generated/spoke the text), whereas for S2S
-        ``conversation_trace`` assistant entries come from the user simulator's STT transcription
-        of the spoken audio — timestamped only after the audio finishes playing. That transcription
-        can sort *after* a subsequent tool_call in the timestamp-ordered trace even when the agent
-        actually spoke first (confirmed against a real S2S transcript), so ``conversation_trace``
-        order cannot be trusted for this signal on S2S. Reading the audit log directly sidesteps
-        that entirely and works uniformly across cascade, S2S, and audio-LLM.
+        Reads assistant/tool events from ``audit_log.json`` because they carry their true,
+        original timestamps. For audio-native pipelines, user boundaries come from recorded user
+        audio segments rather than provider ASR entries, which may be unavailable. Cascade and
+        legacy records continue to use audit-log user entries.
 
         Returns None when ``audit_log.json`` is missing, unreadable, or has no transcript — callers
         should treat that as "unknown" rather than "no lead-ins".
@@ -278,10 +273,29 @@ class TurnTakingMetric(CodeMetric):
         if not transcript:
             return None
 
+        timeline = list(transcript)
+        if context.is_audio_native:
+            user_audio_starts = {
+                round(start * 1000)
+                for segments in context.audio_timestamps_user_turns.values()
+                for start, _ in segments
+            }
+            if user_audio_starts:
+                # Provider transcriptions are optional for audio-native models. Replace any ASR-backed user
+                # entries with speech-boundary markers derived from the simulator's recorded audio timeline.
+                timeline = [entry for entry in timeline if entry.get("message_type") != "user"]
+                timeline.extend(
+                    {"message_type": "user", "timestamp": timestamp, "value": ""} for timestamp in user_audio_starts
+                )
+
         groups: list[bool] = []
         in_group = False
         spoke_since_group = False
-        for entry in sorted(transcript, key=lambda e: int(e["timestamp"])):
+        event_priority = {"user": 0, "assistant": 1, "tool_call": 2, "tool_response": 3}
+        for entry in sorted(
+            timeline,
+            key=lambda e: (int(e["timestamp"]), event_priority.get(e.get("message_type"), 4)),
+        ):
             message_type = entry.get("message_type")
             if message_type in ("tool_call", "tool_response"):
                 if not in_group:
@@ -511,7 +525,7 @@ class TurnTakingMetric(CodeMetric):
         )
 
         # --- Pre-tool-speech lead-in rate ---
-        # Reads audit_log.json directly so it works uniformly across cascade, S2S, and audio-LLM
+        # Combines audit-log assistant/tool events with ASR-independent user boundaries for audio-native pipelines.
         pre_tool_groups = cls._compute_pre_tool_speech_groups(context)
         if pre_tool_groups:
             sub["pretoolspeech_rate"] = _wrap(

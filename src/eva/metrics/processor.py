@@ -666,9 +666,13 @@ def _finalize_extraction(
     context.num_tool_calls = len(context.tool_params)
     if context.pipeline_type == PipelineType.S2S:
         context.num_assistant_turns = len(context.transcribed_assistant_turns)
+        # S2S providers may not expose input transcription. The simulator's
+        # intended user speech is the authoritative source for whether a real
+        # user turn occurred in an audio-native conversation.
+        context.num_user_turns = sum(bool(text.strip()) for text in context.intended_user_turns.values())
     else:
         context.num_assistant_turns = len(context.intended_assistant_turns)
-    context.num_user_turns = len(context.transcribed_user_turns)
+        context.num_user_turns = len(context.transcribed_user_turns)
 
     _warn_turn_misalignment(context)
 
@@ -1075,7 +1079,7 @@ class MetricsContextProcessor:
         - Append the final user turn if it arrived after the last audit-log entry.
         - Label a trailing assistant turn with CUT_OFF_ON_ITS_OWN and sync it
           across trace / intended / transcribed dicts.
-        - Backfill transcribed_user_turns from intended if STT didn't finish.
+        - Backfill transcribed_user_turns from intended if cascade STT didn't finish.
         """
         if not context.conversation_trace:
             # Empty trace (e.g. greeting-only conversation with no user turns). Create from pipecat intended text if
@@ -1106,7 +1110,7 @@ class MetricsContextProcessor:
             context.conversation_trace.append(
                 {"role": "user", "content": last_user_text, "type": "intended", "turn_id": last_user_turn_id}
             )
-            if not context.transcribed_user_turns.get(last_user_turn_id):
+            if context.pipeline_type != PipelineType.S2S and not context.transcribed_user_turns.get(last_user_turn_id):
                 context.transcribed_user_turns[last_user_turn_id] = last_user_text
             logger.info(f"Record {context.record_id}: Appended last user turn: {last_user_text[:50]}")
             return
@@ -1115,7 +1119,11 @@ class MetricsContextProcessor:
 
         # Backfill: if the last intended user turn has no transcription (conversation ended before STT finished), use
         # the intended text.
-        if last_user_turn_id is not None and not context.transcribed_user_turns.get(last_user_turn_id):
+        if (
+            context.pipeline_type != PipelineType.S2S
+            and last_user_turn_id is not None
+            and not context.transcribed_user_turns.get(last_user_turn_id)
+        ):
             last_user_text = context.intended_user_turns[last_user_turn_id]
             context.transcribed_user_turns[last_user_turn_id] = last_user_text
             logger.info(
