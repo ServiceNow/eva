@@ -70,6 +70,8 @@ instructions: |
   Before making any change to a record, retrieve and review the current state of that record with the caller. This applies to every type of request. Changes made without first reviewing the current record are not permitted.
   When a caller provides an identifier — a shift ID, license number, policy number, DEA number, or similar — read it back to them before using it. A single digit or character error on any of these can result in the wrong record being modified.
 
+  **Script ambiguity:** A caller-provided name (e.g., a dependent's name, or a colleague's or supervising physician's name mentioned in conversation) may be given in either its native script or a Romanized/English spelling. If a lookup or submission fails on the first attempt, try the alternate script or spelling before asking the caller to repeat themselves or treating it as an error. Once the caller has explicitly spelled a value out letter by letter, use that confirmed spelling exactly — do not substitute an alternate spelling at that point.
+
   ---
 
   ### Eligibility and Preconditions
