@@ -485,19 +485,33 @@ def create_tts_service(
         logger.info(f"Using Kokoro TTS: {params['model']}")
         kokoro_tts = OpenAITTSService(
             api_key=api_key,
-            model=params["model"],
-            voice=params.get("voice", "alloy"),
             base_url=url,
+            settings=OpenAITTSService.Settings(
+                model=params["model"],
+                voice=params.get("voice", "alloy"),
+            ),
         )
-        # Kokoro sometimes accepts the 2 char codes, and sometimes doesn't
-        # reference codes: https://github.com/hexgrad/kokoro/blob/main/kokoro/pipeline.py
-        supported = ["en-us", "en-gb", "es", "fr-fr", "hi", "it", "pt-br", "ja", "zh"]
-        if language_code not in supported:
-            logger.warning(f"Language code {language_code} not supported by Kokoro, trying to convert to 4 char code")
-            two_to_four = {"en": "en-us", "fr": "fr-fr", "fr-CA": "fr-fr", "pt": "pt-br"}
-            language_code = two_to_four.get(language_code, language_code)
-            if language_code not in supported:
-                raise ValueError(f"Language code {language_code} not supported by Kokoro")
+        # Kokoro's phonemizer only accepts the single-letter LANG_CODES, not the
+        # full codes accepted by kokoro's own KPipeline aliasing.
+        # reference: https://github.com/hexgrad/kokoro/blob/main/kokoro/pipeline.py
+        aliases = {
+            "en-us": "a",
+            "en-gb": "b",
+            "es": "e",
+            "fr-fr": "f",
+            "hi": "h",
+            "it": "i",
+            "pt-br": "p",
+            "ja": "j",
+            "zh": "z",
+        }
+        two_to_four = {"en": "en-us", "fr": "fr-fr", "fr-ca": "fr-fr", "pt": "pt-br"}
+        language_code = aliases.get(
+            language_code, aliases.get(two_to_four.get(language_code.lower(), language_code), language_code)
+        )
+        if language_code not in aliases.values():
+            raise ValueError(f"Language code {language_code} not supported by Kokoro")
+        logger.info(f"Using language code '{language_code}' for Kokoro")
         kokoro_tts._eva_extra_body = {
             "stream": True,
             "streaming_quality": "fast",
