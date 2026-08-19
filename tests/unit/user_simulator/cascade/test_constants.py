@@ -46,3 +46,9 @@ def test_self_correction_delay_is_shorter_than_the_check_interval():
 
     # The correction should land while the assistant is still on its first reply.
     assert SELF_CORRECTION_DELAY_MS < LISTENER_CHECK_INTERVAL_MS
+
+
+def test_interrupt_rate_is_occasional_not_constant():
+    from eva.user_simulator.cascade.constants import INTERRUPT_RATE
+
+    assert 0.0 < INTERRUPT_RATE < 0.5

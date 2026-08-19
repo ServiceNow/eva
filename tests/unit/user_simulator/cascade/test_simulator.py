@@ -629,3 +629,50 @@ async def test_an_ordinary_interruption_does_not_end_the_call():
 
     assert await sim._play_interruption(_InterruptScheduler()) is False
     assert sim.ended == []
+
+
+def test_an_assistant_turn_is_eligible_to_be_interrupted_only_sometimes():
+    from eva.user_simulator.cascade.constants import INTERRUPT_RATE
+    from eva.user_simulator.cascade.simulator import interrupt_allowed_this_turn
+
+    assert interrupt_allowed_this_turn(enabled=True, roll=INTERRUPT_RATE / 2) is True
+    assert interrupt_allowed_this_turn(enabled=True, roll=0.99) is False
+
+
+def test_no_assistant_turn_is_eligible_when_interruptions_are_disabled():
+    from eva.user_simulator.cascade.simulator import interrupt_allowed_this_turn
+
+    assert interrupt_allowed_this_turn(enabled=False, roll=0.0) is False
+
+
+async def test_only_one_interruption_fires_per_assistant_turn():
+    # The eligibility flag is cleared on firing, so a second check in the same
+    # assistant turn is offered allow_interrupt=False and cannot barge in again.
+    from eva.models.config import CascadeSimulatorConfig
+    from eva.user_simulator.cascade.decisions import ListenerVerdict
+
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._config = CascadeSimulatorConfig(enable_interruptions=True)
+    sim._phrase_cache = StubCache()
+    sim._may_interrupt_this_turn = True
+    sim.plays = 0
+    offered = []
+
+    class _Decisions:
+        async def evaluate(self, text, *, allow_interrupt, allow_backchannel):
+            offered.append(allow_interrupt)
+            return ListenerVerdict(should_interrupt=allow_interrupt, should_backchannel=False)
+
+    async def _play(scheduler):
+        sim.plays += 1
+        return False
+
+    sim._decisions = _Decisions()
+    sim._play_interruption = _play
+    sim._stt = type("_Stt", (), {"buffer": type("_B", (), {"current_text": staticmethod(lambda: "hi")})()})()
+
+    await sim._run_checks(_InterruptScheduler())
+    await sim._run_checks(_InterruptScheduler())
+
+    assert offered == [True, False]
+    assert sim.plays == 1

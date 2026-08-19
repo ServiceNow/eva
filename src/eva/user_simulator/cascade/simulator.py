@@ -19,6 +19,7 @@ from eva.user_simulator.cascade.constants import (
     BARGE_IN_OPENERS,
     CALLER_SAMPLE_RATE,
     INACTIVITY_TIMEOUT_MS,
+    INTERRUPT_RATE,
     MAX_INTERRUPT_SLIP_MS,
     SELF_CORRECTION_DELAY_MS,
     SELF_CORRECTION_RATE,
@@ -106,6 +107,17 @@ def interrupt_slip_ms(*, elapsed_s: float) -> int:
     return max(0, int(elapsed_s * 1000))
 
 
+def interrupt_allowed_this_turn(*, enabled: bool, roll: float) -> bool:
+    """Whether this assistant turn is eligible for one barge-in.
+
+    Rolled once per assistant turn rather than per check, and cleared after firing, so a
+    turn carries at most one interruption. Without this the caller barged in on every turn:
+    the decision prompt's YES criteria describe ordinary conversational readiness, so it
+    answers YES as soon as the caller has something to say — which is always.
+    """
+    return enabled and roll < INTERRUPT_RATE
+
+
 def correction_rng(conversation_id: str) -> random.Random:
     """Seed the self-correction gate per conversation, reproducibly but not identically.
 
@@ -167,6 +179,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
     _ticks_awaiting_transcript = 0
     _ticks_assistant_silent = 0
     _ticks_since_assistant_started = 0
+    _may_interrupt_this_turn = False
 
     def __init__(
         self,
@@ -205,6 +218,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._phrase_cache: PhraseCache | None = None
         self._decisions: ListenerDecisions | None = None
         self._rng = correction_rng(self._record_id or "cascade")
+        # Its own stream, so enabling one behavior cannot shift the other's draws.
+        self._interrupt_rng = correction_rng(f"{self._record_id or 'cascade'}:interrupt")
         self._armed_correction: bytes = b""
         self._armed_correction_text = ""
         self._candidate_text = ""
@@ -259,6 +274,11 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 caller_was_speaking = scheduler.caller_spoke_this_tick
                 assistant_was_speaking = result.has_assistant_speech
                 if result.has_assistant_speech:
+                    if self._ticks_since_assistant_started == 0:
+                        # One roll per assistant turn, so a turn carries at most one barge-in.
+                        self._may_interrupt_this_turn = interrupt_allowed_this_turn(
+                            enabled=self._config.enable_interruptions, roll=self._interrupt_rng.random()
+                        )
                     self._ticks_since_assistant_started += 1
                     if self._armed_correction and should_fire_self_correction(
                         ticks_since_assistant_started=self._ticks_since_assistant_started,
@@ -321,10 +341,11 @@ class CascadeUserSimulator(AbstractUserSimulator):
             return False
         verdict = await self._decisions.evaluate(
             self._stt.buffer.current_text(),
-            allow_interrupt=self._config.enable_interruptions,
+            allow_interrupt=self._may_interrupt_this_turn,
             allow_backchannel=self._config.enable_backchannel,
         )
         if verdict.should_interrupt:
+            self._may_interrupt_this_turn = False
             return await self._play_interruption(scheduler)
         if verdict.should_backchannel:
             phrase = play_backchannel(scheduler, self._phrase_cache, BACKCHANNEL_PHRASES)
