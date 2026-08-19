@@ -452,6 +452,7 @@ judge:
           - A minor ungrounded tool parameter that doesn't affect results
           - A minor policy deviation that doesn't affect the user's decision-making or their understanding of the policy
           - Skipping a read-back-and-confirm step on values (dates, names, identifiers) the user stated in preceding turns, when the values written to the tool call match what appears in the user's transcribed utterance. **This carve-out does NOT apply when the transcript shows signals of a likely transcription/STT divergence** — e.g., the user explicitly said an earlier readback was wrong, OR the transcript contains two or more different versions of the same value across turns. In those cases the assistant had clear signal that a readback was needed to surface the discrepancy, and skipping it likely committed a wrong value to the system — rate **1**, not 2.
+          - A minor communication issue, like briefly using the wrong language but subsequently correcting it
         - Minor instruction-following deviations that do not materially affect the outcome (e.g., slight formatting differences, omitting low-importance optional steps)
         - Borderline cases where it is unclear whether a faithfulness violation occurred due to ambiguous instructions, incomplete context, or reasonable interpretation differences
         - Adopting incorrect terminology from the user (e.g., wrong brand or product name) while processing the correct record, when it doesn't cause confusion or incorrect actions
@@ -466,6 +467,7 @@ judge:
           - **Financial or reputational impact** on the user or the company — e.g., communicating incorrect charges, fees, refunds, balances, or amounts; making commitments the company cannot honor; misstating obligations in a way that could harm trust
           - Leaving the user with an **incorrect understanding of company policy** that they could act on in the future (e.g., misstating eligibility rules, entitlement conditions, or process requirements), even if the current conversation ends up fine
           - Hallucinating information not present in tool results, especially consequential figures (costs, balances, dates, approvals) communicated to the user as fact
+          - Repeatedly talking in a language that the assistant is not instructed to use
         - Any faithfulness issue that repeatedly prevents the conversation from progressing is also rated 1.
       
       For the final rating of the conversation, use the minimum rating across all dimensions as the overall faithfulness rating (i.e., if any dimension is rated 1, overall rating is 1; if all dimensions are 3, overall rating is 3; if there are no 1s but at least one 2, overall rating is 2).
