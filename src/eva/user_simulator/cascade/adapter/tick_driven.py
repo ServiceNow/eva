@@ -1,13 +1,18 @@
 """Tick-driven adapter: the caller owns the simulation clock.
 
 Talks to the same assistant server over the same Twilio WebSocket as the
-real-time adapter, with two differences. Outbound audio is not paced, because
-the server is not pacing its own output either (``paced_output=False``); and
-nothing at all is emitted on a tick where the caller is silent.
+real-time adapter, and sends a full tick of audio — real or silence — on every
+tick just as it does. The difference is timing: outbound frames carry no pacing
+sleeps, because the server is not pacing its own output either
+(``paced_output=False``), and there is no minimum tick duration.
 
-Because the provider's VAD advances on audio received rather than wall time,
-not sending audio freezes the assistant. That is what makes caller compute time
-invisible here — and why nothing may be emitted on a stalled tick.
+Because the provider's VAD advances on audio received rather than on wall time,
+the conversation advances only when the caller ticks it. While the caller is
+generating a turn no tick runs, so no audio flows and the assistant is frozen —
+that is what makes caller compute time invisible. The freeze comes from *not
+ticking*, not from emitting nothing within a tick: a tick that sent nothing would
+starve the VAD of the trailing silence that ends the caller's turn, and the
+assistant would never reply at all.
 
 Inbound audio is released strictly one tick at a time however much arrives at
 once, which the real-time adapter already does; the difference is that here the
@@ -27,7 +32,7 @@ import json
 import time
 
 from eva.user_simulator.cascade.adapter.realtime_ws import FRAMES_PER_TICK, RealtimeWSAdapter
-from eva.user_simulator.cascade.constants import BYTES_PER_TICK
+from eva.user_simulator.cascade.constants import BYTES_PER_TICK, SILENCE_BYTE, TICK_DURATION_MS
 from eva.user_simulator.cascade.tick_result import TickResult, played_audio_ms, split_tick_audio
 from eva.utils.logging import get_logger
 
@@ -35,6 +40,16 @@ logger = get_logger(__name__)
 
 MAX_INACTIVE_SECONDS = 40.0
 """Fail loudly if the provider goes quiet this long (tau: DEFAULT_AUDIO_NATIVE_MAX_INACTIVE_SECONDS)."""
+
+QUIET_TICK_GRACE_S = TICK_DURATION_MS / 1000
+"""How long a tick waits for a full tick of assistant audio before calling it silence.
+
+Not pacing: it never *delays* audio that has already arrived, so a provider
+generating faster than real time is still drained as fast as it produces, and
+caller compute still costs the conversation nothing. It is only the bound on how
+long "the assistant has said nothing yet" takes to establish. Without it the loop
+spins through its whole tick budget in milliseconds and every conversation ends at
+tick zero with nothing said."""
 
 
 class TickDrivenAdapter(RealtimeWSAdapter):
@@ -56,6 +71,7 @@ class TickDrivenAdapter(RealtimeWSAdapter):
         )
         self._ticks_released = 0
         self._last_inbound_monotonic = time.monotonic()
+        self._audio_arrived = asyncio.Event()
 
     @property
     def played_ms(self) -> int:
@@ -93,12 +109,15 @@ class TickDrivenAdapter(RealtimeWSAdapter):
             await self._send_speech_event("user_speech_stop")
         self._caller_speaking = is_speaking
 
-        if outgoing_audio:
-            # Perturbation only ever rides on real caller audio here: mixing ambient
-            # noise into a stalled tick would emit frames and unfreeze the assistant.
-            await self._send_unpaced(self._apply_perturbation(outgoing_audio) or outgoing_audio)
+        # Every tick puts a full tick on the wire, silence included, exactly as the
+        # real-time adapter does. The provider's VAD advances on audio *received*, so
+        # a tick that emits nothing never ends the caller's turn and the assistant
+        # never replies. The freeze this plan is built on comes from the caller not
+        # calling `run_tick` while it thinks — not from emitting nothing inside one.
+        outgoing = self._apply_perturbation(outgoing_audio)
+        await self._send_unpaced(outgoing or SILENCE_BYTE * self._bytes_per_tick)
 
-        await asyncio.sleep(0)
+        await self._await_tick_of_audio()
         raw = bytes(self._inbound[: self._bytes_per_tick])
         del self._inbound[: len(raw)]
         chunk, _ = split_tick_audio(raw, self._bytes_per_tick)
@@ -117,6 +136,29 @@ class TickDrivenAdapter(RealtimeWSAdapter):
             wall_clock_ms=int(time.time() * 1000),
             interruption_audio_start_ms=interruption_start,
         )
+
+    def _on_inbound_audio(self) -> None:
+        """Wake a tick that is waiting on assistant audio."""
+        self._audio_arrived.set()
+
+    async def _await_tick_of_audio(self) -> None:
+        """Wait until a whole tick of assistant audio is buffered, or the grace expires.
+
+        Returns as soon as the buffer is full, so nothing already generated is held
+        back. The grace only bounds the silent case.
+        """
+        deadline = time.monotonic() + QUIET_TICK_GRACE_S
+        while len(self._inbound) < self._bytes_per_tick:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return
+            self._audio_arrived.clear()
+            if len(self._inbound) >= self._bytes_per_tick:
+                return
+            try:
+                await asyncio.wait_for(self._audio_arrived.wait(), timeout=remaining)
+            except TimeoutError:
+                return
 
     async def _send_unpaced(self, pcm: bytes) -> None:
         """Split one tick of PCM16 into wire frames and send them with no sleeps."""

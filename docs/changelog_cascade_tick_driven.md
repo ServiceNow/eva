@@ -3,8 +3,10 @@
 Plan: `docs/superpowers/plans/2026-08-06-cascade-tick-driven-adapter.md`
 
 Implemented Tasks 1-8 on `worktree-user-sim-phase-3`, branched off
-`feat/cascade-user-simulator` (Plan 1 + Plan 2 as merged there). Task 9 is live
-end-to-end verification and has **not** been run — see the last section.
+`feat/cascade-user-simulator` (Plan 1 + Plan 2 as merged there). Task 9's steps
+1-4 were run live; step 6 was blocked externally and step 5 was deliberately
+deferred — see the last two sections, which also record two design errors in the
+plan that only a live run exposed.
 
 ## Deviations from the plan, and why
 
@@ -35,9 +37,9 @@ timing — which is the one thing this plan is actually about.
 Consequences: `perturbator` is accepted (and inherited) rather than rejected, so
 the framework-selection site in `simulator.py` passes it unconditionally instead
 of using the plan's `**({...} if adapter_cls is RealtimeWSAdapter else {})`
-conditional. Perturbation is applied only to ticks that carry real caller audio —
-mixing ambient noise into a stalled tick would emit frames and unfreeze the
-assistant, defeating the whole mechanism.
+conditional. Perturbation is applied exactly as on the real-time path (ambient
+noise replaces the silence a quiet tick already sends) — see design error 2 below
+for why the plan's "emit nothing when silent" rule had to go.
 
 ### Nothing armed a barge-in, so Task 8 would have been dead code
 
@@ -91,25 +93,115 @@ that no longer exists.
 
 ## Verification actually performed
 
-`PYTHONPATH=<worktree>/src uv run pytest tests/unit -q` → **2117 passed, 52
+`PYTHONPATH=<worktree>/src uv run pytest tests/unit -q` → **2119 passed, 52
 skipped, 3 xfailed**. `pre-commit run --all-files` → all hooks pass.
 
 New tests: 1 base-server pacing, 6 openai-realtime (pacing both ways, delta-based
 activity guard, truncation target/no-op/item tracking), 4 `TickResult`, 8
-tick-driven adapter (unpaced send, per-tick release, silent-tick emits nothing,
-played position, no tick-duration floor, barge-in position, barge-in discard),
+tick-driven adapter (unpaced send, per-tick release, silent tick still sends a
+full tick, played position, buffered ticks release without delay, quiet tick waits
+out the grace, early return mid-grace, barge-in position, barge-in discard),
 2 scheduler barge-in arming, 4 framework selection, 3 worker pacing.
 
-## Task 9 — NOT DONE
+## Two design errors in the plan, found only by running it
 
-Every step needs live paid runs against OpenAI Realtime plus the cascade caller's
-STT/LLM/TTS providers, and step 5 additionally needs Plan 2's interruption path to
-be stable — it is still being fixed in the other worktree, and that changelog
-lists defect 4b (the interrupt check preempting ordinary turn-taking) as an open
-design question. Running the fidelity comparison before 4b is settled would
-measure Plan 2's turn-routing bug, not this plan's clock.
+The unit tests all passed while the path was completely non-functional. Both
+faults were invisible to them because both are about what happens across *many*
+ticks against a real provider.
 
-Step 5 is the one that matters: it is the entire justification for this plan and
-the evidence for or against porting `gemini_live` and `grok_voice`. Expected
-result is `slip_ms == 0` and `dropped == false` on the tick-driven path against
-non-zero slip and some drops on the real-time path.
+### 1. Removing all pacing left nothing to wait for the provider
+
+First live run ended after 160ms with `reason: timeout` and an empty transcript.
+`max_ticks = timeout * 1000 / TICK_DURATION_MS` ticks ran to exhaustion instantly:
+the real-time adapter's 200ms per-tick floor was the only thing that had ever
+given the assistant time to produce anything, and the plan removed it without
+replacement.
+
+Added `QUIET_TICK_GRACE_S` (one tick, 200ms) and `_await_tick_of_audio()`: a tick
+waits for a full tick of assistant audio, returning the moment it is available.
+This is not pacing — it never delays audio that has already arrived, so a provider
+generating faster than real time is still drained as fast as it produces and
+caller compute still costs the conversation nothing. It only bounds how long "the
+assistant has said nothing yet" takes to establish. The wait is driven by an
+`asyncio.Event` set from a new `_on_inbound_audio()` hook on `RealtimeWSAdapter`
+(a no-op there).
+
+### 2. "Nothing is emitted on a silent tick" was backwards
+
+Second live run reached a real turn — assistant greeted, caller replied at tick 23
+— and then died at the 40s liveness check with the assistant never answering.
+
+The plan asserts that emitting nothing freezes the assistant, and treats that as
+the mechanism. Emitting nothing does freeze it, but it also starves the provider's
+VAD of the trailing silence that *ends the caller's turn*, so no response is ever
+generated. The freeze this plan is built on comes from the caller not calling
+`run_tick` while it thinks; it does not require, and is actively broken by, a tick
+that puts nothing on the wire. That is why the real-time adapter sends a full tick
+every tick.
+
+`run_tick` now sends a full tick of audio — real or silence, perturbation applied
+as on the real-time path — with no pacing sleeps and no minimum tick duration.
+The plan's `test_nothing_is_emitted_on_a_silent_tick` was inverted accordingly,
+and its two "no wait" tests were reframed: they now assert that ticks with audio
+*already buffered* release without delay, plus new tests that a quiet tick waits
+out the grace and that a tick returns early when audio arrives mid-grace.
+
+## Task 9 — steps 1-4 and 6 run; step 5 not run
+
+One ITSM record (record 1), `gpt-realtime-mini`, behaviors off, metrics enabled.
+`--metrics=` was used only for the first diagnostic run.
+
+**Steps 1-2 (artifacts, tools, DB).** Tick-driven run completed, ended `goodbye`,
+7 turns. Full artifact set produced and identical to the baseline's:
+`audit_log.json`, `transcript.jsonl`, `audio_user.wav`, `audio_assistant.wav`,
+`audio_user_clean.wav`, `audio_mixed.wav`, `framework_logs.jsonl`,
+`pipecat_metrics.jsonl`, `initial_scenario_db.json`, `final_scenario_db.json`.
+Audit log holds 2 `tool_call` / 2 `tool_response` entries
+(`verify_employee_auth`, `attempt_account_unlock`), and the DB diff is exactly the
+intended mutation: `active_directory.locked True -> False`, `lock_reason
+too_many_attempts -> None`, plus the two session-auth fields.
+
+**Step 3 (latency).** Compared against the same record on the same framework with
+`TICK_DRIVEN_FRAMEWORKS` temporarily emptied — a like-for-like real-time baseline,
+which the ElevenLabs run could not provide:
+
+| | tick-driven | real-time |
+|---|---|---|
+| completed / end reason | yes / goodbye | yes / goodbye |
+| `model_response` p50 | 765 ms | 780 ms | 
+| `model_response` mean (n) | 823 ms (4) | 1178 ms (2) |
+| tools called | both | both |
+
+p50 is within 2%. The mean gap is small-n noise (4 samples vs 2), not distortion —
+the measurement window (caller stops → first assistant byte) contains no caller
+compute either way.
+
+**Step 4 (turn ordering).** Timestamps monotonic on both paths. The tick-driven
+transcript alternates cleanly; the real-time baseline has two caller turns landing
+before the assistant's reply block and answers "which system?" *before* the caller
+says "Active Directory" — i.e. tick-driving visibly improved ordering, which is the
+direction this plan predicts. The duplicated/concatenated assistant entries appear
+**identically on the baseline**, so they are a pre-existing `openai_realtime`
+transcript artifact, not something this plan introduced.
+
+**Step 6 (ElevenLabs regression).** Could not be completed: the ElevenLabs
+simulator failed to connect to ElevenLabs' own service
+(`EOFError: connection closed while reading HTTP status line`) on all three
+attempts, before any of this plan's code ran. External credential/connectivity
+issue, unrelated to these changes. The paced server branch was instead exercised
+by the Step 3 baseline run, which used `paced_output=True` and completed normally
+— so the pacing path is verified working, just not with the ElevenLabs caller.
+
+**Validation "failure" on every run, including the baseline and the ElevenLabs
+attempt**, is `user_speech_fidelity` erroring with
+`Unable to load vertex credentials from environment`. Environmental, identical
+across all paths. `conversation_valid_end` and `user_behavioral_fidelity` both
+scored 1.0 on the tick-driven run.
+
+**Step 5 (interruption fidelity) NOT run**, by decision. It needs Plan 2's
+interruption path to be stable — still being fixed in the other worktree, whose
+changelog lists defect 4b (the interrupt check preempting ordinary turn-taking) as
+an open design question. Running it before 4b is settled would measure Plan 2's
+turn-routing bug rather than this plan's clock. It remains the deciding evidence
+for porting `gemini_live` and `grok_voice`; expected result is `slip_ms == 0` and
+`dropped == false` tick-driven against non-zero slip and some drops real-time.

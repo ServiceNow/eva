@@ -207,6 +207,10 @@ class RealtimeWSAdapter(Adapter):
         payload = message.get("media", {}).get("payload", "")
         if payload:
             self._inbound.extend(self._mulaw8k_to_pcm16k(base64.b64decode(payload)))
+            self._on_inbound_audio()
+
+    def _on_inbound_audio(self) -> None:
+        """Hook fired after inbound audio lands in the buffer. No-op on this path."""
 
     def _mulaw8k_to_pcm16k(self, mulaw: bytes) -> bytes:
         """Convert 8kHz mulaw from the wire to PCM16 at the caller sample rate."""
