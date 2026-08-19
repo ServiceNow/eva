@@ -25,6 +25,7 @@ from eva.user_simulator.cascade.constants import (
     SELF_CORRECTION_RATE,
     TICK_DURATION_MS,
     TRANSCRIPT_WAIT_MS,
+    WAIT_TO_RESPOND_OTHER_MS,
     ms_to_ticks,
 )
 from eva.user_simulator.cascade.decisions import ListenerDecisions, parse_yes_no
@@ -135,6 +136,17 @@ def summarize_goal(goal: dict) -> str:
         else:
             lines.append(f"{label}: {value}")
     return "\n".join(lines)
+
+
+def is_new_assistant_turn(*, ticks_silent_before: int) -> bool:
+    """Whether assistant audio arriving now starts a new turn or resumes the current one.
+
+    A pause shorter than the turn-end threshold is a gap *inside* one turn — between
+    sentences, or a hole in the audio stream — not a new turn. Treating any single quiet
+    tick as a boundary re-armed the interruption cap mid-utterance, so one assistant turn
+    could collect several barge-ins.
+    """
+    return ticks_silent_before >= ms_to_ticks(WAIT_TO_RESPOND_OTHER_MS)
 
 
 def interrupt_allowed_this_turn(*, enabled: bool, roll: float) -> bool:
@@ -303,8 +315,18 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 self._log_audio_boundaries(scheduler, result, assistant_was_speaking, caller_was_speaking)
                 caller_was_speaking = scheduler.caller_spoke_this_tick
                 assistant_was_speaking = result.has_assistant_speech
+                # Captured before the inactivity check, which clears it on a speech tick.
+                silent_before = self._ticks_assistant_silent
+                if self._assistant_is_inactive(scheduler, result):
+                    logger.warning(
+                        f"tick {scheduler.tick}: assistant silent for "
+                        f"{INACTIVITY_TIMEOUT_MS // 1000}s; ending the conversation"
+                    )
+                    self._on_conversation_end("inactivity_timeout")
+                    break
                 if result.has_assistant_speech:
-                    if self._ticks_since_assistant_started == 0:
+                    if is_new_assistant_turn(ticks_silent_before=silent_before):
+                        self._ticks_since_assistant_started = 0
                         # One roll per assistant turn, so a turn carries at most one barge-in.
                         self._may_interrupt_this_turn = interrupt_allowed_this_turn(
                             enabled=self._config.enable_interruptions, roll=self._interrupt_rng.random()
@@ -319,14 +341,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
                     if scheduler.is_check_tick() and await self._run_checks(scheduler):
                         break
                     continue
-                self._ticks_since_assistant_started = 0
-                if self._assistant_is_inactive(scheduler, result):
-                    logger.warning(
-                        f"tick {scheduler.tick}: assistant silent for "
-                        f"{INACTIVITY_TIMEOUT_MS // 1000}s; ending the conversation"
-                    )
-                    self._on_conversation_end("inactivity_timeout")
-                    break
                 if scheduler.caller_is_speaking or not scheduler.may_take_turn():
                     continue
                 heard, waiting = self._collect_heard_text(scheduler)
@@ -386,17 +400,15 @@ class CascadeUserSimulator(AbstractUserSimulator):
         return False
 
     async def _play_interruption(self, scheduler: TickScheduler) -> bool:
-        """Voice a cached opener immediately, then stream the real content behind it.
+        """Decide what to say, then voice the opener and the content together.
 
-        Returns True when the caller decided to hang up. The generation is offered the
-        end_call tool, so discarding that verdict here strands a caller that wants to
-        say goodbye mid-assistant-turn: it emits nothing and the call runs on to the
-        inactivity timeout.
+        Returns True when the caller decided to hang up.
 
-        The opener buys the lead time the content generation costs. If the content
-        still arrives too late to be a barge-in, it is dropped rather than emitted
-        stale — and the slip is logged either way, because that gap is the empirical
-        risk this design carries.
+        The content is generated *before* anything reaches the wire. Emitting the opener
+        first hid its ~1s latency, but committed the caller to barging in before knowing
+        whether it had anything to say: a hang-up or a dropped-as-stale line then left an
+        orphaned "Actually—" hanging with nothing behind it, which is worse than either a
+        late line or silence. Generating first means "say nothing" is actually available.
         """
         if self._phrase_cache is None:
             return False
@@ -404,8 +416,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
         started_at = time.monotonic()
         opener = self._phrase_cache.choose(BARGE_IN_OPENERS)
         opener_audio = self._phrase_cache.get(opener)
-        scheduler.enqueue_utterance(opener_audio)
-        self._record_audio("user_clean", opener_audio)
 
         if self._config.speculative_generation and self._candidate_audio:
             candidate, audio = self._candidate_text, self._candidate_audio
@@ -413,6 +423,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
             if await candidate_is_relevant(
                 self._decision_client, candidate=candidate, heard=self._stt.buffer.current_text()
             ):
+                scheduler.enqueue_utterance(opener_audio)
+                self._record_audio("user_clean", opener_audio)
                 scheduler.enqueue_utterance(audio)
                 self._record_audio("user_clean", audio)
                 self._history.append({"role": "user", "content": candidate})
@@ -461,10 +473,13 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 "end_call": end_call,
             },
         )
+        # Nothing has reached the wire yet, so a stale line or a hang-up costs no audio.
         if dropped:
             return False
 
         if utterance:
+            scheduler.enqueue_utterance(opener_audio)
+            self._record_audio("user_clean", opener_audio)
             self._history.append({"role": "user", "content": utterance})
             self._on_user_speaks(utterance)
             async for chunk in self._tts.stream(utterance, voice_id=self._voice_id):
@@ -476,11 +491,16 @@ class CascadeUserSimulator(AbstractUserSimulator):
         return end_call
 
     def _assistant_is_inactive(self, scheduler: TickScheduler, result: TickResult) -> bool:
-        """Whether the assistant has produced no audio for INACTIVITY_TIMEOUT_MS.
+        """Whether the assistant has produced no audio for INACTIVITY_TIMEOUT_MS *contiguously*.
 
         Mirrors ElevenLabsUserSimulator's keep-alive rule so both providers record the
         same terminal state: conversation_valid_end treats inactivity_timeout with the
         user speaking last as a definitive end, not a failure.
+
+        Must be called on every tick, speech or silence. It was previously reached only on
+        silent ticks, which made the reset below dead code: the counter then measured
+        *cumulative* silence over the whole call and killed healthy conversations once their
+        quiet ticks happened to total two minutes.
         """
         if result.has_assistant_speech:
             self._ticks_assistant_silent = 0

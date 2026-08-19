@@ -676,3 +676,68 @@ async def test_only_one_interruption_fires_per_assistant_turn():
 
     assert offered == [True, False]
     assert sim.plays == 1
+
+
+def test_a_short_pause_inside_one_assistant_turn_is_not_a_new_turn():
+    # A single quiet tick used to re-arm the interruption cap mid-utterance.
+    from eva.user_simulator.cascade.simulator import is_new_assistant_turn
+
+    assert is_new_assistant_turn(ticks_silent_before=1) is False
+    assert is_new_assistant_turn(ticks_silent_before=4) is False
+
+
+def test_a_sustained_gap_starts_a_new_assistant_turn():
+    from eva.user_simulator.cascade.constants import WAIT_TO_RESPOND_OTHER_MS, ms_to_ticks
+    from eva.user_simulator.cascade.simulator import is_new_assistant_turn
+
+    assert is_new_assistant_turn(ticks_silent_before=ms_to_ticks(WAIT_TO_RESPOND_OTHER_MS)) is True
+
+
+def test_inactivity_measures_contiguous_silence_not_cumulative():
+    # The reset was unreachable in the live loop, so scattered quiet ticks accumulated
+    # and killed healthy calls once they happened to total two minutes.
+    from eva.user_simulator.cascade.constants import INACTIVITY_TIMEOUT_MS, ms_to_ticks
+
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._ticks_assistant_silent = 0
+    limit = ms_to_ticks(INACTIVITY_TIMEOUT_MS)
+
+    # Almost time out, then the assistant speaks once, then go quiet again.
+    for _ in range(limit):
+        assert sim._assistant_is_inactive(_SilenceScheduler(), _tick(False)) is False
+    assert sim._assistant_is_inactive(_SilenceScheduler(), _tick(True)) is False
+    for _ in range(limit):
+        assert sim._assistant_is_inactive(_SilenceScheduler(), _tick(False)) is False
+
+    assert sim._assistant_is_inactive(_SilenceScheduler(), _tick(False)) is True
+
+
+async def test_a_dropped_interruption_emits_no_audio_at_all():
+    # Emitting the opener up front meant a stale drop left it orphaned on the wire.
+    sim = _interrupting_simulator("Active Directory.")
+
+    class _StaleScheduler(_InterruptScheduler):
+        assistant_is_speaking = False  # forces should_drop_interrupt
+
+    scheduler = _StaleScheduler()
+    assert await sim._play_interruption(scheduler) is False
+    assert scheduler.queued == []
+
+
+async def test_a_hangup_during_an_interruption_emits_no_opener():
+    sim = _interrupting_simulator(_EndCallMessage())
+    scheduler = _InterruptScheduler()
+
+    assert await sim._play_interruption(scheduler) is True
+    assert scheduler.queued == []
+    assert sim.ended == ["goodbye"]
+
+
+async def test_a_kept_interruption_speaks_the_opener_then_the_content():
+    sim = _interrupting_simulator("Active Directory.")
+    scheduler = _InterruptScheduler()
+
+    assert await sim._play_interruption(scheduler) is False
+
+    assert scheduler.queued[0] == b"CACHED"
+    assert b"Active Directory." in b"".join(scheduler.queued[1:])
