@@ -727,3 +727,32 @@ async def test_a_kept_interruption_speaks_the_opener_then_the_content():
 
     assert scheduler.queued[0] == b"CACHED"
     assert b"Active Directory." in b"".join(scheduler.queued[1:])
+
+
+def test_openai_realtime_uses_the_tick_driven_adapter():
+    from eva.user_simulator.cascade.adapter.tick_driven import TickDrivenAdapter
+    from eva.user_simulator.cascade.simulator import adapter_class_for_framework
+
+    assert adapter_class_for_framework("openai_realtime") is TickDrivenAdapter
+
+
+def test_pipecat_stays_on_the_real_time_adapter():
+    # Pipecat owns its own clock; freezing it is not possible.
+    from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
+    from eva.user_simulator.cascade.simulator import adapter_class_for_framework
+
+    assert adapter_class_for_framework("pipecat") is RealtimeWSAdapter
+
+
+def test_elevenlabs_stays_on_the_real_time_adapter():
+    from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
+    from eva.user_simulator.cascade.simulator import adapter_class_for_framework
+
+    assert adapter_class_for_framework("elevenlabs") is RealtimeWSAdapter
+
+
+def test_unported_frameworks_default_to_the_real_time_adapter():
+    from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
+    from eva.user_simulator.cascade.simulator import adapter_class_for_framework
+
+    assert adapter_class_for_framework("gemini_live") is RealtimeWSAdapter

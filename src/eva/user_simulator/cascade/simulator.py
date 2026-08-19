@@ -13,7 +13,9 @@ import websockets
 from eva.assistant.services.llm import LiteLLMClient
 from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.base import AbstractUserSimulator
+from eva.user_simulator.cascade.adapter.base import Adapter
 from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
+from eva.user_simulator.cascade.adapter.tick_driven import TickDrivenAdapter
 from eva.user_simulator.cascade.constants import (
     BACKCHANNEL_PHRASES,
     BARGE_IN_OPENERS,
@@ -203,6 +205,21 @@ class _DecisionClient:
         return getattr(message, "content", None) or ""
 
 
+TICK_DRIVEN_FRAMEWORKS = frozenset({"openai_realtime"})
+"""Frameworks whose clock the caller can own. Others keep real-time streaming."""
+
+
+def adapter_class_for_framework(framework: str) -> type[Adapter]:
+    """Pick the adapter for a framework, defaulting to real-time streaming.
+
+    Defaulting to real-time is deliberate: it works everywhere, whereas
+    tick-driving requires the assistant to have no wall-clock timers of its own.
+    """
+    if framework in TICK_DRIVEN_FRAMEWORKS:
+        return TickDrivenAdapter
+    return RealtimeWSAdapter
+
+
 class CascadeUserSimulator(AbstractUserSimulator):
     """Simulated caller built from independently chosen STT, LLM, and TTS models."""
 
@@ -224,6 +241,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         language: str = "en",
         *,
         simulator_config: CascadeSimulatorConfig,
+        framework: str = "pipecat",
     ) -> None:
         super().__init__(
             current_date_time=current_date_time,
@@ -238,6 +256,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             provider="cascade",
         )
         self._config = simulator_config
+        self._framework = framework
         self._stt = LiveKitStreamingSTT(simulator_config.stt, simulator_config.stt_params, language=language)
         self._tts = CartesiaTTS(simulator_config.tts_params, language=language)
         self._llm = LiteLLMClient(model=simulator_config.llm)
@@ -269,7 +288,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
     async def _run(self) -> None:
         """Drive the scheduler until end_call, timeout, or disconnect."""
         websocket = await websockets.connect(self.server_url)
-        adapter = RealtimeWSAdapter(
+        adapter_cls = adapter_class_for_framework(self._framework)
+        adapter = adapter_cls(
             websocket=websocket,
             conversation_id=self._record_id or "cascade",
             perturbator=self._perturbator,
