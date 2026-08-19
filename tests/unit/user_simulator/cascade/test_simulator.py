@@ -315,18 +315,6 @@ def test_verdict_with_no_action_queues_nothing():
     assert verdict.should_backchannel is False
 
 
-def test_slip_is_measured_in_ticks_converted_to_ms():
-    from eva.user_simulator.cascade.simulator import interrupt_slip_ms
-
-    assert interrupt_slip_ms(intended_tick=10, actual_tick=15) == 1000
-
-
-def test_no_slip_when_the_interrupt_lands_on_its_intended_tick():
-    from eva.user_simulator.cascade.simulator import interrupt_slip_ms
-
-    assert interrupt_slip_ms(intended_tick=10, actual_tick=10) == 0
-
-
 def test_interrupt_kept_when_slip_is_within_budget():
     from eva.user_simulator.cascade.simulator import should_drop_interrupt
 
@@ -501,3 +489,143 @@ async def test_relevance_gate_fails_closed():
     llm = FakeLLM(error=RuntimeError("down"))
 
     assert await candidate_is_relevant(llm, candidate="x", heard="y") is False
+
+
+def test_slip_is_measured_on_the_wall_clock_not_the_tick_counter():
+    # The tick counter cannot advance during _play_interruption's await: run_tick is
+    # only pumped by _run, so a tick-delta slip is structurally always zero.
+    from eva.user_simulator.cascade.simulator import interrupt_slip_ms
+
+    assert interrupt_slip_ms(elapsed_s=1.0) == 1000
+    assert interrupt_slip_ms(elapsed_s=0.0) == 0
+    assert interrupt_slip_ms(elapsed_s=2.4) == 2400
+
+
+def test_slip_never_reports_negative_for_a_clock_hiccup():
+    from eva.user_simulator.cascade.simulator import interrupt_slip_ms
+
+    assert interrupt_slip_ms(elapsed_s=-0.5) == 0
+
+
+def test_self_correction_rng_differs_per_conversation():
+    # Seeding every conversation with 0 made the 15% gate unreachable: Random(0)
+    # first drops below 0.15 on draw 26, and conversations run ~7 turns.
+    from eva.user_simulator.cascade.simulator import correction_rng
+
+    a = correction_rng("record-1")
+    b = correction_rng("record-2")
+
+    assert [a.random() for _ in range(5)] != [b.random() for _ in range(5)]
+
+
+def test_self_correction_rng_is_reproducible_for_the_same_conversation():
+    from eva.user_simulator.cascade.simulator import correction_rng
+
+    first = [correction_rng("record-7").random() for _ in range(3)]
+    again = [correction_rng("record-7").random() for _ in range(3)]
+
+    assert first == again
+
+
+def test_self_correction_gate_actually_opens_within_a_normal_conversation():
+    # Across a realistic spread of records, the 15% rate must be reachable.
+    from eva.user_simulator.cascade.constants import SELF_CORRECTION_RATE
+    from eva.user_simulator.cascade.simulator import correction_rng
+
+    turns_per_conversation = 7
+    fired = 0
+    for index in range(60):
+        rng = correction_rng(f"record-{index}")
+        if any(rng.random() < SELF_CORRECTION_RATE for _ in range(turns_per_conversation)):
+            fired += 1
+
+    assert fired > 20, f"only {fired}/60 conversations could ever self-correct"
+
+
+class _EndCallMessage:
+    """LLM reply that hangs up via the tool and says nothing."""
+
+    content = ""
+
+    class _Fn:
+        name = "end_call"
+
+    class _Call:
+        function = None
+
+    def __init__(self) -> None:
+        call = self._Call()
+        call.function = self._Fn()
+        self.tool_calls = [call]
+
+
+def _interrupting_simulator(message):
+    """Bare simulator wired for _play_interruption only."""
+    from eva.models.config import CascadeSimulatorConfig
+    from eva.user_simulator.cascade.stt import TranscriptBuffer
+
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._config = CascadeSimulatorConfig(enable_interruptions=True)
+    sim._history = []
+    sim._voice_id = "voice-f"
+    sim._build_prompt = lambda: "SYSTEM PROMPT"
+    sim.event_logger = _FakeEventLogger()
+    sim._phrase_cache = StubCache()
+    sim._record_audio = lambda *a, **k: None
+    sim._on_user_speaks = lambda *a, **k: None
+    sim._on_assistant_speaks = lambda *a, **k: None
+    sim.ended = []
+    sim._on_conversation_end = sim.ended.append
+    buffer = TranscriptBuffer()
+    buffer.committed = "Your account is unlocked."
+    sim._stt = type("_Stt", (), {"buffer": buffer})()
+
+    class _Llm:
+        async def complete(self, messages, tools=None):
+            return message, {}
+
+    class _Tts:
+        async def stream(self, text, *, voice_id):
+            yield text.encode()
+
+    sim._llm, sim._tts = _Llm(), _Tts()
+    return sim
+
+
+class _InterruptScheduler:
+    tick = 40
+    assistant_is_speaking = True
+
+    def __init__(self) -> None:
+        self.queued: list[bytes] = []
+
+    def enqueue_utterance(self, audio: bytes) -> None:
+        self.queued.append(audio)
+
+
+async def test_a_hangup_during_an_interruption_ends_the_call():
+    # Discarding end_call here stranded the caller: it emitted nothing and the
+    # conversation ran on to the inactivity timeout, looping the assistant.
+    sim = _interrupting_simulator(_EndCallMessage())
+
+    hung_up = await sim._play_interruption(_InterruptScheduler())
+
+    assert hung_up is True
+    assert sim.ended == ["goodbye"]
+
+
+async def test_a_hangup_is_never_dropped_as_stale():
+    sim = _interrupting_simulator(_EndCallMessage())
+
+    class _StoppedScheduler(_InterruptScheduler):
+        assistant_is_speaking = False  # would normally drop the interruption
+
+    assert await sim._play_interruption(_StoppedScheduler()) is True
+    assert sim.ended == ["goodbye"]
+
+
+async def test_an_ordinary_interruption_does_not_end_the_call():
+    sim = _interrupting_simulator("It says my account is locked out.")
+
+    assert await sim._play_interruption(_InterruptScheduler()) is False
+    assert sim.ended == []

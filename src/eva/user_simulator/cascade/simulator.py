@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import random
 import re
+import time
+import zlib
 from pathlib import Path
 
 import websockets
@@ -93,9 +95,25 @@ def should_fire_self_correction(*, ticks_since_assistant_started: int, assistant
     return ticks_since_assistant_started >= ms_to_ticks(SELF_CORRECTION_DELAY_MS)
 
 
-def interrupt_slip_ms(*, intended_tick: int, actual_tick: int) -> int:
-    """How far past its intended tick a barge-in actually landed."""
-    return max(0, actual_tick - intended_tick) * TICK_DURATION_MS
+def interrupt_slip_ms(*, elapsed_s: float) -> int:
+    """How far past its intended moment a barge-in actually landed.
+
+    Measured on the wall clock, not the tick counter. `run_tick` is only pumped by
+    the `_run` loop, so while `_play_interruption` awaits its generation no tick can
+    advance — a tick-delta slip is structurally always zero and the staleness check
+    built on it never engages.
+    """
+    return max(0, int(elapsed_s * 1000))
+
+
+def correction_rng(conversation_id: str) -> random.Random:
+    """Seed the self-correction gate per conversation, reproducibly but not identically.
+
+    Seeding every conversation with 0 made the gate unreachable: `Random(0)` first
+    falls below SELF_CORRECTION_RATE on draw 26, while a conversation runs ~7 turns,
+    so no conversation ever armed a correction.
+    """
+    return random.Random(zlib.crc32(conversation_id.encode()))
 
 
 def should_drop_interrupt(*, slip_ms: int, assistant_still_speaking: bool) -> bool:
@@ -186,7 +204,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._decision_client = _DecisionClient(LiteLLMClient(model=simulator_config.decision_llm))
         self._phrase_cache: PhraseCache | None = None
         self._decisions: ListenerDecisions | None = None
-        self._rng = random.Random(0)
+        self._rng = correction_rng(self._record_id or "cascade")
         self._armed_correction: bytes = b""
         self._armed_correction_text = ""
         self._candidate_text = ""
@@ -248,8 +266,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
                     ):
                         self._fire_self_correction(scheduler)
                         continue
-                    if scheduler.is_check_tick():
-                        await self._run_checks(scheduler)
+                    if scheduler.is_check_tick() and await self._run_checks(scheduler):
+                        break
                     continue
                 self._ticks_since_assistant_started = 0
                 if self._assistant_is_inactive(scheduler, result):
@@ -297,35 +315,41 @@ class CascadeUserSimulator(AbstractUserSimulator):
             backchannel_prompt=prompts.get_template("user_simulator.backchannel_decision"),
         )
 
-    async def _run_checks(self, scheduler: TickScheduler) -> None:
-        """Run the listener-reaction checks and act on the verdict."""
+    async def _run_checks(self, scheduler: TickScheduler) -> bool:
+        """Run the listener-reaction checks and act on the verdict. True means hang up."""
         if self._decisions is None or self._phrase_cache is None:
-            return
+            return False
         verdict = await self._decisions.evaluate(
             self._stt.buffer.current_text(),
             allow_interrupt=self._config.enable_interruptions,
             allow_backchannel=self._config.enable_backchannel,
         )
         if verdict.should_interrupt:
-            await self._play_interruption(scheduler)
-            return
+            return await self._play_interruption(scheduler)
         if verdict.should_backchannel:
             phrase = play_backchannel(scheduler, self._phrase_cache, BACKCHANNEL_PHRASES)
             # Recorded too, or the saved clean track diverges from what went on the wire.
             self._record_audio("user_clean", self._phrase_cache.get(phrase))
             self.event_logger.log_event("backchannel", {"text": phrase, "tick_index": scheduler.tick})
+        return False
 
-    async def _play_interruption(self, scheduler: TickScheduler) -> None:
+    async def _play_interruption(self, scheduler: TickScheduler) -> bool:
         """Voice a cached opener immediately, then stream the real content behind it.
+
+        Returns True when the caller decided to hang up. The generation is offered the
+        end_call tool, so discarding that verdict here strands a caller that wants to
+        say goodbye mid-assistant-turn: it emits nothing and the call runs on to the
+        inactivity timeout.
 
         The opener buys the lead time the content generation costs. If the content
         still arrives too late to be a barge-in, it is dropped rather than emitted
-        stale — and both ticks are logged either way, because that gap is the
-        empirical risk this design carries.
+        stale — and the slip is logged either way, because that gap is the empirical
+        risk this design carries.
         """
         if self._phrase_cache is None:
-            return
+            return False
         intended_tick = scheduler.tick
+        started_at = time.monotonic()
         opener = self._phrase_cache.choose(BARGE_IN_OPENERS)
         opener_audio = self._phrase_cache.get(opener)
         scheduler.enqueue_utterance(opener_audio)
@@ -348,12 +372,12 @@ class CascadeUserSimulator(AbstractUserSimulator):
                         "opener": opener,
                         "intended_tick": intended_tick,
                         "actual_tick": scheduler.tick,
-                        "slip_ms": interrupt_slip_ms(intended_tick=intended_tick, actual_tick=scheduler.tick),
+                        "slip_ms": interrupt_slip_ms(elapsed_s=time.monotonic() - started_at),
                         "speculative": True,
                         "dropped": False,
                     },
                 )
-                return
+                return False
             self.event_logger.log_event("interruption_candidate_rejected", {"text": candidate})
 
         # Consumed, not peeked: leaving it in the buffer would re-append the same
@@ -365,10 +389,14 @@ class CascadeUserSimulator(AbstractUserSimulator):
             self._history.append({"role": "assistant", "content": heard})
             self._on_assistant_speaks(heard)
         message, _stats = await self._llm.complete(messages=self._messages(), tools=[END_CALL_TOOL])
-        utterance, _end_call = extract_turn(message)
+        utterance, end_call = extract_turn(message)
 
-        slip = interrupt_slip_ms(intended_tick=intended_tick, actual_tick=scheduler.tick)
-        dropped = should_drop_interrupt(slip_ms=slip, assistant_still_speaking=scheduler.assistant_is_speaking)
+        slip = interrupt_slip_ms(elapsed_s=time.monotonic() - started_at)
+        # A hang-up is never stale: the caller has decided the call is over, and
+        # dropping it here is what left conversations looping until the timeout.
+        dropped = not end_call and should_drop_interrupt(
+            slip_ms=slip, assistant_still_speaking=scheduler.assistant_is_speaking
+        )
         self.event_logger.log_event(
             "interruption",
             {
@@ -378,16 +406,22 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 "actual_tick": scheduler.tick,
                 "slip_ms": slip,
                 "dropped": dropped,
+                "end_call": end_call,
             },
         )
-        if dropped or not utterance:
-            return
+        if dropped:
+            return False
 
-        self._history.append({"role": "user", "content": utterance})
-        self._on_user_speaks(utterance)
-        async for chunk in self._tts.stream(utterance, voice_id=self._voice_id):
-            self._record_audio("user_clean", chunk)
-            scheduler.enqueue_utterance(chunk)
+        if utterance:
+            self._history.append({"role": "user", "content": utterance})
+            self._on_user_speaks(utterance)
+            async for chunk in self._tts.stream(utterance, voice_id=self._voice_id):
+                self._record_audio("user_clean", chunk)
+                scheduler.enqueue_utterance(chunk)
+
+        if end_call:
+            self._on_conversation_end("goodbye")
+        return end_call
 
     def _assistant_is_inactive(self, scheduler: TickScheduler, result: TickResult) -> bool:
         """Whether the assistant has produced no audio for INACTIVITY_TIMEOUT_MS.
