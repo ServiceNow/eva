@@ -47,15 +47,6 @@ SELF_CORRECTION_DELAY_MS = 1200
 SELF_CORRECTION_RATE = 0.15
 """Fraction of caller turns generated with a self-correction attached."""
 
-INTERRUPT_RATE = 0.15
-"""Fraction of assistant turns eligible for one barge-in.
-
-Rolled once when the assistant starts speaking, not once per check: the interrupt prompt's
-YES criteria ("has the user heard enough to have a response ready?") are satisfied at the end
-of every assistant turn, so ungated every caller utterance became an interruption and normal
-turn-taking was bypassed entirely.
-"""
-
 BACKCHANNEL_PHRASES = ["uh-huh", "mm-hmm"]
 """Fixed continuer vocabulary (tau: voice_config.py:126). Pre-rendered at init."""
 

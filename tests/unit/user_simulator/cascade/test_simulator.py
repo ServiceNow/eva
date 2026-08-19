@@ -631,20 +631,6 @@ async def test_an_ordinary_interruption_does_not_end_the_call():
     assert sim.ended == []
 
 
-def test_an_assistant_turn_is_eligible_to_be_interrupted_only_sometimes():
-    from eva.user_simulator.cascade.constants import INTERRUPT_RATE
-    from eva.user_simulator.cascade.simulator import interrupt_allowed_this_turn
-
-    assert interrupt_allowed_this_turn(enabled=True, roll=INTERRUPT_RATE / 2) is True
-    assert interrupt_allowed_this_turn(enabled=True, roll=0.99) is False
-
-
-def test_no_assistant_turn_is_eligible_when_interruptions_are_disabled():
-    from eva.user_simulator.cascade.simulator import interrupt_allowed_this_turn
-
-    assert interrupt_allowed_this_turn(enabled=False, roll=0.0) is False
-
-
 async def test_only_one_interruption_fires_per_assistant_turn():
     # The eligibility flag is cleared on firing, so a second check in the same
     # assistant turn is offered allow_interrupt=False and cannot barge in again.
