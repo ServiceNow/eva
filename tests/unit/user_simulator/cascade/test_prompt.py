@@ -24,7 +24,9 @@ def test_the_turn_call_carries_no_cascade_specific_contract():
 
 
 def test_interruption_decision_prompt_has_a_history_slot_and_binary_contract():
-    prompt = PromptManager().get_prompt("user_simulator.interruption_decision", conversation_history="AGENT: hello")
+    prompt = PromptManager().get_prompt(
+        "user_simulator.interruption_decision", conversation_history="AGENT: hello", user_goal="Unlock my account."
+    )
 
     assert "AGENT: hello" in prompt
     assert "YES" in prompt
@@ -51,3 +53,15 @@ def test_self_correction_prompt_never_mentions_ending_the_call():
     prompt = PromptManager().get_template("user_simulator.cascade_self_correction")
 
     assert "end_call" not in prompt
+
+
+def test_interruption_decision_prompt_carries_the_user_goal():
+    prompt = PromptManager().get_prompt(
+        "user_simulator.interruption_decision",
+        conversation_history="AGENT: hello",
+        user_goal="Get my account unlocked.",
+    )
+
+    assert "Get my account unlocked." in prompt
+    # The goodbye case the caller kept barging in on.
+    assert "likely to hang up" in prompt

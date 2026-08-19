@@ -107,6 +107,36 @@ def interrupt_slip_ms(*, elapsed_s: float) -> int:
     return max(0, int(elapsed_s * 1000))
 
 
+def summarize_goal(goal: dict) -> str:
+    """State what the caller wants and what would end the call, for the listener checks.
+
+    Field meanings live in the prompt template rather than here, so the explanations stay
+    static across the many calls this decision makes rather than being rebuilt per call.
+    `edge_cases` and `information_required` are deliberately omitted: they are long and
+    describe how to answer questions, not whether the goal is finished.
+    """
+    tree = goal.get("decision_tree", {}) or {}
+    sections = [
+        ("GOAL", goal.get("high_level_user_goal")),
+        ("MUST HAVE", tree.get("must_have_criteria")),
+        ("NICE TO HAVE", tree.get("nice_to_have_criteria")),
+        ("HOW THEY EVALUATE OPTIONS", tree.get("negotiation_behavior")),
+        ("RESOLVED WHEN", tree.get("resolution_condition")),
+        ("FAILED WHEN", tree.get("failure_condition")),
+        ("ESCALATION", tree.get("escalation_behavior")),
+    ]
+    lines: list[str] = []
+    for label, value in sections:
+        if not value:
+            continue
+        if isinstance(value, list):
+            lines.append(f"{label}:")
+            lines += [f"- {item}" for item in value]
+        else:
+            lines.append(f"{label}: {value}")
+    return "\n".join(lines)
+
+
 def interrupt_allowed_this_turn(*, enabled: bool, roll: float) -> bool:
     """Whether this assistant turn is eligible for one barge-in.
 
@@ -333,6 +363,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             self._decision_client,
             interrupt_prompt=prompts.get_template("user_simulator.interruption_decision"),
             backchannel_prompt=prompts.get_template("user_simulator.backchannel_decision"),
+            user_goal=summarize_goal(self.goal),
         )
 
     async def _run_checks(self, scheduler: TickScheduler) -> bool:

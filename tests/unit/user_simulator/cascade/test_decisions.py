@@ -77,3 +77,79 @@ async def test_a_failing_check_fails_closed():
 
     assert verdict.should_interrupt is False
     assert verdict.should_backchannel is False
+
+
+async def test_the_goal_is_substituted_into_the_interrupt_prompt():
+    llm = FakeLLM(["NO", "NO"])
+    seen: list[str] = []
+
+    class _Recorder(FakeLLM):
+        async def decide(self, prompt: str) -> str:
+            seen.append(prompt)
+            return await super().decide(prompt)
+
+    decisions = ListenerDecisions(
+        _Recorder(["NO", "NO"]),
+        interrupt_prompt="goal={user_goal} history={conversation_history}",
+        backchannel_prompt="b {conversation_history}",
+        user_goal="Unlock my account.",
+    )
+
+    await decisions.evaluate("AGENT: hello", allow_interrupt=True, allow_backchannel=True)
+
+    assert "goal=Unlock my account." in seen[0]
+    assert llm.calls == 0
+
+
+async def test_a_backchannel_prompt_without_a_goal_slot_still_works():
+    # str.format ignores unused keyword arguments, so one signature serves both prompts.
+    decisions = ListenerDecisions(
+        FakeLLM(["NO", "YES"]),
+        interrupt_prompt="i {conversation_history}",
+        backchannel_prompt="b {conversation_history}",
+        user_goal="Unlock my account.",
+    )
+
+    verdict = await decisions.evaluate("AGENT: hello", allow_interrupt=True, allow_backchannel=True)
+
+    assert verdict.should_backchannel is True
+
+
+def test_goal_summary_is_compact_and_names_what_is_left():
+    from eva.user_simulator.cascade.simulator import summarize_goal
+
+    summary = summarize_goal(
+        {
+            "high_level_user_goal": "Unlock my AD account.",
+            "decision_tree": {
+                "must_have_criteria": ["account unlocked"],
+                "nice_to_have_criteria": ["a case number"],
+                "negotiation_behavior": "take the fastest fix offered",
+                "resolution_condition": "user can sign in",
+                "failure_condition": "agent cannot unlock it",
+                "escalation_behavior": "do not ask for a live agent",
+                "edge_cases": ["a very long irrelevant edge case " * 40],
+            },
+        }
+    )
+
+    for expected in (
+        "Unlock my AD account.",
+        "account unlocked",
+        "a case number",
+        "take the fastest fix offered",
+        "user can sign in",
+        "agent cannot unlock it",
+        "do not ask for a live agent",
+    ):
+        assert expected in summary, expected
+    # edge_cases is long and describes how to answer questions, not whether the goal is done.
+    assert "irrelevant" not in summary
+
+
+def test_goal_summary_omits_absent_fields_without_blank_labels():
+    from eva.user_simulator.cascade.simulator import summarize_goal
+
+    summary = summarize_goal({"high_level_user_goal": "Unlock my account.", "decision_tree": {}})
+
+    assert summary == "GOAL: Unlock my account."

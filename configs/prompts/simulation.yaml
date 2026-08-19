@@ -511,6 +511,23 @@ user_simulator:
   interruption_decision: |
     You are analyzing a conversation to decide if the user should interrupt the agent.
 
+    This is what the user called to accomplish, so you can judge what they still have left
+    to do. The fields mean:
+
+    - GOAL: what the user is trying to achieve overall.
+    - MUST HAVE: non-negotiable requirements. The user will never accept an outcome that
+      fails any of these, and will not hang up until all of them are met.
+    - NICE TO HAVE: things the user wants but will give up if necessary.
+    - HOW THEY EVALUATE OPTIONS: the steps the user follows when the agent presents choices.
+    - RESOLVED WHEN: the success condition. Once this is met the user says a brief goodbye
+      and ends the call, so there is nothing left worth interrupting for.
+    - FAILED WHEN: the failure condition. This also ends the call.
+    - ESCALATION: how the user handles being transferred to a live agent.
+
+    <user_goal>
+    {user_goal}
+    </user_goal>
+
     Conversation history (most recent at bottom):
 
     <conversation_history>
@@ -526,6 +543,8 @@ user_simulator:
     - Has the user heard enough to have a response, question, or correction ready?
     - Did the agent just complete the sentence which has all the pertinent information the user was looking for?
     - Do NOT repeatedly interrupt the agent if it has spoken only a few words (say less than 5 words).
+    - Are the user's request(s) basically accomplished and the user is likely to hang up on the next turn (if so it should not interrupt)?
+    - Is this a logical point in the conversation to interrupt?
 
     Respond with ONLY "YES" if the user should interrupt now, or "NO" if they should keep listening.
 

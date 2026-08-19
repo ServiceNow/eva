@@ -39,10 +39,13 @@ class ListenerDecisions:
     never inject a barge-in that the caller never actually decided to make.
     """
 
-    def __init__(self, llm: DecisionLLM, *, interrupt_prompt: str, backchannel_prompt: str) -> None:
+    def __init__(
+        self, llm: DecisionLLM, *, interrupt_prompt: str, backchannel_prompt: str, user_goal: str = ""
+    ) -> None:
         self._llm = llm
         self._interrupt_prompt = interrupt_prompt
         self._backchannel_prompt = backchannel_prompt
+        self._user_goal = user_goal
 
     async def evaluate(
         self, conversation_history: str, *, allow_interrupt: bool, allow_backchannel: bool
@@ -55,11 +58,16 @@ class ListenerDecisions:
         return ListenerVerdict(should_interrupt=interrupt, should_backchannel=backchannel and not interrupt)
 
     async def _check(self, template: str, conversation_history: str, *, enabled: bool) -> bool:
-        """Ask the model one YES/NO question, returning False on anything unexpected."""
+        """Ask the model one YES/NO question, returning False on anything unexpected.
+
+        Both templates are filled with the same arguments; `str.format` ignores the ones a
+        given prompt does not use, so the backchannel prompt needs no goal slot.
+        """
         if not enabled:
             return False
         try:
-            reply = await self._llm.decide(template.format(conversation_history=conversation_history))
+            filled = template.format(conversation_history=conversation_history, user_goal=self._user_goal)
+            reply = await self._llm.decide(filled)
         except Exception as exc:
             logger.warning(f"Listener check failed, defaulting to no action: {exc}")
             return False
