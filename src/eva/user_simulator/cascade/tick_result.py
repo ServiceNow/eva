@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import NamedTuple
 
-from eva.user_simulator.cascade.constants import BYTES_PER_TICK, SILENCE_BYTE
+from eva.user_simulator.cascade.constants import BYTES_PER_TICK, SILENCE_BYTE, TICK_DURATION_MS
 
 
 @dataclass(frozen=True)
@@ -24,10 +24,26 @@ class TickResult:
     wall_clock_ms: int
     """Unix ms at the tick's I/O boundary. For latency metrics only, never for ordering."""
 
+    skip_item_id: str | None = None
+    """Provider item whose remaining audio must be discarded after a barge-in."""
+
+    interruption_audio_start_ms: int | None = None
+    """Played position where the caller cut in, in simulated ms."""
+
     @property
     def has_assistant_speech(self) -> bool:
         """Whether any real assistant audio arrived this tick."""
         return self.assistant_audio_raw_bytes > 0
+
+
+def played_audio_ms(*, ticks_released: int) -> int:
+    """Assistant audio actually released into the conversation, in simulated ms.
+
+    This is deliberately not "bytes received": a realtime provider generates
+    faster than real time, so the provider's idea of playback position runs ahead
+    of what the caller has heard. Truncation must use this number.
+    """
+    return ticks_released * TICK_DURATION_MS
 
 
 class TickAudioSplit(NamedTuple):
