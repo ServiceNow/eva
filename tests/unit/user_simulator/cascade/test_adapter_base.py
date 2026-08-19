@@ -15,7 +15,9 @@ async def test_concrete_adapter_satisfies_the_interface():
         async def start(self) -> None:
             pass
 
-        async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
+        async def run_tick(
+            self, tick_number: int, outgoing_audio: bytes | None, *, barge_in: bool = False
+        ) -> TickResult:
             return TickResult(
                 tick_number=tick_number,
                 assistant_audio=b"\x00" * 4,

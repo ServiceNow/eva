@@ -12,13 +12,16 @@ class FakeAdapter(Adapter):
         self.speech_ticks = speech_ticks
         self.sent: list[bytes | None] = []
         self.received_ticks: list[int] = []
+        self.barge_in_ticks: list[int] = []
 
     async def start(self) -> None:
         pass
 
-    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
+    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None, *, barge_in: bool = False) -> TickResult:
         self.sent.append(outgoing_audio)
         self.received_ticks.append(tick_number)
+        if barge_in:
+            self.barge_in_ticks.append(tick_number)
         speaking = self.speech_ticks[tick_number] if tick_number < len(self.speech_ticks) else False
         return TickResult(
             tick_number=tick_number,
@@ -195,7 +198,7 @@ class RaisingAdapter(Adapter):
     async def start(self) -> None:
         pass
 
-    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
+    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None, *, barge_in: bool = False) -> TickResult:
         if tick_number == self.fail_on_tick:
             raise RuntimeError("adapter failure")
         return TickResult(
@@ -298,3 +301,27 @@ async def test_an_utterance_queued_after_a_backchannel_still_consumes_the_turn()
         await scheduler.run_tick()
 
     assert scheduler.may_take_turn() is False
+
+
+async def test_armed_barge_in_fires_on_the_tick_audio_reaches_the_wire():
+    scheduler = _scheduler([True, True, True])
+    adapter = scheduler._adapter
+
+    await scheduler.run_tick()  # silent tick: nothing on the wire yet
+    scheduler.arm_barge_in()
+    scheduler.enqueue_utterance(b"\x01" * BYTES_PER_TICK * 2)
+    await scheduler.run_tick()
+    await scheduler.run_tick()
+
+    # Exactly the first tick that carried caller audio, and only that one.
+    assert adapter.barge_in_ticks == [1]
+
+
+async def test_arming_a_barge_in_with_nothing_queued_does_not_fire_on_silence():
+    scheduler = _scheduler([True, True])
+    adapter = scheduler._adapter
+
+    scheduler.arm_barge_in()
+    await scheduler.run_tick()
+
+    assert adapter.barge_in_ticks == []

@@ -427,6 +427,10 @@ class CascadeUserSimulator(AbstractUserSimulator):
             if await candidate_is_relevant(
                 self._decision_client, candidate=candidate, heard=self._stt.buffer.current_text()
             ):
+                # Tell the adapter the next tick that reaches the wire cuts the
+                # assistant off, so a tick-driven transport can truncate the audio
+                # the caller never heard. Ignored on the real-time path.
+                scheduler.arm_barge_in()
                 scheduler.enqueue_utterance(opener_audio)
                 self._record_audio("user_clean", opener_audio)
                 scheduler.enqueue_utterance(audio)
@@ -482,6 +486,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             return False
 
         if utterance:
+            scheduler.arm_barge_in()
             scheduler.enqueue_utterance(opener_audio)
             self._record_audio("user_clean", opener_audio)
             self._history.append({"role": "user", "content": utterance})

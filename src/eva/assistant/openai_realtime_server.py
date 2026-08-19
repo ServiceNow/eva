@@ -69,6 +69,8 @@ class _AssistantResponseState:
     first_audio_wall_ms: str | None = None
     responding: bool = False
     has_function_calls: bool = False
+    active_item_id: str | None = None
+    """Item currently producing audio; the truncation target on a caller barge-in."""
 
 
 class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
@@ -387,6 +389,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                     logger.debug("Twilio stream stopped")
                     break
 
+                if event_type == "truncate":
+                    await self._truncate_response(conn, int(data.get("audio_end_ms", 0)))
+                    continue
+
                 if event_type == "user_speech_start":
                     # Timestamp from audio_interface when user audio actually started
                     self._audio_interface_speech_start_ts = data.get("timestamp_ms")
@@ -512,6 +518,23 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             case _:
                 logger.debug(f"Unhandled {self._service_name} event: {event_type}")
 
+    async def _truncate_response(self, conn: Any, audio_end_ms: int) -> None:
+        """Discard generated audio past the position the caller actually heard.
+
+        Only a tick-driven caller sends this: with pacing off the provider runs
+        ahead of the caller's playout, so without truncation it would believe the
+        caller heard seconds of audio that were never released.
+        """
+        item_id = self._assistant_state.active_item_id
+        if not item_id:
+            return
+        try:
+            await conn.conversation.item.truncate(item_id=item_id, content_index=0, audio_end_ms=audio_end_ms)
+        except Exception as exc:
+            logger.warning(f"Truncating item {item_id} at {audio_end_ms}ms failed: {exc}")
+            return
+        logger.info(f"Truncated item {item_id} at {audio_end_ms}ms on caller barge-in")
+
     # ── Event handlers ────────────────────────────────────────────────
 
     async def _on_speech_started(self, event: Any) -> None:
@@ -598,6 +621,11 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             return
 
         pcm16_bytes = base64.b64decode(delta_b64)
+        # Read off the delta rather than response.output_item.added: it names the same
+        # item and is already dispatched here, so no extra event handler is needed.
+        item_id = getattr(event, "item_id", None)
+        if item_id:
+            self._assistant_state.active_item_id = item_id
 
         if self._assistant_state.first_audio_wall_ms is None:
             self._assistant_state.first_audio_wall_ms = _wall_ms()

@@ -598,6 +598,10 @@ class _InterruptScheduler:
 
     def __init__(self) -> None:
         self.queued: list[bytes] = []
+        self.barge_in_armed = False
+
+    def arm_barge_in(self) -> None:
+        self.barge_in_armed = True
 
     def enqueue_utterance(self, audio: bytes) -> None:
         self.queued.append(audio)
@@ -727,6 +731,8 @@ async def test_a_kept_interruption_speaks_the_opener_then_the_content():
 
     assert scheduler.queued[0] == b"CACHED"
     assert b"Active Directory." in b"".join(scheduler.queued[1:])
+    # A tick-driven transport needs to know this audio cuts the assistant off.
+    assert scheduler.barge_in_armed is True
 
 
 def test_openai_realtime_uses_the_tick_driven_adapter():

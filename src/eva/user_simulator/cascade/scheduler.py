@@ -36,6 +36,7 @@ class TickScheduler:
         self._awaiting_reply = False
         self._caller_spoke_this_tick = False
         self._backchannel_bytes = 0
+        self._barge_in_armed = False
 
     @property
     def tick(self) -> int:
@@ -60,6 +61,15 @@ class TickScheduler:
         """
         self._backchannel_bytes += len(audio)
         self._playout.extend(audio)
+
+    def arm_barge_in(self) -> None:
+        """Mark the next tick that puts caller audio on the wire as an interruption.
+
+        Armed rather than passed directly because an interruption is enqueued as
+        audio and only reaches the wire on a later tick; the truncation must carry
+        the played position as of *that* tick, not as of the decision.
+        """
+        self._barge_in_armed = True
 
     @property
     def caller_is_speaking(self) -> bool:
@@ -118,8 +128,11 @@ class TickScheduler:
         raised exception leaves the queue and tick count exactly as they were.
         """
         outgoing, consumed = self._peek_chunk()
-        result = await self._adapter.run_tick(self._tick, outgoing)
+        barge_in = self._barge_in_armed and outgoing is not None
+        result = await self._adapter.run_tick(self._tick, outgoing, barge_in=barge_in)
         del self._playout[:consumed]
+        if barge_in:
+            self._barge_in_armed = False
 
         # Backchannel bytes sit at the head of the queue, so this tick is a continuer
         # only while they remain. Anything past them is real speech and takes the turn.

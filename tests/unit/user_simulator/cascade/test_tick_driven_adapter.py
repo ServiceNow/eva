@@ -98,3 +98,36 @@ async def test_run_tick_does_not_wait_out_the_tick_duration():
     # The real-time adapter enforces a 200ms floor per tick; this one must not.
     assert time.monotonic() - started < 0.05
     await adapter.stop()
+
+
+async def test_barge_in_reports_the_played_position_not_the_received_position():
+    ws = FakeWebSocket()
+    adapter = TickDrivenAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+    await adapter.start()
+    # 1s of audio arrives at once but only 3 ticks (600ms) get released.
+    await ws.inbound.put(_media_frame(b"\xff" * 8000))
+    await _settle()
+    for tick in range(3):
+        await adapter.run_tick(tick, None)
+
+    result = await adapter.run_tick(3, b"\x00" * BYTES_PER_TICK, barge_in=True)
+
+    assert result.interruption_audio_start_ms == 600
+    truncate = [json.loads(m) for m in ws.sent if json.loads(m).get("event") == "truncate"]
+    assert truncate and truncate[0]["audio_end_ms"] == 600
+    await adapter.stop()
+
+
+async def test_barge_in_discards_audio_the_caller_never_heard():
+    ws = FakeWebSocket()
+    adapter = TickDrivenAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+    await adapter.start()
+    await ws.inbound.put(_media_frame(b"\xff" * 8000))
+    await _settle()
+
+    result = await adapter.run_tick(0, b"\x00" * BYTES_PER_TICK, barge_in=True)
+
+    # The buffered second of assistant audio is audio the caller cut off.
+    assert result.assistant_audio_raw_bytes == 0
+    assert adapter.played_ms == 0
+    await adapter.stop()
