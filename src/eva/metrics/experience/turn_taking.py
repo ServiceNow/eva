@@ -41,6 +41,19 @@ Flat headline sub-metrics (one number each — show up as columns in analysis vi
                         computed from audit_log.json directly so it works uniformly across
                         cascade/S2S/audio-LLM; omitted when there are no tool calls or the
                         audit log is unavailable — see ``_compute_pre_tool_speech_groups``)
+  VAD turn diagnostics: eot_vad_not_fired_rate (per-conversation boolean, aggregates to a
+                        true rate across a run's conversations), forced_completion_rate
+                        (Smart Turn's silence fallback firing rate; null for Krisp — the
+                        mechanism doesn't exist), forced_completion_final_turn_{short,
+                        acknowledgement,spelled_entity}_rate (among forced completions, how
+                        often the STT transcript matched to that window has that input shape
+                        — a candidate explanation for why the turn analyzer needed the
+                        stop_secs fallback; omitted when there are no forced completions with
+                        a matched transcript), max_turn_open_duration_ms,
+                        mean/p50/p90_time_to_complete_ms (natural completions only).
+                        All null/omitted for runs with no local turn-analyzer VAD
+                        (non-pipecat frameworks, or turn_stop_strategy == "external").
+                        See src/eva/metrics/experience/vad_end_of_turn.py.
 
 All reported sub-metrics are consistent with the main score: ``mean_overlap_score``,
 ``mean_count_score``, and ``mean_yield_score`` aggregate exactly the per-turn scores
@@ -53,6 +66,7 @@ from pathlib import Path
 from typing import Any
 
 from eva.metrics.base import CodeMetric, MetricContext
+from eva.metrics.experience.vad_end_of_turn import compute_vad_turn_sub_metrics
 from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import mean_agent_perf_stat
@@ -67,7 +81,7 @@ class TurnTakingMetric(CodeMetric):
     description = "Turn-taking evaluation based on per-turn latency and interruption behavior"
     category = "experience"
     pass_at_k_threshold = 0.8
-    version = "v0.2"
+    version = "v0.3"
 
     # --- Latency curve (piecewise linear). 0 outside [LATENCY_HARD_EARLY_MS, LATENCY_HARD_LATE_MS]. ---
     # Ramp up 0 → 1 from LATENCY_HARD_EARLY_MS to LATENCY_SWEET_SPOT_LOW_MS.
@@ -585,6 +599,12 @@ class TurnTakingMetric(CodeMetric):
                 "missed_turn": missed_turn,
             }
 
+            vad_result = compute_vad_turn_sub_metrics(context)
+            vad_sub_metrics: dict[str, MetricScore] = {}
+            if vad_result is not None:
+                vad_sub_metrics, vad_per_turn = vad_result
+                details["vad_turns"] = vad_per_turn
+
             if not per_turn_score:
                 self.logger.info(
                     f"[{context.record_id}] No turns with both user and assistant audio timestamps; "
@@ -595,10 +615,12 @@ class TurnTakingMetric(CodeMetric):
                     score=0.0,
                     normalized_score=0.0,
                     details=details,
+                    sub_metrics=vad_sub_metrics,
                 )
 
             score = 0.0 if missed_turn else round(statistics.mean(per_turn_score.values()), 4)
             sub_metrics = self._build_flat_sub_metrics(context, turn_keys, turns_with_tool_calls, per_turn_evidence)
+            sub_metrics.update(vad_sub_metrics)
 
             return MetricScore(
                 name=self.name,

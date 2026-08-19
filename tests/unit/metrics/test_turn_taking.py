@@ -28,6 +28,8 @@ Sub-metrics (flat, one number each):
 
 import json
 import logging
+import shutil
+from pathlib import Path
 
 import pytest
 
@@ -35,6 +37,8 @@ from eva.metrics.experience.turn_taking import TurnTakingMetric
 from eva.models.config import PipelineType
 
 from .conftest import make_metric_context
+
+EXAMPLE_DIR = Path(__file__).parents[3] / "example"
 
 
 @pytest.fixture
@@ -1051,3 +1055,171 @@ class TestPreToolSpeechSubMetric:
         result = await metric.compute(context)
         sub = result.sub_metrics
         assert sub["pretoolspeech_rate"].score == pytest.approx(1.0)
+
+
+def _write_jsonl(path, entries):
+    path.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
+
+
+class TestVadTurnMetricsIntegration:
+    @pytest.mark.asyncio
+    async def test_vad_sub_metrics_populated_for_pipecat_run(self, metric, tmp_path):
+        (tmp_path / "config.json").write_text(
+            json.dumps({"framework": "pipecat", "model": {"turn_stop_strategy": "krisp_viva_turn"}})
+        )
+        _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
+        _write_jsonl(
+            tmp_path / "pipecat_metrics.jsonl",
+            [
+                {
+                    "timestamp": 1100,
+                    "type": "TurnMetricsData",
+                    "value": {"is_complete": True, "e2e_processing_time_ms": 100.0},
+                }
+            ],
+        )
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(ctx)
+        assert result.sub_metrics["mean_time_to_complete_ms"].score == 100.0
+        assert result.details["vad_turns"] == [
+            {"turn_index": 0, "open_duration_ms": 100, "time_to_complete_ms": 100.0, "completion": "natural"}
+        ]
+
+    @pytest.mark.asyncio
+    async def test_vad_sub_metrics_absent_for_non_pipecat_run(self, metric, tmp_path):
+        (tmp_path / "config.json").write_text(json.dumps({"framework": "elevenlabs", "model": {}}))
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(ctx)
+        assert "mean_time_to_complete_ms" not in result.sub_metrics
+        assert "vad_turns" not in result.details
+
+    @pytest.mark.asyncio
+    async def test_vad_sub_metrics_absent_when_no_config_or_vad_files(self, metric, tmp_path):
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(ctx)
+        assert "eot_vad_not_fired_rate" not in result.sub_metrics
+        assert "vad_turns" not in result.details
+
+
+class TestVadTurnMetricsOnEarlyReturn:
+    @pytest.mark.asyncio
+    async def test_vad_sub_metrics_emitted_when_no_turns_have_both_user_and_assistant_audio(self, metric, tmp_path):
+        """Regression test for the "hang on the first/only real turn" scenario:
+
+        the user speaks, the VAD turn analyzer never completes (no TurnMetricsData at
+        all), and inactivity_timeout kills the conversation before the agent ever
+        responds. There is no turn with both user AND assistant audio, so
+        _get_turn_ids_with_turn_taking returns [] and per_turn_score is empty -
+        compute() takes the early-return path. eot_vad_not_fired_rate exists
+        specifically to catch this exact case, so it must still be computed and
+        attached on that early-return MetricScore, not skipped.
+        """
+        (tmp_path / "config.json").write_text(
+            json.dumps({"framework": "pipecat", "model": {"turn_stop_strategy": "krisp_viva_turn"}})
+        )
+        # VAD fires (user_started_speaking) but never completes - no pipecat_metrics.jsonl
+        # TurnMetricsData at all, so the single window is "stuck".
+        _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            conversation_ended_reason="inactivity_timeout",
+            audio_timestamps_user_turns={1: [(0.0, 5.0)]},
+            audio_timestamps_assistant_turns={},
+        )
+        result = await metric.compute(ctx)
+
+        # Early-return path: no turns had both user and assistant audio.
+        assert result.details["per_turn_score"] == {}
+        assert result.score == 0.0
+
+        # But the VAD diagnostics that exist to catch exactly this scenario must still
+        # be present, not silently skipped.
+        assert result.sub_metrics["eot_vad_not_fired_rate"].score == 1.0
+        assert result.details["vad_turns"]
+        assert result.details["vad_turns"][0]["completion"] == "stuck"
+
+
+def _copy_vad_fixture_files(src_dir: Path, dst_dir: Path, glob_prefix: str) -> None:
+    """Copy pipecat_logs*.jsonl/pipecat_metrics*.jsonl/logs*.log from an example dir into dst_dir
+
+    Normalizing the "(N)" suffix in the real filenames to the plain names the code expects.
+    """
+    for pattern, dest_name in [
+        ("pipecat_logs*.jsonl", "pipecat_logs.jsonl"),
+        ("pipecat_metrics*.jsonl", "pipecat_metrics.jsonl"),
+        ("logs*.log", "logs.log"),
+    ]:
+        matches = list(src_dir.glob(pattern))
+        assert matches, f"No {pattern} found in {src_dir} — has the example fixture been removed?"
+        shutil.copy(matches[0], dst_dir / dest_name)
+
+
+class TestVadTurnMetricsRealFixtures:
+    async def test_krisp_example_populates_expected_fields(self, metric, tmp_path):
+        src = EXAMPLE_DIR / "krisp_5-1-2_trial_1"
+        if not src.exists():
+            pytest.skip("example/krisp_5-1-2_trial_1 not present in this checkout")
+        _copy_vad_fixture_files(src, tmp_path, "krisp")
+        (tmp_path / "config.json").write_text(
+            json.dumps({"framework": "pipecat", "model": {"turn_stop_strategy": "krisp_viva_turn"}})
+        )
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            conversation_ended_reason="goodbye",
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(ctx)
+        assert "forced_completion_rate" not in result.sub_metrics
+        assert result.sub_metrics["eot_vad_not_fired_rate"].score == 0.0
+        # This fixture has 11 user_started_speaking events but only 8 TurnMetricsData
+        # completions - 3 windows are genuinely "stuck" (VAD false-starts and one silently
+        # swallowed ~3.2s utterance that the conversation survived because the user's next
+        # utterance completed normally). This is real, confirmed behavior, not a bug -
+        # only natural completions feed mean/p50/p90_time_to_complete_ms.
+        vad_turns = result.details["vad_turns"]
+        assert len(vad_turns) == 11
+        assert sum(1 for t in vad_turns if t["completion"] == "natural") == 8
+        assert sum(1 for t in vad_turns if t["completion"] == "stuck") == 3
+        assert sum(1 for t in vad_turns if t["completion"] == "forced") == 0
+        assert result.sub_metrics["mean_time_to_complete_ms"].score == pytest.approx(154.791, abs=0.01)
+        assert result.sub_metrics["p50_time_to_complete_ms"].score == pytest.approx(103.246, abs=0.01)
+        assert result.sub_metrics["p90_time_to_complete_ms"].score == pytest.approx(412.668, abs=0.01)
+        # Regression guard for the middle-stuck-window bug found during plan review: if a
+        # middle stuck window were (incorrectly) measured against the conversation's global
+        # last-observed timestamp instead of its own next-VAD-start bound, this would be
+        # ~92000ms instead of ~9728ms (the real final open-ended window's duration).
+        assert result.sub_metrics["max_turn_open_duration_ms"].score == pytest.approx(9728, abs=5)
+
+    async def test_nonkrisp_example_populates_forced_completion_rate(self, metric, tmp_path):
+        src = EXAMPLE_DIR / "nonkrisp_4-2-1_trial_0"
+        if not src.exists():
+            pytest.skip("example/nonkrisp_4-2-1_trial_0 not present in this checkout")
+        _copy_vad_fixture_files(src, tmp_path, "nonkrisp")
+        (tmp_path / "config.json").write_text(
+            json.dumps({"framework": "pipecat", "model": {"turn_stop_strategy": "turn_analyzer"}})
+        )
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            conversation_ended_reason="goodbye",
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(ctx)
+        assert result.sub_metrics["forced_completion_rate"].score is not None
+        assert result.sub_metrics["forced_completion_rate"].score > 0
+        assert result.sub_metrics["eot_vad_not_fired_rate"].score == 0.0
+        assert any(t["completion"] == "forced" for t in result.details["vad_turns"])
+        assert any(t["completion"] == "natural" for t in result.details["vad_turns"])
