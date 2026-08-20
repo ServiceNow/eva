@@ -1187,15 +1187,21 @@ class TestVadTurnMetricsRealFixtures:
         # completions - 3 windows are genuinely "stuck" (VAD false-starts and one silently
         # swallowed ~3.2s utterance that the conversation survived because the user's next
         # utterance completed normally). This is real, confirmed behavior, not a bug -
-        # only natural completions feed mean/p50/p90_time_to_complete_ms.
+        # only natural completions feed mean/p50/p90_time_to_complete_ms. Of the remaining
+        # 8, 2 are "early": pipecat's own TurnTrackingObserver logged no turn_start for
+        # the immediately following window, and that following window went on to complete
+        # naturally itself - real evidence the analyzer cut the user off mid-utterance
+        # rather than the window just being VAD noise (which is what the 3 stuck windows are).
         vad_turns = result.details["vad_turns"]
         assert len(vad_turns) == 11
-        assert sum(1 for t in vad_turns if t["completion"] == "natural") == 8
+        assert sum(1 for t in vad_turns if t["completion"] == "natural") == 6
+        assert sum(1 for t in vad_turns if t["completion"] == "early") == 2
         assert sum(1 for t in vad_turns if t["completion"] == "stuck") == 3
         assert sum(1 for t in vad_turns if t["completion"] == "forced") == 0
         assert result.sub_metrics["stuck_rate"].score == pytest.approx(3 / 11, abs=0.0001)
-        assert result.sub_metrics["mean_time_to_complete_ms"].score == pytest.approx(154.791, abs=0.01)
-        assert result.sub_metrics["p50_time_to_complete_ms"].score == pytest.approx(103.246, abs=0.01)
+        assert result.sub_metrics["premature_detection_rate"].score == pytest.approx(2 / 8, abs=0.0001)
+        assert result.sub_metrics["mean_time_to_complete_ms"].score == pytest.approx(133.876, abs=0.01)
+        assert result.sub_metrics["p50_time_to_complete_ms"].score == pytest.approx(100.586, abs=0.01)
         assert result.sub_metrics["p90_time_to_complete_ms"].score == pytest.approx(412.668, abs=0.01)
         # Regression guard for the middle-stuck-window bug found during plan review: if a
         # middle stuck window were (incorrectly) measured against the conversation's global

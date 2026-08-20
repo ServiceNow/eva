@@ -145,6 +145,20 @@ def _transcript_for_vad_stop(dispatched_user_turns: list[tuple[int, str]], vad_s
     return min(candidates, key=lambda c: c[0])[1] if candidates else None
 
 
+def _load_turn_start_timestamps(output_dir: str) -> set[int]:
+    """Return the set of timestamps where pipecat's own TurnTrackingObserver started a turn.
+
+    Sourced from pipecat_logs.jsonl's "turn_start" entries (observers.py:_start_turn), on the
+    same shared epoch-ms clock as vad_starts/vad_stops. This is pipecat's own judgment of
+    whether a given user_started_speaking frame began a genuinely new turn - independent of
+    (and a check on) the turn-analyzer's is_complete/stop_secs signals used elsewhere in this
+    module. Empty when the run's pipeline doesn't emit turn_start at all, which callers must
+    treat as "signal unavailable" rather than "no turn ever started".
+    """
+    entries = load_jsonl(Path(output_dir) / "pipecat_logs.jsonl")
+    return {e["timestamp"] for e in entries if e.get("type") == "turn_start"}
+
+
 def _load_stop_secs_silence_ms(output_dir: str) -> list[float]:
     """Return the 'Silence in ms' value from each pipecat stop_secs forced-completion line, in file order.
 
@@ -169,8 +183,9 @@ def _classify_turns(
     turn_metrics_events: list[dict[str, Any]],
     stop_secs_silence_ms: list[float],
     dispatched_user_turns: list[tuple[int, str]] | None = None,
+    turn_start_timestamps: set[int] | None = None,
 ) -> list[dict[str, Any]]:
-    """Classify each VAD-analyzer turn window as natural/forced/stuck.
+    """Classify each VAD-analyzer turn window as natural/forced/premature/stuck.
 
     natural: one or more TurnMetricsData(is_complete=True) entries fall inside the window.
         A raw VAD-start window can legitimately contain more than one - confirmed against real
@@ -198,6 +213,27 @@ def _classify_turns(
         needed the stop_secs fallback instead of closing naturally. Both the text and the flags
         are omitted when no dispatched turn matches, so a flag is never computed on some other
         turn's words.
+    premature: a natural or forced completion (see above) whose window is immediately
+        followed by another VAD-start window that (a) itself resolves to a natural or forced
+        completion - not "stuck" - and (b) opened with no "turn_start" logged by pipecat's own
+        TurnTrackingObserver (see ``_load_turn_start_timestamps``). Both conditions matter:
+        (b) alone is not enough, since a missing turn_start also shows up ahead of an
+        ordinary Krisp VAD false-start/blip window that resolves "stuck" - confirmed against
+        real Krisp data, where that shape is benign noise already covered by stuck_rate, not
+        a wrongly-cut-short utterance. Condition (a) is what tells the two apart: only when
+        the *next* window turns out to hold a genuine completion of its own does the pair
+        read as one real utterance that got artificially split into two. Confirmed against
+        real data (example/nonkrisp_12_0): the turn analyzer reported is_complete=True on
+        "Sure. My employee ID is emp zero four eight two seven one." with 0.98 confidence,
+        but the user was still mid-utterance - the rest ("Last four of my phone number are
+        seven two nine four.") arrived in the very next VAD-start window, which produced no
+        turn_start of its own and went on to complete naturally there. Only reclassifies the
+        natural/forced result immediately bordering that missing turn_start (for a
+        multi-natural window, that's the last split segment) - earlier segments in the same
+        window, or the run's final window with no following window at all, are untouched.
+        Only checked when ``turn_start_timestamps`` is non-empty; an empty set means this
+        run's pipeline never emits turn_start at all, which must read as "signal
+        unavailable", not "every transition is premature".
     stuck: neither signal found for this window (including: no natural completion and no
         vad_stop in range, in which case no stop_secs value is consumed — it's left for a
         later window that actually earned it). This is common, not a rare edge
@@ -215,7 +251,10 @@ def _classify_turns(
     last_epoch = max([*vad_starts, *vad_stops, *(e["timestamp"] for e in turn_metrics_events)], default=0)
     stop_secs_iter = iter(stop_secs_silence_ms)
     dispatched_user_turns = dispatched_user_turns or []
-    results: list[dict[str, Any]] = []
+    # One entry list per raw VAD-start window (before turn_index is assigned), so the
+    # premature pass below can look at "the next window's own entries" without having to
+    # re-derive window boundaries from the flattened, already-turn_indexed output.
+    per_window: list[list[dict[str, Any]]] = []
 
     for window_start, window_end in windows:
         in_window = [
@@ -225,17 +264,18 @@ def _classify_turns(
         ]
         naturals = [e for e in in_window if e["is_complete"]]
         if naturals:
+            entries = []
             segment_start = window_start
             for natural in naturals:
-                results.append(
+                entries.append(
                     {
-                        "turn_index": len(results),
                         "open_duration_ms": natural["timestamp"] - segment_start,
                         "time_to_complete_ms": natural["e2e_processing_time_ms"],
                         "completion": "natural",
                     }
                 )
                 segment_start = natural["timestamp"]
+            per_window.append(entries)
             continue
 
         stops_in_window = [s for s in vad_stops if s >= window_start and (window_end is None or s < window_end)]
@@ -254,7 +294,6 @@ def _classify_turns(
                 close_time = last_stop
                 transcript_text = _transcript_for_vad_stop(dispatched_user_turns, last_stop)
                 result = {
-                    "turn_index": len(results),
                     "open_duration_ms": close_time - window_start,
                     "time_to_complete_ms": None,
                     "completion": "forced",
@@ -264,19 +303,39 @@ def _classify_turns(
                     # turn analyzer struggles to close on its own (short / ack / spelled-out)?
                     result["transcript_text"] = transcript_text
                     result["final_turn_flags"] = final_turn_input_flags(transcript_text)
-                results.append(result)
+                per_window.append([result])
                 continue
 
         close_time = window_end if window_end is not None else last_epoch
-        results.append(
-            {
-                "turn_index": len(results),
-                "open_duration_ms": close_time - window_start,
-                "time_to_complete_ms": None,
-                "completion": "stuck",
-            }
+        per_window.append(
+            [
+                {
+                    "open_duration_ms": close_time - window_start,
+                    "time_to_complete_ms": None,
+                    "completion": "stuck",
+                }
+            ]
         )
 
+    # Premature pass: a window's last entry (the one bordering the next window) gets
+    # reclassified when the next window itself resolved to a real completion (not "stuck")
+    # but opened with no turn_start - see "early" in this function's docstring for why
+    # both conditions are required.
+    if turn_start_timestamps:
+        for i, (_, window_end) in enumerate(windows[:-1]):
+            last_entry = per_window[i][-1]
+            next_window_resolved = per_window[i + 1][0]["completion"] in ("natural", "forced")
+            if (
+                last_entry["completion"] in ("natural", "forced")
+                and next_window_resolved
+                and window_end not in turn_start_timestamps
+            ):
+                last_entry["completion"] = "early"
+
+    results: list[dict[str, Any]] = []
+    for entries in per_window:
+        for entry in entries:
+            results.append({"turn_index": len(results), **entry})
     return results
 
 
@@ -337,7 +396,15 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
     turn_metrics_events = _load_turn_metrics_events(context.output_dir)
     stop_secs_silence_ms = _load_stop_secs_silence_ms(context.output_dir)
     dispatched_user_turns = _load_dispatched_user_turns(context.output_dir)
-    per_turn = _classify_turns(vad_starts, vad_stops, turn_metrics_events, stop_secs_silence_ms, dispatched_user_turns)
+    turn_start_timestamps = _load_turn_start_timestamps(context.output_dir)
+    per_turn = _classify_turns(
+        vad_starts,
+        vad_stops,
+        turn_metrics_events,
+        stop_secs_silence_ms,
+        dispatched_user_turns,
+        turn_start_timestamps,
+    )
 
     def _wrap(key: str, value: float, normalized: bool) -> MetricScore:
         return MetricScore(name=f"turn_taking.{key}", score=value, normalized_score=value if normalized else None)
@@ -371,10 +438,21 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
 
     natural_count = sum(1 for t in per_turn if t["completion"] == "natural")
     forced_count = sum(1 for t in per_turn if t["completion"] == "forced")
+    premature_count = sum(1 for t in per_turn if t["completion"] == "early")
     strategy = _turn_stop_strategy(context.output_dir)
     if strategy != "krisp_viva_turn" and (natural_count + forced_count) > 0:
         sub["forced_completion_rate"] = _wrap(
             "forced_completion_rate", round(forced_count / (natural_count + forced_count), 4), True
+        )
+
+    # Rate of turn-analyzer completions (natural or forced) that turned out to be premature -
+    # the turn analyzer reported the user done, but the next VAD-start window was never
+    # promoted to a real pipecat turn (see "early" in _classify_turns' docstring), meaning
+    # the user's utterance actually continued and got wrongly cut short.
+    resolved_count = natural_count + forced_count + premature_count
+    if resolved_count > 0:
+        sub["premature_detection_rate"] = _wrap(
+            "premature_detection_rate", round(premature_count / resolved_count, 4), True
         )
 
     # Among forced completions specifically: does the final utterance's shape (short /

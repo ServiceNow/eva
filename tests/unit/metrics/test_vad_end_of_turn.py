@@ -2,12 +2,15 @@
 
 import json
 
+import pytest
+
 from eva.metrics.experience.vad_end_of_turn import (
     _classify_turns,
     _find_run_config,
     _load_dispatched_user_turns,
     _load_stop_secs_silence_ms,
     _load_turn_metrics_events,
+    _load_turn_start_timestamps,
     _load_vad_events,
     _transcript_for_vad_stop,
     compute_vad_turn_sub_metrics,
@@ -110,6 +113,23 @@ class TestLoadVadEvents:
 
     def test_empty_when_file_missing(self, tmp_path):
         assert _load_vad_events(str(tmp_path)) == ([], [])
+
+
+class TestLoadTurnStartTimestamps:
+    def test_extracts_turn_start_timestamps(self, tmp_path):
+        _write_jsonl(
+            tmp_path / "pipecat_logs.jsonl",
+            [
+                {"timestamp": 1000, "type": "turn_start"},
+                {"timestamp": 1050, "type": "turn_end"},
+                {"timestamp": 5000, "type": "turn_start"},
+                {"timestamp": 5000, "type": "user_started_speaking"},
+            ],
+        )
+        assert _load_turn_start_timestamps(str(tmp_path)) == {1000, 5000}
+
+    def test_empty_when_file_missing(self, tmp_path):
+        assert _load_turn_start_timestamps(str(tmp_path)) == set()
 
 
 class TestLoadStopSecsSilenceMs:
@@ -415,6 +435,108 @@ class TestClassifyTurns:
         assert result[0]["completion"] == "forced"
         assert result[0]["open_duration_ms"] == 1787171568321 - 1787171562461
 
+    def test_natural_completion_reclassified_early_when_next_turn_never_started(self):
+        # Reproduces example/nonkrisp_12_0: the turn analyzer reported is_complete=True on
+        # "Sure. My employee ID is emp zero four eight two seven one." but the user was still
+        # mid-utterance. Real evidence of that: pipecat's own TurnTrackingObserver never
+        # logged a turn_start for the very next VAD-start window (5000) - it stayed inside
+        # the same ongoing turn rather than starting a fresh one - and that next window went
+        # on to complete naturally itself ("Last four of my phone number are seven two nine
+        # four."), confirming the pair is really one continued utterance.
+        result = _classify_turns(
+            vad_starts=[1000, 5000],
+            vad_stops=[],
+            turn_metrics_events=[
+                {"timestamp": 1103, "is_complete": True, "e2e_processing_time_ms": 103.0},
+                {"timestamp": 5103, "is_complete": True, "e2e_processing_time_ms": 100.0},
+            ],
+            stop_secs_silence_ms=[],
+            turn_start_timestamps={1000},
+        )
+        assert result[0]["completion"] == "early"
+        assert result[1]["completion"] == "natural"
+
+    def test_natural_completion_stays_natural_when_next_turn_started(self):
+        result = _classify_turns(
+            vad_starts=[1000, 5000],
+            vad_stops=[],
+            turn_metrics_events=[
+                {"timestamp": 1103, "is_complete": True, "e2e_processing_time_ms": 103.0},
+                {"timestamp": 5103, "is_complete": True, "e2e_processing_time_ms": 100.0},
+            ],
+            stop_secs_silence_ms=[],
+            turn_start_timestamps={1000, 5000},
+        )
+        assert result[0]["completion"] == "natural"
+
+    def test_natural_completion_stays_natural_when_next_window_is_stuck(self):
+        # A missing turn_start alone is not enough - it also shows up ahead of an ordinary
+        # Krisp VAD false-start/blip window that never resolves at all ("stuck"), which is
+        # already covered by stuck_rate and must not be conflated with a early split.
+        result = _classify_turns(
+            vad_starts=[1000, 5000],
+            vad_stops=[],
+            turn_metrics_events=[{"timestamp": 1103, "is_complete": True, "e2e_processing_time_ms": 103.0}],
+            stop_secs_silence_ms=[],
+            turn_start_timestamps={1000},
+        )
+        assert result[0]["completion"] == "natural"
+        assert result[1]["completion"] == "stuck"
+
+    def test_forced_completion_reclassified_early_when_next_turn_never_started(self):
+        result = _classify_turns(
+            vad_starts=[1000, 5000],
+            vad_stops=[1050, 5100],
+            turn_metrics_events=[],
+            stop_secs_silence_ms=[3032.0, 3032.0],
+            turn_start_timestamps={1000},
+        )
+        assert result[0]["completion"] == "early"
+        assert result[1]["completion"] == "forced"
+
+    def test_last_window_never_reclassified_early_with_no_following_window(self):
+        # window_end is None for the final, open-ended window - there is no "next" VAD-start
+        # to check turn_start against, so the natural completion stands.
+        result = _classify_turns(
+            vad_starts=[1000],
+            vad_stops=[],
+            turn_metrics_events=[{"timestamp": 1103, "is_complete": True, "e2e_processing_time_ms": 103.0}],
+            stop_secs_silence_ms=[],
+            turn_start_timestamps={1000},
+        )
+        assert result[0]["completion"] == "natural"
+
+    def test_empty_turn_start_timestamps_disables_early_detection(self):
+        # An empty set means this run's pipeline never emits turn_start at all - that must
+        # read as "signal unavailable", not "every transition is early".
+        result = _classify_turns(
+            vad_starts=[1000, 5000],
+            vad_stops=[],
+            turn_metrics_events=[{"timestamp": 1103, "is_complete": True, "e2e_processing_time_ms": 103.0}],
+            stop_secs_silence_ms=[],
+            turn_start_timestamps=set(),
+        )
+        assert result[0]["completion"] == "natural"
+
+    def test_only_last_split_segment_in_a_multi_natural_window_can_be_early(self):
+        # Two naturals split out of one raw window. Only the second (the one bordering the
+        # next VAD-start window) is eligible for reclassification - the first is followed by
+        # another natural completion in the same window, not a missing turn_start.
+        result = _classify_turns(
+            vad_starts=[1000, 5000],
+            vad_stops=[],
+            turn_metrics_events=[
+                {"timestamp": 1001, "is_complete": True, "e2e_processing_time_ms": 100.0},
+                {"timestamp": 2000, "is_complete": True, "e2e_processing_time_ms": 100.0},
+                {"timestamp": 5103, "is_complete": True, "e2e_processing_time_ms": 100.0},
+            ],
+            stop_secs_silence_ms=[],
+            turn_start_timestamps={1000},
+        )
+        assert result[0]["completion"] == "natural"
+        assert result[1]["completion"] == "early"
+        assert result[2]["completion"] == "natural"
+
 
 def _write_config(tmp_path, framework="pipecat", turn_stop_strategy="turn_analyzer"):
     (tmp_path / "config.json").write_text(
@@ -588,6 +710,68 @@ class TestComputeVadTurnSubMetrics:
             {"turn_index": 0, "open_duration_ms": 0, "time_to_complete_ms": None, "completion": "stuck"}
         ]
         assert sub_metrics["stuck_rate"].score == 1.0
+
+    def test_early_detection_rate_reported_when_a_natural_completion_is_undone(self, tmp_path):
+        _write_config(tmp_path, turn_stop_strategy="turn_analyzer")
+        _write_jsonl(
+            tmp_path / "pipecat_logs.jsonl",
+            [
+                {"timestamp": 1000, "type": "turn_start"},
+                {"timestamp": 1000, "type": "user_started_speaking"},
+                {"timestamp": 5000, "type": "user_started_speaking"},
+                # No turn_start at 5000: pipecat kept the turn open through the split.
+                {"timestamp": 9000, "type": "turn_start"},
+                {"timestamp": 9000, "type": "user_started_speaking"},
+            ],
+        )
+        _write_jsonl(
+            tmp_path / "pipecat_metrics.jsonl",
+            [
+                {
+                    "timestamp": 1103,
+                    "type": "TurnMetricsData",
+                    "value": {"is_complete": True, "e2e_processing_time_ms": 103.0},
+                },
+                {
+                    "timestamp": 5103,
+                    "type": "TurnMetricsData",
+                    "value": {"is_complete": True, "e2e_processing_time_ms": 103.0},
+                },
+                {
+                    "timestamp": 9103,
+                    "type": "TurnMetricsData",
+                    "value": {"is_complete": True, "e2e_processing_time_ms": 103.0},
+                },
+            ],
+        )
+        ctx = make_metric_context(output_dir=str(tmp_path))
+        result = compute_vad_turn_sub_metrics(ctx)
+        assert result is not None
+        sub_metrics, per_turn = result
+        assert [t["completion"] for t in per_turn] == ["early", "natural", "natural"]
+        assert sub_metrics["early_detection_rate"].score == pytest.approx(1 / 3, abs=1e-4)
+
+    def test_early_detection_rate_absent_when_no_turn_start_signal_available(self, tmp_path):
+        # No turn_start events recorded at all - early detection has no signal to work
+        # with, so it must not fabricate a rate off an empty turn_start set.
+        _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")
+        _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
+        _write_jsonl(
+            tmp_path / "pipecat_metrics.jsonl",
+            [
+                {
+                    "timestamp": 1100,
+                    "type": "TurnMetricsData",
+                    "value": {"is_complete": True, "e2e_processing_time_ms": 100.0},
+                }
+            ],
+        )
+        ctx = make_metric_context(output_dir=str(tmp_path))
+        result = compute_vad_turn_sub_metrics(ctx)
+        assert result is not None
+        sub_metrics, per_turn = result
+        assert per_turn[0]["completion"] == "natural"
+        assert sub_metrics["early_detection_rate"].score == 0.0
 
     def test_stuck_rate_zero_on_clean_all_natural_ending(self, tmp_path):
         _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")
