@@ -38,12 +38,11 @@ OPENAI_SAMPLE_RATE = 24000
 MULAW_CHUNK_SIZE = 160  # bytes per chunk (20ms at 8kHz, 1 byte per sample)
 MULAW_CHUNK_DURATION_S = 0.02  # 20ms per chunk
 # Don't pad the user track to align with the assistant when real user audio
-# arrived within this window. The speaking-state flag can go stale under
-# event-loop jitter, and padding then injects silence into an active user
-# utterance (the choppy-audio bug). This guard only ever *skips* a pad, so it
-# can never add silence or worsen alignment — during genuine user silence the
-# timestamp is old and padding proceeds normally.
-USER_ACTIVE_GUARD_S = 0.3
+# arrived recently. The speaking-state flag can go stale under event-loop
+# jitter, and padding then injects silence into an active user utterance (the
+# choppy-audio bug). This guard only ever *skips* a pad, so it can never add
+# silence or worsen alignment — during genuine user silence the counter has run
+# past the threshold and padding proceeds normally.
 
 
 def _wall_ms() -> str:
@@ -70,6 +69,8 @@ class _AssistantResponseState:
     first_audio_wall_ms: str | None = None
     responding: bool = False
     has_function_calls: bool = False
+    active_item_id: str | None = None
+    """Item currently producing audio; the truncation target on a caller barge-in."""
 
 
 class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
@@ -84,13 +85,20 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
     _service_name: str = "OpenAI Realtime"
     _metrics_processor_name: str = "openai_realtime"
 
+    USER_ACTIVE_GUARD_DELTAS = 25
+    """Assistant audio deltas after the last user audio before the user counts as idle.
+
+    Counted in deltas rather than wall-clock seconds so a tick-driven caller that
+    pauses to think is not mistaken for a caller who stopped talking.
+    """
+
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         self._audio_sample_rate = OPENAI_SAMPLE_RATE
-        # Monotonic time of the last real user-audio frame appended; used to
-        # guard against padding the user track mid-utterance (see USER_ACTIVE_GUARD_S).
-        self._last_user_audio_mono: float = 0.0
+        # Assistant audio deltas seen since the last real user-audio frame; used to
+        # guard against padding the user track mid-utterance (see USER_ACTIVE_GUARD_DELTAS).
+        self._deltas_since_user_audio: int = self.USER_ACTIVE_GUARD_DELTAS
 
         self._system_prompt: str = self._build_system_prompt()
 
@@ -308,6 +316,20 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         finally:
             logger.info(f"Client disconnected from {self._service_name} server")
 
+    # ── User activity tracking (tick-safe, no wall clock) ────────────
+
+    def note_user_audio(self) -> None:
+        """Record that user audio just arrived."""
+        self._deltas_since_user_audio = 0
+
+    def note_assistant_delta(self) -> None:
+        """Record one assistant audio delta since the last user audio."""
+        self._deltas_since_user_audio += 1
+
+    def user_recently_active(self) -> bool:
+        """Whether user audio arrived recently enough to skip padding its track."""
+        return self._deltas_since_user_audio < self.USER_ACTIVE_GUARD_DELTAS
+
     # ── Audio output pacer (OpenAI -> Twilio WS at real-time rate) ───
 
     async def _pace_audio_output(self, websocket: WebSocket, audio_output_queue: asyncio.Queue[bytes]) -> None:
@@ -330,6 +352,12 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 except Exception as e:
                     logger.error(f"Error sending audio to Twilio WS: {e}")
                     return
+
+                if not self.paced_output:
+                    # Tick-driven caller: it buffers what arrives and releases one tick
+                    # per tick, so pacing here would only add latency without changing
+                    # what the caller hears.
+                    continue
 
                 now = time.monotonic()
                 if next_send_time <= now:
@@ -361,6 +389,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                     logger.debug("Twilio stream stopped")
                     break
 
+                if event_type == "truncate":
+                    await self._truncate_response(conn, int(data.get("audio_end_ms", 0)))
+                    continue
+
                 if event_type == "user_speech_start":
                     # Timestamp from audio_interface when user audio actually started
                     self._audio_interface_speech_start_ts = data.get("timestamp_ms")
@@ -385,7 +417,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                     sync_buffer_to_position(self.assistant_audio_buffer, sync_target)
                     synced = len(self.assistant_audio_buffer) - asst_before
                 self.user_audio_buffer.extend(pcm16_24k)
-                self._last_user_audio_mono = time.monotonic()
+                self.note_user_audio()
                 self._user_frame_count += 1
                 if self._user_frame_count % 50 == 0:
                     diff = len(self.user_audio_buffer) - len(self.assistant_audio_buffer)
@@ -486,6 +518,23 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             case _:
                 logger.debug(f"Unhandled {self._service_name} event: {event_type}")
 
+    async def _truncate_response(self, conn: Any, audio_end_ms: int) -> None:
+        """Discard generated audio past the position the caller actually heard.
+
+        Only a tick-driven caller sends this: with pacing off the provider runs
+        ahead of the caller's playout, so without truncation it would believe the
+        caller heard seconds of audio that were never released.
+        """
+        item_id = self._assistant_state.active_item_id
+        if not item_id:
+            return
+        try:
+            await conn.conversation.item.truncate(item_id=item_id, content_index=0, audio_end_ms=audio_end_ms)
+        except Exception as exc:
+            logger.warning(f"Truncating item {item_id} at {audio_end_ms}ms failed: {exc}")
+            return
+        logger.info(f"Truncated item {item_id} at {audio_end_ms}ms on caller barge-in")
+
     # ── Event handlers ────────────────────────────────────────────────
 
     async def _on_speech_started(self, event: Any) -> None:
@@ -572,6 +621,11 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             return
 
         pcm16_bytes = base64.b64decode(delta_b64)
+        # Read off the delta rather than response.output_item.added: it names the same
+        # item and is already dispatched here, so no extra event handler is needed.
+        item_id = getattr(event, "item_id", None)
+        if item_id:
+            self._assistant_state.active_item_id = item_id
 
         if self._assistant_state.first_audio_wall_ms is None:
             self._assistant_state.first_audio_wall_ms = _wall_ms()
@@ -587,12 +641,13 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 if 0 < latency_ms < 30_000:
                     self._metrics_log.write_latency("model_response", latency_ms / 1000, self._model)
 
+        self.note_assistant_delta()
+
         user_before = len(self.user_audio_buffer)
         synced = 0
         # Skip the pad if the user track is actively receiving audio (flag may be
         # stale under jitter) — padding then would inject a mid-utterance chop.
-        user_recently_active = (time.monotonic() - self._last_user_audio_mono) <= USER_ACTIVE_GUARD_S
-        if not self._user_speaking and not user_recently_active:
+        if not self._user_speaking and not self.user_recently_active():
             sync_buffer_to_position(self.user_audio_buffer, len(self.assistant_audio_buffer))
             synced = len(self.user_audio_buffer) - user_before
         self.assistant_audio_buffer.extend(pcm16_bytes)

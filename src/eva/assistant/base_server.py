@@ -52,6 +52,7 @@ class AbstractAssistantServer(ABC):
         port: int,
         conversation_id: str,
         language: str = "en",
+        paced_output: bool = True,
     ):
         """Initialize the assistant server.
 
@@ -65,10 +66,15 @@ class AbstractAssistantServer(ABC):
             port: Port to listen on
             conversation_id: Unique ID for this conversation
             language: BCP 47 language tag for STT/TTS/S2S services (e.g. 'en', 'fr', 'es-MX')
+            paced_output: Whether to emit audio at real-time cadence. True for callers
+                that infer turn boundaries from silence timing (the ElevenLabs simulator).
+                False for a tick-driven caller, which buffers whatever arrives and
+                releases it one tick at a time, so pacing here would only add latency.
         """
         self.current_date_time = current_date_time
         self.pipeline_config = pipeline_config
         self.language = language
+        self.paced_output = paced_output
         self.initial_message = get_initial_message(language)
         self.agent: AgentConfig = agent
         self.agent_config_path = agent_config_path

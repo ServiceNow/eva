@@ -9,7 +9,7 @@ from typing import Any
 
 from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
-from eva.models.config import RunConfig
+from eva.models.config import RunConfig, UserSimulatorConfig
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, ErrorDetails, LatencyStats
 from eva.user_simulator.factory import create_user_simulator
@@ -21,6 +21,21 @@ from eva.utils.logging import add_record_log_file, current_record_id, get_logger
 logger = get_logger(__name__)
 
 USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS = 20
+
+
+def should_pace_assistant_output(simulator_config: UserSimulatorConfig, *, framework: str) -> bool:
+    """Whether the assistant should emit audio at real-time cadence.
+
+    Only a tick-driven cascade caller can consume unpaced output: it buffers what
+    arrives and releases one tick at a time. Every other caller infers turn
+    boundaries from cadence and would break.
+    """
+    from eva.models.config import CascadeSimulatorConfig
+    from eva.user_simulator.cascade.simulator import TICK_DRIVEN_FRAMEWORKS
+
+    if not isinstance(simulator_config, CascadeSimulatorConfig):
+        return True
+    return framework not in TICK_DRIVEN_FRAMEWORKS
 
 
 def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
@@ -323,6 +338,7 @@ class ConversationWorker:
             port=self.port,
             conversation_id=self.record.id,
             language=self.config.language,
+            paced_output=should_pace_assistant_output(self.config.user_simulator, framework=self.config.framework),
             **server_kwargs,
         )
 
@@ -377,6 +393,7 @@ class ConversationWorker:
             timeout=self._conversation_guard_timeout_seconds(),
             perturbation_config=self.config.perturbation,
             language=language,
+            framework=self.config.framework,
         )
 
         # Let the simulator tell the assistant the moment the call ends, rather than leaving it
