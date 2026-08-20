@@ -158,8 +158,11 @@ collapse — the turns were relabelled. Structurally: `_run` only reaches `_take
 assistant is silent, but the check fires while it is speaking, so with interruptions enabled
 the caller preferentially speaks via the check at 2s granularity instead of waiting out the
 1s silence gate. Knock-on effects: turns taking the interrupt path bypass
-`_maybe_arm_self_correction` and `_prerender_candidate`, and log as `interruption` rather
-than `caller_turn`, which affects metric turn numbering. Deciding how the check and the turn
+`_maybe_arm_self_correction` and `_prerender_candidate`, so enabling interruptions silently
+disables part of the other two behaviours. They also log as `interruption` rather than
+`caller_turn` — which does **not** affect metrics (verified: nothing under `src/eva/metrics/`
+reads `caller_turn`, and turns are numbered from `audio_start(simulated_user)`, which fires on
+both paths), only the human-readable event log and the ablation analysis. Deciding how the check and the turn
 gate should interact is a design change to Plan 2, left for the author.
 
 ### Method note
@@ -176,3 +179,120 @@ reading *one sequence end to end*. Prefer a single full timeline over a summary 
   decision provider stalls the wire. Fixing it means moving the checks off the tick loop.
 - Task 13 steps 2-6 need re-running: step 5 has never produced data, and the `interrupt` and
   `all-on` rows from the last pass aggregate retry attempts (12 event files, not 9).
+
+---
+
+## Session 2: further defects, and the measurement that matters
+
+### 5. inactivity_timeout measured cumulative, not contiguous, silence — FIXED (abd1a42a)
+
+**A Plan 1 bug, not a Plan 2 one, and it has distorted every run including baseline.**
+
+`_assistant_is_inactive` was only ever reached on ticks where the assistant was *silent*,
+because the speech branch `continue`d before it. That made its own reset line unreachable in
+production, so `_ticks_assistant_silent` accumulated quiet ticks across the whole call and
+never reset. "Silent for 120s" therefore meant "quiet ticks have totalled 120s at some point",
+which any long healthy conversation eventually satisfies.
+
+Measured live: one conversation was killed for `inactivity_timeout` after **73.7s** of actual
+contiguous silence, in a 197.6s call.
+
+The unit test that appeared to cover this passes because it calls the method *directly* with a
+speech tick — exercising a branch the real loop never reaches. Worth remembering as a shape:
+a test can cover a line and still not cover the path.
+
+Now called on every tick. Certainty: high — mechanism read from source and confirmed against
+event timestamps.
+
+### 6. Assistant turn boundaries were any 200ms gap — FIXED (abd1a42a)
+
+The interruption cap allows one barge-in per assistant turn, but "new turn" was implemented as
+"a single tick with no assistant audio". A pause between sentences therefore re-armed the cap
+mid-utterance. Now uses `is_new_assistant_turn`, requiring the same 1s (`WAIT_TO_RESPOND_OTHER_MS`)
+the turn gate already applies. Note this also means earlier per-turn rate arithmetic used
+*speech segments* as the denominator, which inflated it.
+
+### 7. The opener was emitted before the content existed — FIXED (abd1a42a)
+
+Plan 2's design plays a pre-rendered opener the instant the decision fires, to hide ~1s of
+generation latency. But that commits the caller to barging in before knowing whether it has
+anything to say. Both a hang-up and a stale drop then left an orphaned "Actually—" on the wire.
+
+Content is now generated *first*; the opener and content are queued together only if the line
+is worth speaking. Dropping now costs zero audio. The cost is that the barge-in lands ~1s after
+the decision rather than ~200ms — which is what makes the slip measurement below meaningful
+rather than cosmetic.
+
+### The interrupt rate gate: added, then removed (97448885, then 3cb17e37)
+
+Recorded because the reasoning is the useful part. A rate gate was added on the belief that the
+decision "always said YES". **It does not.** Measured: in one call the check was asked ~101
+times and answered YES 14 times (~14%) — correctly NO through most of each assistant turn, YES
+once near the end. The defect was *where* it fired, not how often: "the caller has heard enough
+to reply" and "the assistant is finishing" are nearly the same instant, so barge-ins displaced
+ordinary turn-taking rather than being excessive.
+
+So the gate was a random suppressor discarding decisions that were correct, masking a judgement
+problem. Passing the caller's goal to the decision (1d139c07) addresses the judgement at source,
+which made the gate a second suppressor stacked on a fix. Removed. The per-turn eligibility flag
+remains — that is the one-barge-in-per-turn cap, which is structurally right regardless.
+
+### Goal-aware interrupt decision (1d139c07)
+
+`summarize_goal` passes high-level goal, must/nice-to-have criteria, option-evaluation steps,
+and the resolution/failure/escalation conditions. Field meanings live in the prompt template so
+they stay static across calls; the block sits ahead of the conversation history so it is
+prompt-cacheable. `edge_cases` and `information_required` are omitted — long, and about how to
+answer questions rather than whether the goal is finished. Renders ~605 tokens on a real ITSM
+record, of which `negotiation_behavior` is ~60%; drop that field first if cost bites.
+
+## The headline result: reactive interruption does not work on the real-time path
+
+Run: 3 ITSM records x 3 trials, concurrency 3 (deliberately low — slip is a wall-clock
+measurement and contention would inflate it), no rate gate, generate-first.
+
+| | |
+|---|---|
+| barge-ins fired | 35 (across 75 assistant speech segments, ~47%) |
+| kept | **4 (11%)** |
+| dropped, slip > 1500ms | **31 (89%)** |
+| dropped, assistant already stopped | 0 |
+| slip_ms | min 1295, **median 1902**, max 2991 |
+
+Median generation latency is **1902ms against a 1500ms staleness budget**, and every single
+drop was for lateness — not one because the assistant had finished. On `RealtimeWSAdapter`,
+reactive interruption fires and then fails to land roughly nine times in ten.
+
+This is exactly the number Task 13 step 3 was designed to produce and never could while slip
+was measured on a frozen tick counter. The plan states that a high drop rate is "the signal to
+reconsider tick-driving more frameworks (Plan 3)" — that signal has now arrived quantified. On
+a tick-driven adapter the assistant is frozen while the caller thinks, so slip vanishes and all
+35 would land.
+
+**Before concluding the design is unworkable, try a fast `decision_llm`.** It currently defaults
+to `user-llm`, a full-size model, and both the check and the content generation run on it.
+A small fast model could plausibly halve slip. Untested.
+
+## Still outstanding
+
+- **Task 13 remains the only incomplete task.** Steps 2-6 all need re-running against the
+  current build: every earlier number describes code that no longer exists.
+- Step 5 (self-correction validity) has **never** produced data, and it is the check the plan
+  calls the most important — it is also where this implementation departs furthest from the plan.
+- 4b (the interrupt check preempting ordinary turn-taking) — still a design question.
+- Defect 1's unexplained residual (backchannel timeouts still above baseline).
+- `_run_checks` awaits two LLM calls inline in the tick loop with **no timeout**, so a slow
+  decision provider stalls the wire.
+- The last interrupt run still showed 5 `inactivity_timeout` and 2 `unknown` of 10 *after* the
+  contiguous-silence fix. Cause unknown — deliberately not guessed at.
+- `gpt-5.4` has two deployments in `.env`, one with a stale `sk-svcacct-` key, so it fails
+  preflight at random. Pre-existing and unrelated; ablations use `gpt-5.2` to avoid it.
+
+## Method notes worth keeping
+
+- Every diagnosis that turned out wrong came from reading **aggregate counts** and inferring a
+  mechanism. Every one was settled immediately by reading **one sequence end to end**. Prefer a
+  single full timeline over a summary table.
+- Scripted text-surgery on source caused a fourth defect this session: `t.index("def test_...")`
+  matched inside `async def` and silently stripped the keyword, breaking test collection. The
+  handoff already recorded three from the same cause. Use targeted edits.
