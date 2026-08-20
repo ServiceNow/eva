@@ -390,6 +390,26 @@ class FrameworkLogWriter:
         except Exception as e:
             logger.error(f"Error writing framework log: {e}")
 
+    def turn_start(self, timestamp_ms: int | None = None) -> None:
+        """Log a turn start event."""
+        self.write("turn_start", {"frame": "turn_start"}, timestamp_ms)
+
+    def turn_end(self, was_interrupted: bool = False, timestamp_ms: int | None = None) -> None:
+        """Log a turn end event."""
+        self.write("turn_end", {"frame": "turn_end", "was_interrupted": was_interrupted}, timestamp_ms)
+
+    def tts_text(self, text: str, timestamp_ms: int | None = None) -> None:
+        """Log TTS text (what was actually spoken)."""
+        self.write("tts_text", {"frame": text}, timestamp_ms)
+
+    def llm_response(self, text: str, timestamp_ms: int | None = None) -> None:
+        """Log LLM response text (full intended response)."""
+        self.write("llm_response", {"frame": text}, timestamp_ms)
+
+    def s2s_transcript(self, text: str, timestamp_ms: int | None = None) -> None:
+        """Log S2S transcript (what was actually spoken)."""
+        self.write("s2s_transcript", {"frame": text}, timestamp_ms)
+
 
 class MetricsLogWriter:
     """Writes pipecat_metrics.jsonl for non-Pipecat frameworks.
