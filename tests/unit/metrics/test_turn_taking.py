@@ -1109,7 +1109,7 @@ class TestVadTurnMetricsIntegration:
             audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
         )
         result = await metric.compute(ctx)
-        assert "eot_vad_not_fired_rate" not in result.sub_metrics
+        assert "stuck_rate" not in result.sub_metrics
         assert "vad_turns" not in result.details
 
 
@@ -1122,9 +1122,9 @@ class TestVadTurnMetricsOnEarlyReturn:
         all), and inactivity_timeout kills the conversation before the agent ever
         responds. There is no turn with both user AND assistant audio, so
         _get_turn_ids_with_turn_taking returns [] and per_turn_score is empty -
-        compute() takes the early-return path. eot_vad_not_fired_rate exists
-        specifically to catch this exact case, so it must still be computed and
-        attached on that early-return MetricScore, not skipped.
+        compute() takes the early-return path. stuck_rate exists specifically to catch
+        cases like this, so it must still be computed and attached on that early-return
+        MetricScore, not skipped.
         """
         (tmp_path / "config.json").write_text(
             json.dumps({"framework": "pipecat", "model": {"turn_stop_strategy": "krisp_viva_turn"}})
@@ -1146,7 +1146,7 @@ class TestVadTurnMetricsOnEarlyReturn:
 
         # But the VAD diagnostics that exist to catch exactly this scenario must still
         # be present, not silently skipped.
-        assert result.sub_metrics["eot_vad_not_fired_rate"].score == 1.0
+        assert result.sub_metrics["stuck_rate"].score == 1.0
         assert result.details["vad_turns"]
         assert result.details["vad_turns"][0]["completion"] == "stuck"
 
@@ -1183,7 +1183,6 @@ class TestVadTurnMetricsRealFixtures:
         )
         result = await metric.compute(ctx)
         assert "forced_completion_rate" not in result.sub_metrics
-        assert result.sub_metrics["eot_vad_not_fired_rate"].score == 0.0
         # This fixture has 11 user_started_speaking events but only 8 TurnMetricsData
         # completions - 3 windows are genuinely "stuck" (VAD false-starts and one silently
         # swallowed ~3.2s utterance that the conversation survived because the user's next
@@ -1194,14 +1193,16 @@ class TestVadTurnMetricsRealFixtures:
         assert sum(1 for t in vad_turns if t["completion"] == "natural") == 8
         assert sum(1 for t in vad_turns if t["completion"] == "stuck") == 3
         assert sum(1 for t in vad_turns if t["completion"] == "forced") == 0
+        assert result.sub_metrics["stuck_rate"].score == pytest.approx(3 / 11, abs=0.0001)
         assert result.sub_metrics["mean_time_to_complete_ms"].score == pytest.approx(154.791, abs=0.01)
         assert result.sub_metrics["p50_time_to_complete_ms"].score == pytest.approx(103.246, abs=0.01)
         assert result.sub_metrics["p90_time_to_complete_ms"].score == pytest.approx(412.668, abs=0.01)
         # Regression guard for the middle-stuck-window bug found during plan review: if a
         # middle stuck window were (incorrectly) measured against the conversation's global
-        # last-observed timestamp instead of its own next-VAD-start bound, this would be
-        # ~92000ms instead of ~9728ms (the real final open-ended window's duration).
-        assert result.sub_metrics["max_turn_open_duration_ms"].score == pytest.approx(9728, abs=5)
+        # last-observed timestamp instead of its own next-VAD-start bound, the final
+        # open-ended window's open_duration_ms would be ~92000ms instead of ~9728ms.
+        assert vad_turns[-1]["completion"] == "stuck"
+        assert vad_turns[-1]["open_duration_ms"] == pytest.approx(9728, abs=5)
 
     async def test_nonkrisp_example_populates_forced_completion_rate(self, metric, tmp_path):
         src = EXAMPLE_DIR / "nonkrisp_4-2-1_trial_0"
@@ -1220,6 +1221,8 @@ class TestVadTurnMetricsRealFixtures:
         result = await metric.compute(ctx)
         assert result.sub_metrics["forced_completion_rate"].score is not None
         assert result.sub_metrics["forced_completion_rate"].score > 0
-        assert result.sub_metrics["eot_vad_not_fired_rate"].score == 0.0
         assert any(t["completion"] == "forced" for t in result.details["vad_turns"])
         assert any(t["completion"] == "natural" for t in result.details["vad_turns"])
+        vad_turns = result.details["vad_turns"]
+        stuck_count = sum(1 for t in vad_turns if t["completion"] == "stuck")
+        assert result.sub_metrics["stuck_rate"].score == pytest.approx(stuck_count / len(vad_turns), abs=0.0001)

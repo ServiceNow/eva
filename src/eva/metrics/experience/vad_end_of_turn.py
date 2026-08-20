@@ -6,7 +6,8 @@ turn-analyzer VAD (Krisp or Smart Turn). Null for runs with no local VAD (other
 frameworks, or external turn strategies like self-endpointing STT/FLUX).
 
 No pipecat modifications: all signals come from files eva already writes
-(pipecat_logs.jsonl, pipecat_metrics.jsonl) or pipecat's own log output (logs.log).
+(pipecat_logs.jsonl, pipecat_metrics.jsonl, audit_log.json) or pipecat's own log
+output (logs.log).
 """
 
 import json
@@ -20,9 +21,15 @@ from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.models.results import MetricScore
 from eva.utils.conversation_correctly_finished.final_turn import final_turn_input_flags
 from eva.utils.json_utils import load_jsonl
+from eva.utils.log_processing import load_audit_log
 
 _STOP_SECS_RE = re.compile(r"End of Turn complete due to stop_secs\. Silence in ms: ([\d.]+)")
 _FINAL_TURN_FLAG_KEYS = ("short", "acknowledgement", "spelled_entity")
+
+# Widest gap tolerated between a vad_stop and the dispatched user turn it closed. Two orders of
+# magnitude above the observed +3..+8ms dispatch lag, and well under half the closest observed
+# spacing between consecutive vad_stops (2244ms) - see ``_transcript_for_vad_stop``.
+_DISPATCH_VS_VAD_STOP_TOLERANCE_MS = 1000
 
 
 def _find_run_config(output_dir: str) -> dict[str, Any] | None:
@@ -91,27 +98,51 @@ def _load_vad_events(output_dir: str) -> tuple[list[int], list[int]]:
     return starts, stops
 
 
-def _load_transcripts(output_dir: str) -> list[tuple[int, str]]:
-    """Return (timestamp, text) for each STT "transcript" event in pipecat_logs.jsonl, sorted.
+def _load_dispatched_user_turns(output_dir: str) -> list[tuple[int, str]]:
+    """Return (timestamp, text) for each LLM-dispatched user turn in audit_log.json, sorted.
 
-    Same shared epoch-ms clock as ``_load_vad_events`` (both come from pipecat_logs.jsonl), so a
-    transcript's timestamp can be compared directly against a turn window's bounds.
+    Deliberately *not* pipecat_logs.jsonl's "transcript" events. Those are individual STT
+    fragments, stamped when the fragment finalized, and neither property survives contact with
+    real data: a single user turn routinely spans several fragments (confirmed in the fixtures -
+    one turn arrived as "My employee ID is e n" + "p zero six six six six six." + "The last four
+    of my phone are four four two five."), and a fragment can finalize *before* its own turn's
+    user_started_speaking fires, so slicing fragments by VAD-start boundaries attributes them to
+    the previous turn.
+
+    audit_log.json's transcript entries instead carry the aggregated text actually handed to the
+    LLM, one entry per real turn, stamped in the same epoch-ms clock as the VAD events.
     """
-    entries = load_jsonl(Path(output_dir) / "pipecat_logs.jsonl")
-    transcripts = [
-        (e["timestamp"], e["data"]["frame"])
-        for e in entries
-        if e.get("type") == "transcript" and e.get("data", {}).get("frame")
+    audit = load_audit_log(Path(output_dir) / "audit_log.json")
+    if not audit:
+        return []
+    turns = []
+    for entry in audit.get("transcript", []):
+        if entry.get("message_type") != "user" or not entry.get("value"):
+            continue
+        try:
+            timestamp = int(entry["timestamp"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        turns.append((timestamp, entry["value"]))
+    return sorted(turns, key=lambda t: t[0])
+
+
+def _transcript_for_vad_stop(dispatched_user_turns: list[tuple[int, str]], vad_stop: int) -> str | None:
+    """Return the text of the user turn that ``vad_stop`` closed, or None if none matches.
+
+    Each dispatched turn lands a handful of milliseconds after the user_stopped_speaking that
+    ended it (measured at +3..+8ms across all 30 turns in the four fixtures, pairing 1:1 with
+    the vad_stops), while consecutive vad_stops are seconds apart (2244ms at the closest observed).
+    ``_DISPATCH_VS_VAD_STOP_TOLERANCE_MS`` sits between those two scales, so the nearest turn
+    within tolerance is unambiguous - and a window whose utterance was never dispatched at all
+    matches nothing rather than borrowing a neighbour's text.
+    """
+    candidates = [
+        (abs(ts - vad_stop), text)
+        for ts, text in dispatched_user_turns
+        if abs(ts - vad_stop) <= _DISPATCH_VS_VAD_STOP_TOLERANCE_MS
     ]
-    return sorted(transcripts, key=lambda t: t[0])
-
-
-def _final_transcript_in_window(
-    transcripts: list[tuple[int, str]], window_start: int, window_end: int | None
-) -> str | None:
-    """Return the last transcript text whose timestamp falls in [window_start, window_end)."""
-    in_window = [text for ts, text in transcripts if ts >= window_start and (window_end is None or ts < window_end)]
-    return in_window[-1] if in_window else None
+    return min(candidates, key=lambda c: c[0])[1] if candidates else None
 
 
 def _load_stop_secs_silence_ms(output_dir: str) -> list[float]:
@@ -137,11 +168,18 @@ def _classify_turns(
     vad_stops: list[int],
     turn_metrics_events: list[dict[str, Any]],
     stop_secs_silence_ms: list[float],
-    transcripts: list[tuple[int, str]] | None = None,
+    dispatched_user_turns: list[tuple[int, str]] | None = None,
 ) -> list[dict[str, Any]]:
     """Classify each VAD-analyzer turn window as natural/forced/stuck.
 
-    natural: a TurnMetricsData(is_complete=True) entry falls inside the window.
+    natural: one or more TurnMetricsData(is_complete=True) entries fall inside the window.
+        A raw VAD-start window can legitimately contain more than one - confirmed against real
+        Krisp data where a single window held two genuine completions for two separate real
+        user turns (Krisp's own "user_started_speaking" fired late/not-at-all for the second
+        one, so both landed in the first turn's window). Each is emitted as its own result
+        entry rather than keeping only the first and silently dropping the rest: the window is
+        split at each natural completion in turn order, with each sub-turn's open_duration_ms
+        measured from the previous split point (window_start for the first one).
     forced: no natural completion, AND this window has at least one user_stopped_speaking
         event in its range (Smart Turn's stop_secs mechanism only ever fires after VAD has
         registered a stop, so a window with no vad_stop cannot legitimately be the source of
@@ -149,10 +187,17 @@ def _classify_turns(
         in file order (Smart Turn only ever has one open turn waiting on stop_secs at a time,
         so ordinal matching is safe among windows that actually have a vad_stop — see spec's
         "Matching stop_secs lines to turn windows"). Close time = last vad_stop in the
-        window + that silence value. Also tagged with ``final_turn_flags`` (short /
-        acknowledgement / spelled_entity, via ``final_turn_input_flags``) computed on the STT
-        transcript matched to this window by timestamp — a candidate explanation for *why* the
-        turn analyzer needed the stop_secs fallback instead of closing naturally.
+        window; the consumed silence value is only used to confirm the fallback fired, not
+        added to close_time — last vad_stop is emitted only after the turn analyzer has
+        already waited out that full silence duration internally (confirmed against real
+        data: it trails the LLM-dispatched turn by only 4-6ms), so adding it again would
+        double-count that wait. Also tagged with ``final_turn_flags`` (short /
+        acknowledgement / spelled_entity, via ``final_turn_input_flags``) computed on the
+        dispatched user turn that this window's closing vad_stop ended (see
+        ``_transcript_for_vad_stop``) — a candidate explanation for *why* the turn analyzer
+        needed the stop_secs fallback instead of closing naturally. Both the text and the flags
+        are omitted when no dispatched turn matches, so a flag is never computed on some other
+        turn's words.
     stuck: neither signal found for this window (including: no natural completion and no
         vad_stop in range, in which case no stop_secs value is consumed — it's left for a
         later window that actually earned it). This is common, not a rare edge
@@ -161,40 +206,55 @@ def _classify_turns(
         window_end (the next VAD start bounds it), never the conversation's global last
         timestamp. Only the true last, open-ended window (window_end is None) falls back
         to last_epoch as a conversation-end proxy.
+
+    ``turn_index`` on each result is a running count over the *output* list, not the raw
+    window index - windows that split into multiple natural completions push every later
+    entry's index forward accordingly.
     """
     windows = _build_turn_windows(vad_starts)
     last_epoch = max([*vad_starts, *vad_stops, *(e["timestamp"] for e in turn_metrics_events)], default=0)
     stop_secs_iter = iter(stop_secs_silence_ms)
-    transcripts = transcripts or []
+    dispatched_user_turns = dispatched_user_turns or []
     results: list[dict[str, Any]] = []
 
-    for idx, (window_start, window_end) in enumerate(windows):
+    for window_start, window_end in windows:
         in_window = [
             e
             for e in turn_metrics_events
             if e["timestamp"] >= window_start and (window_end is None or e["timestamp"] < window_end)
         ]
-        natural = next((e for e in in_window if e["is_complete"]), None)
-        if natural is not None:
-            results.append(
-                {
-                    "turn_index": idx,
-                    "open_duration_ms": natural["timestamp"] - window_start,
-                    "time_to_complete_ms": natural["e2e_processing_time_ms"],
-                    "completion": "natural",
-                }
-            )
+        naturals = [e for e in in_window if e["is_complete"]]
+        if naturals:
+            segment_start = window_start
+            for natural in naturals:
+                results.append(
+                    {
+                        "turn_index": len(results),
+                        "open_duration_ms": natural["timestamp"] - segment_start,
+                        "time_to_complete_ms": natural["e2e_processing_time_ms"],
+                        "completion": "natural",
+                    }
+                )
+                segment_start = natural["timestamp"]
             continue
 
         stops_in_window = [s for s in vad_stops if s >= window_start and (window_end is None or s < window_end)]
         if stops_in_window:
             silence_ms = next(stop_secs_iter, None)
             if silence_ms is not None:
+                # silence_ms is only consumed here to confirm this window legitimately earned
+                # the stop_secs fallback (ordinal matching) - it is NOT added to close_time.
+                # last_stop (user_stopped_speaking) is emitted by
+                # TurnAnalyzerUserTurnStopStrategy only once the analyzer's append_audio has
+                # already waited out the full silence_ms internally (confirmed against real
+                # data: last_stop trails the audit-log dispatch by only 4-6ms). Adding
+                # silence_ms again here double-counted that wait, inflating open_duration_ms
+                # by roughly one extra stop_secs timeout per forced completion.
                 last_stop = max(stops_in_window)
-                close_time = last_stop + silence_ms
-                transcript_text = _final_transcript_in_window(transcripts, window_start, window_end)
+                close_time = last_stop
+                transcript_text = _transcript_for_vad_stop(dispatched_user_turns, last_stop)
                 result = {
-                    "turn_index": idx,
+                    "turn_index": len(results),
                     "open_duration_ms": close_time - window_start,
                     "time_to_complete_ms": None,
                     "completion": "forced",
@@ -210,7 +270,7 @@ def _classify_turns(
         close_time = window_end if window_end is not None else last_epoch
         results.append(
             {
-                "turn_index": idx,
+                "turn_index": len(results),
                 "open_duration_ms": close_time - window_start,
                 "time_to_complete_ms": None,
                 "completion": "stuck",
@@ -218,6 +278,38 @@ def _classify_turns(
         )
 
     return results
+
+
+# Tolerance for matching the real, ground-truth last user turn (from
+# context.audio_timestamps_user_turns, recorded by the user-simulator process) against the
+# turn-analyzer's own vad_starts (recorded by the pipecat server process). These two are on
+# different clocks with no fixed offset - confirmed against real Krisp/non-Krisp examples,
+# where legitimate skew for a turn VAD *did* register ranged ~0.4-6.8s, while turns VAD never
+# registered at all sat 10.8-24.4s away from the nearest vad_start. 8s sits between those two
+# clusters: generous enough to absorb real skew, tight enough to catch a genuine miss.
+_VAD_MISS_TOLERANCE_MS = 8000
+
+
+def _final_user_turn_never_reached_vad(
+    vad_starts: list[int], audio_timestamps_user_turns: dict[int, list[tuple[float, float]]] | None
+) -> bool:
+    """True if the turn analyzer's VAD never registered a start anywhere near the last real user turn.
+
+    Catches the case where the turn-analyzer's own "user_started_speaking" never fired at all
+    for the final utterance (confirmed against real Krisp examples: the conversation ends via
+    inactivity_timeout with the user having spoken last, but that last utterance produced no
+    VAD-start window whatsoever - so it never shows up in ``per_turn`` and
+    ``per_turn[-1]["completion"] == "stuck"`` can't catch it, since ``per_turn[-1]`` is really
+    describing an earlier, already-resolved turn).
+    """
+    if not audio_timestamps_user_turns or not vad_starts:
+        return False
+    last_key = max(audio_timestamps_user_turns)
+    segments = audio_timestamps_user_turns[last_key]
+    if not segments:
+        return False
+    last_start_ms = min(seg[0] for seg in segments) * 1000
+    return all(abs(vs - last_start_ms) > _VAD_MISS_TOLERANCE_MS for vs in vad_starts)
 
 
 def _turn_stop_strategy(output_dir: str) -> str | None:
@@ -244,25 +336,38 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
 
     turn_metrics_events = _load_turn_metrics_events(context.output_dir)
     stop_secs_silence_ms = _load_stop_secs_silence_ms(context.output_dir)
-    transcripts = _load_transcripts(context.output_dir)
-    per_turn = _classify_turns(vad_starts, vad_stops, turn_metrics_events, stop_secs_silence_ms, transcripts)
+    dispatched_user_turns = _load_dispatched_user_turns(context.output_dir)
+    per_turn = _classify_turns(vad_starts, vad_stops, turn_metrics_events, stop_secs_silence_ms, dispatched_user_turns)
 
     def _wrap(key: str, value: float, normalized: bool) -> MetricScore:
         return MetricScore(name=f"turn_taking.{key}", score=value, normalized_score=value if normalized else None)
 
+    # A user turn that never even got a VAD-start window (see
+    # _final_user_turn_never_reached_vad) is invisible to _classify_turns entirely - fold it
+    # in here as an explicit stuck entry so it's counted by stuck_rate below, rather than
+    # silently vanishing. Only added when it's also the reason the conversation died (matches
+    # the narrower signal this used to be gated on): Krisp has no silence-duration fallback,
+    # so a VAD-analyzer miss is what actually kills the call via inactivity_timeout.
+    if is_agent_timeout_on_user_turn(
+        context.conversation_ended_reason,
+        context.audio_timestamps_user_turns,
+        context.audio_timestamps_assistant_turns,
+    ) and _final_user_turn_never_reached_vad(vad_starts, context.audio_timestamps_user_turns):
+        per_turn = [
+            *per_turn,
+            {
+                "turn_index": len(per_turn),
+                "open_duration_ms": None,
+                "time_to_complete_ms": None,
+                "completion": "stuck",
+                "vad_never_started": True,
+            },
+        ]
+
     sub: dict[str, MetricScore] = {}
 
-    eot_not_fired = (
-        1.0
-        if per_turn[-1]["completion"] == "stuck"
-        and is_agent_timeout_on_user_turn(
-            context.conversation_ended_reason,
-            context.audio_timestamps_user_turns,
-            context.audio_timestamps_assistant_turns,
-        )
-        else 0.0
-    )
-    sub["eot_vad_not_fired_rate"] = _wrap("eot_vad_not_fired_rate", eot_not_fired, True)
+    stuck_count = sum(1 for t in per_turn if t["completion"] == "stuck")
+    sub["stuck_rate"] = _wrap("stuck_rate", round(stuck_count / len(per_turn), 4), True)
 
     natural_count = sum(1 for t in per_turn if t["completion"] == "natural")
     forced_count = sum(1 for t in per_turn if t["completion"] == "forced")
@@ -283,9 +388,6 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
             sub[f"forced_completion_final_turn_{key}_rate"] = _wrap(
                 f"forced_completion_final_turn_{key}_rate", round(rate, 4), True
             )
-
-    open_durations = [t["open_duration_ms"] for t in per_turn]
-    sub["max_turn_open_duration_ms"] = _wrap("max_turn_open_duration_ms", round(max(open_durations), 3), False)
 
     natural_times = [
         t["time_to_complete_ms"]

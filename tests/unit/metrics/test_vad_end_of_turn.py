@@ -5,9 +5,11 @@ import json
 from eva.metrics.experience.vad_end_of_turn import (
     _classify_turns,
     _find_run_config,
+    _load_dispatched_user_turns,
     _load_stop_secs_silence_ms,
     _load_turn_metrics_events,
     _load_vad_events,
+    _transcript_for_vad_stop,
     compute_vad_turn_sub_metrics,
     vad_turn_metrics_applicable,
 )
@@ -127,7 +129,115 @@ class TestLoadStopSecsSilenceMs:
         assert _load_stop_secs_silence_ms(str(tmp_path)) == []
 
 
+def _write_audit_log(path, user_turns):
+    """Write an audit_log.json whose transcript holds the given (timestamp, text) user turns."""
+    path.write_text(
+        json.dumps(
+            {
+                "transcript": [
+                    {"value": text, "message_type": "user", "timestamp": str(ts), "isBotMessage": False}
+                    for ts, text in user_turns
+                ]
+            }
+        )
+    )
+
+
+class TestLoadDispatchedUserTurns:
+    def test_extracts_and_sorts_user_turns_with_string_timestamps(self, tmp_path):
+        _write_audit_log(tmp_path / "audit_log.json", [(5000, "second"), (1000, "first")])
+        assert _load_dispatched_user_turns(str(tmp_path)) == [(1000, "first"), (5000, "second")]
+
+    def test_ignores_assistant_entries(self, tmp_path):
+        (tmp_path / "audit_log.json").write_text(
+            json.dumps(
+                {
+                    "transcript": [
+                        {"value": "user text", "message_type": "user", "timestamp": "1000"},
+                        {"value": "bot text", "message_type": "assistant", "timestamp": "2000"},
+                    ]
+                }
+            )
+        )
+        assert _load_dispatched_user_turns(str(tmp_path)) == [(1000, "user text")]
+
+    def test_empty_when_audit_log_missing(self, tmp_path):
+        assert _load_dispatched_user_turns(str(tmp_path)) == []
+
+    def test_empty_when_audit_log_malformed(self, tmp_path):
+        (tmp_path / "audit_log.json").write_text("{not json")
+        assert _load_dispatched_user_turns(str(tmp_path)) == []
+
+    def test_skips_entries_with_unusable_timestamp_or_empty_text(self, tmp_path):
+        (tmp_path / "audit_log.json").write_text(
+            json.dumps(
+                {
+                    "transcript": [
+                        {"value": "", "message_type": "user", "timestamp": "1000"},
+                        {"value": "no timestamp", "message_type": "user"},
+                        {"value": "bad timestamp", "message_type": "user", "timestamp": "not-a-number"},
+                        {"value": "good", "message_type": "user", "timestamp": "4000"},
+                    ]
+                }
+            )
+        )
+        assert _load_dispatched_user_turns(str(tmp_path)) == [(4000, "good")]
+
+
+class TestTranscriptForVadStop:
+    def test_matches_turn_dispatched_just_after_the_stop(self):
+        # Measured against real fixtures: dispatch lands 3-8ms after the closing vad_stop.
+        turns = [(1056, "first turn"), (5104, "second turn")]
+        assert _transcript_for_vad_stop(turns, 1050) == "first turn"
+        assert _transcript_for_vad_stop(turns, 5100) == "second turn"
+
+    def test_returns_nearest_when_several_are_within_tolerance(self):
+        assert _transcript_for_vad_stop([(1400, "far"), (1005, "near")], 1000) == "near"
+
+    def test_none_when_no_turn_is_close_enough(self):
+        # A window whose utterance was never dispatched must not borrow a distant turn's text.
+        assert _transcript_for_vad_stop([(30000, "much later turn")], 1050) is None
+
+    def test_none_when_no_dispatched_turns(self):
+        assert _transcript_for_vad_stop([], 1050) is None
+
+
 class TestClassifyTurns:
+    def test_forced_turn_text_is_the_full_dispatched_turn_not_the_last_stt_fragment(self):
+        # Reproduces the nonkrisp_2 shape. Window 0 is [1000, 26000) and window 1 is [26000, None).
+        # The user's second utterance began before VAD registered it, so its STT fragments
+        # finalized at 24000/25000 -- inside window 0, whose own utterance ended back at 6000.
+        # Attribution must follow the vad_stop that closed each turn, not the fragment timestamps,
+        # and must report the whole dispatched turn rather than only its trailing fragment.
+        dispatched = [
+            (6005, "Hi. I need help resetting my VPN password."),
+            (32004, "My employee ID is e n p zero six six. The last four of my phone are four four two five."),
+        ]
+        result = _classify_turns(
+            vad_starts=[1000, 26000],
+            vad_stops=[6000, 32000],
+            turn_metrics_events=[],
+            stop_secs_silence_ms=[3000.0, 3000.0],
+            dispatched_user_turns=dispatched,
+        )
+        assert [r["completion"] for r in result] == ["forced", "forced"]
+        assert result[0]["transcript_text"] == "Hi. I need help resetting my VPN password."
+        assert result[1]["transcript_text"] == (
+            "My employee ID is e n p zero six six. The last four of my phone are four four two five."
+        )
+
+    def test_forced_turn_omits_text_when_no_dispatched_turn_matches(self):
+        result = _classify_turns(
+            vad_starts=[1000],
+            vad_stops=[1050],
+            turn_metrics_events=[],
+            stop_secs_silence_ms=[3000.0],
+            dispatched_user_turns=[(90000, "unrelated later turn")],
+        )
+        assert result[0]["completion"] == "forced"
+        assert "transcript_text" not in result[0]
+        assert "final_turn_flags" not in result[0]
+
     def test_single_natural_completion(self):
         # Window: [1000, None). TurnMetricsData at 1103 (is_complete=True) closes it naturally.
         result = _classify_turns(
@@ -157,8 +267,10 @@ class TestClassifyTurns:
         ]
 
     def test_forced_completion_via_stop_secs_ordinal_match(self):
-        # No natural completion in the window -> consumes the one stop_secs silence value.
-        # close_time = last vad_stop in window (1050) + silence_ms (3032.0) = 4082.0
+        # No natural completion in the window -> consumes the one stop_secs silence value
+        # to confirm the fallback fired, but close_time = last vad_stop in window (1050)
+        # directly - the silence value is NOT added again (it's already baked into when
+        # last_stop itself was emitted).
         result = _classify_turns(
             vad_starts=[1000],
             vad_stops=[1050],
@@ -166,7 +278,7 @@ class TestClassifyTurns:
             stop_secs_silence_ms=[3032.0],
         )
         assert result == [
-            {"turn_index": 0, "open_duration_ms": 3082.0, "time_to_complete_ms": None, "completion": "forced"}
+            {"turn_index": 0, "open_duration_ms": 50, "time_to_complete_ms": None, "completion": "forced"}
         ]
 
     def test_stuck_when_no_natural_or_forced_signal(self):
@@ -190,7 +302,7 @@ class TestClassifyTurns:
         )
         assert result == [
             {"turn_index": 0, "open_duration_ms": 103, "time_to_complete_ms": 103.0, "completion": "natural"},
-            {"turn_index": 1, "open_duration_ms": 3100.0, "time_to_complete_ms": None, "completion": "forced"},
+            {"turn_index": 1, "open_duration_ms": 100.0, "time_to_complete_ms": None, "completion": "forced"},
         ]
 
     def test_stuck_last_window_open_duration_uses_last_observed_epoch(self):
@@ -233,6 +345,40 @@ class TestClassifyTurns:
             "completion": "stuck",
         }
 
+    def test_window_with_two_naturals_splits_into_two_turns_instead_of_dropping_the_second(self):
+        # Real Krisp data shape: a single raw VAD-start window contains two genuine
+        # completions for two separate real user turns (Krisp's own start event for the
+        # second turn fired late/not at all, so both completions landed in the first
+        # window). Both must survive as their own "natural" entries, not just the first.
+        result = _classify_turns(
+            vad_starts=[1000],
+            vad_stops=[],
+            turn_metrics_events=[
+                {"timestamp": 1001, "is_complete": True, "e2e_processing_time_ms": 188.9},
+                {"timestamp": 4680, "is_complete": True, "e2e_processing_time_ms": 268.7},
+            ],
+            stop_secs_silence_ms=[],
+        )
+        assert result == [
+            {"turn_index": 0, "open_duration_ms": 1, "time_to_complete_ms": 188.9, "completion": "natural"},
+            {"turn_index": 1, "open_duration_ms": 3679, "time_to_complete_ms": 268.7, "completion": "natural"},
+        ]
+
+    def test_turn_index_accounts_for_earlier_split_windows(self):
+        # A split in an earlier window must push every later window's turn_index forward.
+        result = _classify_turns(
+            vad_starts=[1000, 5000],
+            vad_stops=[],
+            turn_metrics_events=[
+                {"timestamp": 1001, "is_complete": True, "e2e_processing_time_ms": 100.0},
+                {"timestamp": 2000, "is_complete": True, "e2e_processing_time_ms": 100.0},
+                {"timestamp": 5100, "is_complete": True, "e2e_processing_time_ms": 100.0},
+            ],
+            stop_secs_silence_ms=[],
+        )
+        assert [r["turn_index"] for r in result] == [0, 1, 2]
+        assert result[2]["open_duration_ms"] == 100
+
     def test_false_start_does_not_steal_stop_secs_from_later_genuinely_forced_window(self):
         # Window 0: brief VAD false-start - a start immediately superseded by the next
         # start, no user_stopped_speaking ever registered, no natural completion. Since
@@ -249,8 +395,25 @@ class TestClassifyTurns:
         )
         assert result[0]["completion"] == "stuck"
         assert result[1]["completion"] == "forced"
-        assert result[1]["open_duration_ms"] == 5100 + 3032.0 - 5000
+        assert result[1]["open_duration_ms"] == 5100 - 5000
         assert result[1]["time_to_complete_ms"] is None
+
+    def test_forced_completion_does_not_double_count_silence_ms(self):
+        # Regression guard, values taken from example/nonkrisp_2 (real Smart Turn run):
+        # vad_start=1787171562461, vad_stop=1787171568321, stop_secs silence=3032.0,
+        # and the LLM-dispatched turn in audit_log.json landed at 1787171568327 - only
+        # 6ms after vad_stop. That means vad_stop (user_stopped_speaking) already fires
+        # only once the analyzer's internal silence_ms wait is over, so close_time must
+        # be ~vad_stop, not ~vad_stop + silence_ms (which would overshoot the real
+        # dispatch time by ~3032ms - one whole extra stop_secs timeout).
+        result = _classify_turns(
+            vad_starts=[1787171562461],
+            vad_stops=[1787171568321],
+            turn_metrics_events=[],
+            stop_secs_silence_ms=[3032.0],
+        )
+        assert result[0]["completion"] == "forced"
+        assert result[0]["open_duration_ms"] == 1787171568321 - 1787171562461
 
 
 def _write_config(tmp_path, framework="pipecat", turn_stop_strategy="turn_analyzer"):
@@ -351,12 +514,12 @@ class TestComputeVadTurnSubMetrics:
         # Only the natural completion feeds mean_time_to_complete_ms.
         assert sub_metrics["mean_time_to_complete_ms"].score == 100.0
 
-    def test_eot_vad_not_fired_rate_true_on_stuck_plus_inactivity_timeout(self, tmp_path):
+    def test_stuck_rate_counts_mid_conversation_hangs_regardless_of_outcome(self, tmp_path):
         _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")
         _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
         ctx = make_metric_context(
             output_dir=str(tmp_path),
-            conversation_ended_reason="inactivity_timeout",
+            conversation_ended_reason="goodbye",  # the call still ended cleanly
             audio_timestamps_user_turns={1: [(0.0, 5.0)]},
             audio_timestamps_assistant_turns={},
         )
@@ -364,9 +527,69 @@ class TestComputeVadTurnSubMetrics:
         assert result is not None
         sub_metrics, per_turn = result
         assert per_turn[0]["completion"] == "stuck"
-        assert sub_metrics["eot_vad_not_fired_rate"].score == 1.0
+        assert sub_metrics["stuck_rate"].score == 1.0
 
-    def test_eot_vad_not_fired_rate_false_on_clean_ending(self, tmp_path):
+    def test_stuck_rate_includes_final_turn_with_no_vad_start_at_all(self, tmp_path):
+        # Real Krisp shape: 5 real turns all completed naturally, but the 6th and final
+        # real user turn never got a user_started_speaking event from the turn analyzer at
+        # all - no window exists for it in per_turn, so it must be folded in explicitly to
+        # be counted, rather than silently vanishing from stuck_rate's denominator.
+        _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")
+        _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
+        _write_jsonl(
+            tmp_path / "pipecat_metrics.jsonl",
+            [
+                {
+                    "timestamp": 1100,
+                    "type": "TurnMetricsData",
+                    "value": {"is_complete": True, "e2e_processing_time_ms": 100.0},
+                }
+            ],
+        )
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            conversation_ended_reason="inactivity_timeout",
+            # Last real user turn started at 30s (30000ms) - over 28s away from the only
+            # vad_start (1000ms), far past legitimate clock skew.
+            audio_timestamps_user_turns={1: [(0.0, 0.5)], 2: [(30.0, 30.5)]},
+            audio_timestamps_assistant_turns={0: [(0.6, 1.0)]},
+        )
+        result = compute_vad_turn_sub_metrics(ctx)
+        assert result is not None
+        sub_metrics, per_turn = result
+        assert per_turn[0]["completion"] == "natural"
+        assert per_turn[-1] == {
+            "turn_index": 1,
+            "open_duration_ms": None,
+            "time_to_complete_ms": None,
+            "completion": "stuck",
+            "vad_never_started": True,
+        }
+        # 1 stuck (the synthetic missing-turn entry) out of 2 total turns.
+        assert sub_metrics["stuck_rate"].score == 0.5
+
+    def test_stuck_rate_does_not_add_synthetic_entry_within_clock_skew_tolerance(self, tmp_path):
+        # The only vad_start is within clock-skew tolerance of the last real user turn, so
+        # the synthetic missing-turn entry is NOT added - this call had exactly one real
+        # turn, and it's classified stuck for an unrelated reason (no completion signal),
+        # not because VAD never started at all.
+        _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")
+        _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            conversation_ended_reason="inactivity_timeout",
+            audio_timestamps_user_turns={1: [(0.0, 0.5)]},
+            audio_timestamps_assistant_turns={},
+        )
+        result = compute_vad_turn_sub_metrics(ctx)
+        assert result is not None
+        sub_metrics, per_turn = result
+        assert per_turn == [
+            {"turn_index": 0, "open_duration_ms": 0, "time_to_complete_ms": None, "completion": "stuck"}
+        ]
+        assert sub_metrics["stuck_rate"].score == 1.0
+
+    def test_stuck_rate_zero_on_clean_all_natural_ending(self, tmp_path):
         _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")
         _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
         _write_jsonl(
@@ -383,4 +606,4 @@ class TestComputeVadTurnSubMetrics:
         result = compute_vad_turn_sub_metrics(ctx)
         assert result is not None
         sub_metrics, _ = result
-        assert sub_metrics["eot_vad_not_fired_rate"].score == 0.0
+        assert sub_metrics["stuck_rate"].score == 0.0

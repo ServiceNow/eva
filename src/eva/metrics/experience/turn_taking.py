@@ -41,16 +41,20 @@ Flat headline sub-metrics (one number each — show up as columns in analysis vi
                         computed from audit_log.json directly so it works uniformly across
                         cascade/S2S/audio-LLM; omitted when there are no tool calls or the
                         audit log is unavailable — see ``_compute_pre_tool_speech_groups``)
-  VAD turn diagnostics: eot_vad_not_fired_rate (per-conversation boolean, aggregates to a
-                        true rate across a run's conversations), forced_completion_rate
+  VAD turn diagnostics: stuck_rate (fraction of classified turns where the turn analyzer
+                        never produced a natural or forced completion signal at all —
+                        includes both non-fatal mid-conversation hangs and, when it's also
+                        why the conversation died via inactivity_timeout, a trailing turn
+                        the analyzer never even opened a VAD-start window for),
+                        forced_completion_rate
                         (Smart Turn's silence fallback firing rate; null for Krisp — the
                         mechanism doesn't exist), forced_completion_final_turn_{short,
                         acknowledgement,spelled_entity}_rate (among forced completions, how
                         often the STT transcript matched to that window has that input shape
                         — a candidate explanation for why the turn analyzer needed the
                         stop_secs fallback; omitted when there are no forced completions with
-                        a matched transcript), max_turn_open_duration_ms,
-                        mean/p50/p90_time_to_complete_ms (natural completions only).
+                        a matched transcript), mean/p50/p90_time_to_complete_ms
+                        (natural completions only).
                         All null/omitted for runs with no local turn-analyzer VAD
                         (non-pipecat frameworks, or turn_stop_strategy == "external").
                         See src/eva/metrics/experience/vad_end_of_turn.py.
