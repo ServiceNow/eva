@@ -94,7 +94,6 @@ apps/analysis.py/toolkit-job-new: %/toolkit-job-new:  # Deploy app as new Toolki
 		--env EVA_OUTPUT_DIR=/mnt/voice_agent \
 		--env STREAMLIT_BROWSER_SERVER_ADDRESS=$(subst .,-,$(TOOLKIT_JOB)).job.console.elementai.com \
 		--env STREAMLIT_BROWSER_SERVER_PORT=80 \
-		--env STREAMLIT_CLIENT_TOOLBAR_MODE=developer \
 		--env STREAMLIT_SERVER_FILE_WATCHER_TYPE=poll \
 		--env STREAMLIT_SERVER_PORT=8080 \
 		--env STREAMLIT_SERVER_RUN_ON_SAVE=true \
