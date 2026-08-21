@@ -604,35 +604,6 @@ user_simulator:
 
     Respond with ONLY "YES" or "NO".
 
-  cascade_self_correction: |
-    You are about to say this line to the agent:
-
-    <intended_line>
-    {utterance}
-    </intended_line>
-
-    On this turn only, you will misspeak first and then correct yourself, the way
-    people do on real phone calls. The line above is the CORRECT one — it is what
-    you will say as the correction. Your job here is to write the SLIP that comes
-    just before it.
-
-    Write the version of that line that you say by mistake.
-
-    Rules, all of which matter:
-    - It must state a decision that is WRONG but plausibly close to the intended
-      line. A different day, a different one of two options, a slightly wrong
-      number. Never something absurd, and never a different topic.
-    - Change exactly one detail. Everything else stays as it was.
-    - It must stand on its own as a natural thing to say. Do not hedge, do not
-      signal that it is wrong, and do not correct yourself inside it — the
-      self_correction is delivered separately, a moment later.
-    - Never contradict or drop a fact the agent needs; the correction that follows
-      is what satisfies your must_have_criteria, so the slip must be safely
-      reversible by it.
-    - Reply with ONLY the spoken line, nothing else. No quotes, no labels.
-    - If the intended line contains no detail that could plausibly be misspoken
-      (a greeting, a thank-you, a yes/no acknowledgement), reply with exactly NONE.
-
   cascade_next_interruption: |
     You just said this line to the agent:
 

@@ -513,9 +513,6 @@ class CascadeSimulatorConfig(BaseModel):
 
     enable_backchannel: bool = Field(False, description="Caller emits continuers while the assistant speaks.")
     enable_interruptions: bool = Field(False, description="Caller may barge in reacting to the assistant mid-turn.")
-    enable_self_correction: bool = Field(
-        False, description="Caller may reverse its own prior statement, pre-authored and fired on a timer."
-    )
     speculative_generation: bool = Field(
         False,
         description="Pre-render a candidate interruption on the turn call, gated by a relevance check before firing.",

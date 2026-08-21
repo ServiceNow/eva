@@ -39,10 +39,3 @@ def test_fixed_vocabularies_are_non_empty():
 
     assert BACKCHANNEL_PHRASES == ["uh-huh", "mm-hmm"]
     assert len(BARGE_IN_OPENERS) >= 2
-
-
-def test_self_correction_delay_is_shorter_than_the_check_interval():
-    from eva.user_simulator.cascade.constants import LISTENER_CHECK_INTERVAL_MS, SELF_CORRECTION_DELAY_MS
-
-    # The correction should land while the assistant is still on its first reply.
-    assert SELF_CORRECTION_DELAY_MS < LISTENER_CHECK_INTERVAL_MS

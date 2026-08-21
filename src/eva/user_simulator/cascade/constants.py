@@ -38,15 +38,6 @@ SILENCE_BYTE = b"\x00"
 LISTENER_CHECK_INTERVAL_MS = 2000
 """How often the interrupt and backchannel checks run while the assistant speaks."""
 
-MAX_INTERRUPT_SLIP_MS = 1500
-"""Drop a reactive barge-in whose audio arrived this far past its intended tick."""
-
-SELF_CORRECTION_DELAY_MS = 1200
-"""How long after the assistant starts replying to play a pre-authored correction."""
-
-SELF_CORRECTION_RATE = 0.15
-"""Fraction of caller turns generated with a self-correction attached."""
-
 BACKCHANNEL_PHRASES = ["uh-huh", "mm-hmm"]
 """Fixed continuer vocabulary (tau: voice_config.py:126). Pre-rendered at init."""
 

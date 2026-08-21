@@ -1279,7 +1279,6 @@ def test_cascade_behaviors_default_off():
 
     assert config.enable_backchannel is False
     assert config.enable_interruptions is False
-    assert config.enable_self_correction is False
     assert config.speculative_generation is False
 
 

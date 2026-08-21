@@ -41,20 +41,6 @@ def test_backchannel_decision_prompt_has_a_history_slot_and_frequency_guidance()
     assert "When in doubt, say NO" in prompt
 
 
-def test_self_correction_prompt_states_the_wrong_then_right_ordering():
-    prompt = PromptManager().get_template("user_simulator.cascade_self_correction")
-
-    assert "self_correction" in prompt
-    assert "must_have_criteria" in prompt
-
-
-def test_self_correction_prompt_never_mentions_ending_the_call():
-    # It runs as its own call; if it could elicit a hang-up it would race the turn call.
-    prompt = PromptManager().get_template("user_simulator.cascade_self_correction")
-
-    assert "end_call" not in prompt
-
-
 def test_interruption_decision_prompt_carries_the_user_goal():
     prompt = PromptManager().get_prompt(
         "user_simulator.interruption_decision",

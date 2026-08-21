@@ -1,6 +1,15 @@
 from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn, parse_turn_response
 
 
+def _trace_sink():
+    """DecisionLog that accumulates in memory and never writes."""
+    from pathlib import Path
+
+    from eva.user_simulator.cascade.decision_log import DecisionLog
+
+    return DecisionLog(Path("unused-decision-trace.jsonl"))
+
+
 def test_parse_turn_response_returns_the_spoken_line_unchanged():
     assert parse_turn_response("I need to reset my password.") == "I need to reset my password."
 
@@ -52,6 +61,7 @@ def test_outbound_perturbation_reaches_the_adapter():
 def _make_bare_simulator() -> CascadeUserSimulator:
     """Build a CascadeUserSimulator without running __init__, for pure _messages() testing."""
     sim = object.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
     sim._build_prompt = lambda: "SYSTEM PROMPT"
     sim._history = []
     return sim
@@ -88,6 +98,7 @@ def _simulator_with_buffer(committed: str = "", in_flight: str = ""):
     from eva.user_simulator.cascade.stt import TranscriptBuffer
 
     sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
     buffer = TranscriptBuffer()
     buffer.committed, buffer.in_flight = committed, in_flight
     sim._stt = type("_Stt", (), {"buffer": buffer})()
@@ -135,6 +146,7 @@ def test_the_wait_counter_resets_after_a_successful_read():
 def _boundary_simulator():
     """Bare simulator exposing only what _log_audio_boundaries touches."""
     sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
     sim.event_logger = _FakeAudioEventLogger()
     return sim
 
@@ -230,6 +242,7 @@ def test_inactivity_ends_the_call_after_the_shared_two_minute_threshold():
     from eva.user_simulator.cascade.constants import INACTIVITY_TIMEOUT_MS, ms_to_ticks
 
     sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
     sim._ticks_assistant_silent = 0
     silent = _tick(False)
     for _ in range(ms_to_ticks(INACTIVITY_TIMEOUT_MS)):
@@ -240,6 +253,7 @@ def test_inactivity_ends_the_call_after_the_shared_two_minute_threshold():
 
 def test_assistant_speech_resets_the_inactivity_counter():
     sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
     sim._ticks_assistant_silent = 500
 
     assert sim._assistant_is_inactive(_SilenceScheduler(), _tick(True)) is False
@@ -255,6 +269,7 @@ def test_inactivity_does_not_fire_before_the_assistant_ever_speaks():
         assistant_has_spoken = False
 
     sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
     sim._ticks_assistant_silent = 0
     for _ in range(ms_to_ticks(INACTIVITY_TIMEOUT_MS) + 5):
         assert sim._assistant_is_inactive(_NeverSpoke(), _tick(False)) is False
@@ -264,6 +279,7 @@ def test_tick_counters_exist_without_manual_setup():
     # The unit tests build bare instances, so a counter initialised only inside __init__
     # would still pass them and then AttributeError on the first live tick.
     sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
 
     assert sim._ticks_assistant_silent == 0
     assert sim._ticks_awaiting_transcript == 0
@@ -315,153 +331,66 @@ def test_verdict_with_no_action_queues_nothing():
     assert verdict.should_backchannel is False
 
 
-def test_interrupt_kept_when_slip_is_within_budget():
+def test_a_barge_in_is_kept_while_the_assistant_is_mid_utterance():
     from eva.user_simulator.cascade.simulator import should_drop_interrupt
 
-    assert should_drop_interrupt(slip_ms=800, assistant_still_speaking=True) is False
+    assert should_drop_interrupt(assistant_still_speaking=True, same_assistant_turn=True) is False
 
 
-def test_interrupt_dropped_when_slip_exceeds_budget():
+def test_a_slow_barge_in_is_no_longer_dropped_for_being_slow():
+    # Wall-clock slip is not staleness: the assistant is still talking, so the line still lands.
     from eva.user_simulator.cascade.simulator import should_drop_interrupt
 
-    assert should_drop_interrupt(slip_ms=2000, assistant_still_speaking=True) is True
+    assert should_drop_interrupt(assistant_still_speaking=True, same_assistant_turn=True) is False
 
 
-def test_interrupt_dropped_when_the_assistant_already_stopped():
+def test_a_barge_in_is_dropped_once_the_assistant_stopped():
     # No longer an interruption — it would land as an ordinary reply.
     from eva.user_simulator.cascade.simulator import should_drop_interrupt
 
-    assert should_drop_interrupt(slip_ms=100, assistant_still_speaking=False) is True
+    assert should_drop_interrupt(assistant_still_speaking=False, same_assistant_turn=True) is True
 
 
-def test_correction_fires_once_the_delay_has_elapsed():
-    from eva.user_simulator.cascade.simulator import should_fire_self_correction
+def test_a_barge_in_is_dropped_when_the_assistant_moved_to_a_later_turn():
+    # "Still speaking" is satisfied by a *different* turn, which would land the line as a
+    # non-sequitur against speech the caller never reacted to.
+    from eva.user_simulator.cascade.simulator import should_drop_interrupt
 
-    assert should_fire_self_correction(ticks_since_assistant_started=6, assistant_speaking=True) is True
-
-
-def test_correction_does_not_fire_before_the_delay():
-    from eva.user_simulator.cascade.simulator import should_fire_self_correction
-
-    assert should_fire_self_correction(ticks_since_assistant_started=2, assistant_speaking=True) is False
+    assert should_drop_interrupt(assistant_still_speaking=True, same_assistant_turn=False) is True
 
 
-def test_correction_is_abandoned_if_the_assistant_never_replied():
-    from eva.user_simulator.cascade.simulator import should_fire_self_correction
+def test_extract_optional_line_reads_a_plain_line():
+    from eva.user_simulator.cascade.simulator import extract_optional_line
 
-    assert should_fire_self_correction(ticks_since_assistant_started=6, assistant_speaking=False) is False
-
-
-def test_extract_correction_reads_a_plain_line():
-    from eva.user_simulator.cascade.simulator import extract_correction
-
-    assert extract_correction("Actually, wait — I said Thursday, I meant Friday.") == (
-        "Actually, wait — I said Thursday, I meant Friday."
-    )
+    assert extract_optional_line("I wanted Friday, not Thursday.") == "I wanted Friday, not Thursday."
 
 
-def test_extract_correction_strips_a_code_fence():
-    from eva.user_simulator.cascade.simulator import extract_correction
+def test_extract_optional_line_strips_a_code_fence():
+    from eva.user_simulator.cascade.simulator import extract_optional_line
 
-    assert extract_correction("```\nI meant Friday.\n```") == "I meant Friday."
-
-
-def test_extract_correction_is_empty_for_an_empty_reply():
-    from eva.user_simulator.cascade.simulator import extract_correction
-
-    assert extract_correction("") == ""
+    assert extract_optional_line("```\nI meant Friday.\n```") == "I meant Friday."
 
 
-def test_extract_correction_reads_through_a_message_object():
-    from eva.user_simulator.cascade.simulator import extract_correction
+def test_extract_optional_line_is_empty_for_an_empty_reply():
+    from eva.user_simulator.cascade.simulator import extract_optional_line
+
+    assert extract_optional_line("") == ""
+
+
+def test_extract_optional_line_reads_through_a_message_object():
+    from eva.user_simulator.cascade.simulator import extract_optional_line
 
     class _Message:
         content = "I meant Friday."
-        tool_calls: list = []
 
-    assert extract_correction(_Message()) == "I meant Friday."
+    assert extract_optional_line(_Message()) == "I meant Friday."
 
 
-def test_extract_correction_rejects_a_refusal_style_non_answer():
+def test_extract_optional_line_rejects_a_refusal_style_non_answer():
     # The prompt allows the model to decline by returning NONE.
-    from eva.user_simulator.cascade.simulator import extract_correction
+    from eva.user_simulator.cascade.simulator import extract_optional_line
 
-    assert extract_correction("NONE") == ""
-
-
-def _correcting_simulator(reply: str, *, rate_roll: float = 0.0):
-    """Bare simulator wired for _maybe_arm_self_correction only."""
-    from eva.models.config import CascadeSimulatorConfig
-
-    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
-    sim._config = CascadeSimulatorConfig(enable_self_correction=True)
-    sim._rng = type("_Rng", (), {"random": staticmethod(lambda: rate_roll)})()
-    sim._build_prompt = lambda: "SYSTEM PROMPT"
-    sim._history = []
-    sim._voice_id = "voice-f"
-    sim.event_logger = _FakeEventLogger()
-    sim._armed_correction = b""
-    sim._armed_correction_text = ""
-
-    class _Llm:
-        async def complete(self, messages, tools=None):
-            return reply, {}
-
-    class _Tts:
-        async def synthesize(self, text, *, voice_id):
-            return text.encode()
-
-    sim._llm, sim._tts = _Llm(), _Tts()
-    return sim
-
-
-async def test_the_slip_is_spoken_and_the_original_line_is_armed_as_the_correction():
-    # Wrong-then-right: the goal-consistent line must be what lands last.
-    sim = _correcting_simulator("Book me Thursday.")
-
-    spoken = await sim._maybe_arm_self_correction("Book me Friday.")
-
-    assert spoken == "Book me Thursday."
-    assert sim._armed_correction_text == "Book me Friday."
-
-
-async def test_no_correction_is_armed_when_the_rate_gate_declines():
-    sim = _correcting_simulator("Book me Thursday.", rate_roll=0.99)
-
-    spoken = await sim._maybe_arm_self_correction("Book me Friday.")
-
-    assert spoken == "Book me Friday."
-    assert sim._armed_correction == b""
-
-
-async def test_a_none_reply_leaves_the_turn_unchanged():
-    sim = _correcting_simulator("NONE")
-
-    spoken = await sim._maybe_arm_self_correction("Thanks, goodbye.")
-
-    assert spoken == "Thanks, goodbye."
-    assert sim._armed_correction == b""
-
-
-async def test_a_failed_correction_call_degrades_to_an_ordinary_turn():
-    sim = _correcting_simulator("unused")
-
-    class _Failing:
-        async def complete(self, messages, tools=None):
-            raise RuntimeError("provider down")
-
-    sim._llm = _Failing()
-
-    assert await sim._maybe_arm_self_correction("Book me Friday.") == "Book me Friday."
-
-
-async def test_self_correction_is_skipped_when_the_behavior_is_disabled():
-    from eva.models.config import CascadeSimulatorConfig
-
-    sim = _correcting_simulator("Book me Thursday.")
-    sim._config = CascadeSimulatorConfig()
-
-    assert await sim._maybe_arm_self_correction("Book me Friday.") == "Book me Friday."
+    assert extract_optional_line("NONE") == ""
 
 
 async def test_relevance_gate_allows_a_still_relevant_candidate():
@@ -507,41 +436,6 @@ def test_slip_never_reports_negative_for_a_clock_hiccup():
     assert interrupt_slip_ms(elapsed_s=-0.5) == 0
 
 
-def test_self_correction_rng_differs_per_conversation():
-    # Seeding every conversation with 0 made the 15% gate unreachable: Random(0)
-    # first drops below 0.15 on draw 26, and conversations run ~7 turns.
-    from eva.user_simulator.cascade.simulator import correction_rng
-
-    a = correction_rng("record-1")
-    b = correction_rng("record-2")
-
-    assert [a.random() for _ in range(5)] != [b.random() for _ in range(5)]
-
-
-def test_self_correction_rng_is_reproducible_for_the_same_conversation():
-    from eva.user_simulator.cascade.simulator import correction_rng
-
-    first = [correction_rng("record-7").random() for _ in range(3)]
-    again = [correction_rng("record-7").random() for _ in range(3)]
-
-    assert first == again
-
-
-def test_self_correction_gate_actually_opens_within_a_normal_conversation():
-    # Across a realistic spread of records, the 15% rate must be reachable.
-    from eva.user_simulator.cascade.constants import SELF_CORRECTION_RATE
-    from eva.user_simulator.cascade.simulator import correction_rng
-
-    turns_per_conversation = 7
-    fired = 0
-    for index in range(60):
-        rng = correction_rng(f"record-{index}")
-        if any(rng.random() < SELF_CORRECTION_RATE for _ in range(turns_per_conversation)):
-            fired += 1
-
-    assert fired > 20, f"only {fired}/60 conversations could ever self-correct"
-
-
 class _EndCallMessage:
     """LLM reply that hangs up via the tool and says nothing."""
 
@@ -559,12 +453,14 @@ class _EndCallMessage:
         self.tool_calls = [call]
 
 
-def _interrupting_simulator(message):
+def _interrupting_simulator(message, framework="elevenlabs"):
     """Bare simulator wired for _play_interruption only."""
     from eva.models.config import CascadeSimulatorConfig
     from eva.user_simulator.cascade.stt import TranscriptBuffer
 
     sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
+    sim._framework = framework
     sim._config = CascadeSimulatorConfig(enable_interruptions=True)
     sim._history = []
     sim._voice_id = "voice-f"
@@ -642,6 +538,7 @@ async def test_only_one_interruption_fires_per_assistant_turn():
     from eva.user_simulator.cascade.decisions import ListenerVerdict
 
     sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
     sim._config = CascadeSimulatorConfig(enable_interruptions=True)
     sim._phrase_cache = StubCache()
     sim._may_interrupt_this_turn = True
@@ -689,6 +586,7 @@ def test_inactivity_measures_contiguous_silence_not_cumulative():
     from eva.user_simulator.cascade.constants import INACTIVITY_TIMEOUT_MS, ms_to_ticks
 
     sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
     sim._ticks_assistant_silent = 0
     limit = ms_to_ticks(INACTIVITY_TIMEOUT_MS)
 
@@ -762,3 +660,49 @@ def test_unported_frameworks_default_to_the_real_time_adapter():
     from eva.user_simulator.cascade.simulator import adapter_class_for_framework
 
     assert adapter_class_for_framework("gemini_live") is RealtimeWSAdapter
+
+
+async def test_the_incomplete_marker_never_reaches_the_conversation_history():
+    sim = _interrupting_simulator("Active Directory.")
+    sim._stt.buffer.apply_partial("and I still nee")
+
+    await sim._play_interruption(_InterruptScheduler())
+
+    heard = [m["content"] for m in sim._history if m["role"] == "assistant"]
+    assert heard == ["Your account is unlocked. and I still nee"]
+
+
+async def test_a_slow_barge_in_survives_on_every_transport():
+    # Slip is now reported, not enforced: the assistant is mid-utterance, so the line lands.
+    from eva.user_simulator.cascade import simulator as module
+
+    for framework in ("openai_realtime", "pipecat"):
+        sim = _interrupting_simulator("Active Directory.", framework=framework)
+        scheduler = _InterruptScheduler()
+
+        original = module.interrupt_slip_ms
+        module.interrupt_slip_ms = lambda *, elapsed_s: 2400
+        try:
+            assert await sim._play_interruption(scheduler) is False
+        finally:
+            module.interrupt_slip_ms = original
+
+        assert scheduler.queued != [], framework
+
+
+async def test_a_barge_in_is_abandoned_when_a_new_assistant_turn_started_meanwhile():
+    # The assistant finished the utterance we reacted to and began another one while the
+    # line was being generated; firing now would answer speech the caller never heard.
+    sim = _interrupting_simulator("Active Directory.", framework="pipecat")
+    scheduler = _InterruptScheduler()
+
+    original_complete = sim._llm.complete
+
+    async def _complete_then_new_turn(messages, tools=None):
+        sim._assistant_turn_index += 1
+        return await original_complete(messages, tools)
+
+    sim._llm.complete = _complete_then_new_turn
+
+    assert await sim._play_interruption(scheduler) is False
+    assert scheduler.queued == []
