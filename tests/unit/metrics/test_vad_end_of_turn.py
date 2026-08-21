@@ -16,6 +16,7 @@ from eva.metrics.experience.vad_end_of_turn import (
     compute_vad_turn_sub_metrics,
     vad_turn_metrics_applicable,
 )
+from eva.utils.conversation_correctly_finished.final_turn import final_turn_input_flags
 
 from .conftest import make_metric_context
 
@@ -309,6 +310,48 @@ class TestClassifyTurns:
             stop_secs_silence_ms=[],
         )
         assert result == [{"turn_index": 0, "open_duration_ms": 0, "time_to_complete_ms": None, "completion": "stuck"}]
+
+    def test_dispatched_when_a_real_llm_turn_landed_in_an_otherwise_signal_less_window(self):
+        # Reproduces example/nonkrisp_13_0: the user-simulator's audio bridge ended the
+        # session mid-turn, so pipecat's VADController force-stopped speech itself ("no
+        # audio received while speaking") instead of the turn analyzer's is_complete or
+        # stop_secs mechanisms ever firing. Without checking audit_log.json this window
+        # would wrongly read as "stuck" even though the LLM genuinely got the turn and
+        # responded.
+        result = _classify_turns(
+            vad_starts=[1000],
+            vad_stops=[5908],
+            turn_metrics_events=[{"timestamp": 4892, "is_complete": False, "e2e_processing_time_ms": 104.0}],
+            stop_secs_silence_ms=[],
+            dispatched_user_turns=[(5912, "I do not need anything else today. Bye.")],
+        )
+        assert result[0]["completion"] == "dispatched"
+        assert result[0]["open_duration_ms"] == 5912 - 1000
+        assert result[0]["time_to_complete_ms"] is None
+        assert result[0]["transcript_text"] == "I do not need anything else today. Bye."
+        assert result[0]["final_turn_flags"] == final_turn_input_flags("I do not need anything else today. Bye.")
+
+    def test_dispatched_not_used_when_forced_stop_secs_already_matched(self):
+        # A window that legitimately earns the stop_secs fallback must stay "forced", not
+        # get reclassified just because a dispatched turn also happens to land inside it.
+        result = _classify_turns(
+            vad_starts=[1000],
+            vad_stops=[1050],
+            turn_metrics_events=[],
+            stop_secs_silence_ms=[3032.0],
+            dispatched_user_turns=[(1056, "some turn")],
+        )
+        assert result[0]["completion"] == "forced"
+
+    def test_stuck_when_no_dispatched_turn_falls_inside_the_window_either(self):
+        result = _classify_turns(
+            vad_starts=[1000, 5000],
+            vad_stops=[],
+            turn_metrics_events=[],
+            stop_secs_silence_ms=[],
+            dispatched_user_turns=[(90000, "unrelated later turn")],
+        )
+        assert result[0]["completion"] == "stuck"
 
     def test_multiple_turns_ordinal_stop_secs_matching(self):
         # Turn 0: natural completion. Turn 1: no natural completion -> gets the stop_secs value.
@@ -635,6 +678,30 @@ class TestComputeVadTurnSubMetrics:
         assert per_turn[1]["completion"] == "natural"
         # Only the natural completion feeds mean_time_to_complete_ms.
         assert sub_metrics["mean_time_to_complete_ms"].score == 100.0
+
+    def test_dispatched_turn_excluded_from_stuck_rate(self, tmp_path):
+        # Reproduces example/nonkrisp_13_0: no TurnMetricsData is_complete=True and no
+        # stop_secs line for the final window, but audit_log.json proves the LLM was
+        # dispatched and responded - so this must not count toward stuck_rate.
+        _write_config(tmp_path, turn_stop_strategy="turn_analyzer")
+        _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
+        _write_jsonl(
+            tmp_path / "pipecat_metrics.jsonl",
+            [
+                {
+                    "timestamp": 4892,
+                    "type": "TurnMetricsData",
+                    "value": {"is_complete": False, "e2e_processing_time_ms": 104.0},
+                }
+            ],
+        )
+        _write_audit_log(tmp_path / "audit_log.json", [(5912, "I do not need anything else today. Bye.")])
+        ctx = make_metric_context(output_dir=str(tmp_path))
+        result = compute_vad_turn_sub_metrics(ctx)
+        assert result is not None
+        sub_metrics, per_turn = result
+        assert per_turn[0]["completion"] == "dispatched"
+        assert sub_metrics["stuck_rate"].score == 0.0
 
     def test_stuck_rate_counts_mid_conversation_hangs_regardless_of_outcome(self, tmp_path):
         _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")

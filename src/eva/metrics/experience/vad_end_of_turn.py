@@ -185,7 +185,7 @@ def _classify_turns(
     dispatched_user_turns: list[tuple[int, str]] | None = None,
     turn_start_timestamps: set[int] | None = None,
 ) -> list[dict[str, Any]]:
-    """Classify each VAD-analyzer turn window as natural/forced/premature/stuck.
+    """Classify each VAD-analyzer turn window as natural/forced/dispatched/early/stuck.
 
     natural: one or more TurnMetricsData(is_complete=True) entries fall inside the window.
         A raw VAD-start window can legitimately contain more than one - confirmed against real
@@ -213,10 +213,28 @@ def _classify_turns(
         needed the stop_secs fallback instead of closing naturally. Both the text and the flags
         are omitted when no dispatched turn matches, so a flag is never computed on some other
         turn's words.
-    premature: a natural or forced completion (see above) whose window is immediately
-        followed by another VAD-start window that (a) itself resolves to a natural or forced
-        completion - not "stuck" - and (b) opened with no "turn_start" logged by pipecat's own
-        TurnTrackingObserver (see ``_load_turn_start_timestamps``). Both conditions matter:
+    dispatched: no natural completion AND no stop_secs-confirmed forced completion, but
+        audit_log.json shows a real LLM-dispatched user turn (see
+        ``_load_dispatched_user_turns``) landing inside this window's bounds. Confirmed
+        against real data (example/nonkrisp_13_0): the user-simulator's audio bridge called
+        stop() and signaled "session_ended" mid-turn (a race with its own end_call tool),
+        which starved pipecat's VADController of further audio; it emitted
+        "user_stopped_speaking (strategy: None)" via its own "no audio received while
+        speaking, forcing speech stop" fallback - a third closure path that is neither the
+        turn analyzer's is_complete signal nor its stop_secs timeout, so neither the
+        natural nor the forced branch above ever sees it. Without this check the window
+        would wrongly read as "stuck" despite the turn genuinely completing and getting a
+        real assistant response 1.1s later. Close time = the last dispatched turn found in
+        the window (the nearest available proxy for when it actually closed, since there's
+        no vad_stop/stop_secs data to trust here). Tagged with ``transcript_text`` and
+        ``final_turn_flags`` the same way ``forced`` is, from the same matched dispatched
+        turn - both omitted if the match is otherwise unavailable, which cannot actually
+        happen here since the match is what triggered this branch.
+    early: a natural or forced completion (see above) whose window is immediately
+        followed by another VAD-start window that (a) itself resolves to a natural, forced,
+        or dispatched completion - not "stuck" - and (b) opened with no "turn_start" logged
+        by pipecat's own TurnTrackingObserver (see ``_load_turn_start_timestamps``). Both
+        conditions matter:
         (b) alone is not enough, since a missing turn_start also shows up ahead of an
         ordinary Krisp VAD false-start/blip window that resolves "stuck" - confirmed against
         real Krisp data, where that shape is benign noise already covered by stuck_rate, not
@@ -233,15 +251,15 @@ def _classify_turns(
         window, or the run's final window with no following window at all, are untouched.
         Only checked when ``turn_start_timestamps`` is non-empty; an empty set means this
         run's pipeline never emits turn_start at all, which must read as "signal
-        unavailable", not "every transition is premature".
-    stuck: neither signal found for this window (including: no natural completion and no
-        vad_stop in range, in which case no stop_secs value is consumed — it's left for a
-        later window that actually earned it). This is common, not a rare edge
-        case (confirmed against real Krisp data: VAD false-starts and silently-swallowed
-        utterances both produce it) - a middle window's open_duration_ms uses its own
-        window_end (the next VAD start bounds it), never the conversation's global last
-        timestamp. Only the true last, open-ended window (window_end is None) falls back
-        to last_epoch as a conversation-end proxy.
+        unavailable", not "every transition is early".
+    stuck: no natural completion, no stop_secs-confirmed forced completion, and no dispatched
+        user turn landed in this window either (see "dispatched" above - checked first, so a
+        window is only ever "stuck" once that escape hatch has already failed). This is
+        common, not a rare edge case (confirmed against real Krisp data: VAD false-starts and
+        silently-swallowed utterances both produce it) - a middle window's open_duration_ms
+        uses its own window_end (the next VAD start bounds it), never the conversation's
+        global last timestamp. Only the true last, open-ended window (window_end is None)
+        falls back to last_epoch as a conversation-end proxy.
 
     ``turn_index`` on each result is a running count over the *output* list, not the raw
     window index - windows that split into multiple natural completions push every later
@@ -252,7 +270,7 @@ def _classify_turns(
     stop_secs_iter = iter(stop_secs_silence_ms)
     dispatched_user_turns = dispatched_user_turns or []
     # One entry list per raw VAD-start window (before turn_index is assigned), so the
-    # premature pass below can look at "the next window's own entries" without having to
+    # early pass below can look at "the next window's own entries" without having to
     # re-derive window boundaries from the flattened, already-turn_indexed output.
     per_window: list[list[dict[str, Any]]] = []
 
@@ -306,6 +324,30 @@ def _classify_turns(
                 per_window.append([result])
                 continue
 
+        dispatched_in_window = [
+            (ts, text)
+            for ts, text in dispatched_user_turns
+            if ts >= window_start and (window_end is None or ts < window_end)
+        ]
+        if dispatched_in_window:
+            # Neither the turn analyzer's is_complete signal nor its stop_secs timeout ever
+            # fired for this window, but audit_log.json proves the turn was genuinely
+            # dispatched to the LLM anyway - e.g. pipecat's VADController force-stopping
+            # speech itself ("no audio received while speaking") when the user-simulator's
+            # audio bridge ends the session mid-turn. close_time uses the last dispatched
+            # turn's own timestamp, the best available proxy in the absence of a trustworthy
+            # vad_stop/stop_secs pairing.
+            close_time, transcript_text = max(dispatched_in_window, key=lambda t: t[0])
+            result = {
+                "open_duration_ms": close_time - window_start,
+                "time_to_complete_ms": None,
+                "completion": "dispatched",
+                "transcript_text": transcript_text,
+                "final_turn_flags": final_turn_input_flags(transcript_text),
+            }
+            per_window.append([result])
+            continue
+
         close_time = window_end if window_end is not None else last_epoch
         per_window.append(
             [
@@ -317,16 +359,16 @@ def _classify_turns(
             ]
         )
 
-    # Premature pass: a window's last entry (the one bordering the next window) gets
+    # Early pass: a window's last entry (the one bordering the next window) gets
     # reclassified when the next window itself resolved to a real completion (not "stuck")
     # but opened with no turn_start - see "early" in this function's docstring for why
     # both conditions are required.
     if turn_start_timestamps:
         for i, (_, window_end) in enumerate(windows[:-1]):
             last_entry = per_window[i][-1]
-            next_window_resolved = per_window[i + 1][0]["completion"] in ("natural", "forced")
+            next_window_resolved = per_window[i + 1][0]["completion"] in ("natural", "forced", "dispatched")
             if (
-                last_entry["completion"] in ("natural", "forced")
+                last_entry["completion"] in ("natural", "forced", "dispatched")
                 and next_window_resolved
                 and window_end not in turn_start_timestamps
             ):
@@ -438,22 +480,21 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
 
     natural_count = sum(1 for t in per_turn if t["completion"] == "natural")
     forced_count = sum(1 for t in per_turn if t["completion"] == "forced")
-    premature_count = sum(1 for t in per_turn if t["completion"] == "early")
+    dispatched_count = sum(1 for t in per_turn if t["completion"] == "dispatched")
+    early_count = sum(1 for t in per_turn if t["completion"] == "early")
     strategy = _turn_stop_strategy(context.output_dir)
     if strategy != "krisp_viva_turn" and (natural_count + forced_count) > 0:
         sub["forced_completion_rate"] = _wrap(
             "forced_completion_rate", round(forced_count / (natural_count + forced_count), 4), True
         )
 
-    # Rate of turn-analyzer completions (natural or forced) that turned out to be premature -
-    # the turn analyzer reported the user done, but the next VAD-start window was never
-    # promoted to a real pipecat turn (see "early" in _classify_turns' docstring), meaning
-    # the user's utterance actually continued and got wrongly cut short.
-    resolved_count = natural_count + forced_count + premature_count
+    # Rate of turn-analyzer completions (natural, forced, or dispatched) that turned out to
+    # be early - the turn analyzer reported the user done, but the next VAD-start window was
+    # never promoted to a real pipecat turn (see "early" in _classify_turns' docstring),
+    # meaning the user's utterance actually continued and got wrongly cut short.
+    resolved_count = natural_count + forced_count + dispatched_count + early_count
     if resolved_count > 0:
-        sub["premature_detection_rate"] = _wrap(
-            "premature_detection_rate", round(premature_count / resolved_count, 4), True
-        )
+        sub["early_detection_rate"] = _wrap("early_detection_rate", round(early_count / resolved_count, 4), True)
 
     # Among forced completions specifically: does the final utterance's shape (short /
     # acknowledgement / spelled-out entity) explain why the turn analyzer needed the stop_secs

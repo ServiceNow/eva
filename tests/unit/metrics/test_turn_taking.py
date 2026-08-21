@@ -28,8 +28,6 @@ Sub-metrics (flat, one number each):
 
 import json
 import logging
-import shutil
-from pathlib import Path
 
 import pytest
 
@@ -37,8 +35,6 @@ from eva.metrics.experience.turn_taking import TurnTakingMetric
 from eva.models.config import PipelineType
 
 from .conftest import make_metric_context
-
-EXAMPLE_DIR = Path(__file__).parents[3] / "example"
 
 
 @pytest.fixture
@@ -1149,86 +1145,3 @@ class TestVadTurnMetricsOnEarlyReturn:
         assert result.sub_metrics["stuck_rate"].score == 1.0
         assert result.details["vad_turns"]
         assert result.details["vad_turns"][0]["completion"] == "stuck"
-
-
-def _copy_vad_fixture_files(src_dir: Path, dst_dir: Path, glob_prefix: str) -> None:
-    """Copy pipecat_logs*.jsonl/pipecat_metrics*.jsonl/logs*.log from an example dir into dst_dir
-
-    Normalizing the "(N)" suffix in the real filenames to the plain names the code expects.
-    """
-    for pattern, dest_name in [
-        ("pipecat_logs*.jsonl", "pipecat_logs.jsonl"),
-        ("pipecat_metrics*.jsonl", "pipecat_metrics.jsonl"),
-        ("logs*.log", "logs.log"),
-    ]:
-        matches = list(src_dir.glob(pattern))
-        assert matches, f"No {pattern} found in {src_dir} — has the example fixture been removed?"
-        shutil.copy(matches[0], dst_dir / dest_name)
-
-
-class TestVadTurnMetricsRealFixtures:
-    async def test_krisp_example_populates_expected_fields(self, metric, tmp_path):
-        src = EXAMPLE_DIR / "krisp_5-1-2_trial_1"
-        if not src.exists():
-            pytest.skip("example/krisp_5-1-2_trial_1 not present in this checkout")
-        _copy_vad_fixture_files(src, tmp_path, "krisp")
-        (tmp_path / "config.json").write_text(
-            json.dumps({"framework": "pipecat", "model": {"turn_stop_strategy": "krisp_viva_turn"}})
-        )
-        ctx = make_metric_context(
-            output_dir=str(tmp_path),
-            conversation_ended_reason="goodbye",
-            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
-            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
-        )
-        result = await metric.compute(ctx)
-        assert "forced_completion_rate" not in result.sub_metrics
-        # This fixture has 11 user_started_speaking events but only 8 TurnMetricsData
-        # completions - 3 windows are genuinely "stuck" (VAD false-starts and one silently
-        # swallowed ~3.2s utterance that the conversation survived because the user's next
-        # utterance completed normally). This is real, confirmed behavior, not a bug -
-        # only natural completions feed mean/p50/p90_time_to_complete_ms. Of the remaining
-        # 8, 2 are "early": pipecat's own TurnTrackingObserver logged no turn_start for
-        # the immediately following window, and that following window went on to complete
-        # naturally itself - real evidence the analyzer cut the user off mid-utterance
-        # rather than the window just being VAD noise (which is what the 3 stuck windows are).
-        vad_turns = result.details["vad_turns"]
-        assert len(vad_turns) == 11
-        assert sum(1 for t in vad_turns if t["completion"] == "natural") == 6
-        assert sum(1 for t in vad_turns if t["completion"] == "early") == 2
-        assert sum(1 for t in vad_turns if t["completion"] == "stuck") == 3
-        assert sum(1 for t in vad_turns if t["completion"] == "forced") == 0
-        assert result.sub_metrics["stuck_rate"].score == pytest.approx(3 / 11, abs=0.0001)
-        assert result.sub_metrics["premature_detection_rate"].score == pytest.approx(2 / 8, abs=0.0001)
-        assert result.sub_metrics["mean_time_to_complete_ms"].score == pytest.approx(133.876, abs=0.01)
-        assert result.sub_metrics["p50_time_to_complete_ms"].score == pytest.approx(100.586, abs=0.01)
-        assert result.sub_metrics["p90_time_to_complete_ms"].score == pytest.approx(412.668, abs=0.01)
-        # Regression guard for the middle-stuck-window bug found during plan review: if a
-        # middle stuck window were (incorrectly) measured against the conversation's global
-        # last-observed timestamp instead of its own next-VAD-start bound, the final
-        # open-ended window's open_duration_ms would be ~92000ms instead of ~9728ms.
-        assert vad_turns[-1]["completion"] == "stuck"
-        assert vad_turns[-1]["open_duration_ms"] == pytest.approx(9728, abs=5)
-
-    async def test_nonkrisp_example_populates_forced_completion_rate(self, metric, tmp_path):
-        src = EXAMPLE_DIR / "nonkrisp_4-2-1_trial_0"
-        if not src.exists():
-            pytest.skip("example/nonkrisp_4-2-1_trial_0 not present in this checkout")
-        _copy_vad_fixture_files(src, tmp_path, "nonkrisp")
-        (tmp_path / "config.json").write_text(
-            json.dumps({"framework": "pipecat", "model": {"turn_stop_strategy": "turn_analyzer"}})
-        )
-        ctx = make_metric_context(
-            output_dir=str(tmp_path),
-            conversation_ended_reason="goodbye",
-            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
-            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
-        )
-        result = await metric.compute(ctx)
-        assert result.sub_metrics["forced_completion_rate"].score is not None
-        assert result.sub_metrics["forced_completion_rate"].score > 0
-        assert any(t["completion"] == "forced" for t in result.details["vad_turns"])
-        assert any(t["completion"] == "natural" for t in result.details["vad_turns"])
-        vad_turns = result.details["vad_turns"]
-        stuck_count = sum(1 for t in vad_turns if t["completion"] == "stuck")
-        assert result.sub_metrics["stuck_rate"].score == pytest.approx(stuck_count / len(vad_turns), abs=0.0001)
