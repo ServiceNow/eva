@@ -60,3 +60,11 @@ def test_current_text_does_not_consume_the_committed_text():
     buffer.current_text()
 
     assert buffer.take_committed() == "hello"
+
+
+def test_heard_text_never_carries_the_prompt_marker_into_the_transcript():
+    buffer = TranscriptBuffer()
+    buffer.commit("I found your order.")
+    buffer.apply_partial("It includes a keyboa")
+
+    assert buffer.heard_text() == "I found your order. It includes a keyboa"

@@ -30,6 +30,10 @@ class TranscriptBuffer:
             return self.committed
         return f"{self.committed} {self.in_flight} [CURRENTLY SPEAKING, INCOMPLETE]".strip()
 
+    def heard_text(self) -> str:
+        """Return everything heard so far without the in-progress marker, for transcript use."""
+        return f"{self.committed} {self.in_flight}".strip()
+
     def take_committed(self) -> str:
         """Return and clear the committed text."""
         text = self.committed
