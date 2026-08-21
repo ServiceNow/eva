@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from eva.utils.logging import get_logger
@@ -20,11 +21,23 @@ class DecisionLLM(Protocol):
 
 
 @dataclass(frozen=True)
+class CheckTrace:
+    """What one YES/NO check actually did, for the diagnostic trace."""
+
+    ran: bool
+    raw: str = ""
+    latency_ms: int = 0
+    error: str = ""
+
+
+@dataclass(frozen=True)
 class ListenerVerdict:
     """Outcome of one check tick."""
 
     should_interrupt: bool
     should_backchannel: bool
+    interrupt_trace: CheckTrace = field(default_factory=lambda: CheckTrace(ran=False))
+    backchannel_trace: CheckTrace = field(default_factory=lambda: CheckTrace(ran=False))
 
 
 def parse_yes_no(raw: str) -> bool:
@@ -51,24 +64,32 @@ class ListenerDecisions:
         self, conversation_history: str, *, allow_interrupt: bool, allow_backchannel: bool
     ) -> ListenerVerdict:
         """Run whichever checks are enabled. Interrupt wins ties (tau: streaming.py:2549)."""
-        interrupt, backchannel = await asyncio.gather(
+        interrupt_trace, backchannel_trace = await asyncio.gather(
             self._check(self._interrupt_prompt, conversation_history, enabled=allow_interrupt),
             self._check(self._backchannel_prompt, conversation_history, enabled=allow_backchannel),
         )
-        return ListenerVerdict(should_interrupt=interrupt, should_backchannel=backchannel and not interrupt)
+        interrupt = interrupt_trace.ran and parse_yes_no(interrupt_trace.raw)
+        backchannel = backchannel_trace.ran and parse_yes_no(backchannel_trace.raw)
+        return ListenerVerdict(
+            should_interrupt=interrupt,
+            should_backchannel=backchannel and not interrupt,
+            interrupt_trace=interrupt_trace,
+            backchannel_trace=backchannel_trace,
+        )
 
-    async def _check(self, template: str, conversation_history: str, *, enabled: bool) -> bool:
-        """Ask the model one YES/NO question, returning False on anything unexpected.
+    async def _check(self, template: str, conversation_history: str, *, enabled: bool) -> CheckTrace:
+        """Ask the model one YES/NO question, reporting what happened rather than just the answer.
 
         Both templates are filled with the same arguments; `str.format` ignores the ones a
         given prompt does not use, so the backchannel prompt needs no goal slot.
         """
         if not enabled:
-            return False
+            return CheckTrace(ran=False)
+        started = time.monotonic()
         try:
             filled = template.format(conversation_history=conversation_history, user_goal=self._user_goal)
             reply = await self._llm.decide(filled)
         except Exception as exc:
             logger.warning(f"Listener check failed, defaulting to no action: {exc}")
-            return False
-        return parse_yes_no(reply)
+            return CheckTrace(ran=True, latency_ms=int((time.monotonic() - started) * 1000), error=str(exc))
+        return CheckTrace(ran=True, raw=reply, latency_ms=int((time.monotonic() - started) * 1000))
