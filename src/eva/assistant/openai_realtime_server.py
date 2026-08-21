@@ -92,6 +92,8 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
     pauses to think is not mistaken for a caller who stopped talking.
     """
 
+    supports_unpaced_output = True
+
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 

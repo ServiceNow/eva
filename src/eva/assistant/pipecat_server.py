@@ -99,6 +99,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         port: int,
         conversation_id: str,
         language: str = "en",
+        paced_output: bool = True,
         turn_end_fallback_time: int | None = None,
     ):
         """Initialize the assistant server.
@@ -113,6 +114,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
             port: Port to listen on
             conversation_id: Unique ID for this conversation
             language: BCP 47 language tag for STT/TTS services (e.g. 'en', 'fr', 'es-MX')
+            paced_output: Accepted for interface parity; must be True, since Pipecat's output
+                pacing lives in its own transport and is not ours to remove.
             turn_end_fallback_time: Seconds of user-turn silence after the assistant stops
                 speaking before nudging it to retry. ``None`` disables the fallback.
         """
@@ -126,6 +129,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
             port=port,
             conversation_id=conversation_id,
             language=language,
+            paced_output=paced_output,
         )
 
         self.agentic_system = None  # Will be set in _handle_session

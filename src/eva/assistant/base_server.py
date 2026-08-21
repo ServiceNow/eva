@@ -41,6 +41,15 @@ class AbstractAssistantServer(ABC):
     5. Populate the AuditLog with conversation events
     """
 
+    supports_unpaced_output: bool = False
+    """Whether this server can honor ``paced_output=False``.
+
+    Only a server whose outbound relay throttle we own can drop it. A server whose
+    pacing lives inside a third-party runtime cannot, and must reject the request
+    rather than accept it and keep pacing, which would leave a tick-driven caller
+    believing the assistant was unpaced.
+    """
+
     def __init__(
         self,
         current_date_time: str,
@@ -74,6 +83,11 @@ class AbstractAssistantServer(ABC):
         self.current_date_time = current_date_time
         self.pipeline_config = pipeline_config
         self.language = language
+        if not paced_output and not self.supports_unpaced_output:
+            raise ValueError(
+                f"{type(self).__name__} cannot honor paced_output=False: its output pacing is not ours to remove. "
+                "Tick-driving this framework requires leaving pacing on."
+            )
         self.paced_output = paced_output
         self.initial_message = get_initial_message(language)
         self.agent: AgentConfig = agent

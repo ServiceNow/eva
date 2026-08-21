@@ -129,6 +129,7 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
         port: int,
         conversation_id: str,
         language: str = "en",
+        paced_output: bool = True,
     ):
         super().__init__(
             current_date_time=current_date_time,
@@ -140,6 +141,7 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
             port=port,
             conversation_id=conversation_id,
             language=language,
+            paced_output=paced_output,
         )
 
         self._audio_sample_rate = _RECORDING_SAMPLE_RATE
