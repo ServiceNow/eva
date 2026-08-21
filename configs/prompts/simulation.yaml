@@ -300,7 +300,7 @@ user_simulator:
     ## Backup Behavior
     If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using a phonetic alphabet appropriate for your language, one character at a time. ONLY do this if the agent mishears you the first time.
     For English, use the NATO phonetic alphabet (e.g. "C as in Charlie, X as in X-ray").
-    For other languages, spell out characters using their standard phonetic names in your language.
+    For other languages, spell out characters using the standard phonetic alphabet or character names used in that language.
 
   system_prompt_itsm: |
     You are an employee at a company calling the IT service desk.
@@ -401,7 +401,7 @@ user_simulator:
     ## Backup Behavior
     If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using a phonetic alphabet appropriate for your language, one character at a time. ONLY do this if the agent mishears you the first time.
     For English, use the NATO phonetic alphabet (e.g. "C as in Charlie, X as in X-ray").
-    For other languages, spell out characters using their standard phonetic names in your language.
+    For other languages, spell out characters using the standard phonetic alphabet or character names used in that language.
     
     IMPORTANT: Before ending the conversation, confirm with the agent that there are no outstanding actions. The end_call tool should only be called in a turn that is a brief goodbye — never in the same turn where you are providing the agent with data, an identifier, a request to transfer to a live agent, an approval to proceed, or any kind of additional information.
 
@@ -504,6 +504,6 @@ user_simulator:
     ## Backup Behavior
     If the agent mishears you and gets any information wrong, repeat it even slower and spell it out using a phonetic alphabet appropriate for your language, one character at a time. ONLY do this if the agent mishears you the first time.
     For English, use the NATO phonetic alphabet (e.g. "C as in Charlie, X as in X-ray").
-    For other languages, spell out characters using their standard phonetic names in your language.
+    For other languages, spell out characters using the standard phonetic alphabet or character names used in that language.
     
     IMPORTANT: Before ending the conversation, confirm with the agent that there are no outstanding actions. The end_call tool should only be called in a turn that is a brief goodbye — never in the same turn where you are providing the agent with data, an identifier, a request to transfer to a live agent, an approval to proceed, or any kind of additional information.
