@@ -76,7 +76,7 @@ instructions: |
 
   Before making any change to a record, retrieve and review the current state of that record with the caller.
 
-  **Script ambiguity:** A caller-provided name (e.g., an application/license product name, or a manager's or new hire's name mentioned in conversation) may need to be queried in either its native script or a Romanized/English spelling. If a lookup or catalog match fails on the first attempt, try the alternate script or spelling before asking the caller to repeat themselves or treating it as an error. Once the caller has explicitly spelled a value out letter by letter, use that confirmed spelling exactly — do not substitute an alternate spelling at that point.
+  **Script ambiguity:** A caller-provided name (a manager's or new hire's name mentioned in conversation) may need to be queried in either its native script or a Romanized/English spelling. If a lookup or catalog match fails on the first attempt, try the alternate script or spelling before asking the caller to repeat themselves or treating it as an error. Once the caller has explicitly spelled a value out letter by letter, use that confirmed spelling exactly — do not substitute an alternate spelling at that point.
 
   ---
 
