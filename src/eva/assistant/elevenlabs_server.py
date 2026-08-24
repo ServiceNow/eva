@@ -134,6 +134,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
         port: int,
         conversation_id: str,
         language: str = "en",
+        paced_output: bool = True,
     ):
         super().__init__(
             current_date_time=current_date_time,
@@ -145,6 +146,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
             port=port,
             conversation_id=conversation_id,
             language=language,
+            paced_output=paced_output,
         )
 
         # Recording sample rate (ElevenLabs operates at 16 kHz)

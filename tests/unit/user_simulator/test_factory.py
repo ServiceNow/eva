@@ -43,3 +43,26 @@ def test_factory_selects_openai_realtime(tmp_path):
 
     assert isinstance(simulator, OpenAIRealtimeUserSimulator)
     assert simulator.caller_model == "gpt-realtime-1.5"
+
+
+def test_factory_selects_cascade(tmp_path):
+    from eva.models.config import CascadeSimulatorConfig
+    from eva.user_simulator.cascade.simulator import CascadeUserSimulator
+    from eva.utils import router
+
+    router.init(
+        model_list=[
+            {
+                "model_name": "gpt-5.5",
+                "litellm_params": {"model": "openai/gpt-5.5", "api_key": "test-key"},
+            }
+        ]
+    )
+    try:
+        config = CascadeSimulatorConfig()
+        simulator = create_user_simulator(config, **_kwargs(tmp_path))
+
+        assert isinstance(simulator, CascadeUserSimulator)
+        assert simulator.provider == "cascade"
+    finally:
+        router.reset()

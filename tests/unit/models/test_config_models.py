@@ -1225,3 +1225,75 @@ class TestUserSimulatorConfig:
                 user_simulator={"provider": "openai_realtime"},
                 perturbation={"accent": "french"},
             )
+
+    def test_cascade_rejects_accent_perturbation_during_config_load(self):
+        with pytest.raises(ValidationError, match="Accent perturbations require the ElevenLabs user simulator"):
+            _config(
+                env_vars=_BASE_ENV,
+                user_simulator={"provider": "cascade"},
+                perturbation={"accent": "french"},
+            )
+
+    def test_cascade_nested_environment_configuration(self):
+        from eva.models.config import CascadeSimulatorConfig
+
+        config = _config(
+            env_vars=_BASE_ENV
+            | {
+                "EVA_USER_SIMULATOR__PROVIDER": "cascade",
+                "EVA_USER_SIMULATOR__STT_PARAMS": json.dumps({"model": "x"}),
+            }
+        )
+
+        assert isinstance(config.user_simulator, CascadeSimulatorConfig)
+        assert config.user_simulator.stt_params == {"model": "x"}
+
+
+def test_cascade_simulator_config_defaults():
+    from eva.models.config import CascadeSimulatorConfig
+
+    config = CascadeSimulatorConfig()
+
+    assert config.provider == "cascade"
+    assert config.stt == "elevenlabs"
+    assert config.stt_params["model"] == "scribe_v2_realtime"
+    assert config.tts == "cartesia"
+    assert config.tts_params["model"] == "sonic-3.5"
+    assert config.llm == "user-llm"
+
+
+def test_user_simulator_union_discriminates_cascade():
+    from pydantic import TypeAdapter
+
+    from eva.models.config import CascadeSimulatorConfig, UserSimulatorConfig
+
+    parsed = TypeAdapter(UserSimulatorConfig).validate_python({"provider": "cascade"})
+
+    assert isinstance(parsed, CascadeSimulatorConfig)
+
+
+def test_cascade_behaviors_default_off():
+    from eva.models.config import CascadeSimulatorConfig
+
+    config = CascadeSimulatorConfig()
+
+    assert config.enable_backchannel is False
+    assert config.enable_interruptions is False
+    assert config.speculative_generation is False
+
+
+def test_cascade_behaviors_can_be_enabled_independently():
+    from eva.models.config import CascadeSimulatorConfig
+
+    config = CascadeSimulatorConfig(enable_backchannel=True)
+
+    assert config.enable_backchannel is True
+    assert config.enable_interruptions is False
+
+
+def test_cascade_decision_llm_defaults_to_the_caller_llm():
+    from eva.models.config import CascadeSimulatorConfig
+
+    config = CascadeSimulatorConfig()
+
+    assert config.decision_llm == config.llm

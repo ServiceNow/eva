@@ -476,8 +476,51 @@ class OpenAIRealtimeSimulatorConfig(BaseModel):
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
 
+class CascadeSimulatorConfig(BaseModel):
+    """Self-hosted STT/LLM/TTS caller pipeline with tick-based turn-taking."""
+
+    provider: Literal["cascade"] = "cascade"
+
+    stt: str = Field("elevenlabs", description="Streaming STT provider for transcribing assistant audio.")
+    stt_params: dict[str, Any] = Field(
+        default_factory=lambda: {"model": "scribe_v2_realtime"},
+        description="Provider-native keyword arguments passed through to the STT client.",
+    )
+
+    llm: str = Field(
+        "user-llm",
+        description=(
+            "Caller LLM, resolved via the same EVA_MODEL_LIST router as the assistant. Defaults to a "
+            "deployment named 'user-llm' so the caller's model/params (e.g. reasoning_effort) can differ "
+            "from whatever the assistant under test uses."
+        ),
+    )
+
+    tts: str = Field("cartesia", description="TTS provider for the simulated caller's speech.")
+    tts_params: dict[str, Any] = Field(
+        default_factory=lambda: {"model": "sonic-3.5"},
+        description="Provider-native keyword arguments passed through to the TTS client.",
+    )
+
+    decision_llm: str = Field(
+        "user-llm",
+        description=(
+            "Model for the YES/NO interrupt, backchannel, and relevance checks. Defaults to the "
+            "caller's own deployment so it resolves through the same EVA_MODEL_LIST router; point "
+            "it at a cheaper deployment to cut the cost of the per-tick checks."
+        ),
+    )
+
+    enable_backchannel: bool = Field(False, description="Caller emits continuers while the assistant speaks.")
+    enable_interruptions: bool = Field(False, description="Caller may barge in reacting to the assistant mid-turn.")
+    speculative_generation: bool = Field(
+        False,
+        description="Pre-render a candidate interruption on the turn call, gated by a relevance check before firing.",
+    )
+
+
 UserSimulatorConfig = Annotated[
-    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig | CascadeSimulatorConfig,
     Field(discriminator="provider"),
 ]
 
@@ -734,13 +777,13 @@ class RunConfig(BaseSettings):
         config is unused and conflicting env vars are harmless.
         """
         if (
-            isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig)
+            not isinstance(self.user_simulator, ElevenLabsSimulatorConfig)
             and self.perturbation is not None
             and self.perturbation.accent is not None
         ):
             raise ValueError(
                 "Accent perturbations require the ElevenLabs user simulator; "
-                "OpenAI Realtime supports behavior, noise, and connection perturbations."
+                "other providers support behavior, noise, and connection perturbations."
             )
 
         if self.max_rerun_attempts == 0 or self.aggregate_only:
