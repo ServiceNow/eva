@@ -55,9 +55,9 @@
       "평면 주차장"
     ],
     "it": [
-      "parcheggio esterno generale",
-      "parcheggio scoperto generale",
-      "piazzale generale"
+      "parcheggio generale esterno",
+      "parcheggio generale scoperto",
+      "parcheggio generale all'aperto"
     ]
   }
 }
