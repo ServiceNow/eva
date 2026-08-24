@@ -9,6 +9,7 @@ from eva.metrics.experience.vad_end_of_turn import (
     _find_run_config,
     _load_dispatched_user_turns,
     _load_stop_secs_silence_ms,
+    _load_turn_fallback_timestamps,
     _load_turn_metrics_events,
     _load_turn_start_timestamps,
     _load_vad_events,
@@ -205,6 +206,38 @@ class TestLoadDispatchedUserTurns:
         assert _load_dispatched_user_turns(str(tmp_path)) == [(4000, "good")]
 
 
+class TestLoadTurnFallbackTimestamps:
+    def test_extracts_and_sorts_fallback_timestamps(self, tmp_path):
+        (tmp_path / "audit_log.json").write_text(
+            json.dumps(
+                {
+                    "transcript": [
+                        {"value": "second fallback", "message_type": "turn_fallback", "timestamp": "5000"},
+                        {"value": "first fallback", "message_type": "turn_fallback", "timestamp": "1000"},
+                        {"value": "user text", "message_type": "user", "timestamp": "2000"},
+                    ]
+                }
+            )
+        )
+        assert _load_turn_fallback_timestamps(str(tmp_path)) == [1000, 5000]
+
+    def test_empty_when_audit_log_missing(self, tmp_path):
+        assert _load_turn_fallback_timestamps(str(tmp_path)) == []
+
+    def test_skips_entries_with_unusable_timestamp(self, tmp_path):
+        (tmp_path / "audit_log.json").write_text(
+            json.dumps(
+                {
+                    "transcript": [
+                        {"value": "bad", "message_type": "turn_fallback", "timestamp": "not-a-number"},
+                        {"value": "good", "message_type": "turn_fallback", "timestamp": "3000"},
+                    ]
+                }
+            )
+        )
+        assert _load_turn_fallback_timestamps(str(tmp_path)) == [3000]
+
+
 class TestTranscriptForVadStop:
     def test_matches_turn_dispatched_just_after_the_stop(self):
         # Measured against real fixtures: dispatch lands 3-8ms after the closing vad_stop.
@@ -312,7 +345,7 @@ class TestClassifyTurns:
         assert result == [{"turn_index": 0, "open_duration_ms": 0, "time_to_complete_ms": None, "completion": "stuck"}]
 
     def test_dispatched_when_a_real_llm_turn_landed_in_an_otherwise_signal_less_window(self):
-        # Reproduces example/nonkrisp_13_0: the user-simulator's audio bridge ended the
+        # Reproduces example: the user-simulator's audio bridge ended the
         # session mid-turn, so pipecat's VADController force-stopped speech itself ("no
         # audio received while speaking") instead of the turn analyzer's is_complete or
         # stop_secs mechanisms ever firing. Without checking audit_log.json this window
@@ -462,7 +495,7 @@ class TestClassifyTurns:
         assert result[1]["time_to_complete_ms"] is None
 
     def test_forced_completion_does_not_double_count_silence_ms(self):
-        # Regression guard, values taken from example/nonkrisp_2 (real Smart Turn run):
+        # Regression guard, values taken from an example (real Smart Turn run):
         # vad_start=1787171562461, vad_stop=1787171568321, stop_secs silence=3032.0,
         # and the LLM-dispatched turn in audit_log.json landed at 1787171568327 - only
         # 6ms after vad_stop. That means vad_stop (user_stopped_speaking) already fires
@@ -479,7 +512,7 @@ class TestClassifyTurns:
         assert result[0]["open_duration_ms"] == 1787171568321 - 1787171562461
 
     def test_natural_completion_reclassified_early_when_next_turn_never_started(self):
-        # Reproduces example/nonkrisp_12_0: the turn analyzer reported is_complete=True on
+        # Reproduces example: the turn analyzer reported is_complete=True on
         # "Sure. My employee ID is emp zero four eight two seven one." but the user was still
         # mid-utterance. Real evidence of that: pipecat's own TurnTrackingObserver never
         # logged a turn_start for the very next VAD-start window (5000) - it stayed inside
@@ -560,6 +593,70 @@ class TestClassifyTurns:
             turn_start_timestamps=set(),
         )
         assert result[0]["completion"] == "natural"
+
+    def test_natural_completion_followed_by_stuck_fallback_is_not_dropped(self):
+        # Reproduces example: window 0 closes an earlier, unrelated turn
+        # naturally at 1103, but the turn analyzer's VAD never fires again until window 1's
+        # own vad_start at 60000 - a genuinely separate turn got stuck in between and only
+        # got resolved via the 20s turn-end fallback nudge (audit_log's turn_fallback marker,
+        # timestamped mid-gap at 45000). That stuck turn must not be silently swallowed just
+        # because the window already had an earlier, unrelated natural completion.
+        result = _classify_turns(
+            vad_starts=[1000, 60000],
+            vad_stops=[],
+            turn_metrics_events=[{"timestamp": 1103, "is_complete": True, "e2e_processing_time_ms": 103.0}],
+            stop_secs_silence_ms=[],
+            turn_fallback_timestamps=[45000],
+        )
+        assert result[0]["completion"] == "natural"
+        assert result[1] == {
+            "turn_index": 1,
+            "open_duration_ms": 60000 - 1103,
+            "time_to_complete_ms": None,
+            "completion": "stuck",
+        }
+
+    def test_natural_completion_with_no_trailing_fallback_marker_stays_a_single_entry(self):
+        # Ordinary case: a natural completion followed only by normal inter-turn silence
+        # (assistant response + user think time) before the next window's vad_start - with
+        # no turn_fallback marker as evidence a turn got stuck in the gap, no trailing entry
+        # should be fabricated for window 0 itself. Otherwise every ordinary turn transition
+        # would be misread as containing a stuck turn. (Window 1, the next raw VAD-start
+        # window, legitimately resolves "stuck" on its own since it has no signal at all -
+        # that's unrelated to this fix.)
+        result = _classify_turns(
+            vad_starts=[1000, 60000],
+            vad_stops=[],
+            turn_metrics_events=[{"timestamp": 1103, "is_complete": True, "e2e_processing_time_ms": 103.0}],
+            stop_secs_silence_ms=[],
+            turn_fallback_timestamps=[],
+        )
+        assert result[0] == {
+            "turn_index": 0,
+            "open_duration_ms": 103,
+            "time_to_complete_ms": 103.0,
+            "completion": "natural",
+        }
+        assert len(result) == 2
+        assert result[1]["completion"] == "stuck"
+
+    def test_natural_completion_followed_by_stuck_fallback_in_open_ended_window(self):
+        # Same shape as above but in the run's final, open-ended window (window_end=None):
+        # close_time must fall back to the fallback marker's own timestamp rather than a
+        # nonexistent next-window bound.
+        result = _classify_turns(
+            vad_starts=[1000],
+            vad_stops=[],
+            turn_metrics_events=[{"timestamp": 1103, "is_complete": True, "e2e_processing_time_ms": 103.0}],
+            stop_secs_silence_ms=[],
+            turn_fallback_timestamps=[45000],
+        )
+        assert result[1] == {
+            "turn_index": 1,
+            "open_duration_ms": 45000 - 1103,
+            "time_to_complete_ms": None,
+            "completion": "stuck",
+        }
 
     def test_only_last_split_segment_in_a_multi_natural_window_can_be_early(self):
         # Two naturals split out of one raw window. Only the second (the one bordering the
@@ -680,7 +777,7 @@ class TestComputeVadTurnSubMetrics:
         assert sub_metrics["mean_time_to_complete_ms"].score == 100.0
 
     def test_dispatched_turn_excluded_from_stuck_rate(self, tmp_path):
-        # Reproduces example/nonkrisp_13_0: no TurnMetricsData is_complete=True and no
+        # Reproduces example: no TurnMetricsData is_complete=True and no
         # stop_secs line for the final window, but audit_log.json proves the LLM was
         # dispatched and responded - so this must not count toward stuck_rate.
         _write_config(tmp_path, turn_stop_strategy="turn_analyzer")
@@ -839,6 +936,45 @@ class TestComputeVadTurnSubMetrics:
         sub_metrics, per_turn = result
         assert per_turn[0]["completion"] == "natural"
         assert sub_metrics["early_detection_rate"].score == 0.0
+
+    def test_stuck_rate_counts_fallback_stuck_turn_hidden_behind_earlier_natural_completion(self, tmp_path):
+        # Reproduces example: window 0 has an earlier,
+        # unrelated natural completion, but the turn analyzer's VAD then went stuck on a
+        # separate turn that only got resolved via the 20s turn-end fallback nudge -
+        # recorded in audit_log.json as a turn_fallback entry, not a real "user" dispatch.
+        # Must count toward stuck_rate rather than vanishing because the window already
+        # resolved once.
+        _write_config(tmp_path, turn_stop_strategy="turn_analyzer")
+        _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
+        _write_jsonl(
+            tmp_path / "pipecat_metrics.jsonl",
+            [
+                {
+                    "timestamp": 1103,
+                    "type": "TurnMetricsData",
+                    "value": {"is_complete": True, "e2e_processing_time_ms": 103.0},
+                }
+            ],
+        )
+        (tmp_path / "audit_log.json").write_text(
+            json.dumps(
+                {
+                    "transcript": [
+                        {
+                            "value": "[TURN-END FALLBACK after 20s] partial user speech: 'Mac fourteen inch.'",
+                            "message_type": "turn_fallback",
+                            "timestamp": "45000",
+                        }
+                    ]
+                }
+            )
+        )
+        ctx = make_metric_context(output_dir=str(tmp_path))
+        result = compute_vad_turn_sub_metrics(ctx)
+        assert result is not None
+        sub_metrics, per_turn = result
+        assert [t["completion"] for t in per_turn] == ["natural", "stuck"]
+        assert sub_metrics["stuck_rate"].score == 0.5
 
     def test_stuck_rate_zero_on_clean_all_natural_ending(self, tmp_path):
         _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")
