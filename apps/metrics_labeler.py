@@ -296,20 +296,37 @@ def render_judges_per_turn(record: dict, turn_id: int) -> None:
 
 
 def _metric_stats(metric: str, lang: str) -> dict:
+    """Landing-page stats, counted by *completeness* (not just saved).
+
+    A review counts only once it passes `is_review_complete`; a record is
+    fully complete when it has REVIEWS_PER_RECORD complete reviews."""
+    granularity = METRICS[metric]["granularity"]
     dataset_path, labels_path = metric_paths(metric, lang)
     records = load_dataset(str(dataset_path))
     labels = load_labels(labels_path)
     total = len(records) * REVIEWS_PER_RECORD
-    done = sum(min(len(labels.get(str(r["id"]), [])), REVIEWS_PER_RECORD) for r in records)
+
+    done = 0                       # complete reviews (capped per record)
+    records_complete = 0           # records with all required reviews complete
+    in_progress = 0                # records with ≥1 saved review but not complete
     per_labeler: Counter = Counter()
-    for reviews in labels.values():
-        for r in reviews:
-            name = (r.get("labeler") or "?").strip() or "?"
+    for r in records:
+        reviews = labels.get(str(r["id"]), [])
+        complete = [rev for rev in reviews if is_review_complete(granularity, rev)[0]]
+        done += min(len(complete), REVIEWS_PER_RECORD)
+        if len(complete) >= REVIEWS_PER_RECORD:
+            records_complete += 1
+        elif reviews:
+            in_progress += 1
+        for rev in complete:
+            name = (rev.get("labeler") or "?").strip() or "?"
             per_labeler[name] += 1
     return {
         "num_records": len(records),
         "total": total,
         "done": done,
+        "records_complete": records_complete,
+        "in_progress": in_progress,
         "per_labeler": per_labeler,
     }
 
@@ -339,15 +356,18 @@ def _render_landing() -> None:
 
                 stats = _metric_stats(metric, lang)
                 pct = stats["done"] / stats["total"] if stats["total"] else 0.0
-                st.progress(pct, text=f"{stats['done']} / {stats['total']} reviews")
-                st.caption(f"{stats['num_records']} records × {REVIEWS_PER_RECORD} reviews")
+                st.progress(pct, text=f"{stats['done']} / {stats['total']} reviews complete")
+                st.caption(
+                    f"✅ {stats['records_complete']}/{stats['num_records']} records fully complete"
+                    + (f" · ◐ {stats['in_progress']} in progress" if stats["in_progress"] else "")
+                )
 
-                st.markdown("**By labeler**")
+                st.markdown("**Complete reviews by labeler**")
                 if stats["per_labeler"]:
                     for name, count in stats["per_labeler"].most_common():
                         st.markdown(f"- **{name}** — {count}")
                 else:
-                    st.caption("_No reviews yet._")
+                    st.caption("_No complete reviews yet._")
 
                 if st.button(
                     f"Open {metric} ({lang}) →",
@@ -393,12 +413,22 @@ def is_review_complete(granularity: str, payload: dict) -> tuple[bool, list[str]
     return True, []
 
 
-def _record_status_glyph(rid, labels: dict) -> str:
-    """Dropdown marker: ✅ fully reviewed, ◐ partially, • untouched."""
-    n = len(labels.get(str(rid), []))
-    if n >= REVIEWS_PER_RECORD:
+def _num_complete_reviews(rid, labels: dict, granularity: str) -> int:
+    return sum(
+        1 for rev in labels.get(str(rid), []) if is_review_complete(granularity, rev)[0]
+    )
+
+
+def _record_complete(rid, labels: dict, granularity: str) -> bool:
+    """A record is complete when it has REVIEWS_PER_RECORD complete reviews."""
+    return _num_complete_reviews(rid, labels, granularity) >= REVIEWS_PER_RECORD
+
+
+def _record_status_glyph(rid, labels: dict, granularity: str) -> str:
+    """Dropdown marker: ✅ complete, ◐ saved but incomplete, • untouched."""
+    if _record_complete(rid, labels, granularity):
         return "✅"
-    if n > 0:
+    if labels.get(str(rid)):
         return "◐"
     return "•"
 
@@ -406,6 +436,34 @@ def _record_status_glyph(rid, labels: dict) -> str:
 def _go_to_record(record_key: str, new_idx: int, n: int) -> None:
     """Callback to move the record selectbox to `new_idx` (clamped)."""
     st.session_state[record_key] = max(0, min(new_idx, n - 1))
+
+
+def _norm_turn(v: dict | None) -> tuple:
+    v = v or {}
+    return (
+        v.get("rating"),
+        tuple(sorted(v.get("failure_modes") or [])),
+        (v.get("explanation") or "").strip(),
+    )
+
+
+def _norm_whole(d: dict | None) -> tuple:
+    d = d or {}
+    return (
+        d.get("rating"),
+        tuple(sorted(d.get("failure_modes") or [])),
+        (d.get("explanation") or "").strip(),
+    )
+
+
+def has_unsaved_changes(granularity: str, payload: dict, saved_review: dict | None) -> bool:
+    """True if the current inputs differ from the saved review (or from empty when unsaved)."""
+    if granularity in ("per_turn", "speech_fidelity"):
+        cur = {tk: _norm_turn(v) for tk, v in (payload.get("per_turn") or {}).items()}
+        saved_pt = (saved_review or {}).get("per_turn") or {}
+        saved = {tk: _norm_turn(saved_pt.get(tk)) for tk in cur}
+        return cur != saved
+    return _norm_whole(payload) != _norm_whole(saved_review)
 
 
 def main() -> None:
@@ -492,7 +550,7 @@ def main() -> None:
         idx = st.selectbox(
             "Select record",
             options=list(range(len(records))),
-            format_func=lambda i: f"{_record_status_glyph(records[i]['id'], labels)} {records[i]['id']:02d}",
+            format_func=lambda i: f"{_record_status_glyph(records[i]['id'], labels, cfg['granularity'])} {records[i]['id']:02d}",
             key=record_key,
         )
         st.button(
@@ -505,12 +563,12 @@ def main() -> None:
         )
 
         completed = sum(
-            1 for r in records if len(labels.get(str(r["id"]), [])) >= REVIEWS_PER_RECORD
+            1 for r in records if _record_complete(r["id"], labels, cfg["granularity"])
         )
         st.caption(f"Metric: **{metric}** · Language: **{lang}**")
         st.caption(f"Dataset: `{dataset_path.name}`")
         st.caption(f"Labels file: `{labels_path.name}`")
-        st.caption(f"Fully reviewed: {completed}/{len(records)}")
+        st.caption(f"✅ Complete: {completed}/{len(records)}")
 
         if cfg["granularity"] != "speech_fidelity":
             st.header("Layout")
@@ -621,15 +679,19 @@ def main() -> None:
             metric, record, trace, rid, my_review, scope_changed
         )
 
+    payload = payload_builder()
+    dirty = can_save and has_unsaved_changes(cfg["granularity"], payload, my_review)
+
     # --- Save ---
+    # Saving always works — even a partial review. Completeness is a *status*
+    # (see the ✅/◐ markers), never a gate on saving.
+    if dirty:
+        st.warning("⚠️ Unsaved changes — click 💾 Save labels to store them.")
+
     col_a, col_b = st.columns([1, 4])
     with col_a:
         if st.button("💾 Save labels", type="primary", use_container_width=True, disabled=not can_save):
-            payload = payload_builder()
-            complete, missing = is_review_complete(cfg["granularity"], payload)
-            if not complete:
-                st.error("Can't save yet — missing required rating(s): " + ", ".join(missing) + ".")
-            elif my_review is None and any(
+            if my_review is None and any(
                 r.get("labeler", "").strip().lower() == name_norm for r in other_reviews
             ):
                 st.error("A review by you already exists for this record.")
@@ -643,10 +705,21 @@ def main() -> None:
                 updated = [r for r in reviews if r is not my_review] + [new_review]
                 labels[rid] = updated
                 save_labels(labels_path, labels)
-                st.success(f"Saved labels for {rid} (review {len(updated)}/{REVIEWS_PER_RECORD})")
+                complete, missing = is_review_complete(cfg["granularity"], new_review)
+                if complete:
+                    st.success(
+                        f"Saved & marked complete ✅ for {rid} "
+                        f"(review {len(updated)}/{REVIEWS_PER_RECORD})."
+                    )
+                else:
+                    st.info(
+                        f"Saved for {rid} — not yet complete (missing: {', '.join(missing)}). "
+                        f"Fill the remaining rating(s) and save again to mark it complete."
+                    )
     with col_b:
         for r in reviews:
-            st.caption(f"• **{r.get('labeler','?')}** — saved {r.get('updated_at','?')}")
+            done = "✅" if is_review_complete(cfg["granularity"], r)[0] else "◐"
+            st.caption(f"{done} **{r.get('labeler','?')}** — saved {r.get('updated_at','?')}")
 
 
 def _render_per_turn_mode(record, trace, rid, my_review, scope_changed) -> dict:
