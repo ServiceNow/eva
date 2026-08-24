@@ -52,9 +52,12 @@
       "영업 본부"
     ],
     "nl": [
-      "centrumlocatie",
+      "binnenstad",
+      "stadscentrum",
       "kantoor in het centrum",
-      "verkoopkantoor centrum"
+      "hartje stad",
+      "hartje centrum",
+      "verkoopkantoor in het centrum"
     ]
   }
 }

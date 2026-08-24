@@ -2488,7 +2488,7 @@
       },
       "nl": {
         "first_name": "Jan",
-        "last_name": "deBoer"
+        "last_name": "de Boer"
       }
     }
   },
@@ -5510,7 +5510,7 @@
       "de": "Ich muss die Daten meines Hin- und Rückflugs ändern.",
       "hi": "मुझे अपनी आने-जाने की उड़ानों की तारीखें बदलनी हैं।",
       "ko": "제 왕복 항공편 날짜를 변경해야 해요.",
-      "nl": "Ik moet de data van mijn retourvlucht wijzigen."
+      "nl": "Ik moet de terugvlucht naar een andere datum wijzigen."
     },
     "culture_overrides": {
       "en": {
@@ -5585,7 +5585,7 @@
       },
       "nl": {
         "first_name": "Stijn",
-        "last_name": "deJong"
+        "last_name": "de Jong"
       }
     }
   },
@@ -6870,7 +6870,7 @@
       "de": "Können Sie mich heute auf einen früheren Flug umbuchen?",
       "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?",
-      "nl": "Kunt u me vandaag op een eerdere vlucht zetten?"
+      "nl": "Kunt u mij vandaag op een eerdere vlucht zetten?"
     },
     "culture_overrides": {
       "en": {
@@ -6945,7 +6945,7 @@
       },
       "nl": {
         "first_name": "Jan",
-        "last_name": "deWit"
+        "last_name": "de Wit"
       }
     }
   },
@@ -7934,7 +7934,7 @@
       "de": "Hallo, ich werde meinen Flug heute Morgen verpassen – können Sie mich heute auf einen späteren Flug umbuchen?",
       "hi": "नमस्ते, आज सुबह की मेरी उड़ान छूटने वाली है—क्या आप मुझे आज की किसी बाद वाली उड़ान में डाल सकते हैं?",
       "ko": "안녕하세요, 오늘 아침 항공편을 놓칠 것 같은데요—오늘 더 늦은 항공편으로 바꿔 주실 수 있나요?",
-      "nl": "Hoi, ik ga mijn vlucht van vanochtend missen—kunt u me vandaag op een latere vlucht zetten?"
+      "nl": "Hoi, ik ga mijn vlucht van deze ochtend missen — kunt u mij vandaag op een latere vlucht zetten?"
     },
     "culture_overrides": {
       "en": {
@@ -9338,7 +9338,7 @@
       "de": "Hallo, ich muss meinen Flug auf einen früheren Abflug tagsüber umbuchen.",
       "hi": "नमस्ते, मुझे अपनी उड़ान को बदलकर पहले की किसी दिन की उड़ान में करना है।",
       "ko": "안녕하세요, 제 항공편을 더 이른 낮 시간 출발편으로 변경해야 해요.",
-      "nl": "Hoi, ik moet mijn vlucht wijzigen naar een eerdere vlucht overdag."
+      "nl": "Hoi, ik moet mijn vlucht wijzigen naar een eerdere vlucht gedurende de dag."
     },
     "culture_overrides": {
       "en": {
@@ -13286,7 +13286,7 @@
       "de": "Mein Flug nach Chicago wurde gestrichen – können Sie mich heute auf einen anderen Flug umbuchen?",
       "hi": "शिकागो जाने वाली मेरी उड़ान रद्द हो गई—क्या आप मुझे आज किसी दूसरी उड़ान में डाल सकते हैं?",
       "ko": "Chicago행 제 항공편이 취소됐는데요—오늘 다른 항공편으로 잡아 주실 수 있나요?",
-      "nl": "Mijn vlucht naar Chicago is geannuleerd—kunt u me vandaag op een andere vlucht krijgen?"
+      "nl": "Mijn vlucht naar Chicago is geannuleerd—kunt u mij vandaag op een andere vlucht plaatsen?"
     },
     "culture_overrides": {
       "en": {
@@ -14543,7 +14543,7 @@
       "de": "Mein Flug wurde gestrichen – können Sie mich umbuchen und mir helfen, ein Hotel zu finden?",
       "hi": "मेरी उड़ान रद्द हो गई—क्या आप मेरी दोबारा बुकिंग कर सकते हैं और होटल में मदद कर सकते हैं?",
       "ko": "제 항공편이 취소됐는데요—다시 예약해 주시고 호텔도 도와주실 수 있나요?",
-      "nl": "Mijn vlucht is geannuleerd—kunt u me omboeken en helpen met een hotel?"
+      "nl": "Mijn vlucht is geannuleerd—kunt u mij helpen met het omboeken van mijn vlucht en met een hotel?"
     },
     "culture_overrides": {
       "en": {
@@ -15287,7 +15287,7 @@
       "de": "Mein Flug wurde gestrichen und ich brauche eine Rückerstattung.",
       "hi": "मेरी उड़ान रद्द हो गई और मुझे रिफंड चाहिए।",
       "ko": "제 항공편이 취소돼서 환불이 필요해요.",
-      "nl": "Mijn vlucht is geannuleerd en ik heb een terugbetaling nodig."
+      "nl": "Mijn vlucht is geannuleerd en ik wil een terugbetaling."
     },
     "culture_overrides": {
       "en": {
@@ -17745,7 +17745,7 @@
       "de": "Hallo, ich rufe wegen meines verspäteten Flugs an – können Sie mir die neusten Updates nennen?",
       "hi": "नमस्ते, मैं अपनी विलंबित उड़ान के बारे में कॉल कर रहा/रही हूँ—क्या आप मुझे अपडेटेड जानकारी दे सकते हैं?",
       "ko": "안녕하세요, 항공편이 지연되서 전화드렸는데요—업데이트된 정보를 알려 주실 수 있나요?",
-      "nl": "Hoi, ik bel over mijn vertraagde vlucht—kunt u me de bijgewerkte gegevens geven?"
+      "nl": "Hoi, ik bel over mijn vertraagde vlucht—kunt u mij de actuele gegevens doorgeven?"
     },
     "culture_overrides": {
       "en": {
@@ -20412,7 +20412,7 @@
       "de": "Hallo, meine Flugzeit wurde wesentlich geändert. Ich muss stornieren und brauche eine Rückerstattung.",
       "hi": "नमस्ते, मेरी उड़ान का समय काफ़ी बदल गया है और मुझे इसे रद्द करके पैसे वापस लेना है।",
       "ko": "안녕하세요, 제 항공편 시간이 많이 변경돼서 취소하고 환불받아야 해요.",
-      "nl": "Hoi, mijn vluchttijd is flink gewijzigd en ik moet annuleren en een terugbetaling krijgen."
+      "nl": "Hoi, mijn vluchttijd is vaak gewijzigd en ik moet annuleren en een terugbetaling krijgen."
     },
     "culture_overrides": {
       "en": {
@@ -20487,7 +20487,7 @@
       },
       "nl": {
         "first_name": "Chantal",
-        "last_name": "vanBeek"
+        "last_name": "van Beek"
       }
     }
   },
@@ -21651,7 +21651,7 @@
       "de": "Mein Flug wurde gerade gestrichen, nachdem wir umkehren mussten – können Sie mich umbuchen?",
       "hi": "हमारे वापस मुड़ने के बाद मेरी उड़ान अभी-अभी रद्द हो गई—क्या आप मुझे रीबुक करवा सकते हैं?",
       "ko": "제 항공편이 회항한 뒤에 방금 취소됐는데요—다시 예약해 주실 수 있나요?",
-      "nl": "Mijn vlucht is net geannuleerd nadat we moesten omkeren—kunt u me omboeken?"
+      "nl": "Mijn vlucht is net geannuleerd nadat we moesten omkeren—kunt u mijn vlucht omboeken?"
     },
     "culture_overrides": {
       "en": {
@@ -21726,7 +21726,7 @@
       },
       "nl": {
         "first_name": "Daan",
-        "last_name": "vanWijk"
+        "last_name": "van Wijk"
       }
     }
   },
@@ -22489,7 +22489,7 @@
       "de": "Hallo – können Sie mir sagen, was mit meinem Flug los ist, der nach Minneapolis zurückgekehrt ist? Wir sind planmäßig gegen 12:30 gestartet und mussten dann umdrehen.",
       "hi": "नमस्ते—क्या आप मुझे बता सकते हैं कि मेरी उस उड़ान के साथ क्या हो रहा है जो मिनियापोलिस वापस आ गई? हमने निर्धारित समय पर, करीब 12:30 बजे उड़ान भरी थी, और फिर हमें वापस लौटना पड़ा।",
       "ko": "안녕하세요—제 항공편이 Minneapolis로 회항했는데 어떻게 된 건지 알려 주실 수 있나요? 예정 시간인 12:30쯤 이륙했는데, 이후에 회항했어요.",
-      "nl": "Hoi—kunt u me vertellen wat er aan de hand is met mijn vlucht die terugkwam naar Minneapolis? We vertrokken rond de geplande tijd, ongeveer 12:30, en moesten daarna omkeren"
+      "nl": "Hoi—kunt u mij vertellen wat er aan de hand was met mijn vlucht die terugkwam naar Minneapolis? We vertrokken op de geplande tijd, ongeveer 12:30, en moesten daarna omkeren"
     },
     "culture_overrides": {
       "en": {
@@ -22564,7 +22564,7 @@
       },
       "nl": {
         "first_name": "Fleur",
-        "last_name": "deJong"
+        "last_name": "de Jong"
       }
     }
   },
@@ -23453,7 +23453,7 @@
       "de": "Ich habe meinen Flug heute Morgen verpasst – können Sie mich heute auf die günstigste Option nach D.C. umbuchen?",
       "hi": "मेरी उड़ान आज सुबह छूट गई—क्या आप मुझे आज D.C. की सबसे सस्ती विकल्प में डाल सकते हैं?",
       "ko": "오늘 아침 항공편을 놓쳤는데요—오늘 D.C.로 가는 가장 저렴한 옵션으로 잡아 주실 수 있나요?",
-      "nl": "Ik heb mijn vlucht vanochtend gemist—kunt u me vandaag op de goedkoopste optie naar D.C. zetten?"
+      "nl": "Ik heb vanochtend mijn vlucht gemist—kunt u mij vandaag op de goedkoopste optie naar D.C. plaatsen?"
     },
     "culture_overrides": {
       "en": {
@@ -25262,7 +25262,7 @@
       "de": "Ich habe meinen Flug heute Morgen verpasst und brauche noch heute eine Umbuchung nach Minneapolis.",
       "hi": "मेरी उड़ान आज सुबह छूट गई और मुझे आज मिनियापोलिस के लिए रीबुक करवाना है।",
       "ko": "오늘 아침 항공편을 놓쳐서 오늘 Minneapolis로 다시 예약해야 해요.",
-      "nl": "Ik heb mijn vlucht vanochtend gemist en ik moet vandaag worden omgeboekt naar Minneapolis."
+      "nl": "Ik heb mijn vlucht vanochtend gemist en ik moet vandaag omgeboekt worden naar Minneapolis."
     },
     "culture_overrides": {
       "en": {
@@ -26680,7 +26680,7 @@
       "de": "Hallo, ich muss meinen Flug umbuchen, weil mir wegen des Ablaufdatums meines Reisepasses das Boarding verweigert wurde.",
       "hi": "नमस्ते, मुझे अपनी उड़ान दोबारा बुक करनी है क्योंकि मेरे पासपोर्ट की समाप्ति तिथि की वजह से मुझे बोर्डिंग नहीं करने दी गई।",
       "ko": "안녕하세요, 여권 만료일 때문에 탑승이 거부돼서 항공편을 다시 예약해야 해요.",
-      "nl": "Hoi, ik moet mijn vlucht omboeken omdat mij het instappen is geweigerd vanwege de vervaldatum van mijn paspoort."
+      "nl": "Hoi, ik moet mijn vlucht omboeken omdat ik ben geweigerd bij het instappen vanwege de vervaldatum van mijn paspoort."
     },
     "culture_overrides": {
       "en": {
@@ -26755,7 +26755,7 @@
       },
       "nl": {
         "first_name": "Tess",
-        "last_name": "deHaan"
+        "last_name": "de Haan"
       }
     }
   },
@@ -27782,7 +27782,7 @@
       "de": "Können Sie mich heute auf den früheren Flug umbuchen?",
       "hi": "क्या आप मुझे किसी पहले की उड़ान में डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?",
-      "nl": "Kunt u me vandaag op de eerdere vlucht zetten?"
+      "nl": "Kunt u mij vandaag op de eerdere vlucht plaatsen?"
     },
     "culture_overrides": {
       "en": {
@@ -27857,7 +27857,7 @@
       },
       "nl": {
         "first_name": "Sander",
-        "last_name": "deGroot"
+        "last_name": "de Groot"
       }
     }
   },
@@ -29859,7 +29859,7 @@
       "de": "Können Sie mich heute auf einen früheren Flug umbuchen?",
       "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?",
-      "nl": "Kunt u me vandaag op een eerdere vlucht zetten?"
+      "nl": "Kunt u mij vandaag op een eerdere vlucht plaatsen?"
     },
     "culture_overrides": {
       "en": {
@@ -30914,7 +30914,7 @@
       "de": "Hallo, können Sie mich bitte so schnell wie möglich auf den nächsten Flug nach Hause umbuchen?",
       "hi": "नमस्ते, क्या आप मुझे जल्द से जल्द घर की अगली उड़ान पर डाल सकते हैं?",
       "ko": "안녕하세요, 가능한 한 빨리 집으로 가는 다음 항공편으로 바꿔 주실 수 있나요?",
-      "nl": "Hoi, kunt u me zo snel mogelijk op de eerstvolgende vlucht naar huis zetten?"
+      "nl": "Hoi, kunt u mij zo snel mogelijk op de eerstvolgende vlucht naar huis zetten?"
     },
     "culture_overrides": {
       "en": {
@@ -31738,7 +31738,7 @@
       "de": "Können Sie mich bitte auf die Warteliste für den Mittagsflug setzen?",
       "hi": "क्या आप मुझे दोपहर वाली उड़ान के लिए स्टैंडबाय पर रख सकते हैं?",
       "ko": "정오 항공편 대기 명단에 올려 주실 수 있나요?",
-      "nl": "Kunt u me op de stand-bylijst zetten voor de vlucht van 12:00 uur?"
+      "nl": "Kunt u mij op de stand-bylijst zetten voor de vlucht van 12:00 uur smiddags?"
     },
     "culture_overrides": {
       "en": {
@@ -31813,7 +31813,7 @@
       },
       "nl": {
         "first_name": "Julia",
-        "last_name": "vanderWal"
+        "last_name": "van der Wal"
       }
     }
   },
@@ -32946,7 +32946,7 @@
       "de": "Können Sie mich bitte auf die Warteliste für einen früheren Flug heute setzen?",
       "hi": "क्या आप मुझे आज की किसी पहले की उड़ान के लिए स्टैंडबाय पर डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편 대기 명단에 올려 주실 수 있나요?",
-      "nl": "Kunt u me op de stand-bylijst zetten voor een eerdere vlucht vandaag?"
+      "nl": "Kunt u mij op de stand-bylijst zetten voor een eerdere vlucht voor vandaag?"
     },
     "culture_overrides": {
       "en": {
@@ -33747,7 +33747,7 @@
       "de": "Können Sie mich bitte auf die Warteliste für den Flug um 10:00 AM setzen?",
       "hi": "क्या आप मुझे सुबह १० बजे वाली उड़ान के लिए स्टैंडबाय पर रख सकते हैं?",
       "ko": "10:00 AM 항공편 대기 명단에 올려 주실 수 있나요?",
-      "nl": "Kunt u me op de stand-bylijst zetten voor de vlucht van 10:00 AM?"
+      "nl": "Kunt u mij op de stand-bylijst zetten voor de vlucht van 10:00 AM?"
     },
     "culture_overrides": {
       "en": {
@@ -33822,7 +33822,7 @@
       },
       "nl": {
         "first_name": "Femke",
-        "last_name": "vanderVeen"
+        "last_name": "van der Veen"
       }
     }
   },
@@ -36452,7 +36452,7 @@
       },
       "nl": {
         "first_name": "Hugo",
-        "last_name": "vanDam"
+        "last_name": "van Dam"
       }
     }
   },
@@ -37344,7 +37344,7 @@
       "de": "Hallo, ich muss nur den Rückflug meiner Reise stornieren.",
       "hi": "नमस्ते, मुझे अपनी यात्रा का सिर्फ वापसी वाला हिस्सा रद्द करना है।",
       "ko": "안녕하세요, 제 여행에서 돌아오는 구간만 취소해야 해요.",
-      "nl": "Hoi, ik moet alleen het retourdeel van mijn reis annuleren."
+      "nl": "Hoi, ik moet alleen de terugreis van mijn reis annuleren."
     },
     "culture_overrides": {
       "en": {
@@ -37419,7 +37419,7 @@
       },
       "nl": {
         "first_name": "Lucas",
-        "last_name": "deBoer"
+        "last_name": "de Boer"
       }
     }
   },
@@ -38342,7 +38342,7 @@
       },
       "nl": {
         "first_name": "Lisa",
-        "last_name": "vanVliet"
+        "last_name": "van Vliet"
       }
     }
   },
@@ -40935,7 +40935,7 @@
       "de": "Mein Flug hat Verspätung und ich sitze am Flughafen fest – kann ich einen Essensgutschein bekommen?",
       "hi": "मेरी उड़ान में देरी हो गई है और मैं हवाई अड्डे पर फँसा हुआ हूँ—क्या मुझे खाने का वाउचर मिल सकता है?",
       "ko": "제 항공편이 지연돼서 공항에 발이 묶였는데요—식사 바우처를 받을 수 있을까요?",
-      "nl": "Mijn vlucht heeft vertraging en ik zit vast op de luchthaven—kan ik een maaltijdbon krijgen?"
+      "nl": "Mijn vlucht is vertraagd en ik zit vast op de luchthaven—kan ik een maaltijdvoucher krijgen?"
     },
     "culture_overrides": {
       "en": {
@@ -42230,7 +42230,7 @@
       "de": "Mein Flug nach Seattle wurde gestrichen und ich brauche Hilfe bei der Umbuchung.",
       "hi": "सिएटल जाने वाली मेरी उड़ान रद्द हो गई है और मुझे दोबारा बुकिंग कराने में मदद चाहिए।",
       "ko": "Seattle행 항공편이 취소돼서 재예약하는 데 도움이 필요해요.",
-      "nl": "Mijn vlucht naar Seattle is geannuleerd en ik heb hulp nodig om omgeboekt te worden."
+      "nl": "Mijn vlucht naar Seattle is geannuleerd en ik heb hulp nodig bij het omboeken."
     },
     "culture_overrides": {
       "en": {
@@ -43429,7 +43429,7 @@
       },
       "nl": {
         "first_name": "Sanne",
-        "last_name": "deJong"
+        "last_name": "de Jong"
       }
     }
   },
@@ -44544,7 +44544,7 @@
       "de": "Mein Flug wurde gestrichen und die Umbuchung, die man mir gegeben hat, ist nicht akzeptabel – können Sie mir helfen?",
       "hi": "मेरी उड़ान रद्द हो गई है और जो दोबारा बुकिंग उन्होंने मुझे दी है वह मुझे मंज़ूर नहीं है—क्या आप मदद कर सकते हैं?",
       "ko": "제 항공편이 취소됐는데, 새로 예약해 준 일정으로는 어려울 것 같아요.—도와주실 수 있을까요?",
-      "nl": "Mijn vlucht is geannuleerd en de omboeking die ze me hebben gegeven is niet acceptabel—kunt u helpen?"
+      "nl": "Mijn vlucht is geannuleerd en de omboeking die ze mij hebben gegeven is niet acceptabel—kunt u mij helpen?"
     },
     "culture_overrides": {
       "en": {
@@ -45703,7 +45703,7 @@
       },
       "nl": {
         "first_name": "Sam",
-        "last_name": "vandenBerg"
+        "last_name": "van den Berg"
       }
     }
   },
@@ -49191,7 +49191,7 @@
       "de": "Mein Flug hat seit Stunden Verspätung – können Sie mir einen Essensgutschein besorgen und mich kostenlos umbuchen?",
       "hi": "मेरी उड़ान कई घंटों से देरी से चल रही है—क्या आप मुझे खाने का वाउचर दिला सकते हैं और मुझे मुफ्त में दोबारा बुक कर सकते हैं?",
       "ko": "제 항공편이 몇 시간째 지연되고 있는데요—식사 바우처를 받고 무료로 재예약해 주실 수 있나요?",
-      "nl": "Mijn vlucht heeft al uren vertraging—kunt u me een maaltijdbon geven en me gratis omboeken?"
+      "nl": "Mijn vlucht heeft al uren vertraging—kunt u mij een maaltijdvoucher geven en mij kostenloos omboeken?"
     },
     "culture_overrides": {
       "en": {
@@ -51707,7 +51707,7 @@
       "de": "Mir wurde ein Upgrade berechnet, von dem mir gesagt wurde, dass es kostenlos wäre – können Sie das korrigieren?",
       "hi": "मुझसे एक अपग्रेड का चार्ज लिया गया है जिसके बारे में मुझे बताया गया था कि यह मुफ़्त होगा—क्या आप इसे ठीक कर सकते हैं?",
       "ko": "무료라고 안내받은 업그레이드에 요금이 청구됐는데요—이거 처리해 주실 수 있나요?",
-      "nl": "Er zijn kosten in rekening gebracht voor een opwaardering waarvan mij was verteld dat die gratis zou zijn—kunt u dat rechtzetten?"
+      "nl": "Er zijn kosten in rekening gebracht voor een upgrade waarvan mij was verteld dat die gratis zou zijn—kunt u dat corrigeren?"
     },
     "culture_overrides": {
       "en": {
@@ -53067,7 +53067,7 @@
       "de": "Ich muss meinen Flug auf einen früheren Flug heute ändern.",
       "hi": "मुझे अपनी उड़ान आज की किसी पहले वाली उड़ान में बदलनी है।",
       "ko": "오늘 더 이른 항공편으로 변경해야 해요.",
-      "nl": "Ik moet mijn vlucht wijzigen naar een eerdere vlucht vandaag."
+      "nl": "Ik moet mijn vlucht wijzigen naar een eerdere vlucht van vandaag."
     },
     "culture_overrides": {
       "en": {
@@ -53142,7 +53142,7 @@
       },
       "nl": {
         "first_name": "Sterre",
-        "last_name": "vanderVeen"
+        "last_name": "van der Veen"
       }
     }
   },
@@ -53811,7 +53811,7 @@
       "de": "Ich brauche für heute Nacht einen Hotelgutschein und eine Fahrt zum Hotel.",
       "hi": "मुझे आज रात के लिए होटल वाउचर और होटल तक जाने के लिए सवारी चाहिए।",
       "ko": "오늘 밤 호텔 바우처와 호텔까지 갈 교통편이 필요해요.",
-      "nl": "Ik heb een hotelbon en vervoer naar het hotel nodig voor vanavond."
+      "nl": "Ik heb een hotelvoucher en vervoer naar het hotel nodig voor vanavond."
     },
     "culture_overrides": {
       "en": {
@@ -54220,7 +54220,7 @@
       "de": "Können Sie mir helfen, den Flug meines Mannes für morgen nachzuschauen?",
       "hi": "क्या आप मेरे पति की कल की उड़ान ढूँढने में मेरी मदद कर सकते हैं?",
       "ko": "내일 제 남편 항공편을 확인해 주실 수 있나요?",
-      "nl": "Kunt u me helpen de vlucht van mijn man voor morgen op te zoeken?"
+      "nl": "Kunt u mij helpen met de vlucht van mijn man voor morgen op te zoeken?"
     },
     "culture_overrides": {
       "en": {

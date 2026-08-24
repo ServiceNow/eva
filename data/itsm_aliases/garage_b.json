@@ -43,8 +43,10 @@
     ],
     "nl": [
       "b-garage",
-      "parkeergarage b",
-      "westgarage"
+      "parkeergarage B",
+      "garage B",
+      "westgarage",
+      "garage-west"
     ]
   }
 }
