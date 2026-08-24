@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 """Streamlit labeling app for EVA test sets.
 
-Supports three metrics:
-  - conciseness           (per-turn ratings + failure modes + explanation)
+Supports four metrics:
+  - conciseness              (per-turn ratings + failure modes + explanation)
   - conversation_progression (single whole-trace rating + explanation)
-  - faithfulness          (single whole-trace rating + explanation)
+  - faithfulness             (single whole-trace rating + explanation)
+  - agent_speech_fidelity    (per-turn binary rating + justification)
 
 Each record has 3 judges (judge_1, judge_2, judge_3) whose outputs are shown
-side-by-side. Two reviews (different labeler names) are collected per record.
+side-by-side. Two reviews (by two different labelers) are collected per record.
+
+The labeler's identity is resolved automatically from Toolkit (see `toolkit.py`)
+— no name is typed. Labelers in `MANAGER_ALLOWLIST` get a read-only review mode
+that lets them view any other labeler's work (`?impersonate=<user>`).
 
 Usage:
-    streamlit run apps/conciseness_labeler.py
+    streamlit run apps/metrics_labeler.py
 """
 
 from __future__ import annotations
@@ -20,7 +25,14 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
+import sys
+
 import streamlit as st
+
+# Ensure this script's own directory is importable so `import toolkit` works
+# regardless of how the app is launched (streamlit run, AppTest, etc.).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import toolkit
 
 REPO = Path(__file__).resolve().parents[1]
 AUDIO_DIR = REPO / "agent_speech_fidelity_audios"
@@ -92,6 +104,14 @@ def metric_paths(metric: str, lang: str) -> tuple[Path, Path]:
 JUDGE_KEYS = ["judge_1", "judge_2", "judge_3"]
 RATING_CHOICES = [1, 2, 3]
 REVIEWS_PER_RECORD = 2
+
+# Toolkit identities (the local-part of a @servicenow.com email, e.g. "shama.gupta")
+# allowed to use manager review mode — viewing other labelers' work read-only.
+# Everyone else only ever sees/edits their own labels.
+MANAGER_ALLOWLIST = {
+    "shama.gupta",
+    "rachel.hansen",
+}
 
 FAILURE_MODES_BY_METRIC = {
     "conciseness": [
@@ -340,12 +360,69 @@ def _render_landing() -> None:
                     st.rerun()
 
 
+def _resolve_user() -> str | None:
+    """Resolve the current labeler's Toolkit identity once per session.
+
+    Returns the email local-part (minus @servicenow.com), or None if the
+    identity can't be determined (e.g. auth header expired on Toolkit)."""
+    if "toolkit_user" not in st.session_state:
+        try:
+            info = toolkit.get_user()
+        except Exception:
+            info = None
+        mail = (info or {}).get("mail") or ""
+        st.session_state["toolkit_user"] = mail.removesuffix("@servicenow.com") or None
+    return st.session_state["toolkit_user"]
+
+
+def is_manager(user: str | None) -> bool:
+    return bool(user) and user.strip().lower() in {m.lower() for m in MANAGER_ALLOWLIST}
+
+
+def is_review_complete(granularity: str, payload: dict) -> tuple[bool, list[str]]:
+    """Ratings-only completeness check. Returns (is_complete, missing_labels)."""
+    if granularity in ("per_turn", "speech_fidelity"):
+        per_turn = payload.get("per_turn") or {}
+        if not per_turn:
+            return False, ["(no turns to rate)"]
+        missing = [f"turn {tk}" for tk, v in per_turn.items() if (v or {}).get("rating") is None]
+        return (not missing), missing
+    # whole-trace
+    if payload.get("rating") is None:
+        return False, ["overall rating"]
+    return True, []
+
+
+def _record_status_glyph(rid, labels: dict) -> str:
+    """Dropdown marker: ✅ fully reviewed, ◐ partially, • untouched."""
+    n = len(labels.get(str(rid), []))
+    if n >= REVIEWS_PER_RECORD:
+        return "✅"
+    if n > 0:
+        return "◐"
+    return "•"
+
+
+def _go_to_record(record_key: str, new_idx: int, n: int) -> None:
+    """Callback to move the record selectbox to `new_idx` (clamped)."""
+    st.session_state[record_key] = max(0, min(new_idx, n - 1))
+
+
 def main() -> None:
     st.set_page_config(
         page_title="EVA Labeler",
         layout="wide",
         initial_sidebar_state="expanded",
     )
+
+    user = _resolve_user()
+    if not user:
+        st.error(
+            "Could not determine your Toolkit identity. Please reload the page "
+            "(and make sure you're signed in to Toolkit)."
+        )
+        return
+    manager = is_manager(user)
 
     if not st.session_state.get("selected_metric"):
         _render_landing()
@@ -360,17 +437,16 @@ def main() -> None:
     dataset_path, labels_path = metric_paths(metric, lang)
 
     # --- Sidebar: back + labeler + record selection ---
+    impersonate = None
     with st.sidebar:
         if st.button("← Back to metrics", use_container_width=True):
             st.session_state["selected_metric"] = None
             st.rerun()
 
         st.header("Labeler")
-        labeler_name = st.text_input(
-            "Your name",
-            value=st.session_state.get("labeler_name", ""),
-            key="labeler_name",
-        )
+        st.markdown(f"**{user}**")
+        if manager:
+            st.caption("🛡️ Manager access")
 
         if len(langs) > 1:
             lang = st.radio(
@@ -386,12 +462,46 @@ def main() -> None:
         records = load_dataset(str(dataset_path))
         labels = load_labels(labels_path)
 
+        if manager:
+            st.header("🛡️ Review labeler")
+            known = sorted({
+                (r.get("labeler") or "").strip()
+                for revs in labels.values() for r in revs
+                if (r.get("labeler") or "").strip() and (r.get("labeler") or "").strip() != user
+            })
+            options = ["(myself)"] + known
+            param = st.query_params.get("impersonate")
+            if param and param not in options:
+                options.append(param)
+            default = param if (param in options and param != user) else "(myself)"
+            choice = st.selectbox(
+                "View as",
+                options=options,
+                index=options.index(default),
+                key=f"impersonate_{metric}_{lang}",
+                help="View another labeler's saved work read-only.",
+            )
+            if choice not in ("(myself)", user):
+                impersonate = choice
+                st.query_params["impersonate"] = choice
+            else:
+                st.query_params.pop("impersonate", None)
+
         st.header("Record")
+        record_key = f"record_idx_{metric}_{lang}"
         idx = st.selectbox(
             "Select record",
             options=list(range(len(records))),
-            format_func=lambda i: f"{records[i]['id']:02d}",
-            key=f"record_idx_{metric}_{lang}",
+            format_func=lambda i: f"{_record_status_glyph(records[i]['id'], labels)} {records[i]['id']:02d}",
+            key=record_key,
+        )
+        st.button(
+            "Next record →",
+            on_click=_go_to_record,
+            args=(record_key, idx + 1, len(records)),
+            disabled=idx >= len(records) - 1,
+            use_container_width=True,
+            help="Jump to the next record.",
         )
 
         completed = sum(
@@ -439,8 +549,19 @@ def main() -> None:
     st.title(f"EVA Labeler — {metric}")
     st.caption(f"Domain: **{record.get('domain', 'airline')}** · Record: **{rid}** (original_id: {record.get('original_id')})")
 
+    impersonating = impersonate is not None
+    me = impersonate or user
+    if impersonating:
+        b_left, b_right = st.columns([5, 1])
+        with b_left:
+            st.warning(f"🛡️ Manager review mode — viewing **{me}**'s labels (read-only).")
+        with b_right:
+            if st.button("Stop", use_container_width=True):
+                st.query_params.pop("impersonate", None)
+                st.rerun()
+
     reviews = labels.get(rid, [])
-    name_norm = labeler_name.strip().lower()
+    name_norm = (me or "").strip().lower()
     my_review = next(
         (r for r in reviews if name_norm and r.get("labeler", "").strip().lower() == name_norm),
         None,
@@ -451,10 +572,16 @@ def main() -> None:
         st.info(f"No reviews yet for **{rid}**. {REVIEWS_PER_RECORD} reviews needed.")
     elif my_review is not None:
         names = ", ".join(r.get("labeler", "?") for r in reviews)
-        st.info(
-            f"You already have a review for **{rid}** — editing it. "
-            f"Total reviews: {len(reviews)}/{REVIEWS_PER_RECORD} ({names})."
-        )
+        if impersonating:
+            st.info(
+                f"**{me}** has a review for **{rid}** — viewing it (read-only). "
+                f"Total reviews: {len(reviews)}/{REVIEWS_PER_RECORD} ({names})."
+            )
+        else:
+            st.info(
+                f"You already have a review for **{rid}** — editing it. "
+                f"Total reviews: {len(reviews)}/{REVIEWS_PER_RECORD} ({names})."
+            )
     elif len(reviews) >= REVIEWS_PER_RECORD:
         names = ", ".join(r.get("labeler", "?") for r in reviews)
         st.warning(
@@ -474,12 +601,12 @@ def main() -> None:
 
     st.divider()
 
-    # Scope for resetting form state when metric/record/labeler changes
-    init_scope = f"{metric}::{name_norm}::{rid}"
+    # Scope for resetting form state when metric/language/record/labeler changes
+    init_scope = f"{metric}::{lang}::{name_norm}::{rid}"
     scope_changed = st.session_state.get("_last_scope") != init_scope
     st.session_state["_last_scope"] = init_scope
 
-    can_save = my_review is not None or len(reviews) < REVIEWS_PER_RECORD
+    can_save = (not impersonating) and (my_review is not None or len(reviews) < REVIEWS_PER_RECORD)
 
     if cfg["granularity"] == "per_turn":
         new_per_turn = _render_per_turn_mode(
@@ -498,18 +625,19 @@ def main() -> None:
     col_a, col_b = st.columns([1, 4])
     with col_a:
         if st.button("💾 Save labels", type="primary", use_container_width=True, disabled=not can_save):
-            name = labeler_name.strip()
-            if not name:
-                st.error("Please enter your name in the sidebar before saving.")
+            payload = payload_builder()
+            complete, missing = is_review_complete(cfg["granularity"], payload)
+            if not complete:
+                st.error("Can't save yet — missing required rating(s): " + ", ".join(missing) + ".")
             elif my_review is None and any(
-                r.get("labeler", "").strip().lower() == name.lower() for r in other_reviews
+                r.get("labeler", "").strip().lower() == name_norm for r in other_reviews
             ):
-                st.error("A review with this name already exists for this record.")
+                st.error("A review by you already exists for this record.")
             else:
                 new_review = {
-                    "labeler": name,
+                    "labeler": me,
                     "target": record.get("target"),
-                    **payload_builder(),
+                    **payload,
                     "updated_at": datetime.utcnow().isoformat() + "Z",
                 }
                 updated = [r for r in reviews if r is not my_review] + [new_review]
