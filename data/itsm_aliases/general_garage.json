@@ -40,6 +40,11 @@
       "메인 주차장",
       "일반 주차장",
       "일반 차고"
+    ],
+    "nl": [
+      "algemene garage",
+      "algemene parkeergarage",
+      "hoofdgarage"
     ]
   }
 }

@@ -52,6 +52,12 @@
       "다운타운 기술센터",
       "다운타운 엔지니어링 센터",
       "엔지니어링 센터"
+    ],
+    "nl": [
+      "engineeringcentrum",
+      "technisch centrum",
+      "engineeringcentrum in het centrum",
+      "technisch centrum in het centrum"
     ]
   }
 }

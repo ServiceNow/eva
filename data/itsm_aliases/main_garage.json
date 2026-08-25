@@ -39,6 +39,13 @@
       "메인 주차장",
       "메인 차고",
       "주 주차장"
+    ],
+    "nl": [
+      "hoofd parkeergarage",
+      "algemene parkeergarage",
+      "algemene parkeerterrein",
+      "algemene garage",
+      "hoofdgarage"
     ]
   }
 }
