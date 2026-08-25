@@ -188,7 +188,7 @@ class ModelConfig(BaseModel):
     vad: str = Field(
         "silero",
         description=(
-            "VAD analyzer type: 'silero' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."
+            "VAD analyzer type: 'silero', 'krisp_viva' or 'none'. Defaults to 'silero' (SileroVADAnalyzer). Use 'none' with external turn strategies (e.g. deepgram-flux) to skip local VAD. Set via EVA_MODEL__VAD."
         ),
     )
     vad_params: dict[str, Any] = Field(
@@ -196,6 +196,19 @@ class ModelConfig(BaseModel):
         description=(
             "VAD parameters (JSON): confidence, start_secs, stop_secs, min_volume. Set via EVA_MODEL__VAD_PARAMS."
         ),
+    )
+
+    # Transport-level audio input filter
+    audio_in_filter: str = Field(
+        "none",
+        description=(
+            "Audio input filter applied to the transport: 'krisp_viva' or 'none'. Defaults to "
+            "'none'. Set via EVA_MODEL__AUDIO_IN_FILTER."
+        ),
+    )
+    audio_in_filter_params: dict[str, Any] = Field(
+        {},
+        description="Audio input filter parameters (JSON). Set via EVA_MODEL__AUDIO_IN_FILTER_PARAMS.",
     )
 
     # CASCADE-only latency controls.

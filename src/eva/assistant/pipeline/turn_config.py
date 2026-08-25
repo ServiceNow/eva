@@ -8,6 +8,7 @@ from typing import Any
 
 from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
 from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
+from pipecat.audio.vad.krisp_viva_vad import KrispVivaVadAnalyzer
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADAnalyzer, VADParams
 from pipecat.turns.user_start import (
@@ -49,8 +50,11 @@ def create_vad_analyzer(vad_type: str, vad_params: dict[str, Any]) -> VADAnalyze
         # Create VADParams, respecting existing defaults if no params specified
         params = VADParams(**vad_params) if vad_params else None
         return SileroVADAnalyzer(params=params)
+    elif vad_type_lower == "krisp_viva":
+        params = VADParams(**vad_params) if vad_params else None
+        return KrispVivaVadAnalyzer(params=params)
     else:
-        raise ValueError(f"Unsupported VAD type: {vad_type}. Supported types: 'silero', 'none'")
+        raise ValueError(f"Unsupported VAD type: {vad_type}. Supported types: 'silero', 'none', 'krisp_viva'")
 
 
 def create_turn_start_strategy(
