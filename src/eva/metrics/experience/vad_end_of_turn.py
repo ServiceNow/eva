@@ -156,8 +156,7 @@ def _transcript_for_vad_stop(dispatched_user_turns: list[tuple[int, str]], vad_s
     """Return the text of the user turn that ``vad_stop`` closed, or None if none matches.
 
     Each dispatched turn lands a handful of milliseconds after the user_stopped_speaking that
-    ended it (measured at +3..+8ms across all 30 turns in the four fixtures, pairing 1:1 with
-    the vad_stops), while consecutive vad_stops are seconds apart (2244ms at the closest observed).
+    ended it, while consecutive vad_stops are seconds apart (2244ms at the closest observed).
     ``_DISPATCH_VS_VAD_STOP_TOLERANCE_MS`` sits between those two scales, so the nearest turn
     within tolerance is unambiguous - and a window whose utterance was never dispatched at all
     matches nothing rather than borrowing a neighbour's text.
@@ -355,7 +354,7 @@ def _classify_turns(
                 }
                 if transcript_text is not None:
                     # Was stop_secs forced because the user's actual utterance is a shape the
-                    # turn analyzer struggles to close on its own (short / ack / spelled-out)?
+                    # turn analyzer struggles to close on its own (short / acknowledgement / spelled-out)?
                     result["transcript_text"] = transcript_text
                     result["final_turn_flags"] = final_turn_input_flags(transcript_text)
                 per_window.append([result])
