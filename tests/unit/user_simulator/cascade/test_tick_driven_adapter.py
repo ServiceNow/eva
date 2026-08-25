@@ -2,7 +2,11 @@ import asyncio
 import json
 import time
 
-from eva.user_simulator.cascade.adapter.tick_driven import QUIET_TICK_GRACE_S, TickDrivenAdapter
+from eva.user_simulator.cascade.adapter.tick_driven import (
+    MAX_INACTIVE_SECONDS,
+    QUIET_TICK_GRACE_S,
+    TickDrivenAdapter,
+)
 from tests.unit.user_simulator.cascade.test_realtime_ws_adapter import (
     BYTES_PER_TICK,
     FakeWebSocket,
@@ -171,4 +175,33 @@ async def test_barge_in_discards_audio_the_caller_never_heard():
     # The buffered second of assistant audio is audio the caller cut off.
     assert result.assistant_audio_raw_bytes == 0
     assert adapter.played_ms == 0
+    await adapter.stop()
+
+
+async def test_a_stalled_provider_is_reported_not_raised():
+    # Raising aborted the tick loop from under the simulator, so the record ended on the
+    # generic "error" reason and the terminal state the runner reads was never written.
+    ws = FakeWebSocket()
+    adapter = TickDrivenAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+    await adapter.start()
+    adapter._last_inbound_monotonic = time.monotonic() - (MAX_INACTIVE_SECONDS + 1)
+
+    result = await adapter.run_tick(0, None)
+
+    assert result.provider_stalled is True
+    await adapter.stop()
+
+
+async def test_a_live_provider_is_never_reported_as_stalled():
+    ws = FakeWebSocket()
+    adapter = TickDrivenAdapter(websocket=ws, conversation_id="c1", bytes_per_tick=BYTES_PER_TICK)
+    await adapter.start()
+    adapter._last_inbound_monotonic = time.monotonic() - (MAX_INACTIVE_SECONDS + 1)
+    await ws.inbound.put(_media_frame(b"\xff" * 8000))
+    await _settle()
+
+    result = await adapter.run_tick(0, None)
+
+    # Audio arrived this tick, so the liveness clock resets rather than firing.
+    assert result.provider_stalled is False
     await adapter.stop()

@@ -38,12 +38,6 @@ SILENCE_BYTE = b"\x00"
 LISTENER_CHECK_INTERVAL_MS = 2000
 """How often the interrupt and backchannel checks run while the assistant speaks."""
 
-BACKCHANNEL_PHRASES = ["uh-huh", "mm-hmm"]
-"""Fixed continuer vocabulary (tau: voice_config.py:126). Pre-rendered at init."""
-
-BARGE_IN_OPENERS = ["Wait—", "Sorry—", "Hold on—", "Actually—"]
-"""Fixed barge-in openers. Pre-rendered so a decision can be voiced at zero latency."""
-
 
 def ms_to_ticks(milliseconds: int) -> int:
     """Convert milliseconds to whole ticks, flooring."""

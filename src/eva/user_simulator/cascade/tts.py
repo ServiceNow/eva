@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 CARTESIA_URL = "https://api.cartesia.ai/tts/bytes"
 CARTESIA_VERSION = "2024-06-10"
 DEFAULT_FEMALE_VOICE = "f786b574-daa5-4673-aa0c-cbe3e8534c02"
-DEFAULT_MALE_VOICE = "f786b574-daa5-4673-aa0c-cbe3e8534c02"
+DEFAULT_MALE_VOICE = "a0e99841-438c-4a64-b679-ae501e7d6091"
 _FEMALE_PERSONA_ID = 1
 
 

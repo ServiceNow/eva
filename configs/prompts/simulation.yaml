@@ -542,14 +542,19 @@ user_simulator:
     - Has the user heard enough to understand what the agent is asking or saying?
     - Has the user heard enough to have a response, question, or correction ready?
     - Did the agent just complete the sentence which has all the pertinent information the user was looking for?
-    - Do NOT repeatedly interrupt the agent if it has spoken only a few words (say less than 5 words).
+    - Do NOT repeatedly interrupt the agent if it has spoken only a few words (roughly fewer than 5 words in English, or the equivalent short fragment in whatever language the conversation is in — word counts are not comparable across languages).
     - Are the user's request(s) basically accomplished and the user is likely to hang up on the next turn (if so it should not interrupt)?
     - Is this a logical point in the conversation to interrupt?
 
     Respond with ONLY "YES" if the user should interrupt now, or "NO" if they should keep listening.
 
   backchannel_decision: |
-    You simulate a natural listener who occasionally says "uh-huh" or "mm-hmm" to show they're following along.
+    You simulate a natural listener who occasionally makes a brief continuer sound to show they're following along.
+
+    The conversation may be in any language. Judge the FUNCTION of what is said, not the
+    presence of any particular word: every language has these sounds, and the caller draws
+    its own from a vocabulary configured for the conversation's language. The English
+    examples below illustrate the judgement, not the words to look for.
 
     <conversation_history>
     {conversation_history}
@@ -557,7 +562,8 @@ user_simulator:
 
     The agent is still speaking [CURRENTLY SPEAKING, INCOMPLETE]. Ignore the trailing incomplete word/phrase — focus only on the COMPLETE sentences delivered so far in the agent's current turn.
 
-    Continuers ("uh-huh", "mm-hmm", "yeah") are brief sounds that mean "I'm listening, keep going." They:
+    Continuers (English: "uh-huh", "mm-hmm", "yeah"; every language has equivalents) are brief
+    sounds that mean "I'm listening, keep going." They:
     - Happen naturally during extended speech
     - Show engagement without interrupting
     - Are NOT responses to specific content — just signals of attention
@@ -565,7 +571,8 @@ user_simulator:
     Say YES if:
     - The agent has completed at least 2 full, substantive sentences in their current turn
       (Short phrases like "Thanks for your patience" or "Let me check on that" don't count as substantive)
-    - The user hasn't spoken or backchanneled recently (check the last 3 exchanges for ANY user sound including "mm-hmm", "uh-huh", "okay")
+    - The user hasn't spoken or backchanneled recently (check the last 3 exchanges for ANY brief
+      acknowledgement sound from the user, in whatever language the conversation is in)
     - It would feel natural to briefly signal "I'm still here"
 
     Say NO if:
@@ -581,7 +588,7 @@ user_simulator:
     - When in doubt, say NO — silence is also natural
     - Too few continuers is better than too many
 
-    Examples:
+    Examples (English, for illustration — apply the same judgement in any language):
 
     AGENT: "Hi there! How can I hel [CURRENTLY SPEAKING, INCOMPLETE]"
     → NO (just started)
@@ -598,7 +605,7 @@ user_simulator:
     AGENT: "I found your order. It includes a keyboard, thermostat, and headphones. The order was delivered last Tuesday. Now for the exchange, we have a few opti [CURRENTLY SPEAKING, INCOMPLETE]"
     → YES (extended explanation with specific details)
 
-    [If user said "mm-hmm" 2 exchanges ago]
+    [If the user made a brief acknowledgement sound 2 exchanges ago]
     AGENT: "...and those are the available options. Now I'll need your input on which [CURRENTLY SPEAKING, INCOMPLETE]"
     → NO (user backchanneled recently, don't do it again so soon)
 
@@ -618,6 +625,8 @@ user_simulator:
     - Write it as a natural interruption, not a full turn. Short.
     - It must follow from your own goal, not from any specific thing the agent
       might say — you have not heard the reply yet.
+    - Write it in the same language as the line above; the caller does not switch
+      languages mid-call.
     - Reply with ONLY the spoken line, nothing else. No quotes, no labels.
     - If you would have no reason to interrupt whatever the agent says next,
       reply with exactly NONE.

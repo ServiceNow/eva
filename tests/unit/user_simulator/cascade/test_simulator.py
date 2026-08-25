@@ -1,3 +1,4 @@
+from eva.user_simulator.cascade.phrases import load_phrases
 from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn, parse_turn_response
 
 
@@ -462,6 +463,7 @@ def _interrupting_simulator(message, framework="elevenlabs"):
     sim._decision_log = _trace_sink()
     sim._framework = framework
     sim._config = CascadeSimulatorConfig(enable_interruptions=True)
+    sim._phrases = load_phrases("en")
     sim._history = []
     sim._voice_id = "voice-f"
     sim._build_prompt = lambda: "SYSTEM PROMPT"
@@ -556,9 +558,16 @@ async def test_only_one_interruption_fires_per_assistant_turn():
 
     sim._decisions = _Decisions()
     sim._play_interruption = _play
-    sim._stt = type("_Stt", (), {"buffer": type("_B", (), {"current_text": staticmethod(lambda: "hi")})()})()
+    # The transcript has to grow between the two checks, or the unchanged-transcript
+    # gate skips the second one before eligibility is ever consulted.
+    from eva.user_simulator.cascade.stt import TranscriptBuffer
 
+    buffer = TranscriptBuffer()
+    sim._stt = type("_Stt", (), {"buffer": buffer})()
+
+    buffer.committed = "Let me pull up"
     await sim._run_checks(_InterruptScheduler())
+    buffer.committed = "Let me pull up your account."
     await sim._run_checks(_InterruptScheduler())
 
     assert offered == [True, False]
@@ -706,3 +715,179 @@ async def test_a_barge_in_is_abandoned_when_a_new_assistant_turn_started_meanwhi
 
     assert await sim._play_interruption(scheduler) is False
     assert scheduler.queued == []
+
+
+def test_provider_stall_is_a_distinct_terminal_reason_from_inactivity():
+    # inactivity_timeout is a legitimate end the metrics treat as definitive when the
+    # user spoke last; a stalled peer is an invalid record the runner should retry. The
+    # two must not share a reason, or a dead provider scores as a finished conversation.
+    from eva.user_simulator.cascade.tick_result import TickResult
+
+    stalled = TickResult(
+        tick_number=9,
+        assistant_audio=b"\x00" * 8,
+        assistant_audio_raw_bytes=0,
+        wall_clock_ms=0,
+        provider_stalled=True,
+    )
+
+    assert stalled.provider_stalled is True
+    assert (
+        TickResult(tick_number=9, assistant_audio=b"", assistant_audio_raw_bytes=0, wall_clock_ms=0).provider_stalled
+        is False
+    )
+
+
+class _CountingDecisions:
+    """ListenerDecisions stand-in that records every evaluate() it is asked to run."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    async def evaluate(self, heard, *, allow_interrupt, allow_backchannel):
+        from eva.user_simulator.cascade.decisions import ListenerVerdict
+
+        self.calls.append(heard)
+        self.last_allow_backchannel = allow_backchannel
+        return ListenerVerdict(should_interrupt=False, should_backchannel=False)
+
+
+def _checking_simulator():
+    from eva.models.config import CascadeSimulatorConfig
+    from eva.user_simulator.cascade.stt import TranscriptBuffer
+
+    sim = CascadeUserSimulator.__new__(CascadeUserSimulator)
+    sim._decision_log = _trace_sink()
+    sim._config = CascadeSimulatorConfig(enable_interruptions=True, enable_backchannel=True)
+    sim._phrases = load_phrases("en")
+    sim._decisions = _CountingDecisions()
+    sim._phrase_cache = StubCache()
+    sim._may_interrupt_this_turn = True
+    sim._last_checked_text = ""
+    sim.event_logger = _FakeEventLogger()
+    sim._record_audio = lambda *a, **k: None
+    buffer = TranscriptBuffer()
+    sim._stt = type("_Stt", (), {"buffer": buffer})()
+    return sim, buffer
+
+
+async def test_an_unchanged_transcript_does_not_re_ask_the_judges():
+    # The checks fire on a timer but read only the transcript, so a tick where it has
+    # not moved re-asks a question already answered — ~101 checks x 2 calls per call.
+    sim, buffer = _checking_simulator()
+    buffer.committed = "Let me pull up your account."
+
+    await sim._run_checks(_FakeScheduler())
+    await sim._run_checks(_FakeScheduler())
+    await sim._run_checks(_FakeScheduler())
+
+    assert sim._decisions.calls == ["Let me pull up your account."]
+
+
+async def test_a_grown_transcript_is_judged_again():
+    sim, buffer = _checking_simulator()
+    buffer.committed = "Let me pull up"
+
+    await sim._run_checks(_FakeScheduler())
+    buffer.committed = "Let me pull up your account."
+    await sim._run_checks(_FakeScheduler())
+
+    assert len(sim._decisions.calls) == 2
+
+
+async def test_an_empty_transcript_is_never_judged():
+    sim, _buffer = _checking_simulator()
+
+    await sim._run_checks(_FakeScheduler())
+
+    assert sim._decisions.calls == []
+
+
+async def test_backchannelling_survives_a_barge_in_in_the_same_turn():
+    # Interrupting and later humming along are not mutually exclusive for a real
+    # listener; the per-turn cap is about not talking over the assistant twice, not
+    # about going silent for the rest of the turn.
+    sim, buffer = _checking_simulator()
+    sim._may_interrupt_this_turn = False  # this turn has already barged in
+    buffer.committed = "Let me pull up your account."
+
+    await sim._run_checks(_FakeScheduler())
+
+    assert sim._decisions.last_allow_backchannel is True
+
+
+async def test_backchannelling_is_off_only_when_the_config_disables_it():
+    from eva.models.config import CascadeSimulatorConfig
+
+    sim, buffer = _checking_simulator()
+    sim._config = CascadeSimulatorConfig(enable_interruptions=True, enable_backchannel=False)
+    buffer.committed = "Let me pull up your account."
+
+    await sim._run_checks(_FakeScheduler())
+
+    assert sim._decisions.last_allow_backchannel is False
+
+
+async def test_a_transcript_already_judged_in_an_earlier_turn_is_judged_again():
+    # take_committed() runs between turns, so current_text() can return a string this
+    # gate has already seen. Without clearing on a turn boundary that later turn's
+    # check would be skipped as "unchanged" and the barge-in never considered.
+    sim, buffer = _checking_simulator()
+    buffer.committed = "Anything else I can help with?"
+    await sim._run_checks(_FakeScheduler())
+    assert len(sim._decisions.calls) == 1
+
+    # The ordinary turn path consumes the transcript, then the assistant says the same
+    # thing again a turn later — a real pattern for closing questions.
+    buffer.take_committed()
+    sim._last_checked_text = ""  # what the new-turn branch in _run does
+    buffer.committed = "Anything else I can help with?"
+
+    await sim._run_checks(_FakeScheduler())
+
+    assert len(sim._decisions.calls) == 2
+
+
+async def test_a_skipped_check_writes_no_listener_check_row(tmp_path):
+    # The trace exists to separate "the model said NO" from "the check never ran". A row
+    # for a check that was gated out before reaching the judges would blur exactly that.
+    from eva.user_simulator.cascade.decision_log import DecisionLog
+
+    sim, buffer = _checking_simulator()
+    sim._decision_log = DecisionLog(tmp_path / "trace.jsonl")
+    buffer.committed = "Let me pull up your account."
+
+    await sim._run_checks(_FakeScheduler())
+    await sim._run_checks(_FakeScheduler())
+    await sim._run_checks(_FakeScheduler())
+
+    assert sim._decisions.calls == ["Let me pull up your account."]
+    assert sim._decision_log._counts.get("listener_check") == 1
+
+
+async def test_the_tick_trace_records_whether_the_transcript_moved(tmp_path):
+    # A check tick with no listener_check row is otherwise ambiguous between "nothing
+    # new was heard" and "the check ran and failed".
+    from eva.user_simulator.cascade.decision_log import DecisionLog
+
+    sim, buffer = _checking_simulator()
+    rows = []
+    sim._decision_log = DecisionLog(tmp_path / "trace.jsonl")
+    sim._decision_log.log = lambda kind, **fields: rows.append((kind, fields))
+    sim._ticks_assistant_silent = 0
+    sim._ticks_since_assistant_started = 3
+    sim._candidate_audio = b""
+    buffer.committed = "Let me pull up your account."
+
+    sim._log_tick_state(_TickTraceScheduler(), _tick(True), is_check_tick=True)
+    sim._last_checked_text = buffer.current_text()
+    sim._log_tick_state(_TickTraceScheduler(), _tick(True), is_check_tick=True)
+
+    assert rows[0][1]["transcript_moved"] is True
+    assert rows[1][1]["transcript_moved"] is False
+
+
+class _TickTraceScheduler:
+    tick = 12
+    caller_is_speaking = False
+    caller_spoke_this_tick = False

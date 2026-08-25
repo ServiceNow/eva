@@ -30,6 +30,15 @@ class TickResult:
     interruption_audio_start_ms: int | None = None
     """Played position where the caller cut in, in simulated ms."""
 
+    provider_stalled: bool = False
+    """The assistant has produced nothing for so long that the run is not usable.
+
+    Reported rather than raised. A stall is a bad *record*, not a bad *program*: the
+    conversation ends with a terminal reason the runner treats as a validation failure
+    and retries, exactly like any other unfinished record, and the partial audio and
+    event log survive for diagnosis.
+    """
+
     @property
     def has_assistant_speech(self) -> bool:
         """Whether any real assistant audio arrived this tick."""

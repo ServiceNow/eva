@@ -14,10 +14,8 @@ from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.adapter.base import Adapter
 from eva.user_simulator.cascade.adapter.realtime_ws import RealtimeWSAdapter
-from eva.user_simulator.cascade.adapter.tick_driven import TickDrivenAdapter
+from eva.user_simulator.cascade.adapter.tick_driven import MAX_INACTIVE_SECONDS, TickDrivenAdapter
 from eva.user_simulator.cascade.constants import (
-    BACKCHANNEL_PHRASES,
-    BARGE_IN_OPENERS,
     CALLER_SAMPLE_RATE,
     INACTIVITY_TIMEOUT_MS,
     TICK_DURATION_MS,
@@ -28,6 +26,7 @@ from eva.user_simulator.cascade.constants import (
 from eva.user_simulator.cascade.decision_log import DecisionLog
 from eva.user_simulator.cascade.decisions import ListenerDecisions, parse_yes_no
 from eva.user_simulator.cascade.phrase_cache import PhraseCache
+from eva.user_simulator.cascade.phrases import load_phrases
 from eva.user_simulator.cascade.scheduler import TickScheduler
 from eva.user_simulator.cascade.stt_livekit import LiveKitStreamingSTT
 from eva.user_simulator.cascade.tick_result import TickResult
@@ -213,6 +212,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
     _ticks_since_assistant_started = 0
     _may_interrupt_this_turn = False
     _assistant_turn_index = 0
+    _last_checked_text = ""
 
     def __init__(
         self,
@@ -247,6 +247,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._tts = CartesiaTTS(simulator_config.tts_params, language=language)
         self._llm = LiteLLMClient(model=simulator_config.llm)
         self._voice_id = self._tts.voice_for_persona(persona_config)
+        # The caller's out-of-turn vocabulary is language data, not code.
+        self._phrases = load_phrases(language)
         self._history: list[dict[str, str]] = []
         # Shared by the listener checks and the relevance gate so both cost one client.
         self._decision_client = _DecisionClient(LiteLLMClient(model=simulator_config.decision_llm))
@@ -307,6 +309,17 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 self._log_audio_boundaries(scheduler, result, assistant_was_speaking, caller_was_speaking)
                 caller_was_speaking = scheduler.caller_spoke_this_tick
                 assistant_was_speaking = result.has_assistant_speech
+                if result.provider_stalled:
+                    # Distinct from inactivity_timeout, which is a *legitimate* end the
+                    # metrics treat as definitive when the user spoke last. A stall is a
+                    # dead peer: the record is invalid and the runner should retry it,
+                    # which is what the reason not being "goodbye" already means to it.
+                    logger.error(
+                        f"tick {scheduler.tick}: no assistant audio for "
+                        f"{MAX_INACTIVE_SECONDS}s; abandoning the conversation as unusable"
+                    )
+                    self._on_conversation_end("provider_stalled")
+                    break
                 # Captured before the inactivity check, which clears it on a speech tick.
                 silent_before = self._ticks_assistant_silent
                 if self._assistant_is_inactive(scheduler, result):
@@ -322,6 +335,11 @@ class CascadeUserSimulator(AbstractUserSimulator):
                         # One roll per assistant turn, so a turn carries at most one barge-in.
                         self._may_interrupt_this_turn = self._config.enable_interruptions
                         self._assistant_turn_index += 1
+                        # The transcript is consumed between turns, so it can shrink back
+                        # toward the in-flight partial and collide with a value already
+                        # judged. Clearing here keeps "unchanged" meaning "unchanged
+                        # within this turn", which is the only span it is asked about.
+                        self._last_checked_text = ""
                         self._decision_log.log(
                             "assistant_turn_start",
                             tick=scheduler.tick,
@@ -359,9 +377,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
         """
         vocabulary: list[str] = []
         if self._config.enable_backchannel:
-            vocabulary += BACKCHANNEL_PHRASES
+            vocabulary += self._phrases.backchannels
         if self._config.enable_interruptions:
-            vocabulary += BARGE_IN_OPENERS
+            vocabulary += self._phrases.barge_in_openers
         if not vocabulary:
             return
 
@@ -376,10 +394,29 @@ class CascadeUserSimulator(AbstractUserSimulator):
         )
 
     async def _run_checks(self, scheduler: TickScheduler) -> bool:
-        """Run the listener-reaction checks and act on the verdict. True means hang up."""
+        """Run the listener-reaction checks and act on the verdict. True means hang up.
+
+        Gated on there being something new to judge. The checks fire on a timer while
+        the assistant speaks — ~101 times in one measured call, two concurrent LLM calls
+        each — but their only input is the transcript, so a tick where the transcript has
+        not moved re-asks a question already answered. Skipping those is free: identical
+        input, identical verdict.
+        """
         if self._decisions is None or self._phrase_cache is None:
             return False
+
         history = self._stt.buffer.current_text()
+        # Nothing transcribed yet is not a question worth asking, and a transcript that
+        # has not moved re-asks one already answered.
+        if not history or history == self._last_checked_text:
+            return False
+        self._last_checked_text = history
+
+        # Backchannelling stays available after a barge-in: a listener who cuts in and
+        # later hums along is ordinary, and the one-barge-in-per-turn cap is about not
+        # talking over the assistant repeatedly, not about going quiet afterwards.
+        # `allow_interrupt` alone already skips the interrupt call without reaching the
+        # model once the cap is spent.
         verdict = await self._decisions.evaluate(
             history,
             allow_interrupt=self._may_interrupt_this_turn,
@@ -406,7 +443,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             self._may_interrupt_this_turn = False
             return await self._play_interruption(scheduler)
         if verdict.should_backchannel:
-            phrase = play_backchannel(scheduler, self._phrase_cache, BACKCHANNEL_PHRASES)
+            phrase = play_backchannel(scheduler, self._phrase_cache, self._phrases.backchannels)
             # Recorded too, or the saved clean track diverges from what went on the wire.
             self._record_audio("user_clean", self._phrase_cache.get(phrase))
             self.event_logger.log_event("backchannel", {"text": phrase, "tick_index": scheduler.tick})
@@ -428,7 +465,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         intended_tick = scheduler.tick
         intended_turn = self._assistant_turn_index
         started_at = time.monotonic()
-        opener = self._phrase_cache.choose(BARGE_IN_OPENERS)
+        opener = self._phrase_cache.choose(self._phrases.barge_in_openers)
         opener_audio = self._phrase_cache.get(opener)
 
         if self._config.speculative_generation and self._candidate_audio:
@@ -575,8 +612,14 @@ class CascadeUserSimulator(AbstractUserSimulator):
         `rms` is why this exists: `has_assistant_speech` is true for any non-zero bytes,
         digital silence included, so a transport that pads with silence reads as continuous
         speech. Recording both lets that be measured rather than inferred.
+
+        `transcript_moved` serves the same purpose for the other gate. A check tick only
+        reaches the judges when the transcript has changed since the last one judged, so
+        without this a check tick with no following `listener_check` is ambiguous between
+        "nothing new was heard" and "the check ran and something went wrong".
         """
         raw = result.assistant_audio[: result.assistant_audio_raw_bytes]
+        history = self._stt.buffer.current_text()
         self._decision_log.log(
             "tick",
             tick=scheduler.tick,
@@ -589,6 +632,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             ticks_since_assistant_started=self._ticks_since_assistant_started,
             may_interrupt_this_turn=self._may_interrupt_this_turn,
             is_check_tick=is_check_tick,
+            transcript_moved=bool(history) and history != self._last_checked_text,
             has_candidate=bool(self._candidate_audio),
         )
 
@@ -659,7 +703,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
         scripted interruption that lands as a non-sequitur.
         """
         self._candidate_text, self._candidate_audio = "", b""
-        if not self._config.speculative_generation:
+        # A candidate only ever gets spoken by a barge-in, so rendering one with
+        # interruptions off buys an LLM call and a synthesis per turn for nothing.
+        if not self._config.speculative_generation or not self._config.enable_interruptions:
             return
         started = time.monotonic()
         prompt = PromptManager().get_prompt("user_simulator.cascade_next_interruption", utterance=utterance)

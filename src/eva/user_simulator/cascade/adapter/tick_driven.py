@@ -124,7 +124,7 @@ class TickDrivenAdapter(RealtimeWSAdapter):
         if raw:
             self._ticks_released += 1
 
-        self._check_provider_alive(bool(raw))
+        stalled = self._provider_has_stalled(bool(raw))
 
         if self._error is not None:
             raise RuntimeError("TickDrivenAdapter receive loop failed") from self._error
@@ -135,6 +135,7 @@ class TickDrivenAdapter(RealtimeWSAdapter):
             assistant_audio_raw_bytes=len(raw),
             wall_clock_ms=int(time.time() * 1000),
             interruption_audio_start_ms=interruption_start,
+            provider_stalled=stalled,
         )
 
     def _on_inbound_audio(self) -> None:
@@ -178,14 +179,19 @@ class TickDrivenAdapter(RealtimeWSAdapter):
                 )
             )
 
-    def _check_provider_alive(self, received: bool) -> None:
-        """Raise if the provider has produced nothing for too long.
+    def _provider_has_stalled(self, received: bool) -> bool:
+        """Whether the provider has produced nothing for too long.
 
         Wall clock is the right measure here and only here: this is a liveness
         check on a real network peer, not a measurement of conversation time.
+
+        Reported, not raised. Raising aborted the tick loop from underneath the
+        simulator, so the record ended on the generic "error" reason with no way to
+        tell a stalled provider from a bug in the caller, and the terminal state the
+        runner reads was never written. The caller ends the conversation instead.
         """
         now = time.monotonic()
         if received:
             self._last_inbound_monotonic = now
-        elif now - self._last_inbound_monotonic > MAX_INACTIVE_SECONDS:
-            raise RuntimeError(f"No assistant audio for {MAX_INACTIVE_SECONDS}s; provider appears stalled")
+            return False
+        return now - self._last_inbound_monotonic > MAX_INACTIVE_SECONDS

@@ -1,6 +1,6 @@
 import pytest
 
-from eva.user_simulator.cascade.tts import CartesiaTTS
+from eva.user_simulator.cascade.tts import DEFAULT_FEMALE_VOICE, DEFAULT_MALE_VOICE, CartesiaTTS
 
 
 def test_voice_id_selected_for_female_persona():
@@ -53,3 +53,18 @@ async def test_synthesize_concatenates_the_stream(monkeypatch):
     monkeypatch.setattr(tts, "stream", fake_stream)
 
     assert await tts.synthesize("hello", voice_id="voice-f") == b"abcd"
+
+
+def test_the_two_default_voices_are_actually_different():
+    # They were the same id, so voice_for_persona returned one voice for every
+    # persona and the gender scheme it documents was inert.
+    assert DEFAULT_FEMALE_VOICE != DEFAULT_MALE_VOICE
+
+
+def test_personas_of_different_genders_get_different_voices():
+    tts = CartesiaTTS({"api_key": "k"})
+
+    female = tts.voice_for_persona({"user_persona_id": 1})
+    male = tts.voice_for_persona({"user_persona_id": 2})
+
+    assert female != male

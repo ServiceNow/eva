@@ -34,8 +34,10 @@ def test_listener_check_interval_is_two_seconds_in_ticks():
     assert ms_to_ticks(LISTENER_CHECK_INTERVAL_MS) == 10
 
 
-def test_fixed_vocabularies_are_non_empty():
-    from eva.user_simulator.cascade.constants import BACKCHANNEL_PHRASES, BARGE_IN_OPENERS
+def test_the_vocabularies_are_no_longer_constants():
+    # They moved to configs/caller_phrases.yaml because they are language data, not
+    # timing. Timing constants staying here is the whole distinction.
+    from eva.user_simulator.cascade import constants
 
-    assert BACKCHANNEL_PHRASES == ["uh-huh", "mm-hmm"]
-    assert len(BARGE_IN_OPENERS) >= 2
+    assert not hasattr(constants, "BACKCHANNEL_PHRASES")
+    assert not hasattr(constants, "BARGE_IN_OPENERS")

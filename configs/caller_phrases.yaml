@@ -1,0 +1,69 @@
+de:
+  backchannels:
+  - mhm
+  - aha
+  - ja
+  barge_in_openers:
+  - Moment—
+  - Entschuldigung—
+  - Warte—
+  - Also—
+en:
+  backchannels:
+  - uh-huh
+  - mm-hmm
+  barge_in_openers:
+  - Wait—
+  - Sorry—
+  - Hold on—
+  - Actually—
+es:
+  backchannels:
+  - ajá
+  - mmm
+  - ya
+  barge_in_openers:
+  - Espera
+  - Perdona
+  - Un momento
+  - Bueno
+fr:
+  backchannels:
+  - hum hum
+  - oui
+  - d’accord
+  barge_in_openers:
+  - Attendez
+  - Pardon
+  - Juste
+  - En fait
+fr-CA:
+  backchannels:
+  - hum hum
+  - ouais
+  - OK
+  barge_in_openers:
+  - Attends
+  - Excuse
+  - Juste
+  - En fait
+hi:
+  backchannels:
+  - हूँ
+  - अच्छा
+  - हाँ
+  barge_in_openers:
+  - रुकिए
+  - सुनिए
+  - माफ़ कीजिए
+  - असल में
+ko:
+  backchannels:
+  - 네
+  - 음
+  - 아
+  barge_in_openers:
+  - 잠깐만요
+  - 죄송한데
+  - 아니요
+  - 근데
