@@ -1080,9 +1080,9 @@ class TestVadTurnMetricsIntegration:
             audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
         )
         result = await metric.compute(ctx)
-        assert result.sub_metrics["mean_time_to_complete_ms"].score == 100.0
+        assert result.sub_metrics["mean_vad_time_to_complete_ms"].score == 100.0
         assert result.details["vad_turns"] == [
-            {"turn_index": 0, "open_duration_ms": 100, "time_to_complete_ms": 100.0, "completion": "natural"}
+            {"turn_index": 0, "open_duration_ms": 100, "vad_time_to_complete_ms": 100.0, "completion": "natural"}
         ]
 
     @pytest.mark.asyncio
@@ -1094,7 +1094,7 @@ class TestVadTurnMetricsIntegration:
             audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
         )
         result = await metric.compute(ctx)
-        assert "mean_time_to_complete_ms" not in result.sub_metrics
+        assert "mean_vad_time_to_complete_ms" not in result.sub_metrics
         assert "vad_turns" not in result.details
 
     @pytest.mark.asyncio
@@ -1105,7 +1105,7 @@ class TestVadTurnMetricsIntegration:
             audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
         )
         result = await metric.compute(ctx)
-        assert "stuck_rate" not in result.sub_metrics
+        assert "vad_stuck_rate" not in result.sub_metrics
         assert "vad_turns" not in result.details
 
 
@@ -1118,7 +1118,7 @@ class TestVadTurnMetricsOnEarlyReturn:
         all), and inactivity_timeout kills the conversation before the agent ever
         responds. There is no turn with both user AND assistant audio, so
         _get_turn_ids_with_turn_taking returns [] and per_turn_score is empty -
-        compute() takes the early-return path. stuck_rate exists specifically to catch
+        compute() takes the early-return path. vad_stuck_rate exists specifically to catch
         cases like this, so it must still be computed and attached on that early-return
         MetricScore, not skipped.
         """
@@ -1142,6 +1142,6 @@ class TestVadTurnMetricsOnEarlyReturn:
 
         # But the VAD diagnostics that exist to catch exactly this scenario must still
         # be present, not silently skipped.
-        assert result.sub_metrics["stuck_rate"].score == 1.0
+        assert result.sub_metrics["vad_stuck_rate"].score == 1.0
         assert result.details["vad_turns"]
         assert result.details["vad_turns"][0]["completion"] == "stuck"

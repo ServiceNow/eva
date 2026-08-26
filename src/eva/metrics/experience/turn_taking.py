@@ -41,7 +41,7 @@ Flat headline sub-metrics (one number each — show up as columns in analysis vi
                         computed from audit_log.json directly so it works uniformly across
                         cascade/S2S/audio-LLM; omitted when there are no tool calls or the
                         audit log is unavailable — see ``_compute_pre_tool_speech_groups``)
-  VAD turn diagnostics: stuck_rate (fraction of classified turns where the turn analyzer
+  VAD turn diagnostics: vad_stuck_rate (fraction of classified turns where the turn analyzer
                         never produced a natural or forced completion signal at all —
                         includes both non-fatal mid-conversation hangs and, when it's also
                         why the conversation died via inactivity_timeout, a trailing turn
