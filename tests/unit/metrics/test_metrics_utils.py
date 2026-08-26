@@ -11,6 +11,7 @@ from eva.metrics.utils import (
     compute_aggregation,
     extract_wer_errors,
     format_transcript,
+    mean_agent_perf_stat,
     normalize_rating,
     parse_judge_response,
     parse_judge_response_list,
@@ -223,3 +224,58 @@ class TestAggregateWerErrors:
         assert "top_substitutions" in result
         assert "top_deletions" in result
         assert "top_insertions" in result
+
+
+class TestMeanAgentPerfStat:
+    def _write_csv(self, tmp_path, rows):
+        import csv
+
+        csv_path = tmp_path / "agent_perf_stats.csv"
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["prompt", "output_tokens", "reasoning_tokens"])
+            writer.writeheader()
+            writer.writerows(rows)
+        return tmp_path
+
+    def test_missing_file_returns_none(self, tmp_path):
+        assert mean_agent_perf_stat(tmp_path, "output_tokens") is None
+
+    def test_averages_numeric_column(self, tmp_path):
+        output_dir = self._write_csv(
+            tmp_path,
+            [
+                {"prompt": "p1", "output_tokens": "10", "reasoning_tokens": "0"},
+                {"prompt": "p2", "output_tokens": "20", "reasoning_tokens": "5"},
+            ],
+        )
+        assert mean_agent_perf_stat(output_dir, "output_tokens") == pytest.approx(15.0)
+        assert mean_agent_perf_stat(output_dir, "reasoning_tokens") == pytest.approx(2.5)
+
+    def test_blank_and_non_numeric_values_are_skipped(self, tmp_path):
+        output_dir = self._write_csv(
+            tmp_path,
+            [
+                {"prompt": "p1", "output_tokens": "10", "reasoning_tokens": ""},
+                {"prompt": "p2", "output_tokens": "not-a-number", "reasoning_tokens": "5"},
+            ],
+        )
+        assert mean_agent_perf_stat(output_dir, "output_tokens") == pytest.approx(10.0)
+        assert mean_agent_perf_stat(output_dir, "reasoning_tokens") == pytest.approx(5.0)
+
+    def test_oversized_prompt_field_does_not_raise(self, tmp_path):
+        """Regression test.
+
+        A large system prompt (e.g. medical_hr's ~40-tool config) can push
+        the ``prompt`` field of a single row past Python's default 131072-byte csv field limit.
+        Before this fix, that raised ``_csv.Error`` out of ``mean_agent_perf_stat`` and, since
+        turn_taking's ``compute()`` calls it unguarded, zeroed out the entire turn_taking metric
+        for every record. It must instead either parse successfully (limit was raised) or
+        degrade gracefully to ``None`` — never raise.
+        """
+        huge_prompt = "x" * 300_000
+        output_dir = self._write_csv(
+            tmp_path,
+            [{"prompt": huge_prompt, "output_tokens": "42", "reasoning_tokens": "1"}],
+        )
+        result = mean_agent_perf_stat(output_dir, "output_tokens")
+        assert result == pytest.approx(42.0)

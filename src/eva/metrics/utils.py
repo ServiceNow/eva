@@ -16,6 +16,15 @@ from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+# agent_perf_stats.csv stores the full serialized prompt (system prompt + message history) per
+# LLM call in a single field. Agents with large system prompts (e.g. medical_hr's ~40-tool,
+# long-instruction config) routinely exceed Python's default 131072-byte csv field limit, which
+# raises _csv.Error and — since mean_agent_perf_stat is called from turn_taking's compute() —
+# takes down the entire turn_taking metric (score forced to 0, details wiped) instead of just the
+# token sub-metrics that actually depend on this file. Raise the limit well above any observed
+# field size (largest seen so far ~450KB) so legitimate large prompts parse successfully.
+csv.field_size_limit(10_000_000)
+
 
 def parse_judge_response(response_text: str, record_id: str, metric_logger) -> dict | None:
     """Parse LLM judge response using robust JSON extraction.
@@ -524,7 +533,10 @@ def mean_agent_perf_stat(
     try:
         with open(csv_path, newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
-    except OSError:
+    except (OSError, csv.Error):
+        # csv.Error covers e.g. a field exceeding csv.field_size_limit() — treat it the same as a
+        # missing/unreadable file (this sub-metric is best-effort) rather than letting it propagate
+        # and fail the caller's entire metric.
         return None
 
     if not rows:
