@@ -915,7 +915,7 @@ class TestComputeVadTurnSubMetrics:
         assert result is not None
         sub_metrics, per_turn = result
         assert [t["completion"] for t in per_turn] == ["early", "natural", "natural"]
-        assert sub_metrics["early_detection_rate"].score == pytest.approx(1 / 3, abs=1e-4)
+        assert sub_metrics["vad_early_detection_rate"].score == pytest.approx(1 / 3, abs=1e-4)
 
     def test_early_detection_rate_absent_when_no_turn_start_signal_available(self, tmp_path):
         # No turn_start events recorded at all - early detection has no signal to work
@@ -937,7 +937,7 @@ class TestComputeVadTurnSubMetrics:
         assert result is not None
         sub_metrics, per_turn = result
         assert per_turn[0]["completion"] == "natural"
-        assert sub_metrics["early_detection_rate"].score == 0.0
+        assert sub_metrics["vad_early_detection_rate"].score == 0.0
 
     def test_stuck_rate_counts_fallback_stuck_turn_hidden_behind_earlier_natural_completion(self, tmp_path):
         # Reproduces example: window 0 has an earlier,
