@@ -22,7 +22,9 @@ Result (wheel version and `.kef` set will vary by download):
 vendor/krisp/
 ├── README.md                                          (tracked)
 ├── krisp_audio-1.10.0-cp311-cp311-linux_x86_64.whl    (git-ignored)
-└── krisp-viva-tp-v3.kef                               (git-ignored)
+├── krisp-viva-tp-v3.kef                               (git-ignored)
+├── krisp-viva-vad-v2.kef                              (git-ignored)
+└── krisp-viva-vi-tel-v2.1.kef                         (git-ignored)
 ```
 
 > [!WARNING]
@@ -35,6 +37,8 @@ In the Docker container:
 - The `eva` command (which is actually `scripts/docker_eva_wrapper.sh`) installs the `.whl`, if present.
 - The `KRISP_VIVA_TURN_MODEL_PATH` env var points at the `.kef` file directly on that mount, e.g. `vendor/krisp/krisp-viva-tp-v3.kef`.
 - The `KRISP_VIVA_API_KEY` env var provides the API key.
+- If using the Krisp VAD, set `EVA_MODEL__VAD` to `krisp_viva` and point `KRISP_VIVA_VAD_MODEL_PATH`  to the `krisp-viva-vad-v2.kef` file
+- If using the Krisp audio input filter, set `EVA_MODEL__AUDIO_IN_FILTER` to `krisp_viva` and point `KRISP_VIVA_AUDIO_IN_FILTER_MODEL_PATH` to the `krisp-viva-vi-tel-v2.1.kef` file
 
 ## Runtime requirement
 

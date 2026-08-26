@@ -11,7 +11,6 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, WebSocket
-from pipecat.audio.filters.krisp_viva_filter import KrispVivaFilter
 from pipecat.frames.frames import (
     CancelFrame,
     LLMRunFrame,
@@ -573,6 +572,8 @@ class PipecatAssistantServer(AbstractAssistantServer):
         if audio_in_filter_cfg == "none":
             audio_in_filter = None
         elif audio_in_filter_cfg == "krisp":
+            from pipecat.audio.filters.krisp_viva_filter import KrispVivaFilter
+
             audio_in_filter = KrispVivaFilter(**self.pipeline_config.audio_in_filter_params)
             logger.info("Using Krisp VIVA audio-in filter")
         else:

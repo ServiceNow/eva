@@ -33,7 +33,6 @@ def _make_server(tmp_path: Path):
     srv._server_task = None
     srv._runner = None
     srv._metrics_observer = None
-    srv._latency_measurements = []
     srv.num_seconds = 0
     srv.pipeline_config = MagicMock()
     srv.conversation_id = "test-conv"
