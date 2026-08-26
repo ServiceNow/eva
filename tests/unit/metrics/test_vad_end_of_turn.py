@@ -301,7 +301,7 @@ class TestClassifyTurns:
             stop_secs_silence_ms=[],
         )
         assert result == [
-            {"turn_index": 0, "open_duration_ms": 103, "time_to_complete_ms": 103.2, "completion": "natural"}
+            {"turn_index": 0, "open_duration_ms": 103, "vad_time_to_complete_ms": 103.2, "completion": "natural"}
         ]
 
     def test_incomplete_evaluations_before_natural_completion_are_ignored(self):
@@ -317,7 +317,7 @@ class TestClassifyTurns:
             stop_secs_silence_ms=[],
         )
         assert result == [
-            {"turn_index": 0, "open_duration_ms": 300, "time_to_complete_ms": 108.0, "completion": "natural"}
+            {"turn_index": 0, "open_duration_ms": 300, "vad_time_to_complete_ms": 108.0, "completion": "natural"}
         ]
 
     def test_forced_completion_via_stop_secs_ordinal_match(self):
@@ -332,7 +332,7 @@ class TestClassifyTurns:
             stop_secs_silence_ms=[3032.0],
         )
         assert result == [
-            {"turn_index": 0, "open_duration_ms": 50, "time_to_complete_ms": None, "completion": "forced"}
+            {"turn_index": 0, "open_duration_ms": 50, "vad_time_to_complete_ms": None, "completion": "forced"}
         ]
 
     def test_stuck_when_no_natural_or_forced_signal(self):
@@ -342,7 +342,9 @@ class TestClassifyTurns:
             turn_metrics_events=[],
             stop_secs_silence_ms=[],
         )
-        assert result == [{"turn_index": 0, "open_duration_ms": 0, "time_to_complete_ms": None, "completion": "stuck"}]
+        assert result == [
+            {"turn_index": 0, "open_duration_ms": 0, "vad_time_to_complete_ms": None, "completion": "stuck"}
+        ]
 
     def test_dispatched_when_a_real_llm_turn_landed_in_an_otherwise_signal_less_window(self):
         # Reproduces example: the user-simulator's audio bridge ended the
@@ -360,7 +362,7 @@ class TestClassifyTurns:
         )
         assert result[0]["completion"] == "dispatched"
         assert result[0]["open_duration_ms"] == 5912 - 1000
-        assert result[0]["time_to_complete_ms"] is None
+        assert result[0]["vad_time_to_complete_ms"] is None
         assert result[0]["transcript_text"] == "I do not need anything else today. Bye."
         assert result[0]["final_turn_flags"] == final_turn_input_flags("I do not need anything else today. Bye.")
 
@@ -397,8 +399,8 @@ class TestClassifyTurns:
             stop_secs_silence_ms=[3000.0],
         )
         assert result == [
-            {"turn_index": 0, "open_duration_ms": 103, "time_to_complete_ms": 103.0, "completion": "natural"},
-            {"turn_index": 1, "open_duration_ms": 100.0, "time_to_complete_ms": None, "completion": "forced"},
+            {"turn_index": 0, "open_duration_ms": 103, "vad_time_to_complete_ms": 103.0, "completion": "natural"},
+            {"turn_index": 1, "open_duration_ms": 100.0, "vad_time_to_complete_ms": None, "completion": "forced"},
         ]
 
     def test_stuck_last_window_open_duration_uses_last_observed_epoch(self):
@@ -416,7 +418,7 @@ class TestClassifyTurns:
         assert result[1] == {
             "turn_index": 1,
             "open_duration_ms": 5100 - 5000,
-            "time_to_complete_ms": None,
+            "vad_time_to_complete_ms": None,
             "completion": "stuck",
         }
 
@@ -437,7 +439,7 @@ class TestClassifyTurns:
         assert result[0] == {
             "turn_index": 0,
             "open_duration_ms": 1050 - 1000,
-            "time_to_complete_ms": None,
+            "vad_time_to_complete_ms": None,
             "completion": "stuck",
         }
 
@@ -456,8 +458,8 @@ class TestClassifyTurns:
             stop_secs_silence_ms=[],
         )
         assert result == [
-            {"turn_index": 0, "open_duration_ms": 1, "time_to_complete_ms": 188.9, "completion": "natural"},
-            {"turn_index": 1, "open_duration_ms": 3679, "time_to_complete_ms": 268.7, "completion": "natural"},
+            {"turn_index": 0, "open_duration_ms": 1, "vad_time_to_complete_ms": 188.9, "completion": "natural"},
+            {"turn_index": 1, "open_duration_ms": 3679, "vad_time_to_complete_ms": 268.7, "completion": "natural"},
         ]
 
     def test_turn_index_accounts_for_earlier_split_windows(self):
@@ -492,7 +494,7 @@ class TestClassifyTurns:
         assert result[0]["completion"] == "stuck"
         assert result[1]["completion"] == "forced"
         assert result[1]["open_duration_ms"] == 5100 - 5000
-        assert result[1]["time_to_complete_ms"] is None
+        assert result[1]["vad_time_to_complete_ms"] is None
 
     def test_forced_completion_does_not_double_count_silence_ms(self):
         # Regression guard, values taken from an example (real Smart Turn run):
@@ -548,7 +550,7 @@ class TestClassifyTurns:
     def test_natural_completion_stays_natural_when_next_window_is_stuck(self):
         # A missing turn_start alone is not enough - it also shows up ahead of an ordinary
         # Krisp VAD false-start/blip window that never resolves at all ("stuck"), which is
-        # already covered by stuck_rate and must not be conflated with a early split.
+        # already covered by vad_stuck_rate and must not be conflated with a early split.
         result = _classify_turns(
             vad_starts=[1000, 5000],
             vad_stops=[],
@@ -612,7 +614,7 @@ class TestClassifyTurns:
         assert result[1] == {
             "turn_index": 1,
             "open_duration_ms": 60000 - 1103,
-            "time_to_complete_ms": None,
+            "vad_time_to_complete_ms": None,
             "completion": "stuck",
         }
 
@@ -634,7 +636,7 @@ class TestClassifyTurns:
         assert result[0] == {
             "turn_index": 0,
             "open_duration_ms": 103,
-            "time_to_complete_ms": 103.0,
+            "vad_time_to_complete_ms": 103.0,
             "completion": "natural",
         }
         assert len(result) == 2
@@ -654,7 +656,7 @@ class TestClassifyTurns:
         assert result[1] == {
             "turn_index": 1,
             "open_duration_ms": 45000 - 1103,
-            "time_to_complete_ms": None,
+            "vad_time_to_complete_ms": None,
             "completion": "stuck",
         }
 
@@ -713,9 +715,9 @@ class TestComputeVadTurnSubMetrics:
         assert result is not None
         sub_metrics, per_turn = result
         assert "forced_completion_rate" not in sub_metrics
-        assert sub_metrics["mean_time_to_complete_ms"].score == 100.0
+        assert sub_metrics["mean_vad_time_to_complete_ms"].score == 100.0
         assert per_turn == [
-            {"turn_index": 0, "open_duration_ms": 100, "time_to_complete_ms": 100.0, "completion": "natural"}
+            {"turn_index": 0, "open_duration_ms": 100, "vad_time_to_complete_ms": 100.0, "completion": "natural"}
         ]
 
     def test_smart_turn_run_all_natural_reports_zero_forced_completion_rate(self, tmp_path):
@@ -737,9 +739,9 @@ class TestComputeVadTurnSubMetrics:
         sub_metrics, per_turn = result
         assert "forced_completion_rate" in sub_metrics
         assert sub_metrics["forced_completion_rate"].score == 0.0
-        assert sub_metrics["mean_time_to_complete_ms"].score == 100.0
+        assert sub_metrics["mean_vad_time_to_complete_ms"].score == 100.0
         assert per_turn == [
-            {"turn_index": 0, "open_duration_ms": 100, "time_to_complete_ms": 100.0, "completion": "natural"}
+            {"turn_index": 0, "open_duration_ms": 100, "vad_time_to_complete_ms": 100.0, "completion": "natural"}
         ]
 
     def test_smart_turn_run_with_forced_completion(self, tmp_path):
@@ -773,8 +775,8 @@ class TestComputeVadTurnSubMetrics:
         assert sub_metrics["forced_completion_rate"].score == 0.5
         assert per_turn[0]["completion"] == "forced"
         assert per_turn[1]["completion"] == "natural"
-        # Only the natural completion feeds mean_time_to_complete_ms.
-        assert sub_metrics["mean_time_to_complete_ms"].score == 100.0
+        # Only the natural completion feeds mean_vad_time_to_complete_ms.
+        assert sub_metrics["mean_vad_time_to_complete_ms"].score == 100.0
 
     def test_dispatched_turn_excluded_from_stuck_rate(self, tmp_path):
         # Reproduces example: no TurnMetricsData is_complete=True and no
@@ -798,7 +800,7 @@ class TestComputeVadTurnSubMetrics:
         assert result is not None
         sub_metrics, per_turn = result
         assert per_turn[0]["completion"] == "dispatched"
-        assert sub_metrics["stuck_rate"].score == 0.0
+        assert sub_metrics["vad_stuck_rate"].score == 0.0
 
     def test_stuck_rate_counts_mid_conversation_hangs_regardless_of_outcome(self, tmp_path):
         _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")
@@ -813,7 +815,7 @@ class TestComputeVadTurnSubMetrics:
         assert result is not None
         sub_metrics, per_turn = result
         assert per_turn[0]["completion"] == "stuck"
-        assert sub_metrics["stuck_rate"].score == 1.0
+        assert sub_metrics["vad_stuck_rate"].score == 1.0
 
     def test_stuck_rate_includes_final_turn_with_no_vad_start_at_all(self, tmp_path):
         # Real Krisp shape: 5 real turns all completed naturally, but the 6th and final
@@ -847,12 +849,12 @@ class TestComputeVadTurnSubMetrics:
         assert per_turn[-1] == {
             "turn_index": 1,
             "open_duration_ms": None,
-            "time_to_complete_ms": None,
+            "vad_time_to_complete_ms": None,
             "completion": "stuck",
             "vad_never_started": True,
         }
         # 1 stuck (the synthetic missing-turn entry) out of 2 total turns.
-        assert sub_metrics["stuck_rate"].score == 0.5
+        assert sub_metrics["vad_stuck_rate"].score == 0.5
 
     def test_stuck_rate_does_not_add_synthetic_entry_within_clock_skew_tolerance(self, tmp_path):
         # The only vad_start is within clock-skew tolerance of the last real user turn, so
@@ -871,9 +873,9 @@ class TestComputeVadTurnSubMetrics:
         assert result is not None
         sub_metrics, per_turn = result
         assert per_turn == [
-            {"turn_index": 0, "open_duration_ms": 0, "time_to_complete_ms": None, "completion": "stuck"}
+            {"turn_index": 0, "open_duration_ms": 0, "vad_time_to_complete_ms": None, "completion": "stuck"}
         ]
-        assert sub_metrics["stuck_rate"].score == 1.0
+        assert sub_metrics["vad_stuck_rate"].score == 1.0
 
     def test_early_detection_rate_reported_when_a_natural_completion_is_undone(self, tmp_path):
         _write_config(tmp_path, turn_stop_strategy="turn_analyzer")
@@ -974,7 +976,7 @@ class TestComputeVadTurnSubMetrics:
         assert result is not None
         sub_metrics, per_turn = result
         assert [t["completion"] for t in per_turn] == ["natural", "stuck"]
-        assert sub_metrics["stuck_rate"].score == 0.5
+        assert sub_metrics["vad_stuck_rate"].score == 0.5
 
     def test_stuck_rate_zero_on_clean_all_natural_ending(self, tmp_path):
         _write_config(tmp_path, turn_stop_strategy="krisp_viva_turn")
@@ -993,4 +995,4 @@ class TestComputeVadTurnSubMetrics:
         result = compute_vad_turn_sub_metrics(ctx)
         assert result is not None
         sub_metrics, _ = result
-        assert sub_metrics["stuck_rate"].score == 0.0
+        assert sub_metrics["vad_stuck_rate"].score == 0.0

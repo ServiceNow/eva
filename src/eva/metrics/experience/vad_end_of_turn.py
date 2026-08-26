@@ -258,7 +258,7 @@ def _classify_turns(
         ``final_turn_flags`` the same way ``forced`` is, from the same matched dispatched
         turn - both omitted if the match is otherwise unavailable, which cannot actually
         happen here since the match is what triggered this branch.
-    early: a natural or forced completion (see above) whose window is immediately
+    vad_early: a natural or forced completion (see above) whose window is immediately
         followed by another VAD-start window that (a) itself resolves to a natural, forced,
         or dispatched completion - not "stuck" - and (b) opened with no "turn_start" logged
         by pipecat's own TurnTrackingObserver (see ``_load_turn_start_timestamps``). Both
@@ -312,7 +312,7 @@ def _classify_turns(
                 entries.append(
                     {
                         "open_duration_ms": natural["timestamp"] - segment_start,
-                        "time_to_complete_ms": natural["e2e_processing_time_ms"],
+                        "vad_time_to_complete_ms": natural["e2e_processing_time_ms"],
                         "completion": "natural",
                     }
                 )
@@ -325,7 +325,7 @@ def _classify_turns(
                 entries.append(
                     {
                         "open_duration_ms": close_time - segment_start,
-                        "time_to_complete_ms": None,
+                        "vad_time_to_complete_ms": None,
                         "completion": "stuck",
                     }
                 )
@@ -349,7 +349,7 @@ def _classify_turns(
                 transcript_text = _transcript_for_vad_stop(dispatched_user_turns, last_stop)
                 result = {
                     "open_duration_ms": close_time - window_start,
-                    "time_to_complete_ms": None,
+                    "vad_time_to_complete_ms": None,
                     "completion": "forced",
                 }
                 if transcript_text is not None:
@@ -376,7 +376,7 @@ def _classify_turns(
             close_time, transcript_text = max(dispatched_in_window, key=lambda t: t[0])
             result = {
                 "open_duration_ms": close_time - window_start,
-                "time_to_complete_ms": None,
+                "vad_time_to_complete_ms": None,
                 "completion": "dispatched",
                 "transcript_text": transcript_text,
                 "final_turn_flags": final_turn_input_flags(transcript_text),
@@ -389,7 +389,7 @@ def _classify_turns(
             [
                 {
                     "open_duration_ms": close_time - window_start,
-                    "time_to_complete_ms": None,
+                    "vad_time_to_complete_ms": None,
                     "completion": "stuck",
                 }
             ]
@@ -505,7 +505,7 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
             {
                 "turn_index": len(per_turn),
                 "open_duration_ms": None,
-                "time_to_complete_ms": None,
+                "vad_time_to_complete_ms": None,
                 "completion": "stuck",
                 "vad_never_started": True,
             },
@@ -514,7 +514,7 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
     sub: dict[str, MetricScore] = {}
 
     stuck_count = sum(1 for t in per_turn if t["completion"] == "stuck")
-    sub["stuck_rate"] = _wrap("stuck_rate", round(stuck_count / len(per_turn), 4), True)
+    sub["vad_stuck_rate"] = _wrap("vad_stuck_rate", round(stuck_count / len(per_turn), 4), True)
 
     natural_count = sum(1 for t in per_turn if t["completion"] == "natural")
     forced_count = sum(1 for t in per_turn if t["completion"] == "forced")
@@ -532,7 +532,9 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
     # meaning the user's utterance actually continued and got wrongly cut short.
     resolved_count = natural_count + forced_count + dispatched_count + early_count
     if resolved_count > 0:
-        sub["early_detection_rate"] = _wrap("early_detection_rate", round(early_count / resolved_count, 4), True)
+        sub["vad_early_detection_rate"] = _wrap(
+            "vad_early_detection_rate", round(early_count / resolved_count, 4), True
+        )
 
     # Among forced completions specifically: does the final utterance's shape (short /
     # acknowledgement / spelled-out entity) explain why the turn analyzer needed the stop_secs
@@ -547,9 +549,9 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
             )
 
     natural_times = [
-        t["time_to_complete_ms"]
+        t["vad_time_to_complete_ms"]
         for t in per_turn
-        if t["completion"] == "natural" and t["time_to_complete_ms"] is not None
+        if t["completion"] == "natural" and t["vad_time_to_complete_ms"] is not None
     ]
     if natural_times:
         sorted_times = sorted(natural_times)
@@ -558,10 +560,10 @@ def compute_vad_turn_sub_metrics(context: MetricContext) -> tuple[dict[str, Metr
         def _pct(p: float) -> float:
             return sorted_times[min(n - 1, int(p * n))]
 
-        sub["mean_time_to_complete_ms"] = _wrap(
-            "mean_time_to_complete_ms", round(statistics.mean(natural_times), 3), False
+        sub["mean_vad_time_to_complete_ms"] = _wrap(
+            "mean_vad_time_to_complete_ms", round(statistics.mean(natural_times), 3), False
         )
-        sub["p50_time_to_complete_ms"] = _wrap("p50_time_to_complete_ms", round(_pct(0.50), 3), False)
-        sub["p90_time_to_complete_ms"] = _wrap("p90_time_to_complete_ms", round(_pct(0.90), 3), False)
+        sub["p50_vad_time_to_complete_ms"] = _wrap("p50_vad_time_to_complete_ms", round(_pct(0.50), 3), False)
+        sub["p90_vad_time_to_complete_ms"] = _wrap("p90_vad_time_to_complete_ms", round(_pct(0.90), 3), False)
 
     return sub, per_turn
