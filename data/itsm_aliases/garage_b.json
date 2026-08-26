@@ -40,6 +40,13 @@
       "서쪽 주차장",
       "웨스트 주차장",
       "주차장 b"
+    ],
+    "nl": [
+      "b-garage",
+      "parkeergarage B",
+      "garage B",
+      "westgarage",
+      "garage-west"
     ]
   }
 }

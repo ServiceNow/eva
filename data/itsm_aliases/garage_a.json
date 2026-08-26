@@ -32,6 +32,11 @@
       "a 주차장",
       "a 차고",
       "주차장 a"
+    ],
+    "nl": [
+      "a-garage",
+      "parkeergarage A",
+      "garage A"
     ]
   }
 }

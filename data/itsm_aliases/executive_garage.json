@@ -53,6 +53,15 @@
       "임원 주차동",
       "임원 주차장",
       "임원용 차고"
+    ],
+    "nl": [
+      "directiegarage",
+      "garageplaats voor de directie",
+      "directiegarageplek",
+      "directieparkeerplaats",
+      "parkeergarage directie",
+      "hoofdgarage voor de directie",
+      "parkeerplek directie"
     ]
   }
 }

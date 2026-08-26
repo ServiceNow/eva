@@ -41,6 +41,14 @@
       "동쪽 캠퍼스 주차장",
       "동캠 주차장",
       "이스트 캠퍼스 주차장"
+    ],
+    "nl": [
+      "garage oostcampus",
+      "parkeergarage oostcampus",
+      "oostcampusgarage",
+      "oostcampusparkeergarage",
+      "parkeergarage oost",
+      "garage oost"
     ]
   }
 }
