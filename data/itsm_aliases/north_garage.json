@@ -46,6 +46,13 @@
       "autorimessa nord",
       "garage nord",
       "parcheggio nord"
+    ],
+    "nl": [
+      "noordelijke garage",
+      "noordgarage",
+      "garage noord",
+      "parkeergarage noord",
+      "noord parkeergarage"
     ]
   }
 }

@@ -284,13 +284,19 @@ class AgenticSystem:
                     # Apply tool name cleaning for Harmony token leak bug
                     tc_dict["function"]["name"] = _clean_tool_name(tc_dict["function"]["name"])
 
-                    # Log if provider_specific_fields are present (e.g., Gemini thought signatures)
-                    if "provider_specific_fields" in tc_dict:
-                        fields = tc_dict["provider_specific_fields"]
-                        if "thought_signature" in fields:
-                            logger.info(
-                                "🔮 Gemini thought signature present in tool call (will be preserved for next turn)"
-                            )
+                    # Log if a Gemini thought signature is present, so it's visible that it will be
+                    # preserved for the next turn. LiteLLM-routed calls (CASCADE) surface it under
+                    # provider_specific_fields; ALMGeminiClient's raw OpenAI-compat calls to Gemini
+                    # surface it under extra_content (see alm_base._merge_streamed_tool_call_extras).
+                    provider_fields = tc_dict.get("provider_specific_fields") or {}
+                    extra_content = tc_dict.get("extra_content") or {}
+                    if provider_fields.get("thought_signature") or (
+                        isinstance(extra_content.get("google"), dict)
+                        and extra_content["google"].get("thought_signature")
+                    ):
+                        logger.info(
+                            "🔮 Gemini thought signature present in tool call (will be preserved for next turn)"
+                        )
 
                     tool_calls_dicts.append(tc_dict)
 
@@ -330,7 +336,7 @@ class AgenticSystem:
                     "tool_calls": json.dumps(response_tool_calls_for_stats, ensure_ascii=False)
                     if response_tool_calls_for_stats
                     else "",
-                    "reasoning": f'"{reasoning_content_for_csv}"',
+                    "reasoning": reasoning_content_for_csv or None,
                     "reasoning_tokens": reasoning_tokens,
                 }
                 self.agent_perf_stats.append(perf_stat)

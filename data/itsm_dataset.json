@@ -829,7 +829,8 @@
       "de": "Hallo, ich bin ausgesperrt und brauche Hilfe, um wieder an mein Konto zu kommen.",
       "hi": "नमस्ते, मैं अपने अकाउंट से बाहर हो गया हूँ और मुझे इसे वापस एक्सेस करने में मदद चाहिए।",
       "ko": "안녕하세요, 계정이 잠겨서 다시 들어갈 수 있게 도움을 받아야 해요.",
-      "it": "Salve, non riesco più ad accedere al mio account e ho bisogno di aiuto per rientrare."
+      "it": "Salve, non riesco più ad accedere al mio account e ho bisogno di aiuto per rientrare.",
+      "nl": "Hoi, ik ben geblokkeerd en heb hulp nodig om weer toegang te krijgen tot mijn account."
     },
     "culture_overrides": {
       "en": {
@@ -863,6 +864,10 @@
       "it": {
         "first_name": "Simone",
         "last_name": "Giordano"
+      },
+      "nl": {
+        "first_name": "Jesse",
+        "last_name": "Peeters"
       }
     },
     "romanized_culture_overrides": {
@@ -897,6 +902,10 @@
       "it": {
         "first_name": "Simone",
         "last_name": "Giordano"
+      },
+      "nl": {
+        "first_name": "Jesse",
+        "last_name": "Peeters"
       }
     }
   },
@@ -1689,7 +1698,8 @@
       "de": "Hallo, ich kann mich nicht mit dem Firmen-WLAN verbinden.",
       "hi": "नमस्ते, मैं कॉर्पोरेट वाईफ़ाई से कनेक्ट नहीं कर पा रहा/रही हूँ।",
       "ko": "안녕하세요, 회사 Wi-Fi에 연결이 안 돼요.",
-      "it": "Salve, non riesco a connettermi al Wi-Fi aziendale."
+      "it": "Salve, non riesco a connettermi al Wi-Fi aziendale.",
+      "nl": "Hoi, ik kan geen verbinding maken met de bedrijfswifi."
     },
     "culture_overrides": {
       "en": {
@@ -1723,6 +1733,10 @@
       "it": {
         "first_name": "Veronica",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Nova",
+        "last_name": "van Vliet"
       }
     },
     "romanized_culture_overrides": {
@@ -1757,6 +1771,10 @@
       "it": {
         "first_name": "Veronica",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Nova",
+        "last_name": "van Vliet"
       }
     }
   },
@@ -2718,7 +2736,8 @@
       "de": "Hallo, ich muss einen Konferenzraum buchen.",
       "hi": "नमस्ते, मुझे एक कॉन्फ़्रेंस रूम बुक करना है।",
       "ko": "안녕하세요, 회의실을 예약해야 해요.",
-      "it": "Salve, devo prenotare una sala conferenze."
+      "it": "Salve, devo prenotare una sala conferenze.",
+      "nl": "Hoi, ik moet een vergaderruimte boeken."
     },
     "culture_overrides": {
       "en": {
@@ -2752,6 +2771,10 @@
       "it": {
         "first_name": "Federico",
         "last_name": "Mariani"
+      },
+      "nl": {
+        "first_name": "Bram",
+        "last_name": "Timmermans"
       }
     },
     "romanized_culture_overrides": {
@@ -2786,6 +2809,10 @@
       "it": {
         "first_name": "Federico",
         "last_name": "Mariani"
+      },
+      "nl": {
+        "first_name": "Bram",
+        "last_name": "Timmermans"
       }
     }
   },
@@ -3702,7 +3729,8 @@
       "de": "Hallo, ich brauche Zugriff auf Datadog.",
       "hi": "नमस्ते, मुझे डेटाडॉग तक पहुँच चाहिए।",
       "ko": "안녕하세요, Datadog 접근 권한이 필요해요.",
-      "it": "Salve, ho bisogno dell'accesso a Datadog."
+      "it": "Salve, ho bisogno dell'accesso a Datadog.",
+      "nl": "Hoi, ik heb toegang tot Datadog nodig."
     },
     "culture_overrides": {
       "en": {
@@ -3736,6 +3764,10 @@
       "it": {
         "first_name": "Elisa",
         "last_name": "Villa"
+      },
+      "nl": {
+        "first_name": "Laura",
+        "last_name": "Mulder"
       }
     },
     "romanized_culture_overrides": {
@@ -3770,6 +3802,10 @@
       "it": {
         "first_name": "Elisa",
         "last_name": "Villa"
+      },
+      "nl": {
+        "first_name": "Laura",
+        "last_name": "Mulder"
       }
     }
   },
@@ -4585,7 +4621,8 @@
       "de": "Hallo, ich muss meinen Laptop austauschen lassen.",
       "hi": "नमस्ते, मुझे अपना लैपटॉप बदलवाना है।",
       "ko": "안녕하세요, 노트북을 교체해야 해요.",
-      "it": "Salve, devo farmi sostituire il portatile."
+      "it": "Salve, devo farmi sostituire il portatile.",
+      "nl": "Hoi, ik moet mijn laptop laten vervangen."
     },
     "culture_overrides": {
       "en": {
@@ -4619,6 +4656,10 @@
       "it": {
         "first_name": "Luigi",
         "last_name": "Greco"
+      },
+      "nl": {
+        "first_name": "Thijs",
+        "last_name": "Scholten"
       }
     },
     "romanized_culture_overrides": {
@@ -4653,6 +4694,10 @@
       "it": {
         "first_name": "Luigi",
         "last_name": "Greco"
+      },
+      "nl": {
+        "first_name": "Thijs",
+        "last_name": "Scholten"
       }
     }
   },
@@ -5717,7 +5762,8 @@
       "de": "Hallo, ich muss einen neuen Mitarbeiter einrichten lassen.",
       "hi": "नमस्ते, मुझे एक नए कर्मचारी के लिए प्रोविज़न करवाना है।",
       "ko": "안녕하세요, 신규 입사자 프로비저닝을 해야 해요.",
-      "it": "Salve, devo far configurare gli accessi e le risorse per un nuovo impiegato."
+      "it": "Salve, devo far configurare gli accessi e le risorse per un nuovo impiegato.",
+      "nl": "Hoi, ik moet een nieuwe medewerker in de systemen aanmaken."
     },
     "culture_overrides": {
       "en": {
@@ -5751,6 +5797,10 @@
       "it": {
         "first_name": "Giuseppe",
         "last_name": "Rinaldi"
+      },
+      "nl": {
+        "first_name": "Ruben",
+        "last_name": "Visser"
       }
     },
     "romanized_culture_overrides": {
@@ -5785,6 +5835,10 @@
       "it": {
         "first_name": "Giuseppe",
         "last_name": "Rinaldi"
+      },
+      "nl": {
+        "first_name": "Ruben",
+        "last_name": "Visser"
       }
     }
   },
@@ -6624,7 +6678,8 @@
       "de": "Hallo, meine VPN-Verbindung bricht ständig ab und ich brauche Hilfe dabei.",
       "hi": "नमस्ते, मेरा वीपीएन बार-बार डिस्कनेक्ट हो रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, VPN 연결이 계속 끊겨서 도움이 필요해요.",
-      "it": "Salve, la mia VPN continua a disconnettersi e ho bisogno di aiuto."
+      "it": "Salve, la mia VPN continua a disconnettersi e ho bisogno di aiuto.",
+      "nl": "Hoi, mijn VPN-verbinding blijft steeds wegvallen en ik heb daar hulp bij nodig."
     },
     "culture_overrides": {
       "en": {
@@ -6658,6 +6713,10 @@
       "it": {
         "first_name": "Samuele",
         "last_name": "Gallo"
+      },
+      "nl": {
+        "first_name": "Jan",
+        "last_name": "van den Berg"
       }
     },
     "romanized_culture_overrides": {
@@ -6692,6 +6751,10 @@
       "it": {
         "first_name": "Samuele",
         "last_name": "Gallo"
+      },
+      "nl": {
+        "first_name": "Jan",
+        "last_name": "van den Berg"
       }
     }
   },
@@ -7669,7 +7732,8 @@
       "de": "Hallo, ich muss meinen Laptop ersetzen, weil er wirklich alt und langsam geworden ist.",
       "hi": "नमस्ते, मुझे अपना लैपटॉप बदलवाना है क्योंकि यह बहुत पुराना और धीमा हो गया है।",
       "ko": "안녕하세요, 노트북이 너무 오래되고 느려져서 교체해야 해요.",
-      "it": "Salve, devo sostituire il mio portatile perché è molto vecchio e lento."
+      "it": "Salve, devo sostituire il mio portatile perché è molto vecchio e lento.",
+      "nl": "Hoi, ik moet mijn laptop vervangen omdat hij echt oud en traag is geworden."
     },
     "culture_overrides": {
       "en": {
@@ -7703,6 +7767,10 @@
       "it": {
         "first_name": "Giulio",
         "last_name": "Marchetti"
+      },
+      "nl": {
+        "first_name": "Milan",
+        "last_name": "Janssen"
       }
     },
     "romanized_culture_overrides": {
@@ -7737,6 +7805,10 @@
       "it": {
         "first_name": "Giulio",
         "last_name": "Marchetti"
+      },
+      "nl": {
+        "first_name": "Milan",
+        "last_name": "Janssen"
       }
     }
   },
@@ -8420,7 +8492,8 @@
       "de": "Hallo, ich brauche Hilfe, um einen externen Monitor für meinen Arbeitsplatz zu bekommen.",
       "hi": "नमस्ते, मुझे अपने वर्कस्टेशन के लिए एक बाहरी मॉनिटर लेने में मदद चाहिए।",
       "ko": "안녕하세요, 제 워크스테이션에 사용할 외부 모니터를 받는 데 도움이 필요해요.",
-      "it": "Salve, ho bisogno di aiuto per ottenere un monitor esterno per la mia postazione di lavoro."
+      "it": "Salve, ho bisogno di aiuto per ottenere un monitor esterno per la mia postazione di lavoro.",
+      "nl": "Hoi, ik heb hulp nodig om een externe monitor voor mijn werkplek te krijgen."
     },
     "culture_overrides": {
       "en": {
@@ -8454,6 +8527,10 @@
       "it": {
         "first_name": "Roberta",
         "last_name": "Martinelli"
+      },
+      "nl": {
+        "first_name": "Isa",
+        "last_name": "Vermeulen"
       }
     },
     "romanized_culture_overrides": {
@@ -8488,6 +8565,10 @@
       "it": {
         "first_name": "Roberta",
         "last_name": "Martinelli"
+      },
+      "nl": {
+        "first_name": "Isa",
+        "last_name": "Vermeulen"
       }
     }
   },
@@ -9359,7 +9440,8 @@
       "de": "Hallo, ich brauche Zugriff auf Confluence.",
       "hi": "नमस्ते, मुझे कॉन्फ्लूएंस तक पहुँच चाहिए।",
       "ko": "안녕하세요, Confluence 접근 권한이 필요해요.",
-      "it": "Salve, ho bisogno dell'accesso a Confluence."
+      "it": "Salve, ho bisogno dell'accesso a Confluence.",
+      "nl": "Hoi, ik heb toegang tot Confluence nodig."
     },
     "culture_overrides": {
       "en": {
@@ -9393,6 +9475,10 @@
       "it": {
         "first_name": "Paola",
         "last_name": "Conti"
+      },
+      "nl": {
+        "first_name": "Roos",
+        "last_name": "de Wit"
       }
     },
     "romanized_culture_overrides": {
@@ -9427,6 +9513,10 @@
       "it": {
         "first_name": "Paola",
         "last_name": "Conti"
+      },
+      "nl": {
+        "first_name": "Roos",
+        "last_name": "de Wit"
       }
     }
   },
@@ -10451,7 +10541,8 @@
       "de": "Hallo, ich brauche Zugriff auf Datadog.",
       "hi": "नमस्ते, मुझे डेटाडॉग तक पहुँच चाहिए।",
       "ko": "안녕하세요, Datadog 접근 권한이 필요해요.",
-      "it": "Salve, ho bisogno dell'accesso a Datadog."
+      "it": "Salve, ho bisogno dell'accesso a Datadog.",
+      "nl": "Hoi, ik heb toegang tot Datadog nodig."
     },
     "culture_overrides": {
       "en": {
@@ -10485,6 +10576,10 @@
       "it": {
         "first_name": "Benedetta",
         "last_name": "Greco"
+      },
+      "nl": {
+        "first_name": "Judith",
+        "last_name": "Vermeulen"
       }
     },
     "romanized_culture_overrides": {
@@ -10519,6 +10614,10 @@
       "it": {
         "first_name": "Benedetta",
         "last_name": "Greco"
+      },
+      "nl": {
+        "first_name": "Judith",
+        "last_name": "Vermeulen"
       }
     }
   },
@@ -11364,7 +11463,8 @@
       "de": "Hallo, ich brauche eine IntelliJ-Lizenz für meine Entwicklungsarbeit.",
       "hi": "नमस्ते, मुझे अपने विकास कार्य के लिए इंटेलीजे लाइसेंस लेना है।",
       "ko": "안녕하세요, 개발 업무용 IntelliJ 라이선스가 필요해요.",
-      "it": "Salve, devo ottenere una licenza IntelliJ per il mio lavoro di programmazione."
+      "it": "Salve, devo ottenere una licenza IntelliJ per il mio lavoro di programmazione.",
+      "nl": "Hoi, ik heb een IntelliJ-licentie nodig voor mijn ontwikkelwerkzaamheden."
     },
     "culture_overrides": {
       "en": {
@@ -11398,6 +11498,10 @@
       "it": {
         "first_name": "Claudio",
         "last_name": "Benedetti"
+      },
+      "nl": {
+        "first_name": "Thomas",
+        "last_name": "Timmermans"
       }
     },
     "romanized_culture_overrides": {
@@ -11432,6 +11536,10 @@
       "it": {
         "first_name": "Claudio",
         "last_name": "Benedetti"
+      },
+      "nl": {
+        "first_name": "Thomas",
+        "last_name": "Timmermans"
       }
     }
   },
@@ -12252,7 +12360,8 @@
       "de": "Hallo, ich brauche eine temporäre Figma-Lizenz für ein Projekt.",
       "hi": "नमस्ते, मुझे एक प्रोजेक्ट के लिए अस्थायी फ़िग्मा लाइसेंस चाहिए।",
       "ko": "안녕하세요, 프로젝트용 임시 Figma 라이선스가 필요해요.",
-      "it": "Salve, ho bisogno di una licenza temporanea Figma per un progetto."
+      "it": "Salve, ho bisogno di una licenza temporanea Figma per un progetto.",
+      "nl": "Hoi, ik heb een tijdelijke Figma-licentie nodig voor een project."
     },
     "culture_overrides": {
       "en": {
@@ -12286,6 +12395,10 @@
       "it": {
         "first_name": "Elena",
         "last_name": "Ferrari"
+      },
+      "nl": {
+        "first_name": "Inge",
+        "last_name": "Peeters"
       }
     },
     "romanized_culture_overrides": {
@@ -12320,6 +12433,10 @@
       "it": {
         "first_name": "Elena",
         "last_name": "Ferrari"
+      },
+      "nl": {
+        "first_name": "Inge",
+        "last_name": "Peeters"
       }
     }
   },
@@ -13047,7 +13164,8 @@
       "de": "Hallo, ich muss meine IntelliJ IDEA-Lizenz verlängern.",
       "hi": "नमस्ते, मुझे अपना इंटेलीजे आइडिया लाइसेंस नवीनीकृत करना है।",
       "ko": "안녕하세요, IntelliJ IDEA 라이선스를 갱신해야 해요.",
-      "it": "Salve, devo rinnovare la mia licenza IntelliJ IDEA."
+      "it": "Salve, devo rinnovare la mia licenza IntelliJ IDEA.",
+      "nl": "Hoi, ik moet mijn IntelliJ IDEA-licentie verlengen."
     },
     "culture_overrides": {
       "en": {
@@ -13081,6 +13199,10 @@
       "it": {
         "first_name": "Enrico",
         "last_name": "Mazza"
+      },
+      "nl": {
+        "first_name": "Sem",
+        "last_name": "Koster"
       }
     },
     "romanized_culture_overrides": {
@@ -13115,6 +13237,10 @@
       "it": {
         "first_name": "Enrico",
         "last_name": "Mazza"
+      },
+      "nl": {
+        "first_name": "Sem",
+        "last_name": "Koster"
       }
     }
   },
@@ -13905,7 +14031,8 @@
       "de": "Hallo, ich brauche Hilfe, einen Schreibtisch zugewiesen zu bekommen.",
       "hi": "नमस्ते, मुझे एक डेस्क दिलवाने में मदद चाहिए।",
       "ko": "안녕하세요, 자리 배정을 받는 데 도움이 필요해요.",
-      "it": "Salve, ho bisogno di aiuto per farmi assegnare una scrivania."
+      "it": "Salve, ho bisogno di aiuto per farmi assegnare una scrivania.",
+      "nl": "Hoi, ik heb hulp nodig om een bureauplek toegewezen te krijgen."
     },
     "culture_overrides": {
       "en": {
@@ -13939,6 +14066,10 @@
       "it": {
         "first_name": "Angela",
         "last_name": "Mariani"
+      },
+      "nl": {
+        "first_name": "Karin",
+        "last_name": "van den Berg"
       }
     },
     "romanized_culture_overrides": {
@@ -13973,6 +14104,10 @@
       "it": {
         "first_name": "Angela",
         "last_name": "Mariani"
+      },
+      "nl": {
+        "first_name": "Karin",
+        "last_name": "van den Berg"
       }
     }
   },
@@ -14915,7 +15050,8 @@
       "de": "Hallo, ich brauche Hilfe beim Zurücksetzen meines VPN-Passworts.",
       "hi": "नमस्ते, मुझे अपना वीपीएन पासवर्ड रीसेट करने में मदद चाहिए।",
       "ko": "안녕하세요, VPN 비밀번호 재설정하는 데 도움이 필요해요.",
-      "it": "Salve, ho bisogno di aiuto per reimpostare la password della mia VPN."
+      "it": "Salve, ho bisogno di aiuto per reimpostare la password della mia VPN.",
+      "nl": "Hoi, ik heb hulp nodig om mijn VPN-wachtwoord opnieuw in te stellen."
     },
     "culture_overrides": {
       "en": {
@@ -14949,6 +15085,10 @@
       "it": {
         "first_name": "Camilla",
         "last_name": "Longo"
+      },
+      "nl": {
+        "first_name": "Maud",
+        "last_name": "Peters"
       }
     },
     "romanized_culture_overrides": {
@@ -14983,6 +15123,10 @@
       "it": {
         "first_name": "Camilla",
         "last_name": "Longo"
+      },
+      "nl": {
+        "first_name": "Maud",
+        "last_name": "Peters"
       }
     }
   },
@@ -15807,7 +15951,8 @@
       "de": "Hallo, ich brauche Hilfe, einen Schreibtisch am East Campus zu bekommen.",
       "hi": "नमस्ते, मुझे ईस्ट कैंपस में एक डेस्क लेने में मदद चाहिए।",
       "ko": "안녕하세요, East Campus에 자리를 받는 데 도움이 필요해요.",
-      "it": "Salve, ho bisogno di aiuto per ottenere una scrivania a East Campus."
+      "it": "Salve, ho bisogno di aiuto per ottenere una scrivania a East Campus.",
+      "nl": "Hoi, ik heb hulp nodig om een bureauplek op East Campus te krijgen."
     },
     "culture_overrides": {
       "en": {
@@ -15841,6 +15986,10 @@
       "it": {
         "first_name": "Matteo",
         "last_name": "Testa"
+      },
+      "nl": {
+        "first_name": "Julian",
+        "last_name": "Hoekstra"
       }
     },
     "romanized_culture_overrides": {
@@ -15875,6 +16024,10 @@
       "it": {
         "first_name": "Matteo",
         "last_name": "Testa"
+      },
+      "nl": {
+        "first_name": "Julian",
+        "last_name": "Hoekstra"
       }
     }
   },
@@ -16703,7 +16856,8 @@
       "de": "Hallo, ich brauche Hilfe, einen Parkplatz im Parkhaus für Führungskräfte zu bekommen.",
       "hi": "नमस्ते, मुझे एग्ज़ीक्यूटिव गैराज में पार्किंग लेने में मदद चाहिए।",
       "ko": "안녕하세요, Executive Garage 주차 이용을 받는 데 도움이 필요해요.",
-      "it": "Salve, ho bisogno di aiuto per ottenere un parcheggio nell'Executive Garage."
+      "it": "Salve, ho bisogno di aiuto per ottenere un parcheggio nell'Executive Garage.",
+      "nl": "Hoi, ik heb hulp nodig om een parkeerplek in de directiegarage te krijgen."
     },
     "culture_overrides": {
       "en": {
@@ -16737,6 +16891,10 @@
       "it": {
         "first_name": "Federica",
         "last_name": "Lombardi"
+      },
+      "nl": {
+        "first_name": "Petra",
+        "last_name": "de Wit"
       }
     },
     "romanized_culture_overrides": {
@@ -16771,6 +16929,10 @@
       "it": {
         "first_name": "Federica",
         "last_name": "Lombardi"
+      },
+      "nl": {
+        "first_name": "Petra",
+        "last_name": "de Wit"
       }
     }
   },
@@ -17552,7 +17714,8 @@
       "de": "Hallo, ich möchte einen ergonomischen Stuhl für meinen Arbeitsplatz beantragen.",
       "hi": "नमस्ते, मुझे अपने वर्कस्टेशन के लिए एर्गोनॉमिक कुर्सी का अनुरोध करना है।",
       "ko": "안녕하세요, 제 워크스테이션용 인체공학 의자를 요청해야 해요.",
-      "it": "Salve, devo richiedere una sedia ergonomica per la mia postazione di lavoro."
+      "it": "Salve, devo richiedere una sedia ergonomica per la mia postazione di lavoro.",
+      "nl": "Hoi, ik wil een ergonomische stoel voor mijn werkplek aanvragen."
     },
     "culture_overrides": {
       "en": {
@@ -17586,6 +17749,10 @@
       "it": {
         "first_name": "Pietro",
         "last_name": "Rossi"
+      },
+      "nl": {
+        "first_name": "Koen",
+        "last_name": "Martens"
       }
     },
     "romanized_culture_overrides": {
@@ -17620,6 +17787,10 @@
       "it": {
         "first_name": "Pietro",
         "last_name": "Rossi"
+      },
+      "nl": {
+        "first_name": "Koen",
+        "last_name": "Martens"
       }
     }
   },
@@ -18381,7 +18552,8 @@
       "de": "Hallo, ich möchte eine Fußstütze für meinen Schreibtisch beantragen.",
       "hi": "नमस्ते, मुझे अपनी डेस्क के लिए फुटरेस्ट का अनुरोध करना है।",
       "ko": "안녕하세요, 제 책상용 발 받침대를 요청해야 해요.",
-      "it": "Salve, devo richiedere un poggiapiedi per la mia scrivania."
+      "it": "Salve, devo richiedere un poggiapiedi per la mia scrivania.",
+      "nl": "Hoi, ik wil een voetensteun voor mijn bureau aanvragen."
     },
     "culture_overrides": {
       "en": {
@@ -18415,6 +18587,10 @@
       "it": {
         "first_name": "Greta",
         "last_name": "Martinelli"
+      },
+      "nl": {
+        "first_name": "Noor",
+        "last_name": "van Vliet"
       }
     },
     "romanized_culture_overrides": {
@@ -18449,6 +18625,10 @@
       "it": {
         "first_name": "Greta",
         "last_name": "Martinelli"
+      },
+      "nl": {
+        "first_name": "Noor",
+        "last_name": "van Vliet"
       }
     }
   },
@@ -19362,7 +19542,8 @@
       "de": "Hallo, ich muss einen Konferenzraum für ein Meeting nächsten Dienstag buchen.",
       "hi": "नमस्ते, मुझे अगले मंगलवार की मीटिंग के लिए एक कॉन्फ़्रेंस रूम बुक करना है।",
       "ko": "안녕하세요, 다음 주 화요일에 회의실을 예약해야 해요.",
-      "it": "Salve, devo prenotare una sala conferenze per una riunione martedì prossimo."
+      "it": "Salve, devo prenotare una sala conferenze per una riunione martedì prossimo.",
+      "nl": "Hoi, ik moet een vergaderruimte boeken voor een vergadering voor volgende week dinsdag."
     },
     "culture_overrides": {
       "en": {
@@ -19396,6 +19577,10 @@
       "it": {
         "first_name": "Massimo",
         "last_name": "Marchetti"
+      },
+      "nl": {
+        "first_name": "Siem",
+        "last_name": "Vos"
       }
     },
     "romanized_culture_overrides": {
@@ -19430,6 +19615,10 @@
       "it": {
         "first_name": "Massimo",
         "last_name": "Marchetti"
+      },
+      "nl": {
+        "first_name": "Siem",
+        "last_name": "Vos"
       }
     }
   },
@@ -20244,7 +20433,8 @@
       "de": "Hallo, ich muss einen Konferenzraum für ein Meeting buchen.",
       "hi": "नमस्ते, मुझे एक मीटिंग के लिए कॉन्फ़्रेंस रूम बुक करना है।",
       "ko": "안녕하세요, 회의실을 예약해야 해요.",
-      "it": "Salve, devo prenotare una sala conferenze per una riunione."
+      "it": "Salve, devo prenotare una sala conferenze per una riunione.",
+      "nl": "Hoi, ik moet een vergaderruimte boeken voor een vergadering."
     },
     "culture_overrides": {
       "en": {
@@ -20278,6 +20468,10 @@
       "it": {
         "first_name": "Cristina",
         "last_name": "Benedetti"
+      },
+      "nl": {
+        "first_name": "Isa",
+        "last_name": "van Vliet"
       }
     },
     "romanized_culture_overrides": {
@@ -20312,6 +20506,10 @@
       "it": {
         "first_name": "Cristina",
         "last_name": "Benedetti"
+      },
+      "nl": {
+        "first_name": "Isa",
+        "last_name": "van Vliet"
       }
     }
   },
@@ -21179,7 +21377,8 @@
       "de": "Hallo, ich muss Konten für ein neues Teammitglied einrichten lassen, das nächste Woche anfängt.",
       "hi": "नमस्ते, मुझे अगले सप्ताह से जुड़ने वाले एक नए टीम सदस्य के लिए खाते सेट अप करने हैं।",
       "ko": "안녕하세요, 다음 주에 시작하는 새 팀원의 계정을 설정해야 해요.",
-      "it": "Salve, devo configurare gli account per un nuovo membro del team che inizia la settimana prossima."
+      "it": "Salve, devo configurare gli account per un nuovo membro del team che inizia la settimana prossima.",
+      "nl": "Hoi, ik moet accounts aanmaken voor een nieuw teamlid dat volgende week begint."
     },
     "culture_overrides": {
       "en": {
@@ -21213,6 +21412,10 @@
       "it": {
         "first_name": "Carlotta",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Sara",
+        "last_name": "van der Linden"
       }
     },
     "romanized_culture_overrides": {
@@ -21247,6 +21450,10 @@
       "it": {
         "first_name": "Carlotta",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Sara",
+        "last_name": "van der Linden"
       }
     }
   },
@@ -22188,7 +22395,8 @@
       "de": "Hallo, ich brauche Zugriff auf die Datenbank-Lesegruppe wegen eines Produktionsproblems.",
       "hi": "नमस्ते, मुझे एक प्रोडक्शन समस्या के लिए डेटाबेस रीड ग्रुप का एक्सेस चाहिए।",
       "ko": "안녕하세요, 프로덕션 문제 때문에 데이터베이스 읽기 그룹 접근 권한이 필요해요.",
-      "it": "Salve, ho bisogno dell'accesso al gruppo di lettura del database per un problema in produzione."
+      "it": "Salve, ho bisogno dell'accesso al gruppo di lettura del database per un problema in produzione.",
+      "nl": "Hoi, ik heb toegang nodig tot de database-leesgroep vanwege een productieprobleem."
     },
     "culture_overrides": {
       "en": {
@@ -22222,6 +22430,10 @@
       "it": {
         "first_name": "Eleonora",
         "last_name": "Benedetti"
+      },
+      "nl": {
+        "first_name": "Lieke",
+        "last_name": "de Boer"
       }
     },
     "romanized_culture_overrides": {
@@ -22256,6 +22468,10 @@
       "it": {
         "first_name": "Eleonora",
         "last_name": "Benedetti"
+      },
+      "nl": {
+        "first_name": "Lieke",
+        "last_name": "de Boer"
       }
     }
   },
@@ -23160,7 +23376,8 @@
       "de": "Hallo, ich muss aus einer Gruppe entfernt werden, die ich nicht mehr brauche.",
       "hi": "नमस्ते, मुझे एक ऐसे ग्रुप से हटाया जाना है जिसकी अब मुझे ज़रूरत नहीं है।",
       "ko": "안녕하세요, 더 이상 필요 없는 그룹에서 저를 제거해야 해요.",
-      "it": "Salve, devo essere rimosso da un gruppo che non mi serve più."
+      "it": "Salve, devo essere rimosso da un gruppo che non mi serve più.",
+      "nl": "Hoi, ik moet worden verwijderd uit een groep die ik niet meer nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -23194,6 +23411,10 @@
       "it": {
         "first_name": "Luca",
         "last_name": "Ferri"
+      },
+      "nl": {
+        "first_name": "Maarten",
+        "last_name": "Peeters"
       }
     },
     "romanized_culture_overrides": {
@@ -23228,6 +23449,10 @@
       "it": {
         "first_name": "Luca",
         "last_name": "Ferri"
+      },
+      "nl": {
+        "first_name": "Maarten",
+        "last_name": "Peeters"
       }
     }
   },
@@ -24069,7 +24294,8 @@
       "de": "Hallo, ich muss meine Zugriffsrechte wegen einer bevorstehenden Rollenänderung aktualisieren lassen.",
       "hi": "नमस्ते, मुझे अपनी आगामी भूमिका में बदलाव के कारण अपना एक्सेस अपडेट करना है।",
       "ko": "안녕하세요, 곧 있을 역할 변경에 맞춰 제 접근 권한을 업데이트해야 해요.",
-      "it": "Salve, devo aggiornare il mio accesso per un prossimo cambio di ruolo."
+      "it": "Salve, devo aggiornare il mio accesso per un prossimo cambio di ruolo.",
+      "nl": "Hoi, ik moet mijn toegangsrechten bijwerken voor een aankomende functiewijziging."
     },
     "culture_overrides": {
       "en": {
@@ -24103,6 +24329,10 @@
       "it": {
         "first_name": "Nicola",
         "last_name": "Coppola"
+      },
+      "nl": {
+        "first_name": "David",
+        "last_name": "Bakker"
       }
     },
     "romanized_culture_overrides": {
@@ -24137,6 +24367,10 @@
       "it": {
         "first_name": "Nicola",
         "last_name": "Coppola"
+      },
+      "nl": {
+        "first_name": "David",
+        "last_name": "Bakker"
       }
     }
   },
@@ -25031,7 +25265,8 @@
       "de": "Hallo, ich muss die Zugriffsrechte für ein Teammitglied entfernen lassen, das das Unternehmen verlässt.",
       "hi": "नमस्ते, मुझे अपनी टीम से जा रहे एक सदस्य का एक्सेस हटाना है।",
       "ko": "안녕하세요, 퇴사하는 팀원의 접근 권한을 제거해야 합니다.",
-      "it": "Salve, devo revocare l'accesso a un membro del mio team che sta lasciando l'azienda."
+      "it": "Salve, devo revocare l'accesso a un membro del mio team che sta lasciando l'azienda.",
+      "nl": "Hoi, ik moet de toegangsrechten verwijderen voor een vertrekkend teamlid."
     },
     "culture_overrides": {
       "en": {
@@ -25065,6 +25300,10 @@
       "it": {
         "first_name": "Sara",
         "last_name": "Marino"
+      },
+      "nl": {
+        "first_name": "Nova",
+        "last_name": "Mulder"
       }
     },
     "romanized_culture_overrides": {
@@ -25099,6 +25338,10 @@
       "it": {
         "first_name": "Sara",
         "last_name": "Marino"
+      },
+      "nl": {
+        "first_name": "Nova",
+        "last_name": "Mulder"
       }
     }
   },
@@ -25866,7 +26109,8 @@
       "de": "Hallo, ich wollte den Status meiner Salesforce-Zugriffsanfrage prüfen.",
       "hi": "नमस्ते, मैं अपने सेल्सफोर्स पहुँच अनुरोध की स्थिति जाँचना चाहता था।",
       "ko": "안녕하세요, 제 Salesforce 접근 요청 상태를 확인하고 싶습니다.",
-      "it": "Salve, volevo controllare lo stato della mia richiesta di accesso a Salesforce."
+      "it": "Salve, volevo controllare lo stato della mia richiesta di accesso a Salesforce.",
+      "nl": "Hoi, ik wilde de status van mijn toegangsaanvraag voor Salesforce controleren."
     },
     "culture_overrides": {
       "en": {
@@ -25900,6 +26144,10 @@
       "it": {
         "first_name": "Greta",
         "last_name": "Rinaldi"
+      },
+      "nl": {
+        "first_name": "Marit",
+        "last_name": "de Vries"
       }
     },
     "romanized_culture_overrides": {
@@ -25934,6 +26182,10 @@
       "it": {
         "first_name": "Greta",
         "last_name": "Rinaldi"
+      },
+      "nl": {
+        "first_name": "Marit",
+        "last_name": "de Vries"
       }
     }
   },
@@ -27269,7 +27521,8 @@
       "de": "Hallo, mein Arbeitslaptop lässt sich nicht einschalten und ich brauche Hilfe damit.",
       "hi": "नमस्ते, मेरा ऑफ़िस लैपटॉप चालू नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 업무용 노트북 전원이 켜지지 않아서 도움이 필요합니다.",
-      "it": "Salve, il mio portatile aziendale non si accende e ho bisogno di aiuto."
+      "it": "Salve, il mio portatile aziendale non si accende e ho bisogno di aiuto.",
+      "nl": "Hoi, mijn werklaptop gaat niet meer aan en ik heb daar hulp bij nodig."
     },
     "culture_overrides": {
       "en": {
@@ -27303,6 +27556,10 @@
       "it": {
         "first_name": "Antonio",
         "last_name": "Marchetti"
+      },
+      "nl": {
+        "first_name": "Sam",
+        "last_name": "van Loon"
       }
     },
     "romanized_culture_overrides": {
@@ -27337,6 +27594,10 @@
       "it": {
         "first_name": "Antonio",
         "last_name": "Marchetti"
+      },
+      "nl": {
+        "first_name": "Sam",
+        "last_name": "van Loon"
       }
     }
   },
@@ -28713,7 +28974,8 @@
       "de": "Hallo, ich kann mich nicht bei meiner E-Mail anmelden.",
       "hi": "नमस्ते, मैं अपने ईमेल में लॉग इन नहीं कर पा रहा हूँ।",
       "ko": "안녕하세요, 이메일에 로그인할 수 없습니다.",
-      "it": "Salve, non riesco ad accedere alla mia email."
+      "it": "Salve, non riesco ad accedere alla mia email.",
+      "nl": "Hoi, ik kan niet inloggen op mijn e-mail."
     },
     "culture_overrides": {
       "en": {
@@ -28747,6 +29009,10 @@
       "it": {
         "first_name": "Giorgio",
         "last_name": "Rizzo"
+      },
+      "nl": {
+        "first_name": "Peter",
+        "last_name": "Post"
       }
     },
     "romanized_culture_overrides": {
@@ -28781,6 +29047,10 @@
       "it": {
         "first_name": "Giorgio",
         "last_name": "Rizzo"
+      },
+      "nl": {
+        "first_name": "Peter",
+        "last_name": "Post"
       }
     }
   },
@@ -29665,7 +29935,8 @@
       "de": "Hallo, ich habe ein paar Dinge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per un paio di cose."
+      "it": "Salve, mi servirebbe aiuto per un paio di cose.",
+      "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -29699,6 +29970,10 @@
       "it": {
         "first_name": "Andrea",
         "last_name": "Ferri"
+      },
+      "nl": {
+        "first_name": "Gijs",
+        "last_name": "Dijkstra"
       }
     },
     "romanized_culture_overrides": {
@@ -29733,6 +30008,10 @@
       "it": {
         "first_name": "Andrea",
         "last_name": "Ferri"
+      },
+      "nl": {
+        "first_name": "Gijs",
+        "last_name": "Dijkstra"
       }
     }
   },
@@ -30672,7 +30951,8 @@
       "de": "Hallo, ich habe ein paar IT-Hardware-Anfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी हार्डवेयर से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 IT 하드웨어 요청이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle richieste relative all'hardware IT."
+      "it": "Salve, mi servirebbe aiuto per delle richieste relative all'hardware IT.",
+      "nl": "Hoi, ik heb een paar ICT-hardwareverzoeken waarbij ik hulp nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -30706,6 +30986,10 @@
       "it": {
         "first_name": "Cristina",
         "last_name": "Grassi"
+      },
+      "nl": {
+        "first_name": "Anouk",
+        "last_name": "van Dijk"
       }
     },
     "romanized_culture_overrides": {
@@ -30740,6 +31024,10 @@
       "it": {
         "first_name": "Cristina",
         "last_name": "Grassi"
+      },
+      "nl": {
+        "first_name": "Anouk",
+        "last_name": "van Dijk"
       }
     }
   },
@@ -32007,7 +32295,8 @@
       "de": "Hallo, meine E-Mail funktioniert nicht und ich brauche Hilfe damit.",
       "hi": "नमस्ते, मेरा ईमेल बंद पड़ा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 이메일이 작동하지 않아서 도움이 필요합니다.",
-      "it": "Salve, la mia email non funziona e ho bisogno di aiuto."
+      "it": "Salve, la mia email non funziona e ho bisogno di aiuto.",
+      "nl": "Hoi, mijn e-mail ligt eruit en ik heb daar hulp bij nodig."
     },
     "culture_overrides": {
       "en": {
@@ -32041,6 +32330,10 @@
       "it": {
         "first_name": "Alice",
         "last_name": "Galli"
+      },
+      "nl": {
+        "first_name": "Fenna",
+        "last_name": "de Wit"
       }
     },
     "romanized_culture_overrides": {
@@ -32075,6 +32368,10 @@
       "it": {
         "first_name": "Alice",
         "last_name": "Galli"
+      },
+      "nl": {
+        "first_name": "Fenna",
+        "last_name": "de Wit"
       }
     }
   },
@@ -33040,7 +33337,8 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per delle questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -33074,6 +33372,10 @@
       "it": {
         "first_name": "Tommaso",
         "last_name": "Martini"
+      },
+      "nl": {
+        "first_name": "Mees",
+        "last_name": "van Loon"
       }
     },
     "romanized_culture_overrides": {
@@ -33108,6 +33410,10 @@
       "it": {
         "first_name": "Tommaso",
         "last_name": "Martini"
+      },
+      "nl": {
+        "first_name": "Mees",
+        "last_name": "van Loon"
       }
     }
   },
@@ -34032,7 +34338,8 @@
       "de": "Hallo, ich habe ein paar Dinge zu Softwarelizenzen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे सॉफ़्टवेयर लाइसेंस से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 소프트웨어 라이선스 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle questioni relative alle licenze software."
+      "it": "Salve, mi servirebbe aiuto per delle questioni relative alle licenze software.",
+      "nl": "Hoi, ik heb een paar dingen met softwarelicenties waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -34066,6 +34373,10 @@
       "it": {
         "first_name": "Francesca",
         "last_name": "Fabbri"
+      },
+      "nl": {
+        "first_name": "Noor",
+        "last_name": "Janssen"
       }
     },
     "romanized_culture_overrides": {
@@ -34100,6 +34411,10 @@
       "it": {
         "first_name": "Francesca",
         "last_name": "Fabbri"
+      },
+      "nl": {
+        "first_name": "Noor",
+        "last_name": "Janssen"
       }
     }
   },
@@ -35124,7 +35439,8 @@
       "de": "Hallo, ich habe ein paar Anliegen bezüglich der Büroeinrichtungen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे सुविधाओं से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 시설 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle questioni relative ai servizi generali."
+      "it": "Salve, mi servirebbe aiuto per delle questioni relative ai servizi generali.",
+      "nl": "Hoi, ik heb een paar facilitaire voorzieningen waarbij ik hulp nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -35158,6 +35474,10 @@
       "it": {
         "first_name": "Simone",
         "last_name": "Rossi"
+      },
+      "nl": {
+        "first_name": "Tim",
+        "last_name": "de Graaf"
       }
     },
     "romanized_culture_overrides": {
@@ -35192,6 +35512,10 @@
       "it": {
         "first_name": "Simone",
         "last_name": "Rossi"
+      },
+      "nl": {
+        "first_name": "Tim",
+        "last_name": "de Graaf"
       }
     }
   },
@@ -36194,7 +36518,8 @@
       "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कार्यस्थल से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 직장 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle richieste relative all'ambiente di lavoro."
+      "it": "Salve, mi servirebbe aiuto per delle richieste relative all'ambiente di lavoro.",
+      "nl": "Hoi, ik heb een paar werkplekverzoeken waarbij ik hulp nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -36228,6 +36553,10 @@
       "it": {
         "first_name": "Nicole",
         "last_name": "Gallo"
+      },
+      "nl": {
+        "first_name": "Tessa",
+        "last_name": "Vermeulen"
       }
     },
     "romanized_culture_overrides": {
@@ -36262,6 +36591,10 @@
       "it": {
         "first_name": "Nicole",
         "last_name": "Gallo"
+      },
+      "nl": {
+        "first_name": "Tessa",
+        "last_name": "Vermeulen"
       }
     }
   },
@@ -37522,7 +37855,8 @@
       "de": "Hallo, ich habe ein paar IT-Probleme, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ समस्याओं में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per dei problemi informatici."
+      "it": "Salve, mi servirebbe aiuto per dei problemi informatici.",
+      "nl": "Hoi, ik heb een paar ICT-problemen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -37556,6 +37890,10 @@
       "it": {
         "first_name": "Carlo",
         "last_name": "Longo"
+      },
+      "nl": {
+        "first_name": "Sven",
+        "last_name": "Martens"
       }
     },
     "romanized_culture_overrides": {
@@ -37590,6 +37928,10 @@
       "it": {
         "first_name": "Carlo",
         "last_name": "Longo"
+      },
+      "nl": {
+        "first_name": "Sven",
+        "last_name": "Martens"
       }
     }
   },
@@ -38499,7 +38841,8 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per un paio di questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per un paio di questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -38533,6 +38876,10 @@
       "it": {
         "first_name": "Lucia",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Inge",
+        "last_name": "Bos"
       }
     },
     "romanized_culture_overrides": {
@@ -38567,6 +38914,10 @@
       "it": {
         "first_name": "Lucia",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Inge",
+        "last_name": "Bos"
       }
     }
   },
@@ -39807,7 +40158,8 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per delle questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -39841,6 +40193,10 @@
       "it": {
         "first_name": "Angela",
         "last_name": "Ferrara"
+      },
+      "nl": {
+        "first_name": "Hanna",
+        "last_name": "Hermans"
       }
     },
     "romanized_culture_overrides": {
@@ -39875,6 +40231,10 @@
       "it": {
         "first_name": "Angela",
         "last_name": "Ferrara"
+      },
+      "nl": {
+        "first_name": "Hanna",
+        "last_name": "Hermans"
       }
     }
   },
@@ -41025,7 +41385,8 @@
       "de": "Hallo, unser VPN scheint komplett ausgefallen zu sein und ich möchte das melden.",
       "hi": "नमस्ते, हमारा वीपीएन पूरी तरह से बंद लगता है और मुझे इसकी रिपोर्ट करनी है।",
       "ko": "안녕하세요, 저희 VPN이 완전히 다운된 것 같아서 신고하려고 합니다.",
-      "it": "Salve, la nostra VPN sembra essere completamente fuori uso e devo segnalarlo."
+      "it": "Salve, la nostra VPN sembra essere completamente fuori uso e devo segnalarlo.",
+      "nl": "Hoi, onze VPN is compleet uitgevallen en ik wil een melding maken."
     },
     "culture_overrides": {
       "en": {
@@ -41059,6 +41420,10 @@
       "it": {
         "first_name": "Alessio",
         "last_name": "Santoro"
+      },
+      "nl": {
+        "first_name": "Jan",
+        "last_name": "Smit"
       }
     },
     "romanized_culture_overrides": {
@@ -41093,6 +41458,10 @@
       "it": {
         "first_name": "Alessio",
         "last_name": "Santoro"
+      },
+      "nl": {
+        "first_name": "Jan",
+        "last_name": "Smit"
       }
     }
   },
@@ -42313,7 +42682,8 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per delle questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -42347,6 +42717,10 @@
       "it": {
         "first_name": "Benedetta",
         "last_name": "Romano"
+      },
+      "nl": {
+        "first_name": "Tessa",
+        "last_name": "van Beek"
       }
     },
     "romanized_culture_overrides": {
@@ -42381,6 +42755,10 @@
       "it": {
         "first_name": "Benedetta",
         "last_name": "Romano"
+      },
+      "nl": {
+        "first_name": "Tessa",
+        "last_name": "van Beek"
       }
     }
   },
@@ -43334,7 +43712,8 @@
       "de": "Hallo, ich habe ein paar IT-Anfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle richieste informatiche."
+      "it": "Salve, mi servirebbe aiuto per delle richieste informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-verzoeken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -43368,6 +43747,10 @@
       "it": {
         "first_name": "Simone",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Ties",
+        "last_name": "Smits"
       }
     },
     "romanized_culture_overrides": {
@@ -43402,6 +43785,10 @@
       "it": {
         "first_name": "Simone",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Ties",
+        "last_name": "Smits"
       }
     }
   },
@@ -44518,7 +44905,8 @@
       "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कार्यस्थल से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 직장 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle richieste relative all'ambiente di lavoro."
+      "it": "Salve, mi servirebbe aiuto per delle richieste relative all'ambiente di lavoro.",
+      "nl": "Hoi, ik heb een paar werkplekverzoeken waarbij ik hulp nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -44552,6 +44940,10 @@
       "it": {
         "first_name": "Anna",
         "last_name": "Giordano"
+      },
+      "nl": {
+        "first_name": "Anna",
+        "last_name": "van der Meer"
       }
     },
     "romanized_culture_overrides": {
@@ -44586,6 +44978,10 @@
       "it": {
         "first_name": "Anna",
         "last_name": "Giordano"
+      },
+      "nl": {
+        "first_name": "Anna",
+        "last_name": "van der Meer"
       }
     }
   },
@@ -45820,7 +46216,8 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per delle questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -45854,6 +46251,10 @@
       "it": {
         "first_name": "Alessandro",
         "last_name": "Martinelli"
+      },
+      "nl": {
+        "first_name": "Cas",
+        "last_name": "Bos"
       }
     },
     "romanized_culture_overrides": {
@@ -45888,6 +46289,10 @@
       "it": {
         "first_name": "Alessandro",
         "last_name": "Martinelli"
+      },
+      "nl": {
+        "first_name": "Cas",
+        "last_name": "Bos"
       }
     }
   },
@@ -47122,7 +47527,8 @@
       "de": "Hallo, ich habe ein paar Anfragen zur Einrichtung meines Arbeitsplatzes, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कार्यस्थल सेटअप से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 업무 공간 세팅 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune richieste di configurazione dello spazio di lavoro."
+      "it": "Salve, mi servirebbe aiuto per alcune richieste di configurazione dello spazio di lavoro.",
+      "nl": "Hoi, ik heb een paar verzoeken voor het inrichten van mijn werkplek waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -47156,6 +47562,10 @@
       "it": {
         "first_name": "Claudia",
         "last_name": "Mancini"
+      },
+      "nl": {
+        "first_name": "Ilse",
+        "last_name": "de Wit"
       }
     },
     "romanized_culture_overrides": {
@@ -47190,6 +47600,10 @@
       "it": {
         "first_name": "Claudia",
         "last_name": "Mancini"
+      },
+      "nl": {
+        "first_name": "Ilse",
+        "last_name": "de Wit"
       }
     }
   },
@@ -48191,7 +48605,8 @@
       "de": "Hallo, das HR-Portal scheint bei mir nicht zu funktionieren.",
       "hi": "नमस्ते, एचआर पोर्टल मेरे लिए बंद लगता है।",
       "ko": "안녕하세요, 제 쪽에서는 HR 포털이 다운된 것 같습니다.",
-      "it": "Salve, il portale delle risorse umane non mi sta funzionando."
+      "it": "Salve, il portale delle risorse umane non mi sta funzionando.",
+      "nl": "Hoi, het HR-portaal lijkt bij mij niet te werken."
     },
     "culture_overrides": {
       "en": {
@@ -48225,6 +48640,10 @@
       "it": {
         "first_name": "Arianna",
         "last_name": "Lombardo"
+      },
+      "nl": {
+        "first_name": "Chloë",
+        "last_name": "van der Meer"
       }
     },
     "romanized_culture_overrides": {
@@ -48259,6 +48678,10 @@
       "it": {
         "first_name": "Arianna",
         "last_name": "Lombardo"
+      },
+      "nl": {
+        "first_name": "Chloe",
+        "last_name": "van der Meer"
       }
     }
   },
@@ -49433,7 +49856,8 @@
       "de": "Hallo, ich habe heute ein paar Dinge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, oggi avrei bisogno di aiuto per alcune cose."
+      "it": "Salve, oggi avrei bisogno di aiuto per alcune cose.",
+      "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -49467,6 +49891,10 @@
       "it": {
         "first_name": "Alessia",
         "last_name": "Vitale"
+      },
+      "nl": {
+        "first_name": "Isa",
+        "last_name": "Blom"
       }
     },
     "romanized_culture_overrides": {
@@ -49501,6 +49929,10 @@
       "it": {
         "first_name": "Alessia",
         "last_name": "Vitale"
+      },
+      "nl": {
+        "first_name": "Isa",
+        "last_name": "Blom"
       }
     }
   },
@@ -50743,7 +51175,8 @@
       "de": "Hallo, ich habe ein paar Zugriffsanfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एक्सेस से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 접근 권한과 관련해 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per delle richieste di accesso."
+      "it": "Salve, mi servirebbe aiuto per delle richieste di accesso.",
+      "nl": "Hoi, ik heb een paar toegangsaanvragen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -50777,6 +51210,10 @@
       "it": {
         "first_name": "Emanuele",
         "last_name": "De Luca"
+      },
+      "nl": {
+        "first_name": "Noud",
+        "last_name": "de Boer"
       }
     },
     "romanized_culture_overrides": {
@@ -50811,6 +51248,10 @@
       "it": {
         "first_name": "Emanuele",
         "last_name": "DeLuca"
+      },
+      "nl": {
+        "first_name": "Noud",
+        "last_name": "de Boer"
       }
     }
   },
@@ -51848,7 +52289,8 @@
       "de": "Hallo, ich habe ein paar Dinge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose."
+      "it": "Salve, mi servirebbe aiuto per alcune cose.",
+      "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -51882,6 +52324,10 @@
       "it": {
         "first_name": "Edoardo",
         "last_name": "De Luca"
+      },
+      "nl": {
+        "first_name": "Maarten",
+        "last_name": "Dijkstra"
       }
     },
     "romanized_culture_overrides": {
@@ -51916,6 +52362,10 @@
       "it": {
         "first_name": "Edoardo",
         "last_name": "DeLuca"
+      },
+      "nl": {
+        "first_name": "Maarten",
+        "last_name": "Dijkstra"
       }
     }
   },
@@ -52927,7 +53377,8 @@
       "de": "Hallo, ich brauche bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose."
+      "it": "Salve, mi servirebbe aiuto per alcune cose.",
+      "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -52961,6 +53412,10 @@
       "it": {
         "first_name": "Claudio",
         "last_name": "Marchetti"
+      },
+      "nl": {
+        "first_name": "Noah",
+        "last_name": "Gerritsen"
       }
     },
     "romanized_culture_overrides": {
@@ -52995,6 +53450,10 @@
       "it": {
         "first_name": "Claudio",
         "last_name": "Marchetti"
+      },
+      "nl": {
+        "first_name": "Noah",
+        "last_name": "Gerritsen"
       }
     }
   },
@@ -54426,7 +54885,8 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -54460,6 +54920,10 @@
       "it": {
         "first_name": "Angelo",
         "last_name": "Galli"
+      },
+      "nl": {
+        "first_name": "Sven",
+        "last_name": "Jacobs"
       }
     },
     "romanized_culture_overrides": {
@@ -54494,6 +54958,10 @@
       "it": {
         "first_name": "Angelo",
         "last_name": "Galli"
+      },
+      "nl": {
+        "first_name": "Sven",
+        "last_name": "Jacobs"
       }
     }
   },
@@ -55589,7 +56057,8 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Anfragen zu Ausstattung.",
       "hi": "नमस्ते, मुझे उपकरणों से जुड़ी कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 장비 요청 관련해 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune richieste di attrezzature."
+      "it": "Salve, mi servirebbe aiuto per alcune richieste di attrezzature.",
+      "nl": "Hoi, ik heb een paar verzoeken voor apparatuur waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -55623,6 +56092,10 @@
       "it": {
         "first_name": "Veronica",
         "last_name": "De Luca"
+      },
+      "nl": {
+        "first_name": "Anne",
+        "last_name": "Mulder"
       }
     },
     "romanized_culture_overrides": {
@@ -55657,6 +56130,10 @@
       "it": {
         "first_name": "Veronica",
         "last_name": "DeLuca"
+      },
+      "nl": {
+        "first_name": "Anne",
+        "last_name": "Mulder"
       }
     }
   },
@@ -57168,7 +57645,8 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zu meinem Laptop und einer Raumbuchung.",
       "hi": "नमस्ते, मुझे अपने लैपटॉप और एक कमरे की बुकिंग के बारे में कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 제 노트북과 회의실 예약 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose riguardo al mio portatile e alla prenotazione di una sala."
+      "it": "Salve, mi servirebbe aiuto per alcune cose riguardo al mio portatile e alla prenotazione di una sala.",
+      "nl": "Hoi, ik heb een paar dingen waarbij ik hulp nodig heb over mijn laptop en een kamerreservering."
     },
     "culture_overrides": {
       "en": {
@@ -57202,6 +57680,10 @@
       "it": {
         "first_name": "Teresa",
         "last_name": "De Luca"
+      },
+      "nl": {
+        "first_name": "Hanna",
+        "last_name": "Smits"
       }
     },
     "romanized_culture_overrides": {
@@ -57236,6 +57718,10 @@
       "it": {
         "first_name": "Teresa",
         "last_name": "DeLuca"
+      },
+      "nl": {
+        "first_name": "Hanna",
+        "last_name": "Smits"
       }
     }
   },
@@ -58352,7 +58838,8 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen.",
       "hi": "नमस्ते, मुझे सॉफ़्टवेयर से जुड़ी कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 소프트웨어 관련 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune richieste di software."
+      "it": "Salve, mi servirebbe aiuto per alcune richieste di software.",
+      "nl": "Hoi, ik heb een paar softwareverzoeken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -58386,6 +58873,10 @@
       "it": {
         "first_name": "Maria",
         "last_name": "Bianchi"
+      },
+      "nl": {
+        "first_name": "Fenne",
+        "last_name": "de Jong"
       }
     },
     "romanized_culture_overrides": {
@@ -58420,6 +58911,10 @@
       "it": {
         "first_name": "Maria",
         "last_name": "Bianchi"
+      },
+      "nl": {
+        "first_name": "Fenne",
+        "last_name": "de Jong"
       }
     }
   },
@@ -59344,7 +59839,8 @@
       "de": "Hallo, mein externer Monitor zeigt „kein Signal“ an, und ich brauche Hilfe, damit er wieder funktioniert.",
       "hi": "नमस्ते, मेरा बाहरी मॉनिटर 'नो सिग्नल' दिखा रहा है और मुझे इसे फिर से चालू करवाने में मदद चाहिए।",
       "ko": "안녕하세요, 제 외부 모니터에 신호 없음이라고 떠서 다시 작동하게 하는 데 도움이 필요합니다.",
-      "it": "Salve, il mio monitor esterno non mostra nessun segnale e mi serve aiuto per farlo funzionare di nuovo."
+      "it": "Salve, il mio monitor esterno non mostra nessun segnale e mi serve aiuto per farlo funzionare di nuovo.",
+      "nl": "Hoi, mijn externe monitor geeft aan dat er geen signaal is en ik heb hulp nodig om het weer aan de praat te krijgen."
     },
     "culture_overrides": {
       "en": {
@@ -59378,6 +59874,10 @@
       "it": {
         "first_name": "Filippo",
         "last_name": "Mancini"
+      },
+      "nl": {
+        "first_name": "Ties",
+        "last_name": "Willems"
       }
     },
     "romanized_culture_overrides": {
@@ -59412,6 +59912,10 @@
       "it": {
         "first_name": "Filippo",
         "last_name": "Mancini"
+      },
+      "nl": {
+        "first_name": "Ties",
+        "last_name": "Willems"
       }
     }
   },
@@ -60524,7 +61028,8 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Büroeinrichtung.",
       "hi": "नमस्ते, मुझे कार्यालय सेटअप से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 사무실 설치 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune questioni che riguardano l’allestimento dell’ufficio."
+      "it": "Salve, mi servirebbe aiuto per alcune questioni che riguardano l’allestimento dell’ufficio.",
+      "nl": "Hoi, ik heb een paar dingen voor de inrichting van mijn kantoor waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -60558,6 +61063,10 @@
       "it": {
         "first_name": "Paolo",
         "last_name": "Lombardo"
+      },
+      "nl": {
+        "first_name": "Jesse",
+        "last_name": "van Dam"
       }
     },
     "romanized_culture_overrides": {
@@ -60592,6 +61101,10 @@
       "it": {
         "first_name": "Paolo",
         "last_name": "Lombardo"
+      },
+      "nl": {
+        "first_name": "Jesse",
+        "last_name": "van Dam"
       }
     }
   },
@@ -61660,7 +62173,8 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen.",
       "hi": "नमस्ते, मुझे कुछ आईटी अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune richieste informatiche."
+      "it": "Salve, mi servirebbe aiuto per alcune richieste informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-verzoeken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -61694,6 +62208,10 @@
       "it": {
         "first_name": "Camilla",
         "last_name": "Colombo"
+      },
+      "nl": {
+        "first_name": "Karin",
+        "last_name": "Peeters"
       }
     },
     "romanized_culture_overrides": {
@@ -61728,6 +62246,10 @@
       "it": {
         "first_name": "Camilla",
         "last_name": "Colombo"
+      },
+      "nl": {
+        "first_name": "Karin",
+        "last_name": "Peeters"
       }
     }
   },
@@ -62570,7 +63092,8 @@
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose."
+      "it": "Salve, mi servirebbe aiuto per alcune cose.",
+      "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -62604,6 +63127,10 @@
       "it": {
         "first_name": "Eleonora",
         "last_name": "Esposito"
+      },
+      "nl": {
+        "first_name": "Judith",
+        "last_name": "Vos"
       }
     },
     "romanized_culture_overrides": {
@@ -62638,6 +63165,10 @@
       "it": {
         "first_name": "Eleonora",
         "last_name": "Esposito"
+      },
+      "nl": {
+        "first_name": "Judith",
+        "last_name": "Vos"
       }
     }
   },
@@ -63793,7 +64324,8 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -63827,6 +64359,10 @@
       "it": {
         "first_name": "Mattia",
         "last_name": "Grassi"
+      },
+      "nl": {
+        "first_name": "Hendrik",
+        "last_name": "van Leeuwen"
       }
     },
     "romanized_culture_overrides": {
@@ -63861,6 +64397,10 @@
       "it": {
         "first_name": "Mattia",
         "last_name": "Grassi"
+      },
+      "nl": {
+        "first_name": "Hendrik",
+        "last_name": "van Leeuwen"
       }
     }
   },
@@ -65151,7 +65691,8 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Einrichtung meines Arbeitsplatzes.",
       "hi": "नमस्ते, मुझे कार्यस्थल सेटअप से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 업무 공간 설정 관련해서 도움받아야 할 게 몇 가지 있어요.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose che riguardano l’allestimento della postazione di lavoro."
+      "it": "Salve, mi servirebbe aiuto per alcune cose che riguardano l’allestimento della postazione di lavoro.",
+      "nl": "Hoi, ik heb een paar dingen voor de inrichting van mijn werkplek waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -65185,6 +65726,10 @@
       "it": {
         "first_name": "Federica",
         "last_name": "Esposito"
+      },
+      "nl": {
+        "first_name": "Marit",
+        "last_name": "Dijkstra"
       }
     },
     "romanized_culture_overrides": {
@@ -65219,6 +65764,10 @@
       "it": {
         "first_name": "Federica",
         "last_name": "Esposito"
+      },
+      "nl": {
+        "first_name": "Marit",
+        "last_name": "Dijkstra"
       }
     }
   },
@@ -66352,7 +66901,8 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -66386,6 +66936,10 @@
       "it": {
         "first_name": "Massimo",
         "last_name": "Longo"
+      },
+      "nl": {
+        "first_name": "Liam",
+        "last_name": "Mulder"
       }
     },
     "romanized_culture_overrides": {
@@ -66420,6 +66974,10 @@
       "it": {
         "first_name": "Massimo",
         "last_name": "Longo"
+      },
+      "nl": {
+        "first_name": "Liam",
+        "last_name": "Mulder"
       }
     }
   },
@@ -67751,7 +68309,8 @@
       "de": "Hallo, mein Arbeitslaptop ist komplett tot, und ich brauche Hilfe damit.",
       "hi": "नमस्ते, मेरा ऑफ़िस लैपटॉप पूरी तरह बंद हो गया है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 업무용 노트북이 완전히 먹통이라 도움이 필요해요.",
-      "it": "Salve, il mio portatile di lavoro non dà proprio segni di vita e mi serve aiuto."
+      "it": "Salve, il mio portatile di lavoro non dà proprio segni di vita e mi serve aiuto.",
+      "nl": "Hoi, mijn werklaptop is compleet uitgevallen en ik heb er hulp bij nodig."
     },
     "culture_overrides": {
       "en": {
@@ -67785,6 +68344,10 @@
       "it": {
         "first_name": "Mattia",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Thomas",
+        "last_name": "van der Heijden"
       }
     },
     "romanized_culture_overrides": {
@@ -67819,6 +68382,10 @@
       "it": {
         "first_name": "Mattia",
         "last_name": "Moretti"
+      },
+      "nl": {
+        "first_name": "Thomas",
+        "last_name": "van der Heijden"
       }
     }
   },
@@ -69004,7 +69571,8 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen für meinen Büroumzug.",
       "hi": "नमस्ते, मुझे अपने कार्यालय शिफ्ट करने के लिए कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 사무실 이전 관련해서 도움받아야 할 게 몇 가지 있어요.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose che riguardano il mio cambio di ufficio."
+      "it": "Salve, mi servirebbe aiuto per alcune cose che riguardano il mio cambio di ufficio.",
+      "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb voor mijn kantoorverhuizing."
     },
     "culture_overrides": {
       "en": {
@@ -69038,6 +69606,10 @@
       "it": {
         "first_name": "Stefania",
         "last_name": "Caruso"
+      },
+      "nl": {
+        "first_name": "Inge",
+        "last_name": "van Dijk"
       }
     },
     "romanized_culture_overrides": {
@@ -69072,6 +69644,10 @@
       "it": {
         "first_name": "Stefania",
         "last_name": "Caruso"
+      },
+      "nl": {
+        "first_name": "Inge",
+        "last_name": "van Dijk"
       }
     }
   },
@@ -70719,7 +71295,8 @@
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움받아야 할 게 몇 가지 있어요.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose."
+      "it": "Salve, mi servirebbe aiuto per alcune cose.",
+      "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -70753,6 +71330,10 @@
       "it": {
         "first_name": "Lucia",
         "last_name": "Mariani"
+      },
+      "nl": {
+        "first_name": "Maud",
+        "last_name": "Visser"
       }
     },
     "romanized_culture_overrides": {
@@ -70787,6 +71368,10 @@
       "it": {
         "first_name": "Lucia",
         "last_name": "Mariani"
+      },
+      "nl": {
+        "first_name": "Maud",
+        "last_name": "Visser"
       }
     }
   },
@@ -71752,7 +72337,8 @@
       "de": "Hallo, mein Laptop lässt sich nicht einschalten, und ich brauche Hilfe damit.",
       "hi": "नमस्ते, मेरा लैपटॉप चालू नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 노트북이 켜지지 않아서 도움이 필요해요.",
-      "it": "Salve, il mio portatile non si accende e mi serve aiuto."
+      "it": "Salve, il mio portatile non si accende e mi serve aiuto.",
+      "nl": "Hoi, mijn laptop gaat niet meer aan en ik heb er hulp bij nodig."
     },
     "culture_overrides": {
       "en": {
@@ -71786,6 +72372,10 @@
       "it": {
         "first_name": "Miriam",
         "last_name": "Monti"
+      },
+      "nl": {
+        "first_name": "Maud",
+        "last_name": "Janssen"
       }
     },
     "romanized_culture_overrides": {
@@ -71820,6 +72410,10 @@
       "it": {
         "first_name": "Miriam",
         "last_name": "Monti"
+      },
+      "nl": {
+        "first_name": "Maud",
+        "last_name": "Janssen"
       }
     }
   },
@@ -73000,7 +73594,8 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen.",
       "hi": "नमस्ते, मुझे सॉफ़्टवेयर से जुड़ी कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 소프트웨어 요청 관련해서 도움받아야 할 게 몇 가지 있어요.",
-      "it": "Salve, mi servirebbe aiuto per alcune richieste di software."
+      "it": "Salve, mi servirebbe aiuto per alcune richieste di software.",
+      "nl": "Hoi, ik heb een paar softwareverzoeken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -73034,6 +73629,10 @@
       "it": {
         "first_name": "Antonio",
         "last_name": "Benedetti"
+      },
+      "nl": {
+        "first_name": "Sem",
+        "last_name": "Post"
       }
     },
     "romanized_culture_overrides": {
@@ -73068,6 +73667,10 @@
       "it": {
         "first_name": "Antonio",
         "last_name": "Benedetti"
+      },
+      "nl": {
+        "first_name": "Sem",
+        "last_name": "Post"
       }
     }
   },
@@ -74243,7 +74846,8 @@
       "de": "Hallo, ich brauche bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움받아야 할 게 몇 가지 있어요.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose."
+      "it": "Salve, mi servirebbe aiuto per alcune cose.",
+      "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -74277,6 +74881,10 @@
       "it": {
         "first_name": "Carlotta",
         "last_name": "D'Angelo"
+      },
+      "nl": {
+        "first_name": "Kim",
+        "last_name": "Peters"
       }
     },
     "romanized_culture_overrides": {
@@ -74311,6 +74919,10 @@
       "it": {
         "first_name": "Carlotta",
         "last_name": "DAngelo"
+      },
+      "nl": {
+        "first_name": "Kim",
+        "last_name": "Peters"
       }
     }
   },
@@ -75686,7 +76298,8 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -75720,6 +76333,10 @@
       "it": {
         "first_name": "Antonio",
         "last_name": "Colombo"
+      },
+      "nl": {
+        "first_name": "Ruben",
+        "last_name": "de Groot"
       }
     },
     "romanized_culture_overrides": {
@@ -75754,6 +76371,10 @@
       "it": {
         "first_name": "Antonio",
         "last_name": "Colombo"
+      },
+      "nl": {
+        "first_name": "Ruben",
+        "last_name": "de Groot"
       }
     }
   },
@@ -76928,7 +77549,8 @@
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움받아야 할 게 몇 가지 있어요.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose."
+      "it": "Salve, mi servirebbe aiuto per alcune cose.",
+      "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -76962,6 +77584,10 @@
       "it": {
         "first_name": "Francesco",
         "last_name": "Greco"
+      },
+      "nl": {
+        "first_name": "Floris",
+        "last_name": "Prins"
       }
     },
     "romanized_culture_overrides": {
@@ -76996,6 +77622,10 @@
       "it": {
         "first_name": "Francesco",
         "last_name": "Greco"
+      },
+      "nl": {
+        "first_name": "Floris",
+        "last_name": "Prins"
       }
     }
   },
@@ -78132,7 +78762,8 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen.",
       "hi": "नमस्ते, मुझे कुछ आईटी अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune richieste informatiche."
+      "it": "Salve, mi servirebbe aiuto per alcune richieste informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-verzoeken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -78166,6 +78797,10 @@
       "it": {
         "first_name": "Domenico",
         "last_name": "Parisi"
+      },
+      "nl": {
+        "first_name": "Sem",
+        "last_name": "Blom"
       }
     },
     "romanized_culture_overrides": {
@@ -78200,6 +78835,10 @@
       "it": {
         "first_name": "Domenico",
         "last_name": "Parisi"
+      },
+      "nl": {
+        "first_name": "Sem",
+        "last_name": "Blom"
       }
     }
   },
@@ -79692,7 +80331,8 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -79726,6 +80366,10 @@
       "it": {
         "first_name": "Fabio",
         "last_name": "Pellegrini"
+      },
+      "nl": {
+        "first_name": "Finn",
+        "last_name": "van der Linden"
       }
     },
     "romanized_culture_overrides": {
@@ -79760,6 +80404,10 @@
       "it": {
         "first_name": "Fabio",
         "last_name": "Pellegrini"
+      },
+      "nl": {
+        "first_name": "Finn",
+        "last_name": "van der Linden"
       }
     }
   },
@@ -80906,7 +81554,8 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -80940,6 +81589,10 @@
       "it": {
         "first_name": "Veronica",
         "last_name": "Parisi"
+      },
+      "nl": {
+        "first_name": "Iris",
+        "last_name": "Timmermans"
       }
     },
     "romanized_culture_overrides": {
@@ -80974,6 +81627,10 @@
       "it": {
         "first_name": "Veronica",
         "last_name": "Parisi"
+      },
+      "nl": {
+        "first_name": "Iris",
+        "last_name": "Timmermans"
       }
     }
   },
@@ -82438,7 +83095,8 @@
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움받아야 할 게 몇 가지 있어요.",
-      "it": "Salve, mi servirebbe aiuto per alcune cose."
+      "it": "Salve, mi servirebbe aiuto per alcune cose.",
+      "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -82472,6 +83130,10 @@
       "it": {
         "first_name": "Arianna",
         "last_name": "Russo"
+      },
+      "nl": {
+        "first_name": "Lisa",
+        "last_name": "de Graaf"
       }
     },
     "romanized_culture_overrides": {
@@ -82506,6 +83168,10 @@
       "it": {
         "first_name": "Arianna",
         "last_name": "Russo"
+      },
+      "nl": {
+        "first_name": "Lisa",
+        "last_name": "de Graaf"
       }
     }
   },
@@ -84056,7 +84722,8 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
-      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche."
+      "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
+      "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
     "culture_overrides": {
       "en": {
@@ -84090,6 +84757,10 @@
       "it": {
         "first_name": "Giovanni",
         "last_name": "Barbieri"
+      },
+      "nl": {
+        "first_name": "Daan",
+        "last_name": "Scholten"
       }
     },
     "romanized_culture_overrides": {
@@ -84124,6 +84795,10 @@
       "it": {
         "first_name": "Giovanni",
         "last_name": "Barbieri"
+      },
+      "nl": {
+        "first_name": "Daan",
+        "last_name": "Scholten"
       }
     }
   },
@@ -85020,7 +85695,8 @@
       "de": "Hallo, mein VPN funktioniert immer noch nicht, und ich brauche Hilfe dabei.",
       "hi": "नमस्ते, मेरा वीपीएन अभी भी काम नहीं कर रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 VPN이 아직도 작동하지 않아서 도움이 필요해요.",
-      "it": "Salve, la mia VPN continua a non funzionare e ho bisogno di aiuto."
+      "it": "Salve, la mia VPN continua a non funzionare e ho bisogno di aiuto.",
+      "nl": "Hoi, mijn VPN werkt nog steeds niet en ik heb er hulp bij nodig."
     },
     "culture_overrides": {
       "en": {
@@ -85054,6 +85730,10 @@
       "it": {
         "first_name": "Alessio",
         "last_name": "Costa"
+      },
+      "nl": {
+        "first_name": "Tim",
+        "last_name": "van der Heijden"
       }
     },
     "romanized_culture_overrides": {
@@ -85088,6 +85768,10 @@
       "it": {
         "first_name": "Alessio",
         "last_name": "Costa"
+      },
+      "nl": {
+        "first_name": "Tim",
+        "last_name": "van der Heijden"
       }
     }
   },
@@ -86124,7 +86808,8 @@
       "de": "Hallo, ich brauche Hilfe bei einem Login-Problem.",
       "hi": "नमस्ते, मुझे लॉगिन की समस्या में मदद चाहिए।",
       "ko": "안녕하세요, 로그인 문제로 도움이 필요해요.",
-      "it": "Salve, avrei bisogno di aiuto per un problema di accesso."
+      "it": "Salve, avrei bisogno di aiuto per un problema di accesso.",
+      "nl": "Hoi, ik heb hulp nodig met een inlogprobleem."
     },
     "culture_overrides": {
       "en": {
@@ -86158,6 +86843,10 @@
       "it": {
         "first_name": "Michele",
         "last_name": "Parisi"
+      },
+      "nl": {
+        "first_name": "Dirk",
+        "last_name": "Dijkstra"
       }
     },
     "romanized_culture_overrides": {
@@ -86192,6 +86881,10 @@
       "it": {
         "first_name": "Michele",
         "last_name": "Parisi"
+      },
+      "nl": {
+        "first_name": "Dirk",
+        "last_name": "Dijkstra"
       }
     }
   },
@@ -87040,7 +87733,8 @@
       "de": "Hallo, ich brauche Hilfe dabei, etwas in einem Mitarbeiterdatensatz zu überprüfen.",
       "hi": "नमस्ते, मुझे एक कर्मचारी रिकॉर्ड में कुछ देखने में मदद चाहिए।",
       "ko": "안녕하세요, 직원 기록에서 뭔가 확인하는 데 도움이 필요해요.",
-      "it": "Salve, avrei bisogno di aiuto per controllare una cosa nel fascicolo di un dipendente."
+      "it": "Salve, avrei bisogno di aiuto per controllare una cosa nel fascicolo di un dipendente.",
+      "nl": "Hoi, ik heb hulp nodig om iets te controleren in een personeelsdossier."
     },
     "culture_overrides": {
       "en": {
@@ -87074,6 +87768,10 @@
       "it": {
         "first_name": "Alessio",
         "last_name": "Ferri"
+      },
+      "nl": {
+        "first_name": "Joost",
+        "last_name": "Jacobs"
       }
     },
     "romanized_culture_overrides": {
@@ -87108,6 +87806,10 @@
       "it": {
         "first_name": "Alessio",
         "last_name": "Ferri"
+      },
+      "nl": {
+        "first_name": "Joost",
+        "last_name": "Jacobs"
       }
     }
   },
@@ -88022,7 +88724,8 @@
       "de": "Hallo, ich muss meinen Laptop ersetzen.",
       "hi": "नमस्ते, मुझे अपना लैपटॉप बदलना है।",
       "ko": "안녕하세요, 제 노트북을 교체해야 해요.",
-      "it": "Salve, devo sostituire il mio portatile."
+      "it": "Salve, devo sostituire il mio portatile.",
+      "nl": "Hoi, ik moet mijn laptop vervangen."
     },
     "culture_overrides": {
       "en": {
@@ -88056,6 +88759,10 @@
       "it": {
         "first_name": "Giulio",
         "last_name": "Serra"
+      },
+      "nl": {
+        "first_name": "Sem",
+        "last_name": "Kuiper"
       }
     },
     "romanized_culture_overrides": {
@@ -88090,6 +88797,10 @@
       "it": {
         "first_name": "Giulio",
         "last_name": "Serra"
+      },
+      "nl": {
+        "first_name": "Sem",
+        "last_name": "Kuiper"
       }
     }
   },
@@ -89040,7 +89751,8 @@
       "de": "Hallo, ich muss meinen Arbeitslaptop ersetzen.",
       "hi": "नमस्ते, मुझे अपना ऑफ़िस का लैपटॉप बदलना है।",
       "ko": "안녕하세요, 제 업무용 노트북을 교체해야 해요.",
-      "it": "Salve, devo sostituire il mio portatile aziendale."
+      "it": "Salve, devo sostituire il mio portatile aziendale.",
+      "nl": "Hoi, ik moet mijn werklaptop vervangen."
     },
     "culture_overrides": {
       "en": {
@@ -89074,6 +89786,10 @@
       "it": {
         "first_name": "Simona",
         "last_name": "Gallo"
+      },
+      "nl": {
+        "first_name": "Laura",
+        "last_name": "Koster"
       }
     },
     "romanized_culture_overrides": {
@@ -89108,6 +89824,10 @@
       "it": {
         "first_name": "Simona",
         "last_name": "Gallo"
+      },
+      "nl": {
+        "first_name": "Laura",
+        "last_name": "Koster"
       }
     }
   }

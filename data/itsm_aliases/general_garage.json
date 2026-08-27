@@ -45,6 +45,11 @@
       "garage generale",
       "parcheggio generale",
       "parcheggio principale"
+    ],
+    "nl": [
+      "algemene garage",
+      "algemene parkeergarage",
+      "hoofdgarage"
     ]
   }
 }

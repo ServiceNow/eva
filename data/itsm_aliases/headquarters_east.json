@@ -58,6 +58,12 @@
       "edificio est",
       "palazzo est",
       "sede centrale est"
+    ],
+    "nl": [
+      "hoofdkantoor oost",
+      "oostgebouw",
+      "oostvleugel hoofdkantoor",
+      "hoofdkantoor oostvleugel"
     ]
   }
 }

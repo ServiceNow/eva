@@ -2,8 +2,26 @@
 
 import copy
 import itertools
+import json
 from enum import StrEnum
+from pathlib import Path
 from typing import Any
+
+
+def parse_log_message(line: str) -> str:
+    """The message portion of a ``logs.log`` line ('… | msg'), or the whole line."""
+    return line.rsplit(" | ", 1)[-1]
+
+
+def load_audit_log(path: Path) -> dict | None:
+    """Parse ``audit_log.json`` into a dict; ``None`` if missing, unparseable, or not a JSON object."""
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
 
 
 class AnnotationLabel(StrEnum):
@@ -47,11 +65,13 @@ def normalize_for_comparison(text: str) -> str:
 
 
 def truncate_data_uris(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Return a deep copy of *messages* with long data-URI strings truncated.
+    """Return a deep copy of *messages* with long base64 audio strings truncated.
 
-    Audio messages embed base64 WAV data in ``audio_url.url`` fields which can
-    be hundreds of KB each.  For audit logging we only need a prefix to identify
-    the content type; the full payload is not useful in logs.
+    Audio messages embed base64 WAV data either as a ``data:`` URI in
+    ``audio_url.url`` (cascade-style) or as a raw base64 string in
+    ``input_audio.data`` (OpenAI/Gemini ``input_audio`` content parts), both
+    of which can be hundreds of KB each. For audit logging we only need a
+    prefix to identify the content type; the full payload is not useful in logs.
     """
     truncated = copy.deepcopy(messages)
     for msg in truncated:
@@ -59,11 +79,16 @@ def truncate_data_uris(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not isinstance(content, list):
             continue
         for item in content:
-            inner = item.get("audio_url")
-            if isinstance(inner, dict):
-                url = inner.get("url", "")
+            audio_url = item.get("audio_url")
+            if isinstance(audio_url, dict):
+                url = audio_url.get("url", "")
                 if url.startswith(_DATA_URI_PREFIX) and len(url) > _MAX_DATA_URI_LEN:
-                    inner["url"] = url[:_MAX_DATA_URI_LEN] + _TRUNCATION_SUFFIX
+                    audio_url["url"] = url[:_MAX_DATA_URI_LEN] + _TRUNCATION_SUFFIX
+            input_audio = item.get("input_audio")
+            if isinstance(input_audio, dict):
+                data = input_audio.get("data", "")
+                if len(data) > _MAX_DATA_URI_LEN:
+                    input_audio["data"] = data[:_MAX_DATA_URI_LEN] + _TRUNCATION_SUFFIX
     return truncated
 
 

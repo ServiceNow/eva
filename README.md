@@ -343,7 +343,7 @@ output/<run_id>/
 | **🎯 EVA-A · Accuracy** | **✨ EVA-X · Experience** |
 |---|---|
 | *Did the agent complete the task correctly?* | *Was the conversational experience high quality?* |
-|  **Task Completion** · Deterministic |  **Turn Taking** · LLM Judge `BETA` |
+|  **Task Completion** · Deterministic |  **Turn Taking** · Deterministic |
 |  **Agent Speech Fidelity** · Audio LLM Judge `BETA` |  **Conciseness** · LLM Judge |
 |  **Faithfulness** · LLM Judge |  **Conversation Progression** · LLM Judge |
 

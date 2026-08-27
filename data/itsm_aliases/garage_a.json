@@ -36,6 +36,11 @@
     "it": [
       "autorimessa A",
       "parcheggio A"
+    ],
+    "nl": [
+      "a-garage",
+      "parkeergarage A",
+      "garage A"
     ]
   }
 }
