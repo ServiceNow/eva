@@ -20,7 +20,7 @@ const paretoInsights = [
   {
     title: 'No system clears 0.6 on both axes pass@1',
     description:
-      'Across 20 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
+      'Across 18 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
   },
   {
     title: 'Peak and reliable performance diverge',
@@ -30,7 +30,7 @@ const paretoInsights = [
   {
     title: 'Architecture and SDK implementation both shape results',
     description:
-      'The Pareto frontier spans both S2S and cascade architectures. Cascade results vary significantly depending on the SDK implementation used, with some cascade configurations achieving turn-taking scores competitive with S2S models. This suggests that integration choices can matter as much as the underlying models.',
+      'The Pareto frontier spans both S2S and cascade architectures. For cascade systems, we enabled LLM streaming and pre-tool speech. Cascade results vary significantly depending on the SDK implementation used, with some cascade configurations achieving turn-taking scores competitive with S2S models. This suggests that integration choices can matter as much as the underlying models.',
   },
 ];
 
