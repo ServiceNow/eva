@@ -21,6 +21,7 @@ from pipecat.services.cartesia.stt import CartesiaSTTService
 from pipecat.services.cartesia.tts import CartesiaTTSService
 from pipecat.services.cartesia.turns.stt import CartesiaTurnsSTTService
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService, DeepgramFluxSTTSettings
+from pipecat.services.deepgram.flux.tts import DeepgramFluxTTSService
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.deepgram.tts import DeepgramTTSService
 from pipecat.services.elevenlabs.stt import CommitStrategy, ElevenLabsRealtimeSTTService
@@ -375,7 +376,7 @@ def create_tts_service(
     Based on create_tts_service() from chatbot.py.
 
     Args:
-        model: TTS model identifier (cartesia, elevenlabs, openai, gemini)
+        model: TTS model identifier (cartesia, deepgram, deepgram-flux, elevenlabs, openai, gemini)
         params: Model-specific parameters (may include 'alias' key which is ignored here)
         language_code: Language code for speech synthesis
 
@@ -430,7 +431,17 @@ def create_tts_service(
         chatterbox_tts._settings.language = language_code
         return chatterbox_tts
 
-    elif model_lower == "deepgram":
+    elif model_lower.startswith("deepgram"):
+        if "flux" in model_lower:
+            # Flux TTS (/v2/speak) has no separate "model" field: the flux-{voice}-{lang}
+            # string IS the voice, and pipecat keeps Settings.model in sync with it.
+            voice = params.get("voice", "flux-alexis-en")
+            logger.info(f"Using Deepgram Flux TTS: {voice}")
+            return DeepgramFluxTTSService(
+                api_key=api_key,
+                sample_rate=SAMPLE_RATE,
+                settings=DeepgramFluxTTSService.Settings(voice=voice),
+            )
         logger.info(f"Using Deepgram TTS: {params['model']}")
         return DeepgramTTSService(
             api_key=api_key,
@@ -646,7 +657,7 @@ def create_tts_service(
 
     else:
         raise ValueError(
-            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, elevenlabs, gemini, kokoro, nvidia-baseten, openai, smallest, soniox, voxtral, xai, xtts"
+            f"Unknown TTS model: {model}. Available: cartesia, chatterbox, deepgram, deepgram-flux, elevenlabs, gemini, kokoro, nvidia-baseten, openai, smallest, soniox, voxtral, xai, xtts"
         )
 
 

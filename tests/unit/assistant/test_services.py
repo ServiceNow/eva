@@ -321,6 +321,21 @@ class TestCreateTtsService:
         svc = create_tts_service("soniox", params={"api_key": "k", "model": "tts-rt-v1"})
         assert svc._settings.voice == "Adrian"
 
+    def test_deepgram_returns_deepgram_service(self):
+        svc = create_tts_service("deepgram", params={"api_key": "k", "model": "aura-2-helena-en"})
+        assert "Deepgram" in type(svc).__name__
+        assert "Flux" not in type(svc).__name__
+        assert svc._settings.voice == "aura-2-helena-en"
+
+    def test_deepgram_flux_returns_flux_variant(self):
+        svc = create_tts_service("deepgram-flux", params={"api_key": "k", "voice": "flux-haley-en"})
+        assert "Flux" in type(svc).__name__
+        assert svc._settings.voice == "flux-haley-en"
+
+    def test_deepgram_flux_defaults_voice_when_unset(self):
+        svc = create_tts_service("deepgram-flux", params={"api_key": "k"})
+        assert svc._settings.voice == "flux-alexis-en"
+
     def test_openai_respects_voice_param(self):
         svc = create_tts_service("openai", params={"api_key": "k", "model": "tts-1", "voice": "nova"})
         assert svc._settings.voice == "nova"
