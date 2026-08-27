@@ -41,6 +41,23 @@
       "동쪽 캠퍼스 주차장",
       "동캠 주차장",
       "이스트 캠퍼스 주차장"
+    ],
+    "ja": [
+      "イーストガレージ",
+      "東キャンパス駐車場"
+    ],
+    "it": [
+      "autorimessa del campus est",
+      "garage est",
+      "parcheggio del campus est"
+    ],
+    "nl": [
+      "garage oostcampus",
+      "parkeergarage oostcampus",
+      "oostcampusgarage",
+      "oostcampusparkeergarage",
+      "parkeergarage oost",
+      "garage oost"
     ]
   }
 }

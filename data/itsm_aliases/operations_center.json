@@ -49,6 +49,20 @@
       "옵스 센터",
       "운영 본부",
       "운영 센터"
+    ],
+    "ja": [
+      "オペレーションセンター",
+      "運用センター"
+    ],
+    "it": [
+      "centro operativo",
+      "centro operazioni",
+      "sede operativa"
+    ],
+    "nl": [
+      "bedrijfsvoeringcentrum",
+      "operatiecentrum",
+      "operationeel centrum"
     ]
   }
 }

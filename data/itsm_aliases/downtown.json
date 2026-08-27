@@ -50,6 +50,29 @@
       "다운타운 빌딩",
       "다운타운 사무실",
       "영업 본부"
+    ],
+    "ja": [
+      "ダウンタウン",
+      "ダウンタウンビル",
+      "営業本部",
+      "都心オフィス",
+      "都心",
+      "セールス本部",
+      "都心事務所"
+    ],
+    "it": [
+      "palazzo vendite",
+      "sede in centro",
+      "sede vendite",
+      "ufficio del centro"
+    ],
+    "nl": [
+      "binnenstad",
+      "stadscentrum",
+      "kantoor in het centrum",
+      "hartje stad",
+      "hartje centrum",
+      "verkoopkantoor in het centrum"
     ]
   }
 }

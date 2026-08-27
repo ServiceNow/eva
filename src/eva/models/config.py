@@ -117,7 +117,11 @@ class ModelConfig(BaseModel):
         "stt_model": "stt",
         "tts_model": "tts",
     }
-    _LEGACY_DROP: ClassVar[set[str]] = {"realtime_model", "realtime_model_params"}
+    _LEGACY_DROP: ClassVar[set[str]] = {
+        "realtime_model",
+        "realtime_model_params",
+        "audio_llm_full_audio_context",
+    }
 
     # STT models that perform their own (server-side) semantic endpointing. They drive turn
     # boundaries themselves, so they must run with the 'external' turn strategies and no local VAD.
@@ -403,6 +407,9 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.DE: "German",
     Language.HI: "Hindi",
     Language.KO: "Korean",
+    Language.NL: "Dutch",
+    Language.IT: "Italian",
+    Language.JA: "Japanese",
 }
 
 
@@ -526,16 +533,19 @@ class RunConfig(BaseSettings):
     )
 
     # Framework selection
-    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice"] = Field(
-        "pipecat",
-        description=(
-            "Agent framework to use for the assistant server."
-            "'pipecat' (default): Pipecat pipeline."
-            "'openai_realtime': OpenAI Realtime API directly."
-            "'gemini_live': Gemini Live API via google-genai."
-            "'elevenlabs': ElevenLabs Conversational AI API."
-            "'grok_voice': xAI Grok voice realtime API."
-        ),
+    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra"] = (
+        Field(
+            "pipecat",
+            description=(
+                "Agent framework to use for the assistant server."
+                "'pipecat' (default): Pipecat pipeline."
+                "'openai_realtime': OpenAI Realtime API directly."
+                "'gemini_live': Gemini Live API via google-genai."
+                "'elevenlabs': ElevenLabs Conversational AI API."
+                "'grok_voice': xAI Grok voice realtime API."
+                "'smallest_hydra': Smallest Hydra speech-to-speech API."
+            ),
+        )
     )
 
     # Run identifier

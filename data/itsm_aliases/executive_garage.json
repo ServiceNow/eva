@@ -53,6 +53,28 @@
       "임원 주차동",
       "임원 주차장",
       "임원용 차고"
+    ],
+    "ja": [
+      "エグゼクティブガレージ",
+      "メイン駐車場",
+      "幹部用駐車場",
+      "役員用駐車場",
+      "メインガレージ"
+    ],
+    "it": [
+      "autorimessa dirigenti",
+      "garage per i dirigenti",
+      "parcheggio per i dirigenti",
+      "parcheggio dirigenti"
+    ],
+    "nl": [
+      "directiegarage",
+      "garageplaats voor de directie",
+      "directiegarageplek",
+      "directieparkeerplaats",
+      "parkeergarage directie",
+      "hoofdgarage voor de directie",
+      "parkeerplek directie"
     ]
   }
 }

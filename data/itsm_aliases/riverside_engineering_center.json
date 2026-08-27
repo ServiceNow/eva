@@ -47,6 +47,23 @@
       "리버사이드",
       "리버사이드 엔지니어링 센터",
       "엔지니어링 센터"
+    ],
+    "ja": [
+      "リバーサイド",
+      "リバーサイド技術センター",
+      "技術センター",
+      "エンジニアリングセンター",
+      "リバーサイドエンジニアリングセンター"
+    ],
+    "it": [
+      "centro d'ingegneria sul fiume",
+      "sede d'ingegneria Riverside"
+    ],
+    "nl": [
+      "engineeringcentrum rivierzijde",
+      "rivierzijde",
+      "technisch centrum rivierzijde ",
+      "technisch centrum aan de rivier"
     ]
   }
 }

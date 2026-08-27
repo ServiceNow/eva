@@ -39,6 +39,25 @@
       "알파 주차동",
       "알파 주차장",
       "알파 차고"
+    ],
+    "ja": [
+      "アルファガレージ",
+      "アルファ駐車場",
+      "メイン駐車場",
+      "メインガレージ",
+      "本館ガレージ",
+      "メイン車庫"
+    ],
+    "it": [
+      "autorimessa alfa",
+      "garage alfa",
+      "parcheggio alfa",
+      "parcheggio principale"
+    ],
+    "nl": [
+      "alpha-garage",
+      "garage alpha",
+      "hoofdgarage"
     ]
   }
 }
