@@ -568,11 +568,25 @@ class PipecatAssistantServer(AbstractAssistantServer):
 
     def _create_transport(self, websocket) -> FastAPIWebsocketTransport:
         """Create the WebSocket transport with Twilio frame serialization."""
+        audio_in_filter_cfg = self.pipeline_config.audio_in_filter.lower()
+        if audio_in_filter_cfg == "none":
+            audio_in_filter = None
+        elif audio_in_filter_cfg == "krisp_viva":
+            from pipecat.audio.filters.krisp_viva_filter import KrispVivaFilter
+
+            audio_in_filter = KrispVivaFilter(**self.pipeline_config.audio_in_filter_params)
+            logger.info("Using Krisp VIVA audio-in filter")
+        else:
+            raise ValueError(
+                f"Unsupported audio_in_filter: {audio_in_filter_cfg}. Supported types: 'krisp_viva', 'none'"
+            )
+
         return FastAPIWebsocketTransport(
             websocket=websocket,
             params=FastAPIWebsocketParams(
                 audio_in_enabled=True,
                 audio_out_enabled=True,
+                audio_in_filter=audio_in_filter,
                 add_wav_header=False,
                 serializer=TwilioFrameSerializer(
                     self.conversation_id,
