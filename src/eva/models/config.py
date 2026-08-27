@@ -408,6 +408,8 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.HI: "Hindi",
     Language.KO: "Korean",
     Language.NL: "Dutch",
+    Language.IT: "Italian",
+    Language.JA: "Japanese",
 }
 
 
