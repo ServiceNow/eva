@@ -848,15 +848,15 @@ class TestSelfEndpointingSTTAutowire:
 
 
 class TestLatencyOptimizationFlags:
-    def test_defaults_off(self):
+    def test_defaults_on(self):
         c = _config(env_vars=_BASE_ENV)
-        assert c.model.pre_tool_speech == "off"
-        assert c.model.llm_streaming is False
-
-    def test_set_via_env(self):
-        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": "auto", "EVA_MODEL__LLM_STREAMING": "true"})
         assert c.model.pre_tool_speech == "auto"
         assert c.model.llm_streaming is True
+
+    def test_set_via_env(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": "off", "EVA_MODEL__LLM_STREAMING": "false"})
+        assert c.model.pre_tool_speech == "off"
+        assert c.model.llm_streaming is False
 
     @pytest.mark.parametrize("value", ["bogus", "force"])
     def test_invalid_pre_tool_speech_rejected(self, value):

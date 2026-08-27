@@ -65,6 +65,11 @@ export function groupedSystems(input: SystemStats[]): SystemStats[] {
   );
 }
 
+/** Whether `system` has any clean-condition metric data at all. */
+export function hasCleanData(system: SystemStats): boolean {
+  return Object.keys(system.clean).length > 0;
+}
+
 /** Return the CIPoint for `metric` on `system` at `domain` (or pooled). */
 export function getValue(system: SystemStats, metric: string, domain: DomainOrPooled): CIPoint | null {
   const block = system.clean[metric];
