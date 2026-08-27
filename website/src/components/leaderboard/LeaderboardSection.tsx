@@ -37,9 +37,9 @@ const paretoInsights = [
 // Supporting bullets drawn from §4.3 Robustness and §4.4 Failure Mode Analysis.
 const keyInsights = [
   {
-    title: 'Cascade accuracy–experience trade-off',
+    title: 'Accuracy–experience trade-off',
     description:
-      'Among cascade systems we observe a consistent accuracy–experience trade-off: higher-accuracy cascades tend to have higher tool-call latencies, while faster cascades trade accuracy for lower latency.',
+      'Across evaluated systems, accuracy and experience trace out a clear Pareto frontier: the highest-accuracy systems tend to have lower experience scores, while the highest-experience systems tend to have lower accuracy.',
   },
   {
     title: 'Asymmetric degradation under perturbation',
@@ -64,7 +64,7 @@ const keyInsights = [
   {
     title: 'Low-latency cascades close the experience gap',
     description:
-      'Cascade systems built with low-latency models can outperform S2S models on experience. The fastest cascade system achieves the highest EVA-X pass@1 (0.82) of any system, with turn-taking (0.88) surpassing all S2S models — suggesting that latency, not architecture, is the primary driver of experience quality.',
+      'Cascade systems built with low-latency models can outperform S2S models on experience. Streaming the LLM responses as well as using pre-tool speech can greatly improve turn-taking. The fastest cascade system achieves the highest EVA-X pass@1 (0.82) of any system, with turn-taking (0.88) surpassing all S2S models — suggesting that latency, not architecture, is the primary driver of experience quality.',
   },
 ];
 
