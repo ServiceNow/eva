@@ -409,6 +409,7 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.KO: "Korean",
     Language.NL: "Dutch",
     Language.IT: "Italian",
+    Language.JA: "Japanese",
 }
 
 

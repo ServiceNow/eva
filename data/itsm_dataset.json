@@ -829,6 +829,7 @@
       "de": "Hallo, ich bin ausgesperrt und brauche Hilfe, um wieder an mein Konto zu kommen.",
       "hi": "नमस्ते, मैं अपने अकाउंट से बाहर हो गया हूँ और मुझे इसे वापस एक्सेस करने में मदद चाहिए।",
       "ko": "안녕하세요, 계정이 잠겨서 다시 들어갈 수 있게 도움을 받아야 해요.",
+      "ja": "こんにちは、アカウントにログインできなくなってしまい、復旧をお願いしたいのですが。",
       "it": "Salve, non riesco più ad accedere al mio account e ho bisogno di aiuto per rientrare.",
       "nl": "Hoi, ik ben geblokkeerd en heb hulp nodig om weer toegang te krijgen tot mijn account."
     },
@@ -860,6 +861,10 @@
       "ko": {
         "first_name": "재현",
         "last_name": "주"
+      },
+      "ja": {
+        "first_name": "翔",
+        "last_name": "坂本"
       },
       "it": {
         "first_name": "Simone",
@@ -898,6 +903,10 @@
       "ko": {
         "first_name": "Jaehyeon",
         "last_name": "Ju"
+      },
+      "ja": {
+        "first_name": "Sho",
+        "last_name": "Sakamoto"
       },
       "it": {
         "first_name": "Simone",
@@ -1698,6 +1707,7 @@
       "de": "Hallo, ich kann mich nicht mit dem Firmen-WLAN verbinden.",
       "hi": "नमस्ते, मैं कॉर्पोरेट वाईफ़ाई से कनेक्ट नहीं कर पा रहा/रही हूँ।",
       "ko": "안녕하세요, 회사 Wi-Fi에 연결이 안 돼요.",
+      "ja": "こんにちは、社内Wi-Fiに接続できません。",
       "it": "Salve, non riesco a connettermi al Wi-Fi aziendale.",
       "nl": "Hoi, ik kan geen verbinding maken met de bedrijfswifi."
     },
@@ -1729,6 +1739,10 @@
       "ko": {
         "first_name": "지윤",
         "last_name": "황"
+      },
+      "ja": {
+        "first_name": "桃子",
+        "last_name": "池田"
       },
       "it": {
         "first_name": "Veronica",
@@ -1767,6 +1781,10 @@
       "ko": {
         "first_name": "Jiyun",
         "last_name": "Hwang"
+      },
+      "ja": {
+        "first_name": "Momoko",
+        "last_name": "Ikeda"
       },
       "it": {
         "first_name": "Veronica",
@@ -2736,6 +2754,7 @@
       "de": "Hallo, ich muss einen Konferenzraum buchen.",
       "hi": "नमस्ते, मुझे एक कॉन्फ़्रेंस रूम बुक करना है।",
       "ko": "안녕하세요, 회의실을 예약해야 해요.",
+      "ja": "こんにちは、会議室を予約したいのですが。",
       "it": "Salve, devo prenotare una sala conferenze.",
       "nl": "Hoi, ik moet een vergaderruimte boeken."
     },
@@ -2767,6 +2786,10 @@
       "ko": {
         "first_name": "현준",
         "last_name": "양"
+      },
+      "ja": {
+        "first_name": "次郎",
+        "last_name": "長谷川"
       },
       "it": {
         "first_name": "Federico",
@@ -2805,6 +2828,10 @@
       "ko": {
         "first_name": "Hyeonjun",
         "last_name": "Yang"
+      },
+      "ja": {
+        "first_name": "Jiro",
+        "last_name": "Hasegawa"
       },
       "it": {
         "first_name": "Federico",
@@ -3729,6 +3756,7 @@
       "de": "Hallo, ich brauche Zugriff auf Datadog.",
       "hi": "नमस्ते, मुझे डेटाडॉग तक पहुँच चाहिए।",
       "ko": "안녕하세요, Datadog 접근 권한이 필요해요.",
+      "ja": "こんにちは、Datadogへのアクセス権限が必要です。",
       "it": "Salve, ho bisogno dell'accesso a Datadog.",
       "nl": "Hoi, ik heb toegang tot Datadog nodig."
     },
@@ -3760,6 +3788,10 @@
       "ko": {
         "first_name": "지원",
         "last_name": "원"
+      },
+      "ja": {
+        "first_name": "裕子",
+        "last_name": "高橋"
       },
       "it": {
         "first_name": "Elisa",
@@ -3798,6 +3830,10 @@
       "ko": {
         "first_name": "Jiwon",
         "last_name": "Won"
+      },
+      "ja": {
+        "first_name": "Yuko",
+        "last_name": "Takahashi"
       },
       "it": {
         "first_name": "Elisa",
@@ -4621,6 +4657,7 @@
       "de": "Hallo, ich muss meinen Laptop austauschen lassen.",
       "hi": "नमस्ते, मुझे अपना लैपटॉप बदलवाना है।",
       "ko": "안녕하세요, 노트북을 교체해야 해요.",
+      "ja": "こんにちは、パソコンを交換していただきたいのですが。",
       "it": "Salve, devo farmi sostituire il portatile.",
       "nl": "Hoi, ik moet mijn laptop laten vervangen."
     },
@@ -4652,6 +4689,10 @@
       "ko": {
         "first_name": "민준",
         "last_name": "현"
+      },
+      "ja": {
+        "first_name": "翔",
+        "last_name": "藤田"
       },
       "it": {
         "first_name": "Luigi",
@@ -4690,6 +4731,10 @@
       "ko": {
         "first_name": "Minjun",
         "last_name": "Hyeon"
+      },
+      "ja": {
+        "first_name": "Sho",
+        "last_name": "Fujita"
       },
       "it": {
         "first_name": "Luigi",
@@ -5762,6 +5807,7 @@
       "de": "Hallo, ich muss einen neuen Mitarbeiter einrichten lassen.",
       "hi": "नमस्ते, मुझे एक नए कर्मचारी के लिए प्रोविज़न करवाना है।",
       "ko": "안녕하세요, 신규 입사자 프로비저닝을 해야 해요.",
+      "ja": "こんにちは、新入社員のアカウント発行をお願いしたいのですが。",
       "it": "Salve, devo far configurare gli accessi e le risorse per un nuovo impiegato.",
       "nl": "Hoi, ik moet een nieuwe medewerker in de systemen aanmaken."
     },
@@ -5793,6 +5839,10 @@
       "ko": {
         "first_name": "준혁",
         "last_name": "최"
+      },
+      "ja": {
+        "first_name": "次郎",
+        "last_name": "斎藤"
       },
       "it": {
         "first_name": "Giuseppe",
@@ -5831,6 +5881,10 @@
       "ko": {
         "first_name": "Junhyeok",
         "last_name": "Choe"
+      },
+      "ja": {
+        "first_name": "Jiro",
+        "last_name": "Saito"
       },
       "it": {
         "first_name": "Giuseppe",
@@ -6678,6 +6732,7 @@
       "de": "Hallo, meine VPN-Verbindung bricht ständig ab und ich brauche Hilfe dabei.",
       "hi": "नमस्ते, मेरा वीपीएन बार-बार डिस्कनेक्ट हो रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, VPN 연결이 계속 끊겨서 도움이 필요해요.",
+      "ja": "こんにちは、VPNが頻繁に切断されるので、対応をお願いしたいのですが。",
       "it": "Salve, la mia VPN continua a disconnettersi e ho bisogno di aiuto.",
       "nl": "Hoi, mijn VPN-verbinding blijft steeds wegvallen en ik heb daar hulp bij nodig."
     },
@@ -6709,6 +6764,10 @@
       "ko": {
         "first_name": "하준",
         "last_name": "손"
+      },
+      "ja": {
+        "first_name": "悠斗",
+        "last_name": "後藤"
       },
       "it": {
         "first_name": "Samuele",
@@ -6747,6 +6806,10 @@
       "ko": {
         "first_name": "Hajun",
         "last_name": "Son"
+      },
+      "ja": {
+        "first_name": "Yuto",
+        "last_name": "Goto"
       },
       "it": {
         "first_name": "Samuele",
@@ -7732,6 +7795,7 @@
       "de": "Hallo, ich muss meinen Laptop ersetzen, weil er wirklich alt und langsam geworden ist.",
       "hi": "नमस्ते, मुझे अपना लैपटॉप बदलवाना है क्योंकि यह बहुत पुराना और धीमा हो गया है।",
       "ko": "안녕하세요, 노트북이 너무 오래되고 느려져서 교체해야 해요.",
+      "ja": "こんにちは、パソコンがかなり古くなり動作も遅くなってきたため、交換をお願いしたいのですが。",
       "it": "Salve, devo sostituire il mio portatile perché è molto vecchio e lento.",
       "nl": "Hoi, ik moet mijn laptop vervangen omdat hij echt oud en traag is geworden."
     },
@@ -7763,6 +7827,10 @@
       "ko": {
         "first_name": "우진",
         "last_name": "문"
+      },
+      "ja": {
+        "first_name": "圭介",
+        "last_name": "渡辺"
       },
       "it": {
         "first_name": "Giulio",
@@ -7801,6 +7869,10 @@
       "ko": {
         "first_name": "Ujin",
         "last_name": "Mun"
+      },
+      "ja": {
+        "first_name": "Keisuke",
+        "last_name": "Watanabe"
       },
       "it": {
         "first_name": "Giulio",
@@ -8492,6 +8564,7 @@
       "de": "Hallo, ich brauche Hilfe, um einen externen Monitor für meinen Arbeitsplatz zu bekommen.",
       "hi": "नमस्ते, मुझे अपने वर्कस्टेशन के लिए एक बाहरी मॉनिटर लेने में मदद चाहिए।",
       "ko": "안녕하세요, 제 워크스테이션에 사용할 외부 모니터를 받는 데 도움이 필요해요.",
+      "ja": "こんにちは、ワークステーション用の外部モニターを手配していただきたいのですが。",
       "it": "Salve, ho bisogno di aiuto per ottenere un monitor esterno per la mia postazione di lavoro.",
       "nl": "Hoi, ik heb hulp nodig om een externe monitor voor mijn werkplek te krijgen."
     },
@@ -8523,6 +8596,10 @@
       "ko": {
         "first_name": "시은",
         "last_name": "구"
+      },
+      "ja": {
+        "first_name": "沙織",
+        "last_name": "斎藤"
       },
       "it": {
         "first_name": "Roberta",
@@ -8561,6 +8638,10 @@
       "ko": {
         "first_name": "Sieun",
         "last_name": "Gu"
+      },
+      "ja": {
+        "first_name": "Saori",
+        "last_name": "Saito"
       },
       "it": {
         "first_name": "Roberta",
@@ -9440,6 +9521,7 @@
       "de": "Hallo, ich brauche Zugriff auf Confluence.",
       "hi": "नमस्ते, मुझे कॉन्फ्लूएंस तक पहुँच चाहिए।",
       "ko": "안녕하세요, Confluence 접근 권한이 필요해요.",
+      "ja": "こんにちは、Confluenceへのアクセス権原が必要です。",
       "it": "Salve, ho bisogno dell'accesso a Confluence.",
       "nl": "Hoi, ik heb toegang tot Confluence nodig."
     },
@@ -9471,6 +9553,10 @@
       "ko": {
         "first_name": "예진",
         "last_name": "진"
+      },
+      "ja": {
+        "first_name": "理恵",
+        "last_name": "小林"
       },
       "it": {
         "first_name": "Paola",
@@ -9509,6 +9595,10 @@
       "ko": {
         "first_name": "Yejin",
         "last_name": "Jin"
+      },
+      "ja": {
+        "first_name": "Rie",
+        "last_name": "Kobayashi"
       },
       "it": {
         "first_name": "Paola",
@@ -10541,6 +10631,7 @@
       "de": "Hallo, ich brauche Zugriff auf Datadog.",
       "hi": "नमस्ते, मुझे डेटाडॉग तक पहुँच चाहिए।",
       "ko": "안녕하세요, Datadog 접근 권한이 필요해요.",
+      "ja": "こんにちは、Datadogへのアクセス権原が必要です。",
       "it": "Salve, ho bisogno dell'accesso a Datadog.",
       "nl": "Hoi, ik heb toegang tot Datadog nodig."
     },
@@ -10572,6 +10663,10 @@
       "ko": {
         "first_name": "하린",
         "last_name": "천"
+      },
+      "ja": {
+        "first_name": "葵",
+        "last_name": "松本"
       },
       "it": {
         "first_name": "Benedetta",
@@ -10610,6 +10705,10 @@
       "ko": {
         "first_name": "Harin",
         "last_name": "Cheon"
+      },
+      "ja": {
+        "first_name": "Aoi",
+        "last_name": "Matsumoto"
       },
       "it": {
         "first_name": "Benedetta",
@@ -11463,6 +11562,7 @@
       "de": "Hallo, ich brauche eine IntelliJ-Lizenz für meine Entwicklungsarbeit.",
       "hi": "नमस्ते, मुझे अपने विकास कार्य के लिए इंटेलीजे लाइसेंस लेना है।",
       "ko": "안녕하세요, 개발 업무용 IntelliJ 라이선스가 필요해요.",
+      "ja": "こんにちは、開発業務用のIntelliJライセンスを申請したいのですが。",
       "it": "Salve, devo ottenere una licenza IntelliJ per il mio lavoro di programmazione.",
       "nl": "Hoi, ik heb een IntelliJ-licentie nodig voor mijn ontwikkelwerkzaamheden."
     },
@@ -11494,6 +11594,10 @@
       "ko": {
         "first_name": "예준",
         "last_name": "최"
+      },
+      "ja": {
+        "first_name": "智也",
+        "last_name": "山口"
       },
       "it": {
         "first_name": "Claudio",
@@ -11532,6 +11636,10 @@
       "ko": {
         "first_name": "Yejun",
         "last_name": "Choe"
+      },
+      "ja": {
+        "first_name": "Tomoya",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Claudio",
@@ -12360,6 +12468,7 @@
       "de": "Hallo, ich brauche eine temporäre Figma-Lizenz für ein Projekt.",
       "hi": "नमस्ते, मुझे एक प्रोजेक्ट के लिए अस्थायी फ़िग्मा लाइसेंस चाहिए।",
       "ko": "안녕하세요, 프로젝트용 임시 Figma 라이선스가 필요해요.",
+      "ja": "こんにちは、プロジェクト用に一時的なFigmaライセンスを申請したいのですが。",
       "it": "Salve, ho bisogno di una licenza temporanea Figma per un progetto.",
       "nl": "Hoi, ik heb een tijdelijke Figma-licentie nodig voor een project."
     },
@@ -12391,6 +12500,10 @@
       "ko": {
         "first_name": "시은",
         "last_name": "성"
+      },
+      "ja": {
+        "first_name": "純子",
+        "last_name": "佐々木"
       },
       "it": {
         "first_name": "Elena",
@@ -12429,6 +12542,10 @@
       "ko": {
         "first_name": "Sieun",
         "last_name": "Seong"
+      },
+      "ja": {
+        "first_name": "Junko",
+        "last_name": "Sasaki"
       },
       "it": {
         "first_name": "Elena",
@@ -13164,6 +13281,7 @@
       "de": "Hallo, ich muss meine IntelliJ IDEA-Lizenz verlängern.",
       "hi": "नमस्ते, मुझे अपना इंटेलीजे आइडिया लाइसेंस नवीनीकृत करना है।",
       "ko": "안녕하세요, IntelliJ IDEA 라이선스를 갱신해야 해요.",
+      "ja": "こんにちは、IntelliJ IDEAのライセンスを更新したいのですが。",
       "it": "Salve, devo rinnovare la mia licenza IntelliJ IDEA.",
       "nl": "Hoi, ik moet mijn IntelliJ IDEA-licentie verlengen."
     },
@@ -13195,6 +13313,10 @@
       "ko": {
         "first_name": "지환",
         "last_name": "문"
+      },
+      "ja": {
+        "first_name": "駿",
+        "last_name": "松田"
       },
       "it": {
         "first_name": "Enrico",
@@ -13233,6 +13355,10 @@
       "ko": {
         "first_name": "Jihwan",
         "last_name": "Mun"
+      },
+      "ja": {
+        "first_name": "Shun",
+        "last_name": "Matsuda"
       },
       "it": {
         "first_name": "Enrico",
@@ -14031,6 +14157,7 @@
       "de": "Hallo, ich brauche Hilfe, einen Schreibtisch zugewiesen zu bekommen.",
       "hi": "नमस्ते, मुझे एक डेस्क दिलवाने में मदद चाहिए।",
       "ko": "안녕하세요, 자리 배정을 받는 데 도움이 필요해요.",
+      "ja": "こんにちは、座席の割り当てをお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per farmi assegnare una scrivania.",
       "nl": "Hoi, ik heb hulp nodig om een bureauplek toegewezen te krijgen."
     },
@@ -14062,6 +14189,10 @@
       "ko": {
         "first_name": "하영",
         "last_name": "권"
+      },
+      "ja": {
+        "first_name": "美和",
+        "last_name": "加藤"
       },
       "it": {
         "first_name": "Angela",
@@ -14100,6 +14231,10 @@
       "ko": {
         "first_name": "Hayeong",
         "last_name": "Gwon"
+      },
+      "ja": {
+        "first_name": "Miwa",
+        "last_name": "Kato"
       },
       "it": {
         "first_name": "Angela",
@@ -15050,6 +15185,7 @@
       "de": "Hallo, ich brauche Hilfe beim Zurücksetzen meines VPN-Passworts.",
       "hi": "नमस्ते, मुझे अपना वीपीएन पासवर्ड रीसेट करने में मदद चाहिए।",
       "ko": "안녕하세요, VPN 비밀번호 재설정하는 데 도움이 필요해요.",
+      "ja": "こんにちは、VPNのパスワードをリセットしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per reimpostare la password della mia VPN.",
       "nl": "Hoi, ik heb hulp nodig om mijn VPN-wachtwoord opnieuw in te stellen."
     },
@@ -15081,6 +15217,10 @@
       "ko": {
         "first_name": "다은",
         "last_name": "김"
+      },
+      "ja": {
+        "first_name": "恵子",
+        "last_name": "岡本"
       },
       "it": {
         "first_name": "Camilla",
@@ -15119,6 +15259,10 @@
       "ko": {
         "first_name": "Daeun",
         "last_name": "Kim"
+      },
+      "ja": {
+        "first_name": "Keiko",
+        "last_name": "Okamoto"
       },
       "it": {
         "first_name": "Camilla",
@@ -15951,6 +16095,7 @@
       "de": "Hallo, ich brauche Hilfe, einen Schreibtisch am East Campus zu bekommen.",
       "hi": "नमस्ते, मुझे ईस्ट कैंपस में एक डेस्क लेने में मदद चाहिए।",
       "ko": "안녕하세요, East Campus에 자리를 받는 데 도움이 필요해요.",
+      "ja": "東キャンパスの座席の割り当てをお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per ottenere una scrivania a East Campus.",
       "nl": "Hoi, ik heb hulp nodig om een bureauplek op East Campus te krijgen."
     },
@@ -15982,6 +16127,10 @@
       "ko": {
         "first_name": "승민",
         "last_name": "조"
+      },
+      "ja": {
+        "first_name": "和馬",
+        "last_name": "石川"
       },
       "it": {
         "first_name": "Matteo",
@@ -16020,6 +16169,10 @@
       "ko": {
         "first_name": "Seungmin",
         "last_name": "Jo"
+      },
+      "ja": {
+        "first_name": "Kazuma",
+        "last_name": "Ishikawa"
       },
       "it": {
         "first_name": "Matteo",
@@ -16856,6 +17009,7 @@
       "de": "Hallo, ich brauche Hilfe, einen Parkplatz im Parkhaus für Führungskräfte zu bekommen.",
       "hi": "नमस्ते, मुझे एग्ज़ीक्यूटिव गैराज में पार्किंग लेने में मदद चाहिए।",
       "ko": "안녕하세요, Executive Garage 주차 이용을 받는 데 도움이 필요해요.",
+      "ja": "こんにちは、役員用駐車場での駐車スペースの割り当てをお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per ottenere un parcheggio nell'Executive Garage.",
       "nl": "Hoi, ik heb hulp nodig om een parkeerplek in de directiegarage te krijgen."
     },
@@ -16887,6 +17041,10 @@
       "ko": {
         "first_name": "현서",
         "last_name": "안"
+      },
+      "ja": {
+        "first_name": "真理",
+        "last_name": "森"
       },
       "it": {
         "first_name": "Federica",
@@ -16925,6 +17083,10 @@
       "ko": {
         "first_name": "Hyeonseo",
         "last_name": "An"
+      },
+      "ja": {
+        "first_name": "Mari",
+        "last_name": "Mori"
       },
       "it": {
         "first_name": "Federica",
@@ -17714,6 +17876,7 @@
       "de": "Hallo, ich möchte einen ergonomischen Stuhl für meinen Arbeitsplatz beantragen.",
       "hi": "नमस्ते, मुझे अपने वर्कस्टेशन के लिए एर्गोनॉमिक कुर्सी का अनुरोध करना है।",
       "ko": "안녕하세요, 제 워크스테이션용 인체공학 의자를 요청해야 해요.",
+      "ja": "こんにちは、ワークステーション用のエルゴノミクスチェアを申請したいのですが。",
       "it": "Salve, devo richiedere una sedia ergonomica per la mia postazione di lavoro.",
       "nl": "Hoi, ik wil een ergonomische stoel voor mijn werkplek aanvragen."
     },
@@ -17745,6 +17908,10 @@
       "ko": {
         "first_name": "예준",
         "last_name": "하"
+      },
+      "ja": {
+        "first_name": "陽翔",
+        "last_name": "林"
       },
       "it": {
         "first_name": "Pietro",
@@ -17783,6 +17950,10 @@
       "ko": {
         "first_name": "Yejun",
         "last_name": "Ha"
+      },
+      "ja": {
+        "first_name": "Haruto",
+        "last_name": "Hayashi"
       },
       "it": {
         "first_name": "Pietro",
@@ -18552,6 +18723,7 @@
       "de": "Hallo, ich möchte eine Fußstütze für meinen Schreibtisch beantragen.",
       "hi": "नमस्ते, मुझे अपनी डेस्क के लिए फुटरेस्ट का अनुरोध करना है।",
       "ko": "안녕하세요, 제 책상용 발 받침대를 요청해야 해요.",
+      "ja": "こんにちは、デスク用のフットレストを申請したいのですが。",
       "it": "Salve, devo richiedere un poggiapiedi per la mia scrivania.",
       "nl": "Hoi, ik wil een voetensteun voor mijn bureau aanvragen."
     },
@@ -18583,6 +18755,10 @@
       "ko": {
         "first_name": "예진",
         "last_name": "지"
+      },
+      "ja": {
+        "first_name": "陽子",
+        "last_name": "遠藤"
       },
       "it": {
         "first_name": "Greta",
@@ -18621,6 +18797,10 @@
       "ko": {
         "first_name": "Yejin",
         "last_name": "Ji"
+      },
+      "ja": {
+        "first_name": "Yoko",
+        "last_name": "Endo"
       },
       "it": {
         "first_name": "Greta",
@@ -19542,6 +19722,7 @@
       "de": "Hallo, ich muss einen Konferenzraum für ein Meeting nächsten Dienstag buchen.",
       "hi": "नमस्ते, मुझे अगले मंगलवार की मीटिंग के लिए एक कॉन्फ़्रेंस रूम बुक करना है।",
       "ko": "안녕하세요, 다음 주 화요일에 회의실을 예약해야 해요.",
+      "ja": "こんにちは、来週の火曜日に会議室を予約したいのですが。",
       "it": "Salve, devo prenotare una sala conferenze per una riunione martedì prossimo.",
       "nl": "Hoi, ik moet een vergaderruimte boeken voor een vergadering voor volgende week dinsdag."
     },
@@ -19573,6 +19754,10 @@
       "ko": {
         "first_name": "시윤",
         "last_name": "최"
+      },
+      "ja": {
+        "first_name": "優太",
+        "last_name": "藤井"
       },
       "it": {
         "first_name": "Massimo",
@@ -19611,6 +19796,10 @@
       "ko": {
         "first_name": "Siyun",
         "last_name": "Choe"
+      },
+      "ja": {
+        "first_name": "Yuta",
+        "last_name": "Fujii"
       },
       "it": {
         "first_name": "Massimo",
@@ -20433,6 +20622,7 @@
       "de": "Hallo, ich muss einen Konferenzraum für ein Meeting buchen.",
       "hi": "नमस्ते, मुझे एक मीटिंग के लिए कॉन्फ़्रेंस रूम बुक करना है।",
       "ko": "안녕하세요, 회의실을 예약해야 해요.",
+      "ja": "こんにちは、会議室を予約したいのですが。",
       "it": "Salve, devo prenotare una sala conferenze per una riunione.",
       "nl": "Hoi, ik moet een vergaderruimte boeken voor een vergadering."
     },
@@ -20464,6 +20654,10 @@
       "ko": {
         "first_name": "지유",
         "last_name": "황"
+      },
+      "ja": {
+        "first_name": "理恵",
+        "last_name": "小川"
       },
       "it": {
         "first_name": "Cristina",
@@ -20502,6 +20696,10 @@
       "ko": {
         "first_name": "Jiyu",
         "last_name": "Hwang"
+      },
+      "ja": {
+        "first_name": "Rie",
+        "last_name": "Ogawa"
       },
       "it": {
         "first_name": "Cristina",
@@ -21377,6 +21575,7 @@
       "de": "Hallo, ich muss Konten für ein neues Teammitglied einrichten lassen, das nächste Woche anfängt.",
       "hi": "नमस्ते, मुझे अगले सप्ताह से जुड़ने वाले एक नए टीम सदस्य के लिए खाते सेट अप करने हैं।",
       "ko": "안녕하세요, 다음 주에 시작하는 새 팀원의 계정을 설정해야 해요.",
+      "ja": "こんにちは、来週入社する新しいチームメンバーのアカウントを作成したいのですが。",
       "it": "Salve, devo configurare gli account per un nuovo membro del team che inizia la settimana prossima.",
       "nl": "Hoi, ik moet accounts aanmaken voor een nieuw teamlid dat volgende week begint."
     },
@@ -21408,6 +21607,10 @@
       "ko": {
         "first_name": "소연",
         "last_name": "구"
+      },
+      "ja": {
+        "first_name": "愛",
+        "last_name": "三浦"
       },
       "it": {
         "first_name": "Carlotta",
@@ -21446,6 +21649,10 @@
       "ko": {
         "first_name": "Soyeon",
         "last_name": "Gu"
+      },
+      "ja": {
+        "first_name": "Ai",
+        "last_name": "Miura"
       },
       "it": {
         "first_name": "Carlotta",
@@ -22395,6 +22602,7 @@
       "de": "Hallo, ich brauche Zugriff auf die Datenbank-Lesegruppe wegen eines Produktionsproblems.",
       "hi": "नमस्ते, मुझे एक प्रोडक्शन समस्या के लिए डेटाबेस रीड ग्रुप का एक्सेस चाहिए।",
       "ko": "안녕하세요, 프로덕션 문제 때문에 데이터베이스 읽기 그룹 접근 권한이 필요해요.",
+      "ja": "こんにちは、本番障害の対応のため、データベース読み取りグループへの追加をお願いしたいのですが。",
       "it": "Salve, ho bisogno dell'accesso al gruppo di lettura del database per un problema in produzione.",
       "nl": "Hoi, ik heb toegang nodig tot de database-leesgroep vanwege een productieprobleem."
     },
@@ -22426,6 +22634,10 @@
       "ko": {
         "first_name": "유림",
         "last_name": "신"
+      },
+      "ja": {
+        "first_name": "紬",
+        "last_name": "山口"
       },
       "it": {
         "first_name": "Eleonora",
@@ -22464,6 +22676,10 @@
       "ko": {
         "first_name": "Yurim",
         "last_name": "Sin"
+      },
+      "ja": {
+        "first_name": "Tsumugi",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Eleonora",
@@ -23376,6 +23592,7 @@
       "de": "Hallo, ich muss aus einer Gruppe entfernt werden, die ich nicht mehr brauche.",
       "hi": "नमस्ते, मुझे एक ऐसे ग्रुप से हटाया जाना है जिसकी अब मुझे ज़रूरत नहीं है।",
       "ko": "안녕하세요, 더 이상 필요 없는 그룹에서 저를 제거해야 해요.",
+      "ja": "こんにちは、不要になったグループから削除していただきたいのですが。",
       "it": "Salve, devo essere rimosso da un gruppo che non mi serve più.",
       "nl": "Hoi, ik moet worden verwijderd uit een groep die ik niet meer nodig heb."
     },
@@ -23407,6 +23624,10 @@
       "ko": {
         "first_name": "재민",
         "last_name": "남"
+      },
+      "ja": {
+        "first_name": "駿",
+        "last_name": "中川"
       },
       "it": {
         "first_name": "Luca",
@@ -23445,6 +23666,10 @@
       "ko": {
         "first_name": "Jaemin",
         "last_name": "Nam"
+      },
+      "ja": {
+        "first_name": "Shun",
+        "last_name": "Nakagawa"
       },
       "it": {
         "first_name": "Luca",
@@ -24294,6 +24519,7 @@
       "de": "Hallo, ich muss meine Zugriffsrechte wegen einer bevorstehenden Rollenänderung aktualisieren lassen.",
       "hi": "नमस्ते, मुझे अपनी आगामी भूमिका में बदलाव के कारण अपना एक्सेस अपडेट करना है।",
       "ko": "안녕하세요, 곧 있을 역할 변경에 맞춰 제 접근 권한을 업데이트해야 해요.",
+      "ja": "こんにちは、今後の役割変更に伴い、アクセス権限を変更していただきたいのですが。",
       "it": "Salve, devo aggiornare il mio accesso per un prossimo cambio di ruolo.",
       "nl": "Hoi, ik moet mijn toegangsrechten bijwerken voor een aankomende functiewijziging."
     },
@@ -24325,6 +24551,10 @@
       "ko": {
         "first_name": "재현",
         "last_name": "임"
+      },
+      "ja": {
+        "first_name": "淳",
+        "last_name": "中島"
       },
       "it": {
         "first_name": "Nicola",
@@ -24363,6 +24593,10 @@
       "ko": {
         "first_name": "Jaehyeon",
         "last_name": "Im"
+      },
+      "ja": {
+        "first_name": "Jun",
+        "last_name": "Nakajima"
       },
       "it": {
         "first_name": "Nicola",
@@ -25265,6 +25499,7 @@
       "de": "Hallo, ich muss die Zugriffsrechte für ein Teammitglied entfernen lassen, das das Unternehmen verlässt.",
       "hi": "नमस्ते, मुझे अपनी टीम से जा रहे एक सदस्य का एक्सेस हटाना है।",
       "ko": "안녕하세요, 퇴사하는 팀원의 접근 권한을 제거해야 합니다.",
+      "ja": "こんにちは、退職するチームメンバーのアクセス権限を削除していただきたいのですが。",
       "it": "Salve, devo revocare l'accesso a un membro del mio team che sta lasciando l'azienda.",
       "nl": "Hoi, ik moet de toegangsrechten verwijderen voor een vertrekkend teamlid."
     },
@@ -25296,6 +25531,10 @@
       "ko": {
         "first_name": "지은",
         "last_name": "박"
+      },
+      "ja": {
+        "first_name": "杏",
+        "last_name": "太田"
       },
       "it": {
         "first_name": "Sara",
@@ -25334,6 +25573,10 @@
       "ko": {
         "first_name": "Jieun",
         "last_name": "Bak"
+      },
+      "ja": {
+        "first_name": "An",
+        "last_name": "Ota"
       },
       "it": {
         "first_name": "Sara",
@@ -26109,6 +26352,7 @@
       "de": "Hallo, ich wollte den Status meiner Salesforce-Zugriffsanfrage prüfen.",
       "hi": "नमस्ते, मैं अपने सेल्सफोर्स पहुँच अनुरोध की स्थिति जाँचना चाहता था।",
       "ko": "안녕하세요, 제 Salesforce 접근 요청 상태를 확인하고 싶습니다.",
+      "ja": "こんにちは、Salesforceのアクセス権限申請の状況を確認したいのですが。",
       "it": "Salve, volevo controllare lo stato della mia richiesta di accesso a Salesforce.",
       "nl": "Hoi, ik wilde de status van mijn toegangsaanvraag voor Salesforce controleren."
     },
@@ -26140,6 +26384,10 @@
       "ko": {
         "first_name": "지유",
         "last_name": "황"
+      },
+      "ja": {
+        "first_name": "真由美",
+        "last_name": "石田"
       },
       "it": {
         "first_name": "Greta",
@@ -26178,6 +26426,10 @@
       "ko": {
         "first_name": "Jiyu",
         "last_name": "Hwang"
+      },
+      "ja": {
+        "first_name": "Mayumi",
+        "last_name": "Ishida"
       },
       "it": {
         "first_name": "Greta",
@@ -27521,6 +27773,7 @@
       "de": "Hallo, mein Arbeitslaptop lässt sich nicht einschalten und ich brauche Hilfe damit.",
       "hi": "नमस्ते, मेरा ऑफ़िस लैपटॉप चालू नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 업무용 노트북 전원이 켜지지 않아서 도움이 필요합니다.",
+      "ja": "こんにちは。業務用のパソコンの電源が入らないため、対応をお願いしたいのですが。",
       "it": "Salve, il mio portatile aziendale non si accende e ho bisogno di aiuto.",
       "nl": "Hoi, mijn werklaptop gaat niet meer aan en ik heb daar hulp bij nodig."
     },
@@ -27552,6 +27805,10 @@
       "ko": {
         "first_name": "지훈",
         "last_name": "성"
+      },
+      "ja": {
+        "first_name": "秀樹",
+        "last_name": "長谷川"
       },
       "it": {
         "first_name": "Antonio",
@@ -27590,6 +27847,10 @@
       "ko": {
         "first_name": "Jihun",
         "last_name": "Seong"
+      },
+      "ja": {
+        "first_name": "Hideki",
+        "last_name": "Hasegawa"
       },
       "it": {
         "first_name": "Antonio",
@@ -28974,6 +29235,7 @@
       "de": "Hallo, ich kann mich nicht bei meiner E-Mail anmelden.",
       "hi": "नमस्ते, मैं अपने ईमेल में लॉग इन नहीं कर पा रहा हूँ।",
       "ko": "안녕하세요, 이메일에 로그인할 수 없습니다.",
+      "ja": "こんにちは。メールにログインできません。",
       "it": "Salve, non riesco ad accedere alla mia email.",
       "nl": "Hoi, ik kan niet inloggen op mijn e-mail."
     },
@@ -29005,6 +29267,10 @@
       "ko": {
         "first_name": "도현",
         "last_name": "백"
+      },
+      "ja": {
+        "first_name": "誠",
+        "last_name": "山口"
       },
       "it": {
         "first_name": "Giorgio",
@@ -29043,6 +29309,10 @@
       "ko": {
         "first_name": "Dohyeon",
         "last_name": "Baek"
+      },
+      "ja": {
+        "first_name": "Makoto",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Giorgio",
@@ -29935,6 +30205,7 @@
       "de": "Hallo, ich habe ein paar Dinge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、いくつか対応をお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per un paio di cose.",
       "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb."
     },
@@ -29966,6 +30237,10 @@
       "ko": {
         "first_name": "예준",
         "last_name": "서"
+      },
+      "ja": {
+        "first_name": "駿",
+        "last_name": "中島"
       },
       "it": {
         "first_name": "Andrea",
@@ -30004,6 +30279,10 @@
       "ko": {
         "first_name": "Yejun",
         "last_name": "Seo"
+      },
+      "ja": {
+        "first_name": "Shun",
+        "last_name": "Nakajima"
       },
       "it": {
         "first_name": "Andrea",
@@ -30951,6 +31230,7 @@
       "de": "Hallo, ich habe ein paar IT-Hardware-Anfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी हार्डवेयर से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 IT 하드웨어 요청이 몇 가지 있습니다.",
+      "ja": "こんにちは、IT機器の依頼がいくつかあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle richieste relative all'hardware IT.",
       "nl": "Hoi, ik heb een paar ICT-hardwareverzoeken waarbij ik hulp nodig heb."
     },
@@ -30982,6 +31262,10 @@
       "ko": {
         "first_name": "하은",
         "last_name": "장"
+      },
+      "ja": {
+        "first_name": "花子",
+        "last_name": "青木"
       },
       "it": {
         "first_name": "Cristina",
@@ -31020,6 +31304,10 @@
       "ko": {
         "first_name": "Haeun",
         "last_name": "Jang"
+      },
+      "ja": {
+        "first_name": "Hanako",
+        "last_name": "Aoki"
       },
       "it": {
         "first_name": "Cristina",
@@ -32295,6 +32583,7 @@
       "de": "Hallo, meine E-Mail funktioniert nicht und ich brauche Hilfe damit.",
       "hi": "नमस्ते, मेरा ईमेल बंद पड़ा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 이메일이 작동하지 않아서 도움이 필요합니다.",
+      "ja": "こんにちは、メールが使用できない状態が続いているため、対応をお願いしたいのですが。",
       "it": "Salve, la mia email non funziona e ho bisogno di aiuto.",
       "nl": "Hoi, mijn e-mail ligt eruit en ik heb daar hulp bij nodig."
     },
@@ -32326,6 +32615,10 @@
       "ko": {
         "first_name": "서윤",
         "last_name": "곽"
+      },
+      "ja": {
+        "first_name": "結菜",
+        "last_name": "前田"
       },
       "it": {
         "first_name": "Alice",
@@ -32364,6 +32657,10 @@
       "ko": {
         "first_name": "Seoyun",
         "last_name": "Gwak"
+      },
+      "ja": {
+        "first_name": "Yuna",
+        "last_name": "Maeda"
       },
       "it": {
         "first_name": "Alice",
@@ -33337,6 +33634,7 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-dingen waar ik hulp bij nodig heb."
     },
@@ -33368,6 +33666,10 @@
       "ko": {
         "first_name": "은우",
         "last_name": "유"
+      },
+      "ja": {
+        "first_name": "裕太",
+        "last_name": "遠藤"
       },
       "it": {
         "first_name": "Tommaso",
@@ -33406,6 +33708,10 @@
       "ko": {
         "first_name": "Eunu",
         "last_name": "Yu"
+      },
+      "ja": {
+        "first_name": "Yuta",
+        "last_name": "Endo"
       },
       "it": {
         "first_name": "Tommaso",
@@ -34338,6 +34644,7 @@
       "de": "Hallo, ich habe ein paar Dinge zu Softwarelizenzen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे सॉफ़्टवेयर लाइसेंस से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 소프트웨어 라이선스 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ソフトウェアライセンスの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle questioni relative alle licenze software.",
       "nl": "Hoi, ik heb een paar dingen met softwarelicenties waar ik hulp bij nodig heb."
     },
@@ -34369,6 +34676,10 @@
       "ko": {
         "first_name": "윤서",
         "last_name": "서"
+      },
+      "ja": {
+        "first_name": "和美",
+        "last_name": "中村"
       },
       "it": {
         "first_name": "Francesca",
@@ -34407,6 +34718,10 @@
       "ko": {
         "first_name": "Yunseo",
         "last_name": "Seo"
+      },
+      "ja": {
+        "first_name": "Kazumi",
+        "last_name": "Nakamura"
       },
       "it": {
         "first_name": "Francesca",
@@ -35439,6 +35754,7 @@
       "de": "Hallo, ich habe ein paar Anliegen bezüglich der Büroeinrichtungen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे सुविधाओं से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 시설 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、施設の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle questioni relative ai servizi generali.",
       "nl": "Hoi, ik heb een paar facilitaire voorzieningen waarbij ik hulp nodig heb."
     },
@@ -35470,6 +35786,10 @@
       "ko": {
         "first_name": "준서",
         "last_name": "현"
+      },
+      "ja": {
+        "first_name": "太郎",
+        "last_name": "近藤"
       },
       "it": {
         "first_name": "Simone",
@@ -35508,6 +35828,10 @@
       "ko": {
         "first_name": "Junseo",
         "last_name": "Hyeon"
+      },
+      "ja": {
+        "first_name": "Taro",
+        "last_name": "Kondo"
       },
       "it": {
         "first_name": "Simone",
@@ -36518,6 +36842,7 @@
       "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कार्यस्थल से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 직장 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、職場環境の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle richieste relative all'ambiente di lavoro.",
       "nl": "Hoi, ik heb een paar werkplekverzoeken waarbij ik hulp nodig heb."
     },
@@ -36549,6 +36874,10 @@
       "ko": {
         "first_name": "다현",
         "last_name": "이"
+      },
+      "ja": {
+        "first_name": "理恵",
+        "last_name": "中村"
       },
       "it": {
         "first_name": "Nicole",
@@ -36587,6 +36916,10 @@
       "ko": {
         "first_name": "Dahyeon",
         "last_name": "I"
+      },
+      "ja": {
+        "first_name": "Rie",
+        "last_name": "Nakamura"
       },
       "it": {
         "first_name": "Nicole",
@@ -37855,6 +38188,7 @@
       "de": "Hallo, ich habe ein paar IT-Probleme, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ समस्याओं में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per dei problemi informatici.",
       "nl": "Hoi, ik heb een paar ICT-problemen waar ik hulp bij nodig heb."
     },
@@ -37886,6 +38220,10 @@
       "ko": {
         "first_name": "승우",
         "last_name": "한"
+      },
+      "ja": {
+        "first_name": "正人",
+        "last_name": "伊藤"
       },
       "it": {
         "first_name": "Carlo",
@@ -37924,6 +38262,10 @@
       "ko": {
         "first_name": "Seungu",
         "last_name": "Han"
+      },
+      "ja": {
+        "first_name": "Masato",
+        "last_name": "Ito"
       },
       "it": {
         "first_name": "Carlo",
@@ -38841,6 +39183,7 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per un paio di questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -38872,6 +39215,10 @@
       "ko": {
         "first_name": "혜원",
         "last_name": "이"
+      },
+      "ja": {
+        "first_name": "真由美",
+        "last_name": "後藤"
       },
       "it": {
         "first_name": "Lucia",
@@ -38910,6 +39257,10 @@
       "ko": {
         "first_name": "Hyewon",
         "last_name": "I"
+      },
+      "ja": {
+        "first_name": "Mayumi",
+        "last_name": "Goto"
       },
       "it": {
         "first_name": "Lucia",
@@ -40158,6 +40509,7 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -40189,6 +40541,10 @@
       "ko": {
         "first_name": "유림",
         "last_name": "채"
+      },
+      "ja": {
+        "first_name": "智子",
+        "last_name": "中島"
       },
       "it": {
         "first_name": "Angela",
@@ -40227,6 +40583,10 @@
       "ko": {
         "first_name": "Yurim",
         "last_name": "Chae"
+      },
+      "ja": {
+        "first_name": "Tomoko",
+        "last_name": "Nakajima"
       },
       "it": {
         "first_name": "Angela",
@@ -41385,6 +41745,7 @@
       "de": "Hallo, unser VPN scheint komplett ausgefallen zu sein und ich möchte das melden.",
       "hi": "नमस्ते, हमारा वीपीएन पूरी तरह से बंद लगता है और मुझे इसकी रिपोर्ट करनी है।",
       "ko": "안녕하세요, 저희 VPN이 완전히 다운된 것 같아서 신고하려고 합니다.",
+      "ja": "こんにちは、VPNが完全に停止しているようですので、報告いたします。",
       "it": "Salve, la nostra VPN sembra essere completamente fuori uso e devo segnalarlo.",
       "nl": "Hoi, onze VPN is compleet uitgevallen en ik wil een melding maken."
     },
@@ -41416,6 +41777,10 @@
       "ko": {
         "first_name": "민준",
         "last_name": "손"
+      },
+      "ja": {
+        "first_name": "和馬",
+        "last_name": "西村"
       },
       "it": {
         "first_name": "Alessio",
@@ -41454,6 +41819,10 @@
       "ko": {
         "first_name": "Minjun",
         "last_name": "Son"
+      },
+      "ja": {
+        "first_name": "Kazuma",
+        "last_name": "Nishimura"
       },
       "it": {
         "first_name": "Alessio",
@@ -42682,6 +43051,7 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -42713,6 +43083,10 @@
       "ko": {
         "first_name": "지현",
         "last_name": "윤"
+      },
+      "ja": {
+        "first_name": "葵",
+        "last_name": "小林"
       },
       "it": {
         "first_name": "Benedetta",
@@ -42751,6 +43125,10 @@
       "ko": {
         "first_name": "Jihyeon",
         "last_name": "Yun"
+      },
+      "ja": {
+        "first_name": "Aoi",
+        "last_name": "Kobayashi"
       },
       "it": {
         "first_name": "Benedetta",
@@ -43712,6 +44090,7 @@
       "de": "Hallo, ich habe ein paar IT-Anfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの依頼でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle richieste informatiche.",
       "nl": "Hoi, ik heb een paar ICT-verzoeken waar ik hulp bij nodig heb."
     },
@@ -43743,6 +44122,10 @@
       "ko": {
         "first_name": "승민",
         "last_name": "손"
+      },
+      "ja": {
+        "first_name": "樹",
+        "last_name": "岡本"
       },
       "it": {
         "first_name": "Simone",
@@ -43781,6 +44164,10 @@
       "ko": {
         "first_name": "Seungmin",
         "last_name": "Son"
+      },
+      "ja": {
+        "first_name": "Itsuki",
+        "last_name": "Okamoto"
       },
       "it": {
         "first_name": "Simone",
@@ -44905,6 +45292,7 @@
       "de": "Hallo, ich habe ein paar Arbeitsplatz-Anfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कार्यस्थल से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 직장 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、職場環境の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle richieste relative all'ambiente di lavoro.",
       "nl": "Hoi, ik heb een paar werkplekverzoeken waarbij ik hulp nodig heb."
     },
@@ -44936,6 +45324,10 @@
       "ko": {
         "first_name": "서연",
         "last_name": "공"
+      },
+      "ja": {
+        "first_name": "明美",
+        "last_name": "岡本"
       },
       "it": {
         "first_name": "Anna",
@@ -44974,6 +45366,10 @@
       "ko": {
         "first_name": "Seoyeon",
         "last_name": "Gong"
+      },
+      "ja": {
+        "first_name": "Akemi",
+        "last_name": "Okamoto"
       },
       "it": {
         "first_name": "Anna",
@@ -46216,6 +46612,7 @@
       "de": "Hallo, ich habe ein paar IT-Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per delle questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -46247,6 +46644,10 @@
       "ko": {
         "first_name": "지성",
         "last_name": "윤"
+      },
+      "ja": {
+        "first_name": "慎也",
+        "last_name": "青木"
       },
       "it": {
         "first_name": "Alessandro",
@@ -46285,6 +46686,10 @@
       "ko": {
         "first_name": "Jiseong",
         "last_name": "Yun"
+      },
+      "ja": {
+        "first_name": "Shinya",
+        "last_name": "Aoki"
       },
       "it": {
         "first_name": "Alessandro",
@@ -47527,6 +47932,7 @@
       "de": "Hallo, ich habe ein paar Anfragen zur Einrichtung meines Arbeitsplatzes, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कार्यस्थल सेटअप से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 업무 공간 세팅 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、職場環境の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune richieste di configurazione dello spazio di lavoro.",
       "nl": "Hoi, ik heb een paar verzoeken voor het inrichten van mijn werkplek waar ik hulp bij nodig heb."
     },
@@ -47558,6 +47964,10 @@
       "ko": {
         "first_name": "서현",
         "last_name": "윤"
+      },
+      "ja": {
+        "first_name": "凛",
+        "last_name": "池田"
       },
       "it": {
         "first_name": "Claudia",
@@ -47596,6 +48006,10 @@
       "ko": {
         "first_name": "Seohyeon",
         "last_name": "Yun"
+      },
+      "ja": {
+        "first_name": "Rin",
+        "last_name": "Ikeda"
       },
       "it": {
         "first_name": "Claudia",
@@ -48605,6 +49019,7 @@
       "de": "Hallo, das HR-Portal scheint bei mir nicht zu funktionieren.",
       "hi": "नमस्ते, एचआर पोर्टल मेरे लिए बंद लगता है।",
       "ko": "안녕하세요, 제 쪽에서는 HR 포털이 다운된 것 같습니다.",
+      "ja": "こんにちは、HRポータルで障害が発生しているようです。",
       "it": "Salve, il portale delle risorse umane non mi sta funzionando.",
       "nl": "Hoi, het HR-portaal lijkt bij mij niet te werken."
     },
@@ -48636,6 +49051,10 @@
       "ko": {
         "first_name": "예은",
         "last_name": "현"
+      },
+      "ja": {
+        "first_name": "和美",
+        "last_name": "西村"
       },
       "it": {
         "first_name": "Arianna",
@@ -48674,6 +49093,10 @@
       "ko": {
         "first_name": "Yeeun",
         "last_name": "Hyeon"
+      },
+      "ja": {
+        "first_name": "Kazumi",
+        "last_name": "Nishimura"
       },
       "it": {
         "first_name": "Arianna",
@@ -49856,6 +50279,7 @@
       "de": "Hallo, ich habe heute ein paar Dinge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、本日いくつかお願いしたことがあるのです。",
       "it": "Salve, oggi avrei bisogno di aiuto per alcune cose.",
       "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
@@ -49887,6 +50311,10 @@
       "ko": {
         "first_name": "하은",
         "last_name": "심"
+      },
+      "ja": {
+        "first_name": "結菜",
+        "last_name": "藤田"
       },
       "it": {
         "first_name": "Alessia",
@@ -49925,6 +50353,10 @@
       "ko": {
         "first_name": "Haeun",
         "last_name": "Sim"
+      },
+      "ja": {
+        "first_name": "Yuna",
+        "last_name": "Fujita"
       },
       "it": {
         "first_name": "Alessia",
@@ -51175,6 +51607,7 @@
       "de": "Hallo, ich habe ein paar Zugriffsanfragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एक्सेस से जुड़े कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 접근 권한과 관련해 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、本日いくつかお願いしたことがあるのです。",
       "it": "Salve, mi servirebbe aiuto per delle richieste di accesso.",
       "nl": "Hoi, ik heb een paar toegangsaanvragen waar ik hulp bij nodig heb."
     },
@@ -51206,6 +51639,10 @@
       "ko": {
         "first_name": "성준",
         "last_name": "차"
+      },
+      "ja": {
+        "first_name": "大地",
+        "last_name": "吉田"
       },
       "it": {
         "first_name": "Emanuele",
@@ -51244,6 +51681,10 @@
       "ko": {
         "first_name": "Seongjun",
         "last_name": "Cha"
+      },
+      "ja": {
+        "first_name": "Daichi",
+        "last_name": "Yoshida"
       },
       "it": {
         "first_name": "Emanuele",
@@ -52289,6 +52730,7 @@
       "de": "Hallo, ich habe ein paar Dinge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、本日いくつかお願いしたことがあるのです。",
       "it": "Salve, mi servirebbe aiuto per alcune cose.",
       "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb."
     },
@@ -52320,6 +52762,10 @@
       "ko": {
         "first_name": "지성",
         "last_name": "황"
+      },
+      "ja": {
+        "first_name": "陽介",
+        "last_name": "橋本"
       },
       "it": {
         "first_name": "Edoardo",
@@ -52358,6 +52804,10 @@
       "ko": {
         "first_name": "Jiseong",
         "last_name": "Hwang"
+      },
+      "ja": {
+        "first_name": "Yosuke",
+        "last_name": "Hashimoto"
       },
       "it": {
         "first_name": "Edoardo",
@@ -53377,6 +53827,7 @@
       "de": "Hallo, ich brauche bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、いくつかお願いしたことがあるのです。",
       "it": "Salve, mi servirebbe aiuto per alcune cose.",
       "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb."
     },
@@ -53408,6 +53859,10 @@
       "ko": {
         "first_name": "승현",
         "last_name": "서"
+      },
+      "ja": {
+        "first_name": "一樹",
+        "last_name": "石井"
       },
       "it": {
         "first_name": "Claudio",
@@ -53446,6 +53901,10 @@
       "ko": {
         "first_name": "Seunghyeon",
         "last_name": "Seo"
+      },
+      "ja": {
+        "first_name": "Kazuki",
+        "last_name": "Ishii"
       },
       "it": {
         "first_name": "Claudio",
@@ -54885,6 +55344,7 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -54916,6 +55376,10 @@
       "ko": {
         "first_name": "민성",
         "last_name": "방"
+      },
+      "ja": {
+        "first_name": "悠真",
+        "last_name": "石川"
       },
       "it": {
         "first_name": "Angelo",
@@ -54954,6 +55418,10 @@
       "ko": {
         "first_name": "Minseong",
         "last_name": "Bang"
+      },
+      "ja": {
+        "first_name": "Yuma",
+        "last_name": "Ishikawa"
       },
       "it": {
         "first_name": "Angelo",
@@ -56057,6 +56525,7 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Anfragen zu Ausstattung.",
       "hi": "नमस्ते, मुझे उपकरणों से जुड़ी कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 장비 요청 관련해 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、備品の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune richieste di attrezzature.",
       "nl": "Hoi, ik heb een paar verzoeken voor apparatuur waar ik hulp bij nodig heb."
     },
@@ -56088,6 +56557,10 @@
       "ko": {
         "first_name": "시은",
         "last_name": "진"
+      },
+      "ja": {
+        "first_name": "沙織",
+        "last_name": "中川"
       },
       "it": {
         "first_name": "Veronica",
@@ -56126,6 +56599,10 @@
       "ko": {
         "first_name": "Sieun",
         "last_name": "Jin"
+      },
+      "ja": {
+        "first_name": "Saori",
+        "last_name": "Nakagawa"
       },
       "it": {
         "first_name": "Veronica",
@@ -57645,6 +58122,7 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zu meinem Laptop und einer Raumbuchung.",
       "hi": "नमस्ते, मुझे अपने लैपटॉप और एक कमरे की बुकिंग के बारे में कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 제 노트북과 회의실 예약 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、パソコンの件と会議室の予約について、いくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune cose riguardo al mio portatile e alla prenotazione di una sala.",
       "nl": "Hoi, ik heb een paar dingen waarbij ik hulp nodig heb over mijn laptop en een kamerreservering."
     },
@@ -57676,6 +58154,10 @@
       "ko": {
         "first_name": "예원",
         "last_name": "손"
+      },
+      "ja": {
+        "first_name": "菜々子",
+        "last_name": "西村"
       },
       "it": {
         "first_name": "Teresa",
@@ -57714,6 +58196,10 @@
       "ko": {
         "first_name": "Yewon",
         "last_name": "Son"
+      },
+      "ja": {
+        "first_name": "Nanako",
+        "last_name": "Nishimura"
       },
       "it": {
         "first_name": "Teresa",
@@ -58838,6 +59324,7 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen.",
       "hi": "नमस्ते, मुझे सॉफ़्टवेयर से जुड़ी कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 소프트웨어 관련 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ソフトウェアの依頼がいくつかあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune richieste di software.",
       "nl": "Hoi, ik heb een paar softwareverzoeken waar ik hulp bij nodig heb."
     },
@@ -58869,6 +59356,10 @@
       "ko": {
         "first_name": "채원",
         "last_name": "진"
+      },
+      "ja": {
+        "first_name": "陽子",
+        "last_name": "近藤"
       },
       "it": {
         "first_name": "Maria",
@@ -58907,6 +59398,10 @@
       "ko": {
         "first_name": "Chaewon",
         "last_name": "Jin"
+      },
+      "ja": {
+        "first_name": "Yoko",
+        "last_name": "Kondo"
       },
       "it": {
         "first_name": "Maria",
@@ -59839,6 +60334,7 @@
       "de": "Hallo, mein externer Monitor zeigt „kein Signal“ an, und ich brauche Hilfe, damit er wieder funktioniert.",
       "hi": "नमस्ते, मेरा बाहरी मॉनिटर 'नो सिग्नल' दिखा रहा है और मुझे इसे फिर से चालू करवाने में मदद चाहिए।",
       "ko": "안녕하세요, 제 외부 모니터에 신호 없음이라고 떠서 다시 작동하게 하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、外部モニターに「信号なし」と表示されており、復旧の対応をお願いしたいのですが。",
       "it": "Salve, il mio monitor esterno non mostra nessun segnale e mi serve aiuto per farlo funzionare di nuovo.",
       "nl": "Hoi, mijn externe monitor geeft aan dat er geen signaal is en ik heb hulp nodig om het weer aan de praat te krijgen."
     },
@@ -59870,6 +60366,10 @@
       "ko": {
         "first_name": "준우",
         "last_name": "지"
+      },
+      "ja": {
+        "first_name": "拓也",
+        "last_name": "山口"
       },
       "it": {
         "first_name": "Filippo",
@@ -59908,6 +60408,10 @@
       "ko": {
         "first_name": "Junu",
         "last_name": "Ji"
+      },
+      "ja": {
+        "first_name": "Takuya",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Filippo",
@@ -61028,6 +61532,7 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Büroeinrichtung.",
       "hi": "नमस्ते, मुझे कार्यालय सेटअप से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 사무실 설치 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、オフィス環境の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune questioni che riguardano l’allestimento dell’ufficio.",
       "nl": "Hoi, ik heb een paar dingen voor de inrichting van mijn kantoor waar ik hulp bij nodig heb."
     },
@@ -61059,6 +61564,10 @@
       "ko": {
         "first_name": "지성",
         "last_name": "현"
+      },
+      "ja": {
+        "first_name": "雅也",
+        "last_name": "青木"
       },
       "it": {
         "first_name": "Paolo",
@@ -61097,6 +61606,10 @@
       "ko": {
         "first_name": "Jiseong",
         "last_name": "Hyeon"
+      },
+      "ja": {
+        "first_name": "Masaya",
+        "last_name": "Aoki"
       },
       "it": {
         "first_name": "Paolo",
@@ -62173,6 +62686,7 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen.",
       "hi": "नमस्ते, मुझे कुछ आईटी अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune richieste informatiche.",
       "nl": "Hoi, ik heb een paar ICT-verzoeken waar ik hulp bij nodig heb."
     },
@@ -62204,6 +62718,10 @@
       "ko": {
         "first_name": "소율",
         "last_name": "조"
+      },
+      "ja": {
+        "first_name": "麻衣",
+        "last_name": "藤原"
       },
       "it": {
         "first_name": "Camilla",
@@ -62242,6 +62760,10 @@
       "ko": {
         "first_name": "Soyul",
         "last_name": "Jo"
+      },
+      "ja": {
+        "first_name": "Mai",
+        "last_name": "Fujiwara"
       },
       "it": {
         "first_name": "Camilla",
@@ -63092,6 +63614,7 @@
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、本日いくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune cose.",
       "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
@@ -63123,6 +63646,10 @@
       "ko": {
         "first_name": "서윤",
         "last_name": "주"
+      },
+      "ja": {
+        "first_name": "遥",
+        "last_name": "渡辺"
       },
       "it": {
         "first_name": "Eleonora",
@@ -63161,6 +63688,10 @@
       "ko": {
         "first_name": "Seoyun",
         "last_name": "Ju"
+      },
+      "ja": {
+        "first_name": "Haruka",
+        "last_name": "Watanabe"
       },
       "it": {
         "first_name": "Eleonora",
@@ -64324,6 +64855,7 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -64355,6 +64887,10 @@
       "ko": {
         "first_name": "민재",
         "last_name": "허"
+      },
+      "ja": {
+        "first_name": "拓也",
+        "last_name": "田中"
       },
       "it": {
         "first_name": "Mattia",
@@ -64393,6 +64929,10 @@
       "ko": {
         "first_name": "Minjae",
         "last_name": "Heo"
+      },
+      "ja": {
+        "first_name": "Takuya",
+        "last_name": "Tanaka"
       },
       "it": {
         "first_name": "Mattia",
@@ -65691,6 +66231,7 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen zur Einrichtung meines Arbeitsplatzes.",
       "hi": "नमस्ते, मुझे कार्यस्थल सेटअप से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 업무 공간 설정 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、オフィス環境の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune cose che riguardano l’allestimento della postazione di lavoro.",
       "nl": "Hoi, ik heb een paar dingen voor de inrichting van mijn werkplek waar ik hulp bij nodig heb."
     },
@@ -65722,6 +66263,10 @@
       "ko": {
         "first_name": "채원",
         "last_name": "진"
+      },
+      "ja": {
+        "first_name": "千尋",
+        "last_name": "小林"
       },
       "it": {
         "first_name": "Federica",
@@ -65760,6 +66305,10 @@
       "ko": {
         "first_name": "Chaewon",
         "last_name": "Jin"
+      },
+      "ja": {
+        "first_name": "Chihiro",
+        "last_name": "Kobayashi"
       },
       "it": {
         "first_name": "Federica",
@@ -66901,6 +67450,7 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -66932,6 +67482,10 @@
       "ko": {
         "first_name": "상현",
         "last_name": "오"
+      },
+      "ja": {
+        "first_name": "健一",
+        "last_name": "阿部"
       },
       "it": {
         "first_name": "Massimo",
@@ -66970,6 +67524,10 @@
       "ko": {
         "first_name": "Sanghyeon",
         "last_name": "O"
+      },
+      "ja": {
+        "first_name": "Kenichi",
+        "last_name": "Abe"
       },
       "it": {
         "first_name": "Massimo",
@@ -68309,6 +68867,7 @@
       "de": "Hallo, mein Arbeitslaptop ist komplett tot, und ich brauche Hilfe damit.",
       "hi": "नमस्ते, मेरा ऑफ़िस लैपटॉप पूरी तरह बंद हो गया है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 업무용 노트북이 완전히 먹통이라 도움이 필요해요.",
+      "ja": "こんにちは、業務用パソコンが全く動作しない状態のため、対応をお願いしたいのですが。",
       "it": "Salve, il mio portatile di lavoro non dà proprio segni di vita e mi serve aiuto.",
       "nl": "Hoi, mijn werklaptop is compleet uitgevallen en ik heb er hulp bij nodig."
     },
@@ -68340,6 +68899,10 @@
       "ko": {
         "first_name": "현준",
         "last_name": "송"
+      },
+      "ja": {
+        "first_name": "直樹",
+        "last_name": "山下"
       },
       "it": {
         "first_name": "Mattia",
@@ -68378,6 +68941,10 @@
       "ko": {
         "first_name": "Hyeonjun",
         "last_name": "Song"
+      },
+      "ja": {
+        "first_name": "Naoki",
+        "last_name": "Yamashita"
       },
       "it": {
         "first_name": "Mattia",
@@ -69571,6 +70138,7 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Dingen für meinen Büroumzug.",
       "hi": "नमस्ते, मुझे अपने कार्यालय शिफ्ट करने के लिए कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 사무실 이전 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、オフィス移転の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune cose che riguardano il mio cambio di ufficio.",
       "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb voor mijn kantoorverhuizing."
     },
@@ -69602,6 +70170,10 @@
       "ko": {
         "first_name": "현서",
         "last_name": "나"
+      },
+      "ja": {
+        "first_name": "優子",
+        "last_name": "林"
       },
       "it": {
         "first_name": "Stefania",
@@ -69640,6 +70212,10 @@
       "ko": {
         "first_name": "Hyeonseo",
         "last_name": "Na"
+      },
+      "ja": {
+        "first_name": "Yuko",
+        "last_name": "Hayashi"
       },
       "it": {
         "first_name": "Stefania",
@@ -71295,6 +71871,7 @@
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日いくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune cose.",
       "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
@@ -71326,6 +71903,10 @@
       "ko": {
         "first_name": "지현",
         "last_name": "지"
+      },
+      "ja": {
+        "first_name": "桜",
+        "last_name": "小林"
       },
       "it": {
         "first_name": "Lucia",
@@ -71364,6 +71945,10 @@
       "ko": {
         "first_name": "Jihyeon",
         "last_name": "Ji"
+      },
+      "ja": {
+        "first_name": "Sakura",
+        "last_name": "Kobayashi"
       },
       "it": {
         "first_name": "Lucia",
@@ -72337,6 +72922,7 @@
       "de": "Hallo, mein Laptop lässt sich nicht einschalten, und ich brauche Hilfe damit.",
       "hi": "नमस्ते, मेरा लैपटॉप चालू नहीं हो रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 노트북이 켜지지 않아서 도움이 필요해요.",
+      "ja": "こんにちは、パソコンの電源が入らないため、対応をお願いしたいのですが。",
       "it": "Salve, il mio portatile non si accende e mi serve aiuto.",
       "nl": "Hoi, mijn laptop gaat niet meer aan en ik heb er hulp bij nodig."
     },
@@ -72368,6 +72954,10 @@
       "ko": {
         "first_name": "서현",
         "last_name": "엄"
+      },
+      "ja": {
+        "first_name": "里奈",
+        "last_name": "田中"
       },
       "it": {
         "first_name": "Miriam",
@@ -72406,6 +72996,10 @@
       "ko": {
         "first_name": "Seohyeon",
         "last_name": "Eom"
+      },
+      "ja": {
+        "first_name": "Rina",
+        "last_name": "Tanaka"
       },
       "it": {
         "first_name": "Miriam",
@@ -73594,6 +74188,7 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar Software-Anfragen.",
       "hi": "नमस्ते, मुझे सॉफ़्टवेयर से जुड़ी कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 소프트웨어 요청 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、ソフトウェアの依頼がいくつかあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune richieste di software.",
       "nl": "Hoi, ik heb een paar softwareverzoeken waar ik hulp bij nodig heb."
     },
@@ -73625,6 +74220,10 @@
       "ko": {
         "first_name": "동욱",
         "last_name": "현"
+      },
+      "ja": {
+        "first_name": "和也",
+        "last_name": "後藤"
       },
       "it": {
         "first_name": "Antonio",
@@ -73663,6 +74262,10 @@
       "ko": {
         "first_name": "Donguk",
         "last_name": "Hyeon"
+      },
+      "ja": {
+        "first_name": "Kazuya",
+        "last_name": "Goto"
       },
       "it": {
         "first_name": "Antonio",
@@ -74846,6 +75449,7 @@
       "de": "Hallo, ich brauche bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、いくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune cose.",
       "nl": "Hoi, ik heb een paar dingen waar ik hulp bij nodig heb."
     },
@@ -74877,6 +75481,10 @@
       "ko": {
         "first_name": "유진",
         "last_name": "조"
+      },
+      "ja": {
+        "first_name": "七海",
+        "last_name": "近藤"
       },
       "it": {
         "first_name": "Carlotta",
@@ -74915,6 +75523,10 @@
       "ko": {
         "first_name": "Yujin",
         "last_name": "Jo"
+      },
+      "ja": {
+        "first_name": "Nanami",
+        "last_name": "Kondo"
       },
       "it": {
         "first_name": "Carlotta",
@@ -76298,6 +76910,7 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -76329,6 +76942,10 @@
       "ko": {
         "first_name": "민성",
         "last_name": "윤"
+      },
+      "ja": {
+        "first_name": "次郎",
+        "last_name": "加藤"
       },
       "it": {
         "first_name": "Antonio",
@@ -76367,6 +76984,10 @@
       "ko": {
         "first_name": "Minseong",
         "last_name": "Yun"
+      },
+      "ja": {
+        "first_name": "Jiro",
+        "last_name": "Kato"
       },
       "it": {
         "first_name": "Antonio",
@@ -77549,6 +78170,7 @@
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日いくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune cose.",
       "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
@@ -77580,6 +78202,10 @@
       "ko": {
         "first_name": "시우",
         "last_name": "성"
+      },
+      "ja": {
+        "first_name": "健一",
+        "last_name": "吉田"
       },
       "it": {
         "first_name": "Francesco",
@@ -77618,6 +78244,10 @@
       "ko": {
         "first_name": "Siu",
         "last_name": "Seong"
+      },
+      "ja": {
+        "first_name": "Kenichi",
+        "last_name": "Yoshida"
       },
       "it": {
         "first_name": "Francesco",
@@ -78762,6 +79392,7 @@
       "de": "Hallo, ich brauche Hilfe bei ein paar IT-Anfragen.",
       "hi": "नमस्ते, मुझे कुछ आईटी अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune richieste informatiche.",
       "nl": "Hoi, ik heb een paar ICT-verzoeken waar ik hulp bij nodig heb."
     },
@@ -78793,6 +79424,10 @@
       "ko": {
         "first_name": "태현",
         "last_name": "하"
+      },
+      "ja": {
+        "first_name": "一樹",
+        "last_name": "山下"
       },
       "it": {
         "first_name": "Domenico",
@@ -78831,6 +79466,10 @@
       "ko": {
         "first_name": "Taehyeon",
         "last_name": "Ha"
+      },
+      "ja": {
+        "first_name": "Kazuki",
+        "last_name": "Yamashita"
       },
       "it": {
         "first_name": "Domenico",
@@ -80331,6 +80970,7 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -80362,6 +81002,10 @@
       "ko": {
         "first_name": "주원",
         "last_name": "나"
+      },
+      "ja": {
+        "first_name": "淳",
+        "last_name": "岡田"
       },
       "it": {
         "first_name": "Fabio",
@@ -80400,6 +81044,10 @@
       "ko": {
         "first_name": "Juwon",
         "last_name": "Na"
+      },
+      "ja": {
+        "first_name": "Jun",
+        "last_name": "Okada"
       },
       "it": {
         "first_name": "Fabio",
@@ -81554,6 +82202,7 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -81585,6 +82234,10 @@
       "ko": {
         "first_name": "하영",
         "last_name": "백"
+      },
+      "ja": {
+        "first_name": "沙織",
+        "last_name": "森"
       },
       "it": {
         "first_name": "Veronica",
@@ -81623,6 +82276,10 @@
       "ko": {
         "first_name": "Hayeong",
         "last_name": "Baek"
+      },
+      "ja": {
+        "first_name": "Saori",
+        "last_name": "Mori"
       },
       "it": {
         "first_name": "Veronica",
@@ -83095,6 +83752,7 @@
       "de": "Hallo, ich brauche heute bei ein paar Dingen Hilfe.",
       "hi": "नमस्ते, मुझे आज कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日いくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune cose.",
       "nl": "Hoi, ik heb vandaag een paar dingen waar ik hulp bij nodig heb."
     },
@@ -83126,6 +83784,10 @@
       "ko": {
         "first_name": "수연",
         "last_name": "구"
+      },
+      "ja": {
+        "first_name": "理恵",
+        "last_name": "石田"
       },
       "it": {
         "first_name": "Arianna",
@@ -83164,6 +83826,10 @@
       "ko": {
         "first_name": "Suyeon",
         "last_name": "Gu"
+      },
+      "ja": {
+        "first_name": "Rie",
+        "last_name": "Ishida"
       },
       "it": {
         "first_name": "Arianna",
@@ -84722,6 +85388,7 @@
       "de": "Hallo, ich brauche bei ein paar IT-Sachen Hilfe.",
       "hi": "नमस्ते, मुझे आईटी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, IT 관련해서 도움이 필요한 일이 몇 가지 있습니다.",
+      "ja": "こんにちは、ITの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi servirebbe aiuto per alcune questioni informatiche.",
       "nl": "Hoi, ik heb een paar ICT-zaken waar ik hulp bij nodig heb."
     },
@@ -84753,6 +85420,10 @@
       "ko": {
         "first_name": "진우",
         "last_name": "임"
+      },
+      "ja": {
+        "first_name": "達也",
+        "last_name": "岡本"
       },
       "it": {
         "first_name": "Giovanni",
@@ -84791,6 +85462,10 @@
       "ko": {
         "first_name": "Jinu",
         "last_name": "Im"
+      },
+      "ja": {
+        "first_name": "Tatsuya",
+        "last_name": "Okamoto"
       },
       "it": {
         "first_name": "Giovanni",
@@ -85695,6 +86370,7 @@
       "de": "Hallo, mein VPN funktioniert immer noch nicht, und ich brauche Hilfe dabei.",
       "hi": "नमस्ते, मेरा वीपीएन अभी भी काम नहीं कर रहा है और मुझे इसमें मदद चाहिए।",
       "ko": "안녕하세요, 제 VPN이 아직도 작동하지 않아서 도움이 필요해요.",
+      "ja": "こんにちは、VPNが依然として使用できないため、対応をお願いしたいのですが。",
       "it": "Salve, la mia VPN continua a non funzionare e ho bisogno di aiuto.",
       "nl": "Hoi, mijn VPN werkt nog steeds niet en ik heb er hulp bij nodig."
     },
@@ -85726,6 +86402,10 @@
       "ko": {
         "first_name": "준서",
         "last_name": "성"
+      },
+      "ja": {
+        "first_name": "陸",
+        "last_name": "鈴木"
       },
       "it": {
         "first_name": "Alessio",
@@ -85764,6 +86444,10 @@
       "ko": {
         "first_name": "Junseo",
         "last_name": "Seong"
+      },
+      "ja": {
+        "first_name": "Riku",
+        "last_name": "Suzuki"
       },
       "it": {
         "first_name": "Alessio",
@@ -86808,6 +87492,7 @@
       "de": "Hallo, ich brauche Hilfe bei einem Login-Problem.",
       "hi": "नमस्ते, मुझे लॉगिन की समस्या में मदद चाहिए।",
       "ko": "안녕하세요, 로그인 문제로 도움이 필요해요.",
+      "ja": "こんにちは、ログインの問題について対応をお願いしたいのですが。",
       "it": "Salve, avrei bisogno di aiuto per un problema di accesso.",
       "nl": "Hoi, ik heb hulp nodig met een inlogprobleem."
     },
@@ -86839,6 +87524,10 @@
       "ko": {
         "first_name": "준우",
         "last_name": "유"
+      },
+      "ja": {
+        "first_name": "真司",
+        "last_name": "青木"
       },
       "it": {
         "first_name": "Michele",
@@ -86877,6 +87566,10 @@
       "ko": {
         "first_name": "Junu",
         "last_name": "Yu"
+      },
+      "ja": {
+        "first_name": "Shinji",
+        "last_name": "Aoki"
       },
       "it": {
         "first_name": "Michele",
@@ -87733,6 +88426,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, etwas in einem Mitarbeiterdatensatz zu überprüfen.",
       "hi": "नमस्ते, मुझे एक कर्मचारी रिकॉर्ड में कुछ देखने में मदद चाहिए।",
       "ko": "안녕하세요, 직원 기록에서 뭔가 확인하는 데 도움이 필요해요.",
+      "ja": "こんにちは、従業員情報の確認をお願いしたいのですが。",
       "it": "Salve, avrei bisogno di aiuto per controllare una cosa nel fascicolo di un dipendente.",
       "nl": "Hoi, ik heb hulp nodig om iets te controleren in een personeelsdossier."
     },
@@ -87764,6 +88458,10 @@
       "ko": {
         "first_name": "재민",
         "last_name": "성"
+      },
+      "ja": {
+        "first_name": "海斗",
+        "last_name": "石田"
       },
       "it": {
         "first_name": "Alessio",
@@ -87802,6 +88500,10 @@
       "ko": {
         "first_name": "Jaemin",
         "last_name": "Seong"
+      },
+      "ja": {
+        "first_name": "Kaito",
+        "last_name": "Ishida"
       },
       "it": {
         "first_name": "Alessio",
@@ -88724,6 +89426,7 @@
       "de": "Hallo, ich muss meinen Laptop ersetzen.",
       "hi": "नमस्ते, मुझे अपना लैपटॉप बदलना है।",
       "ko": "안녕하세요, 제 노트북을 교체해야 해요.",
+      "ja": "こんにちは、パソコンを交換していただきたいのですが。",
       "it": "Salve, devo sostituire il mio portatile.",
       "nl": "Hoi, ik moet mijn laptop vervangen."
     },
@@ -88755,6 +89458,10 @@
       "ko": {
         "first_name": "지성",
         "last_name": "손"
+      },
+      "ja": {
+        "first_name": "明",
+        "last_name": "阿部"
       },
       "it": {
         "first_name": "Giulio",
@@ -88793,6 +89500,10 @@
       "ko": {
         "first_name": "Jiseong",
         "last_name": "Son"
+      },
+      "ja": {
+        "first_name": "Akira",
+        "last_name": "Abe"
       },
       "it": {
         "first_name": "Giulio",
@@ -89751,6 +90462,7 @@
       "de": "Hallo, ich muss meinen Arbeitslaptop ersetzen.",
       "hi": "नमस्ते, मुझे अपना ऑफ़िस का लैपटॉप बदलना है।",
       "ko": "안녕하세요, 제 업무용 노트북을 교체해야 해요.",
+      "ja": "こんにちは、業務用パソコンを交換していただきたいのですが。",
       "it": "Salve, devo sostituire il mio portatile aziendale.",
       "nl": "Hoi, ik moet mijn werklaptop vervangen."
     },
@@ -89782,6 +90494,10 @@
       "ko": {
         "first_name": "지현",
         "last_name": "황"
+      },
+      "ja": {
+        "first_name": "陽菜",
+        "last_name": "伊藤"
       },
       "it": {
         "first_name": "Simona",
@@ -89820,6 +90536,10 @@
       "ko": {
         "first_name": "Jihyeon",
         "last_name": "Hwang"
+      },
+      "ja": {
+        "first_name": "Hina",
+        "last_name": "Ito"
       },
       "it": {
         "first_name": "Simona",

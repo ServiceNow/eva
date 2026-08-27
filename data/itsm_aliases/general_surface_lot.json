@@ -54,6 +54,11 @@
       "일반 주차장",
       "평면 주차장"
     ],
+    "ja": [
+      "一般平面駐車場",
+      "一般駐車場",
+      "平面駐車場"
+    ],
     "it": [
       "parcheggio generale esterno",
       "parcheggio generale scoperto",

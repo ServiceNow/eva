@@ -689,6 +689,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, eine vorübergehende Verlängerung meiner ärztlichen Zulassung zu beantragen.",
       "hi": "नमस्ते, मुझे अपने चिकित्सा लाइसेंस की अवधि अस्थायी रूप से बढ़ाने के लिए मांगने में मदद चाहिए।",
       "ko": "안녕하세요, 제 의료 면허의 임시 연장을 신청하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、医療免許の一時的な延長申請についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per richiedere una proroga temporanea per la mia licenza medica.",
       "nl": "Hallo, ik heb hulp nodig bij het aanvragen van een tijdelijke verlenging van mijn medische vergunning."
     },
@@ -720,6 +721,10 @@
       "ko": {
         "first_name": "가은",
         "last_name": "구"
+      },
+      "ja": {
+        "first_name": "紬",
+        "last_name": "渡辺"
       },
       "it": {
         "first_name": "Sabrina",
@@ -758,6 +763,10 @@
       "ko": {
         "first_name": "Gaeun",
         "last_name": "Gu"
+      },
+      "ja": {
+        "first_name": "Tsumugi",
+        "last_name": "Watanabe"
       },
       "it": {
         "first_name": "Sabrina",
@@ -1265,6 +1274,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, eine zeitlich begrenzte Verlängerung meiner Lizenz zu beantragen.",
       "hi": "नमस्ते, मुझे अपने लाइसेंस की अवधि अस्थायी रूप से बढ़ाने के लिए मांगने में मदद चाहिए।",
       "ko": "안녕하세요, 제 면허 임시 연장을 요청하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、免許の一時的な延長申請についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per richiedere una proroga temporanea per la mia licenza.",
       "nl": "Hallo, ik heb hulp nodig bij het aanvragen van een tijdelijke verlenging van mijn vergunning."
     },
@@ -1296,6 +1306,10 @@
       "ko": {
         "first_name": "지후",
         "last_name": "공"
+      },
+      "ja": {
+        "first_name": "裕太",
+        "last_name": "藤井"
       },
       "it": {
         "first_name": "Nicola",
@@ -1334,6 +1348,10 @@
       "ko": {
         "first_name": "Jihu",
         "last_name": "Gong"
+      },
+      "ja": {
+        "first_name": "Yuta",
+        "last_name": "Fujii"
       },
       "it": {
         "first_name": "Nicola",
@@ -1899,6 +1917,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, meine I-9-Verifizierung abzuschließen.",
       "hi": "नमस्ते, मुझे अपना आइ-नाइन वेरिफिकेशन पूरा करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 I-9 확인을 완료하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、I-9の確認手続きについてご対応をお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per completare la mia verifica I-9.",
       "nl": "Hallo, ik heb hulp nodig bij het afronden van mijn I-9-verificatie."
     },
@@ -1930,6 +1949,10 @@
       "ko": {
         "first_name": "시윤",
         "last_name": "차"
+      },
+      "ja": {
+        "first_name": "智也",
+        "last_name": "佐藤"
       },
       "it": {
         "first_name": "Andrea",
@@ -1968,6 +1991,10 @@
       "ko": {
         "first_name": "Siyun",
         "last_name": "Cha"
+      },
+      "ja": {
+        "first_name": "Tomoya",
+        "last_name": "Sato"
       },
       "it": {
         "first_name": "Andrea",
@@ -2463,6 +2490,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, meine Unterlagen zur I-9-Nachverifizierung einzureichen.",
       "hi": "नमस्ते, मुझे अपने आइ-नाइन री-वेरिफ़िकेशन दस्तावेज़ जमा करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 I-9 재확인 서류를 제출하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、I-9の再確認書類の提出についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per inviare i miei documenti di riverifica I-9.",
       "nl": "Hallo, ik heb hulp nodig bij het indienen van mijn I-9-herverificatie documenten."
     },
@@ -2494,6 +2522,10 @@
       "ko": {
         "first_name": "혜원",
         "last_name": "허"
+      },
+      "ja": {
+        "first_name": "美穂",
+        "last_name": "岡本"
       },
       "it": {
         "first_name": "Cristina",
@@ -2532,6 +2564,10 @@
       "ko": {
         "first_name": "Hyewon",
         "last_name": "Heo"
+      },
+      "ja": {
+        "first_name": "Miho",
+        "last_name": "Okamoto"
       },
       "it": {
         "first_name": "Cristina",
@@ -3194,6 +3230,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, meinen Ehepartner zu meinem H-1B-Visum hinzuzufügen.",
       "hi": "नमस्ते, मुझे अपने जीवनसाथी को अपने एच-वन बी वीज़ा रिकॉर्ड में जोड़ने में मदद चाहिए।",
       "ko": "안녕하세요, 제 H-1B 비자 기록에 배우자를 추가하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、H-1Bビザの記録に配偶者を追加する手続きについてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per aggiungere il mio coniuge alla mia pratica per il visto H-1B.",
       "nl": "Hallo, ik heb hulp nodig om mijn partner toe te voegen aan mijn H-1B-visumdossier."
     },
@@ -3225,6 +3262,10 @@
       "ko": {
         "first_name": "예나",
         "last_name": "권"
+      },
+      "ja": {
+        "first_name": "美月",
+        "last_name": "山口"
       },
       "it": {
         "first_name": "Lucia",
@@ -3263,6 +3304,10 @@
       "ko": {
         "first_name": "Yena",
         "last_name": "Gwon"
+      },
+      "ja": {
+        "first_name": "Mizuki",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Lucia",
@@ -3748,6 +3793,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, mein Kind zu meinem Visumsantrag hinzuzufügen.",
       "hi": "नमस्ते, मुझे अपने बच्चे को अपनी वीज़ा याचिका में जोड़ने में मदद चाहिए।",
       "ko": "안녕하세요, 제 비자 청원서에 자녀를 추가하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、ビザ申請への子どもの追加についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per aggiungere mio figlio alla mia domanda per il visto.",
       "nl": "Hallo, ik heb hulp nodig om mijn kind toe te voegen aan mijn visumaanvraag."
     },
@@ -3779,6 +3825,10 @@
       "ko": {
         "first_name": "준서",
         "last_name": "정"
+      },
+      "ja": {
+        "first_name": "英明",
+        "last_name": "清水"
       },
       "it": {
         "first_name": "Federico",
@@ -3817,6 +3867,10 @@
       "ko": {
         "first_name": "Junseo",
         "last_name": "Jeong"
+      },
+      "ja": {
+        "first_name": "Hideaki",
+        "last_name": "Shimizu"
       },
       "it": {
         "first_name": "Federico",
@@ -4441,6 +4495,7 @@
       "de": "Hallo, ich muss Urlaub beantragen.",
       "hi": "नमस्ते, मुझे आने वाली छुट्टी के लिए कुछ पी टी ओ मांगना है।",
       "ko": "안녕하세요, 다가오는 휴가에 PTO를 좀 신청하려고 합니다.",
+      "ja": "こんにちは、休暇の予定があるため、有給休暇を申請したいのですが。",
       "it": "Salve, devo richiedere alcuni giorni di permesso retribuito per una vacanza che farò a breve.",
       "nl": "Hallo, ik moet betaald verlof aanvragen voor mijn komende vakantie."
     },
@@ -4472,6 +4527,10 @@
       "ko": {
         "first_name": "윤서",
         "last_name": "신"
+      },
+      "ja": {
+        "first_name": "紗季",
+        "last_name": "山口"
       },
       "it": {
         "first_name": "Antonietta",
@@ -4510,6 +4569,10 @@
       "ko": {
         "first_name": "Yunseo",
         "last_name": "Sin"
+      },
+      "ja": {
+        "first_name": "Saki",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Antonietta",
@@ -5018,6 +5081,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, einen Antrag auf Urlaub einzureichen.",
       "hi": "नमस्ते, मुझे PTO मांग जमा करने में मदद चाहिए।",
       "ko": "안녕하세요, PTO 신청을 하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、有給休暇の申請についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per inserire una richiesta di permesso retribuito.",
       "nl": "Hallo, ik heb hulp nodig bij het indienen van een aanvraag voor betaald verlof."
     },
@@ -5049,6 +5113,10 @@
       "ko": {
         "first_name": "지훈",
         "last_name": "양"
+      },
+      "ja": {
+        "first_name": "真一",
+        "last_name": "山崎"
       },
       "it": {
         "first_name": "Federico",
@@ -5087,6 +5155,10 @@
       "ko": {
         "first_name": "Jihun",
         "last_name": "Yang"
+      },
+      "ja": {
+        "first_name": "Shinichi",
+        "last_name": "Yamazaki"
       },
       "it": {
         "first_name": "Federico",
@@ -5705,6 +5777,7 @@
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
       "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
       "ko": "안녕하세요, 제 근무 중 하나를 교대하려고 전화드렸습니다.",
+      "ja": "こんにちは、勤務の交換についてご相談したいのですが。",
       "it": "Salve, chiamo per cambiare uno dei miei turni.",
       "nl": "Hallo, ik bel over om een van mijn diensten te ruilen."
     },
@@ -5736,6 +5809,10 @@
       "ko": {
         "first_name": "승우",
         "last_name": "곽"
+      },
+      "ja": {
+        "first_name": "悠人",
+        "last_name": "後藤"
       },
       "it": {
         "first_name": "Leonardo",
@@ -5774,6 +5851,10 @@
       "ko": {
         "first_name": "Seungu",
         "last_name": "Gwak"
+      },
+      "ja": {
+        "first_name": "Yuto",
+        "last_name": "Goto"
       },
       "it": {
         "first_name": "Leonardo",
@@ -6308,6 +6389,7 @@
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
       "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
       "ko": "안녕하세요, 근무 중 하나를 교대하려고 전화드렸습니다.",
+      "ja": "こんにちは、勤務の交換についてご相談したいのですが。",
       "it": "Salve, chiamo per cambiare uno dei miei turni.",
       "nl": "Hallo, ik bel over om een van mijn diensten te ruilen."
     },
@@ -6339,6 +6421,10 @@
       "ko": {
         "first_name": "가은",
         "last_name": "주"
+      },
+      "ja": {
+        "first_name": "奈々",
+        "last_name": "岡本"
       },
       "it": {
         "first_name": "Sabrina",
@@ -6377,6 +6463,10 @@
       "ko": {
         "first_name": "Gaeun",
         "last_name": "Ju"
+      },
+      "ja": {
+        "first_name": "Nana",
+        "last_name": "Okamoto"
       },
       "it": {
         "first_name": "Sabrina",
@@ -6943,6 +7033,7 @@
       "de": "Hallo, ich muss meine Angaben zur Berufshaftpflichtversicherung aktualisieren.",
       "hi": "नमस्ते, मुझे अपनी मैल्प्रैक्टिस इन्शुरन्स जानकारी अपडेट करनी है।",
       "ko": "안녕하세요, 제 의료배상 책임보험 정보를 업데이트해야 합니다.",
+      "ja": "こんにちは、医療賠償責任保険の情報を更新したいのですが。",
       "it": "Salve, devo aggiornare le informazioni relative alla mia assicurazione per la responsabilità professionale medica.",
       "nl": "Hallo, ik moet mijn informatie voor mijn beroepsaansprakelijkheidsverzekering bijwerken."
     },
@@ -6974,6 +7065,10 @@
       "ko": {
         "first_name": "채원",
         "last_name": "강"
+      },
+      "ja": {
+        "first_name": "詩織",
+        "last_name": "小林"
       },
       "it": {
         "first_name": "Sara",
@@ -7012,6 +7107,10 @@
       "ko": {
         "first_name": "Chaewon",
         "last_name": "Gang"
+      },
+      "ja": {
+        "first_name": "Shiori",
+        "last_name": "Kobayashi"
       },
       "it": {
         "first_name": "Sara",
@@ -7504,6 +7603,7 @@
       "de": "Hallo, ich muss meine Angaben zur Berufshaftpflichtversicherung aktualisieren.",
       "hi": "नमस्ते, मुझे अपनी मैल्प्रैक्टिस इन्शुरन्स जानकारी अपडेट करनी है।",
       "ko": "안녕하세요, 제 의료배상 책임보험 정보를 업데이트해야 합니다.",
+      "ja": "こんにちは、医療賠償責任保険の情報を更新したいのですが。",
       "it": "Salve, devo aggiornare le informazioni relative alla mia assicurazione per la responsabilità professionale medica.",
       "nl": "Hallo, ik moet mijn informatie voor mijn beroepsaansprakelijkheidsverzekering bijwerken."
     },
@@ -7535,6 +7635,10 @@
       "ko": {
         "first_name": "민호",
         "last_name": "하"
+      },
+      "ja": {
+        "first_name": "誠",
+        "last_name": "加藤"
       },
       "it": {
         "first_name": "Gabriele",
@@ -7573,6 +7677,10 @@
       "ko": {
         "first_name": "Minho",
         "last_name": "Ha"
+      },
+      "ja": {
+        "first_name": "Makoto",
+        "last_name": "Kato"
       },
       "it": {
         "first_name": "Gabriele",
@@ -8132,6 +8240,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, ein paar Onboarding-Punkte zu aktualisieren und meinen Folgetermin zu vereinbaren.",
       "hi": "नमस्ते, मुझे ऑनबोर्डिंग की कुछ चीज़ें अपडेट करने में और अपनी फॉलो-अप अपॉइंटमेंट तय करने में मदद चाहिए।",
       "ko": "안녕하세요, 온보딩 항목 몇 가지를 업데이트하고 후속 예약을 잡는 데 도움이 필요합니다.",
+      "ja": "こんにちは、入社手続きの項目をいくつか更新し、フォローアップ面談を設定したいのですが。",
       "it": "Salve, ho bisogno di aiuto per aggiornare alcune pratiche relative al mio inserimento e fissare un appuntamento di controllo.",
       "nl": "Hallo, ik heb hulp nodig bij het aanpassen van een paar onderdelen van het inwerktraject en bij het plannen van mijn vervolgafspraak."
     },
@@ -8163,6 +8272,10 @@
       "ko": {
         "first_name": "성민",
         "last_name": "차"
+      },
+      "ja": {
+        "first_name": "達也",
+        "last_name": "三浦"
       },
       "it": {
         "first_name": "Edoardo",
@@ -8201,6 +8314,10 @@
       "ko": {
         "first_name": "Seongmin",
         "last_name": "Cha"
+      },
+      "ja": {
+        "first_name": "Tatsuya",
+        "last_name": "Miura"
       },
       "it": {
         "first_name": "Edoardo",
@@ -8661,6 +8778,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, ein paar meiner Onboarding-Aufgaben als erledigt zu markieren.",
       "hi": "नमस्ते, मुझे अपने कुछ ऑनबोर्डिंग काम को पूरा होने का संकेत करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 온보딩 작업 몇 가지를 완료로 표시하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、入社手続きのタスクをいくつか完了済みにしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per contrassegnare come completate alcune delle mie attività di inserimento.",
       "nl": "Hallo, ik heb hulp nodig om een paar van mijn inwerktaken te markeren als voltooid."
     },
@@ -8692,6 +8810,10 @@
       "ko": {
         "first_name": "윤서",
         "last_name": "임"
+      },
+      "ja": {
+        "first_name": "真由美",
+        "last_name": "山口"
       },
       "it": {
         "first_name": "Nicoletta",
@@ -8730,6 +8852,10 @@
       "ko": {
         "first_name": "Yunseo",
         "last_name": "Im"
+      },
+      "ja": {
+        "first_name": "Mayumi",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Nicoletta",
@@ -9347,6 +9473,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, meine DEA-Registrierung auf eine neue Einrichtung zu übertragen.",
       "hi": "नमस्ते, मुझे अपना DEA रेजिस्ट्रेशन एक नई केंद्र पर बदलने में मदद चाहिए।",
       "ko": "안녕하세요, 제 DEA 등록을 새 시설로 이전하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、DEA登録の新しい施設への移管についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per trasferire la mia registrazione DEA a una nuova struttura.",
       "nl": "Hallo, ik heb hulp nodig bij het overzetten van mijn DEA-registratie naar een nieuwe instelling."
     },
@@ -9378,6 +9505,10 @@
       "ko": {
         "first_name": "민지",
         "last_name": "김"
+      },
+      "ja": {
+        "first_name": "花子",
+        "last_name": "鈴木"
       },
       "it": {
         "first_name": "Raffaella",
@@ -9416,6 +9547,10 @@
       "ko": {
         "first_name": "Minji",
         "last_name": "Kim"
+      },
+      "ja": {
+        "first_name": "Hanako",
+        "last_name": "Suzuki"
       },
       "it": {
         "first_name": "Raffaella",
@@ -9940,6 +10075,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, meine DEA-Registrierung auf eine neue Einrichtung zu übertragen.",
       "hi": "नमस्ते, मुझे अपना DEA रेजिस्ट्रेशन एक नई केंद्र पर बदलने में मदद चाहिए।",
       "ko": "안녕하세요, 제 DEA 등록을 새 시설로 이전하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、DEA登録の新しい施設への移管についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per trasferire la mia registrazione DEA a una nuova struttura.",
       "nl": "Hallo, ik heb hulp nodig bij het overzetten van mijn DEA-registratie naar een nieuwe instelling."
     },
@@ -9971,6 +10107,10 @@
       "ko": {
         "first_name": "지호",
         "last_name": "문"
+      },
+      "ja": {
+        "first_name": "俊介",
+        "last_name": "福田"
       },
       "it": {
         "first_name": "Gabriele",
@@ -10009,6 +10149,10 @@
       "ko": {
         "first_name": "Jiho",
         "last_name": "Mun"
+      },
+      "ja": {
+        "first_name": "Shunsuke",
+        "last_name": "Fukuda"
       },
       "it": {
         "first_name": "Gabriele",
@@ -10678,6 +10822,7 @@
       "de": "Hallo, ich muss eine Freistellung beantragen.",
       "hi": "नमस्ते, मुझे ऍफ़ एम् एल ए छुट्टी के लिए दर्ज करना है।",
       "ko": "안녕하세요, FMLA 휴가를 신청해야 합니다.",
+      "ja": "こんにちは、FMLA休暇を申請したいのですが。",
       "it": "Salve, devo presentare una richiesta di congedo familiare e medico.",
       "nl": "Hallo, ik moet een FMLA-verlof aanvragen."
     },
@@ -10709,6 +10854,10 @@
       "ko": {
         "first_name": "주원",
         "last_name": "이"
+      },
+      "ja": {
+        "first_name": "智弘",
+        "last_name": "井上"
       },
       "it": {
         "first_name": "Edoardo",
@@ -10747,6 +10896,10 @@
       "ko": {
         "first_name": "Juwon",
         "last_name": "I"
+      },
+      "ja": {
+        "first_name": "Tomohiro",
+        "last_name": "Inoue"
       },
       "it": {
         "first_name": "Edoardo",
@@ -11294,6 +11447,7 @@
       "de": "Hallo, ich muss eine Freistellung beantragen.",
       "hi": "नमस्ते, मुझे ऍफ़ एम् एल ए छुट्टी के लिए दर्ज करना है।",
       "ko": "안녕하세요, FMLA 휴가를 신청해야 합니다.",
+      "ja": "こんにちは、FMLA休暇を申請したいのですが。",
       "it": "Salve, devo presentare una richiesta di congedo familiare e medico.",
       "nl": "Hallo, ik moet een FMLA-verlof aanvragen."
     },
@@ -11325,6 +11479,10 @@
       "ko": {
         "first_name": "지우",
         "last_name": "양"
+      },
+      "ja": {
+        "first_name": "恵子",
+        "last_name": "福田"
       },
       "it": {
         "first_name": "Claudia",
@@ -11363,6 +11521,10 @@
       "ko": {
         "first_name": "Jiu",
         "last_name": "Yang"
+      },
+      "ja": {
+        "first_name": "Keiko",
+        "last_name": "Fukuda"
       },
       "it": {
         "first_name": "Claudia",
@@ -11962,6 +12124,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, fehlende Bereitschaftsdienststunden auf meinem Stundenzettel zu korrigieren.",
       "hi": "नमस्ते, मुझे अपनी टाइमशीट में गायब ऑन-कॉल घंटों को ठीक करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 타임시트에서 누락된 온콜 시간을 수정하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、勤怠記録に反映されていないオンコール時間の修正をお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per correggere le ore di reperibilità mancanti sul registro presenze.",
       "nl": "Hallo, ik heb hulp nodig bij het corrigeren van ontbrekende uren voor wachtdiensten op mijn urenregistratie."
     },
@@ -11993,6 +12156,10 @@
       "ko": {
         "first_name": "재윤",
         "last_name": "전"
+      },
+      "ja": {
+        "first_name": "悠斗",
+        "last_name": "石川"
       },
       "it": {
         "first_name": "Giacomo",
@@ -12031,6 +12198,10 @@
       "ko": {
         "first_name": "Jaeyun",
         "last_name": "Jeon"
+      },
+      "ja": {
+        "first_name": "Yuto",
+        "last_name": "Ishikawa"
       },
       "it": {
         "first_name": "Giacomo",
@@ -12547,6 +12718,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, Stunden einer alten Schicht auf meinem Stundenzettel zu korrigieren.",
       "hi": "नमस्ते, मुझे अपनी टाइमशीट में एक पुरानी शिफ्ट के घंटों को ठीक करने में मदद चाहिए।",
       "ko": "안녕하세요, 제 타임시트에서 예전 근무의 근무시간을 수정하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、過去の勤務分の勤怠記録の修正をお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per correggere le ore di un vecchio turno sul registro presenze.",
       "nl": "Hallo, ik heb hulp nodig bij het corrigeren van mijn uren van een oude dienst op de urenregistratie."
     },
@@ -12578,6 +12750,10 @@
       "ko": {
         "first_name": "민호",
         "last_name": "노"
+      },
+      "ja": {
+        "first_name": "樹",
+        "last_name": "田中"
       },
       "it": {
         "first_name": "Domenico",
@@ -12616,6 +12792,10 @@
       "ko": {
         "first_name": "Minho",
         "last_name": "No"
+      },
+      "ja": {
+        "first_name": "Itsuki",
+        "last_name": "Tanaka"
       },
       "it": {
         "first_name": "Domenico",
@@ -13318,6 +13498,7 @@
       "de": "Hallo, ich muss meine klinischen Berechtigungen nach meiner Abwesenheit wieder aktivieren lassen.",
       "hi": "नमस्ते, मुझे छुट्टी के बाद अपने क्लिनिकल प्रिविलज फिर से चालू करना हैं।",
       "ko": "안녕하세요, 휴직 후 제 임상 권한을 다시 활성화하려고 합니다.",
+      "ja": "こんにちは、休職後の診療業務の再開についてお願いしたいのですが。",
       "it": "Salve, devo far riattivare la mie autorizzazioni cliniche dopo il periodo di congedo.",
       "nl": "Hallo, ik moet mijn klinische bevoegdheden opnieuw laten activeren na mijn verlof."
     },
@@ -13349,6 +13530,10 @@
       "ko": {
         "first_name": "동욱",
         "last_name": "양"
+      },
+      "ja": {
+        "first_name": "次郎",
+        "last_name": "佐々木"
       },
       "it": {
         "first_name": "Lorenzo",
@@ -13387,6 +13572,10 @@
       "ko": {
         "first_name": "Donguk",
         "last_name": "Yang"
+      },
+      "ja": {
+        "first_name": "Jiro",
+        "last_name": "Sasaki"
       },
       "it": {
         "first_name": "Lorenzo",
@@ -14087,6 +14276,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, meine klinischen Berechtigungen nach meiner Abwesenheit wieder zu aktivieren.",
       "hi": "नमस्ते, मुझे छुट्टी से वापस आने के बाद अपने क्लिनिकल प्रिविलज फिर से चालू करने में मदद चाहिए।",
       "ko": "안녕하세요, 휴직에서 복귀한 후 제 임상 권한을 다시 활성화하는 데 도움이 필요합니다.",
+      "ja": "こんにちは、休職から復帰したため、診療業務の再開についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per riattivare le mie autorizzazioni cliniche dopo il rientro dal congedo.",
       "nl": "Hallo, ik heb hulp nodig bij het opnieuw activeren van mijn klinische bevoegdheden nadat ik ben teruggekomen van mijn verlof."
     },
@@ -14118,6 +14308,10 @@
       "ko": {
         "first_name": "채원",
         "last_name": "장"
+      },
+      "ja": {
+        "first_name": "早紀",
+        "last_name": "池田"
       },
       "it": {
         "first_name": "Federica",
@@ -14156,6 +14350,10 @@
       "ko": {
         "first_name": "Chaewon",
         "last_name": "Jang"
+      },
+      "ja": {
+        "first_name": "Saki",
+        "last_name": "Ikeda"
       },
       "it": {
         "first_name": "Federica",
@@ -14734,6 +14932,7 @@
       "de": "Hallo, ich muss meine Verfügbarkeit für den Bereitschaftsdienst eintragen.",
       "hi": "नमस्ते, मुझे अपनी ऑन-कॉल उपलब्धता दर्ज करनी है।",
       "ko": "안녕하세요, 제 온콜 가능 시간을 등록해야 합니다.",
+      "ja": "こんにちは、オンコール対応可能な日程を登録したいのですが。",
       "it": "Salve, devo registrare la mia disponibilità alla reperibilità.",
       "nl": "Hallo, ik moet mijn beschikbaarheid voor de bereikbaarheidsdienst registreren."
     },
@@ -14765,6 +14964,10 @@
       "ko": {
         "first_name": "지우",
         "last_name": "방"
+      },
+      "ja": {
+        "first_name": "遥",
+        "last_name": "村上"
       },
       "it": {
         "first_name": "Maria",
@@ -14803,6 +15006,10 @@
       "ko": {
         "first_name": "Jiu",
         "last_name": "Bang"
+      },
+      "ja": {
+        "first_name": "Haruka",
+        "last_name": "Murakami"
       },
       "it": {
         "first_name": "Maria",
@@ -15291,6 +15498,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, meine Verfügbarkeit für den Ersatzbereitschaftsdienst einzutragen.",
       "hi": "नमस्ते, मुझे बैकअप ऑन-कॉल उपलब्धता दर्ज करने में मदद चाहिए।",
       "ko": "안녕하세요, 백업 온콜 가능 시간 등록에 도움이 필요합니다.",
+      "ja": "こんにちは、バックアップのオンコールについて、対応可能な日程を登録したいのですが。",
       "it": "Salve, ho bisogno di aiuto per registrare la mia disponibilità alla reperibilità come riserva.",
       "nl": "Hallo, ik heb hulp nodig bij het registreren van mijn beschikbaarheid voor reserve-achterwacht."
     },
@@ -15322,6 +15530,10 @@
       "ko": {
         "first_name": "건우",
         "last_name": "문"
+      },
+      "ja": {
+        "first_name": "雅人",
+        "last_name": "青木"
       },
       "it": {
         "first_name": "Filippo",
@@ -15360,6 +15572,10 @@
       "ko": {
         "first_name": "Geonu",
         "last_name": "Mun"
+      },
+      "ja": {
+        "first_name": "Masato",
+        "last_name": "Aoki"
       },
       "it": {
         "first_name": "Filippo",
@@ -15948,6 +16164,7 @@
       "de": "Hallo, ich rufe wegen des Tauschs einer meiner Schichten an.",
       "hi": "नमस्ते, मैं अपनी एक शिफ्ट बदलने के बारे में कॉल कर रहा/रही हूँ।",
       "ko": "안녕하세요, 제 근무중 하나를 교대하려고 전화드렸습니다.",
+      "ja": "こんにちは、勤務の交換についてご相談したいのですが。",
       "it": "Salve, chiamo per cambiare uno dei miei turni.",
       "nl": "Hallo, ik bel over het ruilen van een van mijn diensten."
     },
@@ -15979,6 +16196,10 @@
       "ko": {
         "first_name": "시은",
         "last_name": "원"
+      },
+      "ja": {
+        "first_name": "恵子",
+        "last_name": "小林"
       },
       "it": {
         "first_name": "Camilla",
@@ -16017,6 +16238,10 @@
       "ko": {
         "first_name": "Sieun",
         "last_name": "Won"
+      },
+      "ja": {
+        "first_name": "Keiko",
+        "last_name": "Kobayashi"
       },
       "it": {
         "first_name": "Camilla",
@@ -16659,6 +16884,7 @@
       "de": "Hallo, ich muss eine Freistellung beantragen.",
       "hi": "नमस्ते, मुझे ऍफ़ एम् एल ए छुट्टी के लिए दर्ज करना है।",
       "ko": "안녕하세요, FMLA 휴가를 신청해야 해서요.",
+      "ja": "こんにちは、FMLA休暇を申請したいのですが。",
       "it": "Salve, devo presentare richiesta per un congedo familiare e medico.",
       "nl": "Hoi, ik moet een FMLA-verlof aanvragen."
     },
@@ -16690,6 +16916,10 @@
       "ko": {
         "first_name": "은우",
         "last_name": "문"
+      },
+      "ja": {
+        "first_name": "樹",
+        "last_name": "松田"
       },
       "it": {
         "first_name": "Alessandro",
@@ -16728,6 +16958,10 @@
       "ko": {
         "first_name": "Eunu",
         "last_name": "Mun"
+      },
+      "ja": {
+        "first_name": "Itsuki",
+        "last_name": "Matsuda"
       },
       "it": {
         "first_name": "Alessandro",
@@ -17456,6 +17690,7 @@
       "de": "Hallo, ich brauche Hilfe bei der Übertragung meiner DEA-Registrierung.",
       "hi": "नमस्ते, मुझे अपना DEA रेजिस्ट्रेशन बदली करने में मदद चाहिए।",
       "ko": "안녕하세요, DEA 등록을 이전하는 데 도움이 필요해요.",
+      "ja": "こんにちは、DEA登録の移管についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per trasferire la mia registrazione DEA.",
       "nl": "Hoi, ik heb hulp nodig bij het overzetten van mijn DEA-registratie."
     },
@@ -17487,6 +17722,10 @@
       "ko": {
         "first_name": "나은",
         "last_name": "오"
+      },
+      "ja": {
+        "first_name": "佳奈",
+        "last_name": "橋本"
       },
       "it": {
         "first_name": "Eleonora",
@@ -17525,6 +17764,10 @@
       "ko": {
         "first_name": "Naeun",
         "last_name": "O"
+      },
+      "ja": {
+        "first_name": "Kana",
+        "last_name": "Hashimoto"
       },
       "it": {
         "first_name": "Eleonora",
@@ -18120,6 +18363,7 @@
       "de": "Hallo, ich muss meine klinischen Berechtigungen wieder aktivieren lassen.",
       "hi": "नमस्ते, मुझे अपने क्लिनिकल प्रिविलज फिर से चालू करना हैं।",
       "ko": "안녕하세요, 제 임상 권한을 다시 활성화해야 해서요.",
+      "ja": "こんにちは、診療業務の再開についてお願いしたいのですが。",
       "it": "Salve, devo far riattivare le mie autorizzazioni cliniche",
       "nl": "Hoi, ik moet mijn klinische bevoegdheden opnieuw laten activeren."
     },
@@ -18151,6 +18395,10 @@
       "ko": {
         "first_name": "예은",
         "last_name": "권"
+      },
+      "ja": {
+        "first_name": "優子",
+        "last_name": "山本"
       },
       "it": {
         "first_name": "Cristina",
@@ -18189,6 +18437,10 @@
       "ko": {
         "first_name": "Yeeun",
         "last_name": "Gwon"
+      },
+      "ja": {
+        "first_name": "Yuko",
+        "last_name": "Yamamoto"
       },
       "it": {
         "first_name": "Cristina",
@@ -18648,6 +18900,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, einen Urlaubsantrag für einen Kollegen einzureichen.",
       "hi": "नमस्ते, मुझे एक साथी की तरफ़ से PTO के लिए अर्जी देने में मदद चाहिए।",
       "ko": "안녕하세요, 동료 대신 PTO 신청을 하는 데 도움이 필요해요.",
+      "ja": "こんにちは、同僚の有給休暇の申請についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per inserire una richiesta di permesso retribuito per un collega.",
       "nl": "Hoi, ik heb hulp nodig bij het indienen van een aanvraag voor betaald verlof voor een collega."
     },
@@ -18679,6 +18932,10 @@
       "ko": {
         "first_name": "연우",
         "last_name": "권"
+      },
+      "ja": {
+        "first_name": "翔",
+        "last_name": "松田"
       },
       "it": {
         "first_name": "Enrico",
@@ -18717,6 +18974,10 @@
       "ko": {
         "first_name": "Yeonu",
         "last_name": "Gwon"
+      },
+      "ja": {
+        "first_name": "Sho",
+        "last_name": "Matsuda"
       },
       "it": {
         "first_name": "Enrico",
@@ -19218,6 +19479,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, ein Gehaltsabrechnungsproblem für eine Schicht zu klären.",
       "hi": "नमस्ते, मुझे एक शिफ्ट के लिए पेरोल की समस्या ठीक करने में मदद चाहिए।",
       "ko": "안녕하세요, 근무 관련 급여 문제를 해결하는 데 도움이 필요해요.",
+      "ja": "こんにちは、ある勤務分の給与の問題について、対応をお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per risolvere un problema di busta paga relativo a un turno di lavoro.",
       "nl": "Hoi, ik heb hulp nodig om een probleem met de salarisadministratie voor een dienst op te lossen."
     },
@@ -19249,6 +19511,10 @@
       "ko": {
         "first_name": "민지",
         "last_name": "심"
+      },
+      "ja": {
+        "first_name": "琴音",
+        "last_name": "石井"
       },
       "it": {
         "first_name": "Giorgia",
@@ -19287,6 +19553,10 @@
       "ko": {
         "first_name": "Minji",
         "last_name": "Sim"
+      },
+      "ja": {
+        "first_name": "Kotone",
+        "last_name": "Ishii"
       },
       "it": {
         "first_name": "Giorgia",
@@ -19966,6 +20236,7 @@
       "de": "Hallo, ich brauche Hilfe beim Antrag auf Verlängerung meiner eingeschränkten Zulassung unter Supervision.",
       "hi": "नमस्ते, मुझे सूपर्वाइज्ड़ लाइसेंस एक्स्टेन्शन मांगने के संबंध में मदद चाहिए।",
       "ko": "안녕하세요, 감독 면허 연장 신청 관련해서 도움이 필요해요.",
+      "ja": "こんにちは、指導下での診療許可の延長申請についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto con una richiesta di proroga della licenza per l'esercizio sotto supervisione.",
       "nl": "Hoi, ik heb hulp nodig met een verlengingsaanvraag voor een vergunning onder supervisie."
     },
@@ -19997,6 +20268,10 @@
       "ko": {
         "first_name": "지호",
         "last_name": "정"
+      },
+      "ja": {
+        "first_name": "光",
+        "last_name": "遠藤"
       },
       "it": {
         "first_name": "Michele",
@@ -20035,6 +20310,10 @@
       "ko": {
         "first_name": "Jiho",
         "last_name": "Jeong"
+      },
+      "ja": {
+        "first_name": "Hikaru",
+        "last_name": "Endo"
       },
       "it": {
         "first_name": "Michele",
@@ -20588,6 +20867,7 @@
       "de": "Hallo, ich brauche Hilfe bei der Anmeldung zum Bereitschaftsdienst.",
       "hi": "नमस्ते, मुझे ऑन-कॉल के लिए दर्ज करने में मदद चाहिए।",
       "ko": "안녕하세요, 온콜 등록하는 데 도움이 필요해요.",
+      "ja": "こんにちは、オンコールの登録についてお願いしたいのですが。",
       "it": "Salve, ho bisogno di aiuto per registrarmi per la reperibilità.",
       "nl": "Hoi, ik heb hulp nodig om me aan te melden voor een bereikbaarheidsdienst."
     },
@@ -20619,6 +20899,10 @@
       "ko": {
         "first_name": "소율",
         "last_name": "성"
+      },
+      "ja": {
+        "first_name": "里奈",
+        "last_name": "木村"
       },
       "it": {
         "first_name": "Alessia",
@@ -20657,6 +20941,10 @@
       "ko": {
         "first_name": "Soyul",
         "last_name": "Seong"
+      },
+      "ja": {
+        "first_name": "Rina",
+        "last_name": "Kimura"
       },
       "it": {
         "first_name": "Alessia",
@@ -21385,6 +21673,7 @@
       "de": "Hallo, ich muss eine Freistellung beantragen.",
       "hi": "नमस्ते, मुझे ऍफ़ एम् एल ए छुट्टी के लिए दर्ज करना है।",
       "ko": "안녕하세요, FMLA 휴가를 신청해야 해서요.",
+      "ja": "こんにちは、FMLA休暇を申請したいのですが。",
       "it": "Salve, devo presentare richiesta per un congedo familiare e medico.",
       "nl": "Hoi, ik moet een FMLA-verlof aanvragen."
     },
@@ -21416,6 +21705,10 @@
       "ko": {
         "first_name": "은서",
         "last_name": "정"
+      },
+      "ja": {
+        "first_name": "麻衣",
+        "last_name": "藤原"
       },
       "it": {
         "first_name": "Elisa",
@@ -21454,6 +21747,10 @@
       "ko": {
         "first_name": "Eunseo",
         "last_name": "Jeong"
+      },
+      "ja": {
+        "first_name": "Mai",
+        "last_name": "Fujiwara"
       },
       "it": {
         "first_name": "Elisa",
@@ -22467,6 +22764,7 @@
       "de": "Hallo, ich habe einige dringende Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
       "hi": "नमस्ते, मेरे पास कुछ जरूरी एचआर क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 급한 HR credentialing 문제가 몇 가지 있어서 도움이 필요해요.",
+      "ja": "こんにちは、人事の資格確認に関する急ぎの件がいくつかあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per dei problemi urgenti relativi alla verifica delle credenziali delle risorse umane.",
       "nl": "Hoi, ik heb een paar dringende problemen met HR-kwalificatieverificatie waar ik hulp bij nodig heb."
     },
@@ -22498,6 +22796,10 @@
       "ko": {
         "first_name": "시은",
         "last_name": "홍"
+      },
+      "ja": {
+        "first_name": "菜々子",
+        "last_name": "佐々木"
       },
       "it": {
         "first_name": "Monica",
@@ -22536,6 +22838,10 @@
       "ko": {
         "first_name": "Sieun",
         "last_name": "Hong"
+      },
+      "ja": {
+        "first_name": "Nanako",
+        "last_name": "Sasaki"
       },
       "it": {
         "first_name": "Monica",
@@ -23321,6 +23627,7 @@
       "de": "Hallo, ich habe einige Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
       "hi": "नमस्ते, मेरे पास कुछ एचआर क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, HR credentialing 문제가 몇 가지 있어서 도움이 필요해요.",
+      "ja": "こんにちは、人事の資格確認に関する急ぎの件がいくつかあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative alla verifica delle credenziali delle risorse umane.",
       "nl": "Hoi, ik heb een paar dringende problemen met HR-kwalificatieverificatie waar ik hulp bij nodig heb"
     },
@@ -23352,6 +23659,10 @@
       "ko": {
         "first_name": "정우",
         "last_name": "채"
+      },
+      "ja": {
+        "first_name": "智也",
+        "last_name": "渡辺"
       },
       "it": {
         "first_name": "Lorenzo",
@@ -23390,6 +23701,10 @@
       "ko": {
         "first_name": "Jeongu",
         "last_name": "Chae"
+      },
+      "ja": {
+        "first_name": "Tomoya",
+        "last_name": "Watanabe"
       },
       "it": {
         "first_name": "Lorenzo",
@@ -24230,6 +24545,7 @@
       "de": "Hallo, ich habe einige Angelegenheiten im Bereich HR und berufliche Zulassung, bei denen ich Unterstützung benötige.",
       "hi": "नमस्ते, मेरे पास कुछ एचआर क्रेडेंशियलिंग समस्याएँ हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, HR credentialing 문제가 몇 가지 있어서 도움이 필요해요.",
+      "ja": "こんにちは、人事の資格確認に関する急ぎの件がいくつかあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative alla verifica delle credenziali delle risorse umane.",
       "nl": "Hoi, ik heb een paar dringende problemen met HR-kwalificatieverificatie waar ik hulp bij nodig heb."
     },
@@ -24261,6 +24577,10 @@
       "ko": {
         "first_name": "다현",
         "last_name": "송"
+      },
+      "ja": {
+        "first_name": "佳奈",
+        "last_name": "近藤"
       },
       "it": {
         "first_name": "Maria",
@@ -24299,6 +24619,10 @@
       "ko": {
         "first_name": "Dahyeon",
         "last_name": "Song"
+      },
+      "ja": {
+        "first_name": "Kana",
+        "last_name": "Kondo"
       },
       "it": {
         "first_name": "Maria",
@@ -25179,6 +25503,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मेरे पास एचआर से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움이 필요한 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een paar HR-zaken waar ik vandaag hulp bij nodig heb."
     },
@@ -25210,6 +25535,10 @@
       "ko": {
         "first_name": "민호",
         "last_name": "노"
+      },
+      "ja": {
+        "first_name": "英明",
+        "last_name": "山下"
       },
       "it": {
         "first_name": "Alessio",
@@ -25248,6 +25577,10 @@
       "ko": {
         "first_name": "Minho",
         "last_name": "No"
+      },
+      "ja": {
+        "first_name": "Hideaki",
+        "last_name": "Yamashita"
       },
       "it": {
         "first_name": "Alessio",
@@ -26071,6 +26404,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मेरे पास एचआर से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움이 필요한 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een paar HR-zaken waar ik vandaag hulp bij nodig heb."
     },
@@ -26102,6 +26436,10 @@
       "ko": {
         "first_name": "준영",
         "last_name": "백"
+      },
+      "ja": {
+        "first_name": "直人",
+        "last_name": "井上"
       },
       "it": {
         "first_name": "Giulio",
@@ -26140,6 +26478,10 @@
       "ko": {
         "first_name": "Junyeong",
         "last_name": "Baek"
+      },
+      "ja": {
+        "first_name": "Naoto",
+        "last_name": "Inoue"
       },
       "it": {
         "first_name": "Giulio",
@@ -26856,6 +27198,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Sachen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मेरे पास एचआर से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움이 필요한 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een paar HR-zaken waar ik vandaag hulp bij nodig heb."
     },
@@ -26887,6 +27230,10 @@
       "ko": {
         "first_name": "다인",
         "last_name": "임"
+      },
+      "ja": {
+        "first_name": "裕子",
+        "last_name": "山口"
       },
       "it": {
         "first_name": "Nicoletta",
@@ -26925,6 +27272,10 @@
       "ko": {
         "first_name": "Dain",
         "last_name": "Im"
+      },
+      "ja": {
+        "first_name": "Yuko",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Nicoletta",
@@ -27752,6 +28103,7 @@
       "de": "Hallo, ich habe heute ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे क्रेडेंशियलिंग से जुड़े कुछ अपडेट के लिए मदद चाहिए।",
       "ko": "안녕하세요, 오늘 credentialing 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日資格情報の更新についていくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per degli aggiornamenti relativi alla verifica delle credenziali.",
       "nl": "Hoi, ik heb een paar updates voor de kwalificatieverificatie waar ik vandaag hulp bij nodig heb."
     },
@@ -27783,6 +28135,10 @@
       "ko": {
         "first_name": "민준",
         "last_name": "서"
+      },
+      "ja": {
+        "first_name": "悠人",
+        "last_name": "原田"
       },
       "it": {
         "first_name": "Michele",
@@ -27821,6 +28177,10 @@
       "ko": {
         "first_name": "Minjun",
         "last_name": "Seo"
+      },
+      "ja": {
+        "first_name": "Yuto",
+        "last_name": "Harada"
       },
       "it": {
         "first_name": "Michele",
@@ -28479,6 +28839,7 @@
       "de": "Hallo, ich habe ein paar Änderungen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे क्रेडेंशियलिंग से जुड़े कुछ अपडेट के लिए मदद चाहिए।",
       "ko": "안녕하세요, credentialing 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日資格情報の更新についていくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per degli aggiornamenti relativi alla verifica delle credenziali.",
       "nl": "Hoi, ik heb een paar updates voor de kwalificatieverificatie waar ik hulp bij nodig heb."
     },
@@ -28510,6 +28871,10 @@
       "ko": {
         "first_name": "민지",
         "last_name": "천"
+      },
+      "ja": {
+        "first_name": "萌",
+        "last_name": "森"
       },
       "it": {
         "first_name": "Alessia",
@@ -28548,6 +28913,10 @@
       "ko": {
         "first_name": "Minji",
         "last_name": "Cheon"
+      },
+      "ja": {
+        "first_name": "Moe",
+        "last_name": "Mori"
       },
       "it": {
         "first_name": "Alessia",
@@ -29127,6 +29496,7 @@
       "de": "Hallo, ich habe ein paar Fragen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों के लिए मदद चाहिए।",
       "ko": "안녕하세요, credentialing 관련해서 도움이 필요한 일이 몇 가지 있어요.",
+      "ja": "こんにちは、資格関連の件でいくつかお願いしたいことがあるのですが",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative alla verifica delle credenziali.",
       "nl": "Hoi, ik heb een paar zaken betreft de kwalificatieverificatie waar ik hulp bij nodig heb."
     },
@@ -29158,6 +29528,10 @@
       "ko": {
         "first_name": "준영",
         "last_name": "허"
+      },
+      "ja": {
+        "first_name": "大輔",
+        "last_name": "山下"
       },
       "it": {
         "first_name": "Giulio",
@@ -29196,6 +29570,10 @@
       "ko": {
         "first_name": "Junyeong",
         "last_name": "Heo"
+      },
+      "ja": {
+        "first_name": "Daisuke",
+        "last_name": "Yamashita"
       },
       "it": {
         "first_name": "Giulio",
@@ -30093,6 +30471,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Sachen im Bereich berufliche Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मेरे पास एचआर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ें हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR credentialing 관련해서 도움이 필요한 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の資格関連の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative alla verifica delle credenziali delle risorse umane.",
       "nl": "Hoi, ik heb een paar HR-zaken betreft de kwalificatieverificatie waar ik vandaag hulp bij nodig heb."
     },
@@ -30124,6 +30503,10 @@
       "ko": {
         "first_name": "수민",
         "last_name": "우"
+      },
+      "ja": {
+        "first_name": "恵子",
+        "last_name": "岡本"
       },
       "it": {
         "first_name": "Cristina",
@@ -30162,6 +30545,10 @@
       "ko": {
         "first_name": "Sumin",
         "last_name": "U"
+      },
+      "ja": {
+        "first_name": "Keiko",
+        "last_name": "Okamoto"
       },
       "it": {
         "first_name": "Cristina",
@@ -30914,6 +31301,7 @@
       "de": "Hallo, ich habe ein paar HR-Punkte, bei denen ich Hilfe brauche, wenn ich aus dem Urlaub zurückkomme.",
       "hi": "नमस्ते, छुट्टी से वापस आते हुए मेरे पास एचआर से जुड़े कुछ मुद्दे हैं जिनमें मुझे मदद चाहिए।",
       "ko": "안녕하세요, 휴직에서 복귀하면서 HR 관련해서 도움이 필요한 항목이 몇 가지 있어요.",
+      "ja": "こんにちは、休職から復帰するにあたり、人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative alle risorse umane appena rientro dal congedo.",
       "nl": "Hoi, ik heb een paar zaken voor HR waar ik hulp bij nodig heb nu ik terugkom van mijn verlof."
     },
@@ -30945,6 +31333,10 @@
       "ko": {
         "first_name": "다현",
         "last_name": "성"
+      },
+      "ja": {
+        "first_name": "菜々子",
+        "last_name": "吉田"
       },
       "it": {
         "first_name": "Lucia",
@@ -30983,6 +31375,10 @@
       "ko": {
         "first_name": "Dahyeon",
         "last_name": "Seong"
+      },
+      "ja": {
+        "first_name": "Nanako",
+        "last_name": "Yoshida"
       },
       "it": {
         "first_name": "Lucia",
@@ -31772,6 +32168,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Punkte für Leistungserbringer, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज प्रोवाइडर से जुड़ी कुछ एचआर चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider HR 관련해서 도움이 필요한 항목이 몇 가지 있어요.",
+      "ja": "こんにちは、本日医療従事者の人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative al personale sanitario.",
       "nl": "Hoi, ik heb een paar HR-zaken voor zorgverleners waar ik vandaag hulp bij nodig heb."
     },
@@ -31803,6 +32200,10 @@
       "ko": {
         "first_name": "시은",
         "last_name": "방"
+      },
+      "ja": {
+        "first_name": "早紀",
+        "last_name": "岡田"
       },
       "it": {
         "first_name": "Maria",
@@ -31841,6 +32242,10 @@
       "ko": {
         "first_name": "Sieun",
         "last_name": "Bang"
+      },
+      "ja": {
+        "first_name": "Saki",
+        "last_name": "Okada"
       },
       "it": {
         "first_name": "Maria",
@@ -32609,6 +33014,7 @@
       "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कुछ प्रोवाइडर रिकॉर्ड अपडेट्स में मदद चाहिए।",
       "ko": "안녕하세요, provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요.",
+      "ja": "こんにちは、医療従事者の記録の更新についていくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di una mano con un paio di aggiornamenti relativi al personale sanitario.",
       "nl": "Hoi, ik heb hulp nodig bij een paar aanpassingen van de zorgverlenersdossier."
     },
@@ -32640,6 +33046,10 @@
       "ko": {
         "first_name": "이준",
         "last_name": "방"
+      },
+      "ja": {
+        "first_name": "海斗",
+        "last_name": "原田"
       },
       "it": {
         "first_name": "Mario",
@@ -32678,6 +33088,10 @@
       "ko": {
         "first_name": "Ijun",
         "last_name": "Bang"
+      },
+      "ja": {
+        "first_name": "Kaito",
+        "last_name": "Harada"
       },
       "it": {
         "first_name": "Mario",
@@ -33542,6 +33956,7 @@
       "de": "Hallo, ich habe heute ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज कुछ प्रोवाइडर रिकॉर्ड अपडेट्स में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日医療従事者の記録の更新についていくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di una mano con un paio di aggiornamenti relativi ai dati del personale sanitario.",
       "nl": "Hoi, ik heb vandaag hulp nodig bij een paar aanpassingen van de zorgverlenersdossier."
     },
@@ -33573,6 +33988,10 @@
       "ko": {
         "first_name": "서연",
         "last_name": "이"
+      },
+      "ja": {
+        "first_name": "和香",
+        "last_name": "村上"
       },
       "it": {
         "first_name": "Rita",
@@ -33611,6 +34030,10 @@
       "ko": {
         "first_name": "Seoyeon",
         "last_name": "I"
+      },
+      "ja": {
+        "first_name": "Waka",
+        "last_name": "Murakami"
       },
       "it": {
         "first_name": "Rita",
@@ -34176,6 +34599,7 @@
       "de": "Hallo, ich habe ein paar Änderungen meiner Leistungserbringerdaten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे कुछ प्रोवाइडर रिकॉर्ड अपडेट्स में मदद चाहिए।",
       "ko": "안녕하세요, provider record 업데이트 관련해서 도움이 필요한 게 몇 가지 있어요.",
+      "ja": "こんにちは、医療従事者の記録の更新についていくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di una mano con un paio di aggiornamenti relativi ai dati del personale sanitario.",
       "nl": "Hoi, ik heb hulp nodig bij een paar aanpassingen van de zorgverlenersdossier."
     },
@@ -34207,6 +34631,10 @@
       "ko": {
         "first_name": "보민",
         "last_name": "양"
+      },
+      "ja": {
+        "first_name": "杏",
+        "last_name": "藤井"
       },
       "it": {
         "first_name": "Michela",
@@ -34245,6 +34673,10 @@
       "ko": {
         "first_name": "Bomin",
         "last_name": "Yang"
+      },
+      "ja": {
+        "first_name": "An",
+        "last_name": "Fujii"
       },
       "it": {
         "first_name": "Michela",
@@ -35061,6 +35493,7 @@
       "de": "Hallo, ich habe ein paar HR-Fragen zum Dienstplan, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एचआर शेड्यूलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, HR scheduling 관련해서 도움이 필요한 일이 몇 가지 있어요.",
+      "ja": "こんにちは、人事の勤務スケジュールの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogni di una mano per delle questioni relative alla pianificazione dei turni delle risorse umane.",
       "nl": "Hoi, ik heb een paar HR-zaken betreft het inroosteren waar ik hulp bij nodig heb."
     },
@@ -35092,6 +35525,10 @@
       "ko": {
         "first_name": "지아",
         "last_name": "나"
+      },
+      "ja": {
+        "first_name": "美咲",
+        "last_name": "中島"
       },
       "it": {
         "first_name": "Noemi",
@@ -35130,6 +35567,10 @@
       "ko": {
         "first_name": "Jia",
         "last_name": "Na"
+      },
+      "ja": {
+        "first_name": "Misaki",
+        "last_name": "Nakajima"
       },
       "it": {
         "first_name": "Noemi",
@@ -35862,6 +36303,7 @@
       "de": "Hallo, ich brauche Hilfe dabei, eine meiner kommenden Schichten zu tauschen, und ich habe außerdem noch eine weitere Frage zum Dienstplan.",
       "hi": "नमस्ते, मुझे अपनी आने वाली शिफ्ट में से एक को बदलने के लिए मदद चाहिए और मेरा शेड्यूलिंग से जुड़ा एक और सवाल भी है।",
       "ko": "안녕하세요, 다가오는 근무 중 하나를 교대하는 데 도움이 필요하고, 근무 일정 관련 질문도 하나 더 있어요.",
+      "ja": "こんにちは、今後の勤務を1回分交換したいのですが、あわせて勤務スケジュールについてもう1点お伺いしたいことがあります。",
       "it": "Salve, ho bisogno di aiuto per cambiare uno dei miei prossimi turni e ho anche un'altra domanda sulla pianificazione dei turni.",
       "nl": "Hoi, ik heb hulp nodig bij het ruilen van een van mijn komende diensten en ik heb ook nog een andere vraag over de rooster."
     },
@@ -35893,6 +36335,10 @@
       "ko": {
         "first_name": "선우",
         "last_name": "권"
+      },
+      "ja": {
+        "first_name": "哲也",
+        "last_name": "西村"
       },
       "it": {
         "first_name": "Simone",
@@ -35931,6 +36377,10 @@
       "ko": {
         "first_name": "Seonu",
         "last_name": "Gwon"
+      },
+      "ja": {
+        "first_name": "Tetsuya",
+        "last_name": "Nishimura"
       },
       "it": {
         "first_name": "Simone",
@@ -36527,6 +36977,7 @@
       "de": "Hallo, ich habe ein paar Fragen wegen des Dienstplans, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे शेड्यूलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 일정 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、勤務スケジュールの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di una mano con un paio di questioni che riguardano la programmazione dei turni.",
       "nl": "Hoi, ik heb een paar roosterzaken waar ik hulp bij nodig heb."
     },
@@ -36558,6 +37009,10 @@
       "ko": {
         "first_name": "예나",
         "last_name": "안"
+      },
+      "ja": {
+        "first_name": "彩花",
+        "last_name": "池田"
       },
       "it": {
         "first_name": "Martina",
@@ -36596,6 +37051,10 @@
       "ko": {
         "first_name": "Yena",
         "last_name": "An"
+      },
+      "ja": {
+        "first_name": "Ayaka",
+        "last_name": "Ikeda"
       },
       "it": {
         "first_name": "Martina",
@@ -37398,6 +37857,7 @@
       "de": "Hallo, ich habe ein paar Personalangelegenheiten, die ich für mein Onboarding und meine Zulassung erledigen muss.",
       "hi": "नमस्ते, मुझे अपनी ऑनबोर्डिंग और क्रेडेंशियल्स से जुड़े कुछ एचआर कार्यों को पूरा करना है।",
       "ko": "안녕하세요, 온보딩과 credentials 관련해서 처리해야 할 HR 일이 몇 가지 있어요.",
+      "ja": "こんにちは、入社手続きと資格関連で、いくつか対応が必要なのですが。",
       "it": "Salve, ho alcune questioni da sbrigare relative alle risorse umane che riguardano il mio inserimento e le mie credenziali.",
       "nl": "Hoi, ik heb een aantal personeelszaken die ik moet regelen voor mijn onboardingproces en mijn inloggegevens."
     },
@@ -37429,6 +37889,10 @@
       "ko": {
         "first_name": "서연",
         "last_name": "안"
+      },
+      "ja": {
+        "first_name": "莉子",
+        "last_name": "山本"
       },
       "it": {
         "first_name": "Maria",
@@ -37467,6 +37931,10 @@
       "ko": {
         "first_name": "Seoyeon",
         "last_name": "An"
+      },
+      "ja": {
+        "first_name": "Riko",
+        "last_name": "Yamamoto"
       },
       "it": {
         "first_name": "Maria",
@@ -38140,6 +38608,7 @@
       "de": "Hallo, ich habe ein paar HR-Onboarding-Sachen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एचआर ऑनबोर्डिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, HR 온보딩 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、人事の入社手続きの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, mi serve aiuto con un paio di questioni relative all'inserimento del personale.",
       "nl": "Hoi, ik heb een paar personeelszaken betreft mijn onboardingproces waar ik hulp bij nodig heb."
     },
@@ -38171,6 +38640,10 @@
       "ko": {
         "first_name": "수빈",
         "last_name": "정"
+      },
+      "ja": {
+        "first_name": "美里",
+        "last_name": "中村"
       },
       "it": {
         "first_name": "Veronica",
@@ -38209,6 +38682,10 @@
       "ko": {
         "first_name": "Subin",
         "last_name": "Jeong"
+      },
+      "ja": {
+        "first_name": "Misato",
+        "last_name": "Nakamura"
       },
       "it": {
         "first_name": "Veronica",
@@ -38771,6 +39248,7 @@
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di una mano con delle questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb vandaag een paar HR-zaken waar ik hulp bij nodig heb."
     },
@@ -38802,6 +39280,10 @@
       "ko": {
         "first_name": "선우",
         "last_name": "황"
+      },
+      "ja": {
+        "first_name": "圭介",
+        "last_name": "山口"
       },
       "it": {
         "first_name": "Giuseppe",
@@ -38840,6 +39322,10 @@
       "ko": {
         "first_name": "Seonu",
         "last_name": "Hwang"
+      },
+      "ja": {
+        "first_name": "Keisuke",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Giuseppe",
@@ -39831,6 +40317,7 @@
       "de": "Hallo, ich habe ein paar Urlaubsanträge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे छुट्टी के कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, 휴가 요청 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、休暇の申請がいくつかあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune richieste di congedo.",
       "nl": "Hoi, ik heb een paar verlofaanvragen waar ik hulp bij nodig heb."
     },
@@ -39862,6 +40349,10 @@
       "ko": {
         "first_name": "민아",
         "last_name": "구"
+      },
+      "ja": {
+        "first_name": "佳奈",
+        "last_name": "小川"
       },
       "it": {
         "first_name": "Cristina",
@@ -39900,6 +40391,10 @@
       "ko": {
         "first_name": "Mina",
         "last_name": "Gu"
+      },
+      "ja": {
+        "first_name": "Kana",
+        "last_name": "Ogawa"
       },
       "it": {
         "first_name": "Cristina",
@@ -40661,6 +41156,7 @@
       "de": "Hallo, ich habe ein paar HR-Urlaubsanträge, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एचआर छुट्टी के कुछ अनुरोधों में मदद चाहिए।",
       "ko": "안녕하세요, HR 휴가 요청 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、人事の休暇申請がいくつかあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle richieste di congedo da parte del personale.",
       "nl": "Hoi, ik heb een paar verlofaanvragen bij de HR-afdeling waar ik hulp bij nodig heb."
     },
@@ -40692,6 +41188,10 @@
       "ko": {
         "first_name": "지훈",
         "last_name": "천"
+      },
+      "ja": {
+        "first_name": "光",
+        "last_name": "前田"
       },
       "it": {
         "first_name": "Federico",
@@ -40730,6 +41230,10 @@
       "ko": {
         "first_name": "Jihun",
         "last_name": "Cheon"
+      },
+      "ja": {
+        "first_name": "Hikaru",
+        "last_name": "Maeda"
       },
       "it": {
         "first_name": "Federico",
@@ -41436,6 +41940,7 @@
       "de": "Hallo, ich habe ein paar urlaubsbezogene Themen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे छुट्टी से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 휴가 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、休暇関連の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative al congedo.",
       "nl": "Hoi, ik heb een paar verlofgerelateerde zaken waar ik hulp bij nodig heb."
     },
@@ -41467,6 +41972,10 @@
       "ko": {
         "first_name": "세은",
         "last_name": "최"
+      },
+      "ja": {
+        "first_name": "詩織",
+        "last_name": "山下"
       },
       "it": {
         "first_name": "Valentina",
@@ -41505,6 +42014,10 @@
       "ko": {
         "first_name": "Seeun",
         "last_name": "Choe"
+      },
+      "ja": {
+        "first_name": "Shiori",
+        "last_name": "Yamashita"
       },
       "it": {
         "first_name": "Valentina",
@@ -42281,6 +42794,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事関連の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, ho un paio di questioni delle risorse umane per cui mi serve aiuto oggi.",
       "nl": "Hoi, ik heb vandaag een paar HR-zaken waar ik hulp bij nodig heb."
     },
@@ -42312,6 +42826,10 @@
       "ko": {
         "first_name": "하윤",
         "last_name": "조"
+      },
+      "ja": {
+        "first_name": "里奈",
+        "last_name": "田中"
       },
       "it": {
         "first_name": "Debora",
@@ -42350,6 +42868,10 @@
       "ko": {
         "first_name": "Hayun",
         "last_name": "Jo"
+      },
+      "ja": {
+        "first_name": "Rina",
+        "last_name": "Tanaka"
       },
       "it": {
         "first_name": "Debora",
@@ -43070,6 +43592,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Anliegen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर की कुछ समस्याओं में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 문제 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事関連の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per un paio di problemi relativi alle risorse umane.",
       "nl": "Hoi, ik heb vandaag een paar HR-kwesties waar ik hulp bij nodig heb."
     },
@@ -43101,6 +43624,10 @@
       "ko": {
         "first_name": "예나",
         "last_name": "고"
+      },
+      "ja": {
+        "first_name": "紗季",
+        "last_name": "中島"
       },
       "it": {
         "first_name": "Camilla",
@@ -43139,6 +43666,10 @@
       "ko": {
         "first_name": "Yena",
         "last_name": "Go"
+      },
+      "ja": {
+        "first_name": "Saki",
+        "last_name": "Nakajima"
       },
       "it": {
         "first_name": "Camilla",
@@ -43792,6 +44323,7 @@
       "de": "Hallo, ich habe ein paar HR-Anliegen zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एचआर शेड्यूलिंग और पेरोल से जुड़ी कुछ समस्याओं में मदद चाहिए।",
       "ko": "안녕하세요, HR 일정과 payroll 문제 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、人事の勤務スケジュールと給与に関する件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per dei problemi col personale relativi alla programmazione dei turni e alle buste paga.",
       "nl": "Hoi, ik heb een paar problemen met personeelsplanning en salarisadministratie waar ik hulp bij nodig heb."
     },
@@ -43823,6 +44355,10 @@
       "ko": {
         "first_name": "시윤",
         "last_name": "엄"
+      },
+      "ja": {
+        "first_name": "陸",
+        "last_name": "青木"
       },
       "it": {
         "first_name": "Jacopo",
@@ -43861,6 +44397,10 @@
       "ko": {
         "first_name": "Siyun",
         "last_name": "Eom"
+      },
+      "ja": {
+        "first_name": "Riku",
+        "last_name": "Aoki"
       },
       "it": {
         "first_name": "Jacopo",
@@ -44648,6 +45188,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Onboarding-Sachen, die ich erledigen muss.",
       "hi": "नमस्ते, मुझे आज एचआर ऑनबोर्डिंग से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
       "ko": "안녕하세요, 오늘 처리해야 할 HR 온보딩 관련 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の入社手続きでいくつか対応が必要なのですが。",
       "it": "Salve, ho alcune questioni relative all'inserimento del personale da sbrigare oggi.",
       "nl": "Hoi, ik heb een aantal HR-zaken betreft mijn onboardingproces die ik vandaag moet regelen."
     },
@@ -44679,6 +45220,10 @@
       "ko": {
         "first_name": "지우",
         "last_name": "민"
+      },
+      "ja": {
+        "first_name": "玲奈",
+        "last_name": "鈴木"
       },
       "it": {
         "first_name": "Alessia",
@@ -44717,6 +45262,10 @@
       "ko": {
         "first_name": "Jiu",
         "last_name": "Min"
+      },
+      "ja": {
+        "first_name": "Rena",
+        "last_name": "Suzuki"
       },
       "it": {
         "first_name": "Alessia",
@@ -45289,6 +45838,7 @@
       "de": "Hallo, ich habe ein paar Onboarding-Fragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे ऑनबोर्डिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 온보딩 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、入社手続きの件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative all'inserimento.",
       "nl": "Hoi, ik heb een paar zaken betreft mijn onboardingproces waar ik hulp bij nodig heb."
     },
@@ -45320,6 +45870,10 @@
       "ko": {
         "first_name": "은서",
         "last_name": "임"
+      },
+      "ja": {
+        "first_name": "結衣",
+        "last_name": "村上"
       },
       "it": {
         "first_name": "Daniela",
@@ -45358,6 +45912,10 @@
       "ko": {
         "first_name": "Eunseo",
         "last_name": "Im"
+      },
+      "ja": {
+        "first_name": "Yui",
+        "last_name": "Murakami"
       },
       "it": {
         "first_name": "Daniela",
@@ -46462,6 +47020,7 @@
       "de": "Hallo, ich habe ein paar HR-Fragen und Fragen zur Zulassung, die ich klären muss, bevor ich wieder zur Arbeit kommen kann.",
       "hi": "नमस्ते, काम पर वापस आने से पहले मुझे क्रेडेंशियलिंग और एचआर से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
       "ko": "안녕하세요, 직장에 복귀하기 전에 처리해야 할 credentialing 및 HR 관련 일이 몇 가지 있어요.",
+      "ja": "こんにちは、復職前に資格関連と人事の件でいくつか対応が必要なのですが。",
       "it": "Salve, ho alcune questioni da sbrigare relative alla verifica delle credenziali e alle risorse umane prima di tornare al lavoro.",
       "nl": "Hoi, ik heb een aantal zaken betreft de bevoegdheidscontrole en HR die ik moet regelen voordat ik weer kan beginnen."
     },
@@ -46493,6 +47052,10 @@
       "ko": {
         "first_name": "현준",
         "last_name": "유"
+      },
+      "ja": {
+        "first_name": "宏",
+        "last_name": "松田"
       },
       "it": {
         "first_name": "Domenico",
@@ -46531,6 +47094,10 @@
       "ko": {
         "first_name": "Hyeonjun",
         "last_name": "Yu"
+      },
+      "ja": {
+        "first_name": "Hiroshi",
+        "last_name": "Matsuda"
       },
       "it": {
         "first_name": "Domenico",
@@ -47548,6 +48115,7 @@
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung, die ich klären muss.",
       "hi": "नमस्ते, मुझे आज क्रेडेंशियलिंग से जुड़ी कुछ चीज़ें पूरी करनी हैं।",
       "ko": "안녕하세요, 오늘 처리해야 할 credentialing 관련 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日資格関連の件でいくつか対応が必要なのですが。",
       "it": "Salve, ho alcune questioni di verifica delle credenziali da sbrigare oggi.",
       "nl": "Hoi, ik heb een aantal zaken betreft de bevoegdheidscontrole die ik vandaag moet regelen."
     },
@@ -47579,6 +48147,10 @@
       "ko": {
         "first_name": "민준",
         "last_name": "천"
+      },
+      "ja": {
+        "first_name": "隼人",
+        "last_name": "加藤"
       },
       "it": {
         "first_name": "Claudio",
@@ -47617,6 +48189,10 @@
       "ko": {
         "first_name": "Minjun",
         "last_name": "Cheon"
+      },
+      "ja": {
+        "first_name": "Hayato",
+        "last_name": "Kato"
       },
       "it": {
         "first_name": "Claudio",
@@ -48597,6 +49173,7 @@
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 credentialing 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日資格関連の件でいくつか対応が必要なのですが。",
       "it": "Salve, avrei bisogno di aiuto per delle questioni relative alla verifica delle credenziali.",
       "nl": "Hoi, ik heb een aantal zaken betreft de bevoegdheidscontrole waar ik vandaag hulp bij nodig heb."
     },
@@ -48628,6 +49205,10 @@
       "ko": {
         "first_name": "정우",
         "last_name": "류"
+      },
+      "ja": {
+        "first_name": "健太",
+        "last_name": "小林"
       },
       "it": {
         "first_name": "Filippo",
@@ -48666,6 +49247,10 @@
       "ko": {
         "first_name": "Jeongu",
         "last_name": "Ryu"
+      },
+      "ja": {
+        "first_name": "Kenta",
+        "last_name": "Kobayashi"
       },
       "it": {
         "first_name": "Filippo",
@@ -49729,6 +50314,7 @@
       "de": "Hallo, ich habe ein paar Fragen zur Zulassung und zu Personalthemen, bei denen ich Hilfe brauche, bevor ich in einer neuen Einrichtung anfange.",
       "hi": "नमस्ते, नई फैसिलिटी में शुरू करने से पहले मुझे क्रेडेंशियलिंग और एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 새 facility에서 시작하기 전에 credentialing 및 HR 관련해서 도움받아야 할 항목이 몇 가지 있어요.",
+      "ja": "こんにちは、新しい施設での勤務開始前に、資格関連と人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alla verifica delle credenziali e alle risorse umane prima di iniziare in una nuova struttura.",
       "nl": "Hoi, ik heb een aantal zaken betreft de bevoegdheidscontrole en HR waar ik hulp bij nodig heb voordat ik bij een nieuwe instelling begin."
     },
@@ -49760,6 +50346,10 @@
       "ko": {
         "first_name": "유나",
         "last_name": "조"
+      },
+      "ja": {
+        "first_name": "美穂",
+        "last_name": "近藤"
       },
       "it": {
         "first_name": "Cristina",
@@ -49798,6 +50388,10 @@
       "ko": {
         "first_name": "Yuna",
         "last_name": "Jo"
+      },
+      "ja": {
+        "first_name": "Miho",
+        "last_name": "Kondo"
       },
       "it": {
         "first_name": "Cristina",
@@ -50876,6 +51470,7 @@
       "de": "Hallo, ich habe heute ein paar Personalfragen zur Zulassung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR credentialing 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の資格関連の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alla verifica delle credenziali e alle risorse umane.",
       "nl": "Hoi, ik heb een aantal zaken betreft de HR-kwalificatieverificatie waar ik vandaag hulp bij nodig heb."
     },
@@ -50907,6 +51502,10 @@
       "ko": {
         "first_name": "은서",
         "last_name": "전"
+      },
+      "ja": {
+        "first_name": "萌",
+        "last_name": "高橋"
       },
       "it": {
         "first_name": "Ilaria",
@@ -50945,6 +51544,10 @@
       "ko": {
         "first_name": "Eunseo",
         "last_name": "Jeon"
+      },
+      "ja": {
+        "first_name": "Moe",
+        "last_name": "Takahashi"
       },
       "it": {
         "first_name": "Ilaria",
@@ -51895,6 +52498,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Fragen als Leistungserbringer, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज प्रोवाइडर एचआर से जुड़ी कुछ मदों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider HR 항목 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日医療従事者の人事の件でいくつかお願いしたいことがあるのですが",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative al personale sanitario.",
       "nl": "Hoi, ik heb een aantal HR-zaken als zorgverlener waar ik vandaag hulp bij nodig heb."
     },
@@ -51926,6 +52530,10 @@
       "ko": {
         "first_name": "소윤",
         "last_name": "한"
+      },
+      "ja": {
+        "first_name": "琴音",
+        "last_name": "森"
       },
       "it": {
         "first_name": "Barbara",
@@ -51964,6 +52572,10 @@
       "ko": {
         "first_name": "Soyun",
         "last_name": "Han"
+      },
+      "ja": {
+        "first_name": "Kotone",
+        "last_name": "Mori"
       },
       "it": {
         "first_name": "Barbara",
@@ -52969,6 +53581,7 @@
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज प्रोवाइडर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider credentialing 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日医療従事者の資格関連の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alla verifica delle credenziali del personale sanitario.",
       "nl": "Hoi, ik heb een aantal zaken betreft de bevoegdheidscontrole als zorgverlener waar ik vandaag hulp bij nodig heb."
     },
@@ -53000,6 +53613,10 @@
       "ko": {
         "first_name": "예나",
         "last_name": "허"
+      },
+      "ja": {
+        "first_name": "里奈",
+        "last_name": "中野"
       },
       "it": {
         "first_name": "Giorgia",
@@ -53038,6 +53655,10 @@
       "ko": {
         "first_name": "Yena",
         "last_name": "Heo"
+      },
+      "ja": {
+        "first_name": "Rina",
+        "last_name": "Nakano"
       },
       "it": {
         "first_name": "Giorgia",
@@ -53928,6 +54549,7 @@
       "de": "Hallo, ich habe heute ein paar Änderungen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज प्रोवाइडर क्रेडेंशियलिंग से जुड़े कुछ अपडेट्स में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider credentialing 업데이트 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日医療従事者の資格関連の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per degli aggiornamenti relativi alla verifica delle credenziali del personale sanitario.",
       "nl": "Hoi, ik heb een aantal aanpassingen voor mijn bevoegdheidscontrole als zorgverlener waar ik vandaag hulp bij nodig heb."
     },
@@ -53959,6 +54581,10 @@
       "ko": {
         "first_name": "소율",
         "last_name": "한"
+      },
+      "ja": {
+        "first_name": "奈々",
+        "last_name": "太田"
       },
       "it": {
         "first_name": "Silvia",
@@ -53997,6 +54623,10 @@
       "ko": {
         "first_name": "Soyul",
         "last_name": "Han"
+      },
+      "ja": {
+        "first_name": "Nana",
+        "last_name": "Ota"
       },
       "it": {
         "first_name": "Silvia",
@@ -54991,6 +55621,7 @@
       "de": "Hallo, ich habe heute ein paar Fragen zur Zulassung als Leistungserbringer, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज प्रोवाइडर क्रेडेंशियलिंग से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 provider credentialing 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日医療従事者の資格関連の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alla verifica delle credenziali del personale sanitario.",
       "nl": "Hoi, ik heb een aantal zaken betreft de bevoegdheidscontrole als zorgverlener waar ik vandaag hulp bij nodig heb."
     },
@@ -55022,6 +55653,10 @@
       "ko": {
         "first_name": "지윤",
         "last_name": "한"
+      },
+      "ja": {
+        "first_name": "佳奈",
+        "last_name": "後藤"
       },
       "it": {
         "first_name": "Angela",
@@ -55060,6 +55695,10 @@
       "ko": {
         "first_name": "Jiyun",
         "last_name": "Han"
+      },
+      "ja": {
+        "first_name": "Kana",
+        "last_name": "Goto"
       },
       "it": {
         "first_name": "Angela",
@@ -56189,6 +56828,7 @@
       "de": "Hallo, ich habe ein paar HR-Fragen im Zusammenhang mit meinem neugeborenen Baby, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मेरे नए बच्चे से जुड़े कुछ एचआर कामों में मुझे मदद चाहिए।",
       "ko": "안녕하세요, 새로 태어난 아기와 관련해서 HR 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、出産に関して、人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane che riguardano mio figlio neonato",
       "nl": "Hoi, ik heb een aantal HR-zaken waar ik hulp bij nodig heb in verband met mijn pasgeborene."
     },
@@ -56220,6 +56860,10 @@
       "ko": {
         "first_name": "지현",
         "last_name": "신"
+      },
+      "ja": {
+        "first_name": "恵子",
+        "last_name": "太田"
       },
       "it": {
         "first_name": "Antonella",
@@ -56258,6 +56902,10 @@
       "ko": {
         "first_name": "Jihyeon",
         "last_name": "Sin"
+      },
+      "ja": {
+        "first_name": "Keiko",
+        "last_name": "Ota"
       },
       "it": {
         "first_name": "Antonella",
@@ -57326,6 +57974,7 @@
       "de": "Hallo, ich habe ein paar HR-Fragen im Zusammenhang mit einer kürzlich erfolgten Adoption, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एक हाल ही में हुई गोद लेने की प्रक्रिया को लेकर एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 최근 입양과 관련해서 HR 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、養子縁組に関して、人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane che riguardano una recente adozione.",
       "nl": "Hoi, ik heb een aantal HR-zaken waar ik hulp bij nodig heb in verband met een recente adoptie."
     },
@@ -57357,6 +58006,10 @@
       "ko": {
         "first_name": "서현",
         "last_name": "전"
+      },
+      "ja": {
+        "first_name": "里奈",
+        "last_name": "岡田"
       },
       "it": {
         "first_name": "Rita",
@@ -57395,6 +58048,10 @@
       "ko": {
         "first_name": "Seohyeon",
         "last_name": "Jeon"
+      },
+      "ja": {
+        "first_name": "Rina",
+        "last_name": "Okada"
       },
       "it": {
         "first_name": "Rita",
@@ -58242,6 +58899,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een aantal personeelszaken waar ik vandaag hulp bij nodig heb."
     },
@@ -58273,6 +58931,10 @@
       "ko": {
         "first_name": "정우",
         "last_name": "정"
+      },
+      "ja": {
+        "first_name": "智也",
+        "last_name": "中野"
       },
       "it": {
         "first_name": "Filippo",
@@ -58311,6 +58973,10 @@
       "ko": {
         "first_name": "Jeongu",
         "last_name": "Jeong"
+      },
+      "ja": {
+        "first_name": "Tomoya",
+        "last_name": "Nakano"
       },
       "it": {
         "first_name": "Filippo",
@@ -59380,6 +60046,7 @@
       "de": "Hallo, ich habe heute ein paar HR-Fragen, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे आज एचआर की कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 게 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een aantal HR-zaken waar ik vandaag hulp bij nodig heb."
     },
@@ -59411,6 +60078,10 @@
       "ko": {
         "first_name": "가은",
         "last_name": "차"
+      },
+      "ja": {
+        "first_name": "明美",
+        "last_name": "松田"
       },
       "it": {
         "first_name": "Paola",
@@ -59449,6 +60120,10 @@
       "ko": {
         "first_name": "Gaeun",
         "last_name": "Cha"
+      },
+      "ja": {
+        "first_name": "Akemi",
+        "last_name": "Matsuda"
       },
       "it": {
         "first_name": "Paola",
@@ -60660,6 +61335,7 @@
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een aantal personeelszaken waar ik vandaag hulp bij nodig heb."
     },
@@ -60691,6 +61367,10 @@
       "ko": {
         "first_name": "보민",
         "last_name": "권"
+      },
+      "ja": {
+        "first_name": "瞳",
+        "last_name": "藤原"
       },
       "it": {
         "first_name": "Giulia",
@@ -60729,6 +61409,10 @@
       "ko": {
         "first_name": "Bomin",
         "last_name": "Gwon"
+      },
+      "ja": {
+        "first_name": "Hitomi",
+        "last_name": "Fujiwara"
       },
       "it": {
         "first_name": "Giulia",
@@ -61734,6 +62418,7 @@
       "de": "Hallo, ich habe ein paar Personalangelegenheiten im Zusammenhang mit einer bevorstehenden Operation, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, मुझे एक आने वाली सर्जरी को लेकर एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 곧 있을 수술과 관련해서 HR 관련 도움받아야 할 일이 몇 가지 있어요.",
+      "ja": "こんにちは、今後の手術に関して人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane, legate a un intervento chirurgico imminente.",
       "nl": "Hoi, ik heb een aantal HR-zaken waar ik hulp bij nodig heb in verband met een aanstaande operatie."
     },
@@ -61765,6 +62450,10 @@
       "ko": {
         "first_name": "시우",
         "last_name": "고"
+      },
+      "ja": {
+        "first_name": "蒼",
+        "last_name": "加藤"
       },
       "it": {
         "first_name": "Filippo",
@@ -61803,6 +62492,10 @@
       "ko": {
         "first_name": "Siu",
         "last_name": "Go"
+      },
+      "ja": {
+        "first_name": "Aoi",
+        "last_name": "Kato"
       },
       "it": {
         "first_name": "Filippo",
@@ -62802,6 +63495,7 @@
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, die ich erledigen muss.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ें निपटानी हैं।",
       "ko": "안녕하세요, 오늘 HR 관련해서 처리해야 할 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni da sbrigare oggi relative alle risorse umane.",
       "nl": "Hoi, ik heb een aantal personeelszaken die ik vandaag moet regelen."
     },
@@ -62833,6 +63527,10 @@
       "ko": {
         "first_name": "민서",
         "last_name": "신"
+      },
+      "ja": {
+        "first_name": "瑞希",
+        "last_name": "阿部"
       },
       "it": {
         "first_name": "Maria",
@@ -62871,6 +63569,10 @@
       "ko": {
         "first_name": "Minseo",
         "last_name": "Sin"
+      },
+      "ja": {
+        "first_name": "Mizuki",
+        "last_name": "Abe"
       },
       "it": {
         "first_name": "Maria",
@@ -63812,6 +64514,7 @@
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een aantal HR-zaken waar ik vandaag hulp bij nodig heb."
     },
@@ -63843,6 +64546,10 @@
       "ko": {
         "first_name": "민아",
         "last_name": "한"
+      },
+      "ja": {
+        "first_name": "優子",
+        "last_name": "加藤"
       },
       "it": {
         "first_name": "Patrizia",
@@ -63881,6 +64588,10 @@
       "ko": {
         "first_name": "Mina",
         "last_name": "Han"
+      },
+      "ja": {
+        "first_name": "Yuko",
+        "last_name": "Kato"
       },
       "it": {
         "first_name": "Patrizia",
@@ -64864,6 +65575,7 @@
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een aantal HR-zaken waar ik vandaag hulp bij nodig heb."
     },
@@ -64895,6 +65607,10 @@
       "ko": {
         "first_name": "수연",
         "last_name": "최"
+      },
+      "ja": {
+        "first_name": "早紀",
+        "last_name": "小川"
       },
       "it": {
         "first_name": "Antonella",
@@ -64933,6 +65649,10 @@
       "ko": {
         "first_name": "Suyeon",
         "last_name": "Choe"
+      },
+      "ja": {
+        "first_name": "Saki",
+        "last_name": "Ogawa"
       },
       "it": {
         "first_name": "Antonella",
@@ -65835,6 +66555,7 @@
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten zum Dienstplan und zur Gehaltsabrechnung, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर की शेड्यूलिंग और पेरोल से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 일정 조정과 급여 관련해서 도움받아야 할 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の勤務スケジュールと給与の件でいくつかお願いしたいことがあるのですが。",
       "it": "Ciao, avrei bisogno di aiuto per alcune questioni relative alla pianificazione degli orari e alle buste paga.",
       "nl": "Hoi, ik heb een aantal zaken betreft personeelsplanning en salarisadministratie waar ik vandaag hulp bij nodig heb."
     },
@@ -65866,6 +66587,10 @@
       "ko": {
         "first_name": "서준",
         "last_name": "차"
+      },
+      "ja": {
+        "first_name": "康平",
+        "last_name": "高橋"
       },
       "it": {
         "first_name": "Antonio",
@@ -65904,6 +66629,10 @@
       "ko": {
         "first_name": "Seojun",
         "last_name": "Cha"
+      },
+      "ja": {
+        "first_name": "Kohei",
+        "last_name": "Takahashi"
       },
       "it": {
         "first_name": "Antonio",
@@ -66821,6 +67550,7 @@
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een aantal HR-zaken waar ik vandaag hulp bij nodig heb."
     },
@@ -66852,6 +67582,10 @@
       "ko": {
         "first_name": "연우",
         "last_name": "원"
+      },
+      "ja": {
+        "first_name": "健太",
+        "last_name": "三浦"
       },
       "it": {
         "first_name": "Matteo",
@@ -66890,6 +67624,10 @@
       "ko": {
         "first_name": "Yeonu",
         "last_name": "Won"
+      },
+      "ja": {
+        "first_name": "Kenta",
+        "last_name": "Miura"
       },
       "it": {
         "first_name": "Matteo",
@@ -67774,6 +68512,7 @@
       "de": "Hallo, ich habe heute ein paar Personalangelegenheiten, bei denen ich Hilfe brauche.",
       "hi": "नमस्ते, आज मुझे एचआर से जुड़ी कुछ चीज़ों में मदद चाहिए।",
       "ko": "안녕하세요, 오늘 HR 관련해서 도움받아야 할 일이 몇 가지 있어요.",
+      "ja": "こんにちは、本日人事の件でいくつかお願いしたいことがあるのですが。",
       "it": "Salve, avrei bisogno di aiuto per alcune questioni relative alle risorse umane.",
       "nl": "Hoi, ik heb een aantal HR-zaken waar ik vandaag hulp bij nodig heb."
     },
@@ -67805,6 +68544,10 @@
       "ko": {
         "first_name": "시윤",
         "last_name": "고"
+      },
+      "ja": {
+        "first_name": "陽翔",
+        "last_name": "石井"
       },
       "it": {
         "first_name": "Roberto",
@@ -67843,6 +68586,10 @@
       "ko": {
         "first_name": "Siyun",
         "last_name": "Go"
+      },
+      "ja": {
+        "first_name": "Haruto",
+        "last_name": "Ishii"
       },
       "it": {
         "first_name": "Roberto",

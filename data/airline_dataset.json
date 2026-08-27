@@ -1196,6 +1196,7 @@
       "de": "Hallo, ich muss meinen Flug auf den 25. März umbuchen.",
       "hi": "नमस्ते, मुझे अपनी उड़ान की तारीख 25 मार्च करनी है।",
       "ko": "안녕하세요, 제 항공편을 3월 25일로 변경해야 해요.",
+      "ja": "こんにちは、予約を3月25日の便に変更したいのですが。",
       "it": "Ciao, devo cambiare il mio volo al 25 marzo.",
       "nl": "Hoi, ik moet mijn vlucht wijzigen naar 25 maart."
     },
@@ -1234,6 +1235,11 @@
         "first_name": "수민",
         "last_name": "송",
         "phone": "+82 10-1941-2770"
+      },
+      "ja": {
+        "first_name": "凛",
+        "last_name": "藤井",
+        "phone": "+81 90-1941-2770"
       },
       "it": {
         "first_name": "Elisa",
@@ -1274,6 +1280,10 @@
       "ko": {
         "first_name": "Sumin",
         "last_name": "Song"
+      },
+      "ja": {
+        "first_name": "Rin",
+        "last_name": "Fujii"
       },
       "it": {
         "first_name": "Elisa",
@@ -2423,6 +2433,7 @@
       "de": "Ich muss meinen Flug auf ein früheres Datum umbuchen.",
       "hi": "मुझे अपनी उड़ान की तारीख बदलकर पहले की करनी है।",
       "ko": "제 항공편을 더 이른 날짜로 변경해야 해요.",
+      "ja": "もっと早い便に変更したいのですが。",
       "it": "Devo anticipare il mio volo.",
       "nl": "Ik moet mijn vlucht wijzigen naar een eerdere datum."
     },
@@ -2461,6 +2472,11 @@
         "first_name": "재현",
         "last_name": "채",
         "phone": "+82 10-0210-8767"
+      },
+      "ja": {
+        "first_name": "剛",
+        "last_name": "小川",
+        "phone": "+81 90-0210-8767"
       },
       "it": {
         "first_name": "Carlo",
@@ -2501,6 +2517,10 @@
       "ko": {
         "first_name": "Jaehyeon",
         "last_name": "Chae"
+      },
+      "ja": {
+        "first_name": "Tsuyoshi",
+        "last_name": "Ogawa"
       },
       "it": {
         "first_name": "Carlo",
@@ -3653,6 +3673,7 @@
       "de": "Hallo, ich muss das Datum meines Rückflugs ändern.",
       "hi": "नमस्ते, मुझे अपनी वापसी की उड़ान की तारीख बदलनी है।",
       "ko": "안녕하세요, 제 귀국 항공편 날짜를 변경해야 해요.",
+      "ja": "こんにちは、帰りの便の日付を変更したいのですが。",
       "it": "Ciao, devo cambiare la data del mio volo di ritorno.",
       "nl": "Hoi, ik moet de datum van mijn terugvlucht wijzigen."
     },
@@ -3691,6 +3712,11 @@
         "first_name": "채원",
         "last_name": "천",
         "phone": "+82 10-0268-3785"
+      },
+      "ja": {
+        "first_name": "裕子",
+        "last_name": "橋本",
+        "phone": "+81 90-0268-3785"
       },
       "it": {
         "first_name": "Sofia",
@@ -3731,6 +3757,10 @@
       "ko": {
         "first_name": "Chaewon",
         "last_name": "Cheon"
+      },
+      "ja": {
+        "first_name": "Yuko",
+        "last_name": "Hashimoto"
       },
       "it": {
         "first_name": "Sofia",
@@ -5540,6 +5570,7 @@
       "de": "Ich muss die Daten meines Hin- und Rückflugs ändern.",
       "hi": "मुझे अपनी आने-जाने की उड़ानों की तारीखें बदलनी हैं।",
       "ko": "제 왕복 항공편 날짜를 변경해야 해요.",
+      "ja": "往復便の日付を変更したいのですが。",
       "it": "Devo cambiare le date di andata e ritorno del mio volo.",
       "nl": "Ik moet de terugvlucht naar een andere datum wijzigen."
     },
@@ -5578,6 +5609,11 @@
         "first_name": "지호",
         "last_name": "최",
         "phone": "+82 10-1355-7396"
+      },
+      "ja": {
+        "first_name": "雅人",
+        "last_name": "林",
+        "phone": "+81 90-1355-7396"
       },
       "it": {
         "first_name": "Andrea",
@@ -5618,6 +5654,10 @@
       "ko": {
         "first_name": "Jiho",
         "last_name": "Choe"
+      },
+      "ja": {
+        "first_name": "Masato",
+        "last_name": "Hayashi"
       },
       "it": {
         "first_name": "Andrea",
@@ -6910,6 +6950,7 @@
       "de": "Können Sie mich heute auf einen früheren Flug umbuchen?",
       "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?",
+      "ja": "今日のもっと早い便に変更できますか。",
       "it": "Potete spostarmi su un volo precedente oggi?",
       "nl": "Kunt u mij vandaag op een eerdere vlucht zetten?"
     },
@@ -6948,6 +6989,11 @@
         "first_name": "현수",
         "last_name": "성",
         "phone": "+82 10-0797-9789"
+      },
+      "ja": {
+        "first_name": "隆",
+        "last_name": "加藤",
+        "phone": "+81 90-0797-9789"
       },
       "it": {
         "first_name": "Riccardo",
@@ -6988,6 +7034,10 @@
       "ko": {
         "first_name": "Hyeonsu",
         "last_name": "Seong"
+      },
+      "ja": {
+        "first_name": "Takashi",
+        "last_name": "Kato"
       },
       "it": {
         "first_name": "Riccardo",
@@ -7984,6 +8034,7 @@
       "de": "Hallo, ich werde meinen Flug heute Morgen verpassen – können Sie mich heute auf einen späteren Flug umbuchen?",
       "hi": "नमस्ते, आज सुबह की मेरी उड़ान छूटने वाली है—क्या आप मुझे आज की किसी बाद वाली उड़ान में डाल सकते हैं?",
       "ko": "안녕하세요, 오늘 아침 항공편을 놓칠 것 같은데요—오늘 더 늦은 항공편으로 바꿔 주실 수 있나요?",
+      "ja": "こんにちは、今朝のフライトに乗り遅れそうなんですが、もっと後の便に変更できますか。",
       "it": "Salve, perderò il mio volo questa mattina: potete spostarmi su un volo successivo oggi?",
       "nl": "Hoi, ik ga mijn vlucht van deze ochtend missen — kunt u mij vandaag op een latere vlucht zetten?"
     },
@@ -8022,6 +8073,11 @@
         "first_name": "서연",
         "last_name": "지",
         "phone": "+82 10-3710-1148"
+      },
+      "ja": {
+        "first_name": "久美子",
+        "last_name": "後藤",
+        "phone": "+81 90-3710-1148"
       },
       "it": {
         "first_name": "Elisa",
@@ -8062,6 +8118,10 @@
       "ko": {
         "first_name": "Seoyeon",
         "last_name": "Ji"
+      },
+      "ja": {
+        "first_name": "Kumiko",
+        "last_name": "Goto"
       },
       "it": {
         "first_name": "Elisa",
@@ -9398,6 +9458,7 @@
       "de": "Hallo, ich muss meinen Flug auf einen früheren Abflug tagsüber umbuchen.",
       "hi": "नमस्ते, मुझे अपनी उड़ान को बदलकर पहले की किसी दिन की उड़ान में करना है।",
       "ko": "안녕하세요, 제 항공편을 더 이른 낮 시간 출발편으로 변경해야 해요.",
+      "ja": "こんにちは、日中のもっと早い便に変更したいのですが。",
       "it": "Salve, dovrei cambiare il mio volo con uno che parta prima durante la giornata.",
       "nl": "Hoi, ik moet mijn vlucht wijzigen naar een eerdere vlucht gedurende de dag."
     },
@@ -9436,6 +9497,11 @@
         "first_name": "연우",
         "last_name": "한",
         "phone": "+82 10-8359-5620"
+      },
+      "ja": {
+        "first_name": "蓮",
+        "last_name": "太田",
+        "phone": "+81 90-8359-5620"
       },
       "it": {
         "first_name": "Francesco",
@@ -9476,6 +9542,10 @@
       "ko": {
         "first_name": "Yeonu",
         "last_name": "Han"
+      },
+      "ja": {
+        "first_name": "Ren",
+        "last_name": "Ota"
       },
       "it": {
         "first_name": "Francesco",
@@ -10848,6 +10918,7 @@
       "de": "Ich muss mein Flugziel auf Detroit ändern.",
       "hi": "मुझे अपनी उड़ान का गंतव्य डेट्रॉइट करना है।",
       "ko": "제 항공편 목적지를 Detroit로 변경해야 해요.",
+      "ja": "デトロイト行きの便に変更したいのですが",
       "it": "Devo cambiare la destinazione del mio volo a Detroit.",
       "nl": "Ik moet mijn vluchtbestemming wijzigen naar Detroit."
     },
@@ -10886,6 +10957,11 @@
         "first_name": "나은",
         "last_name": "방",
         "phone": "+82 10-8283-2952"
+      },
+      "ja": {
+        "first_name": "絵里",
+        "last_name": "遠藤",
+        "phone": "+81 90-8283-2952"
       },
       "it": {
         "first_name": "Giulia",
@@ -10926,6 +11002,10 @@
       "ko": {
         "first_name": "Naeun",
         "last_name": "Bang"
+      },
+      "ja": {
+        "first_name": "Eri",
+        "last_name": "Endo"
       },
       "it": {
         "first_name": "Giulia",
@@ -12151,6 +12231,7 @@
       "de": "Ich muss meinen Flug so ändern, dass er von Newark statt von JFK abfliegt.",
       "hi": "मुझे अपनी उड़ान में बदलाव करके जेएफके  के बजाय नेवार्क से प्रस्थान करना है।",
       "ko": "제 항공편 출발지를 JFK 대신 Newark로 변경해야 해요.",
+      "ja": "JFKではなくニューアーク発の便に変更したいのですが。",
       "it": "Devo cambiare il mio volo in modo che parta da Newark invece che da JFK.",
       "nl": "Ik moet mijn vlucht wijzigen zodat ik vertrek vanaf Newark in plaats van JFK."
     },
@@ -12189,6 +12270,11 @@
         "first_name": "민재",
         "last_name": "공",
         "phone": "+82 10-8321-0099"
+      },
+      "ja": {
+        "first_name": "大樹",
+        "last_name": "斎藤",
+        "phone": "+81 90-8321-0099"
       },
       "it": {
         "first_name": "Daniele",
@@ -12229,6 +12315,10 @@
       "ko": {
         "first_name": "Minjae",
         "last_name": "Gong"
+      },
+      "ja": {
+        "first_name": "Daiki",
+        "last_name": "Saito"
       },
       "it": {
         "first_name": "Daniele",
@@ -13376,6 +13466,7 @@
       "de": "Mein Flug nach Chicago wurde gestrichen – können Sie mich heute auf einen anderen Flug umbuchen?",
       "hi": "शिकागो जाने वाली मेरी उड़ान रद्द हो गई—क्या आप मुझे आज किसी दूसरी उड़ान में डाल सकते हैं?",
       "ko": "Chicago행 제 항공편이 취소됐는데요—오늘 다른 항공편으로 잡아 주실 수 있나요?",
+      "ja": "シカゴ行きの便が欠航になってしまったのですが、今日中に別の便に振り替えていただけますか",
       "it": "Il mio volo per Chicago è stato cancellato: potete mettermi su un altro volo oggi?",
       "nl": "Mijn vlucht naar Chicago is geannuleerd—kunt u mij vandaag op een andere vlucht plaatsen?"
     },
@@ -13414,6 +13505,11 @@
         "first_name": "영준",
         "last_name": "남",
         "phone": "+82 10-9075-9625"
+      },
+      "ja": {
+        "first_name": "健太",
+        "last_name": "林",
+        "phone": "+81 90-9075-9625"
       },
       "it": {
         "first_name": "Diego",
@@ -13454,6 +13550,10 @@
       "ko": {
         "first_name": "Yeongjun",
         "last_name": "Nam"
+      },
+      "ja": {
+        "first_name": "Kenta",
+        "last_name": "Hayashi"
       },
       "it": {
         "first_name": "Diego",
@@ -14643,6 +14743,7 @@
       "de": "Mein Flug wurde gestrichen – können Sie mich umbuchen und mir helfen, ein Hotel zu finden?",
       "hi": "मेरी उड़ान रद्द हो गई—क्या आप मेरी दोबारा बुकिंग कर सकते हैं और होटल में मदद कर सकते हैं?",
       "ko": "제 항공편이 취소됐는데요—다시 예약해 주시고 호텔도 도와주실 수 있나요?",
+      "ja": "便が欠航になってしまったのですが、振り替えをお願いできますか。あと、ホテルの手配もしていただけると助かります。",
       "it": "Il mio volo è stato cancellato: potete riprenotarlo e aiutarmi con un hotel?",
       "nl": "Mijn vlucht is geannuleerd—kunt u mij helpen met het omboeken van mijn vlucht en met een hotel?"
     },
@@ -14681,6 +14782,11 @@
         "first_name": "하영",
         "last_name": "구",
         "phone": "+82 10-5923-5917"
+      },
+      "ja": {
+        "first_name": "未来",
+        "last_name": "三浦",
+        "phone": "+81 90-5923-5917"
       },
       "it": {
         "first_name": "Martina",
@@ -14721,6 +14827,10 @@
       "ko": {
         "first_name": "Hayeong",
         "last_name": "Gu"
+      },
+      "ja": {
+        "first_name": "Mirai",
+        "last_name": "Miura"
       },
       "it": {
         "first_name": "Martina",
@@ -15397,6 +15507,7 @@
       "de": "Mein Flug wurde gestrichen und ich brauche eine Rückerstattung.",
       "hi": "मेरी उड़ान रद्द हो गई और मुझे रिफंड चाहिए।",
       "ko": "제 항공편이 취소돼서 환불이 필요해요.",
+      "ja": "フライトが欠航になったのですが、払い戻しをお願いできますか。",
       "it": "Il mio volo è stato cancellato e ho bisogno di un rimborso.",
       "nl": "Mijn vlucht is geannuleerd en ik wil een terugbetaling."
     },
@@ -15435,6 +15546,11 @@
         "first_name": "유정",
         "last_name": "허",
         "phone": "+82 10-7006-3907"
+      },
+      "ja": {
+        "first_name": "香織",
+        "last_name": "岡田",
+        "phone": "+81 90-7006-3907"
       },
       "it": {
         "first_name": "Margherita",
@@ -15475,6 +15591,10 @@
       "ko": {
         "first_name": "Yujeong",
         "last_name": "Heo"
+      },
+      "ja": {
+        "first_name": "Kaori",
+        "last_name": "Okada"
       },
       "it": {
         "first_name": "Margherita",
@@ -16809,6 +16929,7 @@
       "de": "Mein Flug hat Verspätung und ich muss auf einen anderen Flug wechseln.",
       "hi": "मेरी उड़ान विलंबित है और मुझे अपनी उड़ान बदलनी है।।",
       "ko": "제 항공편이 지연돼서 다른 항공편으로 바꿔야 해요.",
+      "ja": "便が遅延しているのですが、別の便に振り替えていただけますか。",
       "it": "Il mio volo è in ritardo e devo cambiare volo.",
       "nl": "Mijn vlucht is vertraagd en ik moet overstappen op een andere vlucht."
     },
@@ -16847,6 +16968,11 @@
         "first_name": "민지",
         "last_name": "안",
         "phone": "+82 10-9160-1184"
+      },
+      "ja": {
+        "first_name": "美穂",
+        "last_name": "近藤",
+        "phone": "+81 90-9160-1184"
       },
       "it": {
         "first_name": "Daniela",
@@ -16887,6 +17013,10 @@
       "ko": {
         "first_name": "Minji",
         "last_name": "An"
+      },
+      "ja": {
+        "first_name": "Miho",
+        "last_name": "Kondo"
       },
       "it": {
         "first_name": "Daniela",
@@ -17875,6 +18005,7 @@
       "de": "Hallo, ich rufe wegen meines verspäteten Flugs an – können Sie mir die neusten Updates nennen?",
       "hi": "नमस्ते, मैं अपनी विलंबित उड़ान के बारे में कॉल कर रहा/रही हूँ—क्या आप मुझे अपडेटेड जानकारी दे सकते हैं?",
       "ko": "안녕하세요, 항공편이 지연되서 전화드렸는데요—업데이트된 정보를 알려 주실 수 있나요?",
+      "ja": "お世話になっております。便が遅延しているようなのですが、現在の状況を教えていただけますか。",
       "it": "Salve, chiamo per il mio volo che è in ritardo: potete darmi un aggiornamento dettagliato?",
       "nl": "Hoi, ik bel over mijn vertraagde vlucht—kunt u mij de actuele gegevens doorgeven?"
     },
@@ -17913,6 +18044,11 @@
         "first_name": "서현",
         "last_name": "곽",
         "phone": "+82 10-5192-3961"
+      },
+      "ja": {
+        "first_name": "桃子",
+        "last_name": "藤井",
+        "phone": "+81 90-5192-3961"
       },
       "it": {
         "first_name": "Sofia",
@@ -17953,6 +18089,10 @@
       "ko": {
         "first_name": "Seohyeon",
         "last_name": "Gwak"
+      },
+      "ja": {
+        "first_name": "Momoko",
+        "last_name": "Fujii"
       },
       "it": {
         "first_name": "Sofia",
@@ -18753,6 +18893,7 @@
       "de": "Mein Flug hat Verspätung – kann ich einen Essensgutschein bekommen?",
       "hi": "मेरी उड़ान में देरी है—क्या मुझे खाने का वाउचर मिल सकता है?",
       "ko": "제 항공편이 지연됐는데요—식사 바우처를 받을 수 있을까요?",
+      "ja": "便が遅延しているのですが、食事券をいただけますか。",
       "it": "Il mio volo è in ritardo: posso avere un buono pasto?",
       "nl": "Mijn vlucht is vertraagd—kan ik een maaltijdvoucher krijgen?"
     },
@@ -18791,6 +18932,11 @@
         "first_name": "채은",
         "last_name": "손",
         "phone": "+82 10-4888-7724"
+      },
+      "ja": {
+        "first_name": "里奈",
+        "last_name": "林",
+        "phone": "+81 90-4888-7724"
       },
       "it": {
         "first_name": "Roberta",
@@ -18831,6 +18977,10 @@
       "ko": {
         "first_name": "Chaeeun",
         "last_name": "Son"
+      },
+      "ja": {
+        "first_name": "Rina",
+        "last_name": "Hayashi"
       },
       "it": {
         "first_name": "Roberta",
@@ -19765,6 +19915,7 @@
       "de": "Hallo – meine Flugzeit hat sich geändert und ich brauche Hilfe, um alles zu bestätigen.",
       "hi": "नमस्ते—मेरी उड़ान का समय बदल गया है और मुझे हर चीज़ की पुष्टि करने में मदद चाहिए।",
       "ko": "안녕하세요—제 항공편 시간이 변경돼서 예약이 제대로 변경됐는지 확인하고 싶어요.",
+      "ja": "こんにちは。便の時間が変更になったのですが、内容を確認させていただけますか。",
       "it": "Salve, l’orario del mio volo è cambiato e ho bisogno di aiuto per confermare tutto.",
       "nl": "Hoi—mijn vluchttijd is gewijzigd en ik heb hulp nodig om alles te bevestigen."
     },
@@ -19803,6 +19954,11 @@
         "first_name": "예은",
         "last_name": "고",
         "phone": "+82 10-2274-6437"
+      },
+      "ja": {
+        "first_name": "紬",
+        "last_name": "木村",
+        "phone": "+81 90-2274-6437"
       },
       "it": {
         "first_name": "Alice",
@@ -19843,6 +19999,10 @@
       "ko": {
         "first_name": "Yeeun",
         "last_name": "Go"
+      },
+      "ja": {
+        "first_name": "Tsumugi",
+        "last_name": "Kimura"
       },
       "it": {
         "first_name": "Alice",
@@ -20572,6 +20732,7 @@
       "de": "Hallo, meine Flugzeit wurde wesentlich geändert. Ich muss stornieren und brauche eine Rückerstattung.",
       "hi": "नमस्ते, मेरी उड़ान का समय काफ़ी बदल गया है और मुझे इसे रद्द करके पैसे वापस लेना है।",
       "ko": "안녕하세요, 제 항공편 시간이 많이 변경돼서 취소하고 환불받아야 해요.",
+      "ja": "こんにちは、便の時間が大幅に変更になったので、キャンセルして払い戻しをお願いしたいのですが。",
       "it": "Salve, l’orario del mio volo ha subito una grossa modifica. Devo cancellarlo e ottenere un rimborso.",
       "nl": "Hoi, mijn vluchttijd is vaak gewijzigd en ik moet annuleren en een terugbetaling krijgen."
     },
@@ -20610,6 +20771,11 @@
         "first_name": "아린",
         "last_name": "지",
         "phone": "+82 10-9593-6944"
+      },
+      "ja": {
+        "first_name": "七海",
+        "last_name": "山田",
+        "phone": "+81 90-9593-6944"
       },
       "it": {
         "first_name": "Miriam",
@@ -20650,6 +20816,10 @@
       "ko": {
         "first_name": "Arin",
         "last_name": "Ji"
+      },
+      "ja": {
+        "first_name": "Nanami",
+        "last_name": "Yamada"
       },
       "it": {
         "first_name": "Miriam",
@@ -21821,6 +21991,7 @@
       "de": "Mein Flug wurde gerade gestrichen, nachdem wir umkehren mussten – können Sie mich umbuchen?",
       "hi": "हमारे वापस मुड़ने के बाद मेरी उड़ान अभी-अभी रद्द हो गई—क्या आप मुझे रीबुक करवा सकते हैं?",
       "ko": "제 항공편이 회항한 뒤에 방금 취소됐는데요—다시 예약해 주실 수 있나요?",
+      "ja": "引き返した後に欠航になってしまったのですが、振り替えをお願いできますか。",
       "it": "Il mio volo è appena stato cancellato dopo che siamo dovuti tornare indietro: potete riprenotare un altro volo?",
       "nl": "Mijn vlucht is net geannuleerd nadat we moesten omkeren—kunt u mijn vlucht omboeken?"
     },
@@ -21859,6 +22030,11 @@
         "first_name": "민준",
         "last_name": "우",
         "phone": "+82 10-0818-0787"
+      },
+      "ja": {
+        "first_name": "和也",
+        "last_name": "高橋",
+        "phone": "+81 90-0818-0787"
       },
       "it": {
         "first_name": "Simone",
@@ -21899,6 +22075,10 @@
       "ko": {
         "first_name": "Minjun",
         "last_name": "U"
+      },
+      "ja": {
+        "first_name": "Kazuya",
+        "last_name": "Takahashi"
       },
       "it": {
         "first_name": "Simone",
@@ -22669,6 +22849,7 @@
       "de": "Hallo – können Sie mir sagen, was mit meinem Flug los ist, der nach Minneapolis zurückgekehrt ist? Wir sind planmäßig gegen 12:30 gestartet und mussten dann umdrehen.",
       "hi": "नमस्ते—क्या आप मुझे बता सकते हैं कि मेरी उस उड़ान के साथ क्या हो रहा है जो मिनियापोलिस वापस आ गई? हमने निर्धारित समय पर, करीब 12:30 बजे उड़ान भरी थी, और फिर हमें वापस लौटना पड़ा।",
       "ko": "안녕하세요—제 항공편이 Minneapolis로 회항했는데 어떻게 된 건지 알려 주실 수 있나요? 예정 시간인 12:30쯤 이륙했는데, 이후에 회항했어요.",
+      "ja": "こんにちは。ミネアポリスに引き返した便のことでお伺いしたいのですが。定刻の12時半頃に出発したのですが、その後引き返すことになりまして。状況を教えていただけますか。",
       "it": "Salve, potete dirmi cosa sta succedendo con il mio volo che è tornato a Minneapolis? Siamo decollati all’orario previsto, verso le 12:30, e poi siamo dovuti tornare indietro.",
       "nl": "Hoi—kunt u mij vertellen wat er aan de hand was met mijn vlucht die terugkwam naar Minneapolis? We vertrokken op de geplande tijd, ongeveer 12:30, en moesten daarna omkeren"
     },
@@ -22707,6 +22888,11 @@
         "first_name": "민아",
         "last_name": "우",
         "phone": "+82 10-0518-3647"
+      },
+      "ja": {
+        "first_name": "優奈",
+        "last_name": "坂本",
+        "phone": "+81 90-0518-3647"
       },
       "it": {
         "first_name": "Miriam",
@@ -22747,6 +22933,10 @@
       "ko": {
         "first_name": "Mina",
         "last_name": "U"
+      },
+      "ja": {
+        "first_name": "Yuna",
+        "last_name": "Sakamoto"
       },
       "it": {
         "first_name": "Miriam",
@@ -23643,6 +23833,7 @@
       "de": "Ich habe meinen Flug heute Morgen verpasst – können Sie mich heute auf die günstigste Option nach D.C. umbuchen?",
       "hi": "मेरी उड़ान आज सुबह छूट गई—क्या आप मुझे आज D.C. की सबसे सस्ती विकल्प में डाल सकते हैं?",
       "ko": "오늘 아침 항공편을 놓쳤는데요—오늘 D.C.로 가는 가장 저렴한 옵션으로 잡아 주실 수 있나요?",
+      "ja": "今朝の便に乗り遅れてしまったのですが、今日中のワシントンD.C.行きで一番安い便に変更できますか。",
       "it": "Ho perso il mio volo questa mattina: potete darmi l’opzione più economica per D.C. oggi?",
       "nl": "Ik heb vanochtend mijn vlucht gemist—kunt u mij vandaag op de goedkoopste optie naar D.C. plaatsen?"
     },
@@ -23681,6 +23872,11 @@
         "first_name": "서진",
         "last_name": "지",
         "phone": "+82 10-0502-5577"
+      },
+      "ja": {
+        "first_name": "健太",
+        "last_name": "石井",
+        "phone": "+81 90-0502-5577"
       },
       "it": {
         "first_name": "Tommaso",
@@ -23721,6 +23917,10 @@
       "ko": {
         "first_name": "Seojin",
         "last_name": "Ji"
+      },
+      "ja": {
+        "first_name": "Kenta",
+        "last_name": "Ishii"
       },
       "it": {
         "first_name": "Tommaso",
@@ -25462,6 +25662,7 @@
       "de": "Ich habe meinen Flug heute Morgen verpasst und brauche noch heute eine Umbuchung nach Minneapolis.",
       "hi": "मेरी उड़ान आज सुबह छूट गई और मुझे आज मिनियापोलिस के लिए रीबुक करवाना है।",
       "ko": "오늘 아침 항공편을 놓쳐서 오늘 Minneapolis로 다시 예약해야 해요.",
+      "ja": "今朝の便に乗り遅れてしまったのですが、今日中のミネアポリス行きに変更できますか。",
       "it": "Ho perso il mio volo questa mattina e devo riprenotarne uno per Minneapolis oggi.",
       "nl": "Ik heb mijn vlucht vanochtend gemist en ik moet vandaag omgeboekt worden naar Minneapolis."
     },
@@ -25500,6 +25701,11 @@
         "first_name": "지훈",
         "last_name": "공",
         "phone": "+82 10-7355-4432"
+      },
+      "ja": {
+        "first_name": "大樹",
+        "last_name": "山田",
+        "phone": "+81 90-7355-4432"
       },
       "it": {
         "first_name": "Edoardo",
@@ -25540,6 +25746,10 @@
       "ko": {
         "first_name": "Jihun",
         "last_name": "Gong"
+      },
+      "ja": {
+        "first_name": "Daiki",
+        "last_name": "Yamada"
       },
       "it": {
         "first_name": "Edoardo",
@@ -26890,6 +27100,7 @@
       "de": "Hallo, ich muss meinen Flug umbuchen, weil mir wegen des Ablaufdatums meines Reisepasses das Boarding verweigert wurde.",
       "hi": "नमस्ते, मुझे अपनी उड़ान दोबारा बुक करनी है क्योंकि मेरे पासपोर्ट की समाप्ति तिथि की वजह से मुझे बोर्डिंग नहीं करने दी गई।",
       "ko": "안녕하세요, 여권 만료일 때문에 탑승이 거부돼서 항공편을 다시 예약해야 해요.",
+      "ja": "こんにちは、パスポートの有効期限の関係で搭乗を断られてしまったのですが、便の変更をお願いできますか。",
       "it": "Salve, devo riprenotare il mio volo perché mi è stato negato l’imbarco per via della data di scadenza del mio passaporto.",
       "nl": "Hoi, ik moet mijn vlucht omboeken omdat ik ben geweigerd bij het instappen vanwege de vervaldatum van mijn paspoort."
     },
@@ -26928,6 +27139,11 @@
         "first_name": "예나",
         "last_name": "민",
         "phone": "+82 10-1715-6756"
+      },
+      "ja": {
+        "first_name": "彩花",
+        "last_name": "清水",
+        "phone": "+81 90-1715-6756"
       },
       "it": {
         "first_name": "Ludovica",
@@ -26968,6 +27184,10 @@
       "ko": {
         "first_name": "Yena",
         "last_name": "Min"
+      },
+      "ja": {
+        "first_name": "Ayaka",
+        "last_name": "Shimizu"
       },
       "it": {
         "first_name": "Ludovica",
@@ -28002,6 +28222,7 @@
       "de": "Können Sie mich heute auf den früheren Flug umbuchen?",
       "hi": "क्या आप मुझे किसी पहले की उड़ान में डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?",
+      "ja": "今日の早い便に変更していただけますか。",
       "it": "Potete spostarmi sul primo volo della giornata?",
       "nl": "Kunt u mij vandaag op de eerdere vlucht plaatsen?"
     },
@@ -28040,6 +28261,11 @@
         "first_name": "이준",
         "last_name": "엄",
         "phone": "+82 10-3254-0377"
+      },
+      "ja": {
+        "first_name": "翔平",
+        "last_name": "鈴木",
+        "phone": "+81 90-3254-0377"
       },
       "it": {
         "first_name": "Lorenzo",
@@ -28080,6 +28306,10 @@
       "ko": {
         "first_name": "Ijun",
         "last_name": "Eom"
+      },
+      "ja": {
+        "first_name": "Shohei",
+        "last_name": "Suzuki"
       },
       "it": {
         "first_name": "Lorenzo",
@@ -29045,6 +29275,7 @@
       "de": "Hallo, ich muss meinen Flug heute auf einen späteren umbuchen.",
       "hi": "नमस्ते, मुझे अपनी उड़ान आज की किसी बाद वाली उड़ान में बदलनी है।",
       "ko": "안녕하세요, 제 항공편을 오늘 더 늦은 항공편으로 변경해야 해요.",
+      "ja": "こんにちは、今日のもっと遅い便に変更していただけますか。",
       "it": "Salve, devo cambiare il mio volo con uno successivo durante la giornata.",
       "nl": "Hoi, ik moet mijn vlucht wijzigen naar een latere vlucht vandaag."
     },
@@ -29083,6 +29314,11 @@
         "first_name": "서진",
         "last_name": "채",
         "phone": "+82 10-9595-3961"
+      },
+      "ja": {
+        "first_name": "翔",
+        "last_name": "渡辺",
+        "phone": "+81 90-9595-3961"
       },
       "it": {
         "first_name": "Lorenzo",
@@ -29123,6 +29359,10 @@
       "ko": {
         "first_name": "Seojin",
         "last_name": "Chae"
+      },
+      "ja": {
+        "first_name": "Sho",
+        "last_name": "Watanabe"
       },
       "it": {
         "first_name": "Lorenzo",
@@ -30099,6 +30339,7 @@
       "de": "Können Sie mich heute auf einen früheren Flug umbuchen?",
       "hi": "क्या आप मुझे आज की किसी पहले वाली उड़ान में डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편으로 바꿔 주실 수 있나요?",
+      "ja": "今日の早い便に変更していただけますか。",
       "it": "Potete spostarmi su un volo che parta prima durante la giornata?",
       "nl": "Kunt u mij vandaag op een eerdere vlucht plaatsen?"
     },
@@ -30137,6 +30378,11 @@
         "first_name": "하준",
         "last_name": "손",
         "phone": "+82 10-8251-7354"
+      },
+      "ja": {
+        "first_name": "樹",
+        "last_name": "近藤",
+        "phone": "+81 90-8251-7354"
       },
       "it": {
         "first_name": "Alessandro",
@@ -30177,6 +30423,10 @@
       "ko": {
         "first_name": "Hajun",
         "last_name": "Son"
+      },
+      "ja": {
+        "first_name": "Itsuki",
+        "last_name": "Kondo"
       },
       "it": {
         "first_name": "Alessandro",
@@ -31164,6 +31414,7 @@
       "de": "Hallo, können Sie mich bitte so schnell wie möglich auf den nächsten Flug nach Hause umbuchen?",
       "hi": "नमस्ते, क्या आप मुझे जल्द से जल्द घर की अगली उड़ान पर डाल सकते हैं?",
       "ko": "안녕하세요, 가능한 한 빨리 집으로 가는 다음 항공편으로 바꿔 주실 수 있나요?",
+      "ja": "こんにちは、できるだけ早く帰りたいのですが、次の便に変更していただけますか。",
       "it": "Salve, può spostarmi sul prossimo volo per tornare a casa il prima possibile?",
       "nl": "Hoi, kunt u mij zo snel mogelijk op de eerstvolgende vlucht naar huis zetten?"
     },
@@ -31202,6 +31453,11 @@
         "first_name": "태현",
         "last_name": "윤",
         "phone": "+82 10-2077-5631"
+      },
+      "ja": {
+        "first_name": "亮太",
+        "last_name": "高橋",
+        "phone": "+81 90-2077-5631"
       },
       "it": {
         "first_name": "Emanuele",
@@ -31242,6 +31498,10 @@
       "ko": {
         "first_name": "Taehyeon",
         "last_name": "Yun"
+      },
+      "ja": {
+        "first_name": "Ryota",
+        "last_name": "Takahashi"
       },
       "it": {
         "first_name": "Emanuele",
@@ -31998,6 +32258,7 @@
       "de": "Können Sie mich bitte auf die Warteliste für den Mittagsflug setzen?",
       "hi": "क्या आप मुझे दोपहर वाली उड़ान के लिए स्टैंडबाय पर रख सकते हैं?",
       "ko": "정오 항공편 대기 명단에 올려 주실 수 있나요?",
+      "ja": "12時の便の空席待ちに入れていただけますか。",
       "it": "Può mettermi in lista d’attesa per il volo di mezzogiorno?",
       "nl": "Kunt u mij op de stand-bylijst zetten voor de vlucht van 12:00 uur smiddags?"
     },
@@ -32036,6 +32297,11 @@
         "first_name": "나윤",
         "last_name": "엄",
         "phone": "+82 10-9826-7352"
+      },
+      "ja": {
+        "first_name": "沙織",
+        "last_name": "斎藤",
+        "phone": "+81 90-9826-7352"
       },
       "it": {
         "first_name": "Nicole",
@@ -32076,6 +32342,10 @@
       "ko": {
         "first_name": "Nayun",
         "last_name": "Eom"
+      },
+      "ja": {
+        "first_name": "Saori",
+        "last_name": "Saito"
       },
       "it": {
         "first_name": "Nicole",
@@ -33216,6 +33486,7 @@
       "de": "Können Sie mich bitte auf die Warteliste für einen früheren Flug heute setzen?",
       "hi": "क्या आप मुझे आज की किसी पहले की उड़ान के लिए स्टैंडबाय पर डाल सकते हैं?",
       "ko": "오늘 더 이른 항공편 대기 명단에 올려 주실 수 있나요?",
+      "ja": "今日のもっと早い便の空席待ちに入れていただけますか。",
       "it": "Può aggiungermi alla lista d’attesa per un volo precedente al mio in giornata?",
       "nl": "Kunt u mij op de stand-bylijst zetten voor een eerdere vlucht voor vandaag?"
     },
@@ -33254,6 +33525,11 @@
         "first_name": "영준",
         "last_name": "배",
         "phone": "+82 10-4272-2132"
+      },
+      "ja": {
+        "first_name": "佑樹",
+        "last_name": "石川",
+        "phone": "+81 90-4272-2132"
       },
       "it": {
         "first_name": "Federico",
@@ -33294,6 +33570,10 @@
       "ko": {
         "first_name": "Yeongjun",
         "last_name": "Bae"
+      },
+      "ja": {
+        "first_name": "Yuki",
+        "last_name": "Ishikawa"
       },
       "it": {
         "first_name": "Federico",
@@ -34027,6 +34307,7 @@
       "de": "Können Sie mich bitte auf die Warteliste für den Flug um 10:00 AM setzen?",
       "hi": "क्या आप मुझे सुबह १० बजे वाली उड़ान के लिए स्टैंडबाय पर रख सकते हैं?",
       "ko": "10:00 AM 항공편 대기 명단에 올려 주실 수 있나요?",
+      "ja": "午前10時の便の空席待ちに入れていただけますか。",
       "it": "Può mettermi in lista d’attesa per il volo delle 10:00 del mattino?",
       "nl": "Kunt u mij op de stand-bylijst zetten voor de vlucht van 10:00 AM?"
     },
@@ -34065,6 +34346,11 @@
         "first_name": "채원",
         "last_name": "송",
         "phone": "+82 10-8792-3653"
+      },
+      "ja": {
+        "first_name": "優花",
+        "last_name": "藤田",
+        "phone": "+81 90-8792-3653"
       },
       "it": {
         "first_name": "Emma",
@@ -34105,6 +34391,10 @@
       "ko": {
         "first_name": "Chaewon",
         "last_name": "Song"
+      },
+      "ja": {
+        "first_name": "Yuka",
+        "last_name": "Fujita"
       },
       "it": {
         "first_name": "Emma",
@@ -34959,6 +35249,7 @@
       "de": "Hallo, ich muss meinen Flug stornieren.",
       "hi": "नमस्ते, मुझे अपनी उड़ान रद्द करनी है।",
       "ko": "안녕하세요, 제 항공편을 취소해야 해요.",
+      "ja": "こんにちは、予約をキャンセルしたいのですが。",
       "it": "Salve, devo cancellare il mio volo.",
       "nl": "Hoi, ik moet mijn vlucht annuleren."
     },
@@ -34997,6 +35288,11 @@
         "first_name": "태윤",
         "last_name": "곽",
         "phone": "+82 10-5351-6837"
+      },
+      "ja": {
+        "first_name": "蓮",
+        "last_name": "山崎",
+        "phone": "+81 90-5351-6837"
       },
       "it": {
         "first_name": "Samuele",
@@ -35037,6 +35333,10 @@
       "ko": {
         "first_name": "Taeyun",
         "last_name": "Gwak"
+      },
+      "ja": {
+        "first_name": "Ren",
+        "last_name": "Yamazaki"
       },
       "it": {
         "first_name": "Samuele",
@@ -35782,6 +36082,7 @@
       "de": "Hallo, ich muss einen Flug stornieren, den ich gerade gebucht habe.",
       "hi": "नमस्ते, मुझे अभी-अभी बुक की हुई एक उड़ान रद्द करनी है।",
       "ko": "안녕하세요, 방금 예약한 항공편을 취소해야 해요.",
+      "ja": "こんにちは、先ほど予約したばかりの便をキャンセルしたいのですが。",
       "it": "Salve, devo cancellare un volo che ho appena prenotato.",
       "nl": "Hoi, ik moet een vlucht annuleren die ik net heb geboekt."
     },
@@ -35820,6 +36121,11 @@
         "first_name": "보민",
         "last_name": "채",
         "phone": "+82 10-9879-6810"
+      },
+      "ja": {
+        "first_name": "直子",
+        "last_name": "斎藤",
+        "phone": "+81 90-9879-6810"
       },
       "it": {
         "first_name": "Giada",
@@ -35860,6 +36166,10 @@
       "ko": {
         "first_name": "Bomin",
         "last_name": "Chae"
+      },
+      "ja": {
+        "first_name": "Naoko",
+        "last_name": "Saito"
       },
       "it": {
         "first_name": "Giada",
@@ -36687,6 +36997,7 @@
       "de": "Mein Flug wurde gestrichen und ich möchte eine vollständige Rückerstattung.",
       "hi": "मेरी उड़ान रद्द हो गई है और मुझे पूरा रिफंड चाहिए।",
       "ko": "제 항공편이 취소돼서 전액 환불을 받고 싶어요.",
+      "ja": "便が欠航になったのですが、全額払い戻しをお願いできますか。",
       "it": "Il mio volo è stato cancellato e vorrei un rimborso completo.",
       "nl": "Mijn vlucht is geannuleerd en ik wil een volledige terugbetaling."
     },
@@ -36725,6 +37036,11 @@
         "first_name": "준혁",
         "last_name": "박",
         "phone": "+82 10-9196-4861"
+      },
+      "ja": {
+        "first_name": "直樹",
+        "last_name": "坂本",
+        "phone": "+81 90-9196-4861"
       },
       "it": {
         "first_name": "Michele",
@@ -36765,6 +37081,10 @@
       "ko": {
         "first_name": "Junhyeok",
         "last_name": "Bak"
+      },
+      "ja": {
+        "first_name": "Naoki",
+        "last_name": "Sakamoto"
       },
       "it": {
         "first_name": "Michele",
@@ -37664,6 +37984,7 @@
       "de": "Hallo, ich muss nur den Rückflug meiner Reise stornieren.",
       "hi": "नमस्ते, मुझे अपनी यात्रा का सिर्फ वापसी वाला हिस्सा रद्द करना है।",
       "ko": "안녕하세요, 제 여행에서 돌아오는 구간만 취소해야 해요.",
+      "ja": "こんにちは、復路のみキャンセルしたいのですが。",
       "it": "Salve, devo cancellare solo il volo di ritorno del mio viaggio.",
       "nl": "Hoi, ik moet alleen de terugreis van mijn reis annuleren."
     },
@@ -37702,6 +38023,11 @@
         "first_name": "재민",
         "last_name": "우",
         "phone": "+82 10-0014-2021"
+      },
+      "ja": {
+        "first_name": "圭太",
+        "last_name": "小林",
+        "phone": "+81 90-0014-2021"
       },
       "it": {
         "first_name": "Nicola",
@@ -37742,6 +38068,10 @@
       "ko": {
         "first_name": "Jaemin",
         "last_name": "U"
+      },
+      "ja": {
+        "first_name": "Keita",
+        "last_name": "Kobayashi"
       },
       "it": {
         "first_name": "Nicola",
@@ -38597,6 +38927,7 @@
       "de": "Hallo, ich muss meinen Flug stornieren.",
       "hi": "नमस्ते, मुझे अपनी उड़ान रद्द करनी है।",
       "ko": "안녕하세요, 제 항공편을 취소해야 해요.",
+      "ja": "こんにちは、予約をキャンセルしたいのですが。",
       "it": "Salve, devo cancellare il mio volo.",
       "nl": "Hoi, ik moet mijn vlucht annuleren."
     },
@@ -38635,6 +38966,11 @@
         "first_name": "예나",
         "last_name": "노",
         "phone": "+82 10-8939-4811"
+      },
+      "ja": {
+        "first_name": "明里",
+        "last_name": "吉田",
+        "phone": "+81 90-8939-4811"
       },
       "it": {
         "first_name": "Camilla",
@@ -38675,6 +39011,10 @@
       "ko": {
         "first_name": "Yena",
         "last_name": "No"
+      },
+      "ja": {
+        "first_name": "Akari",
+        "last_name": "Yoshida"
       },
       "it": {
         "first_name": "Camilla",
@@ -39523,6 +39863,7 @@
       "de": "Hallo, ich muss meinen Flug stornieren.",
       "hi": "नमस्ते, मुझे अपनी उड़ान रद्द करनी है।",
       "ko": "안녕하세요, 제 항공편을 취소해야 해요.",
+      "ja": "こんにちは、予約をキャンセルしたいのですが。",
       "it": "Salve, devo cancellare il mio volo.",
       "nl": "Hoi, ik moet mijn vlucht annuleren."
     },
@@ -39561,6 +39902,11 @@
         "first_name": "은우",
         "last_name": "전",
         "phone": "+82 10-7185-9838"
+      },
+      "ja": {
+        "first_name": "颯太",
+        "last_name": "吉田",
+        "phone": "+81 90-7185-9838"
       },
       "it": {
         "first_name": "Paolo",
@@ -39601,6 +39947,10 @@
       "ko": {
         "first_name": "Eunu",
         "last_name": "Jeon"
+      },
+      "ja": {
+        "first_name": "Sota",
+        "last_name": "Yoshida"
       },
       "it": {
         "first_name": "Paolo",
@@ -40405,6 +40755,7 @@
       "de": "Ich muss meinen Flug wegen eines medizinischen Notfalls stornieren.",
       "hi": "मुझे मेडिकल इमरजेंसी की वजह से अपनी उड़ान रद्द करनी है।",
       "ko": "의료 응급 상황 때문에 제 항공편을 취소해야 해요.",
+      "ja": "急病のため、予約をキャンセルしたいのですが。",
       "it": "Devo cancellare il mio volo a causa di un’emergenza medica.",
       "nl": "Ik moet mijn vlucht annuleren vanwege een medisch noodgeval."
     },
@@ -40443,6 +40794,11 @@
         "first_name": "지원",
         "last_name": "현",
         "phone": "+82 10-3875-5090"
+      },
+      "ja": {
+        "first_name": "真由",
+        "last_name": "山口",
+        "phone": "+81 90-3875-5090"
       },
       "it": {
         "first_name": "Elisa",
@@ -40483,6 +40839,10 @@
       "ko": {
         "first_name": "Jiwon",
         "last_name": "Hyeon"
+      },
+      "ja": {
+        "first_name": "Mayu",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Elisa",
@@ -41295,6 +41655,7 @@
       "de": "Mein Flug hat Verspätung und ich sitze am Flughafen fest – kann ich einen Essensgutschein bekommen?",
       "hi": "मेरी उड़ान में देरी हो गई है और मैं हवाई अड्डे पर फँसा हुआ हूँ—क्या मुझे खाने का वाउचर मिल सकता है?",
       "ko": "제 항공편이 지연돼서 공항에 발이 묶였는데요—식사 바우처를 받을 수 있을까요?",
+      "ja": "便が遅延していて空港で足止めされているのですが、食事券をいただけますか。",
       "it": "Il mio volo è in ritardo e sono bloccato all’aeroporto: posso avere un buono pasto?",
       "nl": "Mijn vlucht is vertraagd en ik zit vast op de luchthaven—kan ik een maaltijdvoucher krijgen?"
     },
@@ -41333,6 +41694,11 @@
         "first_name": "예준",
         "last_name": "남",
         "phone": "+82 10-6853-9288"
+      },
+      "ja": {
+        "first_name": "隼人",
+        "last_name": "山下",
+        "phone": "+81 90-6853-9288"
       },
       "it": {
         "first_name": "Massimo",
@@ -41373,6 +41739,10 @@
       "ko": {
         "first_name": "Yejun",
         "last_name": "Nam"
+      },
+      "ja": {
+        "first_name": "Hayato",
+        "last_name": "Yamashita"
       },
       "it": {
         "first_name": "Massimo",
@@ -42600,6 +42970,7 @@
       "de": "Mein Flug nach Seattle wurde gestrichen und ich brauche Hilfe bei der Umbuchung.",
       "hi": "सिएटल जाने वाली मेरी उड़ान रद्द हो गई है और मुझे दोबारा बुकिंग कराने में मदद चाहिए।",
       "ko": "Seattle행 항공편이 취소돼서 재예약하는 데 도움이 필요해요.",
+      "ja": "シアトル行きの便が欠航になってしまったのですが、振り替えをお願いできますか。",
       "it": "Il mio volo per Seattle è stato cancellato e ho bisogno di aiuto per prenotarne un altro.",
       "nl": "Mijn vlucht naar Seattle is geannuleerd en ik heb hulp nodig bij het omboeken."
     },
@@ -42638,6 +43009,11 @@
         "first_name": "현우",
         "last_name": "양",
         "phone": "+82 10-7356-1052"
+      },
+      "ja": {
+        "first_name": "光",
+        "last_name": "太田",
+        "phone": "+81 90-7356-1052"
       },
       "it": {
         "first_name": "Carlo",
@@ -42678,6 +43054,10 @@
       "ko": {
         "first_name": "Hyeonu",
         "last_name": "Yang"
+      },
+      "ja": {
+        "first_name": "Hikaru",
+        "last_name": "Ota"
       },
       "it": {
         "first_name": "Carlo",
@@ -43734,6 +44114,7 @@
       "de": "Ich brauche Hilfe dabei, meinen Flug für heute umzubuchen.",
       "hi": "मुझे आज के लिए अपनी उड़ान दोबारा बुक कराने में मदद चाहिए।",
       "ko": "오늘 항공편을 재예약하는 데 도움이 필요해요.",
+      "ja": "今日の便への変更をお願いしたいのですが。",
       "it": "Ho bisogno di aiuto per riprenotare il mio volo per oggi.",
       "nl": "Ik heb hulp nodig om mijn vlucht voor vandaag om te boeken."
     },
@@ -43772,6 +44153,11 @@
         "first_name": "지윤",
         "last_name": "배",
         "phone": "+82 10-5958-7899"
+      },
+      "ja": {
+        "first_name": "舞",
+        "last_name": "山崎",
+        "phone": "+81 90-5958-7899"
       },
       "it": {
         "first_name": "Sara",
@@ -43812,6 +44198,10 @@
       "ko": {
         "first_name": "Jiyun",
         "last_name": "Bae"
+      },
+      "ja": {
+        "first_name": "Mai",
+        "last_name": "Yamazaki"
       },
       "it": {
         "first_name": "Sara",
@@ -44934,6 +45324,7 @@
       "de": "Mein Flug wurde gestrichen und die Umbuchung, die man mir gegeben hat, ist nicht akzeptabel – können Sie mir helfen?",
       "hi": "मेरी उड़ान रद्द हो गई है और जो दोबारा बुकिंग उन्होंने मुझे दी है वह मुझे मंज़ूर नहीं है—क्या आप मदद कर सकते हैं?",
       "ko": "제 항공편이 취소됐는데, 새로 예약해 준 일정으로는 어려울 것 같아요.—도와주실 수 있을까요?",
+      "ja": "便が欠航になって別の便に振り替えていただきました。申し訳ないのですが、その便では都合が合わないため、他の便をご相談できますか。",
       "it": "Il mio volo è stato cancellato e la nuova prenotazione che è stata fatta non va bene: può aiutarmi?",
       "nl": "Mijn vlucht is geannuleerd en de omboeking die ze mij hebben gegeven is niet acceptabel—kunt u mij helpen?"
     },
@@ -44972,6 +45363,11 @@
         "first_name": "지윤",
         "last_name": "안",
         "phone": "+82 10-4387-5774"
+      },
+      "ja": {
+        "first_name": "遥",
+        "last_name": "近藤",
+        "phone": "+81 90-4387-5774"
       },
       "it": {
         "first_name": "Alessia",
@@ -45012,6 +45408,10 @@
       "ko": {
         "first_name": "Jiyun",
         "last_name": "An"
+      },
+      "ja": {
+        "first_name": "Haruka",
+        "last_name": "Kondo"
       },
       "it": {
         "first_name": "Alessia",
@@ -46028,6 +46428,7 @@
       "de": "Mein Flug hat vier Stunden Verspätung und ich brauche Hilfe.",
       "hi": "मेरी उड़ान चार घंटे देरी से है और मुझे मदद चाहिए।",
       "ko": "제 항공편이 4시간 지연돼서 도움이 필요해요.",
+      "ja": "便が4時間遅延しているのですが、どうすればいいですか。",
       "it": "Il mio volo è in ritardo di quattro ore e ho bisogno di aiuto.",
       "nl": "Mijn vlucht heeft vier uur vertraging en ik heb hulp nodig."
     },
@@ -46066,6 +46467,11 @@
         "first_name": "성준",
         "last_name": "배",
         "phone": "+82 10-3328-6099"
+      },
+      "ja": {
+        "first_name": "悠真",
+        "last_name": "中島",
+        "phone": "+81 90-3328-6099"
       },
       "it": {
         "first_name": "Luigi",
@@ -46106,6 +46512,10 @@
       "ko": {
         "first_name": "Seongjun",
         "last_name": "Bae"
+      },
+      "ja": {
+        "first_name": "Yuma",
+        "last_name": "Nakajima"
       },
       "it": {
         "first_name": "Luigi",
@@ -47190,6 +47600,7 @@
       "de": "Hallo, ich muss meinen Flug nach Chicago nächste Woche ändern.",
       "hi": "नमस्ते, मुझे अगले हफ्ते शिकागो जाने वाली अपनी उड़ान बदलनी है।",
       "ko": "안녕하세요, 다음 주 Chicago행 항공편으로 변경해야 해요.",
+      "ja": "こんにちは、来週のシカゴ行きの便を変更したいのですが。",
       "it": "Salve, devo cambiare il mio volo per Chicago della prossima settimana.",
       "nl": "Hoi, ik moet mijn vlucht naar Chicago volgende week wijzigen."
     },
@@ -47228,6 +47639,11 @@
         "first_name": "준우",
         "last_name": "최",
         "phone": "+82 10-9041-6043"
+      },
+      "ja": {
+        "first_name": "健太",
+        "last_name": "山口",
+        "phone": "+81 90-9041-6043"
       },
       "it": {
         "first_name": "Luca",
@@ -47268,6 +47684,10 @@
       "ko": {
         "first_name": "Junu",
         "last_name": "Choe"
+      },
+      "ja": {
+        "first_name": "Kenta",
+        "last_name": "Yamaguchi"
       },
       "it": {
         "first_name": "Luca",
@@ -48629,6 +49049,7 @@
       "de": "Mein Flug heute Morgen wurde gestrichen und ich brauche eine Umbuchung.",
       "hi": "आज सुबह मेरी उड़ान रद्द हो गई थी और मुझे दोबारा बुक किया जाना है।",
       "ko": "오늘 아침 제 항공편이 취소돼서 재예약해야 해요.",
+      "ja": "今朝の便が欠航になってしまったのですが、振り替えをお願いできますか。",
       "it": "Il mio volo di stamattina è stato cancellato e devo fare una nuova prenotazione.",
       "nl": "Mijn vlucht van vanochtend is geannuleerd en ik moet worden omgeboekt."
     },
@@ -48667,6 +49088,11 @@
         "first_name": "건우",
         "last_name": "전",
         "phone": "+82 10-0803-2441"
+      },
+      "ja": {
+        "first_name": "圭太",
+        "last_name": "坂本",
+        "phone": "+81 90-0803-2441"
       },
       "it": {
         "first_name": "Leonardo",
@@ -48707,6 +49133,10 @@
       "ko": {
         "first_name": "Geonu",
         "last_name": "Jeon"
+      },
+      "ja": {
+        "first_name": "Keita",
+        "last_name": "Sakamoto"
       },
       "it": {
         "first_name": "Leonardo",
@@ -49621,6 +50051,7 @@
       "de": "Mein Flug hat seit Stunden Verspätung – können Sie mir einen Essensgutschein besorgen und mich kostenlos umbuchen?",
       "hi": "मेरी उड़ान कई घंटों से देरी से चल रही है—क्या आप मुझे खाने का वाउचर दिला सकते हैं और मुझे मुफ्त में दोबारा बुक कर सकते हैं?",
       "ko": "제 항공편이 몇 시간째 지연되고 있는데요—식사 바우처를 받고 무료로 재예약해 주실 수 있나요?",
+      "ja": "便が何時間も遅延しているのですが、食事券をいただけますか。それと、無料で別の便に振り替えていただけますか。",
       "it": "Il mio volo è in ritardo da ore: può procurarmi un buono pasto e fare una nuova prenotazione per un volo gratis?",
       "nl": "Mijn vlucht heeft al uren vertraging—kunt u mij een maaltijdvoucher geven en mij kostenloos omboeken?"
     },
@@ -49659,6 +50090,11 @@
         "first_name": "수민",
         "last_name": "심",
         "phone": "+82 10-9072-6149"
+      },
+      "ja": {
+        "first_name": "恵子",
+        "last_name": "坂本",
+        "phone": "+81 90-9072-6149"
       },
       "it": {
         "first_name": "Emma",
@@ -49699,6 +50135,10 @@
       "ko": {
         "first_name": "Sumin",
         "last_name": "Sim"
+      },
+      "ja": {
+        "first_name": "Keiko",
+        "last_name": "Sakamoto"
       },
       "it": {
         "first_name": "Emma",
@@ -50658,6 +51098,7 @@
       "de": "Ich muss meinen Flug sofort ändern, weil es einen Todesfall in meiner Familie gab.",
       "hi": "मुझे अपने परिवार में किसी की मृत्यु के कारण अभी अपनी उड़ान बदलनी है।",
       "ko": "가족상 때문에 지금 바로 제 항공편을 변경해야 해요.",
+      "ja": "家族に不幸がありまして、至急便を変更したいのですが。",
       "it": "Devo cambiare subito il mio volo a causa di un lutto in famiglia.",
       "nl": "Ik moet mijn vlucht nu meteen wijzigen vanwege een overlijden in mijn familie."
     },
@@ -50696,6 +51137,11 @@
         "first_name": "서연",
         "last_name": "구",
         "phone": "+82 10-1705-0329"
+      },
+      "ja": {
+        "first_name": "愛",
+        "last_name": "近藤",
+        "phone": "+81 90-1705-0329"
       },
       "it": {
         "first_name": "Ginevra",
@@ -50736,6 +51182,10 @@
       "ko": {
         "first_name": "Seoyeon",
         "last_name": "Gu"
+      },
+      "ja": {
+        "first_name": "Ai",
+        "last_name": "Kondo"
       },
       "it": {
         "first_name": "Ginevra",
@@ -51412,6 +51862,7 @@
       "de": "Ich muss meinen Flug stornieren und brauche eine vollständige Rückerstattung.",
       "hi": "मुझे अपनी उड़ान रद्द करनी है और पूरे पैसे वापस लेने हैं।",
       "ko": "제 항공편을 취소하고 전액 환불을 받아야 해요.",
+      "ja": "予約をキャンセルして、全額払い戻しをお願いしたいのですが。",
       "it": "Devo cancellare il mio volo e ottenere un rimborso completo.",
       "nl": "Ik moet mijn vlucht annuleren en een volledige terugbetaling krijgen."
     },
@@ -51450,6 +51901,11 @@
         "first_name": "준영",
         "last_name": "백",
         "phone": "+82 10-0789-0360"
+      },
+      "ja": {
+        "first_name": "智也",
+        "last_name": "池田",
+        "phone": "+81 90-0789-0360"
       },
       "it": {
         "first_name": "Giulio",
@@ -51490,6 +51946,10 @@
       "ko": {
         "first_name": "Junyeong",
         "last_name": "Baek"
+      },
+      "ja": {
+        "first_name": "Tomoya",
+        "last_name": "Ikeda"
       },
       "it": {
         "first_name": "Giulio",
@@ -52167,6 +52627,7 @@
       "de": "Mir wurde ein Upgrade berechnet, von dem mir gesagt wurde, dass es kostenlos wäre – können Sie das korrigieren?",
       "hi": "मुझसे एक अपग्रेड का चार्ज लिया गया है जिसके बारे में मुझे बताया गया था कि यह मुफ़्त होगा—क्या आप इसे ठीक कर सकते हैं?",
       "ko": "무료라고 안내받은 업그레이드에 요금이 청구됐는데요—이거 처리해 주실 수 있나요?",
+      "ja": "無料と伺っていたアップグレードの料金が請求されているのですが、確認していただけますか。",
       "it": "Mi è stato addebitato un upgrade che mi avevano detto sarebbe stato gratuito: può sistemare la cosa?",
       "nl": "Er zijn kosten in rekening gebracht voor een upgrade waarvan mij was verteld dat die gratis zou zijn—kunt u dat corrigeren?"
     },
@@ -52205,6 +52666,11 @@
         "first_name": "시윤",
         "last_name": "권",
         "phone": "+82 10-3768-2662"
+      },
+      "ja": {
+        "first_name": "悠",
+        "last_name": "橋本",
+        "phone": "+81 90-3768-2662"
       },
       "it": {
         "first_name": "Manuel",
@@ -52245,6 +52711,10 @@
       "ko": {
         "first_name": "Siyun",
         "last_name": "Gwon"
+      },
+      "ja": {
+        "first_name": "Yu",
+        "last_name": "Hashimoto"
       },
       "it": {
         "first_name": "Manuel",
@@ -53537,6 +54007,7 @@
       "de": "Ich muss meinen Flug auf einen früheren Flug heute ändern.",
       "hi": "मुझे अपनी उड़ान आज की किसी पहले वाली उड़ान में बदलनी है।",
       "ko": "오늘 더 이른 항공편으로 변경해야 해요.",
+      "ja": "今日のもっと早い便に変更していただけますか。",
       "it": "Devo cambiare il mio volo con uno che parta prima in giornata.",
       "nl": "Ik moet mijn vlucht wijzigen naar een eerdere vlucht van vandaag."
     },
@@ -53575,6 +54046,11 @@
         "first_name": "유나",
         "last_name": "공",
         "phone": "+82 10-4836-4300"
+      },
+      "ja": {
+        "first_name": "玲奈",
+        "last_name": "藤原",
+        "phone": "+81 90-4836-4300"
       },
       "it": {
         "first_name": "Giada",
@@ -53615,6 +54091,10 @@
       "ko": {
         "first_name": "Yuna",
         "last_name": "Gong"
+      },
+      "ja": {
+        "first_name": "Rena",
+        "last_name": "Fujiwara"
       },
       "it": {
         "first_name": "Giada",
@@ -54291,6 +54771,7 @@
       "de": "Ich brauche für heute Nacht einen Hotelgutschein und eine Fahrt zum Hotel.",
       "hi": "मुझे आज रात के लिए होटल वाउचर और होटल तक जाने के लिए सवारी चाहिए।",
       "ko": "오늘 밤 호텔 바우처와 호텔까지 갈 교통편이 필요해요.",
+      "ja": "今晩のホテルの手配と、ホテルまでの送迎をお願いできますか。",
       "it": "Ho bisogno di un buono per l'hotel e di un passaggio fino all’hotel per stasera.",
       "nl": "Ik heb een hotelvoucher en vervoer naar het hotel nodig voor vanavond."
     },
@@ -54329,6 +54810,11 @@
         "first_name": "서아",
         "last_name": "류",
         "phone": "+82 10-4352-3382"
+      },
+      "ja": {
+        "first_name": "絵里",
+        "last_name": "藤井",
+        "phone": "+81 90-4352-3382"
       },
       "it": {
         "first_name": "Chiara",
@@ -54369,6 +54855,10 @@
       "ko": {
         "first_name": "Seoa",
         "last_name": "Ryu"
+      },
+      "ja": {
+        "first_name": "Eri",
+        "last_name": "Fujii"
       },
       "it": {
         "first_name": "Chiara",
@@ -54710,6 +55200,7 @@
       "de": "Können Sie mir helfen, den Flug meines Mannes für morgen nachzuschauen?",
       "hi": "क्या आप मेरे पति की कल की उड़ान ढूँढने में मेरी मदद कर सकते हैं?",
       "ko": "내일 제 남편 항공편을 확인해 주실 수 있나요?",
+      "ja": "明日の夫の便を調べていただけますか。",
       "it": "Può aiutarmi a cercare il volo di mio marito per domani?",
       "nl": "Kunt u mij helpen met de vlucht van mijn man voor morgen op te zoeken?"
     },
@@ -54776,6 +55267,15 @@
           "gender": "man"
         },
         "phone": "+82 10-9637-9348"
+      },
+      "ja": {
+        "first_name": "美穂",
+        "last_name": "渡辺",
+        "companion": {
+          "first_name": "佑樹",
+          "gender": "man"
+        },
+        "phone": "+81 90-9637-9348"
       },
       "it": {
         "first_name": "Greta",
@@ -54844,6 +55344,13 @@
         "last_name": "Na",
         "companion": {
           "first_name": "Taemin"
+        }
+      },
+      "ja": {
+        "first_name": "Miho",
+        "last_name": "Watanabe",
+        "companion": {
+          "first_name": "Yuki"
         }
       },
       "it": {
