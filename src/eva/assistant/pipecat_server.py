@@ -571,7 +571,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
         audio_in_filter_cfg = self.pipeline_config.audio_in_filter.lower()
         if audio_in_filter_cfg == "none":
             audio_in_filter = None
-        elif audio_in_filter_cfg == "krisp":
+        elif audio_in_filter_cfg == "krisp_viva":
             from pipecat.audio.filters.krisp_viva_filter import KrispVivaFilter
 
             audio_in_filter = KrispVivaFilter(**self.pipeline_config.audio_in_filter_params)
