@@ -58,6 +58,18 @@
       "本部",
       "本部ガレージ",
       "本部駐車場"
+    ],
+    "it": [
+      "quartier generale",
+      "sede centrale",
+      "sede principale",
+      "ufficio centrale"
+    ],
+    "nl": [
+      "hoofdgebouw",
+      "hoofdcampus",
+      "hoofdkantoor",
+      "hoofdvestiging"
     ]
   }
 }

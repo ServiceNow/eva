@@ -33,6 +33,15 @@
     "ja": [
       "イーストキャンパス",
       "東キャンパス"
+    ],
+    "it": [
+      "campus est",
+      "polo est",
+      "sede est"
+    ],
+    "nl": [
+      "campus oost",
+      "oostcampus"
     ]
   }
 }

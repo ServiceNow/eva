@@ -44,6 +44,18 @@
       "メインガレージ",
       "メイン駐車場",
       "第一駐車場"
+    ],
+    "it": [
+      "autorimessa principale",
+      "garage principale",
+      "parcheggio principale"
+    ],
+    "nl": [
+      "hoofd parkeergarage",
+      "algemene parkeergarage",
+      "algemene parkeerterrein",
+      "algemene garage",
+      "hoofdgarage"
     ]
   }
 }

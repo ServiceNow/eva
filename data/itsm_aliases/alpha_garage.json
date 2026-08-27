@@ -47,6 +47,17 @@
       "メインガレージ",
       "本館ガレージ",
       "メイン車庫"
+    ],
+    "it": [
+      "autorimessa alfa",
+      "garage alfa",
+      "parcheggio alfa",
+      "parcheggio principale"
+    ],
+    "nl": [
+      "alpha-garage",
+      "garage alpha",
+      "hoofdgarage"
     ]
   }
 }

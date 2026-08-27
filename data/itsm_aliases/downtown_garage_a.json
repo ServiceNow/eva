@@ -55,6 +55,19 @@
       "駐車場エー",
       "ダウンタウンガレージエー",
       "ダウンタウン駐車場"
+    ],
+    "it": [
+      "autorimessa A in centro",
+      "garage A del centro",
+      "parcheggio A in centro"
+    ],
+    "nl": [
+      "centrumgarage A",
+      "garage A in het centrum",
+      "parkeergarage A centrum",
+      "parkeergarage A",
+      "parkeergarage in het centrum",
+      "garage in het centrum"
     ]
   }
 }

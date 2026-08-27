@@ -61,6 +61,22 @@
       "財務ビル",
       "都心事務所",
       "財務部"
+    ],
+    "it": [
+      "sede del centro",
+      "sede della finanza",
+      "ufficio in centro",
+      "ufficio principale delle risorse umane"
+    ],
+    "nl": [
+      "kantoor in het centrum",
+      "financieel gebouw",
+      "financieel kantoor",
+      "financieel gebouw in het centrum",
+      "financieel kantoor in het centrum",
+      "hoofdkantoor personeelszaken",
+      "hoofdkantoor HR",
+      "kantoor in de binnenstad"
     ]
   }
 }

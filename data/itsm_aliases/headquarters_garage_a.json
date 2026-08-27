@@ -48,6 +48,17 @@
       "本社ガレージエー",
       "本部ガレージエー",
       "本部駐車場エー"
+    ],
+    "it": [
+      "autorimessa A della sede",
+      "garage A sede centrale",
+      "parcheggio A della sede centrale"
+    ],
+    "nl": [
+      "garage A bij het hoofdkantoor",
+      "garage A bij het hoofdgebouw",
+      "hoofdkantoorgarage A",
+      "parkeergarage A hoofdkantoor"
     ]
   }
 }

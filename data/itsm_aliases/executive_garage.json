@@ -60,6 +60,21 @@
       "幹部用駐車場",
       "役員用駐車場",
       "メインガレージ"
+    ],
+    "it": [
+      "autorimessa dirigenti",
+      "garage per i dirigenti",
+      "parcheggio per i dirigenti",
+      "parcheggio dirigenti"
+    ],
+    "nl": [
+      "directiegarage",
+      "garageplaats voor de directie",
+      "directiegarageplek",
+      "directieparkeerplaats",
+      "parkeergarage directie",
+      "hoofdgarage voor de directie",
+      "parkeerplek directie"
     ]
   }
 }

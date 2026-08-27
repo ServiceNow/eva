@@ -62,6 +62,19 @@
       "北駐車場",
       "本社北駐車場",
       "本部北駐車場"
+    ],
+    "it": [
+      "parcheggio nord esterno",
+      "parcheggio nord della sede",
+      "parcheggio nord scoperto",
+      "piazzale nord"
+    ],
+    "nl": [
+      "noordelijk parkeerterrein",
+      "noordparkeergarage bij het hoofdkantoor",
+      "noordgarage bij het hoofdkantoor",
+      "parkeerterrein noord",
+      "parkeergarage noord"
     ]
   }
 }

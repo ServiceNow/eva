@@ -45,9 +45,19 @@
       "メイン駐車場",
       "一般駐車場",
       "共用ガレージ",
-      "メインガレージ", 
+      "メインガレージ",
       "共用駐車場",
       "一般用駐車場"
+    ],
+    "it": [
+      "garage generale",
+      "parcheggio generale",
+      "parcheggio principale"
+    ],
+    "nl": [
+      "algemene garage",
+      "algemene parkeergarage",
+      "hoofdgarage"
     ]
   }
 }

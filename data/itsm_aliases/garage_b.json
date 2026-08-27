@@ -47,6 +47,18 @@
       "西駐車場",
       "西ガレージ",
       "ウエストガレージ"
+    ],
+    "it": [
+      "autorimessa b",
+      "parcheggio b",
+      "parcheggio ovest"
+    ],
+    "nl": [
+      "b-garage",
+      "parkeergarage B",
+      "garage B",
+      "westgarage",
+      "garage-west"
     ]
   }
 }

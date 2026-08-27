@@ -53,6 +53,16 @@
     "ja": [
       "オペレーションセンター",
       "運用センター"
+    ],
+    "it": [
+      "centro operativo",
+      "centro operazioni",
+      "sede operativa"
+    ],
+    "nl": [
+      "bedrijfsvoeringcentrum",
+      "operatiecentrum",
+      "operationeel centrum"
     ]
   }
 }

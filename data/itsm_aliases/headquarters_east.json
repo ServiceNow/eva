@@ -57,6 +57,18 @@
       "東ビル",
       "本部東",
       "東本部"
+    ],
+    "it": [
+      "ala est",
+      "edificio est",
+      "palazzo est",
+      "sede centrale est"
+    ],
+    "nl": [
+      "hoofdkantoor oost",
+      "oostgebouw",
+      "oostvleugel hoofdkantoor",
+      "hoofdkantoor oostvleugel"
     ]
   }
 }

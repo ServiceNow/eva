@@ -36,6 +36,15 @@
     "ja": [
       "ガレージエー",
       "駐車場エー"
+    ],
+    "it": [
+      "autorimessa A",
+      "parcheggio A"
+    ],
+    "nl": [
+      "a-garage",
+      "parkeergarage A",
+      "garage A"
     ]
   }
 }

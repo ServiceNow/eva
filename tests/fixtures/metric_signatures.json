@@ -14,8 +14,8 @@
   "ConversationCorrectlyFinishedMetric": {
     "name": "conversation_correctly_finished",
     "prompt_hash": null,
-    "source_hash": "3f495631946f",
-    "version": "v0.1"
+    "source_hash": "982afe31c94b",
+    "version": "v0.3"
   },
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
@@ -37,15 +37,15 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "060e3f1f9e7a",
+    "prompt_hash": "78028821ce37",
     "source_hash": "ee9b8ea530a4",
     "version": "v0.3"
   },
   "ResponseSpeedMetric": {
     "name": "response_speed",
     "prompt_hash": null,
-    "source_hash": "fdac735ba008",
-    "version": "v0.2"
+    "source_hash": "3b0926903322",
+    "version": "v0.4"
   },
   "STTWERMetric": {
     "name": "stt_wer",

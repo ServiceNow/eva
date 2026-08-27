@@ -59,6 +59,20 @@
       "都心",
       "セールス本部",
       "都心事務所"
+    ],
+    "it": [
+      "palazzo vendite",
+      "sede in centro",
+      "sede vendite",
+      "ufficio del centro"
+    ],
+    "nl": [
+      "binnenstad",
+      "stadscentrum",
+      "kantoor in het centrum",
+      "hartje stad",
+      "hartje centrum",
+      "verkoopkantoor in het centrum"
     ]
   }
 }

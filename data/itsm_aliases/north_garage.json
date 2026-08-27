@@ -47,6 +47,18 @@
       "ノースガレージ",
       "メイン駐車場",
       "北駐車場"
+    ],
+    "it": [
+      "autorimessa nord",
+      "garage nord",
+      "parcheggio nord"
+    ],
+    "nl": [
+      "noordelijke garage",
+      "noordgarage",
+      "garage noord",
+      "parkeergarage noord",
+      "noord parkeergarage"
     ]
   }
 }
