@@ -260,7 +260,7 @@ def _render_whole_trace_judge(idx: int, details: dict) -> None:
 
 def render_judge_prompts(record: dict) -> None:
     """Single collapsible scrollable pane with the judge prompt (identical across judges)."""
-    with st.expander("📜 Full judge prompt", expanded=True):
+    with st.expander("📜 Full judge prompt", expanded=False):
         prompt = ""
         for jkey in JUDGE_KEYS:
             prompt = (record.get(jkey, {}).get("details") or {}).get("judge_prompt", "")
@@ -424,11 +424,21 @@ def _record_complete(rid, labels: dict, granularity: str) -> bool:
     return _num_complete_reviews(rid, labels, granularity) >= REVIEWS_PER_RECORD
 
 
-def _record_status_glyph(rid, labels: dict, granularity: str) -> str:
-    """Dropdown marker: ✅ complete, ◐ saved but incomplete, • untouched."""
+def _record_status_glyph(rid, labels: dict, granularity: str, me: str | None) -> str:
+    """Dropdown marker: ✅ complete, ✔️ you've reviewed (waiting on another labeler),
+    ◐ someone else has reviewed but not you, • untouched.
+
+    The ✔️/◐ split matters when two labelers work the same metric/language: without it,
+    both states look identical (◐), so it's easy to lose track of which records you
+    personally already labeled.
+    """
     if _record_complete(rid, labels, granularity):
         return "✅"
-    if labels.get(str(rid)):
+    reviews = labels.get(str(rid), [])
+    name_norm = (me or "").strip().lower()
+    if name_norm and any((r.get("labeler") or "").strip().lower() == name_norm for r in reviews):
+        return "✔️"
+    if reviews:
         return "◐"
     return "•"
 
@@ -546,21 +556,37 @@ def main() -> None:
                 st.query_params.pop("impersonate", None)
 
         st.header("Record")
+        me_for_status = impersonate or user
         record_key = f"record_idx_{metric}_{lang}"
         idx = st.selectbox(
             "Select record",
             options=list(range(len(records))),
-            format_func=lambda i: f"{_record_status_glyph(records[i]['id'], labels, cfg['granularity'])} {records[i]['id']:02d}",
+            format_func=lambda i: (
+                f"{_record_status_glyph(records[i]['id'], labels, cfg['granularity'], me_for_status)} "
+                f"{records[i]['id']:02d}"
+            ),
             key=record_key,
         )
-        st.button(
-            "Next record →",
-            on_click=_go_to_record,
-            args=(record_key, idx + 1, len(records)),
-            disabled=idx >= len(records) - 1,
-            use_container_width=True,
-            help="Jump to the next record.",
-        )
+        st.caption("✅ complete · ✔️ you've reviewed · ◐ reviewed by someone else · • untouched")
+        nav_prev, nav_next = st.columns(2)
+        with nav_prev:
+            st.button(
+                "← Previous",
+                on_click=_go_to_record,
+                args=(record_key, idx - 1, len(records)),
+                disabled=idx <= 0,
+                use_container_width=True,
+                help="Jump to the previous record.",
+            )
+        with nav_next:
+            st.button(
+                "Next →",
+                on_click=_go_to_record,
+                args=(record_key, idx + 1, len(records)),
+                disabled=idx >= len(records) - 1,
+                use_container_width=True,
+                help="Jump to the next record.",
+            )
 
         completed = sum(
             1 for r in records if _record_complete(r["id"], labels, cfg["granularity"])
@@ -913,7 +939,7 @@ def _render_speech_fidelity_mode(record: dict, rid: str, my_review, scope_change
 
     prompt_text = _load_judge_prompt()
     if prompt_text:
-        with st.expander("📜 Full judge prompt", expanded=True):
+        with st.expander("📜 Full judge prompt", expanded=False):
             box = st.container(height=320, border=True)
             with box:
                 st.text(prompt_text)
