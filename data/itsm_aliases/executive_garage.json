@@ -3,9 +3,7 @@
   "translatable": true,
   "base": [
     "executive garage",
-    "exec garage",
-    "main garage",
-    "executive <last_name>ing"
+    "exec garage"
   ],
   "translations": {
     "fr": [
@@ -34,7 +32,6 @@
       "aparcamiento ejecutivo",
       "garaje de dirección",
       "garaje ejecutivo",
-      "garaje principal",
       "parking ejecutivo"
     ],
     "de": [
@@ -45,21 +42,17 @@
     "hi": [
       "एक्जेक गैराज",
       "एग्जीक्यूटिव गैराज",
-      "एग्जीक्यूटिव पार्किंग",
-      "मुख्य गैराज"
+      "एग्जीक्यूटिव पार्किंग"
     ],
     "ko": [
-      "메인 주차장",
       "임원 주차동",
       "임원 주차장",
       "임원용 차고"
     ],
     "ja": [
       "エグゼクティブガレージ",
-      "メイン駐車場",
       "幹部用駐車場",
-      "役員用駐車場",
-      "メインガレージ"
+      "役員用駐車場"
     ],
     "it": [
       "autorimessa dirigenti",
