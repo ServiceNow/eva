@@ -55,6 +55,8 @@ async def run_benchmark(config: RunConfig) -> int:
         runner.config.preflight_timeout_seconds = config.preflight_timeout_seconds
         if config.metrics is not None:
             runner.config.metrics = config.metrics
+        if config.metric_configs:
+            runner.config.metric_configs = config.metric_configs
 
         dataset_path = runner.config.dataset_path
 

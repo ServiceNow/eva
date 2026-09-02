@@ -181,6 +181,59 @@ class TestSaveResultsCsv:
         assert "record_id" in lines[0]
 
 
+class TestMetricConfigs:
+    def test_defaults_to_stt_wer_language_only(self, tmp_path):
+        config = _make_config(tmp_path)
+        runner = _make_runner(config)
+
+        assert runner._metric_configs == {"stt_wer": {"language": "en"}}
+
+    def test_merges_user_overrides_without_touching_stt_wer(self, tmp_path):
+        config = _make_config(tmp_path).model_copy(
+            update={
+                "metric_configs": {
+                    "faithfulness": {
+                        "judge_model": "potato",
+                        "judge_params": {"reasoning_effort": "herculean"},
+                    }
+                }
+            }
+        )
+        runner = _make_runner(config)
+
+        assert runner._metric_configs == {
+            "stt_wer": {"language": "en"},
+            "faithfulness": {
+                "judge_model": "potato",
+                "judge_params": {"reasoning_effort": "herculean"},
+            },
+        }
+
+    def test_user_override_of_stt_wer_language_wins(self, tmp_path):
+        config = _make_config(tmp_path).model_copy(update={"metric_configs": {"stt_wer": {"language": "fr"}}})
+        runner = _make_runner(config)
+
+        assert runner._metric_configs["stt_wer"] == {"language": "fr"}
+
+    def test_does_not_mutate_stored_config(self, tmp_path):
+        """The returned dict must not alias self.config.metric_configs's nested dicts."""
+        config = _make_config(tmp_path).model_copy(update={"metric_configs": {"faithfulness": {}}})
+        runner = _make_runner(config)
+
+        runner._metric_configs["faithfulness"]["judge_model"] = "mutated"
+
+        assert config.metric_configs["faithfulness"] == {}
+
+    def test_reflects_config_changes_made_after_construction(self, tmp_path):
+        """Mirrors run_benchmark.py applying a CLI override onto runner.config post-construction."""
+        config = _make_config(tmp_path)
+        runner = _make_runner(config)
+
+        runner.config.metric_configs = {"faithfulness": {"judge_model": "potato"}}
+
+        assert runner._metric_configs["faithfulness"] == {"judge_model": "potato"}
+
+
 class TestFromExistingRun:
     @patch.dict(os.environ, _BASE_ENV, clear=True)
     def test_sets_output_dir_to_run_dir(self, tmp_path):

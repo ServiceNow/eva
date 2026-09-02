@@ -13,6 +13,7 @@ and explicit kwargs.  Scripts opt in to ``.env`` and/or CLI via
 """
 
 import copy
+import json
 import logging
 import os
 from collections.abc import Iterator
@@ -609,6 +610,18 @@ class RunConfig(BaseSettings):
     metrics: list[str] | None = Field(
         default_factory=_get_all_metrics,
         description="Metrics to run. Skip all metrics with `EVA_METRICS=` or `--metrics=`.",
+    )
+
+    metric_configs: dict[str, dict[str, Any]] = Field(
+        {},
+        description=(
+            "Per-metric configuration overrides (JSON), keyed by metric name. For judge metrics "
+            "(TextJudgeMetric/AudioJudgeMetric subclasses), 'judge_model' overrides the model "
+            "and 'judge_params' merges into the LLM call params (e.g. reasoning_effort, temperature). "
+            f"Example: EVA_METRIC_CONFIGS='{json.dumps({'faithfulness': {'judge_model': 'gpt-5.6-terra', 'judge_params': {'reasoning_effort': 'none'}}})}' "
+            "or EVA_METRIC_CONFIGS__FAITHFULNESS__JUDGE_MODEL=gpt-5.6-terra "
+            "or EVA_METRIC_CONFIGS__FAITHFULNESS__JUDGE_PARAMS__REASONING_EFFORT=none."
+        ),
     )
 
     # Aggregate-only mode
