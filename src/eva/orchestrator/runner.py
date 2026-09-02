@@ -1,6 +1,7 @@
 """Benchmark runner - main orchestrator for running voice agent benchmarks."""
 
 import asyncio
+import copy
 import json
 import shutil
 import sys
@@ -77,14 +78,21 @@ class BenchmarkRunner:
             pool_size=config.port_pool_size,
         )
 
-        # Per-metric configuration derived from run config (e.g. language for stt_wer).
-        self._metric_configs: dict[str, dict] = {
-            "stt_wer": {"language": config.language.value},
-        }
-
         # Results tracking
         self._results: list[ConversationResult] = []
         self._failed_record_ids: list[str] = []
+
+    @property
+    def _metric_configs(self) -> dict[str, dict]:
+        """Per-metric configuration: language for stt_wer, plus any user-supplied overrides.
+
+        Computed from `self.config` on each access (rather than cached at construction time)
+        so that CLI overrides applied to `runner.config.metric_configs` after
+        `from_existing_run()` (in run_benchmark.py) take effect.
+        """
+        metric_configs: dict[str, dict] = copy.deepcopy(self.config.metric_configs)
+        metric_configs.setdefault("stt_wer", {}).setdefault("language", self.config.language.value)
+        return metric_configs
 
     def _load_agent_config(self) -> AgentConfig:
         """Load single agent configuration; append the language addendum once."""

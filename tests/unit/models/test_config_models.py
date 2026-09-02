@@ -707,6 +707,25 @@ class TestExecutionSettings:
         c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__STT_PARAMS": json.dumps(params)})
         assert c.model.stt_params == params
 
+    def test_metric_configs_default_is_empty(self):
+        c = _config(env_vars=_BASE_ENV)
+        assert c.metric_configs == {}
+
+    def test_metric_configs_via_json_env_var(self):
+        expected = {"faithfulness": {"judge_model": "gpt-5.6-terra", "judge_params": {"reasoning_effort": "none"}}}
+        c = _config(env_vars=_BASE_ENV | {"EVA_METRIC_CONFIGS": json.dumps(expected)})
+        assert c.metric_configs == expected
+
+    def test_metric_configs_via_nested_env_vars(self):
+        env_vars = {
+            "EVA_METRIC_CONFIGS__FAITHFULNESS__JUDGE_MODEL": "gpt-5.6-terra",
+            "EVA_METRIC_CONFIGS__FAITHFULNESS__JUDGE_PARAMS__REASONING_EFFORT": "none",
+        }
+        c = _config(env_vars=_BASE_ENV | env_vars)
+        assert c.metric_configs == {
+            "faithfulness": {"judge_model": "gpt-5.6-terra", "judge_params": {"reasoning_effort": "none"}}
+        }
+
     def test_tts_params(self):
         params = {"api_key": "k", "model": "sonic", "voice": "alloy", "speed": 1.2}
         c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__TTS_PARAMS": json.dumps(params)})
