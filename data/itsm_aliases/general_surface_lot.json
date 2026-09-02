@@ -53,6 +53,21 @@
       "일반 야외 주차장",
       "일반 주차장",
       "평면 주차장"
+    ],
+    "ja": [
+      "一般平面駐車場",
+      "一般駐車場",
+      "平面駐車場"
+    ],
+    "it": [
+      "parcheggio generale esterno",
+      "parcheggio generale scoperto",
+      "parcheggio generale all'aperto"
+    ],
+    "nl": [
+      "algemeen parkeerterrein",
+      "algemene parkeerplaats",
+      "algemene parking"
     ]
   }
 }

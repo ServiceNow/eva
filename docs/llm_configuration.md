@@ -6,6 +6,8 @@ The voice agent benchmark uses **LiteLLM** for universal LLM support. All model 
 
 All LLM configuration is done through `EVA_MODEL_LIST` in your `.env` file. Each entry maps a **model name** (the alias your code uses) to a **provider-specific model identifier** in `litellm_params.model`.
 
+> **Note:** `EVA_MODEL_LIST` is for chat-completion LLM deployments only. STT/TTS providers (e.g. Cartesia, Deepgram, Soniox) don't go through LiteLLM — configure them separately via `EVA_MODEL__STT`/`EVA_MODEL__STT_PARAMS` and `EVA_MODEL__TTS`/`EVA_MODEL__TTS_PARAMS` (see `.env.example`).
+
 ```bash
 EVA_MODEL_LIST='[
   {

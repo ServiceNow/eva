@@ -29,6 +29,19 @@
       "동쪽 캠퍼스",
       "동캠퍼스",
       "이스트 캠퍼스"
+    ],
+    "ja": [
+      "イーストキャンパス",
+      "東キャンパス"
+    ],
+    "it": [
+      "campus est",
+      "polo est",
+      "sede est"
+    ],
+    "nl": [
+      "campus oost",
+      "oostcampus"
     ]
   }
 }

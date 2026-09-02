@@ -1,0 +1,280 @@
+{
+  "code": "nl",
+  "zeros": [
+    "nul",
+    "zero"
+  ],
+  "cardinals": {
+    "een": 1,
+    "twee": 2,
+    "drie": 3,
+    "vier": 4,
+    "vijf": 5,
+    "zes": 6,
+    "zeven": 7,
+    "acht": 8,
+    "negen": 9,
+    "tien": 10,
+    "elf": 11,
+    "twaalf": 12,
+    "dertien": 13,
+    "veertien": 14,
+    "vijftien": 15,
+    "zestien": 16,
+    "zeventien": 17,
+    "achttien": 18,
+    "negentien": 19,
+    "tweehonderd": 200,
+    "driehonderd": 300,
+    "vierhonderd": 400,
+    "vijfhonderd": 500,
+    "zeshonderd": 600,
+    "zevenhonderd": 700,
+    "achthonderd": 800,
+    "negenhonderd": 900
+  },
+  "cardinal_variants": {
+    "één": 1
+  },
+  "cardinals_suffixed": {
+    "eerste": [
+      1,
+      "e"
+    ],
+    "tweede": [
+      2,
+      "e"
+    ],
+    "derde": [
+      3,
+      "e"
+    ],
+    "vierde": [
+      4,
+      "e"
+    ],
+    "vijfde": [
+      5,
+      "e"
+    ],
+    "zesde": [
+      6,
+      "e"
+    ],
+    "zevende": [
+      7,
+      "e"
+    ],
+    "achtste": [
+      8,
+      "e"
+    ],
+    "negende": [
+      9,
+      "e"
+    ],
+    "tiende": [
+      10,
+      "e"
+    ],
+    "elfde": [
+      11,
+      "e"
+    ],
+    "twaalfde": [
+      12,
+      "e"
+    ],
+    "dertiende": [
+      13,
+      "e"
+    ],
+    "veertiende": [
+      14,
+      "e"
+    ],
+    "vijftiende": [
+      15,
+      "e"
+    ],
+    "zestiende": [
+      16,
+      "e"
+    ],
+    "zeventiende": [
+      17,
+      "e"
+    ],
+    "achttiende": [
+      18,
+      "e"
+    ],
+    "negentiende": [
+      19,
+      "e"
+    ],
+    "tweehonderdste": [
+      200,
+      "e"
+    ],
+    "driehonderdste": [
+      300,
+      "e"
+    ],
+    "vierhonderdste": [
+      400,
+      "e"
+    ],
+    "vijfhonderdste": [
+      500,
+      "e"
+    ],
+    "zeshonderdste": [
+      600,
+      "e"
+    ],
+    "zevenhonderdste": [
+      700,
+      "e"
+    ],
+    "achthonderdste": [
+      800,
+      "e"
+    ],
+    "negenhonderdste": [
+      900,
+      "e"
+    ]
+  },
+  "tens": {
+    "twintig": 20,
+    "dertig": 30,
+    "veertig": 40,
+    "vijftig": 50,
+    "zestig": 60,
+    "zeventig": 70,
+    "tachtig": 80,
+    "negentig": 90
+  },
+  "tens_suffixed": {
+    "twintigste": [
+      20,
+      "e"
+    ],
+    "dertigste": [
+      30,
+      "e"
+    ],
+    "veertigste": [
+      40,
+      "e"
+    ],
+    "vijftigste": [
+      50,
+      "e"
+    ],
+    "zestigste": [
+      60,
+      "e"
+    ],
+    "zeventigste": [
+      70,
+      "e"
+    ],
+    "tachtigste": [
+      80,
+      "e"
+    ],
+    "negentigste": [
+      90,
+      "e"
+    ]
+  },
+  "scaling_units": {
+    "honderd": 100,
+    "duizend": 1000,
+    "miljoen": 1000000,
+    "miljard": 1000000000,
+    "biljoen": 1000000000000,
+    "biljard": 1000000000000000,
+    "triljoen": 1000000000000000000
+  },
+  "scaling_units_suffixed": {
+    "honderdste": [
+      100,
+      "e"
+    ],
+    "duizendste": [
+      1000,
+      "e"
+    ],
+    "miljoenste": [
+      1000000,
+      "e"
+    ],
+    "miljardste": [
+      1000000000,
+      "e"
+    ],
+    "biljoenste": [
+      1000000000000,
+      "e"
+    ],
+    "biljardste": [
+      1000000000000000,
+      "e"
+    ],
+    "triljoenste": [
+      1000000000000000000,
+      "e"
+    ]
+  },
+  "conjunction_word": "en",
+  "decimal_word": "komma",
+  "reversed_units": true,
+  "split_hyphenated_numbers": false,
+  "vigesimal_trigger_words": [],
+  "vigesimal_multiplier": 20,
+  "vigesimal_residuals": [],
+  "additive_teen_residuals": [
+    0
+  ],
+  "cardinal_continuation_on_prev_cardinal": false,
+  "conjunction_ignore_prev": [
+    "scaling_units",
+    "tens"
+  ],
+  "repeat_words": {},
+  "half_pattern": null,
+  "half_replacement": null,
+  "one_word": null,
+  "one_plural_suffix": "",
+  "cents_connector": null,
+  "preceding_prefixers": {},
+  "following_prefixers": {},
+  "suffixers": {},
+  "ignore_patterns": "\\b(eh|euh|uh|uhm|ehm|hm|hmm|hum|mhm|mmm)\\b",
+  "replacers": {
+    "\\bdhr\\b": "heer",
+    "\\bhr\\b": "heer",
+    "\\bmw\\b": "mevrouw",
+    "\\bmevr\\b": "mevrouw",
+    "\\bmej\\b": "mejuffrouw",
+    "\\bdr\\b": "doctor",
+    "\\bprof\\b": "professor",
+    "\\bir\\b": "ingenieur",
+    "\\bing\\b": "ingenieur",
+    "\\bmr\\b": "meester",
+    "\\bdrs\\b": "doctorandus",
+    "\\bds\\b": "dominee"
+  },
+  "strip_space_before_apostrophe": false,
+  "ordinal_suffix_pattern": "",
+  "spelling_map_path": null,
+  "letter_class": "a-zà-öø-ÿœæ",
+  "preserve_combining_marks": false,
+  "decimal_separator": "comma",
+  "thousand_separators": [
+    "dot"
+  ]
+}

@@ -1,7 +1,7 @@
 import { Fragment, useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { invertedMetrics, getValue, groupedSystems, domainLabels } from '../../data/leaderboardData';
+import { invertedMetrics, getValue, groupedSystems, hasCleanData, domainLabels } from '../../data/leaderboardData';
 import type { SystemStats, DomainOrPooled } from '../../data/leaderboardData';
 
 const DOMAIN_TABS: DomainOrPooled[] = ['pooled', 'airline', 'itsm', 'medical_hr'];
@@ -174,7 +174,10 @@ function cellTitle(label: string, c: CellData): string {
   return `${label}: ${c.point.toFixed(3)}`;
 }
 
-export function MetricHeatmap({ title, description, metricKeys, metricLabels, baseColor, aggregateColumns, aggregateColor = '#F59E0B', systems, initialDomain = 'pooled' }: MetricHeatmapProps) {
+export function MetricHeatmap({ title, description, metricKeys, metricLabels, baseColor, aggregateColumns, aggregateColor = '#F59E0B', systems: systemsProp, initialDomain = 'pooled' }: MetricHeatmapProps) {
+  // Systems with no clean-condition data (empty `clean`) have nothing to show
+  // in this table — omit their rows rather than rendering a row of dashes.
+  const systems = systemsProp.filter(hasCleanData);
   const themeColors = useThemeColors();
   const themeMode = useThemeMode();
   const aggCols = aggregateColumns ?? [];

@@ -342,6 +342,7 @@ judge:
       - Numeric values derived from prior tool results through simple arithmetic (e.g., summing line items, subtracting used amounts from a balance, or computing a total from prior results)
       - System-level or framework-generated tool calls made before the assistant has any user input, if the assistant subsequently asks for proper information
       - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters, reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance. Which letters are phonetically confusable is language-dependent: in English "v"/"z" or "b"/"d" are classic pairs; in Korean, M is named "엠" and N is named "엔" — nearly identical in fast or phone-quality audio; other languages have their own similar-sounding pairs.
+      - Trying the native-script rendering of a name after a Romanized/English spelling failed a lookup, or vice versa (e.g., trying "山田" after "Yamada" did not match, or trying a Romanized transliteration after the native-script form failed) — this is the same disambiguation behavior as above, grounded in the user's spoken name, not a fabrication. **Exception:** if the user has already explicitly spelled the name out letter by letter (or corrected/confirmed a specific spelling) earlier in the conversation, the assistant must use that confirmed spelling exactly — deviating from it to try an alternate script or spelling at that point IS a fabrication, since the ambiguity was already resolved by the user.
 
       **Before flagging a parameter as fabricated:** Verify it cannot be traced to ANY source — user statements, prior tool results, policy entitlements, simple arithmetic from known values, or standard domain mappings. Also verify enum values against the actual tool specification before claiming a value is invalid.
 
@@ -378,6 +379,7 @@ judge:
       - Offering options or taking actions that the agent instructions explicitly prohibit
       - Not applying policies that are clearly applicable to the situation (e.g., not offering an entitled benefit, not following a required disclosure)
       - Stating a policy incorrectly, or significantly changing a policy's meaning
+      - Not communicating in the language specified in the agent instructions.
       - **Temporal sequencing for consequential actions:** When instructions require "explain before acting" or "get explicit confirmation before proceeding," the assistant must pause for user confirmation BETWEEN read operations and write operations that have financial consequences or are irreversible. Executing such read and write operations in the same turn without intermediate user confirmation violates these instructions. Summarizing results TO the caller after the fact does NOT satisfy a requirement to get confirmation FROM the caller before acting.
       - **Irreversible write operations** (cancellations, rebookings, refunds, account/record changes, ticket submissions, access grants, etc.) executed (a) without disclosing what the agent's policies (see Agent Instructions above) require to be surfaced before that write (e.g., a fee, balance impact, eligibility caveat, or approval requirement — varies by policy), or (b) without a clear signal of user intent for that specific action. Do not invent disclosure requirements the policy does not impose.
 
@@ -410,6 +412,7 @@ judge:
       - Making a reasonable inference when the context makes the intent obvious (e.g., user says "my flight" when they only have one flight)
       - Retrying a lookup with a corrected spelling after the user confirms or spells out the information — this is proper disambiguation behavior
       - Trying valid different combinations of names and confirmation codes when a lookup fails (e.g., swapping commonly confused letters like "v"/"z" or "b"/"d", reordering characters)
+      - Trying a native-script rendering of a name after a Romanized/English spelling failed, or vice versa, when the name was only ever provided by sound (not spelled out) — this is proper disambiguation, not a failure to disambiguate. **Exception:** once the user has explicitly spelled the name out letter by letter or confirmed a specific spelling, silently substituting a different script or spelling instead of using the confirmed one IS a flag.
 
       ### 5. hallucination
       **Scope: Information the assistant states to the user that has no source — not already covered by the preceding dimensions.** Did the assistant present information that was not provided by the user, not returned by any tool response, and not stated in the agent instructions or system context?
@@ -449,6 +452,7 @@ judge:
           - A minor ungrounded tool parameter that doesn't affect results
           - A minor policy deviation that doesn't affect the user's decision-making or their understanding of the policy
           - Skipping a read-back-and-confirm step on values (dates, names, identifiers) the user stated in preceding turns, when the values written to the tool call match what appears in the user's transcribed utterance. **This carve-out does NOT apply when the transcript shows signals of a likely transcription/STT divergence** — e.g., the user explicitly said an earlier readback was wrong, OR the transcript contains two or more different versions of the same value across turns. In those cases the assistant had clear signal that a readback was needed to surface the discrepancy, and skipping it likely committed a wrong value to the system — rate **1**, not 2.
+          - A minor communication issue, like briefly using the wrong language but subsequently correcting it
         - Minor instruction-following deviations that do not materially affect the outcome (e.g., slight formatting differences, omitting low-importance optional steps)
         - Borderline cases where it is unclear whether a faithfulness violation occurred due to ambiguous instructions, incomplete context, or reasonable interpretation differences
         - Adopting incorrect terminology from the user (e.g., wrong brand or product name) while processing the correct record, when it doesn't cause confusion or incorrect actions
@@ -463,6 +467,7 @@ judge:
           - **Financial or reputational impact** on the user or the company — e.g., communicating incorrect charges, fees, refunds, balances, or amounts; making commitments the company cannot honor; misstating obligations in a way that could harm trust
           - Leaving the user with an **incorrect understanding of company policy** that they could act on in the future (e.g., misstating eligibility rules, entitlement conditions, or process requirements), even if the current conversation ends up fine
           - Hallucinating information not present in tool results, especially consequential figures (costs, balances, dates, approvals) communicated to the user as fact
+          - Repeatedly talking in a language that the assistant is not instructed to use
         - Any faithfulness issue that repeatedly prevents the conversation from progressing is also rated 1.
       
       For the final rating of the conversation, use the minimum rating across all dimensions as the overall faithfulness rating (i.e., if any dimension is rated 1, overall rating is 1; if all dimensions are 3, overall rating is 3; if there are no 1s but at least one 2, overall rating is 2).

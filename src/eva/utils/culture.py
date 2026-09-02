@@ -335,6 +335,14 @@ def _inject_aliases(obj: Any, index: dict[str, dict], language: str) -> None:
 
     ``name_aliases`` = base + ``translations[language]`` (deduped, order-preserved).
     Other dicts/lists are recursed into. Entries whose ``name`` is unknown are left alone.
+
+    Alias files have no cross-entity dedup, so two different entities can share the same
+    phrase (e.g. "main garage"). That's only a *dormant* collision if they never appear
+    in the same scenario DB — this function injects aliases per-entry, so ``_match_alias``
+    (itsm_tools.py) never sees the other entity's aliases. It's an *active* collision, and
+    a real bug, only when both entities live in the same scenario DB — then whichever one
+    matches first wins, silently. Existing itsm data is frozen, so dormant collisions
+    there are safe to leave. For new domains/entities, avoid active collisions.
     """
     if isinstance(obj, dict):
         name = obj.get("name")

@@ -30,16 +30,16 @@ const paretoInsights = [
   {
     title: 'Architecture and SDK implementation both shape results',
     description:
-      'The Pareto frontier spans both S2S and cascade architectures. Cascade results vary significantly depending on the SDK implementation used, with some cascade configurations achieving turn-taking scores competitive with S2S models. This suggests that integration choices can matter as much as the underlying models.',
+      'The Pareto frontier spans both S2S and cascade architectures. For cascade systems, we enabled LLM streaming and pre-tool speech. Cascade results vary significantly depending on the SDK implementation used, with some cascade configurations achieving turn-taking scores competitive with S2S models. This suggests that integration choices can matter as much as the underlying models.',
   },
 ];
 
 // Supporting bullets drawn from §4.3 Robustness and §4.4 Failure Mode Analysis.
 const keyInsights = [
   {
-    title: 'Cascade accuracy–experience trade-off',
+    title: 'Accuracy–experience trade-off',
     description:
-      'Among cascade systems we observe a consistent accuracy–experience trade-off: higher-accuracy cascades tend to have higher tool-call latencies, while faster cascades trade accuracy for lower latency.',
+      'Across evaluated systems, accuracy and experience trace out a clear Pareto frontier: the highest-accuracy systems tend to have lower experience scores, while the highest-experience systems tend to have lower accuracy.',
   },
   {
     title: 'Asymmetric degradation under perturbation',
@@ -49,7 +49,7 @@ const keyInsights = [
   {
     title: 'Named-entity transcription bottlenecks cascades',
     description:
-      'Across nine cascade systems, mean key-entity transcription accuracy is strongly correlated with mean task completion. Cascades below 70% key-entity transcription accuracy show substantially lower task completion than those above it.',
+      'Across eight cascade systems, mean key-entity transcription accuracy is strongly correlated with mean task completion. Cascades below 70% key-entity transcription accuracy show substantially lower task completion than those above it.',
   },
   {
     title: 'Faithfulness is decoupled from task completion',
@@ -64,7 +64,7 @@ const keyInsights = [
   {
     title: 'Low-latency cascades close the experience gap',
     description:
-      'Cascade systems built with low-latency models can outperform S2S models on experience. The fastest cascade system achieves the highest EVA-X pass@1 (0.82) of any system, with turn-taking (0.88) surpassing all S2S models — suggesting that latency, not architecture, is the primary driver of experience quality.',
+      'Cascade systems built with low-latency models can outperform S2S models on experience. Streaming the LLM responses as well as using pre-tool speech can greatly improve turn-taking. The fastest cascade system achieves the highest EVA-X pass@1 (0.82) of any system, with turn-taking (0.88) surpassing all S2S models — suggesting that latency, not architecture, is the primary driver of experience quality.',
   },
 ];
 

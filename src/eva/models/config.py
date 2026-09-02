@@ -200,7 +200,7 @@ class ModelConfig(BaseModel):
 
     # CASCADE-only latency controls.
     pre_tool_speech: str = Field(
-        "off",
+        "auto",
         description="Prompt a model-generated lead-in before tool calls: 'off' or 'auto'.",
     )
 
@@ -210,7 +210,7 @@ class ModelConfig(BaseModel):
         return value.lower() if isinstance(value, str) else value
 
     llm_streaming: bool = Field(
-        False,
+        True,
         description="Stream Chat Completions output to TTS sentence-by-sentence.",
     )
     parallel_tool_calls: bool | None = Field(
@@ -407,6 +407,9 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.DE: "German",
     Language.HI: "Hindi",
     Language.KO: "Korean",
+    Language.NL: "Dutch",
+    Language.IT: "Italian",
+    Language.JA: "Japanese",
 }
 
 

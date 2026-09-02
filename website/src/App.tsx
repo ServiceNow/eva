@@ -22,6 +22,18 @@ function getTabFromHash(): TabId {
   return 'intro';
 }
 
+const DEFAULT_TITLE = 'A New End-to-end Framework for Evaluating Voice Agents (EVA)';
+
+const TAB_TITLES: Record<TabId, string> = {
+  intro: DEFAULT_TITLE,
+  architecture: 'EVA - Architecture',
+  metrics: 'EVA - Methodology',
+  results: 'EVA - Results',
+  demo: 'EVA - Demo',
+  limitations: 'EVA - Limitations & Future',
+  acknowledgements: 'EVA - Contributors',
+};
+
 function getInitialTheme(): ThemeMode {
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem('eva-theme');
@@ -51,6 +63,10 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('eva-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.title = TAB_TITLES[activeTab];
+  }, [activeTab]);
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
