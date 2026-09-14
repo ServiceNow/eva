@@ -533,19 +533,26 @@ class RunConfig(BaseSettings):
     )
 
     # Framework selection
-    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra"] = (
-        Field(
-            "pipecat",
-            description=(
-                "Agent framework to use for the assistant server."
-                "'pipecat' (default): Pipecat pipeline."
-                "'openai_realtime': OpenAI Realtime API directly."
-                "'gemini_live': Gemini Live API via google-genai."
-                "'elevenlabs': ElevenLabs Conversational AI API."
-                "'grok_voice': xAI Grok voice realtime API."
-                "'smallest_hydra': Smallest Hydra speech-to-speech API."
-            ),
-        )
+    framework: Literal[
+        "pipecat",
+        "openai_realtime",
+        "gemini_live",
+        "elevenlabs",
+        "grok_voice",
+        "smallest_hydra",
+        "apriel_voice_realtime",
+    ] = Field(
+        "pipecat",
+        description=(
+            "Agent framework to use for the assistant server."
+            "'pipecat' (default): Pipecat pipeline."
+            "'openai_realtime': OpenAI Realtime API directly."
+            "'gemini_live': Gemini Live API via google-genai."
+            "'elevenlabs': ElevenLabs Conversational AI API."
+            "'grok_voice': xAI Grok voice realtime API."
+            "'smallest_hydra': Smallest Hydra speech-to-speech API."
+            "'apriel_voice_realtime': Apriel Voice Realtime with native telephone audio."
+        ),
     )
 
     # Run identifier

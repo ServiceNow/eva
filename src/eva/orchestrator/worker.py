@@ -53,6 +53,10 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
         from eva.assistant.smallest_hydra_server import SmallestHydraAssistantServer
 
         return SmallestHydraAssistantServer
+    elif framework == "apriel_voice_realtime":
+        from eva.assistant.apriel_voice_realtime_server import AprielVoiceRealtimeAssistantServer
+
+        return AprielVoiceRealtimeAssistantServer
     else:
         raise ValueError(
             f"Unknown framework: {framework!r}. "
