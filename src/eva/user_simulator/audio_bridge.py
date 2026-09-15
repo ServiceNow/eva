@@ -46,7 +46,9 @@ SILENCE_DETECTION_THRESHOLD_S = 0.2  # 200ms to detect assistant audio end
 USER_END_DETECTION_DELAY_INTERVALS = 30  # 600ms (30 x 20ms) - longer to avoid splitting natural pauses
 USER_CATCHUP_SILENCE_CHUNKS = 0  # Don't send catch-up silence for user - let VAD detect naturally
 USER_TRAILING_SILENCE_CHUNKS = (
-    100  # 2s (100 x 20ms) streamed after each user turn so the assistant VAD reliably detects end-of-speech
+    # Disabled for now (was 100 = 2s). Revisit before re-enabling: see
+    # docs/cascade_simulator_rationale.md discussion on trailing white noise.
+    0
 )
 # The trailing block streamed to the assistant after each user turn is white
 # noise (not pure silence) so some assistant models (e.g. Gemini Live) see a
