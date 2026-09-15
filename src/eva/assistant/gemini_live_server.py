@@ -56,6 +56,7 @@ MULAW_CHUNK_DURATION_S = 0.02  # 20ms per chunk
 # can never add silence or worsen alignment.
 USER_ACTIVE_GUARD_S = 0.3
 
+
 def _model_supports_fc_scheduling(model: str) -> bool:
     """Whether a Gemini Live model accepts a FunctionResponse ``scheduling`` field.
 
