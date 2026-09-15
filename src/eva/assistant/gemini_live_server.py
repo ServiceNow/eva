@@ -63,13 +63,14 @@ def _model_supports_fc_scheduling(model: str) -> bool:
       - supported  -> send the historical scheduling=WHEN_IDLE (old behavior)
       - unsupported -> omit scheduling (new behavior)
 
-    Google does NOT support function scheduling on 3.5 Flash (its turn lifecycle
-    decouples function calls), but DOES on 3.5 Flash Lite and on older models.
-    Sending ``scheduling`` to a model that lacks support closes the socket with a
-    1007 error.
+    Google does NOT support function scheduling on gemini-3.8-live-extended-thinking
+    (its turn lifecycle decouples function calls, same as the old 3.5 Flash), but
+    DOES on gemini-3.8-live (formerly 3.5 Flash Lite) and on older models. Sending
+    ``scheduling`` to a model that lacks support closes the socket with a 1007
+    error.
     """
     m = model.lower()
-    if "3.5-flash" in m and "lite" not in m:
+    if "3.8-live" in m and "extended-thinking" in m:
         return False
     return True
 

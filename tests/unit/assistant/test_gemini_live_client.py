@@ -118,13 +118,13 @@ class TestCreateGenaiClient:
 class TestFunctionResponseSchedulingGate:
     """Binary, model-gated behavior: send WHEN_IDLE (old) or omit (new)."""
 
-    def test_3_5_flash_unsupported(self):
-        """3.5 Flash does not support scheduling -> omit."""
-        assert _model_supports_fc_scheduling("gemini-3.5-flash-live-preview") is False
+    def test_3_8_live_extended_thinking_unsupported(self):
+        """gemini-3.8-live-extended-thinking does not support scheduling -> omit."""
+        assert _model_supports_fc_scheduling("gemini-3.8-live-extended-thinking") is False
 
-    def test_3_5_flash_lite_supported(self):
-        """3.5 Flash Lite DOES support scheduling -> send WHEN_IDLE."""
-        assert _model_supports_fc_scheduling("gemini-3.5-flash-lite-live-preview") is True
+    def test_3_8_live_supported(self):
+        """gemini-3.8-live DOES support scheduling -> send WHEN_IDLE."""
+        assert _model_supports_fc_scheduling("gemini-3.8-live") is True
 
     def test_older_model_supported(self):
         """Older models keep the old behavior (WHEN_IDLE)."""
