@@ -22944,10 +22944,10 @@
     },
     {
       "id": "gemini-live-3-5-high",
-      "name": "Gemini 3.8 Live Extended",
+      "name": "Gemini 3.8 Live Extended Thinking",
       "type": "s2s",
       "stt": "-",
-      "llm": "Gemini 3.8 Live Extended",
+      "llm": "Gemini 3.8 Live Extended Thinking",
       "tts": "-",
       "clean": {
         "EVA-A_mean": {
