@@ -252,6 +252,7 @@ class TestUserSimulatorSelection:
             timeout=worker._conversation_guard_timeout_seconds(),
             perturbation_config=None,
             language="en",
+            framework=worker.config.framework,
         )
 
     def test_worker_timeout_reserves_provider_cleanup_window(self, tmp_path):
@@ -342,3 +343,25 @@ class TestConversationStatsInRun:
         assert result.num_turns == 3
         assert result.num_tool_calls == 1
         assert result.conversation_ended_reason == "time_limit_exceeded"
+
+
+def test_pacing_disabled_for_tick_driven_cascade_runs():
+    from eva.models.config import CascadeSimulatorConfig
+    from eva.orchestrator.worker import should_pace_assistant_output
+
+    assert should_pace_assistant_output(CascadeSimulatorConfig(), framework="openai_realtime") is False
+
+
+def test_pacing_kept_for_cascade_on_a_real_time_framework():
+    from eva.models.config import CascadeSimulatorConfig
+    from eva.orchestrator.worker import should_pace_assistant_output
+
+    assert should_pace_assistant_output(CascadeSimulatorConfig(), framework="pipecat") is True
+
+
+def test_pacing_kept_for_the_elevenlabs_simulator():
+    from eva.models.config import ElevenLabsSimulatorConfig
+    from eva.orchestrator.worker import should_pace_assistant_output
+
+    # Its silence heuristics read cadence; unpacing it would break turn detection.
+    assert should_pace_assistant_output(ElevenLabsSimulatorConfig(), framework="openai_realtime") is True

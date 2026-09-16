@@ -41,6 +41,15 @@ class AbstractAssistantServer(ABC):
     5. Populate the AuditLog with conversation events
     """
 
+    supports_unpaced_output: bool = False
+    """Whether this server can honor ``paced_output=False``.
+
+    Only a server whose outbound relay throttle we own can drop it. A server whose
+    pacing lives inside a third-party runtime cannot, and must reject the request
+    rather than accept it and keep pacing, which would leave a tick-driven caller
+    believing the assistant was unpaced.
+    """
+
     def __init__(
         self,
         current_date_time: str,
@@ -52,6 +61,7 @@ class AbstractAssistantServer(ABC):
         port: int,
         conversation_id: str,
         language: str = "en",
+        paced_output: bool = True,
     ):
         """Initialize the assistant server.
 
@@ -65,10 +75,20 @@ class AbstractAssistantServer(ABC):
             port: Port to listen on
             conversation_id: Unique ID for this conversation
             language: BCP 47 language tag for STT/TTS/S2S services (e.g. 'en', 'fr', 'es-MX')
+            paced_output: Whether to emit audio at real-time cadence. True for callers
+                that infer turn boundaries from silence timing (the ElevenLabs simulator).
+                False for a tick-driven caller, which buffers whatever arrives and
+                releases it one tick at a time, so pacing here would only add latency.
         """
         self.current_date_time = current_date_time
         self.pipeline_config = pipeline_config
         self.language = language
+        if not paced_output and not self.supports_unpaced_output:
+            raise ValueError(
+                f"{type(self).__name__} cannot honor paced_output=False: its output pacing is not ours to remove. "
+                "Tick-driving this framework requires leaving pacing on."
+            )
+        self.paced_output = paced_output
         self.initial_message = get_initial_message(language)
         self.agent: AgentConfig = agent
         self.agent_config_path = agent_config_path
