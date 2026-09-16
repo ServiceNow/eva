@@ -103,6 +103,7 @@ init(json.loads(os.getenv("EVA_MODEL_LIST")))
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
 INITIAL_MESSAGES_PATH = REPO_ROOT / "configs" / "agents" / "initial_messages.yaml"
+CALLER_PHRASES_PATH = REPO_ROOT / "configs" / "caller_phrases.yaml"
 WER_CONFIGS_DIR = REPO_ROOT / "src" / "eva" / "utils" / "wer_normalization" / "configs"
 
 DEFAULT_MODEL = "gpt-5.5-2026-04-23"
@@ -351,6 +352,63 @@ def _update_initial_messages(language: str, message: str) -> None:
     existing[language] = message
     INITIAL_MESSAGES_PATH.parent.mkdir(parents=True, exist_ok=True)
     INITIAL_MESSAGES_PATH.write_text(yaml.safe_dump(existing, allow_unicode=True, sort_keys=True), encoding="utf-8")
+
+
+async def _translate_caller_phrases(
+    language: str, language_name: str, llm: LLMClient, overwrite: bool = False
+) -> dict[str, list[str]] | None:
+    """Generate the simulated caller's out-of-turn vocabulary for ``language``.
+
+    These are the continuers and barge-in openers the caller speaks *as audio*, so
+    they must be things a native speaker actually says, not translations of the
+    English ones — "uh-huh" has no word-for-word equivalent in most languages.
+
+    Returns None when the language already has phrases and ``overwrite`` is unset.
+    """
+    existing: dict[str, Any] = {}
+    if CALLER_PHRASES_PATH.exists():
+        existing = yaml.safe_load(CALLER_PHRASES_PATH.read_text(encoding="utf-8")) or {}
+    if language in existing and not overwrite:
+        return None
+
+    english = existing.get("en", {})
+    prompt = (
+        f"You are localising a simulated phone caller for {language_name}.\n\n"
+        "Produce two short lists of things the caller says out loud:\n\n"
+        "1. backchannels — brief continuer sounds meaning 'I am listening, keep going', "
+        "said while the other person is still talking. Give the sounds a native speaker "
+        "actually makes, not translations of English ones.\n"
+        "2. barge_in_openers — the very first word or two of an interruption, said just "
+        "before the interrupting sentence. Keep them to one or two words so they sound "
+        "like a real cut-in.\n\n"
+        "These are spoken aloud by a text-to-speech voice, so use ordinary spelling with "
+        "no stage directions, no parentheses and no transliteration hints. Give 2-3 "
+        "backchannels and 3-4 openers.\n\n"
+        f"For reference, the English set is: {json.dumps(english, ensure_ascii=False)}\n\n"
+        'Return JSON: {"backchannels": ["..."], "barge_in_openers": ["..."]}'
+    )
+    text, _ = await llm.generate_text(
+        [{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"},
+    )
+    data = extract_and_load_json(text)
+    backchannels = [str(p).strip() for p in (data.get("backchannels") or []) if str(p).strip()]
+    openers = [str(p).strip() for p in (data.get("barge_in_openers") or []) if str(p).strip()]
+    if not backchannels or not openers:
+        raise ValueError(f"Caller phrase generation returned an incomplete result: {data!r}")
+    return {"backchannels": backchannels, "barge_in_openers": openers}
+
+
+def _update_caller_phrases(language: str, phrases: dict[str, list[str]]) -> None:
+    """Merge one language's phrase set into configs/caller_phrases.yaml."""
+    existing: dict[str, Any] = {}
+    if CALLER_PHRASES_PATH.exists():
+        existing = yaml.safe_load(CALLER_PHRASES_PATH.read_text(encoding="utf-8")) or {}
+    if existing.get(language) == phrases:
+        return
+    existing[language] = phrases
+    CALLER_PHRASES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    CALLER_PHRASES_PATH.write_text(yaml.safe_dump(existing, allow_unicode=True, sort_keys=True), encoding="utf-8")
 
 
 async def _translate_aliases(
@@ -679,6 +737,16 @@ async def amain(args: argparse.Namespace) -> int:
     if not args.dry_run:
         _update_initial_messages(args.language, initial_message)
         logger.info(f"Updated {INITIAL_MESSAGES_PATH}")
+
+    logger.info(f"Generating caller out-of-turn phrases for {args.language_name}")
+    caller_phrases = await _translate_caller_phrases(args.language, args.language_name, llm, args.overwrite_all)
+    if caller_phrases is None:
+        logger.info(f"Caller phrases for {args.language} already present — skipping")
+    elif args.dry_run:
+        logger.info(f"[dry-run] would write caller phrases for {args.language}: {caller_phrases}")
+    else:
+        _update_caller_phrases(args.language, caller_phrases)
+        logger.info(f"Updated {CALLER_PHRASES_PATH}: {caller_phrases}")
 
     for domain in domains:
         logger.info(f"=== Domain: {domain} ===")

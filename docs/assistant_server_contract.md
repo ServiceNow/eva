@@ -125,6 +125,7 @@ and decoding.
 | `start` | Stream opened, contains `streamSid` | Parse `msg["start"]["streamSid"]` |
 | `media` | Audio chunk (8 kHz mulaw, base64) | `parse_twilio_media_message(raw)` → `bytes` |
 | `stop` | Stream closed | Break receive loop |
+| `truncate` | Cascade tick-driven barge-in; discard audio after `audio_end_ms` | OpenAI Realtime truncates its active audio item |
 | `user_speech_start` | User began speaking (wall-clock timestamp) | `msg["timestamp_ms"]` |
 | `user_speech_stop` | User stopped speaking (wall-clock timestamp) | `msg["timestamp_ms"]` |
 

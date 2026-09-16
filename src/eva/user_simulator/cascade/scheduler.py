@@ -5,6 +5,7 @@ from __future__ import annotations
 from eva.user_simulator.cascade.adapter.base import Adapter
 from eva.user_simulator.cascade.constants import (
     BYTES_PER_TICK,
+    LISTENER_CHECK_INTERVAL_MS,
     WAIT_TO_RESPOND_OTHER_MS,
     WAIT_TO_RESPOND_SELF_MS,
     ms_to_ticks,
@@ -34,6 +35,8 @@ class TickScheduler:
         self._assistant_has_spoken = False
         self._awaiting_reply = False
         self._caller_spoke_this_tick = False
+        self._backchannel_bytes = 0
+        self._barge_in_armed = False
 
     @property
     def tick(self) -> int:
@@ -48,6 +51,25 @@ class TickScheduler:
         caller's responsibility to avoid.
         """
         self._playout.extend(audio)
+
+    def enqueue_backchannel(self, audio: bytes) -> None:
+        """Append a continuer, which sounds but does not take the caller's turn.
+
+        A backchannel earns no reply, so counting it as a turn leaves the caller
+        waiting for one that never comes and the call dies at the inactivity
+        timeout instead of reaching a goodbye.
+        """
+        self._backchannel_bytes += len(audio)
+        self._playout.extend(audio)
+
+    def arm_barge_in(self) -> None:
+        """Mark the next tick that puts caller audio on the wire as an interruption.
+
+        Armed rather than passed directly because an interruption is enqueued as
+        audio and only reaches the wire on a later tick; the truncation must carry
+        the played position as of *that* tick, not as of the decision.
+        """
+        self._barge_in_armed = True
 
     @property
     def caller_is_speaking(self) -> bool:
@@ -73,6 +95,12 @@ class TickScheduler:
     def assistant_is_speaking(self) -> bool:
         """Whether the assistant produced audio on the most recent tick."""
         return self._ticks_since_assistant_speech == 0
+
+    def is_check_tick(self) -> bool:
+        """Whether the listener-reaction checks should run now (tau: streaming.py:2514-2521)."""
+        if not self.assistant_is_speaking or self.caller_is_speaking:
+            return False
+        return self.tick % ms_to_ticks(LISTENER_CHECK_INTERVAL_MS) == 0
 
     def may_take_turn(self) -> bool:
         """Whether both silence thresholds are satisfied (tau: streaming.py:2590-2606).
@@ -100,8 +128,16 @@ class TickScheduler:
         raised exception leaves the queue and tick count exactly as they were.
         """
         outgoing, consumed = self._peek_chunk()
-        result = await self._adapter.run_tick(self._tick, outgoing)
+        barge_in = self._barge_in_armed and outgoing is not None
+        result = await self._adapter.run_tick(self._tick, outgoing, barge_in=barge_in)
         del self._playout[:consumed]
+        if barge_in:
+            self._barge_in_armed = False
+
+        # Backchannel bytes sit at the head of the queue, so this tick is a continuer
+        # only while they remain. Anything past them is real speech and takes the turn.
+        was_backchannel = consumed > 0 and self._backchannel_bytes > 0
+        self._backchannel_bytes = max(0, self._backchannel_bytes - consumed)
 
         self._caller_spoke_this_tick = outgoing is not None
         self._ticks_since_caller_speech = 0 if outgoing else self._ticks_since_caller_speech + 1
@@ -111,7 +147,7 @@ class TickScheduler:
         self._assistant_has_spoken = self._assistant_has_spoken or result.has_assistant_speech
         if result.has_assistant_speech:
             self._awaiting_reply = False
-        if outgoing:
+        if outgoing and not was_backchannel:
             self._awaiting_reply = True
 
         self._tick += 1

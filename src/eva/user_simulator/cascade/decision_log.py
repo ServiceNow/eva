@@ -1,4 +1,4 @@
-"""Per-tick diagnostic trace for the cascade caller."""
+"""Per-tick diagnostic trace for the cascade caller's out-of-turn decisions."""
 
 from __future__ import annotations
 
@@ -12,7 +12,17 @@ logger = get_logger(__name__)
 
 
 class DecisionLog:
-    """Write and flush simulator diagnostics as they occur."""
+    """Records every listener check, including the ones that declined or never ran.
+
+    `user_simulator_events.jsonl` only carries actions the caller took, so a check that
+    ran and said NO is indistinguishable there from a check that never fired. This trace
+    separates the two, which is the difference between "the model does not want to
+    interrupt" and "the interrupt path is unreachable".
+
+    Rows are written and flushed as they happen rather than buffered to the end: a
+    conversation that dies mid-run is exactly the one worth having a trace for, and the
+    event log's save-at-exit is why failed attempts currently leave no diagnostics at all.
+    """
 
     def __init__(self, output_path: Path) -> None:
         self.output_path = output_path

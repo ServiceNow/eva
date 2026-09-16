@@ -20,8 +20,12 @@ class Adapter(ABC):
         """Establish the connection. Must return once ready to exchange audio."""
 
     @abstractmethod
-    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
-        """Send this tick's caller audio (None means silence) and collect what arrived."""
+    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None, *, barge_in: bool = False) -> TickResult:
+        """Send this tick's caller audio (None means silence) and collect what arrived.
+
+        ``barge_in`` signals that this tick begins an interruption. Adapters that
+        cannot truncate provider-side audio ignore it.
+        """
 
     @abstractmethod
     async def stop(self) -> None:

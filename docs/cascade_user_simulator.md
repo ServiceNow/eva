@@ -57,3 +57,37 @@ The caller ends with `goodbye` when its LLM calls `end_call`, or `timeout` when 
 conversation budget expires. Sustained assistant silence ends with
 `inactivity_timeout`. A stalled tick-driven provider ends with the distinct
 `provider_stalled` reason and preserves partial artifacts for diagnosis.
+
+## Experimental out-of-turn behaviors
+
+These behaviors are opt-in and are still being tested. Enable them independently
+in the cascade configuration:
+
+```dotenv
+EVA_USER_SIMULATOR__DECISION_LLM=user-llm
+EVA_USER_SIMULATOR__ENABLE_BACKCHANNEL=true
+EVA_USER_SIMULATOR__ENABLE_INTERRUPTIONS=true
+EVA_USER_SIMULATOR__SPECULATIVE_GENERATION=true
+```
+
+All three behavior flags default to `false`. `decision_llm` selects the deployment
+for listener and relevance checks; its default is `user-llm`.
+
+Backchannels play cached continuers while the assistant speaks without taking an
+ordinary caller turn. Interruptions generate goal-aware barge-ins, limited to one
+per detected assistant turn. Speculative generation pre-renders candidate
+interruptions and checks their relevance before use; it is useful when
+interruptions are also enabled.
+
+The tick-driven adapter reports the played audio position when a barge-in reaches
+the wire, discards unheard buffered audio, and requests OpenAI Realtime item
+truncation. The real-time adapter retains its normal streaming behavior.
+
+`configs/caller_phrases.yaml` supplies localized continuers and interruption
+openers. `scripts/add_culture_data.py` generates these phrase sets alongside other
+language data. Phrase audio is cached across conversations.
+
+The decision trace adds listener verdicts, skipped-check context, interruption
+outcomes, and speculative-candidate decisions. Use it alongside the event log and
+audio to evaluate actual timing; passing unit tests alone does not establish
+behavioral quality.

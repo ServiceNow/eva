@@ -12,13 +12,16 @@ class FakeAdapter(Adapter):
         self.speech_ticks = speech_ticks
         self.sent: list[bytes | None] = []
         self.received_ticks: list[int] = []
+        self.barge_in_ticks: list[int] = []
 
     async def start(self) -> None:
         pass
 
-    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
+    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None, *, barge_in: bool = False) -> TickResult:
         self.sent.append(outgoing_audio)
         self.received_ticks.append(tick_number)
+        if barge_in:
+            self.barge_in_ticks.append(tick_number)
         speaking = self.speech_ticks[tick_number] if tick_number < len(self.speech_ticks) else False
         return TickResult(
             tick_number=tick_number,
@@ -195,7 +198,7 @@ class RaisingAdapter(Adapter):
     async def start(self) -> None:
         pass
 
-    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
+    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None, *, barge_in: bool = False) -> TickResult:
         if tick_number == self.fail_on_tick:
             raise RuntimeError("adapter failure")
         return TickResult(
@@ -222,3 +225,103 @@ async def test_failed_adapter_call_leaves_queue_and_tick_unadvanced():
 
     assert scheduler.tick == 0
     assert bytes(scheduler._playout) == utterance
+
+
+async def test_check_tick_only_while_assistant_speaks_and_caller_is_silent():
+    scheduler = _scheduler([True] * 40)
+
+    # Tick 0..9 consumed; tick index 10 is the first multiple of the interval.
+    for _ in range(10):
+        await scheduler.run_tick()
+
+    assert scheduler.is_check_tick() is True
+
+
+async def test_not_a_check_tick_between_intervals():
+    scheduler = _scheduler([True] * 40)
+
+    for _ in range(11):
+        await scheduler.run_tick()
+
+    assert scheduler.is_check_tick() is False
+
+
+async def test_not_a_check_tick_when_the_assistant_is_silent():
+    scheduler = _scheduler([True] + [False] * 40)
+
+    for _ in range(10):
+        await scheduler.run_tick()
+
+    assert scheduler.is_check_tick() is False
+
+
+async def test_not_a_check_tick_while_the_caller_is_speaking():
+    scheduler = _scheduler([True] * 40)
+    for _ in range(9):
+        await scheduler.run_tick()
+    scheduler.enqueue_utterance(b"\x02" * (BYTES_PER_TICK * 5))
+    await scheduler.run_tick()
+
+    assert scheduler.is_check_tick() is False
+
+
+async def test_a_backchannel_does_not_consume_the_callers_turn():
+    # A continuer earns no reply, so treating it as a turn deadlocks may_take_turn()
+    # until the inactivity timeout — 7/8 live conversations died this way.
+    scheduler = _scheduler([True] + [False] * 60)
+    await scheduler.run_tick()  # tick 0: assistant greets
+    scheduler.enqueue_backchannel(b"\x02" * BYTES_PER_TICK)
+    await scheduler.run_tick()  # caller says "mm-hmm"
+
+    for _ in range(40):
+        await scheduler.run_tick()
+
+    assert scheduler.may_take_turn() is True
+
+
+async def test_a_real_utterance_still_consumes_the_turn():
+    scheduler = _scheduler([True] + [False] * 60)
+    await scheduler.run_tick()
+    scheduler.enqueue_utterance(b"\x02" * BYTES_PER_TICK)
+    await scheduler.run_tick()
+
+    for _ in range(40):
+        await scheduler.run_tick()
+
+    assert scheduler.may_take_turn() is False
+
+
+async def test_an_utterance_queued_after_a_backchannel_still_consumes_the_turn():
+    scheduler = _scheduler([True] + [False] * 60)
+    await scheduler.run_tick()
+    scheduler.enqueue_backchannel(b"\x02" * BYTES_PER_TICK)
+    scheduler.enqueue_utterance(b"\x03" * BYTES_PER_TICK)
+
+    for _ in range(40):
+        await scheduler.run_tick()
+
+    assert scheduler.may_take_turn() is False
+
+
+async def test_armed_barge_in_fires_on_the_tick_audio_reaches_the_wire():
+    scheduler = _scheduler([True, True, True])
+    adapter = scheduler._adapter
+
+    await scheduler.run_tick()  # silent tick: nothing on the wire yet
+    scheduler.arm_barge_in()
+    scheduler.enqueue_utterance(b"\x01" * BYTES_PER_TICK * 2)
+    await scheduler.run_tick()
+    await scheduler.run_tick()
+
+    # Exactly the first tick that carried caller audio, and only that one.
+    assert adapter.barge_in_ticks == [1]
+
+
+async def test_arming_a_barge_in_with_nothing_queued_does_not_fire_on_silence():
+    scheduler = _scheduler([True, True])
+    adapter = scheduler._adapter
+
+    scheduler.arm_barge_in()
+    await scheduler.run_tick()
+
+    assert adapter.barge_in_ticks == []
