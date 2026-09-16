@@ -33,7 +33,7 @@ import time
 
 from eva.user_simulator.cascade.adapter.realtime_ws import FRAMES_PER_TICK, RealtimeWSAdapter
 from eva.user_simulator.cascade.constants import BYTES_PER_TICK, SILENCE_BYTE, TICK_DURATION_MS
-from eva.user_simulator.cascade.tick_result import TickResult, split_tick_audio
+from eva.user_simulator.cascade.tick_result import TickResult, played_audio_ms, split_tick_audio
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -69,13 +69,38 @@ class TickDrivenAdapter(RealtimeWSAdapter):
             bytes_per_tick=bytes_per_tick,
             perturbator=perturbator,
         )
+        self._ticks_released = 0
         self._last_inbound_monotonic = time.monotonic()
         self._audio_arrived = asyncio.Event()
 
-    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
-        """Send this tick's caller audio unpaced and release exactly one tick of assistant audio."""
+    @property
+    def played_ms(self) -> int:
+        """Assistant audio released into the conversation so far, in simulated ms."""
+        return played_audio_ms(ticks_released=self._ticks_released)
+
+    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None, *, barge_in: bool = False) -> TickResult:
+        """Send this tick's caller audio unpaced and release exactly one tick of assistant audio.
+
+        When ``barge_in`` is set, first tell the assistant to discard the audio it
+        generated past the position the caller has actually heard.
+        """
         if self._error is not None:
             raise RuntimeError("TickDrivenAdapter receive loop failed") from self._error
+
+        interruption_start: int | None = None
+        if barge_in:
+            interruption_start = self.played_ms
+            await self._ws.send(
+                json.dumps(
+                    {
+                        "event": "truncate",
+                        "conversation_id": self._conversation_id,
+                        "audio_end_ms": interruption_start,
+                    }
+                )
+            )
+            # Everything already buffered is audio the caller never heard.
+            self._inbound.clear()
 
         is_speaking = bool(outgoing_audio)
         if is_speaking and not self._caller_speaking:
@@ -96,6 +121,8 @@ class TickDrivenAdapter(RealtimeWSAdapter):
         raw = bytes(self._inbound[: self._bytes_per_tick])
         del self._inbound[: len(raw)]
         chunk, _ = split_tick_audio(raw, self._bytes_per_tick)
+        if raw:
+            self._ticks_released += 1
 
         stalled = self._provider_has_stalled(bool(raw))
 
@@ -107,6 +134,7 @@ class TickDrivenAdapter(RealtimeWSAdapter):
             assistant_audio=chunk,
             assistant_audio_raw_bytes=len(raw),
             wall_clock_ms=int(time.time() * 1000),
+            interruption_audio_start_ms=interruption_start,
             provider_stalled=stalled,
         )
 

@@ -106,3 +106,38 @@ class FakeConn:
             item = _Item()
 
         self.conversation = _Conversation()
+
+
+@pytest.mark.asyncio
+async def test_truncate_targets_the_item_currently_producing_audio(tmp_path):
+    server = _server(paced=False, tmp_path=tmp_path)
+    server._assistant_state.active_item_id = "item_42"
+    conn = FakeConn()
+
+    await server._truncate_response(conn, 600)
+
+    assert conn.truncated == [{"item_id": "item_42", "content_index": 0, "audio_end_ms": 600}]
+
+
+@pytest.mark.asyncio
+async def test_truncate_is_a_no_op_when_no_item_is_active(tmp_path):
+    server = _server(paced=False, tmp_path=tmp_path)
+    conn = FakeConn()
+
+    await server._truncate_response(conn, 600)
+
+    assert conn.truncated == []
+
+
+@pytest.mark.asyncio
+async def test_audio_delta_records_the_active_item(tmp_path):
+    import base64
+    from types import SimpleNamespace
+
+    server = _server(paced=False, tmp_path=tmp_path)
+    queue: asyncio.Queue[bytes] = asyncio.Queue()
+    event = SimpleNamespace(delta=base64.b64encode(b"\x00" * 480).decode(), item_id="item_7")
+
+    await server._on_audio_delta(event, queue)
+
+    assert server._assistant_state.active_item_id == "item_7"

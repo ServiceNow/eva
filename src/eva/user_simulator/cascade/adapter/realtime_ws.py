@@ -69,8 +69,12 @@ class RealtimeWSAdapter(Adapter):
             await self._ws.send(json.dumps({"event": event, "conversation_id": self._conversation_id}))
         self._receive_task = asyncio.create_task(self._receive_loop())
 
-    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None) -> TickResult:
-        """Send one tick of caller audio at wire cadence and collect one tick of assistant audio."""
+    async def run_tick(self, tick_number: int, outgoing_audio: bytes | None, *, barge_in: bool = False) -> TickResult:
+        """Send one tick of caller audio at wire cadence and collect one tick of assistant audio.
+
+        ``barge_in`` is accepted and ignored: this assistant paces its own output, so
+        it has generated nothing past what the caller already heard to discard.
+        """
         tick_start = asyncio.get_event_loop().time()
         if self._error is not None:
             raise RuntimeError("RealtimeWSAdapter receive loop failed") from self._error

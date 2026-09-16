@@ -505,6 +505,22 @@ class CascadeSimulatorConfig(BaseModel):
         description="Provider-native keyword arguments passed through to the TTS client.",
     )
 
+    decision_llm: str = Field(
+        "user-llm",
+        description=(
+            "Model for the YES/NO interrupt, backchannel, and relevance checks. Defaults to the "
+            "caller's own deployment so it resolves through the same EVA_MODEL_LIST router; point "
+            "it at a cheaper deployment to cut the cost of the per-tick checks."
+        ),
+    )
+
+    enable_backchannel: bool = Field(False, description="Caller emits continuers while the assistant speaks.")
+    enable_interruptions: bool = Field(False, description="Caller may barge in reacting to the assistant mid-turn.")
+    speculative_generation: bool = Field(
+        False,
+        description="Pre-render a candidate interruption on the turn call, gated by a relevance check before firing.",
+    )
+
 
 UserSimulatorConfig = Annotated[
     ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig | CascadeSimulatorConfig,

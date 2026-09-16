@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import audioop
 import re
+import time
 from pathlib import Path
 
 import websockets
@@ -19,9 +20,13 @@ from eva.user_simulator.cascade.constants import (
     INACTIVITY_TIMEOUT_MS,
     TICK_DURATION_MS,
     TRANSCRIPT_WAIT_MS,
+    WAIT_TO_RESPOND_OTHER_MS,
     ms_to_ticks,
 )
 from eva.user_simulator.cascade.decision_log import DecisionLog
+from eva.user_simulator.cascade.decisions import ListenerDecisions, parse_yes_no
+from eva.user_simulator.cascade.phrase_cache import PhraseCache
+from eva.user_simulator.cascade.phrases import load_phrases
 from eva.user_simulator.cascade.scheduler import TickScheduler
 from eva.user_simulator.cascade.stt_livekit import LiveKitStreamingSTT
 from eva.user_simulator.cascade.tick_result import TickResult
@@ -30,6 +35,7 @@ from eva.user_simulator.cascade.tts import CartesiaTTS
 # Shared with the OpenAI Realtime provider so both simulators hang up on the same rules.
 from eva.user_simulator.openai_realtime import END_CALL_DESCRIPTION
 from eva.utils.logging import get_logger
+from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -69,6 +75,120 @@ def extract_turn(message: object) -> tuple[str, bool]:
     return parse_turn_response(content), end_call
 
 
+def extract_optional_line(message: object) -> str:
+    """Read a bare spoken line from a dedicated call, empty when the model declined.
+
+    A bare line rather than a JSON field: demanding JSON on a caller call suppressed
+    the end_call tool call entirely (Plan 1).
+    """
+    content = message if isinstance(message, str) else (getattr(message, "content", None) or "")
+    line = _FENCE.sub("", content).strip()
+    return "" if line.upper() == "NONE" else line
+
+
+def interrupt_slip_ms(*, elapsed_s: float) -> int:
+    """How far past its intended moment a barge-in actually landed.
+
+    Measured on the wall clock, not the tick counter. `run_tick` is only pumped by
+    the `_run` loop, so while `_play_interruption` awaits its generation no tick can
+    advance — a tick-delta slip is structurally always zero and the staleness check
+    built on it never engages.
+    """
+    return max(0, int(elapsed_s * 1000))
+
+
+def summarize_goal(goal: dict) -> str:
+    """State what the caller wants and what would end the call, for the listener checks.
+
+    Field meanings live in the prompt template rather than here, so the explanations stay
+    static across the many calls this decision makes rather than being rebuilt per call.
+    `edge_cases` and `information_required` are deliberately omitted: they are long and
+    describe how to answer questions, not whether the goal is finished.
+    """
+    tree = goal.get("decision_tree", {}) or {}
+    sections = [
+        ("GOAL", goal.get("high_level_user_goal")),
+        ("MUST HAVE", tree.get("must_have_criteria")),
+        ("NICE TO HAVE", tree.get("nice_to_have_criteria")),
+        ("HOW THEY EVALUATE OPTIONS", tree.get("negotiation_behavior")),
+        ("RESOLVED WHEN", tree.get("resolution_condition")),
+        ("FAILED WHEN", tree.get("failure_condition")),
+        ("ESCALATION", tree.get("escalation_behavior")),
+    ]
+    lines: list[str] = []
+    for label, value in sections:
+        if not value:
+            continue
+        if isinstance(value, list):
+            lines.append(f"{label}:")
+            lines += [f"- {item}" for item in value]
+        else:
+            lines.append(f"{label}: {value}")
+    return "\n".join(lines)
+
+
+def is_new_assistant_turn(*, ticks_silent_before: int) -> bool:
+    """Whether assistant audio arriving now starts a new turn or resumes the current one.
+
+    A pause shorter than the turn-end threshold is a gap *inside* one turn — between
+    sentences, or a hole in the audio stream — not a new turn. Treating any single quiet
+    tick as a boundary re-armed the interruption cap mid-utterance, so one assistant turn
+    could collect several barge-ins.
+    """
+    return ticks_silent_before >= ms_to_ticks(WAIT_TO_RESPOND_OTHER_MS)
+
+
+def should_drop_interrupt(*, assistant_still_speaking: bool, same_assistant_turn: bool) -> bool:
+    """Whether a barge-in has gone stale and should be abandoned.
+
+    Staleness is a fact about the assistant, not about how long generation took: a line is
+    still a real interruption whenever the assistant is mid-utterance, however many wall-clock
+    seconds elapsed. Both conditions are needed — "still speaking" alone is satisfied by a
+    *later* turn, which would land the line as a non-sequitur against speech it never heard.
+    """
+    return not (assistant_still_speaking and same_assistant_turn)
+
+
+async def candidate_is_relevant(llm, *, candidate: str, heard: str) -> bool:
+    """Whether a pre-generated interruption still fits what the assistant is saying.
+
+    Fails closed: an unusable answer means we fall back to generating fresh
+    content rather than firing something that may have gone stale.
+    """
+    prompt = PromptManager().get_prompt("user_simulator.cascade_relevance_gate", candidate=candidate, heard=heard)
+    try:
+        reply = await llm.decide(prompt)
+    except Exception as exc:
+        logger.warning(f"Relevance gate failed, discarding candidate: {exc}")
+        return False
+    return parse_yes_no(reply)
+
+
+def play_backchannel(scheduler, cache, phrases: list[str]) -> str:
+    """Queue a cached continuer and return the phrase that was chosen.
+
+    Queued as a backchannel, not an utterance: it must not consume the caller's
+    turn, or the caller waits for a reply the continuer never earns.
+    """
+    phrase = cache.choose(phrases)
+    scheduler.enqueue_backchannel(cache.get(phrase))
+    return phrase
+
+
+class _DecisionClient:
+    """Adapts LiteLLMClient to the single-prompt interface the checks expect."""
+
+    def __init__(self, client: LiteLLMClient) -> None:
+        self._client = client
+
+    async def decide(self, prompt: str) -> str:
+        """Ask one YES/NO question and return the raw reply."""
+        message, _stats = await self._client.complete(messages=[{"role": "user", "content": prompt}])
+        if isinstance(message, str):
+            return message
+        return getattr(message, "content", None) or ""
+
+
 TICK_DRIVEN_FRAMEWORKS = frozenset({"openai_realtime"})
 """Frameworks whose clock the caller can own. Others keep real-time streaming."""
 
@@ -89,6 +209,10 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
     _ticks_awaiting_transcript = 0
     _ticks_assistant_silent = 0
+    _ticks_since_assistant_started = 0
+    _may_interrupt_this_turn = False
+    _assistant_turn_index = 0
+    _last_checked_text = ""
 
     def __init__(
         self,
@@ -123,7 +247,15 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._tts = CartesiaTTS(simulator_config.tts_params, language=language)
         self._llm = LiteLLMClient(model=simulator_config.llm)
         self._voice_id = self._tts.voice_for_persona(persona_config)
+        # The caller's out-of-turn vocabulary is language data, not code.
+        self._phrases = load_phrases(language)
         self._history: list[dict[str, str]] = []
+        # Shared by the listener checks and the relevance gate so both cost one client.
+        self._decision_client = _DecisionClient(LiteLLMClient(model=simulator_config.decision_llm))
+        self._phrase_cache: PhraseCache | None = None
+        self._decisions: ListenerDecisions | None = None
+        self._candidate_text = ""
+        self._candidate_audio = b""
         self._decision_log = DecisionLog(self.output_dir / "user_simulator_decisions.jsonl")
 
     async def run_conversation(self) -> str:
@@ -154,6 +286,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
         await adapter.start()
         await self._stt.start()
+        await self._prepare_listener_behaviors()
         self.event_logger.log_connection_state("connected", {"server_url": self.server_url})
 
         max_ticks = self.timeout * 1000 // TICK_DURATION_MS
@@ -187,6 +320,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
                     )
                     self._on_conversation_end("provider_stalled")
                     break
+                # Captured before the inactivity check, which clears it on a speech tick.
+                silent_before = self._ticks_assistant_silent
                 if self._assistant_is_inactive(scheduler, result):
                     logger.warning(
                         f"tick {scheduler.tick}: assistant silent for "
@@ -194,9 +329,31 @@ class CascadeUserSimulator(AbstractUserSimulator):
                     )
                     self._on_conversation_end("inactivity_timeout")
                     break
-                self._log_tick_state(scheduler, result)
                 if result.has_assistant_speech:
+                    if is_new_assistant_turn(ticks_silent_before=silent_before):
+                        self._ticks_since_assistant_started = 0
+                        # One roll per assistant turn, so a turn carries at most one barge-in.
+                        self._may_interrupt_this_turn = self._config.enable_interruptions
+                        self._assistant_turn_index += 1
+                        # The transcript is consumed between turns, so it can shrink back
+                        # toward the in-flight partial and collide with a value already
+                        # judged. Clearing here keeps "unchanged" meaning "unchanged
+                        # within this turn", which is the only span it is asked about.
+                        self._last_checked_text = ""
+                        self._decision_log.log(
+                            "assistant_turn_start",
+                            tick=scheduler.tick,
+                            turn_index=self._assistant_turn_index,
+                            ticks_silent_before=silent_before,
+                            armed_interrupt=self._may_interrupt_this_turn,
+                        )
+                    self._ticks_since_assistant_started += 1
+                    is_check = scheduler.is_check_tick()
+                    self._log_tick_state(scheduler, result, is_check_tick=is_check)
+                    if is_check and await self._run_checks(scheduler):
+                        break
                     continue
+                self._log_tick_state(scheduler, result, is_check_tick=False)
                 if scheduler.caller_is_speaking or not scheduler.may_take_turn():
                     continue
                 heard, waiting = self._collect_heard_text(scheduler)
@@ -211,6 +368,200 @@ class CascadeUserSimulator(AbstractUserSimulator):
             await self._stt.stop()
             await adapter.stop()
             self.event_logger.log_connection_state("session_ended", {"reason": self._end_reason})
+
+    async def _prepare_listener_behaviors(self) -> None:
+        """Pre-render the fixed vocabularies and build the checks, when any is enabled.
+
+        Rendering happens once at connect time rather than on demand: a cached phrase
+        is the only way a 300ms reaction lands on the tick its check chose.
+        """
+        vocabulary: list[str] = []
+        if self._config.enable_backchannel:
+            vocabulary += self._phrases.backchannels
+        if self._config.enable_interruptions:
+            vocabulary += self._phrases.barge_in_openers
+        if not vocabulary:
+            return
+
+        self._phrase_cache = PhraseCache(self._tts, voice_id=self._voice_id)
+        await self._phrase_cache.prerender(vocabulary)
+        prompts = PromptManager()
+        self._decisions = ListenerDecisions(
+            self._decision_client,
+            interrupt_prompt=prompts.get_template("user_simulator.interruption_decision"),
+            backchannel_prompt=prompts.get_template("user_simulator.backchannel_decision"),
+            user_goal=summarize_goal(self.goal),
+        )
+
+    async def _run_checks(self, scheduler: TickScheduler) -> bool:
+        """Run the listener-reaction checks and act on the verdict. True means hang up.
+
+        Gated on there being something new to judge. The checks fire on a timer while
+        the assistant speaks — ~101 times in one measured call, two concurrent LLM calls
+        each — but their only input is the transcript, so a tick where the transcript has
+        not moved re-asks a question already answered. Skipping those is free: identical
+        input, identical verdict.
+        """
+        if self._decisions is None or self._phrase_cache is None:
+            return False
+
+        history = self._stt.buffer.current_text()
+        # Nothing transcribed yet is not a question worth asking, and a transcript that
+        # has not moved re-asks one already answered.
+        if not history or history == self._last_checked_text:
+            return False
+        self._last_checked_text = history
+
+        # Backchannelling stays available after a barge-in: a listener who cuts in and
+        # later hums along is ordinary, and the one-barge-in-per-turn cap is about not
+        # talking over the assistant repeatedly, not about going quiet afterwards.
+        # `allow_interrupt` alone already skips the interrupt call without reaching the
+        # model once the cap is spent.
+        verdict = await self._decisions.evaluate(
+            history,
+            allow_interrupt=self._may_interrupt_this_turn,
+            allow_backchannel=self._config.enable_backchannel,
+        )
+        self._decision_log.log(
+            "listener_check",
+            tick=scheduler.tick,
+            allow_interrupt=self._may_interrupt_this_turn,
+            allow_backchannel=self._config.enable_backchannel,
+            heard_chars=len(history),
+            heard=history,
+            interrupt_ran=verdict.interrupt_trace.ran,
+            interrupt_raw=verdict.interrupt_trace.raw,
+            interrupt_latency_ms=verdict.interrupt_trace.latency_ms,
+            interrupt_error=verdict.interrupt_trace.error,
+            backchannel_ran=verdict.backchannel_trace.ran,
+            backchannel_raw=verdict.backchannel_trace.raw,
+            backchannel_error=verdict.backchannel_trace.error,
+            should_interrupt=verdict.should_interrupt,
+            should_backchannel=verdict.should_backchannel,
+        )
+        if verdict.should_interrupt:
+            self._may_interrupt_this_turn = False
+            return await self._play_interruption(scheduler)
+        if verdict.should_backchannel:
+            phrase = play_backchannel(scheduler, self._phrase_cache, self._phrases.backchannels)
+            # Recorded too, or the saved clean track diverges from what went on the wire.
+            self._record_audio("user_clean", self._phrase_cache.get(phrase))
+            self.event_logger.log_event("backchannel", {"text": phrase, "tick_index": scheduler.tick})
+        return False
+
+    async def _play_interruption(self, scheduler: TickScheduler) -> bool:
+        """Decide what to say, then voice the opener and the content together.
+
+        Returns True when the caller decided to hang up.
+
+        The content is generated *before* anything reaches the wire. Emitting the opener
+        first hid its ~1s latency, but committed the caller to barging in before knowing
+        whether it had anything to say: a hang-up or a dropped-as-stale line then left an
+        orphaned "Actually—" hanging with nothing behind it, which is worse than either a
+        late line or silence. Generating first means "say nothing" is actually available.
+        """
+        if self._phrase_cache is None:
+            return False
+        intended_tick = scheduler.tick
+        intended_turn = self._assistant_turn_index
+        started_at = time.monotonic()
+        opener = self._phrase_cache.choose(self._phrases.barge_in_openers)
+        opener_audio = self._phrase_cache.get(opener)
+
+        if self._config.speculative_generation and self._candidate_audio:
+            candidate, audio = self._candidate_text, self._candidate_audio
+            self._candidate_text, self._candidate_audio = "", b""
+            relevant = await candidate_is_relevant(
+                self._decision_client, candidate=candidate, heard=self._stt.buffer.current_text()
+            )
+            self._decision_log.log("relevance_gate", tick=intended_tick, candidate=candidate, relevant=relevant)
+            if relevant:
+                # Tell the adapter the next tick that reaches the wire cuts the
+                # assistant off, so a tick-driven transport can truncate the audio
+                # the caller never heard. Ignored on the real-time path.
+                scheduler.arm_barge_in()
+                scheduler.enqueue_utterance(opener_audio)
+                self._record_audio("user_clean", opener_audio)
+                scheduler.enqueue_utterance(audio)
+                self._record_audio("user_clean", audio)
+                self._history.append({"role": "user", "content": candidate})
+                self._on_user_speaks(candidate)
+                self.event_logger.log_event(
+                    "interruption",
+                    {
+                        "text": candidate,
+                        "opener": opener,
+                        "intended_tick": intended_tick,
+                        "actual_tick": scheduler.tick,
+                        "slip_ms": interrupt_slip_ms(elapsed_s=time.monotonic() - started_at),
+                        "speculative": True,
+                        "dropped": False,
+                    },
+                )
+                self._decision_log.log(
+                    "interruption", tick=intended_tick, outcome="spoken", speculative=True, text=candidate
+                )
+                return False
+            self.event_logger.log_event("interruption_candidate_rejected", {"text": candidate})
+            self._decision_log.log("interruption", tick=intended_tick, outcome="candidate_rejected", text=candidate)
+
+        # Consumed, not peeked: leaving it in the buffer would re-append the same
+        # assistant prefix at the next ordinary turn and duplicate it in the history.
+        heard = self._stt.buffer.heard_text()
+        self._stt.buffer.take_committed()
+        self._stt.buffer.in_flight = ""
+        if heard:
+            self._history.append({"role": "assistant", "content": heard})
+            self._on_assistant_speaks(heard)
+        message, _stats = await self._llm.complete(messages=self._messages(), tools=[END_CALL_TOOL])
+        utterance, end_call = extract_turn(message)
+
+        slip = interrupt_slip_ms(elapsed_s=time.monotonic() - started_at)
+        # A hang-up is never stale: the caller has decided the call is over, and
+        # dropping it here is what left conversations looping until the timeout.
+        dropped = not end_call and should_drop_interrupt(
+            assistant_still_speaking=scheduler.assistant_is_speaking,
+            same_assistant_turn=self._assistant_turn_index == intended_turn,
+        )
+        self.event_logger.log_event(
+            "interruption",
+            {
+                "text": utterance,
+                "opener": opener,
+                "intended_tick": intended_tick,
+                "actual_tick": scheduler.tick,
+                "slip_ms": slip,
+                "dropped": dropped,
+                "end_call": end_call,
+            },
+        )
+        self._decision_log.log(
+            "interruption",
+            tick=intended_tick,
+            outcome="dropped" if dropped else ("end_call" if end_call else "spoken"),
+            text=utterance,
+            slip_ms=slip,
+            assistant_still_speaking=scheduler.assistant_is_speaking,
+            intended_turn=intended_turn,
+            actual_turn=self._assistant_turn_index,
+        )
+        # Nothing has reached the wire yet, so a stale line or a hang-up costs no audio.
+        if dropped:
+            return False
+
+        if utterance:
+            scheduler.arm_barge_in()
+            scheduler.enqueue_utterance(opener_audio)
+            self._record_audio("user_clean", opener_audio)
+            self._history.append({"role": "user", "content": utterance})
+            self._on_user_speaks(utterance)
+            async for chunk in self._tts.stream(utterance, voice_id=self._voice_id):
+                self._record_audio("user_clean", chunk)
+                scheduler.enqueue_utterance(chunk)
+
+        if end_call:
+            self._on_conversation_end("goodbye")
+        return end_call
 
     def _assistant_is_inactive(self, scheduler: TickScheduler, result: TickResult) -> bool:
         """Whether the assistant has produced no audio for INACTIVITY_TIMEOUT_MS *contiguously*.
@@ -255,9 +606,20 @@ class CascadeUserSimulator(AbstractUserSimulator):
         elif not result.has_assistant_speech and assistant_was_speaking:
             self.event_logger.log_audio_end("assistant", seconds)
 
-    def _log_tick_state(self, scheduler: TickScheduler, result: TickResult) -> None:
-        """Trace speech state and audio levels for each simulator tick."""
+    def _log_tick_state(self, scheduler: TickScheduler, result: TickResult, *, is_check_tick: bool) -> None:
+        """Trace one tick's speech state, so a check that never ran can be traced to its gate.
+
+        `rms` is why this exists: `has_assistant_speech` is true for any non-zero bytes,
+        digital silence included, so a transport that pads with silence reads as continuous
+        speech. Recording both lets that be measured rather than inferred.
+
+        `transcript_moved` serves the same purpose for the other gate. A check tick only
+        reaches the judges when the transcript has changed since the last one judged, so
+        without this a check tick with no following `listener_check` is ambiguous between
+        "nothing new was heard" and "the check ran and something went wrong".
+        """
         raw = result.assistant_audio[: result.assistant_audio_raw_bytes]
+        history = self._stt.buffer.current_text()
         self._decision_log.log(
             "tick",
             tick=scheduler.tick,
@@ -267,6 +629,11 @@ class CascadeUserSimulator(AbstractUserSimulator):
             caller_is_speaking=scheduler.caller_is_speaking,
             caller_spoke_this_tick=scheduler.caller_spoke_this_tick,
             ticks_assistant_silent=self._ticks_assistant_silent,
+            ticks_since_assistant_started=self._ticks_since_assistant_started,
+            may_interrupt_this_turn=self._may_interrupt_this_turn,
+            is_check_tick=is_check_tick,
+            transcript_moved=bool(history) and history != self._last_checked_text,
+            has_candidate=bool(self._candidate_audio),
         )
 
     def _collect_heard_text(self, scheduler: TickScheduler) -> tuple[str, bool]:
@@ -321,7 +688,50 @@ class CascadeUserSimulator(AbstractUserSimulator):
             self._on_conversation_end("goodbye")
             return True
 
+        # After the audio is queued: the caller is now speaking, so this generation
+        # runs behind its own outgoing audio and costs no conversational latency.
+        if utterance:
+            await self._prerender_candidate(utterance)
         return False
+
+    async def _prerender_candidate(self, utterance: str) -> None:
+        """Pre-generate and pre-render the line the caller would barge in with.
+
+        Done on the caller's own turn, where the latency is already hidden behind
+        its outgoing audio, so a later barge-in can fire without waiting on
+        generation. The relevance gate is what keeps this from degrading into a
+        scripted interruption that lands as a non-sequitur.
+        """
+        self._candidate_text, self._candidate_audio = "", b""
+        # A candidate only ever gets spoken by a barge-in, so rendering one with
+        # interruptions off buys an LLM call and a synthesis per turn for nothing.
+        if not self._config.speculative_generation or not self._config.enable_interruptions:
+            return
+        started = time.monotonic()
+        prompt = PromptManager().get_prompt("user_simulator.cascade_next_interruption", utterance=utterance)
+        try:
+            message, _stats = await self._llm.complete(
+                messages=[*self._messages(), {"role": "user", "content": prompt}]
+            )
+        except Exception as exc:
+            logger.warning(f"Speculative interruption generation failed: {exc}")
+            self._decision_log.log("candidate_generation", ok=False, error=str(exc))
+            return
+        candidate = extract_optional_line(message)
+        if not candidate:
+            raw = message if isinstance(message, str) else (getattr(message, "content", None) or "")
+            self._decision_log.log("candidate_generation", ok=False, declined=True, after=utterance, raw=raw[:400])
+            return
+        self._candidate_text = candidate
+        self._candidate_audio = await self._tts.synthesize(candidate, voice_id=self._voice_id)
+        self._decision_log.log(
+            "candidate_generation",
+            ok=True,
+            after=utterance,
+            candidate=candidate,
+            audio_bytes=len(self._candidate_audio),
+            latency_ms=int((time.monotonic() - started) * 1000),
+        )
 
     def _messages(self) -> list[dict[str, str]]:
         """Build the message list: the shared per-domain caller prompt plus flipped history.

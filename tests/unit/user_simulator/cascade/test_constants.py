@@ -25,3 +25,19 @@ def test_threshold_constants_are_exact_multiples_of_tick_duration():
 def test_ms_to_ticks_converts_and_floors_sub_tick_remainder():
     assert ms_to_ticks(WAIT_TO_RESPOND_OTHER_MS) == 5
     assert ms_to_ticks(150) == 0
+
+
+def test_listener_check_interval_is_two_seconds_in_ticks():
+    from eva.user_simulator.cascade.constants import LISTENER_CHECK_INTERVAL_MS, ms_to_ticks
+
+    assert LISTENER_CHECK_INTERVAL_MS == 2000
+    assert ms_to_ticks(LISTENER_CHECK_INTERVAL_MS) == 10
+
+
+def test_the_vocabularies_are_no_longer_constants():
+    # They moved to configs/caller_phrases.yaml because they are language data, not
+    # timing. Timing constants staying here is the whole distinction.
+    from eva.user_simulator.cascade import constants
+
+    assert not hasattr(constants, "BACKCHANNEL_PHRASES")
+    assert not hasattr(constants, "BARGE_IN_OPENERS")
