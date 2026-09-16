@@ -99,7 +99,7 @@ EVA_DEBUG=false                       # Run only 1 record for testing when enabl
 EVA_RECORD_IDS=1.2.1,1.2.2            # Run specific records only (remove to run all records)
 
 # User Simulator Configuration
-EVA_USER_SIMULATOR__PROVIDER=elevenlabs      # elevenlabs | openai_realtime
+EVA_USER_SIMULATOR__PROVIDER=elevenlabs      # elevenlabs | openai_realtime | cascade
 EVA_USER_SIMULATOR__MODEL=gpt-realtime-1.5   # Used by openai_realtime
 EVA_USER_SIMULATOR__FEMALE_VOICE=marin       # Used by openai_realtime
 EVA_USER_SIMULATOR__MALE_VOICE=cedar         # Used by openai_realtime
@@ -124,6 +124,8 @@ See `.env.example` for the complete list of configuration options.
 **ElevenLabs Agents is the recommended user simulator.** The OpenAI Realtime caller is available as an experimental alternative for those who want to try it, but has not yet been validated at scale and should be treated as beta.
 
 The OpenAI Realtime caller supports behavior, background-noise, and connection-degradation perturbations. Accent variants currently require the ElevenLabs caller because they select dedicated ElevenLabs agents. Both caller providers write `user_simulator_events.jsonl`.
+
+The [cascade user simulator](docs/cascade_user_simulator.md) runs a separate STT/LLM/TTS caller with ordinary turn-taking. It supports both real-time streaming and tick-driven OpenAI Realtime evaluation.
 
 #### Known limitations of the OpenAI Realtime caller (beta)
 

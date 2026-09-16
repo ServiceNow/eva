@@ -3,6 +3,7 @@
 | Document | Description |
 |---|---|
 | [Assistant Server Contract](assistant_server_contract.md) | How to implement a new framework integration (s2s model or custom pipeline) |
+| [Cascade User Simulator](cascade_user_simulator.md) | Caller setup, transports, perturbations, and output artifacts |
 | [Metrics](metrics/README.md) | Metric definitions, scoring rubrics, and judge prompts |
 | [MetricContext](metric_context.md) | Data structures passed to metrics during evaluation |
 | [LLM Configuration](llm_configuration.md) | LLM provider setup and LiteLLM routing |

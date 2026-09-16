@@ -141,8 +141,14 @@ msg = create_twilio_media_message(stream_sid, mulaw_chunk)
 await websocket.send_text(msg)
 ```
 
-Audio output must be 8 kHz mulaw. Send it in 160-byte chunks (20 ms each) at
-real-time pace. Both `openai_realtime_server.py` and `gemini_live_server.py` use a
+Audio output must be 8 kHz mulaw in 160-byte chunks (20 ms each). Keep
+`paced_output=True` by default. The cascade caller uses `paced_output=False` only
+with OpenAI Realtime, whose server declares `supports_unpaced_output=True`; its
+adapter buffers incoming audio and releases one tick at a time. Other servers
+must accept and forward `paced_output` to the base constructor, which rejects
+unpaced output unless the server explicitly supports it.
+
+For paced output, send chunks at real-time pace. Both `openai_realtime_server.py` and `gemini_live_server.py` use a
 dedicated `_pace_audio_output` asyncio task to drain a queue at this rate — copy that
 pattern. If audio is sent too fast or too slow, the user simulator's may incorrectly detect
 turn boundaries.
