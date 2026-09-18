@@ -553,6 +553,7 @@ class RunConfig(BaseSettings):
         "timestamp and model name(s)",  # Overwritten by _set_default_run_id()
         description="Run identifier, auto-generated if not provided",
     )
+    run_id_suffix: str = Field("", description="Optional string appended to auto-generated run identifier")
 
     # Data paths
     domain: Literal["airline", "itsm", "medical_hr"] = "airline"
@@ -784,10 +785,11 @@ class RunConfig(BaseSettings):
         # ── Set default run_id ──
         # self.model.pipeline_parts is only available if self.model is valid, which the above asserts.
         if "run_id" not in self.model_fields_set:
-            suffix = "_".join(v for v in self.model.pipeline_parts.values() if v)
-            lang = self.language.value
-            domain = self.domain.replace("_", "-")
-            self.run_id = f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}_{domain}_{lang}_{suffix}"
+            parts = [f"{datetime.now(UTC):%Y-%m-%d_%H-%M-%S.%f}", self.domain.replace("_", "-"), self.language.value]
+            parts.extend(v for v in self.model.pipeline_parts.values() if v)
+            if self.run_id_suffix:
+                parts.append(self.run_id_suffix)
+            self.run_id = "_".join(parts)
 
         return self
 
