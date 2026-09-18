@@ -567,6 +567,15 @@ class RunConfig(BaseSettings):
         False,
         description="Force rerun all requested metrics, overwriting existing successful results (requires --run-id)",
     )
+    ignore_previous_config: bool = Field(
+        False,
+        description=(
+            "Ignore the config.json saved by the previous run (assuming --run-id points to an existing run). "
+            "Use with caution. "
+            "Without this flag, only a few fields (rerun, preflight, and metrics) can be overridden on rerun; "
+            "the rest come from the saved config.json."
+        ),
+    )
     tool_module_path: str | None = Field(
         None,
         description="Python module path with tool functions (e.g., 'eva.assistant.tools.airline_tools'). "
