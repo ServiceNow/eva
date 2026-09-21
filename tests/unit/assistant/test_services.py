@@ -319,7 +319,7 @@ class TestCreateTtsService:
 
     def test_soniox_defaults_voice_when_unset(self):
         svc = create_tts_service("soniox", params={"api_key": "k", "model": "tts-rt-v1"})
-        assert svc._settings.voice == "Adrian"
+        assert svc._settings.voice == "Bryce"
 
     def test_deepgram_returns_deepgram_service(self):
         svc = create_tts_service("deepgram", params={"api_key": "k", "model": "aura-2-helena-en"})
