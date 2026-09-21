@@ -31,7 +31,7 @@ class _GoodTTS(TTSService):
 
 class _BadTTS(TTSService):
     async def run_tts(self, text, context_id=None) -> AsyncGenerator[Frame | None, None]:
-        await self.push_error(ErrorFrame("401 Unauthorized", fatal=True))
+        await self.push_error(ErrorFrame("401 Unauthorized"))
         return
         yield  # pragma: no cover — makes this an async generator
 
