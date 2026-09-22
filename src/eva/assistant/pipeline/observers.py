@@ -410,6 +410,10 @@ class FrameworkLogWriter:
         """Log S2S transcript (what was actually spoken)."""
         self.write("s2s_transcript", {"frame": text}, timestamp_ms)
 
+    def thought(self, text: str, timestamp_ms: int | None = None) -> None:
+        """Log a model 'thought' part (returned when include_thoughts is enabled)."""
+        self.write("thought", {"frame": text}, timestamp_ms)
+
 
 class MetricsLogWriter:
     """Writes pipecat_metrics.jsonl for non-Pipecat frameworks.

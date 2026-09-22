@@ -23,12 +23,6 @@
     "source_hash": "84e43143d00d",
     "version": "v0.2"
   },
-  "ConversationTimeLimitExceededMetric": {
-    "name": "conversation_completed_on_time",
-    "prompt_hash": null,
-    "source_hash": "26e274ce8076",
-    "version": "v0.1"
-  },
   "ConversationValidEndMetric": {
     "name": "conversation_valid_end",
     "prompt_hash": null,

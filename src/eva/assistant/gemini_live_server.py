@@ -157,7 +157,10 @@ def _agent_tools_to_gemini(agent: AgentConfig) -> list[types.Tool] | None:
                 name=tool.function_name,
                 description=f"{tool.name}: {tool.description}",
                 parameters=params_schema,
-                # behavior=types.Behavior.BLOCKING,
+                # `behavior` (BLOCKING/NON_BLOCKING) is not supported in Vertex AI
+                # per the google-genai SDK docs, and this server always runs
+                # through Vertex (see _create_genai_client) — omitted rather than
+                # set, to avoid depending on unsupported behavior on our only path.
             )
         )
 
@@ -248,18 +251,17 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
             location = "us-central1"
         self._vertex_location = location
 
-        # Thinking config: controls Gemini's internal reasoning budget.
+        # Thinking config: controls Gemini's internal reasoning.
         # Accepts a dict with optional keys:
-        #   "thinking_budget": int  (0=disabled, -1=auto, or token count)
         #   "include_thoughts": bool
         #   "thinking_level": str   ("MINIMAL", "LOW", "MEDIUM", "HIGH")
-        # Example: {"thinking_budget": 1024, "include_thoughts": false}
+        # Note: "thinking_budget" is not supported here — it's deprecated in
+        # favor of "thinking_level" for the Live models this server targets.
+        # Example: {"thinking_level": "LOW", "include_thoughts": false}
         # If not set, defaults to ThinkingConfig() (model-dependent defaults).
         thinking_raw = s2s_params.get("thinking_config", {})
         if isinstance(thinking_raw, dict) and thinking_raw:
             tc_kwargs: dict[str, Any] = {}
-            if "thinking_budget" in thinking_raw:
-                tc_kwargs["thinking_budget"] = int(thinking_raw["thinking_budget"])
             if "include_thoughts" in thinking_raw:
                 tc_kwargs["include_thoughts"] = bool(thinking_raw["include_thoughts"])
             if "thinking_level" in thinking_raw:
@@ -625,6 +627,11 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                         _user_speech_stop_ts = None  # Reset for next turn
 
                                     for part in sc.model_turn.parts:
+                                        if part.thought and part.text:
+                                            logger.debug(f"Model thought: {part.text.strip()}")
+                                            self._fw_log.thought(part.text.strip())
+                                            continue
+
                                         if part.inline_data and part.inline_data.data:
                                             pcm_24k = bytes(part.inline_data.data)
 
