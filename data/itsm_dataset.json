@@ -25601,14 +25601,14 @@
         "negotiation_behavior": [
           "1. Start by saying you want to check the status of your Salesforce access request. Do not volunteer your employee ID, phone digits, or request ID until the agent asks.",
           "2. If the agent asks for identity verification, provide your employee ID exactly as EMP066666 and your phone last four exactly as 4425.",
-          "3. If the agent asks which request you mean, say it is your Salesforce access request. If the agent asks for the request ID, provide REQ-SW-066666 exactly.",
+          "3. If the agent asks which request you mean, say it is your Salesforce access request. If the agent asks for the request ID, provide REQ-SW-659dac3f4833 exactly.",
           "4. If the agent reads back any identifier or name, confirm it briefly if correct. If it is incorrect, state the correct value exactly once using the value in information_required.",
           "5. When the agent gives the status, accept the outcome if they say the request is pending approval and still within the SLA window. Do not ask for escalation, do not ask them to speed it up, and do not challenge the policy.",
           "6. If the agent offers additional explanation about the approval deadline or next steps, acknowledge it briefly.",
           "7. Once the request status has been clearly confirmed, thank the agent and wrap up the call.",
           "Guiding behavioral directions: Only answer the specific question asked. Do not volunteer extra details early. If the agent asks an unexpected but relevant question, answer only with information from information_required. If the agent asks for information not present there, say you do not have any additional details beyond the Salesforce request and the request ID."
         ],
-        "resolution_condition": "You have been told the status of request REQ-SW-066666, including that the Salesforce access request is still pending approval and remains within the SLA window. End the call.",
+        "resolution_condition": "You have been told the status of request REQ-SW-659dac3f4833, including that the Salesforce access request is still pending approval and remains within the SLA window. End the call.",
         "failure_condition": "If the agent makes no progress on your request for 3 consecutive turns, say goodbye and end the call.",
         "escalation_behavior": "Do not ask to speak to a supervisor or live agent. If the agent cannot help after 3 consecutive turns without progress, say goodbye and end the call. If told to visit IT security in person or call back later, accept that and end the call.",
         "edge_cases": [
@@ -25626,7 +25626,7 @@
         "last_name": "<LAST_NAME>",
         "employee_id": "EMP066666",
         "phone_last_four": "4425",
-        "request_id": "REQ-SW-066666",
+        "request_id": "REQ-SW-659dac3f4833",
         "application_name": "Salesforce"
       }
     },
@@ -25641,7 +25641,7 @@
       "last_name": "<LAST_NAME>",
       "employee_id": "EMP066666",
       "phone_last_four": "4425",
-      "request_id": "REQ-SW-066666"
+      "request_id": "REQ-SW-659dac3f4833"
     },
     "scenario_context": {
       "premise": "An employee submitted a Salesforce access request yesterday. They call to check the status. The approval SLA has NOT been breached yet (deadline is tomorrow). The agent looks up the request and reports that it is pending approval and within the SLA window. No escalation is available.",
@@ -26309,13 +26309,13 @@
           },
           {
             "event_type": "user_utterance",
-            "utterance": "Yes, that’s correct. The request ID is R E Q dash S W dash zero six six six six six."
+            "utterance": "Yes, that’s correct. The request ID is R E Q dash S W dash six five nine d a c three f four eight three three."
           },
           {
             "event_type": "tool_call",
             "tool_name": "get_request_status",
             "params": {
-              "request_id": "REQ-SW-066666"
+              "request_id": "REQ-SW-659dac3f4833"
             }
           },
           {
@@ -26324,18 +26324,18 @@
             "status": "success",
             "response": {
               "status": "success",
-              "request_id": "REQ-SW-066666",
+              "request_id": "REQ-SW-659dac3f4833",
               "request_status": "pending_approval",
               "approval_routed_to": "EMP055500",
               "approval_sla_deadline": "2026-08-07 14:00",
               "sla_breached": false,
               "created_date": "2026-08-05",
-              "message": "Request REQ-SW-066666 is pending_approval"
+              "message": "Request REQ-SW-659dac3f4833 is pending_approval"
             }
           },
           {
             "event_type": "agent_utterance",
-            "utterance": "I found request I D, R E Q, dash, S W, dash, zero six six six six six.\n\nYour Salesforce access request is still pending manager approval. It was routed to manager employee I D, E M P, zero five five five zero zero. The approval deadline is tomorrow, August seventh, at two PM Eastern, so the approval service level has not been breached yet.\n\nThere is no escalation available yet. If you’d like, you can call back after two PM tomorrow and I can check again."
+            "utterance": "I found request I D, R E Q, dash, S W, dash, six five nine, d a c, three f, four eight three three.\n\nYour Salesforce access request is still pending manager approval. It was routed to manager employee I D, E M P, zero five five five zero zero. The approval deadline is tomorrow, August seventh, at two PM Eastern, so the approval service level has not been breached yet.\n\nThere is no escalation available yet. If you’d like, you can call back after two PM tomorrow and I can check again."
           }
         ],
         "conversation_ended": true,
