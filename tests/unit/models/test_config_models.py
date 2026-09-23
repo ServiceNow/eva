@@ -102,15 +102,15 @@ class TestRunConfig:
         assert config.max_concurrent_conversations == 1
         assert config.conversation_time_limit_seconds == 600
 
-    def test_run_id_suffix_appended_to_default_run_id(self):
-        """Test that run_id_suffix is appended when run_id is auto-generated."""
-        config = _config(env_vars=_BASE_ENV | {"EVA_RUN_ID_SUFFIX": "suffix"})
+    def test_run_tag_appended_to_default_run_id(self):
+        """Test that run_tag is appended when run_id is auto-generated."""
+        config = _config(env_vars=_BASE_ENV | {"EVA_RUN_TAG": "suffix"})
 
         assert config.run_id.endswith("nova-2_gpt-5.2_sonic_suffix")
 
-    def test_run_id_suffix_ignored_when_run_id_is_explicit(self):
-        """Test that run_id_suffix has no effect when run_id is explicitly set."""
-        config = _config(env_vars=_BASE_ENV | {"EVA_RUN_ID_SUFFIX": "suffix", "EVA_RUN_ID": "explicit_run_id"})
+    def test_run_tag_ignored_when_run_id_is_explicit(self):
+        """Test that run_tag has no effect when run_id is explicitly set."""
+        config = _config(env_vars=_BASE_ENV | {"EVA_RUN_TAG": "suffix", "EVA_RUN_ID": "explicit_run_id"})
 
         assert config.run_id == "explicit_run_id"
 
