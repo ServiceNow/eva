@@ -714,3 +714,78 @@ class TestRunSeedIntegration:
         assert (
             entry_a["mean_ci_lower"] != entry_b["mean_ci_lower"] or entry_a["mean_ci_upper"] != entry_b["mean_ci_upper"]
         )
+
+
+class TestEfficiencyAggregates:
+    def _record(self, record_id: str, **metric_scores: MetricScore) -> RecordMetrics:
+        return RecordMetrics(record_id=record_id, metrics=dict(metric_scores))
+
+    def test_efficiency_mean_over_completed_records(self):
+        """Efficiency block reports mean/min/max over records where the metric was recorded."""
+        r1 = self._record(
+            "1",
+            time_to_completion=MetricScore(name="time_to_completion", score=10.0),
+            turns_to_completion=MetricScore(name="turns_to_completion", score=4.0),
+        )
+        r2 = self._record(
+            "2",
+            time_to_completion=MetricScore(name="time_to_completion", score=20.0),
+            turns_to_completion=MetricScore(name="turns_to_completion", score=8.0),
+        )
+
+        result = compute_run_level_aggregates({"1": r1, "2": r2}, seed=42)
+
+        assert "efficiency" in result
+        ttc = result["efficiency"]["time_to_completion"]
+        assert ttc["mean"] == 15.0
+        assert ttc["min"] == 10.0
+        assert ttc["max"] == 20.0
+        assert ttc["count"] == 2
+        assert ttc["total_records"] == 2
+        assert ttc["higher_is_better"] is False
+
+        turns = result["efficiency"]["turns_to_completion"]
+        assert turns["mean"] == 6.0
+        assert turns["count"] == 2
+
+    def test_skipped_and_errored_records_excluded(self):
+        """Skipped (task not completed) and errored records are excluded from the mean."""
+        r1 = self._record(
+            "1",
+            time_to_completion=MetricScore(name="time_to_completion", score=10.0),
+        )
+        r2 = self._record(
+            "2",
+            time_to_completion=MetricScore(name="time_to_completion", score=None, skipped=True),
+        )
+        r3 = self._record(
+            "3",
+            time_to_completion=MetricScore(name="time_to_completion", score=0.0, error="boom"),
+        )
+
+        result = compute_run_level_aggregates({"1": r1, "2": r2, "3": r3}, seed=42)
+
+        ttc = result["efficiency"]["time_to_completion"]
+        assert ttc["mean"] == 10.0
+        assert ttc["count"] == 1
+        assert ttc["total_records"] == 3
+
+    def test_no_efficiency_metrics_recorded(self):
+        """When no efficiency metrics are present, no efficiency block is emitted."""
+        r1 = make_record_metrics({"task_completion": 1.0}, record_id="1")
+        r1.aggregate_metrics = compute_record_aggregates(r1)
+
+        result = compute_run_level_aggregates({"1": r1}, seed=42)
+
+        assert "efficiency" not in result
+
+    def test_all_records_skipped_no_block(self):
+        """If every efficiency record is skipped, the metric is omitted from the block."""
+        r1 = self._record(
+            "1",
+            time_to_completion=MetricScore(name="time_to_completion", score=None, skipped=True),
+        )
+
+        result = compute_run_level_aggregates({"1": r1}, seed=42)
+
+        assert "efficiency" not in result
