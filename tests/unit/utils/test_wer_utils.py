@@ -98,6 +98,17 @@ class TestWordDigitEquivalence:
             ("99e", "quatre-vingt-dix-neuvième", Language.FR_CA),
             ("EMP343467", "E M P trois quatre trois quatre six sept", Language.FR),
             ("100", "cent", Language.FR),
+            # Scale word right after a round thousand, or larger than the running total.
+            ("3100", "three thousand hundred", Language.EN),
+            ("3100", "tres mil cien", Language.ES),
+            ("2105", "dos mil ciento cinco", Language.ES),
+            ("1000000000", "mil millones", Language.ES),
+            ("2300000000", "dos mil trescientos millones", Language.ES),
+            ("1001000", "un millón mil", Language.ES),
+            ("2100", "deux mille cent", Language.FR),
+            ("3120", "trois mille cent vingt", Language.FR),
+            ("3100", "dreitausend hundert", Language.DE),
+            ("3100", "drieduizend honderd", Language.NL),
             ("Au bâtiment Headquarters, à l'étage FL2.", "au bâtiment headquarters à l'étage fl deux", Language.FR),
         ],
     )
