@@ -37,6 +37,15 @@ merge-public-repo:  # Open a pull request to merge eva's main branch into eva-in
 output/%/toolkit-data-push:  # Push output file(s) to Toolkit
 	eai data push snow.core_llm.voice_agent "output/$*:$*"
 
+output/%/toolkit-data-zip-pull: FORCE  # Zip, pull, and unzip output file(s) from Toolkit (this is faster when there are numerous files)
+	eai job new \
+		--data snow.core_llm.voice_agent:/mnt/voice_agent:rw \
+		--image alpine \
+		--restartable \
+		--wait SUCCEEDED \
+		-- sh -c 'cd /mnt/voice_agent && tar --exclude="*.wav" --exclude="*.mp3" -czf "$*.tar.gz" "$*"'
+	cd output && eai data pull snow.core_llm.voice_agent "$*.tar.gz" . && tar -xzf "$*.tar.gz" && rm "$*.tar.gz"
+
 output/%/toolkit-data-pull output/%: FORCE  # Pull output file(s) from Toolkit
 	eai data pull snow.core_llm.voice_agent "$*" output
 
