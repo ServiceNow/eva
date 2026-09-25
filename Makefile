@@ -35,7 +35,7 @@ merge-public-repo:  # Open a pull request to merge eva's main branch into eva-in
 	gh pr merge --repo ServiceNow/eva-internal --auto --merge pr/merge-main
 
 output/%/toolkit-data-push:  # Push output file(s) to Toolkit
-	eai data push snow.core_llm.voice_agent "output/$*:$*"
+	eai data push --allow-rename snow.core_llm.voice_agent "output/$*:$*"
 
 output/%/toolkit-data-zip-pull: FORCE  # Zip, pull, and unzip output file(s) from Toolkit (this is faster when there are numerous files)
 	eai job new \
