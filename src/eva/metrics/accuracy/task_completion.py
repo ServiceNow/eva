@@ -55,7 +55,8 @@ class TaskCompletion(BaseMetric):
         """
         details: dict = {"match": False, "auth_success": True}
 
-        # Require auth success — if session mismatches, task cannot be complete
+        # Require auth success — if session mismatches, task cannot be complete.
+        # Kept in sync with eva.metrics.diagnostic.task_completion_utils.is_task_completed.
         auth_mismatches = compute_session_auth_mismatches(context.expected_scenario_db, context.final_scenario_db)
         if auth_mismatches:
             details["auth_success"] = False

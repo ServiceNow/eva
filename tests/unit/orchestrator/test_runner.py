@@ -91,6 +91,51 @@ class TestFilterRecords:
         assert len(filtered) == 1
         assert filtered[0].id == "rec-0"
 
+    def test_exclude_record_ids_filter(self, tmp_path):
+        """Excluding specific record IDs removes them from the full set."""
+        config = _make_config(tmp_path)
+        config = config.model_copy(update={"exclude_record_ids": ["rec-1", "rec-3"]})
+        runner = _make_runner(config)
+
+        records = [_make_record(f"rec-{i}") for i in range(5)]
+        filtered = runner._filter_records(records)
+
+        assert {r.id for r in filtered} == {"rec-0", "rec-2", "rec-4"}
+
+    def test_exclude_applied_after_record_ids(self, tmp_path):
+        """exclude_record_ids is applied on top of the record_ids include filter."""
+        config = _make_config(tmp_path)
+        config = config.model_copy(update={"record_ids": ["rec-1", "rec-2", "rec-3"], "exclude_record_ids": ["rec-2"]})
+        runner = _make_runner(config)
+
+        records = [_make_record(f"rec-{i}") for i in range(5)]
+        filtered = runner._filter_records(records)
+
+        assert {r.id for r in filtered} == {"rec-1", "rec-3"}
+
+    def test_exclude_unknown_id_is_noop(self, tmp_path):
+        """Excluding an ID not in the dataset leaves all records intact."""
+        config = _make_config(tmp_path)
+        config = config.model_copy(update={"exclude_record_ids": ["rec-99"]})
+        runner = _make_runner(config)
+
+        records = [_make_record(f"rec-{i}") for i in range(3)]
+        filtered = runner._filter_records(records)
+
+        assert len(filtered) == 3
+
+    def test_debug_takes_precedence_over_exclude(self, tmp_path):
+        """Debug mode short-circuits before exclusion is applied."""
+        config = _make_config(tmp_path)
+        config = config.model_copy(update={"debug": True, "exclude_record_ids": ["rec-0"]})
+        runner = _make_runner(config)
+
+        records = [_make_record(f"rec-{i}") for i in range(5)]
+        filtered = runner._filter_records(records)
+
+        assert len(filtered) == 1
+        assert filtered[0].id == "rec-0"
+
 
 class TestArchiveFailedAttempt:
     def test_moves_record_dir_to_archive(self, tmp_path):
@@ -179,6 +224,59 @@ class TestSaveResultsCsv:
         lines = (tmp_path / "results.csv").read_text().strip().split("\n")
         assert len(lines) == 1
         assert "record_id" in lines[0]
+
+
+class TestMetricConfigs:
+    def test_defaults_to_stt_wer_language_only(self, tmp_path):
+        config = _make_config(tmp_path)
+        runner = _make_runner(config)
+
+        assert runner._metric_configs == {"stt_wer": {"language": "en"}}
+
+    def test_merges_user_overrides_without_touching_stt_wer(self, tmp_path):
+        config = _make_config(tmp_path).model_copy(
+            update={
+                "metric_configs": {
+                    "faithfulness": {
+                        "judge_model": "potato",
+                        "judge_params": {"reasoning_effort": "herculean"},
+                    }
+                }
+            }
+        )
+        runner = _make_runner(config)
+
+        assert runner._metric_configs == {
+            "stt_wer": {"language": "en"},
+            "faithfulness": {
+                "judge_model": "potato",
+                "judge_params": {"reasoning_effort": "herculean"},
+            },
+        }
+
+    def test_user_override_of_stt_wer_language_wins(self, tmp_path):
+        config = _make_config(tmp_path).model_copy(update={"metric_configs": {"stt_wer": {"language": "fr"}}})
+        runner = _make_runner(config)
+
+        assert runner._metric_configs["stt_wer"] == {"language": "fr"}
+
+    def test_does_not_mutate_stored_config(self, tmp_path):
+        """The returned dict must not alias self.config.metric_configs's nested dicts."""
+        config = _make_config(tmp_path).model_copy(update={"metric_configs": {"faithfulness": {}}})
+        runner = _make_runner(config)
+
+        runner._metric_configs["faithfulness"]["judge_model"] = "mutated"
+
+        assert config.metric_configs["faithfulness"] == {}
+
+    def test_reflects_config_changes_made_after_construction(self, tmp_path):
+        """Mirrors run_benchmark.py applying a CLI override onto runner.config post-construction."""
+        config = _make_config(tmp_path)
+        runner = _make_runner(config)
+
+        runner.config.metric_configs = {"faithfulness": {"judge_model": "potato"}}
+
+        assert runner._metric_configs["faithfulness"] == {"judge_model": "potato"}
 
 
 class TestFromExistingRun:

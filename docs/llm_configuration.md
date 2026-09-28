@@ -113,6 +113,20 @@ EVA_MODEL_LIST='[
 ]'
 ```
 
+#### Running the assistant against Gemini (AIS vs Vertex)
+
+When the assistant itself runs on Gemini (e.g. Gemini Live), select the backend via `GOOGLE_GENAI_USE_VERTEXAI`:
+
+```bash
+# Against the AI Studio API (AIS)
+GOOGLE_GENAI_USE_VERTEXAI=0 python main.py --debug
+
+# Against Vertex AI
+GOOGLE_GENAI_USE_VERTEXAI=1 python main.py --debug
+```
+
+Always use `--debug` when testing this, since it runs a single record only.
+
 ### Other Providers
 
 For any LiteLLM-supported provider, use the provider prefix in `litellm_params.model`:

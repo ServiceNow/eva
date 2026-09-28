@@ -353,9 +353,12 @@ class GenericNumberNormalizer:
                         yield output(value)
                         value = scale
                 else:
-                    before = value // 1000 * 1000
-                    residual = value % 1000
-                    value = before + residual * scale
+                    if scale > value:
+                        value *= scale
+                    else:
+                        before = value // 1000 * 1000
+                        residual = value % 1000 or 1
+                        value = before + residual * scale
             elif current in self.scaling_units_suffixed:
                 scale, suffix = self.scaling_units_suffixed[current]
                 if value is None:
@@ -369,9 +372,12 @@ class GenericNumberNormalizer:
                         yield output(value)
                         yield output(str(scale) + suffix)
                 else:
-                    before = value // 1000 * 1000
-                    residual = value % 1000
-                    value = before + residual * scale
+                    if scale > value:
+                        value *= scale
+                    else:
+                        before = value // 1000 * 1000
+                        residual = value % 1000 or 1
+                        value = before + residual * scale
                     yield output(str(value) + suffix)
                 value = None
             elif current in self.preceding_prefixers:
