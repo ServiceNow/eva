@@ -23773,6 +23773,182 @@
         }
       },
       "perturbation_delta": {}
+    },
+    {
+      "id": "launa-csm",
+      "name": "Launa (CSM only)",
+      "type": "2-part",
+      "stt": "-",
+      "llm": "Launa",
+      "tts": "Cartesia Sonic 3",
+      "clean": {
+        "EVA-A_mean": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.6419472222222222,
+              "ci_lower": 0.5879127694444445,
+              "ci_upper": 0.6989962000000001,
+              "n": 50
+            }
+          }
+        },
+        "EVA-A_pass": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.48700000000000004,
+              "ci_lower": 0.381,
+              "ci_upper": 0.5880249999999999,
+              "n": 50
+            }
+          }
+        },
+        "EVA-X_mean": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.7536046888888889,
+              "ci_lower": 0.7258885644444444,
+              "ci_upper": 0.7793799883333334,
+              "n": 50
+            }
+          }
+        },
+        "EVA-X_pass": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.5503333333333333,
+              "ci_lower": 0.476325,
+              "ci_upper": 0.6250083333333333,
+              "n": 50
+            }
+          }
+        },
+        "task_completion": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.536,
+              "ci_lower": 0.43799999999999994,
+              "ci_upper": 0.6359999999999999,
+              "n": 50
+            }
+          }
+        },
+        "agent_speech_fidelity": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.980175,
+              "ci_lower": 0.95660275,
+              "ci_upper": 0.997433625,
+              "n": 50
+            }
+          }
+        },
+        "faithfulness": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.41766666666666663,
+              "ci_lower": 0.3506625,
+              "ci_upper": 0.4895041666666667,
+              "n": 50
+            }
+          }
+        },
+        "turn_taking": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.8138610666666666,
+              "ci_lower": 0.77302661,
+              "ci_upper": 0.8473145466666668,
+              "n": 50
+            }
+          }
+        },
+        "conciseness": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.8402863333333334,
+              "ci_lower": 0.8282326666666666,
+              "ci_upper": 0.8516108249999998,
+              "n": 50
+            }
+          }
+        },
+        "conversation_progression": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.6066666666666667,
+              "ci_lower": 0.5431624999999999,
+              "ci_upper": 0.6663333333333334,
+              "n": 50
+            }
+          }
+        },
+        "response_speed": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 2.104595333333333,
+              "ci_lower": 2.041869516666667,
+              "ci_upper": 2.1765478333333332,
+              "n": 50
+            }
+          }
+        },
+        "EVA-A_pass_at_k": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.8043478260869565,
+              "ci_lower": 0.6739130434782609,
+              "ci_upper": 0.9130434782608695,
+              "n": 46
+            }
+          }
+        },
+        "EVA-A_pass_power_k": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.29090782608695653,
+              "ci_lower": 0.18825982608695652,
+              "ci_upper": 0.406075304347826,
+              "n": 46
+            }
+          }
+        },
+        "EVA-X_pass_at_k": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.9565217391304348,
+              "ci_lower": 0.8913043478260869,
+              "ci_upper": 1.0,
+              "n": 46
+            }
+          }
+        },
+        "EVA-X_pass_power_k": {
+          "pooled": null,
+          "per_domain": {
+            "airline": {
+              "point": 0.18141217391304348,
+              "ci_lower": 0.1209704347826087,
+              "ci_upper": 0.24949443478260871,
+              "n": 46
+            }
+          }
+        }
+      },
+      "perturbation_delta": {}
     }
   ]
 }
