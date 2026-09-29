@@ -20,7 +20,7 @@ const paretoInsights = [
   {
     title: 'No system clears 0.6 on both axes pass@1',
     description:
-      'Across 18 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
+      'Across 20 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
   },
   {
     title: 'Peak and reliable performance diverge',
@@ -64,7 +64,7 @@ const keyInsights = [
   {
     title: 'Low-latency cascades close the experience gap',
     description:
-      'Cascade systems built with low-latency models can outperform S2S models on experience. Streaming the LLM responses as well as using pre-tool speech can greatly improve turn-taking. The fastest cascade system achieves the highest EVA-X pass@1 (0.82) of any system, with turn-taking (0.88) surpassing all S2S models — suggesting that latency, not architecture, is the primary driver of experience quality.',
+      'Cascade systems built with low-latency models can outperform S2S models on experience, and streaming the LLM response along with pre-tool speech can greatly improve turn-taking — the fastest cascade system reaches EVA-X pass@1 at 0.82 with turn-taking at 0.88. Though the fastest system overall is still an S2S model, which leads every system on both EVA-X pass@1 at 0.89 and turn-taking at 0.97.',
   },
 ];
 

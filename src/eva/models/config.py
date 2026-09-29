@@ -13,6 +13,7 @@ and explicit kwargs.  Scripts opt in to ``.env`` and/or CLI via
 """
 
 import copy
+import json
 import logging
 import os
 from collections.abc import Iterator
@@ -567,6 +568,15 @@ class RunConfig(BaseSettings):
         False,
         description="Force rerun all requested metrics, overwriting existing successful results (requires --run-id)",
     )
+    ignore_previous_config: bool = Field(
+        False,
+        description=(
+            "Ignore the config.json saved by the previous run (assuming --run-id points to an existing run). "
+            "Use with caution. "
+            "Without this flag, only a few fields (rerun, preflight, and metrics) can be overridden on rerun; "
+            "the rest come from the saved config.json."
+        ),
+    )
     tool_module_path: str | None = Field(
         None,
         description="Python module path with tool functions (e.g., 'eva.assistant.tools.airline_tools'). "
@@ -611,6 +621,18 @@ class RunConfig(BaseSettings):
         description="Metrics to run. Skip all metrics with `EVA_METRICS=` or `--metrics=`.",
     )
 
+    metric_configs: dict[str, dict[str, Any]] = Field(
+        {},
+        description=(
+            "Per-metric configuration overrides (JSON), keyed by metric name. For judge metrics "
+            "(TextJudgeMetric/AudioJudgeMetric subclasses), 'judge_model' overrides the model "
+            "and 'judge_params' merges into the LLM call params (e.g. reasoning_effort, temperature). "
+            f"Example: EVA_METRIC_CONFIGS='{json.dumps({'faithfulness': {'judge_model': 'gpt-5.6-terra', 'judge_params': {'reasoning_effort': 'none'}}})}' "
+            "or EVA_METRIC_CONFIGS__FAITHFULNESS__JUDGE_MODEL=gpt-5.6-terra "
+            "or EVA_METRIC_CONFIGS__FAITHFULNESS__JUDGE_PARAMS__REASONING_EFFORT=none."
+        ),
+    )
+
     # Aggregate-only mode
     aggregate_only: bool = Field(
         False,
@@ -648,6 +670,10 @@ class RunConfig(BaseSettings):
     record_ids: list[str] | None = Field(
         None,
         description="Specific record IDs to run",
+    )
+    exclude_record_ids: list[str] | None = Field(
+        None,
+        description="Specific record IDs to skip (applied after record_ids)",
     )
 
     # Execution
@@ -861,7 +887,7 @@ class RunConfig(BaseSettings):
                 return rest
         return data
 
-    @field_validator("metrics", "record_ids", mode="before")
+    @field_validator("metrics", "record_ids", "exclude_record_ids", mode="before")
     @classmethod
     def _parse_comma_separated(cls, v: Any) -> list[str] | None:
         """Accept comma-separated strings from env vars."""
