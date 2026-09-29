@@ -26,6 +26,14 @@ FORCE:
 install:  # Install dependencies
 	uv sync --all-extras
 
+merge-public-repo:  # Open a pull request to merge eva's main branch into eva-internal's main-internal branch
+	git fetch origin main
+	git push --force internal refs/remotes/origin/main:refs/heads/pr/merge-main
+	gh pr create --repo ServiceNow/eva-internal --head pr/merge-main --title "Merge public repo" --body "" \
+	|| printf '$(call STYLE,$(FG_BRIGHT)$(RED),Unable to create the pull request.\nLooking for an existing pull request:)\n' \
+	&& gh pr view --repo ServiceNow/eva-internal pr/merge-main
+	gh pr merge --repo ServiceNow/eva-internal --auto --merge pr/merge-main
+
 output/%/toolkit-data-push:  # Push output file(s) to Toolkit
 	eai data push snow.core_llm.voice_agent "output/$*:$*"
 
