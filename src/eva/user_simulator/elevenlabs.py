@@ -23,6 +23,11 @@ from eva.utils.logging import current_record_id, get_logger
 
 logger = get_logger(__name__)
 
+#: How long to wait for ElevenLabs to finish processing a conversation before giving up on the
+#: end_call check. 34s left most medical_hr conversations in-progress; 2 minutes still missed about
+#: 1 in 20, each of which was later "done" with end_call.
+END_CALL_CHECK_BUDGET_SECONDS = 300.0
+
 _PERSONA_GENDER = {1: "F", 2: "M"}
 
 
@@ -85,6 +90,7 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
         Returns:
             Reason the conversation ended:
             - "goodbye": Natural conversation end
+            - "end_call_unverified": ElevenLabs ended the session but never reported whether end_call ran
             - "transfer": Assistant initiated transfer
             - "timeout": Conversation timed out
             - "error": Error occurred
@@ -209,8 +215,7 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
             if conversation_id:
                 try:
                     end_call_found = await self._check_end_call_via_api(conversation_id)
-                    if end_call_found:
-                        self._end_reason = "goodbye"
+                    self._end_reason = self._end_reason_after_check(self._end_reason, end_call_found)
                 except Exception as e:
                     logger.warning(f"Failed to check conversation history for end_call: {e}")
 
@@ -259,7 +264,16 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
 
         return self._end_reason
 
-    async def _check_end_call_via_api(self, conversation_id: str) -> bool:
+    @staticmethod
+    def _end_reason_after_check(reason: str, end_call_found: bool | None) -> str:
+        """The end reason once the end_call check has answered; ``None`` means ElevenLabs never did."""
+        if end_call_found:
+            return "goodbye"
+        if end_call_found is None and reason == "session_ended":
+            return "end_call_unverified"
+        return reason
+
+    async def _check_end_call_via_api(self, conversation_id: str) -> bool | None:
         """Check ElevenLabs Conversations API for end_call tool invocation.
 
         Polls with exponential backoff since the transcript may not be available
@@ -269,13 +283,17 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
             conversation_id: The ElevenLabs conversation ID to check.
 
         Returns:
-            True if end_call was found in the transcript, False otherwise.
+            True if end_call was found, False if the finished conversation has none, and None
+            if ElevenLabs had not finished processing it within the polling budget.
         """
-        max_attempts = 5
         delay = 2.0  # initial delay in seconds
+        waited = 0.0
+        attempt = 0
 
-        for attempt in range(max_attempts):
+        while waited < END_CALL_CHECK_BUDGET_SECONDS:
+            attempt += 1
             await asyncio.sleep(delay)
+            waited += delay
             conv_details = self._client.conversational_ai.conversations.get(conversation_id)
 
             # Dump full response to file for debugging/analysis
@@ -286,6 +304,12 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
             except Exception as e:
                 logger.warning(f"Failed to write conversation details to {details_path}: {e}")
 
+            # Set while the conversation is still processing, before the transcript is populated.
+            termination_reason = getattr(getattr(conv_details, "metadata", None), "termination_reason", None) or ""
+            if "end_call" in termination_reason:
+                logger.info("end_call detected via ElevenLabs termination_reason")
+                return True
+
             if conv_details.transcript:
                 for turn in conv_details.transcript:
                     if turn.tool_results:
@@ -293,19 +317,19 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
                             if hasattr(tool_result, "tool_name") and tool_result.tool_name == "end_call":
                                 logger.info("end_call tool detected via ElevenLabs API")
                                 return True
-                # Transcript populated but no end_call found
-                logger.info("Conversation transcript available but no end_call tool found")
-                return False
+                if conv_details.status == "done":
+                    logger.info("Conversation transcript available but no end_call tool found")
+                    return False
 
-            # Transcript still empty, retry with backoff
             logger.debug(
-                f"Conversation transcript not yet available (attempt {attempt + 1}/{max_attempts}, "
-                f"status={conv_details.status})"
+                f"Conversation not yet processed (attempt {attempt}, {waited:.0f}s, status={conv_details.status})"
             )
             delay = min(delay * 2, 10.0)
 
-        logger.warning(f"Conversation transcript still empty after {max_attempts} attempts")
-        return False
+        logger.warning(
+            f"ElevenLabs had not finished processing the conversation after {waited:.0f}s; end_call could not be verified"
+        )
+        return None
 
     async def _fetch_elevenlabs_audio(self, conversation_id: str) -> None:
         max_attempts = 5
