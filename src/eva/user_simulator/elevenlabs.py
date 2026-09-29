@@ -271,7 +271,9 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
         Returns:
             True if end_call was found in the transcript, False otherwise.
         """
-        max_attempts = 5
+        # ~2 minutes in total. At 5 attempts (~34s) most medical_hr conversations were still
+        # in-progress, so valid endings were scored invalid and rerun.
+        max_attempts = 14
         delay = 2.0  # initial delay in seconds
 
         for attempt in range(max_attempts):
@@ -286,6 +288,12 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
             except Exception as e:
                 logger.warning(f"Failed to write conversation details to {details_path}: {e}")
 
+            # Set while the conversation is still processing, before the transcript is populated.
+            termination_reason = getattr(getattr(conv_details, "metadata", None), "termination_reason", None) or ""
+            if "end_call" in termination_reason:
+                logger.info("end_call detected via ElevenLabs termination_reason")
+                return True
+
             if conv_details.transcript:
                 for turn in conv_details.transcript:
                     if turn.tool_results:
@@ -293,9 +301,9 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
                             if hasattr(tool_result, "tool_name") and tool_result.tool_name == "end_call":
                                 logger.info("end_call tool detected via ElevenLabs API")
                                 return True
-                # Transcript populated but no end_call found
-                logger.info("Conversation transcript available but no end_call tool found")
-                return False
+                if conv_details.status == "done":
+                    logger.info("Conversation transcript available but no end_call tool found")
+                    return False
 
             # Transcript still empty, retry with backoff
             logger.debug(
