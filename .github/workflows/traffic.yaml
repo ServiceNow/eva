@@ -3,7 +3,7 @@ name: Traffic
 on:
   schedule:
     # GitHub only retains 14 days of traffic data. This fetches a snapshot every Thursday, so there is overlap.
-    - cron: "0 12 * * 4"
+    - cron: "0 14 * * 4"
   workflow_dispatch:
 
 jobs:
