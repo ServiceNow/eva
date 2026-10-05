@@ -201,11 +201,17 @@ def create_stt_service(
             logger.info(f"Using Deepgram Flux STT: {params['model']}")
             flux_settings_kwargs: dict[str, Any] = {"model": params["model"]}
             # Flux ignores `language`; only `flux-general-multi` honors `language_hints`.
+            # Defaults to the record's language; an explicit `language_hints` in STT_PARAMS overrides it,
+            # and setting it blank (e.g. [] or "") omits the parameter so Flux auto-detects.
             if params["model"] == "flux-general-multi":
-                if params.get("language_hints"):
-                    flux_settings_kwargs["language_hints"] = params["language_hints"]
+                language_hints = params.get("language_hints", [_base_language(language_code)])
+                if isinstance(language_hints, str):
+                    language_hints = [language_hints]
+                language_hints = [h.strip() for h in language_hints or [] if h and h.strip()]
+                if language_hints:
+                    flux_settings_kwargs["language_hints"] = language_hints
                 else:
-                    logger.warning("No Language hint provided. Auto detecting language for Deepgram Flux")
+                    logger.info("Empty language_hints provided. Auto detecting language for Deepgram Flux")
             return DeepgramFluxSTTService(
                 api_key=api_key,
                 sample_rate=SAMPLE_RATE,
