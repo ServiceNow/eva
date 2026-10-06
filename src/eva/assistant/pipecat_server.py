@@ -576,7 +576,18 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 add_wav_header=False,
                 serializer=TwilioFrameSerializer(
                     self.conversation_id,
-                    params=TwilioFrameSerializer.InputParams(auto_hang_up=False),
+                    params=TwilioFrameSerializer.InputParams(
+                        auto_hang_up=False,
+                        # The stream resampler clears its internal history after
+                        # this many seconds of inactivity. The user-simulator
+                        # bridge paces 20ms chunks with irregular gaps
+                        # (inter-utterance pauses, end-of-utterance silence
+                        # padding), so the 0.2s default fires mid-conversation
+                        # and the caller's speech is transcribed as
+                        # plausible-but-wrong words. pipecat recommends None for
+                        # telephony sources with irregular gaps.
+                        resampler_clear_after_secs=None,
+                    ),
                 ),
             ),
         )
