@@ -18,14 +18,14 @@ import { useThemeColors } from '../../styles/theme';
 // Three central findings from the EVA-Bench paper abstract / §5 Conclusion.
 const paretoInsights = [
   {
-    title: 'No system clears 0.6 on both axes pass@1',
+    title: 'Only one system clears 0.6 on both axes pass@1',
     description:
-      'Across 20 systems spanning all three architectures, no system simultaneously exceeds 0.6 on both EVA-A pass@1 and EVA-X pass@1 — joint accuracy–experience quality remains far from saturated.',
+      'Across 23 systems spanning all three architectures, only one S2S system (Grok Voice 3.0) exceeds 0.6 on both EVA-A pass@1 (0.74) and EVA-X pass@1 (0.71). Every other system falls short on at least one axis — joint accuracy–experience quality remains far from saturated.',
   },
   {
     title: 'Peak and reliable performance diverge',
     description:
-      'Peak (pass@k) and reliable (pass^k) performance diverge substantially: the median pass@k–pass^k gap is 0.44 on EVA-A and 0.24 on EVA-X, indicating single-trial scores systematically overstate deployment-grade reliability.',
+      'Peak (pass@k) and reliable (pass^k) performance diverge substantially: the median pass@k–pass^k gap is 0.40 on EVA-A and 0.47 on EVA-X, indicating single-trial scores systematically overstate deployment-grade reliability.',
   },
   {
     title: 'Architecture and SDK implementation both shape results',
@@ -39,7 +39,7 @@ const keyInsights = [
   {
     title: 'Accuracy–experience trade-off',
     description:
-      'Across evaluated systems, accuracy and experience trace out a clear Pareto frontier: the highest-accuracy systems tend to have lower experience scores, while the highest-experience systems tend to have lower accuracy.',
+      'Across evaluated systems, accuracy and experience trace out a clear Pareto frontier, and no system leads on both. The highest-accuracy system (EVA-A pass@1 0.74) trails the highest-experience system on EVA-X (0.71 vs 0.89), while that system in turn has much lower accuracy (0.46).',
   },
   {
     title: 'Asymmetric degradation under perturbation',
@@ -64,7 +64,7 @@ const keyInsights = [
   {
     title: 'Low-latency cascades close the experience gap',
     description:
-      'Cascade systems built with low-latency models can outperform S2S models on experience, and streaming the LLM response along with pre-tool speech can greatly improve turn-taking — the fastest cascade system reaches EVA-X pass@1 at 0.82 with turn-taking at 0.88. Though the fastest system overall is still an S2S model, which leads every system on both EVA-X pass@1 at 0.89 and turn-taking at 0.97.',
+      'Cascade systems built with low-latency models can outperform S2S models on experience, and streaming the LLM response along with pre-tool speech can greatly improve turn-taking — the fastest cascade system reaches EVA-X pass@1 at 0.82 with turn-taking at 0.88. Though the fastest system overall is still an S2S model, which leads every system on both EVA-X pass@1 at 0.89 and turn-taking at 0.97. S2S also now leads on accuracy, with the top S2S system reaching EVA-A pass@1 of 0.74 versus 0.67 for the best cascade.',
   },
 ];
 
