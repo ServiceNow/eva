@@ -2,6 +2,7 @@
 
 import pytest
 
+from eva.assistant.tools import airline_params, itsm_params, medical_hr_params
 from eva.metrics.diagnostic.tool_call_validity import CALL_ERROR_TYPES, ToolCallValidity
 
 from .conftest import make_metric_context
@@ -302,9 +303,26 @@ async def test_non_dict_tool_response_skipped(metric):
     assert result.details["total_tool_calls"] == 1
 
 
-def test_call_error_types_includes_field_error_types():
-    """CALL_ERROR_TYPES should include all error types from FIELD_ERROR_TYPES."""
-    from eva.assistant.tools.airline_params import FIELD_ERROR_TYPES
+@pytest.mark.parametrize("params_module", [airline_params, itsm_params, medical_hr_params])
+def test_call_error_types_includes_field_error_types(params_module):
+    """CALL_ERROR_TYPES should include the validation error types of every domain."""
+    missing = {t for t, _ in params_module.FIELD_ERROR_TYPES.values()} - CALL_ERROR_TYPES
+    assert not missing, f"{params_module.__name__} error types not in CALL_ERROR_TYPES: {sorted(missing)}"
 
-    for error_type, _ in FIELD_ERROR_TYPES.values():
-        assert error_type in CALL_ERROR_TYPES, f"{error_type} not in CALL_ERROR_TYPES"
+
+@pytest.mark.asyncio
+async def test_non_airline_format_error_penalized(metric):
+    """A medical_hr format error counts as an invalid call."""
+    context = make_metric_context(
+        tool_params=[{"tool_name": "verify_provider_auth", "tool_parameters": {"facility_code": "BOS"}}],
+        tool_responses=[
+            {
+                "tool_name": "verify_provider_auth",
+                "tool_response": {"status": "error", "error_type": "invalid_facility_code_format", "message": "bad"},
+            }
+        ],
+    )
+    result = await metric.compute(context)
+
+    assert result.score == 0.0
+    assert result.details["invalid_tool_calls"] == 1

@@ -8,7 +8,7 @@ Debug metric for diagnosing model performance issues, not directly used in
 final evaluation scores.
 """
 
-from eva.assistant.tools.airline_params import FIELD_ERROR_TYPES
+from eva.assistant.tools import airline_params, itsm_params, medical_hr_params
 from eva.metrics.base import CodeMetric, MetricContext
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import make_rate_sub_metric
@@ -24,8 +24,12 @@ _TOOL_EXECUTOR_ERROR_TYPES = frozenset(
     }
 )
 
-# Validation error types derived from Pydantic param models.
-_VALIDATION_ERROR_TYPES = frozenset(error_type for error_type, _ in FIELD_ERROR_TYPES.values())
+# Validation error types derived from every domain's Pydantic param models; a new domain must be added here.
+_VALIDATION_ERROR_TYPES = frozenset(
+    error_type
+    for params_module in (airline_params, itsm_params, medical_hr_params)
+    for error_type, _ in params_module.FIELD_ERROR_TYPES.values()
+)
 
 CALL_ERROR_TYPES = _TOOL_EXECUTOR_ERROR_TYPES | _VALIDATION_ERROR_TYPES
 
@@ -39,7 +43,7 @@ class ToolCallValidity(CodeMetric):
     """
 
     name = "tool_call_validity"
-    version = "v0.1"
+    version = "v0.2"
     description = "Debug metric: fraction of tool calls with correctly formatted parameters"
     category = "diagnostic"
     exclude_from_pass_at_k = True

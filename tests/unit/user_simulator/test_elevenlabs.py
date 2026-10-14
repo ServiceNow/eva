@@ -46,11 +46,12 @@ def _make_simulator(tmp_path: Path, **overrides) -> ElevenLabsUserSimulator:
     return ElevenLabsUserSimulator(**defaults)
 
 
-def _make_conv_details(transcript=None, status="done"):
+def _make_conv_details(transcript=None, status="done", termination_reason=None):
     """Create a mock ElevenLabs conversation details response."""
     details = SimpleNamespace(
         transcript=transcript,
         status=status,
+        metadata=SimpleNamespace(termination_reason=termination_reason),
     )
     details.model_dump = lambda: {"transcript": transcript, "status": status}
     return details
@@ -241,9 +242,9 @@ class TestCheckEndCallViaApi:
         with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
             result = await sim._check_end_call_via_api("conv-123")
 
-        assert result is False
-        # Should have tried exactly 5 times (max_attempts)
-        assert sim._client.conversational_ai.conversations.get.call_count == 5
+        assert result is None
+        # 2 + 4 + 8 + 29 x 10 = 304s, the first total past the 300s budget
+        assert sim._client.conversational_ai.conversations.get.call_count == 32
 
     @pytest.mark.asyncio
     async def test_backoff_caps_at_10_seconds(self, tmp_path):
@@ -262,8 +263,64 @@ class TestCheckEndCallViaApi:
         with patch("eva.user_simulator.elevenlabs.asyncio.sleep", side_effect=track_sleep):
             await sim._check_end_call_via_api("conv-123")
 
-        # Delays: 2.0, 4.0, 8.0, 10.0 (capped), 10.0 (capped)
-        assert sleep_delays == [2.0, 4.0, 8.0, 10.0, 10.0]
+        # Delays: 2.0, 4.0, 8.0, then 10.0 (capped) until the 300s budget is spent
+        assert sleep_delays == [2.0, 4.0, 8.0] + [10.0] * 29
+
+    @pytest.mark.asyncio
+    async def test_termination_reason_counts_before_transcript_arrives(self, tmp_path):
+        """While processing, the transcript is empty but termination_reason already names end_call."""
+        sim = _make_simulator(tmp_path)
+        sim._client = MagicMock()
+        sim._client.conversational_ai.conversations.get.return_value = _make_conv_details(
+            transcript=None, status="processing", termination_reason="end_call tool was called."
+        )
+
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
+            result = await sim._check_end_call_via_api("conv-123")
+
+        assert result is True
+        assert sim._client.conversational_ai.conversations.get.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_keeps_polling_past_a_minute_until_done(self, tmp_path):
+        """Measured on medical_hr: most conversations were still in-progress 34s after the call."""
+        sim = _make_simulator(tmp_path)
+        sim._client = MagicMock()
+        pending = _make_conv_details(transcript=None, status="in-progress")
+        done = _make_conv_details(transcript=[_make_turn(tool_results=[_make_tool_result("end_call")])])
+        sim._client.conversational_ai.conversations.get.side_effect = [pending] * 8 + [done]
+
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
+            result = await sim._check_end_call_via_api("conv-123")
+
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_populated_transcript_without_end_call_is_not_final_until_done(self, tmp_path):
+        """A partial transcript while processing must not be read as 'no end_call'."""
+        sim = _make_simulator(tmp_path)
+        sim._client = MagicMock()
+        partial = _make_conv_details(transcript=[_make_turn(tool_results=None)], status="processing")
+        sim._client.conversational_ai.conversations.get.return_value = partial
+
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
+            result = await sim._check_end_call_via_api("conv-123")
+
+        assert result is None
+
+    @pytest.mark.parametrize(
+        ("reason", "found", "expected"),
+        [
+            ("session_ended", True, "goodbye"),
+            ("session_ended", False, "session_ended"),
+            ("session_ended", None, "end_call_unverified"),
+            # A specific reason already explains the ending; an unanswered API call must not mask it.
+            ("inactivity_timeout", None, "inactivity_timeout"),
+            ("inactivity_timeout", True, "goodbye"),
+        ],
+    )
+    def test_end_reason_after_check(self, reason, found, expected):
+        assert ElevenLabsUserSimulator._end_reason_after_check(reason, found) == expected
 
     @pytest.mark.asyncio
     async def test_writes_conversation_details_to_file(self, tmp_path):
