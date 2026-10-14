@@ -74,8 +74,8 @@
   "ToolCallValidity": {
     "name": "tool_call_validity",
     "prompt_hash": null,
-    "source_hash": "761f0d0a32dd",
-    "version": "v0.1"
+    "source_hash": "b04558aebc2b",
+    "version": "v0.2"
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
