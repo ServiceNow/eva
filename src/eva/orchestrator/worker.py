@@ -53,10 +53,14 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
         from eva.assistant.smallest_hydra_server import SmallestHydraAssistantServer
 
         return SmallestHydraAssistantServer
+    elif framework == "cartesia_managed":
+        from eva.assistant.cartesia_managed_server import CartesiaManagedAssistantServer
+
+        return CartesiaManagedAssistantServer
     else:
         raise ValueError(
             f"Unknown framework: {framework!r}. "
-            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra"
+            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia_managed"
         )
 
 

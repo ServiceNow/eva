@@ -10,6 +10,9 @@ class TestGetPipelineType:
     def test_s2s_from_s2s_key(self):
         assert get_pipeline_type({"s2s": "gpt-realtime-mini"}) == PipelineType.S2S
 
+    def test_cartesia_managed_is_cascade(self):
+        assert get_pipeline_type({"s2s": "cartesia_managed"}) == PipelineType.CASCADE
+
     def test_audio_llm_from_audio_llm_key(self):
         assert get_pipeline_type({"audio_llm": "ultravox"}) == PipelineType.AUDIO_LLM
 

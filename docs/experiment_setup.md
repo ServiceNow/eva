@@ -92,6 +92,19 @@ We use the default turn detection configurations for most framework in our exper
 
 EVA-Bench makes turn detection parameters and options configurable via the CLI, so practitioners can run experiments using the turn detection settings available to their chosen framework. The only exception is ElevenAgents, where users must register and configure their agents separately prior to evaluation.
 
+### Cartesia Managed Agents
+
+`framework: cartesia_managed` runs a Cartesia managed agent over a WebSocket connection. Managed Agents runs the whole agent loop: audio orchestration (listening, turn-taking, interruptions and speech) along with tool calling, reasoning orchestration and knowledge retrieval, around the reasoning model you choose. EVA's tools run as client tools, and EVA's system prompt and greeting are sent with each call as dynamic variables. One agent per domain is registered before evaluation, with its config in `provision_agents.py`:
+
+```bash
+uv run python scripts/cartesia_managed/provision_agents.py  # create or update; --model picks the LLM (default gpt-5.5)
+scripts/cartesia_managed/run.sh airline                     # likewise itsm, medical_hr
+```
+
+Both read `CARTESIA_API_KEY` from the environment or `.env`.
+
+`s2s_params`: `api_key` and `agent_ids` (EVA agent id to Cartesia agent id) are required; `model` and `alias` label the run; `base_url` (default `wss://api.cartesia.ai`) and `cartesia_version` are optional.
+
 ## Judge Models
 
 The table below lists the API-hosted models used as a judge.

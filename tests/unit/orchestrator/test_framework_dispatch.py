@@ -20,3 +20,9 @@ def test_unknown_framework_error_lists_grok_voice():
     with pytest.raises(ValueError) as exc_info:
         _get_server_class("nope")
     assert "grok_voice" in str(exc_info.value)
+
+
+def test_cartesia_managed_dispatch_returns_cartesia_class():
+    from eva.assistant.cartesia_managed_server import CartesiaManagedAssistantServer
+
+    assert _get_server_class("cartesia_managed") is CartesiaManagedAssistantServer

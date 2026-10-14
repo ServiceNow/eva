@@ -93,6 +93,11 @@ local/
 scripts/leaderboard_runs.json
 scripts/extract_and_generate_leaderboard.py
 
+# Only the public Managed Agents setup belongs in version control.
+scripts/cartesia_managed/*
+!scripts/cartesia_managed/provision_agents.py
+!scripts/cartesia_managed/run.sh
+
 # Website data generation scripts (local only)
 website/scripts/
 
