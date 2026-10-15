@@ -16460,10 +16460,10 @@
     },
     {
       "id": "grok-voice-think-fast-1-0",
-      "name": "Grok Voice Think Fast 1.0",
+      "name": "Grok Voice 1.0",
       "type": "s2s",
       "stt": "-",
-      "llm": "Grok Voice Think Fast 1.0",
+      "llm": "Grok Voice 1.0",
       "tts": "-",
       "clean": {
         "EVA-A_mean": {
