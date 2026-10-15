@@ -63,7 +63,7 @@ apps/traffic.py/download: %/download:  # Download today's GitHub traffic data an
 	eai data push $(TOOLKIT_DATA) ".github/traffic/$${today}_views.json" ".github/traffic/$${today}_clones.json" --remote-root $(TOOLKIT_JOB_NAME)
 	-@$(MAKE) --no-print-directory $*/toolkit-data-rm $*/toolkit-job-url
 
-# Requires bash, not sh, for $'...' quoting, process substitution, and arrays.
+# Requires SHELL:=bash, not sh, for $'...' quoting, process substitution, and arrays.
 apps/traffic.py/toolkit-data-rm:  # Remove outdated GitHub traffic data from Toolkit
 	IFS=$$'\n'; \
 	files=($$(comm -23 <(eai data content ls snow.core_llm.eva --path eva_github_traffic/.github/traffic --field name | sort) <(ls .github/traffic) | sed 's|^|/tmp/eva/.github/traffic/|')) && \
