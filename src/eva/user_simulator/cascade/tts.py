@@ -16,7 +16,7 @@ TTS_SAMPLE_RATE = 16000
 CARTESIA_SSE_URL = "https://api.cartesia.ai/tts/sse"
 CARTESIA_VERSION = "2025-11-04"
 
-CALLER_SPEED = 1.2 # TODO Will use this for the generated barge ins
+CALLER_SPEED = 1.2  # TODO Will use this for the generated barge ins
 """Cartesia generation_config.speed for the caller. People speed up when they cut in, and it
 shortens pre-rendered openers. Fixed for now; promote to config if it needs tuning."""
 
@@ -52,7 +52,7 @@ class CartesiaStreamingTTS:
             "voice": {"mode": "id", "id": voice_id},
             "language": self.language,
             "output_format": {"container": "raw", "encoding": "pcm_s16le", "sample_rate": TTS_SAMPLE_RATE},
-            #"generation_config": {"speed": CALLER_SPEED},
+            # "generation_config": {"speed": CALLER_SPEED},
         }
         return body
 
