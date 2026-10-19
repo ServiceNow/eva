@@ -216,8 +216,8 @@ class TestRouterConcurrency:
     @pytest.mark.asyncio
     async def test_max_parallel_requests_bounds_concurrency(self):
         """Peak concurrent calls never exceeds max_parallel_requests."""
-        test_router = Router(
-            model_list=[
+        router.init(
+            [
                 {
                     "model_name": "test-model",
                     "litellm_params": {
@@ -226,8 +226,7 @@ class TestRouterConcurrency:
                         "max_parallel_requests": 2,
                     },
                 }
-            ],
-            num_retries=0,
+            ]
         )
 
         peak_concurrent = 0
@@ -246,7 +245,7 @@ class TestRouterConcurrency:
 
         with patch("litellm.acompletion", new=mock_acompletion):
             tasks = [
-                test_router.acompletion(
+                router.acompletion(
                     model="test-model",
                     messages=[{"role": "user", "content": f"msg-{i}"}],
                 )

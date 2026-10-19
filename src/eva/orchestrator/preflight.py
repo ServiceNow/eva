@@ -160,6 +160,9 @@ async def _run_preflight(config: RunConfig) -> list[ProbeResult]:
 
     S2S runs are skipped (no live probe yet) — only a log line is emitted.
     """
+    # TODO: probe the user simulator's own services when EVA_USER_SIMULATOR__PROVIDER=cascade (its LLM
+    # deployment, Scribe realtime STT, Cartesia TTS). Today a missing `user-llm` deployment only surfaces as
+    # every record failing after the assistant's greeting.
     timeout = config.preflight_timeout_seconds
     model = config.model
     probes: list[tuple[str, str, Awaitable[tuple[bool, str]]]] = []

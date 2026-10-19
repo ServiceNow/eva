@@ -511,7 +511,7 @@ async def run_record(
 
     audit_log = AuditLog()
     agent_llm_client = LiteLLMClient(model=llm_model)
-    user_sim_llm_client = LiteLLMClient(model="gpt-5.1")
+    user_sim_llm_client = LiteLLMClient(model="user-llm")
 
     agentic_system = AgenticSystem(
         current_date_time=record.current_date_time,

@@ -93,7 +93,7 @@ class LiteLLMClient:
         for attempt in range(max_retries + 1):
             try:
                 start_time = time.time()
-                response = await router.get().acompletion(**kwargs)
+                response = await router.acompletion(**kwargs)
                 elapsed_time = time.time() - start_time
 
                 message = response.choices[0].message
@@ -305,16 +305,17 @@ class LiteLLMClient:
             first_token = False
             try:
                 start_time = time.time()
-                stream = await router.get().acompletion(**kwargs)
-                async for chunk in stream:
-                    chunks.append(chunk)
-                    choices = getattr(chunk, "choices", None) or []
-                    if choices:
-                        delta = getattr(choices[0], "delta", None)
-                        text = getattr(delta, "content", None) if delta else None
-                        if text:
-                            first_token = True
-                            yield ("delta", text)
+                async with router.limit(self.model):
+                    stream = await router.get().acompletion(**kwargs)
+                    async for chunk in stream:
+                        chunks.append(chunk)
+                        choices = getattr(chunk, "choices", None) or []
+                        if choices:
+                            delta = getattr(choices[0], "delta", None)
+                            text = getattr(delta, "content", None) if delta else None
+                            if text:
+                                first_token = True
+                                yield ("delta", text)
                 elapsed_time = time.time() - start_time
 
                 full = litellm.stream_chunk_builder(chunks, messages=messages)
@@ -414,7 +415,8 @@ class LiteLLMClient:
         for attempt in range(max_retries + 1):
             try:
                 start_time = time.time()
-                response = await litellm.aresponses(**kwargs)
+                async with router.limit(self.model):
+                    response = await litellm.aresponses(**kwargs)
                 elapsed = time.time() - start_time
 
                 text_content = ""
