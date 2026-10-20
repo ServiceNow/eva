@@ -53,14 +53,14 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
         from eva.assistant.smallest_hydra_server import SmallestHydraAssistantServer
 
         return SmallestHydraAssistantServer
-    elif framework == "cartesia_managed":
-        from eva.assistant.cartesia_managed_server import CartesiaManagedAssistantServer
+    elif framework == "cartesia":
+        from eva.assistant.cartesia_server import CartesiaAssistantServer
 
-        return CartesiaManagedAssistantServer
+        return CartesiaAssistantServer
     else:
         raise ValueError(
             f"Unknown framework: {framework!r}. "
-            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia_managed"
+            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia"
         )
 
 
@@ -316,10 +316,11 @@ class ConversationWorker:
         server_cls = _get_server_class(self.config.framework)
         resolved_db_path = self._materialize_resolved_scenario_db()
         # The turn-end fallback applies to the Pipecat pipelines (cascade + audio-LLM), whose
-        # turn detection can drop a user turn. S2S servers handle turn-taking natively and
-        # don't accept this kwarg.
+        # turn detection can drop a user turn, and to Cartesia Managed Agents, whose agents must
+        # be provisioned with a matching check-in time. Other S2S servers handle turn-taking
+        # natively and don't accept this kwarg.
         server_kwargs: dict[str, Any] = {}
-        if self.config.framework == "pipecat":
+        if self.config.framework in ("pipecat", "cartesia"):
             server_kwargs["turn_end_fallback_time"] = self.config.turn_end_fallback_time
         self._assistant_server = server_cls(
             current_date_time=self.record.current_date_time,

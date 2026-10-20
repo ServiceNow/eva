@@ -8,12 +8,12 @@ from unittest.mock import patch
 
 import numpy as np
 
-from eva.assistant.cartesia_managed_server import CartesiaManagedAssistantServer, _mix_pcm16, _SpeechSegment
+from eva.assistant.cartesia_server import CartesiaAssistantServer, _mix_pcm16, _SpeechSegment
 from eva.utils.audio_utils import pcm16_mix
 
 
-def _bare_server() -> CartesiaManagedAssistantServer:
-    srv = object.__new__(CartesiaManagedAssistantServer)
+def _bare_server() -> CartesiaAssistantServer:
+    srv = object.__new__(CartesiaAssistantServer)
     srv._system_prompt = "you are a helpful agent"
     srv.initial_message = "Hello, how can I help you today?"
     return srv
@@ -33,10 +33,10 @@ def test_session_create_streams_pcm_and_sends_prompt_and_greeting():
 def test_speech_pieces_split_at_messages_and_tool_calls(monkeypatch):
     segment = _SpeechSegment(1000)
     segment.add_text("One moment.")
-    monkeypatch.setattr("eva.assistant.cartesia_managed_server._now_ms", lambda: 2500)
+    monkeypatch.setattr("eva.assistant.cartesia_server._now_ms", lambda: 2500)
     segment.add_text("Checking now")
     segment.end_piece()  # tool call
-    monkeypatch.setattr("eva.assistant.cartesia_managed_server._now_ms", lambda: 4000)
+    monkeypatch.setattr("eva.assistant.cartesia_server._now_ms", lambda: 4000)
     segment.add_text(" and you are all set.")
     segment.end_piece()
     assert segment.take_pieces() == [("One moment.", 1000), ("Checking now", 2500), ("and you are all set.", 4000)]
@@ -87,6 +87,7 @@ class _Agent:
 
     def __init__(self, events):
         self.events = events
+        self.sent = []
 
     async def __aenter__(self):
         return self
@@ -95,7 +96,7 @@ class _Agent:
         pass
 
     async def send(self, text):
-        pass
+        self.sent.append(json.loads(text))
 
     async def recv(self):
         return json.dumps({"type": "session_ready", "call_id": "call_test"})
@@ -128,9 +129,10 @@ def _ended(text: str, interrupted: bool = False, tool_calls: tuple = ()) -> dict
     }
 
 
-async def _session(events, script=()) -> list[tuple]:
+async def _session(events, script=(), execute_tool=None, agent=None) -> list[tuple]:
     """Runs one session against the replayed agent and simulator; returns the framework log calls."""
     srv = _bare_server()
+    srv.execute_tool = execute_tool
     srv.conversation_id, srv._running, srv._model = "conv_test", True, "managed-test"
     srv._base_url, srv._cartesia_agent_id, srv._cartesia_version, srv._api_key = (
         "ws://agent",
@@ -140,7 +142,7 @@ async def _session(events, script=()) -> list[tuple]:
     )
     srv.user_audio_buffer, srv.assistant_audio_buffer = bytearray(), bytearray()
     srv.audit_log, srv._fw_log, srv._metrics_log = _Recorder(), _Recorder(), _Recorder()
-    with patch("eva.assistant.cartesia_managed_server.websockets.connect", return_value=_Agent(events)):
+    with patch("eva.assistant.cartesia_server.websockets.connect", return_value=agent or _Agent(events)):
         await srv._handle_session(_Simulator(script))
     return srv._fw_log.calls
 
@@ -154,7 +156,8 @@ def _turn_starts(calls) -> int:
 
 
 async def test_each_spoken_agent_turn_is_one_response():
-    # A pause inside a turn does not split it; speech before a tool call and the reply after it are separate turns.
+    # A pause inside a turn does not split it; speech before a tool call and the reply after it are separate
+    # responses within one model turn.
     calls = await _session(
         [
             (0, _audio(0.1)),
@@ -188,3 +191,44 @@ async def test_caller_speech_starts_a_new_turn_and_interruptions_are_marked():
     assert _responses(calls) == ["Let me explain the", "Sure."]
     assert _turn_starts(calls) == 2
     assert [kwargs["was_interrupted"] for name, _, kwargs in calls if name == "turn_end"] == [True, False]
+
+
+def _tool_call(call_id: str, name: str, parameters: dict, expects_response: bool = True) -> dict:
+    return {
+        "type": "client_tool_call",
+        "tool_call_id": call_id,
+        "tool_name": name,
+        "parameters": parameters,
+        "expects_response": expects_response,
+    }
+
+
+async def test_tool_calls_run_eva_tools_and_return_results_and_errors():
+    executed = []
+
+    async def execute_tool(name, params):
+        executed.append((name, params))
+        if name == "broken":
+            raise RuntimeError("database unavailable")
+        return {"status": "success", "reservation": {"id": params["confirmation_number"]}}
+
+    agent = _Agent(
+        [
+            (0, _tool_call("t1", "get_reservation", {"confirmation_number": "ABC123"})),
+            (0, _tool_call("t2", "broken", {})),
+            (0, _tool_call("t3", "notify", {}, expects_response=False)),
+        ]
+    )
+    await _session([], execute_tool=execute_tool, agent=agent)
+
+    assert executed == [("get_reservation", {"confirmation_number": "ABC123"}), ("broken", {}), ("notify", {})]
+    results = {m["tool_call_id"]: m for m in agent.sent if m["type"] == "client_tool_result"}
+    assert set(results) == {"t1", "t2"}  # no result for a tool that expects none
+    assert json.loads(results["t1"]["result"]) == {"status": "success", "reservation": {"id": "ABC123"}}
+    assert results["t1"]["is_error"] is False
+    assert results["t2"] == {
+        "type": "client_tool_result",
+        "tool_call_id": "t2",
+        "result": "database unavailable",
+        "is_error": True,
+    }

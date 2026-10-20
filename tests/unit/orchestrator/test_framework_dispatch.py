@@ -22,7 +22,7 @@ def test_unknown_framework_error_lists_grok_voice():
     assert "grok_voice" in str(exc_info.value)
 
 
-def test_cartesia_managed_dispatch_returns_cartesia_class():
-    from eva.assistant.cartesia_managed_server import CartesiaManagedAssistantServer
+def test_cartesia_dispatch_returns_cartesia_class():
+    from eva.assistant.cartesia_server import CartesiaAssistantServer
 
-    assert _get_server_class("cartesia_managed") is CartesiaManagedAssistantServer
+    assert _get_server_class("cartesia") is CartesiaAssistantServer

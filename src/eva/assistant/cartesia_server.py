@@ -4,7 +4,8 @@ Bridges the user simulator's Twilio-style WebSocket to a Cartesia managed agent 
 API (/v1/agents/websocket/{agent_id}). The agent handles audio and turn-taking; this server moves
 audio, runs EVA's tools as client tools, and records the conversation. EVA's system prompt and
 greeting are sent with each call as dynamic variables, to agents created by
-scripts/cartesia_managed/provision_agents.py.
+scripts/provision_cartesia_agents.py. Settings that cannot be set per call are checked against the
+run config before the call starts.
 """
 
 from __future__ import annotations
@@ -30,13 +31,13 @@ from eva.assistant.base_server import AbstractAssistantServer
 from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWriter
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
+from eva.utils import cartesia_agents
 from eva.utils.audio_utils import create_twilio_media_message, parse_twilio_media_message
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 _SAMPLE_RATE = 16000  # agent PCM in both directions
-_DEFAULT_CARTESIA_VERSION = "2026-08-14"
 
 MULAW_CHUNK_SIZE = 160  # 20 ms at 8 kHz
 CHUNK_DURATION_S = 0.02
@@ -103,7 +104,7 @@ class _SpeechSegment:
         return pieces
 
 
-class CartesiaManagedAssistantServer(AbstractAssistantServer):
+class CartesiaAssistantServer(AbstractAssistantServer):
     def __init__(
         self,
         current_date_time: str,
@@ -115,6 +116,7 @@ class CartesiaManagedAssistantServer(AbstractAssistantServer):
         port: int,
         conversation_id: str,
         language: str = "en",
+        turn_end_fallback_time: int | None = None,
     ):
         super().__init__(
             current_date_time=current_date_time,
@@ -130,14 +132,15 @@ class CartesiaManagedAssistantServer(AbstractAssistantServer):
         self._audio_sample_rate = _SAMPLE_RATE
 
         params = self.pipeline_config.s2s_params or {}
+        self._params = params
         self._api_key = params["api_key"]
-        self._model = params["model"]
         self._base_url = params.get("base_url", "wss://api.cartesia.ai").rstrip("/")
-        self._cartesia_version = params.get("cartesia_version", _DEFAULT_CARTESIA_VERSION)
-        agent_ids = params.get("agent_ids") or {}
-        if agent.id not in agent_ids:
-            raise ValueError(f"s2s_params.agent_ids has no Cartesia agent for EVA agent {agent.id!r}")
-        self._cartesia_agent_id = agent_ids[agent.id]
+        self._cartesia_version = params.get("cartesia_version", cartesia_agents.DEFAULT_CARTESIA_VERSION)
+        self._turn_end_fallback_time = turn_end_fallback_time
+        self._model = params["model"]
+        self._cartesia_agent_id = params.get("assistant_agent_id")
+        if not self._cartesia_agent_id:
+            raise ValueError("Missing Cartesia assistant agent ID in s2s_params")
 
         self._system_prompt = self._build_system_prompt()
         self._call_id: str | None = None
@@ -159,6 +162,8 @@ class CartesiaManagedAssistantServer(AbstractAssistantServer):
             logger.warning("Server already running")
             return
 
+        await asyncio.to_thread(self._check_agent)
+
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._fw_log = FrameworkLogWriter(self.output_dir)
         self._metrics_log = MetricsLogWriter(self.output_dir)
@@ -177,6 +182,17 @@ class CartesiaManagedAssistantServer(AbstractAssistantServer):
         while not self._server.started:
             await asyncio.sleep(0.01)
         logger.info(f"Cartesia managed server started on ws://localhost:{self.port}")
+
+    def _check_agent(self) -> None:
+        """Fetch the managed agent and refuse to run if it does not match the run config."""
+        agent = cartesia_agents.fetch_agent(self._cartesia_agent_id, self._params)
+        cartesia_agents.check_agent_matches_config(
+            agent,
+            model=self._model,
+            pre_tool_speech=self.pipeline_config.pre_tool_speech,
+            turn_end_fallback_time=self._turn_end_fallback_time,
+            tool_names=[t["function"]["name"] for t in self.agent.build_tools_for_agent() or []],
+        )
 
     async def _shutdown(self) -> None:
         if not self._running:

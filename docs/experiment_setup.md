@@ -94,16 +94,26 @@ EVA-Bench makes turn detection parameters and options configurable via the CLI, 
 
 ### Cartesia Managed Agents
 
-`framework: cartesia_managed` runs a Cartesia managed agent over a WebSocket connection. Managed Agents runs the whole agent loop: audio orchestration (listening, turn-taking, interruptions and speech) along with tool calling, reasoning orchestration and knowledge retrieval, around the reasoning model you choose. EVA's tools run as client tools, and EVA's system prompt and greeting are sent with each call as dynamic variables. One agent per domain is registered before evaluation, with its config in `provision_agents.py`:
+`framework: cartesia` runs a Cartesia managed agent over a WebSocket connection. Managed Agents runs the whole agent loop: audio orchestration (listening, turn-taking, interruptions and speech) along with tool calling, reasoning orchestration and knowledge retrieval, around the reasoning model you choose. EVA's tools run as client tools, and EVA's system prompt and greeting are sent with each call as dynamic variables. One agent per domain is registered before evaluation, with its config in `scripts/provision_cartesia_agents.py`. Model fallback is disabled on these agents, so only the chosen model answers.
+
+Some agent settings can't be changed per call, so they are set when the agent is provisioned from EVA's options. The assistant server checks them against the run config and refuses to start if they don't match:
+
+| EVA option | Agent setting |
+|---|---|
+| `EVA_MODEL__PRE_TOOL_SPEECH` (`auto` or `off`) | each tool's `pre_tool_speech` |
+| `EVA_TURN_END_FALLBACK_TIME` (5 to 60 seconds, or unset) | `turn.inactivity_check_in_secs` (unset turns check-ins off) |
 
 ```bash
-uv run python scripts/cartesia_managed/provision_agents.py  # create or update; --model picks the LLM (default gpt-5.5)
-scripts/cartesia_managed/run.sh airline                     # likewise itsm, medical_hr
+# Create or update the agents; --model picks the LLM (default gpt-5.5). Prints each domain's s2s_params.
+python scripts/provision_cartesia_agents.py --pre-tool-speech auto
+
+EVA_FRAMEWORK=cartesia \
+EVA_MODEL__S2S=cartesia \
+EVA_MODEL__S2S_PARAMS='{"model": "gpt-5.5", "api_key": "<cartesia key>", "assistant_agent_id": "<airline agent id>"}' \
+python main.py --domain airline
 ```
 
-Both read `CARTESIA_API_KEY` from the environment or `.env`.
-
-`s2s_params`: `api_key` and `agent_ids` (EVA agent id to Cartesia agent id) are required; `model` and `alias` label the run; `base_url` (default `wss://api.cartesia.ai`) and `cartesia_version` are optional.
+`s2s_params`: `api_key`, `model` and `assistant_agent_id` (the agent for the run's domain) are required, as for ElevenLabs. `model` must match the model configured on the agent; `alias` optionally labels the run. `base_url` (default `wss://api.cartesia.ai`) and `cartesia_version` are optional. `EVA_MODEL__LLM` must be unset, as for any S2S run.
 
 ## Judge Models
 
