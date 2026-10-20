@@ -5,14 +5,18 @@ the dynamic variables system_prompt and initial_message. Settings that cannot be
 set here from EVA's own options, and the assistant server refuses to run against an agent whose
 settings do not match the run config:
 
+    --language                -> language.primary              (EVA_LANGUAGE, default en; fr-CA uses fr)
     --pre-tool-speech         -> each tool's pre_tool_speech  (EVA_MODEL__PRE_TOOL_SPEECH, default auto)
     --turn-end-fallback-time  -> turn.inactivity_check_in_secs (EVA_TURN_END_FALLBACK_TIME, default unset)
+
+--voice sets the agent's voice. It is not checked: like any agent setting that doesn't affect the
+benchmark, it is identified by the run's assistant_agent_id.
 
 Model fallback is disabled, so only the chosen model answers.
 
 Usage:
-    python scripts/provision_cartesia_agents.py [--model gpt-5.5] [--pre-tool-speech auto|off]
-        [--turn-end-fallback-time SECONDS] [--domains airline itsm medical_hr]
+    python scripts/provision_cartesia_agents.py [--model gpt-5.5] [--language en] [--voice VOICE_ID]
+        [--pre-tool-speech auto|off] [--turn-end-fallback-time SECONDS] [--domains airline itsm medical_hr]
 
 Reads CARTESIA_API_KEY from the environment or .env. Tool and agent IDs are kept in
 output/cartesia_agents.json so a rerun updates the same agents. Prints each domain's
@@ -29,11 +33,11 @@ from pathlib import Path
 from dotenv import dotenv_values
 
 from eva.models.agents import AgentConfig
-from eva.models.config import ModelConfig
+from eva.models.config import LANGUAGE_DISPLAY_NAMES, ModelConfig, base_language
 from eva.utils import cartesia_agents
 
 DOMAINS = ("airline", "itsm", "medical_hr")
-VOICE_ID = "f786b574-daa5-4673-aa0c-cbe3e8534c02"  # Katie
+DEFAULT_VOICE_ID = "f786b574-daa5-4673-aa0c-cbe3e8534c02"  # Katie
 STATE = Path("output/cartesia_agents.json")
 
 
@@ -50,18 +54,20 @@ def tool_body(fn: dict, pre_tool_speech: str) -> dict:
     }
 
 
-def agent_config(model: str, tool_ids: list[str], turn_end_fallback_time: int | None) -> dict:
+def agent_config(
+    model: str, tool_ids: list[str], turn_end_fallback_time: int | None, language: str, voice_id: str
+) -> dict:
     return {
         "instructions": cartesia_agents.SYSTEM_PROMPT_VARIABLE,
         "prompt_optimization": False,  # use EVA's system prompt as is
         "initial_message": cartesia_agents.INITIAL_MESSAGE_VARIABLE,
         "speculative_generation": True,
         "model": {"id": model, "fallback_strategy": None},
-        "language": {"primary": "en"},
+        "language": {"primary": base_language(language)},
         "turn": {"inactivity_check_in_secs": turn_end_fallback_time},
         "audio": {
             "input": {"noise_suppression": "off", "asr_model": "auto"},
-            "output": {"voice_id": VOICE_ID},
+            "output": {"voice_id": voice_id},
         },
         "tools": [{"id": t} for t in tool_ids],
     }
@@ -82,6 +88,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", default="gpt-5.5", help="Any model id from GET /v1/agents/models")
     parser.add_argument(
+        "--language",
+        choices=[lang.value for lang in LANGUAGE_DISPLAY_NAMES],
+        default="en",
+        help="Must match EVA_LANGUAGE for the run",
+    )
+    parser.add_argument("--voice", default=DEFAULT_VOICE_ID, help="Cartesia voice ID for the agent (default: Katie)")
+    parser.add_argument(
         "--pre-tool-speech",
         choices=["auto", "off"],
         default=ModelConfig.model_fields["pre_tool_speech"].default,
@@ -90,7 +103,7 @@ def main() -> None:
     parser.add_argument(
         "--turn-end-fallback-time",
         type=int,
-        default=15,
+        default=None,
         help="Must match EVA_TURN_END_FALLBACK_TIME for the run (5-60 seconds; unset disables check-ins)",
     )
     parser.add_argument("--domains", nargs="+", default=list(DOMAINS), choices=DOMAINS)
@@ -125,7 +138,7 @@ def main() -> None:
         payload = {
             "name": name,
             "description": "EVA-Bench agent",
-            "config": agent_config(args.model, tool_ids, args.turn_end_fallback_time),
+            "config": agent_config(args.model, tool_ids, args.turn_end_fallback_time, args.language, args.voice),
         }
         if domain in state["agents"]:
             request("PATCH", f"/v1/agents/{state['agents'][domain]}", body=payload)

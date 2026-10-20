@@ -417,6 +417,14 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
 }
 
 
+def base_language(tag: str) -> str:
+    """Return the ISO 639-1 base code from a BCP 47 tag (e.g. 'es-MX' → 'es').
+
+    Used for providers that only accept the two-letter base code (e.g. Whisper/OpenAI STT, Cartesia Managed Agents).
+    """
+    return tag.split("-")[0].split("_")[0]
+
+
 class PerturbationConfig(BaseModel):
     """Perturbations applied to the simulated user during a benchmark run.
 

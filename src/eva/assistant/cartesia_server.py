@@ -189,6 +189,7 @@ class CartesiaAssistantServer(AbstractAssistantServer):
         cartesia_agents.check_agent_matches_config(
             agent,
             model=self._model,
+            language=str(self.language),
             pre_tool_speech=self.pipeline_config.pre_tool_speech,
             turn_end_fallback_time=self._turn_end_fallback_time,
             tool_names=[t["function"]["name"] for t in self.agent.build_tools_for_agent() or []],

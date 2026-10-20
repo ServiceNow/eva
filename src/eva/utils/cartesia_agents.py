@@ -10,6 +10,8 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from eva.models.config import base_language
+
 DEFAULT_REST_URL = "https://api.cartesia.ai"
 DEFAULT_CARTESIA_VERSION = "2026-08-14"
 
@@ -67,7 +69,12 @@ def fetch_agent(agent_id: str, s2s_params: dict[str, Any]) -> dict:
 
 
 def check_agent_matches_config(
-    agent: dict, model: str, pre_tool_speech: str, turn_end_fallback_time: int | None, tool_names: list[str]
+    agent: dict,
+    model: str,
+    language: str,
+    pre_tool_speech: str,
+    turn_end_fallback_time: int | None,
+    tool_names: list[str],
 ) -> None:
     """Raise if the provisioned agent would not run the benchmark as EVA's config describes."""
     config = agent["config"]
@@ -78,6 +85,9 @@ def check_agent_matches_config(
         problems.append("initial_message must be exactly '{{initial_message}}'")
     if config["model"]["id"] != model:
         problems.append(f"model is {config['model']['id']!r}, but s2s_params.model is {model!r}")
+    agent_language = config.get("language", {}).get("primary")
+    if agent_language != base_language(language):
+        problems.append(f"language.primary is {agent_language!r}, but EVA_LANGUAGE is {language!r}")
     if config["model"].get("fallback_strategy") is not None:
         problems.append("model.fallback_strategy must be null, so only the reported model answers")
     check_in = config.get("turn", {}).get("inactivity_check_in_secs")

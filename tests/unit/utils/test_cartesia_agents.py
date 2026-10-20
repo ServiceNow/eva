@@ -11,6 +11,7 @@ def _agent(**overrides) -> dict:
         "prompt_optimization": False,
         "initial_message": "{{initial_message}}",
         "model": {"id": "gpt-5.5", "fallback_strategy": None},
+        "language": {"primary": "en"},
         "turn": {"inactivity_check_in_secs": None},
         "tools": [{"name": "get_reservation", "pre_tool_speech": "auto"}],
     }
@@ -18,13 +19,14 @@ def _agent(**overrides) -> dict:
     return {"id": "agent_x", "config": config}
 
 
-def _check(agent, pre_tool_speech="auto", turn_end_fallback_time=None):
-    check_agent_matches_config(agent, "gpt-5.5", pre_tool_speech, turn_end_fallback_time, ["get_reservation"])
+def _check(agent, language="en", pre_tool_speech="auto", turn_end_fallback_time=None):
+    check_agent_matches_config(agent, "gpt-5.5", language, pre_tool_speech, turn_end_fallback_time, ["get_reservation"])
 
 
 def test_matching_agent_passes():
     _check(_agent())
     _check(_agent(turn={"inactivity_check_in_secs": 10}), turn_end_fallback_time=10)
+    _check(_agent(language={"primary": "fr"}), language="fr-CA")  # Cartesia has no regional variants
 
 
 @pytest.mark.parametrize(
@@ -32,6 +34,7 @@ def test_matching_agent_passes():
     [
         ({"model": {"id": "gpt-5.5", "fallback_strategy": {"type": "auto"}}}, "fallback_strategy"),
         ({"model": {"id": "gpt-5.4", "fallback_strategy": None}}, "s2s_params.model"),
+        ({"language": {"primary": "fr"}}, "EVA_LANGUAGE"),
         ({"prompt_optimization": True}, "prompt_optimization"),
         ({"instructions": "Be nice. {{system_prompt}}"}, "instructions"),
         ({"turn": {"inactivity_check_in_secs": 15}}, "inactivity_check_in_secs"),

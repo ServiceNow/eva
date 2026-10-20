@@ -56,6 +56,7 @@ from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
 from eva.assistant.pipeline.nvidia_baseten import BasetenSTTService, BasetenTTSService
 from eva.assistant.pipeline.realtime_llm import InstrumentedRealtimeLLMService
 from eva.models.agents import AgentConfig
+from eva.models.config import base_language
 
 # Conditional Gemini imports - may fail if google-genai package version is incompatible
 try:
@@ -87,14 +88,6 @@ logger = get_logger(__name__)
 SAMPLE_RATE = 24000
 
 
-def _base_language(tag: str) -> str:
-    """Return the ISO 639-1 base code from a BCP 47 tag (e.g. 'es-MX' → 'es').
-
-    Used for providers that only accept the two-letter base code (e.g. Whisper/OpenAI STT).
-    """
-    return tag.split("-")[0].split("_")[0]
-
-
 def _to_language_enum(tag: str) -> Language:
     """Convert a BCP 47 tag to a pipecat Language enum.
 
@@ -104,7 +97,7 @@ def _to_language_enum(tag: str) -> Language:
     try:
         return Language(tag)
     except ValueError:
-        return Language(_base_language(tag))
+        return Language(base_language(tag))
 
 
 # Round-robin counters for load-balanced URLs (one per service type)
@@ -191,7 +184,7 @@ def create_stt_service(
             api_key=api_key,
             base_url=url,
             model=params["model"],
-            language=_base_language(language_code),
+            language=base_language(language_code),
             sample_rate=SAMPLE_RATE,
         )
 
@@ -204,7 +197,7 @@ def create_stt_service(
             # Defaults to the record's language; an explicit `language_hints` in STT_PARAMS overrides it,
             # and setting it blank (e.g. [] or "") omits the parameter so Flux auto-detects.
             if params["model"] == "flux-general-multi":
-                language_hints = params.get("language_hints", [_base_language(language_code)])
+                language_hints = params.get("language_hints", [base_language(language_code)])
                 if isinstance(language_hints, str):
                     language_hints = [language_hints]
                 language_hints = [h.strip() for h in language_hints or [] if h and h.strip()]
@@ -241,7 +234,7 @@ def create_stt_service(
             sample_rate=SAMPLE_RATE,
             commit_strategy=CommitStrategy.VAD,
             settings=ElevenLabsRealtimeSTTService.Settings(
-                language=_base_language(language_code),
+                language=base_language(language_code),
                 **elevenlabs_settings_kwargs,
             ),
         )
@@ -274,7 +267,7 @@ def create_stt_service(
         logger.info(f"Using OpenAI STT: {params['model']}")
         # Whisper only accepts ISO 639-1 base codes (e.g. "es", not "es-MX")
         # params["language"] takes precedence if explicitly set by the user
-        whisper_lang = params.get("language") or _base_language(language_code)
+        whisper_lang = params.get("language") or base_language(language_code)
         stt_service = OpenAISTTService(
             api_key=api_key,
             base_url=url,
@@ -474,7 +467,7 @@ def create_tts_service(
             sample_rate=SAMPLE_RATE,
             settings=ElevenLabsTTSService.Settings(
                 voice=params.get("voice_id", "hpp4J3VqNfWAUOO0d1Us"),
-                language=_base_language(language_code),
+                language=base_language(language_code),
                 **elevenlabs_settings_kwargs,
             ),
         )

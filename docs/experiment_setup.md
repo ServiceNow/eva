@@ -100,6 +100,7 @@ Some agent settings can't be changed per call, so they are set when the agent is
 
 | EVA option | Agent setting |
 |---|---|
+| `EVA_LANGUAGE` | `language.primary` (regional variants such as `fr-CA` use the base code) |
 | `EVA_MODEL__PRE_TOOL_SPEECH` (`auto` or `off`) | each tool's `pre_tool_speech` |
 | `EVA_TURN_END_FALLBACK_TIME` (5 to 60 seconds, or unset) | `turn.inactivity_check_in_secs` (unset turns check-ins off) |
 
@@ -112,6 +113,8 @@ EVA_MODEL__S2S=cartesia \
 EVA_MODEL__S2S_PARAMS='{"model": "gpt-5.5", "api_key": "<cartesia key>", "assistant_agent_id": "<airline agent id>"}' \
 python main.py --domain airline
 ```
+
+`--voice` sets the agent's voice; it isn't checked against the run config.
 
 `s2s_params`: `api_key`, `model` and `assistant_agent_id` (the agent for the run's domain) are required, as for ElevenLabs. `model` must match the model configured on the agent; `alias` optionally labels the run. `base_url` (default `wss://api.cartesia.ai`) and `cartesia_version` are optional. `EVA_MODEL__LLM` must be unset, as for any S2S run.
 
