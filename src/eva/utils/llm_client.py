@@ -142,7 +142,8 @@ class LLMClient:
 
                 # Make the API call
                 logger.debug(f"{call_retry_id} started for {self.model}")
-                response = await router.acompletion(**kwargs)
+                async with router.limit(self.model) as deployment:
+                    response = await router.get().acompletion(**{**kwargs, "model": deployment.id})
 
                 (logger.info if attempt > 0 else logger.debug)(f"{call_retry_id} succeeded for {self.model}")
 

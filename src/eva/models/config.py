@@ -497,7 +497,7 @@ class CascadeSimulatorConfig(BaseModel):
     provider: Literal["cascade"] = "cascade"
     stt: Literal["elevenlabs"] = Field("elevenlabs", description="Streaming STT provider for the assistant's audio.")
     stt_model: str = Field("scribe_v2_realtime", description="Streaming STT model.")
-    llm: str = Field(
+    model: str = Field(
         "user-llm",
         description=(
             "Caller LLM deployment, resolved via EVA_MODEL_LIST like the assistant's. A dedicated 'user-llm' "
@@ -516,6 +516,13 @@ class CascadeSimulatorConfig(BaseModel):
         if not value.endswith("_realtime"):
             raise ValueError(f"Cascade caller requires a streaming STT model, got {value!r}")
         return value
+
+    @model_validator(mode="after")
+    def _require_provider_keys(self) -> "CascadeSimulatorConfig":
+        missing = [key for key in ("ELEVENLABS_API_KEY", "CARTESIA_API_KEY") if not os.environ.get(key)]
+        if missing:
+            raise ValueError(f"The cascade user simulator requires {', '.join(missing)} to be set.")
+        return self
 
 
 UserSimulatorConfig = Annotated[
@@ -915,16 +922,6 @@ class RunConfig(BaseSettings):
             return self
         if not os.environ.get("OPENAI_API_KEY"):
             raise ValueError("EVA_USER_SIMULATOR__PROVIDER=openai_realtime requires OPENAI_API_KEY to be set.")
-        return self
-
-    @model_validator(mode="after")
-    def _check_cascade_simulator(self) -> "RunConfig":
-        """When the cascade user simulator is selected, its STT and TTS keys must be present."""
-        if not isinstance(self.user_simulator, CascadeSimulatorConfig):
-            return self
-        missing = [key for key in ("ELEVENLABS_API_KEY", "CARTESIA_API_KEY") if not os.environ.get(key)]
-        if missing:
-            raise ValueError(f"EVA_USER_SIMULATOR__PROVIDER=cascade requires {', '.join(missing)} to be set.")
         return self
 
     @model_validator(mode="before")

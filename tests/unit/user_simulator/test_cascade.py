@@ -36,6 +36,8 @@ GOAL = {
 @pytest.fixture(autouse=True)
 def _no_router(monkeypatch):
     monkeypatch.setattr(cascade_simulator, "LiteLLMClient", MagicMock())
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key")
+    monkeypatch.setenv("CARTESIA_API_KEY", "test-key")
 
 
 def _simulator(tmp_path: Path, *, persona_id: int = 1, **kwargs) -> CascadeUserSimulator:
@@ -106,6 +108,7 @@ def test_messages_flip_roles_into_caller_frame(tmp_path):
 
 def test_stt_accumulates_committed_segments_and_partials():
     stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x")
+    stt.expect_commit()
 
     stt._on_committed({"text": "Hello,"})
     stt._on_partial({"text": "how can"})
@@ -129,9 +132,8 @@ async def test_stt_send_raises_after_provider_error():
 @pytest.mark.asyncio
 async def test_stt_waits_for_every_pending_commit():
     stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x")
-    stt._connection = MagicMock(commit=AsyncMock())
-    await stt.commit()
-    await stt.commit()
+    stt.expect_commit()
+    stt.expect_commit()
 
     stt._on_committed({"text": "One moment."})
     assert not stt.committed_event.is_set()
@@ -143,23 +145,34 @@ async def test_stt_waits_for_every_pending_commit():
 
 @pytest.mark.asyncio
 async def test_stt_drops_late_final_after_partial_fallback():
-    stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x")
-    stt._connection = MagicMock(commit=AsyncMock())
-    await stt.commit()
+    dropped: list[str] = []
+    stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x", on_dropped_final=dropped.append)
+    stt.expect_commit()
     stt._on_partial({"text": "your ticket is"})
     assert stt.take(include_partial=True) == "your ticket is"
 
     stt._on_committed({"text": "your ticket is open."})
-    await stt.commit()
+    stt.expect_commit()
     stt._on_committed({"text": "Anything else?"})
 
     assert stt.take() == "Anything else?"
+    assert dropped == ["your ticket is open."]
+
+
+@pytest.mark.asyncio
+async def test_stt_fails_on_final_with_no_commit_outstanding():
+    stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x")
+    stt._on_committed({"text": "Where did this come from?"})
+
+    assert stt.take() == ""
+    with pytest.raises(RuntimeError, match="no commit outstanding"):
+        await stt.send(b"\xff")
 
 
 @pytest.mark.asyncio
 async def test_commit_is_queued_behind_the_next_bridge_chunk(tmp_path):
     simulator = _simulator(tmp_path)
-    simulator._stt = MagicMock(send=AsyncMock(), commit=AsyncMock(), committed_event=asyncio.Event())
+    simulator._stt = MagicMock(send=AsyncMock(), commit=AsyncMock())
     order: list[str] = []
     simulator._stt.send.side_effect = lambda chunk: order.append(f"send:{chunk.decode()}")
     simulator._stt.commit.side_effect = lambda: order.append("commit")
@@ -249,6 +262,30 @@ async def test_take_turn_speaks_whole_line_in_one_request(tmp_path):
     assert simulator._history == [
         {"role": "assistant", "content": "What is your employee ID?"},
         {"role": "user", "content": "I have it here, my ID is 42. Thanks."},
+    ]
+
+
+@pytest.mark.asyncio
+async def test_take_turn_asks_to_repeat_untranscribed_speech(tmp_path):
+    simulator = _simulator(tmp_path)
+    sent: list[list[dict]] = []
+
+    async def stream(messages, **_):
+        sent.append(messages)
+        yield ("final", ("Sorry, could you repeat that?", {}))
+
+    simulator._llm.complete_stream = stream
+    simulator._tts.stream = lambda text, voice_id: _chunks(b"\x01\x02")
+    simulator._audio_interface = MagicMock()
+    simulator._on_assistant_speaks = MagicMock()
+
+    assert await simulator._take_turn(None) is False
+
+    assert sent[0][-1] == {"role": "system", "content": cascade_simulator.INAUDIBLE_NOTE}
+    simulator._on_assistant_speaks.assert_not_called()  # nothing made up lands in the transcript
+    assert simulator._history == [
+        {"role": "assistant", "content": cascade_simulator.INAUDIBLE},
+        {"role": "user", "content": "Sorry, could you repeat that?"},
     ]
 
 

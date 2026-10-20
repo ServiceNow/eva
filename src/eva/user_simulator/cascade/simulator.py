@@ -21,13 +21,21 @@ logger = get_logger(__name__)
 
 TURN_SETTLE_SECONDS = 1.0
 """Assistant silence required before the caller replies."""
-TRANSCRIPT_WAIT_SECONDS = 1.5
-"""How long after a commit to wait for the final transcript before falling back to the partial."""
+TRANSCRIPT_WAIT_SECONDS = 2.5
+"""How long after a commit to wait for the final transcript before falling back to the partial.
+
+The commit is sent at the start of the pause, so this leaves about 1.5s past ``TURN_SETTLE_SECONDS``
+for a slow final. Only a late final costs this wait; a final dropped after the fallback is lost for good."""
 INACTIVITY_TIMEOUT_SECONDS = 120.0
 """Assistant silence that ends the call, matching ElevenLabsUserSimulator's 12 keep-alives."""
 PLAYBACK_DRAIN_SECONDS = 15.0
 FINAL_FLUSH_SECONDS = 4.0
 POLL_SECONDS = 0.05
+
+INAUDIBLE = "[inaudible]"
+"""Stands in for an agent line the caller heard but could not transcribe."""
+INAUDIBLE_NOTE = f"""The agent just said something you could not make out ({INAUDIBLE} above). \
+Ask them briefly to repeat it, the way a caller on a bad line would."""
 
 TTS_WARM_CONNECTIONS = 1
 """Pooled TTS connections opened before the first turn: one per TTS request that can render at once.
@@ -136,9 +144,11 @@ class CascadeUserSimulator(AbstractUserSimulator):
         if perturbation_config and perturbation_config.accent is not None:
             raise ValueError("Cascade caller does not support ElevenLabs-specific accent variants")
         self.simulator_config = simulator_config
-        self._stt = ScribeStreamingSTT(simulator_config.stt_model, language=language)
+        self._stt = ScribeStreamingSTT(
+            simulator_config.stt_model, language=language, on_dropped_final=self._on_dropped_final
+        )
         self._tts = CartesiaStreamingTTS(simulator_config.tts_model, language=language)
-        self._llm = LiteLLMClient(model=simulator_config.llm)
+        self._llm = LiteLLMClient(model=simulator_config.model)
         # None is a commit marker: commit the STT segment once the audio queued ahead of it is sent.
         self._assistant_audio_queue: asyncio.Queue[bytes | None] = asyncio.Queue()
         self._commit_after_next_chunk = False
@@ -187,7 +197,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
                     "server_url": self.server_url,
                     "caller_provider": self.provider,
                     "caller_stt": f"{self.simulator_config.stt}/{self.simulator_config.stt_model}",
-                    "caller_llm": self.simulator_config.llm,
+                    "caller_llm": self.simulator_config.model,
                     "caller_tts": f"{self.simulator_config.tts}/{self.simulator_config.tts_model}",
                     "caller_voice": self.caller_voice,
                 },
@@ -239,8 +249,11 @@ class CascadeUserSimulator(AbstractUserSimulator):
         the tail, so committing right away would cut the last word into the next segment.
         """
         self._commit_after_next_chunk = True
-        # Until the commit is sent, an earlier turn's set event must not count as this segment's final.
-        self._stt.committed_event.clear()
+        self._stt.expect_commit()
+
+    def _on_dropped_final(self, text: str) -> None:
+        # Pairs with the turn's transcript_partial_fallback: a final longer than that partial was lost.
+        self.event_logger.log_event("transcript_late_final_dropped", {"text": text})
 
     async def _forward_assistant_audio(self) -> None:
         while True:
@@ -284,9 +297,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
             heard = await self._collect_heard_text(committed_at)
             assistant_spoke = False
             if not heard:
+                # Staying silent would stall the call until the inactivity timeout; a caller asks again.
                 self.event_logger.log_event("assistant_audio_untranscribed", {})
-                continue
-            if await self._take_turn(heard):
+            if await self._take_turn(heard or None):
                 return
             last_activity = loop.time()
 
@@ -302,12 +315,18 @@ class CascadeUserSimulator(AbstractUserSimulator):
             return text
         return self._stt.take()
 
-    async def _take_turn(self, heard: str) -> bool:
-        """Generate and speak one caller turn. Returns True when the caller hangs up."""
-        self._history.append({"role": "assistant", "content": heard})
-        self._on_assistant_speaks(heard)
+    async def _take_turn(self, heard: str | None) -> bool:
+        """Generate and speak one caller turn. Returns True when the caller hangs up.
+
+        ``heard`` is None when the agent spoke but nothing was transcribed: the caller asks them to repeat.
+        """
+        self._history.append({"role": "assistant", "content": heard or INAUDIBLE})
+        if heard:
+            self._on_assistant_speaks(heard)
 
         messages = self._messages()
+        if not heard:
+            messages.append({"role": "system", "content": INAUDIBLE_NOTE})
         message, stats, spoke = await self._speak(messages)
         utterance, end_call = extract_turn(message)
         self._log_llm_response(messages, message, stats)

@@ -244,16 +244,43 @@ class TestRouterConcurrency:
             return _mock_response("ok")
 
         with patch("litellm.acompletion", new=mock_acompletion):
-            tasks = [
-                router.acompletion(
-                    model="test-model",
-                    messages=[{"role": "user", "content": f"msg-{i}"}],
-                )
-                for i in range(8)
-            ]
-            await asyncio.gather(*tasks)
+            await asyncio.gather(*(_limited_call("test-model", i) for i in range(8)))
 
         assert peak_concurrent == 2
+
+    @pytest.mark.asyncio
+    async def test_multi_deployment_group_never_exceeds_a_deployment_cap(self):
+        """Calls are pinned to a deployment with a free slot, so LiteLLM never rejects one with a 429."""
+        router.init(
+            [
+                {
+                    "model_name": "test-model",
+                    "litellm_params": {"model": f"openai/{name}", "api_key": "test-key", "max_parallel_requests": cap},
+                }
+                for name, cap in (("small", 1), ("large", 3))
+            ]
+        )
+
+        peak: dict[str, int] = {}
+        current: dict[str, int] = {}
+
+        async def mock_acompletion(*args, **kwargs):
+            name = kwargs["model"]
+            current[name] = current.get(name, 0) + 1
+            peak[name] = max(peak.get(name, 0), current[name])
+            await asyncio.sleep(0.01)
+            current[name] -= 1
+            return _mock_response("ok")
+
+        with patch("litellm.acompletion", new=mock_acompletion):
+            await asyncio.gather(*(_limited_call("test-model", i) for i in range(20)))
+
+        assert peak == {"openai/small": 1, "openai/large": 3}
+
+
+async def _limited_call(model_group: str, i: int):
+    async with router.limit(model_group) as deployment:
+        return await router.get().acompletion(model=deployment.id, messages=[{"role": "user", "content": f"msg-{i}"}])
 
 
 class TestLitellmParamsForwarding:

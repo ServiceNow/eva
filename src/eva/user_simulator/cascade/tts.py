@@ -71,7 +71,7 @@ class CartesiaStreamingTTS:
                     continue
                 # Chunk boundaries need not fall on samples; an odd split would shear PCM16.
                 data = carry + base64.b64decode(event["data"])
-                cut = len(data) - len(data) % 2
+                cut = len(data) // 2 * 2
                 carry = data[cut:]
                 if cut:
                     yield data[:cut]

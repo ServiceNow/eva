@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import os
+from collections.abc import Callable
 from typing import Any
 
 try:
@@ -36,7 +37,14 @@ class ScribeStreamingSTT:
     than the provider's VAD, so turn boundaries have a single owner.
     """
 
-    def __init__(self, model: str, *, language: str = "en", api_key: str | None = None) -> None:
+    def __init__(
+        self,
+        model: str,
+        *,
+        language: str = "en",
+        api_key: str | None = None,
+        on_dropped_final: Callable[[str], None] | None = None,
+    ) -> None:
         self.model = model
         self.language = language.split("-")[0]
         self._api_key = api_key or os.environ.get("ELEVENLABS_API_KEY", "")
@@ -49,6 +57,8 @@ class ScribeStreamingSTT:
         self._pending_commits = 0
         self._stale_commits = 0
         """Commits whose segment was already taken from the partial; their late finals are dropped."""
+        self._on_dropped_final = on_dropped_final
+        """Called with each dropped final, so the caller can record what it acted on without."""
         self._resample_state = None
         self.updated = asyncio.Event()
         """Set on every partial or committed transcript, so a listener can react to each update
@@ -79,11 +89,18 @@ class ScribeStreamingSTT:
             )
             await self._connection.send({"audio_base_64": base64.b64encode(pcm).decode("ascii")})
 
+    def expect_commit(self) -> None:
+        """Count a commit as pending from the moment it is requested, before ``commit`` sends it.
+
+        ``committed_event`` is set once every expected commit has its final text. Counting at request
+        time means a partial fallback taken before the commit is sent still marks its final as stale.
+        """
+        self._pending_commits += 1
+        self.committed_event.clear()
+
     async def commit(self) -> None:
-        """Close the current segment. ``committed_event`` is set once every commit sent so far has its final text."""
+        """Close the current segment, answering the oldest ``expect_commit``."""
         if self._connection is not None:
-            self._pending_commits += 1
-            self.committed_event.clear()
             await self._connection.commit()
 
     def heard_text(self) -> str:
@@ -124,11 +141,19 @@ class ScribeStreamingSTT:
         # Scribe answers commits in order, so the oldest outstanding one is the stale one.
         if self._stale_commits:
             self._stale_commits -= 1
-            logger.debug(f"Dropping late final for an already-answered turn: {text[:120]!r}")
+            logger.warning(f"Dropping late final for an already-answered turn: {text[:120]!r}")
+            if self._on_dropped_final is not None:
+                self._on_dropped_final(text)
+            return
+        if not self._pending_commits:
+            # Finals are matched to commits by order; one with no commit owed means that matching is off,
+            # and later text could be dropped or heard twice. Fail like a provider error rather than guess.
+            self.error = f"final transcript with no commit outstanding: {text[:120]!r}"
+            logger.error(f"Caller STT error: {self.error}")
             return
         if text:
             self._committed.append(text)
-        self._pending_commits = max(self._pending_commits - 1, 0)
+        self._pending_commits -= 1
         if self._pending_commits == 0:
             self.committed_event.set()
 

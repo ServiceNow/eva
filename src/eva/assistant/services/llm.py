@@ -93,7 +93,8 @@ class LiteLLMClient:
         for attempt in range(max_retries + 1):
             try:
                 start_time = time.time()
-                response = await router.acompletion(**kwargs)
+                async with router.limit(self.model) as deployment:
+                    response = await router.get().acompletion(**{**kwargs, "model": deployment.id})
                 elapsed_time = time.time() - start_time
 
                 message = response.choices[0].message
@@ -267,17 +268,24 @@ class LiteLLMClient:
             i += 1
         return instructions, input_items
 
-    def _get_router_litellm_params(self) -> dict[str, Any]:
-        """Look up the litellm_params for self.model from the router config.
+    def _responses_deployment_kwargs(self, deployment: router.Deployment) -> dict[str, Any]:
+        """Model, credentials and reasoning effort for a Responses API call to `deployment`."""
+        litellm_params = deployment.litellm_params
+        kwargs: dict[str, Any] = {"model": litellm_params.get("model", self.model)}
 
-        Assumes the router is initialized (only called from _complete_via_responses_api,
-        which requires use_responses_api=True read from the router at init time).
-        """
-        r = router.get()
-        for deployment in getattr(r, "model_list", []):
-            if deployment.get("model_name") == self.model:
-                return deployment.get("litellm_params", {})
-        return {}
+        # Resolve api_key (may be "os.environ/VAR_NAME")
+        raw_key = litellm_params.get("api_key", "")
+        if raw_key.startswith("os.environ/"):
+            raw_key = os.environ.get(raw_key.split("/", 1)[1], "")
+        if raw_key:
+            kwargs["api_key"] = raw_key
+        if api_base := litellm_params.get("api_base"):
+            kwargs["api_base"] = api_base
+
+        # reasoning_effort from litellm_params (set in EVA_MODEL_LIST deployment config)
+        if reasoning_effort := litellm_params.get("reasoning_effort"):
+            kwargs["reasoning"] = {"effort": reasoning_effort}
+        return kwargs
 
     async def complete_stream(
         self,
@@ -305,8 +313,8 @@ class LiteLLMClient:
             first_token = False
             try:
                 start_time = time.time()
-                async with router.limit(self.model):
-                    stream = await router.get().acompletion(**kwargs)
+                async with router.limit(self.model) as deployment:
+                    stream = await router.get().acompletion(**{**kwargs, "model": deployment.id})
                     async for chunk in stream:
                         chunks.append(chunk)
                         choices = getattr(chunk, "choices", None) or []
@@ -376,47 +384,26 @@ class LiteLLMClient:
         The caller (system.py) stores ``responses_output_items`` from stats on the
         assistant message so the next iteration injects them back into the input.
         """
-        # Resolve model credentials from router config (handles Azure, custom api_base, etc.)
-        litellm_params = self._get_router_litellm_params()
-        litellm_model = litellm_params.get("model", self.model)
-
-        # Resolve api_key (may be "os.environ/VAR_NAME")
-        raw_key = litellm_params.get("api_key", "")
-        if raw_key.startswith("os.environ/"):
-            raw_key = os.environ.get(raw_key.split("/", 1)[1], "")
-        api_key = raw_key or None
-
-        api_base = litellm_params.get("api_base") or None
-
-        # reasoning_effort from litellm_params (set in EVA_MODEL_LIST deployment config)
-        reasoning_effort = litellm_params.get("reasoning_effort")
-
         instructions, input_items = self._convert_messages_for_responses_api(messages)
 
         kwargs: dict[str, Any] = {
-            "model": litellm_model,
             "input": input_items,
             "store": False,
             "include": ["reasoning.encrypted_content"],
         }
-        if reasoning_effort:
-            kwargs["reasoning"] = {"effort": reasoning_effort}
         if instructions:
             kwargs["instructions"] = instructions
         if tools:
             kwargs["tools"] = self._convert_tools_for_responses_api(tools)
             kwargs["tool_choice"] = "auto"
-        if api_key:
-            kwargs["api_key"] = api_key
-        if api_base:
-            kwargs["api_base"] = api_base
 
         last_exception = None
         for attempt in range(max_retries + 1):
             try:
                 start_time = time.time()
-                async with router.limit(self.model):
-                    response = await litellm.aresponses(**kwargs)
+                async with router.limit(self.model) as deployment:
+                    # Resolve credentials from the deployment holding the slot (handles Azure, custom api_base, etc.)
+                    response = await litellm.aresponses(**kwargs, **self._responses_deployment_kwargs(deployment))
                 elapsed = time.time() - start_time
 
                 text_content = ""
