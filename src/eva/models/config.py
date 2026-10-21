@@ -259,6 +259,9 @@ class ModelConfig(BaseModel):
                         "s2s": get_model_alias_from_params(self.s2s_params) or self.s2s,
                         **_fetch_elevenlabs_agent_models(self.s2s_params),
                     }
+                if self.s2s == "cartesia":
+                    # The model is the agent's LLM; name the framework too
+                    return {"s2s": f"cartesia-{get_model_alias_from_params(self.s2s_params)}"}
                 return {"s2s": get_model_alias_from_params(self.s2s_params)}
             case PipelineType.CASCADE:
                 return {
@@ -353,8 +356,8 @@ def get_pipeline_type(model_data: dict) -> PipelineType:
     ``llm_model`` in a flat dict.
     """
     if s2s_value := model_data.get("s2s"):
-        # ElevenLabs uses s2s_params for configuration but is a cascade pipeline internally
-        if s2s_value == "elevenlabs":
+        # These frameworks use s2s_params but report the text they speak, as cascade pipelines do
+        if s2s_value in ("elevenlabs", "cartesia"):
             return PipelineType.CASCADE
         # Ultravox uses s2s_params for plumbing but is an audio-LLM (audio in, text out, separate TTS)
         if s2s_value == "ultravox":
@@ -412,6 +415,14 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.IT: "Italian",
     Language.JA: "Japanese",
 }
+
+
+def base_language(tag: str) -> str:
+    """Return the ISO 639-1 base code from a BCP 47 tag (e.g. 'es-MX' → 'es').
+
+    Used for providers that only accept the two-letter base code (e.g. Whisper/OpenAI STT, Cartesia Managed Agents).
+    """
+    return tag.split("-")[0].split("_")[0]
 
 
 class PerturbationConfig(BaseModel):
@@ -534,19 +545,20 @@ class RunConfig(BaseSettings):
     )
 
     # Framework selection
-    framework: Literal["pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra"] = (
-        Field(
-            "pipecat",
-            description=(
-                "Agent framework to use for the assistant server."
-                "'pipecat' (default): Pipecat pipeline."
-                "'openai_realtime': OpenAI Realtime API directly."
-                "'gemini_live': Gemini Live API via google-genai."
-                "'elevenlabs': ElevenLabs Conversational AI API."
-                "'grok_voice': xAI Grok voice realtime API."
-                "'smallest_hydra': Smallest Hydra speech-to-speech API."
-            ),
-        )
+    framework: Literal[
+        "pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra", "cartesia"
+    ] = Field(
+        "pipecat",
+        description=(
+            "Agent framework to use for the assistant server."
+            "'pipecat' (default): Pipecat pipeline."
+            "'openai_realtime': OpenAI Realtime API directly."
+            "'gemini_live': Gemini Live API via google-genai."
+            "'elevenlabs': ElevenLabs Conversational AI API."
+            "'grok_voice': xAI Grok voice realtime API."
+            "'smallest_hydra': Smallest Hydra speech-to-speech API."
+            "'cartesia': Cartesia Managed Agents over a WebSocket connection."
+        ),
     )
 
     # Run identifier
