@@ -1051,3 +1051,97 @@ class TestPreToolSpeechSubMetric:
         result = await metric.compute(context)
         sub = result.sub_metrics
         assert sub["pretoolspeech_rate"].score == pytest.approx(1.0)
+
+
+def _write_jsonl(path, entries):
+    path.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
+
+
+class TestVadTurnMetricsIntegration:
+    @pytest.mark.asyncio
+    async def test_vad_sub_metrics_populated_for_pipecat_run(self, metric, tmp_path):
+        (tmp_path / "config.json").write_text(
+            json.dumps({"framework": "pipecat", "model": {"turn_stop_strategy": "krisp_viva_turn"}})
+        )
+        _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
+        _write_jsonl(
+            tmp_path / "pipecat_metrics.jsonl",
+            [
+                {
+                    "timestamp": 1100,
+                    "type": "TurnMetricsData",
+                    "value": {"is_complete": True, "e2e_processing_time_ms": 100.0},
+                }
+            ],
+        )
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(ctx)
+        assert result.sub_metrics["mean_vad_time_to_complete_ms"].score == 100.0
+        assert result.details["vad_turns"] == [
+            {"turn_index": 0, "open_duration_ms": 100, "vad_time_to_complete_ms": 100.0, "completion": "natural"}
+        ]
+
+    @pytest.mark.asyncio
+    async def test_vad_sub_metrics_absent_for_non_pipecat_run(self, metric, tmp_path):
+        (tmp_path / "config.json").write_text(json.dumps({"framework": "elevenlabs", "model": {}}))
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(ctx)
+        assert "mean_vad_time_to_complete_ms" not in result.sub_metrics
+        assert "vad_turns" not in result.details
+
+    @pytest.mark.asyncio
+    async def test_vad_sub_metrics_absent_when_no_config_or_vad_files(self, metric, tmp_path):
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 2.0)]},
+        )
+        result = await metric.compute(ctx)
+        assert "vad_stuck_rate" not in result.sub_metrics
+        assert "vad_turns" not in result.details
+
+
+class TestVadTurnMetricsOnEarlyReturn:
+    @pytest.mark.asyncio
+    async def test_vad_sub_metrics_emitted_when_no_turns_have_both_user_and_assistant_audio(self, metric, tmp_path):
+        """Regression test for the "hang on the first/only real turn" scenario:
+
+        the user speaks, the VAD turn analyzer never completes (no TurnMetricsData at
+        all), and inactivity_timeout kills the conversation before the agent ever
+        responds. There is no turn with both user AND assistant audio, so
+        _get_turn_ids_with_turn_taking returns [] and per_turn_score is empty -
+        compute() takes the early-return path. vad_stuck_rate exists specifically to catch
+        cases like this, so it must still be computed and attached on that early-return
+        MetricScore, not skipped.
+        """
+        (tmp_path / "config.json").write_text(
+            json.dumps({"framework": "pipecat", "model": {"turn_stop_strategy": "krisp_viva_turn"}})
+        )
+        # VAD fires (user_started_speaking) but never completes - no pipecat_metrics.jsonl
+        # TurnMetricsData at all, so the single window is "stuck".
+        _write_jsonl(tmp_path / "pipecat_logs.jsonl", [{"timestamp": 1000, "type": "user_started_speaking"}])
+        ctx = make_metric_context(
+            output_dir=str(tmp_path),
+            conversation_ended_reason="inactivity_timeout",
+            audio_timestamps_user_turns={1: [(0.0, 5.0)]},
+            audio_timestamps_assistant_turns={},
+        )
+        result = await metric.compute(ctx)
+
+        # Early-return path: no turns had both user and assistant audio.
+        assert result.details["per_turn_score"] == {}
+        assert result.score == 0.0
+
+        # But the VAD diagnostics that exist to catch exactly this scenario must still
+        # be present, not silently skipped.
+        assert result.sub_metrics["vad_stuck_rate"].score == 1.0
+        assert result.details["vad_turns"]
+        assert result.details["vad_turns"][0]["completion"] == "stuck"
