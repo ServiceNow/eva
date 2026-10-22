@@ -116,8 +116,7 @@ def test_stt_accumulates_committed_segments_and_partials():
     assert stt.heard_text() == "Hello, how can"
     assert stt.take() == "Hello,"
     assert stt.partial == "how can"
-    assert stt.take(include_partial=True) == "how can"
-    assert stt.heard_text() == ""
+    assert stt.heard_text() == "how can"
 
 
 @pytest.mark.asyncio
@@ -143,30 +142,25 @@ async def test_stt_waits_for_every_pending_commit():
     assert stt.take() == "One moment. I found it."
 
 
-@pytest.mark.asyncio
-async def test_stt_drops_late_final_after_partial_fallback():
-    dropped: list[str] = []
-    stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x", on_dropped_final=dropped.append)
-    stt.expect_commit()
-    stt._on_partial({"text": "your ticket is"})
-    assert stt.take(include_partial=True) == "your ticket is"
-
-    stt._on_committed({"text": "your ticket is open."})
-    stt.expect_commit()
-    stt._on_committed({"text": "Anything else?"})
-
-    assert stt.take() == "Anything else?"
-    assert dropped == ["your ticket is open."]
-
-
-@pytest.mark.asyncio
-async def test_stt_fails_on_final_with_no_commit_outstanding():
+def test_stt_keeps_final_with_no_commit_outstanding():
     stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x")
-    stt._on_committed({"text": "Where did this come from?"})
+    stt._on_committed({"text": "Scribe committed this itself."})
 
-    assert stt.take() == ""
-    with pytest.raises(RuntimeError, match="no commit outstanding"):
-        await stt.send(b"\xff")
+    assert stt.error is None
+    assert stt.take() == "Scribe committed this itself."
+
+
+@pytest.mark.asyncio
+async def test_stt_pads_a_commit_that_is_too_short_for_scribe():
+    stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x")
+    stt._connection = AsyncMock()
+    await stt.send(b"\xff" * 80)  # 10ms of audio
+
+    await stt.commit()
+
+    padded = sum(len(base64.b64decode(c.args[0]["audio_base_64"])) for c in stt._connection.send.await_args_list)
+    assert padded >= 0.3 * 16000 * 2
+    stt._connection.commit.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -208,14 +202,14 @@ async def test_error_signals_assistant_and_ends_with_session_ended(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_collect_heard_text_falls_back_to_partial(tmp_path, monkeypatch):
+async def test_collect_heard_text_fails_when_the_final_never_arrives(tmp_path, monkeypatch):
     monkeypatch.setattr(cascade_simulator, "TRANSCRIPT_WAIT_SECONDS", 0.01)
     simulator = _simulator(tmp_path)
+    simulator._stt.expect_commit()
     simulator._stt._on_partial({"text": "your ticket is"})
 
-    heard = await simulator._collect_heard_text(asyncio.get_running_loop().time())
-
-    assert heard == "your ticket is"
+    with pytest.raises(RuntimeError, match="No final transcript"):
+        await simulator._collect_heard_text(asyncio.get_running_loop().time())
 
 
 def _llm_stream(*deltas: str, message=None):
@@ -290,6 +284,40 @@ async def test_take_turn_asks_to_repeat_untranscribed_speech(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_keep_listening_stays_silent_until_the_agent_finishes(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator._llm.complete_stream = _llm_stream(message=_tool_message("", "keep_listening"))
+    simulator._tts.stream = MagicMock()
+    simulator._audio_interface = MagicMock()
+
+    assert await simulator._take_turn("Let me check that.") is False
+
+    simulator._tts.stream.assert_not_called()
+    simulator._audio_interface.output.assert_not_called()
+    assert simulator._history == [{"role": "assistant", "content": "Let me check that."}]
+
+
+@pytest.mark.asyncio
+async def test_keep_listening_is_withheld_after_repeated_waits(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator._kept_listening = cascade_simulator.MAX_KEEP_LISTENING_IN_A_ROW
+    offered: list[str] = []
+
+    async def stream(*, tools, **_):
+        offered.extend(t["function"]["name"] for t in tools)
+        yield ("final", ("Okay.", {}))
+
+    simulator._llm.complete_stream = stream
+    simulator._tts.stream = MagicMock(return_value=_chunks())
+    simulator._audio_interface = MagicMock()
+
+    await simulator._take_turn("Anything else?")
+
+    assert offered == ["end_call"]
+    assert simulator._kept_listening == 0
+
+
+@pytest.mark.asyncio
 async def test_end_call_without_speech_skips_tts(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._llm.complete_stream = _llm_stream(message=_tool_message("", "end_call"))
@@ -353,3 +381,68 @@ async def test_stt_sends_bridge_mulaw_as_16k_pcm16():
     sent = sum(len(base64.b64decode(c.args[0]["audio_base_64"])) for c in stt._connection.send.call_args_list)
     # 1s of 16kHz PCM16 is 32000 bytes; the resampler carries a sample of state between chunks.
     assert abs(sent - 32000) <= 4
+
+
+@pytest.mark.asyncio
+async def test_assistant_line_spoken_during_caller_turn_gets_its_own_turn(tmp_path, monkeypatch):
+    monkeypatch.setattr(cascade_simulator, "TURN_SETTLE_SECONDS", 0)
+    monkeypatch.setattr(cascade_simulator, "POLL_SECONDS", 0)
+    simulator = _simulator(tmp_path)
+    # The caller's own speech clears the end time, as the real bridge does on user audio start.
+    bridge = MagicMock(assistant_audio_starts=0, assistant_audio_ended_at=None)
+    bridge.is_assistant_playing.return_value = False
+    bridge.is_caller_playing.return_value = False
+    simulator._audio_interface = bridge
+    simulator._request_commit = MagicMock()
+    simulator._collect_heard_text = AsyncMock(side_effect=["What is your ID?", "One moment."])
+    simulator.event_logger = MagicMock()
+    heard: list[str] = []
+
+    async def take_turn(text):
+        heard.append(text)
+        if len(heard) == 1:
+            bridge.assistant_audio_starts += 1  # "One moment." starts and ends while the caller replies
+            return False
+        return True
+
+    simulator._take_turn = take_turn
+
+    async def first_pause():
+        # Seed the loop as if the assistant just finished its first line.
+        bridge.is_assistant_playing.return_value = True
+        await asyncio.sleep(0)
+        bridge.is_assistant_playing.return_value = False
+
+    seeder = asyncio.create_task(first_pause())
+    await asyncio.wait_for(simulator._run_turns(), timeout=1)
+    await seeder
+
+    assert heard == ["What is your ID?", "One moment."]
+    simulator.event_logger.log_event.assert_called_with("assistant_spoke_during_caller_turn", {})
+
+
+@pytest.mark.asyncio
+async def test_repeated_untranscribed_agent_lines_fail_the_call(tmp_path, monkeypatch):
+    monkeypatch.setattr(cascade_simulator, "TURN_SETTLE_SECONDS", 0)
+    monkeypatch.setattr(cascade_simulator, "POLL_SECONDS", 0)
+    simulator = _simulator(tmp_path)
+    bridge = MagicMock(assistant_audio_starts=0, assistant_audio_ended_at=None)
+    bridge.is_caller_playing.return_value = False
+    simulator._audio_interface = bridge
+    simulator._request_commit = MagicMock()
+    simulator.event_logger = MagicMock()
+    simulator._collect_heard_text = AsyncMock(return_value="")
+    turns: list[str | None] = []
+
+    async def take_turn(text):
+        turns.append(text)
+        bridge.assistant_audio_starts += 1  # the agent repeats itself, still untranscribed
+        return False
+
+    simulator._take_turn = take_turn
+    bridge.is_assistant_playing.side_effect = [True, *[False] * 1000]
+
+    with pytest.raises(RuntimeError, match="2 agent lines in a row"):
+        await asyncio.wait_for(simulator._run_turns(), timeout=1)
+
+    assert turns == [None]  # asked to repeat once, then gave up

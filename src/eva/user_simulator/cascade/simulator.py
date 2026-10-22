@@ -22,15 +22,19 @@ logger = get_logger(__name__)
 TURN_SETTLE_SECONDS = 1.0
 """Assistant silence required before the caller replies."""
 TRANSCRIPT_WAIT_SECONDS = 2.5
-"""How long after a commit to wait for the final transcript before falling back to the partial.
+"""How long after a commit to wait for the final transcript before failing the call.
 
 The commit is sent at the start of the pause, so this leaves about 1.5s past ``TURN_SETTLE_SECONDS``
-for a slow final. Only a late final costs this wait; a final dropped after the fallback is lost for good."""
+for a slow final. Scribe usually answers within a few hundred ms; only a stalled final costs this wait."""
 INACTIVITY_TIMEOUT_SECONDS = 120.0
 """Assistant silence that ends the call, matching ElevenLabsUserSimulator's 12 keep-alives."""
 PLAYBACK_DRAIN_SECONDS = 15.0
 FINAL_FLUSH_SECONDS = 4.0
 POLL_SECONDS = 0.05
+
+MAX_UNTRANSCRIBED_IN_A_ROW = 2
+"""Agent lines in a row the caller could not transcribe before the call fails: one is a bad line,
+repeated ones mean the caller cannot hear the agent, and the conversation would not be a fair test."""
 
 INAUDIBLE = "[inaudible]"
 """Stands in for an agent line the caller heard but could not transcribe."""
@@ -80,6 +84,30 @@ END_CALL_TOOL = {
 }
 
 
+KEEP_LISTENING_DESCRIPTION = """Use this instead of replying when the agent has not finished its turn.
+
+Agents pause mid-turn while they look something up, so what you heard may be only a first part: a
+filler like "Let me check that", "One moment", or "I'll look that up", or an announcement of what
+they are about to do. A caller waits through those in silence. Call this tool, with no text, to keep
+listening; the rest of the agent's turn will follow.
+
+Never use it when the agent asked you a question, gave you a result, or said goodbye: those need
+your reply."""
+
+KEEP_LISTENING_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "keep_listening",
+        "description": KEEP_LISTENING_DESCRIPTION,
+        "parameters": {"type": "object", "properties": {}, "required": []},
+    },
+}
+
+MAX_KEEP_LISTENING_IN_A_ROW = 2
+"""After this many silent waits the tool is withheld, so a caller that keeps waiting still answers
+rather than stalling the call until the inactivity timeout."""
+
+
 def next_segment(buffer: str, *, first: bool, final: bool) -> tuple[str, str]:
     """Split the next speakable segment off streamed text; returns (segment, rest).
 
@@ -110,6 +138,11 @@ def extract_turn(message: Any) -> tuple[str, bool]:
     calls = getattr(message, "tool_calls", None) or []
     end_call = any(getattr(call.function, "name", "") == "end_call" for call in calls)
     return _FENCE.sub("", content).strip(), end_call
+
+
+def calls_tool(message: Any, name: str) -> bool:
+    """Whether a LiteLLMClient message called the tool ``name``."""
+    return any(getattr(call.function, "name", "") == name for call in getattr(message, "tool_calls", None) or [])
 
 
 class CascadeUserSimulator(AbstractUserSimulator):
@@ -144,15 +177,14 @@ class CascadeUserSimulator(AbstractUserSimulator):
         if perturbation_config and perturbation_config.accent is not None:
             raise ValueError("Cascade caller does not support ElevenLabs-specific accent variants")
         self.simulator_config = simulator_config
-        self._stt = ScribeStreamingSTT(
-            simulator_config.stt_model, language=language, on_dropped_final=self._on_dropped_final
-        )
+        self._stt = ScribeStreamingSTT(simulator_config.stt_model, language=language)
         self._tts = CartesiaStreamingTTS(simulator_config.tts_model, language=language)
         self._llm = LiteLLMClient(model=simulator_config.model)
         # None is a commit marker: commit the STT segment once the audio queued ahead of it is sent.
         self._assistant_audio_queue: asyncio.Queue[bytes | None] = asyncio.Queue()
         self._commit_after_next_chunk = False
         self._history: list[dict[str, str]] = []
+        self._kept_listening = 0
 
     @property
     def caller_voice(self) -> str:
@@ -211,6 +243,10 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 finished = next(iter(done))
                 raise finished.exception() or RuntimeError("Cascade caller task stopped unexpectedly")
 
+            # Mark the bridge stopped, as ElevenLabs' end_session() does: an assistant that hangs up on
+            # signal_conversation_ending (e.g. Cartesia) drops the socket during the flush below, and a
+            # still-running bridge would report that as a disconnect mid-conversation.
+            self._audio_interface.stop()
             # Allow final goodbye audio and transcripts to flush before closing.
             await asyncio.sleep(FINAL_FLUSH_SECONDS)
         except Exception:
@@ -251,10 +287,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._commit_after_next_chunk = True
         self._stt.expect_commit()
 
-    def _on_dropped_final(self, text: str) -> None:
-        # Pairs with the turn's transcript_partial_fallback: a final longer than that partial was lost.
-        self.event_logger.log_event("transcript_late_final_dropped", {"text": text})
-
     async def _forward_assistant_audio(self) -> None:
         while True:
             item = await self._assistant_audio_queue.get()
@@ -270,6 +302,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         assistant_spoke = False
         committed_at: float | None = None
         last_activity = loop.time()
+        untranscribed = 0
 
         while not self._conversation_done.is_set():
             await asyncio.sleep(POLL_SECONDS)
@@ -290,29 +323,41 @@ class CascadeUserSimulator(AbstractUserSimulator):
             if committed_at is None:
                 self._request_commit()
                 committed_at = now
-            ended_at = bridge.assistant_audio_ended_at
-            if ended_at is None or now - ended_at < TURN_SETTLE_SECONDS:
+            # The caller starting to speak clears the bridge's end time, so a line the assistant finished
+            # during the caller's turn settles from when this pause was first seen instead.
+            ended_at = bridge.assistant_audio_ended_at or committed_at
+            if now - ended_at < TURN_SETTLE_SECONDS:
                 continue
 
             heard = await self._collect_heard_text(committed_at)
             assistant_spoke = False
-            if not heard:
+            if heard:
+                untranscribed = 0
+            else:
                 # Staying silent would stall the call until the inactivity timeout; a caller asks again.
                 self.event_logger.log_event("assistant_audio_untranscribed", {})
+                untranscribed += 1
+                if untranscribed >= MAX_UNTRANSCRIBED_IN_A_ROW:
+                    raise RuntimeError(f"Caller could not transcribe {untranscribed} agent lines in a row")
+            starts = bridge.assistant_audio_starts
             if await self._take_turn(heard or None):
                 return
             last_activity = loop.time()
+            if bridge.assistant_audio_starts != starts:
+                # The assistant spoke while the caller was generating (e.g. "One moment."). The polls above
+                # never saw it play, so without this it would go uncommitted, merge into the next turn, or
+                # leave the caller silent until the inactivity timeout if the assistant waits for an answer.
+                self.event_logger.log_event("assistant_spoke_during_caller_turn", {})
+                assistant_spoke, committed_at = True, None
 
     async def _collect_heard_text(self, committed_at: float) -> str:
-        """Return what the assistant said, falling back to the partial if the final is late."""
+        """Return what the assistant said; a final that never arrives fails the call."""
         remaining = TRANSCRIPT_WAIT_SECONDS - (asyncio.get_running_loop().time() - committed_at)
         try:
             await asyncio.wait_for(self._stt.committed_event.wait(), timeout=max(remaining, 0))
         except TimeoutError:
-            text = self._stt.take(include_partial=True)
-            logger.warning(f"No final transcript after {TRANSCRIPT_WAIT_SECONDS}s; using partial: {text[:120]!r}")
-            self.event_logger.log_event("transcript_partial_fallback", {"text": text})
-            return text
+            # Acting on the partial would answer a cut-off line; failing lets the call be rerun.
+            raise RuntimeError(f"No final transcript within {TRANSCRIPT_WAIT_SECONDS}s of the commit") from None
         return self._stt.take()
 
     async def _take_turn(self, heard: str | None) -> bool:
@@ -331,6 +376,10 @@ class CascadeUserSimulator(AbstractUserSimulator):
         utterance, end_call = extract_turn(message)
         self._log_llm_response(messages, message, stats)
 
+        if calls_tool(message, "keep_listening") and not end_call:
+            self._kept_listening += 1
+            return False
+        self._kept_listening = 0
         if utterance:
             self._history.append({"role": "user", "content": utterance})
             self._on_user_speaks(utterance)
@@ -360,13 +409,16 @@ class CascadeUserSimulator(AbstractUserSimulator):
         """
         message: Any = ""
         stats: dict[str, Any] = {}
+        tools = [END_CALL_TOOL]
+        if self._kept_listening < MAX_KEEP_LISTENING_IN_A_ROW:
+            tools.append(KEEP_LISTENING_TOOL)
         # Streamed even though only the final is used: barge-ins will consume the deltas.
-        async for kind, payload in self._llm.complete_stream(messages=messages, tools=[END_CALL_TOOL]):
+        async for kind, payload in self._llm.complete_stream(messages=messages, tools=tools):
             if kind == "final":
                 message, stats = payload
         utterance, _ = extract_turn(message)
         spoke = False
-        if utterance:
+        if utterance and not calls_tool(message, "keep_listening"):
             async for chunk in self._tts.stream(utterance, voice_id=self.caller_voice):
                 self._audio_interface.output(chunk)
                 spoke = True

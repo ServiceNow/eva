@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import base64
 import os
-from collections.abc import Callable
 from typing import Any
 
 try:
@@ -28,6 +27,9 @@ STT_SAMPLE_RATE = 16000
 ~120ms faster (STT lag p50 422 vs 540ms) than sending Scribe the mu-law directly, with no
 change in the information it carries (scripts/measure_barge_in_latency.py, STT_BACKENDS)."""
 
+MIN_COMMIT_SECONDS = 0.3
+"""Scribe ignores a commit with less uncommitted audio than this, and sends no final for it."""
+
 
 class ScribeStreamingSTT:
     """Transcribes assistant audio continuously over ElevenLabs Scribe realtime.
@@ -43,7 +45,6 @@ class ScribeStreamingSTT:
         *,
         language: str = "en",
         api_key: str | None = None,
-        on_dropped_final: Callable[[str], None] | None = None,
     ) -> None:
         self.model = model
         self.language = language.split("-")[0]
@@ -55,10 +56,7 @@ class ScribeStreamingSTT:
         self._closing = False
         self.committed_event = asyncio.Event()
         self._pending_commits = 0
-        self._stale_commits = 0
-        """Commits whose segment was already taken from the partial; their late finals are dropped."""
-        self._on_dropped_final = on_dropped_final
-        """Called with each dropped final, so the caller can record what it acted on without."""
+        self._uncommitted_bytes = 0
         self._resample_state = None
         self.updated = asyncio.Event()
         """Set on every partial or committed transcript, so a listener can react to each update
@@ -87,13 +85,13 @@ class ScribeStreamingSTT:
             pcm, self._resample_state = audioop.ratecv(
                 audioop.ulaw2lin(mulaw, 2), 2, 1, INPUT_SAMPLE_RATE, STT_SAMPLE_RATE, self._resample_state
             )
+            self._uncommitted_bytes += len(pcm)
             await self._connection.send({"audio_base_64": base64.b64encode(pcm).decode("ascii")})
 
     def expect_commit(self) -> None:
         """Count a commit as pending from the moment it is requested, before ``commit`` sends it.
 
-        ``committed_event`` is set once every expected commit has its final text. Counting at request
-        time means a partial fallback taken before the commit is sent still marks its final as stale.
+        ``committed_event`` is set once every expected commit has its final text.
         """
         self._pending_commits += 1
         self.committed_event.clear()
@@ -101,21 +99,22 @@ class ScribeStreamingSTT:
     async def commit(self) -> None:
         """Close the current segment, answering the oldest ``expect_commit``."""
         if self._connection is not None:
+            # A pause commit can follow an earlier one by a few ms of audio; pad the tail with silence so
+            # Scribe accepts it, rather than never answering a commit that was counted as pending.
+            missing = int(MIN_COMMIT_SECONDS * STT_SAMPLE_RATE * 2) - self._uncommitted_bytes
+            if missing > 0:
+                await self._connection.send({"audio_base_64": base64.b64encode(bytes(missing)).decode("ascii")})
+            self._uncommitted_bytes = 0
             await self._connection.commit()
 
     def heard_text(self) -> str:
         """Everything heard since the last ``take``, including the in-flight partial."""
         return " ".join([*self._committed, self.partial]).strip()
 
-    def take(self, *, include_partial: bool = False) -> str:
-        """Return and clear the committed text, optionally with the in-flight partial."""
-        text = self.heard_text() if include_partial else " ".join(self._committed).strip()
+    def take(self) -> str:
+        """Return and clear the committed text."""
+        text = " ".join(self._committed).strip()
         self._committed.clear()
-        if include_partial:
-            self.partial = ""
-            # Finals still owed for this turn would otherwise land in the next one.
-            self._stale_commits += self._pending_commits
-            self._pending_commits = 0
         return text
 
     async def stop(self) -> None:
@@ -138,18 +137,12 @@ class ScribeStreamingSTT:
         text = data.get("text", "").strip()
         self.partial = ""
         self.updated.set()
-        # Scribe answers commits in order, so the oldest outstanding one is the stale one.
-        if self._stale_commits:
-            self._stale_commits -= 1
-            logger.warning(f"Dropping late final for an already-answered turn: {text[:120]!r}")
-            if self._on_dropped_final is not None:
-                self._on_dropped_final(text)
-            return
         if not self._pending_commits:
-            # Finals are matched to commits by order; one with no commit owed means that matching is off,
-            # and later text could be dropped or heard twice. Fail like a provider error rather than guess.
-            self.error = f"final transcript with no commit outstanding: {text[:120]!r}"
-            logger.error(f"Caller STT error: {self.error}")
+            # Scribe also commits on its own (e.g. a long unbroken stretch of speech). That text is real
+            # and owes nobody a commit, so keep it rather than lose it or fail the call.
+            logger.warning(f"Final transcript with no commit outstanding, keeping it: {text[:120]!r}")
+            if text:
+                self._committed.append(text)
             return
         if text:
             self._committed.append(text)
