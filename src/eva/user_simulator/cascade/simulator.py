@@ -241,7 +241,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
             done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             if completion_task not in done and not self._conversation_done.is_set():
                 finished = next(iter(done))
-                raise finished.exception() or RuntimeError("Cascade caller task stopped unexpectedly")
+                # exception() raises CancelledError on a cancelled task, which would skip the error path below.
+                error = None if finished.cancelled() else finished.exception()
+                raise error or RuntimeError("Cascade caller task stopped unexpectedly")
 
             # Mark the bridge stopped, as ElevenLabs' end_session() does: an assistant that hangs up on
             # signal_conversation_ending (e.g. Cartesia) drops the socket during the flush below, and a
