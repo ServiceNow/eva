@@ -211,33 +211,38 @@ class TestRetryLogic:
 
 
 class TestJudgeConcurrency:
-    """Verify that set_max_concurrency caps in-flight calls across all LLMClient instances."""
+    """Verify that set_max_concurrency caps in-flight calls to each model across all LLMClient instances."""
 
     @pytest.mark.asyncio
-    async def test_max_concurrency_bounds_calls_across_clients(self):
-        """Peak concurrent calls never exceeds the limit, even when spread over several clients."""
-        peak_concurrent = 0
-        current_concurrent = 0
+    async def test_max_concurrency_is_per_model_across_clients(self):
+        """Clients on the same model share a limit; clients on different models don't wait on each other."""
+        peak_concurrent: dict[str, int] = {}
+        current_concurrent: dict[str, int] = {}
+        peak_total = 0
 
         async def mock_acompletion(*args, **kwargs):
-            nonlocal peak_concurrent, current_concurrent
-            current_concurrent += 1
-            peak_concurrent = max(peak_concurrent, current_concurrent)
+            nonlocal peak_total
+            model = kwargs["model"]
+            current_concurrent[model] = current_concurrent.get(model, 0) + 1
+            peak_concurrent[model] = max(peak_concurrent.get(model, 0), current_concurrent[model])
+            peak_total = max(peak_total, sum(current_concurrent.values()))
             await asyncio.sleep(0.01)
-            current_concurrent -= 1
+            current_concurrent[model] -= 1
             return _mock_response("ok")
 
         LLMClient.set_max_concurrency(2)
         try:
-            clients = [_make_client(model=f"model-{i}")[0] for i in range(4)]
+            # Two clients per model, each making 3 calls: 6 calls per model competing for 2 slots.
+            clients = [_make_client(model=f"model-{i % 2}")[0] for i in range(4)]
             router._router.acompletion = mock_acompletion
             await asyncio.gather(
-                *(c.generate_text([{"role": "user", "content": f"msg-{i}"}]) for c in clients for i in range(2))
+                *(c.generate_text([{"role": "user", "content": f"msg-{i}"}]) for c in clients for i in range(3))
             )
         finally:
-            LLMClient._slots = None
+            LLMClient.set_max_concurrency(None)
 
-        assert peak_concurrent == 2
+        assert peak_concurrent == {"model-0": 2, "model-1": 2}
+        assert peak_total == 4
 
 
 class TestLitellmParamsForwarding:

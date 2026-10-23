@@ -264,7 +264,7 @@ class MetricsRunner:
         """Run all metrics on all records.
 
         All records and metrics run concurrently; in-flight judge calls
-        are capped by ``max_concurrent_judges`` inside LLMClient.
+        to each model are capped by ``max_concurrent_judges`` inside LLMClient.
 
         After computing per-record metrics, if multi-attempt records are detected,
         computes pass@k and pass^k aggregation across attempts.
@@ -291,7 +291,7 @@ class MetricsRunner:
             targeted = all_record_dirs
         targeted_ids = {rid for rid, _ in targeted}
 
-        # Run targeted records concurrently; LLMClient caps concurrent judge calls.
+        # Run targeted records concurrently; LLMClient caps concurrent judge calls per model.
         tasks = [self.run_and_save_record(rid, rdir) for rid, rdir in targeted]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 

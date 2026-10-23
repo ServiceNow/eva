@@ -195,9 +195,10 @@ EVA_MODEL_LIST='[
 EVA bounds load with two settings rather than per-deployment limits:
 
 - `EVA_MAX_CONCURRENT_CONVERSATIONS`: conversations running at once (assistant and user simulator calls).
-- `EVA_MAX_CONCURRENT_JUDGES`: judge LLM calls in flight at once, across all metrics, validation and judge models.
+- `EVA_MAX_CONCURRENT_JUDGES`: judge LLM calls in flight at once to each judge model, across all metrics and
+  validation. Each model has its own limit, so judges on different models don't wait on each other.
 
-Their sum is the upper bound on concurrent LLM calls. Do not set `max_parallel_requests` on deployments: LiteLLM
+At most `EVA_MAX_CONCURRENT_JUDGES` × the number of judge models are in flight at once. Do not set `max_parallel_requests` on deployments: LiteLLM
 rejects calls over that cap with an immediate 429 instead of queueing them. `rpm`/`tpm` are also turned into a
 per-deployment parallel cap by LiteLLM, so keep them well above the limits above if you set them.
 

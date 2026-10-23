@@ -732,7 +732,7 @@ class RunConfig(BaseSettings):
         3,
         ge=1,
         le=100,
-        description="Maximum number of concurrent judge LLM calls across all metrics and validation",
+        description="Maximum number of concurrent judge LLM calls to each model, across all metrics and validation",
     )
     conversation_time_limit_seconds: int = Field(
         600,
