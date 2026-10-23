@@ -10,6 +10,7 @@ from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
 from eva.orchestrator.runner import BenchmarkRunner
 from eva.utils import router
+from eva.utils.llm_client import LLMClient
 from eva.utils.logging import get_logger, setup_logging
 
 load_dotenv()
@@ -23,6 +24,7 @@ async def run_benchmark(config: RunConfig) -> int:
     setup_logging(level=config.log_level)
     logger = get_logger(__name__)
     router.init(config.model_list)
+    LLMClient.set_max_concurrency(config.max_concurrent_judges)
 
     logger.info(f"Run ID: {config.run_id}")
 

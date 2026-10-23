@@ -154,8 +154,7 @@ EVA_MODEL_LIST='[
     "litellm_params": {
       "model": "azure/gpt-5.2",
       "api_key": "os.environ/AZURE_KEY_A",
-      "api_base": "https://endpoint-a.openai.azure.com",
-      "max_parallel_requests": 5
+      "api_base": "https://endpoint-a.openai.azure.com"
     }
   },
   {
@@ -163,8 +162,7 @@ EVA_MODEL_LIST='[
     "litellm_params": {
       "model": "azure/gpt-5.2",
       "api_key": "os.environ/AZURE_KEY_B",
-      "api_base": "https://endpoint-b.openai.azure.com",
-      "max_parallel_requests": 5
+      "api_base": "https://endpoint-b.openai.azure.com"
     }
   }
 ]'
@@ -194,23 +192,14 @@ EVA_MODEL_LIST='[
 
 ## Concurrency Control
 
-Set `max_parallel_requests` per deployment to limit concurrent API calls:
+EVA bounds load with two settings rather than per-deployment limits:
 
-```bash
-EVA_MODEL_LIST='[
-  {
-    "model_name": "gpt-5.2",
-    "litellm_params": {
-      "model": "azure/gpt-5.2",
-      "api_key": "os.environ/AZURE_API_KEY",
-      "api_base": "https://your-resource.openai.azure.com",
-      "max_parallel_requests": 5
-    }
-  }
-]'
-```
+- `EVA_MAX_CONCURRENT_CONVERSATIONS`: conversations running at once (assistant and user simulator calls).
+- `EVA_MAX_CONCURRENT_JUDGES`: judge LLM calls in flight at once, across all metrics, validation and judge models.
 
-You can also set `rpm` (requests per minute) and `tpm` (tokens per minute) limits.
+Their sum is the upper bound on concurrent LLM calls. Do not set `max_parallel_requests` on deployments: LiteLLM
+rejects calls over that cap with an immediate 429 instead of queueing them. `rpm`/`tpm` are also turned into a
+per-deployment parallel cap by LiteLLM, so keep them well above the limits above if you set them.
 
 ## Advanced: Model Parameters
 
@@ -228,7 +217,7 @@ Configure model parameters (temperature, max_tokens, reasoning_effort, top_p, fr
 - See LiteLLM docs: https://docs.litellm.ai/docs/providers
 
 ### "Rate Limit Exceeded"
-- Adjust `max_parallel_requests` per deployment in `EVA_MODEL_LIST`
+- Lower `EVA_MAX_CONCURRENT_JUDGES` (metrics) or `EVA_MAX_CONCURRENT_CONVERSATIONS` (conversations)
 
 ## Retry Logic and Rate Limits
 

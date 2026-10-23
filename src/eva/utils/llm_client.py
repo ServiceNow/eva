@@ -1,6 +1,7 @@
 """Unified LLM client using LiteLLM for all model calls."""
 
 import asyncio
+import contextlib
 import itertools
 import random
 from typing import ClassVar
@@ -18,10 +19,17 @@ load_dotenv()
 class LLMClient:
     """Unified LLM client using LiteLLM.
 
-    Concurrency is managed by the LiteLLM Router per-deployment `max_parallel_requests` and `rpm`/`tpm` limits configured in `EVA_MODEL_LIST`.
+    Used by metric judges. In-flight calls across all instances are capped by `set_max_concurrency`
+    (``max_concurrent_judges``); unbounded until it is called.
     """
 
     _call_counter: ClassVar[itertools.count] = itertools.count(1)  # Used as a unique identifier for logs.
+    _slots: ClassVar[asyncio.Semaphore | None] = None
+
+    @classmethod
+    def set_max_concurrency(cls, limit: int) -> None:
+        """Cap concurrent calls across all LLMClient instances. Call once at startup."""
+        cls._slots = asyncio.Semaphore(limit)
 
     def __init__(
         self,
@@ -142,8 +150,9 @@ class LLMClient:
 
                 # Make the API call
                 logger.debug(f"{call_retry_id} started for {self.model}")
-                async with router.limit(self.model) as deployment:
-                    response = await router.get().acompletion(**{**kwargs, "model": deployment.id})
+                # Hold a slot only for the call itself, not while backing off between retries.
+                async with self._slots or contextlib.nullcontext():
+                    response = await router.get().acompletion(**kwargs)
 
                 (logger.info if attempt > 0 else logger.debug)(f"{call_retry_id} succeeded for {self.model}")
 
