@@ -26,7 +26,9 @@ from pipecat.frames.frames import (
     ErrorFrame,
     Frame,
     InputAudioRawFrame,
+    TTSAudioRawFrame,
     TTSSpeakFrame,
+    TTSStoppedFrame,
 )
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineWorker
@@ -39,7 +41,9 @@ from eva.assistant.pipeline.services import (
     create_tts_service,
 )
 from eva.assistant.services.llm import LiteLLMClient
-from eva.models.config import PipelineType, RunConfig, get_model_alias_from_params
+from eva.models.config import CascadeSimulatorConfig, PipelineType, RunConfig, get_model_alias_from_params
+from eva.user_simulator.cascade.stt import ScribeStreamingSTT
+from eva.user_simulator.cascade.tts import CartesiaStreamingTTS
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -58,7 +62,7 @@ class PreflightError(RuntimeError):
 class ProbeResult:
     """Outcome of probing a single model/provider."""
 
-    model_type: str  # "LLM", "STT", "TTS", "AUDIO_LLM"
+    model_type: str  # "LLM", "STT", "TTS", "AUDIO_LLM", "USER_SIM_LLM", "USER_SIM_STT", "USER_SIM_TTS"
     model_alias: str
     ok: bool
     detail: str = ""
@@ -67,17 +71,23 @@ class ProbeResult:
 class _FrameCapture(FrameProcessor):
     """Pass-through processor that records every frame it sees."""
 
-    def __init__(self) -> None:
+    def __init__(self, done: asyncio.Event, done_types: tuple[type[Frame], ...] = ()) -> None:
         super().__init__()
         self.frames: list[Frame] = []
+        self._done_types = (ErrorFrame, *done_types) if done_types else ()
+        self.done = done
 
     async def process_frame(self, frame: Frame, direction: FrameDirection) -> None:
         await super().process_frame(frame, direction)
         self.frames.append(frame)
+        if self._done_types and isinstance(frame, self._done_types):
+            self.done.set()
         await self.push_frame(frame, direction)
 
 
-async def _drive_pipecat_service(service: FrameProcessor, input_frames: list[Frame]) -> tuple[bool, str]:
+async def _drive_pipecat_service(
+    service: FrameProcessor, input_frames: list[Frame], done_types: tuple[type[Frame], ...] = ()
+) -> tuple[bool, str]:
     """Run a pipecat STT/TTS service through a minimal pipeline and report success.
 
     The service is wrapped between two capture processors: errors travel upstream and
@@ -85,14 +95,24 @@ async def _drive_pipecat_service(service: FrameProcessor, input_frames: list[Fra
     auto-sends a ``StartFrame`` (which is when streaming services connect and surface
     auth failures as an ``ErrorFrame``); the trailing ``EndFrame`` shuts it down cleanly.
 
+    When ``done_types`` is given, no ``EndFrame`` is sent: the probe waits for one of those
+    frames (or an ``ErrorFrame``) and then cancels. TTS needs this because it holds frames until
+    a ``BotStoppedSpeakingFrame`` from an output transport, which this pipeline lacks, so an
+    ``EndFrame`` would never drain — and the worker's ``CancelFrame`` queues behind it, so the
+    pipeline could not even be cancelled.
+
     Returns ``(ok, detail)`` — ``ok=False`` only when an ``ErrorFrame`` is seen.
     """
-    head, tail = _FrameCapture(), _FrameCapture()
+    done = asyncio.Event()
+    head, tail = _FrameCapture(done, done_types), _FrameCapture(done, done_types)
     task = PipelineWorker(Pipeline([head, service, tail]))
     runner = WorkerRunner(handle_sigint=False, force_gc=True)
 
     async def feed() -> None:
-        await task.queue_frames([*input_frames, EndFrame()])
+        await task.queue_frames(input_frames if done_types else [*input_frames, EndFrame()])
+        if done_types:
+            await done.wait()
+            await task.cancel()
 
     try:
         await runner.add_workers(task)
@@ -138,7 +158,31 @@ async def _probe_tts(config: RunConfig) -> tuple[bool, str]:
     service = create_tts_service(config.model.tts, config.model.tts_params, language_code=config.language.value)
     if service is None:
         return True, ""
-    return await _drive_pipecat_service(service, [TTSSpeakFrame("ok")])
+    return await _drive_pipecat_service(service, [TTSSpeakFrame("ok")], done_types=(TTSAudioRawFrame, TTSStoppedFrame))
+
+
+async def _probe_user_sim_llm(sim: CascadeSimulatorConfig) -> tuple[bool, str]:
+    client = LiteLLMClient(model=sim.model)
+    await client.complete([{"role": "user", "content": "ping"}], max_retries=0)
+    return True, ""
+
+
+async def _probe_user_sim_stt(sim: CascadeSimulatorConfig, language: str) -> tuple[bool, str]:
+    stt = ScribeStreamingSTT(sim.stt_model, language=language)
+    try:
+        await stt.start()
+    finally:
+        await stt.stop()
+    return (False, stt.error) if stt.error else (True, "")
+
+
+async def _probe_user_sim_tts(sim: CascadeSimulatorConfig, language: str) -> tuple[bool, str]:
+    tts = CartesiaStreamingTTS(sim.tts_model, language=language)
+    try:
+        await tts.warm_up(sim.female_voice)
+    finally:
+        await tts.close()
+    return True, ""
 
 
 async def _guard(
@@ -158,11 +202,9 @@ async def _guard(
 async def _run_preflight(config: RunConfig) -> list[ProbeResult]:
     """Probe every model the run will use; return one ``ProbeResult`` per component.
 
-    S2S runs are skipped (no live probe yet) — only a log line is emitted.
+    S2S assistants are skipped (no live probe yet) — only a log line is emitted. A cascade user
+    simulator's LLM, STT, and TTS are probed regardless of the assistant's pipeline.
     """
-    # TODO: probe the user simulator's own services when EVA_USER_SIMULATOR__PROVIDER=cascade (its LLM
-    # deployment, Scribe realtime STT, Cartesia TTS). Today a missing `user-llm` deployment only surfaces as
-    # every record failing after the assistant's greeting.
     timeout = config.preflight_timeout_seconds
     model = config.model
     probes: list[tuple[str, str, Awaitable[tuple[bool, str]]]] = []
@@ -177,7 +219,15 @@ async def _run_preflight(config: RunConfig) -> list[ProbeResult]:
             probes.append(("TTS", get_model_alias_from_params(model.tts_params), _probe_tts(config)))
         case PipelineType.S2S:
             logger.info("Pre-flight: S2S live probe not yet supported")
-            return []
+
+    if isinstance(sim := config.user_simulator, CascadeSimulatorConfig):
+        language = config.language.value
+        probes.append(("USER_SIM_LLM", sim.model, _probe_user_sim_llm(sim)))
+        probes.append(("USER_SIM_STT", sim.stt_model, _probe_user_sim_stt(sim, language)))
+        probes.append(("USER_SIM_TTS", sim.tts_model, _probe_user_sim_tts(sim, language)))
+
+    if not probes:
+        return []
 
     logger.info(f"Pre-flight: checking {len(probes)} model(s) before the run starts...")
     return await asyncio.gather(*(_guard(model_type, alias, probe, timeout) for model_type, alias, probe in probes))

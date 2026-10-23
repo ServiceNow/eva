@@ -498,10 +498,9 @@ class CascadeSimulatorConfig(BaseModel):
     stt: Literal["elevenlabs"] = Field("elevenlabs", description="Streaming STT provider for the assistant's audio.")
     stt_model: str = Field("scribe_v2_realtime", description="Streaming STT model.")
     model: str = Field(
-        "user-llm",
         description=(
-            "Caller LLM deployment, resolved via EVA_MODEL_LIST like the assistant's. A dedicated 'user-llm' "
-            "deployment lets the caller's model and params differ from the assistant under test."
+            "Caller LLM deployment, resolved via EVA_MODEL_LIST like the assistant's. Configure a separate "
+            "deployment if the caller's params need to differ from the assistant under test or the judges."
         ),
     )
     tts: Literal["cartesia"] = Field("cartesia", description="TTS provider for the caller's speech.")

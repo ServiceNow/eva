@@ -52,7 +52,7 @@ def test_factory_selects_cascade(tmp_path, monkeypatch):
     monkeypatch.setattr(cascade_simulator, "LiteLLMClient", MagicMock())
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key")
     monkeypatch.setenv("CARTESIA_API_KEY", "test-key")
-    simulator = create_user_simulator(CascadeSimulatorConfig(), **_kwargs(tmp_path))
+    simulator = create_user_simulator(CascadeSimulatorConfig(model="gpt-test"), **_kwargs(tmp_path))
 
     assert isinstance(simulator, CascadeUserSimulator)
     assert simulator.provider == "cascade"

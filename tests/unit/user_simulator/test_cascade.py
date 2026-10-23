@@ -48,7 +48,7 @@ def _simulator(tmp_path: Path, *, persona_id: int = 1, **kwargs) -> CascadeUserS
         server_url="ws://localhost:9999/ws",
         output_dir=tmp_path,
         agent_id="agent_itsm",
-        simulator_config=CascadeSimulatorConfig(),
+        simulator_config=CascadeSimulatorConfig(model="gpt-test"),
         **kwargs,
     )
 
@@ -65,7 +65,7 @@ async def _chunks(*chunks: bytes):
 
 def test_config_rejects_non_streaming_stt():
     with pytest.raises(ValidationError, match="streaming STT"):
-        CascadeSimulatorConfig(stt_model="scribe_v2")
+        CascadeSimulatorConfig(model="gpt-test", stt_model="scribe_v2")
 
 
 def test_accent_variants_are_rejected(tmp_path):
@@ -74,7 +74,7 @@ def test_accent_variants_are_rejected(tmp_path):
 
 
 def test_persona_selects_voice(tmp_path):
-    config = CascadeSimulatorConfig()
+    config = CascadeSimulatorConfig(model="gpt-test")
 
     assert _simulator(tmp_path / "f").caller_voice == config.female_voice
     assert _simulator(tmp_path / "m", persona_id=2).caller_voice == config.male_voice
