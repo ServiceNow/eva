@@ -153,6 +153,8 @@ class BotToBotAudioBridge:
         self._assistant_audio_active = False  # assistant speaking
         self._user_audio_ended_time = None  # Track when user audio ended for silence sending
         self._assistant_audio_ended_time = None  # Track when assistant audio ended for silence sending
+        # Assistant utterances started so far; lets a caller tell whether the assistant spoke while it was busy.
+        self.assistant_audio_starts = 0
         # Loop time of the last real user-audio chunk sent — used to stamp the
         # user audio_end at the actual end (detection lags it by ~600ms).
         self._last_user_audio_send_time: float | None = None
@@ -567,6 +569,7 @@ class BotToBotAudioBridge:
         if self._assistant_audio_ended_time is not None:
             self._assistant_audio_ended_time = None
         self._assistant_audio_active = True
+        self.assistant_audio_starts += 1
         # The trailing white-noise block exists only to nudge the assistant's VAD
         # into detecting end-of-speech. Once the assistant actually responds it
         # has done its job, so cancel any remaining frames — otherwise noise would

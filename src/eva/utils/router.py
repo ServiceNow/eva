@@ -1,6 +1,10 @@
 """LiteLLM Router — configure-once module.
 
 Call `init(model_list)` once at startup, then `get()` anywhere to retrieve the shared Router instance.
+
+Concurrency is not limited here: since LiteLLM 1.98 the Router rejects calls over a deployment's
+``max_parallel_requests`` with an immediate 429 instead of queueing them, so no default cap is set.
+EVA bounds load upstream with ``max_concurrent_conversations`` and ``max_concurrent_judges``.
 """
 
 from litellm import Router
@@ -16,7 +20,7 @@ def init(model_list: list) -> None:
     """Create and store the shared Router. Call once at startup."""
     global _router
     logger.info(f"Initializing LiteLLM Router with {len(model_list)} deployment(s)")
-    _router = Router(model_list=model_list, num_retries=0, default_max_parallel_requests=5, timeout=60)
+    _router = Router(model_list=model_list, num_retries=0, timeout=60)
 
 
 def reset() -> None:

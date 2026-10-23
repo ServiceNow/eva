@@ -491,8 +491,41 @@ class OpenAIRealtimeSimulatorConfig(BaseModel):
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
 
+class CascadeSimulatorConfig(BaseModel):
+    """Caller built from independently chosen streaming STT, LLM, and TTS models."""
+
+    provider: Literal["cascade"] = "cascade"
+    stt: Literal["elevenlabs"] = Field("elevenlabs", description="Streaming STT provider for the assistant's audio.")
+    stt_model: str = Field("scribe_v2_realtime", description="Streaming STT model.")
+    model: str = Field(
+        description=(
+            "Caller LLM deployment, resolved via EVA_MODEL_LIST like the assistant's. Configure a separate "
+            "deployment if the caller's params need to differ from the assistant under test or the judges."
+        ),
+    )
+    tts: Literal["cartesia"] = Field("cartesia", description="TTS provider for the caller's speech.")
+    tts_model: str = Field("sonic-3.5", description="TTS model.")
+    female_voice: str = Field("f786b574-daa5-4673-aa0c-cbe3e8534c02", description="TTS voice for female personas.")
+    male_voice: str = Field("a0e99841-438c-4a64-b679-ae501e7d6091", description="TTS voice for male personas.")
+
+    @field_validator("stt_model")
+    @classmethod
+    def _require_streaming_stt(cls, value: str) -> str:
+        # The caller must hear the assistant as it speaks; batch models can't support interruptions.
+        if not value.endswith("_realtime"):
+            raise ValueError(f"Cascade caller requires a streaming STT model, got {value!r}")
+        return value
+
+    @model_validator(mode="after")
+    def _require_provider_keys(self) -> "CascadeSimulatorConfig":
+        missing = [key for key in ("ELEVENLABS_API_KEY", "CARTESIA_API_KEY") if not os.environ.get(key)]
+        if missing:
+            raise ValueError(f"The cascade user simulator requires {', '.join(missing)} to be set.")
+        return self
+
+
 UserSimulatorConfig = Annotated[
-    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig | CascadeSimulatorConfig,
     Field(discriminator="provider"),
 ]
 
@@ -695,6 +728,12 @@ class RunConfig(BaseSettings):
         le=100,
         description="Maximum number of concurrent conversations",
     )
+    max_concurrent_judges: int = Field(
+        3,
+        ge=1,
+        le=100,
+        description="Maximum number of concurrent judge LLM calls to each model, across all metrics and validation",
+    )
     conversation_time_limit_seconds: int = Field(
         600,
         ge=30,
@@ -775,13 +814,13 @@ class RunConfig(BaseSettings):
         config is unused and conflicting env vars are harmless.
         """
         if (
-            isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig)
+            not isinstance(self.user_simulator, ElevenLabsSimulatorConfig)
             and self.perturbation is not None
             and self.perturbation.accent is not None
         ):
             raise ValueError(
                 "Accent perturbations require the ElevenLabs user simulator; "
-                "OpenAI Realtime supports behavior, noise, and connection perturbations."
+                "other providers support behavior, noise, and connection perturbations."
             )
 
         if self.max_rerun_attempts == 0 or self.aggregate_only:

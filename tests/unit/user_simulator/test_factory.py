@@ -1,6 +1,9 @@
 from pathlib import Path
+from unittest.mock import MagicMock
 
-from eva.models.config import ElevenLabsSimulatorConfig, OpenAIRealtimeSimulatorConfig
+from eva.models.config import CascadeSimulatorConfig, ElevenLabsSimulatorConfig, OpenAIRealtimeSimulatorConfig
+from eva.user_simulator.cascade import simulator as cascade_simulator
+from eva.user_simulator.cascade.simulator import CascadeUserSimulator
 from eva.user_simulator.elevenlabs import ElevenLabsUserSimulator
 from eva.user_simulator.factory import create_user_simulator
 from eva.user_simulator.openai_realtime import OpenAIRealtimeUserSimulator
@@ -43,3 +46,13 @@ def test_factory_selects_openai_realtime(tmp_path):
 
     assert isinstance(simulator, OpenAIRealtimeUserSimulator)
     assert simulator.caller_model == "gpt-realtime-1.5"
+
+
+def test_factory_selects_cascade(tmp_path, monkeypatch):
+    monkeypatch.setattr(cascade_simulator, "LiteLLMClient", MagicMock())
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key")
+    monkeypatch.setenv("CARTESIA_API_KEY", "test-key")
+    simulator = create_user_simulator(CascadeSimulatorConfig(model="gpt-test"), **_kwargs(tmp_path))
+
+    assert isinstance(simulator, CascadeUserSimulator)
+    assert simulator.provider == "cascade"
