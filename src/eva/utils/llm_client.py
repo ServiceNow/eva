@@ -1,4 +1,4 @@
-"""Unified LLM client using LiteLLM for all model calls."""
+"""Unified LLM client using LiteLLM for metric judges."""
 
 import asyncio
 import contextlib
