@@ -35,6 +35,29 @@ class LatencyStats(BaseModel):
     total_calls: int = Field(..., description="Total number of calls")
 
 
+class BargeInLatency(BaseModel):
+    """One live barge-in by the cascade caller, timed as in scripts/measure_barge_in_latency.py.
+
+    "Last heard word" is the last word of the transcript the firing decision read; it ends when its
+    audio stopped playing to the caller, from the STT's word timestamps. Those fields are None when
+    no timestamps came back for it.
+    """
+
+    heard: str = Field(..., description="Agent speech the reply was written from")
+    opener: str = Field(..., description="Pre-rendered opener played on the verdict")
+    content: str = Field(..., description="Reply spoken after the opener")
+    p_interrupt: float = Field(..., description="Decision model's P(interrupt)")
+    opener_ms: float = Field(..., description="Opener duration: the cover it buys the reply")
+    stt_lag_ms: float | None = Field(None, description="Last heard word ends -> transcript containing it")
+    decision_ms: float = Field(..., description="Decision request -> verdict")
+    reaction_ms: float | None = Field(None, description="Last heard word ends -> opener out")
+    reply_text_ms: float | None = Field(None, description="Opener out -> reply's first segment sent to TTS")
+    tts_first_audio_ms: float | None = Field(None, description="First segment sent -> first TTS audio")
+    content_ready_ms: float | None = Field(None, description="Opener out -> first audible reply audio arrived")
+    gap_ms: float | None = Field(None, description="Silence between the opener ending and the reply's first audio")
+    total_ms: float | None = Field(None, description="Last heard word ends -> reply audible, opener included")
+
+
 class ConversationResult(BaseModel):
     """Result of a single conversation."""
 
@@ -52,6 +75,16 @@ class ConversationResult(BaseModel):
     model_response_latency: LatencyStats | None = Field(
         None,
         description="Time from user speech end to first model audio (s2s/realtime frameworks)",
+    )
+    barge_ins: list[BargeInLatency] = Field(
+        default_factory=list, description="Timing of each caller barge-in (cascade simulator)"
+    )
+    barge_in_reaction_latency: LatencyStats | None = Field(
+        None, description="Barge-in reaction: last heard word ends -> opener out"
+    )
+    barge_in_gap: LatencyStats | None = Field(None, description="Barge-in silence between opener and reply")
+    barge_in_total_latency: LatencyStats | None = Field(
+        None, description="Barge-in last heard word ends -> reply audible"
     )
 
     # Timing

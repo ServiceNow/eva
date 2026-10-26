@@ -13,9 +13,10 @@ from pydantic import ValidationError
 
 from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.cascade import simulator as cascade_simulator
+from eva.user_simulator.cascade.barge_in import BargeIn, trim_silence
 from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn, next_segment
 from eva.user_simulator.cascade.stt import ScribeStreamingSTT
-from eva.user_simulator.cascade.tts import CartesiaStreamingTTS
+from eva.user_simulator.cascade.tts import TTS_SAMPLE_RATE, CartesiaStreamingTTS
 
 GOAL = {
     "high_level_user_goal": "Reset my password.",
@@ -32,12 +33,18 @@ GOAL = {
     "starting_utterance": "I need to reset my password.",
 }
 
+SILENT_PCM = bytes(640)
+"""20ms of PCM16 silence."""
+LOUD_PCM = b"\x00\x40" * 320
+"""20ms of PCM16 well above the silence threshold."""
+
 
 @pytest.fixture(autouse=True)
 def _no_router(monkeypatch):
     monkeypatch.setattr(cascade_simulator, "LiteLLMClient", MagicMock())
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key")
     monkeypatch.setenv("CARTESIA_API_KEY", "test-key")
+    monkeypatch.setattr(cascade_simulator, "DecisionsInterruptor", MagicMock())
 
 
 def _simulator(tmp_path: Path, *, persona_id: int = 1, **kwargs) -> CascadeUserSimulator:
@@ -168,7 +175,7 @@ async def test_commit_is_queued_behind_the_next_bridge_chunk(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._stt = MagicMock(send=AsyncMock(), commit=AsyncMock())
     order: list[str] = []
-    simulator._stt.send.side_effect = lambda chunk: order.append(f"send:{chunk.decode()}")
+    simulator._stt.send.side_effect = lambda chunk, heard_at: order.append(f"send:{chunk.decode()}")
     simulator._stt.commit.side_effect = lambda: order.append("commit")
 
     simulator._on_assistant_audio(b"speech")
@@ -342,6 +349,161 @@ async def test_end_call_hangs_up_after_playback(tmp_path):
 
     assert hung_up is True
     assert simulator._end_reason == "goodbye"
+
+
+def _trigger(at: float = 0.0, *, segment_start: float = 0.0, words: int = 0) -> BargeIn:
+    return BargeIn(heard_at=at, decision_ms=0.0, p_interrupt=0.0, segment_start=segment_start, trigger_words=words)
+
+
+@pytest.mark.asyncio
+async def test_interrupt_decision_plays_opener_then_reply_once(tmp_path):
+    simulator = _simulator(tmp_path)
+
+    async def decide(goal: str, heard: str) -> tuple[str, float]:
+        await asyncio.sleep(0)  # both requests are in flight before either answers
+        return "interrupt", 0.9
+
+    simulator._interruptor.decide = decide
+    simulator._openers = [("Sorry\u2014", b"\x07\x07")]
+    simulator._llm.complete_stream = _llm_stream("It's 4471.")
+    simulator._tts.stream = MagicMock(return_value=_chunks(SILENT_PCM, LOUD_PCM))
+    simulator._audio_interface = MagicMock()
+    simulator._audio_interface.is_assistant_playing.return_value = True
+    simulator._audio_interface.is_caller_playing.return_value = False
+    simulator._stt.partial = "Can I get your employee"
+
+    # Two overlapping decisions both say interrupt; only the first barges in.
+    await asyncio.gather(
+        simulator._decide("goal", "Can I get", _trigger()), simulator._decide("goal", "Can I get your", _trigger())
+    )
+
+    # The reply's leading silence is dropped, so it follows the opener with no padding.
+    outputs = [call.args[0] for call in simulator._audio_interface.output.call_args_list]
+    assert outputs == [b"\x07\x07", LOUD_PCM, b"\x00\x00"]
+    assert simulator._history[-2:] == [
+        {"role": "assistant", "content": "Can I get your employee"},
+        {"role": "user", "content": "Sorry\u2014 It's 4471."},
+    ]
+    assert simulator._turn_active is False
+    assert simulator._stt._stale_commits == 1  # the cut-off segment's final will be dropped
+    [barge_in] = simulator.barge_ins
+    assert (barge_in.heard, barge_in.content, barge_in.p_interrupt) == ("Can I get your employee", "It's 4471.", 0.9)
+    assert barge_in.gap_ms is not None
+    assert barge_in.reaction_ms is None  # no word timestamps came back
+
+
+@pytest.mark.asyncio
+async def test_barge_in_reply_streams_each_segment_to_tts_in_order(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator._llm.complete_stream = _llm_stream("My ID is 4471, ", "and my name ", "is Sam. Thanks.")
+    rendered: list[str] = []
+    audio = {"My ID is 4471,": b"\x00\x10" * 320, "and my name is Sam.": b"\x00\x20" * 320, "Thanks.": LOUD_PCM}
+
+    def stream(text, voice_id):
+        rendered.append(text)
+        return _chunks(audio[text])
+
+    simulator._tts.stream = stream
+    simulator._audio_interface = MagicMock()
+    barge_in = _trigger()
+    barge_in.play_opener("Sorry\u2014", b"", now=0.0)
+
+    message, _, spoke = await simulator._speak_barge_in([], barge_in)
+
+    # The first clause goes out before the sentence it belongs to is finished.
+    assert rendered == ["My ID is 4471,", "and my name is Sam.", "Thanks."]
+    outputs = [call.args[0] for call in simulator._audio_interface.output.call_args_list]
+    assert outputs == [audio[text] for text in rendered]
+    assert spoke and barge_in.content == "My ID is 4471, and my name is Sam. Thanks."
+    assert barge_in.segment_sent_at is not None
+
+
+def test_barge_in_times_reaction_and_gap_from_the_last_heard_word():
+    barge_in = _trigger(10.0)
+    barge_in.word_end_at = 9.6
+    barge_in.decision_ms = 150.0
+    barge_in.play_opener("Sorry\u2014", bytes(TTS_SAMPLE_RATE // 5 * 2), now=10.2)  # 200ms opener
+    barge_in.segment_sent(now=10.5)
+    barge_in.segment_sent(now=10.7)  # only the first segment counts
+
+    assert barge_in.audible(SILENT_PCM, now=10.55) == b""
+    assert barge_in.audible(SILENT_PCM + LOUD_PCM, now=10.6) == LOUD_PCM
+    latency = barge_in.latency()
+
+    assert latency.stt_lag_ms == pytest.approx(400.0)
+    assert latency.reaction_ms == pytest.approx(600.0)
+    assert latency.reply_text_ms == pytest.approx(300.0)
+    assert latency.tts_first_audio_ms == pytest.approx(50.0)
+    assert latency.content_ready_ms == pytest.approx(400.0)
+    assert latency.gap_ms == pytest.approx(200.0)  # opener ended at 10.4, reply audible at 10.6
+    assert latency.total_ms == pytest.approx(1000.0)
+
+
+def test_barge_in_reply_ready_before_opener_ends_has_no_gap():
+    barge_in = _trigger(0.0)
+    barge_in.word_end_at = -0.4
+    barge_in.play_opener("Sorry\u2014", bytes(TTS_SAMPLE_RATE * 2), now=0.1)  # 1s opener
+    barge_in.segment_sent(now=0.3)
+    barge_in.audible(LOUD_PCM, now=0.5)
+
+    assert barge_in.latency().gap_ms == 0.0
+    assert barge_in.latency().total_ms == pytest.approx(1500.0)
+
+
+def test_trim_silence_keeps_only_loud_windows():
+    assert trim_silence(SILENT_PCM + LOUD_PCM + SILENT_PCM) == LOUD_PCM
+
+
+def test_stt_take_with_partial_drops_the_finals_it_already_returned():
+    stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x")
+    stt._on_committed({"text": "Hello,"})
+    stt._on_partial({"text": "can I get your"})
+    stt.expect_commit()
+
+    assert stt.take(include_partial=True) == "Hello, can I get your"
+    assert stt.committed_event.is_set()
+    stt._on_committed({"text": "can I get your ID?"})  # the barge-in's segment
+    stt.expect_commit()
+    stt._on_committed({"text": "Thanks."})
+
+    assert stt.take() == "Thanks."
+
+
+@pytest.mark.asyncio
+async def test_stt_maps_session_word_timestamps_to_when_the_caller_heard_them():
+    stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x")
+    stt._record_sent(32000, heard_at=100.0)  # 1s of 16kHz PCM16: session audio [0, 1s] heard by t=100
+    stt._record_sent(32000, heard_at=101.0)  # [1, 2s] by t=101
+    stt.segment_start = 1.0
+    stt._on_timestamps({"words": [{"text": "Hi", "type": "word", "start": 0.1, "end": 0.4}]})
+    stt._on_timestamps(
+        {
+            "words": [
+                {"text": "Can", "type": "word", "start": 1.1, "end": 1.3},
+                {"text": " ", "type": "spacing", "start": 1.3, "end": 1.35},
+                {"text": "I", "type": "word", "start": 1.35, "end": 1.5},
+            ]
+        }
+    )
+
+    assert stt.word_end(1.0, 0) == pytest.approx(100.3)
+    assert stt.word_end(1.0, 1) == pytest.approx(100.5)
+    assert stt.word_end(1.0, 5) == pytest.approx(100.5)  # fewer final words than the partial had
+    assert stt.word_end(2.0, 0) is None  # that segment's final has not arrived
+    assert stt.word_end(1.0, -1) is None
+
+
+@pytest.mark.asyncio
+async def test_no_interrupt_while_caller_is_speaking(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator._interruptor.decide = AsyncMock(return_value=("interrupt", 0.9))
+    simulator._audio_interface = MagicMock()
+    simulator._audio_interface.is_assistant_playing.return_value = True
+    simulator._audio_interface.is_caller_playing.return_value = True
+
+    await simulator._decide("goal", "Can I get your", _trigger())
+
+    simulator._audio_interface.output.assert_not_called()
 
 
 def _sse(*events: dict) -> httpx.MockTransport:

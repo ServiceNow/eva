@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import random
 import re
 from contextlib import suppress
 from pathlib import Path
@@ -13,6 +14,8 @@ from eva.assistant.services.llm import LiteLLMClient
 from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.audio_bridge import BotToBotAudioBridge
 from eva.user_simulator.base import AbstractUserSimulator
+from eva.user_simulator.cascade.barge_in import BargeIn, trim_silence
+from eva.user_simulator.cascade.interruptor import DecisionsInterruptor
 from eva.user_simulator.cascade.stt import ScribeStreamingSTT
 from eva.user_simulator.cascade.tts import TTS_SAMPLE_RATE, CartesiaStreamingTTS
 from eva.utils.logging import get_logger
@@ -41,9 +44,22 @@ INAUDIBLE = "[inaudible]"
 INAUDIBLE_NOTE = f"""The agent just said something you could not make out ({INAUDIBLE} above). \
 Ask them briefly to repeat it, the way a caller on a bad line would."""
 
-TTS_WARM_CONNECTIONS = 1
+TTS_WARM_CONNECTIONS = 2
 """Pooled TTS connections opened before the first turn: one per TTS request that can render at once.
-Barge-ins that split the first clause off (see ``next_segment``) will want 2."""
+A barge-in renders its first clause and the next sentence concurrently (see ``next_segment``)."""
+
+DECISION_WARM_CONNECTIONS = 2
+"""Pooled decision connections opened before the first turn: consecutive transcript updates'
+decisions can overlap."""
+
+OPENERS = ["Sorry\u2014", "Wait, sorry\u2014", "Sorry, sorry\u2014", "Sorry, hang on a sec\u2014"]
+"""Pre-rendered at startup and played the moment a decision says interrupt, masking the reply's latency."""
+
+BARGE_IN_NOTE = """The agent is still speaking and their last line above is cut off where you stopped \
+listening. You are cutting them off now, and you have ALREADY said "{opener}" out loud. Write only \
+the words that come right after it, picking up mid-sentence. Do not repeat "{opener}" or say anything \
+like it: no apology, no "wait", and no other interjection or filler to get their attention, in any \
+language. Start directly with what you need to say."""
 
 CLAUSE_MIN_WORDS = 3
 """The first clause is spoken early only once it has this many words, so TTS has enough to phrase."""
@@ -181,10 +197,16 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._tts = CartesiaStreamingTTS(simulator_config.tts_model, language=language)
         self._llm = LiteLLMClient(model=simulator_config.model)
         # None is a commit marker: commit the STT segment once the audio queued ahead of it is sent.
-        self._assistant_audio_queue: asyncio.Queue[bytes | None] = asyncio.Queue()
+        self._assistant_audio_queue: asyncio.Queue[tuple[bytes, float] | None] = asyncio.Queue()
         self._commit_after_next_chunk = False
         self._history: list[dict[str, str]] = []
         self._kept_listening = 0
+        self._interruptor = DecisionsInterruptor()
+        self._openers: list[tuple[str, bytes]] = []
+        self._turn_active = False
+        """A caller turn (regular or barge-in) is being generated or spoken; no new barge-in starts."""
+        self._barge_ins = 0
+        """Barge-ins so far; a decision requested before the latest one is stale and never fires."""
 
     @property
     def caller_voice(self) -> str:
@@ -221,6 +243,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
         try:
             await self._stt.start()
             await self._tts.warm_up(self.caller_voice, connections=TTS_WARM_CONNECTIONS)
+            await self._interruptor.warm_up(self._decision_goal(), connections=DECISION_WARM_CONNECTIONS)
+            self._openers = await self._render_openers()
             await self._audio_interface.start_async()
             self._audio_interface.start(self._on_assistant_audio)
             self.event_logger.log_connection_state(
@@ -237,6 +261,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             completion_task = asyncio.create_task(self._wait_for_conversation_end())
             tasks = [completion_task, asyncio.create_task(self._forward_assistant_audio())]
             tasks.append(asyncio.create_task(self._run_turns()))
+            tasks.append(asyncio.create_task(self._watch_for_interruptions()))
 
             done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             if completion_task not in done and not self._conversation_done.is_set():
@@ -262,6 +287,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
                     await task
             await self._stt.stop()
             await self._tts.close()
+            await self._interruptor.close()
             await self._audio_interface.stop_async()
             self._save_clean_user_audio(TTS_SAMPLE_RATE)
 
@@ -274,8 +300,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
     def _on_assistant_audio(self, mulaw_audio: bytes) -> None:
         # Forwarded unconditionally, silence included, so the caller keeps hearing while it speaks.
+        # Stamped on arrival, when the caller has heard it, so STT word times are not skewed by the queue.
         if mulaw_audio:
-            self._assistant_audio_queue.put_nowait(mulaw_audio)
+            self._assistant_audio_queue.put_nowait((mulaw_audio, asyncio.get_running_loop().time()))
             if self._commit_after_next_chunk:
                 self._commit_after_next_chunk = False
                 self._assistant_audio_queue.put_nowait(None)
@@ -285,7 +312,10 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
         The bridge flags the assistant's audio as ended before it hands over the tick that holds
         the tail, so committing right away would cut the last word into the next segment.
+        A request already waiting for that chunk covers this one too.
         """
+        if self._commit_after_next_chunk:
+            return
         self._commit_after_next_chunk = True
         self._stt.expect_commit()
 
@@ -295,7 +325,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             if item is None:
                 await self._stt.commit()
             else:
-                await self._stt.send(item)
+                await self._stt.send(item[0], heard_at=item[1])
 
     async def _run_turns(self) -> None:
         """Reply once the assistant's turn has settled; end the call if it goes quiet for too long."""
@@ -305,10 +335,14 @@ class CascadeUserSimulator(AbstractUserSimulator):
         committed_at: float | None = None
         last_activity = loop.time()
         untranscribed = 0
+        barge_ins = self._barge_ins
 
         while not self._conversation_done.is_set():
             await asyncio.sleep(POLL_SECONDS)
             now = loop.time()
+            if self._barge_ins != barge_ins:
+                # A barge-in answered what the assistant had said; wait for it to speak again.
+                barge_ins, assistant_spoke, committed_at, last_activity = self._barge_ins, False, None, now
             if bridge.is_assistant_playing():
                 assistant_spoke, committed_at, last_activity = True, None, now
                 continue
@@ -331,6 +365,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
             if now - ended_at < TURN_SETTLE_SECONDS:
                 continue
 
+            if self._turn_active:
+                continue  # a barge-in is replying; this pause is part of it
             heard = await self._collect_heard_text(committed_at)
             assistant_spoke = False
             if heard:
@@ -362,11 +398,19 @@ class CascadeUserSimulator(AbstractUserSimulator):
             raise RuntimeError(f"No final transcript within {TRANSCRIPT_WAIT_SECONDS}s of the commit") from None
         return self._stt.take()
 
-    async def _take_turn(self, heard: str | None) -> bool:
+    async def _take_turn(self, heard: str | None, *, barge_in: BargeIn | None = None) -> bool:
         """Generate and speak one caller turn. Returns True when the caller hangs up.
 
         ``heard`` is None when the agent spoke but nothing was transcribed: the caller asks them to repeat.
+        ``barge_in`` marks a barge-in: its opener is already playing, and the reply follows it.
         """
+        self._turn_active = True
+        try:
+            return await self._generate_turn(heard, barge_in)
+        finally:
+            self._turn_active = False
+
+    async def _generate_turn(self, heard: str | None, barge_in: BargeIn | None) -> bool:
         self._history.append({"role": "assistant", "content": heard or INAUDIBLE})
         if heard:
             self._on_assistant_speaks(heard)
@@ -374,9 +418,15 @@ class CascadeUserSimulator(AbstractUserSimulator):
         messages = self._messages()
         if not heard:
             messages.append({"role": "system", "content": INAUDIBLE_NOTE})
-        message, stats, spoke = await self._speak(messages)
+        if barge_in is None:
+            message, stats, spoke = await self._speak(messages)
+        else:
+            messages.append({"role": "system", "content": BARGE_IN_NOTE.format(opener=barge_in.opener)})
+            message, stats, spoke = await self._speak_barge_in(messages, barge_in)
         utterance, end_call = extract_turn(message)
         self._log_llm_response(messages, message, stats)
+        if barge_in is not None:
+            utterance, spoke = f"{barge_in.opener} {barge_in.content}".strip(), True
 
         if calls_tool(message, "keep_listening") and not end_call:
             self._kept_listening += 1
@@ -405,7 +455,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         the prosody continuous, the way an ElevenLabs caller sounds. Splitting the text at
         ``next_segment`` breaks would start audio before the line is written, but a stall between
         segments can let the bridge end the utterance mid-sentence. Splitting is reserved for
-        barge-ins, where the first clause must start before the rest of the line exists.
+        barge-ins (``_speak_barge_in``), where the first clause must start before the rest of the line exists.
 
         Returns the assembled final message, its stats, and whether any audio was sent.
         """
@@ -414,7 +464,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
         tools = [END_CALL_TOOL]
         if self._kept_listening < MAX_KEEP_LISTENING_IN_A_ROW:
             tools.append(KEEP_LISTENING_TOOL)
-        # Streamed even though only the final is used: barge-ins will consume the deltas.
         async for kind, payload in self._llm.complete_stream(messages=messages, tools=tools):
             if kind == "final":
                 message, stats = payload
@@ -425,6 +474,182 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 self._audio_interface.output(chunk)
                 spoke = True
         return message, stats, spoke
+
+    async def _speak_barge_in(
+        self, messages: list[dict[str, Any]], barge_in: BargeIn
+    ) -> tuple[Any, dict[str, Any], bool]:
+        """Speak a barge-in reply as it streams: each ``next_segment`` goes to TTS the moment it is written.
+
+        The first clause starts rendering while the rest is still being generated. Segments render
+        concurrently but play in order; one that is late leaves a gap rather than reordering speech.
+        The reply's leading silence is dropped as it arrives. Keep-listening is not offered: the
+        opener is already out.
+
+        Returns the assembled final message, its stats, and whether any audio was sent.
+        """
+        loop = asyncio.get_running_loop()
+        segments: asyncio.Queue[asyncio.Queue[bytes | None] | None] = asyncio.Queue()
+        renders: list[asyncio.Task] = []
+
+        async def render(text: str, out: asyncio.Queue[bytes | None]) -> None:
+            try:
+                async for chunk in self._tts.stream(text, voice_id=self.caller_voice):
+                    out.put_nowait(chunk)
+            finally:
+                out.put_nowait(None)
+
+        def submit(text: str) -> None:
+            out: asyncio.Queue[bytes | None] = asyncio.Queue()
+            barge_in.segment_sent(loop.time())
+            renders.append(asyncio.create_task(render(text, out)))
+            segments.put_nowait(out)
+
+        async def play() -> bool:
+            spoke = False
+            while (out := await segments.get()) is not None:
+                while (chunk := await out.get()) is not None:
+                    if chunk := barge_in.audible(chunk, loop.time()):
+                        self._audio_interface.output(chunk)
+                        spoke = True
+            return spoke
+
+        player = asyncio.create_task(play())
+        message: Any = ""
+        stats: dict[str, Any] = {}
+        buffer, first = "", True
+        try:
+            async for kind, payload in self._llm.complete_stream(messages=messages, tools=[END_CALL_TOOL]):
+                if kind == "final":
+                    message, stats = payload
+                    continue
+                buffer += payload
+                while True:
+                    segment, buffer = next_segment(buffer, first=first, final=False)
+                    if not segment:
+                        break
+                    submit(segment)
+                    first = False
+            segment, _ = next_segment(buffer, first=first, final=True)
+            if segment:
+                submit(segment)
+            segments.put_nowait(None)
+            spoke = await player
+            await asyncio.gather(*renders)  # surface a failed render
+        finally:
+            for task in [player, *renders]:
+                task.cancel()
+        barge_in.content, _ = extract_turn(message)
+        return message, stats, spoke
+
+    def _can_interrupt(self) -> bool:
+        """Barge in only on the agent's speech, never over the caller's own or a turn in progress."""
+        bridge = self._audio_interface
+        return bridge.is_assistant_playing() and not bridge.is_caller_playing() and not self._turn_active
+
+    async def _watch_for_interruptions(self) -> None:
+        """Ask for a decision on every transcript update while the agent speaks."""
+        goal = self._decision_goal()
+        decisions: set[asyncio.Task] = set()
+        last_text = ""
+        try:
+            while not self._conversation_done.is_set():
+                await self._stt.updated.wait()
+                self._stt.updated.clear()
+                text = self._stt.heard_text()
+                if not text or text == last_text or not self._can_interrupt():
+                    continue
+                last_text = text
+                # Where the update's last word sits, so its end can be read off the STT word timestamps.
+                barge_in = BargeIn(
+                    heard_at=asyncio.get_running_loop().time(),
+                    decision_ms=0.0,
+                    p_interrupt=0.0,
+                    segment_start=self._stt.segment_start,
+                    trigger_words=len(self._stt.partial.split()),
+                )
+                # Not awaited: the next update's decision must not queue behind this one.
+                task = asyncio.create_task(self._decide(goal, text, barge_in))
+                decisions.add(task)
+                task.add_done_callback(decisions.discard)
+        finally:
+            for task in decisions:
+                task.cancel()
+
+    async def _decide(self, goal: str, heard: str, barge_in: BargeIn) -> None:
+        """One decision; an ``interrupt`` fires if barging in is still allowed and nothing fired since.
+
+        ``barge_in`` holds when and where the transcript update ``heard`` came from, and times the barge-in if it fires.
+        """
+        loop = asyncio.get_running_loop()
+        requested_at = self._barge_ins
+        asked_at = loop.time()
+        try:
+            choice, p_interrupt = await self._interruptor.decide(goal, heard)
+        except Exception as exc:
+            logger.warning(f"Interruption decision failed: {exc}")
+            return
+        decision_ms = (loop.time() - asked_at) * 1000.0
+        fire = choice == "interrupt" and self._can_interrupt() and self._barge_ins == requested_at
+        self.event_logger.log_event(
+            "interruption_decision",
+            {
+                "heard": heard,
+                "choice": choice,
+                "p_interrupt": p_interrupt,
+                "decision_ms": decision_ms,
+                "fired": fire,
+            },
+        )
+        if fire:
+            barge_in.decision_ms, barge_in.p_interrupt = decision_ms, p_interrupt
+            await self._interrupt(barge_in)
+
+    async def _interrupt(self, barge_in: BargeIn) -> None:
+        """Sequential barge-in: play an opener now, then generate and speak the reply behind it.
+
+        The agent may keep talking. A failure ends the call as an error, as a failed regular turn does.
+        """
+        self._turn_active = True  # before any await, so a concurrent decision cannot fire too
+        self._barge_ins += 1
+        phrase, pcm = random.choice(self._openers)
+        self._audio_interface.output(pcm)
+        barge_in.play_opener(phrase, pcm, asyncio.get_running_loop().time())
+        # Close the segment being heard, so its final does not repeat into the next turn.
+        self._request_commit()
+        barge_in.heard = self._stt.take(include_partial=True)
+        try:
+            await self._take_turn(barge_in.heard, barge_in=barge_in)
+        except Exception as exc:
+            logger.error(f"Cascade caller barge-in failed: {exc}", exc_info=True)
+            self.event_logger.log_error(f"Barge-in failed: {exc}")
+            self._on_conversation_end("error")
+            return
+        # The cut-off segment's timestamped final has arrived by now: it was committed as the opener started.
+        barge_in.word_end_at = self._stt.word_end(barge_in.segment_start, barge_in.trigger_words - 1)
+        latency = barge_in.latency()
+        self.barge_ins.append(latency)
+        self.event_logger.log_event("barge_in", latency.model_dump())
+        logger.info(f"Barge-in timing: {latency.model_dump(exclude={'heard', 'content'})}")
+
+    async def _render_openers(self) -> list[tuple[str, bytes]]:
+        async def render(phrase: str) -> tuple[str, bytes]:
+            # Trimmed, so every millisecond of playout covers the reply and the gap is not padded.
+            pcm = b"".join([chunk async for chunk in self._tts.stream(phrase, voice_id=self.caller_voice)])
+            return phrase, trim_silence(pcm)
+
+        return list(await asyncio.gather(*(render(phrase) for phrase in OPENERS)))
+
+    def _decision_goal(self) -> str:
+        """The caller's goal as the decision model reads it: what they want and what they hold."""
+        tree = self.goal.get("decision_tree", {})
+        return "\n".join(
+            [
+                f"GOAL: {self.goal.get('high_level_user_goal', '')}",
+                f"MUST HAVE: {tree.get('must_have_criteria', '')}",
+                f"INFORMATION YOU HAVE READY: {self.goal.get('information_required', '')}",
+                f"RESOLVED WHEN: {tree.get('resolution_condition', '')}",
+            ]
+        )
 
     def _log_llm_response(self, messages: list[dict[str, str]], message: Any, stats: dict[str, Any]) -> None:
         """Record exactly what the caller LLM was sent and returned, for diagnosing turn decisions."""

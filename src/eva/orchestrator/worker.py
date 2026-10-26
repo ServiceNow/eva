@@ -11,7 +11,7 @@ from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
 from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
-from eva.models.results import ConversationResult, ErrorDetails, LatencyStats
+from eva.models.results import BargeInLatency, ConversationResult, ErrorDetails, LatencyStats
 from eva.user_simulator.factory import create_user_simulator
 from eva.utils.culture import resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.error_handler import create_error_details
@@ -82,6 +82,21 @@ def _percentile(sorted_data: list[float], p: float) -> float:
     return sorted_data[rank - 1]
 
 
+def _latency_stats(values: list[float | None]) -> LatencyStats | None:
+    """Summarize millisecond values, skipping missing ones; None when there are none."""
+    latencies = sorted(v for v in values if v is not None)
+    if not latencies:
+        return None
+    n = len(latencies)
+    return LatencyStats(
+        mean_ms=sum(latencies) / n,
+        p50_ms=_percentile(latencies, 50),
+        p95_ms=_percentile(latencies, 95),
+        p99_ms=_percentile(latencies, 99),
+        total_calls=n,
+    )
+
+
 class ConversationWorker:
     """Runs a single conversation between assistant and user simulator.
 
@@ -128,6 +143,7 @@ class ConversationWorker:
         self._assistant_server = None
         self._user_simulator = None
         self._conversation_stats: dict[str, Any] = {}
+        self._barge_ins: list[BargeInLatency] = []
         self._log_file_handler = None
         self.deferred_audio_task: asyncio.Task | None = None
 
@@ -251,6 +267,10 @@ class ConversationWorker:
                 stt_latency=stt_latency,
                 tts_latency=tts_latency,
                 model_response_latency=model_response_latency,
+                barge_ins=self._barge_ins,
+                barge_in_reaction_latency=_latency_stats([b.reaction_ms for b in self._barge_ins]),
+                barge_in_gap=_latency_stats([b.gap_ms for b in self._barge_ins]),
+                barge_in_total_latency=_latency_stats([b.total_ms for b in self._barge_ins]),
                 started_at=started_at,
                 ended_at=ended_at,
                 duration_seconds=(ended_at - started_at).total_seconds(),
@@ -430,6 +450,8 @@ class ConversationWorker:
             self._assistant_server = None
 
         if self._user_simulator:
+            # Kept whatever way the call ended, so a timed-out or cancelled call still reports its barge-ins.
+            self._barge_ins = list(self._user_simulator.barge_ins)
             self._user_simulator = None
 
     def _calculate_stt_latency(self) -> LatencyStats | None:
