@@ -1255,6 +1255,58 @@ def test_rebook_flight_voluntary_success(sample_db):
     assert len(new_booking["segments"]) == 1
     assert new_booking["segments"][0]["flight_number"] == "SW200"
     assert new_booking["segments"][0]["seat"] is None
+    # Bags carry over from the old segment; response exposes them
+    assert new_booking["segments"][0]["bags_checked"] == 1
+    assert result["new_journey"]["segments"][0]["bags_checked"] == 1
+
+
+def test_rebook_flight_carries_over_meal_request(sample_db):
+    """Meal request on the old segment carries over to the new booking; seat does not."""
+    db = copy.deepcopy(sample_db)
+    old_seg = db["reservations"]["ABC123"]["bookings"][0]["segments"][0]
+    old_seg["meal_request"] = "vegetarian"
+    old_seg["seat"] = "12A"
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_20260320",
+        "rebooking_type": "voluntary",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    new_seg = db["reservations"]["ABC123"]["bookings"][3]["segments"][0]
+    assert new_seg["meal_request"] == "vegetarian"
+    assert new_seg["seat"] is None
+    assert result["new_journey"]["segments"][0]["meal_request"] == "vegetarian"
+
+
+def test_rebook_flight_carries_over_to_extra_legs(sample_db):
+    """Legs beyond the old journey's inherit bags/meal from its first segment (nonstop -> one-stop)."""
+    db = copy.deepcopy(sample_db)
+    db["reservations"]["ABC123"]["bookings"][0]["segments"][0]["meal_request"] = "vegetarian"
+    # Bookable one-stop journey built from the SW200 nonstop
+    one_stop = copy.deepcopy(db["journeys"]["FL_SW200_20260320"])
+    second_leg = copy.deepcopy(one_stop["segments"][0])
+    second_leg["flight_number"] = "SW201"
+    one_stop["segments"].append(second_leg)
+    db["journeys"]["FL_SW200_SW201_20260320"] = one_stop
+    params = {
+        "confirmation_number": "ABC123",
+        "journey_id": "FL_SW100_20260320",
+        "new_journey_id": "FL_SW200_SW201_20260320",
+        "rebooking_type": "voluntary",
+        "waive_change_fee": False,
+    }
+    result = rebook_flight(params, db, call_index=1)
+
+    assert result["status"] == "success"
+    new_segs = db["reservations"]["ABC123"]["bookings"][-1]["segments"]
+    assert len(new_segs) == 2
+    assert [s["bags_checked"] for s in new_segs] == [1, 1]
+    assert [s["meal_request"] for s in new_segs] == ["vegetarian", "vegetarian"]
+    assert [s["seat"] for s in new_segs] == [None, None]
 
 
 def test_rebook_flight_irrops_no_fees(sample_db):

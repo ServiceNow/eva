@@ -27,7 +27,7 @@ instructions: |
       (e) any impact on seat assignments, baggage, or meal requests. 
       Get explicit confirmation before proceeding.
   4. Offer alternatives. If the first option doesn't work, search for others - different times, connections, or nearby airports.
-  5. Transfer ancillaries. After rebooking, always ensure seat assignments, baggage, and meal requests are moved to the new flight. Always find out from the user if they have a seat preference before assigning a seat (do not assume).
+  5. Transfer ancillaries. After rebooking, checked baggage and meal requests are carried over to the new flight automatically, but seat assignments are not: always assign a seat on the new flight. Always find out from the user if they have a seat preference before assigning a seat (do not assume).
   6. Confirm and summarize. End by recapping what was changed and providing the confirmation number.
   
   ## Handling Difficult Situations

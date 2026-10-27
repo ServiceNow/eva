@@ -537,6 +537,14 @@ def rebook_flight(params: dict, db: dict, call_index: int) -> dict:
     old_segments = booking.get("segments", [])
     new_booking_segments = []
     for i, fs in enumerate(flight_segments):
+        # Bags and meal request carry over from the segment being replaced (seat does not:
+        # the new flight has a different seat map and the agent must ask for a preference).
+        # They are per-booking, so legs beyond the old journey's (e.g. nonstop -> one-stop)
+        # inherit from its first segment.
+        if flight_number:
+            source_segment = replaced_segment
+        else:
+            source_segment = old_segments[i] if i < len(old_segments) else old_segments[0] if old_segments else {}
         if is_irrops and not flight_number and i < len(old_segments):
             # Full rebook: preserve old segment fare_paid
             seg_fare_paid = old_segments[i].get("fare_paid", 0)
@@ -551,8 +559,8 @@ def rebook_flight(params: dict, db: dict, call_index: int) -> dict:
                 "date": new_flight.get("date"),
                 "fare_paid": seg_fare_paid,
                 "seat": None,
-                "bags_checked": 0,
-                "meal_request": None,
+                "bags_checked": source_segment.get("bags_checked") or 0,
+                "meal_request": source_segment.get("meal_request"),
             }
         )
     new_booking = {
@@ -611,7 +619,10 @@ def rebook_flight(params: dict, db: dict, call_index: int) -> dict:
         "new_journey": {
             "journey_id": new_journey_id,
             "num_stops": new_flight.get("num_stops", 0),
-            "segments": copy.deepcopy(new_flight.get("segments", [])),
+            "segments": [
+                {**copy.deepcopy(seg), "bags_checked": bk["bags_checked"], "meal_request": bk["meal_request"]}
+                for seg, bk in zip(new_flight.get("segments", []), new_booking_segments)
+            ],
             "departure": new_flight["segments"][0]["scheduled_departure"] if new_flight.get("segments") else None,
             "arrival": new_flight["segments"][-1]["scheduled_arrival"] if new_flight.get("segments") else None,
             "origin": new_flight.get("origin"),
