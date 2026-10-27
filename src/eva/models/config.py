@@ -13,6 +13,7 @@ and explicit kwargs.  Scripts opt in to ``.env`` and/or CLI via
 """
 
 import copy
+import json
 import logging
 import os
 from collections.abc import Iterator
@@ -258,6 +259,9 @@ class ModelConfig(BaseModel):
                         "s2s": get_model_alias_from_params(self.s2s_params) or self.s2s,
                         **_fetch_elevenlabs_agent_models(self.s2s_params),
                     }
+                if self.s2s == "cartesia":
+                    # The model is the agent's LLM; name the framework too
+                    return {"s2s": f"cartesia-{get_model_alias_from_params(self.s2s_params)}"}
                 return {"s2s": get_model_alias_from_params(self.s2s_params)}
             case PipelineType.CASCADE:
                 return {
@@ -352,8 +356,8 @@ def get_pipeline_type(model_data: dict) -> PipelineType:
     ``llm_model`` in a flat dict.
     """
     if s2s_value := model_data.get("s2s"):
-        # ElevenLabs uses s2s_params for configuration but is a cascade pipeline internally
-        if s2s_value == "elevenlabs":
+        # These frameworks use s2s_params but report the text they speak, as cascade pipelines do
+        if s2s_value in ("elevenlabs", "cartesia"):
             return PipelineType.CASCADE
         # Ultravox uses s2s_params for plumbing but is an audio-LLM (audio in, text out, separate TTS)
         if s2s_value == "ultravox":
@@ -411,6 +415,14 @@ LANGUAGE_DISPLAY_NAMES: dict[Language, str] = {
     Language.IT: "Italian",
     Language.JA: "Japanese",
 }
+
+
+def base_language(tag: str) -> str:
+    """Return the ISO 639-1 base code from a BCP 47 tag (e.g. 'es-MX' → 'es').
+
+    Used for providers that only accept the two-letter base code (e.g. Whisper/OpenAI STT, Cartesia Managed Agents).
+    """
+    return tag.split("-")[0].split("_")[0]
 
 
 class PerturbationConfig(BaseModel):
@@ -479,8 +491,41 @@ class OpenAIRealtimeSimulatorConfig(BaseModel):
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
 
+class CascadeSimulatorConfig(BaseModel):
+    """Caller built from independently chosen streaming STT, LLM, and TTS models."""
+
+    provider: Literal["cascade"] = "cascade"
+    stt: Literal["elevenlabs"] = Field("elevenlabs", description="Streaming STT provider for the assistant's audio.")
+    stt_model: str = Field("scribe_v2_realtime", description="Streaming STT model.")
+    model: str = Field(
+        description=(
+            "Caller LLM deployment, resolved via EVA_MODEL_LIST like the assistant's. Configure a separate "
+            "deployment if the caller's params need to differ from the assistant under test or the judges."
+        ),
+    )
+    tts: Literal["cartesia"] = Field("cartesia", description="TTS provider for the caller's speech.")
+    tts_model: str = Field("sonic-3.5", description="TTS model.")
+    female_voice: str = Field("f786b574-daa5-4673-aa0c-cbe3e8534c02", description="TTS voice for female personas.")
+    male_voice: str = Field("a0e99841-438c-4a64-b679-ae501e7d6091", description="TTS voice for male personas.")
+
+    @field_validator("stt_model")
+    @classmethod
+    def _require_streaming_stt(cls, value: str) -> str:
+        # The caller must hear the assistant as it speaks; batch models can't support interruptions.
+        if not value.endswith("_realtime"):
+            raise ValueError(f"Cascade caller requires a streaming STT model, got {value!r}")
+        return value
+
+    @model_validator(mode="after")
+    def _require_provider_keys(self) -> "CascadeSimulatorConfig":
+        missing = [key for key in ("ELEVENLABS_API_KEY", "CARTESIA_API_KEY") if not os.environ.get(key)]
+        if missing:
+            raise ValueError(f"The cascade user simulator requires {', '.join(missing)} to be set.")
+        return self
+
+
 UserSimulatorConfig = Annotated[
-    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig,
+    ElevenLabsSimulatorConfig | OpenAIRealtimeSimulatorConfig | CascadeSimulatorConfig,
     Field(discriminator="provider"),
 ]
 
@@ -540,6 +585,7 @@ class RunConfig(BaseSettings):
         "elevenlabs",
         "grok_voice",
         "smallest_hydra",
+        "cartesia",
         "apriel_voice_realtime",
     ] = Field(
         "pipecat",
@@ -551,6 +597,7 @@ class RunConfig(BaseSettings):
             "'elevenlabs': ElevenLabs Conversational AI API."
             "'grok_voice': xAI Grok voice realtime API."
             "'smallest_hydra': Smallest Hydra speech-to-speech API."
+            "'cartesia': Cartesia Managed Agents over a WebSocket connection."
             "'apriel_voice_realtime': Apriel Voice Realtime with native telephone audio."
         ),
     )
@@ -573,6 +620,15 @@ class RunConfig(BaseSettings):
     force_rerun_metrics: bool = Field(
         False,
         description="Force rerun all requested metrics, overwriting existing successful results (requires --run-id)",
+    )
+    ignore_previous_config: bool = Field(
+        False,
+        description=(
+            "Ignore the config.json saved by the previous run (assuming --run-id points to an existing run). "
+            "Use with caution. "
+            "Without this flag, only a few fields (rerun, preflight, and metrics) can be overridden on rerun; "
+            "the rest come from the saved config.json."
+        ),
     )
     tool_module_path: str | None = Field(
         None,
@@ -618,6 +674,18 @@ class RunConfig(BaseSettings):
         description="Metrics to run. Skip all metrics with `EVA_METRICS=` or `--metrics=`.",
     )
 
+    metric_configs: dict[str, dict[str, Any]] = Field(
+        {},
+        description=(
+            "Per-metric configuration overrides (JSON), keyed by metric name. For judge metrics "
+            "(TextJudgeMetric/AudioJudgeMetric subclasses), 'judge_model' overrides the model "
+            "and 'judge_params' merges into the LLM call params (e.g. reasoning_effort, temperature). "
+            f"Example: EVA_METRIC_CONFIGS='{json.dumps({'faithfulness': {'judge_model': 'gpt-5.6-terra', 'judge_params': {'reasoning_effort': 'none'}}})}' "
+            "or EVA_METRIC_CONFIGS__FAITHFULNESS__JUDGE_MODEL=gpt-5.6-terra "
+            "or EVA_METRIC_CONFIGS__FAITHFULNESS__JUDGE_PARAMS__REASONING_EFFORT=none."
+        ),
+    )
+
     # Aggregate-only mode
     aggregate_only: bool = Field(
         False,
@@ -656,13 +724,21 @@ class RunConfig(BaseSettings):
         None,
         description="Specific record IDs to run",
     )
+    exclude_record_ids: list[str] | None = Field(
+        None,
+        description="Specific record IDs to skip (applied after record_ids)",
+    )
 
     # Execution
     max_concurrent_conversations: int = Field(
         1,
         ge=1,
-        le=100,
         description="Maximum number of concurrent conversations",
+    )
+    max_concurrent_judges: int = Field(
+        1,
+        ge=1,
+        description="Maximum number of concurrent judge LLM calls to each model, across all metrics and validation",
     )
     conversation_time_limit_seconds: int = Field(
         600,
@@ -744,13 +820,13 @@ class RunConfig(BaseSettings):
         config is unused and conflicting env vars are harmless.
         """
         if (
-            isinstance(self.user_simulator, OpenAIRealtimeSimulatorConfig)
+            not isinstance(self.user_simulator, ElevenLabsSimulatorConfig)
             and self.perturbation is not None
             and self.perturbation.accent is not None
         ):
             raise ValueError(
                 "Accent perturbations require the ElevenLabs user simulator; "
-                "OpenAI Realtime supports behavior, noise, and connection perturbations."
+                "other providers support behavior, noise, and connection perturbations."
             )
 
         if self.max_rerun_attempts == 0 or self.aggregate_only:
@@ -868,7 +944,7 @@ class RunConfig(BaseSettings):
                 return rest
         return data
 
-    @field_validator("metrics", "record_ids", mode="before")
+    @field_validator("metrics", "record_ids", "exclude_record_ids", mode="before")
     @classmethod
     def _parse_comma_separated(cls, v: Any) -> list[str] | None:
         """Accept comma-separated strings from env vars."""

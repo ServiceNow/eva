@@ -10,6 +10,7 @@ from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
 from eva.orchestrator.runner import BenchmarkRunner
 from eva.utils import router
+from eva.utils.llm_client import LLMClient
 from eva.utils.logging import get_logger, setup_logging
 
 load_dotenv()
@@ -23,6 +24,7 @@ async def run_benchmark(config: RunConfig) -> int:
     setup_logging(level=config.log_level)
     logger = get_logger(__name__)
     router.init(config.model_list)
+    LLMClient.set_max_concurrency(config.max_concurrent_judges)
 
     logger.info(f"Run ID: {config.run_id}")
 
@@ -38,23 +40,26 @@ async def run_benchmark(config: RunConfig) -> int:
 
     if existing_run:
         # ── Existing run: validate, rerun, or metrics-only ──
-        try:
-            runner = BenchmarkRunner.from_existing_run(resolved_dir)
-        except FileNotFoundError as e:
-            logger.error(str(e))
-            return 1
+        if config.ignore_previous_config:
+            runner = BenchmarkRunner(config)
+        else:
+            try:
+                runner = BenchmarkRunner.from_existing_run(resolved_dir)
+            except FileNotFoundError as e:
+                logger.error(str(e))
+                return 1
 
-        # Apply env-dependent values (secrets, urls) from live env onto saved config.
-        # Skip strict LLM check when no conversations can run (max_rerun_attempts == 0).
-        runner.config.apply_env_overrides(config, strict_llm=config.max_rerun_attempts != 0)
+            # Apply env-dependent values (secrets, urls) from live env onto saved config.
+            # Skip strict LLM check when no conversations can run (max_rerun_attempts == 0).
+            runner.config.apply_env_overrides(config, strict_llm=config.max_rerun_attempts != 0)
 
-        # Apply CLI overrides
-        runner.config.max_rerun_attempts = config.max_rerun_attempts
-        runner.config.force_rerun_metrics = config.force_rerun_metrics
-        runner.config.preflight = config.preflight
-        runner.config.preflight_timeout_seconds = config.preflight_timeout_seconds
-        if config.metrics is not None:
-            runner.config.metrics = config.metrics
+            # Apply CLI overrides
+            runner.config.max_rerun_attempts = config.max_rerun_attempts
+            runner.config.force_rerun_metrics = config.force_rerun_metrics
+            runner.config.preflight = config.preflight
+            runner.config.preflight_timeout_seconds = config.preflight_timeout_seconds
+            if config.metrics is not None:
+                runner.config.metrics = config.metrics
 
         dataset_path = runner.config.dataset_path
 

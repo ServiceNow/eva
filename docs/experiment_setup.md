@@ -92,6 +92,32 @@ We use the default turn detection configurations for most framework in our exper
 
 EVA-Bench makes turn detection parameters and options configurable via the CLI, so practitioners can run experiments using the turn detection settings available to their chosen framework. The only exception is ElevenAgents, where users must register and configure their agents separately prior to evaluation.
 
+### Cartesia Managed Agents
+
+`framework: cartesia` runs a Cartesia managed agent over a WebSocket connection. Managed Agents runs the whole agent loop: audio orchestration (listening, turn-taking, interruptions and speech) along with tool calling, reasoning orchestration and knowledge retrieval, around the reasoning model you choose. EVA's tools run as client tools, and EVA's system prompt and greeting are sent with each call as dynamic variables. One agent per domain is registered before evaluation, with its config in `scripts/provision_cartesia_agents.py`. Model fallback is disabled on these agents, so only the chosen model answers.
+
+Some agent settings can't be changed per call, so they are set when the agent is provisioned from EVA's options. The assistant server checks them against the run config and refuses to start if they don't match:
+
+| EVA option | Agent setting |
+|---|---|
+| `EVA_LANGUAGE` | `language.primary` (regional variants such as `fr-CA` use the base code) |
+| `EVA_MODEL__PRE_TOOL_SPEECH` (`auto` or `off`) | each tool's `pre_tool_speech` |
+| `EVA_TURN_END_FALLBACK_TIME` (5 to 60 seconds, or unset) | `turn.inactivity_check_in_secs` (unset turns check-ins off) |
+
+```bash
+# Create or update the agents; --model picks the LLM (default gpt-5.5). Prints each domain's s2s_params.
+python scripts/provision_cartesia_agents.py --pre-tool-speech auto
+
+EVA_FRAMEWORK=cartesia \
+EVA_MODEL__S2S=cartesia \
+EVA_MODEL__S2S_PARAMS='{"model": "gpt-5.5", "api_key": "<cartesia key>", "assistant_agent_id": "<airline agent id>"}' \
+python main.py --domain airline
+```
+
+`--voice` sets the agent's voice; it isn't checked against the run config.
+
+`s2s_params`: `api_key`, `model` and `assistant_agent_id` (the agent for the run's domain) are required, as for ElevenLabs. `model` must match the model configured on the agent; `alias` optionally labels the run. `base_url` (default `wss://api.cartesia.ai`) and `cartesia_version` are optional. `EVA_MODEL__LLM` must be unset, as for any S2S run.
+
 ## Judge Models
 
 The table below lists the API-hosted models used as a judge.

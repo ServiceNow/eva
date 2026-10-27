@@ -1,6 +1,7 @@
-"""Unified LLM client using LiteLLM for all model calls."""
+"""Unified LLM client using LiteLLM for metric judges."""
 
 import asyncio
+import contextlib
 import itertools
 import random
 from typing import ClassVar
@@ -18,10 +19,28 @@ load_dotenv()
 class LLMClient:
     """Unified LLM client using LiteLLM.
 
-    Concurrency is managed by the LiteLLM Router per-deployment `max_parallel_requests` and `rpm`/`tpm` limits configured in `EVA_MODEL_LIST`.
+    Used by metric judges. In-flight calls to each model, across all instances, are capped by
+    `set_max_concurrency` (``max_concurrent_judges``); unbounded until it is called. Each model gets its own
+    slots, so judges on different models don't wait on each other.
     """
 
     _call_counter: ClassVar[itertools.count] = itertools.count(1)  # Used as a unique identifier for logs.
+    _max_concurrency: ClassVar[int | None] = None
+    _slots: ClassVar[dict[str, asyncio.Semaphore]] = {}  # One per model, created on its first call.
+
+    @classmethod
+    def set_max_concurrency(cls, limit: int | None) -> None:
+        """Cap concurrent calls per model across all LLMClient instances; None removes the cap. Call at startup."""
+        cls._max_concurrency = limit
+        cls._slots = {}
+
+    def _slot(self) -> contextlib.AbstractAsyncContextManager:
+        """The concurrency slot shared by every LLMClient calling this model."""
+        if self._max_concurrency is None:
+            return contextlib.nullcontext()
+        if self.model not in self._slots:
+            self._slots[self.model] = asyncio.Semaphore(self._max_concurrency)
+        return self._slots[self.model]
 
     def __init__(
         self,
@@ -142,7 +161,9 @@ class LLMClient:
 
                 # Make the API call
                 logger.debug(f"{call_retry_id} started for {self.model}")
-                response = await router.get().acompletion(**kwargs)
+                # Hold a slot only for the call itself, not while backing off between retries.
+                async with self._slot():
+                    response = await router.get().acompletion(**kwargs)
 
                 (logger.info if attempt > 0 else logger.debug)(f"{call_retry_id} succeeded for {self.model}")
 

@@ -23,12 +23,6 @@
     "source_hash": "84e43143d00d",
     "version": "v0.2"
   },
-  "ConversationTimeLimitExceededMetric": {
-    "name": "conversation_completed_on_time",
-    "prompt_hash": null,
-    "source_hash": "26e274ce8076",
-    "version": "v0.1"
-  },
   "ConversationValidEndMetric": {
     "name": "conversation_valid_end",
     "prompt_hash": null,
@@ -74,14 +68,14 @@
   "TaskCompletion": {
     "name": "task_completion",
     "prompt_hash": null,
-    "source_hash": "01aed1a552f4",
+    "source_hash": "8d9872e60b10",
     "version": "v0.1"
   },
   "ToolCallValidity": {
     "name": "tool_call_validity",
     "prompt_hash": null,
-    "source_hash": "761f0d0a32dd",
-    "version": "v0.1"
+    "source_hash": "b04558aebc2b",
+    "version": "v0.2"
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
