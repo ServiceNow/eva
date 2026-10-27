@@ -64,7 +64,7 @@ const keyInsights = [
   {
     title: 'Low-latency cascades close the experience gap',
     description:
-      'Cascade systems built with low-latency models can outperform S2S models on experience, and streaming the LLM response along with pre-tool speech can greatly improve turn-taking — the fastest cascade system reaches EVA-X pass@1 at 0.82 with turn-taking at 0.88. The strongest results come from heavily engineered agent harnesses rather than plain model pipelines: Cartesia Managed Agents, a fully managed cascade harness, reaches EVA-X pass@1 of 0.91 and EVA-A pass@1 of 0.87 (versus 0.67 for the best other cascade), much as the ElevenLabs agent with Claude Haiku shows strong EVA-X. Among native S2S models, Gemini 3.8 Live has the best turn-taking at 0.97 and Grok Voice 3.0 the best accuracy (EVA-A pass@1 0.74).',
+      'Cascade systems built with low-latency models can outperform S2S models on experience, and streaming the LLM response along with pre-tool speech can greatly improve turn-taking — the fastest cascade system reaches EVA-X pass@1 at 0.82 with turn-taking at 0.88. The strongest results come from heavily engineered agent harnesses rather than plain model pipelines: Cartesia Managed Agents, a fully managed cascade harness, reaches EVA-X pass@1 of 0.91 and EVA-A pass@1 of 0.87 (versus 0.67 for the best other cascade), much as the ElevenLabs Elevenagent with Claude Haiku shows strong EVA-X. Among native S2S models, Gemini 3.8 Live has the best turn-taking at 0.97 and Grok Voice 3.0 the best accuracy (EVA-A pass@1 0.74).',
   },
 ];
 
