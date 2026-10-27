@@ -451,5 +451,14 @@
   "decimal_separator": "comma",
   "thousand_separators": [
     "dot"
-  ]
+  ],
+  "spoken_symbols": {
+    "trattino": "-",
+    "trattino basso": "_",
+    "underscore": "_",
+    "chiocciola": "@"
+  },
+  "spoken_symbols_code_only": {
+    "barra": "/"
+  }
 }
