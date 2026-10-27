@@ -21,6 +21,12 @@ _BRACKET_PATTERN = re.compile(r"\[.*?\]")
 # appropriate error-rate measure instead of WER.
 _CER_LANGUAGES = frozenset({"ja", "zh", "ko"})
 
+# CER languages without word spacing: whitespace is not part of the text, so it
+# is removed after normalization and never counts as a character error. Korean
+# is excluded because it separates words with spaces.
+_NO_WHITESPACE_LANGUAGES = frozenset({"ja"})
+_WHITESPACE_PATTERN = re.compile(r"\s+")
+
 
 def _build_wer_component_sub_metrics(
     parent_name: str,
@@ -76,7 +82,7 @@ class STTWERMetric(CodeMetric):
     """
 
     name = "stt_wer"
-    version = "v0.1"
+    version = "v0.2"
     description = "Debug metric: Speech-to-Text transcription accuracy using Word Error Rate"
     category = "diagnostic"
     exclude_from_pass_at_k = True
@@ -108,6 +114,9 @@ class STTWERMetric(CodeMetric):
 
             references_clean = [normalize_text(r, self.language) for r in references]
             hypotheses_clean = [normalize_text(h, self.language) for h in hypotheses]
+            if self.language in _NO_WHITESPACE_LANGUAGES:
+                references_clean = [_WHITESPACE_PATTERN.sub("", r) for r in references_clean]
+                hypotheses_clean = [_WHITESPACE_PATTERN.sub("", h) for h in hypotheses_clean]
 
             if not references:
                 return MetricScore(

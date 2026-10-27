@@ -8,7 +8,9 @@ words are not turned into letters or digits.
 import jiwer
 import pytest
 
+from eva.metrics.diagnostic.stt_wer import STTWERMetric
 from eva.utils.wer_normalization import normalize_text
+from tests.unit.metrics.conftest import make_metric_context
 
 
 def _ja(s: str) -> str:
@@ -131,3 +133,25 @@ def test_existing_kanji_numbers():
     assert _ja("三百二十一") == "321"
     assert _ja("一万二千三百四十五") == "12345"
     assert "3" in _ja("お客様は三名です")
+
+
+@pytest.mark.asyncio
+async def test_metric_ignores_ascii_commas_and_spaces():
+    metric = STTWERMetric(config={"language": "ja"})
+    ctx = make_metric_context(
+        intended_user_turns={1: "はい、そうです。社員番号はイー・エム・ピー、さん、です。"},
+        transcribed_user_turns={1: "はい, そうです 社員番号は EMP3 です"},
+    )
+    result = await metric.compute(ctx)
+    assert result.details["cer"] == 0.0
+
+
+@pytest.mark.asyncio
+async def test_metric_still_counts_a_real_error():
+    metric = STTWERMetric(config={"language": "ja"})
+    ctx = make_metric_context(
+        intended_user_turns={1: "社員番号はEMP3です"},
+        transcribed_user_turns={1: "社員番号はEMP8です"},
+    )
+    result = await metric.compute(ctx)
+    assert result.details["cer"] > 0.0
