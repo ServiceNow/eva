@@ -493,11 +493,24 @@
   "replacers": {},
   "strip_space_before_apostrophe": false,
   "ordinal_suffix_pattern": "",
-  "spelling_map_path": null,
+  "spelling_map_path": "hi_loanwords.json",
   "letter_class": "a-zऀ-ॿ",
   "preserve_combining_marks": true,
   "decimal_separator": "dot",
   "thousand_separators": [
     "comma"
-  ]
+  ],
+  "char_folds": {
+    "़": "",
+    "ँ": "ं",
+    "क़": "क",
+    "ख़": "ख",
+    "ग़": "ग",
+    "ज़": "ज",
+    "ड़": "ड",
+    "ढ़": "ढ",
+    "फ़": "फ",
+    "य़": "य"
+  },
+  "join_hyphenated_compounds": true
 }
