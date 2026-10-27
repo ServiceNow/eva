@@ -39,7 +39,7 @@ const keyInsights = [
   {
     title: 'Accuracy and experience are not inherently at odds',
     description:
-      'Cartesia Managed Agents (GPT 5.5) leads on both axes (EVA-A pass@1 0.87, EVA-X pass@1 0.91), showing that strong accuracy and strong conversational experience can be achieved together on this benchmark. The trade-off seen elsewhere in the field reflects system design rather than a fundamental limit: Grok Voice 3.0 (EVA-A 0.74) trails on EVA-X (0.71), and Gemini 3.5 Flash Lite Live (EVA-X 0.89) trails on EVA-A (0.46).',
+      'Cartesia Managed Agents (GPT 5.5) leads on both axes (EVA-A pass@1 0.87, EVA-X pass@1 0.91), showing that strong accuracy and strong conversational experience can be achieved together on this benchmark, with a cascade-based system and good engineering. The trade-off seen elsewhere in the field reflects system design rather than a fundamental limit: Grok Voice 3.0 (EVA-A 0.74) trails on EVA-X (0.71), and Gemini 3.8 Live (EVA-X 0.89) trails on EVA-A (0.46).',
   },
   {
     title: 'Asymmetric degradation under perturbation',
@@ -64,7 +64,7 @@ const keyInsights = [
   {
     title: 'Low-latency cascades close the experience gap',
     description:
-      'Cascade systems built with low-latency models can outperform S2S models on experience, and streaming the LLM response along with pre-tool speech can greatly improve turn-taking — the fastest cascade system reaches EVA-X pass@1 at 0.82 with turn-taking at 0.88. S2S systems still lead overall on experience: Cartesia Managed Agents reaches EVA-X pass@1 of 0.91 and Gemini 3.5 Flash Lite Live has the best turn-taking at 0.97. S2S also leads on accuracy, with the top system (Cartesia Managed Agents) reaching EVA-A pass@1 of 0.87 versus 0.67 for the best cascade.',
+      'Cascade systems built with low-latency models can outperform S2S models on experience, and streaming the LLM response along with pre-tool speech can greatly improve turn-taking — the fastest cascade system reaches EVA-X pass@1 at 0.82 with turn-taking at 0.88. The strongest results come from heavily engineered agent harnesses rather than plain model pipelines: Cartesia Managed Agents, a cascade-based system, reaches EVA-X pass@1 of 0.91 and EVA-A pass@1 of 0.87 (versus 0.67 for the best other cascade), much as the ElevenLabs agent with Claude Haiku shows strong EVA-X. Among native S2S models, Gemini 3.8 Live has the best turn-taking at 0.97 and Grok Voice 3.0 the best accuracy (EVA-A pass@1 0.74).',
   },
 ];
 
