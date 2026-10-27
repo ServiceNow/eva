@@ -24609,9 +24609,9 @@
     {
       "id": "cartesia-managed-agents-gpt-5-5",
       "name": "Cartesia Managed Agents - GPT 5.5",
-      "type": "s2s",
+      "type": "cascade",
       "stt": "-",
-      "llm": "gpt-5.5",
+      "llm": "Cartesia Managed Agents - GPT 5.5",
       "tts": "-",
       "clean": {
         "EVA-A_mean": {
