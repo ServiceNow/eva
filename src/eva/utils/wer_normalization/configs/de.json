@@ -760,5 +760,23 @@
   "thousand_separators": [
     "dot",
     "space"
-  ]
+  ],
+  "char_folds": {
+    "ä": "ae",
+    "ö": "oe",
+    "ü": "ue",
+    "ß": "ss"
+  },
+  "join_hyphenated_compounds": true,
+  "spoken_symbols": {
+    "bindestrich": "-",
+    "unterstrich": "_",
+    "underscore": "_",
+    "schrägstrich": "/",
+    "schraegstrich": "/",
+    "klammeraffe": "@"
+  },
+  "spoken_symbols_code_only": {
+    "strich": "-"
+  }
 }
