@@ -44,6 +44,11 @@ For new languages, normalization rules are generated once per language via `add_
 
 Languages within the **Romance** (French, Spanish, Italian, Portuguese, Romanian, …), **Indic** (Hindi, Bengali, Punjabi, …), and **Sino-CJK** (Mandarin, Cantonese, Japanese, Korean) families receive particularly thorough coverage because the normalization engine has explicit support for their structural patterns (vigesimal forms, reversed units, positional kanji arithmetic, etc.). Languages outside these families should still benefit from the generic pipeline.
 
+A language config can also opt into three rules for patterns that only some languages need (see the [configs README](../../src/eva/utils/wer_normalization/configs/README.md)):
+- `char_folds`: treat two spellings of a character as equal (Hindi nukta, German ü = ue).
+- `join_hyphenated_compounds`: treat `Anmelde-Konto` and `Anmeldekonto` as the same word.
+- `spoken_symbols`: the spoken word for a symbol in a spelled ID (French "trait d'union", German "Bindestrich") matches the written symbol.
+
 `stt_wer` is a **diagnostic metric** — the benchmark runs and produces valid results even without any WER normalization config for a given language; the metric simply measures raw string distance in that case. You do not need to deeply curate the normalization to get useful benchmark output.
 
 That said, the auto-generated configs can be brittle. The LLM generation step is creative and may miss edge cases, produce inconsistent vocabulary, or generate rules that work for the test cases but fail on real transcripts. **Manual inspection of the generated config is recommended** before treating WER scores as authoritative for a new language. Not all languages can fit in the current normalization framework, and some may require custom rules and code changes.

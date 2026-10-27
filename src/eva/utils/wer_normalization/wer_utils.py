@@ -1,13 +1,16 @@
 """WER text normalization utilities."""
 
 import re
+from collections.abc import Callable
+from functools import lru_cache
 from pathlib import Path
 
+import regex
 from jiwer import Compose, RemovePunctuation, Strip, ToLowerCase
 
 from eva.utils.logging import get_logger
 from eva.utils.wer_normalization.cjk import ChineseTextNormalizer, JapaneseTextNormalizer, KoreanTextNormalizer
-from eva.utils.wer_normalization.engine import GenericTextNormalizer, LanguageConfig
+from eva.utils.wer_normalization.engine import GenericTextNormalizer, LanguageConfig, make_char_folder
 from eva.utils.wer_normalization.whisper_normalizer import BasicTextNormalizer
 
 logger = get_logger(__name__)
@@ -73,7 +76,16 @@ _RE_ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 _RE_SPELLED_DASH = re.compile(r"(?<=\w)\s+dash\s+(?=\w)", re.IGNORECASE)
 
 
-def _normalize_hyphen_groups(text: str) -> str:
+# Hyphen-joined runs of letters (incl. combining marks, so Devanagari vowel signs
+# count: "डेटा-बेस"). Used only for languages with ``join_hyphenated_compounds``.
+_RE_LETTER_COMPOUND = regex.compile(r"[\p{L}\p{M}]+(?:-[\p{L}\p{M}]+)+")
+
+
+def _normalize_hyphen_groups(
+    text: str,
+    join_letter_compounds: bool = False,
+    keep_boundary: Callable[[str], bool] | None = None,
+) -> str:
     def repl(m: re.Match) -> str:
         s = m.group()
         if _RE_ISO_DATE.fullmatch(s):
@@ -82,7 +94,98 @@ def _normalize_hyphen_groups(text: str) -> str:
             return s.replace("-", "")
         return s
 
-    return _RE_HYPHEN_GROUPS.sub(repl, text)
+    text = _RE_HYPHEN_GROUPS.sub(repl, text)
+    if join_letter_compounds:
+        # de/nl/hi: "Anmelde-Konto" == "Anmeldekonto", "ई-मेल" == "ईमेल".
+        # The hyphen is kept next to a number word ("ABC-eins" must still become
+        # "abc 1" to match "ABC-1") and next to a multi-letter acronym
+        # ("HR-Fragen", "VPN-Passwort"), which STT often writes open ("HR Fragen").
+        def keep(piece: str) -> bool:
+            return (len(piece) > 1 and piece.isupper()) or (keep_boundary is not None and keep_boundary(piece))
+
+        def join(m: regex.Match) -> str:
+            parts = m.group().split("-")
+            out = parts[0]
+            for prev, cur in zip(parts, parts[1:]):
+                # Reduplications ("बार-बार", "अभी-अभी") are as often written open as hyphenated: keep them split.
+                out += ("-" if prev == cur or keep(prev) or keep(cur) else "") + cur
+            return out
+
+        text = _RE_LETTER_COMPOUND.sub(join, text)
+    return text
+
+
+_NUMBER_WORD_CHECKERS: dict[str, Callable[[str], bool]] = {}
+
+
+def _number_word_checker(config: LanguageConfig) -> Callable[[str], bool]:
+    """Return a predicate: is this token one of the language's number words? (cached per language code)"""
+    if config.code in _NUMBER_WORD_CHECKERS:
+        return _NUMBER_WORD_CHECKERS[config.code]
+    fold = make_char_folder(config.char_folds)
+    vocab = {
+        fold(w.lower())
+        for group in (config.zeros, config.cardinals, config.cardinal_variants, config.tens, config.scaling_units)
+        for w in group
+    }
+    checker = _NUMBER_WORD_CHECKERS[config.code] = lambda token: fold(token.lower()) in vocab
+    return checker
+
+
+def _phrase_pattern(phrase: str) -> str:
+    """Regex for a spoken-symbol phrase: spaces/apostrophes match any whitespace or apostrophe.
+
+    Curly apostrophes are accepted here because ``normalize_apostrophes`` leaves them as-is.
+    """
+    parts = [re.escape(p) for p in re.split(r"[\s'’‘]+", phrase.strip()) if p]
+    return r"(?:\s+|\s*['’‘]\s*)".join(parts)
+
+
+@lru_cache(maxsize=64)
+def _spoken_symbol_regex(phrases: tuple[str, ...]) -> re.Pattern | None:
+    if not phrases:
+        return None
+    alts = "|".join(_phrase_pattern(p) for p in sorted(phrases, key=len, reverse=True))
+    return re.compile(rf"(?<=\w)\s+({alts})\s+(?=\w)", re.IGNORECASE)
+
+
+def _looks_like_code(token: str) -> bool:
+    """A token from a spelled ID: has a digit, or is all-uppercase letters ("A", "ABC")."""
+    token = token.strip(".,;:!?\"'()")
+    return bool(token) and (any(c.isdigit() for c in token) or (token.isalpha() and token.isupper()))
+
+
+def _replace_spoken_symbols(text: str, symbols: dict[str, str], code_only: dict[str, str]) -> str:
+    """Replace spoken punctuation words between word tokens with the written symbol.
+
+    "A B C trait d'union 1 2 3" -> "A B C-1 2 3", so it then normalizes like the
+    STT form "ABC-123". Words in ``code_only`` are also ordinary words, so they
+    are replaced only when a neighbouring token looks like part of a code.
+    """
+
+    def lookup(table: dict[str, str], spoken: str) -> str:
+        key = re.sub(r"[\s'’‘]+", " ", spoken.lower())
+        for phrase, symbol in table.items():
+            if re.sub(r"[\s'’‘]+", " ", phrase.lower()) == key:
+                return symbol
+        return spoken  # unreachable: the regex only matches table phrases
+
+    rx = _spoken_symbol_regex(tuple(symbols))
+    if rx is not None:
+        text = rx.sub(lambda m: lookup(symbols, m.group(1)), text)
+
+    rx = _spoken_symbol_regex(tuple(code_only))
+    if rx is not None:
+
+        def repl(m: re.Match) -> str:
+            before = m.string[: m.start()].split()
+            after = m.string[m.end() :].split()
+            if (before and _looks_like_code(before[-1])) or (after and _looks_like_code(after[0])):
+                return lookup(code_only, m.group(1))
+            return m.group(0)
+
+        text = rx.sub(repl, text)
+    return text
 
 
 def normalize_apostrophes(text: str) -> str:
@@ -140,11 +243,17 @@ def normalize_text(text: str, language: str = "en") -> str:
     """
     try:
         normalizer = _make_normalizer(language)
+        config = getattr(normalizer, "config", None)
         text = convert_unicode_to_characters(text)
         text = normalize_apostrophes(text)
         text = collapse_single_letters(text)
         text = _RE_SPELLED_DASH.sub(" ", text)
-        text = _normalize_hyphen_groups(text)
+        if config is not None:
+            text = _replace_spoken_symbols(text, config.spoken_symbols, config.spoken_symbols_code_only)
+        if config is not None and config.join_hyphenated_compounds:
+            text = _normalize_hyphen_groups(text, True, _number_word_checker(config))
+        else:
+            text = _normalize_hyphen_groups(text)
         chunks = _RE_LIST_COMMA.split(text)
         normalized_chunks = [BASIC_TRANSFORMATIONS([normalizer(c)])[0] for c in chunks]
         text = " ".join(c for c in normalized_chunks if c)

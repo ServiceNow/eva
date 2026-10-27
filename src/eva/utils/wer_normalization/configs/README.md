@@ -273,6 +273,30 @@ When `true`, the outer normalizer uses NFC (no decomposition) and only strips
 punctuation/symbols, leaving all letter and combining-mark characters intact.
 When `false` (default), diacritics are stripped for comparison.
 
+### `char_folds` `{char: str}`
+
+Single-character orthographic folds applied (after NFC) right after lowercasing,
+to the text and to all number-word vocab, so both spellings converge.
+`hi`: nukta removed (ज़→ज, precomposed क़…य़ too) and chandrabindu → anusvara
+(हाँ→हां). `de`: ä→ae, ö→oe, ü→ue, ß→ss (Krüger == Krueger).
+
+### `join_hyphenated_compounds` `bool`
+
+`true` (de, nl, hi) joins letter-only hyphen compounds: `Anmelde-Konto` ==
+`Anmeldekonto`, `ई-मेल` == `ईमेल`. The hyphen is kept next to a number word,
+a multi-letter acronym (`HR-Fragen`) and in reduplications (`बार-बार`).
+Digit-bearing hyphen groups are joined for every language regardless.
+
+### `spoken_symbols` / `spoken_symbols_code_only` `{phrase: symbol}`
+
+Spoken punctuation used when spelling IDs (`"trait d'union": "-"`,
+`"Unterstrich": "_"`). When the phrase sits between two word tokens it is
+replaced by the glued symbol, so `A B C trait d'union un deux trois` matches
+STT `ABC-123`. Phrases in `spoken_symbols_code_only` are also ordinary words
+(es `barra`, de `Strich`, nl `streepje`) and are replaced only when a
+neighbouring token has a digit or is all uppercase. English `dash` is handled
+separately in `wer_utils.py`.
+
 ---
 
 ## Rarely-edited fields
