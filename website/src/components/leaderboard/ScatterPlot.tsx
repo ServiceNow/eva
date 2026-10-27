@@ -65,7 +65,7 @@ function CustomTooltip({ active, payload, xSub, ySub }: CustomTooltipProps) {
           <span className="text-text-muted font-mono">[{s.yLower.toFixed(2)}, {s.yUpper.toFixed(2)}]</span>
         </div>
       </div>
-      {s.type === 'cascade' && (
+      {s.type === 'cascade' && (s.stt !== '-' || s.tts !== '-') && (
         <div className="text-[10px] text-text-muted mt-1.5 space-y-0.5">
           <div>STT: {s.stt}</div>
           <div>LLM: {s.llm}</div>

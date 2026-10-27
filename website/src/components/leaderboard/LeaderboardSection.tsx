@@ -15,31 +15,31 @@ import {
 } from '../../data/leaderboardData';
 import { useThemeColors } from '../../styles/theme';
 
-// Three central findings from the EVA-Bench paper abstract / §5 Conclusion.
+// Three central findings, updated for the Cartesia Managed Agents run (these now go beyond the paper's numbers).
 const paretoInsights = [
   {
-    title: 'Only one system clears 0.6 on both axes pass@1',
+    title: 'Only two systems clear 0.6 on both axes pass@1',
     description:
-      'Across 23 systems spanning all three architectures, only one S2S system (Grok Voice 3.0) exceeds 0.6 on both EVA-A pass@1 (0.74) and EVA-X pass@1 (0.71). Every other system falls short on at least one axis — joint accuracy–experience quality remains far from saturated.',
+      'Across 24 systems spanning all three architectures, only two exceed 0.6 on both EVA-A pass@1 and EVA-X pass@1: Cartesia Managed Agents with GPT 5.5 (0.87 / 0.91) and Grok Voice 3.0 (0.74 / 0.71). Every other system falls short on at least one axis. Even the top system leaves headroom with its faithfulness is 0.78 and its pass^k is 0.76 on EVA-A and 0.78 on EVA-X.',
   },
   {
     title: 'Peak and reliable performance diverge',
     description:
-      'Peak (pass@k) and reliable (pass^k) performance diverge substantially: the median pass@k–pass^k gap is 0.40 on EVA-A and 0.47 on EVA-X, indicating single-trial scores systematically overstate deployment-grade reliability.',
+      'Peak (pass@k) and reliable (pass^k) performance diverge substantially: the median pass@k–pass^k gap is 0.39 on EVA-A and 0.47 on EVA-X, indicating single-trial scores systematically overstate deployment-grade reliability.',
   },
   {
     title: 'Architecture and SDK implementation both shape results',
     description:
-      'The Pareto frontier spans both S2S and cascade architectures. For cascade systems, we enabled LLM streaming and pre-tool speech. Cascade results vary significantly depending on the SDK implementation used, with some cascade configurations achieving turn-taking scores competitive with S2S models. This suggests that integration choices can matter as much as the underlying models.',
+      'Cartesia Managed Agents (GPT 5.5) dominates every other system on both axes at pass@1, pass@k and pass^k, collapsing the pass@1 Pareto frontier to a single point. Excluding it, the frontier is made up entirely of S2S systems. Note that Managed Agents is a fully managed cascade harness that runs the whole agent loop (turn-taking, tool calling, speech) around the chosen reasoning model, so this is a platform result, not a model-only comparison. For cascade systems, we enabled LLM streaming and pre-tool speech. Cascade results vary significantly depending on the SDK implementation used, with some cascade configurations achieving turn-taking scores competitive with S2S models. This suggests that integration choices can matter as much as the underlying models.',
   },
 ];
 
 // Supporting bullets drawn from §4.3 Robustness and §4.4 Failure Mode Analysis.
 const keyInsights = [
   {
-    title: 'Accuracy–experience trade-off',
+    title: 'Accuracy and experience are not inherently at odds',
     description:
-      'Across evaluated systems, accuracy and experience trace out a clear Pareto frontier, and no system leads on both. The highest-accuracy system (EVA-A pass@1 0.74) trails the highest-experience system on EVA-X (0.71 vs 0.89), while that system in turn has much lower accuracy (0.46).',
+      'Cartesia Managed Agents (GPT 5.5) leads on both axes (EVA-A pass@1 0.87, EVA-X pass@1 0.91), showing that strong accuracy and strong conversational experience can be achieved together on this benchmark, with a fully managed cascade harness and good engineering. The trade-off seen elsewhere in the field reflects system design rather than a fundamental limit: Grok Voice 3.0 (EVA-A 0.74) trails on EVA-X (0.71), and Gemini 3.8 Live (EVA-X 0.89) trails on EVA-A (0.46).',
   },
   {
     title: 'Asymmetric degradation under perturbation',
@@ -64,7 +64,7 @@ const keyInsights = [
   {
     title: 'Low-latency cascades close the experience gap',
     description:
-      'Cascade systems built with low-latency models can outperform S2S models on experience, and streaming the LLM response along with pre-tool speech can greatly improve turn-taking — the fastest cascade system reaches EVA-X pass@1 at 0.82 with turn-taking at 0.88. Though the fastest system overall is still an S2S model, which leads every system on both EVA-X pass@1 at 0.89 and turn-taking at 0.97. S2S also now leads on accuracy, with the top S2S system reaching EVA-A pass@1 of 0.74 versus 0.67 for the best cascade.',
+      'Cascade systems built with low-latency models can outperform S2S models on experience, and streaming the LLM response along with pre-tool speech can greatly improve turn-taking — the fastest cascade system reaches EVA-X pass@1 at 0.82 with turn-taking at 0.88. The strongest results come from heavily engineered agent harnesses rather than plain model pipelines: Cartesia Managed Agents, a fully managed cascade harness, reaches EVA-X pass@1 of 0.91 and EVA-A pass@1 of 0.87 (versus 0.67 for the best other cascade), much as the ElevenLabs Elevenagent with Claude Haiku 4.5 shows strong EVA-X. Among native S2S models, Gemini 3.8 Live has the best turn-taking at 0.97 and Grok Voice 3.0 the best accuracy (EVA-A pass@1 0.74).',
   },
 ];
 
