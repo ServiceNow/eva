@@ -9,8 +9,10 @@ scaffold (markup removal, ignore patterns, whitespace collapsing) while
 overriding the number-conversion and script-specific steps.
 """
 
+import json
 import re
 import unicodedata
+from pathlib import Path
 
 from jaconv import jaconv
 
@@ -88,20 +90,219 @@ _JP_LARGE: dict[str, int] = {"万": 10_000, "億": 100_000_000, "兆": 1_000_000
 
 _JP_NUM_RE = re.compile(r"[〇零一二三四五六七八九十百千万億兆]+")
 _JP_PUNCT_RE = re.compile(r"[。、・「」『』【】〔〕〈〉《》〜～！？…—―]")
-# No \b anchors — word boundaries don't apply to Japanese text
-_JP_FILLERS = re.compile(r"えーと|ええと|えー|あのー|あの|うーん|うん|ねー|ねえ|んーと|んー|んと|まあ|そうですね")
+_RE_ANY_WHITESPACE = re.compile(r"\s+")
+# Fillers only match at the start of a word (not after kana or kanji), so
+# that んと in なんとか / ほんとう is kept.
+_JP_FILLERS = re.compile(
+    r"(?<![\u3041-\u3096\u30a1-\u30fa\u30fc\u4e00-\u9fff])"
+    r"(?:えーと|ええと|えー|あのー|あの|うーん|うん|ねー|ねえ|んーと|んー|んと|まあ|そうですね)"
+)
+
+
+# Orthographic variants with the same reading and meaning (kanji vs kana,
+# okurigana). Mapped to one canonical spelling on both sides.
+_JA_ORTHO_VARIANTS: dict[str, str] = {
+    "苗字": "名字",
+    "振り替え": "振替",
+    "振替え": "振替",
+    "何とか": "なんとか",
+    "合っ": "あっ",
+    "問い合わせ": "問合せ",
+    "問い合せ": "問合せ",
+    "申し込み": "申込",
+    "申込み": "申込",
+    "取り消し": "取消",
+    "取消し": "取消",
+    "払い戻し": "払戻",
+    "払戻し": "払戻",
+    "乗り換え": "乗換",
+    "乗換え": "乗換",
+    "受け付け": "受付",
+    "受付け": "受付",
+}
+_JA_ORTHO_RE = re.compile("|".join(sorted(map(re.escape, _JA_ORTHO_VARIANTS), key=len, reverse=True)))
+
+# Katakana block without the middle dot ・ (U+30FB), which is a separator.
+_KATA = "\u30a1-\u30fa\u30fc-\u30ff"
+
+
+def _load_ja_loanwords() -> dict[str, str]:
+    path = Path(__file__).parent / "configs" / "ja_loanwords.json"
+    with path.open(encoding="utf-8") as f:
+        return json.load(f)["loanwords"]
+
+
+# Product and system names: the STT writes what a Japanese speaker says (katakana),
+# while the reference may keep the Latin name. Both are mapped to one standard
+# katakana spelling, so a near-miss STT spelling (コンフュエンス) still gets partial
+# CER credit instead of a full mismatch against "confluence".
+_JA_LOANWORDS = _load_ja_loanwords()  # katakana spelling -> Latin name
+_JA_KATA_STANDARD: dict[str, str] = {}  # Latin name -> first katakana spelling listed
+for _kata, _latin in _JA_LOANWORDS.items():
+    _JA_KATA_STANDARD.setdefault(_latin, _kata)
+_JA_LOANWORD_KATA_RE = re.compile(
+    rf"(?<![{_KATA}])(?:{'|'.join(sorted(map(re.escape, _JA_LOANWORDS), key=len, reverse=True))})(?![{_KATA}])"
+)
+# Whole Latin words, case-insensitive; an optional hyphen or space between letters
+# lets "Wi-Fi" and "mac OS" match "wifi" and "macos".
+_JA_LATIN_NAMES = "|".join(r"[-\s]?".join(map(re.escape, w)) for w in sorted(_JA_KATA_STANDARD, key=len, reverse=True))
+_JA_LOANWORD_LATIN_RE = re.compile(rf"(?<![A-Za-z0-9])(?:{_JA_LATIN_NAMES})(?![A-Za-z0-9])", re.IGNORECASE)
+
+
+def _ja_latin_to_kata(m: re.Match) -> str:
+    return _JA_KATA_STANDARD[re.sub(r"[-\s]", "", m.group()).lower()]
+
+
+# Katakana names of Latin letters, used when spelling codes.
+_JA_LETTER_NAMES: dict[str, str] = {
+    "エー": "a",
+    "エイ": "a",
+    "ビー": "b",
+    "シー": "c",
+    "ディー": "d",
+    "イー": "e",
+    "エフ": "f",
+    "ジー": "g",
+    "エイチ": "h",
+    "エッチ": "h",
+    "アイ": "i",
+    "ジェー": "j",
+    "ジェイ": "j",
+    "ケー": "k",
+    "ケイ": "k",
+    "エル": "l",
+    "エム": "m",
+    "エヌ": "n",
+    "オー": "o",
+    "ピー": "p",
+    "キュー": "q",
+    "アール": "r",
+    "エス": "s",
+    "ティー": "t",
+    "ユー": "u",
+    "ブイ": "v",
+    "ヴィー": "v",
+    "ダブリュー": "w",
+    "エックス": "x",
+    "ワイ": "y",
+    "ゼット": "z",
+    "ズィー": "z",
+    "ゼッド": "z",
+}
+# Katakana digit words: ゼロ and English number words.
+_JA_KATA_DIGITS: dict[str, str] = {
+    "ゼロ": "0",
+    "ワン": "1",
+    "ツー": "2",
+    "スリー": "3",
+    "フォー": "4",
+    "ファイブ": "5",
+    "シックス": "6",
+    "セブン": "7",
+    "エイト": "8",
+    "ナイン": "9",
+}
+# Hiragana digit readings. These are also particles or parts of ordinary
+# words (に, さん, ご), so they only count when set off by separators.
+# し and く are left out: they are too ambiguous.
+_JA_KANA_DIGITS: dict[str, str] = {
+    "ぜろ": "0",
+    "れい": "0",
+    "まる": "0",
+    "いち": "1",
+    "に": "2",
+    "さん": "3",
+    "よん": "4",
+    "ご": "5",
+    "ろく": "6",
+    "なな": "7",
+    "しち": "7",
+    "はち": "8",
+    "きゅう": "9",
+}
+_JA_STRONG = {**_JA_LETTER_NAMES, **_JA_KATA_DIGITS}
+_JA_CODE_TOKEN = "|".join(sorted(list(_JA_STRONG) + list(_JA_KANA_DIGITS), key=len, reverse=True)) + "|[A-Za-z0-9]"
+_JA_CODE_SEP = "[、・,，\\s]"
+_JA_CODE_TOKEN_RE = re.compile(_JA_CODE_TOKEN)
+_JA_CODE_RUN_RE = re.compile(rf"(?:{_JA_CODE_TOKEN})(?:{_JA_CODE_SEP}*(?:{_JA_CODE_TOKEN}))+")
+_JA_CODE_SEP_RE = re.compile(_JA_CODE_SEP)
+_JA_KATA_RE = re.compile(f"[{_KATA}]")
+_JA_ZERO_RE = re.compile(rf"(?<![{_KATA}])ゼロ(?![{_KATA}])")
+
+
+def _is_kata(c: str) -> bool:
+    return bool(c) and bool(_JA_KATA_RE.match(c))
+
+
+def _map_ja_code_run(m: re.Match) -> str:
+    """Map letter names and digit readings inside a spelled-code run.
+
+    A run is a sequence of letter names, digit words, Latin letters and
+    digits, separated by nothing, 、, ・, commas or spaces. Hiragana digit
+    readings must be set off by separators on both sides. A katakana token at
+    the edge of the run must not touch other katakana (so ワンピース,
+    スリープ and アイスティー stay unchanged). A sub-run is mapped only if it
+    has at least two tokens and either one unambiguous token (katakana,
+    Latin, digit) or at least three hiragana readings.
+    """
+    text, base = m.string, m.start()
+    tokens = [(t.group(), base + t.start(), base + t.end()) for t in _JA_CODE_TOKEN_RE.finditer(m.group())]
+
+    def is_sep_or_edge(i: int) -> bool:
+        return i < 0 or i >= len(text) or bool(_JA_CODE_SEP_RE.match(text[i]))
+
+    valid = [tok not in _JA_KANA_DIGITS or (is_sep_or_edge(s - 1) and is_sep_or_edge(e)) for tok, s, e in tokens]
+
+    # Split at invalid tokens into sub-runs of consecutive valid tokens.
+    groups: list[list[tuple[str, int, int]]] = []
+    current: list[tuple[str, int, int]] = []
+    for tok, ok in zip(tokens, valid):
+        if ok:
+            current.append(tok)
+        else:
+            if current:
+                groups.append(current)
+            current = []
+    if current:
+        groups.append(current)
+
+    out: list[str] = []
+    pos = base
+    for g in groups:
+        # Trim katakana edge tokens that touch other katakana.
+        while g and g[0][0] in _JA_STRONG and _is_kata(text[g[0][1] - 1 : g[0][1]]):
+            g = g[1:]
+        while g and g[-1][0] in _JA_STRONG and _is_kata(text[g[-1][2] : g[-1][2] + 1]):
+            g = g[:-1]
+        if len(g) < 2:
+            continue
+        kana = [t for t, _, _ in g if t in _JA_STRONG or t in _JA_KANA_DIGITS]
+        strong = [t for t, _, _ in g if t not in _JA_KANA_DIGITS]
+        if not kana or (not strong and len(g) < 3):
+            continue
+        out.append(text[pos : g[0][1]])
+        out.append("".join(_JA_STRONG.get(t, _JA_KANA_DIGITS.get(t, t)) for t, _, _ in g))
+        pos = g[-1][2]
+    out.append(text[pos : m.end()])
+    return "".join(out)
 
 
 class JapaneseTextNormalizer(BaseTextNormalizer):
-    """Normalize Japanese text for WER/CER calculation.
+    """Normalize Japanese text for CER calculation.
 
     Pipeline:
     1. Remove markup and filler words
     2. jaconv.normalize() — half/full-width normalisation, unicode compatibility
-    3. Convert kanji numerals → Arabic digits
-    4. Strip Japanese punctuation (。、「」 etc.)
-    5. Lower-case any remaining ASCII (loanwords, product codes)
-    6. Collapse whitespace
+    3. Unify orthographic variants (苗字 → 名字, 振り替え → 振替)
+    4. Convert kanji numerals → Arabic digits, and ゼロ → 0
+    5. Map product names, in Latin or katakana, to one standard katakana
+       spelling (Windows, ウインドウズ → ウィンドウズ)
+    6. In spelled codes, map katakana letter names and kana digit readings
+       (イー、エム、ピー、さん → emp3)
+    7. Strip Japanese punctuation (。、「」 etc.)
+    8. Lower-case any remaining ASCII (loanwords, product codes)
+    9. Remove all whitespace: Japanese has no word spacing, so spaces must
+       not count as character errors
     """
 
     def __init__(self, ignore_patterns: str = ""):
@@ -111,10 +312,15 @@ class JapaneseTextNormalizer(BaseTextNormalizer):
         s = self._remove_markup(s)
         s = self._apply_ignore_patterns(s, self._ignore_patterns)
         s = jaconv.normalize(s)
+        s = _JA_ORTHO_RE.sub(lambda m: _JA_ORTHO_VARIANTS[m.group()], s)
         s = _JP_NUM_RE.sub(lambda m: _parse_positional_number(m.group(), _JP_DIGIT, _JP_SMALL, _JP_LARGE), s)
+        s = _JA_LOANWORD_LATIN_RE.sub(_ja_latin_to_kata, s)
+        s = _JA_LOANWORD_KATA_RE.sub(lambda m: _JA_KATA_STANDARD[_JA_LOANWORDS[m.group()]], s)
+        s = _JA_CODE_RUN_RE.sub(_map_ja_code_run, s)
+        s = _JA_ZERO_RE.sub("0", s)
         s = _JP_PUNCT_RE.sub(" ", s)
         s = s.lower()
-        return self._collapse_whitespace(s)
+        return _RE_ANY_WHITESPACE.sub("", s)
 
 
 # ===========================================================================
