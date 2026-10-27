@@ -241,14 +241,13 @@
   "suffixers": {},
   "ignore_patterns": "\\b(euh|hum|heu|ben|bah|hein|hm|hmm|mm|mhm)\\b",
   "replacers": {
-    "\\bm\\b": "monsieur",
+    "\\bm\\.(?=\\s+[^\\W\\d_]{2})": "monsieur",
     "\\bmme\\b": "madame",
     "\\bmlle\\b": "mademoiselle",
     "\\bdr\\b": "docteur",
     "\\bdre\\b": "docteure",
     "\\bpr\\b": "professeur",
-    "\\bpre\\b": "professeure",
-    "\\bme\\b": "maitre"
+    "\\bpre\\b": "professeure"
   },
   "strip_space_before_apostrophe": false,
   "ordinal_suffix_pattern": "",
@@ -258,5 +257,17 @@
   "decimal_separator": "comma",
   "thousand_separators": [
     "space"
-  ]
+  ],
+  "spoken_symbols": {
+    "trait d'union": "-",
+    "tiret": "-",
+    "tiret bas": "_",
+    "underscore": "_",
+    "barre oblique": "/",
+    "arobase": "@",
+    "a commercial": "@"
+  },
+  "spoken_symbols_code_only": {
+    "barre": "/"
+  }
 }
