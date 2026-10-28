@@ -312,8 +312,7 @@ error. Empty for every other language, which keeps their scores unchanged.
 Latin STT word sounds the same is also rescued (`नेटवर्क` vs `network`, both
 reduced to the consonant key `ntwrk`). Guards: 1:1 words only, at least three
 consonants on both sides, and a stoplist of Hindi words that sound like English
-ones (`कल`/`call`, `बस`/`bus`). To be switched on only after native-speaker
-labeling of its matches.
+ones (`कल`/`call`, `बस`/`bus`).
 
 ---
 

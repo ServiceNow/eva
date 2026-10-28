@@ -131,7 +131,7 @@ class LanguageConfig(BaseModel):
     # re-checks error regions with these languages' rules before counting them.
     code_switch_languages: list[str] = Field(default_factory=list)
     # Also rescue Devanagari reference words whose Latin STT word sounds the
-    # same (नेटवर्क / network). Off until native-speaker labels validate it.
+    # same (नेटवर्क / network). Off by default.
     code_switch_phonetic: bool = False
 
     @classmethod
