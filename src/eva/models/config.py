@@ -498,15 +498,42 @@ class CascadeSimulatorConfig(BaseModel):
     stt: Literal["elevenlabs"] = Field("elevenlabs", description="Streaming STT provider for the assistant's audio.")
     stt_model: str = Field("scribe_v2_realtime", description="Streaming STT model.")
     model: str = Field(
+        "gpt-6.1-sol",
         description=(
             "Caller LLM deployment, resolved via EVA_MODEL_LIST like the assistant's. Configure a separate "
             "deployment if the caller's params need to differ from the assistant under test or the judges."
         ),
     )
+    barge_in_model: str | None = Field(
+        None,
+        description="Caller LLM deployment (via EVA_MODEL_LIST) that writes barge-in replies. None uses model.",
+    )
+    interruption_model: str = Field(
+        "gpt-6-luna",
+        description="OpenAI model for the barge-in decisions (Decisions API), called directly with OPENAI_API_KEY.",
+    )
     tts: Literal["cartesia"] = Field("cartesia", description="TTS provider for the caller's speech.")
     tts_model: str = Field("sonic-3.5", description="TTS model.")
     female_voice: str = Field("f786b574-daa5-4673-aa0c-cbe3e8534c02", description="TTS voice for female personas.")
     male_voice: str = Field("a0e99841-438c-4a64-b679-ae501e7d6091", description="TTS voice for male personas.")
+    interruption_min_updates: int = Field(
+        6,
+        ge=0,
+        description="Transcript updates at the start of each agent turn that are never interrupted; "
+        "no decision is requested for them.",
+    )
+    forced_interruption_every_turns: int | None = Field(
+        None,
+        ge=1,
+        description=(
+            "Test plumbing: on every Nth agent turn, treat the decision for the "
+            "forced_interruption_after_updates-th transcript update (or a later one) as interrupt, whatever the "
+            "decision model said. The decision is still requested and logged as usual. None disables it."
+        ),
+    )
+    forced_interruption_after_updates: int = Field(
+        15, ge=1, description="Transcript updates into a forced turn before its decisions are forced."
+    )
 
     @field_validator("stt_model")
     @classmethod

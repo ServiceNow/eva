@@ -185,6 +185,7 @@ class ScribeStreamingSTT:
 
     def _on_partial(self, data: dict[str, Any]) -> None:
         self.partial = data.get("text", "")
+        logger.debug(f"Partial transcript ({self._pending_commits} commits pending): {self.partial[:120]!r}")
         self.updated.set()
 
     def _on_committed(self, data: dict[str, Any]) -> None:

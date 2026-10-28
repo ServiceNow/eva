@@ -44,6 +44,9 @@ SEND_CHUNK_SIZE_PCM = int(ELEVENLABS_OUTPUT_RATE * SEND_CHUNK_DURATION_MS / 1000
 # Timing constants for silence detection and polling
 SILENCE_DETECTION_THRESHOLD_S = 0.2  # 200ms to detect assistant audio end
 USER_END_DETECTION_DELAY_INTERVALS = 30  # 600ms (30 x 20ms) - longer to avoid splitting natural pauses
+# A mid-utterance underrun shorter than this is held, then caught up (TTS momentarily behind real time);
+# a longer one is a real stall and goes out as silence.
+USER_UNDERRUN_GRACE_S = 0.1
 USER_CATCHUP_SILENCE_CHUNKS = 0  # Don't send catch-up silence for user - let VAD detect naturally
 USER_TRAILING_SILENCE_CHUNKS = (
     # Disabled for now (was 100 = 2s). Revisit before re-enabling: see
@@ -155,6 +158,9 @@ class BotToBotAudioBridge:
         self._assistant_audio_ended_time = None  # Track when assistant audio ended for silence sending
         # Assistant utterances started so far; lets a caller tell whether the assistant spoke while it was busy.
         self.assistant_audio_starts = 0
+        # User utterances started so far, and the loop time the latest one's first frame went on the wire.
+        self.user_audio_starts = 0
+        self.user_audio_started_at: float | None = None
         # Loop time of the last real user-audio chunk sent — used to stamp the
         # user audio_end at the actual end (detection lags it by ~600ms).
         self._last_user_audio_send_time: float | None = None
@@ -474,6 +480,8 @@ class BotToBotAudioBridge:
         """Handle user audio starting."""
         self._user_audio_active = True
         self._user_audio_ended_time = None
+        self.user_audio_starts += 1
+        self.user_audio_started_at = asyncio.get_event_loop().time()
         # A new user turn supersedes any trailing noise still queued from the
         # previous turn, so cancel the remainder.
         self._pending_trailing_noise_chunks = 0
@@ -754,6 +762,7 @@ class BotToBotAudioBridge:
         stream_start_time: float | None = None  # Set when first audio chunk arrives
         silence_start_time: float | None = None  # Set when silence sending begins
         silence_chunks_sent = 0  # Separate counter for silence
+        starved_since: float | None = None  # When a mid-utterance underrun began (see USER_UNDERRUN_GRACE_S)
         next_send_time = asyncio.get_event_loop().time()
 
         logger.info(
@@ -768,7 +777,8 @@ class BotToBotAudioBridge:
                 # Calculate timeout based on time until next send to maintain accurate 20ms intervals
                 time_until_next_send = max(0, next_send_time - current_time)
                 if (
-                    self._user_audio_ended_time is not None
+                    self._user_audio_active
+                    or self._user_audio_ended_time is not None
                     or self._assistant_audio_ended_time is not None
                     or pending_audio
                 ):
@@ -809,10 +819,44 @@ class BotToBotAudioBridge:
                         if mulaw_audio and await self._send_audio_frame(mulaw_audio):
                             audio_chunks_sent += 1
                             self._last_user_audio_send_time = current_time
+                            starved_since = None
                             # Calculate next send time based on absolute target (prevents drift)
                             next_send_time = stream_start_time + (audio_chunks_sent * send_interval)
                             if audio_chunks_sent % LOG_INTERVAL_AUDIO_SEND == 0:
                                 logger.debug(f"→ Sent audio chunk {audio_chunks_sent}")
+
+                elif (
+                    self._user_audio_active
+                    and not self._user_turn_complete
+                    and self.send_queue.empty()
+                    and current_time >= next_send_time
+                ):
+                    # Underrun mid-utterance (e.g. a barge-in's opener has played out before its reply
+                    # arrives): keep the line in real time with silence, as a phone line would. Sending
+                    # nothing would hide the pause from the assistant's VAD, end the utterance after
+                    # USER_END_DETECTION_DELAY_INTERVALS, or burst the late audio to catch up the schedule.
+                    # A starve shorter than USER_UNDERRUN_GRACE_S is TTS streaming a little behind real
+                    # time: padding those chops speech, so they are held and caught up instead.
+                    starved_since = current_time if starved_since is None else starved_since
+                    if current_time - starved_since >= USER_UNDERRUN_GRACE_S:
+                        aligned_len = (len(pending_audio) // PCM_SAMPLE_WIDTH) * PCM_SAMPLE_WIDTH
+                        padding = b"\x00" * (pcm_chunk_size - aligned_len)
+                        if aligned_len:
+                            sent = await self._send_audio_frame(
+                                self._convert_pcm_to_mulaw(pending_audio[:aligned_len] + padding)
+                            )
+                            if sent:
+                                self._last_user_audio_send_time = current_time
+                        else:
+                            sent = await self._send_silence_frame()
+                        if sent:
+                            pending_audio = b""
+                            # Re-anchored at this frame, so the grace held back is not burst out later.
+                            stream_start_time = current_time - audio_chunks_sent * send_interval
+                            audio_chunks_sent += 1
+                            next_send_time = stream_start_time + (audio_chunks_sent * send_interval)
+                            if self.record_callback:
+                                self.record_callback("user_clean", padding)
 
                 elif len(pending_audio) > 0 and len(pending_audio) < pcm_chunk_size:
                     # Partial chunk - wait for more or send after delay
@@ -920,6 +964,7 @@ class BotToBotAudioBridge:
                 # Prevent busy-waiting - sleep until next scheduled send time
                 if (
                     not pending_audio
+                    and not self._user_audio_active
                     and self._user_audio_ended_time is None
                     and self._assistant_audio_ended_time is None
                     and not self._should_send_ambient_noise()

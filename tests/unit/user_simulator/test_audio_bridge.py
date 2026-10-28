@@ -489,3 +489,68 @@ class TestTrailingWhiteNoise:
         assert user_clean, "expected user_clean frames recorded for alignment"
         assert all(data == b"\x00" * SEND_CHUNK_SIZE_PCM for data in user_clean)
         assert _white_noise_pcm() not in user_clean
+
+
+class TestMidUtteranceUnderrun:
+    """A stall inside a user utterance (a barge-in's opener played out before its reply) stays real time."""
+
+    @pytest.mark.asyncio
+    async def test_stall_is_filled_with_silence_without_ending_or_bursting(self, monkeypatch):
+        monkeypatch.setattr("eva.user_simulator.audio_bridge.USER_END_DETECTION_DELAY_INTERVALS", 2)
+        recorded: list[bytes] = []
+        iface = _make_interface(record_callback=lambda source, data: recorded.append(data))
+        iface.websocket = MagicMock()
+        iface.running = True
+        loop = asyncio.get_running_loop()
+        wire: list[tuple[float, bytes]] = []
+        iface._send_audio_frame = AsyncMock(side_effect=lambda frame: wire.append((loop.time(), frame)) or True)
+        iface._on_user_audio_end = AsyncMock(side_effect=lambda now: setattr(iface, "_user_audio_active", False))
+        loud = b"\x00\x40" * (SEND_CHUNK_SIZE_PCM // 2)
+
+        async def caller():
+            iface.output(loud * 4 + loud[: SEND_CHUNK_SIZE_PCM // 2])  # 90ms opener, ending mid-frame
+            await asyncio.sleep(0.4)  # the reply is still being generated
+            assert iface._user_audio_active  # the stall did not end the utterance
+            iface.output(loud * 5)
+            iface.notify_user_utterance_complete()
+            await asyncio.sleep(0.3)
+            iface.running = False
+
+        await asyncio.gather(iface._send_to_assistant(), caller())
+
+        start = wire[0][0]
+        # Never ahead of real time: the late reply is not burst out to catch up the schedule.
+        for index, (sent_at, _) in enumerate(wire):
+            assert index * 0.02 <= sent_at - start + 0.03
+        silence = ElevenLabsAudioInterface._convert_pcm_to_mulaw(b"\x00" * SEND_CHUNK_SIZE_PCM)
+        loud_mulaw = ElevenLabsAudioInterface._convert_pcm_to_mulaw(loud)
+        frames = [frame for _, frame in wire]
+        first_reply = frames.index(loud_mulaw, 5)
+        assert frames[5:first_reply].count(silence) >= 5  # the stall went out as silence
+        assert frames[4] not in (silence, loud_mulaw)  # the opener's last half-frame, padded
+        iface._on_user_audio_end.assert_awaited_once()  # one utterance, ended once it was complete
+        assert b"".join(recorded).count(b"\x00" * SEND_CHUNK_SIZE_PCM) >= 5  # the gap is in user_clean
+
+    @pytest.mark.asyncio
+    async def test_tts_streaming_a_little_behind_real_time_is_not_chopped(self):
+        iface = _make_interface()
+        iface.websocket = MagicMock()
+        iface.running = True
+        wire: list[bytes] = []
+        iface._send_audio_frame = AsyncMock(side_effect=lambda frame: wire.append(frame) or True)
+        loud = b"\x00\x40" * (SEND_CHUNK_SIZE_PCM // 2)
+
+        async def caller():
+            piece = (loud * 2)[:400]  # 12.5ms of speech every 20ms: the queue keeps running dry briefly
+            for _ in range(32):
+                iface.output(piece)
+                await asyncio.sleep(0.02)
+            iface.notify_user_utterance_complete()
+            await asyncio.sleep(0.1)
+            iface.running = False
+
+        await asyncio.gather(iface._send_to_assistant(), caller())
+
+        loud_mulaw = ElevenLabsAudioInterface._convert_pcm_to_mulaw(loud)
+        assert len(wire) >= 19
+        assert [frame for frame in wire if frame != loud_mulaw] == []  # no silence padded into the speech

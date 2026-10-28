@@ -1,11 +1,15 @@
 """Conversation worker for running individual conversations."""
 
 import asyncio
+import difflib
 import json
 import math
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from num2words import num2words
 
 from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
@@ -95,6 +99,72 @@ def _latency_stats(values: list[float | None]) -> LatencyStats | None:
         p99_ms=_percentile(latencies, 99),
         total_calls=n,
     )
+
+
+INTERRUPTED_MARKER = "[interrupted]"
+_WORD = re.compile(r"[a-z0-9']+")
+
+
+_ORDINAL = re.compile(r"(\d+)(?:st|nd|rd|th)")
+_CODE_PART = re.compile(r"\d+|[a-z]")
+
+
+def _words(text: str) -> list[str]:
+    """Lowercase words, with digits spelled out as TTS text has them ("25th" -> twenty fifth, "SK703" -> s k ...)."""
+    words = []
+    for token in _WORD.findall(text.lower()):
+        if ordinal := _ORDINAL.fullmatch(token):
+            words += _WORD.findall(num2words(int(ordinal.group(1)), to="ordinal"))
+        elif any(char.isdigit() for char in token):
+            for part in _CODE_PART.findall(token):
+                words += _WORD.findall(num2words(int(part))) if part.isdigit() else [part]
+        else:
+            words.append(token)
+    return words
+
+
+def _add_missed_words(barge_ins: list[BargeInLatency], audit_log_path: Path) -> list[BargeInLatency]:
+    """Fill each barge-in's spoken/missed from the agent line the audit log marks as interrupted.
+
+    ``heard`` is the caller's STT and the audit log the agent's TTS text, so they differ in form
+    ("SK703" vs "S K seven oh three"); the two are aligned and the words after heard's last match
+    are missed. A last heard word that never matches (a number written differently) overcounts.
+    """
+    if not barge_ins or not audit_log_path.exists():
+        return barge_ins
+    with open(audit_log_path) as f:
+        transcript = json.load(f).get("transcript", [])
+    lines = [
+        entry["value"].removesuffix(INTERRUPTED_MARKER).strip()
+        for entry in transcript
+        if entry.get("message_type") == "assistant"
+        and isinstance(entry.get("value"), str)
+        and entry["value"].endswith(INTERRUPTED_MARKER)
+    ]
+    filled, start = [], 0
+    for barge_in in barge_ins:
+        heard = _words(barge_in.heard)
+        # In order: the interrupted line after the previous match that shares the most with heard.
+        best = None
+        for index in range(start, len(lines)):
+            matcher = difflib.SequenceMatcher(None, heard, _words(lines[index]), autojunk=False)
+            size = sum(block.size for block in matcher.get_matching_blocks())
+            if size and (best is None or size > best[1]):
+                best = (index, size, matcher)
+        if best is None:
+            filled.append(barge_in)
+            continue
+        index, _, matcher = best
+        start = index + 1
+        spoken = _words(lines[index])
+        last = max(block.b + block.size for block in matcher.get_matching_blocks() if block.size)
+        missed = spoken[last:]
+        filled.append(
+            barge_in.model_copy(
+                update={"spoken": lines[index], "missed": " ".join(missed), "missed_words": len(missed)}
+            )
+        )
+    return filled
 
 
 class ConversationWorker:
@@ -257,6 +327,7 @@ class ConversationWorker:
             stt_latency = self._calculate_stt_latency()
             tts_latency = self._calculate_tts_latency()
             model_response_latency = self._calculate_model_response_latency()
+            self._barge_ins = _add_missed_words(self._barge_ins, self.output_dir / "audit_log.json")
 
             result = ConversationResult(
                 record_id=self.record.id,

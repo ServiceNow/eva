@@ -38,15 +38,18 @@ def trim_silence(pcm: bytes) -> bytes:
 class BargeIn:
     """One barge-in's timing, on the event-loop clock (seconds).
 
-    The bridge plays queued caller audio in real time, so the opener plays from ``opener_at`` for
-    ``opener_ms``, and the reply's first audible sample plays at the later of the opener ending and
-    its arrival. The gap is the difference, as the script reads it off its replayed track.
+    The bridge plays queued caller audio in real time, filling any stall with silence, so the opener
+    plays from ``opener_at`` for ``opener_ms``, and the reply's first audible sample plays at the later
+    of the opener ending and its arrival. The gap is the difference, as the script reads it off its
+    replayed track.
     """
 
     heard_at: float
     """The transcript update the firing decision was asked about became readable."""
     decision_ms: float
     p_interrupt: float
+    forced: bool = False
+    """Fired by forced_interruption_every_turns, whatever the decision model said."""
     segment_start: float = 0.0
     trigger_words: int = 0
     """Where that update's last word sits: its STT segment, and the partial's word count."""
@@ -54,10 +57,13 @@ class BargeIn:
     """That last word stopped playing to the caller, from STT word timestamps; None if they never came."""
     opener: str = ""
     opener_at: float = 0.0
+    """The opener went out: queued, then moved to its first frame on the wire by ``opener_on_wire``."""
     opener_ms: float = 0.0
     heard: str = ""
     """What the reply was written from: everything heard when the opener started."""
     content: str = ""
+    first_token_at: float | None = None
+    """The reply LLM's first text token arrived."""
     segment_sent_at: float | None = None
     """The reply's first segment was written and sent to TTS."""
     first_chunk_at: float | None = None
@@ -66,6 +72,17 @@ class BargeIn:
 
     def play_opener(self, phrase: str, pcm: bytes, now: float) -> None:
         self.opener, self.opener_at, self.opener_ms = phrase, now, pcm_ms(len(pcm))
+
+    def opener_on_wire(self, at: float) -> None:
+        """Time the opener from its first frame on the wire rather than from when it was queued.
+
+        Anything synchronous between queuing it and the event loop's next turn delays that frame.
+        """
+        self.opener_at = at
+
+    def first_token(self, now: float) -> None:
+        if self.first_token_at is None:
+            self.first_token_at = now
 
     def segment_sent(self, now: float) -> None:
         if self.segment_sent_at is None:
@@ -98,10 +115,12 @@ class BargeIn:
             opener=self.opener,
             content=self.content,
             p_interrupt=self.p_interrupt,
+            forced=self.forced,
             opener_ms=self.opener_ms,
             stt_lag_ms=None if spoken_at is None else ms(spoken_at, self.heard_at),
             decision_ms=self.decision_ms,
             reaction_ms=None if spoken_at is None else ms(spoken_at, self.opener_at),
+            reply_first_token_ms=ms(self.opener_at, self.first_token_at),
             reply_text_ms=ms(self.opener_at, self.segment_sent_at),
             tts_first_audio_ms=None if self.segment_sent_at is None else ms(self.segment_sent_at, self.first_chunk_at),
             content_ready_ms=ms(self.opener_at, self.audible_at),

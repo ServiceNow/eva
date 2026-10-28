@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.cascade import simulator as cascade_simulator
 from eva.user_simulator.cascade.barge_in import BargeIn, trim_silence
+from eva.user_simulator.cascade.interruptor import DecisionsInterruptor
 from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn, next_segment
 from eva.user_simulator.cascade.stt import ScribeStreamingSTT
 from eva.user_simulator.cascade.tts import TTS_SAMPLE_RATE, CartesiaStreamingTTS
@@ -41,7 +42,7 @@ LOUD_PCM = b"\x00\x40" * 320
 
 @pytest.fixture(autouse=True)
 def _no_router(monkeypatch):
-    monkeypatch.setattr(cascade_simulator, "LiteLLMClient", MagicMock())
+    monkeypatch.setattr(cascade_simulator, "LiteLLMClient", MagicMock(side_effect=lambda **_: MagicMock()))
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key")
     monkeypatch.setenv("CARTESIA_API_KEY", "test-key")
     monkeypatch.setattr(cascade_simulator, "DecisionsInterruptor", MagicMock())
@@ -111,6 +112,16 @@ def test_messages_flip_roles_into_caller_frame(tmp_path):
 
     assert messages[0]["role"] == "system"
     assert [m["role"] for m in messages[1:]] == ["user", "assistant"]
+
+
+def test_system_prompt_is_built_once(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator._build_prompt = MagicMock(return_value="prompt")
+
+    simulator._messages()
+    simulator._messages()
+
+    simulator._build_prompt.assert_called_once()
 
 
 def test_stt_accumulates_committed_segments_and_partials():
@@ -359,13 +370,13 @@ def _trigger(at: float = 0.0, *, segment_start: float = 0.0, words: int = 0) -> 
 async def test_interrupt_decision_plays_opener_then_reply_once(tmp_path):
     simulator = _simulator(tmp_path)
 
-    async def decide(goal: str, heard: str) -> tuple[str, float]:
+    async def decide(goal: str, history: list, heard: str) -> tuple[str, float]:
         await asyncio.sleep(0)  # both requests are in flight before either answers
         return "interrupt", 0.9
 
     simulator._interruptor.decide = decide
     simulator._openers = [("Sorry\u2014", b"\x07\x07")]
-    simulator._llm.complete_stream = _llm_stream("It's 4471.")
+    simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
     simulator._tts.stream = MagicMock(return_value=_chunks(SILENT_PCM, LOUD_PCM))
     simulator._audio_interface = MagicMock()
     simulator._audio_interface.is_assistant_playing.return_value = True
@@ -382,20 +393,44 @@ async def test_interrupt_decision_plays_opener_then_reply_once(tmp_path):
     assert outputs == [b"\x07\x07", LOUD_PCM, b"\x00\x00"]
     assert simulator._history[-2:] == [
         {"role": "assistant", "content": "Can I get your employee"},
-        {"role": "user", "content": "Sorry\u2014 It's 4471."},
+        {"role": "user", "content": "Sorry— It's 4471."},  # the opener is part of what the caller said
     ]
     assert simulator._turn_active is False
     assert simulator._stt._stale_commits == 1  # the cut-off segment's final will be dropped
     [barge_in] = simulator.barge_ins
     assert (barge_in.heard, barge_in.content, barge_in.p_interrupt) == ("Can I get your employee", "It's 4471.", 0.9)
     assert barge_in.gap_ms is not None
+    assert barge_in.reply_first_token_ms is not None
     assert barge_in.reaction_ms is None  # no word timestamps came back
+
+
+@pytest.mark.asyncio
+async def test_barge_in_reaction_is_timed_to_the_openers_first_frame_on_the_wire(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator._openers = [("Sorry—", LOUD_PCM)]
+    simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
+    simulator._tts.stream = MagicMock(return_value=_chunks(LOUD_PCM))
+    bridge = MagicMock(assistant_audio_starts=0, user_audio_starts=3, user_audio_started_at=None)
+    bridge.is_assistant_playing.return_value = True
+
+    def output(pcm: bytes) -> None:
+        if bridge.user_audio_starts == 3:  # the opener starts an utterance, after work that held up the loop
+            bridge.user_audio_starts, bridge.user_audio_started_at = 4, 100.7
+
+    bridge.output.side_effect = output
+    simulator._audio_interface = bridge
+    simulator._stt.word_end = MagicMock(return_value=100.0)
+
+    await simulator._interrupt(_trigger(words=3))
+
+    [barge_in] = simulator.barge_ins
+    assert barge_in.reaction_ms == pytest.approx(700.0)
 
 
 @pytest.mark.asyncio
 async def test_barge_in_reply_streams_each_segment_to_tts_in_order(tmp_path):
     simulator = _simulator(tmp_path)
-    simulator._llm.complete_stream = _llm_stream("My ID is 4471, ", "and my name ", "is Sam. Thanks.")
+    simulator._barge_in_llm.complete_stream = _llm_stream("My ID is 4471, ", "and my name ", "is Sam. Thanks.")
     rendered: list[str] = []
     audio = {"My ID is 4471,": b"\x00\x10" * 320, "and my name is Sam.": b"\x00\x20" * 320, "Thanks.": LOUD_PCM}
 
@@ -423,6 +458,8 @@ def test_barge_in_times_reaction_and_gap_from_the_last_heard_word():
     barge_in.word_end_at = 9.6
     barge_in.decision_ms = 150.0
     barge_in.play_opener("Sorry\u2014", bytes(TTS_SAMPLE_RATE // 5 * 2), now=10.2)  # 200ms opener
+    barge_in.first_token(now=10.35)
+    barge_in.first_token(now=10.4)  # only the first token counts
     barge_in.segment_sent(now=10.5)
     barge_in.segment_sent(now=10.7)  # only the first segment counts
 
@@ -432,6 +469,7 @@ def test_barge_in_times_reaction_and_gap_from_the_last_heard_word():
 
     assert latency.stt_lag_ms == pytest.approx(400.0)
     assert latency.reaction_ms == pytest.approx(600.0)
+    assert latency.reply_first_token_ms == pytest.approx(150.0)
     assert latency.reply_text_ms == pytest.approx(300.0)
     assert latency.tts_first_audio_ms == pytest.approx(50.0)
     assert latency.content_ready_ms == pytest.approx(400.0)
@@ -504,6 +542,41 @@ async def test_no_interrupt_while_caller_is_speaking(tmp_path):
     await simulator._decide("goal", "Can I get your", _trigger())
 
     simulator._audio_interface.output.assert_not_called()
+
+
+def test_forced_interruptions_hit_every_nth_agent_turn_after_enough_updates(tmp_path):
+    simulator = _simulator(tmp_path)
+    assert not simulator._forces_interruption(4, 99)  # off by default
+    simulator.simulator_config = CascadeSimulatorConfig(
+        model="gpt-test", forced_interruption_every_turns=5, forced_interruption_after_updates=15
+    )
+
+    forced = [turn for turn in range(15) if simulator._forces_interruption(turn, 15)]
+    assert forced == [4, 9, 14]
+    assert not simulator._forces_interruption(4, 14)
+    assert simulator._forces_interruption(4, 16)  # a later update still fires if the 15th could not
+
+
+@pytest.mark.asyncio
+async def test_forced_decision_barges_in_over_a_keep_listening_verdict(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator._interruptor.decide = AsyncMock(return_value=("keep_listening", 0.1))
+    simulator._openers = [("Sorry—", b"\x07\x07")]
+    simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
+    simulator._tts.stream = MagicMock(return_value=_chunks(LOUD_PCM))
+    simulator._audio_interface = MagicMock()
+    simulator._audio_interface.is_assistant_playing.return_value = True
+    simulator._audio_interface.is_caller_playing.return_value = False
+    simulator._stt.partial = "Can I get your employee"
+    trigger = _trigger()
+    trigger.forced = True
+
+    await simulator._decide("goal", "Can I get your", trigger)
+
+    simulator._interruptor.decide.assert_awaited_once()  # the real decision is still made
+    [barge_in] = simulator.barge_ins
+    assert (barge_in.forced, barge_in.p_interrupt) == (True, 0.1)
+    assert simulator._caller_turns == 1
 
 
 def _sse(*events: dict) -> httpx.MockTransport:
@@ -608,3 +681,139 @@ async def test_repeated_untranscribed_agent_lines_fail_the_call(tmp_path, monkey
         await asyncio.wait_for(simulator._run_turns(), timeout=1)
 
     assert turns == [None]  # asked to repeat once, then gave up
+
+
+@pytest.mark.asyncio
+async def test_decision_input_carries_goal_history_and_the_line_in_progress(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    requests: list[dict] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        requests.append(json.loads(request.content))
+        choice = {"choice": "keep_listening", "probabilities": [{"value": "interrupt", "probability": 0.2}]}
+        return httpx.Response(200, json={"answers": [choice]})
+
+    interruptor = DecisionsInterruptor("gpt-test-decider")
+    interruptor._client = httpx.AsyncClient(base_url="https://api.test", transport=httpx.MockTransport(answer))
+    history = [{"role": "assistant", "content": "How can I help?"}, {"role": "user", "content": "Reset my password."}]
+
+    assert await interruptor.decide("GOAL: reset", history, "Sure, can I get your") == ("keep_listening", 0.2)
+
+    [body] = requests
+    assert body["model"] == "gpt-test-decider"
+    assert body["input"] == (
+        "<user_goal>\nGOAL: reset\n</user_goal>\n\n"
+        "<conversation>\nAgent: How can I help?\nCaller: Reset my password.\n</conversation>\n\n"
+        "Agent (speaking now): Sure, can I get your"
+    )
+
+
+@pytest.mark.asyncio
+async def test_talked_over_tail_of_the_interrupted_line_gets_no_second_reply(tmp_path, monkeypatch):
+    monkeypatch.setattr(cascade_simulator, "TURN_SETTLE_SECONDS", 0)
+    monkeypatch.setattr(cascade_simulator, "POLL_SECONDS", 0)
+    simulator = _simulator(tmp_path)
+    bridge = MagicMock(assistant_audio_starts=0, assistant_audio_ended_at=None)
+    bridge.is_assistant_playing.return_value = True
+    bridge.is_caller_playing.return_value = False
+    simulator._audio_interface = bridge
+    simulator.event_logger = MagicMock()
+    simulator._take_turn = AsyncMock(return_value=False)
+
+    async def barge_in():
+        # The agent's line runs on under the barge-in, then stops before the caller finishes.
+        simulator._turn_active = True
+        await asyncio.sleep(0.01)
+        simulator._stt.partial = "and what"
+        bridge.is_assistant_playing.return_value = False
+        await asyncio.sleep(0.01)
+        simulator._turn_active = False
+        simulator._record_talked_over_tail(starts=0)
+        await asyncio.sleep(0.01)
+        simulator._conversation_done.set()
+
+    simulator._history = [{"role": "user", "content": "Sorry— It's 4471."}]
+    await asyncio.gather(simulator._run_turns(), barge_in())
+
+    simulator._take_turn.assert_not_called()  # before, an empty final here read as an inaudible line
+    simulator.event_logger.log_event.assert_called_with("barge_in_tail", {"text": "and what"})
+    assert simulator._stt.heard_text() == ""
+    # Heard, so it is in history after the barge-in, but not answered.
+    assert simulator._history[-1] == {"role": "assistant", "content": "and what"}
+
+
+def test_agent_speech_after_a_barge_in_is_kept_when_it_is_a_new_line(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator._audio_interface = MagicMock(assistant_audio_starts=1)
+    simulator._audio_interface.is_assistant_playing.return_value = False
+    simulator.event_logger = MagicMock()
+    simulator._stt.partial = "Yes, your identity is confirmed."
+
+    simulator._record_talked_over_tail(starts=0)  # the agent answered the barge-in within it
+
+    assert simulator._stt.heard_text() == "Yes, your identity is confirmed."
+    assert simulator._tails_recorded == 0
+    assert simulator._history == []  # left for a regular turn, which replies to it
+
+
+@pytest.mark.asyncio
+async def test_no_decision_is_requested_for_the_first_updates_of_an_agent_turn(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator.simulator_config = CascadeSimulatorConfig(model="gpt-test", interruption_min_updates=2)
+    simulator._can_interrupt = MagicMock(return_value=True)
+    asked: list[str] = []
+
+    async def decide(goal, heard, barge_in):
+        asked.append(heard)
+
+    simulator._decide = decide
+    watcher = asyncio.create_task(simulator._watch_for_interruptions())
+    for partial in ["Can", "Can I", "Can I get"]:
+        simulator._stt.partial = partial
+        simulator._stt.updated.set()
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+    simulator._caller_turns += 1  # a new agent turn starts the count over
+    simulator._stt.partial = "Thanks"
+    simulator._stt.updated.set()
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    watcher.cancel()
+
+    assert asked == ["Can I get"]
+
+
+@pytest.mark.asyncio
+async def test_no_decision_or_barge_in_after_the_caller_hangs_up(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator._llm.complete_stream = _llm_stream("Thanks, bye.", message=_tool_message("Thanks, bye.", "end_call"))
+    simulator._tts.stream = MagicMock(return_value=_chunks(LOUD_PCM))
+    simulator._audio_interface = MagicMock()
+    simulator._audio_interface.is_assistant_playing.return_value = True  # the agent says goodbye back
+    simulator._audio_interface.is_caller_playing.return_value = False
+    simulator._wait_for_caller_playback = AsyncMock()
+    simulator._on_conversation_end = MagicMock()
+
+    assert await simulator._take_turn("Anything else?") is True
+    assert simulator._can_interrupt() is False
+
+
+@pytest.mark.asyncio
+async def test_barge_in_llm_is_warmed_once_as_barge_ins_become_possible(tmp_path, monkeypatch):
+    simulator = _simulator(tmp_path)
+    simulator.simulator_config = CascadeSimulatorConfig(model="gpt-test", interruption_min_updates=1)
+    simulator._can_interrupt = MagicMock(return_value=True)
+    simulator._decide = AsyncMock()
+    acompletion = AsyncMock()
+    monkeypatch.setattr(cascade_simulator.router, "get", lambda: SimpleNamespace(acompletion=acompletion))
+
+    watcher = asyncio.create_task(simulator._watch_for_interruptions())
+    for partial in ["Can", "Can I", "Can I get"]:
+        simulator._stt.partial = partial
+        simulator._stt.updated.set()
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+    watcher.cancel()
+
+    acompletion.assert_awaited_once()
+    assert acompletion.await_args.kwargs["max_tokens"] == 1

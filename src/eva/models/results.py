@@ -44,13 +44,20 @@ class BargeInLatency(BaseModel):
     """
 
     heard: str = Field(..., description="Agent speech the reply was written from")
+    spoken: str | None = Field(
+        None, description="Agent's text up to where it was interrupted, from the audit log; None if not found"
+    )
+    missed: str | None = Field(None, description="Spoken words after the last one in heard: said but not in the reply")
+    missed_words: int | None = Field(None, description="Word count of missed")
     opener: str = Field(..., description="Pre-rendered opener played on the verdict")
     content: str = Field(..., description="Reply spoken after the opener")
     p_interrupt: float = Field(..., description="Decision model's P(interrupt)")
+    forced: bool = Field(False, description="Fired by forced_interruption_every_turns, not the decision model")
     opener_ms: float = Field(..., description="Opener duration: the cover it buys the reply")
     stt_lag_ms: float | None = Field(None, description="Last heard word ends -> transcript containing it")
     decision_ms: float = Field(..., description="Decision request -> verdict")
     reaction_ms: float | None = Field(None, description="Last heard word ends -> opener out")
+    reply_first_token_ms: float | None = Field(None, description="Opener out -> reply LLM's first text token")
     reply_text_ms: float | None = Field(None, description="Opener out -> reply's first segment sent to TTS")
     tts_first_audio_ms: float | None = Field(None, description="First segment sent -> first TTS audio")
     content_ready_ms: float | None = Field(None, description="Opener out -> first audible reply audio arrived")

@@ -342,3 +342,36 @@ class TestConversationStatsInRun:
         assert result.num_turns == 3
         assert result.num_tool_calls == 1
         assert result.conversation_ended_reason == "time_limit_exceeded"
+
+
+def test_barge_in_missed_words_align_heard_with_the_interrupted_agent_line(tmp_path):
+    from eva.models.results import BargeInLatency
+    from eva.orchestrator.worker import _add_missed_words
+
+    audit_log = tmp_path / "audit_log.json"
+    line = "I can move you to flight S K seven oh three on March twenty fifth departing Austin at eight"
+    audit_log.write_text(
+        json.dumps(
+            {
+                "transcript": [
+                    {"message_type": "assistant", "value": "Hello. [interrupted]"},  # not this barge-in's line
+                    {"message_type": "user", "value": "Hi."},
+                    {"message_type": "assistant", "value": f"{line} [interrupted]"},
+                ]
+            }
+        )
+    )
+    barge_in = BargeInLatency(
+        heard="I can move you to flight SK703 on March 25th",
+        opener="Sorry, wait—",
+        content="Not that one.",
+        p_interrupt=1.0,
+        opener_ms=600.0,
+        decision_ms=200.0,
+    )
+
+    [filled] = _add_missed_words([barge_in], audit_log)
+
+    # STT digits and the TTS text's spelled-out numbers align, so only what came after is missed.
+    assert filled.spoken == line
+    assert (filled.missed, filled.missed_words) == ("departing austin at eight", 4)
