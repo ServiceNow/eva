@@ -1,9 +1,12 @@
 """Code-switch reconciliation: Hindi with English words, rescued only when the English view proves them equal."""
 
+import json
+
 import jiwer
 import pytest
 
-from eva.utils.wer_normalization.code_switch import reconcile_code_switch, tag_token
+from eva.utils.wer_normalization.code_switch import phonetic_match, reconcile_code_switch, tag_token
+from eva.utils.wer_normalization.engine import CONFIGS_DIR, LanguageConfig
 
 
 def reconcile(ref: str, hyp: str):
@@ -95,3 +98,64 @@ def test_plan_examples(ref, hyp, strict, after, english):
     assert result.strict_output.wer == pytest.approx(strict)
     assert reconciled_wer(result) == pytest.approx(after)
     assert result.ref_langs.count("en") == english
+
+
+# --- Phase 2: phonetic matcher -------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "ref_word,hyp_word",
+    [("कैंसल", "cancel"), ("फ्लाइट", "flight"), ("नेटवर्क", "network"), ("प्रॉब्लम", "problem"), ("कन्फर्म", "confirm")],
+)
+def test_phonetic_match(ref_word, hyp_word):
+    assert phonetic_match(ref_word, hyp_word)
+
+
+@pytest.mark.parametrize(
+    "ref_word,hyp_word",
+    [
+        ("कल", "call"),  # stoplist: कल = tomorrow
+        ("बस", "bus"),
+        ("मैं", "main"),
+        ("पर", "par"),
+        ("मुझे", "mujhe"),  # fewer than 3 consonants
+        ("network", "network"),  # reference must be Devanagari
+        ("नेटवर्क", "नेटवर्क"),  # STT must be Latin
+        ("नेटवर्क", "netflix"),
+    ],
+)
+def test_phonetic_no_match(ref_word, hyp_word):
+    assert not phonetic_match(ref_word, hyp_word)
+
+
+@pytest.mark.parametrize(
+    "ref,hyp,strict,after",
+    [
+        ("मेरे लैपटॉप में नेटवर्क प्रॉब्लम है", "मेरे लैपटॉप में network problem है", 1 / 3, 0.0),
+        ("कृपया मेरा अपॉइंटमेंट कन्फर्म कीजिए", "कृपया मेरा appointment confirm कीजिए", 0.2, 0.0),
+        ("मैं कल आऊँगा", "मैं call आऊँगा", 1 / 3, 1 / 3),
+        ("मैं बस से आऊँगा", "मैं bus से आऊँगा", 0.25, 0.25),
+    ],
+)
+def test_phonetic_plan_examples(ref, hyp, strict, after):
+    result = reconcile_code_switch(ref, hyp, "hi", ("en",), phonetic=True)
+    assert result.strict_output.wer == pytest.approx(strict)
+    assert reconciled_wer(result) == pytest.approx(after)
+    assert all(r.matcher == "phonetic" for r in result.rescues)
+
+
+def test_phonetic_rescue_tags_the_reference_word_english():
+    result = reconcile_code_switch("मेरे नेटवर्क में", "मेरे network में", "hi", ("en",), phonetic=True)
+    assert result.ref_langs == ["hi", "en", "hi"]
+    assert result.hyp_langs == ["hi", "en", "hi"]
+
+
+def test_phonetic_is_off_by_default():
+    assert reconcile("मेरे नेटवर्क में", "मेरे network में").rescues == []
+
+
+def test_phonetic_off_in_every_config():
+    assert not LanguageConfig.model_fields["code_switch_phonetic"].default
+    for path in CONFIGS_DIR.glob("*.json"):
+        data = json.loads(path.read_text())
+        assert not (isinstance(data, dict) and data.get("code_switch_phonetic")), path.name

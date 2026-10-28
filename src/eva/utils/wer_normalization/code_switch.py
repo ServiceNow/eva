@@ -24,6 +24,7 @@ from functools import lru_cache
 
 import jiwer
 import regex
+from rapidfuzz.distance import Levenshtein
 
 from eva.utils.wer_normalization.wer_utils import _make_normalizer, normalize_text
 
@@ -38,6 +39,76 @@ _RE_DIGIT_SPACE = regex.compile(r"(?<=\d) (?=\d)")
 MAX_REGION_TOKENS = 4
 
 MATCHER_SECONDARY_VIEW = "secondary_view"
+MATCHER_PHONETIC = "phonetic"
+
+# --- Phonetic matcher (Devanagari reference word vs Latin STT word) ---------
+# Both words are reduced to a consonant key and compared with Levenshtein
+# similarity: नेटवर्क / network -> ntwrk. Vowels, halant and y are dropped;
+# aspirated and unaspirated consonants share a key letter. S = sh, C = ch.
+_DEVANAGARI_KEY = {
+    "क": "k", "ख": "k", "ग": "g", "घ": "g", "ङ": "n",
+    "च": "C", "छ": "C", "ज": "j", "झ": "j", "ञ": "n",
+    "ट": "t", "ठ": "t", "ड": "d", "ढ": "d", "ण": "n",
+    "त": "t", "थ": "t", "द": "d", "ध": "d", "न": "n",
+    "प": "p", "फ": "f", "ब": "b", "भ": "b", "म": "m",
+    "र": "r", "ल": "l", "व": "w", "श": "S", "ष": "S", "स": "s", "ह": "h",
+    "ं": "n", "ँ": "n", "ः": "h", "ृ": "r",
+}  # fmt: skip
+# English spellings, longest first; c before e/i/y is handled separately.
+_LATIN_KEY = [
+    ("tion", "Sn"), ("sion", "Sn"), ("sch", "sk"), ("tch", "C"),
+    ("sh", "S"), ("ch", "C"), ("ph", "f"), ("th", "t"), ("ck", "k"), ("gh", ""), ("wh", "w"), ("qu", "kw"),
+    ("x", "ks"), ("q", "k"), ("v", "w"), ("z", "j"),
+]  # fmt: skip
+_RE_LATIN_WORD = regex.compile(r"[a-z]+")
+_RE_DEVANAGARI_WORD = regex.compile(r"[\p{Devanagari}]+")
+# Hindi words that sound like an English word STT may write instead (कल = tomorrow, not "call").
+_PHONETIC_STOPLIST = frozenset({"कल", "बस", "मैं", "मैन", "पर", "call", "bus", "main", "par"})
+MIN_KEY_CONSONANTS = 3
+MIN_KEY_SIMILARITY = 0.8
+
+
+def _dedupe(key: str) -> str:
+    return regex.sub(r"(.)\1+", r"\1", key)
+
+
+def devanagari_key(word: str) -> str:
+    return _dedupe("".join(_DEVANAGARI_KEY.get(ch, "") for ch in word))
+
+
+def latin_key(word: str) -> str:
+    out = []
+    i = 0
+    while i < len(word):
+        for spelling, key in _LATIN_KEY:
+            if word.startswith(spelling, i):
+                out.append(key)
+                i += len(spelling)
+                break
+        else:
+            ch = word[i]
+            if ch == "c":
+                out.append("s" if word[i + 1 : i + 2] in ("e", "i", "y") else "k")
+            elif ch not in "aeiouy":
+                out.append(ch)
+            i += 1
+    return _dedupe("".join(out))
+
+
+def phonetic_match(ref_word: str, hyp_word: str) -> bool:
+    """Is the Latin STT word a plausible transcription of the Devanagari reference word?
+
+    Conservative on purpose: Devanagari reference and Latin STT only, at least
+    three consonants on both sides, and homophones of Hindi words are excluded.
+    """
+    if not (_RE_DEVANAGARI_WORD.fullmatch(ref_word) and _RE_LATIN_WORD.fullmatch(hyp_word)):
+        return False
+    if ref_word in _PHONETIC_STOPLIST or hyp_word in _PHONETIC_STOPLIST:
+        return False
+    ref_key, hyp_key = devanagari_key(ref_word), latin_key(hyp_word)
+    if min(len(ref_key), len(hyp_key)) < MIN_KEY_CONSONANTS:
+        return False
+    return Levenshtein.normalized_similarity(ref_key, hyp_key) >= MIN_KEY_SIMILARITY
 
 
 @dataclass
@@ -165,8 +236,15 @@ def _error_regions(chunks) -> list[tuple[int, int, int, int]]:
     return regions
 
 
-def reconcile_code_switch(ref_raw: str, hyp_raw: str, primary: str, secondaries: tuple[str, ...]) -> ReconcileResult:
-    """Align one turn with code-switch rescues. See the module docstring."""
+def reconcile_code_switch(
+    ref_raw: str, hyp_raw: str, primary: str, secondaries: tuple[str, ...], phonetic: bool = False
+) -> ReconcileResult:
+    """Align one turn with code-switch rescues. See the module docstring.
+
+    With ``phonetic``, regions the secondary view can't rescue get a second
+    chance word by word: in a pure 1:1 substitution region, each Devanagari
+    reference word whose Latin STT word passes ``phonetic_match`` is rescued.
+    """
     secondary = secondaries[0]
     ref_view = _build_view(ref_raw, primary, secondary)
     hyp_view = _build_view(hyp_raw, primary, secondary)
@@ -178,28 +256,46 @@ def reconcile_code_switch(ref_raw: str, hyp_raw: str, primary: str, secondaries:
     for rs, re_, hs, he in _error_regions(strict_output.alignments[0]):
         if rs == re_ or hs == he or re_ - rs > MAX_REGION_TOKENS or he - hs > MAX_REGION_TOKENS:
             continue
-        ref_v, hyp_v = _project(ref_view, rs, re_), _project(hyp_view, hs, he)
-        if ref_v is None or hyp_v is None or not _same_speech(ref_v, hyp_v):
-            continue
         ref_span = ref_p[rs:re_]
-        attested = ref_v != ref_span or any(
-            ref_view.from_secondary_run[i] and tag_token(ref_p[i], primary, secondary) == secondary
-            for i in range(rs, re_)
-        )
-        if not attested:
-            continue
-        rescues.append(Rescue(" ".join(ref_span), " ".join(hyp_p[hs:he]), MATCHER_SECONDARY_VIEW, rs))
-        replacements.append((hs, he, ref_span))
+        ref_v, hyp_v = _project(ref_view, rs, re_), _project(hyp_view, hs, he)
+        if ref_v is not None and hyp_v is not None and _same_speech(ref_v, hyp_v):
+            attested = ref_v != ref_span or any(
+                ref_view.from_secondary_run[i] and tag_token(ref_p[i], primary, secondary) == secondary
+                for i in range(rs, re_)
+            )
+            if attested:
+                rescues.append(Rescue(" ".join(ref_span), " ".join(hyp_p[hs:he]), MATCHER_SECONDARY_VIEW, rs))
+                replacements.append((hs, he, ref_span))
+                continue
+        if phonetic and re_ - rs == he - hs:
+            for k in range(re_ - rs):
+                if phonetic_match(ref_p[rs + k], hyp_p[hs + k]):
+                    rescues.append(Rescue(ref_p[rs + k], hyp_p[hs + k], MATCHER_PHONETIC, rs + k))
+                    replacements.append((hs + k, hs + k + 1, [ref_p[rs + k]]))
 
-    hyp_tokens = list(hyp_p)
-    for hs, he, ref_span in reversed(replacements):
-        hyp_tokens[hs:he] = ref_span
+    # A phonetic rescue shows the Devanagari reference word is English.
+    ref_langs = [tag_token(t, primary, secondary) for t in ref_p]
+    for rescue in rescues:
+        if rescue.matcher == MATCHER_PHONETIC:
+            ref_langs[rescue.ref_idx] = secondary
+
+    # Rebuild the hypothesis front to back: rescued spans take the reference tokens and tags.
+    hyp_tokens: list[str] = []
+    hyp_langs: list[str] = []
+    pos = 0
+    for (hs, he, ref_span), rescue in sorted(zip(replacements, rescues), key=lambda x: x[0][0]):
+        hyp_tokens += hyp_p[pos:hs] + ref_span
+        hyp_langs += [tag_token(t, primary, secondary) for t in hyp_p[pos:hs]]
+        hyp_langs += ref_langs[rescue.ref_idx : rescue.ref_idx + len(ref_span)]
+        pos = he
+    hyp_tokens += hyp_p[pos:]
+    hyp_langs += [tag_token(t, primary, secondary) for t in hyp_p[pos:]]
 
     return ReconcileResult(
         ref_tokens=ref_p,
         hyp_tokens=hyp_tokens,
         strict_output=strict_output,
         rescues=rescues,
-        ref_langs=[tag_token(t, primary, secondary) for t in ref_p],
-        hyp_langs=[tag_token(t, primary, secondary) for t in hyp_tokens],
+        ref_langs=ref_langs,
+        hyp_langs=hyp_langs,
     )

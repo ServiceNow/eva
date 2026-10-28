@@ -183,6 +183,7 @@ class STTWERMetric(CodeMetric):
         self.language = self.config.get("language", "en")
         language_config = get_language_config(self.language)
         self.code_switch_languages = tuple(language_config.code_switch_languages) if language_config else ()
+        self.code_switch_phonetic = bool(language_config and language_config.code_switch_phonetic)
 
     async def compute(self, context: MetricContext) -> MetricScore:
         """Compute STT WER for user turns."""
@@ -205,7 +206,7 @@ class STTWERMetric(CodeMetric):
             code_switch_results: list[ReconcileResult] = []
             if self.code_switch_languages:
                 code_switch_results = [
-                    reconcile_code_switch(r, h, self.language, self.code_switch_languages)
+                    reconcile_code_switch(r, h, self.language, self.code_switch_languages, self.code_switch_phonetic)
                     for r, h in zip(references, hypotheses)
                 ]
                 references_clean = [" ".join(r.ref_tokens) for r in code_switch_results]

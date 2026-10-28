@@ -130,6 +130,9 @@ class LanguageConfig(BaseModel):
     # Secondary languages speakers mix in (hi: ["en"]). When non-empty, stt_wer
     # re-checks error regions with these languages' rules before counting them.
     code_switch_languages: list[str] = Field(default_factory=list)
+    # Also rescue Devanagari reference words whose Latin STT word sounds the
+    # same (नेटवर्क / network). Off until native-speaker labels validate it.
+    code_switch_phonetic: bool = False
 
     @classmethod
     def load(cls, language: str) -> "LanguageConfig":
