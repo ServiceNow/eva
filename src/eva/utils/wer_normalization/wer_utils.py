@@ -23,7 +23,9 @@ def _make_normalizer(language: str) -> BasicTextNormalizer | GenericTextNormaliz
     """Return a normalizer for *language*, instantiated on demand.
 
     ``language`` must be an exact pipecat Language value (e.g. ``Language.FR.value``).
-    Config files are named after those values verbatim (``fr-FR.json``, ``en.json``).
+    Config files are named after those values verbatim (``fr.json``, ``en.json``).
+    A regional variant without its own config uses its base language's config
+    (``fr-CA`` -> ``fr.json``), so both are normalized the same way.
     """
     base = language.split("-")[0]
     if base == "ja":
@@ -32,8 +34,9 @@ def _make_normalizer(language: str) -> BasicTextNormalizer | GenericTextNormaliz
         return KoreanTextNormalizer()
     if base == "zh":
         return ChineseTextNormalizer()
-    if (_CONFIGS_DIR / f"{language}.json").exists():
-        return GenericTextNormalizer(LanguageConfig.load(language))
+    for code in dict.fromkeys((language, base)):
+        if (_CONFIGS_DIR / f"{code}.json").exists():
+            return GenericTextNormalizer(LanguageConfig.load(code))
     logger.warning(f"No normalizer found for language {language}, using default normalizer")
     return _DEFAULT_NORMALIZER
 

@@ -239,7 +239,7 @@
   "preceding_prefixers": {},
   "following_prefixers": {},
   "suffixers": {},
-  "ignore_patterns": "\\b(euh|heu|hum|hmm|hm|mhm|ah|hein|bah|ben)\\b",
+  "ignore_patterns": "\\b(euh|heu|hum|hmm|hm|mm|mhm|ah|hein|bah|ben)\\b",
   "replacers": {
     "\\bm\\.(?=\\s+[^\\W\\d_]{2})": "monsieur",
     "\\bmme\\b": "madame",
