@@ -512,5 +512,8 @@
     "फ़": "फ",
     "य़": "य"
   },
-  "join_hyphenated_compounds": true
+  "join_hyphenated_compounds": true,
+  "code_switch_languages": [
+    "en"
+  ]
 }

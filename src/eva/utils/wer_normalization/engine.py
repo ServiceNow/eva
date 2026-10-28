@@ -126,6 +126,11 @@ class LanguageConfig(BaseModel):
     # (contains a digit, or is all uppercase letters, e.g. "ABC" / "A").
     spoken_symbols_code_only: dict[str, str] = Field(default_factory=dict)
 
+    # --- Code-switching (used by stt_wer, see code_switch.py) ---------------
+    # Secondary languages speakers mix in (hi: ["en"]). When non-empty, stt_wer
+    # re-checks error regions with these languages' rules before counting them.
+    code_switch_languages: list[str] = Field(default_factory=list)
+
     @classmethod
     def load(cls, language: str) -> "LanguageConfig":
         path = CONFIGS_DIR / f"{language}.json"

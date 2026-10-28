@@ -297,6 +297,15 @@ STT `ABC-123`. Phrases in `spoken_symbols_code_only` are also ordinary words
 neighbouring token has a digit or is all uppercase. English `dash` is handled
 separately in `wer_utils.py`.
 
+### `code_switch_languages` `[str]`
+
+Languages speakers mix in (`hi`: `["en"]`). When set, `stt_wer` re-checks each
+error region with those languages' rules (`code_switch.py`): reference `seven
+बजे` vs STT `7 बजे` is not an error, because the English view of both is `7`.
+A region is only rescued when the reference is itself English (Latin script,
+or changed by the English rules), so reference `7` vs STT `seven` stays an
+error. Empty for every other language, which keeps their scores unchanged.
+
 ---
 
 ## Rarely-edited fields

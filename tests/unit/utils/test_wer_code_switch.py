@@ -1,0 +1,97 @@
+"""Code-switch reconciliation: Hindi with English words, rescued only when the English view proves them equal."""
+
+import jiwer
+import pytest
+
+from eva.utils.wer_normalization.code_switch import reconcile_code_switch, tag_token
+
+
+def reconcile(ref: str, hyp: str):
+    return reconcile_code_switch(ref, hyp, "hi", ("en",))
+
+
+def reconciled_wer(result) -> float:
+    return jiwer.wer(" ".join(result.ref_tokens), " ".join(result.hyp_tokens))
+
+
+@pytest.mark.parametrize(
+    "ref,hyp,rescued",
+    [
+        ("seven बजे", "7 बजे", ("seven", "7")),
+        ("twenty five मार्च", "25 मार्च", ("twenty five", "25")),  # a 2 -> 1 region
+        ("I'm not sure", "I am not sure", ("m", "am")),
+    ],
+)
+def test_english_view_rescues_the_region(ref, hyp, rescued):
+    result = reconcile(ref, hyp)
+    assert result.strict_output.wer > 0
+    assert [(r.expected, r.actual) for r in result.rescues] == [rescued]
+    assert reconciled_wer(result) == 0.0
+
+
+@pytest.mark.parametrize(
+    "ref,hyp",
+    [
+        ("मुझे 7 बजे", "मुझे seven बजे"),  # reference digit is not attested as English: the user may have said सात
+        ("मुझे सात बजे", "मुझे seven बजे"),  # no Hindi -> English cross-comparison
+        ("मेरी flight कल है", "मेरी fight कल है"),  # real STT error
+        ("मैं कल आऊँगा", "मैं call आऊँगा"),  # कल means tomorrow
+    ],
+)
+def test_not_rescued(ref, hyp):
+    result = reconcile(ref, hyp)
+    assert result.rescues == []
+    assert reconciled_wer(result) == pytest.approx(result.strict_output.wer)
+
+
+def test_region_cutting_through_an_english_number_is_rejected():
+    # English view of the reference is "25": the error region "twenty" -> "20"
+    # covers only half of it, so it can't be projected.
+    result = reconcile("twenty five मार्च", "20 five मार्च")
+    assert result.rescues == []
+
+
+def test_region_longer_than_four_tokens_is_not_rescued():
+    result = reconcile("one two three four five", "1 2 3 4 5")
+    assert result.rescues == []
+
+
+def test_reconciled_never_exceeds_strict():
+    result = reconcile("मेरी flight कल seven बजे है", "मेरी fight कल 7 बजे है")
+    assert [(r.expected, r.actual) for r in result.rescues] == [("seven", "7")]
+    assert reconciled_wer(result) == pytest.approx(1 / 6)
+    assert result.strict_output.wer == pytest.approx(2 / 6)
+
+
+def test_adjacent_errors_form_one_region_rescued_only_as_a_whole():
+    # "flight seven" vs "fight 7" is one region; its English views differ, so nothing is rescued.
+    result = reconcile("मेरी flight seven बजे है", "मेरी fight 7 बजे है")
+    assert result.rescues == []
+
+
+@pytest.mark.parametrize(
+    "token,tag",
+    [("seven", "en"), ("मार्च", "en"), ("फ्लाइट", "en"), ("बजे", "hi"), ("25", "num")],
+)
+def test_tag_token(token, tag):
+    assert tag_token(token, "hi", "en") == tag
+
+
+# Phase 0 / Phase 1 examples: (reference, STT, strict WER, reconciled WER, English reference words)
+@pytest.mark.parametrize(
+    "ref,hyp,strict,after,english",
+    [
+        ("मुझे आईटी टीम से बात करनी है", "मुझे IT टीम से बात करनी है", 0.0, 0.0, 2),
+        ("can I book it", "can I book it", 0.0, 0.0, 4),
+        ("मेरी फ़्लाइट seven बजे है", "मेरी फ़्लाइट 7 बजे है", 0.2, 0.0, 2),
+        ("मुझे twenty five मार्च की booking चाहिए", "मुझे 25 मार्च की बुकिंग चाहिए", 2 / 7, 0.0, 4),
+        ("I'm not sure, क्या आप check कर सकते हैं", "I am not sure क्या आप check कर सकते हैं", 0.1, 0.0, 5),
+        ("मुझे 7 बजे की फ़्लाइट चाहिए", "मुझे seven बजे की फ़्लाइट चाहिए", 1 / 6, 1 / 6, 1),
+        ("मेरी flight कल है", "मेरी fight कल है", 0.25, 0.25, 1),
+    ],
+)
+def test_plan_examples(ref, hyp, strict, after, english):
+    result = reconcile(ref, hyp)
+    assert result.strict_output.wer == pytest.approx(strict)
+    assert reconciled_wer(result) == pytest.approx(after)
+    assert result.ref_langs.count("en") == english
