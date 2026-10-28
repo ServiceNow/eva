@@ -44,7 +44,7 @@
   "STTWERMetric": {
     "name": "stt_wer",
     "prompt_hash": null,
-    "source_hash": "4579dc22ed8c",
+    "source_hash": "0b05d08a9f5d",
     "version": "v0.2"
   },
   "SpeakabilityJudgeMetric": {

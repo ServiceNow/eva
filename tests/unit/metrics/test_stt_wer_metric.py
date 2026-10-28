@@ -121,3 +121,74 @@ class TestSTTWERMetricCompute:
         assert 1 in result.details["per_turn_wer"]
         assert 1 in result.details["per_turn_errors"]
         assert "error_summary" in result.details
+
+
+class TestSTTWERCodeSwitch:
+    """Hindi turns with English words: the reconciled WER is the main score."""
+
+    @pytest.mark.asyncio
+    async def test_reconciled_score_and_strict_wer(self):
+        metric = STTWERMetric(config={"language": "hi"})
+        ctx = make_metric_context(
+            intended_user_turns={1: "मेरी फ़्लाइट seven बजे है", 2: "मेरी flight कल है"},
+            transcribed_user_turns={1: "मेरी फ़्लाइट 7 बजे है", 2: "मेरी fight कल है"},
+        )
+        result = await metric.compute(ctx)
+        assert result.details["strict_wer"] == pytest.approx(round(2 / 9, 3))
+        assert result.score == result.details["wer"] == pytest.approx(round(1 / 9, 3))
+        assert result.details["wer"] <= result.details["strict_wer"]
+        assert result.details["per_turn_wer"] == {1: 0.0, 2: 0.25}
+        assert result.details["per_turn_code_switch_rescues"] == {
+            1: [{"expected": "seven", "actual": "7", "matcher": "secondary_view"}]
+        }
+        assert result.details["total_substitutions"] == 1
+
+    @pytest.mark.asyncio
+    async def test_code_switch_details_and_sub_metrics(self):
+        metric = STTWERMetric(config={"language": "hi"})
+        ctx = make_metric_context(
+            intended_user_turns={1: "मेरी फ़्लाइट seven बजे है", 2: "मेरी flight कल है"},
+            transcribed_user_turns={1: "मेरी फ़्लाइट 7 बजे है", 2: "मेरी fight कल है"},
+        )
+        result = await metric.compute(ctx)
+        code_switch = result.details["code_switch"]
+        assert code_switch["languages"] == ["hi", "en"]
+        assert code_switch["code_switched_words"] == 3  # फ़्लाइट, seven, flight
+        assert code_switch["rescued_words"] == 1
+        assert code_switch["rescues_by_matcher"] == {"secondary_view": 1}
+        # Per-language attribution: fight -> flight is an English error.
+        assert code_switch["per_language"]["en"] == {"wer": 0.333, "ref_words": 3, "errors": 1}
+        assert code_switch["per_language"]["hi"] == {"wer": 0.0, "ref_words": 6, "errors": 0}
+
+        subs = result.sub_metrics
+        assert {"wer_hi", "wer_en", "code_switch_word_rate", "code_switch_rescue_rate"} <= subs.keys()
+        assert subs["wer_en"].name == "stt_wer.wer_en"
+        assert subs["wer_en"].score == pytest.approx(0.333)
+        assert subs["code_switch_word_rate"].score == pytest.approx(0.333)
+        assert subs["code_switch_rescue_rate"].score == pytest.approx(0.111)
+
+    @pytest.mark.asyncio
+    async def test_no_english_words_omits_wer_en(self):
+        metric = STTWERMetric(config={"language": "hi"})
+        ctx = make_metric_context(
+            intended_user_turns={1: "मैं कल आऊंगा"},
+            transcribed_user_turns={1: "मैं कल आऊंगा"},
+        )
+        result = await metric.compute(ctx)
+        assert result.details["code_switch"]["per_language"]["en"]["wer"] is None
+        assert "wer_en" not in result.sub_metrics
+        assert result.details["per_turn_code_switch_rescues"] == {}
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("language", ["en", "fr", "de", "es", "it", "nl", "ja"])
+    async def test_languages_without_code_switching_are_unchanged(self, language):
+        metric = STTWERMetric(config={"language": language})
+        ctx = make_metric_context(
+            intended_user_turns={1: "I'm at seven thirty", 2: "the quick brown fox"},
+            transcribed_user_turns={1: "I am at 7:30", 2: "the quick green fox"},
+        )
+        result = await metric.compute(ctx)
+        assert metric.code_switch_languages == ()
+        for key in ("strict_wer", "code_switch", "per_turn_code_switch_rescues"):
+            assert key not in result.details
+        assert set(result.sub_metrics) == {"substitution_rate", "deletion_rate", "insertion_rate"}
