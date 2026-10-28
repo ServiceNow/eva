@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from eva.metrics.diagnostic.speakability import SpeakabilityJudgeMetric
+from eva.utils.log_processing import AnnotationLabel
 
 from .conftest import make_judge_metric, make_metric_context
 
@@ -195,3 +196,24 @@ async def test_no_turns_to_evaluate(metric):
 
     assert result.error == "No turns to evaluate"
     assert result.score == 0.0
+
+
+def test_annotation_labels_stripped_from_prompt(metric):
+    """EVA-inserted annotation labels are removed; the agent's own brackets and line breaks are kept."""
+    labels = " ".join(label.value for label in AnnotationLabel)
+    context = make_metric_context(
+        intended_assistant_turns={
+            1: f"Let me check that. {labels} Your flight is confirmed [note to self].\n- Seat 12A",
+            2: f"{AnnotationLabel.ASSISTANT_INTERRUPTS} {AnnotationLabel.PAUSE_TOOL_CALL}",
+            3: "Goodbye!",
+        },
+    )
+
+    transcript = metric.format_transcript(context)
+
+    for label in AnnotationLabel:
+        assert label.value not in transcript
+    assert "[note to self]" in transcript
+    assert "Let me check that. Your flight is confirmed [note to self].\n- Seat 12A" in transcript
+    assert "[Turn 2]" not in transcript
+    assert metric.get_expected_turn_ids(context) == [1, 3]
