@@ -192,3 +192,17 @@ class TestSTTWERCodeSwitch:
         for key in ("strict_wer", "code_switch", "per_turn_code_switch_rescues"):
             assert key not in result.details
         assert set(result.sub_metrics) == {"substitution_rate", "deletion_rate", "insertion_rate"}
+
+    @pytest.mark.asyncio
+    async def test_phonetic_rescue_counts_in_hindi_score(self):
+        metric = STTWERMetric(config={"language": "hi"})
+        ctx = make_metric_context(
+            intended_user_turns={1: "मेरे लैपटॉप में नेटवर्क प्रॉब्लम है"},
+            transcribed_user_turns={1: "मेरे लैपटॉप में network problem है"},
+        )
+        result = await metric.compute(ctx)
+        assert metric.code_switch_phonetic
+        assert result.details["strict_wer"] == pytest.approx(0.333)
+        assert result.details["wer"] == 0.0
+        assert result.details["code_switch"]["rescues_by_matcher"] == {"phonetic": 2}
+        assert result.details["code_switch"]["per_language"]["en"]["ref_words"] == 3  # लैपटॉप, नेटवर्क, प्रॉब्लम

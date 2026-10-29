@@ -515,5 +515,6 @@
   "join_hyphenated_compounds": true,
   "code_switch_languages": [
     "en"
-  ]
+  ],
+  "code_switch_phonetic": true
 }

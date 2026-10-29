@@ -154,8 +154,11 @@ def test_phonetic_is_off_by_default():
     assert reconcile("मेरे नेटवर्क में", "मेरे network में").rescues == []
 
 
-def test_phonetic_off_in_every_config():
+def test_phonetic_on_only_for_hindi():
     assert not LanguageConfig.model_fields["code_switch_phonetic"].default
-    for path in CONFIGS_DIR.glob("*.json"):
-        data = json.loads(path.read_text())
-        assert not (isinstance(data, dict) and data.get("code_switch_phonetic")), path.name
+    enabled = {
+        path.name
+        for path in CONFIGS_DIR.glob("*.json")
+        if isinstance(data := json.loads(path.read_text()), dict) and data.get("code_switch_phonetic")
+    }
+    assert enabled == {"hi.json"}
