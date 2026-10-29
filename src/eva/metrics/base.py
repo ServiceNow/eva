@@ -211,19 +211,20 @@ class BaseMetric(ABC):
         self.logger = get_logger(f"metrics.{self.name}")
         self.prompt_manager = get_prompt_manager()
 
-    def get_judge_prompt(self, prompt_key: str = "user_prompt", language: str = "en", **variables) -> str:
+    def get_judge_prompt(self, prompt_key: str = "user_prompt", *, language: str, **variables) -> str:
         """Get judge prompt using PromptManager.
 
         Stamps the unrendered template's sha256[:12] into the prompt-hash contextvar so
         any MetricScore built afterwards in the same compute() picks it up automatically.
-        When the language has judge guidance, it is rendered into ``{language_guidance}``
-        and included in the hash.
+        ``language`` is required so that no caller silently drops the guidance: when the
+        language has judge guidance, it is rendered into ``{language_guidance}`` and
+        included in the hash.
         """
         prompt_path = f"judge.{self.name}.{prompt_key}"
         template = self.prompt_manager.get_template(prompt_path)
         guidance = render_language_guidance(self.name, language)
         _CURRENT_PROMPT_HASH.set(hash_prompt_template(f"{template}\n{guidance}" if guidance else template))
-        variables.setdefault("language_guidance", guidance)
+        variables["language_guidance"] = guidance
         return self.prompt_manager.get_prompt(prompt_path, **variables)
 
     @abstractmethod
