@@ -810,6 +810,14 @@ judge:
         - Filler words, phrasing, word choice, sentence structure
         - Slight pacing or prosody differences
 
+        **Spelled codes and mixed-language speech:**
+        - Letters and digits of trace entities must be spoken with their {expected_language} names. A letter or digit name from another language inside a {expected_language} turn (e.g., the English "jay" or "six" in a non-English turn) means the entity was not articulated in {expected_language}: rating = 0. An entity that is itself in another language in the trace (e.g., an English street or product name) may be said in that language.
+        - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
+        - Confusable letters and digits: check them carefully, but flag only when you clearly hear the other letter or digit, not because of your own transcription or poor audio quality. If unsure, give the benefit of the doubt.
+        - A phrase or sentence in another language inside a {expected_language} turn (e.g., "one moment", "Let me check" in a non-English turn): rating = 0 under the wrong-language rule above; quote those words in the explanation.
+        - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
+        - A number, date or time reading that is unusual but unambiguous is not by itself a reason for rating = 0; rate 0 only if a native {expected_language} listener could take it for a different value.
+
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: Every entity from the conversation trace that the agent speaks in this turn is clearly and correctly articulated.
         - **0 (Low Fidelity)**: One or more entities from the conversation trace are garbled, mispronounced, or indistinguishable in the audio.
