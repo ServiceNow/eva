@@ -72,6 +72,18 @@ hi: |
   - English loanwords and place names should sound as in Indian English; a pronunciation a Hindi listener would not recognise ('Los Angeles', 'aisle' as 'es-le', 'Datadog'): `entity_error` if it is an entity, otherwise `garbled_hallucination`.
   - Hindi speech mixes in English loanwords (flight, booking, ticket, seat): not wrong language.
 
+ja: |
+  - Letter names in codes are katakana: エー, ビー, シー, ディー, イー, エフ, ジー, エイチ/エッチ, アイ, ジェー, ケー, エル, エム, エヌ, オー, ピー, キュー, アール, エス, ティー, ユー, ブイ/ヴィー, ダブリュー, エックス, ワイ, ゼット/ズィー; these, even with an English-like accent, are correct.
+  - Codes must be read letter by letter: a letter group read as a word (INC as インク, PAR as パー, REQ as 'request'): `entity_error`.
+  - English digit names typically heard in Japanese codes: 'six', 'two'.
+  - Digits in codes are expected as ゼロ/れい, いち, に, さん, よん, ご, ろく, なな, はち, きゅう. し (4), しち (7) or く (9) inside a code can be heard as シー (C) or いち (1): not an error by itself; `entity_error` only if a Japanese listener could take it for a different value.
+  - Homophones: Q キュー = 9 きゅう; do not flag only for that, use the trace or intended text. V said ビー (B) changes the code: `entity_error`.
+  - Confusable letters: エム/エヌ (M/N), ビー/ブイ (B/V), ディー/ティー (D/T), ジー/ゼット (G/Z).
+  - Counter readings that are correct (し, しち, く are right here): 4時 よじ, 7時 しちじ, 9時 くじ, 4月 しがつ, 7月 しちがつ, 9月 くがつ, 1日 ついたち, 2日 ふつか, 4日 よっか, 8日 ようか, 20日 はつか, 24日 にじゅうよっか, 1分 いっぷん, 10分 じゅっぷん, 2人 ふたり, 4人 よにん. Readings such as よんじ, きゅうじ, よんにち: not an error by itself; `entity_error` only if a Japanese listener could take it for a different value.
+  - Years are read as numbers (千九百八十八年); a digit-by-digit year: not an error by itself; `entity_error` only if a Japanese listener could take it for a different value.
+  - Katakana pronunciation of English names (コンフルエンス) is correct; a different word (カンファレンス for Confluence): `entity_error` if it is an entity, otherwise `garbled_hallucination`.
+  - Established loanwords (not code-switching): katakana loanwords such as チケット, フライト; 'HR Portal' only if that is the official system name.
+
 ko: |
   - Letter names in codes are Hangul: 에이, 비, 씨, 디, 이, 에프, 지, 에이치, 아이, 제이, 케이, 엘, 엠, 엔, 오, 피, 큐, 알, 에스, 티, 유, 브이, 더블유, 엑스, 와이, 제트/지; these are correct.
   - Digits in codes are Sino-Korean: 공/영, 일, 이, 삼, 사, 오, 육, 칠, 팔, 구. English digit names inside a Korean turn ('six', 'two'): rating = 0 with `wrong_language` (add `entity_error` if it sounds like a different Korean letter or digit). Judge against the intended text: if the intended text itself contains the English words or digit names, reproducing them is not an error. Native numbers (하나, 둘) inside a code: not an error by itself; `entity_error` only if a Korean listener could take it for a different value.

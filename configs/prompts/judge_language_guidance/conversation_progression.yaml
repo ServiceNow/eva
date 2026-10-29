@@ -1,0 +1,9 @@
+# Per-language guidance for the conversation_progression judge, rendered into its language_guidance slot.
+# Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
+# Covers homophone disambiguation before tool calls.
+
+ja: |
+  - Some spoken values are homophones in Japanese: きゅう is both the digit 9 and the letter Q (キュー), and the same name reading can be written with different kanji (隼人 / 隼斗, 斉藤 / 斎藤). The words alone cannot tell the assistant which one the user meant.
+  - If a code or name contains such an element, a lookup failed or the user corrected the value, and the assistant kept calling tools with guessed interpretations or looped over several turns instead of asking which was meant (e.g. 「アルファベットのキューですか、数字のきゅうですか」, 「お名前はどのような漢字をお書きになりますか」), flag it once under question_quality ("Failing to ask for clarification when the user's request was genuinely ambiguous"). Do not also count each differently-guessed retry under unnecessary_tool_calls; repeating a call with identical parameters remains an unnecessary_tool_calls flag as usual.
+  - Trying the other interpretation once after a failed lookup is a retry with corrected parameters, not a flag. Do not flag the absence of a question when the first lookup succeeded and nothing signals ambiguity.
+  - Asking such a disambiguation question, or asking again after a failed lookup, is never redundant_statements and never information_loss, even though the user already said the value: the spoken value did not determine the letter, digit or kanji.

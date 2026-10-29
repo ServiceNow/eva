@@ -70,3 +70,13 @@ hi: |
   - Spoken Hindi routinely mixes in English words (Hinglish). Isolated loanwords such as ID, OK, login, password, email, ticket, booking, flight, seat, account, form, mobile number, PNR are normal Hindi usage, whether written in Devanagari or Latin script, and are not violations.
   - Repeatedly using English procedural phrases that have common Hindi equivalents (Employee ID → कर्मचारी ID, last name → उपनाम / अंतिम नाम, confirmation number → पुष्टि संख्या, six digits → छह अंक) is a minor issue: at most 2.
   - Evidence is Latin-script English phrases in an otherwise Devanagari turn; quote them.
+
+ja: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Q (キュー) and 9 (きゅう) are homophones, so a code heard as "...きゅう..." (e.g. M4Q9) is inherently ambiguous until the user says which was meant.
+  - C (シー) vs 4 (し) and 7 (しち); 7 (しち) vs 1 (いち), which is why なな is preferred for 7.
+  - B/V (ビー/ブイ, often both said ビー); G (ジー), J (ジェー), Z (ゼット/ズィー) and D (ディー) collide under noise; L/R are merged in names spelled by sound. 0 may be ゼロ, れい or まる (and まる also suggests the letter O).
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Katakana loanwords (パスワード, ログイン, チケット, ポータル, アカウント, メール) are normal Japanese, not code-switching. Latin-letter codes and acronyms (EMP, INC, PC, ID) are fine; a transcript that renders a spoken katakana loanword in Latin letters (e.g. "OK") is not by itself evidence of English speech.
+  - Latin-script English terms where an established Japanese term exists ("HR Portal" → 人事ポータル, "sick leave" → 病気休暇) are a minor issue: at most 2.

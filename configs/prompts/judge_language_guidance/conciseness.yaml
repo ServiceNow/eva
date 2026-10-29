@@ -28,3 +28,8 @@ hi: |
 ko: |
   - Normal Korean service register (covered by the cultural-norms exception): formal 합쇼체 endings (-습니다, -ㅂ니까) and polite 해요체 endings (-세요, -요), addressing the user as 고객님, and set phrases (잠시만 기다려 주세요, 확인해 드리겠습니다, 감사합니다, 도와드리겠습니다), even though they lengthen the sentence.
   - Typical Korean repetition that IS filler: 감사합니다 twice in one turn, or a term with its synonym or translation (비밀번호(PIN)).
+
+ja: |
+  - Normal Japanese service register (covered by the cultural-norms exception): keigo and fixed service formulas such as かしこまりました, 恐れ入りますが, 少々お待ちください, お待たせいたしました, 確認いたします / 確認させていただきます, ありがとうございます at the opening or closing. Humble and honorific verb forms are longer than plain forms without adding cognitive load; never flag them as verbosity_or_filler.
+  - Typical Japanese repetition that IS filler: ありがとうございます twice in one turn; the same sentence restated within the turn (e.g. "Confluenceの読み取り専用アクセスですね。" twice); a loanword together with its native synonym ("PIN／暗証番号", "暗証番号（PIN）", "sick leave（病気休暇）").
+  - Different formulas for different functions in one turn (e.g. お待たせいたしました then 確認いたしました) are not repetition.

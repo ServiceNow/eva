@@ -16,3 +16,8 @@ hi: |
 ko: |
   - 만-based grouping and separators do not change the value: 1만 2천 = 12,000 = 만 이천; 12만 = 120,000; 1,000 = 1000. Mark these correct when the value matches.
   - 0 read as 공 (e.g. 공일공 = 010) is the standard reading in phone numbers and codes and matches 0.
+
+ja: |
+  - Katakana letter names match their Latin letters (エー = A, ビー = B, シー = C, ディー = D, ジー = G, ジェー = J, エム = M, エヌ = N, ピー = P, キュー = Q, ブイ = V, ダブリュー = W, ゼット = Z).
+  - Kana, kanji and Arabic digit readings match the digit: ゼロ / れい / まる / 〇 = 0, いち / 一 = 1, よん / し = 4, なな / しち = 7, きゅう / く = 9. But Q and 9 are different values: キュー transcribed or used as 9 (or きゅう as Q) is incorrect, even though they sound the same.
+  - Names: a kana or romaji rendering of a kanji name is still a match (近藤 = こんどう = Kondo), per the Non-Latin scripts rule. A common noun or ordinary word written in place of a name (混同 "confusion" for the surname 近藤) is incorrect: the name was not recognized as a name. A different kanji spelling of the same name reading (隼斗 for 隼人, 斎藤 for 斉藤) cannot be recovered from audio alone, so it follows the first-mention rule in the Correctness Criteria, exactly like Meier vs Meyer: correct on first mention, incorrect once the user has specified the kanji (e.g. 「隼に人です」).
