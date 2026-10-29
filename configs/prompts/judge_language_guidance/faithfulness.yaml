@@ -15,7 +15,7 @@ de: |
 
 fr: |
   **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
-  - Numbers 70-99 are compound and become ambiguous when split or transcribed: "soixante-dix-sept" = 77 vs "soixante, dix-sept" = 60 17; "quatre-vingt-deux" = 82 vs "4 22" / "80 2"; "quatre-vingt-dix" = 90 vs "4 20 10". A code containing such a sequence (e.g. "TOU 13 60 17A") needed digit-by-digit confirmation before it was committed.
+  - Numbers 70-99 are compound and become ambiguous when split or transcribed: "soixante-dix-sept" = 77 vs "soixante, dix-sept" = 60 17; "quatre-vingt-deux" = 82 vs "4 22" / "80 2"; "quatre-vingt-dix" = 90 vs "4 20 10". A code containing such a sequence (e.g. "BRX 60 17") needed digit-by-digit confirmation before it was committed.
   - Letter names rhyming on -é: B/C/D/G/P/T/V/W ("bé, cé, dé, gé, pé, té, vé, double-vé"); G ("gé") and J ("ji") are routinely swapped; M/N ("emme/enne"); I vs Y ("i grec").
 
   **Language policy (violating_policies, "Not communicating in the language specified"):**
@@ -45,7 +45,7 @@ it: |
 
 nl: |
   **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
-  - V/F ("vee/ef"; initial v is devoiced in many accents, so a spoken V is often captured as F, e.g. V7H8N3 → F7H8N3); Z/S; G/CH (both /ɣ~x/); H/A ("haa/aa"), which can add or drop an H; B/P/D/T ("bee, pee, dee, tee").
+  - V/F ("vee/ef"; initial v is devoiced in many accents, so a spoken V is often captured as F, e.g. V4K2R9 → F4K2R9); Z/S; G/CH (both /ɣ~x/); H/A ("haa/aa"), which can add or drop an H; B/P/D/T ("bee, pee, dee, tee").
   - IJ vs Y ("ei" vs "ypsilon / i-grec"; Y is sometimes said "ij"); EI and IJ are the same sound.
   - "zeven"/"negen" (7/9) rhyme, which is why telephone speech uses "zeuven".
 
@@ -73,7 +73,7 @@ hi: |
 
 ja: |
   **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
-  - Q (キュー) and 9 (きゅう) are homophones, so a code heard as "...きゅう..." (e.g. M4Q9) is inherently ambiguous until the user says which was meant.
+  - Q (キュー) and 9 (きゅう) are homophones, so a code heard as "...きゅう..." (e.g. K7Q9) is inherently ambiguous until the user says which was meant.
   - C (シー) vs 4 (し) and 7 (しち); 7 (しち) vs 1 (いち), which is why なな is preferred for 7.
   - B/V (ビー/ブイ, often both said ビー); G (ジー), J (ジェー), Z (ゼット/ズィー) and D (ディー) collide under noise; L/R are merged in names spelled by sound. 0 may be ゼロ, れい or まる (and まる also suggests the letter O).
 

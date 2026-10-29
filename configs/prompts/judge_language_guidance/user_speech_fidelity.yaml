@@ -10,12 +10,12 @@ de: |
   - Units before tens is correct: fünfundsiebzig = 75, vierundzwanzig = 24. A swapped value (siebenundfünfzig for 75): rating 1 (entity error).
   - Times: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45 are all correct; 'halb drei' for 3:30: rating 1 (entity error).
   - Dates: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'. A date read as digit groups a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf'): rating at most 2 while the value is still clear; rating 1 if a German listener could take it for a different value.
-  - A name with its umlaut replaced or lost (Köhler said as 'Kohler' or 'Kerr'): rating 1 (entity error). Meier/Meyer-type spelling variants are fine.
+  - A name with its umlaut replaced or lost (Böhm said as 'Bohm'): rating 1 (entity error). Meier/Meyer-type spelling variants are fine.
   - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords (Ticket, Login, Account, Laptop). A half-English pronunciation of a German word ('Perfekt') is accent, not wrong language.
 
 nl: |
   - Letter names in spelled codes: A aa, B bee, C cee, D dee, E ee, F ef, G gee (Dutch g), H haa, I ie, J jee, K kaa, L el, M em, N en, O oo, P pee, Q kuu, R er, S es, T tee, U uu, V vee, W wee, X iks, Y ij / griekse ij / ypsilon, Z zet; IJ may be said as one letter. Upper or lower case need not be spoken.
-  - Dutch bee, cee, dee, pee, tee sound like English; do not call those English. Clearly English names ('ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee') or English digits ('six', 'one') inside a Dutch turn: a wrong-language deviation: rating at most 2 while the value is still unambiguous. Judge against the intended text: if the intended text itself contains the English words or digit names, reproducing them is not an error.
+  - Dutch bee, cee, dee, pee, tee sound like English; do not call those English. English letter or digit names typically heard in Dutch codes: 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
   - If the English name sounds like a different Dutch letter, it changes the code: English E 'ee' = Dutch I 'ie', English A 'ay' ~ Dutch E 'ee', English I 'eye' ~ Dutch IJ: rating 1 (entity error).
   - Confusable letters: V/F (Dutch v is often devoiced), G/CH, M/N, B/P, D/T.
   - EI and IJ sound the same in names; do not flag a name only because the spelling cannot be heard.
@@ -42,7 +42,7 @@ fr-CA: |
 
 es: |
   - Letter names in spelled codes: A a, B be, C ce, D de, E e, F efe, G ge, H hache, I i, J jota, K ka, L ele, M eme, N ene, Ñ eñe, O o, P pe, Q cu, R erre, S ese, T te, U u, V uve (also ve), W uve doble / doble ve / doble u, X equis, Y i griega / ye, Z zeta. Digits cero, uno, dos ... nueve.
-  - English letter or digit names inside a Spanish turn ('em' for M, 'jay', 'double-u', 'six', 'two'), including inside 'M de Madrid': a wrong-language deviation: rating at most 2 while the value is still unambiguous. Judge against the intended text: if the intended text itself contains the English words or digit names, reproducing them is not an error.
+  - English letter or digit names typically heard in Spanish codes: 'em' for M, 'jay', 'double-u', 'six', 'two', also inside 'M de Madrid'.
   - If the English name sounds like a different Spanish letter, it changes the code: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E, English J 'jay' ~ Spanish Y 'ye': rating 1 (entity error).
   - Spelling words are valid ('M de Madrid', 'B de Barcelona', 'be larga', 've corta').
   - B and V ('be' / 've') sound the same in Spanish: do not flag a B/V swap you cannot hear; only 'uve' said for B (or 'be' for V) is a letter error: rating 1 (entity error).
@@ -53,7 +53,7 @@ es: |
 
 it: |
   - Letter names in spelled codes: A a, B bi, C ci, D di, E e, F effe, G gi, H acca, I i, J i lunga (also 'gei'), K cappa, L elle, M emme, N enne, O o, P pi, Q cu, R erre, S esse, T ti, U u, V vu (also vi), W doppia vu, X ics, Y ipsilon / i greca, Z zeta. Digits zero, uno, due ... nove.
-  - English bee, dee, pee, tee, vee, gee sound like the Italian names; do not call those English. Clearly English names ('ay', 'ee' for E, 'eye', 'aitch', 'kay', 'ar', 'you', 'double-u', 'why', 'zee') or English digits ('six', 'two') inside an Italian turn: a wrong-language deviation: rating at most 2 while the value is still unambiguous. Judge against the intended text: if the intended text itself contains the English words or digit names, reproducing them is not an error.
+  - English bee, dee, pee, tee, vee, gee sound like the Italian names; do not call those English. English letter or digit names typically heard in Italian codes: 'ay', 'ee' for E, 'eye', 'aitch', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'two'.
   - If the English name sounds like a different Italian letter, it changes the code: English E 'ii' = Italian I, English A 'ei' ~ Italian E: rating 1 (entity error).
   - A letter replaced by an ordinary word ('Gioia' for J): rating 1 (entity error). Spelling words are valid ('J come Jolly', 'M come Milano').
   - Confusable letters: M/N, B/P/D/T (bi/pi/di/ti), C/G (ci/gi), F/S (effe/esse).
@@ -86,7 +86,7 @@ ja: |
 
 ko: |
   - Letter names in codes are Hangul: 에이, 비, 씨, 디, 이, 에프, 지, 에이치, 아이, 제이, 케이, 엘, 엠, 엔, 오, 피, 큐, 알, 에스, 티, 유, 브이, 더블유, 엑스, 와이, 제트/지; these are correct.
-  - Digits in codes are Sino-Korean: 공/영, 일, 이, 삼, 사, 오, 육, 칠, 팔, 구. English digit names inside a Korean turn ('six', 'two'): a wrong-language deviation: rating at most 2 while the value is still unambiguous. Judge against the intended text: if the intended text itself contains the English words or digit names, reproducing them is not an error. Native numbers (하나, 둘) inside a code: rating at most 2 while the value is still clear; rating 1 if a Korean listener could take it for a different value.
+  - Digits in codes are Sino-Korean: 공/영, 일, 이, 삼, 사, 오, 육, 칠, 팔, 구. English digit names typically heard in Korean codes: 'six', 'two'. Native numbers (하나, 둘) inside a code: rating at most 2 while the value is still clear; rating 1 if a Korean listener could take it for a different value.
   - Homophones: E 이 = 2 이, Z 지 = G 지; do not flag only for that, use the trace or intended text.
   - Confusable letters and digits: 엠/엔 (M/N), 비/피 (B/P), 제이/지 (J/G), 디/티 (D/T), 일/이 (1/2).
   - Native vs Sino-Korean, correct: hours native (세 시, 열두 시), minutes Sino (삼십 분; 세 시 반 = 3:30), months Sino with 유월 (6) and 시월 (10), days Sino (십오 일), money Sino (만 오천 원), people and items native (두 명, 세 개), ages native (스물다섯 살) or Sino with 세 (이십오 세).
