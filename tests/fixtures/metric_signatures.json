@@ -49,7 +49,7 @@
   },
   "SpeakabilityJudgeMetric": {
     "name": "speakability",
-    "prompt_hash": "0e159b407bf9",
+    "prompt_hash": "815f51f63b04",
     "source_hash": "b76318002d8f",
     "version": "v0.3"
   },
