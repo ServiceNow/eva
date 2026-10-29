@@ -493,11 +493,37 @@
   "replacers": {},
   "strip_space_before_apostrophe": false,
   "ordinal_suffix_pattern": "",
-  "spelling_map_path": null,
+  "spelling_map_path": "hi_loanwords.json",
   "letter_class": "a-zऀ-ॿ",
   "preserve_combining_marks": true,
   "decimal_separator": "dot",
   "thousand_separators": [
     "comma"
-  ]
+  ],
+  "char_folds": {
+    "़": "",
+    "ँ": "ं",
+    "क़": "क",
+    "ख़": "ख",
+    "ग़": "ग",
+    "ज़": "ज",
+    "ड़": "ड",
+    "ढ़": "ढ",
+    "फ़": "फ",
+    "य़": "य"
+  },
+  "join_hyphenated_compounds": true,
+  "code_switch_languages": [
+    "en"
+  ],
+  "code_switch_phonetic": true,
+  "spoken_symbols": {
+    "डैश": "-",
+    "अंडरस्कोर": "_",
+    "underscore": "_",
+    "स्लैश": "/"
+  },
+  "spoken_symbols_code_only": {
+    "slash": "/"
+  }
 }

@@ -1,0 +1,27 @@
+{
+  "_comment": "Katakana spellings of product and system names used in the scenarios, mapped to their Latin name. The Japanese normalizer maps both the Latin name and every katakana spelling listed here to the first katakana spelling listed for that name, on both reference and hypothesis, so CER compares katakana with katakana. Only whole words are mapped. List the standard spelling first; do not add misspellings (e.g. コンフュエンス), which then get partial credit as near-misses instead of counting as correct.",
+  "loanwords": {
+    "コンフルエンス": "confluence",
+    "データドッグ": "datadog",
+    "ウィンドウズ": "windows",
+    "ウインドウズ": "windows",
+    "スラック": "slack",
+    "フィグマ": "figma",
+    "セールスフォース": "salesforce",
+    "アドビ": "adobe",
+    "マイクロソフト": "microsoft",
+    "ジラ": "jira",
+    "ドッカー": "docker",
+    "マックブック": "macbook",
+    "マックオーエス": "macos",
+    "ワイファイ": "wifi",
+    "アトラシアン": "atlassian",
+    "インテリジェイ": "intellij",
+    "ジェットブレインズ": "jetbrains",
+    "シンクパッド": "thinkpad",
+    "レノボ": "lenovo",
+    "デル": "dell",
+    "アップル": "apple",
+    "ズーム": "zoom"
+  }
+}

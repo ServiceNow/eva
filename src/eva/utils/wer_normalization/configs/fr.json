@@ -239,16 +239,15 @@
   "preceding_prefixers": {},
   "following_prefixers": {},
   "suffixers": {},
-  "ignore_patterns": "\\b(euh|heu|hum|hmm|hm|mhm|ah|hein|bah|ben)\\b",
+  "ignore_patterns": "\\b(euh|heu|hum|hmm|hm|mm|mhm|ah|hein|bah|ben)\\b",
   "replacers": {
-    "\\bm\\b": "monsieur",
+    "\\bm\\.(?=\\s+[^\\W\\d_]{2})": "monsieur",
     "\\bmme\\b": "madame",
     "\\bmlle\\b": "mademoiselle",
     "\\bdr\\b": "docteur",
     "\\bdre\\b": "docteure",
     "\\bpr\\b": "professeur",
     "\\bpre\\b": "professeure",
-    "\\bme\\b": "maitre",
     "\\bmgr\\b": "monseigneur",
     "\\bst\\b": "saint",
     "\\bste\\b": "sainte"
@@ -262,5 +261,17 @@
   "thousand_separators": [
     "dot",
     "space"
-  ]
+  ],
+  "spoken_symbols": {
+    "trait d'union": "-",
+    "tiret": "-",
+    "tiret bas": "_",
+    "underscore": "_",
+    "barre oblique": "/",
+    "arobase": "@",
+    "a commercial": "@"
+  },
+  "spoken_symbols_code_only": {
+    "barre": "/"
+  }
 }

@@ -12,6 +12,7 @@ keep dedicated normalizer classes; this engine is for alphabetic languages.
 
 import json
 import re
+import unicodedata
 from collections.abc import Iterator
 from fractions import Fraction
 from pathlib import Path
@@ -105,12 +106,50 @@ class LanguageConfig(BaseModel):
     # outer text normalizer uses ``remove_symbols_keep_marks`` instead of
     # ``remove_symbols_and_diacritics`` so vowel signs survive.
     preserve_combining_marks: bool = False
+    # Single-character orthographic folds applied (after NFC) right after
+    # lowercasing, to the text and to all number-word vocab. Values may be
+    # multi-character. HI: nukta -> "", chandrabindu -> anusvara;
+    # DE: ä -> ae, ö -> oe, ü -> ue, ß -> ss.
+    char_folds: dict[str, str] = Field(default_factory=dict)
+
+    # --- Pre-normalization (applied in wer_utils.normalize_text) -----------
+    # Join letter-only hyphenated compounds ("anmelde-konto" -> "anmeldekonto").
+    # Digit-bearing hyphen groups are always joined, for every language.
+    join_hyphenated_compounds: bool = False
+    # Spoken punctuation words used when spelling IDs, mapped to the written
+    # symbol: {"trait d'union": "-"}. Replaced (glued) when the word sits
+    # between two word tokens. Matching ignores case; spaces / apostrophes in
+    # a phrase match any whitespace or apostrophe.
+    spoken_symbols: dict[str, str] = Field(default_factory=dict)
+    # Same, for words that are also common in ordinary speech (es "barra",
+    # de "Strich"): only replaced when a neighbouring token looks like a code
+    # (contains a digit, or is all uppercase letters, e.g. "ABC" / "A").
+    spoken_symbols_code_only: dict[str, str] = Field(default_factory=dict)
+
+    # --- Code-switching (used by stt_wer, see code_switch.py) ---------------
+    # Secondary languages speakers mix in (hi: ["en"]). When non-empty, stt_wer
+    # re-checks error regions with these languages' rules before counting them.
+    code_switch_languages: list[str] = Field(default_factory=list)
+    # Also rescue a word written in Devanagari on one side and in Latin on the
+    # other when both sound the same (नेटवर्क / network). Off by default.
+    code_switch_phonetic: bool = False
 
     @classmethod
     def load(cls, language: str) -> "LanguageConfig":
         path = CONFIGS_DIR / f"{language}.json"
         with open(path) as f:
             return cls.model_validate(json.load(f))
+
+
+def make_char_folder(char_folds: dict[str, str]):
+    """Return a str -> str function applying NFC + ``char_folds`` (identity when empty)."""
+    if not char_folds:
+        return lambda s: s
+    for k in char_folds:
+        if len(k) != 1:
+            raise ValueError(f"char_folds keys must be single characters, got {k!r}")
+    table = str.maketrans(char_folds)
+    return lambda s: unicodedata.normalize("NFC", s).translate(table)
 
 
 class GenericNumberNormalizer:
@@ -128,7 +167,9 @@ class GenericNumberNormalizer:
         # the input. Without this, vocab entries like "zwölf"/"dreißig"/"fünf"
         # never match because the input has already been folded to ASCII.
         _strip_fn = remove_symbols_keep_marks if config.preserve_combining_marks else remove_symbols_and_diacritics
-        strip = lambda w: _strip_fn(w, keep="")  # noqa: E731
+        # Vocab must see the same char folds as the text (e.g. de "fünf" -> "fuenf").
+        fold = make_char_folder(config.char_folds)
+        strip = lambda w: _strip_fn(fold(w), keep="")  # noqa: E731
         _strip_dict = lambda d: {strip(k): v for k, v in d.items()}  # noqa: E731
         # For suffixed dicts the value is (int, suffix_str); strip the suffix too,
         # otherwise emitted tokens (e.g. "2ème") won't match digit-form outputs
@@ -179,7 +220,7 @@ class GenericNumberNormalizer:
         if config.reversed_units and self.cardinals:
             cardinals_pat = "|".join(re.escape(w) for w in sorted(self.cardinals, key=len, reverse=True))
             if config.conjunction_word and self.tens:
-                conj_stripped = remove_symbols_and_diacritics(config.conjunction_word, keep="")
+                conj_stripped = remove_symbols_and_diacritics(fold(config.conjunction_word), keep="")
                 tens_pat = "|".join(re.escape(w) for w in sorted(self.tens, key=len, reverse=True))
                 conj = re.escape(conj_stripped)
                 self._reversed_units_glued = re.compile(rf"\b({cardinals_pat}){conj}({tens_pat})\b", re.IGNORECASE)
@@ -574,13 +615,16 @@ class GenericTextNormalizer(BaseTextNormalizer):
     def __init__(self, config: LanguageConfig):
         self.config = config
         self.standardize_numbers = GenericNumberNormalizer(config)
+        self._fold = make_char_folder(config.char_folds)
         self.spelling_map: dict[str, str] = {}
         if config.spelling_map_path:
             with open(CONFIGS_DIR / config.spelling_map_path) as f:
-                self.spelling_map = json.load(f)
+                # Values are compared against folded text, so fold them too.
+                self.spelling_map = {k: self._fold(v) for k, v in json.load(f).items()}
 
     def __call__(self, s: str) -> str:
         s = s.lower()
+        s = self._fold(s)
         s = self._remove_markup(s)
         s = self._apply_ignore_patterns(s, self.config.ignore_patterns)
         if self.config.strip_space_before_apostrophe:
