@@ -26,6 +26,15 @@ fr-CA: |
   - Same compound-number system as European French (no "septante/nonante"), so the 77 vs "60 17" ambiguity applies.
   - Québec usage prefers courriel, billet, clavardage over e-mail, ticket, chat; either choice is register, not a language-policy violation.
 
+es: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - B and V are the same sound /b/ (speakers disambiguate with "be larga / be de Barcelona" vs "uve / ve corta"); LL/Y merge (yeísmo); G before e/i and J are both /x/; S/C/Z merge for seseo speakers and are confusable under noise everywhere; H is silent.
+  - Letter names rhyming on -e: B/C/D/P/T ("be, ce, de, pe, te").
+  - "dos"/"doce" (2/12) can be misheard.
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Common anglicisms of Spanish are not a language violation: email, login, check-in, ticket (in IT contexts), online.
+
 nl: |
   **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
   - V/F ("vee/ef"; initial v is devoiced in many accents, so a spoken V is often captured as F, e.g. V7H8N3 → F7H8N3); Z/S; G/CH (both /ɣ~x/); H/A ("haa/aa"), which can add or drop an H; B/P/D/T ("bee, pee, dee, tee").

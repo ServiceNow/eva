@@ -39,3 +39,14 @@ fr-CA: |
   - Québec: Z may also be said 'zed'; this is not English.
   - Contact with English does not make English letter or digit names, INC/EMP spelled in English, or English phrases acceptable; apply the rules above.
   - Times are often said on the 24-hour clock ('quinze heures trente') or as 'trois heures et quart'; both are correct.
+
+es: |
+  - Letter names in spelled codes: A a, B be, C ce, D de, E e, F efe, G ge, H hache, I i, J jota, K ka, L ele, M eme, N ene, Ñ eñe, O o, P pe, Q cu, R erre, S ese, T te, U u, V uve (also ve), W uve doble / doble ve / doble u, X equis, Y i griega / ye, Z zeta. Digits cero, uno, dos ... nueve.
+  - English letter or digit names inside a Spanish turn ('em' for M, 'jay', 'double-u', 'six', 'two'), including inside 'M de Madrid': a wrong-language deviation: rating at most 2 while the value is still unambiguous. Judge against the intended text: if the intended text itself contains the English words or digit names, reproducing them is not an error.
+  - If the English name sounds like a different Spanish letter, it changes the code: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E, English J 'jay' ~ Spanish Y 'ye': rating 1 (entity error).
+  - Spelling words are valid ('M de Madrid', 'B de Barcelona', 'be larga', 've corta').
+  - B and V ('be' / 've') sound the same in Spanish: do not flag a B/V swap you cannot hear; only 'uve' said for B (or 'be' for V) is a letter error: rating 1 (entity error).
+  - Confusable letters and numbers: M/N (eme/ene), N/Ñ, F/S (efe/ese), sesenta/setenta (60/70).
+  - Times: 'las quince treinta', 'las tres y media', 'las tres menos cuarto' = 2:45 are correct; 'menos cuarto' for 3:45: rating 1 (entity error).
+  - Dates: 'el uno de marzo' and 'el primero de marzo' are both valid; years 'dos mil veintiséis', 'mil novecientos noventa'.
+  - Established loanwords (not code-switching): email, ok, check-in.
