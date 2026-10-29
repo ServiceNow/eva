@@ -67,6 +67,7 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
             intended_turns_formatted = self._format_intended_turns(intended_turns)
 
             prompt = self.get_judge_prompt(
+                language=context.language,
                 intended_turns_formatted=intended_turns_formatted,
                 expected_language=context.language_display_name,
             )

@@ -7,8 +7,8 @@
   },
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
-    "prompt_hash": "57caf9a18a3c",
-    "source_hash": "9f183871e45a",
+    "prompt_hash": "5fdd118b6fd8",
+    "source_hash": "7d251695fd2f",
     "version": "v0.1"
   },
   "ConversationCorrectlyFinishedMetric": {
@@ -19,8 +19,8 @@
   },
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
-    "prompt_hash": "174cdf93b398",
-    "source_hash": "84e43143d00d",
+    "prompt_hash": "f26237934000",
+    "source_hash": "0edf89e90978",
     "version": "v0.2"
   },
   "ConversationValidEndMetric": {
@@ -31,8 +31,8 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "78028821ce37",
-    "source_hash": "ee9b8ea530a4",
+    "prompt_hash": "741590f3d7c1",
+    "source_hash": "b2cf38e3fbc7",
     "version": "v0.3"
   },
   "ResponseSpeedMetric": {
@@ -49,20 +49,20 @@
   },
   "SpeakabilityJudgeMetric": {
     "name": "speakability",
-    "prompt_hash": "1e4f78cb051e",
-    "source_hash": "7abcd995909a",
+    "prompt_hash": "9d39f642366b",
+    "source_hash": "b76318002d8f",
     "version": "v0.3"
   },
   "SpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "c614dd12d4fe",
-    "source_hash": "5e61505dc729",
+    "prompt_hash": "889e34a06a58",
+    "source_hash": "aba2c27cb6af",
     "version": "v0.4"
   },
   "TTSFidelityMetric": {
     "name": "tts_fidelity",
-    "prompt_hash": "c3a02ab03f06",
-    "source_hash": "10b97af355f7",
+    "prompt_hash": "99e126158b75",
+    "source_hash": "317128c2ea72",
     "version": "v0.3"
   },
   "TaskCompletion": {
@@ -79,8 +79,8 @@
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
-    "prompt_hash": "8492d1f0d168",
-    "source_hash": "018436ab79ac",
+    "prompt_hash": "6531de5920bd",
+    "source_hash": "e8e81aec84d5",
     "version": "v0.4"
   },
   "TurnTakingMetric": {
@@ -92,13 +92,13 @@
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
     "prompt_hash": "21527fa8d79b",
-    "source_hash": "7f5dcec51568",
+    "source_hash": "b8a700ea5b89",
     "version": "v0.1"
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "849e13c42e3b",
-    "source_hash": "5463b901a11b",
+    "prompt_hash": "1127744357ae",
+    "source_hash": "6625af8e00f9",
     "version": "v0.2"
   }
 }

@@ -247,11 +247,13 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
         """
         if context.is_audio_native:
             conversation, tool_call_ids = self._build_audio_native_conversation(context)
-            prompt = self.get_judge_prompt(prompt_key="audio_native_prompt", conversation=conversation)
+            prompt = self.get_judge_prompt(
+                prompt_key="audio_native_prompt", language=context.language, conversation=conversation
+            )
             return prompt, tool_call_ids
 
         turn_ids = self._get_turns_to_evaluate(context)
-        prompt = self.get_judge_prompt(user_turns=self._format_user_turns(turn_ids, context))
+        prompt = self.get_judge_prompt(language=context.language, user_turns=self._format_user_turns(turn_ids, context))
         return prompt, turn_ids
 
     @staticmethod

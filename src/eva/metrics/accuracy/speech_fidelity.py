@@ -65,6 +65,7 @@ class SpeechFidelityMetric(SpeechFidelityBaseMetric):
             audio_b64 = self.encode_audio_segment(audio_segment)
 
             prompt = self.get_judge_prompt(
+                language=context.language,
                 conversation_trace_formatted=trace_formatted,
                 expected_language=context.language_display_name,
             )

@@ -12,6 +12,7 @@ from typing import Any
 from pipecat.transcriptions.language import Language
 from pydub import AudioSegment
 
+from eva.metrics.language_guidance import render_language_guidance
 from eva.metrics.utils import (
     aggregate_per_turn_scores,
     audio_to_base64,
@@ -210,14 +211,19 @@ class BaseMetric(ABC):
         self.logger = get_logger(f"metrics.{self.name}")
         self.prompt_manager = get_prompt_manager()
 
-    def get_judge_prompt(self, prompt_key: str = "user_prompt", **variables) -> str:
+    def get_judge_prompt(self, prompt_key: str = "user_prompt", language: str = "en", **variables) -> str:
         """Get judge prompt using PromptManager.
 
         Stamps the unrendered template's sha256[:12] into the prompt-hash contextvar so
         any MetricScore built afterwards in the same compute() picks it up automatically.
+        When the language has judge guidance, it is rendered into ``{language_guidance}``
+        and included in the hash.
         """
         prompt_path = f"judge.{self.name}.{prompt_key}"
-        _CURRENT_PROMPT_HASH.set(hash_prompt_template(self.prompt_manager.get_template(prompt_path)))
+        template = self.prompt_manager.get_template(prompt_path)
+        guidance = render_language_guidance(self.name, language)
+        _CURRENT_PROMPT_HASH.set(hash_prompt_template(f"{template}\n{guidance}" if guidance else template))
+        variables.setdefault("language_guidance", guidance)
         return self.prompt_manager.get_prompt(prompt_path, **variables)
 
     @abstractmethod
@@ -412,7 +418,7 @@ class ConversationTextJudgeMetric(TextJudgeMetric):
             prompt_vars = self.get_prompt_variables(context, transcript_text)
 
             # Get and format prompt
-            prompt = self.get_judge_prompt(**prompt_vars)
+            prompt = self.get_judge_prompt(language=context.language, **prompt_vars)
 
             # Call judge
             response, raw_response = await self.call_judge(prompt, context)
@@ -538,7 +544,9 @@ class PerTurnConversationJudgeMetric(TextJudgeMetric):
             if not transcript_text:
                 return MetricScore(name=self.name, score=0.0, normalized_score=0.0, error="No turns to evaluate")
 
-            prompt = self.get_judge_prompt(**self.get_prompt_variables(context, transcript_text))
+            prompt = self.get_judge_prompt(
+                language=context.language, **self.get_prompt_variables(context, transcript_text)
+            )
             response_text, usage = await self.llm_client.generate_text([{"role": "user", "content": prompt}])
             self._log_token_usage(context, self.llm_client.model, self.llm_client.params, prompt, usage, response_text)
             parsed = parse_judge_response_list(response_text)

@@ -20,6 +20,7 @@ import eva.metrics.diagnostic  # noqa: F401
 import eva.metrics.experience  # noqa: F401
 import eva.metrics.validation  # noqa: F401
 from eva.metrics.base import AudioJudgeMetric, BaseMetric, TextJudgeMetric
+from eva.metrics.language_guidance import GUIDANCE_DIR
 from eva.metrics.versioning import hash_prompt_template
 from eva.utils.prompt_manager import get_prompt_manager
 
@@ -76,6 +77,9 @@ def _prompt_hash_for_metric(cls: type[BaseMetric]) -> str | None:
     if not isinstance(templates, dict):
         raise KeyError(f"No judge prompts found for metric {cls.name!r}")
     combined = "\n".join(templates[key] for key in sorted(templates) if isinstance(templates[key], str))
+    guidance_file = GUIDANCE_DIR / f"{cls.name}.yaml"
+    if guidance_file.is_file():
+        combined += "\n" + guidance_file.read_text(encoding="utf-8")
     return hash_prompt_template(combined)
 
 
