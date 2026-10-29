@@ -23,3 +23,19 @@ nl: |
   - 2026 as 'tweeduizendzesentwintig' or 'twintig zesentwintig' are both valid.
   - Times: 'half drie' = 2:30 (not 3:30), 'kwart over twee' = 2:15, 'kwart voor drie' = 2:45, 'tien voor half drie' = 2:20, 'veertien uur dertig' are correct; 'half drie' for 3:30: `entity_error`.
   - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords, including acronyms used in Dutch (ID, FMLA, I-9; Dutch letter names such as 'ie-dee' are preferred but English ones are not wrong language) and 'sorry', 'oké', which are standard Dutch.
+
+fr: |
+  - Letter names in spelled codes: A a, B bé, C cé, D dé, E e (schwa), F effe, G gé, H ache, I i, J ji, K ka, L elle, M emme, N enne, O o, P pé, Q ku, R erre, S esse, T té, U u (French u), V vé, W double-vé, X iks, Y i grec, Z zède. Digits zéro, un, deux, trois ... six (said 'sis'), sept, huit, neuf.
+  - English letter or digit names typically heard in French codes: 'bee' for B, 'jay', 'double-u', 'six' with an English 'ks', 'two', INC or EMP spelled with English names.
+  - If the English name sounds like a different French letter, it changes the code: English G 'djee' ~ French J 'ji', English J 'djay' ~ French G 'gé', English E 'ii' = French I: rating = 0 with `entity_error` and `wrong_language`.
+  - Spelling words are valid ('A comme Anatole', 'M comme Marcel').
+  - Confusable letters: M/N (emme/enne), B/D/P/T (bé/dé/pé/té), G/J (gé/ji), F/S (effe/esse).
+  - Numbers: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze are correct; a different value (soixante-sept for 77): `entity_error`. Liaison and elision (six heures, dix-huit) are normal.
+  - Times: 'quinze heures trente', 'trois heures et demie', 'trois heures moins le quart' = 2:45, 'midi', 'minuit' are correct; 'moins le quart' for 3:45: `entity_error`.
+  - Dates: 'le premier mars' is correct; 'le un mars': not an error by itself; `entity_error` only if a French listener could take it for a different value. Years 'deux mille vingt-six', 'mille neuf cent quatre-vingt-dix' or 'dix-neuf cent quatre-vingt-dix' are valid.
+  - Established loanwords (not code-switching): ticket, e-mail, week-end, OK.
+
+fr-CA: |
+  - Québec: Z may also be said 'zed'; this is not English.
+  - Contact with English does not make English letter or digit names, INC/EMP spelled in English, or English phrases acceptable; apply the rules above.
+  - Times are often said on the 24-hour clock ('quinze heures trente') or as 'trois heures et quart'; both are correct.

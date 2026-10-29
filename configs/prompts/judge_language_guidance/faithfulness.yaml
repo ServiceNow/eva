@@ -13,6 +13,19 @@ de: |
   **Language policy (violating_policies, "Not communicating in the language specified"):**
   - Established anglicisms of German are normal German, not a language violation: Ticket, Login, Account, E-Mail, Check-in, Gate, Upgrade, Status.
 
+fr: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Numbers 70-99 are compound and become ambiguous when split or transcribed: "soixante-dix-sept" = 77 vs "soixante, dix-sept" = 60 17; "quatre-vingt-deux" = 82 vs "4 22" / "80 2"; "quatre-vingt-dix" = 90 vs "4 20 10". A code containing such a sequence (e.g. "TOU 13 60 17A") needed digit-by-digit confirmation before it was committed.
+  - Letter names rhyming on -é: B/C/D/G/P/T/V/W ("bé, cé, dé, gé, pé, té, vé, double-vé"); G ("gé") and J ("ji") are routinely swapped; M/N ("emme/enne"); I vs Y ("i grec").
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Common anglicisms of French are not a language violation: login, ticket, e-mail, check-in, badge, mail.
+
+fr-CA: |
+  **Québec French specifics:**
+  - Same compound-number system as European French (no "septante/nonante"), so the 77 vs "60 17" ambiguity applies.
+  - Québec usage prefers courriel, billet, clavardage over e-mail, ticket, chat; either choice is register, not a language-policy violation.
+
 nl: |
   **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
   - V/F ("vee/ef"; initial v is devoiced in many accents, so a spoken V is often captured as F, e.g. V7H8N3 → F7H8N3); Z/S; G/CH (both /ɣ~x/); H/A ("haa/aa"), which can add or drop an H; B/P/D/T ("bee, pee, dee, tee").
