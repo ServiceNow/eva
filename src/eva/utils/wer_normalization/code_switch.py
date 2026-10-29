@@ -11,9 +11,10 @@ Two independent WER passes can't be combined, so instead:
 2. Build a secondary view V of the raw text: primary-script runs keep the
    primary rules, the other runs get the secondary rules.
 3. For each error region of the P alignment, project it onto V.
-4. Rescue the region only when both V spans are identical and the reference
+4. Rescue the region only when both V spans are identical, the reference
    is attested as secondary-language speech (it is in the secondary script, or
-   the secondary rules changed it).
+   the secondary rules changed it), and the hypothesis span comes from
+   secondary-script text (so "seven" vs सात, a translation, stays an error).
 
 Rescued hypothesis regions are replaced with the reference tokens and the
 alignment is recomputed, so the reconciled WER can never exceed the strict one.
@@ -24,7 +25,6 @@ from functools import lru_cache
 
 import jiwer
 import regex
-from rapidfuzz.distance import Levenshtein
 
 from eva.utils.wer_normalization.wer_utils import _make_normalizer, normalize_text
 
@@ -42,9 +42,10 @@ MATCHER_SECONDARY_VIEW = "secondary_view"
 MATCHER_PHONETIC = "phonetic"
 
 # --- Phonetic matcher (Devanagari reference word vs Latin STT word) ---------
-# Both words are reduced to a consonant key and compared with Levenshtein
-# similarity: नेटवर्क / network -> ntwrk. Vowels, halant and y are dropped;
-# aspirated and unaspirated consonants share a key letter. S = sh, C = ch.
+# Both words are reduced to a consonant key, which must be identical:
+# नेटवर्क / network -> ntwrk. Vowels, halant and y are dropped; aspirated and
+# unaspirated consonants share a key letter. S = sh, C = ch. A consonant
+# repeated across a vowel is kept twice (refunded -> rfndd, not रिफंड rfnd).
 _DEVANAGARI_KEY = {
     "क": "k", "ख": "k", "ग": "g", "घ": "g", "ङ": "n",
     "च": "C", "छ": "C", "ज": "j", "झ": "j", "ञ": "n",
@@ -55,8 +56,8 @@ _DEVANAGARI_KEY = {
     "ं": "n", "ँ": "n", "ः": "h", "ृ": "r",
 }  # fmt: skip
 # Anusvara / chandrabindu take the place of the next consonant: m before a
-# labial (नंबर = number), n otherwise (अंत).
-_LABIALS = frozenset("पफबभम")
+# labial (नंबर = number), n otherwise (अंत, कंफर्म = confirm).
+_LABIALS = frozenset("पबभम")
 # English spellings, longest first; c, g and s are handled separately.
 _LATIN_KEY = [
     ("tion", "Sn"), ("sion", "Sn"), ("sch", "sk"), ("tch", "C"), ("dge", "j"),
@@ -65,24 +66,46 @@ _LATIN_KEY = [
 ]  # fmt: skip
 _RE_LATIN_WORD = regex.compile(r"[a-z]+")
 _RE_DEVANAGARI_WORD = regex.compile(r"[\p{Devanagari}]+")
-# Hindi words that sound like an English word STT may write instead (कल = tomorrow, not "call").
-_PHONETIC_STOPLIST = frozenset({"कल", "बस", "मैं", "मैन", "पर", "call", "bus", "main", "par"})
+# Native Hindi words with the same consonant key as an English word STT may
+# write instead (कल = tomorrow, not "call"; कमरा = room, not "camera").
+_PHONETIC_STOPLIST = frozenset(
+    {"कल", "बस", "मैं", "मैन", "पर", "कमरा", "कमरे", "मिलना", "मिलने", "ज़रूरत", "जरूरत"}
+    | {"call", "bus", "main", "par", "camera", "million"}
+)
 MIN_KEY_CONSONANTS = 3
-MIN_KEY_SIMILARITY = 0.8
+
+# A vowel sign or independent vowel separates two consonants in the key.
+_DEVANAGARI_VOWELS = frozenset("अआइईउऊएऐओऔऑािीुूेैोौॉॅृ")
 
 
-def _dedupe(key: str) -> str:
-    return regex.sub(r"(.)\1+", r"\1", key)
+def _dedupe(parts: list[str]) -> str:
+    """Join key letters; "|" marks a vowel. Repeats merge only when no vowel separates them."""
+    key, prev = [], ""
+    for part in parts:
+        if part == "|":
+            prev = ""
+            continue
+        for ch in part:
+            if ch != prev:
+                key.append(ch)
+            prev = ch
+    return "".join(key)
 
 
 def devanagari_key(word: str) -> str:
-    out = []
+    parts = []
     for i, ch in enumerate(word):
         if ch in "ंँ":
-            out.append("m" if word[i + 1 : i + 2] in _LABIALS else "n")
-        else:
-            out.append(_DEVANAGARI_KEY.get(ch, ""))
-    return _dedupe("".join(out))
+            parts.append("m" if word[i + 1 : i + 2] in _LABIALS else "n")
+        elif ch in _DEVANAGARI_VOWELS:
+            parts.append("|")
+        elif ch in _DEVANAGARI_KEY:
+            parts.append(_DEVANAGARI_KEY[ch])
+            # A consonant without a vowel sign or halant carries the inherent vowel.
+            nxt = word[i + 1 : i + 2]
+            if nxt and nxt not in _DEVANAGARI_VOWELS and nxt not in "्ंँः़":
+                parts.append("|")
+    return _dedupe(parts)
 
 
 def latin_keys(word: str) -> set[str]:
@@ -91,7 +114,7 @@ def latin_keys(word: str) -> set[str]:
     g before e/i/y can be hard or soft (target, manager -> ज), and s between
     vowels can be s or z (basic, business -> ज़, which folds to ज).
     """
-    keys = [""]
+    keys: list[list[str]] = [[]]
     i = 0
     while i < len(word):
         for spelling, key in _LATIN_KEY:
@@ -110,18 +133,58 @@ def latin_keys(word: str) -> set[str]:
             elif ch not in "aeiouy":
                 options = (ch,)
             else:
-                options = ("",)
+                options = ("|",)
             i += 1
-        keys = [k + o for k in keys for o in options]
+        keys = [k + [o] for k in keys for o in options]
     return {_dedupe(k) for k in keys}
+
+
+# English vowel letters each Devanagari vowel can be spelled with. Only the
+# first vowel of a word is compared; the inherent vowel and अ match anything.
+_FIRST_VOWEL = {
+    "ा": "ao", "आ": "ao", "ि": "iey", "ी": "iey", "इ": "iey", "ई": "iey",
+    "ु": "uo", "ू": "uo", "उ": "uo", "ऊ": "uo", "े": "eai", "ए": "eai",
+    "ै": "ae", "ऐ": "ae", "ो": "o", "ओ": "o", "ौ": "oa", "औ": "oa", "ॉ": "oa", "ऑ": "oa",
+}  # fmt: skip
+_RE_LATIN_VOWEL_GROUP = regex.compile(r"[aeiouy]+")
+
+
+def _first_devanagari_vowel(word: str) -> str | None:
+    """English letters the word's first vowel may be spelled with; None = any."""
+    for i, ch in enumerate(word):
+        vowel = ch if ch in _FIRST_VOWEL else None
+        if vowel is None and ch in _DEVANAGARI_KEY and ch not in "ंँःृ":
+            nxt = word[i + 1 : i + 2]
+            if nxt == "्":
+                continue
+            if nxt not in _FIRST_VOWEL:
+                return None  # inherent vowel
+            vowel, i = nxt, i + 1
+        if vowel is None:
+            if ch == "अ":
+                return None
+            continue
+        letters = _FIRST_VOWEL[vowel]
+        if vowel in "आा" and word[i + 1 : i + 2] in ("इ", "य"):
+            letters += "iy"  # आइ / आय is the English "i" of flight, license
+        return letters
+    return None
+
+
+def _first_vowel_compatible(deva_word: str, latin_word: str) -> bool:
+    letters = _first_devanagari_vowel(deva_word)
+    group = _RE_LATIN_VOWEL_GROUP.search(latin_word)
+    return letters is None or group is None or any(c in letters for c in group.group())
 
 
 def phonetic_match(ref_word: str, hyp_word: str) -> bool:
     """Are the two words the same English word, one in Devanagari and one in Latin script?
 
     Works in both directions (कन्फर्म / confirm, booking / बुकिंग). Conservative
-    on purpose: one word per script, at least three consonants on both sides,
-    and homophones of Hindi words are excluded.
+    on purpose: one word per script, identical consonant keys of at least three
+    consonants, and native Hindi words with an English look-alike are excluded.
+    The first vowels must also be compatible, so booking / backing differ;
+    words that differ only in later vowels still match (confirm / conform).
     """
     if _RE_LATIN_WORD.fullmatch(ref_word):
         ref_word, hyp_word = hyp_word, ref_word
@@ -132,10 +195,7 @@ def phonetic_match(ref_word: str, hyp_word: str) -> bool:
     ref_key = devanagari_key(ref_word)
     if len(ref_key) < MIN_KEY_CONSONANTS:
         return False
-    return any(
-        len(hyp_key) >= MIN_KEY_CONSONANTS and Levenshtein.normalized_similarity(ref_key, hyp_key) >= MIN_KEY_SIMILARITY
-        for hyp_key in latin_keys(hyp_word)
-    )
+    return ref_key in latin_keys(hyp_word) and _first_vowel_compatible(ref_word, hyp_word)
 
 
 @dataclass
@@ -290,7 +350,10 @@ def reconcile_code_switch(
                 ref_view.from_secondary_run[i] and tag_token(ref_p[i], primary, secondary) == secondary
                 for i in range(rs, re_)
             )
-            if attested:
+            # The STT side must be English too: intended "seven" vs STT सात is a
+            # translation, even though the Hindi rules also turn सात into 7.
+            hyp_secondary = all(hyp_view.from_secondary_run[i] for i in range(hs, he))
+            if attested and hyp_secondary:
                 rescues.append(Rescue(" ".join(ref_span), " ".join(hyp_p[hs:he]), MATCHER_SECONDARY_VIEW, rs))
                 replacements.append((hs, he, ref_span))
                 continue

@@ -314,17 +314,27 @@ error. Empty for every other language, which keeps their scores unchanged.
 ### `code_switch_phonetic` `bool`
 
 `true` for `hi` only. When `true`, a word written in Devanagari on one side and
-in Latin on the other is also rescued when both sound the same (`नेटवर्क` vs
-`network`, both reduced to the consonant key `ntwrk`), in either direction. The
-Latin key tries both readings of a soft g (`manager` = `मैनेजर`) and of an s
-between vowels (`business` = `बिज़नेस`); anusvara before a labial is `m`
-(`नंबर` = `number`). Guards: 1:1 words only, at least three consonants on both
-sides, and a stoplist of Hindi words that sound like English ones
-(`कल`/`call`, `बस`/`bus`).
+in Latin on the other is also rescued when both sound the same, in either
+direction. Both words are reduced to a consonant key, and the keys must be
+identical (`नेटवर्क` and `network` are both `ntwrk`):
+
+- The Latin key tries both readings of a soft g (`manager` = `मैनेजर`) and of
+  an s between vowels (`reason` = `रीज़न`). Anusvara before प/ब/भ/म is `m`
+  (`नंबर` = `number`), otherwise `n` (`कंफर्म` = `confirm`).
+- A consonant repeated across a vowel is kept twice, so another form of the
+  word doesn't match (`refunded`, `services` vs `रिफंड`, `सर्विस`).
+- The first vowels must be compatible (`बुकिंग` matches `booking`, not
+  `backing`). Words that differ only in a later vowel still match
+  (`कन्फर्म` / `conform`).
+
+Guards: 1:1 words only, at least three consonants, and a stoplist of native
+Hindi words with an English look-alike (`कल`/`call`, `कमरा`/`camera`,
+`मिलना`/`million`).
 
 `hi_loanwords.json` keeps only the loanwords the matcher can't handle: words
-with fewer than three consonants (`code`/`कोड`, `time`/`टाइम`) and month
-names whose Hindi form differs (`january`/`जनवरी`).
+with fewer than three consonants (`code`/`कोड`, `time`/`टाइम`), Hindi forms
+that differ (`january`/`जनवरी`, `september`/`सितंबर`) and words whose first
+vowel is spelled unusually (`business`/`बिज़नेस`).
 
 ---
 

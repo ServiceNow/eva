@@ -39,6 +39,8 @@ def test_english_view_rescues_the_region(ref, hyp, rescued):
         ("मुझे सात बजे", "मुझे seven बजे"),  # no Hindi -> English cross-comparison
         ("मेरी flight कल है", "मेरी fight कल है"),  # real STT error
         ("मैं कल आऊँगा", "मैं call आऊँगा"),  # कल means tomorrow
+        ("मुझे seven चाहिए", "मुझे सात चाहिए"),  # STT translated the English number into Hindi
+        ("twenty five मार्च", "पच्चीस मार्च"),
     ],
 )
 def test_not_rescued(ref, hyp):
@@ -122,13 +124,14 @@ def test_plan_examples(ref, hyp, strict, after, english):
         ("सर्जरी", "surgery"),
         ("टारगेट", "target"),
         # s between vowels can sound like ज़ (folded to ज); plain s still matches
-        ("बिजनेस", "business"),
+        ("रीजन", "reason"),
         ("प्लीज", "please"),
         ("बेसिक", "basic"),
         # anusvara before a labial is m
         ("नंबर", "number"),
         ("कैंपस", "campus"),
-        ("सितंबर", "september"),
+        # anusvara before फ stays n
+        ("कंफर्मेशन", "confirmation"),
     ],
 )
 def test_phonetic_match(ref_word, hyp_word):
@@ -152,6 +155,21 @@ def test_phonetic_match_works_in_both_directions(latin, deva):
         ("network", "network"),  # one word in each script
         ("नेटवर्क", "नेटवर्क"),
         ("नेटवर्क", "netflix"),
+        # native Hindi words with an English look-alike
+        ("कमरा", "camera"),  # room
+        ("मिलना", "million"),  # to meet
+        ("जानकारी", "junkyard"),  # information
+        ("जरूरत", "jarrett"),  # need
+        # a different English word: keys must be identical, first vowels compatible
+        ("ट्रांसफर", "transform"),
+        ("बुकिंग", "backing"),
+        ("कैंसल", "console"),
+        # another form of the word: a consonant repeated across a vowel counts twice
+        ("नंबर", "numbers"),
+        ("नेटवर्क", "networks"),
+        ("पासवर्ड", "passwords"),
+        ("सर्विस", "services"),
+        ("रिफंड", "refunded"),
     ],
 )
 def test_phonetic_no_match(ref_word, hyp_word):
