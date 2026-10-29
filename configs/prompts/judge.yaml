@@ -891,6 +891,14 @@ judge:
         - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
         - Name spelling variants where the pronunciation is identical (e.g., German Meyer/Meier/Maier/Mayer)
 
+        ### Spelled Codes and Mixed-Language Speech
+        - Letters and digits in spelled codes must be spoken with their {expected_language} names. A letter or digit name from another language inside a {expected_language} turn (e.g., the English "jay" or "six" in a non-English turn) is a wrong-language deviation: rating at most 2 while the value is still unambiguous, and 1 (entity error) if it sounds like a different {expected_language} letter or digit. If the intended text itself contains those foreign words or names, reproducing them is not an error.
+        - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
+        - Confusable letters and digits: check them carefully, but flag only when you clearly hear the other letter or digit, not because of your own transcription or poor audio quality. If unsure, give the benefit of the doubt.
+        - A phrase or sentence in another language inside a {expected_language} turn (e.g., "one moment", "Let me check" in a non-English turn) is wrong language for part of the turn: rating at most 2, and 1 if it replaces an entity or the turn no longer makes sense.
+        - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
+        - A number, date or time reading that is unusual but unambiguous is not an entity error: rating at most 2 if it sounds unnatural, and 1 only if a native {expected_language} listener could take it for a different value.
+
         ## Rating Scale (per turn)
         - **3 (High Fidelity)**: 
           - All expected entities spoken correctly (names, dates, destinations, codes, etc)
