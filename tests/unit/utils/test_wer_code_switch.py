@@ -74,27 +74,28 @@ def test_adjacent_errors_form_one_region_rescued_only_as_a_whole():
 
 @pytest.mark.parametrize(
     "token,tag",
-    [("seven", "en"), ("मार्च", "en"), ("फ्लाइट", "en"), ("बजे", "hi"), ("25", "num")],
+    [("seven", "en"), ("कोड", "en"), ("टाइम", "en"), ("फ्लाइट", "hi"), ("बजे", "hi"), ("25", "num")],
 )
 def test_tag_token(token, tag):
     assert tag_token(token, "hi", "en") == tag
 
 
-# Phase 0 / Phase 1 examples: (reference, STT, strict WER, reconciled WER, English reference words)
+# Phase 0 / Phase 1 examples, with the phonetic matcher on as in hi.json:
+# (reference, STT, strict WER, reconciled WER, English reference words)
 @pytest.mark.parametrize(
     "ref,hyp,strict,after,english",
     [
         ("मुझे आईटी टीम से बात करनी है", "मुझे IT टीम से बात करनी है", 0.0, 0.0, 2),
         ("can I book it", "can I book it", 0.0, 0.0, 4),
-        ("मेरी फ़्लाइट seven बजे है", "मेरी फ़्लाइट 7 बजे है", 0.2, 0.0, 2),
-        ("मुझे twenty five मार्च की booking चाहिए", "मुझे 25 मार्च की बुकिंग चाहिए", 2 / 7, 0.0, 4),
+        ("मेरी फ़्लाइट seven बजे है", "मेरी फ़्लाइट 7 बजे है", 0.2, 0.0, 1),
+        ("मुझे twenty five मार्च की booking चाहिए", "मुझे 25 मार्च की बुकिंग चाहिए", 3 / 7, 0.0, 3),
         ("I'm not sure, क्या आप check कर सकते हैं", "I am not sure क्या आप check कर सकते हैं", 0.1, 0.0, 5),
-        ("मुझे 7 बजे की फ़्लाइट चाहिए", "मुझे seven बजे की फ़्लाइट चाहिए", 1 / 6, 1 / 6, 1),
+        ("मुझे 7 बजे की फ़्लाइट चाहिए", "मुझे seven बजे की फ़्लाइट चाहिए", 1 / 6, 1 / 6, 0),
         ("मेरी flight कल है", "मेरी fight कल है", 0.25, 0.25, 1),
     ],
 )
 def test_plan_examples(ref, hyp, strict, after, english):
-    result = reconcile(ref, hyp)
+    result = reconcile_code_switch(ref, hyp, "hi", ("en",), phonetic=True)
     assert result.strict_output.wer == pytest.approx(strict)
     assert reconciled_wer(result) == pytest.approx(after)
     assert result.ref_langs.count("en") == english
@@ -105,10 +106,39 @@ def test_plan_examples(ref, hyp, strict, after, english):
 
 @pytest.mark.parametrize(
     "ref_word,hyp_word",
-    [("कैंसल", "cancel"), ("फ्लाइट", "flight"), ("नेटवर्क", "network"), ("प्रॉब्लम", "problem"), ("कन्फर्म", "confirm")],
+    [
+        ("कैंसल", "cancel"),
+        ("फ्लाइट", "flight"),
+        ("नेटवर्क", "network"),
+        ("प्रॉब्लम", "problem"),
+        ("कन्फर्म", "confirm"),
+        ("पासवर्ड", "password"),
+        ("अकाउंट", "account"),
+        ("लैपटॉप", "laptop"),
+        ("वीपीएन", "vpn"),
+        # soft g sounds like ज; hard g still matches
+        ("मैनेजर", "manager"),
+        ("चार्ज", "charge"),
+        ("सर्जरी", "surgery"),
+        ("टारगेट", "target"),
+        # s between vowels can sound like ज़ (folded to ज); plain s still matches
+        ("बिजनेस", "business"),
+        ("प्लीज", "please"),
+        ("बेसिक", "basic"),
+        # anusvara before a labial is m
+        ("नंबर", "number"),
+        ("कैंपस", "campus"),
+        ("सितंबर", "september"),
+    ],
 )
 def test_phonetic_match(ref_word, hyp_word):
     assert phonetic_match(ref_word, hyp_word)
+
+
+@pytest.mark.parametrize("latin,deva", [("booking", "बुकिंग"), ("march", "मार्च"), ("confirmation", "कन्फर्मेशन")])
+def test_phonetic_match_works_in_both_directions(latin, deva):
+    assert phonetic_match(deva, latin)
+    assert phonetic_match(latin, deva)
 
 
 @pytest.mark.parametrize(
@@ -119,8 +149,8 @@ def test_phonetic_match(ref_word, hyp_word):
         ("मैं", "main"),
         ("पर", "par"),
         ("मुझे", "mujhe"),  # fewer than 3 consonants
-        ("network", "network"),  # reference must be Devanagari
-        ("नेटवर्क", "नेटवर्क"),  # STT must be Latin
+        ("network", "network"),  # one word in each script
+        ("नेटवर्क", "नेटवर्क"),
         ("नेटवर्क", "netflix"),
     ],
 )
@@ -132,7 +162,13 @@ def test_phonetic_no_match(ref_word, hyp_word):
     "ref,hyp,strict,after",
     [
         ("मेरे लैपटॉप में नेटवर्क प्रॉब्लम है", "मेरे लैपटॉप में network problem है", 1 / 3, 0.0),
-        ("कृपया मेरा अपॉइंटमेंट कन्फर्म कीजिए", "कृपया मेरा appointment confirm कीजिए", 0.2, 0.0),
+        ("कृपया मेरा अपॉइंटमेंट कन्फर्म कीजिए", "कृपया मेरा appointment confirm कीजिए", 0.4, 0.0),
+        (
+            "नमस्ते, मुझे अपनी उड़ान की तारीख 25 मार्च करनी है। मेरा कन्फर्मेशन कोड तैयार है।",
+            "नमस्ते, मुझे अपनी उड़ान की तारीख 25 march करनी है। मेरा confirmation code तैयार है।",
+            2 / 15,
+            0.0,
+        ),
         ("मैं कल आऊँगा", "मैं call आऊँगा", 1 / 3, 1 / 3),
         ("मैं बस से आऊँगा", "मैं bus से आऊँगा", 0.25, 0.25),
     ],

@@ -54,9 +54,12 @@ _DEVANAGARI_KEY = {
     "र": "r", "ल": "l", "व": "w", "श": "S", "ष": "S", "स": "s", "ह": "h",
     "ं": "n", "ँ": "n", "ः": "h", "ृ": "r",
 }  # fmt: skip
-# English spellings, longest first; c before e/i/y is handled separately.
+# Anusvara / chandrabindu take the place of the next consonant: m before a
+# labial (नंबर = number), n otherwise (अंत).
+_LABIALS = frozenset("पफबभम")
+# English spellings, longest first; c, g and s are handled separately.
 _LATIN_KEY = [
-    ("tion", "Sn"), ("sion", "Sn"), ("sch", "sk"), ("tch", "C"),
+    ("tion", "Sn"), ("sion", "Sn"), ("sch", "sk"), ("tch", "C"), ("dge", "j"),
     ("sh", "S"), ("ch", "C"), ("ph", "f"), ("th", "t"), ("ck", "k"), ("gh", ""), ("wh", "w"), ("qu", "kw"),
     ("x", "ks"), ("q", "k"), ("v", "w"), ("z", "j"),
 ]  # fmt: skip
@@ -73,42 +76,66 @@ def _dedupe(key: str) -> str:
 
 
 def devanagari_key(word: str) -> str:
-    return _dedupe("".join(_DEVANAGARI_KEY.get(ch, "") for ch in word))
-
-
-def latin_key(word: str) -> str:
     out = []
+    for i, ch in enumerate(word):
+        if ch in "ंँ":
+            out.append("m" if word[i + 1 : i + 2] in _LABIALS else "n")
+        else:
+            out.append(_DEVANAGARI_KEY.get(ch, ""))
+    return _dedupe("".join(out))
+
+
+def latin_keys(word: str) -> set[str]:
+    """Consonant keys of an English word, one per reading of its ambiguous letters.
+
+    g before e/i/y can be hard or soft (target, manager -> ज), and s between
+    vowels can be s or z (basic, business -> ज़, which folds to ज).
+    """
+    keys = [""]
     i = 0
     while i < len(word):
         for spelling, key in _LATIN_KEY:
             if word.startswith(spelling, i):
-                out.append(key)
+                options = (key,)
                 i += len(spelling)
                 break
         else:
-            ch = word[i]
+            ch, prev, nxt = word[i], word[i - 1 : i], word[i + 1 : i + 2]
             if ch == "c":
-                out.append("s" if word[i + 1 : i + 2] in ("e", "i", "y") else "k")
+                options = ("s",) if nxt in ("e", "i", "y") else ("k",)
+            elif ch == "g" and nxt in ("e", "i", "y"):
+                options = ("g", "j")
+            elif ch == "s" and prev and prev in "aeiou" and nxt and nxt in "aeiouy":
+                options = ("s", "j")
             elif ch not in "aeiouy":
-                out.append(ch)
+                options = (ch,)
+            else:
+                options = ("",)
             i += 1
-    return _dedupe("".join(out))
+        keys = [k + o for k in keys for o in options]
+    return {_dedupe(k) for k in keys}
 
 
 def phonetic_match(ref_word: str, hyp_word: str) -> bool:
-    """Is the Latin STT word a plausible transcription of the Devanagari reference word?
+    """Are the two words the same English word, one in Devanagari and one in Latin script?
 
-    Conservative on purpose: Devanagari reference and Latin STT only, at least
-    three consonants on both sides, and homophones of Hindi words are excluded.
+    Works in both directions (कन्फर्म / confirm, booking / बुकिंग). Conservative
+    on purpose: one word per script, at least three consonants on both sides,
+    and homophones of Hindi words are excluded.
     """
+    if _RE_LATIN_WORD.fullmatch(ref_word):
+        ref_word, hyp_word = hyp_word, ref_word
     if not (_RE_DEVANAGARI_WORD.fullmatch(ref_word) and _RE_LATIN_WORD.fullmatch(hyp_word)):
         return False
     if ref_word in _PHONETIC_STOPLIST or hyp_word in _PHONETIC_STOPLIST:
         return False
-    ref_key, hyp_key = devanagari_key(ref_word), latin_key(hyp_word)
-    if min(len(ref_key), len(hyp_key)) < MIN_KEY_CONSONANTS:
+    ref_key = devanagari_key(ref_word)
+    if len(ref_key) < MIN_KEY_CONSONANTS:
         return False
-    return Levenshtein.normalized_similarity(ref_key, hyp_key) >= MIN_KEY_SIMILARITY
+    return any(
+        len(hyp_key) >= MIN_KEY_CONSONANTS and Levenshtein.normalized_similarity(ref_key, hyp_key) >= MIN_KEY_SIMILARITY
+        for hyp_key in latin_keys(hyp_word)
+    )
 
 
 @dataclass
@@ -242,8 +269,8 @@ def reconcile_code_switch(
     """Align one turn with code-switch rescues. See the module docstring.
 
     With ``phonetic``, regions the secondary view can't rescue get a second
-    chance word by word: in a pure 1:1 substitution region, each Devanagari
-    reference word whose Latin STT word passes ``phonetic_match`` is rescued.
+    chance word by word: in a pure 1:1 substitution region, each reference
+    word whose STT word passes ``phonetic_match`` is rescued.
     """
     secondary = secondaries[0]
     ref_view = _build_view(ref_raw, primary, secondary)
@@ -273,7 +300,7 @@ def reconcile_code_switch(
                     rescues.append(Rescue(ref_p[rs + k], hyp_p[hs + k], MATCHER_PHONETIC, rs + k))
                     replacements.append((hs + k, hs + k + 1, [ref_p[rs + k]]))
 
-    # A phonetic rescue shows the Devanagari reference word is English.
+    # A phonetic rescue shows the reference word is English, even in Devanagari.
     ref_langs = [tag_token(t, primary, secondary) for t in ref_p]
     for rescue in rescues:
         if rescue.matcher == MATCHER_PHONETIC:

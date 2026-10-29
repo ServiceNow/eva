@@ -313,11 +313,18 @@ error. Empty for every other language, which keeps their scores unchanged.
 
 ### `code_switch_phonetic` `bool`
 
-`true` for `hi` only. When `true`, a Devanagari reference word whose
-Latin STT word sounds the same is also rescued (`नेटवर्क` vs `network`, both
-reduced to the consonant key `ntwrk`). Guards: 1:1 words only, at least three
-consonants on both sides, and a stoplist of Hindi words that sound like English
-ones (`कल`/`call`, `बस`/`bus`).
+`true` for `hi` only. When `true`, a word written in Devanagari on one side and
+in Latin on the other is also rescued when both sound the same (`नेटवर्क` vs
+`network`, both reduced to the consonant key `ntwrk`), in either direction. The
+Latin key tries both readings of a soft g (`manager` = `मैनेजर`) and of an s
+between vowels (`business` = `बिज़नेस`); anusvara before a labial is `m`
+(`नंबर` = `number`). Guards: 1:1 words only, at least three consonants on both
+sides, and a stoplist of Hindi words that sound like English ones
+(`कल`/`call`, `बस`/`bus`).
+
+`hi_loanwords.json` keeps only the loanwords the matcher can't handle: words
+with fewer than three consonants (`code`/`कोड`, `time`/`टाइम`) and month
+names whose Hindi form differs (`january`/`जनवरी`).
 
 ---
 

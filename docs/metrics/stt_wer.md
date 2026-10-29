@@ -60,7 +60,7 @@ When a language config sets `code_switch_languages` (today only `hi`, with `["en
 
 A region stops counting as an error only when the two sides match **and** the intended text is English there. If the intended text has the digit `7` and the STT writes "seven", the user may have said सात, so it stays an error. A region is never compared across languages (Hindi word vs its English translation), so translation errors are not hidden. Errors can only go down: `wer` ≤ `strict_wer`.
 
-Each intended word is also tagged by language: `en` for Latin script or a known loanword (मार्च), `num` for digits, `hi` otherwise. Substitutions and deletions count against the intended word's language, insertions against the inserted word's. Digits are in neither `hi` nor `en`. English words written in Devanagari that are not in the loanword lexicon are counted as Hindi, so the English share is an undercount.
+Each intended word is also tagged by language: `en` for Latin script, a known short loanword (कोड) or a word the phonetic matcher rescued, `num` for digits, `hi` otherwise. Substitutions and deletions count against the intended word's language, insertions against the inserted word's. Digits are in neither `hi` nor `en`. An English word written in Devanagari that the STT also writes in Devanagari, and that is not in the short-loanword lexicon, is counted as Hindi, so the English share is an undercount.
 
 Languages without `code_switch_languages` (all except `hi`) are scored exactly as before and have none of the fields below.
 
@@ -114,7 +114,7 @@ That said, the auto-generated configs can be brittle. The LLM generation step is
 
 ### Hindi (code-switching)
 
-Intended `मेरी फ़्लाइट seven बजे है` / STT `मेरी फ़्लाइट 7 बजे है`, plus two more turns. The standard fields are as above (omitted here); these are added:
+Turn 1: intended `मेरी फ़्लाइट seven बजे है`, STT `मेरी फ़्लाइट 7 बजे है`. Turn 2: intended `मुझे अपना कन्फर्मेशन कोड चाहिए`, STT `मुझे अपना confirmation कोड चाहिए`. Turn 3 has one real error (a dropped `हैं`). The standard fields are as above (omitted here); these are added:
 
 ```json
 {
@@ -124,19 +124,20 @@ Intended `मेरी फ़्लाइट seven बजे है` / STT `म�
     "wer": 0.062,
     "language": "hi",
     "reference_words": 16,
-    "strict_wer": 0.125,
+    "strict_wer": 0.188,
     "code_switch": {
       "languages": ["hi", "en"],
-      "code_switched_words": 5,
-      "rescued_words": 1,
-      "rescues_by_matcher": {"secondary_view": 1},
+      "code_switched_words": 4,
+      "rescued_words": 2,
+      "rescues_by_matcher": {"secondary_view": 1, "phonetic": 1},
       "per_language": {
-        "hi": {"wer": 0.091, "ref_words": 11, "errors": 1},
-        "en": {"wer": 0.0, "ref_words": 5, "errors": 0}
+        "hi": {"wer": 0.083, "ref_words": 12, "errors": 1},
+        "en": {"wer": 0.0, "ref_words": 4, "errors": 0}
       }
     },
     "per_turn_code_switch_rescues": {
-      "1": [{"expected": "seven", "actual": "7", "matcher": "secondary_view"}]
+      "1": [{"expected": "seven", "actual": "7", "matcher": "secondary_view"}],
+      "2": [{"expected": "कन्फर्मेशन", "actual": "confirmation", "matcher": "phonetic"}]
     }
   }
 }

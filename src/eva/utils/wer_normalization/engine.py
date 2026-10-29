@@ -130,8 +130,8 @@ class LanguageConfig(BaseModel):
     # Secondary languages speakers mix in (hi: ["en"]). When non-empty, stt_wer
     # re-checks error regions with these languages' rules before counting them.
     code_switch_languages: list[str] = Field(default_factory=list)
-    # Also rescue Devanagari reference words whose Latin STT word sounds the
-    # same (नेटवर्क / network). Off by default.
+    # Also rescue a word written in Devanagari on one side and in Latin on the
+    # other when both sound the same (नेटवर्क / network). Off by default.
     code_switch_phonetic: bool = False
 
     @classmethod
