@@ -50,3 +50,13 @@ es: |
   - Times: 'las quince treinta', 'las tres y media', 'las tres menos cuarto' = 2:45 are correct; 'menos cuarto' for 3:45: rating = 0.
   - Dates: 'el uno de marzo' and 'el primero de marzo' are both valid; years 'dos mil veintiséis', 'mil novecientos noventa'.
   - Established loanwords (not code-switching): email, ok, check-in.
+
+it: |
+  - Letter names in spelled codes: A a, B bi, C ci, D di, E e, F effe, G gi, H acca, I i, J i lunga (also 'gei'), K cappa, L elle, M emme, N enne, O o, P pi, Q cu, R erre, S esse, T ti, U u, V vu (also vi), W doppia vu, X ics, Y ipsilon / i greca, Z zeta. Digits zero, uno, due ... nove.
+  - English bee, dee, pee, tee, vee, gee sound like the Italian names; do not call those English. Clearly English names ('ay', 'ee' for E, 'eye', 'aitch', 'kay', 'ar', 'you', 'double-u', 'why', 'zee') or English digits ('six', 'two') inside an Italian turn: rating = 0 (the trace entity is not articulated in Italian). This applies to trace entities the agent speaks; an entity that is itself English in the trace (an English street or product name) may be said in English.
+  - If the English name sounds like a different Italian letter, it changes the code: English E 'ii' = Italian I, English A 'ei' ~ Italian E: rating = 0.
+  - A letter replaced by an ordinary word ('Gioia' for J): rating = 0. Spelling words are valid ('J come Jolly', 'M come Milano').
+  - Confusable letters: M/N, B/P/D/T (bi/pi/di/ti), C/G (ci/gi), F/S (effe/esse).
+  - Dates: 'il primo marzo' (primo, not uno), then cardinals ('il tre marzo'); 'il uno marzo' or other non-Italian date and ID formats: not by itself a reason for rating = 0; rate 0 only if a Italian listener could take it for a different value. Years 'duemilaventisei', 'millenovecentonovanta'.
+  - Times: 'le quindici e trenta', 'le tre e mezza', 'le tre meno un quarto' = 2:45 are correct; a different time: rating = 0.
+  - Established loanwords (not code-switching): email, ticket, ok.

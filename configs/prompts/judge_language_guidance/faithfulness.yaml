@@ -35,6 +35,14 @@ es: |
   **Language policy (violating_policies, "Not communicating in the language specified"):**
   - Common anglicisms of Spanish are not a language violation: email, login, check-in, ticket (in IT contexts), online.
 
+it: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Letter names ending in -i are highly confusable: B/C/D/G/P/T/V ("bi, ci, di, gi, pi, ti, vi/vu"); E/I under noise.
+  - Foreign letters J ("i lunga"), K ("cappa"), W ("doppia vu"), X ("ics"), Y ("ipsilon / i greca") are often spoken with English names. Speakers spell with city names ("B come Bologna").
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Common anglicisms of Italian are not a language violation: password, ticket, badge, email, login, account, check-in.
+
 nl: |
   **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
   - V/F ("vee/ef"; initial v is devoiced in many accents, so a spoken V is often captured as F, e.g. V7H8N3 → F7H8N3); Z/S; G/CH (both /ɣ~x/); H/A ("haa/aa"), which can add or drop an H; B/P/D/T ("bee, pee, dee, tee").
