@@ -3,8 +3,8 @@
 A metric's "signature" captures everything we want to detect changes to:
  - `version`: the manually-bumped string on the class
  - `source_hash`: sha256[:12] of `inspect.getsource(cls)` (class body)
- - `prompt_hash`: sha256[:12] of the unrendered judge prompt template, or
-                  None for non-judge metrics
+ - `prompt_hash`: sha256[:12] of the metric's unrendered judge prompt templates
+                  plus its per-language guidance file, or None for non-judge metrics
 
 The drift test compares the current signatures against a checked-in fixture
 and fails if anything changed without an explicit version bump + fixture regen.
@@ -68,6 +68,8 @@ def _prompt_hash_for_metric(cls: type[BaseMetric]) -> str | None:
     Hashes *every* prompt template under ``judge.{name}`` (sorted by key), not just
     ``user_prompt``, so a metric that ships multiple prompts — e.g. a per-pipeline
     variant like ``audio_native_prompt`` — has all of them covered by drift detection.
+    The metric's guidance file in ``configs/prompts/judge_language_guidance/`` is
+    included too, since it is rendered into those templates.
     A judge metric without any templates raises KeyError — that's a configuration
     bug we want surfaced.
     """
