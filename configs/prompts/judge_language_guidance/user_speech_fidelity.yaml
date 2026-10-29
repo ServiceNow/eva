@@ -44,7 +44,7 @@ es: |
   - English letter or digit names typically heard in Spanish codes: 'em' for M, 'jay', 'double-u', 'six', 'two', also inside 'M de Madrid'.
   - If the English name sounds like a different Spanish letter, it changes the code: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E, English J 'jay' ~ Spanish Y 'ye': rating 1 (entity error).
   - Spelling words are valid ('M de Madrid', 'B de Barcelona', 'be larga', 've corta').
-  - B and V ('be' / 've') sound the same in Spanish: do not flag a B/V swap you cannot hear; only 'uve' said for B (or 'be' for V) is a letter error: rating 1 (entity error).
+  - B and V sound the same in Spanish: do not flag a B/V swap you cannot hear. Only a clearly distinguishing name is a letter error, 'uve' / 've corta' said for B or 'be larga' / 'be de Barcelona' said for V: rating 1 (entity error).
   - Confusable letters and numbers: M/N (eme/ene), N/Ñ, F/S (efe/ese), sesenta/setenta (60/70).
   - Times: 'las quince treinta', 'las tres y media', 'las tres menos cuarto' = 2:45 are correct; 'menos cuarto' for 3:45: rating 1 (entity error).
   - Dates: 'el uno de marzo' and 'el primero de marzo' are both valid; years 'dos mil veintiséis', 'mil novecientos noventa'.
