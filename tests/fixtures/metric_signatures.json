@@ -29,6 +29,12 @@
     "source_hash": "afa2afc284d9",
     "version": "v0.1"
   },
+  "DelegationRateMetric": {
+    "name": "delegation_rate",
+    "prompt_hash": null,
+    "source_hash": "c88e97f10fd2",
+    "version": "v0.1"
+  },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
     "prompt_hash": "78028821ce37",

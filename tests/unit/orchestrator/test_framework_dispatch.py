@@ -26,3 +26,15 @@ def test_cartesia_dispatch_returns_cartesia_class():
     from eva.assistant.cartesia_server import CartesiaAssistantServer
 
     assert _get_server_class("cartesia") is CartesiaAssistantServer
+
+
+def test_openai_live_dispatch_returns_live_class():
+    from eva.assistant.openai_live_server import OpenAILiveAssistantServer
+
+    assert _get_server_class("openai_live") is OpenAILiveAssistantServer
+
+
+def test_unknown_framework_error_lists_openai_live():
+    with pytest.raises(ValueError) as exc_info:
+        _get_server_class("nope")
+    assert "openai_live" in str(exc_info.value)

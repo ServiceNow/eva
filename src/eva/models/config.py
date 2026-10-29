@@ -579,7 +579,14 @@ class RunConfig(BaseSettings):
 
     # Framework selection
     framework: Literal[
-        "pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra", "cartesia"
+        "pipecat",
+        "openai_realtime",
+        "gemini_live",
+        "elevenlabs",
+        "grok_voice",
+        "smallest_hydra",
+        "cartesia",
+        "openai_live",
     ] = Field(
         "pipecat",
         description=(
@@ -591,6 +598,7 @@ class RunConfig(BaseSettings):
             "'grok_voice': xAI Grok voice realtime API."
             "'smallest_hydra': Smallest Hydra speech-to-speech API."
             "'cartesia': Cartesia Managed Agents over a WebSocket connection."
+            "'openai_live': OpenAI GPT-Live API (gpt-live-1) with Responses delegation."
         ),
     )
 
