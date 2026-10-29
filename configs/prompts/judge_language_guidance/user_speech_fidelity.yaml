@@ -68,8 +68,8 @@ hi: |
   - Confusable numbers: सत्रह/सत्तर (17/70), उन्नीस/उनतीस/उनचास (19/29/49), सात/साठ (7/60).
   - Times that are correct: डेढ़ बजे = 1:30, ढाई बजे = 2:30, साढ़े तीन = 3:30 (साढ़े only from 3 up), सवा चार = 4:15, पौने पाँच = 4:45, 'चार बजकर बीस मिनट'. A wrong value (साढ़े पाँच for 4:30, पौने चार for 4:45): rating 1 (entity error).
   - Literal clock readings ('एक तीस' for 1:30, 'चार तीस') or 24-hour readings ('तेरह तीस') in conversation are non-native: rating at most 2 while the value is still clear; rating 1 if a Hindi listener could take it for a different value.
-  - English loanwords and place names should sound as in Indian English; a pronunciation a Hindi listener would not recognise ('Los Angeles', 'aisle' as 'es-le', 'Datadog'): a wrong word (rating at most 2), or rating 1 if it is an entity.
-  - Hindi speech mixes in English loanwords (flight, booking, ticket, seat): not wrong language.
+  - English loanwords and place names should sound as in Indian English; a pronunciation a Hindi listener would not recognise (e.g. 'aisle' said as 'es-le'): a wrong word (rating at most 2), or rating 1 if it is an entity.
+  - Hindi–English code-switching is supported: English words and phrases inside a Hindi sentence (flight, booking, 'last name', 'one moment') are not wrong language. Only a whole English sentence that is not in the intended text counts as wrong language.
 
 ja: |
   - Letter names in codes are katakana: エー, ビー, シー, ディー, イー, エフ, ジー, エイチ/エッチ, アイ, ジェー, ケー, エル, エム, エヌ, オー, ピー, キュー, アール, エス, ティー, ユー, ブイ/ヴィー, ダブリュー, エックス, ワイ, ゼット/ズィー; these, even with an English-like accent, are correct.
