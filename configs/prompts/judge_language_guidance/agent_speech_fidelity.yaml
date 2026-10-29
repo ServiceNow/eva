@@ -8,9 +8,9 @@ de: |
   - Buchstabiertafel words are valid spelling ('D wie Dora', 'Z wie Zeppelin').
   - Confusable letters: D/E/G/T (deh/eh/geh/teh), B/P, M/N, F/S.
   - Units before tens is correct: fünfundsiebzig = 75, vierundzwanzig = 24.
-  - Times: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45 are all correct.
+  - Times: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45 and the regional 'viertel drei' = 2:15 are all correct.
   - Dates: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'. A date read as digit groups a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf'): not by itself a reason for rating = 0; rate 0 only if a German listener could take it for a different value.
-  - A name with its umlaut replaced or lost (Böhm said as 'Bohm'): rating = 0. Meier/Meyer-type spelling variants are fine.
+  - A name with its umlaut replaced or lost (Böhm said as 'Bohm'): rating = 0.
   - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords (Ticket, Login, Account, Laptop). A half-English pronunciation of a German word ('Perfekt') is accent, not wrong language.
 
 nl: |

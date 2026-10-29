@@ -14,7 +14,7 @@ fr-CA: |
 
 de: |
   - Normal German service register (covered by the cultural-norms exception): the formal Sie register and short service phrases such as "Gerne", "Sehr gern", "Einen Moment bitte", "Vielen Dank", "Alles klar".
-  - Numbers and dates are written out in words because that is how the TTS speaks them (e.g. "am zweiundzwanzigsten April zweitausendsechsundzwanzig"). German compound number words look long in writing but take no longer to say than "22. April 2026"; never treat written-out numbers, dates or times as verbosity_or_filler.
+  - Numbers and dates are written out in words because that is how the TTS speaks them, and German compound number words are long in writing (e.g. "am zweiundzwanzigsten April zweitausendsechsundzwanzig" for "22. April 2026").
 
 nl: |
   - The Dutch service register is comparatively direct and has no obligatory politeness formulas, so the cultural-norms exception gives almost no extra room for courtesy wording in Dutch. A single brief acknowledgement ("Prima", "Dank u wel") or a single hold phrase before a tool call ("Eén moment") is fine.
