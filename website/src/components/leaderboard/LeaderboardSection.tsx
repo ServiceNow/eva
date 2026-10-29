@@ -20,7 +20,7 @@ const paretoInsights = [
   {
     title: 'Only two systems clear 0.6 on both axes pass@1',
     description:
-      'Across 24 systems spanning all three architectures, only two exceed 0.6 on both EVA-A pass@1 and EVA-X pass@1: Cartesia Managed Agents with GPT 5.5 (0.87 / 0.91) and Grok Voice 3.0 (0.74 / 0.71). Every other system falls short on at least one axis. Even the top system leaves headroom with its faithfulness is 0.78 and its pass^k is 0.76 on EVA-A and 0.78 on EVA-X.',
+      'Across 25 systems spanning all three architectures, only two exceed 0.6 on both EVA-A pass@1 and EVA-X pass@1: Cartesia Managed Agents with GPT 5.5 (0.87 / 0.91) and Grok Voice 3.0 (0.74 / 0.71). Every other system falls short on at least one axis. Even the top system leaves headroom with its faithfulness is 0.78 and its pass^k is 0.76 on EVA-A and 0.78 on EVA-X.',
   },
   {
     title: 'Peak and reliable performance diverge',
@@ -30,7 +30,7 @@ const paretoInsights = [
   {
     title: 'Architecture and SDK implementation both shape results',
     description:
-      'Cartesia Managed Agents (GPT 5.5) dominates every other system on both axes at pass@1, pass@k and pass^k, collapsing the pass@1 Pareto frontier to a single point. Excluding it, the frontier is made up entirely of S2S systems. Note that Managed Agents is a fully managed cascade harness that runs the whole agent loop (turn-taking, tool calling, speech) around the chosen reasoning model, so this is a platform result, not a model-only comparison. For cascade systems, we enabled LLM streaming and pre-tool speech. Cascade results vary significantly depending on the SDK implementation used, with some cascade configurations achieving turn-taking scores competitive with S2S models. This suggests that integration choices can matter as much as the underlying models.',
+      'Cartesia Managed Agents (GPT 5.5) dominates every other system on both axes at pass@1, pass@k and pass^k, collapsing the pass@1 Pareto frontier to a single point. Excluding it, the frontier is made up almost entirely of S2S systems. Note that Managed Agents is a fully managed cascade harness that runs the whole agent loop (turn-taking, tool calling, speech) around the chosen reasoning model, so this is a platform result, not a model-only comparison. For cascade systems, we enabled LLM streaming and pre-tool speech. Cascade results vary significantly depending on the SDK implementation used, with some cascade configurations achieving turn-taking scores competitive with S2S models. This suggests that integration choices can matter as much as the underlying models.',
   },
 ];
 
