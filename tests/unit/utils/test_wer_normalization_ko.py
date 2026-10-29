@@ -81,6 +81,9 @@ def test_digit_strings(spoken: str, written: str):
         ("네 명", "4명"),
         ("한 개", "1개"),
         ("두 시간", "2시간"),
+        ("두 개를", "2개를"),
+        ("세 명이요", "3명이요"),
+        ("세 대가", "3대가"),
         ("스무 살", "20살"),
         ("스물한 살", "21살"),
         ("열 시", "10시"),
@@ -129,6 +132,14 @@ def test_native_counters(spoken: str, written: str):
         "에 대한 시간",
         "한국",
         "세계",
+        # 한/두/세/네 before a word that only starts like a counter
+        "네 개인정보 확인해 주세요",
+        "네 시작할게요",
+        "네 가지고 있어요",
+        "네 번호는 알려드릴게요",
+        "한 번호를 알려주세요",
+        "두 대리님",
+        "세대 차이",
     ],
 )
 def test_names_and_ordinary_words_unchanged(text: str):

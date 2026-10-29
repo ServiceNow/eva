@@ -669,6 +669,14 @@ _KO_NATIVE_ATTR_TENS: dict[str, int] = {"스무": 20}
 _KO_NATIVE_COUNTER_RE = re.compile(
     r" ?(?:시간|시|명|개|살|번|잔|장|마리|권|대|병|곳|가지|사람|달|군데|송이|켤레|그릇|벌|채)"
 )
+# What may follow a counter after 한/두/세/네: a particle, or the end of the word.
+# Without it, 네 개인정보 ("yes, personal info") would become 4개인정보.
+_KO_COUNTER_END_RE = re.compile(
+    r"(?:$|[^가-힣]|(?:이에|이요|이나|이랑|으로|에서|부터|까지|동안|짜리|만에|밖에|"
+    r"이|가|은|는|을|를|에|의|와|과|도|만|씩|째|요|입|쯤|로|랑|나))"
+)
+# Words that read as attributive number + counter but are ordinary nouns.
+_KO_ATTR_COUNTER_WORDS = frozenset({"세대"})
 # What may directly follow a native number word: a counter or a particle.
 # Prevents 열심히, 열차, 넷플릭스, 하나님, 둘러보다 from being converted.
 _KO_NATIVE_FOLLOW_RE = re.compile(
@@ -691,7 +699,10 @@ def _convert_ko_native(m: re.Match) -> str:
     tens, ones, attr_tens, tens_only, ones_only, attr_only = m.groups()
     uses_attr = (ones in _KO_NATIVE_ATTR) or attr_tens or attr_only
     if uses_attr:
-        if not _KO_NATIVE_COUNTER_RE.match(after):
+        counter = _KO_NATIVE_COUNTER_RE.match(after)
+        if not counter or not _KO_COUNTER_END_RE.match(after, counter.end()):
+            return m.group()
+        if " " not in after[: counter.end()] and m.group() + after[: counter.end()] in _KO_ATTR_COUNTER_WORDS:
             return m.group()
     elif after and _HANGUL_RE.match(after[0]) and not _KO_NATIVE_FOLLOW_RE.match(after):
         return m.group()
