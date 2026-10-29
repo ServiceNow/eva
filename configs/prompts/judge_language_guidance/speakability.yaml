@@ -1,0 +1,14 @@
+# Per-language guidance for the speakability judge, rendered into its language_guidance slot.
+# Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
+# The parenthetical-gloss rule itself is violation 5 in the shared speakability prompt; this file
+# lists the forms it takes in each language and what is NOT a violation there.
+
+hi: |
+  - Typical Hindi glosses (violation 5): a Hindi term followed by its English equivalent, translation or abbreviation, or the reverse, e.g. "कर्मचारी आईडी (employee ID)", "पुष्टिकरण कोड (confirmation code)", "PIN (पिन नंबर)".
+  - Not a violation: English words or codes used on their own, without a duplicate, in Devanagari or Latin script ("booking", "PIN", "ticket", "employee ID", flight numbers, brand names). Mixing Hindi and English is normal spoken Hindi, and script choice is not in the violation list.
+  - The danda (।) and normal Hindi punctuation are not formatting.
+
+ja: |
+  - Typical Japanese glosses (violation 5): a term followed by its translation, reading or abbreviation in half-width ( ) or full-width （ ） parentheses, or joined to its equivalent by ／, e.g. "暗証番号（PIN）", "病気休暇（sick leave）", "PIN／暗証番号".
+  - Not a violation: Latin-script words or codes used on their own (confirmation codes, flight numbers, "ID", "PIN", brand or product names), or katakana loanwords. Script choice and an untranslated English word are not in the violation list.
+  - Japanese punctuation is not formatting: 「」, 『』, 、, 。, ・, 〜 and full-width digits or letters are normal written Japanese and must not be flagged.

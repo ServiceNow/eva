@@ -1,0 +1,93 @@
+# Per-language guidance for the agent_speech_fidelity judge, rendered into its language_guidance slot.
+# Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
+
+de: |
+  - Letter names in spelled codes: A ah, B beh, C zeh, D deh, E eh, F eff, G geh, H hah, I ih, J jott, K kah, L ell, M emm, N enn, O oh, P peh, Q kuh, R err, S ess, T teh, U uh, V fau, W weh, X iks, Y ypsilon, Z zett; Ä/Ö/Ü as ä/ö/ü. Digits null, eins, zwei (zwo is a valid variant), drei ... neun.
+  - English letter or digit names typically heard in German codes: 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6.
+  - If the English name sounds like a different German letter, it changes the code: English E 'ii' = German I, English A 'ay' ~ German E, English V 'vee' ~ German W 'weh', English J 'jay' can be heard as German G 'geh': rating = 0.
+  - Buchstabiertafel words are valid spelling ('D wie Dora', 'Z wie Zeppelin').
+  - Confusable letters: D/E/G/T (deh/eh/geh/teh), B/P, M/N, F/S.
+  - Units before tens is correct: fünfundsiebzig = 75, vierundzwanzig = 24.
+  - Times: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45 and the regional 'viertel drei' = 2:15 are all correct.
+  - Dates: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'. A date read as digit groups a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf'): not by itself a reason for rating = 0; rate 0 only if a German listener could take it for a different value.
+  - A name with its umlaut replaced or lost (Böhm said as 'Bohm'): rating = 0.
+  - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords (Ticket, Login, Account, Laptop). A half-English pronunciation of a German word ('Perfekt') is accent, not wrong language.
+
+nl: |
+  - Letter names in spelled codes: A aa, B bee, C cee, D dee, E ee, F ef, G gee (Dutch g), H haa, I ie, J jee, K kaa, L el, M em, N en, O oo, P pee, Q kuu, R er, S es, T tee, U uu, V vee, W wee, X iks, Y ij / griekse ij / ypsilon, Z zet; IJ may be said as one letter.
+  - The names bee, cee, dee, pee, tee are written like English letter names but are the Dutch names (Dutch B is /beː/, close to English 'bay'); do not call them English. English letter or digit names typically heard in Dutch codes: 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
+  - If the English name sounds like a different Dutch letter, it changes the code: English E 'ee' = Dutch I 'ie', English A 'ay' ~ Dutch E 'ee', English I 'eye' ~ Dutch IJ: rating = 0.
+  - Confusable letters: V/F (Dutch v is often devoiced), G/CH, M/N, B/P, D/T.
+  - EI and IJ sound the same in names; do not flag a name only because the spelling cannot be heard.
+  - Units before tens is correct: vijfenzeventig = 75, zesentwintig = 26. A vowel change that makes a digit unrecognisable or turns it into another digit: rating = 0.
+  - 2026 as 'tweeduizendzesentwintig' or 'twintig zesentwintig' are both valid.
+  - Times: 'half drie' = 2:30 (not 3:30), 'kwart over twee' = 2:15, 'kwart voor drie' = 2:45, 'tien voor half drie' = 2:20, 'veertien uur dertig' are correct.
+  - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords, including acronyms used as words or names in Dutch (ID, FMLA, I-9; Dutch letter names such as 'ie-dee' are preferred but English ones are not wrong language; the letters of a spelled code or identifier still need Dutch names) and 'sorry', 'oké', which are standard Dutch.
+
+fr: |
+  - Letter names in spelled codes: A a, B bé, C cé, D dé, E e (schwa), F effe, G gé, H ache, I i, J ji, K ka, L elle, M emme, N enne, O o, P pé, Q ku, R erre, S esse, T té, U u (French u), V vé, W double-vé, X iks, Y i grec, Z zède. Digits zéro, un, deux, trois ... six (said 'sis'), sept, huit, neuf.
+  - English letter or digit names typically heard in French codes: 'bee' for B, 'jay', 'double-u', 'six' with an English 'ks', 'two', INC or EMP spelled with English names.
+  - If the English name sounds like a different French letter, it changes the code: English G 'djee' ~ French J 'ji', English J 'djay' ~ French G 'gé', English E 'ii' = French I: rating = 0.
+  - Spelling words are valid ('A comme Anatole', 'M comme Marcel').
+  - Confusable letters: M/N (emme/enne), B/D/P/T (bé/dé/pé/té), G/J (gé/ji), F/S (effe/esse).
+  - Numbers: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze are correct. Liaison (six heures, dix-huit) is normal.
+  - Times: 'quinze heures trente', 'trois heures et demie', 'trois heures et quart' = 3:15, 'trois heures moins le quart' = 2:45, 'midi', 'minuit' are correct.
+  - Dates: 'le premier mars' is correct; 'le un mars': not by itself a reason for rating = 0; rate 0 only if a French listener could take it for a different value. Years 'deux mille vingt-six', 'mille neuf cent quatre-vingt-dix' or 'dix-neuf cent quatre-vingt-dix' are valid.
+  - Established loanwords (not code-switching): ticket, e-mail, week-end, OK.
+
+fr-CA: |
+  - Québec: Z may also be said 'zed'; this is not English.
+  - Times: 'trois heures moins quart' (without 'le') = 2:45 and the colloquial 'quart à trois' = 2:45 are correct.
+
+es: |
+  - Letter names in spelled codes: A a, B be, C ce, D de, E e, F efe, G ge, H hache, I i, J jota, K ka, L ele, M eme, N ene, Ñ eñe, O o, P pe, Q cu, R erre, S ese, T te, U u, V uve (also ve), W uve doble / doble ve / doble u, X equis, Y i griega / ye, Z zeta. Digits cero, uno, dos ... nueve.
+  - English letter or digit names typically heard in Spanish codes: 'em' for M, 'jay', 'double-u', 'six', 'two', also inside 'M de Madrid'.
+  - If the English name sounds like a different Spanish letter, it changes the code: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E, English J 'jay' ~ Spanish Y 'ye': rating = 0.
+  - Spelling words are valid ('M de Madrid', 'B de Barcelona', 'be larga', 've corta').
+  - B and V sound the same in Spanish: do not flag a B/V swap you cannot hear. Only a clearly distinguishing name is a letter error, 'uve' / 've corta' said for B or 'be larga' / 'be de Barcelona' said for V: rating = 0.
+  - Confusable letters and numbers: M/N (eme/ene), N/Ñ, F/S (efe/ese), sesenta/setenta (60/70).
+  - Times: 'las quince treinta', 'las tres y media', 'las tres menos cuarto' = 2:45 are correct.
+  - Dates: 'el uno de marzo' and 'el primero de marzo' are both valid; years 'dos mil veintiséis', 'mil novecientos noventa'.
+  - Established loanwords (not code-switching): email, ok, check-in.
+
+it: |
+  - Letter names in spelled codes: A a, B bi, C ci, D di, E e, F effe, G gi, H acca, I i, J i lunga (also 'gei'), K cappa, L elle, M emme, N enne, O o, P pi, Q cu, R erre, S esse, T ti, U u, V vu (also vi), W doppia vu, X ics, Y ipsilon / i greca, Z zeta. Digits zero, uno, due ... nove.
+  - English bee, dee, pee, tee, vee, gee sound like the Italian names; do not call those English. English letter or digit names typically heard in Italian codes: 'ay', 'ee' for E, 'eye', 'aitch', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'two'.
+  - If the English name sounds like a different Italian letter, it changes the code: English E 'ii' = Italian I, English A 'ei' ~ Italian E: rating = 0.
+  - A letter replaced by an ordinary word (the letter J read as the word 'Gioia' instead of 'i lunga'): rating = 0. Spelling words are valid ('J come Jolly', 'M come Milano').
+  - Confusable letters: M/N, B/P/D/T (bi/pi/di/ti), C/G (ci/gi), F/S (effe/esse).
+  - Dates: 'il primo marzo' (primo, not uno), then cardinals ('il tre marzo'); 'l'uno marzo' or other non-Italian date and ID formats: not by itself a reason for rating = 0; rate 0 only if an Italian listener could take it for a different value. Years 'duemilaventisei', 'millenovecentonovanta'.
+  - Times: 'le quindici e trenta', 'le tre e mezza', 'le tre meno un quarto' = 2:45 are correct.
+  - Established loanwords (not code-switching): email, ticket, ok.
+
+hi: |
+  - Latin letters in codes are said with English names, written ए, बी, सी, डी, ई, एफ, जी, एच, आई, जे, के, एल, एम, एन, ओ, पी, क्यू, आर, एस, टी, यू, वी, डब्ल्यू, एक्स, वाई, ज़ेड: this is correct Hindi, not wrong language.
+  - Digits: शून्य, एक, दो, तीन, चार, पाँच, छह, सात, आठ, नौ. English digit names ('zero', 'eight') are common in Indian speech and are not wrong language by themselves; if the intended or trace text spells the Hindi digit word and an English one is spoken, note it (not by itself a reason for rating = 0; rate 0 only if a Hindi listener could take it for a different value).
+  - A digit dropped or clipped (शून्य missing or said 'शून'): rating = 0.
+  - Large numbers group by हज़ार, लाख, करोड़ (एक लाख पच्चीस हज़ार = 125,000): correct.
+  - Confusable numbers: सत्रह/सत्तर (17/70), उन्नीस/उनतीस/उनचास (19/29/49), सात/साठ (7/60).
+  - Times that are correct: डेढ़ बजे = 1:30, ढाई बजे = 2:30, साढ़े तीन = 3:30 (साढ़े only from 3 up), सवा चार = 4:15, पौने पाँच = 4:45, 'चार बजकर बीस मिनट'.
+  - Literal clock readings ('एक तीस' for 1:30, 'चार तीस') or 24-hour readings ('तेरह तीस') in conversation are non-native: not by itself a reason for rating = 0; rate 0 only if a Hindi listener could take it for a different value.
+  - English loanwords and place names should sound as in Indian English; a pronunciation a Hindi listener would not recognise (e.g. 'aisle' said as 'es-le'): for a trace entity (name, place, product) this is rating = 0; non-entity words stay out of scope.
+  - Hindi–English code-switching is supported: English words and phrases inside a Hindi sentence (flight, booking, 'last name', 'one moment') are not wrong language.
+
+ja: |
+  - Letter names in codes are katakana: エー, ビー, シー, ディー, イー, エフ, ジー, エイチ/エッチ, アイ, ジェー, ケー, エル, エム, エヌ, オー, ピー, キュー, アール, エス, ティー, ユー, ブイ/ヴィー, ダブリュー, エックス, ワイ, ゼット/ズィー; these, even with an English-like accent, are correct.
+  - A letter group read as a katakana word (INC as インク, PAR as パー) or as an English word (REQ as 'request'): rating = 0.
+  - English digit names typically heard in Japanese codes: 'six', 'two'.
+  - Digits in codes are expected as ゼロ/れい, いち, に, さん, よん, ご, ろく, なな, はち, きゅう. し (4) or しち (7) inside a code can be heard as シー (C) or いち (1): not by itself a reason for rating = 0; rate 0 only if a Japanese listener could take it for a different value.
+  - Homophones: Q キュー = 9 きゅう; do not flag only for that, use the trace or intended text. V said ビー (B) changes the code: rating = 0.
+  - Confusable letters: エム/エヌ (M/N), ビー/ブイ (B/V), ディー/ティー (D/T), ジー/ゼット (G/Z).
+  - Counter readings that are correct (し, しち, く are right here): 4時 よじ, 7時 しちじ/ななじ, 9時 くじ, 4月 しがつ, 7月 しちがつ, 9月 くがつ, 1日 ついたち, 2日 ふつか, 4日 よっか, 8日 ようか, 20日 はつか, 24日 にじゅうよっか, 1分 いっぷん, 10分 じゅっぷん/じっぷん, 2人 ふたり, 4人 よにん. Readings such as よんじ, きゅうじ, よんにち: not by itself a reason for rating = 0; rate 0 only if a Japanese listener could take it for a different value.
+  - Years are read as numbers (千九百八十八年); a digit-by-digit year: not by itself a reason for rating = 0; rate 0 only if a Japanese listener could take it for a different value.
+  - Katakana pronunciation of English names (コンフルエンス) is correct; a different word (カンファレンス for Confluence): for a trace entity (name, place, product) this is rating = 0; non-entity words stay out of scope.
+  - Established loanwords (not code-switching): katakana loanwords such as チケット, フライト; 'HR Portal' only if that is the official system name.
+
+ko: |
+  - Letter names in codes are Hangul: 에이, 비, 씨, 디, 이, 에프, 지, 에이치, 아이, 제이, 케이, 엘, 엠, 엔, 오, 피, 큐, 알, 에스, 티, 유, 브이, 더블유, 엑스, 와이, 제트/지; these are correct.
+  - Digits in codes are Sino-Korean: 공/영, 일, 이, 삼, 사, 오, 육, 칠, 팔, 구. English digit names typically heard in Korean codes: 'six', 'two'. Native numbers (하나, 둘) inside a code: not by itself a reason for rating = 0; rate 0 only if a Korean listener could take it for a different value.
+  - Homophones: E 이 = 2 이, Z 지 = G 지; do not flag only for that, use the trace or intended text.
+  - Confusable letters and digits: 엠/엔 (M/N), 비/피 (B/P), 제이/지 (J/G), 디/티 (D/T), 일/이 (1/2).
+  - Native vs Sino-Korean, correct: hours native (세 시, 열두 시), minutes Sino (삼십 분; 세 시 반 = 3:30), months Sino with 유월 (6) and 시월 (10), days Sino (십오 일), money Sino (만 오천 원), people and items native (두 명, 세 개), ages native (스물다섯 살) or Sino with 세 (이십오 세).
+  - The wrong system for a correct value ('삼 시' for 3 o'clock, '육월'): not by itself a reason for rating = 0; rate 0 only if a Korean listener could take it for a different value.
+  - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords written in Hangul (티켓, 이메일).

@@ -1,0 +1,80 @@
+# Per-language guidance for the faithfulness judge, rendered into its language_guidance slot.
+# Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
+# Covers confusable letter and digit pairs (failing_to_disambiguate, fabricating_tool_parameters)
+# and phrases in another language under the "respond in <language>" policy (violating_policies).
+
+de: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Letter names rhyming on -e: B/D/P/T/W/G/E/C ("beh, deh, peh, teh, weh, geh, eh, tseh"); also F/S ("eff/ess") and M/N ("emm/enn").
+  - German vs English letter names get mixed: J is "jott" in German but "jay" in English, which sounds close to German G "geh"; English E "ee" sounds like German I; English A "ay" like German E "eh". So J/G, D/E/G/T and E/I/A can swap between what the user said and what the tool received.
+  - "zwei"/"drei" (2/3) are confusable, which is why careful speakers say "zwo".
+  - Two-digit numbers are spoken units-first ("dreiundfünfzig" = 53): a transposition (35) or a split ("3 50") is a typical capture error.
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Established anglicisms of German are normal German, not a language violation: Ticket, Login, Account, E-Mail, Check-in, Gate, Upgrade, Status.
+
+fr: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Numbers 70-99 are compound and become ambiguous when split or transcribed: "soixante-dix-sept" = 77 vs "soixante, dix-sept" = 60 17; "quatre-vingt-deux" = 82 vs "4 22" / "80 2"; "quatre-vingt-dix" = 90 vs "4 20 10". For a code containing such a sequence (e.g. "BRX 60 17"), flag a missing digit-by-digit confirmation only if the trace shows the ambiguity mattered (a failed lookup, a user correction, two versions of the value).
+  - Letter names rhyming on -é: B/C/D/G/P/T/V/W ("bé, cé, dé, gé, pé, té, vé, double-vé"); G ("gé") and J ("ji") are routinely swapped; M/N ("emme/enne"); I vs Y ("i grec").
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Common anglicisms of French are not a language violation: login, ticket, e-mail, check-in, badge, mail.
+
+fr-CA: |
+  **Québec French specifics:**
+  - Québec usage prefers courriel, billet, clavardage over e-mail, ticket, chat; either choice is register, not a language-policy violation.
+
+es: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - B and V are the same sound /b/ (speakers disambiguate with "be larga / be de Barcelona" vs "uve / ve corta"); LL/Y merge (yeísmo); G before e/i and J are both /x/; S/C/Z merge for seseo speakers and are confusable under noise everywhere (with the European Spanish distinción, C before e/i and Z are /θ/, distinct from S /s/); H is silent.
+  - Letter names rhyming on -e: B/C/D/P/T ("be, ce, de, pe, te").
+  - "dos"/"doce" (2/12) can be misheard.
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Common anglicisms of Spanish are not a language violation: email, login, check-in, ticket (in IT contexts), online.
+
+it: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Letter names ending in -i are highly confusable: B/C/D/G/P/T/V ("bi, ci, di, gi, pi, ti, vi/vu"); E/I under noise.
+  - Foreign letters J ("i lunga"), K ("cappa"), W ("doppia vu"), X ("ics"), Y ("ipsilon / i greca") are often spoken with English names. Speakers spell with city names ("B come Bologna").
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Common anglicisms of Italian are not a language violation: password, ticket, badge, email, login, account, check-in.
+
+nl: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - V/F ("vee/ef"; initial v is devoiced in many accents, so a spoken V is often captured as F, e.g. V4K2R9 → F4K2R9); Z/S; G/CH (both /ɣ~x/); H/A ("haa/aa"), which can add or drop an H; B/P/D/T ("bee, pee, dee, tee").
+  - IJ vs Y ("ei" vs "ypsilon / i-grec"; Y is sometimes said "ij"); EI and IJ are the same sound.
+  - "zeven"/"negen" (7/9) rhyme, which is why telephone speech uses "zeuven".
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Common anglicisms of Dutch are not a language violation: ticket, account, e-mail, inloggen/login, check-in, gate, update.
+
+ko: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Letter names: M/N (엠/엔); G/Z (지 vs 지/제트) and J/Z (제이/제트); B/P (비/피) and D/T (디/티) under phone audio.
+  - Letter/digit homophones in codes: E (이) = Sino-Korean 2 (이); the letter O (오) = 5 (오); U (유) vs 6 (육). In writing, the letter O is also easily confused with the digit 0.
+  - Sino-Korean 일/이 (1/2) are a classic pair; speakers may mix native (하나, 둘) and Sino-Korean numbers.
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Hangul-written loanwords (로그인, 티켓, 이메일, 체크인, 비밀번호 리셋) are normal Korean, not code-switching. Latin-script codes and acronyms (ID, PNR, OTP, EMP) are fine.
+
+hi: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - व covers both /v/ and /w/, so V/W are genuinely confusable in names spelled by sound; G (जी) and J (जे) are close in Indian-English letter names; Z may be said जेड or ज़ी.
+  - Hindi number words are irregular and pairwise close: सात/साठ (7/60), सत्रह/सत्तर (17/70), उन्नीस/उनतीस (19/29), तीन/तीस (3/30). English digit names are often mixed in, and शून्य (zero) may be clipped, changing the digit count.
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Hindi–English code-switching (Hinglish) is supported. English words and phrases inside a Hindi sentence are normal Hindi usage and never a language violation, whether written in Devanagari or Latin script: loanwords (ID, OK, login, password, email, ticket, booking, flight, seat, account, form, mobile number, PNR), procedural terms ("Employee ID", "last name", "confirmation number") and short phrases ("six digits", "one moment").
+  - Only a whole sentence or turn in English, when Hindi was instructed, is a language violation; rate its severity with the Rating Scale and quote it as evidence.
+
+ja: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Q (キュー) and 9 (きゅう) are homophones, so a code heard as "...きゅう..." (e.g. K7Q9) is inherently ambiguous until the user says which was meant.
+  - C (シー) vs 4 (し) and 7 (しち); 7 (しち) vs 1 (いち), which is why なな is preferred for 7.
+  - B/V (ビー/ブイ, often both said ビー); G (ジー), J (ジェー), Z (ゼット/ズィー) and D (ディー) collide under noise; L/R are merged in names spelled by sound. 0 may be ゼロ, れい or まる (and まる also suggests the letter O).
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Katakana loanwords (パスワード, ログイン, チケット, ポータル, アカウント, メール) are normal Japanese, not code-switching. Latin-letter codes and acronyms (EMP, INC, PC, ID) are fine; a transcript that renders a spoken katakana loanword in Latin letters (e.g. "OK") is not by itself evidence of English speech.
+  - Latin-script English terms where an established Japanese term exists ("HR Portal" → 人事ポータル, "sick leave" → 病気休暇) are a minor issue: at most 2.
