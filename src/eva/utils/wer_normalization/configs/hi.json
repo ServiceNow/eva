@@ -516,5 +516,14 @@
   "code_switch_languages": [
     "en"
   ],
-  "code_switch_phonetic": true
+  "code_switch_phonetic": true,
+  "spoken_symbols": {
+    "डैश": "-",
+    "अंडरस्कोर": "_",
+    "underscore": "_",
+    "स्लैश": "/"
+  },
+  "spoken_symbols_code_only": {
+    "slash": "/"
+  }
 }

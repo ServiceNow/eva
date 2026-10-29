@@ -294,8 +294,13 @@ Spoken punctuation used when spelling IDs (`"trait d'union": "-"`,
 replaced by the glued symbol, so `A B C trait d'union un deux trois` matches
 STT `ABC-123`. Phrases in `spoken_symbols_code_only` are also ordinary words
 (es `barra`, de `Strich`, nl `streepje`) and are replaced only when a
-neighbouring token has a digit or is all uppercase. English `dash` is handled
-separately in `wer_utils.py`.
+neighbouring token has a digit or is all uppercase.
+
+Every language covers `-`, `_` and `/`; all but `en` and `hi` also cover `@`.
+English `at` and Hindi `ऐट` are ordinary words that the code-neighbour rule
+cannot tell apart in an email address (`john at gmail`), so they are not
+listed. Spoken `dash` is dropped for every language by a separate rule in
+`wer_utils.py` (`_RE_SPELLED_DASH`), so `en.json` does not list it.
 
 ### `code_switch_languages` `[str]`
 

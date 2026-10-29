@@ -476,5 +476,11 @@
     "comma"
   ],
   "decimal_separator": "dot",
-  "spelling_map_path": "en_spelling.json"
+  "spelling_map_path": "en_spelling.json",
+  "spoken_symbols": {
+    "underscore": "_"
+  },
+  "spoken_symbols_code_only": {
+    "slash": "/"
+  }
 }

@@ -456,7 +456,8 @@
     "trattino": "-",
     "trattino basso": "_",
     "underscore": "_",
-    "chiocciola": "@"
+    "chiocciola": "@",
+    "barra obliqua": "/"
   },
   "spoken_symbols_code_only": {
     "barra": "/"

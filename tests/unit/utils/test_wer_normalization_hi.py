@@ -72,6 +72,20 @@ def test_code_switched_sentence():
     )
 
 
+@pytest.mark.parametrize(
+    "spoken,written",
+    [
+        ("A B C डैश एक दो तीन", "ABC-123"),
+        ("A B C अंडरस्कोर एक दो तीन", "ABC_123"),
+        ("A B C underscore एक दो तीन", "ABC_123"),
+        ("A B C स्लैश एक दो तीन", "ABC/123"),
+        ("A B C slash एक दो तीन", "ABC/123"),
+    ],
+)
+def test_spoken_symbol_matches_written_symbol(spoken, written):
+    same(spoken, written)
+
+
 def test_numbers_still_converted():
     same("पाँच", "5")
     same("पांच", "5")

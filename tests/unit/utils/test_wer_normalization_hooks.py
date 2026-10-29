@@ -1,8 +1,9 @@
 """Per-language WER normalization hooks are opt-in.
 
-``char_folds``, ``join_hyphenated_compounds`` and ``spoken_symbols`` only change
-the output for languages whose config enables them. English and every language
-that does not opt in must normalize exactly as before.
+``char_folds`` and ``join_hyphenated_compounds`` only change the output for
+languages whose config enables them. English and every language that does not
+opt in must normalize exactly as before. ``spoken_symbols`` is set for every
+language, English included.
 """
 
 import pytest
@@ -25,11 +26,13 @@ def test_english_config_enables_no_hook():
     cfg = LanguageConfig.load("en")
     assert cfg.char_folds == {}
     assert cfg.join_hyphenated_compounds is False
-    assert cfg.spoken_symbols == {} and cfg.spoken_symbols_code_only == {}
 
 
-def test_english_spoken_symbols_unchanged():
-    assert normalize_text("read underscore only", "en") == "read underscore only"
+def test_english_spoken_symbols():
+    assert normalize_text("mag underscore mutual", "en") == normalize_text("mag_mutual", "en")
+    assert normalize_text("A B C underscore one two three", "en") == normalize_text("ABC_123", "en")
+    assert normalize_text("A B C slash one two three", "en") == normalize_text("ABC/123", "en")
+    assert normalize_text("slash the price", "en") == "slash the price"
     assert normalize_text("A B C hyphen X Y Z", "en") == "abc hyphen xyz"
 
 
