@@ -12,3 +12,12 @@ de: |
 
   **Language policy (violating_policies, "Not communicating in the language specified"):**
   - Established anglicisms of German are normal German, not a language violation: Ticket, Login, Account, E-Mail, Check-in, Gate, Upgrade, Status.
+
+nl: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - V/F ("vee/ef"; initial v is devoiced in many accents, so a spoken V is often captured as F, e.g. V7H8N3 → F7H8N3); Z/S; G/CH (both /ɣ~x/); H/A ("haa/aa"), which can add or drop an H; B/P/D/T ("bee, pee, dee, tee").
+  - IJ vs Y ("ei" vs "ypsilon / i-grec"; Y is sometimes said "ij"); EI and IJ are the same sound.
+  - "zeven"/"negen" (7/9) rhyme, which is why telephone speech uses "zeuven".
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Common anglicisms of Dutch are not a language violation: ticket, account, e-mail, inloggen/login, check-in, gate, update.

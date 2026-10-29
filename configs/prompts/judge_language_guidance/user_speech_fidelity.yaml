@@ -12,3 +12,14 @@ de: |
   - Dates: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'. A date read as digit groups a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf'): rating at most 2 while the value is still clear; rating 1 if a German listener could take it for a different value.
   - A name with its umlaut replaced or lost (Köhler said as 'Kohler' or 'Kerr'): rating 1 (entity error). Meier/Meyer-type spelling variants are fine.
   - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords (Ticket, Login, Account, Laptop). A half-English pronunciation of a German word ('Perfekt') is accent, not wrong language.
+
+nl: |
+  - Letter names in spelled codes: A aa, B bee, C cee, D dee, E ee, F ef, G gee (Dutch g), H haa, I ie, J jee, K kaa, L el, M em, N en, O oo, P pee, Q kuu, R er, S es, T tee, U uu, V vee, W wee, X iks, Y ij / griekse ij / ypsilon, Z zet; IJ may be said as one letter. Upper or lower case need not be spoken.
+  - Dutch bee, cee, dee, pee, tee sound like English; do not call those English. Clearly English names ('ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee') or English digits ('six', 'one') inside a Dutch turn: a wrong-language deviation: rating at most 2 while the value is still unambiguous. Judge against the intended text: if the intended text itself contains the English words or digit names, reproducing them is not an error.
+  - If the English name sounds like a different Dutch letter, it changes the code: English E 'ee' = Dutch I 'ie', English A 'ay' ~ Dutch E 'ee', English I 'eye' ~ Dutch IJ: rating 1 (entity error).
+  - Confusable letters: V/F (Dutch v is often devoiced), G/CH, M/N, B/P, D/T.
+  - EI and IJ sound the same in names; do not flag a name only because the spelling cannot be heard.
+  - Units before tens is correct: vijfenzeventig = 75, zesentwintig = 26. A vowel change that changes the digit ('veer' for vier): rating 1 (entity error).
+  - 2026 as 'tweeduizendzesentwintig' or 'twintig zesentwintig' are both valid.
+  - Times: 'half drie' = 2:30 (not 3:30), 'kwart over twee' = 2:15, 'kwart voor drie' = 2:45, 'tien voor half drie' = 2:20, 'veertien uur dertig' are correct; 'half drie' for 3:30: rating 1 (entity error).
+  - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords, including acronyms used in Dutch (ID, FMLA, I-9; Dutch letter names such as 'ie-dee' are preferred but English ones are not wrong language) and 'sorry', 'oké', which are standard Dutch.
