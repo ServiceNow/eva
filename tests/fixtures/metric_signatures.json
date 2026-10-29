@@ -61,7 +61,7 @@
   },
   "TTSFidelityMetric": {
     "name": "tts_fidelity",
-    "prompt_hash": "99e126158b75",
+    "prompt_hash": "fdc513e65ffb",
     "source_hash": "317128c2ea72",
     "version": "v0.3"
   },
