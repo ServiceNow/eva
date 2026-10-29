@@ -712,16 +712,16 @@ judge:
         - Name spelling variants that are phonetically identical (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
 
         **Spelled codes and mixed-language speech:**
-        - Letters and digits in spelled codes must be spoken with their {expected_language} names. A letter or digit name from another language inside a {expected_language} turn (e.g., the English "jay" or "six" in a non-English turn) is rating = 0 with `wrong_language`; add `entity_error` if it sounds like a different {expected_language} letter or digit. If the intended text itself contains those foreign words or names, reproducing them is not an error.
+        - Letters and digits in spelled codes must be spoken with their {expected_language} names. A letter or digit name from another language (e.g., an English letter or digit name in a German code) is rating = 0 with `wrong_language`; add `entity_error` if it sounds like a different {expected_language} letter or digit. If the intended text itself contains those foreign words or names, reproducing them is not an error.
         - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
-        - Confusable letters and digits: check them carefully, but flag only when you clearly hear the other letter or digit, not because of your own transcription or poor audio quality. If unsure, give the benefit of the doubt.
-        - A phrase or sentence in another language inside a {expected_language} turn (e.g., "one moment", "Let me check" in a non-English turn) is a meaningful portion of the turn: rating = 0 with `wrong_language`, even when the rest of the turn is in {expected_language}.
+        - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
+        - A phrase or sentence in another language that is not in the intended text (e.g., an English "one moment" in a French turn) is rating = 0 with `wrong_language`, even when the rest of the turn is in {expected_language}. If the intended text itself contains the phrase, reproducing it is not an error.
         - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
-        - A number, date or time reading that is unusual but unambiguous is not an error by itself; it is an `entity_error` only if a native {expected_language} listener could take it for a different value.
+        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an error by themselves; they are an `entity_error` only if a native {expected_language} listener could take it for a different value. A different word for the value (e.g., "septante" for "soixante-dix") is still an error, as above.
 
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
-        - **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn.
+        - **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn, OR speech in another language as defined by `wrong_language` below.
 
         ## Failure Modes (only when rating = 0)
         For each low-fidelity turn, tag every failure mode that applies. A turn may have multiple failure modes. Leave the list empty when rating = 1.
@@ -734,7 +734,7 @@ judge:
 
         - **insertion_hallucination** — The audio contains words or phrases that were NOT in the intended text. The TTS added content on its own — extra sentences, repeated phrases, or filler that the script did not contain.
 
-        - **wrong_language** — The audio is spoken in a language different from the expected language ({expected_language}). Use this when the language mismatch is clear and affects a meaningful portion of the turn, not for individual foreign loanwords or proper nouns that are expected to be pronounced natively.
+        - **wrong_language** — Speech in a language other than the expected language ({expected_language}) that is not in the intended text. Use this when the language mismatch is clear and covers a meaningful portion of the turn, a phrase or clause in another language (e.g., "one moment"), or a letter or digit name from another language inside a spelled code. Do not use it for individual foreign loanwords or proper nouns that are expected to be pronounced natively.
 
         Tagging guidance:
         - If a turn has both an entity error and missing/dropped content outside tagged regions, list both `entity_error` and `truncation`.

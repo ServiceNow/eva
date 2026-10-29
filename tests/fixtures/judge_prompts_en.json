@@ -6,7 +6,7 @@
   "speakability.user_prompt": "b169978b9281",
   "transcription_accuracy_key_entities.audio_native_prompt": "315699fd0211",
   "transcription_accuracy_key_entities.user_prompt": "bef4cfeb31b0",
-  "tts_fidelity.user_prompt": "b54fcab99ee9",
+  "tts_fidelity.user_prompt": "d9e1b8363ccb",
   "user_behavioral_fidelity.user_prompt": "5f6361e25eba",
   "user_speech_fidelity.user_prompt": "b01a5ec09632"
 }
