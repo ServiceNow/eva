@@ -507,6 +507,8 @@ judge:
       }}
 
 
+  # No {language_guidance} slot: this judge scores the simulated user against its own
+  # instructions (persona, goal, language directive), not against a language's norms.
   user_behavioral_fidelity:
     user_prompt: |
       You are an expert evaluator determining whether a simulated user's behavior has corrupted the voice agent evaluation. 
