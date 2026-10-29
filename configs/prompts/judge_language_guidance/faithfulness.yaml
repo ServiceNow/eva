@@ -15,7 +15,7 @@ de: |
 
 fr: |
   **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
-  - Numbers 70-99 are compound and become ambiguous when split or transcribed: "soixante-dix-sept" = 77 vs "soixante, dix-sept" = 60 17; "quatre-vingt-deux" = 82 vs "4 22" / "80 2"; "quatre-vingt-dix" = 90 vs "4 20 10". A code containing such a sequence (e.g. "BRX 60 17") needed digit-by-digit confirmation before it was committed.
+  - Numbers 70-99 are compound and become ambiguous when split or transcribed: "soixante-dix-sept" = 77 vs "soixante, dix-sept" = 60 17; "quatre-vingt-deux" = 82 vs "4 22" / "80 2"; "quatre-vingt-dix" = 90 vs "4 20 10". For a code containing such a sequence (e.g. "BRX 60 17"), flag a missing digit-by-digit confirmation only if the trace shows the ambiguity mattered (a failed lookup, a user correction, two versions of the value).
   - Letter names rhyming on -é: B/C/D/G/P/T/V/W ("bé, cé, dé, gé, pé, té, vé, double-vé"); G ("gé") and J ("ji") are routinely swapped; M/N ("emme/enne"); I vs Y ("i grec").
 
   **Language policy (violating_policies, "Not communicating in the language specified"):**
@@ -23,7 +23,6 @@ fr: |
 
 fr-CA: |
   **Québec French specifics:**
-  - Same compound-number system as European French (no "septante/nonante"), so the 77 vs "60 17" ambiguity applies.
   - Québec usage prefers courriel, billet, clavardage over e-mail, ticket, chat; either choice is register, not a language-policy violation.
 
 es: |

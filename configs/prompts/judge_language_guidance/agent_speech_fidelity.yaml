@@ -30,15 +30,14 @@ fr: |
   - If the English name sounds like a different French letter, it changes the code: English G 'djee' ~ French J 'ji', English J 'djay' ~ French G 'gé', English E 'ii' = French I: rating = 0.
   - Spelling words are valid ('A comme Anatole', 'M comme Marcel').
   - Confusable letters: M/N (emme/enne), B/D/P/T (bé/dé/pé/té), G/J (gé/ji), F/S (effe/esse).
-  - Numbers: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze are correct. Liaison and elision (six heures, dix-huit) are normal.
-  - Times: 'quinze heures trente', 'trois heures et demie', 'trois heures moins le quart' = 2:45, 'midi', 'minuit' are correct.
+  - Numbers: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze are correct. Liaison (six heures, dix-huit) is normal.
+  - Times: 'quinze heures trente', 'trois heures et demie', 'trois heures et quart' = 3:15, 'trois heures moins le quart' = 2:45, 'midi', 'minuit' are correct.
   - Dates: 'le premier mars' is correct; 'le un mars': not by itself a reason for rating = 0; rate 0 only if a French listener could take it for a different value. Years 'deux mille vingt-six', 'mille neuf cent quatre-vingt-dix' or 'dix-neuf cent quatre-vingt-dix' are valid.
   - Established loanwords (not code-switching): ticket, e-mail, week-end, OK.
 
 fr-CA: |
   - Québec: Z may also be said 'zed'; this is not English.
-  - Contact with English does not make English letter or digit names, INC/EMP spelled in English, or English phrases acceptable; apply the rules above.
-  - Times are often said on the 24-hour clock ('quinze heures trente') or as 'trois heures et quart'; both are correct.
+  - Times: 'trois heures moins quart' (without 'le') = 2:45 and the colloquial 'quart à trois' = 2:45 are correct.
 
 es: |
   - Letter names in spelled codes: A a, B be, C ce, D de, E e, F efe, G ge, H hache, I i, J jota, K ka, L ele, M eme, N ene, Ñ eñe, O o, P pe, Q cu, R erre, S ese, T te, U u, V uve (also ve), W uve doble / doble ve / doble u, X equis, Y i griega / ye, Z zeta. Digits cero, uno, dos ... nueve.
