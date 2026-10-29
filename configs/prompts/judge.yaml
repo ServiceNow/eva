@@ -84,7 +84,8 @@ judge:
 
       **verbosity_or_filler**
       Contains unnecessary wording, repetition within the same turn, hedging, or explanation beyond what the context requires.
-      Exception: do NOT flag following of cultural norms, such as obligatory politeness structures (e.g. in Japanese and Korean: keigo, honorifics, set opening/closing phrases).
+      Exception: do NOT flag following of cultural norms, such as obligatory politeness structures, formal register and set service phrases (e.g. in Japanese and Korean: keigo, honorifics, set opening/closing phrases). The exception covers one such phrase per function (greet / open, acknowledge, hold, return from hold, thank, close), and a single short acknowledgement, courtesy or empathy phrase is never verbosity_or_filler on its own. It does NOT cover repetition: the same formula said twice in one turn, several acknowledgements stacked together, or a term given together with its synonym or its translation into another language is verbosity_or_filler. Expanding an acronym once, on its first mention (e.g., "your PTO, that's your paid time off"), is not repetition.
+      Judge length by how long the turn takes to say and how many information units it carries, not by its written length or word count: polite constructions, and numbers or dates written out in words, can look long on the page without adding cognitive load.
 
       **excess_information_density**
       Presents too many distinct facts, options, numbers, steps, or requests at once, making it difficult for a listener to process in real time. Note: bundling closely related transactional details that the user needs to act on or remember together (e.g., confirming a reference number, date, and one or two key details in a single turn) is expected behavior — only flag this when the volume of information genuinely exceeds what a listener can comfortably retain.
@@ -341,7 +342,7 @@ judge:
       - Reasonable contextual inferences for categorical parameters, when the enum value's meaning is clearly supported by the user's stated intent
       - Numeric values derived from prior tool results through simple arithmetic (e.g., summing line items, subtracting used amounts from a balance, or computing a total from prior results)
       - System-level or framework-generated tool calls made before the assistant has any user input, if the assistant subsequently asks for proper information
-      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters, reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance. Which letters are phonetically confusable is language-dependent: in English "v"/"z" or "b"/"d" are classic pairs; in Korean, M is named "엠" and N is named "엔" — nearly identical in fast or phone-quality audio; other languages have their own similar-sounding pairs.
+      - Trying valid variations of a user-stated identifier or name when a prior read-only lookup failed (e.g., swapping commonly confused letters, reordering characters, trying alternative spellings) — this is proper disambiguation behavior, not fabrication, since the variation is grounded in the user's original utterance. Which letters are phonetically confusable is language-dependent: in English "v"/"z" or "b"/"d" are classic pairs; in Korean, M is named "엠" and N is named "엔" — nearly identical in fast or phone-quality audio; other languages have their own similar-sounding pairs (see the language-specific guidance below, if any).
       - Trying the native-script rendering of a name after a Romanized/English spelling failed a lookup, or vice versa (e.g., trying "山田" after "Yamada" did not match, or trying a Romanized transliteration after the native-script form failed) — this is the same disambiguation behavior as above, grounded in the user's spoken name, not a fabrication. **Exception:** if the user has already explicitly spelled the name out letter by letter (or corrected/confirmed a specific spelling) earlier in the conversation, the assistant must use that confirmed spelling exactly — deviating from it to try an alternate script or spelling at that point IS a fabrication, since the ambiguity was already resolved by the user.
 
       **Before flagging a parameter as fabricated:** Verify it cannot be traced to ANY source — user statements, prior tool results, policy entitlements, simple arithmetic from known values, or standard domain mappings. Also verify enum values against the actual tool specification before claiming a value is invalid.
@@ -379,7 +380,7 @@ judge:
       - Offering options or taking actions that the agent instructions explicitly prohibit
       - Not applying policies that are clearly applicable to the situation (e.g., not offering an entitled benefit, not following a required disclosure)
       - Stating a policy incorrectly, or significantly changing a policy's meaning
-      - Not communicating in the language specified in the agent instructions.
+      - Not communicating in the language specified in the agent instructions. This includes phrases or clauses in another language inside an otherwise correct-language turn (e.g., "one moment", "Let me check that" in a non-English conversation). Severity: an isolated fixed phrase (a hold, acknowledgement or courtesy formula) is rated 2, even when it recurs across turns; whole sentences of content in another language, or most turns in another language, are rated 1. Loanwords that are established in the specified language, codes, IDs, acronyms, brand/product names and proper nouns are never a language violation.
       - **Temporal sequencing for consequential actions:** When instructions require "explain before acting" or "get explicit confirmation before proceeding," the assistant must pause for user confirmation BETWEEN read operations and write operations that have financial consequences or are irreversible. Executing such read and write operations in the same turn without intermediate user confirmation violates these instructions. Summarizing results TO the caller after the fact does NOT satisfy a requirement to get confirmation FROM the caller before acting.
       - **Irreversible write operations** (cancellations, rebookings, refunds, account/record changes, ticket submissions, access grants, etc.) executed (a) without disclosing what the agent's policies (see Agent Instructions above) require to be surfaced before that write (e.g., a fee, balance impact, eligibility caveat, or approval requirement — varies by policy), or (b) without a clear signal of user intent for that specific action. Do not invent disclosure requirements the policy does not impose.
 
@@ -412,6 +413,7 @@ judge:
       - Making a reasonable inference when the context makes the intent obvious (e.g., user says "my flight" when they only have one flight)
       - Retrying a lookup with a corrected spelling after the user confirms or spells out the information — this is proper disambiguation behavior
       - Trying valid different combinations of names and confirmation codes when a lookup fails (e.g., swapping commonly confused letters like "v"/"z" or "b"/"d", reordering characters)
+      - A value that merely contains letters or digits that sound alike (e.g., "b"/"d", or a digit and a letter that are homophones in the conversation's language) — this is NOT by itself a reason to flag failing_to_disambiguate or fabricating_tool_parameters. Use phonetic confusability only when the trace shows the ambiguity mattered: a failed lookup, a user correction, two different versions of the value across turns, or an utterance that can genuinely be heard two ways (a homophone). Do not flag hypothetical alternative readings when the value was verified successfully and nothing in the conversation signals ambiguity.
       - Trying a native-script rendering of a name after a Romanized/English spelling failed, or vice versa, when the name was only ever provided by sound (not spelled out) — this is proper disambiguation, not a failure to disambiguate. **Exception:** once the user has explicitly spelled the name out letter by letter or confirmed a specific spelling, silently substituting a different script or spelling instead of using the confirmed one IS a flag.
 
       ### 5. hallucination
@@ -452,7 +454,7 @@ judge:
           - A minor ungrounded tool parameter that doesn't affect results
           - A minor policy deviation that doesn't affect the user's decision-making or their understanding of the policy
           - Skipping a read-back-and-confirm step on values (dates, names, identifiers) the user stated in preceding turns, when the values written to the tool call match what appears in the user's transcribed utterance. **This carve-out does NOT apply when the transcript shows signals of a likely transcription/STT divergence** — e.g., the user explicitly said an earlier readback was wrong, OR the transcript contains two or more different versions of the same value across turns. In those cases the assistant had clear signal that a readback was needed to surface the discrepancy, and skipping it likely committed a wrong value to the system — rate **1**, not 2.
-          - A minor communication issue, like briefly using the wrong language but subsequently correcting it
+          - A minor communication issue, like briefly using the wrong language but subsequently correcting it, or a fixed phrase in another language (e.g., "one moment"), even when it recurs across turns
         - Minor instruction-following deviations that do not materially affect the outcome (e.g., slight formatting differences, omitting low-importance optional steps)
         - Borderline cases where it is unclear whether a faithfulness violation occurred due to ambiguous instructions, incomplete context, or reasonable interpretation differences
         - Adopting incorrect terminology from the user (e.g., wrong brand or product name) while processing the correct record, when it doesn't cause confusion or incorrect actions
@@ -467,7 +469,7 @@ judge:
           - **Financial or reputational impact** on the user or the company — e.g., communicating incorrect charges, fees, refunds, balances, or amounts; making commitments the company cannot honor; misstating obligations in a way that could harm trust
           - Leaving the user with an **incorrect understanding of company policy** that they could act on in the future (e.g., misstating eligibility rules, entitlement conditions, or process requirements), even if the current conversation ends up fine
           - Hallucinating information not present in tool results, especially consequential figures (costs, balances, dates, approvals) communicated to the user as fact
-          - Repeatedly talking in a language that the assistant is not instructed to use
+          - Repeatedly talking in a language that the assistant is not instructed to use: whole sentences of content, or most turns
         - Any faithfulness issue that repeatedly prevents the conversation from progressing is also rated 1.
       
       For the final rating of the conversation, use the minimum rating across all dimensions as the overall faithfulness rating (i.e., if any dimension is rated 1, overall rating is 1; if all dimensions are 3, overall rating is 3; if there are no 1s but at least one 2, overall rating is 2).
@@ -627,6 +629,7 @@ judge:
       2. Other kinds of formatting that should not be spoken - JSONS with brackets, etc.
       3. Missing spaces between words that would cause a TTS system to fail (eg. eighttwentypm instead of eight twenty PM). Common acronyms are fine, this is only for words that typically should have spaces between them. Note: Chinese, Japanese, and Korean text does not use spaces between characters by convention — do NOT flag CJK text for missing spaces.
       4. Emojis
+      5. **Glosses**: a term immediately followed, in parentheses or after a slash, by its translation into another language or by a synonym that means exactly the same thing (e.g., a native-language term followed by its English equivalent, or "PIN / passcode"), so the listener hears the same thing twice. Not a violation: an acronym expanded once, on its first mention (e.g., "paid time off (PTO)"); a slash between paired or alternative terms (e.g., "AM/PM", "and/or"); a word, code or abbreviation used on its own.
 
       ## Instructions
 
@@ -708,9 +711,17 @@ judge:
         - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
         - Name spelling variants that are phonetically identical (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
 
+        **Spelled codes and mixed-language speech:**
+        - Letters and digits in spelled codes must be spoken with their {expected_language} names. A letter or digit name from another language (e.g., an English letter or digit name in a German code) is rating = 0 with `wrong_language`; add `entity_error` if it sounds like a different {expected_language} letter or digit. If the intended text itself contains those foreign words or names, reproducing them is not an error.
+        - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
+        - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
+        - A phrase or sentence in another language that is not in the intended text (e.g., an English "one moment" in a French turn) is rating = 0 with `wrong_language`, even when the rest of the turn is in {expected_language}. If the intended text itself contains the phrase, reproducing it is not an error.
+        - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
+        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an error by themselves; they are an `entity_error` only if a native {expected_language} listener could take it for a different value. A different word for the value (e.g., "septante" for "soixante-dix") is still an error, as above.
+
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
-        - **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn.
+        - **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn, OR speech in another language as defined by `wrong_language` below.
 
         ## Failure Modes (only when rating = 0)
         For each low-fidelity turn, tag every failure mode that applies. A turn may have multiple failure modes. Leave the list empty when rating = 1.
@@ -723,7 +734,7 @@ judge:
 
         - **insertion_hallucination** — The audio contains words or phrases that were NOT in the intended text. The TTS added content on its own — extra sentences, repeated phrases, or filler that the script did not contain.
 
-        - **wrong_language** — The audio is spoken in a language different from the expected language ({expected_language}). Use this when the language mismatch is clear and affects a meaningful portion of the turn, not for individual foreign loanwords or proper nouns that are expected to be pronounced natively.
+        - **wrong_language** — Speech in a language other than the expected language ({expected_language}) that is not in the intended text. Use this when the language mismatch is clear and covers a meaningful portion of the turn, a phrase or clause in another language (e.g., "one moment"), or a letter or digit name from another language inside a spelled code. Do not use it for individual foreign loanwords or proper nouns that are expected to be pronounced natively.
 
         Tagging guidance:
         - If a turn has both an entity error and missing/dropped content outside tagged regions, list both `entity_error` and `truncation`.
@@ -801,6 +812,14 @@ judge:
         - Filler words, phrasing, word choice, sentence structure
         - Slight pacing or prosody differences
 
+        **Spelled codes and mixed-language speech:**
+        - Letters and digits of trace entities must be spoken with their {expected_language} names. A letter or digit name from another language inside a trace entity (e.g., an English letter or digit name in a German code) means the entity was not articulated in {expected_language}: rating = 0. An entity that is itself in another language in the trace (e.g., an English street or product name) may be said in that language.
+        - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
+        - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
+        - A phrase in another language around the entities (e.g., an English "one moment" in a French turn) does not affect this rating; other metrics score it. Here, only the entities must be said in {expected_language}.
+        - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
+        - A number, date or time reading that is unusual but unambiguous is not by itself a reason for rating = 0; rate 0 only if a native {expected_language} listener could take it for a different value.
+
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: Every entity from the conversation trace that the agent speaks in this turn is clearly and correctly articulated.
         - **0 (Low Fidelity)**: One or more entities from the conversation trace are garbled, mispronounced, or indistinguishable in the audio.
@@ -873,6 +892,14 @@ judge:
         - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form in that language
         - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
         - Name spelling variants where the pronunciation is identical (e.g., German Meyer/Meier/Maier/Mayer)
+
+        ### Spelled Codes and Mixed-Language Speech
+        - Letters and digits in spelled codes must be spoken with their {expected_language} names. A letter or digit name from another language (e.g., an English letter or digit name in a German code) is a wrong-language deviation: rating at most 2 while the value is still unambiguous, and 1 (entity error) if it sounds like a different {expected_language} letter or digit. If the intended text itself contains those foreign words or names, reproducing them is not an error.
+        - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
+        - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
+        - A phrase or sentence in another language that is not in the intended text (e.g., an English "one moment" in a French turn) is wrong language for part of the turn: rating at most 2, and 1 if it replaces an entity or the turn no longer makes sense. If the intended text itself contains the phrase, reproducing it is not an error.
+        - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
+        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an entity error: rating at most 2 if they sound unnatural, and 1 only if a native {expected_language} listener could take it for a different value. A different word for the value (e.g., "septante" for "soixante-dix") is still flagged, as above.
 
         ## Rating Scale (per turn)
         - **3 (High Fidelity)**: 

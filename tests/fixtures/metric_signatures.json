@@ -7,7 +7,7 @@
   },
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
-    "prompt_hash": "5fdd118b6fd8",
+    "prompt_hash": "3ce16be3d73b",
     "source_hash": "7d251695fd2f",
     "version": "v0.1"
   },
@@ -31,7 +31,7 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "741590f3d7c1",
+    "prompt_hash": "e1e6f9722f0c",
     "source_hash": "b2cf38e3fbc7",
     "version": "v0.3"
   },
@@ -49,19 +49,19 @@
   },
   "SpeakabilityJudgeMetric": {
     "name": "speakability",
-    "prompt_hash": "9d39f642366b",
+    "prompt_hash": "815f51f63b04",
     "source_hash": "b76318002d8f",
     "version": "v0.3"
   },
   "SpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "889e34a06a58",
+    "prompt_hash": "409869c14038",
     "source_hash": "aba2c27cb6af",
     "version": "v0.4"
   },
   "TTSFidelityMetric": {
     "name": "tts_fidelity",
-    "prompt_hash": "99e126158b75",
+    "prompt_hash": "0f90aac2690e",
     "source_hash": "317128c2ea72",
     "version": "v0.3"
   },
@@ -97,7 +97,7 @@
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "1127744357ae",
+    "prompt_hash": "f0f0b36fa4bd",
     "source_hash": "6625af8e00f9",
     "version": "v0.2"
   }
