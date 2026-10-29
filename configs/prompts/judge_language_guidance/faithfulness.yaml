@@ -1,0 +1,14 @@
+# Per-language guidance for the faithfulness judge, rendered into its language_guidance slot.
+# Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
+# Covers confusable letter and digit pairs (failing_to_disambiguate, fabricating_tool_parameters)
+# and phrases in another language under the "respond in <language>" policy (violating_policies).
+
+de: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Letter names rhyming on -e: B/D/P/T/W/G/E/C ("beh, deh, peh, teh, weh, geh, eh, tseh"); also F/S ("eff/ess") and M/N ("emm/enn").
+  - German vs English letter names get mixed: J is "jott" in German but "jay" in English, which sounds close to German G "geh"; English E "ee" sounds like German I; English A "ay" like German E "eh". So J/G, D/E/G/T and E/I/A can swap between what the user said and what the tool received.
+  - "zwei"/"drei" (2/3) are confusable, which is why careful speakers say "zwo".
+  - Two-digit numbers are spoken units-first ("dreiundfünfzig" = 53): a transposition (35) or a split ("3 50") is a typical capture error.
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Established anglicisms of German are normal German, not a language violation: Ticket, Login, Account, E-Mail, Check-in, Gate, Upgrade, Status.

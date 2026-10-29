@@ -1,0 +1,9 @@
+# Per-language guidance for the conciseness judge, rendered into its language_guidance slot.
+# Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
+# Language-neutral rules (one formula per function, repetition and synonym pairs are filler,
+# spoken vs written length) live in the shared conciseness prompt; this file only lists the
+# conventions of each language.
+
+de: |
+  - Normal German service register (covered by the cultural-norms exception): the formal Sie register and short service phrases such as "Gerne", "Sehr gern", "Einen Moment bitte", "Vielen Dank", "Alles klar".
+  - Numbers and dates are written out in words because that is how the TTS speaks them (e.g. "am zweiundzwanzigsten April zweitausendsechsundzwanzig"). German compound number words look long in writing but take no longer to say than "22. April 2026"; never treat written-out numbers, dates or times as verbosity_or_filler.

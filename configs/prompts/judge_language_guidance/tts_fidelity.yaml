@@ -1,0 +1,14 @@
+# Per-language guidance for the tts_fidelity judge, rendered into its language_guidance slot.
+# Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
+
+de: |
+  - Letter names in spelled codes: A ah, B beh, C zeh, D deh, E eh, F eff, G geh, H hah, I ih, J jott, K kah, L ell, M emm, N enn, O oh, P peh, Q kuh, R err, S ess, T teh, U uh, V fau, W weh, X iks, Y ypsilon, Z zett; Ä/Ö/Ü as ä/ö/ü. Digits null, eins, zwei (zwo is a valid variant), drei ... neun.
+  - English letter or digit names typically heard in German codes: 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6.
+  - If the English name sounds like a different German letter, it changes the code: English E 'ii' = German I, English A 'ay' ~ German E, English V 'vee' ~ German W 'weh', English J 'jay' can be heard as German G 'geh': rating = 0 with `entity_error` and `wrong_language`.
+  - Buchstabiertafel words are valid spelling ('D wie Dora', 'Z wie Zeppelin').
+  - Confusable letters: D/E/G/T (deh/eh/geh/teh), B/P, M/N, F/S.
+  - Units before tens is correct: fünfundsiebzig = 75, vierundzwanzig = 24. A swapped value (siebenundfünfzig for 75): `entity_error`.
+  - Times: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45 are all correct; 'halb drei' for 3:30: `entity_error`.
+  - Dates: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'. A date read as digit groups a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf'): not an error by itself; `entity_error` only if a German listener could take it for a different value.
+  - A name with its umlaut replaced or lost (Köhler said as 'Kohler' or 'Kerr'): `entity_error`. Meier/Meyer-type spelling variants are fine.
+  - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords (Ticket, Login, Account, Laptop). A half-English pronunciation of a German word ('Perfekt') is accent, not wrong language.
