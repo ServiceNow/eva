@@ -627,6 +627,7 @@ judge:
       2. Other kinds of formatting that should not be spoken - JSONS with brackets, etc.
       3. Missing spaces between words that would cause a TTS system to fail (eg. eighttwentypm instead of eight twenty PM). Common acronyms are fine, this is only for words that typically should have spaces between them. Note: Chinese, Japanese, and Korean text does not use spaces between characters by convention — do NOT flag CJK text for missing spaces.
       4. Emojis
+      5. **Parenthetical glosses**: a term immediately followed by its translation, equivalent or abbreviation in parentheses or after a slash (e.g., "paid time off (PTO)", "PIN / passcode", or a native-language term followed by its English equivalent). TTS does not voice the parentheses or slash, so the listener hears both forms back-to-back. A word, code or abbreviation used on its own, without a duplicate, is not a violation.
 
       ## Instructions
 
