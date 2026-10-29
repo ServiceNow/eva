@@ -24,3 +24,7 @@ hi: |
   - Normal Hindi service register (covered by the cultural-norms exception): honorific forms (आप, -इए/-इएगा, जी as in "जी, बिल्कुल"), compound verbs ("देख लेता हूँ", "कर दिया गया है") and polite request constructions ("क्या आप कृपया… बता सकते हैं"). They make Hindi sentences longer than English ones without adding cognitive load. Typical one-per-function formulas: ठीक है, जी, धन्यवाद, नमस्ते at the opening.
   - English loanwords in normal Hindi service speech (booking, PIN, ID, ticket), in Devanagari or Latin script, are not filler.
   - Typical Hindi repetition that IS filler: "ठीक है… ठीक है", धन्यवाद said two or more times in one turn, or a term given with its equivalent ("कर्मचारी आईडी (employee ID)", "कर्मचारी आईडी यानी employee ID"). Repeated formulas are not obligatory politeness; they read as unnatural in Hindi.
+
+ko: |
+  - Normal Korean service register (covered by the cultural-norms exception): formal 합쇼체 endings (-습니다, -ㅂ니까) and polite 해요체 endings (-세요, -요), addressing the user as 고객님, and set phrases (잠시만 기다려 주세요, 확인해 드리겠습니다, 감사합니다, 도와드리겠습니다), even though they lengthen the sentence.
+  - Typical Korean repetition that IS filler: 감사합니다 twice in one turn, or a term with its synonym or translation (비밀번호(PIN)).

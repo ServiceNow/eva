@@ -71,3 +71,12 @@ hi: |
   - Literal clock readings ('एक तीस' for 1:30, 'चार तीस') or 24-hour readings ('तेरह तीस') in conversation are non-native: not an error by itself; `entity_error` only if a Hindi listener could take it for a different value.
   - English loanwords and place names should sound as in Indian English; a pronunciation a Hindi listener would not recognise ('Los Angeles', 'aisle' as 'es-le', 'Datadog'): `entity_error` if it is an entity, otherwise `garbled_hallucination`.
   - Hindi speech mixes in English loanwords (flight, booking, ticket, seat): not wrong language.
+
+ko: |
+  - Letter names in codes are Hangul: 에이, 비, 씨, 디, 이, 에프, 지, 에이치, 아이, 제이, 케이, 엘, 엠, 엔, 오, 피, 큐, 알, 에스, 티, 유, 브이, 더블유, 엑스, 와이, 제트/지; these are correct.
+  - Digits in codes are Sino-Korean: 공/영, 일, 이, 삼, 사, 오, 육, 칠, 팔, 구. English digit names inside a Korean turn ('six', 'two'): rating = 0 with `wrong_language` (add `entity_error` if it sounds like a different Korean letter or digit). Judge against the intended text: if the intended text itself contains the English words or digit names, reproducing them is not an error. Native numbers (하나, 둘) inside a code: not an error by itself; `entity_error` only if a Korean listener could take it for a different value.
+  - Homophones: E 이 = 2 이, Z 지 = G 지; do not flag only for that, use the trace or intended text.
+  - Confusable letters and digits: 엠/엔 (M/N), 비/피 (B/P), 제이/지 (J/G), 디/티 (D/T), 일/이 (1/2).
+  - Native vs Sino-Korean, correct: hours native (세 시, 열두 시), minutes Sino (삼십 분; 세 시 반 = 3:30), months Sino with 유월 (6) and 시월 (10), days Sino (십오 일), money Sino (만 오천 원), people and items native (두 명, 세 개), ages native (스물다섯 살) or Sino with 세 (이십오 세).
+  - The wrong system for a correct value ('삼 시' for 3 o'clock, '육월'): not an error by itself; `entity_error` only if a Korean listener could take it for a different value. A different value: `entity_error`.
+  - Not code-switching: proper nouns, official product or system names, codes and acronyms, and established loanwords written in Hangul (티켓, 이메일).

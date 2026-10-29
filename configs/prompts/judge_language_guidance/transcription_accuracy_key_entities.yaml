@@ -12,3 +12,7 @@ hi: |
   - Hindi and English digit names are both normal in Hindi speech and match the digits (शून्य / ज़ीरो / zero = 0, दो / टू / two = 2).
   - Code-switching is standard in spoken Hindi: the same English loanword in Devanagari or Latin script is a match (मार्च = March, कोड = code, ईमेल = email).
   - Indian digit grouping does not change the value (1,50,000 = 150,000 = डेढ़ लाख).
+
+ko: |
+  - 만-based grouping and separators do not change the value: 1만 2천 = 12,000 = 만 이천; 12만 = 120,000; 1,000 = 1000. Mark these correct when the value matches.
+  - 0 read as 공 (e.g. 공일공 = 010) is the standard reading in phone numbers and codes and matches 0.

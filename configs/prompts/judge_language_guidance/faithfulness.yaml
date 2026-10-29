@@ -52,6 +52,15 @@ nl: |
   **Language policy (violating_policies, "Not communicating in the language specified"):**
   - Common anglicisms of Dutch are not a language violation: ticket, account, e-mail, inloggen/login, check-in, gate, update.
 
+ko: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - Letter names: M/N (엠/엔); G/Z (지 vs 지/제트) and J/Z (제이/제트); B/P (비/피) and D/T (디/티) under phone audio.
+  - Letter/digit homophones in codes: E (이) = Sino-Korean 2 (이); O (오) = 5 (오); U (유) vs 6 (육); 0 is often read 공, which also collides with O.
+  - Sino-Korean 일/이 (1/2) are a classic pair; speakers may mix native (하나, 둘) and Sino-Korean numbers.
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Hangul-written loanwords (로그인, 티켓, 이메일, 체크인, 비밀번호 리셋) are normal Korean, not code-switching. Latin-script codes and acronyms (ID, PNR, OTP, EMP) are fine.
+
 hi: |
   **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
   - व covers both /v/ and /w/, so V/W are genuinely confusable in names spelled by sound; G (जी) and J (जे) are close in Indian-English letter names; Z may be said जेड or ज़ी.
