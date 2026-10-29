@@ -60,3 +60,14 @@ it: |
   - Dates: 'il primo marzo' (primo, not uno), then cardinals ('il tre marzo'); 'il uno marzo' or other non-Italian date and ID formats: not by itself a reason for rating = 0; rate 0 only if a Italian listener could take it for a different value. Years 'duemilaventisei', 'millenovecentonovanta'.
   - Times: 'le quindici e trenta', 'le tre e mezza', 'le tre meno un quarto' = 2:45 are correct; a different time: rating = 0.
   - Established loanwords (not code-switching): email, ticket, ok.
+
+hi: |
+  - Latin letters in codes are said with English names, written ए, बी, सी, डी, ई, एफ, जी, एच, आई, जे, के, एल, एम, एन, ओ, पी, क्यू, आर, एस, टी, यू, वी, डब्ल्यू, एक्स, वाई, ज़ेड: this is correct Hindi, not wrong language.
+  - Digits: शून्य, एक, दो, तीन, चार, पाँच, छह, सात, आठ, नौ. English digit names ('zero', 'eight') are common in Indian speech and are not wrong language by themselves; if the intended or trace text spells the Hindi digit word and an English one is spoken, note it (not by itself a reason for rating = 0; rate 0 only if a Hindi listener could take it for a different value).
+  - A digit dropped or clipped (शून्य missing or said 'शून'): rating = 0.
+  - Large numbers group by हज़ार, लाख, करोड़ (एक लाख पच्चीस हज़ार = 125,000): correct.
+  - Confusable numbers: सत्रह/सत्तर (17/70), उन्नीस/उनतीस/उनचास (19/29/49), सात/साठ (7/60).
+  - Times that are correct: डेढ़ बजे = 1:30, ढाई बजे = 2:30, साढ़े तीन = 3:30 (साढ़े only from 3 up), सवा चार = 4:15, पौने पाँच = 4:45, 'चार बजकर बीस मिनट'. A wrong value (साढ़े पाँच for 4:30, पौने चार for 4:45): rating = 0.
+  - Literal clock readings ('एक तीस' for 1:30, 'चार तीस') or 24-hour readings ('तेरह तीस') in conversation are non-native: not by itself a reason for rating = 0; rate 0 only if a Hindi listener could take it for a different value.
+  - English loanwords and place names should sound as in Indian English; a pronunciation a Hindi listener would not recognise ('Los Angeles', 'aisle' as 'es-le', 'Datadog'): for a trace entity (name, place, product) this is rating = 0; non-entity words stay out of scope.
+  - Hindi speech mixes in English loanwords (flight, booking, ticket, seat): not wrong language.

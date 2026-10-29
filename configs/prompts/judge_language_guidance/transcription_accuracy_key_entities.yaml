@@ -6,3 +6,9 @@
 de: |
   - Umlaut and ß spellings and their standard transliterations are the same name or word: ä = ae, ö = oe, ü = ue, ß = ss (Krüger = Krueger, Müller = Mueller, Straße = Strasse). Treat them as matching on every mention, including after the user spelled the name, because they are one spelling written two ways.
   - This is narrower than the Meyer/Meier rule: Meier vs Meyer is a different spelling and follows the first-mention rule in the Correctness Criteria.
+
+hi: |
+  - Devanagari letter names match their Latin letters (ए = A, बी = B, सी = C, डी = D, ई = E, जी = G, जे = J, एम = M, एन = N, पी = P, क्यू = Q, वी = V, डब्ल्यू = W, ज़ेड = Z).
+  - Hindi and English digit names are both normal in Hindi speech and match the digits (शून्य / ज़ीरो / zero = 0, दो / टू / two = 2).
+  - Code-switching is standard in spoken Hindi: the same English loanword in Devanagari or Latin script is a match (मार्च = March, कोड = code, ईमेल = email).
+  - Indian digit grouping does not change the value (1,50,000 = 150,000 = डेढ़ लाख).

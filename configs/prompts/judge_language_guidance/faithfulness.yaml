@@ -51,3 +51,13 @@ nl: |
 
   **Language policy (violating_policies, "Not communicating in the language specified"):**
   - Common anglicisms of Dutch are not a language violation: ticket, account, e-mail, inloggen/login, check-in, gate, update.
+
+hi: |
+  **Confusable letters and numbers (failing_to_disambiguate, fabricating_tool_parameters):**
+  - व covers both /v/ and /w/, so V/W are genuinely confusable in names spelled by sound; G (जी) and J (जे) are close in Indian-English letter names; Z may be said जेड or ज़ी.
+  - Hindi number words are irregular and pairwise close: सात/साठ (7/60), सत्रह/सत्तर (17/70), उन्नीस/उनतीस (19/29), तीन/तीस (3/30). English digit names are often mixed in, and शून्य (zero) may be clipped, changing the digit count.
+
+  **Language policy (violating_policies, "Not communicating in the language specified"):**
+  - Spoken Hindi routinely mixes in English words (Hinglish). Isolated loanwords such as ID, OK, login, password, email, ticket, booking, flight, seat, account, form, mobile number, PNR are normal Hindi usage, whether written in Devanagari or Latin script, and are not violations.
+  - Repeatedly using English procedural phrases that have common Hindi equivalents (Employee ID → कर्मचारी ID, last name → उपनाम / अंतिम नाम, confirmation number → पुष्टि संख्या, six digits → छह अंक) is a minor issue: at most 2.
+  - Evidence is Latin-script English phrases in an otherwise Devanagari turn; quote them.
