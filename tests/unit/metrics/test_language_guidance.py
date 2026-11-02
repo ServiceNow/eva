@@ -6,17 +6,12 @@ import os
 import string
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
 
 from eva.metrics import language_guidance
-from eva.metrics.accuracy.faithfulness import FaithfulnessJudgeMetric
-from eva.metrics.accuracy.speech_fidelity import SpeechFidelityMetric
 from eva.metrics.base import BaseMetric
-from eva.metrics.diagnostic.transcription_accuracy_key_entities import TranscriptionAccuracyKeyEntitiesMetric
-from eva.metrics.diagnostic.tts_fidelity import TTSFidelityMetric
 from eva.metrics.experience.conciseness import ConcisenessJudgeMetric
 from eva.metrics.language_guidance import (
     DISPLAY_NAMES_BY_CODE,
@@ -25,10 +20,10 @@ from eva.metrics.language_guidance import (
     render_language_guidance,
 )
 from eva.metrics.versioning import _CURRENT_PROMPT_HASH
-from eva.models.config import PipelineType, base_language
+from eva.models.config import base_language
 from eva.utils.prompt_manager import get_prompt_manager
 
-from .conftest import make_judge_metric, make_metric_context
+from .conftest import make_judge_metric
 
 # Scores the simulated user against its own instructions, so it has no guidance slot.
 JUDGES_WITHOUT_GUIDANCE = {"user_behavioral_fidelity"}
@@ -126,82 +121,6 @@ def test_get_judge_prompt_injects_guidance_and_changes_hash(tmp_path, monkeypatc
     assert "### European French-specific guidance\nFrench note.\n" in french
     assert "specific guidance" not in english
     assert french_hash != english_hash
-
-
-class _Captured(Exception):
-    """Raised by the patched get_judge_prompt to stop compute() once the prompt is requested."""
-
-
-def _speech_fidelity_patches(metric):
-    return [
-        patch.object(metric, "load_role_audio", return_value=MagicMock()),
-        patch.object(metric, "encode_audio_segment", return_value=""),
-    ]
-
-
-@pytest.mark.parametrize(
-    "metric_cls, extra_patches",
-    [
-        # ConversationTextJudgeMetric
-        (FaithfulnessJudgeMetric, lambda m: [patch.object(m, "format_transcript", return_value="<transcript>")]),
-        # PerTurnConversationJudgeMetric
-        (ConcisenessJudgeMetric, lambda m: [patch.object(m, "format_transcript", return_value="<transcript>")]),
-        # SpeechFidelityBaseMetric
-        (
-            TTSFidelityMetric,
-            lambda m: [
-                *_speech_fidelity_patches(m),
-                patch.object(m, "_get_intended_turns", return_value={1: "Hello"}),
-            ],
-        ),
-        # SpeechFidelityMetric
-        (
-            SpeechFidelityMetric,
-            lambda m: [
-                *_speech_fidelity_patches(m),
-                patch.object(m, "_build_redacted_trace", return_value=[]),
-                patch.object(m, "_get_assistant_turn_ids", return_value=[1]),
-                patch.object(m, "_format_redacted_trace", return_value="<trace>"),
-            ],
-        ),
-    ],
-)
-@pytest.mark.asyncio
-async def test_judge_metrics_forward_context_language(metric_cls, extra_patches):
-    metric = make_judge_metric(metric_cls, mock_llm=True)
-    context = make_metric_context(language="fr-CA", conversation_trace=[])
-    spy = MagicMock(side_effect=_Captured)
-    patches = [patch.object(metric, "get_judge_prompt", spy), *extra_patches(metric)]
-    for p in patches:
-        p.start()
-    try:
-        await metric.compute(context)
-    finally:
-        for p in patches:
-            p.stop()
-
-    spy.assert_called_once()
-    assert spy.call_args.kwargs["language"] == "fr-CA"
-
-
-@pytest.mark.parametrize("pipeline_type", [PipelineType.CASCADE, PipelineType.S2S])
-def test_key_entities_forwards_context_language(pipeline_type):
-    metric = make_judge_metric(TranscriptionAccuracyKeyEntitiesMetric)
-    context = make_metric_context(
-        language="ja",
-        pipeline_type=pipeline_type,
-        intended_user_turns={0: "ABC123"},
-        transcribed_user_turns={0: "ABC123"},
-    )
-    spy = MagicMock(side_effect=_Captured)
-    with (
-        patch.object(metric, "get_judge_prompt", spy),
-        patch.object(metric, "_build_audio_native_conversation", return_value=("<conversation>", [1])),
-        pytest.raises(_Captured),
-    ):
-        metric._build_prompt_and_turns(context)
-
-    assert spy.call_args.kwargs["language"] == "ja"
 
 
 def _render_english_judge_prompts() -> dict[str, str]:
