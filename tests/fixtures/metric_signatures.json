@@ -79,7 +79,7 @@
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
-    "prompt_hash": "6531de5920bd",
+    "prompt_hash": "dcf0fe2feed6",
     "source_hash": "e8e81aec84d5",
     "version": "v0.4"
   },

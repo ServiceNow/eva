@@ -509,8 +509,6 @@ judge:
       }}
 
 
-  # No {language_guidance} slot: this judge scores the simulated user against its own
-  # instructions (persona, goal, language directive), not against a language's norms.
   user_behavioral_fidelity:
     user_prompt: |
       You are an expert evaluator determining whether a simulated user's behavior has corrupted the voice agent evaluation. 
@@ -991,7 +989,7 @@ judge:
       - Honorific/title variants: "Ms." vs "Miss", "Mr." vs "Mister", and language equivalents (e.g., French "Madame" vs "Mme", Japanese "様" vs "-san") are acceptable variants of the same title.
 
       Important note: The expected text will often feature things formatted like "one two three" instead of "123". Your goal is to evaluate the semantic equivalence, meaning these are considered equivalent if they were heard in audio.
-      
+      {language_guidance}
       ## Examples
       
       **Example Input:**
@@ -1086,7 +1084,7 @@ judge:
           "summary": "1 entity found. Phone number spans into interrupted region — skipped. Partial transcription (404-555) matches the portion before the interruption."
       }}
       ]
-      {language_guidance}
+      
       ## Response Format
        Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the User Turns to Evaluate section above:
       [
@@ -1169,7 +1167,7 @@ judge:
         - Large-unit grouping differences (e.g., Japanese 万-system: "ichi-man go-sen" / 一万五千 = 15,000)
 
       Important note: The user text will often feature things formatted like "one two three" instead of "123". Your goal is to evaluate semantic equivalence — these are considered equivalent if the value matches what the agent used.
-
+      {language_guidance}
       ## Examples
 
       The user gives an id in turn 1 and corrects it in turn 2; nothing is rated at those user turns — each **tool call** is rated on its own. Tool Call [1] used the pre-correction value EM123 (wrong, because the user had already corrected it) and Tool Call [2] used the corrected value EM456 (right). Tool Call [3] uses only a `record_id` that came from a tool response, so it is omitted entirely.
@@ -1220,7 +1218,7 @@ judge:
       ]
 
       Note Tool Call [3] does not appear: its only argument (record_id) came from a tool response, not the user.
-      {language_guidance}
+
       ## Response Format
       Respond with a JSON array. Output **one entry per tool call that uses at least one user-provided entity**, keyed by the tool call's `[N]` id. Tool calls with no user-provided entities, and turns where the user only speaks, must NOT appear.
       [
