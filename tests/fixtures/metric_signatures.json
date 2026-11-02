@@ -31,7 +31,7 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "e1e6f9722f0c",
+    "prompt_hash": "9a6dea1d72e8",
     "source_hash": "b2cf38e3fbc7",
     "version": "v0.3"
   },
