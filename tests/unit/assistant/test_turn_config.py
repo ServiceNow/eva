@@ -294,3 +294,71 @@ class TestCreateTurnStopStrategyKrispViva:
         assert call_kwargs["sample_rate"] == 16000
         # None of these should leak into the strategy as tuning params.
         fake_module.KrispTurnParams.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Phantom ink-2 turn.start must not open a turn (issue #561)
+# ---------------------------------------------------------------------------
+
+
+class TestInk2PhantomTurnStart:
+    """Drive a real UserTurnController with the strategies used for ink-2 (cartesia) runs.
+
+    ink-2 emits ProposedUserStartedSpeakingFrame on turn.start, InterimTranscriptionFrame /
+    TranscriptionFrame only when there is text, and ProposedUserStoppedSpeakingFrame on turn.end.
+    A turn.start produced by trailing audio of the previous utterance has no words, so it must not
+    open a user turn: opening one broadcasts an interruption that cancels the in-flight LLM query.
+    """
+
+    @staticmethod
+    async def _controller(start_strategy):
+        from pipecat.clocks.system_clock import SystemClock
+        from pipecat.processors.frame_processor import FrameProcessorSetup
+        from pipecat.turns.user_turn_controller import UserTurnController
+        from pipecat.turns.user_turn_strategies import UserTurnStrategies
+        from pipecat.utils.asyncio.task_manager import TaskManager
+
+        controller = UserTurnController(
+            user_turn_strategies=UserTurnStrategies(start=[start_strategy], stop=[ExternalUserTurnStopStrategy()])
+        )
+        await controller.setup(
+            FrameProcessorSetup(clock=SystemClock(), task_manager=TaskManager(), pipeline_worker=MagicMock())
+        )
+
+        started = []
+
+        @controller.event_handler("on_user_turn_started")
+        async def _on_started(controller, strategy, params):
+            started.append(params)
+
+        return controller, started
+
+    @staticmethod
+    def _strategy():
+        return create_turn_start_strategy("transcription", {})
+
+    async def test_turn_start_without_words_does_not_open_a_turn(self):
+        from pipecat.frames.frames import ProposedUserStartedSpeakingFrame, ProposedUserStoppedSpeakingFrame
+
+        controller, started = await self._controller(self._strategy())
+        try:
+            await controller.process_frame(ProposedUserStartedSpeakingFrame())
+            await controller.process_frame(ProposedUserStoppedSpeakingFrame())  # turn.end with ''
+        finally:
+            await controller.cleanup()
+
+        assert started == []
+
+    async def test_first_interim_opens_turn_with_interruption(self):
+        from pipecat.frames.frames import InterimTranscriptionFrame, ProposedUserStartedSpeakingFrame
+
+        controller, started = await self._controller(self._strategy())
+        try:
+            await controller.process_frame(ProposedUserStartedSpeakingFrame())
+            assert started == []  # still waiting for a word
+            await controller.process_frame(InterimTranscriptionFrame("hello", "u", "2026-01-01T00:00:00Z"))
+        finally:
+            await controller.cleanup()
+
+        assert len(started) == 1
+        assert started[0].enable_interruptions is True  # a real barge-in still interrupts

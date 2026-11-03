@@ -117,7 +117,7 @@ class AgenticSystem:
             audit_log: Audit log for conversation tracking
             llm_client: Client for LLM calls
             output_dir: Optional output directory for saving performance stats
-            pre_tool_speech: Lead-in mode ('off'|'auto')
+            pre_tool_speech: Lead-in mode ('off'|'auto'|'always')
             llm_streaming: Stream LLM output sentence-by-sentence
             assistant_gender: Speaking gender for the assistant ('M'|'F'); None adds no
                 gender instruction (for gender-neutral languages like English)
@@ -145,8 +145,9 @@ class AgenticSystem:
             agent_instructions=agent.instructions,
             datetime=self.current_date_time,
         )
-        if self.pre_tool_speech == "auto":
-            self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
+        lead_in_prompt = self.prompt_manager.get_pre_tool_speech_prompt(self.pre_tool_speech)
+        if lead_in_prompt:
+            self.system_prompt += "\n\n" + lead_in_prompt
         if self.assistant_gender is not None:
             gender_word = "male" if self.assistant_gender == "M" else "female"
             self.system_prompt += "\n\n" + self.prompt_manager.get_prompt(

@@ -69,8 +69,9 @@ class AudioLLMAgenticSystem(AgenticSystem):
             datetime=current_date_time,
         )
         # Reuse the shared pre-tool lead-in prompt appended to the system prompt.
-        if self.pre_tool_speech == "auto":
-            self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
+        lead_in_prompt = self.prompt_manager.get_pre_tool_speech_prompt(self.pre_tool_speech)
+        if lead_in_prompt:
+            self.system_prompt += "\n\n" + lead_in_prompt
         # Reuse the shared gender instruction appended to the system prompt.
         if self.assistant_gender is not None:
             gender_word = "male" if self.assistant_gender == "M" else "female"

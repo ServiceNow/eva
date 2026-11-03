@@ -820,11 +820,18 @@ class TestTurnStrategyConfig:
 
 
 class TestSelfEndpointingSTTAutowire:
-    def test_cartesia_forces_external_and_no_vad(self):
+    def test_cartesia_defaults_to_transcription_start_external_stop_and_no_vad(self):
+        # 'transcription' start: a turn opens on the first non-empty transcript, so ink-2's phantom
+        # turn.start (trailing audio, no words) can't cancel an in-flight query (issue #561).
         m = ModelConfig(stt="cartesia", llm="gpt-5.2")
-        assert m.turn_start_strategy == "external"
+        assert m.turn_start_strategy == "transcription"
         assert m.turn_stop_strategy == "external"
         assert m.vad == "none"
+
+    def test_explicit_external_start_is_respected(self):
+        # Kept selectable so the old behavior can still be A/B compared.
+        m = ModelConfig(stt="cartesia", llm="gpt-5.2", turn_start_strategy="external")
+        assert m.turn_start_strategy == "external"
 
     def test_conflicting_user_values_are_overridden(self):
         m = ModelConfig(
@@ -834,7 +841,7 @@ class TestSelfEndpointingSTTAutowire:
             turn_start_strategy="vad",
             turn_stop_strategy="turn_analyzer",
         )
-        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("external", "external", "none")
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("transcription", "external", "none")
 
     def test_non_self_endpointing_stt_untouched(self):
         m = ModelConfig(stt="cartesia-multilingual", llm="gpt-5.2")
@@ -844,11 +851,11 @@ class TestSelfEndpointingSTTAutowire:
         m = ModelConfig(
             stt="cartesia",
             llm="gpt-5.2",
-            turn_start_strategy="external",
+            turn_start_strategy="transcription",
             turn_stop_strategy="external",
             vad="none",
         )
-        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("external", "external", "none")
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("transcription", "external", "none")
 
     def test_runconfig_roundtrip(self):
         c = _config(
@@ -860,7 +867,7 @@ class TestSelfEndpointingSTTAutowire:
         )
         assert c.model.stt == "cartesia"
         assert (c.model.turn_start_strategy, c.model.turn_stop_strategy, c.model.vad) == (
-            "external",
+            "transcription",
             "external",
             "none",
         )
@@ -876,6 +883,10 @@ class TestLatencyOptimizationFlags:
         c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": "off", "EVA_MODEL__LLM_STREAMING": "false"})
         assert c.model.pre_tool_speech == "off"
         assert c.model.llm_streaming is False
+
+    def test_always_pre_tool_speech_accepted(self):
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": "ALWAYS"})
+        assert c.model.pre_tool_speech == "always"
 
     @pytest.mark.parametrize("value", ["bogus", "force"])
     def test_invalid_pre_tool_speech_rejected(self, value):

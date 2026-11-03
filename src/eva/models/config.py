@@ -125,8 +125,13 @@ class ModelConfig(BaseModel):
     }
 
     # STT models that perform their own (server-side) semantic endpointing. They drive turn
-    # boundaries themselves, so they must run with the 'external' turn strategies and no local VAD.
+    # boundaries themselves, so they must run with the 'external' turn-stop strategy and no local VAD.
     _SELF_ENDPOINTING_STT: ClassVar[set[str]] = {"cartesia"}
+    # Turn-start strategies that work with a self-endpointing STT. 'transcription' is the default:
+    # it opens a turn (and interrupts) on the first non-empty transcript, so a phantom turn.start
+    # with no words (trailing audio of the previous utterance) can't cancel an in-flight LLM query.
+    # 'external' opens a turn on every turn.start and is kept only for A/B comparison.
+    _SELF_ENDPOINTING_START_STRATEGIES: ClassVar[set[str]] = {"transcription", "external"}
 
     # ── Mode selectors (exactly one group must be set for a real run) ──
     llm: str | None = Field(
@@ -202,7 +207,10 @@ class ModelConfig(BaseModel):
     # CASCADE-only latency controls.
     pre_tool_speech: str = Field(
         "auto",
-        description="Prompt a model-generated lead-in before tool calls: 'off' or 'auto'.",
+        description=(
+            "Prompt a model-generated lead-in before tool calls: 'off', 'auto', or 'always' "
+            "(like 'auto', but also requires the lead-in right after the caller confirms an action)."
+        ),
     )
 
     @field_validator("pre_tool_speech", mode="before")
@@ -290,11 +298,13 @@ class ModelConfig(BaseModel):
         """Auto-configure turn-taking for self-endpointing STT models (e.g. Cartesia ink-2).
 
         These models drive turn boundaries themselves (the service pushes its own speech
-        start/stop and transcription frames), so they require the 'external' turn strategies
-        with local VAD disabled. Forcing it here lets a bare ``EVA_MODEL__STT=cartesia``
-        "just work", and the forced values are reflected in the persisted config.json / run_id.
-        A conflicting user-provided value is overridden with a WARNING; an untouched default is
-        logged at INFO. Idempotent: a value already at the target is left untouched (clean reload).
+        start/stop and transcription frames), so they require the 'external' turn-stop strategy
+        with local VAD disabled, and a turn-start strategy driven by their transcription frames
+        ('transcription' by default; 'external' stays selectable). Forcing it here lets a bare
+        ``EVA_MODEL__STT=cartesia`` "just work", and the forced values are reflected in the
+        persisted config.json / run_id. A conflicting user-provided value is overridden with a
+        WARNING; an untouched default is logged at INFO. Idempotent: a value already at the target
+        (or, for the start strategy, in the allowed set) is left untouched (clean reload).
 
         Only applies to the CASCADE pipeline: in AUDIO_LLM / S2S the ``stt`` field does not
         instantiate an in-pipeline STT service, so there is nothing to emit the external turn
@@ -306,9 +316,11 @@ class ModelConfig(BaseModel):
         if (self.stt or "").lower() not in self._SELF_ENDPOINTING_STT:
             return self
 
-        forced = {"turn_start_strategy": "external", "turn_stop_strategy": "external", "vad": "none"}
+        forced = {"turn_start_strategy": "transcription", "turn_stop_strategy": "external", "vad": "none"}
         for field, target in forced.items():
             if getattr(self, field) == target:
+                continue
+            if field == "turn_start_strategy" and getattr(self, field) in self._SELF_ENDPOINTING_START_STRATEGIES:
                 continue
             if field in self.model_fields_set:
                 logger.warning(
@@ -322,7 +334,7 @@ class ModelConfig(BaseModel):
 
     @model_validator(mode="after")
     def _validate_latency_optimizations(self) -> "ModelConfig":
-        allowed = {"off", "auto"}
+        allowed = {"off", "auto", "always"}
         if self.pre_tool_speech not in allowed:
             raise ValueError(f"pre_tool_speech must be one of {sorted(allowed)}, got '{self.pre_tool_speech}'")
         # pre_tool_speech is honored by both CASCADE and AUDIO_LLM; llm_streaming by both
