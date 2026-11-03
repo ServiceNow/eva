@@ -121,6 +121,7 @@ class BotToBotAudioBridge:
         conversation_done_callback: Callable[[str], None] | None = None,
         perturbator: AudioPerturbator | None = None,
         disconnect_reason: str = "elevenlabs_disconnect",
+        input_chunk_duration: float = INPUT_CHUNK_DURATION,
     ):
         """Initialize the audio interface.
 
@@ -132,6 +133,8 @@ class BotToBotAudioBridge:
             conversation_done_callback: Optional callback for signaling conversation end
             perturbator: Optional perturbator to apply to user audio before sending
             disconnect_reason: Terminal reason reported when the assistant WebSocket closes unexpectedly.
+            input_chunk_duration: Seconds of assistant audio per input_callback. Each tick holds the
+                audio that arrived during it, so this is also how late the caller can hear it.
         """
         self.websocket_uri = websocket_uri
         self.conversation_id = conversation_id
@@ -140,6 +143,7 @@ class BotToBotAudioBridge:
         self.conversation_done_callback = conversation_done_callback
         self._perturbator = perturbator
         self.disconnect_reason = disconnect_reason
+        self.input_chunk_duration = input_chunk_duration
 
         self.websocket = None
         self.running = False
@@ -605,8 +609,13 @@ class BotToBotAudioBridge:
         # Now mark detection time for the silence-sending state machine.
         self._assistant_audio_ended_time = loop_now
         logger.info("🔊 Assistant audio END (silence detected)")
-        # Send catch-up silence to cover the detection delay for ElevenLabs
-        if ASSISTANT_CATCHUP_SILENCE_CHUNKS > 0 and not self._should_send_ambient_noise():
+        # Send catch-up silence to cover the detection delay for ElevenLabs. Not while the caller is
+        # talking (the agent stopped under a barge-in): it would interleave with the caller's frames.
+        if (
+            ASSISTANT_CATCHUP_SILENCE_CHUNKS > 0
+            and not self._should_send_ambient_noise()
+            and not self.is_caller_playing()
+        ):
             await self._send_catchup_silence("user", ASSISTANT_CATCHUP_SILENCE_CHUNKS)
 
     async def _continuous_input_stream(self) -> None:
@@ -616,25 +625,30 @@ class BotToBotAudioBridge:
         from a real microphone. When there's audio from the assistant, we send that.
         When there's no audio, we send silence.
         """
-        # Calculate chunk size: μ-law 8kHz, 250ms chunks
-        # 8000 samples/sec * 0.25s = 2000 samples (μ-law is 1 byte per sample)
-        samples_per_chunk = int(ASSISTANT_SAMPLE_RATE * self.INPUT_CHUNK_DURATION)
+        # Calculate chunk size: μ-law 8kHz is 1 byte per sample (250ms -> 2000 bytes)
+        duration = self.input_chunk_duration
+        samples_per_chunk = int(ASSISTANT_SAMPLE_RATE * duration)
+        # 18 x 20ms silence frames per 250ms tick, kept at that rate for any tick length
+        silence_frames_per_tick = 18 * duration / self.INPUT_CHUNK_DURATION
+        silence_credit = 0.0
+        log_interval = max(1, round(LOG_INTERVAL_INPUT_STREAM * self.INPUT_CHUNK_DURATION / duration))
 
-        logger.info(
-            f"Starting continuous input stream (chunk: {samples_per_chunk} bytes, interval: {self.INPUT_CHUNK_DURATION}s)"
-        )
+        logger.info(f"Starting continuous input stream (chunk: {samples_per_chunk} bytes, interval: {duration}s)")
 
         # Track silence state for faster polling when no audio is available
         consecutive_empty_chunks = 0
+        next_tick = asyncio.get_event_loop().time()
 
         while self.running:
             start_time = asyncio.get_event_loop().time()
+            # Absolute schedule, so short ticks don't drift; restart it after a stall rather than burst
+            next_tick = next_tick + duration if next_tick + duration > start_time else start_time + duration
 
             # Collect audio from buffer
             audio_chunk = b""
             try:
                 while len(audio_chunk) < samples_per_chunk:
-                    remaining_time = self.INPUT_CHUNK_DURATION - (asyncio.get_event_loop().time() - start_time)
+                    remaining_time = next_tick - asyncio.get_event_loop().time()
                     # Use shorter timeout when we've been getting empty buffers (silence mode)
                     if consecutive_empty_chunks > 0:
                         timeout = FAST_POLL_TIMEOUT_S
@@ -674,17 +688,16 @@ class BotToBotAudioBridge:
             # Send assistant silence while waiting for assistant to respond
             # Send in 20ms chunks (same as user silence) for smoother timing
             if assistant_silence and self._should_send_assistant_silence() and not self._should_send_ambient_noise():
-                # Calculate how many 20ms chunks fit in 250ms (round up to ensure we send enough)
-                # 250ms / 20ms = 12.5, round up to 18 to avoid falling behind real-time
-                chunks_to_send = 18
-                for _ in range(chunks_to_send):
+                # 250ms / 20ms = 12.5 frames, rounded up to 18 per 250ms to avoid falling behind real-time
+                silence_credit += silence_frames_per_tick
+                for _ in range(int(silence_credit)):
                     await self._send_silence_frame(chunk_size=SEND_CHUNK_SIZE_PCM)
-                if consecutive_empty_chunks % LOG_INTERVAL_INPUT_STREAM == 1:
+                silence_credit -= int(silence_credit)
+                if consecutive_empty_chunks % log_interval == 1:
                     logger.debug("Sending silence assistant")
 
             # Maintain steady rate
-            elapsed = asyncio.get_event_loop().time() - start_time
-            sleep_time = max(0, self.INPUT_CHUNK_DURATION - elapsed)
+            sleep_time = next_tick - asyncio.get_event_loop().time()
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
 
@@ -789,6 +802,7 @@ class BotToBotAudioBridge:
                 try:
                     pcm_audio = await asyncio.wait_for(self.send_queue.get(), timeout=timeout)
                     pending_audio += pcm_audio
+                    starved_since = None  # audio is flowing again: a later starve gets its own grace
                     # Initialize/reset stream start time when audio arrives after idle/silence
                     if stream_start_time is None or not self._user_audio_active:
                         stream_start_time = asyncio.get_event_loop().time()

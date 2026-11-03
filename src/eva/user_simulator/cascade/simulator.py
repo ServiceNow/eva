@@ -45,6 +45,9 @@ INAUDIBLE = "[inaudible]"
 INAUDIBLE_NOTE = f"""The agent just said something you could not make out ({INAUDIBLE} above). \
 Ask them briefly to repeat it, the way a caller on a bad line would."""
 
+ASSISTANT_AUDIO_TICK_S = 0.02
+"""Bridge input tick: the agent's audio reaches the STT this often, as it arrives, not in 250ms batches."""
+
 TTS_WARM_CONNECTIONS = 2
 """Pooled TTS connections opened before the first turn: one per TTS request that can render at once.
 A barge-in renders its first clause and the next sentence concurrently (see ``next_segment``)."""
@@ -140,7 +143,11 @@ def next_segment(buffer: str, *, first: bool, final: bool) -> tuple[str, str]:
     for index, char in enumerate(buffer[:-1]):
         if char not in breaks or not buffer[index + 1].isspace():
             continue
-        if char in CLAUSE_BREAKS and len(buffer[:index].split()) < CLAUSE_MIN_WORDS:
+        words = buffer[:index].split()
+        if char in CLAUSE_BREAKS and len(words) < CLAUSE_MIN_WORDS:
+            continue
+        # A spelled-out letter or digit ("F F W,") said last in its own TTS request sounds clipped.
+        if char in CLAUSE_BREAKS and len(words[-1]) == 1:
             continue
         return buffer[: index + 1].strip(), buffer[index + 1 :]
     if final:
@@ -214,6 +221,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
         """A caller turn (regular or barge-in) is being generated or spoken; no new barge-in starts."""
         self._barge_ins = 0
         """Barge-ins so far; a decision requested before the latest one is stale and never fires."""
+        self._barge_in_warm_up_turn: int | None = None
+        """The agent turn the barge-in LLM was last warmed for (see ``_warm_up_barge_in_llm``)."""
         self._tails_recorded = 0
         """Talked-over tails of interrupted agent lines recorded so far (see ``_record_talked_over_tail``)."""
         self._caller_turns = 0
@@ -249,6 +258,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             conversation_done_callback=self._on_conversation_end,
             perturbator=self._perturbator,
             disconnect_reason="assistant_disconnect",
+            input_chunk_duration=ASSISTANT_AUDIO_TICK_S,
         )
         tasks: list[asyncio.Task] = []
         try:
@@ -573,13 +583,17 @@ class CascadeUserSimulator(AbstractUserSimulator):
     async def _watch_for_interruptions(self) -> None:
         """Ask for a decision on every transcript update while the agent speaks.
 
-        The first ``interruption_min_updates`` updates of each agent turn are never interrupted, so no
-        decision is requested for them.
+        No decision is requested where no barge-in may fire: the first ``interruption_min_updates``
+        updates of each agent turn, agent turns before ``interruption_first_turn``, the
+        ``interruption_cooldown_updates`` updates after a barge-in, and once
+        ``interruption_max_per_call`` barge-ins have fired.
         """
+        config = self.simulator_config
         goal = self._decision_goal()
         decisions: set[asyncio.Task] = set()
         last_text = ""
         turn, updates = self._caller_turns, 0
+        fired, since_barge_in = 0, 0
         try:
             while not self._conversation_done.is_set():
                 await self._stt.updated.wait()
@@ -591,9 +605,18 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 if self._caller_turns != turn:
                     turn, updates = self._caller_turns, 0
                 updates += 1
-                if updates <= self.simulator_config.interruption_min_updates:
+                if self._barge_ins != fired:
+                    fired, since_barge_in = self._barge_ins, 0
+                since_barge_in += 1
+                if (
+                    updates <= config.interruption_min_updates
+                    or turn < config.interruption_first_turn
+                    or (fired and since_barge_in <= config.interruption_cooldown_updates)
+                    or (config.interruption_max_per_call is not None and fired >= config.interruption_max_per_call)
+                ):
                     continue
-                if updates == self.simulator_config.interruption_min_updates + 1:
+                if self._barge_in_warm_up_turn != turn:  # once per turn, as its first decision is requested
+                    self._barge_in_warm_up_turn = turn
                     self._warm_up_barge_in_llm()
                 # Where the update's last word sits, so its end can be read off the STT word timestamps.
                 barge_in = BargeIn(

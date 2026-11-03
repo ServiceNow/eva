@@ -522,6 +522,20 @@ class CascadeSimulatorConfig(BaseModel):
         description="Transcript updates at the start of each agent turn that are never interrupted; "
         "no decision is requested for them.",
     )
+    interruption_first_turn: int = Field(
+        2,
+        ge=0,
+        description="Agent turns at the start of the call that are never interrupted (0-based index of the "
+        "first that can be); no decision is requested during them.",
+    )
+    interruption_cooldown_updates: int = Field(
+        10,
+        ge=0,
+        description="Transcript updates after a barge-in before the next decision.",
+    )
+    interruption_max_per_call: int | None = Field(
+        8, ge=0, description="Barge-ins per call, after which no decision is requested. None disables it."
+    )
     forced_interruption_every_turns: int | None = Field(
         None,
         ge=1,

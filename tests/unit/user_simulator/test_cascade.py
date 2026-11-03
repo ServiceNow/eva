@@ -249,6 +249,11 @@ def test_next_segment_speaks_first_clause_then_sentences():
     # A break needs following whitespace, so codes and decimals never split.
     assert next_segment("Code MRC-07 or 4.5 now", first=True, final=False) == ("", "Code MRC-07 or 4.5 now")
     assert next_segment("trailing words", first=False, final=True) == ("trailing words", "")
+    # Never right after a spelled-out letter or digit, which would be said last in its own request.
+    assert next_segment("The code is Z K three F F W, not V", first=True, final=False) == (
+        "",
+        "The code is Z K three F F W, not V",
+    )
 
 
 @pytest.mark.asyncio
@@ -759,7 +764,9 @@ def test_agent_speech_after_a_barge_in_is_kept_when_it_is_a_new_line(tmp_path):
 @pytest.mark.asyncio
 async def test_no_decision_is_requested_for_the_first_updates_of_an_agent_turn(tmp_path):
     simulator = _simulator(tmp_path)
-    simulator.simulator_config = CascadeSimulatorConfig(model="gpt-test", interruption_min_updates=2)
+    simulator.simulator_config = CascadeSimulatorConfig(
+        model="gpt-test", interruption_first_turn=0, interruption_min_updates=2
+    )
     simulator._can_interrupt = MagicMock(return_value=True)
     asked: list[str] = []
 
@@ -801,7 +808,9 @@ async def test_no_decision_or_barge_in_after_the_caller_hangs_up(tmp_path):
 @pytest.mark.asyncio
 async def test_barge_in_llm_is_warmed_once_as_barge_ins_become_possible(tmp_path, monkeypatch):
     simulator = _simulator(tmp_path)
-    simulator.simulator_config = CascadeSimulatorConfig(model="gpt-test", interruption_min_updates=1)
+    simulator.simulator_config = CascadeSimulatorConfig(
+        model="gpt-test", interruption_first_turn=0, interruption_min_updates=1
+    )
     simulator._can_interrupt = MagicMock(return_value=True)
     simulator._decide = AsyncMock()
     acompletion = AsyncMock()
@@ -817,3 +826,59 @@ async def test_barge_in_llm_is_warmed_once_as_barge_ins_become_possible(tmp_path
 
     acompletion.assert_awaited_once()
     assert acompletion.await_args.kwargs["max_tokens"] == 1
+
+
+async def _updates(simulator, partials: list[str]) -> None:
+    for partial in partials:
+        simulator._stt.partial = partial
+        simulator._stt.updated.set()
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+
+
+@pytest.mark.asyncio
+async def test_no_decision_is_requested_before_the_first_interruptible_agent_turn(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator.simulator_config = CascadeSimulatorConfig(
+        model="gpt-test", interruption_first_turn=2, interruption_min_updates=0
+    )
+    simulator._can_interrupt = MagicMock(return_value=True)
+    asked: list[str] = []
+
+    async def decide(goal, heard, barge_in):
+        asked.append(heard)
+
+    simulator._decide = decide
+    watcher = asyncio.create_task(simulator._watch_for_interruptions())
+    for turn, partial in enumerate(["Hello", "Sure", "Your flight"]):
+        simulator._caller_turns = turn
+        await _updates(simulator, [partial])
+    watcher.cancel()
+
+    assert asked == ["Your flight"]
+
+
+@pytest.mark.asyncio
+async def test_decisions_pause_for_the_cooldown_after_a_barge_in_and_stop_at_the_cap(tmp_path):
+    simulator = _simulator(tmp_path)
+    simulator.simulator_config = CascadeSimulatorConfig(
+        model="gpt-test",
+        interruption_first_turn=0,
+        interruption_min_updates=0,
+        interruption_cooldown_updates=2,
+        interruption_max_per_call=2,
+    )
+    simulator._can_interrupt = MagicMock(return_value=True)
+    asked: list[str] = []
+
+    async def decide(goal, heard, barge_in):
+        asked.append(heard)
+        simulator._barge_ins += 1  # every decision here fires a barge-in
+
+    simulator._decide = decide
+    watcher = asyncio.create_task(simulator._watch_for_interruptions())
+    await _updates(simulator, ["a", "a b", "a b c", "a b c d", "a b c d e", "a b c d e f", "a b c d e f g"])
+    watcher.cancel()
+
+    # "a" fires; two updates of cooldown; "a b c d" fires and reaches the cap.
+    assert asked == ["a", "a b c d"]
