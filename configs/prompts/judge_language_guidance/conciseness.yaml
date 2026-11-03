@@ -2,34 +2,62 @@
 # Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
 # Language-neutral rules (one formula per function, repetition and synonym pairs are filler,
 # spoken vs written length) live in the shared conciseness prompt; this file only lists the
-# conventions of each language.
+# conventions of each language. Each group heading states what its items mean for the rating.
 
 fr: |
-  - Normal French service register (covered by the cultural-norms exception): the formal vous register (vouvoiement) and short service formulas such as "Je vous écoute" (functional: it hands the floor to the user, like "go ahead"), "Parfait", "Très bien", "D'accord", "Je vous en prie", "Puis-je vous aider ?", "Je vais vérifier cela pour vous", and addressing the user by name ("Très bien, Lucien").
-  - Vous-forms and polite constructions ("Pourriez-vous me donner…", "Je vais vous demander de…") are normal French register.
-  - Example of stacked acknowledgements that ARE filler: "Parfait, très bien, d'accord, merci beaucoup".
+  **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception):**
+  - The formal vous register (vouvoiement), including vous-forms and polite constructions ("Pourriez-vous me donner…", "Je vais vous demander de…").
+  - Short service formulas, one per function: "Je vous écoute" (it hands the floor to the user, like "go ahead"), "Parfait", "Très bien", "D'accord", "Je vous en prie", "Puis-je vous aider ?", "Je vais vérifier cela pour vous", and addressing the user by name ("Très bien, Lucien").
+  - Québec service register is often warmer than European French: "Excellent, Lucien !", "Ça me fait plaisir", "Pas de problème", "Je suis là pour vous aider".
 
-fr-CA: |
-  - Québec service register is often warmer than European French. Typical warm phrases: "Excellent, Lucien !", "Ça me fait plaisir", "Pas de problème", "Je suis là pour vous aider".
+  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
+  - Stacked acknowledgements: "Parfait, très bien, d'accord, merci beaucoup".
 
 de: |
-  - Normal German service register (covered by the cultural-norms exception): the formal Sie register and short service phrases such as "Gerne", "Sehr gern", "Einen Moment bitte", "Vielen Dank", "Alles klar".
-  - Numbers and dates are written out in words because that is how the TTS speaks them, and German compound number words are long in writing (e.g. "am zweiundzwanzigsten April zweitausendsechsundzwanzig" for "22. April 2026").
+  **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception):**
+  - The formal Sie register and short service phrases, one per function: "Gerne", "Sehr gern", "Einen Moment bitte", "Vielen Dank", "Alles klar".
+
+  **Not excess length, do not flag any failure mode for it:**
+  - Numbers and dates written out in words, because that is how the TTS speaks them. German compound number words are long in writing (e.g. "am zweiundzwanzigsten April zweitausendsechsundzwanzig" for "22. April 2026") but not when spoken.
 
 nl: |
-  - The Dutch service register is comparatively direct and has no obligatory politeness formulas, so the cultural-norms exception gives almost no extra room for courtesy wording in Dutch. A single brief acknowledgement ("Prima", "Dank u wel") or a single hold phrase before a tool call ("Eén moment", "Ik ga meteen kijken", "Ik ga uw reservering er direct bij zoeken") is fine.
-  - Typical Dutch filler to flag as verbosity_or_filler: lead-ins that announce what the assistant is about to ask or do instead of just asking or doing it ("Om uw boeking te openen…", "Daarna doen we de rest stap voor stap"), a hold phrase stacked with another hold phrase or lead-in, "Eén moment" repeated within the turn, and "Mooi" stacked on top of other acknowledgements or lead-ins.
+  The Dutch service register is direct and has no obligatory politeness formulas, so the cultural-norms exception gives almost no extra room for courtesy wording in Dutch.
+
+  **Not filler, do not flag verbosity_or_filler:**
+  - A single brief acknowledgement ("Prima", "Dank u wel").
+  - A single hold phrase before a tool call ("Eén moment", "Ik ga meteen kijken", "Ik ga uw reservering er direct bij zoeken").
+
+  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
+  - Lead-ins that announce what the assistant is about to ask or do instead of just asking or doing it ("Om uw boeking te openen…", "Daarna doen we de rest stap voor stap").
+  - A hold phrase stacked with another hold phrase or lead-in, or "Eén moment" repeated within the turn.
+  - "Mooi" stacked on top of other acknowledgements or lead-ins.
 
 hi: |
-  - Normal Hindi service register (covered by the cultural-norms exception): honorific forms (आप, -इए/-इएगा, जी as in "जी, बिल्कुल"), compound verbs ("देख लेता हूँ", "कर दिया गया है") and polite request constructions ("क्या आप कृपया… बता सकते हैं"). They make Hindi sentences longer than English ones without adding cognitive load. Typical one-per-function formulas: ठीक है, जी, धन्यवाद, नमस्ते at the opening.
-  - English loanwords in normal Hindi service speech (booking, PIN, ID, ticket), in Devanagari or Latin script, are not filler.
-  - Typical Hindi repetition that IS filler: "ठीक है… ठीक है", धन्यवाद said two or more times in one turn, or a term given with its equivalent ("कर्मचारी आईडी (employee ID)", "कर्मचारी आईडी यानी employee ID"). Repeated formulas are not obligatory politeness; they read as unnatural in Hindi.
+  **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception):**
+  - Honorific forms (आप, -इए/-इएगा, जी as in "जी, बिल्कुल"), compound verbs ("देख लेता हूँ", "कर दिया गया है") and polite request constructions ("क्या आप कृपया… बता सकते हैं"). They make Hindi sentences longer than English ones without adding cognitive load.
+  - One formula per function: ठीक है, जी, धन्यवाद, नमस्ते at the opening.
+  - English loanwords in normal Hindi service speech (booking, PIN, ID, ticket), in Devanagari or Latin script.
+
+  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
+  - "ठीक है… ठीक है", or धन्यवाद said two or more times in one turn. Repeated formulas are not obligatory politeness; they sound unnatural in Hindi.
+  - A term given with its equivalent ("कर्मचारी आईडी (employee ID)", "कर्मचारी आईडी यानी employee ID").
 
 ko: |
-  - Normal Korean service register (covered by the cultural-norms exception): formal 합쇼체 endings (-습니다, -ㅂ니까) and polite 해요체 endings (-세요, -요), addressing the user as 고객님, and set phrases (잠시만 기다려 주세요, 확인해 드리겠습니다, 감사합니다, 도와드리겠습니다), even though they lengthen the sentence.
-  - Typical Korean repetition that IS filler: 감사합니다 twice in one turn, or a term with its synonym or translation (비밀번호(PIN)).
+  **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception), even though they lengthen the sentence:**
+  - Formal 합쇼체 endings (-습니다, -ㅂ니까) and polite 해요체 endings (-세요, -요), and addressing the user as 고객님.
+  - Set phrases, one per function: 잠시만 기다려 주세요, 확인해 드리겠습니다, 감사합니다, 도와드리겠습니다.
+
+  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
+  - 감사합니다 twice in one turn.
+  - A term with its synonym or translation (비밀번호(PIN)).
 
 ja: |
-  - Normal Japanese service register (covered by the cultural-norms exception): keigo and fixed service formulas such as かしこまりました, 恐れ入りますが, 少々お待ちください, お待たせいたしました, 確認いたします / 確認させていただきます, ありがとうございます at the opening or closing. Humble and honorific verb forms are longer than plain forms without adding cognitive load; never flag them as verbosity_or_filler.
-  - Typical Japanese repetition that IS filler: ありがとうございます twice in one turn; the same sentence restated within the turn (e.g. "Confluenceの読み取り専用アクセスですね。" twice); a loanword together with its native synonym ("PIN／暗証番号", "暗証番号（PIN）", "sick leave（病気休暇）").
-  - Different formulas for different functions in one turn (e.g. お待たせいたしました then 確認いたしました) are not repetition.
+  **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception):**
+  - Keigo, and humble and honorific verb forms, which are longer than plain forms without adding cognitive load.
+  - Fixed service formulas, one per function: かしこまりました, 恐れ入りますが, 少々お待ちください, お待たせいたしました, 確認いたします / 確認させていただきます, ありがとうございます at the opening or closing.
+  - Different formulas for different functions in one turn (e.g. お待たせいたしました then 確認いたしました).
+
+  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
+  - ありがとうございます twice in one turn.
+  - The same sentence restated within the turn (e.g. "Confluenceの読み取り専用アクセスですね。" twice).
+  - A loanword together with its native synonym ("PIN／暗証番号", "暗証番号（PIN）", "sick leave（病気休暇）").
