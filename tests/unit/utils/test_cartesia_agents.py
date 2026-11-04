@@ -49,8 +49,3 @@ def test_mismatched_agent_is_rejected(overrides, match):
 def test_pre_tool_speech_follows_eva_setting():
     with pytest.raises(ValueError, match="pre_tool_speech"):
         _check(_agent(), pre_tool_speech="off")
-
-
-def test_always_pre_tool_speech_is_not_supported():
-    with pytest.raises(ValueError, match="only support"):
-        _check(_agent(), pre_tool_speech="always")

@@ -72,15 +72,6 @@ agent:
     Before calling a tool, say one brief sentence first. For lookups, use a short lead-in (e.g. "Let me pull that up."). Before any action that is irreversible or has real-world consequences, state what you'll do, get confirmation, then call the tool.
     If calling multiple tools at once, only one lead-in is needed.
 
-  # Stricter variant of pre_tool_speech (EVA_MODEL__PRE_TOOL_SPEECH=always): also requires the lead-in
-  # on the turn right after the caller confirms an action, which 'auto' leaves silent.
-  pre_tool_speech_always: |
-    ## Responsiveness
-    Every time you are about to call a tool, say one brief sentence first, in the same response as the tool call. This applies to every tool call, including right after the caller says yes to an action you proposed. Never call a tool silently.
-    For lookups, use a short lead-in (e.g. "Let me pull that up."). For an action the caller just confirmed, say what you are doing now (e.g. "Okay, canceling that now.").
-    Before any action that is irreversible or has real-world consequences, still state what you'll do and get confirmation in an earlier turn; the lead-in then goes just before the tool call.
-    If calling multiple tools at once or in a row, only one lead-in is needed, at the start.
-
   gender_instruction: |
     ## Speaking Gender
     You are speaking as a {gender_word} voice. In languages with grammatical gender, consistently use {gender_word} forms (verb conjugations, adjectives, self-references) for yourself throughout the conversation.

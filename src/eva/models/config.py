@@ -207,10 +207,7 @@ class ModelConfig(BaseModel):
     # CASCADE-only latency controls.
     pre_tool_speech: str = Field(
         "auto",
-        description=(
-            "Prompt a model-generated lead-in before tool calls: 'off', 'auto', or 'always' "
-            "(like 'auto', but also requires the lead-in right after the caller confirms an action)."
-        ),
+        description="Prompt a model-generated lead-in before tool calls: 'off' or 'auto'.",
     )
 
     @field_validator("pre_tool_speech", mode="before")
@@ -334,7 +331,7 @@ class ModelConfig(BaseModel):
 
     @model_validator(mode="after")
     def _validate_latency_optimizations(self) -> "ModelConfig":
-        allowed = {"off", "auto", "always"}
+        allowed = {"off", "auto"}
         if self.pre_tool_speech not in allowed:
             raise ValueError(f"pre_tool_speech must be one of {sorted(allowed)}, got '{self.pre_tool_speech}'")
         # pre_tool_speech is honored by both CASCADE and AUDIO_LLM; llm_streaming by both

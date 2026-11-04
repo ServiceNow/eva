@@ -18,12 +18,6 @@ from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# pre_tool_speech mode -> prompt appended to the agent system prompt ('off' appends nothing).
-PRE_TOOL_SPEECH_PROMPTS = {
-    "auto": "agent.pre_tool_speech",
-    "always": "agent.pre_tool_speech_always",
-}
-
 
 class PromptManager:
     """Manages prompts loaded from YAML files with dynamic variable substitution.
@@ -142,11 +136,6 @@ class PromptManager:
             raise KeyError(
                 f"Missing variable {e} for prompt '{path}'. Available variables: {sorted(formatted_vars.keys())}"
             ) from e
-
-    def get_pre_tool_speech_prompt(self, mode: str) -> str | None:
-        """Return the lead-in prompt for a pre_tool_speech mode, or None when the mode adds none ('off')."""
-        path = PRE_TOOL_SPEECH_PROMPTS.get(mode)
-        return self.get_prompt(path) if path else None
 
 
 # Global singleton instance

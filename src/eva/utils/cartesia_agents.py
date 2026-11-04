@@ -77,8 +77,6 @@ def check_agent_matches_config(
     tool_names: list[str],
 ) -> None:
     """Raise if the provisioned agent would not run the benchmark as EVA's config describes."""
-    if pre_tool_speech not in ("auto", "off"):
-        raise ValueError(f"Cartesia agents only support pre_tool_speech 'auto' or 'off', got '{pre_tool_speech}'")
     config = agent["config"]
     problems = []
     if config.get("instructions") != SYSTEM_PROMPT_VARIABLE or config.get("prompt_optimization"):

@@ -74,7 +74,7 @@ The CASCADE pipeline exposes three optional latency levers. They are off or unse
 
 | Flag | Values | Effect |
 |------|--------|--------|
-| `EVA_MODEL__PRE_TOOL_SPEECH` | `off` / `auto` / `always` | Ask the model to speak a brief lead-in before running a tool. The lead-in is model-generated, not templated. `always` also requires the lead-in right after the caller confirms an action (`auto` lets the model call the tool silently there); not supported for Cartesia-hosted agents. |
+| `EVA_MODEL__PRE_TOOL_SPEECH` | `off` / `auto` | Ask the model to speak a brief lead-in before running a tool. The lead-in is model-generated, not templated. |
 | `EVA_MODEL__LLM_STREAMING` | `true` / `false` | Stream Chat Completions output to TTS sentence-by-sentence. Responses API deployments warn and use non-streaming completion. |
 | `EVA_MODEL__PARALLEL_TOOL_CALLS` | unset / `true` / `false` | Forward the provider's `parallel_tool_calls` setting when tools are present. Leave unset for provider defaults; set `false` to match the ElevenAgents assistant config. |
 

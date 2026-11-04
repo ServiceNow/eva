@@ -884,10 +884,6 @@ class TestLatencyOptimizationFlags:
         assert c.model.pre_tool_speech == "off"
         assert c.model.llm_streaming is False
 
-    def test_always_pre_tool_speech_accepted(self):
-        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__PRE_TOOL_SPEECH": "ALWAYS"})
-        assert c.model.pre_tool_speech == "always"
-
     @pytest.mark.parametrize("value", ["bogus", "force"])
     def test_invalid_pre_tool_speech_rejected(self, value):
         with pytest.raises(ValueError):
