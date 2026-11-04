@@ -565,6 +565,7 @@ class BenchmarkRunner:
 
         llm_generic_error_record_ids = find_records_with_llm_generic_error(self.output_dir, successful_ids)
         barge_in_summary = self._aggregate_barge_ins(successful_ids)
+        back_channel_summary = self._aggregate_back_channels(successful_ids)
         eval_summary_path = self.output_dir / "evaluation_summary.json"
         with open(eval_summary_path, "w") as f:
             json.dump(
@@ -585,6 +586,7 @@ class BenchmarkRunner:
                         "time_limit_accepted_record_ids": sorted(time_limit_accepted_ids),
                     },
                     **({"barge_in": barge_in_summary} if barge_in_summary else {}),
+                    **({"back_channel": back_channel_summary} if back_channel_summary else {}),
                     "rerun_history": rerun_history,
                     "final_failures": final_failures,
                 },
@@ -1005,6 +1007,22 @@ class BenchmarkRunner:
             "decision_ms": stats("decision_ms"),
             "gap_ms": stats("gap_ms"),
         }
+
+    def _aggregate_back_channels(self, record_ids: set[str]) -> dict[str, Any] | None:
+        """Run-level count of caller back-channels across records; None when there were none."""
+        total, records_with_back_channels = 0, 0
+        for record_id in sorted(record_ids):
+            result_path = self.output_dir / "records" / record_id / "result.json"
+            if not result_path.exists():
+                continue
+            with open(result_path) as f:
+                count = len(json.load(f).get("back_channels") or [])
+            if count:
+                total += count
+                records_with_back_channels += 1
+        if not total:
+            return None
+        return {"total_back_channels": total, "records_with_back_channels": records_with_back_channels}
 
     def _archive_failed_attempt(self, record_id: str, attempt_number: int) -> None:
         """Archive a failed attempt before rerunning.

@@ -13,9 +13,10 @@ from pydantic import ValidationError
 
 from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.cascade import simulator as cascade_simulator
+from eva.user_simulator.cascade import tts as tts_module
 from eva.user_simulator.cascade.barge_in import MIN_GAP_MS, BargeIn, trim_silence
 from eva.user_simulator.cascade.interruptor import DecisionsInterruptor
-from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn, next_segment
+from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn
 from eva.user_simulator.cascade.stt import OpenAIStreamingSTT, ScribeStreamingSTT
 from eva.user_simulator.cascade.tts import TTS_SAMPLE_RATE, CartesiaStreamingTTS
 
@@ -70,6 +71,19 @@ def _tool_message(content: str, *tool_names: str) -> SimpleNamespace:
 async def _chunks(*chunks: bytes):
     for chunk in chunks:
         yield chunk
+
+
+def _text_stream(*chunks: bytes, received: list[str] | None = None):
+    """A fake ``stream_text``: drains the text, as Cartesia would, then yields ``chunks``."""
+
+    async def stream_text(text, voice_id):
+        async for piece in text:
+            if received is not None:
+                received.append(piece)
+        for chunk in chunks:
+            yield chunk
+
+    return stream_text
 
 
 def test_config_rejects_non_streaming_stt():
@@ -242,21 +256,6 @@ def _llm_stream(*deltas: str, message=None):
     return stream
 
 
-def test_next_segment_speaks_first_clause_then_sentences():
-    assert next_segment("I have my ID, and", first=True, final=False) == ("I have my ID,", " and")
-    # Too few words for an early clause; later segments only end at sentences.
-    assert next_segment("Yes, my ID", first=True, final=False) == ("", "Yes, my ID")
-    assert next_segment("It is 42, thanks. More", first=False, final=False) == ("It is 42, thanks.", " More")
-    # A break needs following whitespace, so codes and decimals never split.
-    assert next_segment("Code MRC-07 or 4.5 now", first=True, final=False) == ("", "Code MRC-07 or 4.5 now")
-    assert next_segment("trailing words", first=False, final=True) == ("trailing words", "")
-    # Never right after a spelled-out letter or digit, which would be said last in its own request.
-    assert next_segment("The code is Z K three F F W, not V", first=True, final=False) == (
-        "",
-        "The code is Z K three F F W, not V",
-    )
-
-
 @pytest.mark.asyncio
 async def test_take_turn_speaks_whole_line_in_one_request(tmp_path):
     simulator = _simulator(tmp_path)
@@ -381,9 +380,9 @@ async def test_interrupt_decision_plays_opener_then_reply_once(tmp_path):
         return "interrupt", 0.9
 
     simulator._interruptor.decide = decide
-    simulator._openers = [("Sorry\u2014", b"\x07\x07")]
+    simulator._openers.entries = [("Sorry\u2014", b"\x07\x07")]
     simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
-    simulator._tts.stream = MagicMock(return_value=_chunks(SILENT_PCM, LOUD_PCM))
+    simulator._tts.stream_text = _text_stream(SILENT_PCM, LOUD_PCM)
     simulator._audio_interface = MagicMock()
     simulator._audio_interface.is_assistant_playing.return_value = True
     simulator._audio_interface.is_caller_playing.return_value = False
@@ -412,9 +411,9 @@ async def test_interrupt_decision_plays_opener_then_reply_once(tmp_path):
 @pytest.mark.asyncio
 async def test_barge_in_opener_is_timed_from_its_first_frame_on_the_wire(tmp_path):
     simulator = _simulator(tmp_path)
-    simulator._openers = [("Sorry—", LOUD_PCM)]
+    simulator._openers.entries = [("Sorry—", LOUD_PCM)]
     simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
-    simulator._tts.stream = MagicMock(return_value=_chunks(LOUD_PCM))
+    simulator._tts.stream_text = _text_stream(LOUD_PCM)
     bridge = MagicMock(assistant_audio_starts=0, user_audio_starts=3, user_audio_started_at=None)
     bridge.is_assistant_playing.return_value = True
 
@@ -432,27 +431,43 @@ async def test_barge_in_opener_is_timed_from_its_first_frame_on_the_wire(tmp_pat
 
 
 @pytest.mark.asyncio
-async def test_barge_in_reply_streams_each_segment_to_tts_in_order(tmp_path):
+async def test_barge_in_gap_over_the_limit_fails_the_call(tmp_path, monkeypatch):
     simulator = _simulator(tmp_path)
-    simulator._barge_in_llm.complete_stream = _llm_stream("My ID is 4471, ", "and my name ", "is Sam. Thanks.")
-    rendered: list[str] = []
-    audio = {"My ID is 4471,": b"\x00\x10" * 320, "and my name is Sam.": b"\x00\x20" * 320, "Thanks.": LOUD_PCM}
+    simulator._openers.entries = [("Sorry—", LOUD_PCM)]
+    simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
+    simulator._tts.stream_text = _text_stream(LOUD_PCM)
+    simulator._audio_interface = MagicMock(assistant_audio_starts=0, user_audio_starts=0, user_audio_started_at=None)
+    simulator._on_conversation_end = MagicMock()
 
-    def stream(text, voice_id):
-        rendered.append(text)
-        return _chunks(audio[text])
+    await simulator._interrupt(_trigger())
+    simulator._on_conversation_end.assert_not_called()  # within the limit
 
-    simulator._tts.stream = stream
+    monkeypatch.setattr(cascade_simulator, "MAX_BARGE_IN_GAP_MS", 0.0)  # every gap is at least MIN_GAP_MS
+    await simulator._interrupt(_trigger())
+    simulator._on_conversation_end.assert_called_once_with("error")
+    assert len(simulator.barge_ins) == 2  # the slow barge-in is still recorded
+
+
+@pytest.mark.asyncio
+async def test_barge_in_reply_streams_every_delta_to_one_tts_context(tmp_path):
+    simulator = _simulator(tmp_path)
+    deltas = ["My ID is 4471, ", "and my name ", "is Sam. Thanks."]
+    simulator._barge_in_llm.complete_stream = _llm_stream(*deltas)
+    received: list[str] = []
+    audio = [b"\x00\x10" * 320, b"\x00\x20" * 320, LOUD_PCM]
+    simulator._tts.stream_text = _text_stream(*audio, received=received)
+    simulator._tts.stream = MagicMock()
     simulator._audio_interface = MagicMock()
     barge_in = _trigger()
     barge_in.play_opener("Sorry\u2014", b"", now=0.0)
 
     message, _, spoke = await simulator._speak_barge_in([], barge_in)
 
-    # The first clause goes out before the sentence it belongs to is finished.
-    assert rendered == ["My ID is 4471,", "and my name is Sam.", "Thanks."]
+    # Deltas go to TTS verbatim, spacing included; no client-side splitting.
+    assert received == deltas
+    simulator._tts.stream.assert_not_called()
     outputs = [call.args[0] for call in simulator._audio_interface.output.call_args_list]
-    assert outputs == [audio[text] for text in rendered]
+    assert outputs == audio
     assert spoke and barge_in.content == "My ID is 4471, and my name is Sam. Thanks."
 
 
@@ -534,9 +549,9 @@ def test_forced_interruptions_hit_every_nth_agent_turn_after_enough_updates(tmp_
 async def test_forced_decision_barges_in_over_a_keep_listening_verdict(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._interruptor.decide = AsyncMock(return_value=("keep_listening", 0.1))
-    simulator._openers = [("Sorry—", b"\x07\x07")]
+    simulator._openers.entries = [("Sorry—", b"\x07\x07")]
     simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
-    simulator._tts.stream = MagicMock(return_value=_chunks(LOUD_PCM))
+    simulator._tts.stream_text = _text_stream(LOUD_PCM)
     simulator._audio_interface = MagicMock()
     simulator._audio_interface.is_assistant_playing.return_value = True
     simulator._audio_interface.is_caller_playing.return_value = False
@@ -570,6 +585,74 @@ async def test_tts_streams_sample_aligned_chunks_and_raises_on_error():
     tts._client = httpx.AsyncClient(transport=_sse({"type": "error", "error": "bad voice"}))
     with pytest.raises(RuntimeError, match="bad voice"):
         [chunk async for chunk in tts.stream("Hi", voice_id="v")]
+
+
+class _FakeCartesiaSocket:
+    """Records sent requests; answers each finished context with ``replies`` tagged by its context_id."""
+
+    def __init__(self, *replies: dict, stale: dict | None = None) -> None:
+        self.sent: list[dict] = []
+        self._replies, self._stale = replies, stale
+        self._inbox: asyncio.Queue[str] = asyncio.Queue()
+        self.state = tts_module.State.OPEN
+
+    async def send(self, raw: str) -> None:
+        request = json.loads(raw)
+        self.sent.append(request)
+        if request.get("continue") is False:
+            if self._stale:
+                self._inbox.put_nowait(json.dumps(self._stale))
+            for reply in self._replies:
+                self._inbox.put_nowait(json.dumps({**reply, "context_id": request["context_id"]}))
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self) -> str:
+        return await self._inbox.get()
+
+
+async def _pieces(*pieces: str):
+    for piece in pieces:
+        yield piece
+
+
+@pytest.mark.asyncio
+async def test_tts_stream_text_sends_continuations_and_yields_aligned_audio():
+    tts = CartesiaStreamingTTS("sonic-3.5", api_key="x")
+    odd = base64.b64encode(b"\x01\x02\x03").decode()
+    tail = base64.b64encode(b"\x04").decode()
+    ws = _FakeCartesiaSocket(
+        {"type": "chunk", "data": odd},
+        {"type": "chunk", "data": tail},
+        {"type": "done", "done": True},
+        stale={"type": "chunk", "data": odd, "context_id": "cancelled-earlier"},
+    )
+    tts._ws = ws
+
+    audio = [chunk async for chunk in tts.stream_text(_pieces("こんにちは、", "", "元気です。"), voice_id="v")]
+
+    assert audio == [b"\x01\x02", b"\x03\x04"]  # the stale context's audio is dropped
+    assert [(r["transcript"], r["continue"]) for r in ws.sent] == [
+        ("こんにちは、", True),
+        ("元気です。", True),
+        ("", False),
+    ]
+    assert {r["context_id"] for r in ws.sent} == {ws.sent[0]["context_id"]}
+    assert ws.sent[0]["max_buffer_delay_ms"] == tts_module.STREAM_BUFFER_DELAY_MS
+
+
+@pytest.mark.asyncio
+async def test_tts_stream_text_with_no_text_sends_nothing_and_raises_on_error():
+    tts = CartesiaStreamingTTS("sonic-3.5", api_key="x")
+    tts._ws = _FakeCartesiaSocket()
+    assert [chunk async for chunk in tts.stream_text(_pieces(), voice_id="v")] == []
+    assert tts._ws.sent == []
+
+    tts._ws = _FakeCartesiaSocket({"type": "error", "message": "bad voice"})
+    with pytest.raises(RuntimeError, match="bad voice"):
+        [chunk async for chunk in tts.stream_text(_pieces("Hi."), voice_id="v")]
+    assert tts._ws.sent[-1]["cancel"] is True
 
 
 @pytest.mark.asyncio
@@ -985,3 +1068,134 @@ async def test_forced_interrupt_fires_even_when_the_decision_is_slow(tmp_path):
 
     await simulator._decide("goal", "Can I get your", trigger)
     simulator._interrupt.assert_awaited_once()
+
+
+def _back_channel_simulator(tmp_path, choice: str = "back_channel") -> CascadeUserSimulator:
+    simulator = _simulator(tmp_path)
+    simulator._interruptor.decide = AsyncMock(return_value=(choice, 0.1))
+    simulator._back_channels.entries = [("Mhm.", LOUD_PCM)]
+    bridge = MagicMock()
+    bridge.is_assistant_playing.return_value = True
+    bridge.is_caller_playing.return_value = False
+    bridge.play_back_channel = AsyncMock(return_value=(100.0, 100.4))
+    simulator._audio_interface = bridge
+    simulator.event_logger = MagicMock()
+    return simulator
+
+
+@pytest.mark.asyncio
+async def test_back_channel_is_played_and_tracked_where_it_landed(tmp_path):
+    simulator = _back_channel_simulator(tmp_path)
+    simulator._caller_turns = 3
+
+    await simulator._decide("goal", "Your confirmation number is", _trigger())
+
+    simulator._audio_interface.play_back_channel.assert_awaited_once_with(LOUD_PCM)
+    [back_channel] = simulator.back_channels
+    assert back_channel.model_dump() == {
+        "phrase": "Mhm.",
+        "agent_turn": 3,
+        "heard": "Your confirmation number is",
+        "timestamp_ms": 100_000,
+        "duration_ms": pytest.approx(400.0),
+        "decision_ms": back_channel.decision_ms,
+    }
+    event_types = [call.args[0] for call in simulator.event_logger.log_event.call_args_list]
+    assert "back_channel" in event_types
+
+
+@pytest.mark.asyncio
+async def test_back_channel_is_not_a_turn_or_a_barge_in(tmp_path):
+    simulator = _back_channel_simulator(tmp_path)
+    simulator._history = [{"role": "assistant", "content": "Hi."}]
+
+    await simulator._decide("goal", "Your confirmation number is", _trigger())
+
+    assert simulator._history == [{"role": "assistant", "content": "Hi."}]
+    assert simulator._barge_ins == 0
+    assert simulator.barge_ins == []
+    assert simulator._caller_turns == 0
+    simulator._audio_interface.output.assert_not_called()  # never queued as an utterance
+    simulator._audio_interface.notify_user_utterance_complete.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_back_channel_cools_down_by_transcript_updates(tmp_path):
+    simulator = _back_channel_simulator(tmp_path)
+    simulator._updates_seen = 1
+
+    await simulator._decide("goal", "one", _trigger())
+    simulator._updates_seen = 1 + simulator.simulator_config.back_channel_cooldown_updates
+    await simulator._decide("goal", "two", _trigger())  # still inside the cooldown
+    assert len(simulator.back_channels) == 1
+
+    simulator._updates_seen += 1
+    await simulator._decide("goal", "three", _trigger())
+    assert len(simulator.back_channels) == 2
+
+
+@pytest.mark.asyncio
+async def test_no_back_channel_while_the_caller_is_speaking(tmp_path):
+    simulator = _back_channel_simulator(tmp_path)
+    simulator._audio_interface.is_caller_playing.return_value = True
+
+    await simulator._decide("goal", "Your confirmation number is", _trigger())
+
+    simulator._audio_interface.play_back_channel.assert_not_awaited()
+    assert simulator.back_channels == []
+
+
+@pytest.mark.asyncio
+async def test_back_channel_choice_is_ignored_when_disabled(tmp_path):
+    simulator = _back_channel_simulator(tmp_path)
+    simulator._back_channels.entries = []  # nothing rendered when the option is off
+
+    await simulator._decide("goal", "Your confirmation number is", _trigger())
+
+    simulator._audio_interface.play_back_channel.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_interrupt_verdict_still_barges_in_with_back_channels_on(tmp_path):
+    simulator = _back_channel_simulator(tmp_path, choice="interrupt")
+    simulator._interrupt = AsyncMock()
+
+    await simulator._decide("goal", "Your name is Bob", _trigger())
+
+    simulator._interrupt.assert_awaited_once()
+    simulator._audio_interface.play_back_channel.assert_not_awaited()
+
+
+@pytest.mark.parametrize(("enabled", "offered"), [(True, True), (False, False)])
+@pytest.mark.asyncio
+async def test_decision_offers_back_channel_only_when_enabled(enabled, offered):
+    requests: list[dict] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        requests.append(json.loads(request.content))
+        return httpx.Response(200, json={"answers": [{"choice": "keep_listening", "probabilities": []}]})
+
+    interruptor = DecisionsInterruptor("gpt-test-decider", back_channel=enabled)
+    interruptor._client = httpx.AsyncClient(base_url="https://api.test", transport=httpx.MockTransport(answer))
+
+    await interruptor.decide("goal", [], "Hello")
+
+    values = [choice["value"] for choice in requests[0]["questions"][0]["choices"]]
+    assert ("back_channel" in values) is offered
+    assert {"interrupt", "keep_listening"} <= set(values)
+
+
+@pytest.mark.asyncio
+async def test_slow_back_channel_decision_does_not_play(tmp_path):
+    simulator = _back_channel_simulator(tmp_path)
+    simulator.simulator_config = CascadeSimulatorConfig(model="gpt-test", interruption_max_decision_ms=1)
+
+    async def slow_decide(*_):
+        await asyncio.sleep(0.01)
+        return "back_channel", 0.1
+
+    simulator._interruptor.decide = slow_decide
+
+    await simulator._decide("goal", "Your confirmation number is", _trigger())
+
+    simulator._audio_interface.play_back_channel.assert_not_awaited()

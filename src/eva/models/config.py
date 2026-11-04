@@ -541,6 +541,16 @@ class CascadeSimulatorConfig(BaseModel):
     interruption_max_per_call: int | None = Field(
         8, ge=0, description="Barge-ins per call, after which no decision is requested. None disables it."
     )
+    back_channel: bool = Field(
+        True,
+        description="Let the decision model also choose back_channel: a short pre-rendered acknowledgement "
+        '("mhm") played over the agent\'s line, with no reply generated.',
+    )
+    back_channel_cooldown_updates: int = Field(
+        10,
+        ge=0,
+        description="Transcript updates after a back-channel before the next one can play.",
+    )
     forced_interruption_every_turns: int | None = Field(
         None,
         ge=1,

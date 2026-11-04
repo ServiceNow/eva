@@ -52,6 +52,21 @@ class BargeInLatency(BaseModel):
     gap_ms: float | None = Field(None, description="Silence between the opener ending and the reply's first audio")
 
 
+class BackChannel(BaseModel):
+    """One back-channel by the cascade caller: a short acknowledgement ("mhm") played over the agent's line.
+
+    Not a turn and not an interruption: it is kept out of the transcript and audit log, and the assistant
+    is never signalled that the caller started or stopped speaking.
+    """
+
+    phrase: str = Field(..., description="Pre-rendered phrase played")
+    agent_turn: int = Field(..., description="0-based index of the agent turn it was played over")
+    heard: str = Field(..., description="Agent speech heard so far in that turn: where in the line it landed")
+    timestamp_ms: int = Field(..., description="Unix time (ms) its first frame went on the wire")
+    duration_ms: float = Field(..., description="How long the phrase played")
+    decision_ms: float = Field(..., description="Decision request -> verdict")
+
+
 class ConversationResult(BaseModel):
     """Result of a single conversation."""
 
@@ -74,6 +89,9 @@ class ConversationResult(BaseModel):
         default_factory=list, description="Timing of each caller barge-in (cascade simulator)"
     )
     barge_in_gap: LatencyStats | None = Field(None, description="Barge-in silence between opener and reply")
+    back_channels: list[BackChannel] = Field(
+        default_factory=list, description="Each caller back-channel played over the agent (cascade simulator)"
+    )
 
     # Timing
     started_at: datetime = Field(..., description="When the conversation started")

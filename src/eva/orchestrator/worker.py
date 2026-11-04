@@ -15,7 +15,7 @@ from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
 from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
-from eva.models.results import BargeInLatency, ConversationResult, ErrorDetails, LatencyStats
+from eva.models.results import BackChannel, BargeInLatency, ConversationResult, ErrorDetails, LatencyStats
 from eva.user_simulator.factory import create_user_simulator
 from eva.utils.culture import resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.error_handler import create_error_details
@@ -214,6 +214,7 @@ class ConversationWorker:
         self._user_simulator = None
         self._conversation_stats: dict[str, Any] = {}
         self._barge_ins: list[BargeInLatency] = []
+        self._back_channels: list[BackChannel] = []
         self._log_file_handler = None
         self.deferred_audio_task: asyncio.Task | None = None
 
@@ -340,6 +341,7 @@ class ConversationWorker:
                 model_response_latency=model_response_latency,
                 barge_ins=self._barge_ins,
                 barge_in_gap=_latency_stats([b.gap_ms for b in self._barge_ins]),
+                back_channels=self._back_channels,
                 started_at=started_at,
                 ended_at=ended_at,
                 duration_seconds=(ended_at - started_at).total_seconds(),
@@ -521,6 +523,7 @@ class ConversationWorker:
         if self._user_simulator:
             # Kept whatever way the call ended, so a timed-out or cancelled call still reports its barge-ins.
             self._barge_ins = list(self._user_simulator.barge_ins)
+            self._back_channels = list(self._user_simulator.back_channels)
             self._user_simulator = None
 
     def _calculate_stt_latency(self) -> LatencyStats | None:

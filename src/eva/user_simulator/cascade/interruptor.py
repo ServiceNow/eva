@@ -34,12 +34,21 @@ DECISION_CHOICES = [
     },
 ]
 
+BACK_CHANNEL_CHOICE = {
+    "value": "back_channel",
+    "description": 'Occasional. A brief acknowledgement ("mhm", "yeah") while the agent is partway through a '
+    "long run of details, instructions or results, the way a listener shows they are following. Never when the "
+    "agent asked a question or got something wrong, and not in a short line.",
+}
+"""Offered only when back-channeling is enabled."""
+
 
 class DecisionsInterruptor:
-    """Asks whether the caller should cut in on the agent's in-progress line."""
+    """Asks whether the caller should cut in on, or murmur along to, the agent's in-progress line."""
 
-    def __init__(self, model: str) -> None:
+    def __init__(self, model: str, *, back_channel: bool = False) -> None:
         self.model = model
+        self._choices = [*DECISION_CHOICES, BACK_CHANNEL_CHOICE] if back_channel else DECISION_CHOICES
         self._client = httpx.AsyncClient(
             base_url=OPENAI_API_BASE,
             headers={"Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', '')}"},
@@ -67,7 +76,7 @@ class DecisionsInterruptor:
                         "type": "choice",
                         "name": "action",
                         "instructions": DECISION_INSTRUCTIONS,
-                        "choices": DECISION_CHOICES,
+                        "choices": self._choices,
                     }
                 ],
             },

@@ -378,3 +378,29 @@ class TestFromExistingRun:
 
         with pytest.raises(FileNotFoundError, match="config.json not found"):
             BenchmarkRunner.from_existing_run(run_dir)
+
+
+class TestAggregateBackChannels:
+    @staticmethod
+    def _write_result(runner: BenchmarkRunner, record_id: str, back_channels: int) -> None:
+        record_dir = runner.output_dir / "records" / record_id
+        record_dir.mkdir(parents=True)
+        entry = {"phrase": "Mhm.", "agent_turn": 2, "heard": "Your", "timestamp_ms": 0, "duration_ms": 400.0}
+        (record_dir / "result.json").write_text(json.dumps({"back_channels": [entry] * back_channels}))
+
+    def test_counts_back_channels_across_successful_records(self, tmp_path):
+        runner = _make_runner(_make_config(tmp_path))
+        self._write_result(runner, "a", 3)
+        self._write_result(runner, "b", 0)
+        self._write_result(runner, "c", 1)
+        self._write_result(runner, "failed", 5)
+
+        summary = runner._aggregate_back_channels({"a", "b", "c", "missing"})
+
+        assert summary == {"total_back_channels": 4, "records_with_back_channels": 2}
+
+    def test_none_without_back_channels(self, tmp_path):
+        runner = _make_runner(_make_config(tmp_path))
+        self._write_result(runner, "a", 0)
+
+        assert runner._aggregate_back_channels({"a"}) is None

@@ -654,3 +654,108 @@ class TestAssistantAudioEndCatchup:
         await iface._on_assistant_audio_end()
 
         assert iface._send_silence_frame.await_count == 10
+
+
+class TestPlayBackChannel:
+    """A back-channel reaches the assistant as audio only: it is never a caller utterance or an interruption."""
+
+    @staticmethod
+    def _bridge(perturbator=None):
+        from websockets.protocol import State as WebSocketState
+
+        event_logger = MagicMock()
+        record_callback = MagicMock()
+        iface = _make_interface(event_logger=event_logger, record_callback=record_callback)
+        iface._perturbator = perturbator
+        iface.websocket = AsyncMock(state=WebSocketState.OPEN)
+        iface.running = True
+        return iface, event_logger, record_callback
+
+    @staticmethod
+    async def _play(iface, audio: bytes):
+        sender = asyncio.create_task(iface._send_to_assistant())
+        try:
+            return await asyncio.wait_for(iface.play_back_channel(audio), timeout=2)
+        finally:
+            iface.running = False
+            sender.cancel()
+
+    @staticmethod
+    def _sent(iface) -> list[dict]:
+        return [json.loads(call.args[0]) for call in iface.websocket.send.call_args_list]
+
+    @pytest.mark.asyncio
+    async def test_sends_only_media_frames_and_no_speech_signals(self):
+        iface, event_logger, _ = self._bridge()
+
+        await self._play(iface, b"\x00\x40" * SEND_CHUNK_SIZE_PCM)  # 2 frames
+
+        assert [message["event"] for message in self._sent(iface)] == ["media", "media"]
+        event_logger.log_audio_start.assert_not_called()
+        event_logger.log_audio_end.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_leaves_utterance_state_untouched(self):
+        iface, _, record_callback = self._bridge()
+
+        started_at, ended_at = await self._play(iface, b"\x00\x40" * SEND_CHUNK_SIZE_PCM)
+
+        assert ended_at > started_at
+        assert iface.user_audio_starts == 0
+        assert iface._user_audio_active is False
+        assert iface._user_audio_ended_time is None
+        assert iface._pending_trailing_noise_chunks == 0
+        assert iface._back_channel_active is False
+        # Silence in the clean user track, which holds what the caller's turns said.
+        assert {call.args for call in record_callback.call_args_list} == {("user_clean", bytes(SEND_CHUNK_SIZE_PCM))}
+
+    @pytest.mark.asyncio
+    async def test_partial_frame_is_padded_before_the_perturbator(self):
+        perturbator = MagicMock(has_ambient_noise=False)
+        perturbator.apply.side_effect = lambda pcm: pcm
+        iface, _, _ = self._bridge(perturbator)
+
+        await self._play(iface, b"\x00\x40" * (SEND_CHUNK_SIZE_PCM // 4))  # half a frame
+
+        perturbator.apply.assert_called_once_with(
+            (b"\x00\x40" * (SEND_CHUNK_SIZE_PCM // 4)).ljust(SEND_CHUNK_SIZE_PCM, b"\x00")
+        )
+
+    @pytest.mark.asyncio
+    async def test_caller_counts_as_playing_until_it_finishes(self):
+        iface, _, _ = self._bridge()
+        during: list[bool] = []
+        send = iface._send_audio_frame
+
+        async def record(frame):
+            during.append(iface.is_caller_playing())
+            return await send(frame)
+
+        iface._send_audio_frame = record
+        assert not iface.is_caller_playing()
+
+        await self._play(iface, b"\x00\x40" * SEND_CHUNK_SIZE_PCM)
+
+        assert during == [True, True]
+        assert not iface.is_caller_playing()
+
+    @pytest.mark.asyncio
+    async def test_a_real_utterance_cuts_it_off(self):
+        iface, _, _ = self._bridge()
+        playing = asyncio.create_task(iface.play_back_channel(b"\x00\x40" * SEND_CHUNK_SIZE_PCM * 10))
+        await asyncio.sleep(0)
+
+        await iface._on_user_audio_start()
+
+        await asyncio.wait_for(playing, timeout=1)
+        assert iface._back_channel_audio == b""
+
+    @pytest.mark.asyncio
+    async def test_fails_when_the_connection_is_closed(self):
+        iface, _, _ = self._bridge()
+        iface._send_audio_frame = AsyncMock(return_value=False)
+
+        with pytest.raises(RuntimeError, match="connection is closed"):
+            await self._play(iface, b"\x00\x40" * SEND_CHUNK_SIZE_PCM)
+
+        assert iface._back_channel_active is False
