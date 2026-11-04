@@ -43,15 +43,28 @@ class LiteLLMClient:
         litellm.drop_params = True
 
     def _lookup_use_responses_api_from_router(self) -> bool:
-        """Read use_responses_api for self.model from the EVA_MODEL_LIST deployment config.
+        """Decide whether self.model uses the OpenAI Responses API, from its EVA_MODEL_LIST deployment.
 
-        The field lives at the top level of the deployment object (not inside litellm_params),
-        since it is an EVA routing decision rather than a LiteLLM parameter.
+        Precedence (flags live at the top level of the deployment object, not inside litellm_params,
+        since they are EVA routing decisions rather than LiteLLM parameters):
+        1. ``use_chat_completions: true`` -> chat completions.
+        2. ``use_responses_api: true`` -> Responses API, even for providers that don't use an ``openai/``
+           model prefix.
+        3. Default: Responses API when ``litellm_params.model`` starts with ``openai/`` (this includes
+           OpenAI-compatible servers such as vLLM reached through ``api_base``/``base_url``, so set
+           ``use_chat_completions: true`` on those if the server has no /v1/responses endpoint);
+           chat completions for everything else (Vertex, Azure, ...).
         """
         r = router.get()
         for deployment in getattr(r, "model_list", []):
             if deployment.get("model_name") == self.model:
-                return bool(deployment.get("use_responses_api", False))
+                if deployment.get("use_chat_completions", False):
+                    return False
+                if deployment.get("use_responses_api", False):
+                    return True
+                params = deployment.get("litellm_params", {})
+                is_native_openai = str(params.get("model", "")).startswith("openai/")
+                return is_native_openai
         return False
 
     async def complete(
@@ -270,8 +283,8 @@ class LiteLLMClient:
     def _get_router_litellm_params(self) -> dict[str, Any]:
         """Look up the litellm_params for self.model from the router config.
 
-        Assumes the router is initialized (only called from _complete_via_responses_api,
-        which requires use_responses_api=True read from the router at init time).
+        Assumes the router is initialized (only called from the Responses API paths,
+        which requires use_responses_api resolved from the router at init time).
         """
         r = router.get()
         for deployment in getattr(r, "model_list", []):
@@ -287,6 +300,11 @@ class LiteLLMClient:
         initial_delay: float = 1.0,
     ):
         """Yield text deltas, then the assembled final message and stats."""
+        if self.use_responses_api:
+            async for item in self._complete_stream_via_responses_api(messages, tools, max_retries, initial_delay):
+                yield item
+            return
+
         kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
@@ -361,21 +379,13 @@ class LiteLLMClient:
                 raise
         raise last_exception
 
-    async def _complete_via_responses_api(
-        self,
-        messages: list[dict[str, Any]],
-        tools: list[dict] | None,
-        max_retries: int,
-        initial_delay: float,
-    ) -> tuple[Any, dict[str, Any]]:
-        """Call the OpenAI Responses API for stateless multi-turn encrypted reasoning.
+    def _build_responses_kwargs(self, messages: list[dict[str, Any]], tools: list[dict] | None) -> dict[str, Any]:
+        """Build litellm.aresponses kwargs, resolving credentials from the router config.
 
         Uses ``include=["reasoning.encrypted_content"]`` + ``store=False`` so encrypted
         reasoning is threaded through tool-call loops without managing conversation IDs.
-        The caller (system.py) stores ``responses_output_items`` from stats on the
-        assistant message so the next iteration injects them back into the input.
         """
-        # Resolve model credentials from router config (handles Azure, custom api_base, etc.)
+        # Resolve model credentials from router config (handles Azure, custom api_base/base_url, etc.)
         litellm_params = self._get_router_litellm_params()
         litellm_model = litellm_params.get("model", self.model)
 
@@ -385,7 +395,7 @@ class LiteLLMClient:
             raw_key = os.environ.get(raw_key.split("/", 1)[1], "")
         api_key = raw_key or None
 
-        api_base = litellm_params.get("api_base") or None
+        api_base = litellm_params.get("api_base") or litellm_params.get("base_url") or None
 
         # reasoning_effort from litellm_params (set in EVA_MODEL_LIST deployment config)
         reasoning_effort = litellm_params.get("reasoning_effort")
@@ -409,79 +419,98 @@ class LiteLLMClient:
             kwargs["api_key"] = api_key
         if api_base:
             kwargs["api_base"] = api_base
+        return kwargs
+
+    def _parse_responses_output(self, response: Any, elapsed: float) -> tuple[Any, dict[str, Any]]:
+        """Convert a completed Responses API response into (message, stats).
+
+        Shared by the non-streaming and streaming paths. ``stats["responses_output_items"]``
+        holds the raw output items that the caller threads into the next tool-loop iteration.
+        """
+        text_content = ""
+        reasoning_summary: str | None = None
+        tool_calls: list[ChatCompletionMessageToolCall] = []
+        output_items_for_next_turn: list[dict[str, Any]] = []
+
+        for item in response.output:
+            if item.type == "reasoning":
+                # Prefer human-readable summary; fall back to encrypted_content as the
+                # reasoning-text equivalent (e.g. gpt-5.2 returns no readable summary)
+                summary_parts = getattr(item, "summary", []) or []
+                if summary_parts:
+                    reasoning_summary = " ".join(s.text for s in summary_parts if hasattr(s, "text"))
+                if not reasoning_summary:
+                    reasoning_summary = getattr(item, "encrypted_content", None)
+                output_items_for_next_turn.append(item.model_dump(exclude_none=True))
+            elif item.type == "message":
+                for c in item.content:
+                    if hasattr(c, "text") and c.text:
+                        text_content += c.text
+                output_items_for_next_turn.append(item.model_dump(exclude_none=True))
+            elif item.type == "function_call":
+                tool_calls.append(
+                    ChatCompletionMessageToolCall(
+                        id=item.call_id,
+                        type="function",
+                        function={"name": item.name, "arguments": item.arguments},
+                    )
+                )
+                output_items_for_next_turn.append(item.model_dump(exclude_none=True))
+
+        usage = getattr(response, "usage", None)
+        reasoning_tokens = 0
+        if usage and hasattr(usage, "output_tokens_details"):
+            details = usage.output_tokens_details
+            if details:
+                reasoning_tokens = getattr(details, "reasoning_tokens", 0) or 0
+
+        if reasoning_summary:
+            logger.info(f"💭 Reasoning summary from Responses API ({len(reasoning_summary)} chars)")
+
+        stats = {
+            "prompt_tokens": getattr(usage, "input_tokens", 0) if usage else 0,
+            "completion_tokens": getattr(usage, "output_tokens", 0) if usage else 0,
+            "reasoning_tokens": reasoning_tokens,
+            "finish_reason": getattr(response, "status", "completed"),
+            "model": getattr(response, "model", self.model),
+            "cost": None,
+            "cost_source": "litellm",
+            "latency": round(elapsed, 3),
+            "reasoning": reasoning_summary,
+            "reasoning_content": reasoning_summary,
+            "thinking_blocks": None,
+            "responses_output_items": output_items_for_next_turn or None,
+        }
+
+        if tool_calls:
+            message = SimpleNamespace(
+                content=text_content,
+                tool_calls=tool_calls,
+                reasoning_content=reasoning_summary,
+            )
+            return message, stats
+        return text_content, stats
+
+    async def _complete_via_responses_api(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | None,
+        max_retries: int,
+        initial_delay: float,
+    ) -> tuple[Any, dict[str, Any]]:
+        """Call the OpenAI Responses API (non-streaming) for stateless multi-turn encrypted reasoning.
+
+        The caller (system.py) stores ``responses_output_items`` from stats on the
+        assistant message so the next iteration injects them back into the input.
+        """
+        kwargs = self._build_responses_kwargs(messages, tools)
 
         last_exception = None
         for attempt in range(max_retries + 1):
             try:
                 start_time = time.time()
                 response = await litellm.aresponses(**kwargs)
-                elapsed = time.time() - start_time
-
-                text_content = ""
-                reasoning_summary: str | None = None
-                tool_calls: list[ChatCompletionMessageToolCall] = []
-                output_items_for_next_turn: list[dict[str, Any]] = []
-
-                for item in response.output:
-                    if item.type == "reasoning":
-                        # Prefer human-readable summary; fall back to encrypted_content as the
-                        # reasoning-text equivalent (e.g. gpt-5.2 returns no readable summary)
-                        summary_parts = getattr(item, "summary", []) or []
-                        if summary_parts:
-                            reasoning_summary = " ".join(s.text for s in summary_parts if hasattr(s, "text"))
-                        if not reasoning_summary:
-                            reasoning_summary = getattr(item, "encrypted_content", None)
-                        output_items_for_next_turn.append(item.model_dump(exclude_none=True))
-                    elif item.type == "message":
-                        for c in item.content:
-                            if hasattr(c, "text") and c.text:
-                                text_content += c.text
-                        output_items_for_next_turn.append(item.model_dump(exclude_none=True))
-                    elif item.type == "function_call":
-                        tool_calls.append(
-                            ChatCompletionMessageToolCall(
-                                id=item.call_id,
-                                type="function",
-                                function={"name": item.name, "arguments": item.arguments},
-                            )
-                        )
-                        output_items_for_next_turn.append(item.model_dump(exclude_none=True))
-
-                usage = getattr(response, "usage", None)
-                reasoning_tokens = 0
-                if usage and hasattr(usage, "output_tokens_details"):
-                    details = usage.output_tokens_details
-                    if details:
-                        reasoning_tokens = getattr(details, "reasoning_tokens", 0) or 0
-
-                if reasoning_summary:
-                    logger.info(f"💭 Reasoning summary from Responses API ({len(reasoning_summary)} chars)")
-
-                stats = {
-                    "prompt_tokens": getattr(usage, "input_tokens", 0) if usage else 0,
-                    "completion_tokens": getattr(usage, "output_tokens", 0) if usage else 0,
-                    "reasoning_tokens": reasoning_tokens,
-                    "finish_reason": getattr(response, "status", "completed"),
-                    "model": getattr(response, "model", self.model),
-                    "cost": None,
-                    "cost_source": "litellm",
-                    "latency": round(elapsed, 3),
-                    "reasoning": reasoning_summary,
-                    "reasoning_content": reasoning_summary,
-                    "thinking_blocks": None,
-                    "responses_output_items": output_items_for_next_turn or None,
-                }
-
-                if tool_calls:
-                    message = SimpleNamespace(
-                        content=text_content,
-                        tool_calls=tool_calls,
-                        reasoning_content=reasoning_summary,
-                    )
-                    return message, stats
-                else:
-                    return text_content, stats
-
+                return self._parse_responses_output(response, time.time() - start_time)
             except Exception as e:
                 last_exception = e
                 if is_retryable_error(e) and attempt < max_retries:
@@ -495,4 +524,63 @@ class LiteLLMClient:
                     logger.exception(f"Responses API call failed: {e}")
                     raise
 
+        raise last_exception
+
+    async def _complete_stream_via_responses_api(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | None,
+        max_retries: int,
+        initial_delay: float,
+    ):
+        """Streaming variant of the Responses API call.
+
+        Yields ("delta", text) for each ``response.output_text.delta`` event, then
+        ("final", (message, stats)) built from the terminal ``response.completed`` /
+        ``response.incomplete`` event's full response object (same shape as the
+        non-streaming path, including ``responses_output_items``). Function calls are read from
+        that object's ``output``; the argument delta events are not consumed.
+        """
+        kwargs = self._build_responses_kwargs(messages, tools)
+        kwargs["stream"] = True
+
+        last_exception = None
+        for attempt in range(max_retries + 1):
+            first_token = False
+            try:
+                start_time = time.time()
+                stream = await litellm.aresponses(**kwargs)
+                final_response = None
+                async for event in stream:
+                    event_type = getattr(event, "type", None)
+                    if event_type == "response.output_text.delta":
+                        text = getattr(event, "delta", None)
+                        if text:
+                            first_token = True
+                            yield ("delta", text)
+                    elif event_type in ("response.completed", "response.incomplete"):
+                        final_response = event.response
+                    elif event_type in ("response.failed", "error"):
+                        err = getattr(getattr(event, "response", None), "error", None) or getattr(
+                            event, "message", None
+                        )
+                        raise RuntimeError(f"Responses API stream failed: {err}")
+
+                if final_response is None:
+                    raise RuntimeError("Responses API stream ended without a completed response")
+
+                yield ("final", self._parse_responses_output(final_response, time.time() - start_time))
+                return
+            except Exception as e:
+                last_exception = e
+                if is_retryable_error(e) and attempt < max_retries and not first_token:
+                    delay = initial_delay * (2**attempt)
+                    logger.warning(
+                        f"Retryable streaming error on attempt {attempt + 1}/{max_retries + 1}: {e}. "
+                        f"Retrying in {delay:.1f}s..."
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                logger.exception(f"Responses API streaming call failed: {e}")
+                raise
         raise last_exception
