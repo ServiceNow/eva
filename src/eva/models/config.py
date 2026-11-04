@@ -318,6 +318,12 @@ class ModelConfig(BaseModel):
             if getattr(self, field) == target:
                 continue
             if field == "turn_start_strategy" and getattr(self, field) in self._SELF_ENDPOINTING_START_STRATEGIES:
+                if getattr(self, field) == "external":
+                    logger.warning(
+                        f"STT '{self.stt}': keeping turn_start_strategy='external'. A turn.start with no words "
+                        f"(trailing audio of the previous utterance) can interrupt and cancel an in-flight LLM "
+                        f"query; the default is '{target}'."
+                    )
                 continue
             if field in self.model_fields_set:
                 logger.warning(
