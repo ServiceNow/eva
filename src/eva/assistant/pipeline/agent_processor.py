@@ -481,6 +481,7 @@ class UserObserver(FrameProcessor):
         turn_end_fallback_time: int | None = None,
         fallback_processor=None,
         turn_stop_strategy=None,
+        uninterruptible_finals: bool = False,
         **kwargs,
     ):
         """Initialize the user observer.
@@ -497,6 +498,10 @@ class UserObserver(FrameProcessor):
                 ``trigger_user_turn_stopped()`` so the turn rides Pipecat's standard flow
                 (native ``on_user_turn_stopped`` → ``process_complete_user_turn`` → native
                 turn boundaries). When None (audio-LLM), the legacy bypass path is used.
+            uninterruptible_finals: Re-type the final transcript and stop proposal so they survive
+                the InterruptionFrame flush. Only needed when a transcript frame opens the user turn
+                (``turn_start_strategy='transcription'``); other pipelines keep pipecat's default
+                interruption semantics.
             kwargs: args to be sent to the parent FrameProcessor
         """
         super().__init__(**kwargs)
@@ -509,6 +514,7 @@ class UserObserver(FrameProcessor):
         self._fallback = TurnEndFallbackTimer(turn_end_fallback_time, self._on_fallback_fire)
         self._fallback_processor = fallback_processor
         self._turn_stop_strategy = turn_stop_strategy
+        self._uninterruptible_finals = uninterruptible_finals
         if fallback_processor is not None:
             fallback_processor.fallback_timer = self._fallback
 
@@ -683,7 +689,9 @@ class UserObserver(FrameProcessor):
                 # Reset for next turn
                 self._last_transcription_time = None
 
-        await self.push_frame(_as_uninterruptible(frame, direction), direction)
+        if self._uninterruptible_finals:
+            frame = _as_uninterruptible(frame, direction)
+        await self.push_frame(frame, direction)
 
 
 _UNINTERRUPTIBLE_VARIANTS = {

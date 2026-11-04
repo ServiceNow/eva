@@ -403,7 +403,10 @@ class TestInk2FinalSurvivesTurnStartInterruption:
             events.append(message.content)
 
         await run_test(
-            Pipeline([UserObserver(), pair.user()]), frames_to_send=frames, ignore_start=True, start_timeout=15.0
+            Pipeline([UserObserver(uninterruptible_finals=True), pair.user()]),
+            frames_to_send=frames,
+            ignore_start=True,
+            start_timeout=15.0,
         )
         return events
 
@@ -429,3 +432,56 @@ class TestInk2FinalSurvivesTurnStartInterruption:
         )
         # Exactly one stop, before EndFrame teardown could flush the aggregation.
         assert events == ["Yes, that's correct."]
+
+    async def test_stop_proposal_before_any_text_still_closes_turn_on_late_final(self):
+        # ink-2 can send turn.start, turn.end (no words yet), then the final. The stop proposal
+        # lands while no turn is open; the late final opens the turn and must still close it.
+        from pipecat.frames.frames import (
+            ProposedUserStartedSpeakingFrame,
+            ProposedUserStoppedSpeakingFrame,
+            TranscriptionFrame,
+        )
+        from pipecat.tests.utils import SleepFrame
+
+        now = "2026-01-01T00:00:00Z"
+        events = await self._run(
+            [
+                ProposedUserStartedSpeakingFrame(),
+                ProposedUserStoppedSpeakingFrame(),
+                TranscriptionFrame("Yes, that's correct.", "user", now, finalized=True),
+                SleepFrame(1.5),  # shorter than pipecat's 5s stop watchdog
+            ]
+        )
+        assert events == ["Yes, that's correct."]
+
+
+class TestUninterruptibleFinalsScope:
+    async def _pushed(self, observer, frame):
+        from pipecat.processors.frame_processor import FrameDirection
+
+        pushed = []
+
+        async def _capture(f, direction=None):
+            pushed.append(f)
+
+        observer.push_frame = _capture
+        await observer.process_frame(frame, FrameDirection.DOWNSTREAM)
+        return pushed[-1]
+
+    async def test_default_leaves_final_interruptible(self):
+        from pipecat.frames.frames import TranscriptionFrame, UninterruptibleFrame
+
+        from eva.assistant.pipeline.agent_processor import UserObserver
+
+        out = await self._pushed(UserObserver(), TranscriptionFrame("hi", "u", "2026-01-01T00:00:00Z"))
+        assert not isinstance(out, UninterruptibleFrame)
+
+    async def test_enabled_makes_final_uninterruptible(self):
+        from pipecat.frames.frames import TranscriptionFrame, UninterruptibleFrame
+
+        from eva.assistant.pipeline.agent_processor import UserObserver
+
+        out = await self._pushed(
+            UserObserver(uninterruptible_finals=True), TranscriptionFrame("hi", "u", "2026-01-01T00:00:00Z")
+        )
+        assert isinstance(out, UninterruptibleFrame)
