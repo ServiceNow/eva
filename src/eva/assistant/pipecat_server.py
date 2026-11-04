@@ -66,6 +66,7 @@ from eva.assistant.services.llm import LiteLLMClient
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig, PipelineType
 from eva.utils.logging import get_logger
+from eva.utils.stt_turn_latency import INK2_TURN_END_METRIC
 
 logger = get_logger(__name__)
 
@@ -546,10 +547,14 @@ class PipecatAssistantServer(AbstractAssistantServer):
         # monotonic seconds at the last eager-end prediction (None if none pending)
         eager: dict[str, float | None] = {"ts": None}
 
+        # ink-2 runs have no VAD, so pipecat reports no STT TTFB. Each committed turn is therefore
+        # recorded in pipecat_metrics.jsonl as an Ink2TurnEnd entry (wall-clock epoch ms); the worker
+        # pairs these with the simulator's audio_end to compute stt_latency
+        # (eva.utils.stt_turn_latency). epoch_ms is also logged for reading logs.log directly.
         @stt.event_handler("on_turn_eager_end")
         async def _on_eager_end(_service, transcript: str) -> None:
             eager["ts"] = time.monotonic()
-            logger.info(f"[ink-2] eager end-of-turn predicted: {transcript!r}")
+            logger.info(f"[ink-2] eager end-of-turn predicted (epoch_ms={current_timestamp_ms()}): {transcript!r}")
 
         @stt.event_handler("on_turn_resume")
         async def _on_resume(_service) -> None:
@@ -559,11 +564,19 @@ class PipecatAssistantServer(AbstractAssistantServer):
         @stt.event_handler("on_turn_end")
         async def _on_turn_end(_service, transcript: str) -> None:
             ts = eager["ts"]
+            epoch_ms = current_timestamp_ms()
+            # Empty transcripts (silence-only turns) produce no user message, so they don't commit a turn.
+            if transcript and self._metrics_observer:
+                self._metrics_observer.write_entry(
+                    {"timestamp": int(epoch_ms), "type": INK2_TURN_END_METRIC, "processor": type(stt).__name__}
+                )
             if ts is not None:
                 delta_ms = int((time.monotonic() - ts) * 1000)
-                logger.info(f"[ink-2] committed end-of-turn (eager->final +{delta_ms}ms): {transcript!r}")
+                logger.info(
+                    f"[ink-2] committed end-of-turn (epoch_ms={epoch_ms}, eager->final +{delta_ms}ms): {transcript!r}"
+                )
             else:
-                logger.info(f"[ink-2] committed end-of-turn (no eager prediction): {transcript!r}")
+                logger.info(f"[ink-2] committed end-of-turn (epoch_ms={epoch_ms}, no eager prediction): {transcript!r}")
             eager["ts"] = None
 
     def _create_transport(self, websocket) -> FastAPIWebsocketTransport:

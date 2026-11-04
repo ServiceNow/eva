@@ -98,6 +98,56 @@ class TestCalculateLlmLatency:
         assert result.mean_ms == 200.0
 
 
+class TestCalculateSttLatencyInk2Fallback:
+    """ink-2 has no VAD, so STT latency comes from Ink2TurnEnd entries + simulator events."""
+
+    def _write(self, worker, metrics, events):
+        worker.output_dir.mkdir(parents=True)
+        (worker.output_dir / "pipecat_metrics.jsonl").write_text("\n".join(json.dumps(m) for m in metrics) + "\n")
+        (worker.output_dir / "user_simulator_events.jsonl").write_text("\n".join(json.dumps(e) for e in events) + "\n")
+
+    def test_uses_turn_end_entries_when_no_real_ttfb(self, tmp_path):
+        worker = _make_worker(tmp_path)
+        self._write(
+            worker,
+            [
+                # Startup 0.0 TTFB is filtered, so it must not block the fallback.
+                {"type": "TTFBMetricsData", "processor": "CartesiaTurnsSTTService#4", "value": 0.0},
+                {"type": "Ink2TurnEnd", "timestamp": 103_700, "processor": "CartesiaTurnsSTTService"},
+            ],
+            [
+                {"event_type": "audio_start", "user": "simulated_user", "audio_timestamp": 100.0},
+                {"event_type": "audio_end", "user": "simulated_user", "audio_timestamp": 103.0},
+                {"event_type": "audio_start", "user": "assistant", "audio_timestamp": 104.5},
+            ],
+        )
+        result = worker._calculate_stt_latency()
+        assert result.total_calls == 1
+        assert result.mean_ms == pytest.approx(700, abs=1)
+
+    def test_real_ttfb_takes_precedence(self, tmp_path):
+        worker = _make_worker(tmp_path)
+        self._write(
+            worker,
+            [
+                {"type": "TTFBMetricsData", "processor": "DeepgramSTTService", "value": 0.2},
+                {"type": "Ink2TurnEnd", "timestamp": 103_700, "processor": "CartesiaTurnsSTTService"},
+            ],
+            [
+                {"event_type": "audio_start", "user": "simulated_user", "audio_timestamp": 100.0},
+                {"event_type": "audio_end", "user": "simulated_user", "audio_timestamp": 103.0},
+            ],
+        )
+        assert worker._calculate_stt_latency().mean_ms == pytest.approx(200, abs=1)
+
+    def test_no_simulator_events_returns_none(self, tmp_path):
+        worker = _make_worker(tmp_path)
+        worker.output_dir.mkdir(parents=True)
+        entry = {"type": "Ink2TurnEnd", "timestamp": 103_700, "processor": "CartesiaTurnsSTTService"}
+        (worker.output_dir / "pipecat_metrics.jsonl").write_text(json.dumps(entry) + "\n")
+        assert worker._calculate_stt_latency() is None
+
+
 class TestCalculateSttLatency:
     def test_no_metrics_file_returns_none(self, tmp_path):
         worker = _make_worker(tmp_path)
