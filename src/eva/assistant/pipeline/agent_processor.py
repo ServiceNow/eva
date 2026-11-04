@@ -1,6 +1,7 @@
 """Frame processors for the Pipecat pipeline."""
 
 import asyncio
+import copy
 import time
 from collections.abc import Awaitable
 
@@ -13,6 +14,7 @@ from pipecat.frames.frames import (
     InputAudioRawFrame,
     InterimTranscriptionFrame,
     LLMContextFrame,
+    ProposedUserStoppedSpeakingFrame,
     TranscriptionFrame,
     TTSSpeakFrame,
     UserStartedSpeakingFrame,
@@ -27,6 +29,8 @@ from eva.assistant.pipeline.frames import (
     LLMMessageFrame,
     SpokenMessageFrame,
     TurnTimestampFrame,
+    UninterruptibleProposedUserStoppedSpeakingFrame,
+    UninterruptibleTranscriptionFrame,
     UserMessageFrame,
     VADBufferFrame,
 )
@@ -679,7 +683,30 @@ class UserObserver(FrameProcessor):
                 # Reset for next turn
                 self._last_transcription_time = None
 
-        await self.push_frame(frame, direction)
+        await self.push_frame(_as_uninterruptible(frame, direction), direction)
+
+
+_UNINTERRUPTIBLE_VARIANTS = {
+    TranscriptionFrame: UninterruptibleTranscriptionFrame,
+    ProposedUserStoppedSpeakingFrame: UninterruptibleProposedUserStoppedSpeakingFrame,
+}
+
+
+def _as_uninterruptible(frame: Frame, direction: FrameDirection) -> Frame:
+    """Re-type a downstream final transcript / stop proposal so it survives an interruption flush.
+
+    The aggregator just downstream broadcasts an InterruptionFrame when a user turn opens, and
+    pipecat then discards its queued data/control frames. If a late interim opens the turn with
+    the final and the stop proposal already queued behind it, both are lost and the turn never
+    closes. Exact type match only, so subclasses (and already-converted frames) pass untouched.
+    """
+    variant = _UNINTERRUPTIBLE_VARIANTS.get(type(frame))
+    if variant is None or direction != FrameDirection.DOWNSTREAM:
+        return frame
+    # Shallow copy keeps every field (id, pts, metadata, text, ...); only the type changes.
+    converted = copy.copy(frame)
+    converted.__class__ = variant
+    return converted
 
 
 class UserAudioCollector(FrameProcessor):

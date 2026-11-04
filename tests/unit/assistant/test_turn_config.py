@@ -362,3 +362,70 @@ class TestInk2PhantomTurnStart:
 
         assert len(started) == 1
         assert started[0].enable_interruptions is True  # a real barge-in still interrupts
+
+
+class TestInk2FinalSurvivesTurnStartInterruption:
+    """Regression for the final-frame stall found while fixing eva-internal#561.
+
+    ink-2 can deliver a late interim, the final TranscriptionFrame and the
+    ProposedUserStoppedSpeakingFrame back-to-back. The interim opens the user turn, the
+    aggregator broadcasts an InterruptionFrame, and pipecat flushes the aggregator's queued
+    data/control frames — the final and the stop proposal — so the turn never closes.
+    UserObserver (just ahead of the aggregator) must make those two frames survive the flush.
+    """
+
+    @staticmethod
+    async def _run(frames):
+        from pipecat.pipeline.pipeline import Pipeline
+        from pipecat.processors.aggregators.llm_context import LLMContext
+        from pipecat.processors.aggregators.llm_response_universal import (
+            LLMContextAggregatorPair,
+            LLMUserAggregatorParams,
+        )
+        from pipecat.tests.utils import run_test
+        from pipecat.turns.user_turn_strategies import UserTurnStrategies
+
+        from eva.assistant.pipeline.agent_processor import UserObserver
+
+        pair = LLMContextAggregatorPair(
+            LLMContext(),
+            user_params=LLMUserAggregatorParams(
+                user_turn_strategies=UserTurnStrategies(
+                    start=[create_turn_start_strategy("transcription", {})],
+                    stop=[ExternalUserTurnStopStrategy()],
+                )
+            ),
+        )
+        events = []
+
+        @pair.user().event_handler("on_user_turn_stopped")
+        async def _on_stopped(aggregator, strategy, message):
+            events.append(message.content)
+
+        await run_test(
+            Pipeline([UserObserver(), pair.user()]), frames_to_send=frames, ignore_start=True, start_timeout=15.0
+        )
+        return events
+
+    async def test_back_to_back_interim_final_stop_closes_the_turn(self):
+        from pipecat.frames.frames import (
+            InterimTranscriptionFrame,
+            ProposedUserStartedSpeakingFrame,
+            ProposedUserStoppedSpeakingFrame,
+            TranscriptionFrame,
+        )
+        from pipecat.tests.utils import SleepFrame
+
+        now = "2026-01-01T00:00:00Z"
+        events = await self._run(
+            [
+                ProposedUserStartedSpeakingFrame(),
+                InterimTranscriptionFrame("Yes", "user", now),
+                TranscriptionFrame("Yes, that's correct.", "user", now, finalized=True),
+                ProposedUserStoppedSpeakingFrame(),
+                # Shorter than pipecat's 5s stop watchdog, so only the real stop path can close it.
+                SleepFrame(1.5),
+            ]
+        )
+        # Exactly one stop, before EndFrame teardown could flush the aggregation.
+        assert events == ["Yes, that's correct."]
