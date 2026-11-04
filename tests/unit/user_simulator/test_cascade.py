@@ -13,10 +13,10 @@ from pydantic import ValidationError
 
 from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.cascade import simulator as cascade_simulator
-from eva.user_simulator.cascade.barge_in import BargeIn, trim_silence
+from eva.user_simulator.cascade.barge_in import MIN_GAP_MS, BargeIn, trim_silence
 from eva.user_simulator.cascade.interruptor import DecisionsInterruptor
 from eva.user_simulator.cascade.simulator import CascadeUserSimulator, extract_turn, next_segment
-from eva.user_simulator.cascade.stt import ScribeStreamingSTT
+from eva.user_simulator.cascade.stt import OpenAIStreamingSTT, ScribeStreamingSTT
 from eva.user_simulator.cascade.tts import TTS_SAMPLE_RATE, CartesiaStreamingTTS
 
 GOAL = {
@@ -45,6 +45,7 @@ def _no_router(monkeypatch):
     monkeypatch.setattr(cascade_simulator, "LiteLLMClient", MagicMock(side_effect=lambda **_: MagicMock()))
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-key")
     monkeypatch.setenv("CARTESIA_API_KEY", "test-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     monkeypatch.setattr(cascade_simulator, "DecisionsInterruptor", MagicMock())
 
 
@@ -56,7 +57,7 @@ def _simulator(tmp_path: Path, *, persona_id: int = 1, **kwargs) -> CascadeUserS
         server_url="ws://localhost:9999/ws",
         output_dir=tmp_path,
         agent_id="agent_itsm",
-        simulator_config=CascadeSimulatorConfig(model="gpt-test"),
+        simulator_config=CascadeSimulatorConfig(model="gpt-test", stt="elevenlabs"),
         **kwargs,
     )
 
@@ -73,7 +74,7 @@ async def _chunks(*chunks: bytes):
 
 def test_config_rejects_non_streaming_stt():
     with pytest.raises(ValidationError, match="streaming STT"):
-        CascadeSimulatorConfig(model="gpt-test", stt_model="scribe_v2")
+        CascadeSimulatorConfig(model="gpt-test", stt="elevenlabs", stt_model="scribe_v2")
 
 
 def test_accent_variants_are_rejected(tmp_path):
@@ -186,7 +187,7 @@ async def test_commit_is_queued_behind_the_next_bridge_chunk(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._stt = MagicMock(send=AsyncMock(), commit=AsyncMock())
     order: list[str] = []
-    simulator._stt.send.side_effect = lambda chunk, heard_at: order.append(f"send:{chunk.decode()}")
+    simulator._stt.send.side_effect = lambda chunk: order.append(f"send:{chunk.decode()}")
     simulator._stt.commit.side_effect = lambda: order.append("commit")
 
     simulator._on_assistant_audio(b"speech")
@@ -367,8 +368,8 @@ async def test_end_call_hangs_up_after_playback(tmp_path):
     assert simulator._end_reason == "goodbye"
 
 
-def _trigger(at: float = 0.0, *, segment_start: float = 0.0, words: int = 0) -> BargeIn:
-    return BargeIn(heard_at=at, decision_ms=0.0, p_interrupt=0.0, segment_start=segment_start, trigger_words=words)
+def _trigger() -> BargeIn:
+    return BargeIn(decision_ms=0.0, p_interrupt=0.0)
 
 
 @pytest.mark.asyncio
@@ -395,7 +396,8 @@ async def test_interrupt_decision_plays_opener_then_reply_once(tmp_path):
 
     # The reply's leading silence is dropped, so it follows the opener with no padding.
     outputs = [call.args[0] for call in simulator._audio_interface.output.call_args_list]
-    assert outputs == [b"\x07\x07", LOUD_PCM, b"\x00\x00"]
+    assert [outputs[0], outputs[1].lstrip(b"\x00"), outputs[2]] == [b"\x07\x07", LOUD_PCM.lstrip(b"\x00"), b"\x00\x00"]
+    assert len(outputs[1]) > len(LOUD_PCM)  # held off the opener by the minimum gap
     assert simulator._history[-2:] == [
         {"role": "assistant", "content": "Can I get your employee"},
         {"role": "user", "content": "Sorry— It's 4471."},  # the opener is part of what the caller said
@@ -405,12 +407,10 @@ async def test_interrupt_decision_plays_opener_then_reply_once(tmp_path):
     [barge_in] = simulator.barge_ins
     assert (barge_in.heard, barge_in.content, barge_in.p_interrupt) == ("Can I get your employee", "It's 4471.", 0.9)
     assert barge_in.gap_ms is not None
-    assert barge_in.reply_first_token_ms is not None
-    assert barge_in.reaction_ms is None  # no word timestamps came back
 
 
 @pytest.mark.asyncio
-async def test_barge_in_reaction_is_timed_to_the_openers_first_frame_on_the_wire(tmp_path):
+async def test_barge_in_opener_is_timed_from_its_first_frame_on_the_wire(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._openers = [("Sorry—", LOUD_PCM)]
     simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
@@ -424,12 +424,11 @@ async def test_barge_in_reaction_is_timed_to_the_openers_first_frame_on_the_wire
 
     bridge.output.side_effect = output
     simulator._audio_interface = bridge
-    simulator._stt.word_end = MagicMock(return_value=100.0)
+    barge_in = _trigger()
 
-    await simulator._interrupt(_trigger(words=3))
+    await simulator._interrupt(barge_in)
 
-    [barge_in] = simulator.barge_ins
-    assert barge_in.reaction_ms == pytest.approx(700.0)
+    assert barge_in.opener_at == pytest.approx(100.7)
 
 
 @pytest.mark.asyncio
@@ -455,42 +454,35 @@ async def test_barge_in_reply_streams_each_segment_to_tts_in_order(tmp_path):
     outputs = [call.args[0] for call in simulator._audio_interface.output.call_args_list]
     assert outputs == [audio[text] for text in rendered]
     assert spoke and barge_in.content == "My ID is 4471, and my name is Sam. Thanks."
-    assert barge_in.segment_sent_at is not None
 
 
-def test_barge_in_times_reaction_and_gap_from_the_last_heard_word():
-    barge_in = _trigger(10.0)
-    barge_in.word_end_at = 9.6
+def test_barge_in_times_the_gap_after_the_opener():
+    barge_in = _trigger()
     barge_in.decision_ms = 150.0
     barge_in.play_opener("Sorry\u2014", bytes(TTS_SAMPLE_RATE // 5 * 2), now=10.2)  # 200ms opener
-    barge_in.first_token(now=10.35)
-    barge_in.first_token(now=10.4)  # only the first token counts
-    barge_in.segment_sent(now=10.5)
-    barge_in.segment_sent(now=10.7)  # only the first segment counts
 
     assert barge_in.audible(SILENT_PCM, now=10.55) == b""
     assert barge_in.audible(SILENT_PCM + LOUD_PCM, now=10.6) == LOUD_PCM
     latency = barge_in.latency()
 
-    assert latency.stt_lag_ms == pytest.approx(400.0)
-    assert latency.reaction_ms == pytest.approx(600.0)
-    assert latency.reply_first_token_ms == pytest.approx(150.0)
-    assert latency.reply_text_ms == pytest.approx(300.0)
-    assert latency.tts_first_audio_ms == pytest.approx(50.0)
-    assert latency.content_ready_ms == pytest.approx(400.0)
+    assert latency.decision_ms == 150.0
     assert latency.gap_ms == pytest.approx(200.0)  # opener ended at 10.4, reply audible at 10.6
-    assert latency.total_ms == pytest.approx(1000.0)
 
 
-def test_barge_in_reply_ready_before_opener_ends_has_no_gap():
-    barge_in = _trigger(0.0)
-    barge_in.word_end_at = -0.4
+def test_barge_in_reply_ready_before_opener_ends_is_padded_to_the_min_gap():
+    barge_in = _trigger()
     barge_in.play_opener("Sorry\u2014", bytes(TTS_SAMPLE_RATE * 2), now=0.1)  # 1s opener
-    barge_in.segment_sent(now=0.3)
-    barge_in.audible(LOUD_PCM, now=0.5)
 
-    assert barge_in.latency().gap_ms == 0.0
-    assert barge_in.latency().total_ms == pytest.approx(1500.0)
+    assert barge_in.audible(LOUD_PCM, now=0.5) == bytes(round(MIN_GAP_MS / 1000 * TTS_SAMPLE_RATE) * 2) + LOUD_PCM
+    assert barge_in.latency().gap_ms == pytest.approx(MIN_GAP_MS)
+
+
+def test_barge_in_reply_just_after_opener_is_padded_only_the_rest_of_the_way():
+    barge_in = _trigger()
+    barge_in.play_opener("Sorry\u2014", bytes(TTS_SAMPLE_RATE * 2), now=0.0)  # 1s opener
+
+    assert barge_in.audible(LOUD_PCM, now=1.05) == bytes(round(0.08 * TTS_SAMPLE_RATE) * 2) + LOUD_PCM
+    assert barge_in.latency().gap_ms == pytest.approx(MIN_GAP_MS)
 
 
 def test_trim_silence_keeps_only_loud_windows():
@@ -510,30 +502,6 @@ def test_stt_take_with_partial_drops_the_finals_it_already_returned():
     stt._on_committed({"text": "Thanks."})
 
     assert stt.take() == "Thanks."
-
-
-@pytest.mark.asyncio
-async def test_stt_maps_session_word_timestamps_to_when_the_caller_heard_them():
-    stt = ScribeStreamingSTT("scribe_v2_realtime", api_key="x")
-    stt._record_sent(32000, heard_at=100.0)  # 1s of 16kHz PCM16: session audio [0, 1s] heard by t=100
-    stt._record_sent(32000, heard_at=101.0)  # [1, 2s] by t=101
-    stt.segment_start = 1.0
-    stt._on_timestamps({"words": [{"text": "Hi", "type": "word", "start": 0.1, "end": 0.4}]})
-    stt._on_timestamps(
-        {
-            "words": [
-                {"text": "Can", "type": "word", "start": 1.1, "end": 1.3},
-                {"text": " ", "type": "spacing", "start": 1.3, "end": 1.35},
-                {"text": "I", "type": "word", "start": 1.35, "end": 1.5},
-            ]
-        }
-    )
-
-    assert stt.word_end(1.0, 0) == pytest.approx(100.3)
-    assert stt.word_end(1.0, 1) == pytest.approx(100.5)
-    assert stt.word_end(1.0, 5) == pytest.approx(100.5)  # fewer final words than the partial had
-    assert stt.word_end(2.0, 0) is None  # that segment's final has not arrived
-    assert stt.word_end(1.0, -1) is None
 
 
 @pytest.mark.asyncio
@@ -882,3 +850,138 @@ async def test_decisions_pause_for_the_cooldown_after_a_barge_in_and_stop_at_the
 
     # "a" fires; two updates of cooldown; "a b c d" fires and reaches the cap.
     assert asked == ["a", "a b c d"]
+
+
+def test_config_defaults_to_openai_stt():
+    config = CascadeSimulatorConfig(model="gpt-test")
+
+    assert (config.stt, config.stt_model) == ("openai", "gpt-live-transcribe")
+    assert CascadeSimulatorConfig(model="gpt-test", stt="elevenlabs").stt_model == "scribe_v2_realtime"
+
+
+def _delta(item: str, text: str) -> dict:
+    return {"type": "conversation.item.input_audio_transcription.delta", "item_id": item, "delta": text}
+
+
+def _acked(item: str) -> dict:
+    return {"type": "input_audio_buffer.committed", "item_id": item}
+
+
+def _completed(item: str, text: str) -> dict:
+    return {"type": "conversation.item.input_audio_transcription.completed", "item_id": item, "transcript": text}
+
+
+@pytest.mark.asyncio
+async def test_openai_stt_accumulates_deltas_and_waits_for_every_commit():
+    stt = OpenAIStreamingSTT("gpt-live-transcribe", api_key="x")
+    stt.expect_commit()
+    stt.expect_commit()
+    stt._on_event(_acked("a"))
+    stt._on_event(_acked("b"))
+
+    stt._on_event(_delta("a", " One"))
+    stt._on_event(_delta("a", " moment."))
+    assert stt.heard_text() == "One moment."
+    stt._on_event(_completed("a", "One moment."))
+    stt._on_event(_delta("b", " I found"))
+    assert not stt.committed_event.is_set()
+    assert stt.heard_text() == "One moment. I found"
+    stt._on_event(_completed("b", "I found it."))
+
+    assert stt.committed_event.is_set()
+    assert stt.take() == "One moment. I found it."
+
+
+@pytest.mark.asyncio
+async def test_openai_stt_drops_late_deltas_and_final_of_a_taken_segment():
+    stt = OpenAIStreamingSTT("gpt-live-transcribe", api_key="x")
+    stt._on_event(_delta("a", " Can I get"))
+    stt.expect_commit()
+
+    assert stt.take(include_partial=True) == "Can I get"
+    stt._on_event(_acked("a"))
+    stt._on_event(_delta("a", " your"))
+    stt._on_event(_completed("a", "Can I get your"))
+
+    assert stt.heard_text() == ""
+
+
+@pytest.mark.asyncio
+async def test_openai_stt_pads_a_commit_that_is_too_short():
+    stt = OpenAIStreamingSTT("gpt-live-transcribe", api_key="x")
+    stt._ws = AsyncMock()
+    await stt.send(b"\xff" * 80)  # 10ms of audio
+
+    await stt.commit()
+
+    events = [json.loads(c.args[0]) for c in stt._ws.send.await_args_list]
+    appended = sum(len(base64.b64decode(e["audio"])) for e in events if e["type"] == "input_audio_buffer.append")
+    assert appended >= 0.1 * 24000 * 2
+    assert events[-1] == {"type": "input_audio_buffer.commit"}
+
+
+@pytest.mark.asyncio
+async def test_interrupt_is_rejected_when_the_decision_is_too_slow(tmp_path):
+    simulator = _simulator(tmp_path)
+    delay = 0.3
+
+    async def decide(goal: str, history: list, heard: str) -> tuple[str, float]:
+        await asyncio.sleep(delay)
+        return "interrupt", 0.9
+
+    simulator._interruptor.decide = decide
+    simulator._audio_interface = MagicMock()
+    simulator._audio_interface.is_assistant_playing.return_value = True
+    simulator._audio_interface.is_caller_playing.return_value = False
+    simulator._interrupt = AsyncMock()
+    simulator.simulator_config = CascadeSimulatorConfig(model="gpt-test", interruption_max_decision_ms=150)
+
+    await simulator._decide("goal", "Can I get your", _trigger())  # a >=300ms decision > 150ms
+    simulator._interrupt.assert_not_called()
+
+    delay = 0.0
+    await simulator._decide("goal", "Can I get your", _trigger())
+    simulator._interrupt.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_openai_stt_matches_out_of_order_finals_by_item():
+    stt = OpenAIStreamingSTT("gpt-live-transcribe", api_key="x")
+    stt._on_event(_delta("a", " Can I get"))
+    stt.expect_commit()
+    stt._on_event(_acked("a"))
+    assert stt.take(include_partial=True) == "Can I get"
+    stt.expect_commit()
+    stt._on_event(_acked("b"))
+
+    stt._on_event(_completed("b", "your name?"))  # the fresh segment's final arrives first
+    stt._on_event(_completed("a", "Can I get"))
+
+    assert stt.committed_event.is_set()
+    assert stt.take() == "your name?"
+
+
+def test_config_rejects_an_elevenlabs_model_on_openai():
+    with pytest.raises(ValidationError, match="ElevenLabs model"):
+        CascadeSimulatorConfig(model="gpt-test", stt_model="scribe_v2_realtime")
+
+
+@pytest.mark.asyncio
+async def test_forced_interrupt_fires_even_when_the_decision_is_slow(tmp_path):
+    simulator = _simulator(tmp_path)
+
+    async def decide(goal: str, history: list, heard: str) -> tuple[str, float]:
+        await asyncio.sleep(0.3)
+        return "continue", 0.1
+
+    simulator._interruptor.decide = decide
+    simulator._audio_interface = MagicMock()
+    simulator._audio_interface.is_assistant_playing.return_value = True
+    simulator._audio_interface.is_caller_playing.return_value = False
+    simulator._interrupt = AsyncMock()
+    simulator.simulator_config = CascadeSimulatorConfig(model="gpt-test", interruption_max_decision_ms=150)
+    trigger = _trigger()
+    trigger.forced = True
+
+    await simulator._decide("goal", "Can I get your", trigger)
+    simulator._interrupt.assert_awaited_once()

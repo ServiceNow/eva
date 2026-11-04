@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import bisect
+import json
 import os
+from contextlib import suppress
 from typing import Any
 
 try:
@@ -13,6 +14,7 @@ try:
 except ImportError:  # Python 3.13+
     import audioop_lts as audioop
 
+import websockets
 from elevenlabs.realtime import AudioFormat, CommitStrategy, RealtimeConnection, RealtimeEvents, ScribeRealtime
 
 from eva.utils.logging import get_logger
@@ -30,8 +32,6 @@ change in the information it carries (scripts/measure_barge_in_latency.py, STT_B
 
 MIN_COMMIT_SECONDS = 0.3
 """Scribe ignores a commit with less uncommitted audio than this, and sends no final for it."""
-
-PCM_BYTES_PER_SECOND = STT_SAMPLE_RATE * 2
 
 
 class ScribeStreamingSTT:
@@ -62,14 +62,6 @@ class ScribeStreamingSTT:
         self._stale_commits = 0
         """Commits whose segment was already taken from the partial; their late finals are dropped."""
         self._uncommitted_bytes = 0
-        self._sent_seconds: list[float] = []
-        self._heard_at: list[float] = []
-        """Per send: session audio sent so far (s), and the loop time that audio had been heard by.
-        Scribe's word timestamps are session-relative, so this maps them onto the loop clock."""
-        self.segment_start = 0.0
-        """Session time (s) where the current, uncommitted segment began."""
-        self._word_ends: list[tuple[float, float]] = []
-        """(start, end) session time (s) of every timestamped word transcribed."""
         self._resample_state = None
         self.updated = asyncio.Event()
         """Set on every partial or committed transcript, so a listener can react to each update
@@ -84,20 +76,14 @@ class ScribeStreamingSTT:
                 "sample_rate": STT_SAMPLE_RATE,
                 "commit_strategy": CommitStrategy.MANUAL,
                 "language_code": self.language,
-                "include_timestamps": True,
             }
         )
         self._connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, self._on_partial)
         self._connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, self._on_committed)
-        # Sent after each COMMITTED_TRANSCRIPT, so it never counts as a final of its own.
-        self._connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT_WITH_TIMESTAMPS, self._on_timestamps)
         self._connection.on(RealtimeEvents.ERROR, self._on_error)
 
-    async def send(self, mulaw: bytes, *, heard_at: float | None = None) -> None:
-        """Stream one chunk of the assistant's 8kHz mu-law audio, as 16kHz PCM16.
-
-        ``heard_at`` is the loop time the chunk reached the caller (default: now); its audio ends there.
-        """
+    async def send(self, mulaw: bytes) -> None:
+        """Stream one chunk of the assistant's 8kHz mu-law audio, as 16kHz PCM16."""
         if self.error is not None:
             raise RuntimeError(f"Caller STT failed: {self.error}")
         if self._connection is not None and mulaw:
@@ -105,7 +91,6 @@ class ScribeStreamingSTT:
                 audioop.ulaw2lin(mulaw, 2), 2, 1, INPUT_SAMPLE_RATE, STT_SAMPLE_RATE, self._resample_state
             )
             self._uncommitted_bytes += len(pcm)
-            self._record_sent(len(pcm), heard_at)
             await self._connection.send({"audio_base_64": base64.b64encode(pcm).decode("ascii")})
 
     def expect_commit(self) -> None:
@@ -123,10 +108,8 @@ class ScribeStreamingSTT:
             # Scribe accepts it, rather than never answering a commit that was counted as pending.
             missing = int(MIN_COMMIT_SECONDS * STT_SAMPLE_RATE * 2) - self._uncommitted_bytes
             if missing > 0:
-                self._record_sent(missing, None)
                 await self._connection.send({"audio_base_64": base64.b64encode(bytes(missing)).decode("ascii")})
             self._uncommitted_bytes = 0
-            self.segment_start = self._sent_seconds[-1] if self._sent_seconds else 0.0
             await self._connection.commit()
 
     def heard_text(self) -> str:
@@ -147,29 +130,6 @@ class ScribeStreamingSTT:
             self._pending_commits = 0
             self.committed_event.set()
         return text
-
-    def word_end(self, segment_start: float, index: int) -> float | None:
-        """Loop time the ``index``-th word (0-based) of the segment from ``segment_start`` stopped playing.
-
-        None until that segment's timestamped final arrives. A final with fewer words than the
-        partial it settles gives its last word, as the barge-in script does.
-        """
-        ends = [end for start, end in self._word_ends if start >= segment_start]
-        if index < 0 or not ends:
-            return None
-        return self._loop_time(ends[min(index, len(ends) - 1)])
-
-    def _record_sent(self, num_bytes: int, heard_at: float | None) -> None:
-        sent = (self._sent_seconds[-1] if self._sent_seconds else 0.0) + num_bytes / PCM_BYTES_PER_SECOND
-        self._sent_seconds.append(sent)
-        self._heard_at.append(asyncio.get_running_loop().time() if heard_at is None else heard_at)
-
-    def _loop_time(self, session_seconds: float) -> float | None:
-        """Loop time a session-relative audio position was heard: each send's audio ends at its ``heard_at``."""
-        index = bisect.bisect_left(self._sent_seconds, session_seconds)
-        if index == len(self._sent_seconds):
-            return None
-        return self._heard_at[index] - (self._sent_seconds[index] - session_seconds)
 
     async def stop(self) -> None:
         """Close the session. Safe to call twice."""
@@ -210,14 +170,246 @@ class ScribeStreamingSTT:
         if self._pending_commits == 0:
             self.committed_event.set()
 
-    def _on_timestamps(self, data: dict[str, Any]) -> None:
-        for word in data.get("words") or []:
-            if word.get("type") == "word" and word.get("start") is not None and word.get("end") is not None:
-                self._word_ends.append((float(word["start"]), float(word["end"])))
-
     def _on_error(self, data: dict[str, Any]) -> None:
         if self._closing:
             logger.debug(f"Caller STT closed: {data}")
             return
         self.error = str(data.get("error") or data.get("message_type") or data)
         logger.error(f"Caller STT error: {self.error}")
+
+
+OPENAI_REALTIME_URL = "wss://api.openai.com/v1/realtime?intent=transcription"
+OPENAI_SAMPLE_RATE = 24000
+"""What gpt-live-transcribe is sent: the bridge's 8kHz mu-law, decoded and upsampled to 24kHz PCM16."""
+OPENAI_MIN_COMMIT_SECONDS = 0.1
+"""OpenAI rejects a commit with less buffered audio than this (input_audio_buffer_commit_empty)."""
+OPENAI_SESSION_TIMEOUT_SECONDS = 10.0
+
+
+class OpenAIStreamingSTT:
+    """Transcribes assistant audio continuously over an OpenAI realtime transcription session.
+
+    Same contract as ``ScribeStreamingSTT``: partials are tracked as deltas arrive, and commits are manual
+    (no server VAD).
+    """
+
+    def __init__(
+        self,
+        model: str,
+        *,
+        language: str = "en",
+        api_key: str | None = None,
+    ) -> None:
+        self.model = model
+        self.language = language.split("-")[0]
+        self._api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
+        self._ws: websockets.ClientConnection | None = None
+        self._receiver: asyncio.Task | None = None
+        self._committed: list[str] = []
+        self._partials: dict[str, str] = {}
+        """Deltas so far of each item not yet completed, in arrival order."""
+        self._stale_items: set[str] = set()
+        """Items already taken with the partial; their late deltas are dropped."""
+        self.error: str | None = None
+        self._closing = False
+        self._session_ready = asyncio.Event()
+        self.committed_event = asyncio.Event()
+        self._unacked_commits = 0
+        """Expected commits OpenAI has not yet acknowledged with an item id."""
+        self._stale_unacked = 0
+        """Unacknowledged commits whose segment was already taken from the partial."""
+        self._pending_items: set[str] = set()
+        """Acknowledged commits still owed a final. Finals for different items may arrive out of order,
+        so they are matched by item id rather than counted."""
+        self._uncommitted_bytes = 0
+        self._resample_state = None
+        self.updated = asyncio.Event()
+        """Set on every delta or completed transcript, so a listener can react to each update
+        (e.g. an interruption decision) without polling. Clear it before waiting."""
+
+    @property
+    def partial(self) -> str:
+        return "".join(self._partials.values()).strip()
+
+    @property
+    def _pending_commits(self) -> int:
+        return self._unacked_commits + len(self._pending_items)
+
+    async def start(self) -> None:
+        """Open the session and wait until it is configured; a rejected configuration sets ``error``."""
+        self._ws = await websockets.connect(
+            OPENAI_REALTIME_URL, additional_headers={"Authorization": f"Bearer {self._api_key}"}
+        )
+        self._receiver = asyncio.create_task(self._receive())
+        await self._send(
+            {
+                "type": "session.update",
+                "session": {
+                    "type": "transcription",
+                    "audio": {
+                        "input": {
+                            "format": {"type": "audio/pcm", "rate": OPENAI_SAMPLE_RATE},
+                            "transcription": {"model": self.model, "languages": [self.language], "delay": "minimal"},
+                            "turn_detection": None,
+                        }
+                    },
+                },
+            }
+        )
+        try:
+            await asyncio.wait_for(self._session_ready.wait(), timeout=OPENAI_SESSION_TIMEOUT_SECONDS)
+        except TimeoutError:
+            self.error = self.error or "No session.updated from OpenAI transcription"
+        if self.error is not None:
+            logger.error(f"Caller STT error: {self.error}")
+
+    async def send(self, mulaw: bytes) -> None:
+        """Stream one chunk of the assistant's 8kHz mu-law audio, as 24kHz PCM16."""
+        if self.error is not None:
+            raise RuntimeError(f"Caller STT failed: {self.error}")
+        if self._ws is not None and mulaw:
+            pcm, self._resample_state = audioop.ratecv(
+                audioop.ulaw2lin(mulaw, 2), 2, 1, INPUT_SAMPLE_RATE, OPENAI_SAMPLE_RATE, self._resample_state
+            )
+            self._uncommitted_bytes += len(pcm)
+            await self._append(pcm)
+
+    def expect_commit(self) -> None:
+        """Count a commit as pending from the moment it is requested, before ``commit`` sends it.
+
+        ``committed_event`` is set once every expected commit has its final text.
+        """
+        self._unacked_commits += 1
+        self.committed_event.clear()
+
+    async def commit(self) -> None:
+        """Close the current segment, answering the oldest ``expect_commit``."""
+        if self._ws is not None:
+            # Pad a commit too short for OpenAI, rather than never answering a commit counted as pending.
+            missing = int(OPENAI_MIN_COMMIT_SECONDS * OPENAI_SAMPLE_RATE * 2) - self._uncommitted_bytes
+            if missing > 0:
+                await self._append(bytes(missing))
+            self._uncommitted_bytes = 0
+            await self._send({"type": "input_audio_buffer.commit"})
+
+    def heard_text(self) -> str:
+        """Everything heard since the last ``take``, including the in-flight partial."""
+        return " ".join([*self._committed, self.partial]).strip()
+
+    def take(self, *, include_partial: bool = False) -> str:
+        """Return and clear the committed text, optionally with the in-flight partial.
+
+        With the partial, call ``expect_commit`` first so its segment gets closed: that final, and
+        those of commits already pending, repeat what is returned here, so they are dropped.
+        """
+        text = self.heard_text() if include_partial else " ".join(self._committed).strip()
+        self._committed.clear()
+        if include_partial:
+            self._stale_items.update(self._partials)
+            self._stale_items.update(self._pending_items)
+            self._partials.clear()
+            self._pending_items.clear()
+            self._stale_unacked += self._unacked_commits
+            self._unacked_commits = 0
+            self.committed_event.set()
+        return text
+
+    async def stop(self) -> None:
+        """Close the session. Safe to call twice."""
+        ws, self._ws = self._ws, None
+        self._closing = True
+        if ws is not None:
+            try:
+                await ws.close()
+            except Exception as exc:
+                logger.warning(f"Error closing caller STT: {exc}")
+        if self._receiver is not None:
+            self._receiver.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._receiver
+
+    async def _append(self, pcm: bytes) -> None:
+        await self._send({"type": "input_audio_buffer.append", "audio": base64.b64encode(pcm).decode("ascii")})
+
+    async def _send(self, event: dict[str, Any]) -> None:
+        if self._ws is not None:
+            await self._ws.send(json.dumps(event))
+
+    async def _receive(self) -> None:
+        try:
+            async for message in self._ws:
+                self._on_event(json.loads(message))
+        except Exception as exc:
+            self._on_error({"error": f"connection lost: {exc}"})
+        else:
+            self._on_error({"error": "connection closed"})
+
+    def _on_event(self, data: dict[str, Any]) -> None:
+        kind = data.get("type", "")
+        if kind == "session.updated":
+            self._session_ready.set()
+        elif kind == "input_audio_buffer.committed":
+            self._on_committed(data.get("item_id", ""))
+        elif kind == "conversation.item.input_audio_transcription.delta":
+            self._on_delta(data)
+        elif kind == "conversation.item.input_audio_transcription.completed":
+            self._on_completed(data.get("item_id", ""), data.get("transcript", ""))
+        elif kind == "conversation.item.input_audio_transcription.failed":
+            logger.warning(f"Caller STT could not transcribe a segment: {data.get('error')}")
+            self._on_completed(data.get("item_id", ""), "")
+        elif kind == "error":
+            self._on_error(data.get("error") or data)
+
+    def _on_delta(self, data: dict[str, Any]) -> None:
+        item, delta = data.get("item_id", ""), data.get("delta", "")
+        if item in self._stale_items or not delta:
+            return
+        self._partials[item] = self._partials.get(item, "") + delta
+        logger.debug(f"Partial transcript ({self._pending_commits} commits pending): {self.partial[:120]!r}")
+        self.updated.set()
+
+    def _on_committed(self, item: str) -> None:
+        # Commits are acknowledged in order, so the oldest unacknowledged one is the one acknowledged.
+        if self._stale_unacked:
+            self._stale_unacked -= 1
+            self._stale_items.add(item)
+        elif self._unacked_commits:
+            self._unacked_commits -= 1
+            self._pending_items.add(item)
+
+    def _on_completed(self, item: str, transcript: str) -> None:
+        text = transcript.strip()
+        self._partials.pop(item, None)
+        self.updated.set()
+        if item in self._stale_items:
+            self._stale_items.discard(item)
+            logger.debug(f"Dropping late final for an already-taken segment: {text[:120]!r}")
+            return
+        if item not in self._pending_items:
+            logger.warning(f"Final transcript with no commit outstanding, keeping it: {text[:120]!r}")
+            if text:
+                self._committed.append(text)
+            return
+        if text:
+            self._committed.append(text)
+        self._pending_items.discard(item)
+        if self._pending_commits == 0:
+            self.committed_event.set()
+
+    def _on_error(self, data: Any) -> None:
+        if self._closing:
+            logger.debug(f"Caller STT closed: {data}")
+            return
+        self.error = str(data.get("message") or data) if isinstance(data, dict) else str(data)
+        self._session_ready.set()  # unblock start()
+        logger.error(f"Caller STT error: {self.error}")
+
+
+CallerSTT = ScribeStreamingSTT | OpenAIStreamingSTT
+
+
+def create_caller_stt(provider: str, model: str, *, language: str = "en") -> CallerSTT:
+    """The caller's streaming STT for a ``CascadeSimulatorConfig.stt`` provider."""
+    if provider == "openai":
+        return OpenAIStreamingSTT(model, language=language)
+    return ScribeStreamingSTT(model, language=language)

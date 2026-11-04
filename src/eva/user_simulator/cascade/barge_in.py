@@ -1,4 +1,4 @@
-"""Live timing of the cascade caller's barge-ins, measured as in scripts/measure_barge_in_latency.py."""
+"""State of a cascade caller barge-in, and the silence gap between its opener and reply."""
 
 from __future__ import annotations
 
@@ -16,6 +16,8 @@ SILENCE_RMS = 200
 """PCM16 RMS per window below which caller audio counts as silence (opener trimming and the gap)."""
 WINDOW_BYTES = TTS_SAMPLE_RATE * 2 // 100
 """10ms of PCM16 mono."""
+MIN_GAP_MS = 130.0
+"""Least silence between the opener and the reply; a reply butted right against it sounds spliced."""
 
 
 def pcm_ms(num_bytes: int) -> float:
@@ -36,7 +38,7 @@ def trim_silence(pcm: bytes) -> bytes:
 
 @dataclass
 class BargeIn:
-    """One barge-in's timing, on the event-loop clock (seconds).
+    """One barge-in, timed on the event-loop clock (seconds).
 
     The bridge plays queued caller audio in real time, filling any stall with silence, so the opener
     plays from ``opener_at`` for ``opener_ms``, and the reply's first audible sample plays at the later
@@ -44,17 +46,10 @@ class BargeIn:
     replayed track.
     """
 
-    heard_at: float
-    """The transcript update the firing decision was asked about became readable."""
     decision_ms: float
     p_interrupt: float
     forced: bool = False
     """Fired by forced_interruption_every_turns, whatever the decision model said."""
-    segment_start: float = 0.0
-    trigger_words: int = 0
-    """Where that update's last word sits: its STT segment, and the partial's word count."""
-    word_end_at: float | None = None
-    """That last word stopped playing to the caller, from STT word timestamps; None if they never came."""
     opener: str = ""
     opener_at: float = 0.0
     """The opener went out: queued, then moved to its first frame on the wire by ``opener_on_wire``."""
@@ -62,11 +57,6 @@ class BargeIn:
     heard: str = ""
     """What the reply was written from: everything heard when the opener started."""
     content: str = ""
-    first_token_at: float | None = None
-    """The reply LLM's first text token arrived."""
-    segment_sent_at: float | None = None
-    """The reply's first segment was written and sent to TTS."""
-    first_chunk_at: float | None = None
     audible_at: float | None = None
     """First audible reply chunk arrived from TTS."""
 
@@ -80,50 +70,31 @@ class BargeIn:
         """
         self.opener_at = at
 
-    def first_token(self, now: float) -> None:
-        if self.first_token_at is None:
-            self.first_token_at = now
-
-    def segment_sent(self, now: float) -> None:
-        if self.segment_sent_at is None:
-            self.segment_sent_at = now
-
     def audible(self, chunk: bytes, now: float) -> bytes:
         """Record a reply chunk's arrival; returns it with any leading silence of the reply dropped.
 
         Causal, as a real-time player could do it: only audio that has already arrived is inspected.
+        A reply ready within MIN_GAP_MS of the opener ending is padded out to it; a later one is not.
         """
-        if self.first_chunk_at is None:
-            self.first_chunk_at = now
         if self.audible_at is not None:
             return chunk
         loud = loud_windows(chunk)
         if not loud:
             return b""
+        opener_end = self.opener_at + self.opener_ms / 1000.0
         self.audible_at = now
-        return chunk[loud[0] :]
+        pad = round(max(0.0, opener_end + MIN_GAP_MS / 1000.0 - max(now, opener_end)) * TTS_SAMPLE_RATE) * 2
+        return b"\x00" * pad + chunk[loud[0] :]
 
     def latency(self) -> BargeInLatency:
-        def ms(start: float, end: float | None) -> float | None:
-            return None if end is None else (end - start) * 1000.0
-
         opener_end = self.opener_at + self.opener_ms / 1000.0
-        content_plays_at = None if self.audible_at is None else max(opener_end, self.audible_at)
-        spoken_at = self.word_end_at
+        gap_ms = None if self.audible_at is None else max(MIN_GAP_MS, (self.audible_at - opener_end) * 1000.0)
         return BargeInLatency(
             heard=self.heard,
             opener=self.opener,
             content=self.content,
             p_interrupt=self.p_interrupt,
             forced=self.forced,
-            opener_ms=self.opener_ms,
-            stt_lag_ms=None if spoken_at is None else ms(spoken_at, self.heard_at),
             decision_ms=self.decision_ms,
-            reaction_ms=None if spoken_at is None else ms(spoken_at, self.opener_at),
-            reply_first_token_ms=ms(self.opener_at, self.first_token_at),
-            reply_text_ms=ms(self.opener_at, self.segment_sent_at),
-            tts_first_audio_ms=None if self.segment_sent_at is None else ms(self.segment_sent_at, self.first_chunk_at),
-            content_ready_ms=ms(self.opener_at, self.audible_at),
-            gap_ms=ms(opener_end, content_plays_at),
-            total_ms=None if spoken_at is None or content_plays_at is None else ms(spoken_at, content_plays_at),
+            gap_ms=gap_ms,
         )

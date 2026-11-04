@@ -21,7 +21,7 @@ from eva.models.results import ConversationResult, RunResult
 from eva.orchestrator.port_pool import PortPool
 from eva.orchestrator.preflight import run_preflight
 from eva.orchestrator.validation_runner import ValidationResult, ValidationRunner
-from eva.orchestrator.worker import ConversationWorker
+from eva.orchestrator.worker import ConversationWorker, _latency_stats
 from eva.utils.conversation_checks import check_conversation_finished, find_records_with_llm_generic_error
 from eva.utils.culture import get_language_addendum
 from eva.utils.logging import get_logger
@@ -564,6 +564,7 @@ class BenchmarkRunner:
             self._archive_failed_attempt(oid, attempt_number)
 
         llm_generic_error_record_ids = find_records_with_llm_generic_error(self.output_dir, successful_ids)
+        barge_in_summary = self._aggregate_barge_ins(successful_ids)
         eval_summary_path = self.output_dir / "evaluation_summary.json"
         with open(eval_summary_path, "w") as f:
             json.dump(
@@ -583,6 +584,7 @@ class BenchmarkRunner:
                         "successful_record_ids": sorted(successful_ids),
                         "time_limit_accepted_record_ids": sorted(time_limit_accepted_ids),
                     },
+                    **({"barge_in": barge_in_summary} if barge_in_summary else {}),
                     "rerun_history": rerun_history,
                     "final_failures": final_failures,
                 },
@@ -972,6 +974,37 @@ class BenchmarkRunner:
             rdir = self.output_dir / "records" / oid
             task = asyncio.create_task(metrics_runner.run_and_save_record(oid, rdir))
             metrics_background_tasks.append(task)
+
+    def _aggregate_barge_ins(self, record_ids: set[str]) -> dict[str, Any] | None:
+        """Run-level summary of caller barge-ins across records; None when there were none."""
+        barge_ins: list[dict] = []
+        records_with_barge_ins = 0
+        for record_id in sorted(record_ids):
+            result_path = self.output_dir / "records" / record_id / "result.json"
+            if not result_path.exists():
+                continue
+            with open(result_path) as f:
+                record_barge_ins = json.load(f).get("barge_ins") or []
+            if record_barge_ins:
+                records_with_barge_ins += 1
+                barge_ins.extend(record_barge_ins)
+        if not barge_ins:
+            return None
+
+        def stats(key: str) -> dict | None:
+            result = _latency_stats([b.get(key) for b in barge_ins])
+            return result.model_dump() if result else None
+
+        missed_words = [b["missed_words"] for b in barge_ins if b.get("missed_words") is not None]
+        return {
+            "total_barge_ins": len(barge_ins),
+            "records_with_barge_ins": records_with_barge_ins,
+            "forced_barge_ins": sum(1 for b in barge_ins if b.get("forced")),
+            "mean_p_interrupt": sum(b["p_interrupt"] for b in barge_ins) / len(barge_ins),
+            "mean_missed_words": sum(missed_words) / len(missed_words) if missed_words else None,
+            "decision_ms": stats("decision_ms"),
+            "gap_ms": stats("gap_ms"),
+        }
 
     def _archive_failed_attempt(self, record_id: str, attempt_number: int) -> None:
         """Archive a failed attempt before rerunning.

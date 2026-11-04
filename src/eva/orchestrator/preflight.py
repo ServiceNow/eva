@@ -42,7 +42,7 @@ from eva.assistant.pipeline.services import (
 )
 from eva.assistant.services.llm import LiteLLMClient
 from eva.models.config import CascadeSimulatorConfig, PipelineType, RunConfig, get_model_alias_from_params
-from eva.user_simulator.cascade.stt import ScribeStreamingSTT
+from eva.user_simulator.cascade.stt import create_caller_stt
 from eva.user_simulator.cascade.tts import CartesiaStreamingTTS
 from eva.utils.logging import get_logger
 
@@ -168,7 +168,7 @@ async def _probe_user_sim_llm(sim: CascadeSimulatorConfig) -> tuple[bool, str]:
 
 
 async def _probe_user_sim_stt(sim: CascadeSimulatorConfig, language: str) -> tuple[bool, str]:
-    stt = ScribeStreamingSTT(sim.stt_model, language=language)
+    stt = create_caller_stt(sim.stt, sim.stt_model, language=language)
     try:
         await stt.start()
     finally:

@@ -87,7 +87,7 @@ class AbstractUserSimulator(ABC):
         self._user_clean_audio = bytearray()
         self._record_id = current_record_id.get()
         self.barge_ins: list[BargeInLatency] = []
-        """Timing of each barge-in, for providers that interrupt; the worker saves it to result.json."""
+        """Each barge-in, for providers that interrupt; the worker saves it to result.json."""
 
     @abstractmethod
     async def run_conversation(self) -> str:

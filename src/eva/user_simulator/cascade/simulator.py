@@ -16,7 +16,7 @@ from eva.user_simulator.audio_bridge import BotToBotAudioBridge
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.barge_in import BargeIn, trim_silence
 from eva.user_simulator.cascade.interruptor import DecisionsInterruptor
-from eva.user_simulator.cascade.stt import ScribeStreamingSTT
+from eva.user_simulator.cascade.stt import create_caller_stt
 from eva.user_simulator.cascade.tts import TTS_SAMPLE_RATE, CartesiaStreamingTTS
 from eva.utils import router
 from eva.utils.logging import get_logger
@@ -56,9 +56,9 @@ DECISION_WARM_CONNECTIONS = 2
 """Pooled decision connections opened before the first turn: consecutive transcript updates'
 decisions can overlap."""
 
-OPENERS = ["Sorry, wait\u2014"]
+OPENERS = ["Sorry, wait\u2014", "Hold on\u2014", "Wait one sec\u2014", "Oh, actually\u2014", "Wait, sorry\u2014"]
 """Pre-rendered at startup and played the moment a decision says interrupt, masking the reply's latency.
-One phrase for now, so barge-in timings are measured against a fixed opener duration."""
+English only for now."""
 
 BARGE_IN_NOTE = """The agent is still speaking and their last line above is cut off where you stopped \
 listening. You are cutting them off now, and you have ALREADY said "{opener}" out loud. Write only \
@@ -202,12 +202,12 @@ class CascadeUserSimulator(AbstractUserSimulator):
         if perturbation_config and perturbation_config.accent is not None:
             raise ValueError("Cascade caller does not support ElevenLabs-specific accent variants")
         self.simulator_config = simulator_config
-        self._stt = ScribeStreamingSTT(simulator_config.stt_model, language=language)
+        self._stt = create_caller_stt(simulator_config.stt, simulator_config.stt_model, language=language)
         self._tts = CartesiaStreamingTTS(simulator_config.tts_model, language=language)
         self._llm = LiteLLMClient(model=simulator_config.model)
         self._barge_in_llm = LiteLLMClient(model=simulator_config.barge_in_model or simulator_config.model)
         # None is a commit marker: commit the STT segment once the audio queued ahead of it is sent.
-        self._assistant_audio_queue: asyncio.Queue[tuple[bytes, float] | None] = asyncio.Queue()
+        self._assistant_audio_queue: asyncio.Queue[bytes | None] = asyncio.Queue()
         self._commit_after_next_chunk = False
         self._history: list[dict[str, str]] = []
         self._system_prompt: str | None = None
@@ -325,9 +325,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
     def _on_assistant_audio(self, mulaw_audio: bytes) -> None:
         # Forwarded unconditionally, silence included, so the caller keeps hearing while it speaks.
-        # Stamped on arrival, when the caller has heard it, so STT word times are not skewed by the queue.
         if mulaw_audio:
-            self._assistant_audio_queue.put_nowait((mulaw_audio, asyncio.get_running_loop().time()))
+            self._assistant_audio_queue.put_nowait(mulaw_audio)
             if self._commit_after_next_chunk:
                 self._commit_after_next_chunk = False
                 self._assistant_audio_queue.put_nowait(None)
@@ -350,7 +349,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             if item is None:
                 await self._stt.commit()
             else:
-                await self._stt.send(item[0], heard_at=item[1])
+                await self._stt.send(item)
 
     async def _run_turns(self) -> None:
         """Reply once the assistant's turn has settled; end the call if it goes quiet for too long."""
@@ -528,7 +527,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
         def submit(text: str) -> None:
             out: asyncio.Queue[bytes | None] = asyncio.Queue()
-            barge_in.segment_sent(loop.time())
             renders.append(asyncio.create_task(render(text, out)))
             segments.put_nowait(out)
 
@@ -550,7 +548,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 if kind == "final":
                     message, stats = payload
                     continue
-                barge_in.first_token(loop.time())
                 buffer += payload
                 while True:
                     segment, buffer = next_segment(buffer, first=first, final=False)
@@ -618,15 +615,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 if self._barge_in_warm_up_turn != turn:  # once per turn, as its first decision is requested
                     self._barge_in_warm_up_turn = turn
                     self._warm_up_barge_in_llm()
-                # Where the update's last word sits, so its end can be read off the STT word timestamps.
-                barge_in = BargeIn(
-                    heard_at=asyncio.get_running_loop().time(),
-                    decision_ms=0.0,
-                    p_interrupt=0.0,
-                    segment_start=self._stt.segment_start,
-                    trigger_words=len(self._stt.partial.split()),
-                    forced=self._forces_interruption(turn, updates),
-                )
+                barge_in = BargeIn(decision_ms=0.0, p_interrupt=0.0, forced=self._forces_interruption(turn, updates))
                 # Not awaited: the next update's decision must not queue behind this one.
                 task = asyncio.create_task(self._decide(goal, text, barge_in))
                 decisions.add(task)
@@ -668,7 +657,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
     async def _decide(self, goal: str, heard: str, barge_in: BargeIn) -> None:
         """One decision; an ``interrupt`` fires if barging in is still allowed and nothing fired since.
 
-        ``barge_in`` holds when and where the transcript update ``heard`` came from, and times the barge-in if it fires.
+        ``barge_in`` carries whether the decision is forced, and times the barge-in if it fires.
         """
         loop = asyncio.get_running_loop()
         requested_at = self._barge_ins
@@ -679,7 +668,14 @@ class CascadeUserSimulator(AbstractUserSimulator):
             logger.warning(f"Interruption decision failed: {exc}")
             return
         decision_ms = (loop.time() - asked_at) * 1000.0
-        fire = (choice == "interrupt" or barge_in.forced) and self._can_interrupt() and self._barge_ins == requested_at
+        max_decision = self.simulator_config.interruption_max_decision_ms
+        too_slow = not barge_in.forced and max_decision is not None and decision_ms > max_decision
+        fire = (
+            (choice == "interrupt" or barge_in.forced)
+            and not too_slow
+            and self._can_interrupt()
+            and self._barge_ins == requested_at
+        )
         self.event_logger.log_event(
             "interruption_decision",
             {
@@ -688,6 +684,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 "p_interrupt": p_interrupt,
                 "decision_ms": decision_ms,
                 "forced": barge_in.forced,
+                "too_slow": too_slow,
                 "fired": fire,
             },
         )
@@ -720,12 +717,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
         if bridge.user_audio_starts == caller_starts + 1 and bridge.user_audio_started_at is not None:
             barge_in.opener_on_wire(bridge.user_audio_started_at)  # the utterance the opener started
         self._record_talked_over_tail(starts)
-        # The cut-off segment's timestamped final has arrived by now: it was committed as the opener started.
-        barge_in.word_end_at = self._stt.word_end(barge_in.segment_start, barge_in.trigger_words - 1)
         latency = barge_in.latency()
         self.barge_ins.append(latency)
         self.event_logger.log_event("barge_in", latency.model_dump())
-        logger.info(f"Barge-in timing: {latency.model_dump(exclude={'heard', 'content'})}")
 
     def _record_talked_over_tail(self, starts: int) -> None:
         """Record what the agent said over the barge-in, if that was only the rest of the interrupted line.

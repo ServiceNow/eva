@@ -495,8 +495,13 @@ class CascadeSimulatorConfig(BaseModel):
     """Caller built from independently chosen streaming STT, LLM, and TTS models."""
 
     provider: Literal["cascade"] = "cascade"
-    stt: Literal["elevenlabs"] = Field("elevenlabs", description="Streaming STT provider for the assistant's audio.")
-    stt_model: str = Field("scribe_v2_realtime", description="Streaming STT model.")
+    stt: Literal["openai", "elevenlabs"] = Field(
+        "openai", description="Streaming STT provider for the assistant's audio."
+    )
+    stt_model: str | None = Field(
+        None,
+        description="Streaming STT model. None uses the provider's default (gpt-live-transcribe, scribe_v2_realtime).",
+    )
     model: str = Field(
         "gpt-6.1-sol",
         description=(
@@ -548,18 +553,29 @@ class CascadeSimulatorConfig(BaseModel):
     forced_interruption_after_updates: int = Field(
         15, ge=1, description="Transcript updates into a forced turn before its decisions are forced."
     )
+    interruption_max_decision_ms: float | None = Field(
+        700,
+        gt=0,
+        description="An interrupt verdict whose decision took longer than this does not fire: the caller would cut "
+        "in late, after what prompted it. The reply is always written from the latest transcript, so this guards "
+        "timing, not content. Forced decisions always fire. None disables it.",
+    )
 
-    @field_validator("stt_model")
-    @classmethod
-    def _require_streaming_stt(cls, value: str) -> str:
+    @model_validator(mode="after")
+    def _resolve_stt_model(self) -> "CascadeSimulatorConfig":
+        if self.stt_model is None:
+            self.stt_model = "gpt-live-transcribe" if self.stt == "openai" else "scribe_v2_realtime"
         # The caller must hear the assistant as it speaks; batch models can't support interruptions.
-        if not value.endswith("_realtime"):
-            raise ValueError(f"Cascade caller requires a streaming STT model, got {value!r}")
-        return value
+        elif self.stt == "elevenlabs" and not self.stt_model.endswith("_realtime"):
+            raise ValueError(f"Cascade caller requires a streaming STT model, got {self.stt_model!r}")
+        elif self.stt == "openai" and self.stt_model.startswith("scribe"):
+            raise ValueError(f"STT model {self.stt_model!r} is an ElevenLabs model; set stt='elevenlabs' to use it")
+        return self
 
     @model_validator(mode="after")
     def _require_provider_keys(self) -> "CascadeSimulatorConfig":
-        missing = [key for key in ("ELEVENLABS_API_KEY", "CARTESIA_API_KEY") if not os.environ.get(key)]
+        stt_key = "OPENAI_API_KEY" if self.stt == "openai" else "ELEVENLABS_API_KEY"
+        missing = [key for key in (stt_key, "CARTESIA_API_KEY") if not os.environ.get(key)]
         if missing:
             raise ValueError(f"The cascade user simulator requires {', '.join(missing)} to be set.")
         return self
