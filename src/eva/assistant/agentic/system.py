@@ -131,7 +131,6 @@ class AgenticSystem:
         self.pre_tool_speech = pre_tool_speech
         self.llm_streaming = llm_streaming
         self.assistant_gender = assistant_gender
-        self._warned_responses_streaming_fallback = False
 
         self.prompt_manager = PromptManager()
 
@@ -239,14 +238,7 @@ class AgenticSystem:
                 prompt_str = json.dumps(messages_for_log, indent=2, ensure_ascii=False)
 
                 content_streamed = False
-                use_responses_api = getattr(self.llm_client, "use_responses_api", False)
-                if self.llm_streaming and use_responses_api and not self._warned_responses_streaming_fallback:
-                    logger.warning(
-                        "llm_streaming is not supported for Responses API deployments; using non-streaming completion."
-                    )
-                    self._warned_responses_streaming_fallback = True
-
-                if self.llm_streaming and not use_responses_api:
+                if self.llm_streaming:
                     response = None
                     llm_stats = {}
                     delta_count = 0

@@ -211,27 +211,6 @@ class TestLLMStreaming:
         ]
         assert all(entry.get("value") != GENERIC_ERROR for entry in audit_log.transcript)
 
-    @pytest.mark.asyncio
-    async def test_responses_api_streaming_falls_back_with_one_warning(self, caplog):
-        llm = MagicMock()
-        llm.use_responses_api = True
-        llm.complete = AsyncMock(
-            side_effect=[
-                (_msg("First response."), dict(_STATS)),
-                (_msg("Second response."), dict(_STATS)),
-            ]
-        )
-        llm.complete_stream = MagicMock()
-        system = AgenticSystem("x", _agent(), MagicMock(), AuditLog(), llm, llm_streaming=True)
-
-        with caplog.at_level("WARNING", logger="eva.assistant.agentic.system"):
-            assert await _collect(system, "hi") == ["First response."]
-            assert await _collect(system, "again") == ["Second response."]
-
-        assert llm.complete.await_count == 2
-        llm.complete_stream.assert_not_called()
-        assert caplog.text.count("llm_streaming is not supported for Responses API deployments") == 1
-
 
 class TestCompleteStream:
     @pytest.mark.asyncio

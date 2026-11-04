@@ -180,7 +180,6 @@ class TestCompleteViaResponsesApiReasoning:
                         "model": "openai/gpt-5.2",
                         "api_key": "test-key",
                     },
-                    "use_responses_api": True,
                 }
             ]
         )
@@ -304,7 +303,13 @@ class TestParallelToolCallsForwarding:
     @pytest.fixture(autouse=True, scope="class")
     def _init_router(self):
         router.init(
-            model_list=[{"model_name": "gpt-5.2", "litellm_params": {"model": "openai/gpt-5.2", "api_key": "test-key"}}]
+            model_list=[
+                {
+                    "model_name": "gpt-5.2",
+                    "litellm_params": {"model": "openai/gpt-5.2", "api_key": "test-key"},
+                    "use_chat_completions": True,
+                }
+            ]
         )
         yield
         router.reset()
@@ -368,3 +373,158 @@ class TestParallelToolCallsForwarding:
             async for _kind, _payload in client.complete_stream([{"role": "user", "content": "hi"}]):
                 pass
         assert "parallel_tool_calls" not in r.acompletion.call_args.kwargs
+
+
+class TestCompleteStreamViaResponsesApi:
+    @pytest.fixture(autouse=True, scope="class")
+    def _init_router(self):
+        router.init(
+            model_list=[
+                {
+                    "model_name": "gpt-5.2",
+                    "litellm_params": {"model": "openai/gpt-5.2", "api_key": "test-key"},
+                }
+            ]
+        )
+        yield
+        router.reset()
+
+    @staticmethod
+    def _stream_of(events):
+        async def _aresponses(**kwargs):
+            assert kwargs["stream"] is True
+
+            async def gen():
+                for e in events:
+                    yield e
+
+            return gen()
+
+        return _aresponses
+
+    @pytest.mark.asyncio
+    async def test_yields_deltas_then_final_from_completed_event(self):
+        client = LiteLLMClient(model="gpt-5.2")
+        response = _make_mock_response([_make_message_item("Hello there.")])
+        events = [
+            SimpleNamespace(type="response.created"),
+            SimpleNamespace(type="response.output_text.delta", delta="Hello "),
+            SimpleNamespace(type="response.output_text.delta", delta="there."),
+            SimpleNamespace(type="response.completed", response=response),
+        ]
+
+        with (
+            patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
+            patch("litellm.aresponses", self._stream_of(events)),
+        ):
+            out = [item async for item in client.complete_stream([{"role": "user", "content": "hi"}])]
+
+        assert out[:2] == [("delta", "Hello "), ("delta", "there.")]
+        kind, (message, stats) = out[2]
+        assert kind == "final"
+        assert message == "Hello there."
+        assert stats["responses_output_items"] is not None
+
+    @pytest.mark.asyncio
+    async def test_function_call_from_completed_event(self):
+        client = LiteLLMClient(model="gpt-5.2")
+        item = MagicMock()
+        item.type = "function_call"
+        item.call_id = "call_1"
+        item.name = "get_weather"
+        item.arguments = '{"location":"Paris, France"}'
+        item.model_dump.return_value = {"type": "function_call", "call_id": "call_1"}
+        response = _make_mock_response([_make_message_item("Checking. "), item])
+        events = [
+            SimpleNamespace(type="response.output_text.delta", delta="Checking. "),
+            SimpleNamespace(type="response.function_call_arguments.delta", delta="{"),
+            SimpleNamespace(type="response.completed", response=response),
+        ]
+
+        with (
+            patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
+            patch("litellm.aresponses", self._stream_of(events)),
+        ):
+            out = [item async for item in client.complete_stream([{"role": "user", "content": "hi"}])]
+
+        assert out[0] == ("delta", "Checking. ")
+        _, (message, stats) = out[-1]
+        assert message.content == "Checking. "
+        assert message.tool_calls[0].id == "call_1"
+        assert message.tool_calls[0].function.name == "get_weather"
+        assert len(stats["responses_output_items"]) == 2
+
+    @pytest.mark.asyncio
+    async def test_missing_completed_event_raises(self):
+        client = LiteLLMClient(model="gpt-5.2")
+        events = [SimpleNamespace(type="response.output_text.delta", delta="Hi")]
+
+        with (
+            patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
+            patch("litellm.aresponses", self._stream_of(events)),
+        ):
+            with pytest.raises(RuntimeError, match="without a completed response"):
+                [item async for item in client.complete_stream([{"role": "user", "content": "hi"}], max_retries=0)]
+
+
+class TestUseResponsesApiResolution:
+    @staticmethod
+    def _resolve(deployment: dict) -> bool:
+        router.init(model_list=[{"model_name": "m", **deployment}])
+        try:
+            return LiteLLMClient(model="m").use_responses_api
+        finally:
+            router.reset()
+
+    def test_native_openai_defaults_to_responses_api(self):
+        assert self._resolve({"litellm_params": {"model": "openai/gpt-5.5", "api_key": "k"}}) is True
+
+    def test_use_chat_completions_opts_out(self):
+        assert (
+            self._resolve({"litellm_params": {"model": "openai/gpt-5.5", "api_key": "k"}, "use_chat_completions": True})
+            is False
+        )
+
+    @pytest.mark.parametrize("key", ["base_url", "api_base"])
+    def test_openai_prefixed_custom_endpoint_defaults_to_responses_api(self, key):
+        params = {"model": "openai/phonellm", "api_key": "k", key: "https://example.test/v1"}
+        assert self._resolve({"litellm_params": params}) is True
+
+    def test_custom_endpoint_opts_out_with_use_chat_completions(self):
+        params = {"model": "openai/phonellm", "api_key": "k", "base_url": "https://example.test/v1"}
+        assert self._resolve({"litellm_params": params, "use_chat_completions": True}) is False
+
+    def test_non_openai_provider_stays_on_chat_completions(self):
+        assert self._resolve({"litellm_params": {"model": "vertex_ai/gemini-3.1-pro-preview"}}) is False
+
+    def test_use_responses_api_forces_on_for_non_openai_provider(self):
+        params = {"model": "vertex_ai/gemini-3.1-pro-preview"}
+        assert self._resolve({"litellm_params": params, "use_responses_api": True}) is True
+
+    def test_use_chat_completions_wins_over_use_responses_api(self):
+        params = {"model": "openai/gpt-5.5", "api_key": "k"}
+        deployment = {"litellm_params": params, "use_responses_api": True, "use_chat_completions": True}
+        assert self._resolve(deployment) is False
+
+
+class TestResponsesApiBaseUrl:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("key", ["base_url", "api_base"])
+    async def test_custom_endpoint_forwarded_to_aresponses(self, key):
+        router.init(
+            model_list=[
+                {
+                    "model_name": "gemma",
+                    "litellm_params": {"model": "openai/gemma", "api_key": "k", key: "https://example.test/v1"},
+                    "use_responses_api": True,
+                }
+            ]
+        )
+        try:
+            client = LiteLLMClient(model="gemma")
+            mock_response = _make_mock_response([_make_message_item("ok")])
+            with patch("litellm.aresponses", new_callable=AsyncMock, return_value=mock_response) as m:
+                await client.complete([{"role": "user", "content": "hi"}])
+            assert m.call_args.kwargs["api_base"] == "https://example.test/v1"
+        finally:
+            router.reset()
