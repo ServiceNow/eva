@@ -46,9 +46,11 @@ BACK_CHANNEL_CHOICE = {
 class DecisionsInterruptor:
     """Asks whether the caller should cut in on, or murmur along to, the agent's in-progress line."""
 
-    def __init__(self, model: str, *, back_channel: bool = False) -> None:
+    def __init__(self, model: str, *, interrupt: bool = True, back_channel: bool = False) -> None:
         self.model = model
-        self._choices = [*DECISION_CHOICES, BACK_CHANNEL_CHOICE] if back_channel else DECISION_CHOICES
+        self._choices = [c for c in DECISION_CHOICES if interrupt or c["value"] != "interrupt"]
+        if back_channel:
+            self._choices.append(BACK_CHANNEL_CHOICE)
         self._client = httpx.AsyncClient(
             base_url=OPENAI_API_BASE,
             headers={"Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', '')}"},

@@ -1431,7 +1431,7 @@ A phone caller says one of these while listening to a voice agent, to show they 
 English equivalents: "Mhm.", "Yeah.", "Uh-huh.", "Okay.", "Right.".
 
 Rules:
-- Extremely short: ONE word or sound each, never more than 2 words, and at most ~8 characters.
+- Extremely short: ONE word or sound each, never more than {max_words} words, and at most {max_chars} characters.
 - The sounds may be nearly the same across languages (mhm, uh-huh, okay) — what matters is spelling
   them in the NATIVE SCRIPT of {language_name} so a text-to-speech engine pronounces them naturally.
   Use the script's usual way of writing the sound (e.g. Devanagari "हम्म", Japanese "うん").
@@ -1448,7 +1448,13 @@ OPENER_DASH = "—"
 
 
 async def _generate_phrases(prompt_template: str, language: str, language_name: str, llm: LLMClient) -> list[str]:
-    prompt = prompt_template.format(count=PHRASES_PER_LANGUAGE, language=language, language_name=language_name)
+    prompt = prompt_template.format(
+        count=PHRASES_PER_LANGUAGE,
+        language=language,
+        language_name=language_name,
+        max_words=MAX_BACKCHANNEL_WORDS,
+        max_chars=MAX_BACKCHANNEL_CHARS,
+    )
     text, _ = await llm.generate_text([{"role": "user", "content": prompt}], response_format={"type": "json_object"})
     phrases = extract_and_load_json(text).get("phrases")
     if not isinstance(phrases, list) or not all(isinstance(p, str) and p.strip() for p in phrases):
@@ -1467,7 +1473,9 @@ def _validate_openers(phrases: list[str]) -> list[str]:
 def _validate_backchannels(phrases: list[str]) -> list[str]:
     for p in phrases:
         if len(p.split()) > MAX_BACKCHANNEL_WORDS or len(p) > MAX_BACKCHANNEL_CHARS:
-            raise ValueError(f"Back-channel {p!r} is too long (max {MAX_BACKCHANNEL_WORDS} words)")
+            raise ValueError(
+                f"Back-channel {p!r} is too long (max {MAX_BACKCHANNEL_WORDS} words, {MAX_BACKCHANNEL_CHARS} chars)"
+            )
     return phrases
 
 

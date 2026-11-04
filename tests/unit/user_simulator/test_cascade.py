@@ -76,7 +76,7 @@ async def _chunks(*chunks: bytes):
 def _text_stream(*chunks: bytes, received: list[str] | None = None):
     """A fake ``stream_text``: drains the text, as Cartesia would, then yields ``chunks``."""
 
-    async def stream_text(text, voice_id):
+    async def stream_text(text, voice_id, speed=None):
         async for piece in text:
             if received is not None:
                 received.append(piece)
@@ -84,6 +84,13 @@ def _text_stream(*chunks: bytes, received: list[str] | None = None):
             yield chunk
 
     return stream_text
+
+
+def _bridge(**attributes) -> MagicMock:
+    """A fake audio bridge; its one awaited method is an AsyncMock."""
+    bridge = MagicMock(**attributes)
+    bridge.wait_for_back_channel = AsyncMock()
+    return bridge
 
 
 def test_config_rejects_non_streaming_stt():
@@ -267,7 +274,7 @@ async def test_take_turn_speaks_whole_line_in_one_request(tmp_path):
         return _chunks(b"\x01\x02", b"\x03\x04")
 
     simulator._tts.stream = stream
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
 
     hung_up = await simulator._take_turn("What is your employee ID?")
 
@@ -293,7 +300,7 @@ async def test_take_turn_asks_to_repeat_untranscribed_speech(tmp_path):
 
     simulator._llm.complete_stream = stream
     simulator._tts.stream = lambda text, voice_id: _chunks(b"\x01\x02")
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     simulator._on_assistant_speaks = MagicMock()
 
     assert await simulator._take_turn(None) is False
@@ -311,7 +318,7 @@ async def test_keep_listening_stays_silent_until_the_agent_finishes(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._llm.complete_stream = _llm_stream(message=_tool_message("", "keep_listening"))
     simulator._tts.stream = MagicMock()
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
 
     assert await simulator._take_turn("Let me check that.") is False
 
@@ -332,7 +339,7 @@ async def test_keep_listening_is_withheld_after_repeated_waits(tmp_path):
 
     simulator._llm.complete_stream = stream
     simulator._tts.stream = MagicMock(return_value=_chunks())
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
 
     await simulator._take_turn("Anything else?")
 
@@ -345,7 +352,7 @@ async def test_end_call_without_speech_skips_tts(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._llm.complete_stream = _llm_stream(message=_tool_message("", "end_call"))
     simulator._tts.stream = MagicMock()
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     simulator._audio_interface.is_caller_playing.return_value = False
 
     assert await simulator._take_turn("Goodbye.") is True
@@ -358,7 +365,7 @@ async def test_end_call_hangs_up_after_playback(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._llm.complete_stream = _llm_stream("Thanks, bye.", message=_tool_message("Thanks, bye.", "end_call"))
     simulator._tts.stream = MagicMock(return_value=_chunks(b"\x01\x02"))
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     simulator._audio_interface.is_caller_playing.return_value = False
 
     hung_up = await simulator._take_turn("Your password is reset.")
@@ -380,10 +387,10 @@ async def test_interrupt_decision_plays_opener_then_reply_once(tmp_path):
         return "interrupt", 0.9
 
     simulator._interruptor.decide = decide
-    simulator._openers.entries = [("Sorry\u2014", b"\x07\x07")]
+    simulator._opener_phrases.entries = [("Sorry\u2014", b"\x07\x07")]
     simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
     simulator._tts.stream_text = _text_stream(SILENT_PCM, LOUD_PCM)
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     simulator._audio_interface.is_assistant_playing.return_value = True
     simulator._audio_interface.is_caller_playing.return_value = False
     simulator._stt.partial = "Can I get your employee"
@@ -411,10 +418,10 @@ async def test_interrupt_decision_plays_opener_then_reply_once(tmp_path):
 @pytest.mark.asyncio
 async def test_barge_in_opener_is_timed_from_its_first_frame_on_the_wire(tmp_path):
     simulator = _simulator(tmp_path)
-    simulator._openers.entries = [("Sorry—", LOUD_PCM)]
+    simulator._opener_phrases.entries = [("Sorry—", LOUD_PCM)]
     simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
     simulator._tts.stream_text = _text_stream(LOUD_PCM)
-    bridge = MagicMock(assistant_audio_starts=0, user_audio_starts=3, user_audio_started_at=None)
+    bridge = _bridge(assistant_audio_starts=0, user_audio_starts=3, user_audio_started_at=None)
     bridge.is_assistant_playing.return_value = True
 
     def output(pcm: bytes) -> None:
@@ -433,16 +440,16 @@ async def test_barge_in_opener_is_timed_from_its_first_frame_on_the_wire(tmp_pat
 @pytest.mark.asyncio
 async def test_barge_in_gap_over_the_limit_fails_the_call(tmp_path, monkeypatch):
     simulator = _simulator(tmp_path)
-    simulator._openers.entries = [("Sorry—", LOUD_PCM)]
+    simulator._opener_phrases.entries = [("Sorry—", LOUD_PCM)]
     simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
     simulator._tts.stream_text = _text_stream(LOUD_PCM)
-    simulator._audio_interface = MagicMock(assistant_audio_starts=0, user_audio_starts=0, user_audio_started_at=None)
+    simulator._audio_interface = _bridge(assistant_audio_starts=0, user_audio_starts=0, user_audio_started_at=None)
     simulator._on_conversation_end = MagicMock()
 
     await simulator._interrupt(_trigger())
     simulator._on_conversation_end.assert_not_called()  # within the limit
 
-    monkeypatch.setattr(cascade_simulator, "MAX_BARGE_IN_GAP_MS", 0.0)  # every gap is at least MIN_GAP_MS
+    simulator.simulator_config.max_barge_in_gap_ms = 1.0  # every gap is at least MIN_GAP_MS
     await simulator._interrupt(_trigger())
     simulator._on_conversation_end.assert_called_once_with("error")
     assert len(simulator.barge_ins) == 2  # the slow barge-in is still recorded
@@ -457,7 +464,7 @@ async def test_barge_in_reply_streams_every_delta_to_one_tts_context(tmp_path):
     audio = [b"\x00\x10" * 320, b"\x00\x20" * 320, LOUD_PCM]
     simulator._tts.stream_text = _text_stream(*audio, received=received)
     simulator._tts.stream = MagicMock()
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     barge_in = _trigger()
     barge_in.play_opener("Sorry\u2014", b"", now=0.0)
 
@@ -478,7 +485,7 @@ def test_barge_in_times_the_gap_after_the_opener():
 
     assert barge_in.audible(SILENT_PCM, now=10.55) == b""
     assert barge_in.audible(SILENT_PCM + LOUD_PCM, now=10.6) == LOUD_PCM
-    latency = barge_in.latency()
+    latency = barge_in.record()
 
     assert latency.decision_ms == 150.0
     assert latency.gap_ms == pytest.approx(200.0)  # opener ended at 10.4, reply audible at 10.6
@@ -489,7 +496,7 @@ def test_barge_in_reply_ready_before_opener_ends_is_padded_to_the_min_gap():
     barge_in.play_opener("Sorry\u2014", bytes(TTS_SAMPLE_RATE * 2), now=0.1)  # 1s opener
 
     assert barge_in.audible(LOUD_PCM, now=0.5) == bytes(round(MIN_GAP_MS / 1000 * TTS_SAMPLE_RATE) * 2) + LOUD_PCM
-    assert barge_in.latency().gap_ms == pytest.approx(MIN_GAP_MS)
+    assert barge_in.record().gap_ms == pytest.approx(MIN_GAP_MS)
 
 
 def test_barge_in_reply_just_after_opener_is_padded_only_the_rest_of_the_way():
@@ -497,7 +504,7 @@ def test_barge_in_reply_just_after_opener_is_padded_only_the_rest_of_the_way():
     barge_in.play_opener("Sorry\u2014", bytes(TTS_SAMPLE_RATE * 2), now=0.0)  # 1s opener
 
     assert barge_in.audible(LOUD_PCM, now=1.05) == bytes(round(0.08 * TTS_SAMPLE_RATE) * 2) + LOUD_PCM
-    assert barge_in.latency().gap_ms == pytest.approx(MIN_GAP_MS)
+    assert barge_in.record().gap_ms == pytest.approx(MIN_GAP_MS)
 
 
 def test_trim_silence_keeps_only_loud_windows():
@@ -523,7 +530,7 @@ def test_stt_take_with_partial_drops_the_finals_it_already_returned():
 async def test_no_interrupt_while_caller_is_speaking(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._interruptor.decide = AsyncMock(return_value=("interrupt", 0.9))
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     simulator._audio_interface.is_assistant_playing.return_value = True
     simulator._audio_interface.is_caller_playing.return_value = True
 
@@ -549,10 +556,10 @@ def test_forced_interruptions_hit_every_nth_agent_turn_after_enough_updates(tmp_
 async def test_forced_decision_barges_in_over_a_keep_listening_verdict(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._interruptor.decide = AsyncMock(return_value=("keep_listening", 0.1))
-    simulator._openers.entries = [("Sorry—", b"\x07\x07")]
+    simulator._opener_phrases.entries = [("Sorry—", b"\x07\x07")]
     simulator._barge_in_llm.complete_stream = _llm_stream("It's 4471.")
     simulator._tts.stream_text = _text_stream(LOUD_PCM)
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     simulator._audio_interface.is_assistant_playing.return_value = True
     simulator._audio_interface.is_caller_playing.return_value = False
     simulator._stt.partial = "Can I get your employee"
@@ -680,7 +687,7 @@ async def test_assistant_line_spoken_during_caller_turn_gets_its_own_turn(tmp_pa
     monkeypatch.setattr(cascade_simulator, "POLL_SECONDS", 0)
     simulator = _simulator(tmp_path)
     # The caller's own speech clears the end time, as the real bridge does on user audio start.
-    bridge = MagicMock(assistant_audio_starts=0, assistant_audio_ended_at=None)
+    bridge = _bridge(assistant_audio_starts=0, assistant_audio_ended_at=None)
     bridge.is_assistant_playing.return_value = False
     bridge.is_caller_playing.return_value = False
     simulator._audio_interface = bridge
@@ -717,7 +724,7 @@ async def test_repeated_untranscribed_agent_lines_fail_the_call(tmp_path, monkey
     monkeypatch.setattr(cascade_simulator, "TURN_SETTLE_SECONDS", 0)
     monkeypatch.setattr(cascade_simulator, "POLL_SECONDS", 0)
     simulator = _simulator(tmp_path)
-    bridge = MagicMock(assistant_audio_starts=0, assistant_audio_ended_at=None)
+    bridge = _bridge(assistant_audio_starts=0, assistant_audio_ended_at=None)
     bridge.is_caller_playing.return_value = False
     simulator._audio_interface = bridge
     simulator._request_commit = MagicMock()
@@ -769,7 +776,7 @@ async def test_talked_over_tail_of_the_interrupted_line_gets_no_second_reply(tmp
     monkeypatch.setattr(cascade_simulator, "TURN_SETTLE_SECONDS", 0)
     monkeypatch.setattr(cascade_simulator, "POLL_SECONDS", 0)
     simulator = _simulator(tmp_path)
-    bridge = MagicMock(assistant_audio_starts=0, assistant_audio_ended_at=None)
+    bridge = _bridge(assistant_audio_starts=0, assistant_audio_ended_at=None)
     bridge.is_assistant_playing.return_value = True
     bridge.is_caller_playing.return_value = False
     simulator._audio_interface = bridge
@@ -800,7 +807,7 @@ async def test_talked_over_tail_of_the_interrupted_line_gets_no_second_reply(tmp
 
 def test_agent_speech_after_a_barge_in_is_kept_when_it_is_a_new_line(tmp_path):
     simulator = _simulator(tmp_path)
-    simulator._audio_interface = MagicMock(assistant_audio_starts=1)
+    simulator._audio_interface = _bridge(assistant_audio_starts=1)
     simulator._audio_interface.is_assistant_playing.return_value = False
     simulator.event_logger = MagicMock()
     simulator._stt.partial = "Yes, your identity is confirmed."
@@ -846,7 +853,7 @@ async def test_no_decision_or_barge_in_after_the_caller_hangs_up(tmp_path):
     simulator = _simulator(tmp_path)
     simulator._llm.complete_stream = _llm_stream("Thanks, bye.", message=_tool_message("Thanks, bye.", "end_call"))
     simulator._tts.stream = MagicMock(return_value=_chunks(LOUD_PCM))
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     simulator._audio_interface.is_assistant_playing.return_value = True  # the agent says goodbye back
     simulator._audio_interface.is_caller_playing.return_value = False
     simulator._wait_for_caller_playback = AsyncMock()
@@ -924,7 +931,7 @@ async def test_decisions_pause_for_the_cooldown_after_a_barge_in_and_stop_at_the
 
     async def decide(goal, heard, barge_in):
         asked.append(heard)
-        simulator._barge_ins += 1  # every decision here fires a barge-in
+        simulator._barge_in_count += 1  # every decision here fires a barge-in
 
     simulator._decide = decide
     watcher = asyncio.create_task(simulator._watch_for_interruptions())
@@ -1013,7 +1020,7 @@ async def test_interrupt_is_rejected_when_the_decision_is_too_slow(tmp_path):
         return "interrupt", 0.9
 
     simulator._interruptor.decide = decide
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     simulator._audio_interface.is_assistant_playing.return_value = True
     simulator._audio_interface.is_caller_playing.return_value = False
     simulator._interrupt = AsyncMock()
@@ -1058,7 +1065,7 @@ async def test_forced_interrupt_fires_even_when_the_decision_is_slow(tmp_path):
         return "continue", 0.1
 
     simulator._interruptor.decide = decide
-    simulator._audio_interface = MagicMock()
+    simulator._audio_interface = _bridge()
     simulator._audio_interface.is_assistant_playing.return_value = True
     simulator._audio_interface.is_caller_playing.return_value = False
     simulator._interrupt = AsyncMock()
@@ -1073,8 +1080,8 @@ async def test_forced_interrupt_fires_even_when_the_decision_is_slow(tmp_path):
 def _back_channel_simulator(tmp_path, choice: str = "back_channel") -> CascadeUserSimulator:
     simulator = _simulator(tmp_path)
     simulator._interruptor.decide = AsyncMock(return_value=(choice, 0.1))
-    simulator._back_channels.entries = [("Mhm.", LOUD_PCM)]
-    bridge = MagicMock()
+    simulator._back_channel_phrases.entries = [("Mhm.", LOUD_PCM)]
+    bridge = _bridge()
     bridge.is_assistant_playing.return_value = True
     bridge.is_caller_playing.return_value = False
     bridge.play_back_channel = AsyncMock(return_value=(100.0, 100.4))
@@ -1112,7 +1119,7 @@ async def test_back_channel_is_not_a_turn_or_a_barge_in(tmp_path):
     await simulator._decide("goal", "Your confirmation number is", _trigger())
 
     assert simulator._history == [{"role": "assistant", "content": "Hi."}]
-    assert simulator._barge_ins == 0
+    assert simulator._barge_in_count == 0
     assert simulator.barge_ins == []
     assert simulator._caller_turns == 0
     simulator._audio_interface.output.assert_not_called()  # never queued as an utterance
@@ -1148,7 +1155,7 @@ async def test_no_back_channel_while_the_caller_is_speaking(tmp_path):
 @pytest.mark.asyncio
 async def test_back_channel_choice_is_ignored_when_disabled(tmp_path):
     simulator = _back_channel_simulator(tmp_path)
-    simulator._back_channels.entries = []  # nothing rendered when the option is off
+    simulator._back_channel_phrases.entries = []  # nothing rendered when the option is off
 
     await simulator._decide("goal", "Your confirmation number is", _trigger())
 

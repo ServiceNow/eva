@@ -395,7 +395,7 @@ class TestAggregateBackChannels:
         self._write_result(runner, "c", 1)
         self._write_result(runner, "failed", 5)
 
-        summary = runner._aggregate_back_channels({"a", "b", "c", "missing"})
+        _, summary = runner._aggregate_caller_events({"a", "b", "c", "missing"})
 
         assert summary == {"total_back_channels": 4, "records_with_back_channels": 2}
 
@@ -403,4 +403,4 @@ class TestAggregateBackChannels:
         runner = _make_runner(_make_config(tmp_path))
         self._write_result(runner, "a", 0)
 
-        assert runner._aggregate_back_channels({"a"}) is None
+        assert runner._aggregate_caller_events({"a"}) == (None, None)

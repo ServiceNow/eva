@@ -345,7 +345,7 @@ class TestConversationStatsInRun:
 
 
 def test_barge_in_missed_words_align_heard_with_the_interrupted_agent_line(tmp_path):
-    from eva.models.results import BargeInLatency
+    from eva.models.results import BargeInRecord
     from eva.orchestrator.worker import _add_missed_words
 
     audit_log = tmp_path / "audit_log.json"
@@ -361,7 +361,7 @@ def test_barge_in_missed_words_align_heard_with_the_interrupted_agent_line(tmp_p
             }
         )
     )
-    barge_in = BargeInLatency(
+    barge_in = BargeInRecord(
         heard="I can move you to flight SK703 on March 25th",
         opener="Sorry, wait—",
         content="Not that one.",

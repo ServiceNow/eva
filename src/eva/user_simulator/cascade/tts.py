@@ -26,9 +26,10 @@ STREAM_BUFFER_DELAY_MS = 500
 natural break before rendering. The 3000ms default would stall a barge-in's first words; lower risks
 choppier phrasing."""
 
-CALLER_SPEED = 1.2  # TODO Will use this for the generated barge ins
-"""Cartesia generation_config.speed for the caller. People speed up when they cut in, and it
-shortens pre-rendered openers. Fixed for now; promote to config if it needs tuning."""
+CALLER_SPEED = 1.2
+"""Cartesia generation_config.speed for barge-ins (openers and replies); regular turns use the voice's
+default. People speed up when they cut in, and it shortens pre-rendered openers. Fixed for now; promote
+to config if it needs tuning."""
 
 KEEPALIVE = httpx.Limits(max_keepalive_connections=8, keepalive_expiry=300.0)
 """httpx's 5s default would drop the warm connection during a long assistant turn, putting a
@@ -55,21 +56,23 @@ class CartesiaStreamingTTS:
         self._ws_lock = asyncio.Lock()
         """One streamed context at a time on the socket; barge-ins never overlap anyway."""
 
-    def _body(self, text: str, voice_id: str) -> dict:
+    def _body(self, text: str, voice_id: str, speed: float | None = None) -> dict:
         body = {
             "model_id": self.model,
             "transcript": text,
             "voice": {"mode": "id", "id": voice_id},
             "language": self.language,
             "output_format": {"container": "raw", "encoding": "pcm_s16le", "sample_rate": TTS_SAMPLE_RATE},
-            # "generation_config": {"speed": CALLER_SPEED},
         }
+        if speed is not None:
+            body["generation_config"] = {"speed": speed}
         return body
 
-    async def stream(self, text: str, *, voice_id: str) -> AsyncIterator[bytes]:
+    async def stream(self, text: str, *, voice_id: str, speed: float | None = None) -> AsyncIterator[bytes]:
         """Yield sample-aligned PCM16 chunks so playout can start before the whole line is rendered."""
         carry = b""
-        async with self._client.stream("POST", CARTESIA_SSE_URL, json=self._body(text, voice_id)) as response:
+        body = self._body(text, voice_id, speed)
+        async with self._client.stream("POST", CARTESIA_SSE_URL, json=body) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
                 if not line.startswith("data:"):
@@ -83,7 +86,9 @@ class CartesiaStreamingTTS:
                 if pcm:
                     yield pcm
 
-    async def stream_text(self, text: AsyncIterator[str], *, voice_id: str) -> AsyncIterator[bytes]:
+    async def stream_text(
+        self, text: AsyncIterator[str], *, voice_id: str, speed: float | None = None
+    ) -> AsyncIterator[bytes]:
         """Render text while it is still being written, yielding PCM16 chunks as they are generated.
 
         Each piece is sent the moment it arrives as a continuation of one Cartesia WebSocket context, so
@@ -98,7 +103,7 @@ class CartesiaStreamingTTS:
             done = False
 
             def request(transcript: str, more: bool) -> str:
-                body = self._body(transcript, voice_id)
+                body = self._body(transcript, voice_id, speed)
                 body.update(context_id=context_id, max_buffer_delay_ms=STREAM_BUFFER_DELAY_MS)
                 body["continue"] = more
                 return json.dumps(body)
@@ -124,8 +129,10 @@ class CartesiaStreamingTTS:
                     if event.get("type") == "chunk" and event.get("data"):
                         out.put_nowait(base64.b64decode(event["data"]))
                     if event.get("done"):
-                        break
-                out.put_nowait(None)
+                        out.put_nowait(None)
+                        return
+                # Closed before ``done``: the reply was cut off, which must not pass for a finished line.
+                raise RuntimeError("Caller TTS socket closed before the line finished")
 
             def relay_error(task: asyncio.Task) -> None:
                 if not task.cancelled() and task.exception() is not None:

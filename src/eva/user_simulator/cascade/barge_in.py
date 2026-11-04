@@ -9,7 +9,7 @@ try:
 except ImportError:  # Python 3.13+
     import audioop_lts as audioop
 
-from eva.models.results import BargeInLatency
+from eva.models.results import BargeInRecord
 from eva.user_simulator.cascade.tts import TTS_SAMPLE_RATE
 
 SILENCE_RMS = 200
@@ -86,10 +86,10 @@ class BargeIn:
         pad = round(max(0.0, opener_end + MIN_GAP_MS / 1000.0 - max(now, opener_end)) * TTS_SAMPLE_RATE) * 2
         return b"\x00" * pad + chunk[loud[0] :]
 
-    def latency(self) -> BargeInLatency:
+    def record(self) -> BargeInRecord:
         opener_end = self.opener_at + self.opener_ms / 1000.0
         gap_ms = None if self.audible_at is None else max(MIN_GAP_MS, (self.audible_at - opener_end) * 1000.0)
-        return BargeInLatency(
+        return BargeInRecord(
             heard=self.heard,
             opener=self.opener,
             content=self.content,

@@ -15,7 +15,7 @@ from eva.assistant.base_server import AbstractAssistantServer
 from eva.models.agents import AgentConfig
 from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
-from eva.models.results import BackChannel, BargeInLatency, ConversationResult, ErrorDetails, LatencyStats
+from eva.models.results import BackChannel, BargeInRecord, ConversationResult, ErrorDetails, LatencyStats
 from eva.user_simulator.factory import create_user_simulator
 from eva.utils.culture import resolve_scenario_db, resolve_user_config, resolve_user_goal
 from eva.utils.error_handler import create_error_details
@@ -86,7 +86,7 @@ def _percentile(sorted_data: list[float], p: float) -> float:
     return sorted_data[rank - 1]
 
 
-def _latency_stats(values: list[float | None]) -> LatencyStats | None:
+def latency_stats(values: list[float | None]) -> LatencyStats | None:
     """Summarize millisecond values, skipping missing ones; None when there are none."""
     latencies = sorted(v for v in values if v is not None)
     if not latencies:
@@ -102,38 +102,59 @@ def _latency_stats(values: list[float | None]) -> LatencyStats | None:
 
 
 INTERRUPTED_MARKER = "[interrupted]"
-_WORD = re.compile(r"[a-z0-9']+")
-
-
+_WORD = re.compile(r"[぀-ヿ一-鿿]|[^\W_]+(?:'[^\W_]+)*")
+"""A kana or CJK ideograph on its own (those scripts have no spaces), else a run of letters and digits."""
 _ORDINAL = re.compile(r"(\d+)(?:st|nd|rd|th)")
-_CODE_PART = re.compile(r"\d+|[a-z]")
+_CODE_PART = re.compile(r"\d+|[^\W\d_]")
 
 
-def _words(text: str) -> list[str]:
-    """Lowercase words, with digits spelled out as TTS text has them ("25th" -> twenty fifth, "SK703" -> s k ...)."""
+def _spell_number(value: int, language: str, **kwargs: str) -> list[str]:
+    """``value`` spelled out in ``language``, as words; the digits themselves where num2words lacks it."""
+    try:
+        return _WORD.findall(num2words(value, lang=language, **kwargs).casefold())
+    except (NotImplementedError, OverflowError):
+        return [str(value)]
+
+
+def _words(text: str, language: str = "en") -> list[str]:
+    """Casefolded words, with digits spelled out as TTS text has them ("25th" -> twenty fifth, "SK703" -> s k ...)."""
     words = []
-    for token in _WORD.findall(text.lower()):
-        if ordinal := _ORDINAL.fullmatch(token):
-            words += _WORD.findall(num2words(int(ordinal.group(1)), to="ordinal"))
+    for token in _WORD.findall(text.casefold()):
+        if language == "en" and (ordinal := _ORDINAL.fullmatch(token)):
+            words += _spell_number(int(ordinal.group(1)), language, to="ordinal")
         elif any(char.isdigit() for char in token):
             for part in _CODE_PART.findall(token):
-                words += _WORD.findall(num2words(int(part))) if part.isdigit() else [part]
+                words += _spell_number(int(part), language) if part.isdigit() else [part]
         else:
             words.append(token)
     return words
 
 
-def _add_missed_words(barge_ins: list[BargeInLatency], audit_log_path: Path) -> list[BargeInLatency]:
+def _add_missed_words(
+    barge_ins: list[BargeInRecord], audit_log_path: Path, language: str = "en"
+) -> list[BargeInRecord]:
     """Fill each barge-in's spoken/missed from the agent line the audit log marks as interrupted.
 
     ``heard`` is the caller's STT and the audit log the agent's TTS text, so they differ in form
     ("SK703" vs "S K seven oh three"); the two are aligned and the words after heard's last match
     are missed. A last heard word that never matches (a number written differently) overcounts.
+    Diagnostic only: an unreadable audit log leaves the barge-ins as they are.
     """
     if not barge_ins or not audit_log_path.exists():
         return barge_ins
-    with open(audit_log_path) as f:
-        transcript = json.load(f).get("transcript", [])
+    language = language.split("-")[0].lower()
+    try:
+        with open(audit_log_path) as f:
+            transcript = json.load(f).get("transcript", [])
+        return _align_missed_words(barge_ins, transcript, language)
+    except Exception as exc:
+        logger.warning(f"Could not compute barge-in missed words from {audit_log_path}: {exc}")
+        return barge_ins
+
+
+def _align_missed_words(
+    barge_ins: list[BargeInRecord], transcript: list[dict[str, Any]], language: str
+) -> list[BargeInRecord]:
     lines = [
         entry["value"].removesuffix(INTERRUPTED_MARKER).strip()
         for entry in transcript
@@ -143,11 +164,11 @@ def _add_missed_words(barge_ins: list[BargeInLatency], audit_log_path: Path) -> 
     ]
     filled, start = [], 0
     for barge_in in barge_ins:
-        heard = _words(barge_in.heard)
+        heard = _words(barge_in.heard, language)
         # In order: the interrupted line after the previous match that shares the most with heard.
         best = None
         for index in range(start, len(lines)):
-            matcher = difflib.SequenceMatcher(None, heard, _words(lines[index]), autojunk=False)
+            matcher = difflib.SequenceMatcher(None, heard, _words(lines[index], language), autojunk=False)
             size = sum(block.size for block in matcher.get_matching_blocks())
             if size and (best is None or size > best[1]):
                 best = (index, size, matcher)
@@ -156,7 +177,7 @@ def _add_missed_words(barge_ins: list[BargeInLatency], audit_log_path: Path) -> 
             continue
         index, _, matcher = best
         start = index + 1
-        spoken = _words(lines[index])
+        spoken = _words(lines[index], language)
         last = max(block.b + block.size for block in matcher.get_matching_blocks() if block.size)
         missed = spoken[last:]
         filled.append(
@@ -213,7 +234,7 @@ class ConversationWorker:
         self._assistant_server = None
         self._user_simulator = None
         self._conversation_stats: dict[str, Any] = {}
-        self._barge_ins: list[BargeInLatency] = []
+        self._barge_ins: list[BargeInRecord] = []
         self._back_channels: list[BackChannel] = []
         self._log_file_handler = None
         self.deferred_audio_task: asyncio.Task | None = None
@@ -328,7 +349,9 @@ class ConversationWorker:
             stt_latency = self._calculate_stt_latency()
             tts_latency = self._calculate_tts_latency()
             model_response_latency = self._calculate_model_response_latency()
-            self._barge_ins = _add_missed_words(self._barge_ins, self.output_dir / "audit_log.json")
+            self._barge_ins = _add_missed_words(
+                self._barge_ins, self.output_dir / "audit_log.json", str(self.config.language.value)
+            )
 
             result = ConversationResult(
                 record_id=self.record.id,
@@ -340,7 +363,7 @@ class ConversationWorker:
                 tts_latency=tts_latency,
                 model_response_latency=model_response_latency,
                 barge_ins=self._barge_ins,
-                barge_in_gap=_latency_stats([b.gap_ms for b in self._barge_ins]),
+                barge_in_gap=latency_stats([b.gap_ms for b in self._barge_ins]),
                 back_channels=self._back_channels,
                 started_at=started_at,
                 ended_at=ended_at,

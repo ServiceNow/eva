@@ -19,10 +19,10 @@ class PhraseCache:
     def __bool__(self) -> bool:
         return bool(self.entries)
 
-    async def render(self, tts: CartesiaStreamingTTS, voice_id: str) -> None:
+    async def render(self, tts: CartesiaStreamingTTS, voice_id: str, *, speed: float | None = None) -> None:
         async def render_one(phrase: str) -> tuple[str, bytes]:
             # Trimmed, so every millisecond of playout is speech and the gap is not padded.
-            pcm = b"".join([chunk async for chunk in tts.stream(phrase, voice_id=voice_id)])
+            pcm = b"".join([chunk async for chunk in tts.stream(phrase, voice_id=voice_id, speed=speed)])
             return phrase, trim_silence(pcm)
 
         self.entries = list(await asyncio.gather(*(render_one(phrase) for phrase in self.phrases)))

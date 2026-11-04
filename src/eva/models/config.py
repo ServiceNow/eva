@@ -518,9 +518,14 @@ class CascadeSimulatorConfig(BaseModel):
         description="OpenAI model for the barge-in decisions (Decisions API), called directly with OPENAI_API_KEY.",
     )
     tts: Literal["cartesia"] = Field("cartesia", description="TTS provider for the caller's speech.")
-    tts_model: str = Field("sonic-3.5", description="TTS model.")
+    tts_model: str = Field("sonic-3.6", description="TTS model.")
     female_voice: str = Field("f786b574-daa5-4673-aa0c-cbe3e8534c02", description="TTS voice for female personas.")
     male_voice: str = Field("a0e99841-438c-4a64-b679-ae501e7d6091", description="TTS voice for male personas.")
+    interruptions: bool = Field(
+        True,
+        description="Let the caller barge in on the agent's line when the decision model says interrupt. "
+        "Decisions (and OPENAI_API_KEY) are needed only while this or back_channel is on.",
+    )
     interruption_min_updates: int = Field(
         6,
         ge=0,
@@ -570,6 +575,13 @@ class CascadeSimulatorConfig(BaseModel):
         "in late, after what prompted it. The reply is always written from the latest transcript, so this guards "
         "timing, not content. Forced decisions always fire. None disables it.",
     )
+    max_barge_in_gap_ms: float | None = Field(
+        1000,
+        gt=0,
+        description="Silence between a barge-in's opener and its reply past which the call fails and is rerun: "
+        "a caller who cuts in and then says nothing is no longer a realistic barge-in, and a live call cannot "
+        "take it back. None disables it.",
+    )
 
     @model_validator(mode="after")
     def _resolve_stt_model(self) -> "CascadeSimulatorConfig":
@@ -582,10 +594,17 @@ class CascadeSimulatorConfig(BaseModel):
             raise ValueError(f"STT model {self.stt_model!r} is an ElevenLabs model; set stt='elevenlabs' to use it")
         return self
 
+    @property
+    def uses_decisions(self) -> bool:
+        """Whether the caller asks the Decisions API about the agent's in-progress lines."""
+        return self.interruptions or self.back_channel
+
     @model_validator(mode="after")
     def _require_provider_keys(self) -> "CascadeSimulatorConfig":
-        stt_key = "OPENAI_API_KEY" if self.stt == "openai" else "ELEVENLABS_API_KEY"
-        missing = [key for key in (stt_key, "CARTESIA_API_KEY") if not os.environ.get(key)]
+        keys = {"OPENAI_API_KEY" if self.stt == "openai" else "ELEVENLABS_API_KEY", "CARTESIA_API_KEY"}
+        if self.uses_decisions:
+            keys.add("OPENAI_API_KEY")  # the Decisions API is called directly, not via EVA_MODEL_LIST
+        missing = sorted(key for key in keys if not os.environ.get(key))
         if missing:
             raise ValueError(f"The cascade user simulator requires {', '.join(missing)} to be set.")
         return self

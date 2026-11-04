@@ -183,6 +183,8 @@ OPENAI_SAMPLE_RATE = 24000
 """What gpt-live-transcribe is sent: the bridge's 8kHz mu-law, decoded and upsampled to 24kHz PCM16."""
 OPENAI_MIN_COMMIT_SECONDS = 0.1
 """OpenAI rejects a commit with less buffered audio than this (input_audio_buffer_commit_empty)."""
+OPENAI_EMPTY_COMMIT_CODE = "input_audio_buffer_commit_empty"
+"""The one error event that leaves the session usable; every other error fails the STT."""
 OPENAI_SESSION_TIMEOUT_SECONDS = 10.0
 
 
@@ -358,7 +360,14 @@ class OpenAIStreamingSTT:
             logger.warning(f"Caller STT could not transcribe a segment: {data.get('error')}")
             self._on_completed(data.get("item_id", ""), "")
         elif kind == "error":
-            self._on_error(data.get("error") or data)
+            error = data.get("error") or data
+            if isinstance(error, dict) and error.get("code") == OPENAI_EMPTY_COMMIT_CODE:
+                # The session survives a rejected commit; answer it as an empty segment rather than leave
+                # it pending (and the caller waiting on it) or fail the call.
+                logger.warning(f"Caller STT rejected a commit as empty: {error.get('message')}")
+                self._on_rejected_commit()
+            else:
+                self._on_error(error)
 
     def _on_delta(self, data: dict[str, Any]) -> None:
         item, delta = data.get("item_id", ""), data.get("delta", "")
@@ -376,6 +385,15 @@ class OpenAIStreamingSTT:
         elif self._unacked_commits:
             self._unacked_commits -= 1
             self._pending_items.add(item)
+
+    def _on_rejected_commit(self) -> None:
+        # Rejections, like acknowledgements, answer the oldest unacknowledged commit.
+        if self._stale_unacked:
+            self._stale_unacked -= 1
+        elif self._unacked_commits:
+            self._unacked_commits -= 1
+        if self._pending_commits == 0:
+            self.committed_event.set()
 
     def _on_completed(self, item: str, transcript: str) -> None:
         text = transcript.strip()

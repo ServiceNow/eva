@@ -20,7 +20,7 @@ from eva.user_simulator.cascade.interruptor import DecisionsInterruptor
 from eva.user_simulator.cascade.phrase_cache import PhraseCache
 from eva.user_simulator.cascade.phrases import BACKCHANNELS, OPENERS, phrases_for
 from eva.user_simulator.cascade.stt import create_caller_stt
-from eva.user_simulator.cascade.tts import TTS_SAMPLE_RATE, CartesiaStreamingTTS
+from eva.user_simulator.cascade.tts import CALLER_SPEED, TTS_SAMPLE_RATE, CartesiaStreamingTTS
 from eva.utils import router
 from eva.utils.logging import get_logger
 
@@ -62,10 +62,6 @@ decisions can overlap."""
 BACK_CHANNEL_PLAY_MARGIN_SECONDS = 0.5
 """Slack past a back-channel's own length before giving up on it: one that never finishes means the send
 loop has stopped, and the caller counts as speaking (blocking barge-ins and turns) until it is given up."""
-
-MAX_BARGE_IN_GAP_MS = 1000.0
-"""Silence between the opener and the reply past which the call fails: a caller who cuts in and then
-says nothing for a second is no longer a realistic barge-in, so the record is rerun instead of scored."""
 
 BARGE_IN_NOTE = """The agent is still speaking and their last line above is cut off where you stopped \
 listening. You are cutting them off now, and you have ALREADY said "{opener}" out loud. Write only \
@@ -189,10 +185,12 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._system_prompt: str | None = None
         self._kept_listening = 0
         self._interruptor = DecisionsInterruptor(
-            simulator_config.interruption_model, back_channel=simulator_config.back_channel
+            simulator_config.interruption_model,
+            interrupt=simulator_config.interruptions,
+            back_channel=simulator_config.back_channel,
         )
-        self._openers = PhraseCache(phrases_for(OPENERS, language))
-        self._back_channels = PhraseCache(phrases_for(BACKCHANNELS, language))
+        self._opener_phrases = PhraseCache(phrases_for(OPENERS, language))
+        self._back_channel_phrases = PhraseCache(phrases_for(BACKCHANNELS, language))
         self._updates_seen = 0
         """Transcript updates decided on so far, over the whole call: the clock for the back-channel cooldown."""
         self._last_back_channel_update: int | None = None
@@ -201,7 +199,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._barge_in_warm_up: asyncio.Task | None = None
         self._turn_active = False
         """A caller turn (regular or barge-in) is being generated or spoken; no new barge-in starts."""
-        self._barge_ins = 0
+        self._barge_in_count = 0
         """Barge-ins so far; a decision requested before the latest one is stale and never fires."""
         self._barge_in_warm_up_turn: int | None = None
         """The agent turn the barge-in LLM was last warmed for (see ``_warm_up_barge_in_llm``)."""
@@ -246,10 +244,13 @@ class CascadeUserSimulator(AbstractUserSimulator):
         try:
             await self._stt.start()
             await self._tts.warm_up(self.caller_voice, connections=TTS_WARM_CONNECTIONS)
-            await self._interruptor.warm_up(self._decision_goal(), connections=DECISION_WARM_CONNECTIONS)
-            await self._openers.render(self._tts, self.caller_voice)
+            if self.simulator_config.uses_decisions:
+                await self._interruptor.warm_up(self._decision_goal(), connections=DECISION_WARM_CONNECTIONS)
+            if self.simulator_config.interruptions:
+                # At the barge-in speed: callers speed up when they cut in.
+                await self._opener_phrases.render(self._tts, self.caller_voice, speed=CALLER_SPEED)
             if self.simulator_config.back_channel:
-                await self._back_channels.render(self._tts, self.caller_voice)
+                await self._back_channel_phrases.render(self._tts, self.caller_voice)
             await self._audio_interface.start_async()
             self._audio_interface.start(self._on_assistant_audio)
             self.event_logger.log_connection_state(
@@ -268,7 +269,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
             completion_task = asyncio.create_task(self._wait_for_conversation_end())
             tasks = [completion_task, asyncio.create_task(self._forward_assistant_audio())]
             tasks.append(asyncio.create_task(self._run_turns()))
-            tasks.append(asyncio.create_task(self._watch_for_interruptions()))
+            if self.simulator_config.uses_decisions:
+                tasks.append(asyncio.create_task(self._watch_for_interruptions()))
 
             done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             if completion_task not in done and not self._conversation_done.is_set():
@@ -375,19 +377,25 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
             if self._turn_active:
                 continue  # a barge-in is replying; this pause is part of it
-            heard = await self._collect_heard_text(committed_at)
-            assistant_spoke = False
-            if heard:
-                untranscribed = 0
-            else:
-                # Staying silent would stall the call until the inactivity timeout; a caller asks again.
-                self.event_logger.log_event("assistant_audio_untranscribed", {})
-                untranscribed += 1
-                if untranscribed >= MAX_UNTRANSCRIBED_IN_A_ROW:
-                    raise RuntimeError(f"Caller could not transcribe {untranscribed} agent lines in a row")
-            starts = bridge.assistant_audio_starts
-            if await self._take_turn(heard or None):
-                return
+            # Claimed before awaiting the transcript, so a barge-in decision landing meanwhile is discarded
+            # rather than speaking over this turn.
+            self._turn_active = True
+            try:
+                heard = await self._collect_heard_text(committed_at)
+                assistant_spoke = False
+                if heard:
+                    untranscribed = 0
+                else:
+                    # Staying silent would stall the call until the inactivity timeout; a caller asks again.
+                    self.event_logger.log_event("assistant_audio_untranscribed", {})
+                    untranscribed += 1
+                    if untranscribed >= MAX_UNTRANSCRIBED_IN_A_ROW:
+                        raise RuntimeError(f"Caller could not transcribe {untranscribed} agent lines in a row")
+                starts = bridge.assistant_audio_starts
+                if await self._take_turn(heard or None):
+                    return
+            finally:
+                self._turn_active = False
             last_activity = loop.time()
             if bridge.assistant_audio_starts != starts:
                 # The assistant spoke while the caller was generating (e.g. "One moment."). The polls above
@@ -482,6 +490,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
         spoke = False
         if utterance and not calls_tool(message, "keep_listening"):
             async for chunk in self._tts.stream(utterance, voice_id=self.caller_voice):
+                if not spoke:
+                    # A caller finishes their "mhm" before speaking, so the line queues behind it.
+                    await self._audio_interface.wait_for_back_channel()
                 self._audio_interface.output(chunk)
                 spoke = True
         return message, stats, spoke
@@ -493,7 +504,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
         Audio starts while the rest of the line is still being generated; Cartesia chooses where to
         break, so nothing here depends on the language's punctuation or word boundaries. The reply's
-        leading silence is dropped as it arrives. Keep-listening is not offered: the opener is already out.
+        leading silence is dropped as it arrives. No tools are offered: the opener is already out, so the
+        caller must say something (keep-listening or end_call would leave it hanging); hanging up waits
+        for a regular turn.
 
         Returns the assembled final message, its stats, and whether any audio was sent.
         """
@@ -503,14 +516,14 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
         async def text() -> AsyncIterator[str]:
             nonlocal message, stats
-            async for kind, payload in self._barge_in_llm.complete_stream(messages=messages, tools=[END_CALL_TOOL]):
+            async for kind, payload in self._barge_in_llm.complete_stream(messages=messages):
                 if kind == "final":
                     message, stats = payload
                 else:
                     yield payload
 
         spoke = False
-        async with aclosing(self._tts.stream_text(text(), voice_id=self.caller_voice)) as audio:
+        async with aclosing(self._tts.stream_text(text(), voice_id=self.caller_voice, speed=CALLER_SPEED)) as audio:
             async for chunk in audio:
                 if chunk := barge_in.audible(chunk, loop.time()):
                     self._audio_interface.output(chunk)
@@ -554,8 +567,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 if self._caller_turns != turn:
                     turn, updates = self._caller_turns, 0
                 updates += 1
-                if self._barge_ins != fired:
-                    fired, since_barge_in = self._barge_ins, 0
+                if self._barge_in_count != fired:
+                    fired, since_barge_in = self._barge_in_count, 0
                 since_barge_in += 1
                 if (
                     updates <= config.interruption_min_updates
@@ -587,7 +600,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
         async def warm_up() -> None:
             try:
-                request: dict[str, Any] = {"messages": self._messages(), "tools": [END_CALL_TOOL], "max_tokens": 1}
+                # No tools, as the reply has none, so the cached prefix matches it.
+                request: dict[str, Any] = {"messages": self._messages(), "max_tokens": 1}
                 await router.get().acompletion(model=self._barge_in_llm.model, **request)
             except Exception as exc:
                 logger.debug(f"Barge-in LLM warm-up failed: {exc}")
@@ -601,7 +615,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
         """
         every = self.simulator_config.forced_interruption_every_turns
         return (
-            every is not None
+            self.simulator_config.interruptions
+            and every is not None
             and (turn + 1) % every == 0
             and updates >= self.simulator_config.forced_interruption_after_updates
         )
@@ -612,7 +627,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         ``barge_in`` carries whether the decision is forced, and times the barge-in if it fires.
         """
         loop = asyncio.get_running_loop()
-        requested_at = self._barge_ins
+        requested_at = self._barge_in_count
         asked_at = loop.time()
         try:
             choice, p_interrupt = await self._interruptor.decide(goal, list(self._history), heard)
@@ -626,7 +641,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             (choice == "interrupt" or barge_in.forced)
             and not too_slow
             and self._can_interrupt()
-            and self._barge_ins == requested_at
+            and self._barge_in_count == requested_at
         )
         self.event_logger.log_event(
             "interruption_decision",
@@ -650,7 +665,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         """Back-channel only where a barge-in could start, and ``back_channel_cooldown_updates`` after the last one."""
         last = self._last_back_channel_update
         return (
-            bool(self._back_channels)
+            bool(self._back_channel_phrases)
             and self._can_interrupt()
             and (last is None or self._updates_seen - last > self.simulator_config.back_channel_cooldown_updates)
         )
@@ -662,7 +677,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
         the agent's line is still in progress and the caller's next turn answers it as usual. The bridge
         sends it without any speech start/stop signal, so nothing marks it as the caller interrupting.
         """
-        phrase, pcm = self._back_channels.pick()
+        phrase, pcm = self._back_channel_phrases.pick()
         self._last_back_channel_update = self._updates_seen  # before the await, so no other decision plays too
         agent_turn = self._caller_turns
         try:
@@ -690,10 +705,10 @@ class CascadeUserSimulator(AbstractUserSimulator):
         The agent may keep talking. A failure ends the call as an error, as a failed regular turn does.
         """
         self._turn_active = True  # before any await, so a concurrent decision cannot fire too
-        self._barge_ins += 1
+        self._barge_in_count += 1
         bridge = self._audio_interface
         starts, caller_starts = bridge.assistant_audio_starts, bridge.user_audio_starts
-        phrase, pcm = self._openers.pick()
+        phrase, pcm = self._opener_phrases.pick()
         bridge.output(pcm)
         barge_in.play_opener(phrase, pcm, asyncio.get_running_loop().time())
         # Close the segment being heard, so its final does not repeat into the next turn.
@@ -709,12 +724,14 @@ class CascadeUserSimulator(AbstractUserSimulator):
         if bridge.user_audio_starts == caller_starts + 1 and bridge.user_audio_started_at is not None:
             barge_in.opener_on_wire(bridge.user_audio_started_at)  # the utterance the opener started
         self._record_talked_over_tail(starts)
-        latency = barge_in.latency()
+        latency = barge_in.record()
         self.barge_ins.append(latency)
         self.event_logger.log_event("barge_in", latency.model_dump())
-        if latency.gap_ms is not None and latency.gap_ms > MAX_BARGE_IN_GAP_MS:
-            logger.error(f"Cascade caller barge-in gap {latency.gap_ms:.0f}ms exceeds {MAX_BARGE_IN_GAP_MS:.0f}ms")
-            self.event_logger.log_error(f"Barge-in gap {latency.gap_ms:.0f}ms exceeds {MAX_BARGE_IN_GAP_MS:.0f}ms")
+        # A barge-in that went quiet too long breaks realism, and a live call cannot redo it: rerun the record.
+        max_gap = self.simulator_config.max_barge_in_gap_ms
+        if latency.gap_ms is not None and max_gap is not None and latency.gap_ms > max_gap:
+            logger.error(f"Cascade caller barge-in gap {latency.gap_ms:.0f}ms exceeds {max_gap:.0f}ms")
+            self.event_logger.log_error(f"Barge-in gap {latency.gap_ms:.0f}ms exceeds {max_gap:.0f}ms")
             self._on_conversation_end("error")
 
     def _record_talked_over_tail(self, starts: int) -> None:

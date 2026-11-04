@@ -21,7 +21,7 @@ from eva.models.results import ConversationResult, RunResult
 from eva.orchestrator.port_pool import PortPool
 from eva.orchestrator.preflight import run_preflight
 from eva.orchestrator.validation_runner import ValidationResult, ValidationRunner
-from eva.orchestrator.worker import ConversationWorker, _latency_stats
+from eva.orchestrator.worker import ConversationWorker, latency_stats
 from eva.utils.conversation_checks import check_conversation_finished, find_records_with_llm_generic_error
 from eva.utils.culture import get_language_addendum
 from eva.utils.logging import get_logger
@@ -564,8 +564,7 @@ class BenchmarkRunner:
             self._archive_failed_attempt(oid, attempt_number)
 
         llm_generic_error_record_ids = find_records_with_llm_generic_error(self.output_dir, successful_ids)
-        barge_in_summary = self._aggregate_barge_ins(successful_ids)
-        back_channel_summary = self._aggregate_back_channels(successful_ids)
+        barge_in_summary, back_channel_summary = self._aggregate_caller_events(successful_ids)
         eval_summary_path = self.output_dir / "evaluation_summary.json"
         with open(eval_summary_path, "w") as f:
             json.dump(
@@ -977,28 +976,41 @@ class BenchmarkRunner:
             task = asyncio.create_task(metrics_runner.run_and_save_record(oid, rdir))
             metrics_background_tasks.append(task)
 
-    def _aggregate_barge_ins(self, record_ids: set[str]) -> dict[str, Any] | None:
-        """Run-level summary of caller barge-ins across records; None when there were none."""
+    def _aggregate_caller_events(self, record_ids: set[str]) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """Run-level summaries of caller barge-ins and back-channels; each is None when there were none.
+
+        One pass over the records' result.json files serves both.
+        """
         barge_ins: list[dict] = []
         records_with_barge_ins = 0
+        total_back_channels, records_with_back_channels = 0, 0
         for record_id in sorted(record_ids):
             result_path = self.output_dir / "records" / record_id / "result.json"
             if not result_path.exists():
                 continue
             with open(result_path) as f:
-                record_barge_ins = json.load(f).get("barge_ins") or []
-            if record_barge_ins:
+                result = json.load(f)
+            if record_barge_ins := result.get("barge_ins") or []:
                 records_with_barge_ins += 1
                 barge_ins.extend(record_barge_ins)
+            if back_channels := len(result.get("back_channels") or []):
+                total_back_channels += back_channels
+                records_with_back_channels += 1
+
+        back_channel_summary = (
+            {"total_back_channels": total_back_channels, "records_with_back_channels": records_with_back_channels}
+            if total_back_channels
+            else None
+        )
         if not barge_ins:
-            return None
+            return None, back_channel_summary
 
         def stats(key: str) -> dict | None:
-            result = _latency_stats([b.get(key) for b in barge_ins])
+            result = latency_stats([b.get(key) for b in barge_ins])
             return result.model_dump() if result else None
 
         missed_words = [b["missed_words"] for b in barge_ins if b.get("missed_words") is not None]
-        return {
+        barge_in_summary = {
             "total_barge_ins": len(barge_ins),
             "records_with_barge_ins": records_with_barge_ins,
             "forced_barge_ins": sum(1 for b in barge_ins if b.get("forced")),
@@ -1007,22 +1019,7 @@ class BenchmarkRunner:
             "decision_ms": stats("decision_ms"),
             "gap_ms": stats("gap_ms"),
         }
-
-    def _aggregate_back_channels(self, record_ids: set[str]) -> dict[str, Any] | None:
-        """Run-level count of caller back-channels across records; None when there were none."""
-        total, records_with_back_channels = 0, 0
-        for record_id in sorted(record_ids):
-            result_path = self.output_dir / "records" / record_id / "result.json"
-            if not result_path.exists():
-                continue
-            with open(result_path) as f:
-                count = len(json.load(f).get("back_channels") or [])
-            if count:
-                total += count
-                records_with_back_channels += 1
-        if not total:
-            return None
-        return {"total_back_channels": total, "records_with_back_channels": records_with_back_channels}
+        return barge_in_summary, back_channel_summary
 
     def _archive_failed_attempt(self, record_id: str, attempt_number: int) -> None:
         """Archive a failed attempt before rerunning.

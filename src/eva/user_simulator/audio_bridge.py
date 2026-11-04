@@ -13,6 +13,7 @@ import functools
 import json
 import time
 from collections.abc import Callable
+from contextlib import suppress
 
 import numpy as np
 import websockets
@@ -354,6 +355,17 @@ class BotToBotAudioBridge:
             self._back_channel_active = False
             self._back_channel_audio = b""
             self._back_channel_done = None
+
+    async def wait_for_back_channel(self) -> None:
+        """Return once any playing back-channel has finished, so caller speech queues after it.
+
+        Shielded: a cancelled waiter must not cancel the playback it waited on. A failed playback
+        is the back-channel's own problem, not the waiter's.
+        """
+        done = self._back_channel_done
+        if done is not None and not done.done():
+            with suppress(Exception):
+                await asyncio.shield(done)
 
     def _cut_back_channel(self) -> None:
         """Drop the rest of a playing back-channel: a real utterance took over the line."""

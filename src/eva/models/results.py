@@ -35,7 +35,7 @@ class LatencyStats(BaseModel):
     total_calls: int = Field(..., description="Total number of calls")
 
 
-class BargeInLatency(BaseModel):
+class BargeInRecord(BaseModel):
     """One live barge-in by the cascade caller: what it heard and missed, and how fast it reacted."""
 
     heard: str = Field(..., description="Agent speech the reply was written from")
@@ -85,7 +85,7 @@ class ConversationResult(BaseModel):
         None,
         description="Time from user speech end to first model audio (s2s/realtime frameworks)",
     )
-    barge_ins: list[BargeInLatency] = Field(
+    barge_ins: list[BargeInRecord] = Field(
         default_factory=list, description="Timing of each caller barge-in (cascade simulator)"
     )
     barge_in_gap: LatencyStats | None = Field(None, description="Barge-in silence between opener and reply")
