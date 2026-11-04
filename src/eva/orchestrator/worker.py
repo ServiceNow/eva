@@ -478,10 +478,21 @@ class ConversationWorker:
             # times and the simulator's real end of speech (includes any wait the simulator adds after
             # the user stops talking, since the assistant cannot respond before the turn commits).
             events_path = self.output_dir / "user_simulator_events.jsonl"
-            if not latencies and ink2_turn_end_times_s and events_path.exists():
-                for value_sec in compute_turn_commit_latencies(ink2_turn_end_times_s, events_path):
-                    if 0 < value_sec < 30:
-                        latencies.append(value_sec * 1000)
+            if not latencies and ink2_turn_end_times_s:
+                if not events_path.exists():
+                    logger.warning(
+                        f"STT latency: {len(ink2_turn_end_times_s)} ink-2 turn end(s) recorded but "
+                        f"{events_path.name} is missing; cannot compute STT latency"
+                    )
+                else:
+                    for value_sec in compute_turn_commit_latencies(ink2_turn_end_times_s, events_path):
+                        if 0 < value_sec < 30:
+                            latencies.append(value_sec * 1000)
+                    if not latencies:
+                        logger.warning(
+                            f"STT latency: {len(ink2_turn_end_times_s)} ink-2 turn end(s) recorded but none "
+                            f"could be paired with a user utterance in {events_path.name}"
+                        )
 
             if not latencies:
                 return None

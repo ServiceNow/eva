@@ -140,12 +140,25 @@ class TestCalculateSttLatencyInk2Fallback:
         )
         assert worker._calculate_stt_latency().mean_ms == pytest.approx(200, abs=1)
 
-    def test_no_simulator_events_returns_none(self, tmp_path):
+    def test_no_simulator_events_returns_none_and_warns(self, tmp_path):
         worker = _make_worker(tmp_path)
         worker.output_dir.mkdir(parents=True)
         entry = {"type": "Ink2TurnEnd", "timestamp": 103_700, "processor": "CartesiaTurnsSTTService"}
         (worker.output_dir / "pipecat_metrics.jsonl").write_text(json.dumps(entry) + "\n")
-        assert worker._calculate_stt_latency() is None
+        with patch("eva.orchestrator.worker.logger") as mock_logger:
+            assert worker._calculate_stt_latency() is None
+        assert "user_simulator_events.jsonl is missing" in mock_logger.warning.call_args.args[0]
+
+    def test_unpairable_turn_ends_return_none_and_warn(self, tmp_path):
+        worker = _make_worker(tmp_path)
+        self._write(
+            worker,
+            [{"type": "Ink2TurnEnd", "timestamp": 103_700, "processor": "CartesiaTurnsSTTService"}],
+            [{"event_type": "audio_end", "user": "assistant", "audio_timestamp": 99.0}],
+        )
+        with patch("eva.orchestrator.worker.logger") as mock_logger:
+            assert worker._calculate_stt_latency() is None
+        assert "could be paired" in mock_logger.warning.call_args.args[0]
 
 
 class TestCalculateSttLatency:
