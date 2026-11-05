@@ -123,6 +123,7 @@ class BotToBotAudioBridge:
         perturbator: AudioPerturbator | None = None,
         disconnect_reason: str = "elevenlabs_disconnect",
         input_chunk_duration: float = INPUT_CHUNK_DURATION,
+        open_mic: bool = False,
     ):
         """Initialize the audio interface.
 
@@ -136,6 +137,9 @@ class BotToBotAudioBridge:
             disconnect_reason: Terminal reason reported when the assistant WebSocket closes unexpectedly.
             input_chunk_duration: Seconds of assistant audio per input_callback. Each tick holds the
                 audio that arrived during it, so this is also how late the caller can hear it.
+            open_mic: Stream silence to the assistant while it speaks too, like ambient noise does. The
+                assistant records the caller's input contiguously, so a back-channel sent mid-line lands
+                at the start of that line unless the stream before it is continuous.
         """
         self.websocket_uri = websocket_uri
         self.conversation_id = conversation_id
@@ -145,6 +149,7 @@ class BotToBotAudioBridge:
         self._perturbator = perturbator
         self.disconnect_reason = disconnect_reason
         self.input_chunk_duration = input_chunk_duration
+        self._open_mic = open_mic
 
         self.websocket = None
         self.running = False
@@ -478,7 +483,9 @@ class BotToBotAudioBridge:
         ambient noise streams to the assistant at all times when the user is not
         speaking, including during assistant speech, to simulate an always-open mic.
         """
-        return not self._user_audio_active and self._perturbator is not None and self._perturbator.has_ambient_noise
+        if self._user_audio_active:
+            return False
+        return self._open_mic or (self._perturbator is not None and self._perturbator.has_ambient_noise)
 
     async def _send_audio_frame(self, mulaw_data: bytes) -> bool:
         """Send an audio frame to the websocket.

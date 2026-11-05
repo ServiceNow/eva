@@ -243,6 +243,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             perturbator=self._perturbator,
             disconnect_reason="assistant_disconnect",
             input_chunk_duration=ASSISTANT_AUDIO_TICK_S,
+            open_mic=self.simulator_config.back_channel,
         )
         tasks: list[asyncio.Task] = []
         try:

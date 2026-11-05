@@ -552,7 +552,7 @@ class CascadeSimulatorConfig(BaseModel):
         '("mhm") played over the agent\'s line, with no reply generated.',
     )
     back_channel_cooldown_updates: int = Field(
-        10,
+        25,
         ge=0,
         description="Transcript updates after a back-channel before the next one can play.",
     )
@@ -569,7 +569,7 @@ class CascadeSimulatorConfig(BaseModel):
         15, ge=1, description="Transcript updates into a forced turn before its decisions are forced."
     )
     interruption_min_probability: float = Field(
-        0.85,
+        0.65,
         ge=0,
         le=1,
         description="An interrupt verdict fires only when the decision model's P(interrupt) is at least this; "
