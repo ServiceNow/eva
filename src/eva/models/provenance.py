@@ -27,6 +27,7 @@ class BaseProvenance(BaseModel):
     tool_module: ArtifactInfo | None = None
     scenario_db: ArtifactInfo | None = None
     python_version: str = ""
+    litellm_version: str = ""  # TEMPORARY: remove after the litellm 1.85.0 vs 1.105.1 lead-in comparison
     platform: str = ""
     captured_at: datetime = Field(default_factory=datetime.now)
 
