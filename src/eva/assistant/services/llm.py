@@ -321,6 +321,7 @@ class LiteLLMClient:
         for attempt in range(max_retries + 1):
             chunks: list[Any] = []
             first_token = False
+            tool_call_started = False
             try:
                 start_time = time.time()
                 stream = await router.get().acompletion(**kwargs)
@@ -333,6 +334,11 @@ class LiteLLMClient:
                         if text:
                             first_token = True
                             yield ("delta", text)
+                        if not tool_call_started and delta and getattr(delta, "tool_calls", None):
+                            # Text before this point is complete; let the consumer release it now
+                            # instead of waiting for the tool arguments to finish streaming.
+                            tool_call_started = True
+                            yield ("tool_call_start", None)
                 elapsed_time = time.time() - start_time
 
                 full = litellm.stream_chunk_builder(chunks, messages=messages)
@@ -547,6 +553,7 @@ class LiteLLMClient:
         last_exception = None
         for attempt in range(max_retries + 1):
             first_token = False
+            tool_call_started = False
             try:
                 start_time = time.time()
                 stream = await litellm.aresponses(**kwargs)
@@ -558,6 +565,12 @@ class LiteLLMClient:
                         if text:
                             first_token = True
                             yield ("delta", text)
+                    elif event_type == "response.output_item.added" and (
+                        getattr(getattr(event, "item", None), "type", None) == "function_call"
+                    ):
+                        if not tool_call_started:
+                            tool_call_started = True
+                            yield ("tool_call_start", None)
                     elif event_type in ("response.completed", "response.incomplete"):
                         final_response = event.response
                     elif event_type in ("response.failed", "error"):

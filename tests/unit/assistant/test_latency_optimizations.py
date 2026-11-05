@@ -185,6 +185,52 @@ class TestLLMStreaming:
         assert await _collect(system, "look up A") == ["All set."]
 
     @pytest.mark.asyncio
+    async def test_lead_in_released_at_tool_call_start_not_stream_end(self):
+        """The trailing sentence must reach the consumer before the tool-call arguments finish streaming."""
+        lead_in_seen = asyncio.Event()
+        order = []
+
+        class _ToolStartLLM:
+            use_responses_api = False
+
+            def __init__(self):
+                self.calls = 0
+
+            async def complete_stream(self, messages, tools=None):
+                self.calls += 1
+                if self.calls == 2:
+                    yield ("delta", "All set.")
+                    yield ("final", (_msg("All set."), dict(_STATS)))
+                    return
+                yield ("delta", "Let me pull that up.")
+                yield ("tool_call_start", None)
+                # Simulates tool-call argument tokens still streaming.
+                await asyncio.wait_for(lead_in_seen.wait(), timeout=1)
+                order.append("stream_end")
+                final = _msg("Let me pull that up.", tool_calls=[_tc("c1", "get_reservation", "{}")])
+                yield ("final", (final, dict(_STATS)))
+
+        tool_handler = MagicMock()
+        tool_handler.execute = AsyncMock(return_value={"status": "success"})
+        system = AgenticSystem(
+            "x",
+            _agent([_tool()]),
+            tool_handler,
+            AuditLog(),
+            _ToolStartLLM(),
+            pre_tool_speech="auto",
+            llm_streaming=True,
+        )
+        out = []
+        async for r in system.process_query("look up A"):
+            out.append(r)
+            if r == "Let me pull that up.":
+                order.append("lead_in")
+                lead_in_seen.set()
+        assert out == ["Let me pull that up.", "All set."]
+        assert order == ["lead_in", "stream_end"]
+
+    @pytest.mark.asyncio
     async def test_streaming_cancellation_records_spoken_prefix(self):
         audit_log = AuditLog()
         llm = _CancellingStreamLLM()
