@@ -17,20 +17,31 @@ KEEPALIVE = httpx.Limits(max_keepalive_connections=8, keepalive_expiry=300.0)
 DECISION_INSTRUCTIONS = """You are the caller on a live phone call with a support agent, and the agent \
 is speaking right now; their line after the conversation so far is still in progress. Polite callers \
 almost never cut an agent off: they let the agent finish, even when they already know what they will \
-say. Keep listening unless the agent is clearly getting something about you or your request wrong. \
-What should the caller do at this moment?"""
+say. Keep listening unless the agent is clearly getting something about you or your request wrong.
+
+What you read is a live speech-to-text transcript of the agent, not their words: names, codes and \
+numbers are often misspelled or split oddly (a name heard as a similar-sounding word, "B V" for "B Z"), \
+and the last few words may still change. A spelling that differs from what you know is not, by itself, \
+the agent being wrong: only a clear mistake in meaning is (a different flight, date, amount or request).
+
+Never cut in while the agent is reading out or spelling a code, confirmation number, name, number or \
+list, or partway through a sentence that has not yet said what it is getting at: wait for it to finish, \
+then judge what they actually said. What should the caller do at this moment?"""
 
 DECISION_CHOICES = [
     {
         "value": "interrupt",
-        "description": "Rare. Only when the agent has just stated something clearly wrong about the caller or "
-        "their request (a wrong name, number, account or problem) and continuing would waste the call. Never "
-        "to answer a question, agree, add information, or because the agent paused or seems to have finished.",
+        "description": "Rare. Only when the agent has just finished stating something clearly wrong in meaning "
+        "about the caller or their request (a different flight, date, amount, account or problem, not a "
+        "transcription misspelling) and continuing would waste the call. Never mid-code, mid-spelling or "
+        "mid-sentence, never to answer a question, agree, add information, summarize, or ask for something, "
+        "and never because the agent paused or seems to have finished.",
     },
     {
         "value": "keep_listening",
         "description": "The default, almost always: let the agent finish their line, including when they are "
-        "asking a question, giving instructions or results, or when the caller already knows their answer.",
+        "asking a question, giving instructions, results or a summary, spelling or reading out details, or "
+        "when the caller already knows their answer.",
     },
 ]
 

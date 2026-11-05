@@ -67,7 +67,11 @@ BARGE_IN_NOTE = """The agent is still speaking and their last line above is cut 
 listening. You are cutting them off now, and you have ALREADY said "{opener}" out loud. Write only \
 the words that come right after it, picking up mid-sentence. Do not repeat "{opener}" or say anything \
 like it: no apology, no "wait", and no other interjection or filler to get their attention, in any \
-language. Start directly with what you need to say in the language of the conversation."""
+language. Start directly with what you need to say in the language of the conversation.
+
+You are still the caller, never the agent: say only what the caller needs to correct or ask, in a sentence \
+or two. Do not finish, repeat or summarize the agent's cut-off line (their code, number, list or \
+sentence), and do not take over the agent's job of explaining, summarizing or confirming."""
 
 _PERSONA_GENDER = {1: "F", 2: "M"}
 _FENCE = re.compile(r"^```[a-z]*\s*|\s*```$", re.MULTILINE)
@@ -638,7 +642,10 @@ class CascadeUserSimulator(AbstractUserSimulator):
         max_decision = self.simulator_config.interruption_max_decision_ms
         too_slow = not barge_in.forced and max_decision is not None and decision_ms > max_decision
         fire = (
-            (choice == "interrupt" or barge_in.forced)
+            (
+                barge_in.forced
+                or (choice == "interrupt" and p_interrupt >= self.simulator_config.interruption_min_probability)
+            )
             and not too_slow
             and self._can_interrupt()
             and self._barge_in_count == requested_at

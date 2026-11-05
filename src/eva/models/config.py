@@ -568,6 +568,13 @@ class CascadeSimulatorConfig(BaseModel):
     forced_interruption_after_updates: int = Field(
         15, ge=1, description="Transcript updates into a forced turn before its decisions are forced."
     )
+    interruption_min_probability: float = Field(
+        0.85,
+        ge=0,
+        le=1,
+        description="An interrupt verdict fires only when the decision model's P(interrupt) is at least this; "
+        "the choice alone is not enough. Forced decisions always fire.",
+    )
     interruption_max_decision_ms: float | None = Field(
         700,
         gt=0,

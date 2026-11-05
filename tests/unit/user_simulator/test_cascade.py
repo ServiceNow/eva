@@ -1165,12 +1165,24 @@ async def test_back_channel_choice_is_ignored_when_disabled(tmp_path):
 @pytest.mark.asyncio
 async def test_interrupt_verdict_still_barges_in_with_back_channels_on(tmp_path):
     simulator = _back_channel_simulator(tmp_path, choice="interrupt")
+    simulator._interruptor.decide = AsyncMock(return_value=("interrupt", 0.95))
     simulator._interrupt = AsyncMock()
 
     await simulator._decide("goal", "Your name is Bob", _trigger())
 
     simulator._interrupt.assert_awaited_once()
     simulator._audio_interface.play_back_channel.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_interrupt_verdict_below_the_minimum_probability_does_not_fire(tmp_path):
+    simulator = _back_channel_simulator(tmp_path, choice="interrupt")
+    simulator._interruptor.decide = AsyncMock(return_value=("interrupt", 0.6))
+    simulator._interrupt = AsyncMock()
+
+    await simulator._decide("goal", "Your name is Bob", _trigger())
+
+    simulator._interrupt.assert_not_awaited()
 
 
 @pytest.mark.parametrize(("enabled", "offered"), [(True, True), (False, False)])
