@@ -97,7 +97,7 @@
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "f0f0b36fa4bd",
+    "prompt_hash": "ce4b30434e34",
     "source_hash": "6625af8e00f9",
     "version": "v0.2"
   }
