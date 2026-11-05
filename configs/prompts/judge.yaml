@@ -715,7 +715,7 @@ judge:
         - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
         - A phrase or sentence in another language that is not in the intended text (e.g., an English "one moment" in a French turn) is rating = 0 with `wrong_language`, even when the rest of the turn is in {expected_language}. If the intended text itself contains the phrase, reproducing it is not an error.
         - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
-        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an error by themselves; they are an `entity_error` only if a native {expected_language} listener could take it for a different value. A different word for the value (e.g., "septante" for "soixante-dix") is still an error, as above.
+        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an error by themselves; they are an `entity_error` only if a native {expected_language} listener could take it for a different value. A different word for the value (e.g., Swiss/Belgian "septante" for standard French "soixante-dix") is still an error, even though it means the same number.
 
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
