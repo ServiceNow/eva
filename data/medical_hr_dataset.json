@@ -20991,7 +20991,8 @@
           "If asked for the leave category, choose employee_medical_condition.",
           "If asked whether you want to shorten the leave to match your remaining entitlement, say no, you are calling about the full 10-week request only.",
           "If the phone number last four digits the agent reads for OTP do not match the phone number in information_required, say you do not recognize that number and accept being told the number cannot be changed over the phone.",
-          "If the agent offers to submit the full 10-week request, or asks you to confirm submitting it, say yes. Do not argue against your own request or point out the entitlement limit yourself."
+          "If the agent offers to submit the full 10-week request, or asks you to confirm submitting it, say yes. Do not argue against your own request or point out the entitlement limit yourself.",
+          "If the agent submits the 10-week request and then asks to schedule a return-to-work check-in, say you will schedule it later, thank them and end the call."
         ]
       },
       "information_required": {
