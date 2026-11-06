@@ -1,7 +1,6 @@
 """LLM client factory and implementations using LiteLLM."""
 
 import asyncio
-import os
 import time
 from types import SimpleNamespace
 from typing import Any
@@ -18,6 +17,9 @@ from eva.utils.logging import get_logger
 load_dotenv()
 
 logger = get_logger(__name__)
+
+# Responses API stream error codes that succeed on retry (rate_limit_exceeded is handled separately).
+_TRANSIENT_STREAM_ERROR_CODES = frozenset({"server_error", "vector_store_timeout"})
 
 
 class LiteLLMClient:
@@ -284,7 +286,7 @@ class LiteLLMClient:
         """Look up the litellm_params for self.model from the router config.
 
         Assumes the router is initialized (only called from the Responses API paths,
-        which requires use_responses_api resolved from the router at init time).
+        which require use_responses_api resolved from the router at init time).
         """
         r = router.get()
         for deployment in getattr(r, "model_list", []):
@@ -380,46 +382,78 @@ class LiteLLMClient:
         raise last_exception
 
     def _build_responses_kwargs(self, messages: list[dict[str, Any]], tools: list[dict] | None) -> dict[str, Any]:
-        """Build litellm.aresponses kwargs, resolving credentials from the router config.
+        """Build ``router.aresponses`` kwargs.
 
+        The Router resolves credentials and forwards the deployment's ``litellm_params`` (api_key,
+        api_base, reasoning_effort, extra_body, timeout, ...), so only per-call arguments are set here.
         Uses ``include=["reasoning.encrypted_content"]`` + ``store=False`` so encrypted
         reasoning is threaded through tool-call loops without managing conversation IDs.
         """
-        # Resolve model credentials from router config (handles Azure, custom api_base/base_url, etc.)
         litellm_params = self._get_router_litellm_params()
-        litellm_model = litellm_params.get("model", self.model)
-
-        # Resolve api_key (may be "os.environ/VAR_NAME")
-        raw_key = litellm_params.get("api_key", "")
-        if raw_key.startswith("os.environ/"):
-            raw_key = os.environ.get(raw_key.split("/", 1)[1], "")
-        api_key = raw_key or None
-
-        api_base = litellm_params.get("api_base") or litellm_params.get("base_url") or None
-
-        # reasoning_effort from litellm_params (set in EVA_MODEL_LIST deployment config)
-        reasoning_effort = litellm_params.get("reasoning_effort")
-
         instructions, input_items = self._convert_messages_for_responses_api(messages)
 
         kwargs: dict[str, Any] = {
-            "model": litellm_model,
+            "model": self.model,
             "input": input_items,
             "store": False,
             "include": ["reasoning.encrypted_content"],
         }
-        if reasoning_effort:
-            kwargs["reasoning"] = {"effort": reasoning_effort}
         if instructions:
             kwargs["instructions"] = instructions
         if tools:
             kwargs["tools"] = self._convert_tools_for_responses_api(tools)
             kwargs["tool_choice"] = "auto"
-        if api_key:
-            kwargs["api_key"] = api_key
-        if api_base:
-            kwargs["api_base"] = api_base
+            if self.parallel_tool_calls is not None:
+                kwargs["parallel_tool_calls"] = self.parallel_tool_calls
+
+        # The Router's Responses path ignores ``base_url`` (chat completions accepts it as an alias
+        # for ``api_base``) and has no ``max_tokens`` (Responses calls it ``max_output_tokens``).
+        if not litellm_params.get("api_base") and litellm_params.get("base_url"):
+            kwargs["api_base"] = litellm_params["base_url"]
+        if litellm_params.get("max_tokens") and not litellm_params.get("max_output_tokens"):
+            kwargs["max_output_tokens"] = litellm_params["max_tokens"]
         return kwargs
+
+    @staticmethod
+    def _response_cost(response: Any) -> float | None:
+        """Cost of a Responses API response, or None when LiteLLM has no pricing for the model."""
+        hidden = getattr(response, "_hidden_params", None)
+        cost = hidden.get("response_cost") if isinstance(hidden, dict) else None
+        if cost is None:
+            try:
+                cost = litellm.completion_cost(completion_response=response)
+            except Exception:
+                cost = None
+        return cost
+
+    def _stream_failure_exception(self, event: Any) -> Exception:
+        """Turn a ``response.failed`` / ``error`` stream event into an exception.
+
+        Transient codes become LiteLLM exceptions so ``is_retryable_error`` retries them like the
+        HTTP-level errors of chat completions. Everything else (``invalid_prompt``, image errors, ...)
+        would fail identically on retry and stays a plain ``RuntimeError``.
+        """
+        # response.failed nests the error under response.error (a dict or object); an error event carries it directly.
+        error = getattr(getattr(event, "response", None), "error", None) or event
+        if isinstance(error, dict):
+            code, message = error.get("code"), error.get("message")
+        else:
+            code, message = getattr(error, "code", None), getattr(error, "message", None)
+        text = f"Responses API stream failed ({code}): {message}"
+        if code == "rate_limit_exceeded":
+            return litellm.RateLimitError(message=text, llm_provider="openai", model=self.model)
+        if code in _TRANSIENT_STREAM_ERROR_CODES:
+            return litellm.InternalServerError(message=text, llm_provider="openai", model=self.model)
+        return RuntimeError(text)
+
+    def _raise_if_responses_api_unsupported(self, error: Exception) -> None:
+        """Replace a missing-endpoint error with one that names the ``use_chat_completions`` opt-out."""
+        if getattr(error, "status_code", None) in (404, 405, 501):
+            raise RuntimeError(
+                f"Model '{self.model}' is using the OpenAI Responses API, but its endpoint does not support it "
+                f'({type(error).__name__}: {error}). Set "use_chat_completions": true on the deployment in '
+                "EVA_MODEL_LIST to use Chat Completions instead."
+            ) from error
 
     def _parse_responses_output(self, response: Any, elapsed: float) -> tuple[Any, dict[str, Any]]:
         """Convert a completed Responses API response into (message, stats).
@@ -473,7 +507,7 @@ class LiteLLMClient:
             "reasoning_tokens": reasoning_tokens,
             "finish_reason": getattr(response, "status", "completed"),
             "model": getattr(response, "model", self.model),
-            "cost": None,
+            "cost": self._response_cost(response),
             "cost_source": "litellm",
             "latency": round(elapsed, 3),
             "reasoning": reasoning_summary,
@@ -509,9 +543,10 @@ class LiteLLMClient:
         for attempt in range(max_retries + 1):
             try:
                 start_time = time.time()
-                response = await litellm.aresponses(**kwargs)
+                response = await router.get().aresponses(**kwargs)
                 return self._parse_responses_output(response, time.time() - start_time)
             except Exception as e:
+                self._raise_if_responses_api_unsupported(e)
                 last_exception = e
                 if is_retryable_error(e) and attempt < max_retries:
                     delay = initial_delay * (2**attempt)
@@ -549,7 +584,7 @@ class LiteLLMClient:
             first_token = False
             try:
                 start_time = time.time()
-                stream = await litellm.aresponses(**kwargs)
+                stream = await router.get().aresponses(**kwargs)
                 final_response = None
                 async for event in stream:
                     event_type = getattr(event, "type", None)
@@ -561,10 +596,7 @@ class LiteLLMClient:
                     elif event_type in ("response.completed", "response.incomplete"):
                         final_response = event.response
                     elif event_type in ("response.failed", "error"):
-                        err = getattr(getattr(event, "response", None), "error", None) or getattr(
-                            event, "message", None
-                        )
-                        raise RuntimeError(f"Responses API stream failed: {err}")
+                        raise self._stream_failure_exception(event)
 
                 if final_response is None:
                     raise RuntimeError("Responses API stream ended without a completed response")
@@ -572,6 +604,7 @@ class LiteLLMClient:
                 yield ("final", self._parse_responses_output(final_response, time.time() - start_time))
                 return
             except Exception as e:
+                self._raise_if_responses_api_unsupported(e)
                 last_exception = e
                 if is_retryable_error(e) and attempt < max_retries and not first_token:
                     delay = initial_delay * (2**attempt)

@@ -9,6 +9,7 @@ Covers:
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import litellm
 import pytest
 
 from eva.assistant.services.llm import LiteLLMClient
@@ -139,6 +140,13 @@ def _make_mock_router_with_no_deployments():
     return mock_router
 
 
+def _make_mock_router_with_aresponses(aresponses) -> MagicMock:
+    """Mock router (no deployments) whose ``aresponses`` is the given callable."""
+    mock_router = _make_mock_router_with_no_deployments()
+    mock_router.aresponses = aresponses
+    return mock_router
+
+
 def _make_reasoning_item(summary_texts: list[str], encrypted_content: str) -> MagicMock:
     item = MagicMock()
     item.type = "reasoning"
@@ -200,8 +208,10 @@ class TestCompleteViaResponsesApiReasoning:
         mock_response = _make_mock_response([reasoning_item, message_item], reasoning_tokens=42)
 
         with (
-            patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
-            patch("litellm.aresponses", new_callable=AsyncMock, return_value=mock_response),
+            patch(
+                "eva.assistant.services.llm.router.get",
+                return_value=_make_mock_router_with_aresponses(AsyncMock(return_value=mock_response)),
+            ),
         ):
             result, stats = await client.complete(messages=[{"role": "user", "content": "Hello"}])
 
@@ -224,8 +234,10 @@ class TestCompleteViaResponsesApiReasoning:
         mock_response = _make_mock_response([reasoning_item, message_item], reasoning_tokens=10)
 
         with (
-            patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
-            patch("litellm.aresponses", new_callable=AsyncMock, return_value=mock_response),
+            patch(
+                "eva.assistant.services.llm.router.get",
+                return_value=_make_mock_router_with_aresponses(AsyncMock(return_value=mock_response)),
+            ),
         ):
             _, stats = await client.complete(messages=[{"role": "user", "content": "Hi"}])
 
@@ -256,8 +268,10 @@ class TestCompleteViaResponsesApiReasoning:
         mock_response = _make_mock_response([reasoning_item, fn_call_item], reasoning_tokens=20)
 
         with (
-            patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
-            patch("litellm.aresponses", new_callable=AsyncMock, return_value=mock_response),
+            patch(
+                "eva.assistant.services.llm.router.get",
+                return_value=_make_mock_router_with_aresponses(AsyncMock(return_value=mock_response)),
+            ),
         ):
             result, stats = await client.complete(
                 messages=[{"role": "user", "content": "Get info"}],
@@ -414,8 +428,10 @@ class TestCompleteStreamViaResponsesApi:
         ]
 
         with (
-            patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
-            patch("litellm.aresponses", self._stream_of(events)),
+            patch(
+                "eva.assistant.services.llm.router.get",
+                return_value=_make_mock_router_with_aresponses(self._stream_of(events)),
+            ),
         ):
             out = [item async for item in client.complete_stream([{"role": "user", "content": "hi"}])]
 
@@ -442,8 +458,10 @@ class TestCompleteStreamViaResponsesApi:
         ]
 
         with (
-            patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
-            patch("litellm.aresponses", self._stream_of(events)),
+            patch(
+                "eva.assistant.services.llm.router.get",
+                return_value=_make_mock_router_with_aresponses(self._stream_of(events)),
+            ),
         ):
             out = [item async for item in client.complete_stream([{"role": "user", "content": "hi"}])]
 
@@ -460,11 +478,92 @@ class TestCompleteStreamViaResponsesApi:
         events = [SimpleNamespace(type="response.output_text.delta", delta="Hi")]
 
         with (
-            patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_no_deployments()),
-            patch("litellm.aresponses", self._stream_of(events)),
+            patch(
+                "eva.assistant.services.llm.router.get",
+                return_value=_make_mock_router_with_aresponses(self._stream_of(events)),
+            ),
         ):
             with pytest.raises(RuntimeError, match="without a completed response"):
                 [item async for item in client.complete_stream([{"role": "user", "content": "hi"}], max_retries=0)]
+
+
+class TestStreamFailureEvents:
+    @staticmethod
+    def _client() -> LiteLLMClient:
+        client = LiteLLMClient.__new__(LiteLLMClient)
+        client.model = "gpt-5.2"
+        client.parallel_tool_calls = None
+        client.use_responses_api = True
+        return client
+
+    @staticmethod
+    def _failed(code: str):
+        return SimpleNamespace(
+            type="response.failed", response=SimpleNamespace(error={"code": code, "message": "boom"})
+        )
+
+    @staticmethod
+    def _ok():
+        response = _make_mock_response([_make_message_item("done")])
+        return SimpleNamespace(type="response.completed", response=response)
+
+    @staticmethod
+    def _sequence(streams):
+        """Build an aresponses mock that serves one event list per call, in order."""
+        calls = iter(streams)
+
+        async def _aresponses(**kwargs):
+            events = next(calls)
+
+            async def gen():
+                for e in events:
+                    yield e
+
+            return gen()
+
+        return AsyncMock(side_effect=_aresponses)
+
+    async def _run(self, streams, max_retries=2):
+        aresponses = self._sequence(streams)
+        with patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_aresponses(aresponses)):
+            out = [
+                i
+                async for i in self._client().complete_stream(
+                    [{"role": "user", "content": "hi"}], max_retries=max_retries, initial_delay=0
+                )
+            ]
+        return out, aresponses
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("code", ["server_error", "rate_limit_exceeded", "vector_store_timeout"])
+    async def test_transient_codes_are_retried(self, code):
+        out, aresponses = await self._run([[self._failed(code)], [self._ok()]])
+        assert out[-1][0] == "final"
+        assert aresponses.await_count == 2
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("code", ["invalid_prompt", "image_content_policy_violation", "invalid_image_url", None])
+    async def test_non_transient_codes_are_not_retried(self, code):
+        with pytest.raises(RuntimeError, match="Responses API stream failed"):
+            await self._run([[self._failed(code)], [self._ok()]])
+
+    @pytest.mark.asyncio
+    async def test_error_event_with_top_level_code_is_retried(self):
+        error = SimpleNamespace(type="error", code="server_error", message="boom")
+        out, aresponses = await self._run([[error], [self._ok()]])
+        assert out[-1][0] == "final"
+        assert aresponses.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_not_retried_after_text_was_streamed(self):
+        delta = SimpleNamespace(type="response.output_text.delta", delta="Hello")
+        with pytest.raises(litellm.InternalServerError):
+            await self._run([[delta, self._failed("server_error")], [self._ok()]])
+
+    def test_maps_to_litellm_exceptions(self):
+        client = self._client()
+        assert isinstance(client._stream_failure_exception(self._failed("rate_limit_exceeded")), litellm.RateLimitError)
+        assert isinstance(client._stream_failure_exception(self._failed("server_error")), litellm.InternalServerError)
 
 
 class TestUseResponsesApiResolution:
@@ -507,24 +606,102 @@ class TestUseResponsesApiResolution:
         assert self._resolve(deployment) is False
 
 
-class TestResponsesApiBaseUrl:
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("key", ["base_url", "api_base"])
-    async def test_custom_endpoint_forwarded_to_aresponses(self, key):
-        router.init(
-            model_list=[
-                {
-                    "model_name": "gemma",
-                    "litellm_params": {"model": "openai/gemma", "api_key": "k", key: "https://example.test/v1"},
-                    "use_responses_api": True,
-                }
-            ]
-        )
+class TestResponsesApiRouterCall:
+    @staticmethod
+    def _call_kwargs(litellm_params: dict, parallel_tool_calls=None, tools=None) -> dict:
+        router.init(model_list=[{"model_name": "gemma", "litellm_params": litellm_params, "use_responses_api": True}])
         try:
-            client = LiteLLMClient(model="gemma")
-            mock_response = _make_mock_response([_make_message_item("ok")])
-            with patch("litellm.aresponses", new_callable=AsyncMock, return_value=mock_response) as m:
-                await client.complete([{"role": "user", "content": "hi"}])
-            assert m.call_args.kwargs["api_base"] == "https://example.test/v1"
+            client = LiteLLMClient(model="gemma", parallel_tool_calls=parallel_tool_calls)
+            return client._build_responses_kwargs([{"role": "user", "content": "hi"}], tools)
         finally:
             router.reset()
+
+    @pytest.mark.parametrize("key", ["base_url", "api_base"])
+    def test_custom_endpoint_resolved(self, key):
+        kwargs = self._call_kwargs({"model": "openai/gemma", "api_key": "k", key: "https://example.test/v1"})
+        # api_base is applied by the Router from litellm_params; base_url needs an explicit override.
+        assert kwargs.get("api_base") == ("https://example.test/v1" if key == "base_url" else None)
+
+    def test_credentials_left_to_router(self):
+        kwargs = self._call_kwargs({"model": "openai/gemma", "api_key": "os.environ/KEY"})
+        assert kwargs["model"] == "gemma"
+        assert "api_key" not in kwargs
+
+    def test_max_tokens_mapped_to_max_output_tokens(self):
+        assert self._call_kwargs({"model": "openai/gemma", "max_tokens": 64})["max_output_tokens"] == 64
+
+    def test_explicit_max_output_tokens_not_overridden(self):
+        kwargs = self._call_kwargs({"model": "openai/gemma", "max_tokens": 64, "max_output_tokens": 128})
+        assert "max_output_tokens" not in kwargs  # the Router applies the deployment's own value
+
+    @pytest.mark.parametrize("value", [True, False])
+    def test_parallel_tool_calls_forwarded_with_tools(self, value):
+        tools = [{"type": "function", "function": {"name": "f", "parameters": {}}}]
+        kwargs = self._call_kwargs({"model": "openai/gemma"}, parallel_tool_calls=value, tools=tools)
+        assert kwargs["parallel_tool_calls"] is value
+
+    def test_parallel_tool_calls_absent_when_unset_or_no_tools(self):
+        tools = [{"type": "function", "function": {"name": "f", "parameters": {}}}]
+        assert "parallel_tool_calls" not in self._call_kwargs({"model": "openai/gemma"}, tools=tools)
+        assert "parallel_tool_calls" not in self._call_kwargs({"model": "openai/gemma"}, parallel_tool_calls=True)
+
+    @pytest.mark.asyncio
+    async def test_complete_goes_through_router(self):
+        router.init(model_list=[{"model_name": "gemma", "litellm_params": {"model": "openai/gemma", "api_key": "k"}}])
+        try:
+            client = LiteLLMClient(model="gemma")
+            aresponses = AsyncMock(return_value=_make_mock_response([_make_message_item("ok")]))
+            with patch.object(router.get(), "aresponses", aresponses, create=True):
+                text, _ = await client.complete([{"role": "user", "content": "hi"}])
+            assert text == "ok"
+            assert aresponses.call_args.kwargs["model"] == "gemma"
+        finally:
+            router.reset()
+
+
+class TestResponsesApiCost:
+    def test_cost_read_from_hidden_params(self):
+        response = _make_mock_response([_make_message_item("ok")])
+        response._hidden_params = {"response_cost": 0.0123}
+        assert LiteLLMClient._response_cost(response) == 0.0123
+
+    def test_cost_falls_back_to_completion_cost(self):
+        response = _make_mock_response([_make_message_item("ok")])
+        response._hidden_params = {}
+        with patch("litellm.completion_cost", return_value=0.5) as m:
+            assert LiteLLMClient._response_cost(response) == 0.5
+        assert m.call_args.kwargs["completion_response"] is response
+
+    def test_cost_none_when_model_has_no_pricing(self):
+        response = _make_mock_response([_make_message_item("ok")])
+        response._hidden_params = {}
+        with patch("litellm.completion_cost", side_effect=Exception("not mapped")):
+            assert LiteLLMClient._response_cost(response) is None
+
+    def test_stats_include_cost(self):
+        client = LiteLLMClient.__new__(LiteLLMClient)
+        client.model = "gpt-5.2"
+        response = _make_mock_response([_make_message_item("ok")])
+        response._hidden_params = {"response_cost": 0.01}
+        _, stats = client._parse_responses_output(response, 1.0)
+        assert stats["cost"] == 0.01
+
+
+class TestResponsesApiUnsupportedEndpoint:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("stream", [False, True])
+    async def test_404_raises_error_naming_use_chat_completions(self, stream):
+        client = LiteLLMClient.__new__(LiteLLMClient)
+        client.model = "gemma"
+        client.parallel_tool_calls = None
+        client.use_responses_api = True
+        not_found = litellm.NotFoundError("404 page not found", model="gemma", llm_provider="openai")
+        aresponses = AsyncMock(side_effect=not_found)
+        messages = [{"role": "user", "content": "hi"}]
+        with patch("eva.assistant.services.llm.router.get", return_value=_make_mock_router_with_aresponses(aresponses)):
+            with pytest.raises(RuntimeError, match="use_chat_completions"):
+                if stream:
+                    [item async for item in client.complete_stream(messages, max_retries=3, initial_delay=0)]
+                else:
+                    await client.complete(messages, max_retries=3, initial_delay=0)
+        assert aresponses.await_count == 1  # not retried
