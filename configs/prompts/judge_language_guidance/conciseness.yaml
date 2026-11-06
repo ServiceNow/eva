@@ -28,7 +28,6 @@ nl: |
   - A single hold phrase before a tool call (e.g. "Eén moment", "Ik ga meteen kijken", "Ik ga uw reservering er direct bij zoeken").
 
   **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
-  - Lead-ins that announce what the assistant is about to ask or do instead of just asking or doing it (e.g. "Om uw boeking te openen…", "Daarna doen we de rest stap voor stap").
   - A hold phrase stacked with another hold phrase or lead-in, or the same hold phrase (e.g. "Eén moment") repeated within the turn.
   - Any acknowledgement (e.g. "Mooi", "Prima") stacked on top of other acknowledgements or lead-ins.
 

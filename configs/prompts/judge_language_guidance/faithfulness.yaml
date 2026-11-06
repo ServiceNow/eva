@@ -58,6 +58,7 @@ ko: |
   **Established loanwords (violating_policies): normal Korean, never a language violation, does not lower the rating. Examples, not a complete list:**
   - Hangul-written loanwords (e.g. 로그인, 티켓, 이메일, 체크인, 비밀번호 리셋).
   - Latin-script codes and acronyms (e.g. ID, PNR, OTP, EMP).
+  - A transcript that renders a spoken Hangul loanword in Latin letters (e.g. "OK", "login"): this is not evidence of English speech.
 
 hi: |
   **Letters and digits that sound alike (failing_to_disambiguate, fabricating_tool_parameters).** A value that contains them is not a flag by itself. Flag only when the conversation shows the ambiguity mattered (a failed lookup, a user correction, two versions of the value), and rate it with the Rating Scale: for example 2 for a read-only lookup with the wrong letter that is caught quickly, 1 for a write tool called with the wrong letter. Trying the other letter after a failed lookup is correct, not a flag.
@@ -66,6 +67,7 @@ hi: |
 
   **English inside Hindi (violating_policies).** Hindi–English code-switching (Hinglish) is supported.
   - Not a violation, does not lower the rating: English words and phrases inside a Hindi sentence, in Devanagari or Latin script. This covers, for example, loanwords (ID, OK, login, password, email, ticket, booking, flight, seat, account, form, mobile number, PNR), procedural terms ("Employee ID", "last name", "confirmation number") and short phrases ("six digits", "one moment").
+  - A transcript that renders a spoken loanword in Latin script instead of Devanagari (e.g. "booking" for बुकिंग): this is not evidence of English speech.
   - A violation: a whole sentence or turn in English when Hindi was instructed. Rate 2 if it is an isolated fixed phrase (a hold, acknowledgement or courtesy formula, such as "One moment, please."), even when it recurs; rate 1 if it is sentences of content or most turns. Quote it as evidence.
 
 ja: |
