@@ -6,7 +6,7 @@
 de: |
   **Correct, does not lower the rating:**
   - Letter names in spelled codes: A ah, B beh, C zeh, D deh, E eh, F eff, G geh, H hah, I ih, J jott, K kah, L ell, M emm, N enn, O oh, P peh, Q kuh, R err, S ess, T teh, U uh, V fau, W weh, X iks, Y ypsilon, Z zett; Ä/Ö/Ü as ä/ö/ü. Digits null, eins, zwei (zwo is a valid variant), drei ... neun.
-  - Buchstabiertafel words ('D wie Dora', 'Z wie Zeppelin').
+  - Buchstabiertafel words (e.g. 'D wie Dora', 'Z wie Zeppelin').
   - Units before tens: fünfundsiebzig = 75, vierundzwanzig = 24.
   - Times: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45, and the regional 'viertel drei' = 2:15.
   - Dates: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'.
@@ -20,7 +20,7 @@ de: |
   **Letters and digits that sound alike: rating = 0 only if the audio itself is ambiguous between the two; do not rate 0 because your own transcription shows the other one:**
   - D/E/G/T (deh/eh/geh/teh), B/P, M/N, F/S; zwei/drei (2/3), which is why careful speakers say 'zwo'.
   **Not wrong language, does not lower the rating:**
-  - Proper nouns, official product or system names, codes and acronyms, and established loanwords (Ticket, Login, Account, Laptop).
+  - Proper nouns, official product or system names, codes and acronyms, and established loanwords (e.g. Ticket, Login, Account, Laptop).
   - A half-English pronunciation of a German word ('Perfekt'): this is accent.
 
 nl: |
@@ -46,7 +46,7 @@ nl: |
 fr: |
   **Correct, does not lower the rating:**
   - Letter names in spelled codes: A a, B bé, C cé, D dé, E e (schwa), F effe, G gé, H ache, I i, J ji, K ka, L elle, M emme, N enne, O o, P pé, Q ku, R erre, S esse, T té, U u (French u), V vé, W double-vé, X iks, Y i grec, Z zède. Digits zéro, un, deux, trois ... six (said 'sis'), sept, huit, neuf.
-  - Spelling words ('A comme Anatole', 'M comme Marcel').
+  - Spelling words (e.g. 'A comme Anatole', 'M comme Marcel').
   - Numbers: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze. Liaison (six heures, dix-huit).
   - Times: 'quinze heures trente', 'trois heures et demie', 'trois heures et quart' = 3:15, 'trois heures moins le quart' = 2:45, 'midi', 'minuit'.
   - Dates and years: 'le premier mars', 'deux mille vingt-six', 'mille neuf cent quatre-vingt-dix' or 'dix-neuf cent quatre-vingt-dix'.
@@ -60,12 +60,12 @@ fr: |
   **Letters and digits that sound alike: rating = 0 only if the audio itself is ambiguous between the two; do not rate 0 because your own transcription shows the other one:**
   - M/N (emme/enne), B/D/P/T (bé/dé/pé/té), G/J (gé/ji), F/S (effe/esse).
   **Not wrong language, does not lower the rating:**
-  - Established loanwords: ticket, e-mail, week-end, OK.
+  - Established loanwords, e.g. ticket, e-mail, week-end, OK.
 
 es: |
   **Correct, does not lower the rating:**
   - Letter names in spelled codes: A a, B be, C ce, D de, E e, F efe, G ge, H hache, I i, J jota, K ka, L ele, M eme, N ene, Ñ eñe, O o, P pe, Q cu, R erre, S ese, T te, U u, V uve (also ve), W uve doble / doble ve / doble u, X equis, Y i griega / ye, Z zeta. Digits cero, uno, dos ... nueve.
-  - Spelling words ('M de Madrid', 'B de Barcelona', 'be larga', 've corta').
+  - Spelling words (e.g. 'M de Madrid', 'B de Barcelona', 'be larga', 've corta').
   - Times: 'las quince treinta', 'las tres y media', 'las tres menos cuarto' = 2:45.
   - Dates and years: 'el uno de marzo' and 'el primero de marzo', 'dos mil veintiséis', 'mil novecientos noventa'.
   **English letter or digit names inside a trace entity: the entity is not said in Spanish, rating = 0.** Typical cases:
@@ -78,13 +78,13 @@ es: |
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the trace to know which was meant:**
   - B and V (both /b/) when said without a distinguishing name.
   **Not wrong language, does not lower the rating:**
-  - Established loanwords: email, ok, check-in.
+  - Established loanwords, e.g. email, ok, check-in.
 
 it: |
   **Correct, does not lower the rating:**
   - Letter names in spelled codes: A a, B bi, C ci, D di, E e, F effe, G gi, H acca, I i, J i lunga (also 'gei'), K cappa, L elle, M emme, N enne, O o, P pi, Q cu, R erre, S esse, T ti, U u, V vu (also vi), W doppia vu, X ics, Y ipsilon / i greca, Z zeta. Digits zero, uno, due ... nove.
   - English bee, dee, pee, tee, vee, gee sound like the Italian names: they are not English.
-  - Spelling words ('J come Jolly', 'M come Milano').
+  - Spelling words (e.g. 'J come Jolly', 'M come Milano').
   - Dates and years: 'il primo marzo' (primo, not uno), then cardinals ('il tre marzo'); 'duemilaventisei', 'millenovecentonovanta'.
   - Times: 'le quindici e trenta', 'le tre e mezza', 'le tre meno un quarto' = 2:45.
   **English letter or digit names inside a trace entity: the entity is not said in Italian, rating = 0.** Typical cases:
@@ -97,7 +97,7 @@ it: |
   **Letters and digits that sound alike: rating = 0 only if the audio itself is ambiguous between the two; do not rate 0 because your own transcription shows the other one:**
   - M/N, B/P/D/T (bi/pi/di/ti), C/G (ci/gi), F/S (effe/esse).
   **Not wrong language, does not lower the rating:**
-  - Established loanwords: email, ticket, ok.
+  - Established loanwords, e.g. email, ticket, ok.
 
 hi: |
   **Correct, does not lower the rating:**
@@ -114,7 +114,7 @@ hi: |
   **Letters and digits that sound alike: rating = 0 only if the audio itself is ambiguous between the two; do not rate 0 because your own transcription shows the other one:**
   - सत्रह/सत्तर (17/70), उन्नीस/उनतीस/उनचास (19/29/49), सात/साठ (7/60).
   **Not wrong language, does not lower the rating:**
-  - Hindi–English code-switching is supported: English words and phrases inside a Hindi sentence (flight, booking, 'last name', 'one moment').
+  - Hindi–English code-switching is supported: English words and phrases inside a Hindi sentence (e.g. flight, booking, 'last name', 'one moment').
 
 ja: |
   **Correct, does not lower the rating:**
@@ -155,4 +155,4 @@ ko: |
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the trace to know which was meant:**
   - E 이 and 2 이; O 오 and 5 오; Z 지 and G 지.
   **Not wrong language, does not lower the rating:**
-  - Proper nouns, official product or system names, codes and acronyms, and established loanwords written in Hangul (티켓, 이메일).
+  - Proper nouns, official product or system names, codes and acronyms, and established loanwords written in Hangul (e.g. 티켓, 이메일).

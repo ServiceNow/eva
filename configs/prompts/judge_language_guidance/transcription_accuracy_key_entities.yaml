@@ -6,7 +6,7 @@
 
 de: |
   **Match, correct = true on every mention:**
-  - Umlaut and ß spellings and their standard transliterations: ä = ae, ö = oe, ü = ue, ß = ss (Krüger = Krueger, Müller = Mueller, Straße = Strasse). They are one spelling written two ways, so they match even after the user spelled the name.
+  - Umlaut and ß spellings and their standard transliterations: ä = ae, ö = oe, ü = ue, ß = ss (e.g. Krüger = Krueger, Müller = Mueller, Straße = Strasse). They are one spelling written two ways, so they match even after the user spelled the name.
 
   **Follows the first-mention rule in the Correctness Criteria (correct on first mention, incorrect once the user has specified the spelling):**
   - Meier vs Meyer and similar: these are different spellings, not transliterations.
@@ -15,7 +15,7 @@ hi: |
   **Match, correct = true:**
   - Devanagari letter names and their Latin letters (ए = A, बी = B, सी = C, डी = D, ई = E, जी = G, जे = J, एम = M, एन = N, पी = P, क्यू = Q, वी = V, डब्ल्यू = W, ज़ेड = Z).
   - Hindi and English digit names, which are both normal in Hindi speech (शून्य / ज़ीरो / zero = 0, दो / टू / two = 2).
-  - The same English loanword in Devanagari or Latin script (मार्च = March, कोड = code, ईमेल = email): code-switching is standard in spoken Hindi.
+  - The same English loanword in Devanagari or Latin script (e.g. मार्च = March, कोड = code, ईमेल = email): code-switching is standard in spoken Hindi.
   - Indian digit grouping (1,50,000 = 150,000 = डेढ़ लाख).
 
 ko: |
