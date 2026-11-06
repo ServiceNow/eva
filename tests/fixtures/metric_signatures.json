@@ -7,7 +7,7 @@
   },
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
-    "prompt_hash": "9114df14508b",
+    "prompt_hash": "0fea17e18148",
     "source_hash": "53556461d46c",
     "version": "v0.2"
   },
@@ -31,7 +31,7 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "cd9005393775",
+    "prompt_hash": "ff74eb20e56d",
     "source_hash": "424f203bd94d",
     "version": "v0.4"
   },
@@ -61,7 +61,7 @@
   },
   "TTSFidelityMetric": {
     "name": "tts_fidelity",
-    "prompt_hash": "3507d7a646ed",
+    "prompt_hash": "7350437aa5f9",
     "source_hash": "bf688bc70e3a",
     "version": "v0.4"
   },
@@ -97,7 +97,7 @@
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "fa3fa32e226c",
+    "prompt_hash": "09fbe5b55da0",
     "source_hash": "97456368615c",
     "version": "v0.3"
   }
