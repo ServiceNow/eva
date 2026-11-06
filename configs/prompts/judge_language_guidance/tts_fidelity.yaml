@@ -7,21 +7,19 @@ de: |
   **Correct, does not lower the rating:**
   - Letter names in spelled codes: A ah, B beh, C zeh, D deh, E eh, F eff, G geh, H hah, I ih, J jott, K kah, L ell, M emm, N enn, O oh, P peh, Q kuh, R err, S ess, T teh, U uh, V fau, W weh, X iks, Y ypsilon, Z zett; Ä/Ö/Ü as ä/ö/ü. Digits null, eins, zwei (zwo is a valid variant), drei ... neun.
   - Buchstabiertafel words (e.g. 'D wie Dora', 'Z wie Zeppelin').
-  - Units before tens: fünfundsiebzig = 75, vierundzwanzig = 24.
   - Times: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45, and the regional 'viertel drei' = 2:15.
   - Dates: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'.
   **English letter or digit names in a spelled code: rating = 0 with `wrong_language`; add `entity_error` when the English name sounds like a different German letter.** Typical cases:
   - 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6.
   - These English names sound like a different German letter, so the code changes: English E 'ii' = German I, English A 'ay' ~ German E, English V 'vee' ~ German W 'weh', English J 'jay' ~ German G 'geh'.
   **Rating = 0 with `entity_error`:**
-  - A name with its umlaut replaced or lost (Böhm said as 'Bohm').
   - A different value: siebenundfünfzig for 75, 'halb drei' for 3:30.
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a German listener could take it for a different value:**
   - A date read as digit groups a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf').
   **Letters and digits that sound alike: rating = 0 with `entity_error` only if the audio itself is ambiguous between the two; do not rate 0 because your own transcription shows the other one:**
   - D/E/G/T (deh/eh/geh/teh), B/P, M/N, F/S; zwei/drei (2/3), which is why careful speakers say 'zwo'.
   **Not wrong language, does not lower the rating:**
-  - Proper nouns, official product or system names, codes and acronyms, and established loanwords (e.g. Ticket, Login, Account, Laptop).
+  - Established loanwords, e.g. Ticket, Login, Account, Laptop.
   - A half-English pronunciation of a German word ('Perfekt'): this is accent.
 
 nl: |
@@ -42,7 +40,7 @@ nl: |
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - EI and IJ in names.
   **Not wrong language, does not lower the rating:**
-  - Proper nouns, official product or system names, codes and acronyms, and established loanwords, including 'sorry' and 'oké', which are standard Dutch.
+  - Established loanwords, including 'sorry' and 'oké', which are standard Dutch.
   - An acronym used as a word or name inside a sentence (ID, FMLA, I-9) said with English letter names; Dutch names ('ie-dee') are preferred. This does not cover the letters of a spelled code or identifier: those follow the English letter names rule above.
 
 fr: |
@@ -114,7 +112,7 @@ hi: |
   **Rating = 0 with `entity_error`:**
   - A digit dropped or clipped (शून्य missing or said 'शून').
   - A different value: साढ़े पाँच for 4:30, पौने चार for 4:45.
-  - An English loanword or place name that a Hindi listener would not recognise (e.g. 'aisle' said as 'es-le'), when it is an entity. Loanwords and place names should sound as in Indian English. When it is not an entity: rating = 0 only if it changes the meaning, otherwise rating = 1.
+  - An English loanword or place name that a Hindi listener would not recognise (e.g. 'aisle' said as 'es-le'), when it is an entity. Loanwords and place names should sound as in Indian English.
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a Hindi listener could take it for a different value:**
   - An English digit name spoken where the intended or trace text spells out the Hindi digit word (आठ written, 'eight' spoken).
   - Literal clock readings ('एक तीस' for 1:30, 'चार तीस') or 24-hour readings ('तेरह तीस'), which are non-native in conversation.
@@ -135,7 +133,7 @@ ja: |
   **Rating = 0 with `entity_error`:**
   - A letter group read as a katakana word (INC as インク, PAR as パー) or as an English word (REQ as 'request').
   - V said ビー (B): the code changes.
-  - A different word for a name (カンファレンス for Confluence), when it is an entity. When it is not an entity: rating = 0 only if it changes the meaning, otherwise rating = 1.
+  - A different word for a name (カンファレンス for Confluence), when it is an entity.
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a Japanese listener could take it for a different value:**
   - し (4) or しち (7) inside a code, which can be heard as シー (C) or いち (1).
   - Counter readings such as よんじ, きゅうじ, よんにち.
@@ -164,4 +162,4 @@ ko: |
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - E 이 and 2 이; O 오 and 5 오; Z 지 and G 지.
   **Not wrong language, does not lower the rating:**
-  - Proper nouns, official product or system names, codes and acronyms, and established loanwords written in Hangul (e.g. 티켓, 이메일).
+  - Established loanwords written in Hangul, e.g. 티켓, 이메일.

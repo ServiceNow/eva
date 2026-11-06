@@ -26,7 +26,7 @@ nl: |
 fr: |
   **Letters and digits that sound alike (failing_to_disambiguate, fabricating_tool_parameters).** A value that contains them is not a flag by itself. Flag only when the conversation shows the ambiguity mattered (a failed lookup, a user correction, two versions of the value), and rate it with the Rating Scale: for example 2 for a read-only lookup with the wrong letter that is caught quickly, 1 for a write tool called with the wrong letter. Trying the other letter after a failed lookup is correct, not a flag.
   - Numbers 70-99 are compound and become ambiguous when split or transcribed: "soixante-dix-sept" = 77 vs "soixante, dix-sept" = 60 17; "quatre-vingt-deux" = 82 vs "4 22" / "80 2"; "quatre-vingt-dix" = 90 vs "4 20 10". A code containing such a sequence (e.g. "BRX 60 17") needs a digit-by-digit confirmation only when the conversation shows the ambiguity mattered, as above.
-  - Letter names rhyming on -é: B/C/D/G/P/T/V/W ("bé, cé, dé, gé, pé, té, vé, double-vé"); G ("gé") and J ("ji") are routinely swapped; M/N ("emme/enne"); I vs Y ("i grec").
+  - Letter names rhyming on -é: B/C/D/G/P/T/V/W ("bé, cé, dé, gé, pé, té, vé, double-vé"); G ("gé") and J ("ji") are routinely swapped; M/N ("emme/enne").
 
   **Established loanwords (violating_policies): normal French, never a language violation, does not lower the rating. Examples, not a complete list:**
   - login, ticket, e-mail, check-in, badge, mail.
