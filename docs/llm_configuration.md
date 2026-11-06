@@ -143,6 +143,35 @@ EVA_MODEL_LIST='[
 ]'
 ```
 
+## Chat Completions vs Responses API
+
+The assistant LLM and the cascade user simulator use OpenAI's Responses API for any deployment whose `litellm_params.model` starts with `openai/`, and Chat Completions for every other provider (Vertex, Azure, ...). The Responses API threads encrypted reasoning through tool-call loops. Streaming (`EVA_MODEL__LLM_STREAMING`) works with both. Metric judges always use Chat Completions.
+
+Two optional flags change this. They go at the top level of the deployment object, next to `model_name`, not inside `litellm_params`:
+
+| Flag | Effect |
+|------|--------|
+| `use_chat_completions: true` | Use Chat Completions. Takes precedence over everything else. |
+| `use_responses_api: true` | Use the Responses API for a model that does not start with `openai/`. |
+
+The `openai/` prefix also matches OpenAI-compatible servers (vLLM, etc.) reached through `api_base` or `base_url`. Many of them have no `/v1/responses` endpoint. For those, set `use_chat_completions`:
+
+```bash
+EVA_MODEL_LIST='[
+  {
+    "model_name": "my-vllm-model",
+    "litellm_params": {
+      "model": "openai/my-model",
+      "api_base": "http://my-server:8000/v1",
+      "api_key": "none"
+    },
+    "use_chat_completions": true
+  }
+]'
+```
+
+Responses calls go through the same LiteLLM Router as Chat Completions, so `litellm_params` (api key, endpoint, `reasoning_effort`, `extra_body`, timeouts, ...) and load balancing apply. `base_url` is treated as `api_base`, and `max_tokens` as `max_output_tokens`.
+
 ## Load Balancing
 
 Add multiple entries with the same `model_name` to load-balance across deployments:
@@ -216,6 +245,10 @@ Configure model parameters (temperature, max_tokens, reasoning_effort, top_p, fr
 - Verify the `model_name` in your code matches an entry in `EVA_MODEL_LIST`
 - Check that `litellm_params.model` uses the correct provider prefix
 - See LiteLLM docs: https://docs.litellm.ai/docs/providers
+
+### "...is using the OpenAI Responses API, but its endpoint does not support it"
+- The server returned 404, 405 or 501 for `/v1/responses`
+- Add `"use_chat_completions": true` to the deployment (see [Chat Completions vs Responses API](#chat-completions-vs-responses-api))
 
 ### "Rate Limit Exceeded"
 - Lower `EVA_MAX_CONCURRENT_JUDGES` (metrics) or `EVA_MAX_CONCURRENT_CONVERSATIONS` (conversations)
