@@ -43,7 +43,7 @@ nl: |
   - EI and IJ in names.
   **Not wrong language, does not lower the rating:**
   - Proper nouns, official product or system names, codes and acronyms, and established loanwords, including 'sorry' and 'oké', which are standard Dutch.
-  - Acronyms used as words or names (ID, FMLA, I-9) said with English letter names; Dutch names ('ie-dee') are preferred. The letters of a spelled code or identifier still need Dutch names.
+  - An acronym used as a word or name inside a sentence (ID, FMLA, I-9) said with English letter names; Dutch names ('ie-dee') are preferred. This does not cover the letters of a spelled code or identifier: those follow the English letter names rule above.
 
 fr: |
   **Correct, does not lower the rating:**
@@ -108,7 +108,7 @@ it: |
 hi: |
   **Correct, does not lower the rating:**
   - Latin letters in codes said with their English names, written ए, बी, सी, डी, ई, एफ, जी, एच, आई, जे, के, एल, एम, एन, ओ, पी, क्यू, आर, एस, टी, यू, वी, डब्ल्यू, एक्स, वाई, ज़ेड: this is how Hindi names Latin letters, not wrong language.
-  - Digits शून्य, एक, दो, तीन, चार, पाँच, छह, सात, आठ, नौ, or their English names ('zero', 'eight'), which are common in Indian speech.
+  - Digits शून्य, एक, दो, तीन, चार, पाँच, छह, सात, आठ, नौ. English digit names ('zero', 'eight') are also correct, since they are common in Indian speech, when the intended or trace text writes the digit as a numeral or in English.
   - Large numbers grouped by हज़ार, लाख, करोड़ (एक लाख पच्चीस हज़ार = 125,000).
   - Times: डेढ़ बजे = 1:30, ढाई बजे = 2:30, साढ़े तीन = 3:30 (साढ़े only from 3 up), सवा चार = 4:15, पौने पाँच = 4:45, 'चार बजकर बीस मिनट'.
   **Rating = 0 with `entity_error`:**
@@ -116,7 +116,7 @@ hi: |
   - A different value: साढ़े पाँच for 4:30, पौने चार for 4:45.
   - An English loanword or place name that a Hindi listener would not recognise (e.g. 'aisle' said as 'es-le'), when it is an entity. Loanwords and place names should sound as in Indian English. When it is not an entity: rating = 0 only if it changes the meaning, otherwise rating = 1.
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a Hindi listener could take it for a different value:**
-  - An English digit name spoken where the intended or trace text spells the Hindi digit word.
+  - An English digit name spoken where the intended or trace text spells out the Hindi digit word (आठ written, 'eight' spoken).
   - Literal clock readings ('एक तीस' for 1:30, 'चार तीस') or 24-hour readings ('तेरह तीस'), which are non-native in conversation.
   **Letters and digits that sound alike: rating = 0 with `entity_error` only if the audio itself is ambiguous between the two; do not rate 0 because your own transcription shows the other one:**
   - सत्रह/सत्तर (17/70), उन्नीस/उनतीस/उनचास (19/29/49), सात/साठ (7/60).
