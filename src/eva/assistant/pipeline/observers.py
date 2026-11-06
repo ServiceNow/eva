@@ -296,11 +296,14 @@ class MetricsFileObserver(BaseObserver):
         if not isinstance(frame, MetricsFrame):
             return
 
-        # Deduplicate based on frame ID
-        frame_id = id(frame)
-        if frame_id in self._frames_seen:
+        # Deduplicate on the frame's own id, which pipecat assigns from a
+        # process-global monotonic counter. The same frame is observed once per
+        # pipeline hop, so dedup is required; id(frame) is not usable as the key
+        # because CPython reuses the memory address of a collected frame, which
+        # silently drops later, unrelated MetricsFrames.
+        if frame.id in self._frames_seen:
             return
-        self._frames_seen.add(frame_id)
+        self._frames_seen.add(frame.id)
 
         timestamp = self.clock.to_wall_time(data.timestamp)
 
