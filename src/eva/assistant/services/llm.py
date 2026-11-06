@@ -193,7 +193,12 @@ class LiteLLMClient:
         """Convert chat completions tool format to Responses API format.
 
         Chat completions: {"type": "function", "function": {"name": ..., "description": ..., "parameters": ...}}
-        Responses API:    {"type": "function", "name": ..., "description": ..., "parameters": ...}
+        Responses API:    {"type": "function", "name": ..., "description": ..., "parameters": ..., "strict": ...}
+
+        ``strict`` is always set explicitly. Responses API function tools are strict by default, which
+        treats every parameter as required and makes the model fill optional arguments (e.g. a leg-level
+        ``flight_number`` that turns a rebooking into a partial rebook). Chat Completions tools are
+        non-strict by default, so keep that unless the tool sets ``strict`` itself.
         """
         result = []
         for tool in tools:
@@ -205,6 +210,7 @@ class LiteLLMClient:
                         "name": fn["name"],
                         "description": fn.get("description", ""),
                         "parameters": fn.get("parameters", {}),
+                        "strict": bool(fn.get("strict", False)),
                     }
                 )
         return result

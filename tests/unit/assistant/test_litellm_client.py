@@ -40,8 +40,18 @@ class TestConvertToolsForResponsesApi:
                 "name": "get_reservation",
                 "description": "Look up a reservation",
                 "parameters": {"type": "object", "properties": {"id": {"type": "string"}}},
+                "strict": False,
             }
         ]
+
+    def test_strict_is_false_by_default(self):
+        """Responses API tools are strict unless told otherwise, which makes the model fill optional args."""
+        tools = [{"type": "function", "function": {"name": "t", "parameters": {}}}]
+        assert LiteLLMClient._convert_tools_for_responses_api(tools)[0]["strict"] is False
+
+    def test_explicit_strict_is_preserved(self):
+        tools = [{"type": "function", "function": {"name": "t", "parameters": {}, "strict": True}}]
+        assert LiteLLMClient._convert_tools_for_responses_api(tools)[0]["strict"] is True
 
     def test_multiple_tools(self):
         """All tools in the list are converted."""
