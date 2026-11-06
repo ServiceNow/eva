@@ -5,8 +5,30 @@ from dataclasses import dataclass
 from pipecat.frames.frames import (
     ControlFrame,
     DataFrame,
+    ProposedUserStoppedSpeakingFrame,
     SystemFrame,
+    TranscriptionFrame,
+    UninterruptibleFrame,
 )
+
+
+@dataclass
+class UninterruptibleTranscriptionFrame(TranscriptionFrame, UninterruptibleFrame):
+    """A final TranscriptionFrame that survives an InterruptionFrame queue flush.
+
+    When a late interim opens the user turn, the aggregator broadcasts an InterruptionFrame
+    and pipecat discards its queued data/control frames — including a final transcript queued
+    right behind the interim — so the turn never closes (eva-internal#561 follow-up).
+    """
+
+
+@dataclass
+class UninterruptibleProposedUserStoppedSpeakingFrame(ProposedUserStoppedSpeakingFrame, UninterruptibleFrame):
+    """A ProposedUserStoppedSpeakingFrame that survives an InterruptionFrame queue flush.
+
+    Companion to UninterruptibleTranscriptionFrame: the stop proposal is queued behind the
+    final transcript and would be flushed along with it.
+    """
 
 
 @dataclass

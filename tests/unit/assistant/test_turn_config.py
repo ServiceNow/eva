@@ -1,8 +1,13 @@
 """Unit tests for turn_config factory functions."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pipecat.frames.frames import (
+    ProposedUserStoppedSpeakingFrame,
+    TranscriptionFrame,
+    UserStoppedSpeakingFrame,
+)
 from pipecat.turns.user_start import (
     ExternalUserTurnStartStrategy,
     TranscriptionUserTurnStartStrategy,
@@ -15,6 +20,7 @@ from pipecat.turns.user_stop import (
 )
 
 from eva.assistant.pipeline.turn_config import (
+    EmptyProposalStopStrategy,
     create_turn_start_strategy,
     create_turn_stop_strategy,
     create_vad_analyzer,
@@ -294,3 +300,259 @@ class TestCreateTurnStopStrategyKrispViva:
         assert call_kwargs["sample_rate"] == 16000
         # None of these should leak into the strategy as tuning params.
         fake_module.KrispTurnParams.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Phantom ink-2 turn.start must not open a turn (issue #561)
+# ---------------------------------------------------------------------------
+
+
+class TestInk2PhantomTurnStart:
+    """Drive a real UserTurnController with the strategies used for ink-2 (cartesia) runs.
+
+    ink-2 emits ProposedUserStartedSpeakingFrame on turn.start, InterimTranscriptionFrame /
+    TranscriptionFrame only when there is text, and ProposedUserStoppedSpeakingFrame on turn.end.
+    A turn.start produced by trailing audio of the previous utterance has no words, so it must not
+    open a user turn: opening one broadcasts an interruption that cancels the in-flight LLM query.
+    """
+
+    @staticmethod
+    async def _controller(start_strategy):
+        from pipecat.clocks.system_clock import SystemClock
+        from pipecat.processors.frame_processor import FrameProcessorSetup
+        from pipecat.turns.user_turn_controller import UserTurnController
+        from pipecat.turns.user_turn_strategies import UserTurnStrategies
+        from pipecat.utils.asyncio.task_manager import TaskManager
+
+        controller = UserTurnController(
+            user_turn_strategies=UserTurnStrategies(start=[start_strategy], stop=[ExternalUserTurnStopStrategy()])
+        )
+        await controller.setup(
+            FrameProcessorSetup(clock=SystemClock(), task_manager=TaskManager(), pipeline_worker=MagicMock())
+        )
+
+        started = []
+
+        @controller.event_handler("on_user_turn_started")
+        async def _on_started(controller, strategy, params):
+            started.append(params)
+
+        return controller, started
+
+    @staticmethod
+    def _strategy():
+        return create_turn_start_strategy("transcription", {})
+
+    async def test_turn_start_without_words_does_not_open_a_turn(self):
+        from pipecat.frames.frames import ProposedUserStartedSpeakingFrame, ProposedUserStoppedSpeakingFrame
+
+        controller, started = await self._controller(self._strategy())
+        try:
+            await controller.process_frame(ProposedUserStartedSpeakingFrame())
+            await controller.process_frame(ProposedUserStoppedSpeakingFrame())  # turn.end with ''
+        finally:
+            await controller.cleanup()
+
+        assert started == []
+
+    async def test_first_interim_opens_turn_with_interruption(self):
+        from pipecat.frames.frames import InterimTranscriptionFrame, ProposedUserStartedSpeakingFrame
+
+        controller, started = await self._controller(self._strategy())
+        try:
+            await controller.process_frame(ProposedUserStartedSpeakingFrame())
+            assert started == []  # still waiting for a word
+            await controller.process_frame(InterimTranscriptionFrame("hello", "u", "2026-01-01T00:00:00Z"))
+        finally:
+            await controller.cleanup()
+
+        assert len(started) == 1
+        assert started[0].enable_interruptions is True  # a real barge-in still interrupts
+
+
+class TestInk2FinalSurvivesTurnStartInterruption:
+    """Regression for the final-frame stall found while fixing eva-internal#561.
+
+    ink-2 can deliver a late interim, the final TranscriptionFrame and the
+    ProposedUserStoppedSpeakingFrame back-to-back. The interim opens the user turn, the
+    aggregator broadcasts an InterruptionFrame, and pipecat flushes the aggregator's queued
+    data/control frames — the final and the stop proposal — so the turn never closes.
+    UserObserver (just ahead of the aggregator) must make those two frames survive the flush.
+    """
+
+    @staticmethod
+    async def _run(frames):
+        from pipecat.pipeline.pipeline import Pipeline
+        from pipecat.processors.aggregators.llm_context import LLMContext
+        from pipecat.processors.aggregators.llm_response_universal import (
+            LLMContextAggregatorPair,
+            LLMUserAggregatorParams,
+        )
+        from pipecat.tests.utils import run_test
+        from pipecat.turns.user_turn_strategies import UserTurnStrategies
+
+        from eva.assistant.pipeline.agent_processor import UserObserver
+
+        pair = LLMContextAggregatorPair(
+            LLMContext(),
+            user_params=LLMUserAggregatorParams(
+                user_turn_strategies=UserTurnStrategies(
+                    start=[create_turn_start_strategy("transcription", {})],
+                    stop=[ExternalUserTurnStopStrategy()],
+                )
+            ),
+        )
+        events = []
+
+        @pair.user().event_handler("on_user_turn_stopped")
+        async def _on_stopped(aggregator, strategy, message):
+            events.append(message.content)
+
+        await run_test(
+            Pipeline([UserObserver(uninterruptible_finals=True), pair.user()]),
+            frames_to_send=frames,
+            ignore_start=True,
+            start_timeout=15.0,
+        )
+        return events
+
+    async def test_back_to_back_interim_final_stop_closes_the_turn(self):
+        from pipecat.frames.frames import (
+            InterimTranscriptionFrame,
+            ProposedUserStartedSpeakingFrame,
+            ProposedUserStoppedSpeakingFrame,
+            TranscriptionFrame,
+        )
+        from pipecat.tests.utils import SleepFrame
+
+        now = "2026-01-01T00:00:00Z"
+        events = await self._run(
+            [
+                ProposedUserStartedSpeakingFrame(),
+                InterimTranscriptionFrame("Yes", "user", now),
+                TranscriptionFrame("Yes, that's correct.", "user", now, finalized=True),
+                ProposedUserStoppedSpeakingFrame(),
+                # Shorter than pipecat's 5s stop watchdog, so only the real stop path can close it.
+                SleepFrame(1.5),
+            ]
+        )
+        # Exactly one stop, before EndFrame teardown could flush the aggregation.
+        assert events == ["Yes, that's correct."]
+
+    async def test_stop_proposal_before_any_text_still_closes_turn_on_late_final(self):
+        # ink-2 can send turn.start, turn.end (no words yet), then the final. The stop proposal
+        # lands while no turn is open; the late final opens the turn and must still close it.
+        from pipecat.frames.frames import (
+            ProposedUserStartedSpeakingFrame,
+            ProposedUserStoppedSpeakingFrame,
+            TranscriptionFrame,
+        )
+        from pipecat.tests.utils import SleepFrame
+
+        now = "2026-01-01T00:00:00Z"
+        events = await self._run(
+            [
+                ProposedUserStartedSpeakingFrame(),
+                ProposedUserStoppedSpeakingFrame(),
+                TranscriptionFrame("Yes, that's correct.", "user", now, finalized=True),
+                SleepFrame(1.5),  # shorter than pipecat's 5s stop watchdog
+            ]
+        )
+        assert events == ["Yes, that's correct."]
+
+
+class TestUninterruptibleFinalsScope:
+    async def _pushed(self, observer, frame):
+        from pipecat.processors.frame_processor import FrameDirection
+
+        pushed = []
+
+        async def _capture(f, direction=None):
+            pushed.append(f)
+
+        observer.push_frame = _capture
+        await observer.process_frame(frame, FrameDirection.DOWNSTREAM)
+        return pushed[-1]
+
+    async def test_default_leaves_final_interruptible(self):
+        from pipecat.frames.frames import TranscriptionFrame, UninterruptibleFrame
+
+        from eva.assistant.pipeline.agent_processor import UserObserver
+
+        out = await self._pushed(UserObserver(), TranscriptionFrame("hi", "u", "2026-01-01T00:00:00Z"))
+        assert not isinstance(out, UninterruptibleFrame)
+
+    async def test_enabled_makes_final_uninterruptible(self):
+        from pipecat.frames.frames import TranscriptionFrame, UninterruptibleFrame
+
+        from eva.assistant.pipeline.agent_processor import UserObserver
+
+        out = await self._pushed(
+            UserObserver(uninterruptible_finals=True), TranscriptionFrame("hi", "u", "2026-01-01T00:00:00Z")
+        )
+        assert isinstance(out, UninterruptibleFrame)
+
+
+# ---------------------------------------------------------------------------
+# EmptyProposalStopStrategy (ink-2 turn committed with no words)
+# ---------------------------------------------------------------------------
+
+
+class TestEmptyProposalStopStrategy:
+    """A turn the STT commits with no text must close at once, not after the 5s watchdog."""
+
+    @staticmethod
+    async def _open_turn(strategy):
+        strategy.trigger_user_turn_stopped = AsyncMock()
+        await strategy.handle_user_turn_started()
+        return strategy
+
+    async def test_empty_commit_closes_the_turn(self):
+        strategy = await self._open_turn(EmptyProposalStopStrategy())
+
+        await strategy.process_frame(ProposedUserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_awaited_once()
+
+    async def test_stock_strategy_waits_for_text(self):
+        """Documents the behaviour being replaced: the stock strategy never closes an empty turn."""
+        strategy = await self._open_turn(ExternalUserTurnStopStrategy())
+
+        await strategy.process_frame(ProposedUserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_not_awaited()
+
+    async def test_turn_with_text_closes_once(self):
+        strategy = await self._open_turn(EmptyProposalStopStrategy())
+
+        await strategy.process_frame(TranscriptionFrame(text="hello there", user_id="u", timestamp="t"))
+        await strategy.process_frame(ProposedUserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_awaited_once()
+
+    async def test_no_open_turn_is_ignored(self):
+        strategy = EmptyProposalStopStrategy()
+        strategy.trigger_user_turn_stopped = AsyncMock()
+
+        await strategy.process_frame(ProposedUserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_not_awaited()
+
+    async def test_stop_announced_elsewhere_is_not_forced(self):
+        strategy = await self._open_turn(EmptyProposalStopStrategy())
+
+        await strategy.process_frame(UserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_not_awaited()
+
+
+class TestCloseEmptyTurnsFlag:
+    def test_flag_selects_the_subclass_for_external(self):
+        assert type(create_turn_stop_strategy("external", {}, close_empty_turns=True)) is EmptyProposalStopStrategy
+
+    def test_default_keeps_the_stock_strategy(self):
+        assert type(create_turn_stop_strategy("external", {})) is ExternalUserTurnStopStrategy
+
+    def test_flag_is_ignored_for_other_strategies(self):
+        result = create_turn_stop_strategy("speech_timeout", {}, close_empty_turns=True)
+        assert isinstance(result, SpeechTimeoutUserTurnStopStrategy)
