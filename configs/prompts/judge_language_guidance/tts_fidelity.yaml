@@ -5,7 +5,7 @@
 
 de: |
   **Correct, does not lower the rating:**
-  - Letter names in spelled codes: A ah, B beh, C zeh, D deh, E eh, F eff, G geh, H hah, I ih, J jott, K kah, L ell, M emm, N enn, O oh, P peh, Q kuh, R err, S ess, T teh, U uh, V fau, W weh, X iks, Y ypsilon, Z zett; Ä/Ö/Ü as ä/ö/ü. Digits null, eins, zwei (zwo is a valid variant), drei ... neun.
+  - These are the German names of letters and digits in a spelled code; a letter or digit said this way is correct: A ah, B beh, C zeh, D deh, E eh, F eff, G geh, H hah, I ih, J jott, K kah, L ell, M emm, N enn, O oh, P peh, Q kuh, R err, S ess, T teh, U uh, V fau, W weh, X iks, Y ypsilon, Z zett; Ä/Ö/Ü as ä/ö/ü. Digits: null, eins, zwei (zwo is a valid variant), drei ... neun.
   - Buchstabiertafel words (e.g. 'D wie Dora', 'Z wie Zeppelin').
   - Times: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45, and the regional 'viertel drei' = 2:15.
   - Dates: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'.
@@ -24,8 +24,8 @@ de: |
 
 nl: |
   **Correct, does not lower the rating:**
-  - Letter names in spelled codes: A aa, B bee, C cee, D dee, E ee, F ef, G gee (Dutch g), H haa, I ie, J jee, K kaa, L el, M em, N en, O oo, P pee, Q kuu, R er, S es, T tee, U uu, V vee, W wee, X iks, Y ij / griekse ij / ypsilon, Z zet; IJ may be said as one letter.
-  - The names bee, cee, dee, pee, tee are written like English letter names but are the Dutch names (Dutch B is /beː/, close to English 'bay'): they are not English.
+  - These are the Dutch names of letters and digits in a spelled code; a letter or digit said this way is correct: A aa, B bee, C cee, D dee, E ee, F ef, G gee (Dutch g), H haa, I ie, J jee, K kaa, L el, M em, N en, O oo, P pee, Q kuu, R er, S es, T tee, U uu, V vee, W wee, X iks, Y ij / griekse ij / ypsilon, Z zet; IJ may be said as one letter.
+  - Some of these are written like English names but are the Dutch ones: bee, cee, dee, pee, tee, gee, wee (Dutch B is /beː/, close to English 'bay'). Said this way, they are not English.
   - Units before tens: vijfenzeventig = 75, zesentwintig = 26.
   - 2026 as 'tweeduizendzesentwintig' or 'twintig zesentwintig'.
   - Times: 'half drie' = 2:30 (not 3:30), 'kwart over twee' = 2:15, 'kwart voor drie' = 2:45, 'tien voor half drie' = 2:20, 'veertien uur dertig'.
@@ -45,7 +45,8 @@ nl: |
 
 fr: |
   **Correct, does not lower the rating:**
-  - Letter names in spelled codes: A a, B bé, C cé, D dé, E e (schwa), F effe, G gé, H ache, I i, J ji, K ka, L elle, M emme, N enne, O o, P pé, Q ku, R erre, S esse, T té, U u (French u), V vé, W double-vé, X iks, Y i grec, Z zède. Digits zéro, un, deux, trois ... six (said 'sis'), sept, huit, neuf.
+  - These are the French names of letters and digits in a spelled code; a letter or digit said this way is correct: A a, B bé, C cé, D dé, E e, F effe, G gé, H ache, I i, J ji, K ka, L elle, M emme, N enne, O o, P pé, Q ku, R erre, S esse, T té, U u, V vé, W double-vé, X iks, Y i grec, Z zède. Digits: zéro, un, deux, trois, quatre, cinq, six, sept, huit, neuf.
+  - Some of these are written like English names but sound different: A is /a/ (as in 'papa'), E is /ə/ (as in 'le'), I is /i/ (as in 'ici'), U is /y/ (as in 'tu'), and six is said 'sis'. Said the English way ('ay', 'ee', 'eye', 'you', 'six' with a 'ks'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'A comme Anatole', 'M comme Marcel').
   - Numbers: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze. Liaison (six heures, dix-huit).
   - Times: 'quinze heures trente', 'trois heures et demie', 'trois heures et quart' = 3:15, 'trois heures moins le quart' = 2:45, 'midi', 'minuit'.
@@ -66,7 +67,8 @@ fr: |
 
 es: |
   **Correct, does not lower the rating:**
-  - Letter names in spelled codes: A a, B be, C ce, D de, E e, F efe, G ge, H hache, I i, J jota, K ka, L ele, M eme, N ene, Ñ eñe, O o, P pe, Q cu, R erre, S ese, T te, U u, V uve (also ve), W uve doble / doble ve / doble u, X equis, Y i griega / ye, Z zeta. Digits cero, uno, dos ... nueve.
+  - These are the Spanish names of letters and digits in a spelled code; a letter or digit said this way is correct: A a, B be, C ce, D de, E e, F efe, G ge, H hache, I i, J jota, K ka, L ele, M eme, N ene, Ñ eñe, O o, P pe, Q cu, R erre, S ese, T te, U u, V uve (also ve), W uve doble / doble ve / doble u, X equis, Y i griega / ye, Z zeta. Digits: cero, uno, dos ... nueve.
+  - Some of these are written like English names but sound different: A is /a/, E is /e/ (as in 'mesa'), I is /i/, U is /u/. Said the English way ('ay', 'ee', 'eye', 'you'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'M de Madrid', 'B de Barcelona', 'be larga', 've corta').
   - Times: 'las quince treinta', 'las tres y media', 'las tres menos cuarto' = 2:45.
   - Dates and years: 'el uno de marzo' and 'el primero de marzo', 'dos mil veintiséis', 'mil novecientos noventa'.
@@ -85,8 +87,8 @@ es: |
 
 it: |
   **Correct, does not lower the rating:**
-  - Letter names in spelled codes: A a, B bi, C ci, D di, E e, F effe, G gi, H acca, I i, J i lunga (also 'gei'), K cappa, L elle, M emme, N enne, O o, P pi, Q cu, R erre, S esse, T ti, U u, V vu (also vi), W doppia vu, X ics, Y ipsilon / i greca, Z zeta. Digits zero, uno, due ... nove.
-  - English bee, dee, pee, tee, vee, gee sound like the Italian names: they are not English.
+  - These are the Italian names of letters and digits in a spelled code; a letter or digit said this way is correct: A a, B bi, C ci, D di, E e, F effe, G gi, H acca, I i, J i lunga (also 'gei'), K cappa, L elle, M emme, N enne, O o, P pi, Q cu, R erre, S esse, T ti, U u, V vu (also vi), W doppia vu, X ics, Y ipsilon / i greca, Z zeta. Digits: zero, uno, due ... nove.
+  - Some English names sound like these Italian ones: English bee, dee, pee, tee, vee, gee sound like Italian bi, di, pi, ti, vi, gi, so said this way they are not English. A, E, I, U are /a/, /e/, /i/, /u/; said the English way ('ay', 'ee', 'eye', 'you'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'J come Jolly', 'M come Milano').
   - Dates and years: 'il primo marzo' (primo, not uno), then cardinals ('il tre marzo'); 'duemilaventisei', 'millenovecentonovanta'.
   - Times: 'le quindici e trenta', 'le tre e mezza', 'le tre meno un quarto' = 2:45.
@@ -105,8 +107,8 @@ it: |
 
 hi: |
   **Correct, does not lower the rating:**
-  - Latin letters in codes said with their English names, written ए, बी, सी, डी, ई, एफ, जी, एच, आई, जे, के, एल, एम, एन, ओ, पी, क्यू, आर, एस, टी, यू, वी, डब्ल्यू, एक्स, वाई, ज़ेड: this is how Hindi names Latin letters, not wrong language.
-  - Digits शून्य, एक, दो, तीन, चार, पाँच, छह, सात, आठ, नौ. English digit names ('zero', 'eight') are also correct, since they are common in Indian speech, when the intended or trace text writes the digit as a numeral or in English.
+  - These are the Hindi names of Latin letters in a spelled code; a letter said this way is correct: Hindi uses the English letter names, written ए, बी, सी, डी, ई, एफ, जी, एच, आई, जे, के, एल, एम, एन, ओ, पी, क्यू, आर, एस, टी, यू, वी, डब्ल्यू, एक्स, वाई, ज़ेड; this is not wrong language.
+  - These are the Hindi digit names in a spelled code; a digit said this way is correct: शून्य, एक, दो, तीन, चार, पाँच, छह, सात, आठ, नौ. English digit names ('zero', 'eight') are also correct, since they are common in Indian speech, when the intended or trace text writes the digit as a numeral or in English.
   - Large numbers grouped by हज़ार, लाख, करोड़ (एक लाख पच्चीस हज़ार = 125,000).
   - Times: डेढ़ बजे = 1:30, ढाई बजे = 2:30, साढ़े तीन = 3:30 (साढ़े only from 3 up), सवा चार = 4:15, पौने पाँच = 4:45, 'चार बजकर बीस मिनट'.
   **Rating = 0 with `entity_error`:**
@@ -123,8 +125,8 @@ hi: |
 
 ja: |
   **Correct, does not lower the rating:**
-  - Letter names in codes in katakana, even with an English-like accent: エー, ビー, シー, ディー, イー, エフ, ジー, エイチ/エッチ, アイ, ジェー, ケー, エル, エム, エヌ, オー, ピー, キュー, アール, エス, ティー, ユー, ブイ/ヴィー, ダブリュー, エックス, ワイ, ゼット/ズィー.
-  - Digits in codes: ゼロ/れい, いち, に, さん, よん, ご, ろく, なな, はち, きゅう.
+  - These are the Japanese names of Latin letters in a spelled code, in katakana; a letter said this way is correct, even with an English-like accent: エー, ビー, シー, ディー, イー, エフ, ジー, エイチ/エッチ, アイ, ジェー, ケー, エル, エム, エヌ, オー, ピー, キュー, アール, エス, ティー, ユー, ブイ/ヴィー, ダブリュー, エックス, ワイ, ゼット/ズィー.
+  - These are the Japanese digit names in a spelled code; a digit said this way is correct: ゼロ/れい, いち, に, さん, よん, ご, ろく, なな, はち, きゅう.
   - Counter readings (し, しち, く are right here): 4時 よじ, 7時 しちじ/ななじ, 9時 くじ, 4月 しがつ, 7月 しちがつ, 9月 くがつ, 1日 ついたち, 2日 ふつか, 4日 よっか, 8日 ようか, 20日 はつか, 24日 にじゅうよっか, 1分 いっぷん, 10分 じゅっぷん/じっぷん, 2人 ふたり, 4人 よにん.
   - Years read as numbers (千九百八十八年).
   - Katakana pronunciation of English names (コンフルエンス for Confluence).
@@ -147,8 +149,8 @@ ja: |
 
 ko: |
   **Correct, does not lower the rating:**
-  - Letter names in codes in Hangul: 에이, 비, 씨, 디, 이, 에프, 지, 에이치, 아이, 제이, 케이, 엘, 엠, 엔, 오, 피, 큐, 알, 에스, 티, 유, 브이, 더블유, 엑스, 와이, 제트/지.
-  - Digits in codes in Sino-Korean: 공/영, 일, 이, 삼, 사, 오, 육, 칠, 팔, 구.
+  - These are the Korean names of Latin letters in a spelled code, in Hangul; a letter said this way is correct: 에이, 비, 씨, 디, 이, 에프, 지, 에이치, 아이, 제이, 케이, 엘, 엠, 엔, 오, 피, 큐, 알, 에스, 티, 유, 브이, 더블유, 엑스, 와이, 제트/지.
+  - These are the Korean digit names in a spelled code, in Sino-Korean; a digit said this way is correct: 공/영, 일, 이, 삼, 사, 오, 육, 칠, 팔, 구.
   - Native vs Sino-Korean: hours native (세 시, 열두 시), minutes Sino (삼십 분; 세 시 반 = 3:30), months Sino with 유월 (6) and 시월 (10), days Sino (십오 일), money Sino (만 오천 원), people and items native (두 명, 세 개), ages native (스물다섯 살) or Sino with 세 (이십오 세).
   **English letter or digit names in a spelled code: rating = 0 with `wrong_language`; add `entity_error` when the English name sounds like a different Korean letter.** Typical cases:
   - 'six', 'two'.
