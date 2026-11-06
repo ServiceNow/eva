@@ -84,7 +84,7 @@ judge:
 
       **verbosity_or_filler**
       Contains unnecessary wording, repetition within the same turn, hedging, or explanation beyond what the context requires.
-      Exception: do NOT flag following of cultural norms, such as obligatory politeness structures, formal register and set service phrases (e.g. in Japanese and Korean: keigo, honorifics, set opening/closing phrases). The exception covers one such phrase per function (greet / open, acknowledge, hold, return from hold, thank, close). A single short acknowledgement, courtesy or empathy phrase is never verbosity_or_filler on its own. It does NOT cover repetition: the same formula said twice in one turn, several acknowledgements stacked together, or a term given together with its synonym or its translation into another language is verbosity_or_filler. Expanding an acronym once, on its first mention (e.g., "your PTO, that's your paid time off"), is not repetition.
+      Exception: do NOT flag following of cultural norms, such as obligatory politeness structures, formal register and set service phrases (e.g. in Japanese and Korean: keigo, honorifics, set opening/closing phrases). The exception covers one such phrase per function (greet / open, acknowledge, hold, return from hold, thank, close). A single short acknowledgement, courtesy or empathy phrase is never verbosity_or_filler on its own. It does NOT cover repetition: the same formula said twice in one turn, several acknowledgements stacked together, a hold phrase stacked with another hold phrase or lead-in (e.g., "One moment, let me check that for you, just a second"), or a term given together with its synonym or its translation into another language is verbosity_or_filler. Expanding an acronym once, on its first mention (e.g., "your PTO, that's your paid time off"), is not repetition.
       Judge length by how long the turn takes to say and how many information units it carries, not by its written length or word count: polite constructions, and numbers or dates written out in words, can look long on the page without adding cognitive load.
 
       **excess_information_density**
@@ -712,6 +712,8 @@ judge:
         **Spelled codes and mixed-language speech:**
         - Letters and digits in spelled codes must be spoken with their {expected_language} names. A letter or digit name from another language (e.g., an English letter or digit name in a German code) is rating = 0 with `wrong_language`; add `entity_error` if it sounds like a different {expected_language} letter or digit. If the intended text itself contains those foreign words or names, reproducing them is not an error.
         - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
+        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it replaced by an ordinary word that is not a spelling-alphabet word, is rating = 0 with `entity_error`.
+        - A name said without its diacritic or special letter, so that it sounds different (e.g., "Böhm" said as "Bohm"), is rating = 0 with `entity_error`.
         - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
         - A phrase or sentence in another language that is not in the intended text (e.g., an English "one moment" in a French turn) is rating = 0 with `wrong_language`, even when the rest of the turn is in {expected_language}. If the intended text itself contains the phrase, reproducing it is not an error.
         - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
@@ -813,6 +815,8 @@ judge:
         **Spelled codes and mixed-language speech:**
         - Letters and digits of trace entities must be spoken with their {expected_language} names. A letter or digit name from another language inside a trace entity (e.g., an English letter or digit name in a German code) means the entity was not articulated in {expected_language}: rating = 0. An entity that is itself in another language in the trace (e.g., an English street or product name) may be said in that language.
         - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
+        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it replaced by an ordinary word that is not a spelling-alphabet word, is rating = 0.
+        - A name said without its diacritic or special letter, so that it sounds different (e.g., "Böhm" said as "Bohm"), is rating = 0.
         - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
         - A phrase in another language around the entities (e.g., an English "one moment" in a French turn) does not affect this rating; other metrics score it. Here, only the entities must be said in {expected_language}.
         - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
@@ -894,6 +898,8 @@ judge:
         ### Spelled Codes and Mixed-Language Speech
         - Letters and digits in spelled codes must be spoken with their {expected_language} names. A letter or digit name from another language (e.g., an English letter or digit name in a German code) is a wrong-language deviation: rating at most 2 while the value is still unambiguous, and 1 (entity error) if it sounds like a different {expected_language} letter or digit. If the intended text itself contains those foreign words or names, reproducing them is not an error.
         - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
+        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it replaced by an ordinary word that is not a spelling-alphabet word, is rating 1 (entity error).
+        - A name said without its diacritic or special letter, so that it sounds different (e.g., "Böhm" said as "Bohm"), is rating 1 (entity error).
         - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
         - A phrase or sentence in another language that is not in the intended text (e.g., an English "one moment" in a French turn) is wrong language for part of the turn: rating at most 2, and 1 if it replaces an entity or the turn no longer makes sense. If the intended text itself contains the phrase, reproducing it is not an error.
         - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
