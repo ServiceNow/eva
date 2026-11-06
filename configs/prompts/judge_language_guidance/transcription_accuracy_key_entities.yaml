@@ -1,0 +1,34 @@
+# Per-language guidance for the transcription_accuracy_key_entities judge, rendered into its language_guidance slot.
+# Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
+# Shared by user_prompt and audio_native_prompt. "Compared value" below means the transcribed
+# value (user_prompt) or the tool-call value (audio_native_prompt). Each group heading states
+# what its items mean for the `correct` field.
+
+de: |
+  **Match, correct = true on every mention, even after the user spelled the name:**
+  - Umlaut and ß spellings and their standard transliterations: ä = ae, ö = oe, ü = ue, ß = ss (e.g. Krüger = Krueger, Müller = Mueller, Straße = Strasse). They are one spelling written two ways.
+
+hi: |
+  **Match, correct = true:**
+  - Devanagari letter names and their Latin letters (ए = A, बी = B, सी = C, डी = D, ई = E, जी = G, जे = J, एम = M, एन = N, पी = P, क्यू = Q, वी = V, डब्ल्यू = W, ज़ेड = Z).
+  - Hindi and English digit names, which are both normal in Hindi speech (शून्य / ज़ीरो / zero = 0, दो / टू / two = 2).
+  - The same English loanword in Devanagari or Latin script (e.g. मार्च = March, कोड = code, ईमेल = email): code-switching is standard in spoken Hindi.
+  - Indian digit grouping (1,50,000 = 150,000 = डेढ़ लाख).
+
+ko: |
+  **Match, correct = true when the value matches:**
+  - 만-based grouping and separators: 1만 2천 = 12,000 = 만 이천; 12만 = 120,000; 1,000 = 1000.
+  - 0 read as 공 (e.g. 공일공 = 010), the standard reading in phone numbers and codes.
+
+ja: |
+  **Match, correct = true:**
+  - Katakana letter names and their Latin letters (エー = A, ビー = B, シー = C, ディー = D, ジー = G, ジェー = J, エム = M, エヌ = N, ピー = P, キュー = Q, ブイ = V, ダブリュー = W, ゼット = Z).
+  - Kana, kanji and Arabic digit readings of the same digit: ゼロ / れい / まる / 〇 = 0, いち / 一 = 1, よん / し = 4, なな / しち = 7, きゅう / く = 9.
+  - A kana or romaji rendering of a kanji name (近藤 = こんどう = Kondo), per the Non-Latin scripts rule.
+
+  **No match, correct = false:**
+  - キュー transcribed or used as 9, or きゅう as Q: Q and 9 are different values, even though they sound the same.
+  - A common noun or ordinary word written in place of a name (混同 "confusion" for the surname 近藤): the name was not recognized as a name.
+
+  **Follows the first-mention rule in the Correctness Criteria (correct on first mention, incorrect once the user has specified the kanji, e.g. 「隼に人です」):**
+  - A different kanji spelling of the same name reading (隼斗 for 隼人, 斎藤 for 斉藤): it cannot be recovered from audio alone.
