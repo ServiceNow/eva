@@ -1,7 +1,6 @@
 """Provenance capture utility for benchmark runs."""
 
 import hashlib
-import importlib.metadata
 import importlib.util
 import os
 import platform
@@ -16,14 +15,6 @@ from eva.utils.hash_utils import hash_directory, hash_file
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
-
-
-def _litellm_version() -> str:
-    """TEMPORARY: installed litellm version, recorded to compare runs across litellm releases."""
-    try:
-        return importlib.metadata.version("litellm")
-    except importlib.metadata.PackageNotFoundError:
-        return ""
 
 
 def _run_git_command(args: list[str]) -> str | None:
@@ -172,7 +163,6 @@ def capture_provenance(
         tool_module=tool_module_info,
         scenario_db=scenario_db,
         python_version=sys.version,
-        litellm_version=_litellm_version(),
         platform=platform.platform(),
     )
 
@@ -256,6 +246,5 @@ def capture_metrics_provenance(
         scenario_db=scenario_db_info,
         metrics_computed=sorted(metric_names),
         python_version=sys.version,
-        litellm_version=_litellm_version(),
         platform=platform.platform(),
     )
