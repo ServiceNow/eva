@@ -21,6 +21,10 @@ Performs all one-time setup needed to run the benchmark in a new language:
      optionally a spelling-variation map. New configs are auto-discovered at
      runtime without any further code changes.
 
+  3b. **Caller phrases** — adds the language's interruption openers and
+     back-channels ("mhm", "okay"…, spelled in the native script for TTS) to
+     ``src/eva/user_simulator/cascade/phrases.py``, each from its own prompt.
+
   4. **Environment / display** — patches ``.env.example`` with the new
      ``EVA_<LANG>_USER_*`` stubs and registers the display name in
      ``LANGUAGE_DISPLAY_NAMES``.
@@ -104,8 +108,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
 INITIAL_MESSAGES_PATH = REPO_ROOT / "configs" / "agents" / "initial_messages.yaml"
 WER_CONFIGS_DIR = REPO_ROOT / "src" / "eva" / "utils" / "wer_normalization" / "configs"
+PHRASES_PATH = REPO_ROOT / "src" / "eva" / "user_simulator" / "cascade" / "phrases.py"
 
-DEFAULT_MODEL = "gpt-5.5-2026-04-23"
+DEFAULT_MODEL = "gpt-6.1-sol"
 TRANSLATION_BATCH = 25
 ALIAS_BATCH = 50  # Max unique names per alias-translation LLM call.
 
@@ -718,6 +723,7 @@ async def amain(args: argparse.Namespace) -> int:
         args.dry_run,
         args.overwrite_all,
     )
+    await update_phrases(args.language, args.language_name, PHRASES_PATH, llm, args.dry_run, args.overwrite_all)
     await update_wer_normalizer_config(
         args.language,
         args.language_name,
@@ -1403,6 +1409,155 @@ def update_language_display_names(
 
     config_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     logger.info(f"Added {new_key}: {language_name!r} to LANGUAGE_DISPLAY_NAMES in {config_path}")
+
+
+_OPENERS_PROMPT = """Write {count} short interruption openers for {language_name} (BCP-47: {language}).
+
+A phone caller says one of these the instant they cut in on a voice agent who is still talking,
+before their actual sentence. English equivalents: "Sorry, wait—", "Hold on—", "Wait one sec—",
+"Oh, actually—", "Wait, sorry—".
+
+Rules:
+- Natural, polite-but-urgent spoken phrasing for {language_name}, 1-4 words each, all different.
+- Native script of the language (full diacritics for Latin-script languages).
+- Each ends with an em dash (—) to show the sentence is cut off and continues. No other punctuation.
+- Use the register a caller would use with a customer-service agent.
+
+Return JSON: {{"phrases": ["...", ...]}} with exactly {count} items. No markdown, no commentary."""
+
+_BACKCHANNELS_PROMPT = """Write {count} back-channel sounds for {language_name} (BCP-47: {language}).
+
+A phone caller says one of these while listening to a voice agent, to show they are following.
+English equivalents: "Mhm.", "Yeah.", "Uh-huh.", "Okay.", "Right.".
+
+Rules:
+- Extremely short: ONE word or sound each, never more than {max_words} words, and at most {max_chars} characters.
+- The sounds may be nearly the same across languages (mhm, uh-huh, okay) — what matters is spelling
+  them in the NATIVE SCRIPT of {language_name} so a text-to-speech engine pronounces them naturally.
+  Use the script's usual way of writing the sound (e.g. Devanagari "हम्म", Japanese "うん").
+- At least 2 of them should be non-lexical sounds (like "mhm", "uh-huh"); the rest may be the language's
+  common one-word acknowledgements ("yes", "okay", "right").
+- All different. Each ends with a period. No em dashes, no ellipses.
+
+Return JSON: {{"phrases": ["...", ...]}} with exactly {count} items. No markdown, no commentary."""
+
+PHRASES_PER_LANGUAGE = 5
+MAX_BACKCHANNEL_WORDS = 2
+MAX_BACKCHANNEL_CHARS = 12
+OPENER_DASH = "—"
+
+
+async def _generate_phrases(prompt_template: str, language: str, language_name: str, llm: LLMClient) -> list[str]:
+    prompt = prompt_template.format(
+        count=PHRASES_PER_LANGUAGE,
+        language=language,
+        language_name=language_name,
+        max_words=MAX_BACKCHANNEL_WORDS,
+        max_chars=MAX_BACKCHANNEL_CHARS,
+    )
+    text, _ = await llm.generate_text([{"role": "user", "content": prompt}], response_format={"type": "json_object"})
+    phrases = extract_and_load_json(text).get("phrases")
+    if not isinstance(phrases, list) or not all(isinstance(p, str) and p.strip() for p in phrases):
+        raise ValueError(f"Phrase generation returned invalid data: {phrases!r}")
+    phrases = list(dict.fromkeys(p.strip() for p in phrases))
+    if len(phrases) != PHRASES_PER_LANGUAGE:
+        raise ValueError(f"Expected {PHRASES_PER_LANGUAGE} distinct phrases, got {phrases!r}")
+    return phrases
+
+
+def _validate_openers(phrases: list[str]) -> list[str]:
+    """Ensure each opener ends in exactly one em dash (the model sometimes uses a hyphen or drops it)."""
+    return [p.rstrip("-–—.,! ") + OPENER_DASH for p in phrases]
+
+
+def _validate_backchannels(phrases: list[str]) -> list[str]:
+    for p in phrases:
+        if len(p.split()) > MAX_BACKCHANNEL_WORDS or len(p) > MAX_BACKCHANNEL_CHARS:
+            raise ValueError(
+                f"Back-channel {p!r} is too long (max {MAX_BACKCHANNEL_WORDS} words, {MAX_BACKCHANNEL_CHARS} chars)"
+            )
+    return phrases
+
+
+def _format_phrase_entry(language: str, phrases: list[str], indent: str = "    ", max_width: int = 120) -> list[str]:
+    """Source lines for one ``"<lang>": [...]`` entry, exploded one-per-line when it would be too wide."""
+    items = ", ".join(json.dumps(p, ensure_ascii=False) for p in phrases)
+    single = f'{indent}"{language}": [{items}],'
+    # Wide (CJK) characters count double, as ruff format measures them.
+    if sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in single) <= max_width:
+        return [single]
+    return [
+        f'{indent}"{language}": [',
+        *(f"{indent}    {json.dumps(p, ensure_ascii=False)}," for p in phrases),
+        f"{indent}],",
+    ]
+
+
+def _find_phrase_table(lines: list[str], table_name: str) -> tuple[int, int] | None:
+    """(start, close) line indices of ``<table_name>: dict[...] = {`` and its closing ``}``."""
+    start = next((i for i, line in enumerate(lines) if re.match(rf"{table_name}\s*[:=]", line)), None)
+    if start is None:
+        return None
+    close = next((i for i in range(start + 1, len(lines)) if lines[i].rstrip() == "}"), None)
+    return None if close is None else (start, close)
+
+
+def _phrase_entry_span(lines: list[str], start: int, close: int, language: str) -> tuple[int, int] | None:
+    """(first, last) line indices of the existing ``"<language>"`` entry inside the table, if present."""
+    first = next((i for i in range(start + 1, close) if re.match(rf'\s*"{re.escape(language)}"\s*:', lines[i])), None)
+    if first is None:
+        return None
+    last = first
+    if not lines[first].rstrip().endswith("],"):
+        last = next(i for i in range(first + 1, close) if lines[i].strip() == "],")
+    return first, last
+
+
+async def update_phrases(
+    language: str,
+    language_name: str,
+    phrases_path: Path,
+    llm: LLMClient,
+    dry_run: bool,
+    overwrite: bool = False,
+) -> None:
+    """Add the language's interruption openers and back-channels to ``phrases.py``.
+
+    Each table is generated from its own prompt (back-channels are tiny sounds spelled in the native
+    script, openers are short cut-in phrases) and inserted before the dict's closing brace. Idempotent:
+    a table that already has the language is skipped unless ``overwrite`` replaces its entry in place.
+    """
+    if not phrases_path.exists():
+        logger.warning(f"{phrases_path} not found — skipping phrase update")
+        return
+
+    tables = (
+        ("OPENERS", _OPENERS_PROMPT, _validate_openers),
+        ("BACKCHANNELS", _BACKCHANNELS_PROMPT, _validate_backchannels),
+    )
+    for table_name, prompt_template, validate in tables:
+        lines = phrases_path.read_text(encoding="utf-8").splitlines()
+        span = _find_phrase_table(lines, table_name)
+        if span is None:
+            logger.warning(f"Could not find {table_name} in {phrases_path.name} — skipping")
+            continue
+        start, close = span
+        existing = _phrase_entry_span(lines, start, close, language)
+        if existing is not None and not overwrite:
+            logger.info(f"{table_name}[{language!r}] already present")
+            continue
+
+        phrases = validate(await _generate_phrases(prompt_template, language, language_name, llm))
+        entry = _format_phrase_entry(language, phrases)
+        if dry_run:
+            logger.info(f"[dry-run] would write {table_name}[{language!r}] = {phrases}")
+            continue
+        if existing is not None:
+            lines[existing[0] : existing[1] + 1] = entry
+        else:
+            lines[close:close] = entry
+        phrases_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        logger.info(f"Wrote {table_name}[{language!r}] = {phrases}")
 
 
 def update_env_example(language: str, language_name: str, env_example_path: Path, dry_run: bool) -> None:

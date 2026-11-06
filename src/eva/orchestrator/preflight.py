@@ -42,7 +42,8 @@ from eva.assistant.pipeline.services import (
 )
 from eva.assistant.services.llm import LiteLLMClient
 from eva.models.config import CascadeSimulatorConfig, PipelineType, RunConfig, get_model_alias_from_params
-from eva.user_simulator.cascade.stt import ScribeStreamingSTT
+from eva.user_simulator.cascade.interruptor import DecisionsInterruptor
+from eva.user_simulator.cascade.stt import create_caller_stt
 from eva.user_simulator.cascade.tts import CartesiaStreamingTTS
 from eva.utils.logging import get_logger
 
@@ -167,8 +168,25 @@ async def _probe_user_sim_llm(sim: CascadeSimulatorConfig) -> tuple[bool, str]:
     return True, ""
 
 
+async def _probe_user_sim_barge_in_llm(sim: CascadeSimulatorConfig) -> tuple[bool, str]:
+    client = LiteLLMClient(model=sim.barge_in_model)
+    await client.complete([{"role": "user", "content": "ping"}], max_retries=0)
+    return True, ""
+
+
+async def _probe_user_sim_decisions(sim: CascadeSimulatorConfig) -> tuple[bool, str]:
+    interruptor = DecisionsInterruptor(
+        sim.interruption_model, interrupt=sim.interruptions, back_channel=sim.back_channel
+    )
+    try:
+        await interruptor.decide("Ping.", [], "Hello.")
+    finally:
+        await interruptor.close()
+    return True, ""
+
+
 async def _probe_user_sim_stt(sim: CascadeSimulatorConfig, language: str) -> tuple[bool, str]:
-    stt = ScribeStreamingSTT(sim.stt_model, language=language)
+    stt = create_caller_stt(sim.stt, sim.stt_model, language=language)
     try:
         await stt.start()
     finally:
@@ -223,6 +241,10 @@ async def _run_preflight(config: RunConfig) -> list[ProbeResult]:
     if isinstance(sim := config.user_simulator, CascadeSimulatorConfig):
         language = config.language.value
         probes.append(("USER_SIM_LLM", sim.model, _probe_user_sim_llm(sim)))
+        if sim.interruptions and sim.barge_in_model and sim.barge_in_model != sim.model:
+            probes.append(("USER_SIM_BARGE_IN_LLM", sim.barge_in_model, _probe_user_sim_barge_in_llm(sim)))
+        if sim.uses_decisions:
+            probes.append(("USER_SIM_DECISIONS", sim.interruption_model, _probe_user_sim_decisions(sim)))
         probes.append(("USER_SIM_STT", sim.stt_model, _probe_user_sim_stt(sim, language)))
         probes.append(("USER_SIM_TTS", sim.tts_model, _probe_user_sim_tts(sim, language)))
 

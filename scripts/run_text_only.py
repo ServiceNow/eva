@@ -23,6 +23,7 @@ import asyncio
 import copy
 import json
 import os
+import re
 import shutil
 import sys
 from datetime import UTC, datetime
@@ -153,6 +154,8 @@ END_CALL_TOOL = [
     }
 ]
 
+GOODBYE_PATTERN = re.compile(r"\b(good\s*-?\s*bye|bye)\b", re.IGNORECASE)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -216,9 +219,22 @@ async def run_user_turn(
     llm_client: LiteLLMClient,
     user_system_prompt: str,
     conversation_history: list[dict[str, str]],
+    end_call_tool: bool = True,
 ) -> tuple[str, bool]:
-    """Generate one user-simulator turn. Returns (message, should_end)."""
+    """Generate one user-simulator turn. Returns (message, should_end).
+
+    With ``end_call_tool=False`` the sim gets no tools and the call ends when it says goodbye,
+    which is treated as if it had called end_call.
+    """
     messages = [{"role": "system", "content": user_system_prompt}] + conversation_history
+    if not end_call_tool:
+        response, _ = await llm_client.complete(messages)
+        content = getattr(response, "content", "") or (response if isinstance(response, str) else "")
+        if "end_call" in content:
+            logger.warning(f"User sim wrote end_call as text despite having no tool: {content!r}")
+            return re.sub(r"\S*end_call\S*", "", content).strip(), True
+        return content, bool(GOODBYE_PATTERN.search(content))
+
     response, _ = await llm_client.complete(messages, tools=END_CALL_TOOL)
 
     tool_calls = getattr(response, "tool_calls", None)
@@ -481,6 +497,7 @@ async def run_record(
     requested_metrics: list[str],
     output_id: str | None = None,
     composites: list[EVACompositeDefinition] | None = None,
+    end_call_tool: bool = True,
 ) -> dict[str, Any]:
     """Run a single record through the text-only conversation loop and compute metrics."""
     output_id = output_id or record.id
@@ -558,7 +575,9 @@ async def run_record(
 
         # User-simulator turn
         user_history = build_user_sim_history(audit_log)
-        user_message, should_end = await run_user_turn(user_sim_llm_client, user_prompt, user_history)
+        user_message, should_end = await run_user_turn(
+            user_sim_llm_client, user_prompt, user_history, end_call_tool=end_call_tool
+        )
         if should_end:
             end_reason = "goodbye"
             if user_message:
@@ -762,6 +781,11 @@ async def main() -> None:
         default=",".join(TEXT_COMPATIBLE_METRICS),
         help=f"Comma-separated metrics to run. Available: {', '.join(TEXT_COMPATIBLE_METRICS)}",
     )
+    parser.add_argument(
+        "--no-end-call-tool",
+        action="store_true",
+        help="Give the user sim no end_call tool; end the call when it says goodbye instead",
+    )
     args = parser.parse_args()
 
     domain = args.domain
@@ -868,6 +892,7 @@ async def main() -> None:
                 requested_metrics=requested_metrics,
                 output_id=oid,
                 composites=text_composites,
+                end_call_tool=not args.no_end_call_tool,
             )
         except Exception as e:
             logger.error(f"{oid} failed: {e}", exc_info=True)

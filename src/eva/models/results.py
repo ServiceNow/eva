@@ -35,6 +35,38 @@ class LatencyStats(BaseModel):
     total_calls: int = Field(..., description="Total number of calls")
 
 
+class BargeInRecord(BaseModel):
+    """One live barge-in by the cascade caller: what it heard and missed, and how fast it reacted."""
+
+    heard: str = Field(..., description="Agent speech the reply was written from")
+    spoken: str | None = Field(
+        None, description="Agent's text up to where it was interrupted, from the audit log; None if not found"
+    )
+    missed: str | None = Field(None, description="Spoken words after the last one in heard: said but not in the reply")
+    missed_words: int | None = Field(None, description="Word count of missed")
+    opener: str = Field(..., description="Pre-rendered opener played on the verdict")
+    content: str = Field(..., description="Reply spoken after the opener")
+    p_interrupt: float = Field(..., description="Decision model's P(interrupt)")
+    forced: bool = Field(False, description="Fired by forced_interruption_every_turns, not the decision model")
+    decision_ms: float = Field(..., description="Decision request -> verdict")
+    gap_ms: float | None = Field(None, description="Silence between the opener ending and the reply's first audio")
+
+
+class BackChannel(BaseModel):
+    """One back-channel by the cascade caller: a short acknowledgement ("mhm") played over the agent's line.
+
+    Not a turn and not an interruption: it is kept out of the transcript and audit log, and the assistant
+    is never signalled that the caller started or stopped speaking.
+    """
+
+    phrase: str = Field(..., description="Pre-rendered phrase played")
+    agent_turn: int = Field(..., description="0-based index of the agent turn it was played over")
+    heard: str = Field(..., description="Agent speech heard so far in that turn: where in the line it landed")
+    timestamp_ms: int = Field(..., description="Unix time (ms) its first frame went on the wire")
+    duration_ms: float = Field(..., description="How long the phrase played")
+    decision_ms: float = Field(..., description="Decision request -> verdict")
+
+
 class ConversationResult(BaseModel):
     """Result of a single conversation."""
 
@@ -52,6 +84,13 @@ class ConversationResult(BaseModel):
     model_response_latency: LatencyStats | None = Field(
         None,
         description="Time from user speech end to first model audio (s2s/realtime frameworks)",
+    )
+    barge_ins: list[BargeInRecord] = Field(
+        default_factory=list, description="Timing of each caller barge-in (cascade simulator)"
+    )
+    barge_in_gap: LatencyStats | None = Field(None, description="Barge-in silence between opener and reply")
+    back_channels: list[BackChannel] = Field(
+        default_factory=list, description="Each caller back-channel played over the agent (cascade simulator)"
     )
 
     # Timing

@@ -495,30 +495,123 @@ class CascadeSimulatorConfig(BaseModel):
     """Caller built from independently chosen streaming STT, LLM, and TTS models."""
 
     provider: Literal["cascade"] = "cascade"
-    stt: Literal["elevenlabs"] = Field("elevenlabs", description="Streaming STT provider for the assistant's audio.")
-    stt_model: str = Field("scribe_v2_realtime", description="Streaming STT model.")
+    stt: Literal["openai", "elevenlabs"] = Field(
+        "openai", description="Streaming STT provider for the assistant's audio."
+    )
+    stt_model: str | None = Field(
+        None,
+        description="Streaming STT model. None uses the provider's default (gpt-live-transcribe, scribe_v2_realtime).",
+    )
     model: str = Field(
+        "gpt-6.1-sol",
         description=(
             "Caller LLM deployment, resolved via EVA_MODEL_LIST like the assistant's. Configure a separate "
             "deployment if the caller's params need to differ from the assistant under test or the judges."
         ),
     )
+    barge_in_model: str | None = Field(
+        None,
+        description="Caller LLM deployment (via EVA_MODEL_LIST) that writes barge-in replies. None uses model.",
+    )
+    interruption_model: str = Field(
+        "gpt-6-luna",
+        description="OpenAI model for the barge-in decisions (Decisions API), called directly with OPENAI_API_KEY.",
+    )
     tts: Literal["cartesia"] = Field("cartesia", description="TTS provider for the caller's speech.")
-    tts_model: str = Field("sonic-3.5", description="TTS model.")
+    tts_model: str = Field("sonic-3.6", description="TTS model.")
     female_voice: str = Field("f786b574-daa5-4673-aa0c-cbe3e8534c02", description="TTS voice for female personas.")
     male_voice: str = Field("a0e99841-438c-4a64-b679-ae501e7d6091", description="TTS voice for male personas.")
+    interruptions: bool = Field(
+        True,
+        description="Let the caller barge in on the agent's line when the decision model says interrupt. "
+        "Decisions (and OPENAI_API_KEY) are needed only while this or back_channel is on.",
+    )
+    interruption_min_updates: int = Field(
+        6,
+        ge=0,
+        description="Transcript updates at the start of each agent turn that are never interrupted; "
+        "no decision is requested for them.",
+    )
+    interruption_first_turn: int = Field(
+        2,
+        ge=0,
+        description="Agent turns at the start of the call that are never interrupted (0-based index of the "
+        "first that can be); no decision is requested during them.",
+    )
+    interruption_cooldown_updates: int = Field(
+        10,
+        ge=0,
+        description="Transcript updates after a barge-in before the next decision.",
+    )
+    interruption_max_per_call: int | None = Field(
+        8, ge=0, description="Barge-ins per call, after which no decision is requested. None disables it."
+    )
+    back_channel: bool = Field(
+        True,
+        description="Let the decision model also choose back_channel: a short pre-rendered acknowledgement "
+        '("mhm") played over the agent\'s line, with no reply generated.',
+    )
+    back_channel_cooldown_updates: int = Field(
+        25,
+        ge=0,
+        description="Transcript updates after a back-channel before the next one can play.",
+    )
+    forced_interruption_every_turns: int | None = Field(
+        None,
+        ge=1,
+        description=(
+            "Test plumbing: on every Nth agent turn, treat the decision for the "
+            "forced_interruption_after_updates-th transcript update (or a later one) as interrupt, whatever the "
+            "decision model said. The decision is still requested and logged as usual. None disables it."
+        ),
+    )
+    forced_interruption_after_updates: int = Field(
+        15, ge=1, description="Transcript updates into a forced turn before its decisions are forced."
+    )
+    interruption_min_probability: float = Field(
+        0.65,
+        ge=0,
+        le=1,
+        description="An interrupt verdict fires only when the decision model's P(interrupt) is at least this; "
+        "the choice alone is not enough. Forced decisions always fire.",
+    )
+    interruption_max_decision_ms: float | None = Field(
+        700,
+        gt=0,
+        description="An interrupt verdict whose decision took longer than this does not fire: the caller would cut "
+        "in late, after what prompted it. The reply is always written from the latest transcript, so this guards "
+        "timing, not content. Forced decisions always fire. None disables it.",
+    )
+    max_barge_in_gap_ms: float | None = Field(
+        1000,
+        gt=0,
+        description="Silence between a barge-in's opener and its reply past which the call fails and is rerun: "
+        "a caller who cuts in and then says nothing is no longer a realistic barge-in, and a live call cannot "
+        "take it back. None disables it.",
+    )
 
-    @field_validator("stt_model")
-    @classmethod
-    def _require_streaming_stt(cls, value: str) -> str:
+    @model_validator(mode="after")
+    def _resolve_stt_model(self) -> "CascadeSimulatorConfig":
+        if self.stt_model is None:
+            self.stt_model = "gpt-live-transcribe" if self.stt == "openai" else "scribe_v2_realtime"
         # The caller must hear the assistant as it speaks; batch models can't support interruptions.
-        if not value.endswith("_realtime"):
-            raise ValueError(f"Cascade caller requires a streaming STT model, got {value!r}")
-        return value
+        elif self.stt == "elevenlabs" and not self.stt_model.endswith("_realtime"):
+            raise ValueError(f"Cascade caller requires a streaming STT model, got {self.stt_model!r}")
+        elif self.stt == "openai" and self.stt_model.startswith("scribe"):
+            raise ValueError(f"STT model {self.stt_model!r} is an ElevenLabs model; set stt='elevenlabs' to use it")
+        return self
+
+    @property
+    def uses_decisions(self) -> bool:
+        """Whether the caller asks the Decisions API about the agent's in-progress lines."""
+        return self.interruptions or self.back_channel
 
     @model_validator(mode="after")
     def _require_provider_keys(self) -> "CascadeSimulatorConfig":
-        missing = [key for key in ("ELEVENLABS_API_KEY", "CARTESIA_API_KEY") if not os.environ.get(key)]
+        keys = {"OPENAI_API_KEY" if self.stt == "openai" else "ELEVENLABS_API_KEY", "CARTESIA_API_KEY"}
+        if self.uses_decisions:
+            keys.add("OPENAI_API_KEY")  # the Decisions API is called directly, not via EVA_MODEL_LIST
+        missing = sorted(key for key in keys if not os.environ.get(key))
         if missing:
             raise ValueError(f"The cascade user simulator requires {', '.join(missing)} to be set.")
         return self
