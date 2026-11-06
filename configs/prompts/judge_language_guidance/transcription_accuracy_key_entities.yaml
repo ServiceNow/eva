@@ -5,11 +5,8 @@
 # what its items mean for the `correct` field.
 
 de: |
-  **Match, correct = true on every mention:**
-  - Umlaut and ß spellings and their standard transliterations: ä = ae, ö = oe, ü = ue, ß = ss (e.g. Krüger = Krueger, Müller = Mueller, Straße = Strasse). They are one spelling written two ways, so they match even after the user spelled the name.
-
-  **Follows the first-mention rule in the Correctness Criteria (correct on first mention, incorrect once the user has specified the spelling):**
-  - Meier vs Meyer and similar: these are different spellings, not transliterations.
+  **Match, correct = true on every mention, even after the user spelled the name:**
+  - Umlaut and ß spellings and their standard transliterations: ä = ae, ö = oe, ü = ue, ß = ss (e.g. Krüger = Krueger, Müller = Mueller, Straße = Strasse). They are one spelling written two ways.
 
 hi: |
   **Match, correct = true:**
@@ -34,4 +31,4 @@ ja: |
   - A common noun or ordinary word written in place of a name (混同 "confusion" for the surname 近藤): the name was not recognized as a name.
 
   **Follows the first-mention rule in the Correctness Criteria (correct on first mention, incorrect once the user has specified the kanji, e.g. 「隼に人です」):**
-  - A different kanji spelling of the same name reading (隼斗 for 隼人, 斎藤 for 斉藤): it cannot be recovered from audio alone, exactly like Meier vs Meyer.
+  - A different kanji spelling of the same name reading (隼斗 for 隼人, 斎藤 for 斉藤): it cannot be recovered from audio alone.
