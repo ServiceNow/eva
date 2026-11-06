@@ -350,7 +350,12 @@ class PipecatAssistantServer(AbstractAssistantServer):
             logger.info(f"Using turn start strategy: {turn_start_cfg}")
 
             # Create turn stop strategy using factory function
-            turn_stop_strategy = create_turn_stop_strategy(turn_stop_cfg, turn_stop_params, smart_turn_stop_secs)
+            # A self-endpointing STT (ink-2) can commit a phantom turn with no words; close it at once
+            # instead of after pipecat's 5s user_turn_stop_timeout, so a cancelled query is re-run sooner.
+            self_endpointing = (self.pipeline_config.stt or "").lower() in self.pipeline_config._SELF_ENDPOINTING_STT
+            turn_stop_strategy = create_turn_stop_strategy(
+                turn_stop_cfg, turn_stop_params, smart_turn_stop_secs, close_empty_turns=self_endpointing
+            )
             logger.info(f"Using turn stop strategy: {turn_stop_cfg}")
 
             user_turn_strategies = UserTurnStrategies(

@@ -1,8 +1,13 @@
 """Unit tests for turn_config factory functions."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pipecat.frames.frames import (
+    ProposedUserStoppedSpeakingFrame,
+    TranscriptionFrame,
+    UserStoppedSpeakingFrame,
+)
 from pipecat.turns.user_start import (
     ExternalUserTurnStartStrategy,
     TranscriptionUserTurnStartStrategy,
@@ -15,6 +20,7 @@ from pipecat.turns.user_stop import (
 )
 
 from eva.assistant.pipeline.turn_config import (
+    EmptyProposalStopStrategy,
     create_turn_start_strategy,
     create_turn_stop_strategy,
     create_vad_analyzer,
@@ -485,3 +491,68 @@ class TestUninterruptibleFinalsScope:
             UserObserver(uninterruptible_finals=True), TranscriptionFrame("hi", "u", "2026-01-01T00:00:00Z")
         )
         assert isinstance(out, UninterruptibleFrame)
+
+
+# ---------------------------------------------------------------------------
+# EmptyProposalStopStrategy (ink-2 turn committed with no words)
+# ---------------------------------------------------------------------------
+
+
+class TestEmptyProposalStopStrategy:
+    """A turn the STT commits with no text must close at once, not after the 5s watchdog."""
+
+    @staticmethod
+    async def _open_turn(strategy):
+        strategy.trigger_user_turn_stopped = AsyncMock()
+        await strategy.handle_user_turn_started()
+        return strategy
+
+    async def test_empty_commit_closes_the_turn(self):
+        strategy = await self._open_turn(EmptyProposalStopStrategy())
+
+        await strategy.process_frame(ProposedUserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_awaited_once()
+
+    async def test_stock_strategy_waits_for_text(self):
+        """Documents the behaviour being replaced: the stock strategy never closes an empty turn."""
+        strategy = await self._open_turn(ExternalUserTurnStopStrategy())
+
+        await strategy.process_frame(ProposedUserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_not_awaited()
+
+    async def test_turn_with_text_closes_once(self):
+        strategy = await self._open_turn(EmptyProposalStopStrategy())
+
+        await strategy.process_frame(TranscriptionFrame(text="hello there", user_id="u", timestamp="t"))
+        await strategy.process_frame(ProposedUserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_awaited_once()
+
+    async def test_no_open_turn_is_ignored(self):
+        strategy = EmptyProposalStopStrategy()
+        strategy.trigger_user_turn_stopped = AsyncMock()
+
+        await strategy.process_frame(ProposedUserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_not_awaited()
+
+    async def test_stop_announced_elsewhere_is_not_forced(self):
+        strategy = await self._open_turn(EmptyProposalStopStrategy())
+
+        await strategy.process_frame(UserStoppedSpeakingFrame())
+
+        strategy.trigger_user_turn_stopped.assert_not_awaited()
+
+
+class TestCloseEmptyTurnsFlag:
+    def test_flag_selects_the_subclass_for_external(self):
+        assert type(create_turn_stop_strategy("external", {}, close_empty_turns=True)) is EmptyProposalStopStrategy
+
+    def test_default_keeps_the_stock_strategy(self):
+        assert type(create_turn_stop_strategy("external", {})) is ExternalUserTurnStopStrategy
+
+    def test_flag_is_ignored_for_other_strategies(self):
+        result = create_turn_stop_strategy("speech_timeout", {}, close_empty_turns=True)
+        assert isinstance(result, SpeechTimeoutUserTurnStopStrategy)
