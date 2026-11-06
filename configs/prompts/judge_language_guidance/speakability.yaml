@@ -4,7 +4,7 @@
 # lists the forms it takes in each language and what is NOT a violation there.
 
 hi: |
-  **Violation 5, gloss (rating 0):** a Hindi term followed by its English equivalent, translation or abbreviation, or the reverse, for example:
+  **Violation 5, gloss (rating 0):** a term immediately followed, in parentheses or after a slash (half-width or full-width), by its translation into another language, its reading, its abbreviation or an exact synonym, so the listener hears the same thing twice. For example:
   - "कर्मचारी आईडी (employee ID)", "पुष्टिकरण कोड (confirmation code)", "PIN (पिन नंबर)".
 
   **Not a violation, does not lower the rating:**
@@ -12,14 +12,14 @@ hi: |
   - The danda (।) and normal Hindi punctuation: this is not formatting.
 
 ko: |
-  **Violation 5, gloss (rating 0):** a term followed by its translation or abbreviation in parentheses or after a slash, for example:
+  **Violation 5, gloss (rating 0):** a term immediately followed, in parentheses or after a slash (half-width or full-width), by its translation into another language, its reading, its abbreviation or an exact synonym, so the listener hears the same thing twice. For example:
   - "비밀번호(PIN)", "PIN/비밀번호".
 
   **Not a violation, does not lower the rating:**
   - Latin-script words or codes used on their own (confirmation codes, flight numbers, "ID", "PIN", brand or product names), or Hangul-written loanwords (e.g. 로그인, 티켓). Script choice and an untranslated English word are not in the violation list.
 
 ja: |
-  **Violation 5, gloss (rating 0):** a term followed by its translation, reading or abbreviation in half-width ( ) or full-width （ ） parentheses, or joined to its equivalent by ／, for example:
+  **Violation 5, gloss (rating 0):** a term immediately followed, in parentheses or after a slash (half-width or full-width), by its translation into another language, its reading, its abbreviation or an exact synonym, so the listener hears the same thing twice. For example:
   - "暗証番号（PIN）", "病気休暇（sick leave）", "PIN／暗証番号".
 
   **Not a violation, does not lower the rating:**
