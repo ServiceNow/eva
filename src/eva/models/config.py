@@ -36,7 +36,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic_core import InitErrorDetails, PydanticCustomError
-from pydantic_settings import BaseSettings, CliSuppress, SettingsConfigDict
+from pydantic_settings import BaseSettings, CliSuppress, NoDecode, SettingsConfigDict
 
 from eva.models.provenance import RunProvenance
 
@@ -524,7 +524,7 @@ class CascadeSimulatorConfig(BaseModel):
     interruptions: bool = Field(
         True,
         description="Let the caller barge in on the agent's line when the decision model says interrupt. "
-        "Decisions (and OPENAI_API_KEY) are needed only while this or back_channel is on.",
+        "Decisions (and OPENAI_API_KEY) are needed only while this is on.",
     )
     interruption_min_updates: int = Field(
         6,
@@ -546,15 +546,12 @@ class CascadeSimulatorConfig(BaseModel):
     interruption_max_per_call: int | None = Field(
         8, ge=0, description="Barge-ins per call, after which no decision is requested. None disables it."
     )
-    back_channel: bool = Field(
-        True,
-        description="Let the decision model also choose back_channel: a short pre-rendered acknowledgement "
-        '("mhm") played over the agent\'s line, with no reply generated.',
-    )
-    back_channel_cooldown_updates: int = Field(
-        25,
-        ge=0,
-        description="Transcript updates after a back-channel before the next one can play.",
+    back_channel: Annotated[list[str], NoDecode] = Field(
+        ["back_channel"],
+        description="Sounds (names in data/sound_bank) played over the agent's line as transcript updates "
+        'accumulate, with no reply generated: a short pre-rendered "mhm", a cough, and so on. Each is a '
+        "phrases.json (phrases by language code) rendered in the caller's voice and/or male/ and female/ folders of WAVs. A comma-separated "
+        "env value is accepted; empty disables them.",
     )
     forced_interruption_every_turns: int | None = Field(
         None,
@@ -601,15 +598,20 @@ class CascadeSimulatorConfig(BaseModel):
             raise ValueError(f"STT model {self.stt_model!r} is an ElevenLabs model; set stt='elevenlabs' to use it")
         return self
 
-    @property
-    def uses_decisions(self) -> bool:
-        """Whether the caller asks the Decisions API about the agent's in-progress lines."""
-        return self.interruptions or self.back_channel
+    @field_validator("back_channel", mode="before")
+    @classmethod
+    def _parse_sounds(cls, v: Any) -> Any:
+        """Accept a comma-separated string from env vars. barge_in_opener is reserved for barge-ins."""
+        if isinstance(v, str):
+            v = [s for item in v.split(",") if (s := item.strip())]
+        if isinstance(v, list) and "barge_in_opener" in v:
+            raise ValueError("barge_in_opener plays only as the start of a barge-in, not as a back-channel sound")
+        return v
 
     @model_validator(mode="after")
     def _require_provider_keys(self) -> "CascadeSimulatorConfig":
         keys = {"OPENAI_API_KEY" if self.stt == "openai" else "ELEVENLABS_API_KEY", "CARTESIA_API_KEY"}
-        if self.uses_decisions:
+        if self.interruptions:
             keys.add("OPENAI_API_KEY")  # the Decisions API is called directly, not via EVA_MODEL_LIST
         missing = sorted(key for key in keys if not os.environ.get(key))
         if missing:

@@ -53,18 +53,18 @@ class BargeInRecord(BaseModel):
 
 
 class BackChannel(BaseModel):
-    """One back-channel by the cascade caller: a short acknowledgement ("mhm") played over the agent's line.
+    """One sound from the cascade caller's sound bank ("mhm", a cough) played over the agent's line.
 
     Not a turn and not an interruption: it is kept out of the transcript and audit log, and the assistant
     is never signalled that the caller started or stopped speaking.
     """
 
-    phrase: str = Field(..., description="Pre-rendered phrase played")
+    sound: str = Field(..., description="Sound bank name it came from, e.g. back_channel")
+    phrase: str = Field(..., description="Pre-rendered phrase or clip name played")
     agent_turn: int = Field(..., description="0-based index of the agent turn it was played over")
     heard: str = Field(..., description="Agent speech heard so far in that turn: where in the line it landed")
     timestamp_ms: int = Field(..., description="Unix time (ms) its first frame went on the wire")
     duration_ms: float = Field(..., description="How long the phrase played")
-    decision_ms: float = Field(..., description="Decision request -> verdict")
 
 
 class ConversationResult(BaseModel):

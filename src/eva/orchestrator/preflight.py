@@ -175,9 +175,7 @@ async def _probe_user_sim_barge_in_llm(sim: CascadeSimulatorConfig) -> tuple[boo
 
 
 async def _probe_user_sim_decisions(sim: CascadeSimulatorConfig) -> tuple[bool, str]:
-    interruptor = DecisionsInterruptor(
-        sim.interruption_model, interrupt=sim.interruptions, back_channel=sim.back_channel
-    )
+    interruptor = DecisionsInterruptor(sim.interruption_model)
     try:
         await interruptor.decide("Ping.", [], "Hello.")
     finally:
@@ -243,7 +241,7 @@ async def _run_preflight(config: RunConfig) -> list[ProbeResult]:
         probes.append(("USER_SIM_LLM", sim.model, _probe_user_sim_llm(sim)))
         if sim.interruptions and sim.barge_in_model and sim.barge_in_model != sim.model:
             probes.append(("USER_SIM_BARGE_IN_LLM", sim.barge_in_model, _probe_user_sim_barge_in_llm(sim)))
-        if sim.uses_decisions:
+        if sim.interruptions:
             probes.append(("USER_SIM_DECISIONS", sim.interruption_model, _probe_user_sim_decisions(sim)))
         probes.append(("USER_SIM_STT", sim.stt_model, _probe_user_sim_stt(sim, language)))
         probes.append(("USER_SIM_TTS", sim.tts_model, _probe_user_sim_tts(sim, language)))

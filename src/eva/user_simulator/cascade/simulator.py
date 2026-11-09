@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import random
 import re
 from collections.abc import AsyncIterator
 from contextlib import aclosing, suppress
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -17,8 +19,7 @@ from eva.user_simulator.audio_bridge import BotToBotAudioBridge
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.barge_in import BargeIn, pcm_ms
 from eva.user_simulator.cascade.interruptor import DecisionsInterruptor
-from eva.user_simulator.cascade.phrase_cache import PhraseCache
-from eva.user_simulator.cascade.phrases import BACKCHANNELS, OPENERS, phrases_for
+from eva.user_simulator.cascade.phrase_cache import OPENER_SOUND, PhraseCache
 from eva.user_simulator.cascade.stt import create_caller_stt
 from eva.user_simulator.cascade.tts import CALLER_SPEED, TTS_SAMPLE_RATE, CartesiaStreamingTTS
 from eva.utils import router
@@ -59,9 +60,16 @@ DECISION_WARM_CONNECTIONS = 2
 """Pooled decision connections opened before the first turn: consecutive transcript updates'
 decisions can overlap."""
 
-BACK_CHANNEL_PLAY_MARGIN_SECONDS = 0.5
-"""Slack past a back-channel's own length before giving up on it: one that never finishes means the send
+SOUND_PLAY_MARGIN_SECONDS = 0.5
+"""Slack past a sound's own length before giving up on it: one that never finishes means the send
 loop has stopped, and the caller counts as speaking (blocking barge-ins and turns) until it is given up."""
+SOUND_RAMP_UPDATES = 100
+"""A sound's chance per transcript update is its updates since it last played over this: it climbs as the
+agent's line goes on, and starts over once the sound plays."""
+SOUND_MIN_PROBABILITY = 0.2
+"""No sound plays while its chance is below this."""
+SOUND_MAX_PROBABILITY = 0.5
+"""Where a sound's chance stops climbing."""
 
 BARGE_IN_NOTE = """The agent is still speaking and their last line above is cut off where you stopped \
 listening. You are cutting them off now, and you have ALREADY said "{opener}" out loud. Write only \
@@ -74,6 +82,18 @@ or two. Do not finish, repeat or summarize the agent's cut-off line (their code,
 sentence), and do not take over the agent's job of explaining, summarizing or confirming."""
 
 _PERSONA_GENDER = {1: "F", 2: "M"}
+
+
+@dataclass
+class Sound:
+    """A sound-bank sound the caller can play over the agent's line (see ``_due_sound``)."""
+
+    name: str
+    cache: PhraseCache
+    updates: int = 0
+    """Transcript updates heard since it last played (or since the call began)."""
+
+
 _FENCE = re.compile(r"^```[a-z]*\s*|\s*```$", re.MULTILINE)
 
 END_CALL_DESCRIPTION = """Use this to end the phone call and hang up.
@@ -188,16 +208,15 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._history: list[dict[str, str]] = []
         self._system_prompt: str | None = None
         self._kept_listening = 0
-        self._interruptor = DecisionsInterruptor(
-            simulator_config.interruption_model,
-            interrupt=simulator_config.interruptions,
-            back_channel=simulator_config.back_channel,
-        )
-        self._opener_phrases = PhraseCache(phrases_for(OPENERS, language))
-        self._back_channel_phrases = PhraseCache(phrases_for(BACKCHANNELS, language))
-        self._updates_seen = 0
-        """Transcript updates decided on so far, over the whole call: the clock for the back-channel cooldown."""
-        self._last_back_channel_update: int | None = None
+        self._interruptor = DecisionsInterruptor(simulator_config.interruption_model)
+        gender = _PERSONA_GENDER.get(self.persona_config.get("user_persona_id"), "F")
+        self._opener_phrases = PhraseCache.from_bank(OPENER_SOUND, language, gender)
+        self._sounds = [
+            Sound(name, PhraseCache.from_bank(name, language, gender))
+            for name in dict.fromkeys(simulator_config.back_channel)
+        ]
+        self._sound_playing = False
+        """A sound is playing or about to: no other plays over it."""
         self._hung_up = False
         """The caller called end_call: it never speaks, decides or barges in again."""
         self._barge_in_warm_up: asyncio.Task | None = None
@@ -243,19 +262,17 @@ class CascadeUserSimulator(AbstractUserSimulator):
             perturbator=self._perturbator,
             disconnect_reason="assistant_disconnect",
             input_chunk_duration=ASSISTANT_AUDIO_TICK_S,
-            open_mic=self.simulator_config.back_channel,
+            open_mic=bool(self._sounds),
         )
         tasks: list[asyncio.Task] = []
         try:
             await self._stt.start()
             await self._tts.warm_up(self.caller_voice, connections=TTS_WARM_CONNECTIONS)
-            if self.simulator_config.uses_decisions:
-                await self._interruptor.warm_up(self._decision_goal(), connections=DECISION_WARM_CONNECTIONS)
             if self.simulator_config.interruptions:
+                await self._interruptor.warm_up(self._decision_goal(), connections=DECISION_WARM_CONNECTIONS)
                 # At the barge-in speed: callers speed up when they cut in.
                 await self._opener_phrases.render(self._tts, self.caller_voice, speed=CALLER_SPEED)
-            if self.simulator_config.back_channel:
-                await self._back_channel_phrases.render(self._tts, self.caller_voice)
+            await asyncio.gather(*(sound.cache.render(self._tts, self.caller_voice) for sound in self._sounds))
             await self._audio_interface.start_async()
             self._audio_interface.start(self._on_assistant_audio)
             self.event_logger.log_connection_state(
@@ -274,7 +291,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             completion_task = asyncio.create_task(self._wait_for_conversation_end())
             tasks = [completion_task, asyncio.create_task(self._forward_assistant_audio())]
             tasks.append(asyncio.create_task(self._run_turns()))
-            if self.simulator_config.uses_decisions:
+            if self.simulator_config.interruptions or self._sounds:
                 tasks.append(asyncio.create_task(self._watch_for_interruptions()))
 
             done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -552,7 +569,8 @@ class CascadeUserSimulator(AbstractUserSimulator):
         No decision is requested where no barge-in may fire: the first ``interruption_min_updates``
         updates of each agent turn, agent turns before ``interruption_first_turn``, the
         ``interruption_cooldown_updates`` updates after a barge-in, and once
-        ``interruption_max_per_call`` barge-ins have fired.
+        ``interruption_max_per_call`` barge-ins have fired. There (or with interruptions off) a sound
+        may play instead; where a decision is requested, it plays only if the decision does not fire.
         """
         config = self.simulator_config
         goal = self._decision_goal()
@@ -568,19 +586,24 @@ class CascadeUserSimulator(AbstractUserSimulator):
                 if not text or text == last_text or not self._can_interrupt():
                     continue
                 last_text = text
-                self._updates_seen += 1
+                for sound in self._sounds:
+                    sound.updates += 1
                 if self._caller_turns != turn:
                     turn, updates = self._caller_turns, 0
                 updates += 1
                 if self._barge_in_count != fired:
                     fired, since_barge_in = self._barge_in_count, 0
                 since_barge_in += 1
-                if (
+                if not config.interruptions or (
                     updates <= config.interruption_min_updates
                     or turn < config.interruption_first_turn
                     or (fired and since_barge_in <= config.interruption_cooldown_updates)
                     or (config.interruption_max_per_call is not None and fired >= config.interruption_max_per_call)
                 ):
+                    if sound := self._due_sound():
+                        task = asyncio.create_task(self._play_sound(sound, text))
+                        decisions.add(task)
+                        task.add_done_callback(decisions.discard)
                     continue
                 if self._barge_in_warm_up_turn != turn:  # once per turn, as its first decision is requested
                     self._barge_in_warm_up_turn = turn
@@ -666,43 +689,52 @@ class CascadeUserSimulator(AbstractUserSimulator):
         if fire:
             barge_in.decision_ms, barge_in.p_interrupt = decision_ms, p_interrupt
             await self._interrupt(barge_in)
-        elif choice == "back_channel" and not too_slow and self._can_back_channel():
-            await self._play_back_channel(heard, decision_ms)
+        elif sound := self._due_sound():
+            await self._play_sound(sound, heard)
 
-    def _can_back_channel(self) -> bool:
-        """Back-channel only where a barge-in could start, and ``back_channel_cooldown_updates`` after the last one."""
-        last = self._last_back_channel_update
-        return (
-            bool(self._back_channel_phrases)
-            and self._can_interrupt()
-            and (last is None or self._updates_seen - last > self.simulator_config.back_channel_cooldown_updates)
-        )
+    def _due_sound(self) -> Sound | None:
+        """The first sound whose roll succeeds, if one may play now; its updates start over.
 
-    async def _play_back_channel(self, heard: str, decision_ms: float) -> None:
-        """Play a pre-rendered acknowledgement over the agent's line, and record where it landed.
+        Sounds play only where a barge-in could start, and one at a time. A sound's chance is its updates
+        since it last played over ``SOUND_RAMP_UPDATES``, capped at ``SOUND_MAX_PROBABILITY``, and it
+        cannot play below ``SOUND_MIN_PROBABILITY``. Earlier sounds in the list roll first.
+        """
+        if self._sound_playing or not self._can_interrupt():
+            return None
+        for sound in self._sounds:
+            probability = min(SOUND_MAX_PROBABILITY, sound.updates / SOUND_RAMP_UPDATES)
+            if sound.cache and probability >= SOUND_MIN_PROBABILITY and random.random() < probability:
+                sound.updates = 0
+                self._sound_playing = True  # before any await, so no other roll plays over it
+                return sound
+        return None
+
+    async def _play_sound(self, sound: Sound, heard: str) -> None:
+        """Play a pre-rendered sound over the agent's line, and record where it landed.
 
         No reply is generated, and it is not a turn: it stays out of ``_history`` and the transcript, since
         the agent's line is still in progress and the caller's next turn answers it as usual. The bridge
         sends it without any speech start/stop signal, so nothing marks it as the caller interrupting.
         """
-        phrase, pcm = self._back_channel_phrases.pick()
-        self._last_back_channel_update = self._updates_seen  # before the await, so no other decision plays too
+        phrase, pcm = sound.cache.pick()
         agent_turn = self._caller_turns
         try:
             started_at, ended_at = await asyncio.wait_for(
                 self._audio_interface.play_back_channel(pcm),
-                timeout=pcm_ms(len(pcm)) / 1000.0 + BACK_CHANNEL_PLAY_MARGIN_SECONDS,
+                timeout=pcm_ms(len(pcm)) / 1000.0 + SOUND_PLAY_MARGIN_SECONDS,
             )
         except Exception as exc:
-            logger.warning(f"Back-channel failed: {exc!r}")
+            logger.warning(f"Sound {sound.name!r} failed: {exc!r}")
             return
+        finally:
+            self._sound_playing = False
         back_channel = BackChannel(
+            sound=sound.name,
             phrase=phrase,
             agent_turn=agent_turn,
             heard=heard,
             timestamp_ms=int(started_at * 1000),
             duration_ms=(ended_at - started_at) * 1000.0,
-            decision_ms=decision_ms,
         )
         self.back_channels.append(back_channel)
         self.event_logger.log_event("back_channel", back_channel.model_dump())

@@ -23,7 +23,8 @@ Performs all one-time setup needed to run the benchmark in a new language:
 
   3b. **Caller phrases** — adds the language's interruption openers and
      back-channels ("mhm", "okay"…, spelled in the native script for TTS) to
-     ``src/eva/user_simulator/cascade/phrases.py``, each from its own prompt.
+     ``data/sound_bank/{barge_in_opener,back_channel}/phrases.json``, each
+     from its own prompt.
 
   4. **Environment / display** — patches ``.env.example`` with the new
      ``EVA_<LANG>_USER_*`` stubs and registers the display name in
@@ -79,6 +80,7 @@ import os
 import re
 import sys
 import unicodedata
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -108,7 +110,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
 INITIAL_MESSAGES_PATH = REPO_ROOT / "configs" / "agents" / "initial_messages.yaml"
 WER_CONFIGS_DIR = REPO_ROOT / "src" / "eva" / "utils" / "wer_normalization" / "configs"
-PHRASES_PATH = REPO_ROOT / "src" / "eva" / "user_simulator" / "cascade" / "phrases.py"
+SOUND_BANK_DIR = DATA_DIR / "sound_bank"
 
 DEFAULT_MODEL = "gpt-6.1-sol"
 TRANSLATION_BATCH = 25
@@ -723,7 +725,21 @@ async def amain(args: argparse.Namespace) -> int:
         args.dry_run,
         args.overwrite_all,
     )
-    await update_phrases(args.language, args.language_name, PHRASES_PATH, llm, args.dry_run, args.overwrite_all)
+    for sound, prompt, validate in (
+        ("barge_in_opener", _OPENERS_PROMPT, _validate_openers),
+        ("back_channel", _BACKCHANNELS_PROMPT, _validate_backchannels),
+    ):
+        await update_sound_phrases(
+            sound,
+            args.language,
+            args.language_name,
+            prompt,
+            validate,
+            SOUND_BANK_DIR / sound / "phrases.json",
+            llm,
+            args.dry_run,
+            args.overwrite_all,
+        )
     await update_wer_normalizer_config(
         args.language,
         args.language_name,
@@ -1479,85 +1495,37 @@ def _validate_backchannels(phrases: list[str]) -> list[str]:
     return phrases
 
 
-def _format_phrase_entry(language: str, phrases: list[str], indent: str = "    ", max_width: int = 120) -> list[str]:
-    """Source lines for one ``"<lang>": [...]`` entry, exploded one-per-line when it would be too wide."""
-    items = ", ".join(json.dumps(p, ensure_ascii=False) for p in phrases)
-    single = f'{indent}"{language}": [{items}],'
-    # Wide (CJK) characters count double, as ruff format measures them.
-    if sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in single) <= max_width:
-        return [single]
-    return [
-        f'{indent}"{language}": [',
-        *(f"{indent}    {json.dumps(p, ensure_ascii=False)}," for p in phrases),
-        f"{indent}],",
-    ]
-
-
-def _find_phrase_table(lines: list[str], table_name: str) -> tuple[int, int] | None:
-    """(start, close) line indices of ``<table_name>: dict[...] = {`` and its closing ``}``."""
-    start = next((i for i, line in enumerate(lines) if re.match(rf"{table_name}\s*[:=]", line)), None)
-    if start is None:
-        return None
-    close = next((i for i in range(start + 1, len(lines)) if lines[i].rstrip() == "}"), None)
-    return None if close is None else (start, close)
-
-
-def _phrase_entry_span(lines: list[str], start: int, close: int, language: str) -> tuple[int, int] | None:
-    """(first, last) line indices of the existing ``"<language>"`` entry inside the table, if present."""
-    first = next((i for i in range(start + 1, close) if re.match(rf'\s*"{re.escape(language)}"\s*:', lines[i])), None)
-    if first is None:
-        return None
-    last = first
-    if not lines[first].rstrip().endswith("],"):
-        last = next(i for i in range(first + 1, close) if lines[i].strip() == "],")
-    return first, last
-
-
-async def update_phrases(
+async def update_sound_phrases(
+    sound: str,
     language: str,
     language_name: str,
+    prompt_template: str,
+    validate: Callable[[list[str]], list[str]],
     phrases_path: Path,
     llm: LLMClient,
     dry_run: bool,
     overwrite: bool = False,
 ) -> None:
-    """Add the language's interruption openers and back-channels to ``phrases.py``.
+    """Add the language's phrases for a sound-bank sound to its ``phrases.json``, one line per language.
 
-    Each table is generated from its own prompt (back-channels are tiny sounds spelled in the native
-    script, openers are short cut-in phrases) and inserted before the dict's closing brace. Idempotent:
-    a table that already has the language is skipped unless ``overwrite`` replaces its entry in place.
+    Idempotent: a language already present is skipped unless ``overwrite`` replaces it.
     """
     if not phrases_path.exists():
-        logger.warning(f"{phrases_path} not found — skipping phrase update")
+        logger.warning(f"{phrases_path} not found — skipping {sound} update")
+        return
+    table = json.loads(phrases_path.read_text(encoding="utf-8"))
+    if language in table and not overwrite:
+        logger.info(f"{sound}[{language!r}] already present")
         return
 
-    tables = (
-        ("OPENERS", _OPENERS_PROMPT, _validate_openers),
-        ("BACKCHANNELS", _BACKCHANNELS_PROMPT, _validate_backchannels),
-    )
-    for table_name, prompt_template, validate in tables:
-        lines = phrases_path.read_text(encoding="utf-8").splitlines()
-        span = _find_phrase_table(lines, table_name)
-        if span is None:
-            logger.warning(f"Could not find {table_name} in {phrases_path.name} — skipping")
-            continue
-        start, close = span
-        existing = _phrase_entry_span(lines, start, close, language)
-        if existing is not None and not overwrite:
-            logger.info(f"{table_name}[{language!r}] already present")
-            continue
-
-        phrases = validate(await _generate_phrases(prompt_template, language, language_name, llm))
-        entry = _format_phrase_entry(language, phrases)
-        if dry_run:
-            logger.info(f"[dry-run] would write {table_name}[{language!r}] = {phrases}")
-            continue
-        if existing is not None:
-            lines[existing[0] : existing[1] + 1] = entry
-        else:
-            lines[close:close] = entry
-        phrases_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-        logger.info(f"Wrote {table_name}[{language!r}] = {phrases}")
+    phrases = validate(await _generate_phrases(prompt_template, language, language_name, llm))
+    if dry_run:
+        logger.info(f"[dry-run] would write {sound}[{language!r}] = {phrases}")
+        return
+    table[language] = phrases
+    lines = (f"  {json.dumps(key)}: {json.dumps(value, ensure_ascii=False)}" for key, value in table.items())
+    phrases_path.write_text("{\n" + ",\n".join(lines) + "\n}\n", encoding="utf-8")
+    logger.info(f"Wrote {sound}[{language!r}] = {phrases}")
 
 
 def update_env_example(language: str, language_name: str, env_example_path: Path, dry_run: bool) -> None:

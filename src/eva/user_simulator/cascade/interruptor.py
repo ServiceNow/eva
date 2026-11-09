@@ -16,8 +16,7 @@ KEEPALIVE = httpx.Limits(max_keepalive_connections=8, keepalive_expiry=300.0)
 
 DECISION_INSTRUCTIONS = """You are the caller on a live phone call with a support agent, and the agent \
 is speaking right now; their line after the conversation so far is still in progress. Real callers do \
-not sit in silence: they cut in when the conversation is obviously going wrong, and they murmur along \
-when the agent talks for a long time and is on track for what they want. Otherwise they listen, \
+not sit in silence: they cut in when the conversation is obviously going wrong. Otherwise they listen, \
 especially early in a line.
 
 What you read is a live speech-to-text transcript of the agent, not their words: names, codes and \
@@ -50,26 +49,13 @@ DECISION_CHOICES = [
     },
 ]
 
-BACK_CHANNEL_CHOICE = {
-    "value": "back_channel",
-    "description": 'A brief acknowledgement ("mhm", "yeah", "okay") the way a real listener shows they are '
-    "following. Use it when the line has grown long (several sentences, or a long run of details, "
-    "instructions, explanations or results) AND what the agent is saying fits the caller's goal and is "
-    "heading the right way. It should be the usual choice in a long line like that, over keep_listening. "
-    "Never when the agent asked a question or something looks wrong, mid-code or mid-spelling, and not in "
-    "a short line.",
-}
-"""Offered only when back-channeling is enabled."""
-
 
 class DecisionsInterruptor:
-    """Asks whether the caller should cut in on, or murmur along to, the agent's in-progress line."""
+    """Asks whether the caller should cut in on the agent's in-progress line."""
 
-    def __init__(self, model: str, *, interrupt: bool = True, back_channel: bool = False) -> None:
+    def __init__(self, model: str) -> None:
         self.model = model
-        self._choices = [c for c in DECISION_CHOICES if interrupt or c["value"] != "interrupt"]
-        if back_channel:
-            self._choices.append(BACK_CHANNEL_CHOICE)
+        self._choices = DECISION_CHOICES
         self._client = httpx.AsyncClient(
             base_url=OPENAI_API_BASE,
             headers={"Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', '')}"},
