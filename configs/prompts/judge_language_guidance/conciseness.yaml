@@ -20,9 +20,6 @@ de: |
 nl: |
   The Dutch service register is direct and has no obligatory politeness formulas, so the cultural-norms exception gives almost no extra room for courtesy wording in Dutch.
 
-  **Not filler, do not flag verbosity_or_filler:**
-  - A single hold phrase before a tool call (e.g. "Eén moment", "Ik ga meteen kijken", "Ik ga uw reservering er direct bij zoeken").
-
 hi: |
   **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception):**
   - Honorific forms (e.g. आप, -इए/-इएगा, जी as in "जी, बिल्कुल"), compound verbs ("देख लेता हूँ", "कर दिया गया है") and polite request constructions ("क्या आप कृपया… बता सकते हैं"). They make Hindi sentences longer than English ones without adding cognitive load.
@@ -39,6 +36,3 @@ ja: |
   - Keigo, and humble and honorific verb forms, which are longer than plain forms without adding cognitive load.
   - Fixed service formulas, one per function, such as かしこまりました, 恐れ入りますが, 少々お待ちください, お待たせいたしました, 確認いたします / 確認させていただきます, ありがとうございます at the opening or closing.
   - Different formulas for different functions in one turn (e.g. お待たせいたしました then 確認いたしました).
-
-  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
-  - The same sentence restated within the turn (e.g. "Confluenceの読み取り専用アクセスですね。" twice).
