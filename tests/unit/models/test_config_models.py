@@ -820,17 +820,17 @@ class TestTurnStrategyConfig:
 
 
 class TestSelfEndpointingSTTAutowire:
-    def test_cartesia_defaults_to_transcription_start_external_stop_and_no_vad(self):
-        # 'transcription' start: a turn opens on the first non-empty transcript, so ink-2's phantom
-        # turn.start (trailing audio, no words) can't cancel an in-flight query (issue #561).
+    def test_cartesia_defaults_to_external_start_external_stop_and_no_vad(self):
+        # ink-2's own turn.start opens the user turn. A phantom one (trailing audio, no words) can
+        # cancel an in-flight query; the agent processor re-runs it when the turn closes empty (#561).
         m = ModelConfig(stt="cartesia", llm="gpt-5.2")
-        assert m.turn_start_strategy == "transcription"
+        assert m.turn_start_strategy == "external"
         assert m.turn_stop_strategy == "external"
         assert m.vad == "none"
 
-    def test_explicit_external_start_is_respected(self):
-        # Kept selectable so the old behavior can still be A/B compared.
-        m = ModelConfig(stt="cartesia", llm="gpt-5.2", turn_start_strategy="external")
+    def test_explicit_transcription_start_is_overridden(self):
+        # 'transcription' start needs the uninterruptible-final workaround, which was removed.
+        m = ModelConfig(stt="cartesia", llm="gpt-5.2", turn_start_strategy="transcription")
         assert m.turn_start_strategy == "external"
 
     def test_conflicting_user_values_are_overridden(self):
@@ -841,7 +841,7 @@ class TestSelfEndpointingSTTAutowire:
             turn_start_strategy="vad",
             turn_stop_strategy="turn_analyzer",
         )
-        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("transcription", "external", "none")
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("external", "external", "none")
 
     def test_non_self_endpointing_stt_untouched(self):
         m = ModelConfig(stt="cartesia-multilingual", llm="gpt-5.2")
@@ -851,11 +851,11 @@ class TestSelfEndpointingSTTAutowire:
         m = ModelConfig(
             stt="cartesia",
             llm="gpt-5.2",
-            turn_start_strategy="transcription",
+            turn_start_strategy="external",
             turn_stop_strategy="external",
             vad="none",
         )
-        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("transcription", "external", "none")
+        assert (m.turn_start_strategy, m.turn_stop_strategy, m.vad) == ("external", "external", "none")
 
     def test_runconfig_roundtrip(self):
         c = _config(
@@ -867,7 +867,7 @@ class TestSelfEndpointingSTTAutowire:
         )
         assert c.model.stt == "cartesia"
         assert (c.model.turn_start_strategy, c.model.turn_stop_strategy, c.model.vad) == (
-            "transcription",
+            "external",
             "external",
             "none",
         )

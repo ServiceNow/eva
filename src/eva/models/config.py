@@ -127,11 +127,6 @@ class ModelConfig(BaseModel):
     # STT models that perform their own (server-side) semantic endpointing. They drive turn
     # boundaries themselves, so they must run with the 'external' turn-stop strategy and no local VAD.
     _SELF_ENDPOINTING_STT: ClassVar[set[str]] = {"cartesia"}
-    # Turn-start strategies that work with a self-endpointing STT. 'transcription' is the default:
-    # it opens a turn (and interrupts) on the first non-empty transcript, so a phantom turn.start
-    # with no words (trailing audio of the previous utterance) can't cancel an in-flight LLM query.
-    # 'external' opens a turn on every turn.start and is kept only for A/B comparison.
-    _SELF_ENDPOINTING_START_STRATEGIES: ClassVar[set[str]] = {"transcription", "external"}
 
     # ── Mode selectors (exactly one group must be set for a real run) ──
     llm: str | None = Field(
@@ -296,12 +291,15 @@ class ModelConfig(BaseModel):
 
         These models drive turn boundaries themselves (the service pushes its own speech
         start/stop and transcription frames), so they require the 'external' turn-stop strategy
-        with local VAD disabled, and a turn-start strategy driven by their transcription frames
-        ('transcription' by default; 'external' stays selectable). Forcing it here lets a bare
-        ``EVA_MODEL__STT=cartesia`` "just work", and the forced values are reflected in the
-        persisted config.json / run_id. A conflicting user-provided value is overridden with a
-        WARNING; an untouched default is logged at INFO. Idempotent: a value already at the target
-        (or, for the start strategy, in the allowed set) is left untouched (clean reload).
+        with local VAD disabled, and the 'external' turn-start strategy (the STT's own turn.start
+        opens the user turn). Forcing it here lets a bare ``EVA_MODEL__STT=cartesia`` "just work",
+        and the forced values are reflected in the persisted config.json / run_id. A conflicting
+        user-provided value is overridden with a WARNING; an untouched default is logged at INFO.
+        Idempotent: a value already at the target is left untouched (clean reload).
+
+        A phantom turn.start with no words (trailing audio of the previous utterance) can cancel an
+        in-flight LLM query. BenchmarkAgentProcessor re-runs that query when the turn then closes
+        empty, and EmptyProposalStopStrategy closes the empty turn immediately.
 
         Only applies to the CASCADE pipeline: in AUDIO_LLM / S2S the ``stt`` field does not
         instantiate an in-pipeline STT service, so there is nothing to emit the external turn
@@ -313,17 +311,9 @@ class ModelConfig(BaseModel):
         if (self.stt or "").lower() not in self._SELF_ENDPOINTING_STT:
             return self
 
-        forced = {"turn_start_strategy": "transcription", "turn_stop_strategy": "external", "vad": "none"}
+        forced = {"turn_start_strategy": "external", "turn_stop_strategy": "external", "vad": "none"}
         for field, target in forced.items():
             if getattr(self, field) == target:
-                continue
-            if field == "turn_start_strategy" and getattr(self, field) in self._SELF_ENDPOINTING_START_STRATEGIES:
-                if getattr(self, field) == "external":
-                    logger.warning(
-                        f"STT '{self.stt}': keeping turn_start_strategy='external'. A turn.start with no words "
-                        f"(trailing audio of the previous utterance) can interrupt and cancel an in-flight LLM "
-                        f"query; the default is '{target}'."
-                    )
                 continue
             if field in self.model_fields_set:
                 logger.warning(

@@ -649,9 +649,6 @@ class PipecatAssistantServer(AbstractAssistantServer):
                 fallback_processor=agent_processor,
                 # Cascade: fallback rides the standard turn flow via a native turn-stop.
                 turn_stop_strategy=turn_stop_strategy,
-                # A transcript frame opening the turn triggers an InterruptionFrame that would flush
-                # the queued final + stop proposal; only this start strategy needs them protected.
-                uninterruptible_finals=self.pipeline_config.turn_start_strategy == "transcription",
             )
             pipeline_components.append(self._user_observer)
             pipeline_components.append(user_aggregator)  # Aggregates & fires turn events
