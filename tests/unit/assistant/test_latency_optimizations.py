@@ -110,7 +110,7 @@ async def _collect(system, query):
 
 
 class TestPreToolSpeechDirective:
-    @pytest.mark.parametrize("mode,present", [("off", False), ("auto", True)])
+    @pytest.mark.parametrize("mode,present", [("off", False), ("auto", True), ("always", True)])
     def test_directive_injection(self, mode, present):
         system = AgenticSystem(
             current_date_time="2026-02-25 10:00:00",
@@ -121,6 +121,18 @@ class TestPreToolSpeechDirective:
             pre_tool_speech=mode,
         )
         assert ("Responsiveness" in system.system_prompt) is present
+
+    @pytest.mark.parametrize("mode,always_text", [("auto", False), ("always", True)])
+    def test_always_mode_uses_stricter_directive(self, mode, always_text):
+        system = AgenticSystem(
+            current_date_time="2026-02-25 10:00:00",
+            agent=_agent(),
+            tool_handler=MagicMock(),
+            audit_log=AuditLog(),
+            llm_client=MagicMock(),
+            pre_tool_speech=mode,
+        )
+        assert ("Never call a tool silently" in system.system_prompt) is always_text
 
 
 class TestSilentToolCallNoFabricatedSpeech:

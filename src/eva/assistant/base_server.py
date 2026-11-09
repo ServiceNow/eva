@@ -301,8 +301,9 @@ class AbstractAssistantServer(ABC):
             agent_instructions=self.agent.instructions,
             datetime=self.current_date_time,
         )
-        if self.pipeline_config.pre_tool_speech == "auto":
-            prompt += "\n\n" + prompt_manager.get_prompt("agent.pre_tool_speech")
+        lead_in_prompt = prompt_manager.get_pre_tool_speech_prompt(self.pipeline_config.pre_tool_speech)
+        if lead_in_prompt:
+            prompt += "\n\n" + lead_in_prompt
         return prompt
 
     def _save_scenario_dbs(self) -> None:

@@ -77,7 +77,7 @@ class BenchmarkAgentProcessor(FrameProcessor):
             audit_log: Audit log for conversation tracking
             llm_client: LLM client for generating responses
             output_dir: Optional output directory for saving performance stats
-            pre_tool_speech: Lead-in mode ('off'|'auto')
+            pre_tool_speech: Lead-in mode ('off'|'auto'|'always')
             llm_streaming: Stream LLM output sentence-by-sentence
             assistant_gender: Speaking gender for the assistant ('M'|'F'); None adds no
                 gender instruction
