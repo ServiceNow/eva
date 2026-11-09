@@ -30,18 +30,10 @@ hi: |
   - One formula per function, such as ठीक है, जी, धन्यवाद, or नमस्ते at the opening.
   - English loanwords in normal Hindi service speech (e.g. booking, PIN, ID, ticket), in Devanagari or Latin script.
 
-  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
-  - The same formula said twice or more in one turn, e.g. "ठीक है… ठीक है", or धन्यवाद two or more times. Repeated formulas are not obligatory politeness; they sound unnatural in Hindi.
-  - A term given with its equivalent (e.g. "कर्मचारी आईडी (employee ID)", "कर्मचारी आईडी यानी employee ID").
-
 ko: |
   **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception), even though they lengthen the sentence:**
   - Formal 합쇼체 endings (-습니다, -ㅂ니까) and polite 해요체 endings (-세요, -요), and addressing the user as 고객님.
   - Set phrases, one per function, such as 잠시만 기다려 주세요, 확인해 드리겠습니다, 감사합니다, 도와드리겠습니다.
-
-  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
-  - The same formula said twice in one turn, e.g. 감사합니다 twice.
-  - A term with its synonym or translation (e.g. 비밀번호(PIN)).
 
 ja: |
   **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception):**
@@ -50,6 +42,4 @@ ja: |
   - Different formulas for different functions in one turn (e.g. お待たせいたしました then 確認いたしました).
 
   **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
-  - The same formula said twice in one turn, e.g. ありがとうございます twice.
   - The same sentence restated within the turn (e.g. "Confluenceの読み取り専用アクセスですね。" twice).
-  - A loanword together with its native synonym (e.g. "PIN／暗証番号", "暗証番号（PIN）", "sick leave（病気休暇）").
