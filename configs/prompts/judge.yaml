@@ -716,8 +716,7 @@ judge:
         - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
         - A phrase or sentence in another language that is not in the intended text (e.g., an English "one moment" in a French turn) is rating = 0 with `wrong_language`, even when the rest of the turn is in {expected_language}. If the intended text itself contains the phrase, reproducing it is not an error.
         - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
-        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an error by themselves; they are an `entity_error` only if a native {expected_language} listener could take it for a different value. A different word for the value (e.g., Swiss/Belgian "septante" for standard French "soixante-dix") is still an error, even though it means the same number.
-        - A digit sequence that is normally read digit by digit (a PIN, phone number, confirmation or account number, or other code) but is read as one number (e.g., PIN "1234" read as "one thousand two hundred thirty-four") is an `entity_error`, even though the value is the same.
+        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an error by themselves; they are an `entity_error` only if a native {expected_language} listener could take it for a different value, or if a code that is normally read digit by digit (a PIN, phone number, confirmation or account number) is read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"). A different word for the value (e.g., Swiss/Belgian "septante" for standard French "soixante-dix") is still an error, even though it means the same number.
 
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
@@ -819,8 +818,7 @@ judge:
         - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
         - A phrase in another language around the entities (e.g., an English "one moment" in a French turn) does not affect this rating; other metrics score it. Here, only the entities must be said in {expected_language}.
         - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
-        - A number, date or time reading that is unusual but unambiguous is not by itself a reason for rating = 0; rate 0 only if a native {expected_language} listener could take it for a different value.
-        - A digit sequence that is normally read digit by digit (a PIN, phone number, confirmation or account number, or other code) but is read as one number (e.g., PIN "1234" read as "one thousand two hundred thirty-four") is rating = 0, even though the value is the same.
+        - A number, date or time reading that is unusual but unambiguous is not by itself a reason for rating = 0; rate 0 only if a native {expected_language} listener could take it for a different value, or if a code that is normally read digit by digit (a PIN, phone number, confirmation or account number) is read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four").
 
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: Every entity from the conversation trace that the agent speaks in this turn is clearly and correctly articulated.
@@ -902,8 +900,7 @@ judge:
         - Confusable letters and digits: don't flag one because of your own transcription; audio that is ambiguous between two letters or digits is still an error.
         - A phrase or sentence in another language that is not in the intended text (e.g., an English "one moment" in a French turn) is wrong language for part of the turn: rating at most 2, and 1 if it replaces an entity or the turn no longer makes sense. If the intended text itself contains the phrase, reproducing it is not an error.
         - Not wrong language: proper nouns, official product or system names, codes and acronyms, and loanwords that are established in {expected_language}.
-        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an entity error: rating at most 2 if they sound unnatural, and 1 only if a native {expected_language} listener could take it for a different value. A different word for the value (e.g., Swiss/Belgian "septante" for standard French "soixante-dix") is still flagged, even though it means the same number.
-        - A digit sequence that is normally read digit by digit (a PIN, phone number, confirmation or account number, or other code) but is read as one number (e.g., PIN "1234" read as "one thousand two hundred thirty-four") is rating at most 2, even though the value is the same.
+        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an entity error: rating at most 2 if they sound unnatural or if a code that is normally read digit by digit (a PIN, phone number, confirmation or account number) is read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"), and 1 only if a native {expected_language} listener could take it for a different value. A different word for the value (e.g., Swiss/Belgian "septante" for standard French "soixante-dix") is still flagged, even though it means the same number.
 
         ## Rating Scale (per turn)
         - **3 (High Fidelity)**: 
