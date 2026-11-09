@@ -19,7 +19,7 @@
   },
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
-    "prompt_hash": "6f04804fface",
+    "prompt_hash": "af760af9b94c",
     "source_hash": "f0281a98a14b",
     "version": "v0.3"
   },

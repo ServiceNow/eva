@@ -8,11 +8,8 @@ ja: |
 
   **Flag once under question_quality ("Failing to ask for clarification when the user's request was genuinely ambiguous"):**
   - A code or name contains such an element, a lookup failed or the user corrected the value, and the assistant kept calling tools with guessed interpretations or looped over several turns instead of asking which was meant (e.g. 「アルファベットのキューですか、数字のきゅうですか」, 「お名前はどのような漢字をお書きになりますか」).
-  - Rate it with the Rating Scale: 2 if the guessing cost one extra turn or call, 1 if it stalled the conversation over several turns.
-  - Do not also count each differently-guessed retry under unnecessary_tool_calls. Repeating a call with identical parameters is still an unnecessary_tool_calls flag, as usual.
 
   **Not a flag, does not lower the rating:**
-  - Trying the other interpretation once after a failed lookup: this is a retry with corrected parameters.
   - Not asking when the first lookup succeeded and nothing signals ambiguity.
   - Asking such a disambiguation question, or asking again after a failed lookup: this is never redundant_statements or information_loss, even though the user already said the value, because the spoken value did not determine the letter, digit or kanji.
 
@@ -21,10 +18,7 @@ ko: |
 
   **Flag once under question_quality ("Failing to ask for clarification when the user's request was genuinely ambiguous"):**
   - A code contains such an element, a lookup failed or the user corrected the value, and the assistant kept calling tools with guessed interpretations or looped over several turns instead of asking which was meant (e.g. 「영어 이인가요, 숫자 이인가요?」).
-  - Rate it with the Rating Scale: 2 if the guessing cost one extra turn or call, 1 if it stalled the conversation over several turns.
-  - Do not also count each differently-guessed retry under unnecessary_tool_calls. Repeating a call with identical parameters is still an unnecessary_tool_calls flag, as usual.
 
   **Not a flag, does not lower the rating:**
-  - Trying the other interpretation once after a failed lookup: this is a retry with corrected parameters.
   - Not asking when the first lookup succeeded and nothing signals ambiguity.
   - Asking such a disambiguation question, or asking again after a failed lookup: this is never redundant_statements or information_loss, even though the user already said the value, because the spoken value did not determine the letter or digit.
