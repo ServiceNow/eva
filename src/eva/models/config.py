@@ -357,7 +357,7 @@ def get_pipeline_type(model_data: dict) -> PipelineType:
     """
     if s2s_value := model_data.get("s2s"):
         # These frameworks use s2s_params but report the text they speak, as cascade pipelines do
-        if s2s_value in ("elevenlabs", "cartesia"):
+        if s2s_value in ("elevenlabs", "cartesia", "guava_daytona"):
             return PipelineType.CASCADE
         # Ultravox uses s2s_params for plumbing but is an audio-LLM (audio in, text out, separate TTS)
         if s2s_value == "ultravox":
@@ -579,7 +579,14 @@ class RunConfig(BaseSettings):
 
     # Framework selection
     framework: Literal[
-        "pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra", "cartesia"
+        "pipecat",
+        "openai_realtime",
+        "gemini_live",
+        "elevenlabs",
+        "grok_voice",
+        "smallest_hydra",
+        "cartesia",
+        "guava_daytona",
     ] = Field(
         "pipecat",
         description=(
@@ -591,6 +598,7 @@ class RunConfig(BaseSettings):
             "'grok_voice': xAI Grok voice realtime API."
             "'smallest_hydra': Smallest Hydra speech-to-speech API."
             "'cartesia': Cartesia Managed Agents over a WebSocket connection."
+            "'guava_daytona': Guava voice agent via a hosted control endpoint and a SIP media relay."
         ),
     )
 
