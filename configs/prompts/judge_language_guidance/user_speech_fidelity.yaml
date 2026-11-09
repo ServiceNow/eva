@@ -51,6 +51,7 @@ fr: |
   - This is how numbers are read in French; a number read this way is correct: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze. Liaison (six heures, dix-huit).
   - This is how times are read in French; a time read this way is correct: 'quinze heures trente', 'trois heures et demie', 'trois heures et quart' = 3:15, 'trois heures moins le quart' or 'trois heures moins quart' (without 'le', common in Québec) = 2:45, 'midi', 'minuit'.
   - This is how dates and years are read in French; a date or year read this way is correct: 'le premier mars', 'deux mille vingt-six', 'mille neuf cent quatre-vingt-dix' or 'dix-neuf cent quatre-vingt-dix'.
+  - Phone numbers read in two-digit pairs, as is usual in French ('zéro six, douze, trente-quatre…' for 06 12 34…): this is correct, not a code read as one number.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different French letter.** Typical cases:
   - 'bee' for B, 'jay', 'double-u', 'six' with an English 'ks', 'two', INC or EMP spelled with English names.
   - These English names sound like a different French letter, so the code changes: English G 'djee' ~ French J 'ji', English J 'djay' ~ French G 'gé', English E 'ii' = French I.
