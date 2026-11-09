@@ -17,7 +17,7 @@ de: |
   **Unusual but understandable: rating at most 2 while the value is still clear; rating 1 if a German listener could take it for a different value:**
   - A date read as digit groups a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf').
   **Letters and digits that sound alike: rating 1 only if the audio itself is ambiguous between the two; do not lower the rating because your own transcription shows the other one:**
-  - D/E/G/T (deh/eh/geh/teh), B/P, M/N, F/S; zwei/drei (2/3), which is why careful speakers say 'zwo'.
+  - D/E/G/T (deh/eh/geh/teh), B/P, M/N/L (emm/enn/ell), F/S; zwei/drei (2/3), which is why careful speakers say 'zwo'.
   **Not wrong language, does not lower the rating:**
   - Established loanwords, e.g. Ticket, Login, Account, Laptop.
   - A half-English pronunciation of a German word ('Perfekt'): this is accent.
@@ -36,7 +36,7 @@ nl: |
   - A vowel change that makes a digit unrecognisable or turns it into another digit.
   - A different value: 'half drie' for 3:30.
   **Letters and digits that sound alike: rating 1 only if the audio itself is ambiguous between the two; do not lower the rating because your own transcription shows the other one:**
-  - V/F (Dutch v is often devoiced), G/CH, M/N, B/P, D/T; zeven/negen (7/9), which is why telephone speech uses 'zeuven'.
+  - V/F (Dutch v is often devoiced), G/CH, M/N/L (em/en/el), B/P, D/T; zeven/negen (7/9), which is why telephone speech uses 'zeuven'.
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - EI and IJ in names.
   **Not wrong language, does not lower the rating:**
@@ -78,7 +78,7 @@ es: |
   - A name that clearly picks the other letter: 'uve' / 've corta' said for B, or 'be larga' / 'be de Barcelona' said for V.
   - A different value: 'menos cuarto' for 3:45.
   **Letters and digits that sound alike: rating 1 only if the audio itself is ambiguous between the two; do not lower the rating because your own transcription shows the other one:**
-  - M/N (eme/ene), N/Ñ, F/S (efe/ese), sesenta/setenta (60/70), dos/doce (2/12).
+  - M/N/L (eme/ene/ele), N/Ñ, F/S (efe/ese), sesenta/setenta (60/70), dos/doce (2/12).
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - B and V (both /b/) when said without a distinguishing name.
   **Not wrong language, does not lower the rating:**
@@ -100,7 +100,7 @@ it: |
   **Unusual but understandable: rating at most 2 while the value is still clear; rating 1 if a Italian listener could take it for a different value:**
   - 'l'uno marzo' or other non-Italian date and ID formats.
   **Letters and digits that sound alike: rating 1 only if the audio itself is ambiguous between the two; do not lower the rating because your own transcription shows the other one:**
-  - M/N, B/P/D/T (bi/pi/di/ti), C/G (ci/gi), F/S (effe/esse).
+  - M/N/L (emme/enne/elle), B/P/D/T (bi/pi/di/ti), C/G (ci/gi), F/S (effe/esse).
   **Not wrong language, does not lower the rating:**
   - Established loanwords, e.g. email, ticket, ok.
 
@@ -140,7 +140,7 @@ ja: |
   - Counter readings such as よんじ, きゅうじ, よんにち.
   - A year read digit by digit.
   **Letters and digits that sound alike: rating 1 only if the audio itself is ambiguous between the two; do not lower the rating because your own transcription shows the other one:**
-  - エム/エヌ (M/N), ビー/ブイ (B/V), ディー/ティー (D/T), ジー/ゼット (G/Z).
+  - エム/エヌ/エル (M/N/L), ビー/ブイ (B/V), ディー/ティー (D/T), ジー/ゼット (G/Z).
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - Q キュー and 9 きゅう.
   **Not wrong language, does not lower the rating:**
@@ -159,7 +159,7 @@ ko: |
   - Native numbers (하나, 둘) inside a code.
   - The wrong number system for a correct value ('삼 시' for 3 o'clock, '육월').
   **Letters and digits that sound alike: rating 1 only if the audio itself is ambiguous between the two; do not lower the rating because your own transcription shows the other one:**
-  - 엠/엔 (M/N), 비/피 (B/P), 제이/지 (J/G), 디/티 (D/T), 일/이 (1/2), U 유 / 6 육.
+  - 엠/엔/엘 (M/N/L), 비/피 (B/P), 제이/지 (J/G), 디/티 (D/T), 일/이 (1/2), U 유 / 6 육.
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - E 이 and 2 이; O 오 and 5 오; Z 지 and G 지.
   **Not wrong language, does not lower the rating:**
