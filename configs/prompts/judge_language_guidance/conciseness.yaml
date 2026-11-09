@@ -10,9 +10,6 @@ fr: |
   - Short service formulas, one per function, such as "Je vous écoute" (it hands the floor to the user, like "go ahead"), "Parfait", "Très bien", "D'accord", "Je vous en prie", "Puis-je vous aider ?", "Je vais vérifier cela pour vous", and addressing the user by name ("Très bien, Lucien").
   - Québec service register is often warmer than European French, e.g. "Excellent, Lucien !", "Ça me fait plaisir", "Pas de problème", "Je suis là pour vous aider".
 
-  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
-  - Several acknowledgements stacked together, in any combination, e.g. "Parfait, très bien, d'accord, merci beaucoup".
-
 de: |
   **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception):**
   - The formal Sie register and short service phrases, one per function, such as "Gerne", "Sehr gern", "Einen Moment bitte", "Vielen Dank", "Alles klar".
@@ -26,10 +23,6 @@ nl: |
   **Not filler, do not flag verbosity_or_filler:**
   - A single brief acknowledgement (e.g. "Prima", "Dank u wel").
   - A single hold phrase before a tool call (e.g. "Eén moment", "Ik ga meteen kijken", "Ik ga uw reservering er direct bij zoeken").
-
-  **Filler, flag verbosity_or_filler (rating 2; 1 only if it materially increases cognitive load):**
-  - A hold phrase stacked with another hold phrase or lead-in, or the same hold phrase (e.g. "Eén moment") repeated within the turn.
-  - Any acknowledgement (e.g. "Mooi", "Prima") stacked on top of other acknowledgements or lead-ins.
 
 hi: |
   **Not filler, do not flag verbosity_or_filler (covered by the cultural-norms exception):**
