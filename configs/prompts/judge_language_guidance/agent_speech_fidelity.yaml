@@ -46,19 +46,17 @@ fr: |
   - Some of these are written like English names but sound different: A is /a/ (as in 'papa'), E is /ə/ (as in 'le'), I is /i/ (as in 'ici'), U is /y/ (as in 'tu'), and six is said 'sis'. Said the English way ('ay', 'ee', 'eye', 'you', 'six' with a 'ks'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'A comme Anatole', 'M comme Marcel').
   - This is how numbers are read in French; a number read this way is correct: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze. Liaison (six heures, dix-huit).
-  - This is how times are read in French; a time read this way is correct: 'quinze heures trente', 'trois heures et demie', 'trois heures et quart' = 3:15, 'trois heures moins le quart' = 2:45, 'midi', 'minuit'.
+  - This is how times are read in French; a time read this way is correct: 'quinze heures trente', 'trois heures et demie', 'trois heures et quart' = 3:15, 'trois heures moins le quart' or 'trois heures moins quart' (without 'le', common in Québec) = 2:45, 'midi', 'minuit'.
   - This is how dates and years are read in French; a date or year read this way is correct: 'le premier mars', 'deux mille vingt-six', 'mille neuf cent quatre-vingt-dix' or 'dix-neuf cent quatre-vingt-dix'.
-  - Z said 'zed' (common in Québec): this is not English.
-  - This is how times are also read in Québec French; a time read this way is correct: 'trois heures moins quart' (without 'le') = 2:45 and the colloquial 'quart à trois' = 2:45.
   **English letter or digit names inside a trace entity: the entity is not said in French, rating = 0.** Typical cases:
   - 'bee' for B, 'jay', 'double-u', 'six' with an English 'ks', 'two', INC or EMP spelled with English names.
   - These English names sound like a different French letter, so the code changes: English G 'djee' ~ French J 'ji', English J 'djay' ~ French G 'gé', English E 'ii' = French I.
   **Unusual but understandable: rating = 1; rating = 0 only if a French listener could take it for a different value:**
   - 'le un mars' instead of 'le premier mars'.
   **Letters and digits that sound alike: rating = 0 only if the audio itself is ambiguous between the two; do not rate 0 because your own transcription shows the other one:**
-  - M/N (emme/enne), B/D/P/T (bé/dé/pé/té), G/J (gé/ji), F/S (effe/esse).
+  - M/N/L (emme/enne/elle), B/D/P/T (bé/dé/pé/té), G/J (gé/ji), F/S (effe/esse).
   **Not wrong language, does not lower the rating:**
-  - Established loanwords, e.g. ticket, e-mail, week-end, OK.
+  - Established loanwords, e.g. e-mail, week-end, OK.
 
 es: |
   **Correct, does not lower the rating:**
