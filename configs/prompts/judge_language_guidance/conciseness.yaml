@@ -21,7 +21,6 @@ nl: |
   The Dutch service register is direct and has no obligatory politeness formulas, so the cultural-norms exception gives almost no extra room for courtesy wording in Dutch.
 
   **Not filler, do not flag verbosity_or_filler:**
-  - A single brief acknowledgement (e.g. "Prima", "Dank u wel").
   - A single hold phrase before a tool call (e.g. "Eén moment", "Ik ga meteen kijken", "Ik ga uw reservering er direct bij zoeken").
 
 hi: |
