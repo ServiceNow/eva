@@ -22,6 +22,30 @@ from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+
+def _extract_reasoning(message: Any) -> str | None:
+    """Reasoning text from a message; vLLM versions use ``reasoning_content`` or ``reasoning``."""
+    return getattr(message, "reasoning_content", None) or getattr(message, "reasoning", None) or None
+
+
+def _streamed_reasoning(chunks: list[Any]) -> str | None:
+    """Concatenate reasoning deltas from raw stream chunks.
+
+    litellm's stream_chunk_builder only recognizes ``reasoning_content`` deltas, so reasoning
+    streamed under vLLM's newer ``reasoning`` field is lost when the message is reassembled.
+    """
+    parts: list[str] = []
+    for chunk in chunks:
+        for choice in getattr(chunk, "choices", None) or []:
+            delta = getattr(choice, "delta", None)
+            if delta is None:
+                continue
+            text = _extract_reasoning(delta)
+            if text:
+                parts.append(text)
+    return "".join(parts) or None
+
+
 # vLLM / OpenAI-compatible decoding params that are safe to forward via extra_body.
 # Unknown keys are still forwarded (vLLM evolves) but warned about, to catch typos.
 _KNOWN_SAMPLING_PARAMS = frozenset(
@@ -79,6 +103,7 @@ class ALMvLLMClient(BaseALMClient):
         sample_width: int = DEFAULT_SAMPLE_WIDTH,
         language: str | None = None,
         enable_thinking: bool = False,
+        reasoning_effort: str | None = None,
         sampling_params: dict[str, Any] | None = None,
     ):
         super().__init__(
@@ -94,6 +119,9 @@ class ALMvLLMClient(BaseALMClient):
         )
         self._reasoning_token_fallback_warned = False
         self.enable_thinking = enable_thinking
+        # Sent as top-level ``reasoning_effort`` in extra_body (as the NowLLM provider does) for
+        # servers that gate reasoning on it rather than on chat_template_kwargs.enable_thinking.
+        self.reasoning_effort = reasoning_effort
         # vLLM-specific decoding params (repetition_penalty, top_p, top_k, min_p,
         # frequency_penalty, presence_penalty, ...). Validated here, then merged into
         # extra_body of every complete()/complete_stream() call; not applied to
@@ -114,7 +142,8 @@ class ALMvLLMClient(BaseALMClient):
             f"Initialized ALMvLLMClient: base_url={self.base_url}, model={self.model}, "
             f"sample_rate={self.sample_rate}, num_channels={self.num_channels}, "
             f"sample_width={self.sample_width}, "
-            f"sampling_params={self.sampling_params}, enable_thinking={self.enable_thinking}"
+            f"sampling_params={self.sampling_params}, enable_thinking={self.enable_thinking}, "
+            f"reasoning_effort={self.reasoning_effort}"
         )
 
     @staticmethod
@@ -166,6 +195,8 @@ class ALMvLLMClient(BaseALMClient):
         extra_body: dict[str, Any] = {
             "chat_template_kwargs": {"enable_thinking": self.enable_thinking},
         }
+        if self.reasoning_effort:
+            extra_body["reasoning_effort"] = self.reasoning_effort
         extra_body.update(self.sampling_params)
         return extra_body
 
@@ -205,7 +236,9 @@ class ALMvLLMClient(BaseALMClient):
 
                 # Extract reasoning content if present (OpenAI o1 and compatible models)
                 # vLLM versions use different field names: "reasoning_content" vs "reasoning"
-                reasoning_content = getattr(message, "reasoning_content", None) or getattr(message, "reasoning", None)
+                reasoning_content = _extract_reasoning(message)
+                if reasoning_content:
+                    logger.debug(f"ALM reasoning: {reasoning_content}")
 
                 # Extract reasoning tokens if present
                 reasoning_tokens = 0
@@ -291,7 +324,9 @@ class ALMvLLMClient(BaseALMClient):
                 elapsed = time.time() - start_time
 
                 message, usage, finish_reason = _assemble_stream_chunks(chunks, messages)
-                reasoning_content = getattr(message, "reasoning_content", None) or None
+                reasoning_content = _streamed_reasoning(chunks) or _extract_reasoning(message)
+                if reasoning_content:
+                    logger.debug(f"ALM reasoning: {reasoning_content}")
 
                 # Reasoning tokens from usage if the server reported them; else approximate from
                 # the streamed reasoning text (mirrors the non-streaming complete() path).
