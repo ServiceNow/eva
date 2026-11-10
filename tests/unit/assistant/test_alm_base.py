@@ -8,9 +8,13 @@ merging streamed tool_call deltas, so that key is silently dropped unless we re-
 ourselves -- see _merge_streamed_tool_call_extras.
 """
 
+from unittest.mock import AsyncMock
+
+import pytest
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 from eva.assistant.pipeline.alm_base import _assemble_stream_chunks, _merge_streamed_tool_call_extras
+from eva.assistant.pipeline.alm_vllm import ALMvLLMClient
 
 
 def _make_chunk(delta: dict, finish_reason: str | None = None, usage: dict | None = None) -> ChatCompletionChunk:
@@ -170,3 +174,34 @@ def test_merge_streamed_tool_call_extras_handles_multiple_tool_calls():
     assert dumped[1]["id"] == "call_2"
     assert dumped[1]["function"]["arguments"] == '{"city": "SF"}'
     assert dumped[1]["extra_content"]["google"]["thought_signature"] == "sig_b"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("field", ["reasoning", "reasoning_content"])
+async def test_vllm_complete_stream_captures_reasoning_under_either_field(field):
+    """Streamed reasoning is surfaced whether vLLM names the delta field `reasoning` or `reasoning_content`."""
+    chunks = [
+        _make_chunk({"role": "assistant", field: "Let me "}),
+        _make_chunk({field: "think."}),
+        _make_chunk({"content": "Hello."}),
+        _make_chunk({}, finish_reason="stop"),
+    ]
+
+    async def _stream():
+        for chunk in chunks:
+            yield chunk
+
+    client = ALMvLLMClient(base_url="http://localhost:1")
+    client._client.chat.completions.create = AsyncMock(return_value=_stream())
+
+    events = [ev async for ev in client.complete_stream([{"role": "user", "content": "hi"}])]
+
+    _, (_, stats) = events[-1]
+    assert stats["reasoning"] == "Let me think."
+    assert stats["reasoning_content"] == "Let me think."
+
+
+def test_vllm_reasoning_effort_in_extra_body():
+    assert "reasoning_effort" not in ALMvLLMClient(base_url="http://localhost:1")._build_extra_body()
+    client = ALMvLLMClient(base_url="http://localhost:1", reasoning_effort="low")
+    assert client._build_extra_body()["reasoning_effort"] == "low"
