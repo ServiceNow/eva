@@ -18,6 +18,7 @@ import websockets
 from elevenlabs.realtime import AudioFormat, CommitStrategy, RealtimeConnection, RealtimeEvents, ScribeRealtime
 
 from eva.utils.logging import get_logger
+from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -192,7 +193,8 @@ class OpenAIStreamingSTT:
     """Transcribes assistant audio continuously over an OpenAI realtime transcription session.
 
     Same contract as ``ScribeStreamingSTT``: partials are tracked as deltas arrive, and commits are manual
-    (no server VAD).
+    (no server VAD). ``prompt`` and ``keywords`` describe the call to the model: at the minimal delay they
+    cut wrong words about as much as a higher delay does, without its lag.
     """
 
     def __init__(
@@ -200,10 +202,16 @@ class OpenAIStreamingSTT:
         model: str,
         *,
         language: str = "en",
+        delay: str = "minimal",
+        prompt: str | None = None,
+        keywords: list[str] | None = None,
         api_key: str | None = None,
     ) -> None:
         self.model = model
         self.language = language.split("-")[0]
+        self.delay = delay
+        self.prompt = prompt
+        self.keywords = keywords
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
         self._ws: websockets.ClientConnection | None = None
         self._receiver: asyncio.Task | None = None
@@ -251,7 +259,7 @@ class OpenAIStreamingSTT:
                     "audio": {
                         "input": {
                             "format": {"type": "audio/pcm", "rate": OPENAI_SAMPLE_RATE},
-                            "transcription": {"model": self.model, "languages": [self.language], "delay": "minimal"},
+                            "transcription": self._transcription_config(),
                             "turn_detection": None,
                         }
                     },
@@ -264,6 +272,20 @@ class OpenAIStreamingSTT:
             self.error = self.error or "No session.updated from OpenAI transcription"
         if self.error is not None:
             logger.error(f"Caller STT error: {self.error}")
+
+    def _transcription_config(self) -> dict[str, Any]:
+        # English too: codes, names and acronyms are often spoken in English whatever the call's language.
+        config: dict[str, Any] = {
+            "model": self.model,
+            "languages": list(dict.fromkeys([self.language, "en"])),
+            "delay": self.delay,
+        }
+        if self.prompt:
+            config["prompt"] = self.prompt
+        if self.keywords:
+            config["keywords"] = self.keywords
+        logger.info(f"Caller STT transcription config: {config}")
+        return config
 
     async def send(self, mulaw: bytes) -> None:
         """Stream one chunk of the assistant's 8kHz mu-law audio, as 24kHz PCM16."""
@@ -426,8 +448,25 @@ class OpenAIStreamingSTT:
 CallerSTT = ScribeStreamingSTT | OpenAIStreamingSTT
 
 
-def create_caller_stt(provider: str, model: str, *, language: str = "en") -> CallerSTT:
-    """The caller's streaming STT for a ``CascadeSimulatorConfig.stt`` provider."""
+def create_caller_stt(
+    provider: str,
+    model: str,
+    *,
+    language: str = "en",
+    domain: str | None = None,
+) -> CallerSTT:
+    """The caller's streaming STT for a ``CascadeSimulatorConfig.stt`` provider.
+
+    ``domain`` picks the call description from ``user_simulator.stt_prompt_{domain}`` and
+    ``stt_keywords_{domain}`` (comma-separated) in the simulation prompts; a domain without them gets none.
+    """
     if provider == "openai":
-        return OpenAIStreamingSTT(model, language=language)
+        prompt, keywords = None, None
+        if domain:
+            prompts = PromptManager()
+            with suppress(KeyError):
+                prompt = prompts.get_template(f"user_simulator.stt_prompt_{domain}").strip()
+            with suppress(KeyError):
+                keywords = [k.strip() for k in prompts.get_template(f"user_simulator.stt_keywords_{domain}").split(",")]
+        return OpenAIStreamingSTT(model, language=language, prompt=prompt, keywords=keywords)
     return ScribeStreamingSTT(model, language=language)
