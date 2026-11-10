@@ -250,7 +250,16 @@ class AgenticSystem:
                                 content_streamed = True
                                 streamed_chunks.append(agg.text)
                                 yield agg.text
-                        else:
+                        elif kind == "tool_call_start":
+                            # SimpleTextAggregator holds a trailing sentence until the next
+                            # non-space character arrives. Tool-call tokens are not text deltas,
+                            # so without this the lead-in is held until the stream ends.
+                            held = await aggregator.flush()
+                            if held and held.text.strip():
+                                content_streamed = True
+                                streamed_chunks.append(held.text)
+                                yield held.text
+                        elif kind == "final":
                             response, llm_stats = payload
                     # delta_count > 1 confirms the provider streamed token-by-token rather
                     # than a client falling back to a single non-streaming chunk.
