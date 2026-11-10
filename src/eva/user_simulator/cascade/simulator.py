@@ -199,10 +199,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
             raise ValueError("Cascade caller does not support ElevenLabs-specific accent variants")
         self.simulator_config = simulator_config
         self._stt = create_caller_stt(
-            simulator_config.stt,
-            simulator_config.stt_model,
-            language=language,
-            domain=agent_id.removeprefix("agent_")
+            simulator_config.stt, simulator_config.stt_model, language=language, domain=agent_id.removeprefix("agent_")
         )
         self._tts = CartesiaStreamingTTS(simulator_config.tts_model, language=language)
         self._llm = LiteLLMClient(model=simulator_config.model)
