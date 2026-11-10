@@ -118,6 +118,26 @@ python main.py --domain airline
 
 `s2s_params`: `api_key`, `model` and `assistant_agent_id` (the agent for the run's domain) are required, as for ElevenLabs. `model` must match the model configured on the agent; `alias` optionally labels the run. `base_url` (default `wss://api.cartesia.ai`) and `cartesia_version` are optional. `EVA_MODEL__LLM` must be unset, as for any S2S run.
 
+### Guava Daytona
+
+`framework: guava_daytona` runs a Guava voice agent reached over a live phone call. For each conversation, EVA sends the system prompt, greeting and tool schemas to Guava's hosted control endpoint, which starts an agent and returns a SIP code. EVA then dials that code through a media relay container on the host, so the agent hears and speaks over a real SIP/RTP call. Tool calls come back over the control connection and run locally through EVA's tool executor; the agent's transcripts populate the audit log, and the run is scored as a cascade pipeline.
+
+The host needs Docker (the relay runs with `--network host`) and outbound UDP for SIP/RTP and STUN. Guava provides the control endpoint, an app token and the relay image, and grants pull access to the image's registry; authenticate Docker to that registry before running.
+
+```bash
+# Values provided by Guava, to be added in .env
+GUAVA_DAYTONA_ENDPOINT=wss://<endpoint>/ws
+GUAVA_APP_TOKEN=<token>
+GUAVA_RELAY_IMAGE=<relay image>
+GUAVA_BASE_URL=<guava api base url>
+GUAVA_SIP_HOST=<guava sip host>
+
+EVA_FRAMEWORK=guava_daytona \
+EVA_MODEL__S2S=guava_daytona \
+EVA_MODEL__S2S_PARAMS='{"model": "guava_daytona", "api_key": "<guava api key>"}' \
+python main.py --domain airline
+```
+
 ## Judge Models
 
 The table below lists the API-hosted models used as a judge.
