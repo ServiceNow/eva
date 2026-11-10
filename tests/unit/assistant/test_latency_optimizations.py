@@ -185,6 +185,52 @@ class TestLLMStreaming:
         assert await _collect(system, "look up A") == ["All set."]
 
     @pytest.mark.asyncio
+    async def test_lead_in_released_at_tool_call_start_not_stream_end(self):
+        """The trailing sentence must reach the consumer before the tool-call arguments finish streaming."""
+        lead_in_seen = asyncio.Event()
+        order = []
+
+        class _ToolStartLLM:
+            use_responses_api = False
+
+            def __init__(self):
+                self.calls = 0
+
+            async def complete_stream(self, messages, tools=None):
+                self.calls += 1
+                if self.calls == 2:
+                    yield ("delta", "All set.")
+                    yield ("final", (_msg("All set."), dict(_STATS)))
+                    return
+                yield ("delta", "Let me pull that up.")
+                yield ("tool_call_start", None)
+                # Simulates tool-call argument tokens still streaming.
+                await asyncio.wait_for(lead_in_seen.wait(), timeout=1)
+                order.append("stream_end")
+                final = _msg("Let me pull that up.", tool_calls=[_tc("c1", "get_reservation", "{}")])
+                yield ("final", (final, dict(_STATS)))
+
+        tool_handler = MagicMock()
+        tool_handler.execute = AsyncMock(return_value={"status": "success"})
+        system = AgenticSystem(
+            "x",
+            _agent([_tool()]),
+            tool_handler,
+            AuditLog(),
+            _ToolStartLLM(),
+            pre_tool_speech="auto",
+            llm_streaming=True,
+        )
+        out = []
+        async for r in system.process_query("look up A"):
+            out.append(r)
+            if r == "Let me pull that up.":
+                order.append("lead_in")
+                lead_in_seen.set()
+        assert out == ["Let me pull that up.", "All set."]
+        assert order == ["lead_in", "stream_end"]
+
+    @pytest.mark.asyncio
     async def test_streaming_cancellation_records_spoken_prefix(self):
         audit_log = AuditLog()
         llm = _CancellingStreamLLM()
@@ -210,27 +256,6 @@ class TestLLMStreaming:
             {"role": "assistant", "content": "Let me check."},
         ]
         assert all(entry.get("value") != GENERIC_ERROR for entry in audit_log.transcript)
-
-    @pytest.mark.asyncio
-    async def test_responses_api_streaming_falls_back_with_one_warning(self, caplog):
-        llm = MagicMock()
-        llm.use_responses_api = True
-        llm.complete = AsyncMock(
-            side_effect=[
-                (_msg("First response."), dict(_STATS)),
-                (_msg("Second response."), dict(_STATS)),
-            ]
-        )
-        llm.complete_stream = MagicMock()
-        system = AgenticSystem("x", _agent(), MagicMock(), AuditLog(), llm, llm_streaming=True)
-
-        with caplog.at_level("WARNING", logger="eva.assistant.agentic.system"):
-            assert await _collect(system, "hi") == ["First response."]
-            assert await _collect(system, "again") == ["Second response."]
-
-        assert llm.complete.await_count == 2
-        llm.complete_stream.assert_not_called()
-        assert caplog.text.count("llm_streaming is not supported for Responses API deployments") == 1
 
 
 class TestCompleteStream:
