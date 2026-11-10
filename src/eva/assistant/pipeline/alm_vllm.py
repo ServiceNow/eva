@@ -238,7 +238,7 @@ class ALMvLLMClient(BaseALMClient):
                 # vLLM versions use different field names: "reasoning_content" vs "reasoning"
                 reasoning_content = _extract_reasoning(message)
                 if reasoning_content:
-                    logger.info(f"ALM reasoning: {reasoning_content}")
+                    logger.debug(f"ALM reasoning: {reasoning_content}")
 
                 # Extract reasoning tokens if present
                 reasoning_tokens = 0
@@ -326,7 +326,7 @@ class ALMvLLMClient(BaseALMClient):
                 message, usage, finish_reason = _assemble_stream_chunks(chunks, messages)
                 reasoning_content = _streamed_reasoning(chunks) or _extract_reasoning(message)
                 if reasoning_content:
-                    logger.info(f"ALM reasoning: {reasoning_content}")
+                    logger.debug(f"ALM reasoning: {reasoning_content}")
 
                 # Reasoning tokens from usage if the server reported them; else approximate from
                 # the streamed reasoning text (mirrors the non-streaming complete() path).
