@@ -12,6 +12,7 @@ import yaml
 from pipecat.transcriptions.language import Language
 
 from eva.models.config import LANGUAGE_DISPLAY_NAMES, PerturbationConfig
+from eva.models.results import BackChannel, BargeInRecord
 from eva.user_simulator.event_logger import UserSimulatorEventLogger
 from eva.user_simulator.perturbation import AudioPerturbator
 from eva.utils.audio_utils import save_audio_track
@@ -85,6 +86,10 @@ class AbstractUserSimulator(ABC):
 
         self._user_clean_audio = bytearray()
         self._record_id = current_record_id.get()
+        self.barge_ins: list[BargeInRecord] = []
+        """Each barge-in, for providers that interrupt; the worker saves it to result.json."""
+        self.back_channels: list[BackChannel] = []
+        """Each back-channel, for providers that make them; the worker saves it to result.json."""
 
     @abstractmethod
     async def run_conversation(self) -> str:

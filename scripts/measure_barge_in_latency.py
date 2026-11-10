@@ -73,7 +73,7 @@ class Strategy:
     hedge_decision: bool = False
     hedge_reply: bool = False
     """Hedge the LLM and TTS requests too."""
-    response_model: str = "gpt-5.6-luna"
+    response_model: str = "gpt-6-luna"
     reasoning_effort: str | None = "none"
     """None omits the parameter (non-reasoning models reject it)."""
     service_tier: str = "default"
@@ -121,7 +121,7 @@ generating) is used and the rest are cancelled.
 
 ITERATIONS_PER_STRATEGY = 5
 
-RUN_ONLY = ["fresh_text_clause"]
+RUN_ONLY = ["sequential", "fresh_text_clause"]
 
 STT_BACKENDS = ["production"]
 """Speech-to-text paths to compare, interleaved per run so session drift hits each equally.
@@ -163,6 +163,7 @@ CLAUSE_BREAKS = (",", "—", "–", ";", ":")
 SPECULATE_P = 0.1
 """threshold strategies: P(interrupt) at or above which a delta starts a speculative reply."""
 
+load_dotenv(override=True)  # before SIMULATOR: its validator checks the provider keys in os.environ
 SIMULATOR = CascadeSimulatorConfig()
 """The cascade simulator's config: STT model, TTS model and voices come from here, so the
 experiment hears and speaks through the same components a benchmark run uses. Caller speed is
@@ -1195,7 +1196,6 @@ def summarize(samples: list[Sample], openers: list[Opener]) -> None:
 
 async def main() -> None:
     """Warm everything, run every strategy, save recordings, print the summary."""
-    load_dotenv(override=True)
     openai_key = os.environ.get("OPENAI_API_KEY")
     cartesia_key = os.environ.get("CARTESIA_API_KEY")
     if not openai_key or not cartesia_key:

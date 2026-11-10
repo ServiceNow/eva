@@ -1,0 +1,12 @@
+{
+  "en": ["Sorry, wait—", "Hold on—", "Wait one sec—", "Oh, actually—", "Wait, sorry—"],
+  "es": ["Perdona, espera—", "Un momento—", "Espera un segundo—", "Ah, en realidad—", "Espera, perdón—"],
+  "fr": ["Pardon, attendez—", "Une seconde—", "Attendez un instant—", "Ah, en fait—", "Attendez, désolé—"],
+  "de": ["Entschuldigung, warten Sie—", "Moment mal—", "Einen Augenblick—", "Ach, eigentlich—", "Warten Sie, sorry—"],
+  "it": ["Scusi, aspetti—", "Un attimo—", "Aspetti un secondo—", "Ah, in realtà—", "Aspetti, scusi—"],
+  "fr-CA": ["Excusez-moi, attendez—", "Une petite seconde—", "Attendez une minute—", "Ah, en fait—", "Attendez, désolé—"],
+  "hi": ["माफ़ कीजिए, रुकिए—", "एक सेकंड—", "ज़रा रुकिए—", "अरे, असल में—", "रुकिए, माफ़ कीजिए—"],
+  "ko": ["죄송한데, 잠깐만요—", "잠시만요—", "잠깐만요—", "아, 사실—", "잠깐, 죄송해요—"],
+  "nl": ["Sorry, wacht even—", "Wacht even—", "Eén momentje—", "O, eigenlijk—", "Wacht, sorry—"],
+  "ja": ["すみません、ちょっと待って—", "ちょっと待ってください—", "あの、すみません—", "あ、実は—", "待ってください、すみません—"]
+}

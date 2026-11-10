@@ -21,6 +21,11 @@ Performs all one-time setup needed to run the benchmark in a new language:
      optionally a spelling-variation map. New configs are auto-discovered at
      runtime without any further code changes.
 
+  3b. **Caller phrases** — adds the language's interruption openers and
+     back-channels ("mhm", "okay"…, spelled in the native script for TTS) to
+     ``data/sound_bank/{barge_in_opener,back_channel}/phrases.json``, each
+     from its own prompt.
+
   4. **Environment / display** — patches ``.env.example`` with the new
      ``EVA_<LANG>_USER_*`` stubs and registers the display name in
      ``LANGUAGE_DISPLAY_NAMES``.
@@ -75,6 +80,7 @@ import os
 import re
 import sys
 import unicodedata
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -104,8 +110,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
 INITIAL_MESSAGES_PATH = REPO_ROOT / "configs" / "agents" / "initial_messages.yaml"
 WER_CONFIGS_DIR = REPO_ROOT / "src" / "eva" / "utils" / "wer_normalization" / "configs"
+SOUND_BANK_DIR = DATA_DIR / "sound_bank"
 
-DEFAULT_MODEL = "gpt-5.5-2026-04-23"
+DEFAULT_MODEL = "gpt-6.1-sol"
 TRANSLATION_BATCH = 25
 ALIAS_BATCH = 50  # Max unique names per alias-translation LLM call.
 
@@ -718,6 +725,21 @@ async def amain(args: argparse.Namespace) -> int:
         args.dry_run,
         args.overwrite_all,
     )
+    for sound, prompt, validate in (
+        ("barge_in_opener", _OPENERS_PROMPT, _validate_openers),
+        ("back_channel", _BACKCHANNELS_PROMPT, _validate_backchannels),
+    ):
+        await update_sound_phrases(
+            sound,
+            args.language,
+            args.language_name,
+            prompt,
+            validate,
+            SOUND_BANK_DIR / sound / "phrases.json",
+            llm,
+            args.dry_run,
+            args.overwrite_all,
+        )
     await update_wer_normalizer_config(
         args.language,
         args.language_name,
@@ -1403,6 +1425,107 @@ def update_language_display_names(
 
     config_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     logger.info(f"Added {new_key}: {language_name!r} to LANGUAGE_DISPLAY_NAMES in {config_path}")
+
+
+_OPENERS_PROMPT = """Write {count} short interruption openers for {language_name} (BCP-47: {language}).
+
+A phone caller says one of these the instant they cut in on a voice agent who is still talking,
+before their actual sentence. English equivalents: "Sorry, wait—", "Hold on—", "Wait one sec—",
+"Oh, actually—", "Wait, sorry—".
+
+Rules:
+- Natural, polite-but-urgent spoken phrasing for {language_name}, 1-4 words each, all different.
+- Native script of the language (full diacritics for Latin-script languages).
+- Each ends with an em dash (—) to show the sentence is cut off and continues. No other punctuation.
+- Use the register a caller would use with a customer-service agent.
+
+Return JSON: {{"phrases": ["...", ...]}} with exactly {count} items. No markdown, no commentary."""
+
+_BACKCHANNELS_PROMPT = """Write {count} back-channel sounds for {language_name} (BCP-47: {language}).
+
+A phone caller says one of these while listening to a voice agent, to show they are following.
+English equivalents: "Mhm.", "Yeah.", "Uh-huh.", "Okay.", "Right.".
+
+Rules:
+- Extremely short: ONE word or sound each, never more than {max_words} words, and at most {max_chars} characters.
+- The sounds may be nearly the same across languages (mhm, uh-huh, okay) — what matters is spelling
+  them in the NATIVE SCRIPT of {language_name} so a text-to-speech engine pronounces them naturally.
+  Use the script's usual way of writing the sound (e.g. Devanagari "हम्म", Japanese "うん").
+- At least 2 of them should be non-lexical sounds (like "mhm", "uh-huh"); the rest may be the language's
+  common one-word acknowledgements ("yes", "okay", "right").
+- All different. Each ends with a period. No em dashes, no ellipses.
+
+Return JSON: {{"phrases": ["...", ...]}} with exactly {count} items. No markdown, no commentary."""
+
+PHRASES_PER_LANGUAGE = 5
+MAX_BACKCHANNEL_WORDS = 2
+MAX_BACKCHANNEL_CHARS = 12
+OPENER_DASH = "—"
+
+
+async def _generate_phrases(prompt_template: str, language: str, language_name: str, llm: LLMClient) -> list[str]:
+    prompt = prompt_template.format(
+        count=PHRASES_PER_LANGUAGE,
+        language=language,
+        language_name=language_name,
+        max_words=MAX_BACKCHANNEL_WORDS,
+        max_chars=MAX_BACKCHANNEL_CHARS,
+    )
+    text, _ = await llm.generate_text([{"role": "user", "content": prompt}], response_format={"type": "json_object"})
+    phrases = extract_and_load_json(text).get("phrases")
+    if not isinstance(phrases, list) or not all(isinstance(p, str) and p.strip() for p in phrases):
+        raise ValueError(f"Phrase generation returned invalid data: {phrases!r}")
+    phrases = list(dict.fromkeys(p.strip() for p in phrases))
+    if len(phrases) != PHRASES_PER_LANGUAGE:
+        raise ValueError(f"Expected {PHRASES_PER_LANGUAGE} distinct phrases, got {phrases!r}")
+    return phrases
+
+
+def _validate_openers(phrases: list[str]) -> list[str]:
+    """Ensure each opener ends in exactly one em dash (the model sometimes uses a hyphen or drops it)."""
+    return [p.rstrip("-–—.,! ") + OPENER_DASH for p in phrases]
+
+
+def _validate_backchannels(phrases: list[str]) -> list[str]:
+    for p in phrases:
+        if len(p.split()) > MAX_BACKCHANNEL_WORDS or len(p) > MAX_BACKCHANNEL_CHARS:
+            raise ValueError(
+                f"Back-channel {p!r} is too long (max {MAX_BACKCHANNEL_WORDS} words, {MAX_BACKCHANNEL_CHARS} chars)"
+            )
+    return phrases
+
+
+async def update_sound_phrases(
+    sound: str,
+    language: str,
+    language_name: str,
+    prompt_template: str,
+    validate: Callable[[list[str]], list[str]],
+    phrases_path: Path,
+    llm: LLMClient,
+    dry_run: bool,
+    overwrite: bool = False,
+) -> None:
+    """Add the language's phrases for a sound-bank sound to its ``phrases.json``, one line per language.
+
+    Idempotent: a language already present is skipped unless ``overwrite`` replaces it.
+    """
+    if not phrases_path.exists():
+        logger.warning(f"{phrases_path} not found — skipping {sound} update")
+        return
+    table = json.loads(phrases_path.read_text(encoding="utf-8"))
+    if language in table and not overwrite:
+        logger.info(f"{sound}[{language!r}] already present")
+        return
+
+    phrases = validate(await _generate_phrases(prompt_template, language, language_name, llm))
+    if dry_run:
+        logger.info(f"[dry-run] would write {sound}[{language!r}] = {phrases}")
+        return
+    table[language] = phrases
+    lines = (f"  {json.dumps(key)}: {json.dumps(value, ensure_ascii=False)}" for key, value in table.items())
+    phrases_path.write_text("{\n" + ",\n".join(lines) + "\n}\n", encoding="utf-8")
+    logger.info(f"Wrote {sound}[{language!r}] = {phrases}")
 
 
 def update_env_example(language: str, language_name: str, env_example_path: Path, dry_run: bool) -> None:
