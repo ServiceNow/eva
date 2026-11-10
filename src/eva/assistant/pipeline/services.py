@@ -5,8 +5,11 @@ Creates Pipecat services with proper configuration.
 
 import dataclasses
 import datetime
+import json
+import types
 from collections.abc import AsyncGenerator
 from typing import Any
+from urllib.parse import urlsplit
 
 from openai import AsyncAzureOpenAI, BadRequestError
 from pipecat.frames.frames import (
@@ -27,6 +30,7 @@ from pipecat.services.deepgram.tts import DeepgramTTSService
 from pipecat.services.elevenlabs.stt import CommitStrategy, ElevenLabsRealtimeSTTService
 from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 from pipecat.services.llm_service import LLMService
+from pipecat.services.openai.realtime import events as openai_realtime_events
 from pipecat.services.openai.realtime.events import (
     AudioConfiguration,
     AudioInput,
@@ -763,6 +767,50 @@ def create_realtime_llm_service(
             base_url=url,
             session_properties=session_properties,
         )
+    elif model_lower.startswith("apriel"):
+        # Apriel is a self-hosted realtime model behind an OpenAI-Realtime-API-
+        # compatible endpoint. It differs from the plain "openai" branch in
+        # three ways (mirrors the fixes made for the eval harness in
+        # openai_realtime_server.py):
+        #   1. No voice selection support -> omit `voice` from the session
+        #      update entirely (default_voice=None).
+        #   2. Auth is via a WS subprotocol token, not an Authorization
+        #      header -> connect with `websocket_connection_options.subprotocols`
+        #      instead of the default Bearer-header `_connect`.
+        #   3. The internal hostname contains underscores, which breaks TLS
+        #      SNI/hostname verification -> override `server_hostname` to the
+        #      hyphenated form while keeping the real (underscored) URI.
+        session_properties = get_openai_session_properties(system_prompt, params, pipecat_tools, default_voice=None)
+        ws_base_url = params.get("websocket_base_url") or params.get("base_url", "")
+        # The OpenAI SDK's realtime.connect() always appends "/realtime" to
+        # websocket_base_url (see openai.resources.realtime.realtime.RealtimeConnectionManager._prepare_url).
+        # Pipecat's OpenAIRealtimeLLMService does NOT do this -- it uses
+        # base_url verbatim -- so replicate the SDK's path here.
+        ws_base_url = ws_base_url.rstrip("/") + "/realtime"
+        logger.info(f"Using Apriel Realtime LLM: {params['model']}, url {ws_base_url}")
+
+        kwargs = {
+            "api_key": params.get("api_key", ""),
+            "base_url": ws_base_url,
+            "settings": OpenAIRealtimeLLMService.Settings(
+                model=params["model"],
+                session_properties=session_properties,
+            ),
+        }
+        if audit_log is not None:
+            kwargs["audit_log"] = audit_log
+            service = InstrumentedRealtimeLLMService(**kwargs)
+        else:
+            service = OpenAIRealtimeLLMService(**kwargs)
+
+        connect_kwargs: dict[str, Any] = dict(params.get("websocket_connection_options", {}))
+        host = urlsplit(ws_base_url).hostname or ""
+        if "_" in host:
+            connect_kwargs["server_hostname"] = host.replace("_", "-")
+        service._eva_websocket_connect_kwargs = connect_kwargs
+        service._connect = types.MethodType(override__connect_with_extra_kwargs, service)
+        service.send_client_event = types.MethodType(override__send_client_event_strip_response_overrides, service)
+        return service
     elif model_lower == "ultravox":
         logger.info("Using Ultravox LLM")
         return UltravoxRealtimeLLMService(
@@ -799,10 +847,17 @@ def create_realtime_llm_service(
         )
 
     else:
-        raise ValueError(f"Unknown realtime model: {model}. Available: gpt-realtime, ultravox, gemini-live")
+        raise ValueError(
+            f"Unknown realtime model: {model}. Available: gpt-realtime, ultravox, gemini-live, apriel-voice"
+        )
 
 
-def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tools) -> SessionProperties:
+def get_openai_session_properties(
+    system_prompt: str,
+    params: dict,
+    pipecat_tools,
+    default_voice: str | None = "marin",
+) -> SessionProperties:
     """Create openai compatible session properties object.
 
     ``params["turn_detection_disabled"]`` (bool, default False): set True
@@ -812,6 +867,10 @@ def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tool
     ``input_audio_buffer.commit`` + ``response.create`` on
     UserStoppedSpeakingFrame. Without this, pipecat assumes the server will
     detect turn boundaries and never commits the audio buffer.
+
+    ``default_voice``: fallback voice when ``params["voice"]`` is not set.
+    Pass ``None`` for endpoints that don't support voice selection (e.g.
+    Apriel) so the field is omitted from the session update entirely.
     """
     if params.get("turn_detection_disabled"):
         # Pipecat will drive turn detection from its own VAD signals.
@@ -830,7 +889,7 @@ def get_openai_session_properties(system_prompt: str, params: dict, pipecat_tool
                 turn_detection=turn_detection,
             ),
             output=AudioOutput(
-                voice=params.get("voice", "marin"),
+                voice=params.get("voice", default_voice),
             ),
         ),
         tools=pipecat_tools,
@@ -1040,6 +1099,174 @@ async def override__connect(self):
     except Exception as e:
         await self.push_error(error_msg=f"initialization error: {e}", exception=e)
         self._websocket = None
+
+
+class _LegacyEventRemappingWebSocket:
+    """Proxy around a websockets client connection to support Apriel Voice.
+
+    Patches Apriel's event schema to match pipecat's stricter GA event schema before
+    pipecat's parser sees them.
+
+    Fixes applied:
+      1. Apriel speaks the older "conversation.item.created" event name
+         (fields identical to the GA "conversation.item.added"/
+         "conversation.item.done" pair: `previous_item_id` + `item`), which
+         pipecat's OpenAIRealtimeLLMService doesn't recognize and raises on.
+         Remapped to "added" rather than "done" since that's where the
+         actual state-tracking logic (function-call tracking,
+         LLMFullResponseStartFrame) lives; Apriel only ever sends one event
+         per item, so there's no separate "done" to also forward.
+      2. Apriel omits `response.status_details` on "response.created" /
+         "response.done" events. Pipecat's `Response` model types it as
+         `Any` with no default, so it's required-but-nullable -- filled in
+         with None when absent.
+      3. Apriel's `response.usage` omits the nested `input_token_details` /
+         `output_token_details` objects (only sends the top-level
+         input/output/total token counts). Pipecat's `Usage` model requires
+         both -- filled in with an empty dict (all of `TokenDetails`'s own
+         fields default) when absent.
+      4. Apriel emits event types pipecat's schema has no model for at all
+         (e.g. "output_audio_buffer.cleared" -- not in
+         `events._server_event_types`, not a legacy-name issue). These are
+         dropped rather than forwarded.
+      5. Apriel doesn't reliably emit a "conversation.item.added" (or legacy
+         "conversation.item.created") event carrying `name` for function_call
+         items before sending "response.function_call_arguments.done" --
+         pipecat's `_handle_evt_function_call_arguments_done` looks the call
+         up in `_pending_function_calls` (populated only by that item-added
+         event) purely by `call_id` and silently no-ops if it's missing,
+         which hangs the conversation (no tool call, no fallback response).
+         Apriel does inline the function `name` directly on the .done event
+         itself (an extra field pipecat's strict schema ignores). When seen,
+         a synthetic "conversation.item.added" is inserted just before the
+         real .done event so pipecat's own tracking populates in time.
+
+    Any of the above previously raised inside `parse_server_event`, which
+    `_receive_task_handler` doesn't catch -- the exception kills that task
+    outright, silently dropping the connection for the rest of the
+    conversation (no crash, just no more responses).
+    """
+
+    _TYPE_REMAP = {"conversation.item.created": "conversation.item.added"}
+
+    def __init__(self, websocket):
+        self._websocket = websocket
+
+    async def __aiter__(self):
+        # ClientConnection.__aiter__ is itself an async generator (not a
+        # method returning `self`), so drive iteration through `async for`
+        # rather than calling `.__anext__()` directly on the raw connection.
+        async for message in self._websocket:
+            for out_message in self._process(message):
+                yield out_message
+
+    async def recv(self, *args, **kwargs):
+        message = await self._websocket.recv(*args, **kwargs)
+        out_messages = self._process(message)
+        return out_messages[0] if out_messages else None
+
+    def _process(self, message):
+        """Return the list of messages to forward for one incoming raw message."""
+        if isinstance(message, (bytes, bytearray)):
+            return [message]
+        try:
+            data = json.loads(message)
+        except (TypeError, ValueError):
+            return [message]
+
+        out = []
+        if data.get("type") == "response.function_call_arguments.done" and data.get("name"):
+            synthetic_item = {
+                "type": "function_call",
+                "status": "in_progress",
+                "call_id": data["call_id"],
+                "name": data["name"],
+            }
+            out.append(
+                json.dumps(
+                    {
+                        "type": "conversation.item.added",
+                        "previous_item_id": None,
+                        "item": synthetic_item,
+                        "event_id": f"{data.get('event_id', data['call_id'])}-synthetic-item-added",
+                    }
+                )
+            )
+
+        changed = False
+        new_type = self._TYPE_REMAP.get(data.get("type"))
+        if new_type:
+            data["type"] = new_type
+            changed = True
+
+        response = data.get("response")
+        if isinstance(response, dict):
+            if "status_details" not in response:
+                response["status_details"] = None
+                changed = True
+            usage = response.get("usage")
+            if isinstance(usage, dict):
+                for details_key in ("input_token_details", "output_token_details"):
+                    if details_key not in usage:
+                        usage[details_key] = {}
+                        changed = True
+
+        if data.get("type") not in openai_realtime_events._server_event_types:
+            logger.debug(f"Dropping realtime server event unsupported by pipecat: {data.get('type')}")
+            return out
+
+        out.append(json.dumps(data) if changed else message)
+        return out
+
+    def __getattr__(self, name):
+        return getattr(self._websocket, name)
+
+
+async def override__connect_with_extra_kwargs(self):
+    """Connect using extra websocket kwargs stashed on the instance as `_eva_websocket_connect_kwargs`.
+
+    Used for realtime endpoints that need extra websocket options on top of
+    the default Bearer-token auth: a WS subprotocol token (e.g. Apriel, in
+    addition to -- not instead of -- the Authorization header; matches what
+    the OpenAI SDK's own `_connect_ws` sends), and/or a `server_hostname`
+    override for hostnames with underscores that break TLS SNI/hostname
+    verification. Also wraps the connection in `_LegacyEventRemappingWebSocket`
+    to bridge the legacy/GA Realtime event-name mismatch.
+    """
+    try:
+        if self._websocket:
+            return
+
+        logger.info(f"Connecting to {self.base_url}")
+        connect_kwargs = dict(self._eva_websocket_connect_kwargs)
+        connect_kwargs["additional_headers"] = {
+            "Authorization": f"Bearer {self.api_key}",
+            **connect_kwargs.get("additional_headers", {}),
+        }
+        websocket = await websocket_connect(
+            uri=self.base_url,
+            **connect_kwargs,
+        )
+        self._websocket = _LegacyEventRemappingWebSocket(websocket)
+        self._receive_task = self.create_task(self._receive_task_handler())
+    except Exception as e:
+        await self.push_error(error_msg=f"initialization error: {e}", exception=e)
+        self._websocket = None
+
+
+async def override__send_client_event_strip_response_overrides(self, event):
+    """Strip per-response overrides from outgoing response.create events.
+
+    Pipecat's OpenAIRealtimeLLMService.run_llm() sends `response.create` with
+    an inline `response.output_modalities` override on every turn. Apriel
+    rejects any per-response override ("unsupported_response_overrides" --
+    apply instructions/tools/modalities/generation params via session.update
+    before response.create instead), so send a bare response.create, matching
+    what the eval harness does (`conn.response.create()` with no args).
+    """
+    if getattr(event, "type", None) == "response.create" and getattr(event, "response", None) is not None:
+        event = type(event)()
+    await self._ws_send(event.model_dump(exclude_none=True))
 
 
 # Unicode to ASCII replacements for TTS

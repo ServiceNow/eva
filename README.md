@@ -27,6 +27,9 @@ Using a realistic **bot-to-bot architecture**, EVA runs fully automated evaluati
 
 ### Cloning the Repository
 
+> [!TIP]
+> The judge validation datasets (`docs/metrics/judge_validation_datasets/*.jsonl`) are stored with [Git LFS](https://git-lfs.com/). They are not required to run EVA. If you want them, install Git LFS (e.g. `brew install git-lfs` or `sudo apt install git-lfs`), then run `git lfs install` before cloning. If you have already cloned the repo without Git LFS, also run `git lfs pull` inside the repo.
+
 If you're only interested in running the latest stable version of EVA, you can clone with `--branch latest`, and optionally speed things up with `--depth 1 --no-tags --single-branch`.
 ```bash
 git clone https://github.com/ServiceNow/eva.git --branch latest --depth 1 --no-tags --single-branch
@@ -264,11 +267,14 @@ docker compose run --rm benchmark
 
 ### Development Setup
 
-Install pre-commit hooks to lint and format code:
+Install pre-commit hooks to lint and format code, and Git LFS hooks so large data files are uploaded on push:
 
 ```bash
 pre-commit install
+git lfs install
 ```
+
+Files matching the patterns in [`.gitattributes`](.gitattributes) are tracked by Git LFS automatically. To track a new kind of file, run `git lfs track "<pattern>"` and commit the updated `.gitattributes`.
 
 ### Running Tests
 

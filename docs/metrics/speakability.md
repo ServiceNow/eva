@@ -22,6 +22,11 @@ LLM-based metric that evaluates whether assistant text is free of formatting and
 
 Uses `intended_assistant_turns` from MetricContext — the text sent to the TTS engine.
 
+Before the turns reach the judge:
+- EVA's own annotation labels (`AnnotationLabel`: `[pause]`, `[speaker likely cut itself off]`, `[assistant interrupts]`, etc.) are removed, since the agent never produced them. Any other brackets are kept and judged.
+- Whitespace inside each turn is normalised: repeated spaces and tabs are merged, spaces at the start and end of a line and blank lines are dropped. Line breaks are kept, so lists and tables stay visible.
+- Turns that are empty after this are skipped and do not count towards `num_turns`.
+
 ### Audio-Native vs Cascade
 
 - **Cascade**: Fully applicable — evaluates whether the LLM's text output is appropriate for TTS.
@@ -71,7 +76,7 @@ Any of the following violations result in a score of 0:
 
 - **File**: `src/eva/metrics/diagnostic/speakability.py`
 - **Class**: `SpeakabilityJudgeMetric`
-- **Base Class**: `SingleTurnTextJudgeMetric`
+- **Base Class**: `PerTurnConversationJudgeMetric`
 - **Prompt location**: `configs/prompts/judge.yaml` under `judge.speakability`
 - **Configuration options**:
   - `judge_model`: LLM model to use (default: "gpt-5.2")

@@ -50,8 +50,8 @@
   "SpeakabilityJudgeMetric": {
     "name": "speakability",
     "prompt_hash": "1e4f78cb051e",
-    "source_hash": "c8a781f5795b",
-    "version": "v0.2"
+    "source_hash": "7abcd995909a",
+    "version": "v0.3"
   },
   "SpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
