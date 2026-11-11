@@ -2,11 +2,7 @@
 
 from dataclasses import dataclass
 
-from pipecat.frames.frames import (
-    ControlFrame,
-    DataFrame,
-    SystemFrame,
-)
+from pipecat.frames.frames import ControlFrame, DataFrame, SystemFrame
 
 
 @dataclass
