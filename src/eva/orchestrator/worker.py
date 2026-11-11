@@ -17,6 +17,7 @@ from eva.utils.culture import resolve_scenario_db, resolve_user_config, resolve_
 from eva.utils.error_handler import create_error_details
 from eva.utils.hash_utils import get_dict_hash
 from eva.utils.logging import add_record_log_file, current_record_id, get_logger, remove_record_log_file
+from eva.utils.stt_turn_latency import INK2_TURN_END_METRIC, compute_turn_commit_latencies
 
 logger = get_logger(__name__)
 
@@ -447,11 +448,15 @@ class ConversationWorker:
 
         try:
             latencies = []
+            ink2_turn_end_times_s: list[float] = []
             with open(metrics_path) as f:
                 for line_num, line in enumerate(f, start=1):
                     try:
                         metric = json.loads(line)
                         metric_type = metric.get("type")
+                        if metric_type == INK2_TURN_END_METRIC and isinstance(metric.get("timestamp"), (int, float)):
+                            ink2_turn_end_times_s.append(metric["timestamp"] / 1000)
+                            continue
                         is_stt_ttfb = metric_type == "TTFBMetricsData" and "STTService" in metric.get("processor", "")
                         is_stt_latency = metric_type == "LatencyMetric" and metric.get("stage") == "stt"
                         if not (is_stt_ttfb or is_stt_latency):
@@ -468,6 +473,26 @@ class ConversationWorker:
                             f"metric_type={metric.get('type')!r}, raw={line.strip()[:500]}"
                         )
                         continue
+
+            # ink-2 has no VAD, so pipecat reports no real STT TTFB. Reconstruct it from committed-turn
+            # times and the simulator's real end of speech (includes any wait the simulator adds after
+            # the user stops talking, since the assistant cannot respond before the turn commits).
+            events_path = self.output_dir / "user_simulator_events.jsonl"
+            if not latencies and ink2_turn_end_times_s:
+                if not events_path.exists():
+                    logger.warning(
+                        f"STT latency: {len(ink2_turn_end_times_s)} ink-2 turn end(s) recorded but "
+                        f"{events_path.name} is missing; cannot compute STT latency"
+                    )
+                else:
+                    for value_sec in compute_turn_commit_latencies(ink2_turn_end_times_s, events_path):
+                        if 0 < value_sec < 30:
+                            latencies.append(value_sec * 1000)
+                    if not latencies:
+                        logger.warning(
+                            f"STT latency: {len(ink2_turn_end_times_s)} ink-2 turn end(s) recorded but none "
+                            f"could be paired with a user utterance in {events_path.name}"
+                        )
 
             if not latencies:
                 return None
