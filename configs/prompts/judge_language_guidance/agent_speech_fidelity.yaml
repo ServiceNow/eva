@@ -90,7 +90,7 @@ it: |
   - These English names sound like a different Italian letter, so the code changes: English E 'ii' = Italian I, English A 'ei' ~ Italian E.
   **Rating = 0, the entity is wrong:**
   - A letter replaced by an ordinary word (the letter J read as the word 'Gioia' instead of 'i lunga').
-  **Unusual but understandable: rating = 1; rating = 0 only if a Italian listener could take it for a different value:**
+  **Unusual but understandable: rating = 1; rating = 0 only if an Italian listener could take it for a different value:**
   - 'l'uno marzo' or other non-Italian date and ID formats.
   **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
   - M/N/L (emme/enne/elle), B/P/D/T (bi/pi/di/ti), C/G (ci/gi), F/S (effe/esse).

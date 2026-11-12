@@ -97,7 +97,7 @@ it: |
   **Rating = 0 with `entity_error`:**
   - A letter replaced by an ordinary word (the letter J read as the word 'Gioia' instead of 'i lunga').
   - A different value, such as a different time.
-  **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a Italian listener could take it for a different value:**
+  **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if an Italian listener could take it for a different value:**
   - 'l'uno marzo' or other non-Italian date and ID formats.
   **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0 with `entity_error`, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
   - M/N/L (emme/enne/elle), B/P/D/T (bi/pi/di/ti), C/G (ci/gi), F/S (effe/esse).

@@ -55,13 +55,13 @@
   },
   "SpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "ef9f0508d1d1",
+    "prompt_hash": "9cc8bda1a428",
     "source_hash": "a3bfd5b63aba",
     "version": "v0.5"
   },
   "TTSFidelityMetric": {
     "name": "tts_fidelity",
-    "prompt_hash": "84fcdd136e90",
+    "prompt_hash": "982681428bc8",
     "source_hash": "bf688bc70e3a",
     "version": "v0.4"
   },
@@ -97,7 +97,7 @@
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "2980d48886bb",
+    "prompt_hash": "169ef50b834d",
     "source_hash": "97456368615c",
     "version": "v0.3"
   }
