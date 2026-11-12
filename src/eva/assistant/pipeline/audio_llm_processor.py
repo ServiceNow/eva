@@ -228,6 +228,11 @@ class AudioLLMProcessor(FrameProcessor):
         # wiring); used here to cancel/reset on a real completed user turn.
         self.fallback_timer: TurnEndFallbackTimer | None = None
 
+        # UserObserver reads and clears these when the fallback fires. The audio-LLM spine has
+        # no STT transcript, so they stay empty and the nudge is sent as "no user speech".
+        self._pending_final_transcripts: list[str] = []
+        self._latest_interim_transcript = ""
+
         # Optional callback for transcript saving (set by pipecat_server.py)
         self.on_assistant_response: Awaitable | None = None
 

@@ -326,11 +326,16 @@ class ModelConfig(BaseModel):
         if self.pre_tool_speech not in allowed:
             raise ValueError(f"pre_tool_speech must be one of {sorted(allowed)}, got '{self.pre_tool_speech}'")
         # pre_tool_speech is honored by both CASCADE and AUDIO_LLM; llm_streaming by both
-        # (via BaseALMClient.complete_stream); only parallel_tool_calls remains CASCADE-only.
-        if self.parallel_tool_calls is not None and self.pipeline_type != PipelineType.CASCADE:
+        # (via BaseALMClient.complete_stream). parallel_tool_calls is honored by CASCADE, the OpenAI
+        # realtime S2S server, and AUDIO_LLM with a vLLM model; the Gemini audio client ignores it.
+        if (
+            self.parallel_tool_calls is not None
+            and self.pipeline_type == PipelineType.AUDIO_LLM
+            and "vllm" not in (self.audio_llm or "").lower()
+        ):
             logger.warning(
-                "parallel_tool_calls applies only to the CASCADE pipeline; it will be ignored "
-                f"for pipeline_type={self.pipeline_type}."
+                "parallel_tool_calls is only forwarded for vLLM audio-LLMs; it will be ignored "
+                f"for audio_llm={self.audio_llm}."
             )
         if self.assistant_gender is not None and self.pipeline_type == PipelineType.S2S:
             logger.warning(

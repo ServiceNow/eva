@@ -901,6 +901,7 @@ def create_audio_llm_client(
     model: str,
     params: dict[str, Any],
     language: str | None = None,
+    parallel_tool_calls: bool | None = None,
 ) -> BaseALMClient:
     """Create an audio-LLM API client.
 
@@ -915,6 +916,8 @@ def create_audio_llm_client(
                 Optional: temperature, max_tokens, sample_rate, num_channels, sample_width.
         language: BCP 47 language tag (e.g. 'en', 'fr'). Used to build the
                   client's default transcription prompt.
+        parallel_tool_calls: Forwarded to the vLLM client when tools are present
+                  (None leaves the server default). Ignored for Gemini.
 
     Returns:
         Configured audio-LLM client.
@@ -967,7 +970,9 @@ def create_audio_llm_client(
             sample_width=params.get("sample_width", 2),
             language=language,
             enable_thinking=params.get("enable_thinking", False),
+            reasoning_effort=params.get("reasoning_effort"),
             sampling_params=params.get("sampling_params"),
+            parallel_tool_calls=parallel_tool_calls,
         )
         logger.info(f"Using {model} vLLM audio-LLM: {base_url}")
         return client

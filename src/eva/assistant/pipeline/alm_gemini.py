@@ -30,6 +30,7 @@ from eva.assistant.pipeline.alm_base import (
     DEFAULT_SAMPLE_WIDTH,
     BaseALMClient,
     _assemble_stream_chunks,
+    delta_starts_tool_call,
 )
 from eva.utils.logging import get_logger
 
@@ -275,6 +276,7 @@ class ALMGeminiClient(BaseALMClient):
         for attempt in range(self.max_retries + 1):
             chunks: list[Any] = []
             first_token = False
+            tool_call_started = False
             try:
                 self._maybe_refresh_token()
                 start_time = time.time()
@@ -288,6 +290,11 @@ class ALMGeminiClient(BaseALMClient):
                         if text:
                             first_token = True
                             yield ("delta", text)
+                        if not tool_call_started and delta_starts_tool_call(delta):
+                            # Text before this point is complete; let the consumer release it now
+                            # instead of waiting for the tool arguments to finish streaming.
+                            tool_call_started = True
+                            yield ("tool_call_start", None)
                 elapsed = time.time() - start_time
 
                 # Gemini's OpenAI-compat endpoint does not surface reasoning content (its

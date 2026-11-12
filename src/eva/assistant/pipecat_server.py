@@ -295,6 +295,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
                     self.pipeline_config.audio_llm,
                     self.pipeline_config.audio_llm_params,
                     language=self.language,
+                    parallel_tool_calls=self.pipeline_config.parallel_tool_calls,
                 )
                 # Note: audio_llm_audio_collector and audio_llm_processor are created
                 # after context/user_aggregator below (they need those references)

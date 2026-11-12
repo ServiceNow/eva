@@ -98,6 +98,15 @@ def resample_pcm16(pcm_data: bytes, from_rate: int, to_rate: int) -> bytes:
 _KNOWN_STREAMED_TOOL_CALL_KEYS = {"id", "type", "function", "index", "provider_specific_fields"}
 
 
+def delta_starts_tool_call(delta: Any) -> bool:
+    """True if a streamed chunk delta carries tool-call tokens.
+
+    Used by streaming clients to emit ``("tool_call_start", None)`` so the consumer can release
+    a held lead-in sentence before the tool-call arguments finish streaming.
+    """
+    return bool(delta is not None and getattr(delta, "tool_calls", None))
+
+
 def _merge_streamed_tool_call_extras(dict_chunks: list[dict]) -> list[Any] | None:
     """Rebuild tool_calls from raw stream chunks, preserving extra keys.
 

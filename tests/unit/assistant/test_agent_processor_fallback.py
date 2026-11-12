@@ -565,3 +565,29 @@ async def test_audio_llm_fallback_forwards_partial_audio_with_hint():
     proc.audio_collector.get_buffered_audio.assert_called_once()
     # A response reached TTS (boundary pushed first, then the reply).
     assert proc.push_frame.await_count > 2
+
+
+async def test_observer_fallback_fire_with_real_audio_llm_processor(monkeypatch):
+    """Regression: the observer reads/clears partial-transcript buffers on the fallback processor.
+
+    AudioLLMProcessor must define them (always empty) or the timer task dies with AttributeError.
+    """
+    from eva.assistant.pipeline import audio_llm_processor as mod
+
+    monkeypatch.setattr(mod, "AudioLLMAgenticSystem", MagicMock())
+    proc = mod.AudioLLMProcessor(
+        audio_collector=MagicMock(),
+        current_date_time="2026-01-01 00:00",
+        agent=MagicMock(),
+        tool_handler=MagicMock(),
+        audit_log=MagicMock(),
+        alm_client=MagicMock(),
+        output_dir=MagicMock(),
+    )
+    proc.process_turn_fallback = AsyncMock()
+    obs = UserObserver(turn_end_fallback_time=FALLBACK_TIME, fallback_processor=proc)
+
+    await obs._on_fallback_fire(FALLBACK_TIME)
+
+    proc.process_turn_fallback.assert_awaited_once()
+    assert proc.process_turn_fallback.await_args.args[1] == ""

@@ -16,6 +16,7 @@ from eva.assistant.pipeline.alm_base import (
     DEFAULT_SAMPLE_WIDTH,
     BaseALMClient,
     _assemble_stream_chunks,
+    delta_starts_tool_call,
 )
 from eva.utils.llm_utils import approximate_reasoning_tokens
 from eva.utils.logging import get_logger
@@ -105,6 +106,7 @@ class ALMvLLMClient(BaseALMClient):
         enable_thinking: bool = False,
         reasoning_effort: str | None = None,
         sampling_params: dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
     ):
         super().__init__(
             model=model,
@@ -122,6 +124,9 @@ class ALMvLLMClient(BaseALMClient):
         # Sent as top-level ``reasoning_effort`` in extra_body (as the NowLLM provider does) for
         # servers that gate reasoning on it rather than on chat_template_kwargs.enable_thinking.
         self.reasoning_effort = reasoning_effort
+        # Forwarded as top-level ``parallel_tool_calls`` when tools are present; None leaves the
+        # server default.
+        self.parallel_tool_calls = parallel_tool_calls
         # vLLM-specific decoding params (repetition_penalty, top_p, top_k, min_p,
         # frequency_penalty, presence_penalty, ...). Validated here, then merged into
         # extra_body of every complete()/complete_stream() call; not applied to
@@ -143,7 +148,7 @@ class ALMvLLMClient(BaseALMClient):
             f"sample_rate={self.sample_rate}, num_channels={self.num_channels}, "
             f"sample_width={self.sample_width}, "
             f"sampling_params={self.sampling_params}, enable_thinking={self.enable_thinking}, "
-            f"reasoning_effort={self.reasoning_effort}"
+            f"reasoning_effort={self.reasoning_effort}, parallel_tool_calls={self.parallel_tool_calls}"
         )
 
     @staticmethod
@@ -223,6 +228,8 @@ class ALMvLLMClient(BaseALMClient):
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
+            if self.parallel_tool_calls is not None:
+                kwargs["parallel_tool_calls"] = self.parallel_tool_calls
 
         last_exception: Exception | None = None
         for attempt in range(self.max_retries + 1):
@@ -304,11 +311,14 @@ class ALMvLLMClient(BaseALMClient):
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
+            if self.parallel_tool_calls is not None:
+                kwargs["parallel_tool_calls"] = self.parallel_tool_calls
 
         last_exception: Exception | None = None
         for attempt in range(self.max_retries + 1):
             chunks: list[Any] = []
             first_token = False
+            tool_call_started = False
             try:
                 start_time = time.time()
                 stream = await self._client.chat.completions.create(**kwargs)
@@ -321,6 +331,11 @@ class ALMvLLMClient(BaseALMClient):
                         if text:
                             first_token = True
                             yield ("delta", text)
+                        if not tool_call_started and delta_starts_tool_call(delta):
+                            # Text before this point is complete; let the consumer release it now
+                            # instead of waiting for the tool arguments to finish streaming.
+                            tool_call_started = True
+                            yield ("tool_call_start", None)
                 elapsed = time.time() - start_time
 
                 message, usage, finish_reason = _assemble_stream_chunks(chunks, messages)

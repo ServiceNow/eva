@@ -177,6 +177,34 @@ def test_merge_streamed_tool_call_extras_handles_multiple_tool_calls():
 
 
 @pytest.mark.asyncio
+async def test_vllm_complete_stream_emits_tool_call_start_once_before_final():
+    """The lead-in text is followed by a single tool_call_start, emitted when tool-call tokens begin."""
+    tool_delta = {
+        "tool_calls": [{"index": 0, "id": "call_1", "type": "function", "function": {"name": "get_x", "arguments": ""}}]
+    }
+    args_delta = {"tool_calls": [{"index": 0, "function": {"arguments": "{}"}}]}
+    chunks = [
+        _make_chunk({"role": "assistant", "content": "Let me pull that up."}),
+        _make_chunk(tool_delta),
+        _make_chunk(args_delta),
+        _make_chunk({}, finish_reason="tool_calls"),
+    ]
+
+    async def _stream():
+        for chunk in chunks:
+            yield chunk
+
+    client = ALMvLLMClient(base_url="http://localhost:1")
+    client._client.chat.completions.create = AsyncMock(return_value=_stream())
+
+    events = [
+        ev async for ev in client.complete_stream([{"role": "user", "content": "hi"}], tools=[{"type": "function"}])
+    ]
+
+    assert [kind for kind, _ in events] == ["delta", "tool_call_start", "final"]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("field", ["reasoning", "reasoning_content"])
 async def test_vllm_complete_stream_captures_reasoning_under_either_field(field):
     """Streamed reasoning is surfaced whether vLLM names the delta field `reasoning` or `reasoning_content`."""
