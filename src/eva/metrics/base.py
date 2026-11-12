@@ -662,7 +662,7 @@ class AudioJudgeMetric(BaseMetric):
     metric_type = MetricType.AUDIO_JUDGE
 
     # Subclasses can override
-    default_model = "gemini-3-flash-preview"
+    default_model = "gemini-3.8-flash"
     default_params: dict[str, Any] = {"temperature": 0.0, "max_tokens": 40000, "reasoning_effort": "minimal"}
     rating_scale: tuple[int, int] = (-2, 2)  # Can vary by metric
 

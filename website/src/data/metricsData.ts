@@ -55,7 +55,7 @@ export const metrics: MetricDefinition[] = [
     badge: 'beta',
     category: 'eva-a',
     type: 'lalm_judge',
-    judgeModel: 'Gemini 3 Flash',
+    judgeModel: 'Gemini 3.8 Flash',
     judgeAccuracy: 0.8957,
     judgeScores: [
       { label: 'accuracy', value: 0.8957, std: 0.0258 },
@@ -862,7 +862,7 @@ Transcribed: \`My phone number is 404-555.\`
     displayName: 'TTS Fidelity',
     category: 'debug',
     type: 'lalm_judge',
-    judgeModel: 'Gemini 3 Flash',
+    judgeModel: 'Gemini 3.8 Flash',
     judgeAccuracy: 0.8957,
     judgeScores: [
       { label: 'accuracy', value: 0.8957, std: 0.0258 },
@@ -1119,7 +1119,7 @@ Respond in JSON format:
     displayName: 'User Speech Fidelity',
     category: 'validation',
     type: 'lalm_judge',
-    judgeModel: 'Gemini 3 Flash',
+    judgeModel: 'Gemini 3.8 Flash',
     description: 'Audio-based check that the user simulator\'s TTS output matches the intended text. Validates that the simulated user is actually saying what it\'s supposed to say.',
     inputs: 'User audio recording, intended user text',
     outputRange: '1-3 per turn (1=low fidelity, 2=medium, 3=high), aggregated as mean',

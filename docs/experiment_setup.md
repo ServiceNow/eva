@@ -125,7 +125,7 @@ The table below lists the API-hosted models used as a judge.
 | Model ID                                    | Provider    | Type | Parameters                  |
 |---------------------------------------------|-------------|------|-----------------------------|
 | gpt-5.2                                     | OpenAI      | LLM  | reasoning: default          |
-| gemini-3-flash-preview                      | Google      | LLM  | reasoning: default          |
+| gemini-3.8-flash                            | Google      | LLM  | reasoning: default          |
 | us.anthropic.claude-opus-4-6-v1             | AWS Bedrock | LLM  | reasoning: default          |
 
 
