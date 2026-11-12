@@ -83,7 +83,7 @@ Each metric implements `BaseMetric.compute(context: MetricContext) -> MetricScor
 **LLM-as-Judge:**
 - Integer/boolean ratings (not decimals) to avoid precision issues
 - Structured prompts in `configs/prompts/judge.yaml`
-- GPT-5.2 for text judges, Gemini 3 Flash for audio judges, Claude Opus for faithfulness
+- GPT-5.2 for text judges, Gemini 3.8 Flash for audio judges, Claude Opus for faithfulness
 
 **Audio Evaluation:**
 - Audio encoded as base64 WAV, sent to Gemini via LiteLLM
