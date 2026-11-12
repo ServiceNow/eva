@@ -31,7 +31,7 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "e4ada5043c95",
+    "prompt_hash": "c381e86709c8",
     "source_hash": "424f203bd94d",
     "version": "v0.4"
   },
@@ -55,13 +55,13 @@
   },
   "SpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "b2f4bedf13ca",
+    "prompt_hash": "acc805e96020",
     "source_hash": "c4e6f3d0b3cf",
     "version": "v0.5"
   },
   "TTSFidelityMetric": {
     "name": "tts_fidelity",
-    "prompt_hash": "fd675a2bbf0b",
+    "prompt_hash": "1c3b8198102a",
     "source_hash": "4846ca933c54",
     "version": "v0.4"
   },
@@ -97,7 +97,7 @@
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "9f2072e2a80b",
+    "prompt_hash": "8229fdad4c9c",
     "source_hash": "ec8ad53652e0",
     "version": "v0.3"
   }
