@@ -1,6 +1,6 @@
 {
   "agent_speech_fidelity.user_prompt": "8aea9bc4e05a",
-  "conciseness.user_prompt": "400d52fbdd94",
+  "conciseness.user_prompt": "b51f813837d2",
   "conversation_progression.user_prompt": "c45acc2bc604",
   "faithfulness.user_prompt": "88356dac8781",
   "speakability.user_prompt": "719737e772a7",
