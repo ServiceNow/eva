@@ -2,7 +2,7 @@
   "agent_speech_fidelity.user_prompt": "5e83a870614e",
   "conciseness.user_prompt": "b51f813837d2",
   "conversation_progression.user_prompt": "c45acc2bc604",
-  "faithfulness.user_prompt": "fe11febe54fc",
+  "faithfulness.user_prompt": "51c3badafd36",
   "speakability.user_prompt": "719737e772a7",
   "transcription_accuracy_key_entities.audio_native_prompt": "315699fd0211",
   "transcription_accuracy_key_entities.user_prompt": "bef4cfeb31b0",
