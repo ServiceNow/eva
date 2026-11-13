@@ -797,7 +797,7 @@ judge:
         - Can you clearly hear the entity as spoken?
         - Does the spoken form sound like the correct entity, or is it garbled, mispronounced, or distorted?
         - If the agent spells out a code letter by letter, is each letter/digit clearly distinguishable?
-        - Were the entities spoken in the right language? The expected language is **{expected_language}** — if an entity is spoken in a different language (e.g., a code spelled with English letter names in a German turn), set rating = 0 for that turn. Speech in another language around the entities is not evaluated here.
+        - Were the entities spoken in the right language? The expected language is **{expected_language}** — if an entity is spoken in a different language, set rating = 0 for that turn. This includes a letter or digit of a trace entity said with its name from another language (e.g., an English letter or digit name in a German code); codes and acronyms are not an exception. Not wrong language: an entity that is itself in another language in the trace (e.g., an English street or product name), proper nouns, official product or system names, and loanwords that are established in {expected_language}. Speech in another language around the entities (e.g., an English "one moment" in a French turn) is not evaluated here; other metrics score it.
 
         ## Entity Categories to Listen For
         - Confirmation codes (e.g., ZK3FFW, FAR0UM) — especially when spelled out letter by letter
@@ -821,28 +821,25 @@ judge:
         - Tool response contains "YTM924". Agent tries to spell it out but audio sounds like "Y T N nine two four" — "M" sounds like "N". ✗
         - Agent says a dollar amount but the audio is garbled and you cannot tell if it's "fifty" or "fifteen". ✗
         - Agent spells a code but skips or slurs a letter so the spoken code has fewer characters than expected. ✗
+        - Audio that could be either of two letters or digits that sound alike (e.g., "b"/"d"). ✗
+        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it said as an ordinary word instead of its letter name (e.g., Italian "J" said as "Gioia" instead of "i lunga"). ✗
+        - A code that is normally read digit by digit (a PIN, phone number, confirmation or account number) read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"), or a number, date or time reading that a native {expected_language} listener could take for a different value. ✗
 
         **What to ignore (does NOT cause rating = 0):**
         - Entities the agent mentions that are NOT in the conversation trace — do not evaluate these
         - Minor pronunciation variations that do not change identity (e.g., "Ms." vs "Miss")
         - Filler words, phrasing, word choice, sentence structure
         - Slight pacing or prosody differences
-
-        **Spelled codes and mixed-language speech:**
-        - Letters and digits of trace entities must be spoken with their {expected_language} names. A letter or digit name from another language inside a trace entity (e.g., an English letter or digit name in a German code) means the entity was not articulated in {expected_language}: rating = 0. An entity that is itself in another language in the trace (e.g., an English street or product name) may be said in that language.
-        - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
-        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it said as an ordinary word instead of its letter name (e.g., Italian "J" said as "Gioia" instead of "i lunga"), is rating = 0.
-        - Confusable letters and digits: don't flag one because of your own transcription; in contrast, audio that is ambiguous between two letters or digits is still an error.
-        - A phrase in another language around the entities (e.g., an English "one moment" in a French turn) does not affect this rating; other metrics score it. Here, only the entities must be said in {expected_language}.
-        - Not wrong language: proper nouns, official product or system names, and loanwords that are established in {expected_language}. Codes and acronyms are not an exception: their letters and digits must be spoken with {expected_language} names, as above.
-        - A number, date or time reading that is unusual but unambiguous is not by itself a reason for rating = 0; rate 0 only if a native {expected_language} listener could take it for a different value, or if a code that is normally read digit by digit (a PIN, phone number, confirmation or account number) is read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four").
-        - Where the language-specific guidance below states an exception to these rules (e.g., code-switching or digit names that are normal in that language), follow the language-specific guidance.
+        - Spelling-alphabet words (e.g., "A as in Anna") used to say a letter
+        - A number, date or time reading that is unusual but unambiguous, unless it is one of the code readings listed under low fidelity above
+        - Letters or digits that sound alike (e.g., "b"/"d"): judge by what the audio says, not by your own transcript. If the audio clearly says the intended one, it is correct even if you transcribed the other; if the audio could be either, it is an error (see above).
 
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: Every entity from the conversation trace that the agent speaks in this turn is clearly and correctly articulated.
         - **0 (Low Fidelity)**: One or more entities from the conversation trace are garbled, mispronounced, or indistinguishable in the audio.
 
         If the assistant does not speak any entities from the conversation trace in a turn (e.g., a greeting, filler, or turn where it only mentions entities not in the trace), set `has_entities` to false. These turns are excluded from scoring.
+        Where the language-specific guidance section below (if present) states an exception to these rules (e.g., code-switching or digit names that are normal in that language), follow the language-specific guidance.
         {language_guidance}
         ## Response Format
         Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Conversation Trace above:
