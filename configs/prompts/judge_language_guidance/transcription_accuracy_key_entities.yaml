@@ -23,12 +23,13 @@ ko: |
 ja: |
   **Match, correct = true:**
   - Katakana letter names and their Latin letters (エー = A, ビー = B, シー = C, ディー = D, イー = E, エフ = F,ジー = G, エイチ/エッチ = H, アイ = I, ジェー = J, ケー = K, エル = L, エム = M, エヌ = N, オー = O, ピー = P, キュー = Q, アール = R, エス = S, ティ = T, ユー = U, ブイ = V, ダブリュー = W, エックス = X, ワイ = Y ゼット/ズィー = Z).
-  - Kana, kanji and Arabic digit readings of the same digit: ゼロ / れい / まる / 〇 = 0, いち / 一 = 1, よん / し = 4, なな / しち = 7, きゅう / く = 9.
+  - Kana, kanji and Arabic digit readings of the same digit: ゼロ / れい / まる / 〇 / 零 = 0, いち / 一 = 1, に / 二　= 2, さん / 三 = 3, よん / し / 四 = 4, ご / 五　= 5, ろく / 六= 6, なな / しち / 七 = 7, はち / 八= 8, きゅう / く /九 = 9.
   - A kana or romaji rendering of a kanji name (近藤 = こんどう = Kondo), per the Non-Latin scripts rule.
 
   **No match, correct = false:**
   - キュー transcribed or used as 9, or きゅう as Q: Q and 9 are different values, even though they sound the same.
   - A common noun or ordinary word written in place of a name (混同 "confusion" for the surname 近藤): the name was not recognized as a name.
+  - A name rendered as a non-existent or invalid name form, such as 混藤 for 近藤, where a character is swapped for a similar-sounding one and the result is not a valid name.
 
   **Follows the first-mention rule in the Correctness Criteria (correct on first mention, incorrect once the user has specified the kanji, e.g. 「隼に人です」):**
   - A different kanji spelling of the same name reading (隼斗 for 隼人, 斎藤 for 斉藤): it cannot be recovered from audio alone.
