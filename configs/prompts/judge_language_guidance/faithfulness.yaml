@@ -39,7 +39,7 @@ es: |
   - "dos"/"doce" (2/12) and "sesenta"/"setenta" (60/70) can be misheard.
 
   **Established loanwords (wrong_language): normal Spanish, never a language violation, does not lower the rating. Examples, not a complete list:**
-  - email, login, check-in, ticket (in IT contexts and outside them, e.g. a shop receipt), online.
+  - email, login, check-in, ticket, online.
 
 it: |
   **Letters and digits that sound alike in Italian; apply the shared rule on sound-alike letters and digits (failing_to_disambiguate, fabricating_tool_parameters) to them:**
