@@ -16,7 +16,7 @@ de: |
   - A different value: siebenundfünfzig for 75, 'halb drei' for 3:30.
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a German listener could take it for a different value:**
   - A date read as digit groups a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf').
-  **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0 with `entity_error`, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
+  **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0 with `entity_error`, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
   - D/E/G/T (deh/eh/geh/teh), B/P, M/N/L (emm/enn/ell), F/S; zwei/drei (2/3), which is why careful speakers say 'zwo'.
   **Not wrong language, does not lower the rating:**
   - Established loanwords, e.g. Ticket, Login, Account, Laptop.
@@ -35,7 +35,7 @@ nl: |
   **Rating = 0 with `entity_error`:**
   - A vowel change that makes a digit unrecognisable or turns it into another digit.
   - A different value: 'half drie' for 3:30.
-  **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0 with `entity_error`, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
+  **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0 with `entity_error`, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
   - V/F (Dutch v is often devoiced), G/CH, M/N/L (em/en/el), B/P, D/T; zeven/negen (7/9), which is why telephone speech uses 'zeuven'.
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - EI and IJ in names.
@@ -59,7 +59,7 @@ fr: |
   - A different value: soixante-sept for 77, 'moins le quart' for 3:45.
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a French listener could take it for a different value:**
   - 'le un mars' instead of 'le premier mars'.
-  **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0 with `entity_error`, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
+  **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0 with `entity_error`, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
   - M/N/L (emme/enne/elle), B/D/P/T (bé/dé/pé/té), G/J (gé/ji), F/S (effe/esse).
   **Not wrong language, does not lower the rating:**
   - Established loanwords, e.g. e-mail, week-end, OK.
@@ -77,7 +77,7 @@ es: |
   **Rating = 0 with `entity_error`:**
   - A name that clearly picks the other letter: 'uve' / 've corta' said for B, or 'be larga' / 'be de Barcelona' said for V.
   - A different value: 'menos cuarto' for 3:45.
-  **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0 with `entity_error`, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
+  **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0 with `entity_error`, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
   - M/N/L (eme/ene/ele), N/Ñ, F/S (efe/ese), sesenta/setenta (60/70), dos/doce (2/12).
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - B and V (both /b/) when said without a distinguishing name.
@@ -99,7 +99,7 @@ it: |
   - A different value, such as a different time.
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if an Italian listener could take it for a different value:**
   - 'l'uno marzo' or other non-Italian date and ID formats.
-  **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0 with `entity_error`, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
+  **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0 with `entity_error`, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
   - M/N/L (emme/enne/elle), B/P/D/T (bi/pi/di/ti), C/G (ci/gi), F/S (effe/esse).
   **Not wrong language, does not lower the rating:**
   - Established loanwords, e.g. email, ticket, ok.
@@ -117,7 +117,7 @@ hi: |
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a Hindi listener could take it for a different value:**
   - An English digit name spoken where the intended or trace text spells out the Hindi digit word (आठ written, 'eight' spoken).
   - Literal clock readings ('एक तीस' for 1:30, 'चार तीस') or 24-hour readings ('तेरह तीस'), which are non-native in conversation.
-  **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0 with `entity_error`, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
+  **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0 with `entity_error`, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
   - सत्रह/सत्तर (17/70), उन्नीस/उनतीस/उनचास (19/29/49), सात/साठ (7/60).
   **Not wrong language, does not lower the rating:**
   - Hindi–English code-switching is supported: English words and phrases inside a Hindi sentence (e.g. flight, booking, 'last name', 'one moment'). Only a whole English sentence that is not in the intended text is wrong language.
@@ -139,7 +139,7 @@ ja: |
   - し (4) or しち (7) inside a code, which can be heard as シー (C) or いち (1).
   - Counter readings such as よんじ, きゅうじ, よんにち.
   - A year read digit by digit.
-  **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0 with `entity_error`, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
+  **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0 with `entity_error`, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
   - エム/エヌ/エル (M/N/L), ビー/ブイ (B/V), ディー/ティー (D/T), ジー/ゼット (G/Z).
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - Q キュー and 9 きゅう.
@@ -158,7 +158,7 @@ ko: |
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a Korean listener could take it for a different value:**
   - Native numbers (하나, 둘) inside a code.
   - The wrong number system for a correct value ('삼 시' for 3 o'clock, '육월').
-  **Letters and digits that sound alike: audio that is ambiguous between the two is still rating = 0 with `entity_error`, like a clearly wrong letter or digit; do not rate 0 because your own transcription shows the other one:**
+  **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0 with `entity_error`, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
   - 엠/엔/엘 (M/N/L), 비/피 (B/P), 제이/지 (J/G), 디/티 (D/T), 일/이 (1/2), U 유 / 6 육.
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the intended text to know which was meant:**
   - E 이 and 2 이; O 오 and 5 오; Z 지 and G 지.
