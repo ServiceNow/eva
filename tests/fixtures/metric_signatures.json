@@ -55,7 +55,7 @@
   },
   "SpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "83bec2dd74e7",
+    "prompt_hash": "6293a920855c",
     "source_hash": "a3bfd5b63aba",
     "version": "v0.5"
   },
