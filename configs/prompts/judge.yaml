@@ -710,7 +710,10 @@ judge:
         - Missing words that change the meaning or omit an entity
         - Added words that introduce a factually incorrect entity
         - Substituted words that alter an entity value
-        - Audio spoken in the wrong language (We expect audio in {expected_language})
+        - Speech in another language that is not in the intended text, including a letter or digit name from another language in a spelled code (see `wrong_language` below; we expect audio in {expected_language})
+        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it said as an ordinary word instead of its letter name (e.g., Italian "J" said as "Gioia" instead of "i lunga") — `entity_error`
+        - A code that is normally read digit by digit (a PIN, phone number, confirmation or account number) read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"), or any reading that a native {expected_language} listener could take for a different value — `entity_error`
+        - Audio that could be either of two letters or digits that sound alike (e.g., "b"/"d") — `entity_error`
 
         **What to ignore (does NOT cause rating = 0):**
         - Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss", "Mr." vs "Mister", or language-equivalent honorific forms such as French "Madame" vs "Mme" or Japanese "様" vs "-san")
@@ -723,16 +726,9 @@ judge:
         - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form of those letters in that language
         - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
         - Name spelling variants that are phonetically identical (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
-
-        **Spelled codes and mixed-language speech:**
-        - Letters and digits in spelled codes must be spoken with their {expected_language} names. A letter or digit name from another language (e.g., an English letter or digit name in a German code) is rating = 0 with `wrong_language`; add `entity_error` if it sounds like a different {expected_language} letter or digit. If the intended text itself contains those foreign words or names, reproducing them is not an error.
-        - Spelling-alphabet words (e.g., "A as in Anna") are a valid way to say a letter.
-        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it said as an ordinary word instead of its letter name (e.g., Italian "J" said as "Gioia" instead of "i lunga"), is rating = 0 with `entity_error`.
-        - Confusable letters and digits: don't flag one because of your own transcription; in contrast, audio that is ambiguous between two letters or digits is still an error.
-        - A phrase or sentence in another language that is not in the intended text (e.g., an English "one moment" in a French turn) is rating = 0 with `wrong_language`, even when the rest of the turn is in {expected_language}. If the intended text itself contains the phrase, reproducing it is not an error.
-        - Not wrong language: proper nouns, official product or system names, and loanwords that are established in {expected_language}. Codes and acronyms are not an exception: their letters and digits must be spoken with {expected_language} names, as above.
-        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an error by themselves; they are an `entity_error` only if a native {expected_language} listener could take it for a different value, or if a code that is normally read digit by digit (a PIN, phone number, confirmation or account number) is read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"). A different word for the value (e.g., Swiss/Belgian "septante" for standard French "soixante-dix") is still an error, even though it means the same number.
-        - Where the language-specific guidance below states an exception to these rules (e.g., code-switching or digit names that are normal in that language), follow the language-specific guidance.
+        - Spelling-alphabet words (e.g., "A as in Anna") used to say a letter
+        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse), unless it is one of the code readings listed as errors above
+        - Letters or digits that sound alike (e.g., "b"/"d"): judge by what the audio says, not by your own transcript. If the audio clearly says the intended one, it is correct even if you transcribed the other; if the audio could be either, it is an error (see above).
 
         ## Rating Scale (per turn)
         - **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
@@ -749,12 +745,17 @@ judge:
 
         - **insertion_hallucination** — The audio contains words or phrases that were NOT in the intended text. The TTS added content on its own — extra sentences, repeated phrases, or filler that the script did not contain.
 
-        - **wrong_language** — Speech in a language other than the expected language ({expected_language}) that is not in the intended text. Use this when the language mismatch is clear and covers a meaningful portion of the turn, a phrase or clause in another language (e.g., "one moment"), or a letter or digit name from another language inside a spelled code. Do not use it for individual foreign loanwords or proper nouns that are expected to be pronounced natively.
+        - **wrong_language** — Speech in a language other than the expected language ({expected_language}) that is not in the intended text. Use this when:
+          - the language mismatch is clear and covers a meaningful portion of the turn;
+          - a phrase or sentence is in another language (e.g., an English "one moment" in a French turn), even when the rest of the turn is in {expected_language};
+          - a letter or digit in a spelled code or acronym is said with its name from another language (e.g., an English letter or digit name in a German code); add `entity_error` if it sounds like a different {expected_language} letter or digit. Codes and acronyms are not an exception: their letters and digits must be spoken with {expected_language} names.
+          Not wrong language: proper nouns, official product or system names, loanwords that are established in {expected_language}, and words in another language that are in the intended text.
 
         Tagging guidance:
         - If a turn has both an entity error and missing/dropped content outside tagged regions, list both `entity_error` and `truncation`.
         - Garbled audio at an entity position is `entity_error`, not `garbled_hallucination` — check the intended text first to decide whether the affected region is an entity.
         - Do NOT use `truncation` for content lost to interruption tags, even if the interruption tags are not at the exact location where the truncation occured — that is expected behavior, not an error.
+        Where the language-specific guidance section below (if present) states an exception to these rules (e.g., code-switching or digit names that are normal in that language), follow the language-specific guidance.
         {language_guidance}
         ## Response Format
         Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Intended Turns above:
