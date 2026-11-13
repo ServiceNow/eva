@@ -109,6 +109,7 @@ class TestFaithfulness:
                 "violating_policies": {"rating": 3, "flagged": False, "evidence": ""},
                 "failing_to_disambiguate": {"rating": 1, "flagged": True, "evidence": "bad"},
                 "hallucination": {"rating": 3, "flagged": False, "evidence": ""},
+                "wrong_language": {"rating": 2, "flagged": True, "evidence": "one moment"},
             },
         }
 
@@ -128,6 +129,7 @@ class TestFaithfulness:
             "violating_policies_rate",
             "failing_to_disambiguate_rate",
             "hallucination_rate",
+            "wrong_language_rate",
         }
         # Binary issue-flag semantics: 1.0 when flagged, 0.0 when clean.
         fab = score.sub_metrics["fabricating_tool_parameters_rate"]
