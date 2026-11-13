@@ -65,7 +65,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     """
 
     name = "transcription_accuracy_key_entities"
-    version = "v0.4"
+    version = "v0.5"
     description = (
         "Debug metric: LLM judge evaluation of user key entity accuracy (STT in cascade, tool calls in audio-native)"
     )

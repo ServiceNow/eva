@@ -26,7 +26,7 @@ class TTSFidelityMetric(SpeechFidelityBaseMetric):
     """
 
     name = "tts_fidelity"
-    version = "v0.3"
+    version = "v0.4"
     description = "Diagnostic metric: TTS fidelity to the intended text"
     category = "diagnostic"
     role = "assistant"

@@ -28,7 +28,7 @@ class ConcisenessJudgeMetric(PerTurnConversationJudgeMetric):
     """
 
     name = "conciseness"
-    version = "v0.1"
+    version = "v0.2"
     description = "LLM judge evaluation of assistant response conciseness"
     category = "experience"
     rating_scale = (1, 3)
