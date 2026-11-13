@@ -438,7 +438,7 @@ judge:
       - If the assistant states something with NO source at all → flag here
 
       ### 6. wrong_language
-      **Scope: The language of the assistant's turns only.** Did the assistant communicate in the language specified in the agent instructions? See the Rating Scale section below for severity.
+      **Scope: The language of the assistant's turns only.** Did the assistant communicate in the language specified in the agent instructions?
 
       **IS a flag:**
       - Whole turns or sentences in another language
