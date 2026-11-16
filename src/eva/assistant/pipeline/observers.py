@@ -274,8 +274,10 @@ class MetricsFileObserver(BaseObserver):
         else:
             return str(value)
 
-    def _write_jsonl(self, entry: dict):
+    def write_jsonl(self, entry: dict):
         """Write a single entry to the JSONL file.
+
+        Also used for entries that do not come from a MetricsFrame (e.g. an STT turn commit time).
 
         Args:
             entry: Dictionary to write as JSON line
@@ -283,10 +285,6 @@ class MetricsFileObserver(BaseObserver):
         if self._file_handle:
             self._file_handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
             self._file_handle.flush()
-
-    def write_entry(self, entry: dict) -> None:
-        """Append an entry that does not come from a MetricsFrame (e.g. an STT turn commit time)."""
-        self._write_jsonl(entry)
 
     async def on_push_frame(self, data: FramePushed):
         """Handle pushed frames, intercepting MetricsFrame instances.
@@ -331,7 +329,7 @@ class MetricsFileObserver(BaseObserver):
                 "value": serialized_value,
             }
 
-            self._write_jsonl(entry)
+            self.write_jsonl(entry)
 
             logger.debug(
                 f"Metrics: {metric_type} from {metrics_data.processor} (model={metrics_data.model}): {serialized_value}"

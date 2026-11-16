@@ -572,7 +572,7 @@ class PipecatAssistantServer(AbstractAssistantServer):
             epoch_ms = current_timestamp_ms()
             # Empty transcripts (silence-only turns) produce no user message, so they don't commit a turn.
             if transcript and self._metrics_observer:
-                self._metrics_observer.write_entry(
+                self._metrics_observer.write_jsonl(
                     {"timestamp": int(epoch_ms), "type": INK2_TURN_END_METRIC, "processor": type(stt).__name__}
                 )
             if ts is not None:
