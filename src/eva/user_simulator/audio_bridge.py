@@ -11,6 +11,7 @@ import asyncio
 import base64
 import functools
 import json
+import os
 import time
 from collections.abc import Callable
 
@@ -43,7 +44,9 @@ SEND_CHUNK_SIZE_PCM = int(ELEVENLABS_OUTPUT_RATE * SEND_CHUNK_DURATION_MS / 1000
 
 # Timing constants for silence detection and polling
 SILENCE_DETECTION_THRESHOLD_S = 0.2  # 200ms to detect assistant audio end
-USER_END_DETECTION_DELAY_INTERVALS = 30  # 600ms (30 x 20ms) - longer to avoid splitting natural pauses
+# 600ms (30 x 20ms) by default - longer to avoid splitting natural pauses.
+# EVA_USER_END_DELAY_INTERVALS overrides it (in 20ms intervals) for latency sweeps.
+USER_END_DETECTION_DELAY_INTERVALS = int(os.environ.get("EVA_USER_END_DELAY_INTERVALS", "30"))
 USER_CATCHUP_SILENCE_CHUNKS = 0  # Don't send catch-up silence for user - let VAD detect naturally
 USER_TRAILING_SILENCE_CHUNKS = (
     # Disabled for now (was 100 = 2s). Revisit before re-enabling: see
