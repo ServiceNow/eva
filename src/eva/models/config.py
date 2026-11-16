@@ -212,7 +212,7 @@ class ModelConfig(BaseModel):
 
     llm_streaming: bool = Field(
         True,
-        description="Stream Chat Completions output to TTS sentence-by-sentence.",
+        description="Stream LLM output (Chat Completions or Responses API) to TTS sentence-by-sentence.",
     )
     parallel_tool_calls: bool | None = Field(
         None,
