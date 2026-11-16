@@ -120,6 +120,11 @@ function SystemName({ system, componentColors }: { system: SystemStats; componen
     const color = componentColors.get(system.llm) || '#F1F5F9';
     return <span style={{ color }}>{system.llm}{elevenAgentsSuffix}</span>;
   }
+  // Fully managed cascade harness (no separate STT/TTS components).
+  if (system.stt === '-' && system.tts === '-') {
+    const color = componentColors.get(system.llm) || '#F1F5F9';
+    return <span style={{ color }}>{system.llm}{elevenAgentsSuffix}</span>;
+  }
   return (
     <span className="text-sm leading-relaxed inline-flex flex-wrap items-baseline">
       <span className="whitespace-nowrap" style={{ color: componentColors.get(system.stt) }}>{system.stt}</span>

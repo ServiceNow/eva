@@ -4,11 +4,25 @@ Debug metric for diagnosing model performance issues, not directly used in
 final evaluation scores.
 """
 
+import re
 from typing import Any
 
 from eva.metrics.base import MetricContext, PerTurnConversationJudgeMetric
 from eva.metrics.registry import register_metric
 from eva.models.config import PipelineType
+from eva.utils.log_processing import AnnotationLabel
+
+
+def _strip_annotation_labels(text: str) -> str:
+    """Remove EVA-inserted annotation labels, keeping the agent's own line breaks.
+
+    Unlike ``strip_labels``, newlines are preserved so that markdown lists and
+    tables in the agent's text remain visible to the judge.
+    """
+    for label in AnnotationLabel:
+        text = text.replace(label, "")
+    lines = (re.sub(r"[ \t]+", " ", line).strip() for line in text.splitlines())
+    return "\n".join(line for line in lines if line)
 
 
 @register_metric
@@ -30,7 +44,7 @@ class SpeakabilityJudgeMetric(PerTurnConversationJudgeMetric):
     """
 
     name = "speakability"
-    version = "v0.2"
+    version = "v0.3"
     description = "Debug metric: LLM judge evaluation of text voice-friendliness per turn"
     category = "diagnostic"
     exclude_from_pass_at_k = True
@@ -38,18 +52,18 @@ class SpeakabilityJudgeMetric(PerTurnConversationJudgeMetric):
     rating_scale = (0, 1)
 
     def get_expected_turn_ids(self, context: MetricContext) -> list[int]:
-        """Return turn IDs for non-empty intended assistant turns."""
+        """Return turn IDs for intended assistant turns that are non-empty once labels are stripped."""
         return [
             turn_id
             for turn_id in sorted(context.intended_assistant_turns.keys())
-            if context.intended_assistant_turns[turn_id]
+            if _strip_annotation_labels(context.intended_assistant_turns[turn_id] or "")
         ]
 
     def format_transcript(self, context: MetricContext) -> str:
-        """Format intended assistant turns for the judge prompt."""
+        """Format intended assistant turns for the judge prompt, without EVA annotation labels."""
         lines = []
         for turn_id in sorted(context.intended_assistant_turns.keys()):
-            content = context.intended_assistant_turns[turn_id]
+            content = _strip_annotation_labels(context.intended_assistant_turns[turn_id] or "")
             if content:
                 lines.append(f"[Turn {turn_id}]\n{content}")
         return "\n\n".join(lines)

@@ -77,7 +77,7 @@ const futurePlans = [
     items: [
       {
         title: 'Extended Leaderboard',
-        description: 'We continue to expand the leaderboard with more cascade and audio-native systems. ElevenAgent, OpenAI Realtime, and Gemini Live are already integrated; next additions include Deepgram Voice Agent and additional speech-to-speech systems.',
+        description: 'We continue to expand the leaderboard with more cascade and audio-native systems. ElevenAgent, OpenAI Realtime, Gemini Live, and Cartesia Managed Agents are already integrated; next additions include Deepgram Voice Agent and additional speech-to-speech systems.',
       },
     ],
   },

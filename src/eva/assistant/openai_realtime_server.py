@@ -12,6 +12,7 @@ import json
 import time
 from dataclasses import dataclass, field
 from typing import Any
+from urllib.parse import urlsplit
 
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -174,13 +175,15 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         logger.info(f"{self._service_name} server stopped on port {self.port}")
 
-    def _default_voice(self) -> str:
+    def _default_voice(self) -> str | None:
         """Default voice ID when `s2s_params.voice` is not set.
 
         Subclasses override when the underlying service uses a different
         voice catalogue.
         """
-        return "marin"
+        if "realtime" in self._model:
+            return "marin"
+        return None
 
     def _build_session_config(self) -> dict[str, Any]:
         """Construct the `session.update` payload for the realtime connection.
@@ -197,7 +200,6 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             "instructions": self._system_prompt,
             "audio": {
                 "output": {
-                    "voice": s2s.get("voice", self._default_voice()),
                     "format": {"type": "audio/pcm", "rate": 24000},
                 },
                 "input": {
@@ -215,6 +217,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             },
             "tools": self._realtime_tools,
         }
+
+        voice = s2s.get("voice", self._default_voice())
+        if voice:
+            session_config["audio"]["output"]["voice"] = voice
 
         reasoning_effort = s2s.get("reasoning_effort")
         if reasoning_effort:
@@ -234,7 +240,11 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         api_key = self.pipeline_config.s2s_params.get("api_key")
         if not api_key:
             raise ValueError(f"API key required for {self._service_name}")
-        return AsyncOpenAI(api_key=api_key)
+        return AsyncOpenAI(
+            api_key=api_key,
+            base_url=self.pipeline_config.s2s_params.get("base_url"),
+            websocket_base_url=self.pipeline_config.s2s_params.get("websocket_base_url"),
+        )
 
     async def _handle_session(self, websocket: WebSocket) -> None:
         """Handle a single WebSocket session.
@@ -261,7 +271,14 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         try:
             logger.info(f"Starting {self._service_name} session (model={self._model})")
-            async with client.realtime.connect(model=self._model) as conn:
+            websocket_options = dict(self.pipeline_config.s2s_params.get("websocket_connection_options") or {})
+            host = urlsplit(self.pipeline_config.s2s_params.get("websocket_base_url") or "").hostname or ""
+            if "_" in host:
+                websocket_options["server_hostname"] = host.replace("_", "-")
+
+            async with client.realtime.connect(
+                model=self._model, websocket_connection_options=websocket_options
+            ) as conn:
                 # Configure the session
                 session_config = self._build_session_config()
                 await conn.session.update(session=session_config)
