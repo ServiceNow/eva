@@ -850,7 +850,8 @@ class BotToBotAudioBridge:
                             sent = bool(mulaw_audio) and await self._send_audio_frame(mulaw_audio)
                             if sent:
                                 logger.info(f"Sent padded chunk ({original_len} bytes padded to {pcm_chunk_size})")
-                                self._last_user_audio_send_time = current_time
+                                # Stamp at its scheduled slot (when starvation began), not after the grace hold
+                                self._last_user_audio_send_time = starved_since
                                 pending_audio = b""
                                 gap_flushed_partial = True
                         else:
