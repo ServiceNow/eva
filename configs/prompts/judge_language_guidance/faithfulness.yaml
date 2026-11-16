@@ -12,7 +12,7 @@ de: |
   - Two-digit numbers are spoken units first ("dreiundfünfzig" = 53): a transposition (35) or a split ("3 50") is a typical capture error.
 
   **Established loanwords (wrong_language): normal German, never a language violation, does not lower the rating. Examples, not a complete list:**
-  - Ticket, Login, Account, E-Mail, Check-in, Gate, Upgrade, Status.
+  - Login, Account, E-Mail, Check-in, Gate, Upgrade.
 
 nl: |
   **For letters and digits that sound alike in Dutch, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
