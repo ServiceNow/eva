@@ -7,7 +7,7 @@
 de: |
   **For letters and digits that sound alike in German, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
   - Letter names rhyming on -e: B/D/P/T/W/G/E/C ("beh, deh, peh, teh, weh, geh, eh, tseh"); also F/S ("eff/ess") and M/N/L ("emm/enn/ell").
-  - German and English letter names get mixed: J is "jott" in German but "jay" in English, which sounds close to German G "geh"; English E "ee" sounds like German I; English A "ay" like German E "eh". So J/G, D/E/G/T and E/I/A can swap between what the user said and what the tool received.
+  - German and English letter names get mixed: English E "ee" sounds like German I; English A "ay" like German E "eh". So D/E/G/T and E/I/A can swap between what the user said and what the tool received.
   - "zwei"/"drei" (2/3), which is why careful speakers say "zwo".
   - Two-digit numbers are spoken units first ("dreiundfünfzig" = 53): a transposition (35) or a split ("3 50") is a typical capture error.
 

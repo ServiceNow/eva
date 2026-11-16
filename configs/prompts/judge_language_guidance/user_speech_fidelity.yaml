@@ -83,7 +83,7 @@ es: |
   - This is how dates and years are read in Spanish; a date or year read this way is correct: 'el uno de marzo' and 'el primero de marzo', 'dos mil veintiséis', 'mil novecientos noventa'.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different Spanish letter.** Typical cases:
   - 'em' for M, 'jay', 'double-u', 'six', 'two', also inside 'M de Madrid'.
-  - These English names sound like a different Spanish letter, so the code changes: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E, English J 'jay' ~ Spanish Y 'ye'.
+  - These English names sound like a different Spanish letter, so the code changes: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E.
   **Rating 1 (entity error):**
   - A name that clearly picks the other letter: 'uve' / 've corta' / 've chica' said for B, or 'be larga' / 'be de Barcelona' said for V.
   - A different value: 'menos cuarto' for 3:45.

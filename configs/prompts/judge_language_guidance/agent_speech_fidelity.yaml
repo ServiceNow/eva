@@ -76,7 +76,7 @@ es: |
   - This is how dates and years are read in Spanish; a date or year read this way is correct: 'el uno de marzo' and 'el primero de marzo', 'dos mil veintiséis', 'mil novecientos noventa'.
   **English letter or digit names inside a trace entity: the entity is not said in Spanish, rating = 0.** Typical cases:
   - 'em' for M, 'jay', 'double-u', 'six', 'two', also inside 'M de Madrid'.
-  - These English names sound like a different Spanish letter, so the code changes: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E, English J 'jay' ~ Spanish Y 'ye'.
+  - These English names sound like a different Spanish letter, so the code changes: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E.
   **Rating = 0, the entity is wrong:**
   - A name that clearly picks the other letter: 'uve' / 've corta' / 've chica' said for B, or 'be larga' / 'be de Barcelona' said for V.
   **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
