@@ -129,6 +129,11 @@ class BenchmarkAgentProcessor(FrameProcessor):
         # Interruption handling
         self._current_query_task: asyncio.Task | None = None
         self._interrupted = asyncio.Event()
+        # Text of the query being processed, and of the last query an interruption cancelled
+        # while it was in flight. The latter is re-run if the turn that interrupted it closes
+        # with no words (see process_complete_user_turn).
+        self._current_query_text: str | None = None
+        self._cancelled_query_text: str | None = None
 
         # Optional callback for assistant responses (used for transcript saving)
         self.on_assistant_response: Awaitable | None = None
@@ -184,6 +189,7 @@ class BenchmarkAgentProcessor(FrameProcessor):
         self._interrupted.set()
         if self._current_query_task and not self._current_query_task.done():
             logger.info("Interruption received - cancelling ongoing query")
+            self._cancelled_query_text = self._current_query_text
             self._current_query_task.cancel()
             try:
                 await self._current_query_task
@@ -234,20 +240,32 @@ class BenchmarkAgentProcessor(FrameProcessor):
         self._pending_fallback = None
         text = (text or "").strip()
 
+        recovered = False
         if fallback is None:
             # Normal completed user turn.
             if not text:
-                logger.debug("Ignoring empty user turn")
-                return
-            # A real user turn landed: cancel any pending nudge and reset the give-up counter so
-            # each true turn gets a fresh allowance.
-            self._reset_fallback_on_real_turn()
-            # Clear the pending transcripts so the next fallback only includes transcriptions
-            # since the assistant responds to this turn.
-            self._pending_final_transcripts.clear()
-            self._latest_interim_transcript = ""
-            query_text = text
-            log_user_input = True
+                if self._cancelled_query_text is None:
+                    logger.debug("Ignoring empty user turn")
+                    return
+                # The interruption that opened this turn cancelled an in-flight query, but the
+                # turn closed with no words (e.g. a turn.start from trailing audio). Nothing else
+                # will answer the user, so re-run the cancelled query. Its user input is already
+                # in the audit log, so don't log it again.
+                query_text = self._cancelled_query_text
+                self._cancelled_query_text = None
+                log_user_input = False
+                recovered = True
+                logger.info(f"Empty user turn after an interruption cancelled a query; re-running it: {query_text}")
+            else:
+                # A real user turn landed: cancel any pending nudge and reset the give-up counter
+                # so each true turn gets a fresh allowance.
+                self._reset_fallback_on_real_turn()
+                # Clear the pending transcripts so the next fallback only includes transcriptions
+                # since the assistant responds to this turn.
+                self._pending_final_transcripts.clear()
+                self._latest_interim_transcript = ""
+                query_text = text
+                log_user_input = True
         else:
             # Turn-end fallback: the backstop decided the user's turn ended. Frame the (possibly
             # empty/partial) transcript as a nudge and record a turn_fallback marker. Do NOT reset
@@ -270,12 +288,16 @@ class BenchmarkAgentProcessor(FrameProcessor):
                 pass
 
         self._interrupted.clear()
-        if fallback is None:
+        if fallback is None and not recovered:
             logger.info(f"Processing complete user turn: {query_text}")
             # Add to message aggregator for context
             self._user_message_aggregator.append({"role": "user", "content": query_text})
+        if not recovered:
+            # A new query replaces whatever an earlier interruption cancelled.
+            self._cancelled_query_text = None
 
         # Process through agentic system as a cancellable task
+        self._current_query_text = query_text
         self._current_query_task = asyncio.create_task(
             self._process_user_query(query_text, log_user_input=log_user_input)
         )
@@ -285,6 +307,7 @@ class BenchmarkAgentProcessor(FrameProcessor):
             logger.info("Query processing interrupted by user")
         finally:
             self._current_query_task = None
+            self._current_query_text = None
 
     @property
     def query_in_flight(self) -> bool:
@@ -369,8 +392,9 @@ class BenchmarkAgentProcessor(FrameProcessor):
         if self.fallback_timer is not None:
             self.fallback_timer.cancel()
 
-        # Cancel any in-progress query
+        # Cancel any in-progress query (a shutdown is not an interruption to recover from)
         self._interrupted.set()
+        self._cancelled_query_text = None
         if self._current_query_task and not self._current_query_task.done():
             self._current_query_task.cancel()
             try:
@@ -449,6 +473,7 @@ class BenchmarkAgentProcessor(FrameProcessor):
         self.audit_log.append_user_input(marker, message_type="turn_fallback", llm_content=nudge)
         # Clear any prior interruption so the fallback response can be spoken.
         self._interrupted.clear()
+        self._cancelled_query_text = None
         try:
             async for response in self.agentic_system.process_query(nudge, log_user_input=False):
                 if response:

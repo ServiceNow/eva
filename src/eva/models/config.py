@@ -125,7 +125,7 @@ class ModelConfig(BaseModel):
     }
 
     # STT models that perform their own (server-side) semantic endpointing. They drive turn
-    # boundaries themselves, so they must run with the 'external' turn strategies and no local VAD.
+    # boundaries themselves, so they must run with the 'external' turn-stop strategy and no local VAD.
     _SELF_ENDPOINTING_STT: ClassVar[set[str]] = {"cartesia"}
 
     # ── Mode selectors (exactly one group must be set for a real run) ──
@@ -290,11 +290,16 @@ class ModelConfig(BaseModel):
         """Auto-configure turn-taking for self-endpointing STT models (e.g. Cartesia ink-2).
 
         These models drive turn boundaries themselves (the service pushes its own speech
-        start/stop and transcription frames), so they require the 'external' turn strategies
-        with local VAD disabled. Forcing it here lets a bare ``EVA_MODEL__STT=cartesia``
-        "just work", and the forced values are reflected in the persisted config.json / run_id.
-        A conflicting user-provided value is overridden with a WARNING; an untouched default is
-        logged at INFO. Idempotent: a value already at the target is left untouched (clean reload).
+        start/stop and transcription frames), so they require the 'external' turn-stop strategy
+        with local VAD disabled, and the 'external' turn-start strategy (the STT's own turn.start
+        opens the user turn). Forcing it here lets a bare ``EVA_MODEL__STT=cartesia`` "just work",
+        and the forced values are reflected in the persisted config.json / run_id. A conflicting
+        user-provided value is overridden with a WARNING; an untouched default is logged at INFO.
+        Idempotent: a value already at the target is left untouched (clean reload).
+
+        A phantom turn.start with no words (trailing audio of the previous utterance) can cancel an
+        in-flight LLM query. BenchmarkAgentProcessor re-runs that query when the turn then closes
+        empty, and EmptyProposalStopStrategy closes the empty turn immediately.
 
         Only applies to the CASCADE pipeline: in AUDIO_LLM / S2S the ``stt`` field does not
         instantiate an in-pipeline STT service, so there is nothing to emit the external turn
