@@ -5,7 +5,9 @@
 
 de: |
   **Correct, does not lower the rating:**
-  - These are the German names of letters and digits in a spelled code; a letter or digit said this way is correct: A ah, B beh, C zeh, D deh, E eh, F eff, G geh, H hah, I ih, J jott, K kah, L ell, M emm, N enn, O oh, P peh, Q kuh, R err, S ess, T teh, U uh, V fau, W weh, X iks, Y ypsilon, Z zett; Ä/Ö/Ü as ä/ö/ü. Digits: null, eins, zwei (zwo is a valid variant), drei ... neun.
+  - When a code is spelled letter by letter in German, it is correct to say each letter and digit using its German name. The terms in brackets show the German pronunciation, written with German spelling conventions (not English ones). A letter or digit said this way is correct:
+    - Letters: A (ah), B (beh), C (zeh), D (deh), E (eh), F (eff), G (geh), H (hah), I (ih), J (jott), K (kah), L (ell), M (emm), N (enn), O (oh), P (peh), Q (kuh), R (err), S (ess), T (teh), U (uh), V (fau), W (weh), X (iks), Y (ypsilon), Z (zett). The umlauts Ä, Ö and Ü are pronounced ä, ö and ü.
+    - Digits: 0 (null), 1 (eins), 2 (zwei; 'zwo' is also a valid variant), 3 (drei), 4 (vier), 5 (fünf), 6 (sechs), 7 (sieben), 8 (acht), 9 (neun).
   - Buchstabiertafel words (e.g. 'D wie Dora', 'Z wie Zeppelin').
   - This is how times are read in German; a time read this way is correct: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45, and the regional 'viertel drei' = 2:15.
   - This is how dates are read in German; a date read this way is correct: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'.
@@ -24,7 +26,9 @@ de: |
 
 nl: |
   **Correct, does not lower the rating:**
-  - These are the Dutch names of letters and digits in a spelled code; a letter or digit said this way is correct: A aa, B bee, C cee, D dee, E ee, F ef, G gee (Dutch g), H haa, I ie, J jee, K kaa, L el, M em, N en, O oo, P pee, Q kuu, R er, S es, T tee, U uu, V vee, W wee, X iks, Y ij / griekse ij / ypsilon, Z zet; IJ may be said as one letter.
+  - When a code is spelled letter by letter in Dutch, it is correct to say each letter and digit using its Dutch name. The terms in brackets show the Dutch pronunciation, written with Dutch spelling conventions (not English ones). A letter or digit said this way is correct:
+    - Letters: A (aa), B (bee), C (cee), D (dee), E (ee), F (ef), G (gee, Dutch g), H (haa), I (ie), J (jee), K (kaa), L (el), M (em), N (en), O (oo), P (pee), Q (kuu), R (er), S (es), T (tee), U (uu), V (vee), W (wee), X (iks), Y (ij / griekse ij / ypsilon), Z (zet). IJ may be said as one letter.
+    - Digits: 0 (nul), 1 (een), 2 (twee), 3 (drie), 4 (vier), 5 (vijf), 6 (zes), 7 (zeven), 8 (acht), 9 (negen).
   - Some of these are written like English names but are the Dutch ones: bee, cee, dee, pee, tee, gee, wee (Dutch B is /beː/, close to English 'bay'). Said this way, they are not English.
   - This is how numbers are read in Dutch, units before tens; a number read this way is correct: vijfenzeventig = 75, zesentwintig = 26.
   - This is how years are read in Dutch; a year read this way is correct: 2026 as 'tweeduizendzesentwintig' or 'twintig zesentwintig'.
@@ -45,7 +49,9 @@ nl: |
 
 fr: |
   **Correct, does not lower the rating:**
-  - These are the French names of letters and digits in a spelled code; a letter or digit said this way is correct: A a, B bé, C cé, D dé, E e, F effe, G gé, H ache, I i, J ji, K ka, L elle, M emme, N enne, O o, P pé, Q ku, R erre, S esse, T té, U u, V vé, W double-vé, X iks, Y i grec, Z zède. Digits: zéro, un, deux, trois, quatre, cinq, six, sept, huit, neuf.
+  - When a code is spelled letter by letter in French, it is correct to say each letter and digit using its French name. The terms in brackets show the French pronunciation, written with French spelling conventions (not English ones). A letter or digit said this way is correct:
+    - Letters: A (a), B (bé), C (cé), D (dé), E (e), F (effe), G (gé), H (ache), I (i), J (ji), K (ka), L (elle), M (emme), N (enne), O (o), P (pé), Q (ku), R (erre), S (esse), T (té), U (u), V (vé), W (double-vé), X (iks), Y (i grec), Z (zède).
+    - Digits: 0 (zéro), 1 (un), 2 (deux), 3 (trois), 4 (quatre), 5 (cinq), 6 (six, said 'sis'), 7 (sept), 8 (huit), 9 (neuf).
   - Some of these are written like English names but sound different: A is /a/ (as in 'papa'), E is /ə/ (as in 'le'), I is /i/ (as in 'ici'), U is /y/ (as in 'tu'), and six is said 'sis'. Said the English way ('ay', 'ee', 'eye', 'you', 'six' with a 'ks'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'A comme Anatole', 'M comme Marcel').
   - This is how numbers are read in French; a number read this way is correct: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze. Liaison (six heures, dix-huit).
@@ -66,7 +72,9 @@ fr: |
 
 es: |
   **Correct, does not lower the rating:**
-  - These are the Spanish names of letters and digits in a spelled code; a letter or digit said this way is correct: A a, B be, C ce, D de, E e, F efe, G ge, H hache, I i (also i latina), J jota, K ka, L ele, M eme, N ene, Ñ eñe, O o, P pe, Q cu, R erre, S ese, T te, U u, V uve (also ve, ve chica), W uve doble / doble uve / doble ve / doble u, X equis, Y i griega / ye, Z zeta. Digits: cero, uno, dos ... nueve.
+  - When a code is spelled letter by letter in Spanish, it is correct to say each letter and digit using its Spanish name. The terms in brackets show the Spanish pronunciation, written with Spanish spelling conventions (not English ones). A letter or digit said this way is correct:
+    - Letters: A (a), B (be), C (ce), D (de), E (e), F (efe), G (ge), H (hache), I (i, also i latina), J (jota), K (ka), L (ele), M (eme), N (ene), Ñ (eñe), O (o), P (pe), Q (cu), R (erre), S (ese), T (te), U (u), V (uve, also ve, ve chica), W (uve doble / doble uve / doble ve / doble u), X (equis), Y (i griega / ye), Z (zeta).
+    - Digits: 0 (cero), 1 (uno), 2 (dos), 3 (tres), 4 (cuatro), 5 (cinco), 6 (seis), 7 (siete), 8 (ocho), 9 (nueve).
   - Some of these are written like English names but sound different: A is /a/, E is /e/ (as in 'mesa'), I is /i/, U is /u/. Said the English way ('ay', 'ee', 'eye', 'you'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'M de Madrid', 'B de Barcelona', 'be larga', 've corta', 've chica').
   - This is how times are read in Spanish; a time read this way is correct: 'las quince treinta', 'las tres y media', 'las tres y media de la mañana' = 3:30, 'las tres y media de la tarde' = 15:30, 'las tres menos cuarto' = 2:45.
@@ -87,7 +95,9 @@ es: |
 
 it: |
   **Correct, does not lower the rating:**
-  - These are the Italian names of letters and digits in a spelled code; a letter or digit said this way is correct: A a, B bi, C ci, D di, E e, F effe, G gi, H acca, I i, J i lunga (also 'gei'), K cappa, L elle, M emme, N enne, O o, P pi, Q cu, R erre, S esse, T ti, U u, V vu (also vi), W doppia vu, X ics, Y ipsilon / i greca, Z zeta. Digits: zero, uno, due ... nove.
+  - When a code is spelled letter by letter in Italian, it is correct to say each letter and digit using its Italian name. The terms in brackets show the Italian pronunciation, written with Italian spelling conventions (not English ones). A letter or digit said this way is correct:
+    - Letters: A (a), B (bi), C (ci), D (di), E (e), F (effe), G (gi), H (acca), I (i), J (i lunga, also 'gei'), K (cappa), L (elle), M (emme), N (enne), O (o), P (pi), Q (cu), R (erre), S (esse), T (ti), U (u), V (vu, also vi), W (doppia vu), X (ics), Y (ipsilon / i greca), Z (zeta).
+    - Digits: 0 (zero), 1 (uno), 2 (due), 3 (tre), 4 (quattro), 5 (cinque), 6 (sei), 7 (sette), 8 (otto), 9 (nove).
   - Some English names sound like these Italian ones: English bee, dee, pee, tee, vee, gee sound like Italian bi, di, pi, ti, vi, gi, so said this way they are not English. A, E, I, U are /a/, /e/, /i/, /u/; said the English way ('ay', 'ee', 'eye', 'you'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'J come Jolly', 'M come Milano').
   - This is how dates and years are read in Italian; a date or year read this way is correct: 'il primo marzo' (primo, not uno), then cardinals ('il tre marzo'); 'duemilaventisei', 'millenovecentonovanta'.
