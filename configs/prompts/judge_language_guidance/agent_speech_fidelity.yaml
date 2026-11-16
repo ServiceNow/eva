@@ -11,7 +11,7 @@ de: |
   - Buchstabiertafel words (e.g. 'D wie Dora', 'Z wie Zeppelin').
   - This is how times are read in German; a time read this way is correct: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' = 2:45.
   - This is how dates are read in German; a date read this way is correct: 'achter November neunzehnhundertneunzig', 'achter November sechsundzwanzig', 'zweitausendsechsundzwanzig'.
-  **English letter or digit names inside a trace entity: the entity is not said in German, rating = 0.** Typical cases:
+  **English letter or digit names inside a trace entity: if the entity is not said in German, the rating should be 0.** Typical cases:
   - 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6 (using English pronunciation for letter or digit names)
   - These English names sound like a different German letter, so the code changes: English E 'ii' = German I, English A 'ay' ~ German E, English V 'vee' ~ German W 'weh'.
   **Unusual but understandable: rating = 1; rating = 0 only if a German listener could take it for a different value:**
@@ -31,7 +31,7 @@ nl: |
   - This is how numbers are read in Dutch, units before tens; a number read this way is correct: vijfenzeventig = 75, zesentwintig = 26.
   - This is how years are read in Dutch; a year read this way is correct: 2026 as 'tweeduizendzesentwintig' or 'twintig zesentwintig'.
   - This is how times are read in Dutch; a time read this way is correct: 'half drie' = 2:30 (not 3:30), 'kwart over twee' = 2:15, 'kwart voor drie' = 2:45, 'tien voor half drie' = 2:20, 'veertien uur dertig'.
-  **English letter or digit names inside a trace entity: the entity is not said in Dutch, rating = 0.** Typical cases:
+  **English letter or digit names inside a trace entity: if the entity is not said in Dutch, the rating should be 0.** Typical cases:
   - 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
   - These English names sound like a different Dutch letter, so the code changes: English E 'ee' = Dutch I 'ie', English A 'ay' ~ Dutch E 'ee', English I 'eye' ~ Dutch IJ.
   **Rating = 0, the entity is wrong:**
@@ -55,7 +55,7 @@ fr: |
   - This is how times are read in French; a time read this way is correct: 'quinze heures trente', 'trois heures et demie', 'trois heures et quart' = 3:15, 'trois heures moins le quart' or 'trois heures moins quart' (without 'le', common in Québec) = 2:45, 'midi', 'minuit'.
   - This is how dates and years are read in French; a date or year read this way is correct: 'le premier mars', 'deux mille vingt-six', 'mille neuf cent quatre-vingt-dix' or 'dix-neuf cent quatre-vingt-dix'.
   - Phone numbers read in two-digit pairs, as is usual in French ('zéro six, douze, trente-quatre…' for 06 12 34…): this is correct, not a code read as one number.
-  **English letter or digit names inside a trace entity: the entity is not said in French, rating = 0.** Typical cases:
+  **English letter or digit names inside a trace entity: if the entity is not said in French, the rating should be 0.** Typical cases:
   - 'bee' for B, 'jay', 'double-u', 'six' with an English 'ks', 'two', INC or EMP spelled with English names.
   - These English names sound like a different French letter, so the code changes: English G 'djee' ~ French J 'ji', English J 'djay' ~ French G 'gé', English E 'ii' = French I.
   **Unusual but understandable: rating = 1; rating = 0 only if a French listener could take it for a different value:**
@@ -74,7 +74,7 @@ es: |
   - Spelling words (e.g. 'M de Madrid', 'B de Barcelona', 'be larga', 've corta', 've chica').
   - This is how times are read in Spanish; a time read this way is correct: 'las quince treinta', 'las tres y media', 'las tres y media de la mañana' = 3:30, 'las tres y media de la tarde' = 15:30, 'las tres menos cuarto' = 2:45.
   - This is how dates and years are read in Spanish; a date or year read this way is correct: 'el uno de marzo' and 'el primero de marzo', 'dos mil veintiséis', 'mil novecientos noventa'.
-  **English letter or digit names inside a trace entity: the entity is not said in Spanish, rating = 0.** Typical cases:
+  **English letter or digit names inside a trace entity: if the entity is not said in Spanish, the rating should be 0.** Typical cases:
   - 'em' for M, 'jay', 'double-u', 'six', 'two', also inside 'M de Madrid'.
   - These English names sound like a different Spanish letter, so the code changes: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E.
   **Rating = 0, the entity is wrong:**
@@ -96,7 +96,7 @@ it: |
   - Spelling words (e.g. 'J come Jolly', 'M come Milano').
   - This is how dates and years are read in Italian; a date or year read this way is correct: 'il primo marzo' (primo, not uno), then cardinals ('il tre marzo'); 'duemilaventisei', 'millenovecentonovanta'.
   - This is how times are read in Italian; a time read this way is correct: 'le quindici e trenta', 'le tre e mezza', 'le tre meno un quarto' = 2:45.
-  **English letter or digit names inside a trace entity: the entity is not said in Italian, rating = 0.** Typical cases:
+  **English letter or digit names inside a trace entity: if the entity is not said in Italian, the rating should be 0.** Typical cases:
   - 'ay', 'ee' for E, 'eye', 'aitch', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'two'.
   - These English names sound like a different Italian letter, so the code changes: English E 'ii' = Italian I, English A 'ei' ~ Italian E.
   **Rating = 0, the entity is wrong:**
@@ -132,7 +132,7 @@ ja: |
   - This is how numbers are read with counters in Japanese; a number read this way is correct (し, しち, く are right here): 4時 よじ, 7時 しちじ, 9時 くじ, 4月 しがつ, 7月 しちがつ/なながつ, 9月 くがつ, 1日 ついたち, 2日 ふつか, 3日 みっか, 4日 よっか, 5日 いつか, 6日 むいか, 7日 なのか, 8日 ようか, 9日 ここのか, 10日 とおか, 14日 じゅうよっか, 20日 はつか, 24日 にじゅうよっか, 1分 いっぷん, 10分 じゅっぷん, 1人 ひとり, 2人 ふたり, 4人 よにん.
   - This is how years are read in Japanese; a year read this way is correct: as a number (千九百八十八年).
   - Katakana pronunciation of English names (コンフルエンス for Confluence).
-  **English letter or digit names inside a trace entity: the entity is not said in Japanese, rating = 0.** Typical cases:
+  **English letter or digit names inside a trace entity: if the entity is not said in Japanese, the rating should be 0.** Typical cases:
   - 'six', 'two'.
   **Rating = 0, the entity is wrong:**
   - A letter group read as a katakana word (INC as インク, PAR as パー) or as an English word (REQ as 'request').
@@ -154,7 +154,7 @@ ko: |
   - These are the Korean names of Latin letters in a spelled code, in Hangul; a letter said this way is correct: 에이, 비, 씨, 디, 이, 에프, 지, 에이치, 아이, 제이, 케이, 엘, 엠, 엔, 오, 피, 큐, 알, 에스, 티, 유, 브이, 더블유, 엑스, 와이, 제트/지.
   - These are the Korean digit names in a spelled code, in Sino-Korean; a digit said this way is correct: 공/영, 일, 이, 삼, 사, 오, 육, 칠, 팔, 구.
   - This is how numbers are read in Korean, with native or Sino-Korean numbers depending on what is counted; a number read this way is correct: hours native (세 시, 열두 시), minutes Sino (삼십 분; 세 시 반 = 3:30), months Sino with 유월 (6) and 시월 (10), days Sino (십오 일), money Sino (만 오천 원), people and items native (두 명, 세 개), ages native (스물다섯 살) or Sino with 세 (이십오 세).
-  **English letter or digit names inside a trace entity: the entity is not said in Korean, rating = 0.** Typical cases:
+  **English letter or digit names inside a trace entity: if the entity is not said in Korean, the rating should be 0.** Typical cases:
   - 'six', 'two'.
   **Unusual but understandable: rating = 1; rating = 0 only if a Korean listener could take it for a different value:**
   - Native numbers (하나, 둘) inside a code.
