@@ -9,17 +9,17 @@ de: |
     - Letters: A (ah), B (beh), C (zeh), D (deh), E (eh), F (eff), G (geh), H (hah), I (ih), J (jott), K (kah), L (ell), M (emm), N (enn), O (oh), P (peh), Q (kuh), R (err), S (ess), T (teh), U (uh), V (fau), W (weh), X (iks), Y (ypsilon), Z (zett). The umlauts Ä, Ö and Ü are pronounced ä, ö and ü.
     - Digits: 0 (null), 1 (eins), 2 (zwei; 'zwo' is also a valid variant), 3 (drei), 4 (vier), 5 (fünf), 6 (sechs), 7 (sieben), 8 (acht), 9 (neun).
   - Buchstabiertafel words (e.g. 'D wie Dora', 'Z wie Zeppelin').
-  - This is how times are read in German; a time read this way is correct: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' / 'drei viertel drei' = 2:45, and the regional 'viertel drei' = 2:15.
-  - This is how dates are read in German; a date read this way is correct: 'achter November neunzehnhundertneunzig', 'zweitausendsechsundzwanzig'.
+  - This is how times are read in German; a time read this way is correct: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' = 2:45.
+  - This is how dates are read in German; a date read this way is correct: 'achter November neunzehnhundertneunzig', 'achter November sechsundzwanzig', 'zweitausendsechsundzwanzig'.
   **English letter or digit names in a spelled code: rating = 0 with `wrong_language`; add `entity_error` when the English name sounds like a different German letter.** Typical cases:
-  - 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6.
-  - These English names sound like a different German letter, so the code changes: English E 'ii' = German I, English A 'ay' ~ German E, English V 'vee' ~ German W 'weh', English J 'jay' ~ German G 'geh'.
+  - 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6 (using English pronunciation for letter or digit names)
+  - These English names sound like a different German letter, so the code changes: English E 'ii' = German I, English A 'ay' ~ German E, English V 'vee' ~ German W 'weh'.
   **Rating = 0 with `entity_error`:**
   - A different value: siebenundfünfzig for 75, 'halb drei' for 3:30.
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a German listener could take it for a different value:**
-  - A date read as digit groups a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf').
+  - A date read as digit groups that a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf' for the date "2.11.1990").
   **Letters and digits that sound alike: judge by what the audio says, not by your own transcript. Audio that could be either is rating = 0 with `entity_error`, like a clearly wrong letter or digit; audio that clearly says the intended one is correct even if you transcribed the other:**
-  - D/E/G/T (deh/eh/geh/teh), B/P, M/N/L (emm/enn/ell), F/S; zwei/drei (2/3), which is why careful speakers say 'zwo'.
+  - D/E/G/T (deh/eh/geh/teh), B/P (beh/peh), M/N/L (emm/enn/ell), F/S (eff/ess); zwei/drei (2/3), which is why careful speakers say 'zwo'.
   **Not wrong language, does not lower the rating:**
   - Established loanwords, e.g. Ticket, Login, Account, Laptop.
   - A half-English pronunciation of a German word ('Perfekt'): this is accent.
