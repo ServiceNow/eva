@@ -20,7 +20,7 @@ from eva.assistant.agentic.audit_log import (
 from eva.assistant.tools.tool_executor import ToolExecutor, execute_and_log_tool
 from eva.models.agents import AgentConfig
 from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
-from eva.utils.error_handler import categorize_error
+from eva.utils.error_handler import LLMIncompleteResponseError, categorize_error
 from eva.utils.log_processing import truncate_data_uris
 from eva.utils.logging import get_logger
 from eva.utils.prompt_manager import PromptManager
@@ -131,7 +131,6 @@ class AgenticSystem:
         self.pre_tool_speech = pre_tool_speech
         self.llm_streaming = llm_streaming
         self.assistant_gender = assistant_gender
-        self._warned_responses_streaming_fallback = False
 
         self.prompt_manager = PromptManager()
 
@@ -154,6 +153,41 @@ class AgenticSystem:
             )
         # Build tools for the LLM
         self.tools = agent.build_tools_for_agent()
+
+    def _record_perf_stat(
+        self,
+        prompt_str: str,
+        response_content: str,
+        llm_stats: dict[str, Any],
+        tool_calls_for_stats: list[dict[str, Any]] | None,
+    ) -> None:
+        """Append one LLM call's usage, cost and stop reason to ``agent_perf_stats``."""
+        reasoning_content_for_csv = llm_stats.get("reasoning_content") or ""
+        reasoning_tokens = llm_stats.get("reasoning_tokens", 0) or 0
+
+        # Log if reasoning tokens are present but no reasoning content
+        if reasoning_tokens > 0 and not reasoning_content_for_csv:
+            logger.debug(f"⚠️ Model used {reasoning_tokens} reasoning tokens but did not return thinking blocks.")
+
+        perf_stat = {
+            "prompt": prompt_str,
+            "response": response_content,
+            "prompt_tokens": llm_stats.get("prompt_tokens", 0),
+            "output_tokens": llm_stats.get("completion_tokens", 0),
+            "cost": llm_stats.get("cost", 0.0),
+            "cost_source": llm_stats.get("cost_source", "unknown"),
+            "stop_reason": llm_stats.get("finish_reason", "unknown"),
+            "latency": llm_stats.get("latency", 0.0),
+            "parameters": json.dumps(llm_stats.get("parameters", {}), ensure_ascii=False),
+            "tool_calls": json.dumps(tool_calls_for_stats, ensure_ascii=False) if tool_calls_for_stats else "",
+            "reasoning": reasoning_content_for_csv or None,
+            "reasoning_tokens": reasoning_tokens,
+        }
+        self.agent_perf_stats.append(perf_stat)
+        logger.debug(
+            f"Collected agent perf stat: tokens={perf_stat['prompt_tokens']}/{perf_stat['output_tokens']}, "
+            f"stop_reason={perf_stat['stop_reason']}"
+        )
 
     def _record_partial_streamed_output(self, chunks: list[str], reason: str) -> None:
         partial = " ".join(chunk.strip() for chunk in chunks if chunk.strip())
@@ -239,14 +273,7 @@ class AgenticSystem:
                 prompt_str = json.dumps(messages_for_log, indent=2, ensure_ascii=False)
 
                 content_streamed = False
-                use_responses_api = getattr(self.llm_client, "use_responses_api", False)
-                if self.llm_streaming and use_responses_api and not self._warned_responses_streaming_fallback:
-                    logger.warning(
-                        "llm_streaming is not supported for Responses API deployments; using non-streaming completion."
-                    )
-                    self._warned_responses_streaming_fallback = True
-
-                if self.llm_streaming and not use_responses_api:
+                if self.llm_streaming:
                     response = None
                     llm_stats = {}
                     delta_count = 0
@@ -258,7 +285,16 @@ class AgenticSystem:
                                 content_streamed = True
                                 streamed_chunks.append(agg.text)
                                 yield agg.text
-                        else:
+                        elif kind == "tool_call_start":
+                            # SimpleTextAggregator holds a trailing sentence until the next
+                            # non-space character arrives. Tool-call tokens are not text deltas,
+                            # so without this the lead-in is held until the stream ends.
+                            held = await aggregator.flush()
+                            if held and held.text.strip():
+                                content_streamed = True
+                                streamed_chunks.append(held.text)
+                                yield held.text
+                        elif kind == "final":
                             response, llm_stats = payload
                     # delta_count > 1 confirms the provider streamed token-by-token rather
                     # than a client falling back to a single non-streaming chunk.
@@ -313,36 +349,7 @@ class AgenticSystem:
                     else None
                 )
 
-                # Store performance stats
-                reasoning_content_for_csv = llm_stats.get("reasoning_content") or ""
-                reasoning_tokens = llm_stats.get("reasoning_tokens", 0) or 0
-
-                # Log if reasoning tokens are present but no reasoning content
-                if reasoning_tokens > 0 and not reasoning_content_for_csv:
-                    logger.debug(
-                        f"⚠️ Model used {reasoning_tokens} reasoning tokens but did not return thinking blocks."
-                    )
-
-                perf_stat = {
-                    "prompt": prompt_str,
-                    "response": response_content,
-                    "prompt_tokens": llm_stats.get("prompt_tokens", 0),
-                    "output_tokens": llm_stats.get("completion_tokens", 0),
-                    "cost": llm_stats.get("cost", 0.0),
-                    "cost_source": llm_stats.get("cost_source", "unknown"),
-                    "stop_reason": llm_stats.get("finish_reason", "unknown"),
-                    "latency": llm_stats.get("latency", 0.0),
-                    "parameters": json.dumps(llm_stats.get("parameters", {}), ensure_ascii=False),
-                    "tool_calls": json.dumps(response_tool_calls_for_stats, ensure_ascii=False)
-                    if response_tool_calls_for_stats
-                    else "",
-                    "reasoning": reasoning_content_for_csv or None,
-                    "reasoning_tokens": reasoning_tokens,
-                }
-                self.agent_perf_stats.append(perf_stat)
-                logger.debug(
-                    f"Collected agent perf stat: tokens={perf_stat['prompt_tokens']}/{perf_stat['output_tokens']}, stop_reason={perf_stat['stop_reason']}"
-                )
+                self._record_perf_stat(prompt_str, response_content, llm_stats, response_tool_calls_for_stats)
 
                 llm_call_response = ConversationMessage(
                     role=MessageRole.ASSISTANT,
@@ -400,13 +407,19 @@ class AgenticSystem:
                         latency_ms=float(int(end_time_failed) - int(start_time)),
                         error_type=error_type,
                         error_source=error_source,
+                        error_message=error_msg[:500],
                         retry_attempt=0,
                     )
                     self.audit_log.append_llm_call(failed_llm_call, agent_name=agent.name)
+                    if isinstance(e, LLMIncompleteResponseError):
+                        # The call ran and was billed; record its usage and stop reason (e.g. "length").
+                        # Tool calls stay empty because none are executed.
+                        partial = " ".join(c.strip() for c in streamed_chunks if c.strip()) or e.partial_text
+                        self._record_perf_stat(prompt_str, partial, e.llm_stats, None)
                     if streamed_chunks:
                         self._record_partial_streamed_output(streamed_chunks, "streaming failure")
-                    else:
-                        yield GENERIC_ERROR
+                    # Speak the error even after partial output so the caller is told the reply was cut off.
+                    yield GENERIC_ERROR
                 return
 
             if response_content and not content_streamed:
