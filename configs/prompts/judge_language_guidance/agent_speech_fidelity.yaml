@@ -13,7 +13,7 @@ de: |
   - This is how dates are read in German; a date read this way is correct: 'achter November neunzehnhundertneunzig' = 8.11.1990, 'achter November sechsundzwanzig' = 8.11.26, 'zweitausendsechsundzwanzig' = 2026.
   **English letter or digit names inside a trace entity: if the entity is not said in German, the rating should be 0.** Typical cases:
   - 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6 (using English pronunciation for letter or digit names)
-  - These English names sound like a different German letter, so the code changes: English E 'ii' = German I, English A 'ay' ~ German E, English V 'vee' ~ German W 'weh'.
+  - These English names sound like a different German letter, so the code changes: English E /iː/ = German I /iː/, English A /eɪ/ ~ German E /eː/, English V /viː/ ~ German W /veː/.
   **Unusual but understandable: rating = 1; rating = 0 only if a German listener could take it for a different value:**
   - A date read as digit groups that a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf' for the date "2.11.1990").
   **Letters and digits that sound alike. Decide from the audio, not from the transcript. If the audio could be either, treat it as rating = 0, like a clearly wrong letter or digit. If the audio clearly says the intended one, it is correct, even if the transcript shows the other:**
@@ -33,7 +33,7 @@ nl: |
   - This is how times are read in Dutch; a time read this way is correct: 'half drie' = 2:30 or 14:30 (not 3:30), 'kwart over twee' = 2:15 or 14:15, 'kwart voor drie' = 2:45 or 14:45, 'tien voor half drie' = 2:20 or 14:20, 'veertien uur dertig' = 14:30.
   **English letter or digit names inside a trace entity: if the entity is not said in Dutch, the rating should be 0.** Typical cases:
   - 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
-  - These English names sound like a different Dutch letter, so the code changes: English E 'ee' = Dutch I 'ie', English A 'ay' ~ Dutch E 'ee', English I 'eye' ~ Dutch IJ.
+  - These English names sound like a different Dutch letter, so the code changes: English E /iː/ = Dutch I /i/, English A /eɪ/ ~ Dutch E /eː/, English I /aɪ/ ~ Dutch IJ /ɛi/.
   **Rating = 0, the entity is wrong:**
   - A vowel change that makes a digit unrecognisable or turns it into another digit.
   **Letters and digits that sound alike. Decide from the audio, not from the transcript. If the audio could be either, treat it as rating = 0, like a clearly wrong letter or digit. If the audio clearly says the intended one, it is correct, even if the transcript shows the other:**
@@ -57,7 +57,7 @@ fr: |
   - Phone numbers read in two-digit pairs, as is usual in French ('zéro six, douze, trente-quatre…' for 06 12 34…): this is correct, not a code read as one number.
   **English letter or digit names inside a trace entity: if the entity is not said in French, the rating should be 0.** Typical cases:
   - 'bee' for B, 'jay', 'double-u', 'six' with an English 'ks', 'two', INC or EMP spelled with English names.
-  - These English names sound like a different French letter, so the code changes: English G 'djee' ~ French J 'ji', English J 'djay' ~ French G 'gé', English E 'ii' = French I.
+  - These English names sound like a different French letter, so the code changes: English G /dʒiː/ ~ French J /ʒi/, English J /dʒeɪ/ ~ French G /ʒe/, English E /iː/ = French I /i/.
   **Unusual but understandable: rating = 1; rating = 0 only if a French listener could take it for a different value:**
   - 'le un mars' instead of 'le premier mars'.
   **Letters and digits that sound alike. Decide from the audio, not from the transcript. If the audio could be either, treat it as rating = 0, like a clearly wrong letter or digit. If the audio clearly says the intended one, it is correct, even if the transcript shows the other:**
@@ -76,7 +76,7 @@ es: |
   - This is how dates and years are read in Spanish; a date or year read this way is correct: 'el uno de marzo' and 'el primero de marzo' = 1 de marzo, 'dos mil veintiséis' = 2026, 'mil novecientos noventa' = 1990.
   **English letter or digit names inside a trace entity: if the entity is not said in Spanish, the rating should be 0.** Typical cases:
   - 'em' for M, 'jay', 'double-u', 'six', 'two', also inside 'M de Madrid'.
-  - These English names sound like a different Spanish letter, so the code changes: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E.
+  - These English names sound like a different Spanish letter, so the code changes: English E /iː/ = Spanish I /i/, English A /eɪ/ ~ Spanish E /e/.
   **Rating = 0, the entity is wrong:**
   - A name that clearly picks the other letter: 'uve' / 've corta' / 've chica' said for B, or 'be larga' / 'be de Barcelona' said for V.
   **Letters and digits that sound alike. Decide from the audio, not from the transcript. If the audio could be either, treat it as rating = 0, like a clearly wrong letter or digit. If the audio clearly says the intended one, it is correct, even if the transcript shows the other:**
@@ -98,7 +98,7 @@ it: |
   - This is how times are read in Italian; a time read this way is correct: 'le quindici e trenta' = 15:30, 'le tre e mezza' = 3:30 or 15:30, 'le tre meno un quarto' = 2:45 or 14:45.
   **English letter or digit names inside a trace entity: if the entity is not said in Italian, the rating should be 0.** Typical cases:
   - 'ay', 'ee' for E, 'eye', 'aitch', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'two'.
-  - These English names sound like a different Italian letter, so the code changes: English E 'ii' = Italian I, English A 'ei' ~ Italian E.
+  - These English names sound like a different Italian letter, so the code changes: English E /iː/ = Italian I /i/, English A /eɪ/ ~ Italian E /e/.
   **Rating = 0, the entity is wrong:**
   - A letter replaced by an ordinary word (the letter J read as the word 'Gioia' instead of 'i lunga').
   **Unusual but understandable: rating = 1; rating = 0 only if an Italian listener could take it for a different value:**

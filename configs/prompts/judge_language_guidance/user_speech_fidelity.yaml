@@ -13,7 +13,7 @@ de: |
   - This is how dates are read in German; a date read this way is correct: 'achter November neunzehnhundertneunzig' = 8.11.1990, 'achter November sechsundzwanzig' = 8.11.26, 'zweitausendsechsundzwanzig' = 2026.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different German letter.** Typical cases:
   - 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6 (using English pronunciation for letter or digit names)
-  - These English names sound like a different German letter, so the code changes: English E 'ii' = German I, English A 'ay' ~ German E, English V 'vee' ~ German W 'weh'.
+  - These English names sound like a different German letter, so the code changes: English E /iː/ = German I /iː/, English A /eɪ/ ~ German E /eː/, English V /viː/ ~ German W /veː/.
   **Rating 1 (entity error):**
   - A different value: siebenundfünfzig for 75, 'halb drei' for 3:30.
   **Unusual but understandable: rating at most 2 while the value is still clear; rating 1 if a German listener could take it for a different value:**
@@ -37,7 +37,7 @@ nl: |
   - This is how times are read in Dutch; a time read this way is correct: 'half drie' = 2:30 or 14:30 (not 3:30), 'kwart over twee' = 2:15 or 14:15, 'kwart voor drie' = 2:45 or 14:45, 'tien voor half drie' = 2:20 or 14:20, 'veertien uur dertig' = 14:30.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different Dutch letter.** Typical cases:
   - 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
-  - These English names sound like a different Dutch letter, so the code changes: English E 'ee' = Dutch I 'ie', English A 'ay' ~ Dutch E 'ee', English I 'eye' ~ Dutch IJ.
+  - These English names sound like a different Dutch letter, so the code changes: English E /iː/ = Dutch I /i/, English A /eɪ/ ~ Dutch E /eː/, English I /aɪ/ ~ Dutch IJ /ɛi/.
   **Rating 1 (entity error):**
   - A vowel change that makes a digit unrecognisable or turns it into another digit.
   - A different value: 'half drie' for 3:30.
@@ -62,7 +62,7 @@ fr: |
   - Phone numbers read in two-digit pairs, as is usual in French ('zéro six, douze, trente-quatre…' for 06 12 34…): this is correct, not a code read as one number.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different French letter.** Typical cases:
   - 'bee' for B, 'jay', 'double-u', 'six' with an English 'ks', 'two', INC or EMP spelled with English names.
-  - These English names sound like a different French letter, so the code changes: English G 'djee' ~ French J 'ji', English J 'djay' ~ French G 'gé', English E 'ii' = French I.
+  - These English names sound like a different French letter, so the code changes: English G /dʒiː/ ~ French J /ʒi/, English J /dʒeɪ/ ~ French G /ʒe/, English E /iː/ = French I /i/.
   **Rating 1 (entity error):**
   - A different value: soixante-sept for 77, 'moins le quart' for 3:45.
   **Unusual but understandable: rating at most 2 while the value is still clear; rating 1 if a French listener could take it for a different value:**
@@ -83,7 +83,7 @@ es: |
   - This is how dates and years are read in Spanish; a date or year read this way is correct: 'el uno de marzo' and 'el primero de marzo' = 1 de marzo, 'dos mil veintiséis' = 2026, 'mil novecientos noventa' = 1990.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different Spanish letter.** Typical cases:
   - 'em' for M, 'jay', 'double-u', 'six', 'two', also inside 'M de Madrid'.
-  - These English names sound like a different Spanish letter, so the code changes: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E.
+  - These English names sound like a different Spanish letter, so the code changes: English E /iː/ = Spanish I /i/, English A /eɪ/ ~ Spanish E /e/.
   **Rating 1 (entity error):**
   - A name that clearly picks the other letter: 'uve' / 've corta' / 've chica' said for B, or 'be larga' / 'be de Barcelona' said for V.
   - A different value: 'menos cuarto' for 3:45.
@@ -106,7 +106,7 @@ it: |
   - This is how times are read in Italian; a time read this way is correct: 'le quindici e trenta' = 15:30, 'le tre e mezza' = 3:30 or 15:30, 'le tre meno un quarto' = 2:45 or 14:45.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different Italian letter.** Typical cases:
   - 'ay', 'ee' for E, 'eye', 'aitch', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'two'.
-  - These English names sound like a different Italian letter, so the code changes: English E 'ii' = Italian I, English A 'ei' ~ Italian E.
+  - These English names sound like a different Italian letter, so the code changes: English E /iː/ = Italian I /i/, English A /eɪ/ ~ Italian E /e/.
   **Rating 1 (entity error):**
   - A letter replaced by an ordinary word (the letter J read as the word 'Gioia' instead of 'i lunga').
   - A different value, such as a different time.
