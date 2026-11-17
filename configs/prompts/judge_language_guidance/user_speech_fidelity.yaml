@@ -9,8 +9,8 @@ de: |
     - Letters: A (ah), B (beh), C (zeh), D (deh), E (eh), F (eff), G (geh), H (hah), I (ih), J (jott), K (kah), L (ell), M (emm), N (enn), O (oh), P (peh), Q (kuh), R (err), S (ess), T (teh), U (uh), V (fau), W (weh), X (iks), Y (ypsilon), Z (zett). The umlauts Ä, Ö and Ü are pronounced ä, ö and ü.
     - Digits: 0 (null), 1 (eins), 2 (zwei; 'zwo' is also a valid variant), 3 (drei), 4 (vier), 5 (fünf), 6 (sechs), 7 (sieben), 8 (acht), 9 (neun).
   - Buchstabiertafel words (e.g. 'D wie Dora', 'Z wie Zeppelin').
-  - This is how times are read in German; a time read this way is correct: 'vierzehn Uhr dreißig', 'halb drei' = 2:30 (not 3:30), 'Viertel nach zwei' = 2:15, 'Viertel vor drei' = 2:45.
-  - This is how dates are read in German; a date read this way is correct: 'achter November neunzehnhundertneunzig', 'achter November sechsundzwanzig', 'zweitausendsechsundzwanzig'.
+  - This is how times are read in German; a time read this way is correct: 'vierzehn Uhr dreißig' = 14:30, 'halb drei' = 2:30 or 14:30 (not 3:30), 'Viertel nach zwei' = 2:15 or 14:15, 'Viertel vor drei' = 2:45 or 14:45.
+  - This is how dates are read in German; a date read this way is correct: 'achter November neunzehnhundertneunzig' = 8.11.1990, 'achter November sechsundzwanzig' = 8.11.26, 'zweitausendsechsundzwanzig' = 2026.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different German letter.** Typical cases:
   - 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6 (using English pronunciation for letter or digit names)
   - These English names sound like a different German letter, so the code changes: English E 'ii' = German I, English A 'ay' ~ German E, English V 'vee' ~ German W 'weh'.
@@ -34,7 +34,7 @@ nl: |
   - Some of these are written like English names but are the Dutch ones: bee, cee, dee, pee, tee, gee, wee (Dutch B is /beː/, close to English 'bay'). Said this way, they are not English.
   - This is how numbers are read in Dutch, units before tens; a number read this way is correct: vijfenzeventig = 75, zesentwintig = 26.
   - This is how years are read in Dutch; a year read this way is correct: 2026 as 'tweeduizendzesentwintig' or 'twintig zesentwintig'.
-  - This is how times are read in Dutch; a time read this way is correct: 'half drie' = 2:30 (not 3:30), 'kwart over twee' = 2:15, 'kwart voor drie' = 2:45, 'tien voor half drie' = 2:20, 'veertien uur dertig'.
+  - This is how times are read in Dutch; a time read this way is correct: 'half drie' = 2:30 or 14:30 (not 3:30), 'kwart over twee' = 2:15 or 14:15, 'kwart voor drie' = 2:45 or 14:45, 'tien voor half drie' = 2:20 or 14:20, 'veertien uur dertig' = 14:30.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different Dutch letter.** Typical cases:
   - 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
   - These English names sound like a different Dutch letter, so the code changes: English E 'ee' = Dutch I 'ie', English A 'ay' ~ Dutch E 'ee', English I 'eye' ~ Dutch IJ.
@@ -57,8 +57,8 @@ fr: |
   - Some of these are written like English names but sound different: A is /a/ (as in 'papa'), E is /ə/ (as in 'le'), I is /i/ (as in 'ici'), U is /y/ (as in 'tu'), and six is said 'sis'. Said the English way ('ay', 'ee', 'eye', 'you', 'six' with a 'ks'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'A comme Anatole', 'M comme Marcel').
   - This is how numbers are read in French; a number read this way is correct: 70 soixante-dix, 77 soixante-dix-sept, 80 quatre-vingts, 91 quatre-vingt-onze. Use liaisons when required (six heures, dix-huit).
-  - This is how times are read in French; a time read this way is correct: 'quinze heures trente', 'trois heures et demie', 'trois heures et quart' = 3:15, 'trois heures moins le quart' or 'trois heures moins quart' (without 'le', common in Québec) = 2:45, 'midi', 'minuit'.
-  - This is how dates and years are read in French; a date or year read this way is correct: 'le premier mars', 'deux mille vingt-six', 'mille neuf cent quatre-vingt-dix' or 'dix-neuf cent quatre-vingt-dix'.
+  - This is how times are read in French; a time read this way is correct: 'quinze heures trente' = 15:30, 'trois heures et demie' = 3:30 or 15:30, 'trois heures et quart' = 3:15 or 15:15, 'trois heures moins le quart' or 'trois heures moins quart' (without 'le', common in Québec) = 2:45 or 14:45, 'midi' = 12:00, 'minuit' = 0:00.
+  - This is how dates and years are read in French; a date or year read this way is correct: 'le premier mars' = 1er mars, 'deux mille vingt-six' = 2026, 'mille neuf cent quatre-vingt-dix' or 'dix-neuf cent quatre-vingt-dix' = 1990.
   - Phone numbers read in two-digit pairs, as is usual in French ('zéro six, douze, trente-quatre…' for 06 12 34…): this is correct, not a code read as one number.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different French letter.** Typical cases:
   - 'bee' for B, 'jay', 'double-u', 'six' with an English 'ks', 'two', INC or EMP spelled with English names.
@@ -79,8 +79,8 @@ es: |
     - Digits: 0 (cero), 1 (uno), 2 (dos), 3 (tres), 4 (cuatro), 5 (cinco), 6 (seis), 7 (siete), 8 (ocho), 9 (nueve).
   - Some of these are written like English names but sound different: A is /a/, E is /e/ (as in 'mesa'), I is /i/, U is /u/. Said the English way ('ay', 'ee', 'eye', 'you'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'M de Madrid', 'B de Barcelona', 'be larga', 've corta', 've chica').
-  - This is how times are read in Spanish; a time read this way is correct: 'las quince treinta', 'las tres y media', 'las tres y media de la mañana' = 3:30, 'las tres y media de la tarde' = 15:30, 'las tres menos cuarto' = 2:45.
-  - This is how dates and years are read in Spanish; a date or year read this way is correct: 'el uno de marzo' and 'el primero de marzo', 'dos mil veintiséis', 'mil novecientos noventa'.
+  - This is how times are read in Spanish; a time read this way is correct: 'las quince treinta' = 15:30, 'las tres y media' = 3:30 or 15:30, 'las tres y media de la mañana' = 3:30, 'las tres y media de la tarde' = 15:30, 'las tres menos cuarto' = 2:45 or 14:45.
+  - This is how dates and years are read in Spanish; a date or year read this way is correct: 'el uno de marzo' and 'el primero de marzo' = 1 de marzo, 'dos mil veintiséis' = 2026, 'mil novecientos noventa' = 1990.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different Spanish letter.** Typical cases:
   - 'em' for M, 'jay', 'double-u', 'six', 'two', also inside 'M de Madrid'.
   - These English names sound like a different Spanish letter, so the code changes: English E 'ii' = Spanish I, English A 'ei' ~ Spanish E.
@@ -102,8 +102,8 @@ it: |
     - Digits: 0 (zero), 1 (uno), 2 (due), 3 (tre), 4 (quattro), 5 (cinque), 6 (sei), 7 (sette), 8 (otto), 9 (nove).
   - Some English names sound like these Italian ones: English bee, dee, pee, tee, vee, gee sound like Italian bi, di, pi, ti, vi, gi, so said this way they are not English. A, E, I, U are /a/, /e/, /i/, /u/; said the English way ('ay', 'ee', 'eye', 'you'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'J come Jolly', 'M come Milano').
-  - This is how dates and years are read in Italian; a date or year read this way is correct: 'il primo marzo' (primo, not uno), then cardinals ('il tre marzo'); 'duemilaventisei', 'millenovecentonovanta'.
-  - This is how times are read in Italian; a time read this way is correct: 'le quindici e trenta', 'le tre e mezza', 'le tre meno un quarto' = 2:45.
+  - This is how dates and years are read in Italian; a date or year read this way is correct: 'il primo marzo' = 1 marzo (primo, not uno), then cardinals ('il tre marzo' = 3 marzo); 'duemilaventisei' = 2026, 'millenovecentonovanta' = 1990.
+  - This is how times are read in Italian; a time read this way is correct: 'le quindici e trenta' = 15:30, 'le tre e mezza' = 3:30 or 15:30, 'le tre meno un quarto' = 2:45 or 14:45.
   **English letter or digit names in a spelled code: rating at most 2 while the value is still clear; rating 1 (entity error) when the English name sounds like a different Italian letter.** Typical cases:
   - 'ay', 'ee' for E, 'eye', 'aitch', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'two'.
   - These English names sound like a different Italian letter, so the code changes: English E 'ii' = Italian I, English A 'ei' ~ Italian E.
