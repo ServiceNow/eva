@@ -12,13 +12,11 @@ fr: |
 
 de: |
   **Cultural-norms exception: not filler, do not flag verbosity_or_filler for:**
-  - The formal Sie register and short service phrases, one per function, such as "Gerne", "Sehr gern", "Einen Moment bitte", "Vielen Dank", "Alles klar".
+  - The formal Sie register, including Sie-forms and polite constructions ("Könnten Sie mir bitte … nennen?", "Darf ich Sie bitten, …").
+  - Short service phrases, one per function, such as "Gerne", "Sehr gern", "Einen Moment bitte", "Vielen Dank", "Alles klar", "Ich schaue mir das gerne für Sie an".
 
   **Not excess length, do not flag any failure mode for it:**
   - Numbers and dates written out in words, because that is how the TTS speaks them. German compound number words look long (e.g. "am zweiundzwanzigsten April zweitausendsechsundzwanzig" for "22. April 2026") but are a single information unit.
-
-nl: |
-  The Dutch service register is direct and has no obligatory politeness formulas, so the cultural-norms exception gives almost no extra room for courtesy wording in Dutch.
 
 hi: |
   **Cultural-norms exception: not filler, do not flag verbosity_or_filler for:**
