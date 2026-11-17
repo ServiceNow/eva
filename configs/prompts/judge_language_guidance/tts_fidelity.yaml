@@ -37,7 +37,7 @@ nl: |
   - 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
   - These English names sound like a different Dutch letter, so the code changes: English E /iː/ = Dutch I /i/, English A /eɪ/ ~ Dutch E /eː/, English I /aɪ/ ~ Dutch IJ /ɛi/.
   **Rating = 0 with `entity_error`:**
-  - A vowel change that makes a digit unrecognisable or turns it into another digit.
+  - A digit said with a changed sound (vowel or consonant), so that it cannot be recognized or sounds like another digit.
   - A different value: 'half drie' for 3:30.
   **Letters and digits that sound alike. Decide from the audio, not from the transcript. If the audio could be either, treat it as rating = 0 with `entity_error`, like a clearly wrong letter or digit. If the audio clearly says the intended one, it is correct, even if the transcript shows the other:**
   - V/F (Dutch v is often devoiced), G/CH, M/N/L (em/en/el), B/P, D/T; zeven/negen (7/9), which is why telephone speech uses 'zeuven'.
@@ -124,7 +124,7 @@ hi: |
   **Rating = 0 with `entity_error`:**
   - A digit dropped or clipped (शून्य missing or said 'शून').
   - A different value: साढ़े पाँच for 4:30, पौने चार for 4:45.
-  - An English loanword or place name that a Hindi listener would not recognise (e.g. 'aisle' said as 'es-le'), when it is an entity. Loanwords and place names should sound as in Indian English.
+  - An English loanword or place name that a Hindi listener would not recognize (e.g. 'aisle' said as 'es-le'), when it is an entity. Loanwords and place names should sound as in Indian English.
   **Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if a Hindi listener could take it for a different value:**
   - An English digit name spoken where the intended or trace text spells out the Hindi digit word (आठ written, 'eight' spoken).
   - Literal clock readings ('एक तीस' for 1:30, 'चार तीस') or 24-hour readings ('तेरह तीस'), which are non-native in conversation.

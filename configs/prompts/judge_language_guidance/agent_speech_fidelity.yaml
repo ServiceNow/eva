@@ -35,7 +35,7 @@ nl: |
   - 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
   - These English names sound like a different Dutch letter, so the code changes: English E /iː/ = Dutch I /i/, English A /eɪ/ ~ Dutch E /eː/, English I /aɪ/ ~ Dutch IJ /ɛi/.
   **Rating = 0, the entity is wrong:**
-  - A vowel change that makes a digit unrecognisable or turns it into another digit.
+  - A digit said with a changed sound (vowel or consonant), so that it cannot be recognized or sounds like another digit.
   **Letters and digits that sound alike. Decide from the audio, not from the transcript. If the audio could be either, treat it as rating = 0, like a clearly wrong letter or digit. If the audio clearly says the intended one, it is correct, even if the transcript shows the other:**
   - V/F (Dutch v is often devoiced), G/CH, M/N/L (em/en/el), B/P, D/T; zeven/negen (7/9), which is why telephone speech uses 'zeuven'.
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the trace to know which was meant:**
@@ -116,7 +116,7 @@ hi: |
   - This is how times are read in Hindi; a time read this way is correct: डेढ़ बजे = 1:30, ढाई बजे = 2:30, साढ़े तीन = 3:30 (साढ़े only from 3 up), सवा चार = 4:15, पौने पाँच = 4:45, 'चार बजकर बीस मिनट'.
   **Rating = 0, the entity is wrong:**
   - A digit dropped or clipped (शून्य missing or said 'शून').
-  - An English loanword or place name in a trace entity (name, place, product) that a Hindi listener would not recognise (e.g. 'aisle' said as 'es-le'). Loanwords and place names should sound as in Indian English.
+  - An English loanword or place name in a trace entity (name, place, product) that a Hindi listener would not recognize (e.g. 'aisle' said as 'es-le'). Loanwords and place names should sound as in Indian English.
   **Unusual but understandable: rating = 1; rating = 0 only if a Hindi listener could take it for a different value:**
   - An English digit name spoken where the intended or trace text spells out the Hindi digit word (आठ written, 'eight' spoken).
   - Literal clock readings ('एक तीस' for 1:30, 'चार तीस') or 24-hour readings ('तेरह तीस'), which are non-native in conversation.
