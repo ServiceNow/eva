@@ -96,7 +96,7 @@ es: |
 it: |
   **Correct, does not lower the rating:**
   - When a code is spelled letter by letter in Italian, it is correct to say each letter and digit using its Italian name. The terms in brackets show the Italian pronunciation, written with Italian spelling conventions (not English ones). A letter or digit said this way is correct:
-    - Letters: A (a), B (bi), C (ci), D (di), E (e), F (effe), G (gi), H (acca), I (i), J (i lunga, also 'gei'), K (cappa), L (elle), M (emme), N (enne), O (o), P (pi), Q (cu), R (erre), S (esse), T (ti), U (u), V (vu, also vi), W (doppia vu), X (ics), Y (ipsilon / i greca), Z (zeta).
+    - Letters: A (a), B (bi), C (ci), D (di), E (e), F (effe), G (gi), H (acca), I (i), J (i lunga, also 'gei'), K (cappa), L (elle), M (emme), N (enne), O (o), P (pi), Q (cu), R (erre), S (esse), T (ti), U (u), V (vu, also 'vi'), W (doppia vu, also 'vu doppia'), X (ics), Y (ipsilon, also 'i greca'), Z (zeta).
     - Digits: 0 (zero), 1 (uno), 2 (due), 3 (tre), 4 (quattro), 5 (cinque), 6 (sei), 7 (sette), 8 (otto), 9 (nove).
   - Some English names sound like these Italian ones: English bee, dee, pee, tee, vee, gee sound like Italian bi, di, pi, ti, vi, gi, so said this way they are not English. A, E, I, U are /a/, /e/, /i/, /u/; said the English way ('ay', 'ee', 'eye', 'you'), they are English names: see the English letter or digit names below.
   - Spelling words (e.g. 'J come Jolly', 'M come Milano').
