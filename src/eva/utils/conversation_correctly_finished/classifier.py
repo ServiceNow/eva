@@ -50,16 +50,11 @@ def _extract_sim_audio(out: Path, s: ConvFinishSignals) -> tuple[list[float], li
     s.assistant_audio_events = sum(
         1 for e in ev if e.get("event_type") == "audio_start" and e.get("user") == "assistant"
     )
-    asst_ends = [
-        e["audio_timestamp"] for e in ev if e.get("event_type") == "audio_end" and e.get("user") == "assistant"
-    ]
-    u_starts = [
-        e["audio_timestamp"] for e in ev if e.get("event_type") == "audio_start" and e.get("user") == "simulated_user"
-    ]
-    u_ends = [
-        e["audio_timestamp"] for e in ev if e.get("event_type") == "audio_end" and e.get("user") == "simulated_user"
-    ]
-    return u_starts, u_ends, asst_ends
+
+    def times(kind: str, who: str) -> list[float]:
+        return [e["timestamp"] / 1000 for e in ev if e.get("event_type") == kind and e.get("user") == who]
+
+    return times("audio_start", "simulated_user"), times("audio_end", "simulated_user"), times("audio_end", "assistant")
 
 
 def _extract_log_signals(lines: list[str], s: ConvFinishSignals) -> None:

@@ -177,7 +177,7 @@ def _parse_user_simulator_events(events_file: Path) -> list[dict]:
       anything else                     → speaker = "user" (EL user-simulator)
 
     Time reference:
-      t0 = earliest audio_timestamp across all completed sessions.
+      t0 = earliest audio start timestamp across all completed sessions.
       All start/end values stored as relative seconds from t0.
     """
     events = []
@@ -187,14 +187,14 @@ def _parse_user_simulator_events(events_file: Path) -> list[dict]:
                 events.append(json.loads(line))
 
     audio_events = [e for e in events if e.get("event_type") in ("audio_start", "audio_end")]
-    audio_events.sort(key=lambda x: x.get("audio_timestamp", 0))
+    audio_events.sort(key=lambda x: x["timestamp"])
 
     active: dict = {}
     raw: list = []
     for ev in audio_events:
         user = ev.get("user")
         etype = ev.get("event_type")
-        ts = ev.get("audio_timestamp")
+        ts = ev["timestamp"] / 1000
         if etype == "audio_start":
             if user not in active or active[user].get("end") is not None:
                 active[user] = {"user": user, "start": ts, "end": None}

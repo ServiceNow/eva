@@ -34,10 +34,10 @@ def _read_user_utterances(events_path: Path) -> tuple[list[tuple[float, float]],
                 event = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            ts = event.get("audio_timestamp")
-            if not isinstance(ts, (int, float)):
-                continue
             kind, who = event.get("event_type"), event.get("user")
+            if kind not in ("audio_start", "audio_end") or not isinstance(event.get("timestamp"), (int, float)):
+                continue
+            ts = event["timestamp"] / 1000
             if who == "simulated_user" and kind == "audio_start":
                 open_start = ts
             elif who == "simulated_user" and kind == "audio_end":
