@@ -8,8 +8,9 @@ import yaml from 'js-yaml'
 const JUDGE_PROMPTS_ID = 'virtual:judge-prompts'
 const JUDGE_YAML = fileURLToPath(new URL('../configs/prompts/judge.yaml', import.meta.url))
 
-// Exposes the judge prompts from configs/prompts/judge.yaml, with placeholders
-// left as-is.
+// Exposes the judge prompts from configs/prompts/judge.yaml, with the _shared
+// variables inlined (as PromptManager does at runtime) and all other
+// placeholders left as-is.
 function judgePrompts(): Plugin {
   return {
     name: 'judge-prompts',
@@ -19,10 +20,19 @@ function judgePrompts(): Plugin {
     load(id) {
       if (id !== '\0' + JUDGE_PROMPTS_ID) return
       this.addWatchFile(JUDGE_YAML)
-      const { judge } = yaml.load(readFileSync(JUDGE_YAML, 'utf8')) as {
+      const { _shared = {}, judge } = yaml.load(readFileSync(JUDGE_YAML, 'utf8')) as {
+        _shared?: Record<string, string>
         judge: Record<string, Record<string, string>>
       }
-      return `export default ${JSON.stringify(judge)}`
+      const inlineShared = (prompt: string) =>
+        Object.entries(_shared).reduce((p, [key, value]) => p.replaceAll(`{${key}}`, value.trimEnd()), prompt)
+      const prompts = Object.fromEntries(
+        Object.entries(judge).map(([metric, metricPrompts]) => [
+          metric,
+          Object.fromEntries(Object.entries(metricPrompts).map(([name, prompt]) => [name, inlineShared(prompt)])),
+        ]),
+      )
+      return `export default ${JSON.stringify(prompts)}`
     },
   }
 }
