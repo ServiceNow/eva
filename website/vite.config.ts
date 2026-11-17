@@ -43,5 +43,7 @@ export default defineConfig({
   build: {
     outDir: '../docs',
     emptyOutDir: false,
+    // Bundle is dominated by src/data/leaderboardStats.json (~800 kB); fine for a static site.
+    chunkSizeWarningLimit: 1500,
   },
 })
