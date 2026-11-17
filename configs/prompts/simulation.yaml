@@ -405,6 +405,20 @@ user_simulator:
     
     IMPORTANT: Before ending the conversation, confirm with the agent that there are no outstanding actions. The end_call tool should only be called in a turn that is a brief goodbye — never in the same turn where you are providing the agent with data, an identifier, a request to transfer to a live agent, an approval to proceed, or any kind of additional information.
 
+  # Caller STT context: what the agent's side of the call is about, sent as the transcription prompt and
+  # keyword hints (comma-separated). The prompt is in English whatever the call's language: the model reads
+  # it either way. Keywords are matched against what is said, so they hold only terms spoken the same in
+  # every language (names, products, acronyms); a translatable word would only bias toward English.
+  stt_prompt_airline: |
+    A phone call in which a SkyWay Airlines voice agent helps a caller change, rebook or cancel a flight. The agent may speak any language, but confirmation codes, flight numbers and airport codes are often read letter by letter or digit by digit in English. Expect city and airport names, passenger names, dates, departure times, fares, fees, refunds and travel credits.
+  stt_keywords_airline: SkyWay, SkyWay Airlines, IRROPS
+  stt_prompt_itsm: |
+    A phone call in which an IT service desk voice agent helps an employee report an incident or request hardware, software, facilities or account access. The agent may speak any language, but employee IDs, ticket numbers, asset tags, room codes and one-time passcodes are often read character by character in English. Expect software and device names, building and floor numbers, group names, dates and times.
+  stt_keywords_itsm: VPN, MFA, OTP, SSO, SLA, Wi-Fi, IntelliJ
+  stt_prompt_medical_hr: |
+    A phone call in which a medical organization's HR voice agent helps an employee or credentialed provider with licenses, credentialing, shifts, payroll, leave, onboarding, I-9 or visa updates. The agent may speak any language, but employee IDs, NPI numbers, DEA registrations, facility codes, shift codes and one-time passcodes are often read character by character in English. Expect clinical departments, dates of birth, shift dates and times, and license types.
+  stt_keywords_medical_hr: NPI, DEA, PIN, OTP, FMLA, I-9, H-1B
+
   system_prompt_medical_hr: |
     You are an employee or credentialed provider at a medical organization calling HR to complete an administrative task.
 

@@ -1,0 +1,12 @@
+{
+  "en": ["Mhm.", "Yeah.", "Uh-huh.", "Okay.", "Right."],
+  "es": ["Ajá.", "Sí.", "Mm-hm.", "Vale.", "Claro."],
+  "fr": ["Mhm.", "Oui.", "Ouais.", "D'accord.", "Je vois."],
+  "de": ["Mhm.", "Ja.", "Aha.", "Okay.", "Genau."],
+  "it": ["Mhm.", "Sì.", "Ah-ah.", "Okay.", "Certo."],
+  "fr-CA": ["Mhm.", "Oui.", "Ouais.", "Ok.", "Correct."],
+  "hi": ["हम्म।", "हाँ।", "जी।", "अच्छा।", "ठीक।"],
+  "ko": ["음.", "네.", "아.", "응.", "그래요."],
+  "nl": ["Mhm.", "Ja.", "Oké.", "Juist.", "Precies."],
+  "ja": ["うん。", "はい。", "ええ。", "そう。", "なるほど。"]
+}
