@@ -13,7 +13,7 @@ de: |
   - This is how dates are read in German; a date read this way is correct: 'achter November neunzehnhundertneunzig' = 8.11.1990, 'achter November sechsundzwanzig' = 8.11.26, 'zweitausendsechsundzwanzig' = 2026.
   **English letter or digit names inside a trace entity: if the entity is not said in German, the rating should be 0.** Typical cases:
   - 'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6 (using English pronunciation for letter or digit names)
-  - These English names sound like a different German letter, so the code changes: English E /iː/ = German I /iː/, English A /eɪ/ ~ German E /eː/, English V /viː/ ~ German W /veː/.
+  - These English names sound like a different German letter, so the code changes: English E /iː/ = German I /iː/, English A /eɪ/ ~ German E /eː/, English V /viː/ is not German V /faʊ/ and starts like German W /veː/.
   **Unusual but understandable: rating = 1; rating = 0 only if a German listener could take it for a different value:**
   - A date read as digit groups that a German listener cannot parse as a date ('neunzehn neunzig, zwei, Monat elf' for the date "2.11.1990").
   **Letters and digits that sound alike. Decide from the audio, not from the transcript. If the audio could be either, treat it as rating = 0, like a clearly wrong letter or digit. If the audio clearly says the intended one, it is correct, even if the transcript shows the other:**
@@ -33,7 +33,7 @@ nl: |
   - This is how times are read in Dutch; a time read this way is correct: 'half drie' = 2:30 or 14:30 (not 3:30), 'kwart over twee' = 2:15 or 14:15, 'kwart voor drie' = 2:45 or 14:45, 'tien voor half drie' = 2:20 or 14:20, 'veertien uur dertig' = 14:30.
   **English letter or digit names inside a trace entity: if the entity is not said in Dutch, the rating should be 0.** Typical cases:
   - 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
-  - These English names sound like a different Dutch letter, so the code changes: English E /iː/ = Dutch I /i/, English A /eɪ/ ~ Dutch E /eː/, English I /aɪ/ ~ Dutch IJ /ɛi/.
+  - These English names sound like a different Dutch letter, so the code changes: English E /iː/ = Dutch I /i/, English A /eɪ/ ~ Dutch E /eː/, English I /aɪ/ ~ Dutch IJ / Y /ɛi/.
   **Rating = 0, the entity is wrong:**
   - A digit said with a changed sound (vowel or consonant), so that it cannot be recognized or sounds like another digit.
   **Letters and digits that sound alike. Decide from the audio, not from the transcript. If the audio could be either, treat it as rating = 0, like a clearly wrong letter or digit. If the audio clearly says the intended one, it is correct, even if the transcript shows the other:**
@@ -83,7 +83,7 @@ es: |
   - M/N/L (eme/ene/ele), N/Ñ, F/S (efe/ese), sesenta/setenta (60/70), dos/doce (2/12).
   **Same sound, cannot be told apart from audio: never lower the rating for these alone; use the trace to know which was meant:**
   - B and V (both /b/) when said without a distinguishing name.
-  - In names spelled by sound: G before e/i and J (both /x/), as in Gerardo/Jerardo; C before e/i and Z (both /θ/), as in Ceballos/Zeballos; C, K and QU (all /k/), as in Carla/Karla; LL and Y (yeísmo); H is silent.
+  - In names spelled by sound: G before e/i and J (both /x/), as in Gerardo/Jerardo; C before e/i and Z (both /θ/ in Spain; both /s/ with seseo, as in Latin America, the Canaries and much of Andalusia, where they also sound like S), as in Ceballos/Zeballos; C, K and QU (all /k/), as in Carla/Karla; LL and Y (yeísmo); H is silent.
   **Not wrong language, does not lower the rating:**
   - Established loanwords, e.g. email, ok, check-in.
 
