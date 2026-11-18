@@ -72,6 +72,7 @@ class LLMCall(BaseModel):
     latency_ms: float | None = None
     error_type: str | None = None
     error_source: str | None = None
+    error_message: str | None = None
     retry_attempt: int = 0
 
 
@@ -283,6 +284,7 @@ class AuditLog:
             "latency_ms": llm_call.latency_ms,
             "error_type": llm_call.error_type,
             "error_source": llm_call.error_source,
+            "error_message": llm_call.error_message,
             "retry_attempt": llm_call.retry_attempt,
             "message_type": "llm_call",
         }

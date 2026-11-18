@@ -126,22 +126,22 @@ class TestNormalizeEventForProcessor:
     """_normalize_event_for_processor maps legacy role names to neutral names for old elevenlabs_events.jsonl files."""
 
     def test_legacy_elevenlabs_user_mapped_to_neutral(self):
-        event = {"event_type": "audio_start", "user": "elevenlabs_user", "audio_timestamp": 1.0}
+        event = {"event_type": "audio_start", "user": "elevenlabs_user", "timestamp": 1000}
         result = _normalize_event_for_processor(event)
         assert result["user"] == "simulated_user"
 
     def test_legacy_framework_agent_mapped_to_neutral(self):
-        event = {"event_type": "audio_start", "user": "framework_agent", "audio_timestamp": 1.0}
+        event = {"event_type": "audio_start", "user": "framework_agent", "timestamp": 1000}
         result = _normalize_event_for_processor(event)
         assert result["user"] == "assistant"
 
     def test_legacy_pipecat_agent_mapped_to_neutral(self):
-        event = {"event_type": "audio_start", "user": "pipecat_agent", "audio_timestamp": 1.0}
+        event = {"event_type": "audio_start", "user": "pipecat_agent", "timestamp": 1000}
         result = _normalize_event_for_processor(event)
         assert result["user"] == "assistant"
 
     def test_neutral_role_passes_through_unchanged(self):
-        event = {"event_type": "audio_start", "user": "simulated_user", "audio_timestamp": 1.0}
+        event = {"event_type": "audio_start", "user": "simulated_user", "timestamp": 1000}
         result = _normalize_event_for_processor(event)
         assert result["user"] == "simulated_user"
 

@@ -86,17 +86,23 @@ class TestEventLogger:
         event = logger._events[0]
         assert event["event_type"] == "audio_start"
         assert event["user"] == "simulated_user"
-        assert isinstance(event["audio_timestamp"], float)
+        assert isinstance(event["timestamp"], int)
         assert event["sequence"] == 1
         assert "type" not in event
         assert "data" not in event
+        assert "audio_timestamp" not in event
 
     def test_log_audio_end_structure(self, logger):
         logger.log_audio_end("assistant")
         event = logger._events[0]
         assert event["event_type"] == "audio_end"
         assert event["user"] == "assistant"
-        assert isinstance(event["audio_timestamp"], float)
+        assert isinstance(event["timestamp"], int)
+
+    def test_log_audio_end_stamps_real_end_not_log_time(self, logger):
+        """A back-dated end is stored as the event timestamp, so it orders by when the audio stopped."""
+        logger.log_audio_end("simulated_user", 1000.1234)
+        assert logger._events[0]["timestamp"] == 1000123
 
     def test_save_creates_jsonl(self, logger):
         logger.log_user_speech("hello")
