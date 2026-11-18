@@ -187,14 +187,22 @@ def _parse_user_simulator_events(events_file: Path) -> list[dict]:
                 events.append(json.loads(line))
 
     audio_events = [e for e in events if e.get("event_type") in ("audio_start", "audio_end")]
-    audio_events.sort(key=lambda x: x["timestamp"])
+
+    def _audio_time(ev: dict) -> float:
+        # Older runs stored the audio time in seconds as "audio_timestamp" and the
+        # log time in "timestamp"; newer runs store the audio time in "timestamp" (ms).
+        if "audio_timestamp" in ev:
+            return ev["audio_timestamp"]
+        return ev["timestamp"] / 1000
+
+    audio_events.sort(key=_audio_time)
 
     active: dict = {}
     raw: list = []
     for ev in audio_events:
         user = ev.get("user")
         etype = ev.get("event_type")
-        ts = ev["timestamp"] / 1000
+        ts = _audio_time(ev)
         if etype == "audio_start":
             if user not in active or active[user].get("end") is not None:
                 active[user] = {"user": user, "start": ts, "end": None}
