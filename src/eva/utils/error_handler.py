@@ -39,6 +39,23 @@ from eva.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
+class LLMIncompleteResponseError(RuntimeError):
+    """An LLM call stopped before finishing (token limit or content filter).
+
+    Not retryable: a retry hits the same limit, and the output (including tool-call arguments) may be
+    cut off. ``llm_stats`` carries the call's usage, cost and stop reason so the caller can still record
+    the call; ``partial_text`` is whatever text the response contained.
+    """
+
+    def __init__(self, reason: str | None, llm_stats: dict, partial_text: str = "", llm_provider: str | None = None):
+        super().__init__(f"LLM response incomplete (reason: {reason or 'unknown'})")
+        self.reason = reason
+        self.llm_stats = llm_stats
+        self.partial_text = partial_text
+        # Read by get_error_source(), like LiteLLM's own exceptions.
+        self.llm_provider = llm_provider
+
+
 @dataclass
 class ErrorInfo:
     """Structured error information from categorization."""
@@ -105,6 +122,16 @@ def categorize_error(error: Exception) -> ErrorInfo:
             error_source=error_source,
             is_retryable=True,
             status_code=status_code,
+            original_exception=error,
+        )
+
+    # Response stopped at a token limit or content filter - not retryable
+    if isinstance(error, LLMIncompleteResponseError):
+        return ErrorInfo(
+            error_type="llm_error",
+            error_source=error_source,
+            is_retryable=False,
+            status_code=None,
             original_exception=error,
         )
 

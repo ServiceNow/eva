@@ -820,11 +820,18 @@ class TestTurnStrategyConfig:
 
 
 class TestSelfEndpointingSTTAutowire:
-    def test_cartesia_forces_external_and_no_vad(self):
+    def test_cartesia_defaults_to_external_start_external_stop_and_no_vad(self):
+        # ink-2's own turn.start opens the user turn. A phantom one (trailing audio, no words) can
+        # cancel an in-flight query; the agent processor re-runs it when the turn closes empty (#561).
         m = ModelConfig(stt="cartesia", llm="gpt-5.2")
         assert m.turn_start_strategy == "external"
         assert m.turn_stop_strategy == "external"
         assert m.vad == "none"
+
+    def test_explicit_transcription_start_is_overridden(self):
+        # 'transcription' start needs the uninterruptible-final workaround, which was removed.
+        m = ModelConfig(stt="cartesia", llm="gpt-5.2", turn_start_strategy="transcription")
+        assert m.turn_start_strategy == "external"
 
     def test_conflicting_user_values_are_overridden(self):
         m = ModelConfig(

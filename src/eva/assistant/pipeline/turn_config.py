@@ -28,6 +28,28 @@ from eva.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
+class EmptyProposalStopStrategy(ExternalUserTurnStopStrategy):
+    """External turn stop that also closes a turn whose committed transcript is empty.
+
+    A self-endpointing STT (Cartesia ink-2) can open a turn from trailing audio and then commit it
+    with no words. It skips the TranscriptionFrame for an empty commit but still proposes the turn
+    stop. The stock strategy waits for text, so it never closes the turn, and pipecat's 5s
+    user_turn_stop_timeout watchdog closes it instead. That delays re-running a query the phantom
+    turn cancelled by about 5s.
+
+    Only use this with an STT that pushes the final TranscriptionFrame before the proposed stop,
+    as ink-2 does. Otherwise a real turn would be closed before its text arrives.
+    """
+
+    async def _handle_user_stopped_speaking(self, *, announced_elsewhere: bool):
+        had_text = bool(self._text)
+        await super()._handle_user_stopped_speaking(announced_elsewhere=announced_elsewhere)
+        # `had_text` keeps this from firing twice: with text, the parent already triggered the stop.
+        if not had_text and not announced_elsewhere and self._turn_open:
+            logger.debug(f"{self}: closing a turn committed with no text")
+            await self._trigger_user_turn_stopped()
+
+
 def create_vad_analyzer(vad_type: str, vad_params: dict[str, Any]) -> VADAnalyzer | None:
     """Create a VAD analyzer from configuration.
 
@@ -90,6 +112,7 @@ def create_turn_stop_strategy(
     strategy_type: str,
     strategy_params: dict[str, Any],
     smart_turn_stop_secs: float | None = None,
+    close_empty_turns: bool = False,
 ) -> BaseUserTurnStopStrategy:
     """Create a user turn stop strategy from configuration.
 
@@ -97,6 +120,8 @@ def create_turn_stop_strategy(
         strategy_type: Strategy type ('speech_timeout', 'turn_analyzer', 'krisp_viva_turn', 'external')
         strategy_params: Strategy-specific parameters
         smart_turn_stop_secs: stop_secs for SmartTurnParams (used with turn_analyzer strategy)
+        close_empty_turns: for 'external' only, close a turn the STT committed with no text instead
+            of waiting for pipecat's user_turn_stop_timeout. Set for ink-2 (see EmptyProposalStopStrategy).
 
     Returns:
         Turn stop strategy instance
@@ -134,6 +159,8 @@ def create_turn_stop_strategy(
         return TurnAnalyzerUserTurnStopStrategy(turn_analyzer=krisp_analyzer, **params)
     elif strategy_type_lower == "external":
         # ExternalUserTurnStopStrategy has no required parameters
+        if close_empty_turns:
+            return EmptyProposalStopStrategy(**strategy_params)
         return ExternalUserTurnStopStrategy(**strategy_params)
     else:
         raise ValueError(
