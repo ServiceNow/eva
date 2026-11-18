@@ -706,14 +706,14 @@ judge:
         - Names (e.g., Mr. Rivera, Rodriguez)
 
         **What constitutes an error (rating = 0):**
-        - Any entity spoken incorrectly (wrong digits, letters, amounts, numbers)
-        - Missing words that change the meaning or omit an entity
-        - Added words that introduce a factually incorrect entity
-        - Substituted words that alter an entity value
-        - Speech in another language that is not in the intended text, including a letter or digit name from another language in a spelled code (see `wrong_language` below; we expect audio in {expected_language})
-        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it said as an ordinary word instead of its letter name (e.g., Italian "J" said as "Gioia" instead of "i lunga") — `entity_error`
-        - A code that is normally read digit by digit (a PIN, phone number, confirmation or account number) read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"), or any reading that a native {expected_language} listener could take for a different value — `entity_error`
-        - Audio that could be either of two letters or digits that sound alike (e.g., "b"/"d") — `entity_error`
+        - Any entity spoken incorrectly (wrong digits, letters, amounts, numbers) (failure mode: `entity_error`)
+        - Missing words that change the meaning or omit an entity (failure mode: `entity_error` if an entity was omitted, otherwise `truncation`)
+        - Added words that introduce a factually incorrect entity (failure modes: `entity_error` and `insertion_hallucination`)
+        - Substituted words that alter an entity value (failure mode: `entity_error`)
+        - Speech in another language that is not in the intended text, including a letter or digit name from another language in a spelled code (see `wrong_language` below; we expect audio in {expected_language}) (failure mode: `wrong_language`, and also `entity_error` if a letter or digit name sounds like a different {expected_language} letter or digit). Words in another language that the TTS added are added words (failure mode: `insertion_hallucination`).
+        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it said as an ordinary word instead of its letter name (e.g., Italian "J" said as "Gioia" instead of "i lunga") (failure mode: `entity_error`)
+        - A code that is normally read digit by digit (a PIN, phone number, confirmation or account number) read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"), or any reading that a native {expected_language} listener could take for a different value (failure mode: `entity_error`)
+        - Audio that could be either of two letters or digits that sound alike (e.g., "b"/"d") (failure mode: `entity_error`)
 
         **What to ignore (does NOT cause rating = 0):**
         - Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss", "Mr." vs "Mister", or language-equivalent honorific forms such as French "Madame" vs "Mme" or Japanese "様" vs "-san")
@@ -726,8 +726,8 @@ judge:
         - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form of those letters in that language
         - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
         - Name spelling variants that are phonetically identical (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
-        - Spelling-alphabet words (e.g., "A as in Anna") used to say a letter
-        - The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse), unless it is one of the code readings listed as errors above
+        - When the intended text spells a letter with a spelling-alphabet word (e.g., "A as in Anna"), the letter is said as its letter name (not as the article "a") and the word ("Anna") as an ordinary word (not spelled out). Spelling-alphabet words that are not in the intended text are added words, judged by the usual rules.
+        - The same value said in a different valid form (e.g., "1234" read as "twelve thirty-four" or "one two three four", "2026" as "twenty twenty-six" or "two thousand twenty-six") is not an entity error by itself, as long as a native {expected_language} listener hears the same value. Exception: the code readings listed as errors above (e.g., a PIN read as one number). If the audio says a different value, it is an entity error.
         - Letters or digits that sound alike (e.g., "b"/"d"): judge by what the audio says, not by your own transcript. If the audio clearly says the intended one, it is correct even if you transcribed the other; if the audio could be either, it is an error (see above).
 
         ## Rating Scale (per turn)
@@ -746,10 +746,9 @@ judge:
         - **insertion_hallucination** — The audio contains words or phrases that were NOT in the intended text. The TTS added content on its own — extra sentences, repeated phrases, or filler that the script did not contain.
 
         - **wrong_language** — Speech in a language other than the expected language ({expected_language}) that is not in the intended text. Use this when:
-          - the language mismatch is clear and covers a meaningful portion of the turn;
-          - a phrase or sentence is in another language (e.g., an English "one moment" in a French turn), even when the rest of the turn is in {expected_language};
+          - the language mismatch is clear and covers a meaningful portion of the turn (e.g., a French intended text read in English);
           - a letter or digit in a spelled code or acronym is said with its name from another language (e.g., an English letter or digit name in a German code); add `entity_error` if it sounds like a different {expected_language} letter or digit. Codes and acronyms are not an exception: their letters and digits must be spoken with {expected_language} names.
-          Not wrong language: proper nouns, official product or system names, loanwords that are established in {expected_language}, and words in another language that are in the intended text.
+          Not wrong language: proper nouns, official product or system names, loanwords that are established in {expected_language}, and words in another language that are in the intended text. Words in another language that the TTS added are `insertion_hallucination`.
 
         Tagging guidance:
         - If a turn has both an entity error and missing/dropped content outside tagged regions, list both `entity_error` and `truncation`.
@@ -830,8 +829,8 @@ judge:
         - Minor pronunciation variations that do not change identity (e.g., "Ms." vs "Miss")
         - Filler words, phrasing, word choice, sentence structure
         - Slight pacing or prosody differences
-        - Spelling-alphabet words (e.g., "A as in Anna") used to say a letter
-        - A number, date or time reading that is unusual but unambiguous, unless it is one of the code readings listed under low fidelity above
+        - A letter said with a spelling-alphabet word (e.g., "A as in Anna") is correct, as long as the letter is said as its letter name (not as the article "a") and the word ("Anna") as an ordinary word (not spelled out).
+        - A number, date or time said in a different valid form (e.g., "1234" read as "twelve thirty-four" or "one two three four", "2026" as "twenty twenty-six" or "two thousand twenty-six") is correct, as long as a native {expected_language} listener hears the same value. Exception: the code readings listed under low fidelity above (e.g., a PIN read as one number). If the audio says a different value, the rating is 0.
         - Letters or digits that sound alike (e.g., "b"/"d"): judge by what the audio says, not by your own transcript. If the audio clearly says the intended one, it is correct even if you transcribed the other; if the audio could be either, it is an error (see above).
 
         ## Rating Scale (per turn)
@@ -895,7 +894,7 @@ judge:
         - **Added words**: Extra words spoken that are not in the intended text
         - **Wrong words**: Words spoken incorrectly or substituted with different words
         - **Entity errors**: Any of the TTS-critical entities above spoken incorrectly (rating 1). This includes a spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), a letter in it said as an ordinary word instead of its letter name (e.g., Italian "J" said as "Gioia" instead of "i lunga"), and audio that could be either of two letters or digits that sound alike (e.g., "b"/"d").
-        - **Unusual readings**: The intended words read in an unusual order or grouping (e.g., a number read digit by digit instead of as one number, or the reverse) are not an entity error by themselves: rating at most 2 if they sound unnatural or if a code that is normally read digit by digit (a PIN, phone number, confirmation or account number) is read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"), and 1 only if a native {expected_language} listener could take it for a different value.
+        - **Unusual readings**: The same value said in a different valid form (e.g., "1234" read as "twelve thirty-four" or "one two three four", "2026" as "twenty twenty-six" or "two thousand twenty-six") is not an entity error by itself. Rating at most 2 if it sounds unnatural, or if a code that is normally read digit by digit (a PIN, phone number, confirmation or account number) is read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"). If the audio says a different value, or a native {expected_language} listener could take it for one, it is an entity error (rating 1).
         - **Wrong language**: Anything spoken in a language other than {expected_language} and not in the intended text: an entity, a letter or digit name in a spelled code or acronym (e.g., an English letter or digit name in a German code), a word, a phrase or a sentence (e.g., an English "one moment" in a French turn). Rating at most 2, and 1 if it changes or replaces an entity (e.g., the English letter name sounds like a different {expected_language} letter) or the turn no longer makes sense. Codes and acronyms are not an exception. Not wrong language: proper nouns, official product or system names, loanwords that are established in {expected_language}, and words in another language that are in the intended text.
 
         ### What to Ignore
@@ -908,7 +907,7 @@ judge:
         - Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form in that language
         - Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
         - Name spelling variants where the pronunciation is identical (e.g., German Meyer/Meier/Maier/Mayer)
-        - Spelling-alphabet words (e.g., "A as in Anna") used to say a letter
+        - When the intended text spells a letter with a spelling-alphabet word (e.g., "A as in Anna"), the letter is said as its letter name (not as the article "a") and the word ("Anna") as an ordinary word (not spelled out). Spelling-alphabet words that are not in the intended text are added words, judged by the usual rules.
         - Letters or digits that sound alike (e.g., "b"/"d"): judge by what the audio says, not by your own transcript. If the audio clearly says the intended one, it is correct even if you transcribed the other; if the audio could be either, it is an entity error (see Error Types).
 
         ## Rating Scale (per turn)
