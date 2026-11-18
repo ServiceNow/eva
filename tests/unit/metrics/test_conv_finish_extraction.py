@@ -208,11 +208,11 @@ def test_vad_no_turn_detected_from_events(tmp_path):
     events = "\n".join(
         json.dumps(x)
         for x in [
-            {"event_type": "audio_start", "user": "assistant", "audio_timestamp": 100.0},
-            {"event_type": "audio_end", "user": "assistant", "audio_timestamp": 108.0},
+            {"event_type": "audio_start", "user": "assistant", "timestamp": 100_000},
+            {"event_type": "audio_end", "user": "assistant", "timestamp": 108_000},
             {"type": "user_speech", "data": {"text": "It is for end of life."}},
-            {"event_type": "audio_start", "user": "simulated_user", "audio_timestamp": 112.0},
-            {"event_type": "audio_end", "user": "simulated_user", "audio_timestamp": 113.5},
+            {"event_type": "audio_start", "user": "simulated_user", "timestamp": 112_000},
+            {"event_type": "audio_end", "user": "simulated_user", "timestamp": 113_500},
         ]
     )
     # pipecat: only an EARLIER user_started_speaking, none in the final window (112-113.5)

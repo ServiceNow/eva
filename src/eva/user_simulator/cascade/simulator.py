@@ -16,6 +16,7 @@ from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.stt import ScribeStreamingSTT
 from eva.user_simulator.cascade.tts import TTS_SAMPLE_RATE, CartesiaStreamingTTS
 from eva.utils.logging import get_logger
+from eva.utils.prompt_manager import PromptManager
 
 logger = get_logger(__name__)
 
@@ -187,11 +188,19 @@ class CascadeUserSimulator(AbstractUserSimulator):
         self._kept_listening = 0
 
     @property
+    def caller_gender(self) -> str:
+        return _PERSONA_GENDER.get(self.persona_config.get("user_persona_id"), "F")
+
+    @property
     def caller_voice(self) -> str:
-        gender = _PERSONA_GENDER.get(self.persona_config.get("user_persona_id"))
-        if gender == "M":
+        if self.caller_gender == "M":
             return self.simulator_config.male_voice
         return self.simulator_config.female_voice
+
+    def _build_prompt(self) -> str:
+        gender_word = "male" if self.caller_gender == "M" else "female"
+        gender_instruction = PromptManager().get_prompt("user_simulator.gender_instruction", gender_word=gender_word)
+        return super()._build_prompt() + "\n\n" + gender_instruction
 
     async def run_conversation(self) -> str:
         try:

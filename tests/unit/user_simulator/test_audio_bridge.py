@@ -16,6 +16,7 @@ import pytest
 from eva.user_simulator.audio_bridge import (
     ASSISTANT_SAMPLE_RATE,
     SEND_CHUNK_SIZE_PCM,
+    USER_END_DETECTION_DELAY_INTERVALS,
     USER_TRAILING_NOISE_SNR_DB,
     USER_TRAILING_SILENCE_CHUNKS,
     ElevenLabsAudioInterface,
@@ -489,3 +490,57 @@ class TestTrailingWhiteNoise:
         assert user_clean, "expected user_clean frames recorded for alignment"
         assert all(data == b"\x00" * SEND_CHUNK_SIZE_PCM for data in user_clean)
         assert _white_noise_pcm() not in user_clean
+
+
+class TestUserEndDetectionGap:
+    """The end-of-utterance detection delay streams real-time silence, not a gap in the wire."""
+
+    async def _run_utterance(self, iface: ElevenLabsAudioInterface, audio: bytes, run_s: float) -> list[bytes]:
+        iface.websocket = MagicMock()
+        iface.running = True
+        wire: list[bytes] = []
+        iface._send_audio_frame = AsyncMock(side_effect=lambda frame: wire.append(frame) or True)
+        iface.output(audio)
+
+        async def stop_later():
+            await asyncio.sleep(run_s)
+            iface.running = False
+
+        await asyncio.gather(iface._send_to_assistant(), stop_later())
+        return wire
+
+    @pytest.mark.asyncio
+    async def test_partial_chunk_end_streams_silence_during_delay(self):
+        """A leftover partial chunk is padded, then silence fills the delay before the utterance ends."""
+        recorded: list[tuple[str, bytes]] = []
+        iface = _make_interface(record_callback=lambda source, data: recorded.append((source, data)))
+        speech = b"\x10\x10" * (SEND_CHUNK_SIZE_PCM // 2) * 3 + b"\x10\x10" * 50  # 3 full chunks + a partial
+        wire = await self._run_utterance(iface, speech, run_s=1.0)
+
+        assert iface._user_audio_ended_time is not None
+        assert not iface._user_audio_active
+        # 3 speech frames, then the delay's frames (padded partial first) with no hole on the wire.
+        assert len(wire) == 3 + USER_END_DETECTION_DELAY_INTERVALS
+        silence_mulaw = ElevenLabsAudioInterface._convert_pcm_to_mulaw(b"\x00" * SEND_CHUNK_SIZE_PCM)
+        assert wire[3] != silence_mulaw
+        assert all(frame == silence_mulaw for frame in wire[4:])
+        # user_clean gets the speech (on enqueue), the partial's padding, then one silence frame per delay frame.
+        user_clean = [data for source, data in recorded if source == "user_clean"]
+        assert user_clean[0] == speech
+        assert len(user_clean[1]) == SEND_CHUNK_SIZE_PCM - 100
+        assert user_clean[2:] == [b"\x00" * SEND_CHUNK_SIZE_PCM] * (USER_END_DETECTION_DELAY_INTERVALS - 1)
+
+    @pytest.mark.asyncio
+    async def test_exact_boundary_end_needs_turn_complete(self):
+        """With no partial chunk, silence streams but the utterance ends only once the turn is complete."""
+        iface = _make_interface()
+        speech = b"\x10\x10" * (SEND_CHUNK_SIZE_PCM // 2) * 2
+        wire = await self._run_utterance(iface, speech, run_s=1.0)
+        assert iface._user_audio_active
+        assert len(wire) > 2 + USER_END_DETECTION_DELAY_INTERVALS  # silence kept streaming, no end
+
+        iface = _make_interface()
+        iface.notify_user_utterance_complete()
+        wire = await self._run_utterance(iface, speech, run_s=1.0)
+        assert not iface._user_audio_active
+        assert len(wire) == 2 + USER_END_DETECTION_DELAY_INTERVALS

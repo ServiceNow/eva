@@ -44,6 +44,9 @@ SEND_CHUNK_SIZE_PCM = int(ELEVENLABS_OUTPUT_RATE * SEND_CHUNK_DURATION_MS / 1000
 # Timing constants for silence detection and polling
 SILENCE_DETECTION_THRESHOLD_S = 0.2  # 200ms to detect assistant audio end
 USER_END_DETECTION_DELAY_INTERVALS = 30  # 600ms (30 x 20ms) - longer to avoid splitting natural pauses
+# A gap in user audio shorter than this is held, then caught up (TTS momentarily behind real time);
+# a longer one goes out as real-time silence while the end-of-utterance delay runs.
+USER_UNDERRUN_GRACE_S = 0.1
 USER_CATCHUP_SILENCE_CHUNKS = 0  # Don't send catch-up silence for user - let VAD detect naturally
 USER_TRAILING_SILENCE_CHUNKS = (
     # Disabled for now (was 100 = 2s). Revisit before re-enabling: see
@@ -754,6 +757,10 @@ class BotToBotAudioBridge:
         stream_start_time: float | None = None  # Set when first audio chunk arrives
         silence_start_time: float | None = None  # Set when silence sending begins
         silence_chunks_sent = 0  # Separate counter for silence
+        # Gap in user audio while the utterance is still active (see the gap branch below)
+        starved_since: float | None = None
+        gap_chunks_sent = 0
+        gap_flushed_partial = False
         next_send_time = asyncio.get_event_loop().time()
 
         logger.info(
@@ -770,6 +777,7 @@ class BotToBotAudioBridge:
                 if (
                     self._user_audio_ended_time is not None
                     or self._assistant_audio_ended_time is not None
+                    or self._user_audio_active
                     or pending_audio
                 ):
                     # Use remaining time until next send, with a small minimum to avoid busy-waiting
@@ -813,50 +821,61 @@ class BotToBotAudioBridge:
                             next_send_time = stream_start_time + (audio_chunks_sent * send_interval)
                             if audio_chunks_sent % LOG_INTERVAL_AUDIO_SEND == 0:
                                 logger.debug(f"→ Sent audio chunk {audio_chunks_sent}")
-
-                elif len(pending_audio) > 0 and len(pending_audio) < pcm_chunk_size:
-                    # Partial chunk - wait for more or send after delay
-                    time_since_last_send = current_time - next_send_time + send_interval
-                    if time_since_last_send >= send_interval * USER_END_DETECTION_DELAY_INTERVALS:
-                        if self.websocket and pending_audio:
-                            # Pad partial chunk to full size with trailing silence
-                            # This ensures consistent chunk sizes for STT processing
-                            original_len = len(pending_audio)
-                            # Align to sample boundary (2 bytes per sample)
-                            aligned_len = (original_len // PCM_SAMPLE_WIDTH) * PCM_SAMPLE_WIDTH
-                            padded_chunk = pending_audio[:aligned_len] + b"\x00" * (pcm_chunk_size - aligned_len)
-
-                            mulaw_audio = self._convert_pcm_to_mulaw(padded_chunk)
-                            if mulaw_audio and await self._send_audio_frame(mulaw_audio):
-                                audio_chunks_sent += 1
-                                logger.info(
-                                    f"Sent padded chunk ({original_len} bytes padded to {pcm_chunk_size}) - end of utterance"
-                                )
-                                pending_audio = b""
-
-                                # Mark end of user audio and start sending silence for VAD
-                                if self._user_audio_active:
-                                    await self._on_user_audio_end(current_time)
-                                    # Reset stream timing for next audio stream
-                                    stream_start_time = None
-                                    next_send_time = current_time + send_interval
+                            # Real audio resumed: any gap is over
+                            starved_since = None
+                            gap_chunks_sent = 0
+                            gap_flushed_partial = False
 
                 elif (
                     self._user_audio_active
-                    and self._user_turn_complete
-                    and not pending_audio
+                    and len(pending_audio) < pcm_chunk_size
                     and self.send_queue.empty()
+                    and current_time >= next_send_time
                 ):
-                    # Exact-boundary end of utterance: ElevenLabs signaled the user
-                    # agent finished and the audio drained with no leftover partial
-                    # chunk, so the branch above never fires. Mark end after the
-                    # detection delay so trailing silence is sent and the assistant
-                    # VAD can close the turn (otherwise the conversation stalls).
-                    time_since_last_send = current_time - next_send_time + send_interval
-                    if time_since_last_send >= send_interval * USER_END_DETECTION_DELAY_INTERVALS:
-                        await self._on_user_audio_end(current_time)
-                        stream_start_time = None
-                        next_send_time = current_time + send_interval
+                    # Gap in user audio while the utterance is active: the utterance ended or TTS is
+                    # behind. Keep the line in real time with silence (ambient noise if configured), as
+                    # a phone line would, so the assistant's VAD hears the pause the end-of-utterance
+                    # delay is timing instead of nothing at all. A gap shorter than USER_UNDERRUN_GRACE_S
+                    # is held so late audio catches up without padding chopping the speech; past that,
+                    # the frames follow the absolute schedule, so the held ones are backfilled.
+                    starved_since = current_time if starved_since is None else starved_since
+                    if current_time - starved_since >= USER_UNDERRUN_GRACE_S and self.websocket:
+                        if pending_audio:
+                            # Leftover partial chunk goes out first, padded, so nothing is reordered behind
+                            # the silence. Align to sample boundary (2 bytes per sample).
+                            original_len = len(pending_audio)
+                            aligned_len = (original_len // PCM_SAMPLE_WIDTH) * PCM_SAMPLE_WIDTH
+                            padding = b"\x00" * (pcm_chunk_size - aligned_len)
+                            mulaw_audio = self._convert_pcm_to_mulaw(pending_audio[:aligned_len] + padding)
+                            sent = bool(mulaw_audio) and await self._send_audio_frame(mulaw_audio)
+                            if sent:
+                                logger.info(f"Sent padded chunk ({original_len} bytes padded to {pcm_chunk_size})")
+                                # Stamp at its scheduled slot (when starvation began), not after the grace hold
+                                self._last_user_audio_send_time = starved_since
+                                pending_audio = b""
+                                gap_flushed_partial = True
+                        else:
+                            padding = b"\x00" * pcm_chunk_size
+                            sent = await self._send_silence_frame()
+                        if sent:
+                            audio_chunks_sent += 1
+                            gap_chunks_sent += 1
+                            next_send_time = stream_start_time + (audio_chunks_sent * send_interval)
+                            # Speech is recorded on enqueue (output()); record the padding the wire got
+                            if self.record_callback:
+                                self.record_callback("user_clean", padding)
+                            # End of utterance after the detection delay. A leftover partial chunk marks the
+                            # end by itself; an exact-boundary end needs ElevenLabs' turn-complete cue.
+                            if gap_chunks_sent >= USER_END_DETECTION_DELAY_INTERVALS and (
+                                gap_flushed_partial or self._user_turn_complete
+                            ):
+                                await self._on_user_audio_end(current_time)
+                                # Reset stream timing for next audio stream
+                                stream_start_time = None
+                                next_send_time = current_time + send_interval
+                                starved_since = None
+                                gap_chunks_sent = 0
+                                gap_flushed_partial = False
 
                 # Drain the trailing white-noise block scheduled by
                 # _on_user_audio_end, one frame per real-time (20ms) tick. This
@@ -920,6 +939,7 @@ class BotToBotAudioBridge:
                 # Prevent busy-waiting - sleep until next scheduled send time
                 if (
                     not pending_audio
+                    and not self._user_audio_active
                     and self._user_audio_ended_time is None
                     and self._assistant_audio_ended_time is None
                     and not self._should_send_ambient_noise()
