@@ -17,7 +17,7 @@ de: |
 nl: |
   **For letters and digits that sound alike in Dutch, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
   - V/F ("vee/ef"; initial v is devoiced in many accents, so a spoken V is often captured as F, e.g. V4K2R9 → F4K2R9); Z/S; G/CH (both /ɣ~x/); H/A ("haa/aa"), which can add or drop an H; B/P/D/T ("bee, pee, dee, tee").
-  - IJ vs Y ("ei" vs "ypsilon / i-grec"; Y is sometimes said "ij"); EI and IJ are the same sound.
+  - IJ vs Y ("ei" vs "ypsilon / i-grec"; Y is pronounced "ij" / "ei"); EI and IJ are the same sound, and asking "korte ei of lange ij?" (short ei or long ij) is correct disambiguation.
   - "zeven"/"negen" (7/9) rhyme, which is why telephone speech uses "zeuven".
 
   **Established loanwords (wrong_language): normal Dutch, never a language violation, does not lower the rating. Examples, not a complete list:**
@@ -65,9 +65,9 @@ hi: |
   - Hindi number words are irregular and pairwise close: सात/साठ (7/60), सत्रह/सत्तर (17/70), उन्नीस/उनतीस (19/29), तीन/तीस (3/30). English digit names are often mixed in, and शून्य (zero) may be clipped, changing the digit count.
 
   **English inside Hindi (wrong_language).** Hindi–English code-switching (Hinglish) is supported.
-  - Not a violation, does not lower the rating: English words and phrases inside a Hindi sentence, in Devanagari or Latin script. This covers, for example, loanwords (ID, OK, login, password, email, ticket, booking, flight, seat, account, form, mobile number, PNR), procedural terms ("Employee ID", "last name", "confirmation number") and short phrases ("six digits", "one moment").
-  - A transcript that renders a spoken loanword in Latin script instead of Devanagari (e.g. "booking" for बुकिंग): this is not evidence of English speech.
-  - A violation: a whole sentence or turn in English when Hindi was instructed. Rate 2 if it is an isolated fixed phrase (a hold, acknowledgement or courtesy formula, such as "One moment, please."), even when it recurs; rate 1 if it is sentences of content, a clause that carries information the user needs, or most turns. Quote it as evidence.
+  - Not a violation, does not lower the rating: English words and phrases inside a Hindi sentence, in Devanagari or Latin script. This covers, for example, loanwords (ID, OK, login, password, email, ticket, booking, flight, seat, account, form, mobile number, PNR), procedural terms ("Employee ID", "last name", "confirmation number"), English number words ("six digits", "two passengers") and short phrases ("one moment").
+  - A transcript that renders a spoken loanword in Latin script instead of Devanagari (e.g. "booking" for बुकिंग): this is not evidence of English speech. Latin script alone is never evidence; an English clause or sentence is, in either script.
+  - A violation: a whole English clause, sentence or turn when Hindi was instructed. Rate 2 if it is an isolated fixed phrase (a hold, acknowledgement or courtesy formula, such as "One moment, please."), even when it recurs; rate 1 if it is sentences of content, a clause that carries information the user needs, or most turns. Quote it as evidence.
 
 ja: |
   **For letters and digits that sound alike in Japanese, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
