@@ -25,7 +25,7 @@ function judgePrompts(): Plugin {
         judge: Record<string, Record<string, string>>
       }
       const inlineShared = (prompt: string) =>
-        Object.entries(_shared).reduce((p, [key, value]) => p.replaceAll(`{${key}}`, value.trimEnd()), prompt)
+        Object.entries(_shared).reduce((p, [key, value]) => p.replaceAll(`{${key}}`, value), prompt)
       const prompts = Object.fromEntries(
         Object.entries(judge).map(([metric, metricPrompts]) => [
           metric,
