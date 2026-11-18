@@ -25,7 +25,7 @@ de: |
 nl: |
   **Correct, does not lower the rating:**
   - When a code is spelled letter by letter in Dutch, it is correct to say each letter and digit using its Dutch name. The terms in brackets show the Dutch pronunciation, written with Dutch spelling conventions (not English ones). A letter or digit said this way is correct:
-    - Letters: A (aa), B (bee), C (cee), D (dee), E (ee), F (ef), G (gee, Dutch g), H (haa), I (ie), J (jee), K (kaa), L (el), M (em), N (en), O (oo), P (pee), Q (kuu), R (er), S (es), T (tee), U (uu), V (vee), W (wee), X (iks), Y (ij / griekse ij / ypsilon), Z (zet). IJ may be said as one letter.
+    - Letters: A (aa), B (bee), C (cee), D (dee), E (ee), F (ef), G (gee, Dutch g), H (haa), I (ie), J (jee), K (kaa), L (el), M (em), N (en), O (oo), P (pee), Q (kuu), R (er), S (es), T (tee), U (uu), V (vee), W (wee), X (iks), Y (ij / griekse ij / ypsilon), Z (zet). IJ is said as one letter.
     - Digits: 0 (nul), 1 (een), 2 (twee), 3 (drie), 4 (vier), 5 (vijf), 6 (zes), 7 (zeven), 8 (acht), 9 (negen).
   - Some of these are written like English names but are the Dutch ones: bee, cee, dee, pee, tee, gee, wee (Dutch B is /beː/, close to English 'bay'). Said this way, they are not English.
   - This is how numbers are read in Dutch, units before tens; a number read this way is correct: vijfenzeventig = 75, zesentwintig = 26.
@@ -42,7 +42,7 @@ nl: |
   - EI and IJ in names.
   **Not wrong language, does not lower the rating:**
   - Established loanwords, including 'sorry' and 'oké', which are standard Dutch.
-  - An acronym used as a word or name inside a sentence (ID, FMLA, I-9) said with English letter names; Dutch names ('ie-dee') are preferred. This does not cover the letters of a spelled code or identifier: those follow the English letter names rule above.
+  - An acronym used as a word or name inside a sentence (ID, FMLA, I-9) said with English letter names; Dutch names ('ie-dee', 'ef-em-el-aa', 'ie-negen') are preferred. This does not cover the letters of a spelled code or identifier: those follow the English letter names rule above.
 
 fr: |
   **Correct, does not lower the rating:**
@@ -113,9 +113,9 @@ hi: |
   - These are the Hindi names of Latin letters in a spelled code; a letter said this way is correct: Hindi uses the English letter names, written ए, बी, सी, डी, ई, एफ, जी, एच, आई, जे, के, एल, एम, एन, ओ, पी, क्यू, आर, एस, टी, यू, वी, डब्ल्यू, एक्स, वाई, ज़ेड; this is not wrong language.
   - These are the Hindi digit names in a spelled code; a digit said this way is correct: शून्य, एक, दो, तीन, चार, पाँच, छह, सात, आठ, नौ. English digit names ('zero', 'eight') are also correct, since they are common in Indian speech, when the intended or trace text writes the digit as a numeral or in English.
   - This is how large numbers are read in Hindi; a number read this way is correct: grouped by हज़ार, लाख, करोड़ (एक लाख पच्चीस हज़ार = 125,000).
-  - This is how times are read in Hindi; a time read this way is correct: डेढ़ बजे = 1:30, ढाई बजे = 2:30, साढ़े तीन = 3:30 (साढ़े only from 3 up), सवा चार = 4:15, पौने पाँच = 4:45, 'चार बजकर बीस मिनट'.
+  - This is how times are read in Hindi; a time read this way is correct: डेढ़ बजे = 1:30, ढाई बजे = 2:30, साढ़े तीन = 3:30 (साढ़े only from 3 up), सवा चार = 4:15, पौने पाँच = 4:45, 'चार बजकर बीस मिनट' = 4:20.
   **Rating = 0, the entity is wrong:**
-  - A digit dropped or clipped (शून्य missing or said 'शून').
+  - Digit dropped: the digit word is absent from the spoken output (e.g., शून्य omitted). Digit clipped: the digit word is present but truncated to a non-standard form (e.g., 'शून' for शून्य). Accepted spelling variants (छः/छह, पांच/पाँच) are not clipping.
   - An English loanword or place name in a trace entity (name, place, product) that a Hindi listener would not recognize (e.g. 'aisle' said as 'es-le'). Loanwords and place names should sound as in Indian English.
   **Unusual but understandable: rating = 1; rating = 0 only if a Hindi listener could take it for a different value:**
   - An English digit name spoken where the intended or trace text spells out the Hindi digit word (आठ written, 'eight' spoken).
