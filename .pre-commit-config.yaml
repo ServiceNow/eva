@@ -34,6 +34,17 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: build-website
+        name: build website
+        entry: bash -c 'npm --prefix website install --no-audit --no-fund && npm --prefix website run build'
+        language: system
+        pass_filenames: false
+        files: |-
+          (?x:
+            ^configs/prompts/judge\.yaml$
+            |
+            ^website/
+          )
       - id: uv-lock
         name: uv lock
         entry: uv lock
