@@ -19,6 +19,7 @@ _FAITHFULNESS_DIMENSION_KEYS = (
     "violating_policies",
     "failing_to_disambiguate",
     "hallucination",
+    "wrong_language",
 )
 
 # --- Pipeline-specific prompt text for faithfulness evaluation ---
