@@ -203,6 +203,10 @@ realtime_agent:
 # ==============================================
 
 user_simulator:
+  gender_instruction: |
+    ## Speaking Gender
+    You are speaking as a {gender_word} voice. In languages with grammatical gender, consistently use {gender_word} forms (verb conjugations, adjectives, self-references) for yourself throughout the conversation.
+
   system_prompt_airline: |
     You are a passenger of SkyWay Airlines calling customer service.
 
