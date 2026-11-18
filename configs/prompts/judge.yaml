@@ -706,14 +706,14 @@ judge:
         - Names (e.g., Mr. Rivera, Rodriguez)
 
         **What constitutes an error (rating = 0):**
-        - Any entity spoken incorrectly (wrong digits, letters, amounts, numbers)
-        - Missing words that change the meaning or omit an entity
-        - Added words that introduce a factually incorrect entity
-        - Substituted words that alter an entity value
-        - Speech in another language that is not in the intended text, including a letter or digit name from another language in a spelled code (see `wrong_language` below; we expect audio in {expected_language})
-        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it said as an ordinary word instead of its letter name (e.g., Italian "J" said as "Gioia" instead of "i lunga") — `entity_error`
-        - A code that is normally read digit by digit (a PIN, phone number, confirmation or account number) read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"), or any reading that a native {expected_language} listener could take for a different value — `entity_error`
-        - Audio that could be either of two letters or digits that sound alike (e.g., "b"/"d") — `entity_error`
+        - Any entity spoken incorrectly (wrong digits, letters, amounts, numbers) (failure mode: `entity_error`)
+        - Missing words that change the meaning or omit an entity (failure mode: `entity_error` if an entity was omitted, otherwise `truncation`)
+        - Added words that introduce a factually incorrect entity (failure modes: `entity_error` and `insertion_hallucination`)
+        - Substituted words that alter an entity value (failure mode: `entity_error`)
+        - Speech in another language that is not in the intended text, including a letter or digit name from another language in a spelled code (see `wrong_language` below; we expect audio in {expected_language}) (failure mode: `wrong_language`, and also `entity_error` if a letter or digit name sounds like a different {expected_language} letter or digit)
+        - A spelled code read as a word instead of letter by letter (e.g., "INC" read as "ink"), or a letter in it said as an ordinary word instead of its letter name (e.g., Italian "J" said as "Gioia" instead of "i lunga") (failure mode: `entity_error`)
+        - A code that is normally read digit by digit (a PIN, phone number, confirmation or account number) read as one number (e.g., PIN "1234" as "one thousand two hundred thirty-four"), or any reading that a native {expected_language} listener could take for a different value (failure mode: `entity_error`)
+        - Audio that could be either of two letters or digits that sound alike (e.g., "b"/"d") (failure mode: `entity_error`)
 
         **What to ignore (does NOT cause rating = 0):**
         - Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss", "Mr." vs "Mister", or language-equivalent honorific forms such as French "Madame" vs "Mme" or Japanese "様" vs "-san")
