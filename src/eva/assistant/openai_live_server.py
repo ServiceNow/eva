@@ -92,6 +92,25 @@ def build_function_tools(agent: AgentConfig) -> list[dict]:
     ]
 
 
+def optional_param_names(agent: AgentConfig) -> dict[str, set[str]]:
+    """Optional parameter names per tool function name."""
+    return {
+        tool.function_name: {p if isinstance(p, str) else p.name for p in tool.optional_parameters}
+        for tool in agent.tools
+    }
+
+
+def drop_empty_optional_args(arguments: dict, optional: set[str]) -> tuple[dict, list[str]]:
+    """Remove optional arguments the backend model sent as "" or null.
+
+    The delegation model fills optional parameters it means to omit with empty strings (for example
+    ``rebook_flight(flight_number="")``), which the tools reject as invalid values; it then retried the
+    same call 26 times in one trial. Empty required arguments are kept so the tool reports them.
+    """
+    dropped = [k for k, v in arguments.items() if k in optional and v in ("", None)]
+    return {k: v for k, v in arguments.items() if k not in dropped}, dropped
+
+
 def build_session_config(
     *,
     model: str,
@@ -139,10 +158,27 @@ USER_QUIET_FLUSH_MS = 1200  # input-transcript quiet time (after the user stoppe
 INTERRUPT_TAIL_MS = 1000  # how long an interrupted assistant turn stays open for late transcript fragments
 USER_MERGE_WINDOW_MS = 2000  # a transcript-less speech start older than this is not merged into the next one
 
+# The simulator marks assistant audio_start/audio_end by media-chunk arrival, not loudness, so any silence we
+# forward counts as agent speech there. After each loud chunk only this much quiet audio is forwarded: enough to
+# bridge short pauses inside speech (the simulator ends a span after 200 ms without chunks, so pauses up to about
+# 0.4 s stay one span), little enough to keep the counted tail short. Measured in audio, not wall clock, because
+# Live can deliver audio faster than real time. Transcript deltas do not extend it (they trail the audio).
+FORWARD_SILENCE_HOLD_MS = 200
+_FORWARD_SILENCE_HOLD_BYTES = LIVE_SAMPLE_RATE * 2 * FORWARD_SILENCE_HOLD_MS // 1000  # PCM16 mono
+
 # Live's output is clocked by the input audio it receives, and the user simulator sends nothing until the
 # assistant has spoken, so we fill idle input with silence (guard value is a guess; tune after a real run).
 SILENCE_FEED_GUARD_S = 0.1  # no real user frame for this long -> feed silence
-_SILENCE_CHUNK_B64 = base64.b64encode(b"\x00" * (LIVE_SAMPLE_RATE * 2 // 50)).decode("ascii")  # 20 ms
+_SILENCE_CHUNK_BYTES = LIVE_SAMPLE_RATE * 2 // 50  # 20 ms of PCM16
+_SILENCE_CHUNK_B64 = base64.b64encode(b"\x00" * _SILENCE_CHUNK_BYTES).decode("ascii")
+
+# Live rejects input "no more than 1.2x real-time speed with bursts of at most 5 seconds". While it waits for the
+# assistant, the simulator sends silence at 1.44x real time (18 x 20 ms frames per 250 ms tick) and our silence feed
+# fills the gaps between those bursts, so Live got about 2x and dropped audio. Non-speech input (simulator frames
+# outside the user's speech, and our feed) is therefore not sent while we are already this far ahead of real time;
+# the user's speech is always sent.
+LIVE_INPUT_MAX_LEAD_S = 0.2
+INPUT_RATE_LOG_INTERVAL_S = 5.0  # how often to log what we sent Live
 
 _MAX_LATENCY_MS = 30_000
 _INTERRUPTED_SUFFIX = " [interrupted]"
@@ -157,6 +193,91 @@ class TurnEvent:
     text: str
     timestamp_ms: str | None
     interrupted: bool = False
+
+
+@dataclass
+class InputRateReport:
+    """Audio sent to Live in one window, in seconds of audio, plus how far ahead of real time we got."""
+
+    wall_s: float
+    user_s: float
+    silence_s: float
+    rate: float  # (user_s + silence_s) / wall_s
+    lead_s: float  # seconds of audio sent beyond real time, now
+    max_lead_s: float  # largest lead seen in the window
+    max_feed_lag_s: float  # largest delay of the silence feed behind its schedule in the window
+    dropped_user_s: float = 0.0  # simulator non-speech audio not sent because we were ahead of real time
+    dropped_silence_s: float = 0.0  # silence-feed audio not sent because we were ahead of real time
+
+
+class LiveInputMeter:
+    """Count the PCM16 audio sent to Live by source (forwarded user audio, our silence feed).
+
+    The lead is how many seconds of audio we are ahead of real time. Idle time is not banked: it falls back toward
+    zero while nothing is sent, the way a burst limit would count it.
+    """
+
+    _BYTES_PER_S = LIVE_SAMPLE_RATE * 2
+
+    def __init__(self, interval_s: float = INPUT_RATE_LOG_INTERVAL_S) -> None:
+        self._interval_s = interval_s
+        self._totals = {"user": 0, "silence": 0}
+        self._window = {"user": 0, "silence": 0}
+        self._dropped = {"user": 0, "silence": 0}
+        self._window_start: float | None = None
+        self._last_add: float | None = None
+        self._lead_s = 0.0
+        self._max_lead_s = 0.0
+        self._max_feed_lag_s = 0.0
+
+    def total_bytes(self, source: Literal["user", "silence"]) -> int:
+        return self._totals[source]
+
+    def lead_s(self, now: float) -> float:
+        """Seconds of audio sent beyond real time, as of ``now``."""
+        return max(0.0, self._lead_s - (now - self._last_add)) if self._last_add is not None else 0.0
+
+    def add(self, source: Literal["user", "silence"], nbytes: int, now: float) -> None:
+        if self._window_start is None:
+            self._window_start = now
+        self._totals[source] += nbytes
+        self._window[source] += nbytes
+        self._lead_s = self.lead_s(now) + nbytes / self._BYTES_PER_S
+        self._last_add = now
+        self._max_lead_s = max(self._max_lead_s, self._lead_s)
+
+    def drop(self, source: Literal["user", "silence"], nbytes: int, now: float) -> None:
+        """Count audio that was not sent; it does not change the lead."""
+        if self._window_start is None:
+            self._window_start = now
+        self._dropped[source] += nbytes
+
+    def note_lag(self, lag_s: float) -> None:
+        self._max_feed_lag_s = max(self._max_feed_lag_s, lag_s)
+
+    def report(self, now: float) -> InputRateReport | None:
+        """Return the window's numbers and start a new window, once per interval after the first audio."""
+        if self._window_start is None or now - self._window_start < self._interval_s:
+            return None
+        wall = now - self._window_start
+        user_s, silence_s = self._window["user"] / self._BYTES_PER_S, self._window["silence"] / self._BYTES_PER_S
+        rep = InputRateReport(
+            wall_s=wall,
+            user_s=user_s,
+            silence_s=silence_s,
+            rate=(user_s + silence_s) / wall,
+            lead_s=self.lead_s(now),
+            max_lead_s=self._max_lead_s,
+            max_feed_lag_s=self._max_feed_lag_s,
+            dropped_user_s=self._dropped["user"] / self._BYTES_PER_S,
+            dropped_silence_s=self._dropped["silence"] / self._BYTES_PER_S,
+        )
+        self._window = {"user": 0, "silence": 0}
+        self._dropped = {"user": 0, "silence": 0}
+        self._window_start = now
+        self._max_lead_s = rep.lead_s
+        self._max_feed_lag_s = 0.0
+        return rep
 
 
 def _rms(pcm: bytes) -> float:
@@ -364,6 +485,7 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
 
         self._frontend_instructions, self._backend_instructions = load_live_prompts(self.agent_config_path)
         self._tools: list[dict] = build_function_tools(self.agent)
+        self._optional_params: dict[str, set[str]] = optional_param_names(self.agent)
 
         self._tracker = TurnTracker()
         self._started = asyncio.Event()
@@ -378,6 +500,9 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
         # Monotonic time of the last real user-audio frame appended; guards against padding the user
         # track mid-utterance (see USER_ACTIVE_GUARD_S).
         self._last_user_audio_mono: float = 0.0
+        # Output gate (see FORWARD_SILENCE_HOLD_MS): quiet PCM bytes still allowed out since the last loud chunk.
+        self._quiet_bytes_left = 0
+        self._input_meter = LiveInputMeter()
 
     def _build_session_config(self) -> dict[str, Any]:
         s2s = self.pipeline_config.s2s_params
@@ -486,6 +611,8 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
         self._logged_first_transcript = False
         self._stream_sid = self.conversation_id
         self._user_speaking = False
+        self._quiet_bytes_left = 0
+        self._input_meter = LiveInputMeter()
 
         client = AsyncOpenAI(api_key=self.pipeline_config.s2s_params["api_key"])
 
@@ -549,6 +676,9 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
             while True:
                 next_send += MULAW_CHUNK_DURATION_S
                 now = time.monotonic()
+                self._log_input_rate(now)
+                if self._started.is_set():
+                    self._input_meter.note_lag(now - next_send)
                 if next_send < now - 0.1:
                     next_send = now  # fell behind (e.g. event-loop stall): do not burst to catch up
                 await asyncio.sleep(max(0.0, next_send - now))
@@ -556,9 +686,36 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
                     continue
                 if time.monotonic() - self._last_user_audio_mono <= SILENCE_FEED_GUARD_S:
                     continue
-                await conn.session.input_audio.append(audio=_SILENCE_CHUNK_B64)
+                await self._send_input_to_live(conn, _SILENCE_CHUNK_B64, _SILENCE_CHUNK_BYTES, "silence")
         except asyncio.CancelledError:
             pass
+
+    def _log_input_rate(self, now: float) -> None:
+        """Log what we sent Live in the last window (diagnostic for input_audio_rate_limit_exceeded)."""
+        rep = self._input_meter.report(now)
+        if rep is None:
+            return
+        logger.debug(
+            f"Live input audio: {rep.wall_s:.1f}s window, user {rep.user_s:.2f}s + silence {rep.silence_s:.2f}s"
+            f" = {rep.rate:.2f}x real time; ahead of real time {rep.lead_s:.2f}s (max {rep.max_lead_s:.2f}s);"
+            f" silence feed max lag {rep.max_feed_lag_s:.3f}s; not sent (ahead of real time): user"
+            f" {rep.dropped_user_s:.2f}s, silence {rep.dropped_silence_s:.2f}s"
+        )
+
+    async def _send_input_to_live(
+        self, conn: Any, audio_b64: str, nbytes: int, source: Literal["user", "silence"]
+    ) -> None:
+        """Append input audio to Live, unless it is non-speech that would push us ahead of real time.
+
+        See LIVE_INPUT_MAX_LEAD_S. Only frames from the simulator while the user is speaking are always sent.
+        """
+        now = time.monotonic()
+        is_speech = source == "user" and self._user_speaking
+        if not is_speech and self._input_meter.lead_s(now) > LIVE_INPUT_MAX_LEAD_S:
+            self._input_meter.drop(source, nbytes, now)
+            return
+        await conn.session.input_audio.append(audio=audio_b64)
+        self._input_meter.add(source, nbytes, time.monotonic())
 
     # ── Audio output pacer (Live -> Twilio WS at real-time rate) ──────
 
@@ -641,7 +798,9 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
 
                 # Audio sent before session.started raced in the spike, so it is only recorded until then.
                 if self._started.is_set():
-                    await conn.session.input_audio.append(audio=base64.b64encode(pcm16_24k).decode("ascii"))
+                    await self._send_input_to_live(
+                        conn, base64.b64encode(pcm16_24k).decode("ascii"), len(pcm16_24k), "user"
+                    )
 
         except WebSocketDisconnect:
             logger.debug("Twilio WebSocket disconnected")
@@ -724,9 +883,9 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
     async def _on_audio_delta(self, event: Any, audio_output_queue: asyncio.Queue[bytes]) -> None:
         """Handle an output audio chunk: record it, measure latency, and queue it for Twilio.
 
-        Live streams audio continuously (silence when idle), so every chunk is recorded, but only speech
-        (plus a short hold, so pauses inside speech do not split it) is forwarded: the simulator would
-        otherwise see one unbroken assistant span. Speech onset is detected from loudness, not from arrival.
+        Live streams audio continuously (silence when idle), so every chunk is recorded, but only speech is
+        forwarded, plus a short quiet tail after it (see ``_gate_output``): the simulator times assistant audio
+        by chunk arrival, so forwarded silence would count as agent speech.
         """
         delta_b64 = getattr(event, "delta", "") or ""
         if not delta_b64:
@@ -747,15 +906,29 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
             sync_buffer_to_position(self.user_audio_buffer, len(self.assistant_audio_buffer))
         self.assistant_audio_buffer.extend(pcm16_bytes)
 
-        if not self._tracker.assistant_speaking(_now_ms()):
+        to_send = self._gate_output(pcm16_bytes)
+        if not to_send:
             return
 
         try:
-            mulaw_bytes = pcm16_24k_to_mulaw_8k(pcm16_bytes)
+            mulaw_bytes = pcm16_24k_to_mulaw_8k(to_send)
             for offset in range(0, len(mulaw_bytes), MULAW_CHUNK_SIZE):
                 await audio_output_queue.put(mulaw_bytes[offset : offset + MULAW_CHUNK_SIZE])
         except Exception as e:
             logger.error(f"Error converting audio for output queue: {e}")
+
+    def _gate_output(self, pcm: bytes) -> bytes:
+        """Return the part of this chunk to forward: all of a loud chunk, or quiet audio within the hold after one.
+
+        Every loud chunk resets the allowance to FORWARD_SILENCE_HOLD_MS of quiet audio; quiet audio beyond it, and
+        quiet audio before any speech, is not forwarded.
+        """
+        if _rms(pcm) >= LOUD_RMS_THRESHOLD:
+            self._quiet_bytes_left = _FORWARD_SILENCE_HOLD_BYTES
+            return pcm
+        out = pcm[: self._quiet_bytes_left]
+        self._quiet_bytes_left -= len(out)
+        return out
 
     def _emit(self, events: list[TurnEvent]) -> None:
         """Write completed turns to the audit log and framework log."""
@@ -819,6 +992,9 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
         except json.JSONDecodeError:
             arguments = {}
         logger.info(f"Tool call: {name}({json.dumps(arguments, ensure_ascii=False)})")
+        arguments, dropped = drop_empty_optional_args(arguments, self._optional_params.get(name, set()))
+        if dropped:
+            logger.info(f"Tool call {name}: dropped empty optional argument(s) {dropped}")
         task = asyncio.create_task(self.execute_tool(name, arguments))
         self._pending_calls.setdefault(delegation_id, []).append((item.get("call_id", ""), name, arguments, task))
 

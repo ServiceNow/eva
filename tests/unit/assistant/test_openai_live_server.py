@@ -13,18 +13,24 @@ import yaml
 
 from eva.assistant.openai_live_server import (
     ASSISTANT_QUIET_FLUSH_MS,
+    FORWARD_SILENCE_HOLD_MS,
     INTERRUPT_TAIL_MS,
+    LIVE_INPUT_MAX_LEAD_S,
     LIVE_SAMPLE_RATE,
     USER_QUIET_FLUSH_MS,
+    LiveInputMeter,
     OpenAILiveAssistantServer,
     TurnEvent,
     TurnTracker,
     build_function_tools,
     build_session_config,
+    drop_empty_optional_args,
     load_live_prompts,
+    optional_param_names,
 )
 from eva.models.agents import AgentConfig, AgentTool, AgentToolParameter
 from eva.models.config import ModelConfig
+from eva.utils.audio_utils import pcm16_24k_to_mulaw_8k
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AIRLINE_YAML = REPO_ROOT / "configs" / "agents" / "airline_agent.yaml"
@@ -302,11 +308,38 @@ class TestTurnTracker:
         assert t.finalize(9000) == [TurnEvent("assistant", "Found it. Your flight is confirmed.", "3000")]
 
 
+class TestEmptyOptionalArgs:
+    def test_optional_param_names_per_tool(self):
+        tool = AgentTool(
+            id="t",
+            name="rebook_flight",
+            description="d",
+            required_parameters=["confirmation_number"],
+            optional_parameters=[AgentToolParameter(name="flight_number"), "new_fare_class"],
+        )
+        agent = AgentConfig(
+            id="a", name="A", description="d", role="r", instructions="i", tool_module_path="m", tools=[tool]
+        )
+        assert optional_param_names(agent) == {"rebook_flight": {"flight_number", "new_fare_class"}}
+
+    def test_empty_optional_values_are_dropped(self):
+        args = {"confirmation_number": "M9M6FJ", "flight_number": "", "new_fare_class": None, "waive": False}
+        kept, dropped = drop_empty_optional_args(args, {"flight_number", "new_fare_class", "waive"})
+        assert kept == {"confirmation_number": "M9M6FJ", "waive": False}
+        assert dropped == ["flight_number", "new_fare_class"]
+
+    def test_empty_required_values_are_kept(self):
+        kept, dropped = drop_empty_optional_args({"confirmation_number": ""}, {"flight_number"})
+        assert kept == {"confirmation_number": ""}
+        assert dropped == []
+
+
 def _bare_server(execute_tool=None) -> OpenAILiveAssistantServer:
     """Instance without running __init__ (skips agent/tool-executor setup)."""
     srv = object.__new__(OpenAILiveAssistantServer)
     srv._pending_calls = {}
     srv._delegation_started = {}
+    srv._optional_params = {}
     srv._fw_log = MagicMock()
     srv.execute_tool = execute_tool or AsyncMock(return_value={"ok": True})
     return srv
@@ -392,6 +425,16 @@ class TestDelegatedToolCalls:
         await srv._on_response_event(_call_done("call_1", "t", "{not json"), conn)
         await srv._on_response_event(_completed(), conn)
         srv.execute_tool.assert_awaited_once_with("t", {})
+
+    async def test_empty_optional_argument_is_not_passed_to_the_tool(self):
+        srv = _bare_server()
+        srv._optional_params = {"rebook_flight": {"flight_number"}}
+        conn, _ = _recording_conn()
+        args = '{"confirmation_number": "M9M6FJ", "flight_number": ""}'
+        await srv._on_response_event(_call_done("call_1", "rebook_flight", args), conn)
+        await srv._on_response_event(_completed(), conn)
+        srv.execute_tool.assert_awaited_once_with("rebook_flight", {"confirmation_number": "M9M6FJ"})
+        assert srv._fw_log.write.call_args.args[1]["arguments"] == {"confirmation_number": "M9M6FJ"}
 
     async def test_pending_calls_are_cleared_after_completion(self):
         srv = _bare_server()
@@ -523,6 +566,9 @@ class TestServerInit:
         assert [t["name"] for t in responses["tools"]] == [t.function_name for t in _agent().tools]
         assert cfg["delegation"]["acknowledgement_delay_ms"] == 100
 
+    def test_optional_params_come_from_the_agent_tools(self, tmp_path):
+        assert _make_server(tmp_path)._optional_params == optional_param_names(_agent())
+
     def test_recording_sample_rate_is_live_rate(self, tmp_path):
         assert _make_server(tmp_path)._audio_sample_rate == 24000
 
@@ -597,14 +643,55 @@ class TestLiveEvents:
         assert len(srv.assistant_audio_buffer) == len(QUIET)
         assert queue.empty()
 
-    async def test_quiet_chunk_inside_speaking_hold_is_forwarded(self, tmp_path):
+    @staticmethod
+    async def _feed(srv, queue, chunks):
+        for pcm in chunks:
+            event = SimpleNamespace(type="session.output_audio.delta", delta=base64.b64encode(pcm).decode("ascii"))
+            await srv._handle_live_event(event, MagicMock(), queue)
+
+    @staticmethod
+    def _drain(queue) -> list[bytes]:
+        return [queue.get_nowait() for _ in range(queue.qsize())]
+
+    N_HOLD = FORWARD_SILENCE_HOLD_MS // 20  # QUIET is 20 ms
+
+    async def test_quiet_audio_right_after_speech_is_forwarded_in_order(self, tmp_path):
+        """A short quiet stretch is sent at once, so a brief pause inside speech does not split the span."""
         srv = _make_server(tmp_path)
         queue: asyncio.Queue[bytes] = asyncio.Queue()
-        loud = SimpleNamespace(type="session.output_audio.delta", delta=base64.b64encode(LOUD).decode("ascii"))
-        quiet = SimpleNamespace(type="session.output_audio.delta", delta=base64.b64encode(QUIET).decode("ascii"))
-        await srv._handle_live_event(loud, MagicMock(), queue)
-        await srv._handle_live_event(quiet, MagicMock(), queue)
-        assert queue.qsize() == 2  # a pause inside speech keeps the span continuous
+        await self._feed(srv, queue, [LOUD, QUIET])
+        assert self._drain(queue) == [pcm16_24k_to_mulaw_8k(LOUD), pcm16_24k_to_mulaw_8k(QUIET)]
+        assert len(srv.assistant_audio_buffer) == len(LOUD) + len(QUIET)  # the recording keeps every chunk
+
+    async def test_silence_beyond_the_hold_is_not_forwarded(self, tmp_path):
+        """The simulator times agent audio by chunk arrival, so only FORWARD_SILENCE_HOLD_MS of silence may follow speech."""
+        srv = _make_server(tmp_path)
+        queue: asyncio.Queue[bytes] = asyncio.Queue()
+        await self._feed(srv, queue, [LOUD, *[QUIET] * (self.N_HOLD + 3)])
+        assert queue.qsize() == 1 + self.N_HOLD
+
+    async def test_hold_is_measured_in_audio_not_chunks(self, tmp_path):
+        """A quiet chunk that crosses the hold is cut at the hold, even when Live sends long chunks."""
+        srv = _make_server(tmp_path)
+        queue: asyncio.Queue[bytes] = asyncio.Queue()
+        long_quiet = QUIET * (self.N_HOLD + 5)
+        await self._feed(srv, queue, [LOUD, long_quiet])
+        forwarded_quiet = b"".join(self._drain(queue)[1:])
+        assert len(forwarded_quiet) == len(pcm16_24k_to_mulaw_8k(QUIET * self.N_HOLD))
+
+    async def test_speech_after_a_long_pause_resets_the_hold(self, tmp_path):
+        srv = _make_server(tmp_path)
+        queue: asyncio.Queue[bytes] = asyncio.Queue()
+        await self._feed(srv, queue, [LOUD, *[QUIET] * (self.N_HOLD + 3), LOUD, QUIET])
+        assert queue.qsize() == 1 + self.N_HOLD + 1 + 1
+
+    async def test_transcript_delta_alone_does_not_forward_silence(self, tmp_path):
+        """Transcripts trail the audio, so a late delta must not turn the silence after speech into agent audio."""
+        srv = _make_server(tmp_path)
+        queue: asyncio.Queue[bytes] = asyncio.Queue()
+        srv._tracker.on_output_transcript("Okay.", int(time.time() * 1000))
+        await self._feed(srv, queue, [QUIET])
+        assert queue.empty()
 
     async def test_user_speech_stop_is_stamped_with_receive_time(self, tmp_path):
         srv = _make_server(tmp_path)
@@ -764,6 +851,58 @@ class TestHandleSession:
                 await session
 
 
+def _pcm_seconds(seconds: float) -> int:
+    return int(LIVE_SAMPLE_RATE * 2 * seconds)
+
+
+class TestLiveInputMeter:
+    """Diagnostic for Live's input_audio_rate_limit_exceeded: how much audio we send Live, from which source."""
+
+    def test_no_report_before_the_interval(self):
+        meter = LiveInputMeter(interval_s=5.0)
+        meter.add("user", _pcm_seconds(1.0), now=100.0)
+        assert meter.report(now=104.9) is None
+
+    def test_no_report_before_any_audio(self):
+        assert LiveInputMeter(interval_s=5.0).report(now=1000.0) is None
+
+    def test_report_splits_sources_and_gives_rate(self):
+        meter = LiveInputMeter(interval_s=5.0)
+        meter.add("user", _pcm_seconds(3.0), now=100.0)
+        meter.add("silence", _pcm_seconds(3.0), now=100.5)
+        rep = meter.report(now=105.0)
+        assert rep.wall_s == pytest.approx(5.0)
+        assert rep.user_s == pytest.approx(3.0) and rep.silence_s == pytest.approx(3.0)
+        assert rep.rate == pytest.approx(1.2)
+
+    def test_dropped_audio_is_reported_by_source_and_does_not_add_lead(self):
+        meter = LiveInputMeter(interval_s=5.0)
+        meter.add("user", _pcm_seconds(1.0), now=100.0)
+        meter.drop("user", _pcm_seconds(0.5), now=100.0)
+        meter.drop("silence", _pcm_seconds(0.25), now=100.0)
+        rep = meter.report(now=105.0)
+        assert rep.dropped_user_s == pytest.approx(0.5) and rep.dropped_silence_s == pytest.approx(0.25)
+        assert rep.max_lead_s == pytest.approx(1.0)
+
+    def test_lead_counts_audio_ahead_of_real_time_without_banking_idle_time(self):
+        meter = LiveInputMeter(interval_s=5.0)
+        meter.add("silence", _pcm_seconds(1.0), now=100.0)  # 1 s ahead
+        meter.add("silence", _pcm_seconds(1.0), now=110.0)  # 10 s idle is not credit: 1 s ahead again
+        meter.add("user", _pcm_seconds(2.0), now=110.5)  # 0.5 s later: 0.5 + 2 = 2.5 s ahead
+        rep = meter.report(now=111.0)
+        assert rep.max_lead_s == pytest.approx(2.5)
+        assert rep.lead_s == pytest.approx(2.0)  # 0.5 s of real time has passed since
+
+    def test_window_resets_after_a_report(self):
+        meter = LiveInputMeter(interval_s=5.0)
+        meter.add("user", _pcm_seconds(5.0), now=100.0)
+        meter.note_lag(0.08)
+        assert meter.report(now=105.0).max_feed_lag_s == pytest.approx(0.08)
+        meter.add("silence", _pcm_seconds(1.0), now=106.0)
+        rep = meter.report(now=110.0)
+        assert rep.user_s == 0 and rep.silence_s == pytest.approx(1.0) and rep.max_feed_lag_s == 0
+
+
 @pytest.mark.asyncio
 class TestSilenceFeed:
     """Live's output is clocked by the input audio it receives, so idle gaps must be filled with silence."""
@@ -803,6 +942,74 @@ class TestSilenceFeed:
             srv._last_user_audio_mono = time.monotonic()
 
         await self._run_feed(srv, conn, 0.3, during=user_frame)
+        conn.session.input_audio.append.assert_not_awaited()
+
+    async def test_fed_silence_is_counted_by_the_input_meter(self, tmp_path):
+        srv = _make_server(tmp_path)
+        srv._started.set()
+        conn = _FakeLiveConn()
+        await self._run_feed(srv, conn, 0.3)
+        sent = len(conn.session.input_audio.append.await_args_list)
+        assert srv._input_meter.total_bytes("silence") == sent * LIVE_SAMPLE_RATE // 50 * 2
+
+    async def test_forwarded_user_audio_is_counted_by_the_input_meter(self, tmp_path):
+        srv = _make_server(tmp_path)
+        srv._started.set()
+        frame = base64.b64encode(b"\xff" * 160).decode("ascii")  # 20 ms of 8 kHz mu-law
+        websocket = MagicMock()
+        websocket.receive_text = AsyncMock(
+            side_effect=[json.dumps({"event": "media", "media": {"payload": frame}}), json.dumps({"event": "stop"})]
+        )
+        await srv._forward_user_audio(websocket, _FakeLiveConn())
+        assert srv._input_meter.total_bytes("user") == LIVE_SAMPLE_RATE // 50 * 2  # 20 ms at 24 kHz PCM16
+
+
+@pytest.mark.asyncio
+class TestLiveInputLeadCap:
+    """Live rejects input beyond 1.2x real time; non-speech audio must not push us ahead of real time.
+
+    While it waits for the assistant, the simulator sends silence at 1.44x real time, and our silence feed fills
+    the gaps between its bursts, so without a cap Live gets about 2x.
+    """
+
+    N_ALLOWED = round(LIVE_INPUT_MAX_LEAD_S / 0.02) + 1  # 20 ms frames sent before the lead passes the cap
+
+    @staticmethod
+    def _media(n: int) -> list[str]:
+        frame = base64.b64encode(b"\xff" * 160).decode("ascii")  # 20 ms of mu-law silence
+        return [json.dumps({"event": "media", "media": {"payload": frame}})] * n
+
+    async def _forward(self, srv, events: list[str]) -> _FakeLiveConn:
+        conn = _FakeLiveConn()
+        websocket = MagicMock()
+        websocket.receive_text = AsyncMock(side_effect=[*events, json.dumps({"event": "stop"})])
+        await srv._forward_user_audio(websocket, conn)
+        return conn
+
+    async def test_simulator_silence_beyond_the_cap_is_dropped_but_recorded(self, tmp_path):
+        srv = _make_server(tmp_path)
+        srv._started.set()
+        conn = await self._forward(srv, self._media(30))  # 0.6 s of audio arriving at once
+        sent = len(conn.session.input_audio.append.await_args_list)
+        assert self.N_ALLOWED - 1 <= sent <= self.N_ALLOWED + 1
+        assert len(srv.user_audio_buffer) == 30 * LIVE_SAMPLE_RATE // 50 * 2  # the recording keeps every frame
+
+    async def test_user_speech_is_always_forwarded(self, tmp_path):
+        srv = _make_server(tmp_path)
+        srv._started.set()
+        start = json.dumps({"event": "user_speech_start", "timestamp_ms": str(int(time.time() * 1000))})
+        conn = await self._forward(srv, [start, *self._media(30)])
+        assert len(conn.session.input_audio.append.await_args_list) == 30
+
+    async def test_silence_feed_pauses_while_ahead_of_real_time(self, tmp_path):
+        srv = _make_server(tmp_path)
+        srv._started.set()
+        srv._input_meter.add("user", _pcm_seconds(1.0), now=time.monotonic())  # 1 s ahead
+        conn = _FakeLiveConn()
+        task = asyncio.create_task(srv._feed_silence_to_live(conn))
+        await asyncio.sleep(0.3)
+        task.cancel()
+        await task
         conn.session.input_audio.append.assert_not_awaited()
 
 
