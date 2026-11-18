@@ -46,6 +46,7 @@ from eva.metrics.base import MetricContext
 from eva.metrics.registry import get_global_registry
 from eva.metrics.runner import MetricsRunner
 from eva.models.agents import AgentConfig
+from eva.models.config import DEFAULT_CASCADE_SIMULATOR_MODEL
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, RecordMetrics
 from eva.utils import router
@@ -511,7 +512,9 @@ async def run_record(
 
     audit_log = AuditLog()
     agent_llm_client = LiteLLMClient(model=llm_model)
-    user_sim_llm_client = LiteLLMClient(model=os.environ.get("EVA_USER_SIMULATOR__MODEL", llm_model))
+    user_sim_llm_client = LiteLLMClient(
+        model=os.environ.get("EVA_USER_SIMULATOR__MODEL", DEFAULT_CASCADE_SIMULATOR_MODEL)
+    )
 
     agentic_system = AgenticSystem(
         current_date_time=record.current_date_time,

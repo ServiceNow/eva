@@ -496,6 +496,9 @@ class OpenAIRealtimeSimulatorConfig(BaseModel):
     male_voice: str = Field("cedar", description="Voice used for male caller personas.")
 
 
+DEFAULT_CASCADE_SIMULATOR_MODEL = "gpt-6.1-sol"
+
+
 class CascadeSimulatorConfig(BaseModel):
     """Caller built from independently chosen streaming STT, LLM, and TTS models."""
 
@@ -503,13 +506,14 @@ class CascadeSimulatorConfig(BaseModel):
     stt: Literal["elevenlabs"] = Field("elevenlabs", description="Streaming STT provider for the assistant's audio.")
     stt_model: str = Field("scribe_v2_realtime", description="Streaming STT model.")
     model: str = Field(
+        DEFAULT_CASCADE_SIMULATOR_MODEL,
         description=(
             "Caller LLM deployment, resolved via EVA_MODEL_LIST like the assistant's. Configure a separate "
             "deployment if the caller's params need to differ from the assistant under test or the judges."
         ),
     )
     tts: Literal["cartesia"] = Field("cartesia", description="TTS provider for the caller's speech.")
-    tts_model: str = Field("sonic-3.5", description="TTS model.")
+    tts_model: str = Field("sonic-3.6", description="TTS model.")
     female_voice: str = Field("f786b574-daa5-4673-aa0c-cbe3e8534c02", description="TTS voice for female personas.")
     male_voice: str = Field("a0e99841-438c-4a64-b679-ae501e7d6091", description="TTS voice for male personas.")
 
