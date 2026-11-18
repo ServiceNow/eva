@@ -116,9 +116,9 @@ class TestCalculateSttLatencyInk2Fallback:
                 {"type": "Ink2TurnEnd", "timestamp": 103_700, "processor": "CartesiaTurnsSTTService"},
             ],
             [
-                {"event_type": "audio_start", "user": "simulated_user", "audio_timestamp": 100.0},
-                {"event_type": "audio_end", "user": "simulated_user", "audio_timestamp": 103.0},
-                {"event_type": "audio_start", "user": "assistant", "audio_timestamp": 104.5},
+                {"event_type": "audio_start", "user": "simulated_user", "timestamp": 100_000},
+                {"event_type": "audio_end", "user": "simulated_user", "timestamp": 103_000},
+                {"event_type": "audio_start", "user": "assistant", "timestamp": 104_500},
             ],
         )
         result = worker._calculate_stt_latency()
@@ -134,8 +134,8 @@ class TestCalculateSttLatencyInk2Fallback:
                 {"type": "Ink2TurnEnd", "timestamp": 103_700, "processor": "CartesiaTurnsSTTService"},
             ],
             [
-                {"event_type": "audio_start", "user": "simulated_user", "audio_timestamp": 100.0},
-                {"event_type": "audio_end", "user": "simulated_user", "audio_timestamp": 103.0},
+                {"event_type": "audio_start", "user": "simulated_user", "timestamp": 100_000},
+                {"event_type": "audio_end", "user": "simulated_user", "timestamp": 103_000},
             ],
         )
         assert worker._calculate_stt_latency().mean_ms == pytest.approx(200, abs=1)
@@ -154,7 +154,7 @@ class TestCalculateSttLatencyInk2Fallback:
         self._write(
             worker,
             [{"type": "Ink2TurnEnd", "timestamp": 103_700, "processor": "CartesiaTurnsSTTService"}],
-            [{"event_type": "audio_end", "user": "assistant", "audio_timestamp": 99.0}],
+            [{"event_type": "audio_end", "user": "assistant", "timestamp": 99_000}],
         )
         with patch("eva.orchestrator.worker.logger") as mock_logger:
             assert worker._calculate_stt_latency() is None

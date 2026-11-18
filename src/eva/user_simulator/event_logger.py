@@ -108,23 +108,9 @@ class UserSimulatorEventLogger:
 
         Args:
             role: Speaker role (e.g. "simulated_user", "assistant").
-            timestamp: Timestamp in milliseconds when audio started
+            timestamp: Unix timestamp (seconds) when the audio started; defaults to now.
         """
-        # Use Unix timestamp in seconds (as float)
-        audio_timestamp = timestamp or time.time()
-        # Note: For audio events, we need to store event_type and user at top level
-        # not nested in data
-        self._sequence += 1
-        event = {
-            "timestamp": int(time.time() * 1000),  # Keep milliseconds for consistency
-            "sequence": self._sequence,
-            "event_type": "audio_start",
-            "user": role,
-            "audio_timestamp": audio_timestamp,  # Unix timestamp in seconds for audio timing
-            "provider": self.provider,
-        }
-        self._events.append(event)
-        logger.debug(f"Audio start logged: {role}")
+        self._log_audio_event("audio_start", role, timestamp)
 
     def log_audio_end(self, role: str, timestamp: float | None = None) -> None:
         """Log when audio ends for a given role.
@@ -133,24 +119,26 @@ class UserSimulatorEventLogger:
             role: Speaker role (e.g. "simulated_user", "assistant").
             timestamp: Unix timestamp (seconds) of the *actual* audio end. End-of-
                 audio is detected after a silence threshold, so callers pass the
-                real end time; otherwise the stamp would lag by that threshold and
-                shrink the following pause/latency in the timeline.
+                real end time; otherwise the stamp would lag by that threshold, and
+                the event would sort after things that happened once the audio stopped.
         """
-        # Use Unix timestamp in seconds (as float)
-        audio_timestamp = timestamp if timestamp is not None else time.time()
+        self._log_audio_event("audio_end", role, timestamp)
+
+    def _log_audio_event(self, event_type: str, role: str, timestamp: float | None) -> None:
+        """Append an audio event stamped with when the audio changed, not when it was logged."""
+        audio_time = timestamp if timestamp is not None else time.time()
         # Note: For audio events, we need to store event_type and user at top level
         # not nested in data
         self._sequence += 1
         event = {
-            "timestamp": int(time.time() * 1000),  # Keep milliseconds for consistency
+            "timestamp": int(audio_time * 1000),
             "sequence": self._sequence,
-            "event_type": "audio_end",
+            "event_type": event_type,
             "user": role,
-            "audio_timestamp": audio_timestamp,  # Unix timestamp in seconds for audio timing
             "provider": self.provider,
         }
         self._events.append(event)
-        logger.debug(f"Audio end logged: {role}")
+        logger.debug(f"Audio {event_type.removeprefix('audio_')} logged: {role}")
 
     def save(self) -> None:
         """Save all logged events to the output file."""

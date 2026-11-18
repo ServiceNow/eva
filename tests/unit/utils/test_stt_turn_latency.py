@@ -12,7 +12,7 @@ def _write_events(path, events):
 
 
 def _audio(kind, who, ts):
-    return {"event_type": kind, "user": who, "audio_timestamp": ts}
+    return {"event_type": kind, "user": who, "timestamp": int(ts * 1000)}
 
 
 class TestComputeTurnCommitLatencies:

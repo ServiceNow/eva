@@ -397,7 +397,7 @@ def _handle_audio_start(
 ) -> None:
     """Process an audio_start event, advancing the turn counter if needed."""
     role = event["data"]["user"]
-    timestamp = event["data"]["audio_timestamp"]
+    timestamp = event["timestamp_ms"] / 1000
 
     if role == "simulated_user":
         if state.assistant_audio_open:
@@ -465,7 +465,7 @@ def _handle_audio_start(
 def _handle_audio_end(event: dict, state: "_TurnExtractionState") -> None:
     """Process an audio_end event, recording the end timestamp and closing the audio session."""
     role = event["data"]["user"]
-    timestamp = event["data"]["audio_timestamp"]
+    timestamp = event["timestamp_ms"] / 1000
     if (key := state.last_audio_start_key.get(role)) is not None:
         state.audio_ends.setdefault(key, []).append(timestamp)
     if role == "simulated_user":
