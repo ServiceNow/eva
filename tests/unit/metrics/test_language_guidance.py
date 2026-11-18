@@ -147,3 +147,41 @@ def test_english_judge_prompts_match_golden():
         GOLDEN_EN_PATH.write_text(json.dumps(current, indent=2, sort_keys=True) + "\n")
     golden = json.loads(GOLDEN_EN_PATH.read_text())
     assert current == golden, f"English judge prompts changed. If intended, regenerate with {REGEN_GOLDEN_ENV}=1."
+
+
+# The three speech-fidelity judges share their per-language facts; only the rating wording in
+# the group headings and a few rating-specific items differ. These groups must list the same items.
+SPEECH_FIDELITY_JUDGES = ("agent_speech_fidelity", "tts_fidelity", "user_speech_fidelity")
+SHARED_SPEECH_GROUPS = (
+    "**Correct",
+    "**English letter or digit names",
+    "**Unusual but understandable",
+    "**Letters and digits that sound alike",
+    "**Same sound",
+)
+
+
+def _shared_speech_groups(text: str) -> dict[str, list[str]]:
+    groups, current = {}, None
+    for line in text.splitlines():
+        if line.startswith("**"):
+            current = next((prefix for prefix in SHARED_SPEECH_GROUPS if line.startswith(prefix)), None)
+            if current:
+                groups[current] = []
+        elif current and line.startswith("- "):
+            groups[current].append(line)
+    return groups
+
+
+def test_speech_fidelity_guidance_files_list_the_same_items():
+    files = {
+        metric: yaml.safe_load((GUIDANCE_DIR / f"{metric}.yaml").read_text(encoding="utf-8"))
+        for metric in SPEECH_FIDELITY_JUDGES
+    }
+    reference, *others = SPEECH_FIDELITY_JUDGES
+    for metric in others:
+        assert files[metric].keys() == files[reference].keys(), f"{metric} and {reference} cover different languages"
+        for lang, text in files[reference].items():
+            assert _shared_speech_groups(files[metric][lang]) == _shared_speech_groups(text), (
+                f"{metric} and {reference} list different items for {lang!r}"
+            )

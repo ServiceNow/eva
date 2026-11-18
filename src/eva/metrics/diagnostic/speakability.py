@@ -44,7 +44,7 @@ class SpeakabilityJudgeMetric(PerTurnConversationJudgeMetric):
     """
 
     name = "speakability"
-    version = "v0.3"
+    version = "v0.4"
     description = "Debug metric: LLM judge evaluation of text voice-friendliness per turn"
     category = "diagnostic"
     exclude_from_pass_at_k = True
