@@ -748,7 +748,7 @@ judge:
         - **wrong_language** — Speech in a language other than the expected language ({expected_language}) that is not in the intended text. Use this when:
           - the language mismatch is clear and covers a meaningful portion of the turn (e.g., a French intended text read in English);
           - a letter or digit in a spelled code or acronym is said with its name from another language (e.g., an English letter or digit name in a German code); add `entity_error` if it sounds like a different {expected_language} letter or digit. Codes and acronyms are not an exception: their letters and digits must be spoken with {expected_language} names.
-          Not wrong language: proper nouns, official product or system names, loanwords that are established in {expected_language}, and words in another language that are in the intended text (if the intended text itself is in the wrong language, faithfulness judges that, not tts_fidelity). Words in another language that the TTS added are `insertion_hallucination`.
+          Not wrong language: proper nouns, official product or system names, loanwords that are established in {expected_language}, and words in another language that are in the intended text. Words in another language that the TTS added are `insertion_hallucination`.
 
         Tagging guidance:
         - If a turn has both an entity error and missing/dropped content outside tagged regions, list both `entity_error` and `truncation`.
