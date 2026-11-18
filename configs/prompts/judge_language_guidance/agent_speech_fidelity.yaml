@@ -30,7 +30,7 @@ nl: |
   - Some of these are written like English names but are the Dutch ones: bee, cee, dee, pee, tee, gee, wee (Dutch B is /beː/, close to English 'bay'). Said this way, they are not English.
   - This is how numbers are read in Dutch, units before tens; a number read this way is correct: vijfenzeventig = 75, zesentwintig = 26.
   - This is how years are read in Dutch; a year read this way is correct: 2026 as 'tweeduizendzesentwintig' or 'twintig zesentwintig'.
-  - This is how times are read in Dutch; a time read this way is correct: 'half drie' = 2:30 or 14:30 (not 3:30), 'kwart over twee' = 2:15 or 14:15, 'kwart voor drie' = 2:45 or 14:45, 'tien voor half drie' = 2:20 or 14:20, 'veertien uur dertig' = 14:30.
+  - This is how times are read in Dutch; a time read this way is correct: 'half drie' = 2:30 or 14:30 (not 3:30), 'kwart over twee' = 2:15 or 14:15, 'kwart voor drie' = 2:45 or 14:45, 'tien voor half drie' = 2:20 or 14:20, 'veertien uur dertig' = 14:30. A day part after the time says which one is meant: 's ochtends (6:00–11:59), 's middags (12:00–17:59), 's avonds (18:00–23:59), 's nachts (0:00–5:59); 'half drie 's middags' = 14:30, 'half drie 's nachts' = 2:30, 'acht uur 's avonds' = 20:00.
   **English letter or digit names inside a trace entity: if the entity is not said in Dutch, the rating should be 0.** Typical cases:
   - 'ay', 'aitch', 'jay', 'kay', 'ar', 'you', 'double-u', 'why', 'zee', 'six', 'one'.
   - These English names sound like a different Dutch letter, so the code changes: English E /iː/ = Dutch I /i/, English A /eɪ/ ~ Dutch E /eː/, English I /aɪ/ ~ Dutch IJ / Y /ɛi/.
