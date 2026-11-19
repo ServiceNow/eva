@@ -5,6 +5,7 @@ inactivity detection, end_call API polling with backoff, and error handling.
 """
 
 import asyncio
+import threading
 import wave
 from pathlib import Path
 from types import SimpleNamespace
@@ -447,3 +448,55 @@ class TestRecordAndSaveCleanAudio:
         sim._save_clean_user_audio(sample_rate=16000)
 
         assert not (tmp_path / "audio_user_clean.wav").exists()
+
+
+class TestBlockingCallsStayOffEventLoop:
+    """The ElevenLabs REST client is synchronous: its calls must not run on the loop shared by every conversation."""
+
+    @pytest.mark.asyncio
+    async def test_end_call_check_runs_the_http_call_in_a_thread(self, tmp_path):
+        sim = _make_simulator(tmp_path)
+        sim._client = MagicMock()
+        loop_thread = threading.get_ident()
+        call_threads = []
+
+        def get(conversation_id):
+            call_threads.append(threading.get_ident())
+            return _make_conv_details(termination_reason="end_call tool was called")
+
+        sim._client.conversational_ai.conversations.get.side_effect = get
+
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock):
+            assert await sim._check_end_call_via_api("conv-123") is True
+
+        assert call_threads and all(t != loop_thread for t in call_threads)
+
+    @pytest.mark.asyncio
+    async def test_audio_download_runs_in_a_thread_and_writes_the_recording(self, tmp_path):
+        sim = _make_simulator(tmp_path)
+        sim._client = MagicMock()
+        loop_thread = threading.get_ident()
+        call_threads = []
+
+        def get(conversation_id):
+            call_threads.append(threading.get_ident())
+            return iter([b"abc", b"def"])
+
+        sim._client.conversational_ai.conversations.audio.get.side_effect = get
+
+        await sim._fetch_elevenlabs_audio("conv-123")
+
+        assert call_threads and all(t != loop_thread for t in call_threads)
+        assert (tmp_path / "elevenlabs_audio_recording.mp3").read_bytes() == b"abcdef"
+
+    @pytest.mark.asyncio
+    async def test_audio_download_retries_when_recording_not_ready(self, tmp_path):
+        sim = _make_simulator(tmp_path)
+        sim._client = MagicMock()
+        sim._client.conversational_ai.conversations.audio.get.side_effect = [RuntimeError("not ready"), iter([b"ok"])]
+
+        with patch("eva.user_simulator.elevenlabs.asyncio.sleep", new_callable=AsyncMock) as sleep:
+            await sim._fetch_elevenlabs_audio("conv-123")
+
+        sleep.assert_awaited_once_with(2.0)
+        assert (tmp_path / "elevenlabs_audio_recording.mp3").read_bytes() == b"ok"
