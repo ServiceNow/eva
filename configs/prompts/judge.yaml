@@ -443,7 +443,7 @@ judge:
       **IS a flag:**
       - Whole turns or sentences in another language
       - Phrases or clauses in another language inside an otherwise correct-language turn (e.g., "one moment", "Let me check that" in a non-English conversation), including fixed formulaic phrases that recur across turns
-      - Self-references in the wrong grammatical gender. The assistant's assigned speaking gender is: {assistant_gender}. If it is male or female and the language marks the speaker's gender (verb forms, participles, adjectives the assistant uses about itself), the assistant must use forms of that gender. If it is "none", do not check this. Rate this 2, never 1, even when it recurs. Forms that refer to the user or to other people are not covered.
+      - Self-references in the wrong grammatical gender. The assistant's assigned speaking gender is: {assistant_gender}. If it is male or female and the language marks the speaker's gender (verb forms, participles, adjectives the assistant uses about itself), the assistant must use forms of that gender. If it is "none", do not check the assistant's self-references for gender issues. Rate this 2, never 1, even when it recurs. Forms that refer to the user or to other people are not covered.
 
       **Is NOT a flag:**
       - Loanwords that are established in the specified language
@@ -606,7 +606,7 @@ judge:
       - Only flag this if the user's non-target-language speech was substantial and pervasive — isolated foreign words, proper nouns, or brief code-switching are acceptable.
       - Do NOT flag this if the agent itself switched languages and the user followed the agent's lead.
       - Do NOT flag this if the user spoke in the target language for the majority of the conversation and only slipped briefly.
-      - The user's speaking gender (the gender of their voice) is: {user_gender}. If it is male or female, also flag this type if the user consistently referred to themselves with the other gender's grammatical forms where {language_display_name} marks the speaker's gender (verb forms, participles, adjectives about themselves); report it under wrong_language. If it is "none", do not check this. Isolated slips are acceptable, and forms that refer to the agent or to other people are not covered.
+      - The user's speaking gender (the gender of their voice) is: {user_gender}. If it is male or female, also flag this type if the user consistently referred to themselves with the other gender's grammatical forms where {language_display_name} marks the speaker's gender (verb forms, participles, adjectives about themselves); report it under wrong_language. If it is "none", do not check the user's self-references for gender issues. Isolated slips are acceptable, and forms that refer to the agent or to other people are not covered.
       
       ## Rating
         
