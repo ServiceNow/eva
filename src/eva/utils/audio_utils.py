@@ -4,7 +4,6 @@ import audioop
 import base64
 import io
 import json
-import struct
 import wave
 from pathlib import Path
 
@@ -128,28 +127,20 @@ def sync_buffer_to_position(buffer: bytearray, target_position: int) -> None:
         buffer.extend(b"\x00" * (target_position - current_len))
 
 
-def pcm16_mix(track_a: bytes, track_b: bytes) -> bytes:
+def pcm16_mix(track_a: bytes | bytearray, track_b: bytes | bytearray) -> bytes:
     """Mix two 16-bit PCM tracks by sample-wise addition with clipping.
 
     Both tracks must be the same sample rate. If lengths differ,
     the shorter track is zero-padded.
+
+    Vectorized with numpy: this runs on the event loop at server teardown, and a per-sample
+    Python loop blocked every concurrent conversation for seconds on long calls.
     """
-    len_a, len_b = len(track_a), len(track_b)
-    max_len = max(len_a, len_b)
-
-    # Zero-pad shorter track
-    if len_a < max_len:
-        track_a = track_a + b"\x00" * (max_len - len_a)
-    if len_b < max_len:
-        track_b = track_b + b"\x00" * (max_len - len_b)
-
-    # Mix with clipping
-    n_samples = max_len // 2
-    fmt = f"<{n_samples}h"
-    samples_a = struct.unpack(fmt, track_a)
-    samples_b = struct.unpack(fmt, track_b)
-    mixed = struct.pack(fmt, *(max(-32768, min(32767, a + b)) for a, b in zip(samples_a, samples_b)))
-    return mixed
+    a = np.frombuffer(track_a, dtype="<i2").astype(np.int32)
+    b = np.frombuffer(track_b, dtype="<i2").astype(np.int32)
+    n = max(len(a), len(b))
+    mixed = np.pad(a, (0, n - len(a))) + np.pad(b, (0, n - len(b)))
+    return np.clip(mixed, -32768, 32767).astype("<i2").tobytes()
 
 
 def resample_pcm16_soxr(pcm_bytes: bytes, from_rate: int, to_rate: int) -> bytes:
