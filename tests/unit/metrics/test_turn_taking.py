@@ -4,7 +4,8 @@ Scoring model (continuous, 0–1):
   - Latency → piecewise linear:
       ramp 0 → 1 over [-500ms, 500ms], flat 1 to 2000ms,
       ramp 1 → 0 over [2000ms, 3500ms] (non-tool) or [3000ms, 5000ms] (tool call).
-  - Agent-interrupt turns → overlap-based, capped at AGENT_INTERRUPT_MAX_SCORE = 0.5.
+  - Agent-interrupt turns → overlap-based, capped at AGENT_INTERRUPT_MAX_SCORE = 0.5, unless every
+    overlap is a backchannel and the agent then responds → response latency score ("backchannel").
   - User-interrupt turns → agent yield-latency-based (ramp 1 → 0 over [0, 2000ms]).
   - Both flags on one turn → min of the two.
   - Conversation not completed → overall score zeroed; per-turn data preserved in details.
@@ -551,7 +552,8 @@ class TestInterruptCountPenalty:
     async def test_single_barge_in_count_score_at_cap(self, metric):
         """n=1 lands at AGENT_INTERRUPT_MAX_SCORE=0.5 (matching the overlap cap)."""
         context = make_metric_context(
-            audio_timestamps_user_turns={1: [(0.0, 2.0)], 2: [(5.0, 6.0)]},
+            # User ends 0.1 s after the agent's overlap, so it is an interruption, not a backchannel.
+            audio_timestamps_user_turns={1: [(0.0, 1.1)], 2: [(5.0, 6.0)]},
             audio_timestamps_assistant_turns={1: [(0.8, 1.0), (3.0, 4.0)], 2: [(7.0, 8.0)]},
             assistant_interrupted_turns={1},
         )
@@ -567,9 +569,10 @@ class TestInterruptCountPenalty:
         """3 tiny overlaps: each overlap_score is near cap, but count_score drops to 0 → turn score 0."""
         context = make_metric_context(
             # Three 50ms agent barge-ins during a single long user turn, then settled response.
+            # The last one ends with the user's speech, so the turn is not all backchannels.
             audio_timestamps_user_turns={1: [(0.0, 10.0)], 2: [(15.0, 16.0)]},
             audio_timestamps_assistant_turns={
-                1: [(2.0, 2.05), (5.0, 5.05), (8.0, 8.05), (11.0, 12.0)],
+                1: [(2.0, 2.05), (5.0, 5.05), (9.95, 10.0), (11.0, 12.0)],
                 2: [(17.0, 18.0)],
             },
             assistant_interrupted_turns={1},
@@ -607,14 +610,15 @@ class TestInterruptCountSubMetrics:
     async def test_num_interruptions_sums_segments_across_turns(self, metric):
         """Two interrupt turns (1 seg + 2 segs) → num_interruptions = 3, mean_count_score = mean(1, 0.5)."""
         context = make_metric_context(
+            # Each turn has an overlap ending within 200 ms of the user's end, so neither is all backchannels.
             audio_timestamps_user_turns={
-                1: [(0.0, 5.0)],
+                1: [(0.0, 1.3)],
                 2: [(10.0, 20.0)],
                 3: [(25.0, 26.0)],  # normal latency turn
             },
             audio_timestamps_assistant_turns={
                 1: [(1.0, 1.2), (6.0, 7.0)],  # 1 barge-in, then settled
-                2: [(11.0, 11.05), (14.0, 14.05), (21.0, 22.0)],  # 2 barge-ins, then settled
+                2: [(11.0, 11.05), (19.95, 20.0), (21.0, 22.0)],  # 2 barge-ins, then settled
                 3: [(27.0, 28.0)],
             },
             assistant_interrupted_turns={1, 2},
@@ -780,6 +784,154 @@ class TestDualInterrupt:
         assert sub["user_interruption.rate"].score == pytest.approx(1 / 3, abs=1e-4)
         assert sub["user_interruption.mean_yield_ms"].score == pytest.approx(500, abs=1)
         assert sub["user_interruption.mean_yield_score"].score == pytest.approx(0.75, abs=1e-3)
+
+
+class TestBackchannel:
+    """Agent-interrupt turns whose only overlaps are backchannels are scored on the response latency.
+
+    Backchannel: a merged agent utterance (fragments <= 300 ms apart) of at most 1.5 s that ends
+    at least 200 ms before the user segment it overlaps ends. When every overlapping utterance is
+    one and the agent responds after the user finishes, the turn score is the post-interrupt
+    latency score alone (full 0-1 range, no 0.5 cap).
+    """
+
+    @pytest.mark.asyncio
+    async def test_backchannel_then_prompt_response_scores_one(self, metric):
+        """'Mm' 0.5 s long ends 0.35 s before the user finishes; answer 1.1 s after user end."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 3.92)], 2: [(20.0, 21.0)]},
+            audio_timestamps_assistant_turns={1: [(3.06, 3.57), (5.03, 7.36)], 2: [(22.0, 23.0)]},
+            assistant_interrupted_turns={1},
+        )
+        result = await metric.compute(context)
+        assert result.details["per_turn_reason"][1] == "backchannel"
+        assert result.details["per_turn_score"][1] == pytest.approx(1.0, abs=1e-4)
+        ev = result.details["per_turn_evidence"][1]
+        assert ev["backchannel"] is True
+        assert ev["overlap_ms"] == pytest.approx(510, abs=1)
+        assert ev["post_interrupt_latency_ms"] == pytest.approx(1110, abs=1)
+
+    @pytest.mark.asyncio
+    async def test_backchannel_then_slow_response_scores_on_latency(self, metric):
+        """Backchannel, then the answer comes 3 s after the user ends (non-tool curve) -> 1 - 1000/1500."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 4.0)]},
+            audio_timestamps_assistant_turns={1: [(2.0, 2.5), (7.0, 8.0)]},
+            assistant_interrupted_turns={1},
+        )
+        result = await metric.compute(context)
+        assert result.details["per_turn_reason"][1] == "backchannel"
+        assert result.details["per_turn_score"][1] == pytest.approx(1 - 1000 / 1500, abs=1e-3)
+
+    @pytest.mark.asyncio
+    async def test_utterance_ending_near_user_end_is_an_interruption(self, metric):
+        """Agent utterance ends 0.1 s before the user does: the user did not keep talking 200 ms."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 4.0)]},
+            audio_timestamps_assistant_turns={1: [(3.4, 3.9), (5.0, 6.0)]},
+            assistant_interrupted_turns={1},
+        )
+        result = await metric.compute(context)
+        assert result.details["per_turn_reason"][1] == "agent_interrupt"
+        assert result.details["per_turn_score"][1] <= 0.5
+
+    @pytest.mark.asyncio
+    async def test_long_overlapping_utterance_is_an_interruption(self, metric):
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 5.0)]},
+            audio_timestamps_assistant_turns={1: [(1.0, 2.6), (6.0, 7.0)]},  # 1.6 s
+            assistant_interrupted_turns={1},
+        )
+        result = await metric.compute(context)
+        assert result.details["per_turn_reason"][1] == "agent_interrupt"
+
+    @pytest.mark.asyncio
+    async def test_fragments_closer_than_merge_gap_count_as_one_utterance(self, metric):
+        """0.8 s + 0.8 s fragments 0.2 s apart = one 1.8 s utterance -> not a backchannel."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 5.0)]},
+            audio_timestamps_assistant_turns={1: [(1.0, 1.8), (2.0, 2.8), (6.0, 7.0)]},
+            assistant_interrupted_turns={1},
+        )
+        result = await metric.compute(context)
+        assert result.details["per_turn_reason"][1] == "agent_interrupt"
+
+    @pytest.mark.asyncio
+    async def test_separate_backchannels_all_count(self, metric):
+        """Two short utterances 1 s apart, both well inside the user's speech -> backchannel."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 5.0)]},
+            audio_timestamps_assistant_turns={1: [(1.0, 1.5), (2.5, 3.0), (6.0, 7.0)]},
+            assistant_interrupted_turns={1},
+        )
+        result = await metric.compute(context)
+        assert result.details["per_turn_reason"][1] == "backchannel"
+        assert result.details["per_turn_score"][1] == pytest.approx(1.0, abs=1e-4)
+
+    @pytest.mark.asyncio
+    async def test_one_real_interruption_keeps_the_penalty(self, metric):
+        """A backchannel plus an agent utterance that runs past the user's end -> agent_interrupt."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 5.0)]},
+            audio_timestamps_assistant_turns={1: [(1.0, 1.5), (4.5, 7.0)]},
+            assistant_interrupted_turns={1},
+        )
+        result = await metric.compute(context)
+        assert result.details["per_turn_reason"][1] == "agent_interrupt"
+
+    @pytest.mark.asyncio
+    async def test_backchannel_without_response_keeps_the_penalty(self, metric):
+        """No agent speech after the user ends: nothing to score the response on."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 2.0)]},
+            audio_timestamps_assistant_turns={1: [(0.5, 1.5)]},
+            assistant_interrupted_turns={1},
+        )
+        result = await metric.compute(context)
+        assert result.details["per_turn_reason"][1] == "agent_interrupt"
+        assert "backchannel" not in result.details["per_turn_evidence"][1]
+
+    @pytest.mark.asyncio
+    async def test_dual_interrupt_with_backchannel_uses_response_and_yield(self, metric):
+        """User barged in (yield 500 ms -> 0.75); agent only backchannelled, answered 1 s after."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 1.0)], 2: [(2.5, 6.0)]},
+            audio_timestamps_assistant_turns={1: [(1.5, 3.0)], 2: [(4.0, 4.5), (7.0, 8.0)]},
+            assistant_interrupted_turns={2},
+            user_interrupted_turns={2},
+        )
+        result = await metric.compute(context)
+        assert result.details["per_turn_reason"][2] == "dual_interrupt"
+        assert result.details["per_turn_evidence"][2]["backchannel"] is True
+        assert result.details["per_turn_score"][2] == pytest.approx(0.75, abs=1e-3)
+
+    @pytest.mark.asyncio
+    async def test_backchannel_turns_are_not_counted_as_interruptions(self, metric):
+        """Turn 1 backchannel, turn 2 real interruption, turn 3 clean."""
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 4.0)], 2: [(10.0, 11.0)], 3: [(20.0, 21.0)]},
+            audio_timestamps_assistant_turns={
+                1: [(2.0, 2.5), (5.0, 6.0)],
+                2: [(10.8, 12.0)],
+                3: [(22.0, 23.0)],
+            },
+            assistant_interrupted_turns={1, 2},
+        )
+        result = await metric.compute(context)
+        sub = result.sub_metrics
+        assert sub["agent_backchannel.rate"].score == pytest.approx(1 / 3, abs=1e-4)
+        assert sub["agent_interruption.rate"].score == pytest.approx(1 / 3, abs=1e-4)
+        assert sub["agent_interruption.mean_overlap_ms"].score == pytest.approx(200, abs=1)
+        assert sub["agent_interruption.num_interruptions"].score == 1.0
+
+    @pytest.mark.asyncio
+    async def test_no_backchannels_reports_zero_rate(self, metric):
+        context = make_metric_context(
+            audio_timestamps_user_turns={1: [(0.0, 1.0)]},
+            audio_timestamps_assistant_turns={1: [(2.0, 3.0)]},
+        )
+        result = await metric.compute(context)
+        assert result.sub_metrics["agent_backchannel.rate"].score == 0.0
 
 
 # ---------- Pre-tool-speech lead-in rate ----------

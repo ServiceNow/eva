@@ -6,6 +6,10 @@ characterizes what happened on that turn:
                                          (bounded by AGENT_INTERRUPT_MAX_SCORE = 0.5 — the
                                          overlap and count sub-scores are each capped at
                                          0.5, so even a clean-looking interrupt lands at ≤ 0.5)
+                                         unless every overlapping agent utterance is a
+                                         backchannel (≤ 1.5 s, user keeps talking ≥ 200 ms
+                                         after it) and the agent responds after the user ends:
+                                         then post_interrupt_score alone, reason "backchannel"
   - turn ∈ user_interrupted_turns      → agent-yield-based score
   - turn ∈ both sets                   → min of the two above
   - otherwise                          → latency-based score
@@ -21,6 +25,8 @@ Main turn_taking.score = mean(per-turn scores).
 Flat headline sub-metrics (one number each — show up as columns in analysis views):
   Latency:              mean_latency_ms, p50_latency_ms, p90_latency_ms,
                         on_time_rate, early_rate, late_rate
+  Agent backchannels:   agent_backchannel.rate (always; backchannel turns are kept out of
+                        the agent_interruption.* sub-metrics below)
   Agent interruptions:  agent_interruption.rate (always),
                         agent_interruption.num_interruptions (None when rate = 0),
                         agent_interruption.mean_overlap_ms,
@@ -67,7 +73,7 @@ class TurnTakingMetric(CodeMetric):
     description = "Turn-taking evaluation based on per-turn latency and interruption behavior"
     category = "experience"
     pass_at_k_threshold = 0.8
-    version = "v0.2"
+    version = "v0.3"
 
     # --- Latency curve (piecewise linear). 0 outside [LATENCY_HARD_EARLY_MS, LATENCY_HARD_LATE_MS]. ---
     # Ramp up 0 → 1 from LATENCY_HARD_EARLY_MS to LATENCY_SWEET_SPOT_LOW_MS.
@@ -96,6 +102,13 @@ class TurnTakingMetric(CodeMetric):
     # Distinct agent-interrupt segments in a single user turn. Score ramps
     # AGENT_INTERRUPT_MAX_SCORE → 0 over [1, INTERRUPT_COUNT_HARD]. Only defined for n ≥ 1.
     INTERRUPT_COUNT_HARD: int = 3  # ≥3 distinct barge-ins → count sub-score = 0
+
+    # --- Backchannels. An agent utterance that overlaps the user is a backchannel when it is short
+    # and the user keeps talking after it (the agent did not take the turn). An agent-interrupt turn
+    # whose overlaps are all backchannels is scored on the agent's response latency alone. ---
+    BACKCHANNEL_MAX_MS: float = 1500
+    BACKCHANNEL_MERGE_GAP_MS: float = 300  # agent fragments closer than this form one utterance
+    BACKCHANNEL_USER_CONTINUES_MS: float = 200  # user keeps talking at least this long after it
 
     # --- User interruption (agent yield latency in ms). Score ramps down 1 → 0 over [0, YIELD_HARD_MS]. ---
     YIELD_HARD_MS: float = 2000
@@ -197,6 +210,41 @@ class TurnTakingMetric(CodeMetric):
                     count += 1
                     break
         return count
+
+    @classmethod
+    def _only_backchannels(cls, context: MetricContext, turn_id: int) -> bool:
+        """True when every agent utterance overlapping the user's speech in this turn is a backchannel.
+
+        Agent segments closer than BACKCHANNEL_MERGE_GAP_MS are merged into one utterance. An
+        overlapping utterance is a backchannel when it lasts at most BACKCHANNEL_MAX_MS and ends at
+        least BACKCHANNEL_USER_CONTINUES_MS before the end of the user segment it overlaps most.
+        """
+        u_segs = context.audio_timestamps_user_turns.get(turn_id)
+        a_segs = context.audio_timestamps_assistant_turns.get(turn_id)
+        if not u_segs or not a_segs:
+            return False
+        utterances: list[tuple[float, float]] = []
+        for a_start, a_end in sorted(a_segs):
+            if utterances and (a_start - utterances[-1][1]) * 1000 <= cls.BACKCHANNEL_MERGE_GAP_MS:
+                utterances[-1] = (utterances[-1][0], max(utterances[-1][1], a_end))
+            else:
+                utterances.append((a_start, a_end))
+        any_overlap = False
+        for a_start, a_end in utterances:
+            overlaps = [
+                (min(u_end, a_end) - max(u_start, a_start), u_end)
+                for u_start, u_end in u_segs
+                if min(u_end, a_end) - max(u_start, a_start) > 0.001
+            ]
+            if not overlaps:
+                continue
+            any_overlap = True
+            _, user_end = max(overlaps)
+            if (a_end - a_start) * 1000 > cls.BACKCHANNEL_MAX_MS:
+                return False
+            if (user_end - a_end) * 1000 < cls.BACKCHANNEL_USER_CONTINUES_MS:
+                return False
+        return any_overlap
 
     @staticmethod
     def _compute_post_interrupt_latency_ms(context: MetricContext, turn_id: int) -> float | None:
@@ -341,7 +389,13 @@ class TurnTakingMetric(CodeMetric):
                     post_score = cls._latency_score(post_ms, has_tool_call=has_tool_call)
                     evidence["post_interrupt_latency_ms"] = round(post_ms, 3)
                     evidence["post_interrupt_latency_score"] = round(post_score, 4)
-                    agent_score = min(agent_score, post_score)
+                    if cls._only_backchannels(context, turn_id):
+                        # The agent only backchannelled while the user spoke, then responded:
+                        # score the response like a normal turn, with no interruption penalty.
+                        evidence["backchannel"] = True
+                        agent_score = post_score
+                    else:
+                        agent_score = min(agent_score, post_score)
 
         if is_user_int:
             yield_ms = cls._compute_yield_ms(context, turn_id)
@@ -353,7 +407,7 @@ class TurnTakingMetric(CodeMetric):
         if agent_score is not None and user_score is not None:
             return min(agent_score, user_score), "dual_interrupt", evidence
         if agent_score is not None:
-            return agent_score, "agent_interrupt", evidence
+            return agent_score, "backchannel" if evidence.get("backchannel") else "agent_interrupt", evidence
         if user_score is not None:
             return user_score, "user_interrupt", evidence
 
@@ -423,7 +477,13 @@ class TurnTakingMetric(CodeMetric):
             sub["late_rate"] = _wrap("late_rate", round(late / n, 4), True)
 
         # --- Agent interruptions (prefixed so readers see the grouping in tables/docs). ---
-        agent_turns = [t for t in turn_keys if t in context.assistant_interrupted_turns]
+        # Backchannel turns are scored on response latency, so they are reported on their own and
+        # kept out of the interruption sub-metrics.
+        backchannel_turns = [t for t in turn_keys if (per_turn_evidence.get(t) or {}).get("backchannel")]
+        sub["agent_backchannel.rate"] = _wrap(
+            "agent_backchannel.rate", round(len(backchannel_turns) / total_turns, 4), True
+        )
+        agent_turns = [t for t in turn_keys if t in context.assistant_interrupted_turns and t not in backchannel_turns]
         sub["agent_interruption.rate"] = _wrap(
             "agent_interruption.rate", round(len(agent_turns) / total_turns, 4), True
         )

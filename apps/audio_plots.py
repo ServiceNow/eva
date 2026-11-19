@@ -334,6 +334,7 @@ def _format_tt_for_turn(tid: int | None, tt_by_id: dict) -> str:
     reason_label = {
         "latency": "Latency",
         "agent_interrupt": "Agent interrupted user",
+        "backchannel": "Agent backchannel",
         "user_interrupt": "User interrupted agent",
         "dual_interrupt": "Both interrupted",
     }.get(reason, reason)
