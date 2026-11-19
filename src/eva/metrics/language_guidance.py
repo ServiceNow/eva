@@ -61,39 +61,6 @@ def render_language_guidance(metric_name: str, language: str) -> str:
     return f"\n### {display_name}-specific guidance\n{text}\n"
 
 
-_GENDER_WORDS = {"M": "male", "F": "female"}
-
-
-def render_assistant_gender_note(gender: str | None, language: str, language_display_name: str) -> str:
-    """Faithfulness ``wrong_language`` item for the assistant's assigned speaking gender.
-
-    Empty for English or when no gender was assigned (the default, and always for S2S), so those
-    prompts are unchanged. Otherwise it starts with a newline and continues the "IS a flag" list.
-    """
-    word = _GENDER_WORDS.get(gender or "")
-    if not word or base_language(language) == "en":
-        return ""
-    return (
-        f"\n- Self-references in the wrong grammatical gender. The assistant was instructed to speak as a {word} "
-        f"speaker: where {language_display_name} marks the speaker's gender (verb forms, participles, adjectives the "
-        f"assistant uses about itself), it must use {word} forms. Rate this 2, never 1, even when it recurs. Forms "
-        "that refer to the user or to other people are not covered."
-    )
-
-
-def render_user_gender_note(gender: str | None, language: str, language_display_name: str) -> str:
-    """user_behavioral_fidelity Corruption Type 6 item for the user simulator's speaking gender.
-
-    Empty for English or when the persona has no known gender, so those prompts are unchanged.
-    Otherwise it starts with a newline and continues the Type 6 list.
-    """
-    word = _GENDER_WORDS.get(gender or "")
-    if not word or base_language(language) == "en":
-        return ""
-    other = "female" if word == "male" else "male"
-    return (
-        f"\n- The user speaks with a {word} voice. Also flag this type if the user consistently referred to themselves "
-        f"with {other} grammatical forms where {language_display_name} marks the speaker's gender (verb forms, "
-        "participles, adjectives about themselves); report it under wrong_language. Isolated slips are acceptable, "
-        "and forms that refer to the agent or to other people are not covered."
-    )
+def speaking_gender_word(gender: str | None) -> str:
+    """Return the speaking gender as judge prompts state it: "male", "female" or "none" (not assigned)."""
+    return {"M": "male", "F": "female"}.get(gender or "", "none")

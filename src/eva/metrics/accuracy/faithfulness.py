@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from eva.metrics.base import ConversationTextJudgeMetric, MetricContext
-from eva.metrics.language_guidance import render_assistant_gender_note
+from eva.metrics.language_guidance import speaking_gender_word
 from eva.metrics.pipeline_prompts import (
     get_assistant_turns_disclaimer,
     get_misrepresentation_pipeline_note,
@@ -80,9 +80,7 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
             "assistant_turns_disclaimer": get_assistant_turns_disclaimer(context.is_s2s),
             "misrepresentation_pipeline_note": get_misrepresentation_pipeline_note(context.is_s2s),
             "disambiguation_context": disambiguation_context,
-            "assistant_gender_note": render_assistant_gender_note(
-                context.assistant_gender, context.language, context.language_display_name
-            ),
+            "assistant_gender": speaking_gender_word(context.assistant_gender),
         }
 
     def build_metric_score(

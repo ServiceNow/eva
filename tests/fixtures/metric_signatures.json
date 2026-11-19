@@ -31,8 +31,8 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "2b2ea0f2a97a",
-    "source_hash": "ece6b77aca92",
+    "prompt_hash": "482ad3ed1bfe",
+    "source_hash": "00ef7ed55e16",
     "version": "v0.4"
   },
   "ResponseSpeedMetric": {
@@ -91,8 +91,8 @@
   },
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
-    "prompt_hash": "010f9e89b375",
-    "source_hash": "8a64bd32fc74",
+    "prompt_hash": "46175d378f86",
+    "source_hash": "f8f01abe0d9f",
     "version": "v0.2"
   },
   "UserSpeechFidelityMetric": {
