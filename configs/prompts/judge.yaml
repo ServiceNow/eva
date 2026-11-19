@@ -443,7 +443,7 @@ judge:
       **IS a flag:**
       - Whole turns or sentences in another language
       - Phrases or clauses in another language inside an otherwise correct-language turn (e.g., "one moment", "Let me check that" in a non-English conversation), including fixed formulaic phrases that recur across turns
-      - Self-references in the wrong grammatical gender. The assistant's assigned speaking gender is: {assistant_gender}. If it is male or female and the language marks the speaker's gender (verb forms, participles, adjectives the assistant uses about itself), the assistant must use forms of that gender. If it is "none", do not check the assistant's self-references for gender issues. Rate this 2, never 1, even when it recurs. Forms that refer to the user or to other people are not covered.
+      - Self-references in the wrong grammatical gender. The assistant's assigned speaking gender is: {assistant_gender}. If it is "none", do not check the assistant's self-references for gender issues. If it is male or female and the language marks the speaker's gender (verb forms, participles, adjectives the assistant uses about itself), the assistant must use forms of that gender; a self-reference in the other gender is rated 2, never 1, even when it recurs. Forms that refer to the user or to other people are not covered.
 
       **Is NOT a flag:**
       - Loanwords that are established in the specified language
