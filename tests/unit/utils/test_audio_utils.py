@@ -7,6 +7,7 @@ and Twilio WebSocket protocol message round-trips.
 import audioop
 import json
 import math
+import random
 import struct
 
 import pytest
@@ -69,6 +70,23 @@ class TestPcm16Mix:
         mixed = pcm16_mix(short_track, long_track)
         result = struct.unpack("<2h", mixed)
         assert result == (5100, 200)
+
+    def test_matches_per_sample_reference_on_random_unequal_tracks(self):
+        """The vectorized mix must equal a plain per-sample mix, for bytes and bytearray inputs."""
+
+        def reference(x: bytes, y: bytes) -> bytes:
+            n = max(len(x), len(y)) // 2
+            x, y = x.ljust(n * 2, b"\x00"), y.ljust(n * 2, b"\x00")
+            sa, sb = struct.unpack(f"<{n}h", x), struct.unpack(f"<{n}h", y)
+            return struct.pack(f"<{n}h", *(max(-32768, min(32767, p + q)) for p, q in zip(sa, sb)))
+
+        rng = random.Random(0)
+        a = struct.pack("<1000h", *(rng.randint(-32768, 32767) for _ in range(1000)))
+        b = struct.pack("<700h", *(rng.randint(-32768, 32767) for _ in range(700)))
+        assert pcm16_mix(a, b) == reference(a, b)
+        assert pcm16_mix(b, a) == reference(b, a)
+        assert pcm16_mix(bytearray(a), bytearray(b)) == reference(a, b)
+        assert pcm16_mix(b"", b"") == b""
 
 
 class TestTwilioProtocol:

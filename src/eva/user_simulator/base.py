@@ -17,7 +17,7 @@ from eva.user_simulator.perturbation import AudioPerturbator
 from eva.utils.audio_utils import save_audio_track
 from eva.utils.culture import add_user_language_directive
 from eva.utils.logging import current_record_id, get_logger
-from eva.utils.prompt_manager import PromptManager
+from eva.utils.prompt_manager import get_prompt_manager
 
 logger = get_logger(__name__)
 
@@ -104,7 +104,8 @@ class AbstractUserSimulator(ABC):
         )
 
         domain = self.agent_id.removeprefix("agent_")
-        return PromptManager().get_prompt(
+        # The shared instance: a fresh PromptManager() re-parses every prompt YAML on the shared event loop.
+        return get_prompt_manager().get_prompt(
             f"user_simulator.system_prompt_{domain}",
             high_level_user_goal=self.goal["high_level_user_goal"],
             must_have_criteria=self.goal["decision_tree"]["must_have_criteria"],

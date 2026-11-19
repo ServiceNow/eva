@@ -292,7 +292,8 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
             attempt += 1
             await asyncio.sleep(delay)
             waited += delay
-            conv_details = self._client.conversational_ai.conversations.get(conversation_id)
+            # Sync HTTP call: run it in a thread so it doesn't block the event loop shared by every conversation.
+            conv_details = await asyncio.to_thread(self._client.conversational_ai.conversations.get, conversation_id)
 
             # Dump full response to file for debugging/analysis
             details_path = self.output_dir / "elevenlabs_conversation_details.json"
@@ -329,16 +330,20 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
         )
         return None
 
+    def _download_elevenlabs_audio(self, conversation_id: str, audio_path: Path) -> None:
+        """Stream the server-side recording to ``audio_path``. Blocking: call it from a thread."""
+        audio_iter = self._client.conversational_ai.conversations.audio.get(conversation_id)
+        with open(audio_path, "wb") as f:
+            f.writelines(audio_iter)
+
     async def _fetch_elevenlabs_audio(self, conversation_id: str) -> None:
         max_attempts = 5
         delay = 2.0
 
         for attempt in range(max_attempts):
             try:
-                audio_iter = self._client.conversational_ai.conversations.audio.get(conversation_id)
                 audio_path = self.output_dir / "elevenlabs_audio_recording.mp3"
-                with open(audio_path, "wb") as f:
-                    f.writelines(audio_iter)
+                await asyncio.to_thread(self._download_elevenlabs_audio, conversation_id, audio_path)
                 logger.info(f"Saved ElevenLabs server-side audio to {audio_path}")
                 return
             except Exception as e:
