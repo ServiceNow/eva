@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from eva.metrics.base import ConversationTextJudgeMetric, MetricContext
+from eva.metrics.language_guidance import render_user_gender_note
 from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import build_binary_flag_sub_metrics
@@ -110,6 +111,9 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
             "conversation_end": conversation_end,
             "user_simulator_instructions": _render_user_simulator_instructions(context),
             "language_display_name": context.language_display_name,
+            "user_gender_note": render_user_gender_note(
+                context.user_gender, context.language, context.language_display_name
+            ),
         }
 
     def build_metric_score(

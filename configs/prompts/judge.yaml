@@ -442,7 +442,7 @@ judge:
 
       **IS a flag:**
       - Whole turns or sentences in another language
-      - Phrases or clauses in another language inside an otherwise correct-language turn (e.g., "one moment", "Let me check that" in a non-English conversation), including fixed formulaic phrases that recur across turns
+      - Phrases or clauses in another language inside an otherwise correct-language turn (e.g., "one moment", "Let me check that" in a non-English conversation), including fixed formulaic phrases that recur across turns{assistant_gender_note}
 
       **Is NOT a flag:**
       - Loanwords that are established in the specified language
@@ -604,7 +604,7 @@ judge:
         The user was instructed to communicate in {language_display_name}, but spoke predominantly in a different language during the conversation.
       - Only flag this if the user's non-target-language speech was substantial and pervasive — isolated foreign words, proper nouns, or brief code-switching are acceptable.
       - Do NOT flag this if the agent itself switched languages and the user followed the agent's lead.
-      - Do NOT flag this if the user spoke in the target language for the majority of the conversation and only slipped briefly.
+      - Do NOT flag this if the user spoke in the target language for the majority of the conversation and only slipped briefly.{user_gender_note}
       
       ## Rating
         

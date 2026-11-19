@@ -23,7 +23,7 @@ from eva.metrics.versioning import _CURRENT_PROMPT_HASH
 from eva.models.config import base_language
 from eva.utils.prompt_manager import get_prompt_manager
 
-from .conftest import make_judge_metric
+from .conftest import make_judge_metric, make_metric_context
 
 # Scores the simulated user against its own instructions, so it has no guidance slot.
 JUDGES_WITHOUT_GUIDANCE = {"user_behavioral_fidelity"}
@@ -123,6 +123,10 @@ def test_get_judge_prompt_injects_guidance_and_changes_hash(tmp_path, monkeypatc
     assert french_hash != english_hash
 
 
+# Prompt variables that always render empty for English (see language_guidance.render_*_gender_note).
+_EMPTY_IN_ENGLISH = {"assistant_gender_note", "user_gender_note"}
+
+
 def _render_english_judge_prompts() -> dict[str, str]:
     """Render every judge template in English with placeholder values, keyed by ``metric.prompt_key``."""
     prompt_manager = get_prompt_manager()
@@ -130,6 +134,7 @@ def _render_english_judge_prompts() -> dict[str, str]:
     for metric, key, template in _judge_templates():
         fields = {name for _, name, _, _ in string.Formatter().parse(template) if name}
         variables = {name: f"<{name}>" for name in fields - {"language_guidance"}}
+        variables.update(dict.fromkeys(fields & _EMPTY_IN_ENGLISH, ""))
         stub = SimpleNamespace(name=metric, prompt_manager=prompt_manager)
         rendered = BaseMetric.get_judge_prompt(stub, key, language="en", **variables)
         hashes[f"{metric}.{key}"] = hashlib.sha256(rendered.encode("utf-8")).hexdigest()[:12]
@@ -185,3 +190,37 @@ def test_speech_fidelity_guidance_files_list_the_same_items():
             assert _shared_speech_groups(files[metric][lang]) == _shared_speech_groups(text), (
                 f"{metric} and {reference} list different items for {lang!r}"
             )
+
+
+@pytest.mark.parametrize(
+    ("gender", "language", "expected_word"),
+    [("F", "hi", "female"), ("M", "fr", "male"), ("F", "fr-CA", "female")],
+)
+def test_assistant_gender_note_renders_for_gendered_runs(gender, language, expected_word):
+    note = language_guidance.render_assistant_gender_note(gender, language, "Hindi")
+    assert note.startswith("\n- Self-references in the wrong grammatical gender.")
+    assert f"speak as a {expected_word} speaker" in note
+    assert "Rate this 2, never 1" in note
+
+
+@pytest.mark.parametrize(("gender", "language"), [(None, "hi"), ("F", "en"), ("X", "fr")])
+def test_gender_notes_are_empty_without_gender_or_in_english(gender, language):
+    assert language_guidance.render_assistant_gender_note(gender, language, "Hindi") == ""
+    assert language_guidance.render_user_gender_note(gender, language, "Hindi") == ""
+
+
+def test_user_gender_note_names_the_opposite_forms():
+    note = language_guidance.render_user_gender_note("M", "hi", "Hindi")
+    assert "speaks with a male voice" in note
+    assert "with female grammatical forms" in note
+    assert "report it under wrong_language" in note
+
+
+def test_faithfulness_prompt_includes_assistant_gender_note_only_when_set():
+    from eva.metrics.accuracy.faithfulness import FaithfulnessJudgeMetric
+
+    metric = make_judge_metric(FaithfulnessJudgeMetric)
+    with_gender = metric.get_prompt_variables(make_metric_context(language="hi", assistant_gender="F"), "<trace>")
+    without = metric.get_prompt_variables(make_metric_context(language="hi"), "<trace>")
+    assert "speak as a female speaker" in with_gender["assistant_gender_note"]
+    assert without["assistant_gender_note"] == ""

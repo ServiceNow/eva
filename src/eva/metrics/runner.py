@@ -38,6 +38,9 @@ from eva.utils.provenance import capture_metrics_provenance
 
 logger = get_logger(__name__)
 
+# user_persona_id -> speaking gender, as in the user simulators (src/eva/user_simulator/*), which pick the voice by it.
+_PERSONA_GENDER = {1: "F", 2: "M"}
+
 
 def _metric_higher_is_better(name: str) -> bool:
     """Return ``higher_is_better`` for a registered metric, or ``True`` if unknown.
@@ -154,6 +157,8 @@ class MetricsRunner:
         # Determine pipeline type from config
         model_data = config_data.get("model", {})
         self._pipeline_type = get_pipeline_type(model_data) if model_data else PipelineType.CASCADE
+        # assistant_gender is ignored for S2S at run time (the provider picks the voice), so it is ignored here too.
+        self._assistant_gender = model_data.get("assistant_gender") if self._pipeline_type != PipelineType.S2S else None
 
         agent_config_path = config_data.get("agent_config_path")
 
@@ -621,6 +626,8 @@ class MetricsRunner:
             agent_id=self._agent_config["id"],
             current_date_time=record.current_date_time,
             language=self._run_language,
+            assistant_gender=getattr(self, "_assistant_gender", None),
+            user_gender=_PERSONA_GENDER.get(resolved_user_config.get("user_persona_id")),
             # Basic stats from result
             num_turns=result.num_turns,
             tools_called=result.tools_called,
