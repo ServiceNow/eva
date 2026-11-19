@@ -188,8 +188,10 @@ def test_speech_fidelity_guidance_files_list_the_same_items():
 
 
 @pytest.mark.parametrize(("gender", "expected"), [("F", "female"), ("M", "male"), (None, "none"), ("X", "none")])
-def test_speaking_gender_word(gender, expected):
-    assert language_guidance.speaking_gender_word(gender) == expected
+def test_gender_word(gender, expected):
+    from eva.models.config import gender_word
+
+    assert gender_word(gender) == expected
 
 
 def test_faithfulness_and_user_behavioral_fidelity_pass_speaking_genders():

@@ -14,6 +14,7 @@ from eva.assistant.agentic.system import AgenticSystem
 from eva.assistant.pipeline.alm_base import BaseALMClient
 from eva.assistant.tools.tool_executor import ToolExecutor
 from eva.models.agents import AgentConfig
+from eva.models.config import gender_word
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -73,9 +74,8 @@ class AudioLLMAgenticSystem(AgenticSystem):
             self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
         # Reuse the shared gender instruction appended to the system prompt.
         if self.assistant_gender is not None:
-            gender_word = "male" if self.assistant_gender == "M" else "female"
             self.system_prompt += "\n\n" + self.prompt_manager.get_prompt(
-                "agent.gender_instruction", gender_word=gender_word
+                "agent.gender_instruction", gender_word=gender_word(self.assistant_gender)
             )
 
         # Per-turn audio history: list of (audio_bytes, sample_rate)

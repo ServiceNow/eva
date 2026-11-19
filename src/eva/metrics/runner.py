@@ -21,7 +21,7 @@ from eva.metrics.processor import MetricsContextProcessor
 from eva.metrics.registry import MetricRegistry, get_global_registry
 from eva.metrics.utils import direction_for_sub_metric
 from eva.metrics.versioning import _CURRENT_METRIC_VERSION
-from eva.models.config import PipelineType, get_pipeline_type
+from eva.models.config import PERSONA_GENDER, PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
 from eva.utils.bootstrap import mean_ci_fields, named_ci_fields, run_seed
@@ -37,9 +37,6 @@ from eva.utils.pass_at_k import (
 from eva.utils.provenance import capture_metrics_provenance
 
 logger = get_logger(__name__)
-
-# user_persona_id -> speaking gender, as in the user simulators (src/eva/user_simulator/*), which pick the voice by it.
-_PERSONA_GENDER = {1: "F", 2: "M"}
 
 
 def _metric_higher_is_better(name: str) -> bool:
@@ -627,7 +624,7 @@ class MetricsRunner:
             current_date_time=record.current_date_time,
             language=self._run_language,
             assistant_gender=getattr(self, "_assistant_gender", None),
-            user_gender=_PERSONA_GENDER.get(resolved_user_config.get("user_persona_id")),
+            user_gender=PERSONA_GENDER.get(resolved_user_config.get("user_persona_id")),
             # Basic stats from result
             num_turns=result.num_turns,
             tools_called=result.tools_called,

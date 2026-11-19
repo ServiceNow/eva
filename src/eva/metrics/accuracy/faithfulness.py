@@ -4,7 +4,6 @@ import json
 from typing import Any
 
 from eva.metrics.base import ConversationTextJudgeMetric, MetricContext
-from eva.metrics.language_guidance import speaking_gender_word
 from eva.metrics.pipeline_prompts import (
     get_assistant_turns_disclaimer,
     get_misrepresentation_pipeline_note,
@@ -12,6 +11,7 @@ from eva.metrics.pipeline_prompts import (
 )
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import build_binary_flag_sub_metrics
+from eva.models.config import gender_word
 from eva.models.results import MetricScore
 
 _FAITHFULNESS_DIMENSION_KEYS = (
@@ -80,7 +80,7 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
             "assistant_turns_disclaimer": get_assistant_turns_disclaimer(context.is_s2s),
             "misrepresentation_pipeline_note": get_misrepresentation_pipeline_note(context.is_s2s),
             "disambiguation_context": disambiguation_context,
-            "assistant_gender": speaking_gender_word(context.assistant_gender),
+            "assistant_gender": gender_word(context.assistant_gender),
         }
 
     def build_metric_score(

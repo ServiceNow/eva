@@ -16,7 +16,7 @@ from elevenlabs.conversational_ai.conversation import (
     ConversationInitiationData,
 )
 
-from eva.models.config import PerturbationConfig
+from eva.models.config import PERSONA_GENDER, PerturbationConfig
 from eva.user_simulator.audio_bridge import ELEVENLABS_OUTPUT_RATE, ElevenLabsAudioInterface
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.utils.logging import current_record_id, get_logger
@@ -27,8 +27,6 @@ logger = get_logger(__name__)
 #: end_call check. 34s left most medical_hr conversations in-progress; 2 minutes still missed about
 #: 1 in 20, each of which was later "done" with end_call.
 END_CALL_CHECK_BUDGET_SECONDS = 300.0
-
-_PERSONA_GENDER = {1: "F", 2: "M"}
 
 
 class ElevenLabsUserSimulator(AbstractUserSimulator):
@@ -145,7 +143,7 @@ class ElevenLabsUserSimulator(AbstractUserSimulator):
 
             # ElevenLabs user simulator agent ID
             persona_id = self.persona_config["user_persona_id"]
-            gender = _PERSONA_GENDER[persona_id]
+            gender = PERSONA_GENDER[persona_id]
             if self._perturbation_config and self._perturbation_config.accent:
                 key = self._perturbation_config.accent.value.upper()
                 env_var = f"EVA_{key}_ACCENT_USER_{gender}"

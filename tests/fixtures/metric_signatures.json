@@ -32,7 +32,7 @@
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
     "prompt_hash": "c1578e5ed0cb",
-    "source_hash": "00ef7ed55e16",
+    "source_hash": "85d1660b9868",
     "version": "v0.4"
   },
   "ResponseSpeedMetric": {
@@ -92,7 +92,7 @@
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
     "prompt_hash": "46175d378f86",
-    "source_hash": "f8f01abe0d9f",
+    "source_hash": "662d3e99d7ef",
     "version": "v0.2"
   },
   "UserSpeechFidelityMetric": {

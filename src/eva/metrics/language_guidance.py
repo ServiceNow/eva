@@ -59,8 +59,3 @@ def render_language_guidance(metric_name: str, language: str) -> str:
         return ""
     display_name = DISPLAY_NAMES_BY_CODE.get(language, language)
     return f"\n### {display_name}-specific guidance\n{text}\n"
-
-
-def speaking_gender_word(gender: str | None) -> str:
-    """Return the speaking gender as judge prompts state it: "male", "female" or "none" (not assigned)."""
-    return {"M": "male", "F": "female"}.get(gender or "", "none")

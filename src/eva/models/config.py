@@ -353,6 +353,15 @@ class PipelineType(StrEnum):
     S2S = "s2s"
 
 
+# user_persona_id -> speaking gender ('F' | 'M'); user simulators pick their voice by it.
+PERSONA_GENDER = {1: "F", 2: "M"}
+
+
+def gender_word(gender: str | None) -> str:
+    """Return a speaking gender ('M' | 'F' | None) as prompts state it: "male", "female" or "none"."""
+    return {"M": "male", "F": "female"}.get(gender or "", "none")
+
+
 def get_pipeline_type(model_data: dict) -> PipelineType:
     """Return the pipeline type for the given model config.
 

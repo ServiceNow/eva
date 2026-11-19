@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from eva.assistant.services.llm import LiteLLMClient
-from eva.models.config import CascadeSimulatorConfig, PerturbationConfig
+from eva.models.config import PERSONA_GENDER, CascadeSimulatorConfig, PerturbationConfig, gender_word
 from eva.user_simulator.audio_bridge import BotToBotAudioBridge
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.stt import ScribeStreamingSTT
@@ -51,7 +51,6 @@ CLAUSE_MIN_WORDS = 3
 CLAUSE_BREAKS = ",;:\u2014\u2013"
 SENTENCE_BREAKS = ".?!"
 
-_PERSONA_GENDER = {1: "F", 2: "M"}
 _FENCE = re.compile(r"^```[a-z]*\s*|\s*```$", re.MULTILINE)
 
 END_CALL_DESCRIPTION = """Use this to end the phone call and hang up.
@@ -189,7 +188,7 @@ class CascadeUserSimulator(AbstractUserSimulator):
 
     @property
     def caller_gender(self) -> str:
-        return _PERSONA_GENDER.get(self.persona_config.get("user_persona_id"), "F")
+        return PERSONA_GENDER.get(self.persona_config.get("user_persona_id"), "F")
 
     @property
     def caller_voice(self) -> str:
@@ -198,8 +197,9 @@ class CascadeUserSimulator(AbstractUserSimulator):
         return self.simulator_config.female_voice
 
     def _build_prompt(self) -> str:
-        gender_word = "male" if self.caller_gender == "M" else "female"
-        gender_instruction = PromptManager().get_prompt("user_simulator.gender_instruction", gender_word=gender_word)
+        gender_instruction = PromptManager().get_prompt(
+            "user_simulator.gender_instruction", gender_word=gender_word(self.caller_gender)
+        )
         return super()._build_prompt() + "\n\n" + gender_instruction
 
     async def run_conversation(self) -> str:

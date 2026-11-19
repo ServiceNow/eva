@@ -17,7 +17,7 @@ try:
 except ImportError:
     import audioop_lts as audioop
 
-from eva.models.config import OpenAIRealtimeSimulatorConfig, PerturbationConfig
+from eva.models.config import PERSONA_GENDER, OpenAIRealtimeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.audio_bridge import BotToBotAudioBridge
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.utils.logging import get_logger
@@ -26,7 +26,6 @@ logger = get_logger(__name__)
 
 OPENAI_SAMPLE_RATE = 24000
 BRIDGE_SAMPLE_RATE = 16000
-_PERSONA_GENDER = {1: "F", 2: "M"}
 CALLER_INPUT_FORMAT = {"type": "audio/pcmu"}
 CALLER_OUTPUT_FORMAT = {"type": "audio/pcm", "rate": OPENAI_SAMPLE_RATE}
 CALLER_TURN_DETECTION = {
@@ -105,7 +104,7 @@ class OpenAIRealtimeUserSimulator(AbstractUserSimulator):
 
     @property
     def caller_voice(self) -> str:
-        gender = _PERSONA_GENDER.get(self.persona_config.get("user_persona_id"))
+        gender = PERSONA_GENDER.get(self.persona_config.get("user_persona_id"))
         if gender == "M":
             return self.simulator_config.male_voice
         return self.simulator_config.female_voice
