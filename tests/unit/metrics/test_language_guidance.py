@@ -23,7 +23,7 @@ from eva.metrics.versioning import _CURRENT_PROMPT_HASH
 from eva.models.config import base_language
 from eva.utils.prompt_manager import get_prompt_manager
 
-from .conftest import make_judge_metric
+from .conftest import make_judge_metric, make_metric_context
 
 # Scores the simulated user against its own instructions, so it has no guidance slot.
 JUDGES_WITHOUT_GUIDANCE = {"user_behavioral_fidelity"}
@@ -185,3 +185,21 @@ def test_speech_fidelity_guidance_files_list_the_same_items():
             assert _shared_speech_groups(files[metric][lang]) == _shared_speech_groups(text), (
                 f"{metric} and {reference} list different items for {lang!r}"
             )
+
+
+@pytest.mark.parametrize(("gender", "expected"), [("F", "female"), ("M", "male"), (None, "none"), ("X", "none")])
+def test_gender_word(gender, expected):
+    from eva.models.config import gender_word
+
+    assert gender_word(gender) == expected
+
+
+def test_faithfulness_and_user_behavioral_fidelity_pass_speaking_genders():
+    from eva.metrics.accuracy.faithfulness import FaithfulnessJudgeMetric
+
+    metric = make_judge_metric(FaithfulnessJudgeMetric)
+    assert metric.get_prompt_variables(make_metric_context(assistant_gender="F"), "<t>")["assistant_gender"] == "female"
+    assert metric.get_prompt_variables(make_metric_context(), "<t>")["assistant_gender"] == "none"
+    templates = {f"{m}.{k}": tpl for m, k, tpl in _judge_templates()}
+    assert "{assistant_gender}" in templates["faithfulness.user_prompt"]
+    assert "{user_gender}" in templates["user_behavioral_fidelity.user_prompt"]

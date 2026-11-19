@@ -31,6 +31,10 @@ fr: |
   **Established loanwords (wrong_language): normal French, never a language violation, does not lower the rating. Examples, not a complete list:**
   - login, e-mail, check-in, badge, mail.
 
+  **Speaker gender, only when the assistant was given a speaking gender:**
+  - An error, flag it under the `wrong_language` dimension: the assistant refers to itself with a gender other than the one assigned, in any word that agrees with the speaker: adjectives, past participles and nouns for itself (male / female: "je suis désolé" / "désolée", "ravi" / "ravie", "je suis certain" / "certaine", "je suis allé" / "allée", "je suis votre conseiller" / "votre conseillère").
+  - Not an error, do not flag: gendered words that do not refer to the assistant itself, such as past participles with avoir ("j'ai vérifié votre dossier") and words that agree with something else ("votre réservation est confirmée").
+
 es: |
   **For letters and digits that sound alike in Spanish, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
   - B and V are the same sound /b/ (speakers disambiguate with "be larga / be de Barcelona" vs "uve / ve corta"); LL/Y merge (yeísmo); G before e/i and J are both /x/; S/C/Z merge for seseo speakers and are confusable under noise everywhere (with the European Spanish distinción, C before e/i and Z in all positions are /θ/, distinct from S /s/); C before a/o/u, K and QU are all /k/ (Carla/Karla, Quique/Kike); H is silent.
@@ -40,6 +44,10 @@ es: |
   **Established loanwords (wrong_language): normal Spanish, never a language violation, does not lower the rating. Examples, not a complete list:**
   - email, login, check-in, ticket, online.
 
+  **Speaker gender, only when the assistant was given a speaking gender:**
+  - An error, flag it under the `wrong_language` dimension: the assistant refers to itself with a gender other than the one assigned, in any word that agrees with the speaker: adjectives, participles and nouns for itself (male / female: "encantado" / "encantada", "estoy seguro" / "segura", "estoy listo" / "lista", "soy su asesor" / "su asesora").
+  - Not an error, do not flag: gendered words that do not refer to the assistant itself, such as verb forms ("he revisado", "le confirmo") and words that agree with something else ("su reserva está confirmada").
+
 it: |
   **For letters and digits that sound alike in Italian, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
   - Letter names ending in -i: B/C/D/G/P/T/V ("bi, ci, di, gi, pi, ti, vi/vu"); E/I under noise.
@@ -47,6 +55,10 @@ it: |
 
   **Established loanwords (wrong_language): normal Italian, never a language violation, does not lower the rating. Examples, not a complete list:**
   - password, ticket, badge, email, login, account, check-in.
+
+  **Speaker gender, only when the assistant was given a speaking gender:**
+  - An error, flag it under the `wrong_language` dimension: the assistant refers to itself with a gender other than the one assigned, in any word that agrees with the speaker: adjectives, past participles and nouns for itself (male / female: "sono contento" / "contenta", "sono sicuro" / "sicura", "sono stato" / "stata", "sono il suo consulente" / "la sua consulente").
+  - Not an error, do not flag: gendered words that do not refer to the assistant itself, such as past participles with avere ("ho controllato") and words that agree with something else ("la prenotazione è confermata").
 
 ko: |
   **For letters and digits that sound alike in Korean, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
@@ -68,6 +80,10 @@ hi: |
   - Not a violation, does not lower the rating: English words and phrases inside a Hindi sentence, in Devanagari or Latin script. This covers, for example, loanwords (ID, OK, login, password, email, ticket, booking, flight, seat, account, form, mobile number, PNR), procedural terms ("Employee ID", "last name", "confirmation number"), English number words ("six digits", "two passengers") and short phrases ("one moment").
   - A transcript that renders a spoken loanword in Latin script instead of Devanagari (e.g. "booking" for बुकिंग): this is not evidence of English speech. Latin script alone is never evidence; an English clause or sentence is, in either script.
   - A violation: a whole English clause, sentence or turn when Hindi was instructed. Rate 2 if it is an isolated fixed phrase (a hold, acknowledgement or courtesy formula, such as "One moment, please."), even when it recurs; rate 1 if it is sentences of content, a clause that carries information the user needs, or most turns. Quote it as evidence.
+
+  **Speaker gender, only when the assistant was given a speaking gender:**
+  - An error, flag it under the `wrong_language` dimension: the assistant refers to itself with a gender other than the one assigned, in any word with मैं that agrees with the speaker: verbs, participles and adjectives (male / female: "मैं देख रहा हूँ" / "मैं देख रही हूँ", "मैं करता हूँ" / "मैं करती हूँ", "मैं गया था" / "मैं गई थी").
+  - Not an error, do not flag: gendered words that do not refer to the assistant itself, such as the perfective with ने, which agrees with the object ("मैंने आपकी बुकिंग देख ली है": ली agrees with बुकिंग), and forms that agree with आप (the user); हम with masculine plural forms ("हम देख रहे हैं"), standard for any speaker.
 
 ja: |
   **For letters and digits that sound alike in Japanese, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**

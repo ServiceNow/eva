@@ -94,6 +94,8 @@ class MetricContext:
         fallback_turn_ids: set[int] | None = None,
         pipeline_type: PipelineType = PipelineType.CASCADE,
         language: str = "en",
+        assistant_gender: str | None = None,
+        user_gender: str | None = None,
     ):
         self.record_id = record_id
 
@@ -129,6 +131,10 @@ class MetricContext:
         self.current_date_time = current_date_time
         self.language = language
         self.language_display_name = LANGUAGE_DISPLAY_NAMES.get(Language(language), language)
+        # Speaking genders ('M' | 'F' | None): the assistant's from the run config (cascade / audio-LLM only),
+        # the user simulator's from its persona (the same mapping that picks its voice).
+        self.assistant_gender = assistant_gender
+        self.user_gender = user_gender
 
         # Processed log data
         self.transcribed_assistant_turns = transcribed_assistant_turns or {}
