@@ -32,8 +32,8 @@ fr: |
   - login, e-mail, check-in, badge, mail.
 
   **Speaker gender, only when the assistant was given a speaking gender:**
-  - An error, flag it under the `wrong_language` dimension: an adjective or a past participle with être about the assistant itself than the one assigned (male / female: "je suis désolé" / "désolée", "ravi" / "ravie", "je suis certain" / "certaine", "je suis allé" / "allée").
-  - Not an error, do not flag: past participles with avoir ("j'ai vérifié votre dossier"), and words that agree with something else ("votre réservation est confirmée").
+  - An error, flag it under the `wrong_language` dimension: the assistant refers to itself with a gender other than the one assigned, in any word that agrees with the speaker: adjectives, past participles and nouns for itself (male / female: "je suis désolé" / "désolée", "ravi" / "ravie", "je suis certain" / "certaine", "je suis allé" / "allée", "je suis votre conseiller" / "votre conseillère").
+  - Not an error, do not flag: gendered words that do not refer to the assistant itself, such as past participles with avoir ("j'ai vérifié votre dossier") and words that agree with something else ("votre réservation est confirmée").
 
 es: |
   **For letters and digits that sound alike in Spanish, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
@@ -45,8 +45,8 @@ es: |
   - email, login, check-in, ticket, online.
 
   **Speaker gender, only when the assistant was given a speaking gender:**
-  - An error, flag it under the `wrong_language` dimension: an adjective about the assistant itself than the one assigned (male / female: "encantado" / "encantada", "estoy seguro" / "segura", "estoy contento" / "contenta").
-  - Not an error, do not flag: verb forms ("he revisado", "le confirmo"), and words that agree with something else ("su reserva está confirmada").
+  - An error, flag it under the `wrong_language` dimension: the assistant refers to itself with a gender other than the one assigned, in any word that agrees with the speaker: adjectives, participles and nouns for itself (male / female: "encantado" / "encantada", "estoy seguro" / "segura", "estoy listo" / "lista", "soy su asesor" / "su asesora").
+  - Not an error, do not flag: gendered words that do not refer to the assistant itself, such as verb forms ("he revisado", "le confirmo") and words that agree with something else ("su reserva está confirmada").
 
 it: |
   **For letters and digits that sound alike in Italian, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
@@ -57,8 +57,8 @@ it: |
   - password, ticket, badge, email, login, account, check-in.
 
   **Speaker gender, only when the assistant was given a speaking gender:**
-  - An error, flag it under the `wrong_language` dimension: an adjective or a past participle with essere about the assistant itself than the one assigned (male / female: "sono contento" / "contenta", "sono sicuro" / "sicura", "sono stato" / "stata").
-  - Not an error, do not flag: past participles with avere ("ho controllato"), and words that agree with something else ("la prenotazione è confermata").
+  - An error, flag it under the `wrong_language` dimension: the assistant refers to itself with a gender other than the one assigned, in any word that agrees with the speaker: adjectives, past participles and nouns for itself (male / female: "sono contento" / "contenta", "sono sicuro" / "sicura", "sono stato" / "stata", "sono il suo consulente" / "la sua consulente").
+  - Not an error, do not flag: gendered words that do not refer to the assistant itself, such as past participles with avere ("ho controllato") and words that agree with something else ("la prenotazione è confermata").
 
 ko: |
   **For letters and digits that sound alike in Korean, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
@@ -82,8 +82,8 @@ hi: |
   - A violation: a whole English clause, sentence or turn when Hindi was instructed. Rate 2 if it is an isolated fixed phrase (a hold, acknowledgement or courtesy formula, such as "One moment, please."), even when it recurs; rate 1 if it is sentences of content, a clause that carries information the user needs, or most turns. Quote it as evidence.
 
   **Speaker gender, only when the assistant was given a speaking gender:**
-  - An error, flag it under the `wrong_language` dimension: a verb or participle with मैं than the one assigned, since these agree with the speaker (male "मैं देख रहा हूँ", "मैं करता हूँ", "मैं गया था"; female "मैं देख रही हूँ", "मैं करती हूँ", "मैं गई थी").
-  - Not an error, do not flag: the perfective with ने, which agrees with the object ("मैंने आपकी बुकिंग देख ली है": ली agrees with बुकिंग); हम with masculine plural forms ("हम देख रहे हैं"), standard for any speaker; forms that agree with आप (the user).
+  - An error, flag it under the `wrong_language` dimension: the assistant refers to itself with a gender other than the one assigned, in any word with मैं that agrees with the speaker: verbs, participles and adjectives (male / female: "मैं देख रहा हूँ" / "मैं देख रही हूँ", "मैं करता हूँ" / "मैं करती हूँ", "मैं गया था" / "मैं गई थी").
+  - Not an error, do not flag: gendered words that do not refer to the assistant itself, such as the perfective with ने, which agrees with the object ("मैंने आपकी बुकिंग देख ली है": ली agrees with बुकिंग), and forms that agree with आप (the user); हम with masculine plural forms ("हम देख रहे हैं"), standard for any speaker.
 
 ja: |
   **For letters and digits that sound alike in Japanese, apply the rules for failing_to_disambiguate and fabricating_tool_parameters:**
