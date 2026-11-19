@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from eva.assistant.services.llm import LiteLLMClient
-from eva.models.config import PERSONA_GENDER, CascadeSimulatorConfig, PerturbationConfig, gender_word
+from eva.models.config import PERSONA_GENDER, CascadeSimulatorConfig, PerturbationConfig
 from eva.user_simulator.audio_bridge import BotToBotAudioBridge
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.stt import ScribeStreamingSTT
