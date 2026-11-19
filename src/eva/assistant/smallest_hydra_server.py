@@ -41,9 +41,9 @@ from eva.assistant.s2s_transcription import BatchTranscriber, create_transcriber
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils.audio_utils import (
+    MulawStreamUpsampler,
     create_twilio_media_message,
     mulaw_8k_to_pcm16_16k,
-    mulaw_8k_to_pcm16_48k,
     parse_twilio_media_message,
     pcm16_48k_to_mulaw_8k,
     resample_pcm16_soxr,
@@ -281,6 +281,7 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
         twilio_connected = True
 
         # Per-turn state (shared across tasks via nonlocal).
+        _user_recording_upsampler = MulawStreamUpsampler(48000)
         _in_model_turn = False
         _user_speaking = False
         _user_speech_start_ts: str | None = None  # simulator VAD: user speech start (wall ms)
@@ -418,7 +419,7 @@ class SmallestHydraAssistantServer(AbstractAssistantServer):
                                     continue
 
                                 # Record user audio at 48 kHz (recording rate).
-                                pcm_48k = mulaw_8k_to_pcm16_48k(mulaw_bytes)
+                                pcm_48k = _user_recording_upsampler.process(mulaw_bytes)
                                 if not _in_model_turn:
                                     sync_buffer_to_position(self.assistant_audio_buffer, len(self.user_audio_buffer))
                                 self.user_audio_buffer.extend(pcm_48k)

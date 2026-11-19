@@ -31,9 +31,9 @@ from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWrite
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils.audio_utils import (
+    MulawStreamUpsampler,
     create_twilio_media_message,
     mulaw_8k_to_pcm16_16k,
-    mulaw_8k_to_pcm16_24k,
     parse_twilio_media_message,
     pcm16_24k_to_mulaw_8k,
     sync_buffer_to_position,
@@ -453,6 +453,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
         _assistant_turn_text: list[str] = []
         _user_turn_text: list[str] = []
 
+        _user_recording_upsampler = MulawStreamUpsampler(_RECORDING_SAMPLE_RATE)
         _in_model_turn = False
         _user_speaking = False
         _user_speech_start_ts: str | None = None  # Timestamp from audio_interface (speech start)
@@ -519,7 +520,7 @@ class GeminiLiveAssistantServer(AbstractAssistantServer):
                                 # Convert 8 kHz mulaw -> 16 kHz PCM for Gemini
                                 pcm_16k = mulaw_8k_to_pcm16_16k(mulaw_bytes)
 
-                                pcm_24k = mulaw_8k_to_pcm16_24k(mulaw_bytes)
+                                pcm_24k = _user_recording_upsampler.process(mulaw_bytes)
                                 if not _in_model_turn:
                                     sync_buffer_to_position(self.assistant_audio_buffer, len(self.user_audio_buffer))
                                 self.user_audio_buffer.extend(pcm_24k)
