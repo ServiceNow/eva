@@ -273,6 +273,69 @@ When `true`, the outer normalizer uses NFC (no decomposition) and only strips
 punctuation/symbols, leaving all letter and combining-mark characters intact.
 When `false` (default), diacritics are stripped for comparison.
 
+### `char_folds` `{char: str}`
+
+Single-character orthographic folds applied (after NFC) right after lowercasing,
+to the text and to all number-word vocab, so both spellings converge.
+`hi`: nukta removed (ज़→ज, precomposed क़…य़ too) and chandrabindu → anusvara
+(हाँ→हां). `de`: ä→ae, ö→oe, ü→ue, ß→ss (Krüger == Krueger).
+
+### `join_hyphenated_compounds` `bool`
+
+`true` (de, nl, hi) joins letter-only hyphen compounds: `Anmelde-Konto` ==
+`Anmeldekonto`, `ई-मेल` == `ईमेल`. The hyphen is kept next to a number word,
+a multi-letter acronym (`HR-Fragen`) and in reduplications (`बार-बार`).
+Digit-bearing hyphen groups are joined for every language regardless.
+
+### `spoken_symbols` / `spoken_symbols_code_only` `{phrase: symbol}`
+
+Spoken punctuation used when spelling IDs (`"trait d'union": "-"`,
+`"Unterstrich": "_"`). When the phrase sits between two word tokens it is
+replaced by the glued symbol, so `A B C trait d'union un deux trois` matches
+STT `ABC-123`. Phrases in `spoken_symbols_code_only` are also ordinary words
+(es `barra`, de `Strich`, nl `streepje`) and are replaced only when a
+neighbouring token has a digit or is all uppercase.
+
+Every language covers `-`, `_` and `/`; all but `en` and `hi` also cover `@`.
+English `at` and Hindi `ऐट` are ordinary words that the code-neighbour rule
+cannot tell apart in an email address (`john at gmail`), so they are not
+listed. Spoken `dash` is dropped for every language by a separate rule in
+`wer_utils.py` (`_RE_SPELLED_DASH`), so `en.json` does not list it.
+
+### `code_switch_languages` `[str]`
+
+Languages speakers mix in (`hi`: `["en"]`). When set, `stt_wer` re-checks each
+error region with those languages' rules (`code_switch.py`): reference `seven
+बजे` vs STT `7 बजे` is not an error, because the English view of both is `7`.
+A region is only rescued when the reference is itself English (Latin script,
+or changed by the English rules), so reference `7` vs STT `seven` stays an
+error. Empty for every other language, which keeps their scores unchanged.
+
+### `code_switch_phonetic` `bool`
+
+`true` for `hi` only. When `true`, a word written in Devanagari on one side and
+in Latin on the other is also rescued when both sound the same, in either
+direction. Both words are reduced to a consonant key, and the keys must be
+identical (`नेटवर्क` and `network` are both `ntwrk`):
+
+- The Latin key tries both readings of a soft g (`manager` = `मैनेजर`) and of
+  an s between vowels (`reason` = `रीज़न`). Anusvara before प/ब/भ/म is `m`
+  (`नंबर` = `number`), otherwise `n` (`कंफर्म` = `confirm`).
+- A consonant repeated across a vowel is kept twice, so another form of the
+  word doesn't match (`refunded`, `services` vs `रिफंड`, `सर्विस`).
+- The first vowels must be compatible (`बुकिंग` matches `booking`, not
+  `backing`). Words that differ only in a later vowel still match
+  (`कन्फर्म` / `conform`).
+
+Guards: 1:1 words only, at least three consonants, and a stoplist of native
+Hindi words with an English look-alike (`कल`/`call`, `कमरा`/`camera`,
+`मिलना`/`million`).
+
+`hi_loanwords.json` keeps only the loanwords the matcher can't handle: words
+with fewer than three consonants (`code`/`कोड`, `time`/`टाइम`), Hindi forms
+that differ (`january`/`जनवरी`, `september`/`सितंबर`) and words whose first
+vowel is spelled unusually (`business`/`बिज़नेस`).
+
 ---
 
 ## Rarely-edited fields

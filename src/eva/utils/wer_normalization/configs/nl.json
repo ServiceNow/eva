@@ -276,5 +276,17 @@
   "decimal_separator": "comma",
   "thousand_separators": [
     "dot"
-  ]
+  ],
+  "join_hyphenated_compounds": true,
+  "spoken_symbols": {
+    "koppelteken": "-",
+    "liggend streepje": "_",
+    "laag streepje": "_",
+    "underscore": "_",
+    "schuine streep": "/",
+    "apenstaartje": "@"
+  },
+  "spoken_symbols_code_only": {
+    "streepje": "-"
+  }
 }
