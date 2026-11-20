@@ -16,7 +16,7 @@ LLM-based metric that evaluates whether the assistant remains faithful to inform
 ### Evaluation Method
 
 - **Type**: Judge (LLM-as-judge)
-- **Model**: Claude Opus 4.6
+- **Model**: GPT-5.2 (reasoning effort: medium)
 - **Granularity**: Conversation-level (single rating for the whole conversation)
 
 ### Input Data
@@ -98,4 +98,4 @@ The judge evaluates six independent dimensions, each scored as a binary flag + s
 - **Class**: `FaithfulnessJudgeMetric`
 - **Base Class**: `ConversationTextJudgeMetric`
 - **Prompt**: `configs/prompts/judge.yaml` under `judge.faithfulness`
-- **Configuration**: `judge_model` (default: Claude Opus 4.6 via Bedrock)
+- **Configuration**: `judge_model` (default: "gpt-5.2", reasoning effort: medium)

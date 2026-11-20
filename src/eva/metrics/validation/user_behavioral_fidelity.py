@@ -72,7 +72,8 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
     description = "Validation metric for simulated user corruption detection"
     category = "validation"
     rating_scale = (0, 1)
-    default_model = "gpt-5.2-medium"
+    default_model = "gpt-5.2"
+    default_params = {"max_tokens": 100000, "reasoning_effort": "medium", "service_tier": "flex"}
 
     def get_prompt_variables(self, context: MetricContext, transcript_text: str) -> dict[str, Any]:
         """Return variables for prompt formatting."""
