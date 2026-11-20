@@ -8,7 +8,7 @@
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
     "prompt_hash": "9dbd1ec23872",
-    "source_hash": "53556461d46c",
+    "source_hash": "0b99715d1572",
     "version": "v0.2"
   },
   "ConversationCorrectlyFinishedMetric": {
@@ -20,7 +20,7 @@
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
     "prompt_hash": "af760af9b94c",
-    "source_hash": "f0281a98a14b",
+    "source_hash": "8fee05463010",
     "version": "v0.3"
   },
   "ConversationValidEndMetric": {
@@ -32,7 +32,7 @@
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
     "prompt_hash": "fd88fb675b84",
-    "source_hash": "85d1660b9868",
+    "source_hash": "76175f1b5505",
     "version": "v0.4"
   },
   "ResponseSpeedMetric": {
@@ -50,19 +50,19 @@
   "SpeakabilityJudgeMetric": {
     "name": "speakability",
     "prompt_hash": "d58209677aea",
-    "source_hash": "d51967c87e64",
+    "source_hash": "90ebbc2965e9",
     "version": "v0.4"
   },
   "SpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
     "prompt_hash": "0ad14ef1e4a7",
-    "source_hash": "a3bfd5b63aba",
+    "source_hash": "c4e6f3d0b3cf",
     "version": "v0.5"
   },
   "TTSFidelityMetric": {
     "name": "tts_fidelity",
     "prompt_hash": "334261014777",
-    "source_hash": "bf688bc70e3a",
+    "source_hash": "4846ca933c54",
     "version": "v0.4"
   },
   "TaskCompletion": {
@@ -80,7 +80,7 @@
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
     "prompt_hash": "ced28ef26cbd",
-    "source_hash": "56eecdf20fa2",
+    "source_hash": "1c8ba53d9c9e",
     "version": "v0.5"
   },
   "TurnTakingMetric": {
@@ -92,13 +92,13 @@
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
     "prompt_hash": "dfb9e4c46db9",
-    "source_hash": "662d3e99d7ef",
+    "source_hash": "6ff245924058",
     "version": "v0.2"
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
     "prompt_hash": "aad0fd8e228d",
-    "source_hash": "97456368615c",
+    "source_hash": "ec8ad53652e0",
     "version": "v0.3"
   }
 }

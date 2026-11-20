@@ -366,7 +366,7 @@ class TextJudgeMetric(BaseMetric):
 
     # Subclasses can override these
     default_model = "gpt-5.2"
-    default_params: dict[str, Any] = {"max_tokens": 100000, "service_tier": "flex"}
+    default_params: dict[str, Any] = {"max_tokens": 100000, "reasoning_effort": "none", "service_tier": "flex"}
     rating_scale: tuple[int, int] = (1, 3)  # (min, max)
 
     def __init__(self, config: dict[str, Any] | None = None):
@@ -668,7 +668,7 @@ class AudioJudgeMetric(BaseMetric):
     metric_type = MetricType.AUDIO_JUDGE
 
     # Subclasses can override
-    default_model = "gemini-3-flash-preview"
+    default_model = "gemini-3.8-flash"
     default_params: dict[str, Any] = {"temperature": 0.0, "max_tokens": 40000, "reasoning_effort": "minimal"}
     rating_scale: tuple[int, int] = (-2, 2)  # Can vary by metric
 
