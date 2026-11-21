@@ -111,7 +111,9 @@ def main() -> None:
     parser.add_argument("--domains", nargs="+", default=list(DOMAINS), choices=DOMAINS)
     args = parser.parse_args()
     if "-" in args.language:
-        raise SystemExit(f"--language takes a base language code without a region tag; use {args.language.split('-')[0]}")
+        raise SystemExit(
+            f"--language takes a base language code without a region tag; use {args.language.split('-')[0]}"
+        )
     if args.turn_end_fallback_time is not None and not 5 <= args.turn_end_fallback_time <= 60:
         raise SystemExit("Cartesia supports --turn-end-fallback-time between 5 and 60 seconds")
 
