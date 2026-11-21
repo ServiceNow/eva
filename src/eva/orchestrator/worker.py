@@ -58,10 +58,14 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
         from eva.assistant.cartesia_server import CartesiaAssistantServer
 
         return CartesiaAssistantServer
+    elif framework == "phonic":
+        from eva.assistant.phonic_server import PhonicAssistantServer
+
+        return PhonicAssistantServer
     else:
         raise ValueError(
             f"Unknown framework: {framework!r}. "
-            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia"
+            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia, phonic"
         )
 
 

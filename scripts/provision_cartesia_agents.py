@@ -5,7 +5,7 @@ the dynamic variables system_prompt and initial_message. Settings that cannot be
 set here from EVA's own options, and the assistant server refuses to run against an agent whose
 settings do not match the run config:
 
-    --language                -> language.primary              (EVA_LANGUAGE, default en; fr-CA uses fr)
+    --language                -> language.primary              (EVA_LANGUAGE, default en; no region tags)
     --pre-tool-speech         -> each tool's pre_tool_speech  (EVA_MODEL__PRE_TOOL_SPEECH, default auto)
     --turn-end-fallback-time  -> turn.inactivity_check_in_secs (EVA_TURN_END_FALLBACK_TIME, default unset)
 
@@ -19,7 +19,9 @@ Usage:
         [--pre-tool-speech auto|off] [--turn-end-fallback-time SECONDS] [--domains airline itsm medical_hr]
 
 Reads CARTESIA_API_KEY from the environment or .env. Tool and agent IDs are kept in
-output/cartesia_agents.json so a rerun updates the same agents. Prints each domain's
+output/cartesia_agents.json. Agents are keyed by domain and language, so a rerun updates the same agent
+for that domain and language while other languages keep their own agents. Tools are keyed by domain and
+tool name and shared by every language's agent for that domain. Prints each domain's
 EVA_MODEL__S2S_PARAMS (without the api_key) to use for the run.
 """
 
@@ -33,7 +35,7 @@ from pathlib import Path
 from dotenv import dotenv_values
 
 from eva.models.agents import AgentConfig
-from eva.models.config import LANGUAGE_DISPLAY_NAMES, ModelConfig, base_language
+from eva.models.config import LANGUAGE_DISPLAY_NAMES, ModelConfig
 from eva.utils import cartesia_agents
 
 DOMAINS = ("airline", "itsm", "medical_hr")
@@ -63,7 +65,7 @@ def agent_config(
         "initial_message": cartesia_agents.INITIAL_MESSAGE_VARIABLE,
         "speculative_generation": True,
         "model": {"id": model, "fallback_strategy": None},
-        "language": {"primary": base_language(language)},
+        "language": {"primary": language},
         "turn": {"inactivity_check_in_secs": turn_end_fallback_time},
         "audio": {
             "input": {"noise_suppression": "off", "asr_model": "auto"},
@@ -91,7 +93,7 @@ def main() -> None:
         "--language",
         choices=[lang.value for lang in LANGUAGE_DISPLAY_NAMES],
         default="en",
-        help="Must match EVA_LANGUAGE for the run",
+        help="Base language code without a region tag (e.g. fr, not fr-CA); must match EVA_LANGUAGE for the run",
     )
     parser.add_argument("--voice", default=DEFAULT_VOICE_ID, help="Cartesia voice ID for the agent (default: Katie)")
     parser.add_argument(
@@ -108,6 +110,8 @@ def main() -> None:
     )
     parser.add_argument("--domains", nargs="+", default=list(DOMAINS), choices=DOMAINS)
     args = parser.parse_args()
+    if "-" in args.language:
+        raise SystemExit(f"--language takes a base language code without a region tag; use {args.language.split('-')[0]}")
     if args.turn_end_fallback_time is not None and not 5 <= args.turn_end_fallback_time <= 60:
         raise SystemExit("Cartesia supports --turn-end-fallback-time between 5 and 60 seconds")
 
@@ -134,19 +138,20 @@ def main() -> None:
                 STATE.write_text(json.dumps(state, indent=2))
             tool_ids.append(state["tools"][key])
 
-        name = f"eva-{domain.replace('_', '-')}-{args.model.replace('.', '').replace('-', '')}"
+        agent_key = f"{domain}/{args.language}"
+        name = f"eva-{domain.replace('_', '-')}-{args.language.lower()}-{args.model.replace('.', '').replace('-', '')}"
         payload = {
             "name": name,
             "description": "EVA-Bench agent",
             "config": agent_config(args.model, tool_ids, args.turn_end_fallback_time, args.language, args.voice),
         }
-        if domain in state["agents"]:
-            request("PATCH", f"/v1/agents/{state['agents'][domain]}", body=payload)
+        if agent_key in state["agents"]:
+            request("PATCH", f"/v1/agents/{state['agents'][agent_key]}", body=payload)
         else:
-            state["agents"][domain] = request("POST", "/v1/agents", body=payload)["id"]
+            state["agents"][agent_key] = request("POST", "/v1/agents", body=payload)["id"]
         STATE.write_text(json.dumps(state, indent=2))
-        print(f"{domain}: {state['agents'][domain]} with {len(tool_ids)} tools", file=sys.stderr)
-        print(f"{domain}: " + json.dumps({"model": args.model, "assistant_agent_id": state["agents"][domain]}))
+        print(f"{agent_key}: {state['agents'][agent_key]} with {len(tool_ids)} tools", file=sys.stderr)
+        print(f"{agent_key}: " + json.dumps({"model": args.model, "assistant_agent_id": state["agents"][agent_key]}))
 
 
 if __name__ == "__main__":
