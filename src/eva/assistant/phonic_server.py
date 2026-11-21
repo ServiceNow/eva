@@ -33,6 +33,7 @@ from eva.assistant.base_server import AbstractAssistantServer
 from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWriter
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
+from eva.user_simulator.cascade.simulator import INACTIVITY_TIMEOUT_SECONDS
 from eva.utils.audio_utils import (
     MulawStreamUpsampler,
     create_twilio_media_message,
@@ -68,40 +69,20 @@ def _now_ms() -> str:
 
 
 def _agent_tools_to_phonic(agent: AgentConfig, timeout_ms: int) -> list[dict[str, Any]] | None:
-    """Convert EVA AgentConfig tools to inline Phonic ``custom_websocket`` tools."""
-    if not agent.tools:
-        return None
+    """Convert EVA AgentConfig tools to inline Phonic ``custom_websocket`` tools.
 
-    tools: list[dict[str, Any]] = []
-    for tool in agent.tools:
-        # Phonic only accepts strict schemas: every property must be listed as
-        # required, so optional params are made nullable (nulls dropped on call).
-        properties = tool.get_parameter_properties()
-        required = set(tool.get_required_param_names())
-        for name, prop in properties.items():
-            if name not in required:
-                properties[name] = {"anyOf": [prop, {"type": "null"}]}
-        tools.append(
-            {
-                "type": "custom_websocket",
-                "tool_schema": {
-                    "type": "function",
-                    "function": {
-                        "name": tool.function_name,
-                        "description": f"{tool.name}: {tool.description}",
-                        "parameters": {
-                            "type": "object",
-                            "properties": properties,
-                            "required": list(properties),
-                            "additionalProperties": False,
-                        },
-                        "strict": True,
-                    },
-                },
-                "execution_mode": "sync",
-                "tool_call_output_timeout_ms": timeout_ms,
-            }
-        )
+    Uses the same schema as scripts/provision_phonic_agents.py, so optional
+    params stay optional (not strict, which would make the model send nulls).
+    """
+    tools = [
+        {
+            "type": "custom_websocket",
+            "tool_schema": tool,
+            "execution_mode": "sync",
+            "tool_call_output_timeout_ms": timeout_ms,
+        }
+        for tool in agent.build_tools_for_agent() or []
+    ]
     return tools or None
 
 
@@ -124,6 +105,8 @@ class PhonicAssistantServer(AbstractAssistantServer):
         port: int,
         conversation_id: str,
         language: str = "en",
+        turn_end_fallback_time: int | None = None,
+        conversation_time_limit_seconds: int = 600,
     ):
         super().__init__(
             current_date_time=current_date_time,
@@ -138,6 +121,10 @@ class PhonicAssistantServer(AbstractAssistantServer):
         )
 
         self._audio_sample_rate = _RECORDING_SAMPLE_RATE
+        # Sent with every session so they override the provisioned agent's copies
+        # (scripts/provision_phonic_agents.py sets the same values from the same sources).
+        self._turn_end_fallback_time = turn_end_fallback_time
+        self._conversation_time_limit_seconds = conversation_time_limit_seconds
 
         s2s_params = self.pipeline_config.s2s_params or {}
         self._model = s2s_params.get("model", "phonic-1")
@@ -236,6 +223,9 @@ class PhonicAssistantServer(AbstractAssistantServer):
             "output_format": "pcm_24000",
             "default_language": self._language_code,
             **self._extra_config,
+            "no_input_poke_sec": self._turn_end_fallback_time,
+            "no_input_end_conversation_sec": int(INACTIVITY_TIMEOUT_SECONDS),
+            "max_conversation_duration_sec": self._conversation_time_limit_seconds,
         }
         if self._agent_name:
             # The provisioned agent's system_prompt / welcome_message are the
@@ -265,8 +255,12 @@ class PhonicAssistantServer(AbstractAssistantServer):
         _user_speaking = False
         _user_speech_start_ts: str | None = None  # simulator VAD: user speech start (wall ms)
         _user_speech_stop_ts: str | None = None  # simulator VAD: user speech stop (wall ms)
-        # Phonic's own end-of-user-speech; preferred latency reference (see Hydra server).
+        # Phonic's own end-of-user-speech; preferred latency reference (as in the Hydra and
+        # ElevenLabs servers) because the simulator's user_speech_stop timestamp is on the
+        # event loop clock, not wall ms. TODO: once that is fixed, switch all servers to the
+        # simulator's timing so latency is comparable across assistants.
         _phonic_speech_stop_wall_ms: str | None = None
+        _phonic_ended_conversation = False
         _assistant_turn_start_ts: str | None = None
         _asst_text = ""
         _last_audio_sent = time.monotonic()
@@ -372,8 +366,8 @@ class PhonicAssistantServer(AbstractAssistantServer):
 
                 async def _process_phonic_events() -> None:  # noqa: C901
                     """Consume events from the Phonic socket."""
-                    nonlocal _in_model_turn, _user_speaking
-                    nonlocal _user_speech_stop_ts, _phonic_speech_stop_wall_ms
+                    nonlocal _in_model_turn, _user_speech_stop_ts, _phonic_ended_conversation
+                    nonlocal _phonic_speech_stop_wall_ms
                     nonlocal _assistant_turn_start_ts, _asst_text
 
                     _forwarded_bytes = 0
@@ -461,9 +455,6 @@ class PhonicAssistantServer(AbstractAssistantServer):
                                         _user_utt_ts = _user_speech_start_ts or _now_ms()
                                     _user_words.append(text)
 
-                            elif etype == "user_started_speaking":
-                                _user_speaking = True
-
                             elif etype == "assistant_started_speaking":
                                 _flush_user()
                                 # Turns follow Phonic's speaking events, not audio: a stray
@@ -484,7 +475,7 @@ class PhonicAssistantServer(AbstractAssistantServer):
                                     _phonic_speech_stop_wall_ms = None
 
                             elif etype == "user_finished_speaking":
-                                _user_speaking = False
+                                # Read for latency only; _user_speaking follows the simulator.
                                 _phonic_speech_stop_wall_ms = _now_ms()
 
                             elif etype == "assistant_finished_speaking":
@@ -510,7 +501,10 @@ class PhonicAssistantServer(AbstractAssistantServer):
                                 logger.warning(f"Phonic tool call interrupted: {msg.tool_name} ({msg.tool_call_id})")
 
                             elif etype == "assistant_ended_conversation":
+                                # Only sent on no_input_end_conversation_sec, the same silence
+                                # limit as the user simulator's inactivity timeout.
                                 logger.info("Phonic assistant ended the conversation")
+                                _phonic_ended_conversation = True
 
                             elif etype == "error":
                                 logger.error(f"Phonic error: {msg.error} param_errors={msg.param_errors}")
@@ -550,6 +544,15 @@ class PhonicAssistantServer(AbstractAssistantServer):
                 }
 
                 done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
+                # When Phonic ends the call for inactivity, keep the user side open so the
+                # simulator's own inactivity timeout ends it (end_reason "inactivity_timeout",
+                # as for other assistants) instead of seeing an assistant disconnect.
+                user_audio_task = next(t for t, name in tasks.items() if name == "user_audio")
+                if _phonic_ended_conversation and user_audio_task in pending:
+                    logger.info("Waiting for the user simulator to end the call")
+                    await user_audio_task
+                    done, pending = done | {user_audio_task}, pending - {user_audio_task}
 
                 for task in done:
                     exc = task.exception() if not task.cancelled() else None

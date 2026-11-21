@@ -10,6 +10,11 @@ Usage:
         [--domains airline itsm medical_hr] [--backchannel]
 
 Deploys all domains by default, with assistant backchannel cues off unless --backchannel is passed.
+Timing settings mirror the run config: --turn-end-fallback-time (EVA_TURN_END_FALLBACK_TIME) sets
+"Respond after" (no_input_poke_sec), --conversation-time-limit-seconds
+(EVA_CONVERSATION_TIME_LIMIT_SECONDS, default 600) sets the max conversation duration, and the
+silence limit (no_input_end_conversation_sec) is the user simulator's INACTIVITY_TIMEOUT_SECONDS.
+The assistant server sends the same values with every session, so the run matches the saved agent.
 
 Reads PHONIC_API_KEY from the environment or .env. Agent IDs are kept in output/phonic_agents.json.
 Agents are keyed by domain and language, so a rerun updates the same agent for that domain and language
@@ -30,7 +35,8 @@ from phonic import AsyncPhonic
 from phonic.core.api_error import ApiError
 
 from eva.models.agents import AgentConfig
-from eva.models.config import LANGUAGE_DISPLAY_NAMES
+from eva.models.config import LANGUAGE_DISPLAY_NAMES, RunConfig
+from eva.user_simulator.cascade.simulator import INACTIVITY_TIMEOUT_SECONDS
 
 DOMAINS = ("airline", "itsm", "medical_hr")
 STATE = Path("output/phonic_agents.json")
@@ -62,8 +68,19 @@ async def upsert_tool(client: AsyncPhonic, fn: dict) -> None:
         await client.tools.update(fn["name"], **body)  # a tool's type cannot change
 
 
-def agent_config(model: str, tool_names: list[str], language: str, voice_id: str, backchannel: bool) -> dict:
+def agent_config(
+    model: str,
+    tool_names: list[str],
+    language: str,
+    voice_id: str,
+    backchannel: bool,
+    turn_end_fallback_time: int | None,
+    conversation_time_limit_seconds: int,
+) -> dict:
     return {
+        "no_input_poke_sec": turn_end_fallback_time,
+        "no_input_end_conversation_sec": int(INACTIVITY_TIMEOUT_SECONDS),
+        "max_conversation_duration_sec": conversation_time_limit_seconds,
         "enable_assistant_backchannel": backchannel,
         "model": model,
         "voice_id": voice_id,
@@ -87,6 +104,18 @@ async def main() -> None:
         help="Base language code without a region tag (e.g. fr, not fr-CA); must match EVA_LANGUAGE for the run",
     )
     parser.add_argument("--domains", nargs="+", default=list(DOMAINS), choices=DOMAINS)
+    parser.add_argument(
+        "--turn-end-fallback-time",
+        type=int,
+        default=RunConfig.model_fields["turn_end_fallback_time"].default,
+        help="Must match EVA_TURN_END_FALLBACK_TIME for the run -> no_input_poke_sec (unset disables the poke)",
+    )
+    parser.add_argument(
+        "--conversation-time-limit-seconds",
+        type=int,
+        default=RunConfig.model_fields["conversation_time_limit_seconds"].default,
+        help="Must match EVA_CONVERSATION_TIME_LIMIT_SECONDS for the run -> max_conversation_duration_sec",
+    )
     parser.add_argument("--backchannel", action="store_true", help="Enable assistant backchannel cues (off by default)")
     args = parser.parse_args()
     if "-" in args.language:
@@ -111,7 +140,15 @@ async def main() -> None:
 
         agent_key = f"{domain}/{args.language}"
         name = f"eva-{domain.replace('_', '-')}-{args.language.lower()}-{args.model.replace('.', '').replace('-', '')}"
-        config = agent_config(args.model, tool_names, args.language, args.voice, args.backchannel)
+        config = agent_config(
+            args.model,
+            tool_names,
+            args.language,
+            args.voice,
+            args.backchannel,
+            args.turn_end_fallback_time,
+            args.conversation_time_limit_seconds,
+        )
         if agent_key in state["agents"]:
             await client.agents.update(state["agents"][agent_key]["id"], name=name, **config)
         else:

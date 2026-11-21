@@ -327,6 +327,9 @@ class ConversationWorker:
         server_kwargs: dict[str, Any] = {}
         if self.config.framework in ("pipecat", "cartesia"):
             server_kwargs["turn_end_fallback_time"] = self.config.turn_end_fallback_time
+        elif self.config.framework == "phonic":
+            server_kwargs["turn_end_fallback_time"] = self.config.turn_end_fallback_time
+            server_kwargs["conversation_time_limit_seconds"] = self.config.conversation_time_limit_seconds
         self._assistant_server = server_cls(
             current_date_time=self.record.current_date_time,
             pipeline_config=self.config.model,

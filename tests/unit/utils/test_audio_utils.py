@@ -10,7 +10,9 @@ import math
 import random
 import struct
 
+import numpy as np
 import pytest
+import soxr
 
 from eva.utils.audio_utils import (
     MulawStreamUpsampler,
@@ -71,6 +73,21 @@ class TestMulawStreamUpsampler:
         mulaw = _generate_mulaw_tone(440, 400)
         out = b"".join(upsampler.process(mulaw[i : i + 160]) for i in range(0, len(mulaw), 160))
         assert _rms(out) / _rms(audioop.ulaw2lin(mulaw, 2)) == pytest.approx(1.0, abs=0.1)
+
+    def test_delay_is_only_the_lookahead(self):
+        """Output matches one-shot resampling shifted by the 4 ms look-ahead."""
+        upsampler = MulawStreamUpsampler(24000)
+        mulaw = _generate_mulaw_tone(440, 400)
+        out = np.frombuffer(
+            b"".join(upsampler.process(mulaw[i : i + 160]) for i in range(0, len(mulaw), 160)), dtype=np.int16
+        )
+        pcm = np.frombuffer(audioop.ulaw2lin(mulaw, 2), dtype=np.int16)
+        ref = soxr.resample(pcm, 8000, 24000, quality="HQ")
+        delay = MulawStreamUpsampler._LOOKAHEAD_SAMPLES * 3
+        a, b = out[delay:].astype(float), ref[: len(out) - delay].astype(float)
+        # Skip the edges, where the one-shot reference has its own filter ramp.
+        err = np.sqrt(np.mean((a[500:-500] - b[500:-500]) ** 2))
+        assert err < 0.01 * _rms(pcm.tobytes())
 
     def test_rejects_non_integer_ratio(self):
         with pytest.raises(ValueError):
