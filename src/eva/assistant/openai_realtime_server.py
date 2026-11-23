@@ -60,6 +60,19 @@ class _UserTurnRecord:
     speech_stopped_wall_ms: str = ""
     transcript: str = ""
     flushed: bool = False
+    # Set once the assistant has replied to this turn. A turn that was answered
+    # but still has no transcript is not going to get one.
+    answered: bool = False
+
+
+@dataclass
+class _PendingToolCall:
+    """A tool call recorded while its response streams; it runs at response.done."""
+
+    call_id: str
+    name: str
+    arguments: dict[str, Any]
+    response_id: str = ""
 
 
 @dataclass
@@ -99,6 +112,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         self._user_turn: _UserTurnRecord | None = None
         self._assistant_state = _AssistantResponseState()
+        self._pending_tool_calls: list[_PendingToolCall] = []
         self._stream_sid: str = ""
 
         self._user_speaking: bool = False
@@ -146,6 +160,12 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._server_task = asyncio.create_task(self._server.serve())
 
         while not self._server.started:
+            if self._server_task.done():
+                # serve() returned without starting, e.g. the port is already in use.
+                self._running = False
+                self._server = None
+                self._server_task = None
+                raise RuntimeError(f"{self._service_name} server failed to start on port {self.port}")
             await asyncio.sleep(0.01)
 
         logger.info(f"{self._service_name} server started on ws://localhost:{self.port}")
@@ -246,6 +266,16 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             websocket_base_url=self.pipeline_config.s2s_params.get("websocket_base_url"),
         )
 
+    def _websocket_options(self) -> dict[str, Any]:
+        """Websocket connect options, with an SNI override for hosts that contain underscores."""
+        params = self.pipeline_config.s2s_params or {}
+        options = dict(params.get("websocket_connection_options") or {})
+        # The SDK derives the websocket URL from base_url when websocket_base_url is unset.
+        host = urlsplit(params.get("websocket_base_url") or params.get("base_url") or "").hostname or ""
+        if "_" in host:
+            options["server_hostname"] = host.replace("_", "-")
+        return options
+
     async def _handle_session(self, websocket: WebSocket) -> None:
         """Handle a single WebSocket session.
 
@@ -263,6 +293,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         # Reset per-session state
         self._user_turn = None
         self._assistant_state = _AssistantResponseState()
+        self._pending_tool_calls = []
         self._stream_sid = self.conversation_id
         self._user_speaking = False
         self._bot_speaking = False
@@ -271,10 +302,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
         try:
             logger.info(f"Starting {self._service_name} session (model={self._model})")
-            websocket_options = dict(self.pipeline_config.s2s_params.get("websocket_connection_options") or {})
-            host = urlsplit(self.pipeline_config.s2s_params.get("websocket_base_url") or "").hostname or ""
-            if "_" in host:
-                websocket_options["server_hostname"] = host.replace("_", "-")
+            websocket_options = self._websocket_options()
 
             async with client.realtime.connect(
                 model=self._model, websocket_connection_options=websocket_options
@@ -323,6 +351,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         except Exception as e:
             logger.error(f"{self._service_name} session error: {e}", exc_info=True)
         finally:
+            self._flush_user_turn_without_transcript()
             logger.info(f"Client disconnected from {self._service_name} server")
 
     # ── Audio output pacer (OpenAI -> Twilio WS at real-time rate) ───
@@ -474,12 +503,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 # whisper-1 access).  If a user turn was active but has no
                 # transcript yet, record a placeholder so the turn is not lost.
                 if self._user_turn and not self._user_turn.flushed:
-                    timestamp_ms = self._user_turn.speech_started_wall_ms or None
-                    self.audit_log.append_user_input(
-                        "[user speech - transcription unavailable]",
-                        timestamp_ms=timestamp_ms,
-                    )
-                    self._user_turn.flushed = True
+                    self._write_missing_transcript_placeholder()
 
             case "response.output_audio.delta":
                 await self._on_audio_delta(event, audio_output_queue)
@@ -491,10 +515,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                 self._on_transcript_done(event)
 
             case "response.function_call_arguments.done":
-                await self._on_function_call_done(event, conn)
+                self._on_function_call_done(event)
 
             case "response.done":
-                await self._on_response_done(event)
+                await self._on_response_done(event, conn)
 
             case "error":
                 error_data = getattr(event, "error", None)
@@ -530,6 +554,11 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             logger.debug(f"Flushed interrupted assistant response: {partial_text[:60]}...")
             self._assistant_state = _AssistantResponseState()
 
+        # The assistant already replied to the previous turn and no transcript has
+        # arrived, so none is coming: record a placeholder rather than losing the turn.
+        if self._user_turn and self._user_turn.answered:
+            self._flush_user_turn_without_transcript()
+
         # Start new user turn only if previous one was flushed (or doesn't exist)
         # This preserves the original timestamp when VAD fires multiple speech_started
         # events during a single logical user utterance (due to brief pauses)
@@ -545,6 +574,23 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             self._audio_interface_speech_start_ts = None  # Reset for next turn
         else:
             logger.debug(f"Speech started at {wall} (continuing existing turn)")
+
+    def _write_missing_transcript_placeholder(self) -> None:
+        """Record that the current user turn happened but its transcript is unavailable."""
+        timestamp_ms = self._user_turn.speech_started_wall_ms or None
+        self.audit_log.append_user_input("[user speech - transcription unavailable]", timestamp_ms=timestamp_ms)
+        self._user_turn.flushed = True
+
+    def _flush_user_turn_without_transcript(self) -> None:
+        """Write a placeholder for a spoken user turn that never received a transcript.
+
+        Skipped when a transcript is buffered (a subclass may still write it) or the
+        turn has no speech start.
+        """
+        turn = self._user_turn
+        if turn and not turn.flushed and not turn.transcript and turn.speech_started_wall_ms:
+            logger.warning("User turn ended without a transcription; recording a placeholder")
+            self._write_missing_transcript_placeholder()
 
     async def _on_speech_stopped(self, event: Any) -> None:
         """Handle input_audio_buffer.speech_stopped."""
@@ -654,10 +700,8 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             self._assistant_state.transcript_done_text = transcript.strip()
             logger.debug(f"Assistant transcript done: {transcript}...")
 
-    async def _on_function_call_done(self, event: Any, conn: Any) -> None:
-        """Handle response.function_call_arguments.done - execute tool call."""
-        call_id = getattr(event, "call_id", "")
-        func_name = getattr(event, "name", "")
+    def _on_function_call_done(self, event: Any) -> None:
+        """Handle response.function_call_arguments.done - record the call; it runs at response.done."""
         arguments_str = getattr(event, "arguments", "{}") or "{}"
 
         try:
@@ -665,36 +709,89 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         except json.JSONDecodeError:
             arguments = {}
 
-        logger.info(f"Tool call: {func_name}({json.dumps(arguments, ensure_ascii=False)})")
+        self._pending_tool_calls.append(
+            _PendingToolCall(
+                call_id=getattr(event, "call_id", ""),
+                name=getattr(event, "name", ""),
+                arguments=arguments,
+                response_id=getattr(event, "response_id", "") or "",
+            )
+        )
         self._assistant_state.has_function_calls = True
 
-        # Execute tool and record in audit log
-        result = await self.execute_tool(func_name, arguments)
+    def _take_response_tool_calls(self, event: Any) -> tuple[str, list[_PendingToolCall]]:
+        """Remove and return the pending tool calls that belong to the finished response."""
+        response = getattr(event, "response", None)
+        response_id = getattr(response, "id", "") or ""
+        if response_id:
+            taken = [call for call in self._pending_tool_calls if call.response_id in ("", response_id)]
+        else:
+            taken = list(self._pending_tool_calls)
+        self._pending_tool_calls = [call for call in self._pending_tool_calls if call not in taken]
+        return response_id, taken
 
-        if self._fw_log:
-            self._fw_log.write(
-                "tool_call",
-                {
-                    "frame": "tool_call",
-                    "tool_name": func_name,
-                    "arguments": arguments,
-                    "result": result,
-                },
+    async def _run_tool_batch(self, response_id: str, tool_calls: list[_PendingToolCall], conn: Any) -> None:
+        """Run a completed response's tools in order, return all results, then request one continuation."""
+        results: list[Any] = []
+        for call in tool_calls:
+            logger.info(f"Tool call: {call.name}({json.dumps(call.arguments, ensure_ascii=False)})")
+            result = await self.execute_tool(call.name, call.arguments)
+            results.append(result)
+
+            if self._fw_log:
+                self._fw_log.write(
+                    "tool_call",
+                    {
+                        "frame": "tool_call",
+                        "tool_name": call.name,
+                        "arguments": call.arguments,
+                        "result": result,
+                    },
+                )
+
+        for call, result in zip(tool_calls, results, strict=True):
+            await conn.conversation.item.create(
+                item={
+                    "type": "function_call_output",
+                    "call_id": call.call_id,
+                    "output": json.dumps(result, ensure_ascii=False),
+                }
             )
 
-        # Send function call output back to OpenAI
-        await conn.conversation.item.create(
-            item={
-                "type": "function_call_output",
-                "call_id": call_id,
-                "output": json.dumps(result, ensure_ascii=False),
-            }
+        # One response.create() per batch: a second one while the first is
+        # active fails with "Conversation already has an active response".
+        await conn.response.create()
+        logger.debug(
+            f"Returned {len(tool_calls)} tool result(s) for response {response_id or '<unknown>'} "
+            "and requested one continuation"
         )
 
-        # Trigger next response after tool result
-        await conn.response.create()
+    async def _on_response_done(self, event: Any, conn: Any | None = None) -> None:
+        """Record a finished response and, if it completed, run its tools and continue."""
+        response_id, tool_calls = self._take_response_tool_calls(event)
+        status = getattr(getattr(event, "response", None), "status", None)
 
-    async def _on_response_done(self, event: Any) -> None:
+        self._record_response_done(event)
+
+        if not tool_calls:
+            return
+
+        if status != "completed":
+            # The tools have not run, so the scenario state stays consistent
+            # with what the model knows.
+            logger.warning(
+                f"Not running {len(tool_calls)} tool call(s) from response "
+                f"{response_id or '<unknown>'} with status={status!r}"
+            )
+            return
+
+        if conn is None:
+            logger.error("Cannot return Realtime tool results without an active connection")
+            return
+
+        await self._run_tool_batch(response_id, tool_calls, conn)
+
+    def _record_response_done(self, event: Any) -> None:
         """Handle response.done - assistant response complete.
 
         Following the pipecat InstrumentedRealtimeLLMService pattern:
@@ -734,6 +831,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             content = self._extract_response_text(event)
 
         audio_was_streamed = self._assistant_state.first_audio_wall_ms is not None
+
+        if self._user_turn and (content or audio_was_streamed) and not has_function_calls:
+            self._user_turn.answered = True
 
         # Skip tool-call-only responses (nothing spoken)
         if not content and has_function_calls:

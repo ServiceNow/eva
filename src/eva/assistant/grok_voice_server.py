@@ -76,7 +76,7 @@ class GrokVoiceAssistantServer(OpenAIRealtimeAssistantServer):
         self._flush_pending_user_transcript()
         await super()._on_speech_started(event)
 
-    async def _on_response_done(self, event: Any) -> None:
+    async def _on_response_done(self, event: Any, conn: Any | None = None) -> None:
         """Flush any pending transcript before recording assistant output."""
         self._flush_pending_user_transcript()
-        await super()._on_response_done(event)
+        await super()._on_response_done(event, conn)
