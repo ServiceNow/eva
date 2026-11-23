@@ -9,7 +9,11 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from openai import AsyncOpenAI
 
-from eva.assistant.apriel_realtime_server import AprielRealtimeAssistantServer, _AssistantResponseState
+from eva.assistant.apriel_realtime_server import (
+    AprielRealtimeAssistantServer,
+    _AssistantResponseState,
+    _AudioPlayback,
+)
 
 
 def _bare_server() -> AprielRealtimeAssistantServer:
@@ -82,14 +86,9 @@ def _response_done_event(
 def _connection() -> MagicMock:
     conn = MagicMock()
     conn.conversation.item.create = AsyncMock()
+    conn.conversation.item.truncate = AsyncMock()
     conn.response.create = AsyncMock()
     return conn
-
-
-async def _wait_for_finalizers(srv: AprielRealtimeAssistantServer) -> None:
-    tasks = list(srv._tool_finalizer_tasks)
-    assert tasks
-    await asyncio.gather(*tasks)
 
 
 class TestCreateClient:
@@ -132,9 +131,10 @@ class TestCreateClient:
 
 
 class TestDefaultVoice:
-    def test_default_voice_is_marin(self):
+    def test_no_default_voice(self):
         srv = _bare_server()
-        assert srv._default_voice() == "marin"
+        srv._model = "apriel-realtime-v1"
+        assert srv._default_voice() is None
 
 
 class TestBuildSessionConfig:
@@ -151,11 +151,11 @@ class TestBuildSessionConfig:
         assert cfg["audio"]["output"]["voice"] == "marin"
         assert cfg["tools"] == []
 
-    def test_voice_falls_back_to_default(self):
+    def test_voice_omitted_when_unset(self):
         srv = _bare_server()
-        srv.pipeline_config.s2s_params = {"api_key": "sk-test", "model": "gpt-realtime-mini"}
+        srv.pipeline_config.s2s_params = {"api_key": "sk-test", "model": "apriel-realtime-v1"}
         cfg = srv._build_session_config()
-        assert cfg["audio"]["output"]["voice"] == "marin"
+        assert "voice" not in cfg["audio"]["output"]
 
     def test_includes_whisper_transcription_model_by_default(self):
         srv = _bare_server()
@@ -267,57 +267,78 @@ class TestUserTurnLifecycle:
 
 class TestToolCallSequencing:
     @pytest.mark.asyncio
-    async def test_fast_tool_waits_for_response_done_before_result_and_continuation(self):
+    async def test_tool_runs_only_at_response_done_then_returns_result_and_continuation(self):
         srv = _bare_server()
         srv.execute_tool = AsyncMock(return_value={"status": "success", "value": "sunny"})
         conn = _connection()
         item = _function_item("call_1", "get_weather", '{"city":"Paris"}')
 
-        srv._on_response_output_item(_output_item_event("resp_1", item), start_tool=False)
-        await srv._on_function_call_done(_arguments_done_event("resp_1", "call_1", '{"city":"Paris"}'))
+        srv._on_response_output_item(_output_item_event("resp_1", item))
+        srv._on_function_call_done(_arguments_done_event("resp_1", "call_1", '{"city":"Paris"}'))
         await asyncio.sleep(0)
 
-        srv.execute_tool.assert_awaited_once_with("get_weather", {"city": "Paris"})
+        srv.execute_tool.assert_not_awaited()
         conn.conversation.item.create.assert_not_awaited()
         conn.response.create.assert_not_awaited()
 
         await srv._on_response_done(_response_done_event("resp_1", [item]), conn)
-        await _wait_for_finalizers(srv)
 
+        srv.execute_tool.assert_awaited_once_with("get_weather", {"city": "Paris"})
         output_item = conn.conversation.item.create.await_args.kwargs["item"]
         assert output_item["call_id"] == "call_1"
         assert '"value": "sunny"' in output_item["output"]
         conn.response.create.assert_awaited_once_with()
 
     @pytest.mark.asyncio
-    async def test_tool_execution_overlaps_response_tail(self):
+    async def test_name_from_arguments_done_is_used_when_response_omits_output(self):
         srv = _bare_server()
-        tool_started = asyncio.Event()
-        release_tool = asyncio.Event()
+        srv.execute_tool = AsyncMock(return_value={"status": "success"})
+        conn = _connection()
+
+        srv._on_function_call_done(_arguments_done_event("resp_1", "call_1", '{"id":"42"}', name="lookup"))
+        await srv._on_response_done(_response_done_event("resp_1", []), conn)
+
+        srv.execute_tool.assert_awaited_once_with("lookup", {"id": "42"})
+        conn.conversation.item.create.assert_awaited_once()
+        conn.response.create.assert_awaited_once_with()
+
+    @pytest.mark.asyncio
+    async def test_missing_name_returns_error_output_without_running_a_tool(self):
+        srv = _bare_server()
+        srv.execute_tool = AsyncMock()
+        conn = _connection()
+
+        srv._on_function_call_done(_arguments_done_event("resp_1", "call_1", "{}"))
+        await srv._on_response_done(_response_done_event("resp_1", []), conn)
+
+        srv.execute_tool.assert_not_awaited()
+        output = json.loads(conn.conversation.item.create.await_args.kwargs["item"]["output"])
+        assert output["error_type"] == "function_not_found"
+        conn.response.create.assert_awaited_once_with()
+
+    @pytest.mark.asyncio
+    async def test_cancelled_tool_completes_the_audit_pair(self):
+        srv = _bare_server()
+        started = asyncio.Event()
 
         async def execute_tool(name: str, arguments: dict) -> dict:
-            tool_started.set()
-            await release_tool.wait()
-            return {"status": "success", "name": name, "arguments": arguments}
+            started.set()
+            await asyncio.Event().wait()
 
         srv.execute_tool = AsyncMock(side_effect=execute_tool)
         conn = _connection()
-        item = _function_item("call_1", "lookup", '{"id":"42"}')
+        item = _function_item("call_1", "lookup", "{}")
+        srv._on_response_output_item(_output_item_event("resp_1", item))
 
-        srv._on_response_output_item(_output_item_event("resp_1", item), start_tool=False)
-        await srv._on_function_call_done(_arguments_done_event("resp_1", "call_1", '{"id":"42"}'))
-        await tool_started.wait()
-        await srv._on_response_done(_response_done_event("resp_1", [item]), conn)
-        finalizers = list(srv._tool_finalizer_tasks)
+        task = asyncio.create_task(srv._on_response_done(_response_done_event("resp_1", [item]), conn))
+        await started.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
 
-        assert len(finalizers) == 1
+        srv.audit_log.append_tool_response.assert_called_once()
+        assert srv.audit_log.append_tool_response.call_args.args[1]["error_type"] == "cancelled"
         conn.conversation.item.create.assert_not_awaited()
-        conn.response.create.assert_not_awaited()
-
-        release_tool.set()
-        await asyncio.gather(*finalizers)
-        conn.conversation.item.create.assert_awaited_once()
-        conn.response.create.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_parallel_results_are_batched_in_response_order_with_one_continuation(self):
@@ -332,11 +353,10 @@ class TestToolCallSequencing:
         second = _function_item("call_2", "second_tool", '{"n":2}')
 
         for item in (first, second):
-            srv._on_response_output_item(_output_item_event("resp_1", item), start_tool=False)
-            await srv._on_function_call_done(_arguments_done_event("resp_1", item.call_id, item.arguments))
+            srv._on_response_output_item(_output_item_event("resp_1", item))
+            srv._on_function_call_done(_arguments_done_event("resp_1", item.call_id, item.arguments))
 
         await srv._on_response_done(_response_done_event("resp_1", [second, first]), conn)
-        await _wait_for_finalizers(srv)
 
         sent_call_ids = [entry.kwargs["item"]["call_id"] for entry in conn.conversation.item.create.await_args_list]
         assert sent_call_ids == ["call_2", "call_1"]
@@ -344,28 +364,21 @@ class TestToolCallSequencing:
         conn.response.create.assert_awaited_once_with()
 
     @pytest.mark.asyncio
-    async def test_cancelled_response_does_not_send_tool_output_or_continue(self):
+    @pytest.mark.parametrize("status", ["cancelled", "incomplete", "failed"])
+    async def test_unfinished_response_does_not_run_tools_or_continue(self, status):
         srv = _bare_server()
-        tool_started = asyncio.Event()
-
-        async def execute_tool(name: str, arguments: dict) -> dict:
-            tool_started.set()
-            await asyncio.Event().wait()
-            return {"status": "success"}
-
-        srv.execute_tool = AsyncMock(side_effect=execute_tool)
+        srv.execute_tool = AsyncMock(return_value={"status": "success"})
         conn = _connection()
         item = _function_item("call_1", "lookup", "{}")
 
-        srv._on_response_output_item(_output_item_event("resp_1", item), start_tool=False)
-        await srv._on_function_call_done(_arguments_done_event("resp_1", "call_1", "{}"))
-        await tool_started.wait()
+        srv._on_response_output_item(_output_item_event("resp_1", item))
+        srv._on_function_call_done(_arguments_done_event("resp_1", "call_1", "{}"))
         await srv._on_response_done(
-            _response_done_event("resp_1", [item], status="cancelled"),
+            _response_done_event("resp_1", [item], status=status),
             conn,
         )
-        await asyncio.sleep(0)
 
+        srv.execute_tool.assert_not_awaited()
         conn.conversation.item.create.assert_not_awaited()
         conn.response.create.assert_not_awaited()
         assert not srv._pending_tool_calls
@@ -542,7 +555,6 @@ class TestPlaybackInterruption:
         event = _response_done_event("old", [item])
         await self.dispatch(srv, queue, conn, "response.done", response=event.response)
         await self.dispatch(srv, queue, conn, "input_audio_buffer.speech_started", item_id="user-1")
-        await _wait_for_finalizers(srv)
         assert queue.empty()
         srv.execute_tool.assert_awaited_once_with("lookup_booking", {"id": "123"})
         conn.conversation.item.create.assert_awaited_once()
@@ -591,6 +603,175 @@ class TestPlaybackInterruption:
         await self.start_audio(srv, queue, conn, response_id="", frames=1)
         assert queue.qsize() == 1
 
+    async def finish(self, srv, queue, conn, response_id, transcript):
+        await self.dispatch(
+            srv,
+            queue,
+            conn,
+            "response.output_audio_transcript.done",
+            response_id=response_id,
+            transcript=transcript,
+        )
+        event = _response_done_event(response_id, [])
+        await self.dispatch(srv, queue, conn, "response.done", response=event.response)
+
+    @pytest.mark.asyncio
+    async def test_output_is_held_until_playback_drains(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        srv._fw_log = MagicMock()
+        await self.start_audio(srv, queue, conn, frames=3)
+        await self.finish(srv, queue, conn, "old", "Your flight is booked.")
+        srv.audit_log.append_assistant_output.assert_not_called()
+
+        socket = SimpleNamespace(send_text=AsyncMock())
+        pacer = asyncio.create_task(srv._pace_audio_output(socket, queue))
+        try:
+            await asyncio.wait_for(queue.join(), 1)
+        finally:
+            pacer.cancel()
+            await pacer
+        srv.audit_log.append_assistant_output.assert_called_once()
+        assert srv.audit_log.append_assistant_output.call_args.args[0] == "Your flight is booked."
+        srv._fw_log.turn_end.assert_called_once_with(was_interrupted=False)
+
+    @pytest.mark.asyncio
+    async def test_barge_in_after_response_done_logs_output_as_interrupted(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        srv._fw_log = MagicMock()
+        await self.start_audio(srv, queue, conn)
+        await self.finish(srv, queue, conn, "old", "Your confirmation code is ABC123.")
+        await self.dispatch(srv, queue, conn, "input_audio_buffer.speech_started", item_id="user-1")
+
+        srv.audit_log.append_assistant_output.assert_called_once()
+        # No audio had been sent yet, so none of the text was heard.
+        assert srv.audit_log.append_assistant_output.call_args.args[0] == "[interrupted]"
+        srv._fw_log.turn_end.assert_called_once_with(was_interrupted=True)
+
+    @pytest.mark.asyncio
+    async def test_interruption_during_generation_is_logged_once(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        await self.start_audio(srv, queue, conn)
+        await self.dispatch(
+            srv, queue, conn, "response.output_audio_transcript.delta", response_id="old", delta="Hello"
+        )
+        await self.dispatch(srv, queue, conn, "input_audio_buffer.speech_started", item_id="user-1")
+        # A provider that does not cancel on barge-in still reports completion.
+        event = _response_done_event(
+            "old",
+            [SimpleNamespace(type="message", content=[SimpleNamespace(type="audio", transcript="Hello there")])],
+        )
+        await self.dispatch(srv, queue, conn, "response.done", response=event.response)
+        srv.audit_log.append_assistant_output.assert_called_once()
+        assert srv.audit_log.append_assistant_output.call_args.args[0] == "[interrupted]"
+
+    @pytest.mark.asyncio
+    async def test_barge_in_truncates_item_at_played_audio(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        sent = asyncio.Event()
+        count = 0
+
+        async def send(_message):
+            nonlocal count
+            count += 1
+            if count == 2:
+                sent.set()
+
+        await self.start_audio(srv, queue, conn)
+        pacer = asyncio.create_task(srv._pace_audio_output(SimpleNamespace(send_text=send), queue))
+        try:
+            await asyncio.wait_for(sent.wait(), 1)
+            await self.dispatch(srv, queue, conn, "input_audio_buffer.speech_started", item_id="user-1")
+        finally:
+            pacer.cancel()
+            await pacer
+        # Each frame is 20 ms of 24 kHz PCM16 (960 bytes).
+        conn.conversation.item.truncate.assert_awaited_once_with(item_id="item-old", content_index=0, audio_end_ms=40)
+
+    @pytest.mark.asyncio
+    async def test_barge_in_before_any_frame_truncates_at_zero(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        await self.start_audio(srv, queue, conn)
+        await self.dispatch(srv, queue, conn, "input_audio_buffer.speech_started", item_id="user-1")
+        conn.conversation.item.truncate.assert_awaited_once_with(item_id="item-old", content_index=0, audio_end_ms=0)
+
+    @pytest.mark.asyncio
+    async def test_no_truncate_when_playback_already_finished(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        await self.start_audio(srv, queue, conn, frames=1)
+        socket = SimpleNamespace(send_text=AsyncMock())
+        pacer = asyncio.create_task(srv._pace_audio_output(socket, queue))
+        try:
+            await asyncio.wait_for(queue.join(), 1)
+        finally:
+            pacer.cancel()
+            await pacer
+        await self.dispatch(srv, queue, conn, "input_audio_buffer.speech_started", item_id="user-1")
+        conn.conversation.item.truncate.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_truncate_failure_is_not_fatal(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        conn.conversation.item.truncate.side_effect = RuntimeError("unsupported")
+        await self.start_audio(srv, queue, conn)
+        await self.dispatch(srv, queue, conn, "input_audio_buffer.speech_started", item_id="user-1")
+        assert queue.empty()
+
+    @pytest.mark.asyncio
+    async def test_disconnect_logs_held_output_as_interrupted(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        await self.start_audio(srv, queue, conn)
+        await self.finish(srv, queue, conn, "old", "Goodbye.")
+        srv._flush_deferred_outputs_on_disconnect()
+        srv.audit_log.append_assistant_output.assert_called_once()
+        assert srv.audit_log.append_assistant_output.call_args.args[0] == "[interrupted]"
+
+    @pytest.mark.asyncio
+    async def test_barge_in_logs_only_the_estimated_heard_prefix(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        await self.start_audio(srv, queue, conn)
+        await self.finish(srv, queue, conn, "old", "Your confirmation code is ABC123 and you are all set.")
+        playback = srv._audio_playbacks["old"]
+        assert playback.queued_pcm_bytes > 0
+        playback.sent_pcm_bytes = playback.queued_pcm_bytes // 2  # caller heard about half
+
+        await self.dispatch(srv, queue, conn, "input_audio_buffer.speech_started", item_id="user-1")
+
+        # 52 chars * 0.5 = 26 -> cut inside "ABC123"; the partial word is dropped.
+        assert srv.audit_log.append_assistant_output.call_args.args[0] == "Your confirmation code is [interrupted]"
+
+
+class TestEstimateHeardText:
+    @staticmethod
+    def _playback(queued: int, sent: int) -> _AudioPlayback:
+        return _AudioPlayback(queued_pcm_bytes=queued, sent_pcm_bytes=sent)
+
+    def test_full_text_when_all_audio_was_sent(self):
+        text = "Hello there friend."
+        assert AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 100), text) == text
+
+    def test_full_text_without_audio_information(self):
+        assert AprielRealtimeAssistantServer._estimate_heard_text(None, "Hello there.") == "Hello there."
+        assert (
+            AprielRealtimeAssistantServer._estimate_heard_text(self._playback(0, 0), "Hello there.") == "Hello there."
+        )
+
+    def test_nothing_heard_when_no_audio_was_sent(self):
+        assert AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 0), "Hello there.") == ""
+
+    def test_cut_at_a_word_boundary(self):
+        # 0.5 of 24 chars = 12 -> inside "everyone"; the partial word is dropped.
+        assert (
+            AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 50), "Hello and welcome everyone!")
+            == "Hello and"
+        )
+
+    def test_cut_exactly_on_a_space_keeps_the_whole_words(self):
+        # 6 of 12 chars lands on the space after "Hello".
+        assert AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 50), "Hello world!") == "Hello"
+
+    def test_single_long_word_cut_gives_empty_text(self):
+        assert AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 50), "Supercalifragilistic") == ""
+
 
 class TestAprielNames:
     def test_apriel_session_controls_are_forwarded(self):
@@ -623,3 +804,99 @@ class TestAprielNames:
         srv.pipeline_config.s2s_params = {"api_key": "application-test"}
         assert "subprotocols" not in srv._websocket_options()
         assert srv._create_client().api_key == "application-test"
+
+
+class TestWebsocketOptionsHostAndSubprotocols:
+    def test_sni_override_uses_base_url_when_websocket_base_url_is_unset(self):
+        srv = _bare_server()
+        srv.pipeline_config.s2s_params = {"api_key": "k", "base_url": "https://test_job.example/v1"}
+        assert srv._websocket_options()["server_hostname"] == "test-job.example"
+
+    def test_websocket_base_url_takes_precedence_over_base_url(self):
+        srv = _bare_server()
+        srv.pipeline_config.s2s_params = {
+            "api_key": "k",
+            "base_url": "https://other_host.example/v1",
+            "websocket_base_url": "wss://test_job.example/v1",
+        }
+        assert srv._websocket_options()["server_hostname"] == "test-job.example"
+
+    def test_proxy_subprotocols_are_merged_with_user_supplied_ones(self):
+        srv = _bare_server()
+        srv.pipeline_config.s2s_params = {
+            "apriel_api_key": "application-test",
+            "websocket_connection_options": {"subprotocols": ["custom-proto", "realtime"]},
+        }
+        options = srv._websocket_options()
+        assert options["subprotocols"] == [
+            "realtime",
+            "openai-insecure-api-key.application-test",
+            "custom-proto",
+        ]
+        assert srv.pipeline_config.s2s_params["websocket_connection_options"]["subprotocols"] == [
+            "custom-proto",
+            "realtime",
+        ]
+
+
+class TestStreamedFunctionCallFlag:
+    @pytest.mark.asyncio
+    async def test_streamed_function_call_flag_skips_mixed_response_without_audio(self):
+        srv = _bare_server()
+        srv._log_assistant_output = MagicMock()
+        # The function call was seen while streaming, but response.done carries no function_call item.
+        srv._on_function_call_done(_arguments_done_event("resp_1", "call_1", "{}", name="lookup"))
+        assert srv._assistant_state.has_function_calls
+        srv._assistant_state.transcript_done_text = "Let me check that."
+
+        await srv._record_response_done(_response_done_event("resp_1", []))
+
+        srv._log_assistant_output.assert_not_called()
+
+
+class TestContinuationWhileUserSpeaking:
+    @pytest.mark.asyncio
+    async def test_outputs_are_sent_but_response_create_is_skipped_while_user_speaks(self):
+        srv = _bare_server()
+        srv.execute_tool = AsyncMock(return_value={"status": "success"})
+        srv._user_speaking = True
+        conn = _connection()
+        item = _function_item("call_1", "lookup", "{}")
+        srv._on_response_output_item(_output_item_event("resp_1", item))
+        srv._on_function_call_done(_arguments_done_event("resp_1", "call_1", "{}"))
+
+        await srv._on_response_done(_response_done_event("resp_1", [item]), conn)
+
+        srv.execute_tool.assert_awaited_once_with("lookup", {})
+        conn.conversation.item.create.assert_awaited_once()
+        conn.response.create.assert_not_awaited()
+
+    def test_session_config_sets_create_response_explicitly(self):
+        srv = _bare_server()
+        assert srv._build_session_config()["audio"]["input"]["turn_detection"]["create_response"] is True
+
+
+class TestSessionConfigBooleans:
+    @pytest.mark.parametrize("field", ["enable_thinking", "pre_tool_speech"])
+    @pytest.mark.parametrize("value", ["false", "true", 0, 1, None])
+    def test_non_boolean_values_are_rejected(self, field, value):
+        srv = _bare_server()
+        srv.pipeline_config.s2s_params[field] = value
+        with pytest.raises(ValueError, match=field):
+            srv._build_session_config()
+
+
+class TestClientLifecycle:
+    @pytest.mark.asyncio
+    async def test_client_is_closed_when_the_session_ends(self):
+        srv = _bare_server()
+        srv.conversation_id = "conv_1"
+        client = MagicMock()
+        client.close = AsyncMock()
+        client.realtime.connect.side_effect = RuntimeError("connect failed")
+        srv._create_client = MagicMock(return_value=client)
+        websocket = MagicMock()
+
+        await srv._handle_session(websocket)
+
+        client.close.assert_awaited_once_with()

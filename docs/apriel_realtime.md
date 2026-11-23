@@ -29,8 +29,8 @@ export EVA_MODEL__S2S_PARAMS='{
   "websocket_base_url": "wss://<endpoint-host>/v1"
 }'
 export APRIEL_REALTIME_API_KEY="<realtime-api-key>"
-# Set only when a protected EAI endpoint requires a cloud token:
-# export APRIEL_BACKEND_AUTH_TOKEN="<cloud-authentication-token>"
+# Set only when the endpoint sits behind a gateway that requires its own bearer token:
+# export APRIEL_BACKEND_AUTH_TOKEN="<backend-auth-token>"
 ```
 
 The SDK appends `/realtime` to the WebSocket base URL. Set the endpoint explicitly;
@@ -42,15 +42,13 @@ Map the credentials into EVA's model parameters before starting EVA:
 EVA_MODEL__S2S_PARAMS="$(python3 - <<'PY'
 import json
 import os
-from urllib.parse import urlsplit
 
 params = json.loads(os.environ["EVA_MODEL__S2S_PARAMS"])
 key = os.environ["APRIEL_REALTIME_API_KEY"]
-host = (urlsplit(params.get("websocket_base_url") or params["base_url"]).hostname or "").lower()
-cloud = os.environ.get("APRIEL_BACKEND_AUTH_TOKEN") if host.endswith(".job.console.elementai.com") else None
-params["api_key"] = cloud or key
+backend_token = os.environ.get("APRIEL_BACKEND_AUTH_TOKEN")
+params["api_key"] = backend_token or key
 params.pop("apriel_api_key", None)
-if cloud:
+if backend_token:
     params["apriel_api_key"] = key
 print(json.dumps(params))
 PY
@@ -58,10 +56,9 @@ PY
 export EVA_MODEL__S2S_PARAMS
 ```
 
-For EAI hosts ending in `.job.console.elementai.com`, a supplied cloud token becomes
-the bearer credential and the realtime key is sent in the WebSocket subprotocol.
-Without that token, or for direct/Run:ai endpoints, the realtime key becomes the
-bearer credential. The mapping ignores the cloud token for non-EAI hosts.
+When `APRIEL_BACKEND_AUTH_TOKEN` is set, it becomes the bearer credential and the realtime
+key is sent in the WebSocket subprotocol. Otherwise the realtime key is the bearer
+credential.
 
 The adapter reads `api_key` and optional `apriel_api_key` from
 `EVA_MODEL__S2S_PARAMS`; it does not read the two `APRIEL_*` environment variables
@@ -75,7 +72,8 @@ and judges. Their credentials and settings are separate from the Apriel endpoint
 
 Add supported options to `EVA_MODEL__S2S_PARAMS` before mapping credentials:
 
-- `voice`, `vad_settings`, and `reasoning_effort` configure the session.
+- `voice`, `vad_settings`, and `reasoning_effort` configure the session. No voice
+  is sent unless `voice` is set.
 - `enable_thinking` and `pre_tool_speech` are JSON booleans forwarded when supplied.
 - `apriel` contains provider-specific extensions, such as
   `{"tts_input_streaming": "token"}`. Confirm supported values with the endpoint owner.
