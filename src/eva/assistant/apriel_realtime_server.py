@@ -60,6 +60,9 @@ class _UserTurnRecord:
     speech_stopped_wall_ms: str = ""
     transcript: str = ""
     flushed: bool = False
+    # Set once the assistant has replied to this turn. A turn that was answered
+    # but still has no transcript is not going to get one.
+    answered: bool = False
 
 
 @dataclass
@@ -202,6 +205,12 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
         self._server_task = asyncio.create_task(self._server.serve())
 
         while not self._server.started:
+            if self._server_task.done():
+                # serve() returned without starting, e.g. the port is already in use.
+                self._running = False
+                self._server = None
+                self._server_task = None
+                raise RuntimeError(f"{self._service_name} server failed to start on port {self.port}")
             await asyncio.sleep(0.01)
 
         logger.info(f"{self._service_name} server started on ws://localhost:{self.port}")
@@ -415,6 +424,7 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
         except Exception as e:
             logger.error(f"{self._service_name} session error: {e}", exc_info=True)
         finally:
+            self._flush_user_turn_without_transcript()
             self._flush_deferred_outputs_on_disconnect()
             self._reset_tool_tracking()
             try:
@@ -742,12 +752,7 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
                 # transcript yet, record a placeholder so the turn is not lost.
                 user_turn = self._user_turn_for_event(event)
                 if user_turn and not user_turn.flushed:
-                    timestamp_ms = user_turn.speech_started_wall_ms or None
-                    self.audit_log.append_user_input(
-                        "[user speech - transcription unavailable]",
-                        timestamp_ms=timestamp_ms,
-                    )
-                    user_turn.flushed = True
+                    self._write_missing_transcript_placeholder(user_turn)
 
             case "response.output_audio.delta":
                 await self._on_audio_delta(event, audio_output_queue)
@@ -785,6 +790,24 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
     def _event_item_id(event: Any) -> str:
         """Return the conversation item ID carried by a speech/ASR event."""
         return getattr(event, "item_id", "") or ""
+
+    def _write_missing_transcript_placeholder(self, turn: _UserTurnRecord) -> None:
+        """Record that a user turn happened but its transcript is unavailable."""
+        timestamp_ms = turn.speech_started_wall_ms or None
+        self.audit_log.append_user_input("[user speech - transcription unavailable]", timestamp_ms=timestamp_ms)
+        turn.flushed = True
+
+    def _flush_user_turn_without_transcript(self) -> None:
+        """Write a placeholder for a spoken user turn that never received a transcript.
+
+        Apriel may emit no input transcription at all, in which case nothing else
+        writes the turn. Skipped when a transcript is buffered or the turn never
+        recorded a speech start.
+        """
+        turn = self._user_turn
+        if turn and not turn.flushed and not turn.transcript and turn.speech_started_wall_ms:
+            logger.warning("User turn ended without a transcription; recording a placeholder")
+            self._write_missing_transcript_placeholder(turn)
 
     def _user_turn_for_event(self, event: Any, *, create: bool = False) -> _UserTurnRecord | None:
         """Resolve a speech/ASR event to its user turn without relying on ASR timing.
@@ -836,6 +859,11 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
                 interrupted=True,
             )
             self._assistant_state = _AssistantResponseState()
+
+        # The assistant already replied to the previous turn and no transcript has
+        # arrived, so none is coming: record a placeholder rather than losing the turn.
+        if self._user_turn and self._user_turn.answered:
+            self._flush_user_turn_without_transcript()
 
         item_id = self._event_item_id(event)
         known_turn = self._user_turns_by_item_id.get(item_id) if item_id else None
@@ -1069,6 +1097,9 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
             content = self._extract_response_text(event)
 
         audio_was_streamed = self._assistant_state.first_audio_wall_ms is not None
+
+        if self._user_turn and (content or audio_was_streamed) and not has_function_calls:
+            self._user_turn.answered = True
 
         # Skip tool-call-only responses (nothing spoken)
         if not content and has_function_calls:

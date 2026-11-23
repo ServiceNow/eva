@@ -4,7 +4,7 @@ import asyncio
 import base64
 import json
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from openai import AsyncOpenAI
@@ -13,6 +13,7 @@ from eva.assistant.apriel_realtime_server import (
     AprielRealtimeAssistantServer,
     _AssistantResponseState,
     _AudioPlayback,
+    _UserTurnRecord,
 )
 
 
@@ -900,3 +901,101 @@ class TestClientLifecycle:
         await srv._handle_session(websocket)
 
         client.close.assert_awaited_once_with()
+
+
+PLACEHOLDER = "[user speech - transcription unavailable]"
+
+
+def _user_entries(srv) -> list[str]:
+    return [call.args[0] for call in srv.audit_log.append_user_input.call_args_list]
+
+
+async def _answer_the_turn(srv, response_id: str = "resp_1") -> None:
+    """Record a spoken assistant response, which marks the current user turn answered."""
+    srv._assistant_state.transcript_done_text = "Sure, one moment."
+    srv._assistant_state.first_audio_wall_ms = "1"
+    await srv._record_response_done(_response_done_event(response_id, []))
+
+
+class TestMissingUserTranscript:
+    @pytest.mark.asyncio
+    async def test_answered_turn_without_transcript_gets_a_placeholder_at_the_next_speech_start(self):
+        srv = _bare_server()
+        await srv._on_speech_started(SimpleNamespace(item_id="user-1"))
+        await _answer_the_turn(srv)
+
+        await srv._on_speech_started(SimpleNamespace(item_id="user-2"))
+
+        assert _user_entries(srv) == [PLACEHOLDER]
+        assert srv._user_turn.item_id == "user-2"
+        assert srv._user_turn.flushed is False
+
+    @pytest.mark.asyncio
+    async def test_unanswered_turn_gets_no_placeholder(self):
+        srv = _bare_server()
+        await srv._on_speech_started(SimpleNamespace(item_id="user-1"))
+
+        await srv._on_speech_started(SimpleNamespace(item_id="user-1"))
+
+        srv.audit_log.append_user_input.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_turn_with_a_transcript_gets_no_placeholder(self):
+        srv = _bare_server()
+        await srv._on_speech_started(SimpleNamespace(item_id="user-1"))
+        await srv._on_transcription_completed(SimpleNamespace(item_id="user-1", transcript="I need a flight"))
+        await _answer_the_turn(srv)
+
+        await srv._on_speech_started(SimpleNamespace(item_id="user-2"))
+
+        assert _user_entries(srv) == ["I need a flight"]
+
+    @pytest.mark.asyncio
+    async def test_tool_call_only_response_does_not_mark_the_turn_answered(self):
+        srv = _bare_server()
+        await srv._on_speech_started(SimpleNamespace(item_id="user-1"))
+        item = _function_item("call_1", "lookup", "{}")
+        await srv._record_response_done(_response_done_event("resp_1", [item]))
+
+        assert srv._user_turn.answered is False
+
+    def test_unflushed_turn_gets_a_placeholder_at_session_end(self):
+        srv = _bare_server()
+        srv._user_turn = _UserTurnRecord(item_id="user-1", speech_started_wall_ms="100")
+
+        srv._flush_user_turn_without_transcript()
+        srv._flush_user_turn_without_transcript()  # idempotent
+
+        assert _user_entries(srv) == [PLACEHOLDER]
+
+    def test_buffered_transcript_is_left_alone(self):
+        srv = _bare_server()
+        srv._user_turn = _UserTurnRecord(item_id="user-1", speech_started_wall_ms="100", transcript="buffered")
+
+        srv._flush_user_turn_without_transcript()
+
+        srv.audit_log.append_user_input.assert_not_called()
+
+
+class TestStartFailure:
+    @pytest.mark.asyncio
+    async def test_start_raises_instead_of_hanging_when_the_server_fails_to_start(self, tmp_path):
+        srv = _bare_server()
+        srv._running = False
+        srv.output_dir = tmp_path
+        srv.port = 8765
+
+        class _FailingServer:
+            started = False
+
+            def __init__(self, config):
+                pass
+
+            async def serve(self):
+                return  # e.g. the port is already in use
+
+        with patch("eva.assistant.apriel_realtime_server.uvicorn.Server", _FailingServer):
+            with pytest.raises(RuntimeError, match="failed to start"):
+                await asyncio.wait_for(srv.start(), timeout=2)
+
+        assert srv._running is False
