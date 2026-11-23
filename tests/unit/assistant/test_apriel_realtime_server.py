@@ -36,6 +36,7 @@ def _bare_server() -> AprielRealtimeAssistantServer:
     srv._user_speaking = False
     srv._user_turn = None
     srv._user_turns_by_item_id = {}
+    srv._next_turn_id = 0
     srv._audio_interface_speech_start_ts = None
     srv._last_user_audio_mono = 0.0
     srv._stream_sid = "test-stream"
@@ -253,6 +254,7 @@ class TestUserTurnLifecycle:
         srv.audit_log.append_user_input.assert_called_once_with(
             "the first utterance",
             timestamp_ms="1000",
+            turn_id=first_turn.turn_id,
         )
 
     @pytest.mark.asyncio
@@ -999,3 +1001,45 @@ class TestStartFailure:
                 await asyncio.wait_for(srv.start(), timeout=2)
 
         assert srv._running is False
+
+
+class TestLateTranscriptionAfterPlaceholder:
+    @pytest.mark.asyncio
+    async def test_late_transcription_replaces_the_placeholder_instead_of_duplicating(self):
+        srv = _bare_server()
+        srv.audit_log.update_user_input_by_turn_id = MagicMock(return_value=True)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-a"))
+        turn_a = srv._user_turn
+        await _answer_the_turn(srv)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-b"))
+        assert _user_entries(srv) == [PLACEHOLDER]
+
+        # item-a's transcription finally arrives, after turn B already started.
+        await srv._on_transcription_completed(SimpleNamespace(item_id="item-a", transcript="I need a flight"))
+
+        srv.audit_log.update_user_input_by_turn_id.assert_called_once_with(turn_a.turn_id, "I need a flight")
+        assert _user_entries(srv) == [PLACEHOLDER]  # no second entry
+        assert turn_a.transcript == "I need a flight"
+
+    @pytest.mark.asyncio
+    async def test_a_normal_transcription_is_still_appended_once(self):
+        srv = _bare_server()
+        srv.audit_log.update_user_input_by_turn_id = MagicMock(return_value=True)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-a"))
+
+        await srv._on_transcription_completed(SimpleNamespace(item_id="item-a", transcript="hello there"))
+
+        assert _user_entries(srv) == ["hello there"]
+        srv.audit_log.update_user_input_by_turn_id.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_failed_replacement_falls_back_to_appending(self):
+        srv = _bare_server()
+        srv.audit_log.update_user_input_by_turn_id = MagicMock(return_value=False)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-a"))
+        await _answer_the_turn(srv)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-b"))
+
+        await srv._on_transcription_completed(SimpleNamespace(item_id="item-a", transcript="late text"))
+
+        assert _user_entries(srv) == [PLACEHOLDER, "late text"]

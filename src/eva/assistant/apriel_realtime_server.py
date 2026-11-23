@@ -63,6 +63,9 @@ class _UserTurnRecord:
     # Set once the assistant has replied to this turn. A turn that was answered
     # but still has no transcript is not going to get one.
     answered: bool = False
+    # Audit-log turn id, used to replace a placeholder with the real transcript.
+    turn_id: int | None = None
+    placeholder_written: bool = False
 
 
 @dataclass
@@ -351,6 +354,7 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
         # Reset per-session state
         self._user_turn = None
         self._user_turns_by_item_id = {}
+        self._next_turn_id = 0
         self._assistant_state = _AssistantResponseState()
         self._stream_sid = self.conversation_id
         self._reset_audio_playback()
@@ -791,11 +795,23 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
         """Return the conversation item ID carried by a speech/ASR event."""
         return getattr(event, "item_id", "") or ""
 
+    def _new_user_turn(self, **fields: Any) -> _UserTurnRecord:
+        """Create a user turn with a fresh audit-log turn id."""
+        self._next_turn_id += 1
+        return _UserTurnRecord(turn_id=self._next_turn_id, **fields)
+
     def _write_missing_transcript_placeholder(self, turn: _UserTurnRecord) -> None:
-        """Record that a user turn happened but its transcript is unavailable."""
+        """Record that a user turn happened but its transcript is unavailable.
+
+        The entry carries the turn id so a late transcription replaces it instead of
+        adding a second entry for the same spoken turn.
+        """
         timestamp_ms = turn.speech_started_wall_ms or None
-        self.audit_log.append_user_input("[user speech - transcription unavailable]", timestamp_ms=timestamp_ms)
+        self.audit_log.append_user_input(
+            "[user speech - transcription unavailable]", timestamp_ms=timestamp_ms, turn_id=turn.turn_id
+        )
         turn.flushed = True
+        turn.placeholder_written = True
 
     def _flush_user_turn_without_transcript(self) -> None:
         """Write a placeholder for a spoken user turn that never received a transcript.
@@ -831,7 +847,7 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
         if not create:
             return None
 
-        turn = _UserTurnRecord(item_id=item_id)
+        turn = self._new_user_turn(item_id=item_id)
         self._user_turns_by_item_id[item_id] = turn
         if self._user_turn is None:
             self._user_turn = turn
@@ -879,7 +895,7 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
         if starts_new_turn:
             # Use timestamp from audio_interface if available (source of truth)
             start_ts = self._audio_interface_speech_start_ts or wall
-            self._user_turn = _UserTurnRecord(item_id=item_id, speech_started_wall_ms=start_ts)
+            self._user_turn = self._new_user_turn(item_id=item_id, speech_started_wall_ms=start_ts)
             if item_id:
                 self._user_turns_by_item_id[item_id] = self._user_turn
             if self._fw_log:
@@ -928,7 +944,17 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
             user_turn.transcript = transcript
             user_turn.flushed = True
 
-        self.audit_log.append_user_input(transcript, timestamp_ms=timestamp_ms)
+        if user_turn and user_turn.placeholder_written and user_turn.turn_id is not None:
+            # A placeholder was already written for this turn; replace it rather than
+            # recording the same spoken turn twice.
+            user_turn.placeholder_written = False
+            if self.audit_log.update_user_input_by_turn_id(user_turn.turn_id, transcript):
+                logger.debug(f"Replaced placeholder with late transcription: {transcript[:60]}...")
+                return
+
+        self.audit_log.append_user_input(
+            transcript, timestamp_ms=timestamp_ms, turn_id=user_turn.turn_id if user_turn else None
+        )
         logger.debug(f"User transcription: {transcript}...")
 
     async def _on_audio_delta(self, event: Any, audio_output_queue: asyncio.Queue[_OutputAudioChunk]) -> None:
