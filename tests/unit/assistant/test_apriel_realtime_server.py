@@ -10,6 +10,7 @@ import pytest
 from openai import AsyncOpenAI
 
 from eva.assistant.apriel_realtime_server import (
+    LEADING_SILENCE_PCM_BYTES,
     AprielRealtimeAssistantServer,
     _AssistantResponseState,
     _AudioPlayback,
@@ -720,13 +721,29 @@ class TestPlaybackInterruption:
         assert queue.empty()
 
     @pytest.mark.asyncio
-    async def test_disconnect_logs_held_output_as_interrupted(self):
+    async def test_hang_up_before_any_speech_logs_nothing(self):
         srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
         await self.start_audio(srv, queue, conn)
         await self.finish(srv, queue, conn, "old", "Goodbye.")
         srv._flush_deferred_outputs_on_disconnect()
-        srv.audit_log.append_assistant_output.assert_called_once()
-        assert srv.audit_log.append_assistant_output.call_args.args[0] == "[interrupted]"
+        srv.audit_log.append_assistant_output.assert_not_called()
+        assert srv._audio_playbacks["old"].deferred_output is None
+
+    @pytest.mark.asyncio
+    async def test_hang_up_mid_goodbye_logs_heard_part_as_not_interrupted(self):
+        srv, queue, conn = _bare_server(), asyncio.Queue(), _connection()
+        srv._fw_log = MagicMock()
+        await self.start_audio(srv, queue, conn)
+        await self.finish(srv, queue, conn, "old", "Thanks for calling and have a great day.")
+        playback = srv._audio_playbacks["old"]
+        playback.sent_pcm_bytes = playback.queued_pcm_bytes * 9 // 10
+
+        srv._flush_deferred_outputs_on_disconnect()
+
+        logged = srv.audit_log.append_assistant_output.call_args.args[0]
+        assert logged and "[interrupted]" not in logged
+        assert "Thanks for calling and have a great day.".startswith(logged)
+        srv._fw_log.turn_end.assert_called_once_with(was_interrupted=False)
 
     @pytest.mark.asyncio
     async def test_barge_in_logs_only_the_estimated_heard_prefix(self):
@@ -739,41 +756,51 @@ class TestPlaybackInterruption:
 
         await self.dispatch(srv, queue, conn, "input_audio_buffer.speech_started", item_id="user-1")
 
-        # 52 chars * 0.5 = 26 -> cut inside "ABC123"; the partial word is dropped.
-        assert srv.audit_log.append_assistant_output.call_args.args[0] == "Your confirmation code is [interrupted]"
+        # After the 200 ms lead-in, ~48% of the speech was sent: cut 25 of 53
+        # chars lands on the space after "is", and one more word is dropped.
+        assert srv.audit_log.append_assistant_output.call_args.args[0] == "Your confirmation code [interrupted]"
 
 
 class TestEstimateHeardText:
+    LEAD = LEADING_SILENCE_PCM_BYTES
+
     @staticmethod
     def _playback(queued: int, sent: int) -> _AudioPlayback:
         return _AudioPlayback(queued_pcm_bytes=queued, sent_pcm_bytes=sent)
 
+    @staticmethod
+    def _estimate(playback: _AudioPlayback | None, text: str) -> str:
+        return AprielRealtimeAssistantServer._estimate_heard_text(playback, text)
+
     def test_full_text_when_all_audio_was_sent(self):
         text = "Hello there friend."
-        assert AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 100), text) == text
+        assert self._estimate(self._playback(96_000, 96_000), text) == text
 
     def test_full_text_without_audio_information(self):
-        assert AprielRealtimeAssistantServer._estimate_heard_text(None, "Hello there.") == "Hello there."
-        assert (
-            AprielRealtimeAssistantServer._estimate_heard_text(self._playback(0, 0), "Hello there.") == "Hello there."
-        )
+        assert self._estimate(None, "Hello there.") == "Hello there."
+        assert self._estimate(self._playback(0, 0), "Hello there.") == "Hello there."
 
     def test_nothing_heard_when_no_audio_was_sent(self):
-        assert AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 0), "Hello there.") == ""
+        assert self._estimate(self._playback(96_000, 0), "Hello there.") == ""
 
-    def test_cut_at_a_word_boundary(self):
-        # 0.5 of 24 chars = 12 -> inside "everyone"; the partial word is dropped.
-        assert (
-            AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 50), "Hello and welcome everyone!")
-            == "Hello and"
-        )
+    def test_cut_inside_leading_silence_hears_nothing(self):
+        # 160 ms sent: still inside the 200 ms lead-in (the "I'm" case from 1.3.1).
+        assert self._estimate(self._playback(96_000, 160 * 48), "I'm sorry to hear that.") == ""
 
-    def test_cut_exactly_on_a_space_keeps_the_whole_words(self):
-        # 6 of 12 chars lands on the space after "Hello".
-        assert AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 50), "Hello world!") == "Hello"
+    def test_mid_word_cut_drops_the_partial_word_and_one_more(self):
+        text = "Hello and welcome everyone!"  # 27 chars
+        speech = 27 * 4800
+        # Half the speech sent -> cut 13, inside "welcome".
+        assert self._estimate(self._playback(self.LEAD + speech, self.LEAD + speech // 2), text) == "Hello"
+
+    def test_cut_on_a_space_drops_one_word(self):
+        text = "Hello world friend"  # 18 chars; index 11 is the space after "world"
+        speech = 18 * 4800
+        assert self._estimate(self._playback(self.LEAD + speech, self.LEAD + 11 * 4800), text) == "Hello"
 
     def test_single_long_word_cut_gives_empty_text(self):
-        assert AprielRealtimeAssistantServer._estimate_heard_text(self._playback(100, 50), "Supercalifragilistic") == ""
+        speech = 20 * 4800
+        assert self._estimate(self._playback(self.LEAD + speech, self.LEAD + speech // 2), "Supercalifragilistic") == ""
 
 
 class TestAprielNames:

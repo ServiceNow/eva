@@ -44,6 +44,10 @@ MULAW_CHUNK_SIZE = 160  # bytes per chunk (20ms at 8kHz, 1 byte per sample)
 # can never add silence or worsen alignment — during genuine user silence the
 # timestamp is old and padding proceeds normally.
 USER_ACTIVE_GUARD_S = 0.3
+# TTS audio starts with near-silence. When estimating how much text the caller
+# heard, this much audio at the start of a response is treated as containing no
+# speech (checked against recordings: a 160 ms cut had no audible speech).
+LEADING_SILENCE_PCM_BYTES = int(0.2 * OPENAI_SAMPLE_RATE * 2)  # 200 ms of PCM16
 
 
 def _wall_ms() -> str:
@@ -588,28 +592,47 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
         """Approximate the part of `content` the caller heard before playback was cut off.
 
         The provider gives no alignment between text and audio, so this assumes
-        speech is spread evenly over the audio: the heard fraction of the text is
-        the fraction of audio bytes sent, cut back to a word boundary. The result
-        can be a word or two off. Without audio information the full text is kept.
+        speech is spread evenly over the audio after the leading silence: the
+        heard fraction of the text is the fraction of speech bytes sent. The cut
+        is moved back to a word boundary and then one more word is dropped, so
+        the estimate errs towards logging less than was heard rather than words
+        the caller never heard. Without audio information the full text is kept.
         """
         if playback is None or playback.queued_pcm_bytes <= 0:
             return content
-        fraction = min(1.0, playback.sent_pcm_bytes / playback.queued_pcm_bytes)
-        cut = int(len(content) * fraction)
-        if cut >= len(content):
+        if playback.sent_pcm_bytes >= playback.queued_pcm_bytes:
             return content
-        if cut > 0 and not content[cut].isspace():
+        speech_bytes = playback.queued_pcm_bytes - LEADING_SILENCE_PCM_BYTES
+        sent_speech_bytes = playback.sent_pcm_bytes - LEADING_SILENCE_PCM_BYTES
+        if speech_bytes <= 0 or sent_speech_bytes <= 0:
+            return ""
+        cut = len(content) * sent_speech_bytes // speech_bytes
+        if cut <= 0:
+            return ""
+        head = content[:cut]
+        if not content[cut].isspace():
             # Drop the partial word at the cut.
-            head, _, _ = content[:cut].rpartition(" ")
-            return head.strip()
-        return content[:cut].strip()
+            head = head.rpartition(" ")[0]
+        # Drop one more word to stay on the side of what was actually heard.
+        return head.strip().rpartition(" ")[0].strip()
 
     def _flush_deferred_outputs_on_disconnect(self) -> None:
-        """Log text whose playback never finished because the session ended."""
+        """Log text whose playback never finished because the session ended.
+
+        The caller hanging up is not a barge-in, so only the heard part is
+        logged, as an ordinary uninterrupted turn. Nothing is logged if no
+        speech was heard.
+        """
         for playback in self._audio_playbacks.values():
-            if playback.deferred_output:
-                deferred = playback.deferred_output
-                self._log_assistant_output(playback, deferred.content, deferred.timestamp_ms, interrupted=True)
+            if not playback.deferred_output:
+                continue
+            deferred = playback.deferred_output
+            heard = self._estimate_heard_text(playback, deferred.content)
+            if heard:
+                self._log_assistant_output(playback, heard, deferred.timestamp_ms)
+            else:
+                playback.deferred_output = None
+                playback.output_logged = True
 
     def _record_played_audio(self, pcm16: bytes) -> None:
         """Record only audio sent to EVA, so discarded speech is not graded."""
