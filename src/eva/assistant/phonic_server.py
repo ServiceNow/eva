@@ -58,6 +58,12 @@ MULAW_CHUNK_DURATION_S = 0.02
 _KEEPALIVE_INTERVAL = 5.0
 _MULAW_SILENCE_B64 = base64.b64encode(b"\xff" * MULAW_CHUNK_SIZE).decode("ascii")  # 20 ms
 
+# Phonic tool names are unique per organization, so a tool name shared by several domains
+# (e.g. transfer_to_agent) is provisioned with that domain's prefix (i_transfer_to_agent).
+# Airline keeps plain names. Phonic's tool_call carries the prefixed name, which is
+# stripped back to EVA's before execution.
+PHONIC_TOOL_PREFIXES = {"itsm": "i_", "medical_hr": "m_"}
+
 
 def _now_ms() -> str:
     return str(int(round(time.time() * 1000)))
@@ -106,7 +112,6 @@ class PhonicAssistantServer(AbstractAssistantServer):
         conversation_id: str,
         language: str = "en",
         turn_end_fallback_time: int | None = None,
-        conversation_time_limit_seconds: int = 600,
     ):
         super().__init__(
             current_date_time=current_date_time,
@@ -124,7 +129,7 @@ class PhonicAssistantServer(AbstractAssistantServer):
         # Sent with every session so they override the provisioned agent's copies
         # (scripts/provision_phonic_agents.py sets the same values from the same sources).
         self._turn_end_fallback_time = turn_end_fallback_time
-        self._conversation_time_limit_seconds = conversation_time_limit_seconds
+        self._tool_names = {tool.function_name for tool in agent.tools}
 
         s2s_params = self.pipeline_config.s2s_params or {}
         self._model = s2s_params.get("model", "phonic-1")
@@ -225,7 +230,6 @@ class PhonicAssistantServer(AbstractAssistantServer):
             **self._extra_config,
             "no_input_poke_sec": self._turn_end_fallback_time,
             "no_input_end_conversation_sec": int(INACTIVITY_TIMEOUT_SECONDS),
-            "max_conversation_duration_sec": self._conversation_time_limit_seconds,
         }
         if self._agent_name:
             # The provisioned agent's system_prompt / welcome_message are the
@@ -242,6 +246,16 @@ class PhonicAssistantServer(AbstractAssistantServer):
             if self._phonic_tools:
                 config["tools"] = self._phonic_tools
         return ConfigPayload(**config)
+
+    def _eva_tool_name(self, phonic_name: str) -> str:
+        """Strip a provisioned domain prefix (see PHONIC_TOOL_PREFIXES) from a Phonic tool name."""
+        if phonic_name in self._tool_names:
+            return phonic_name
+        for prefix in PHONIC_TOOL_PREFIXES.values():
+            name = phonic_name.removeprefix(prefix)
+            if name in self._tool_names:
+                return name
+        return phonic_name
 
     async def _handle_session(self, websocket: WebSocket) -> None:  # noqa: C901
         """Bridge a single Twilio WebSocket session with Phonic."""
@@ -492,7 +506,7 @@ class PhonicAssistantServer(AbstractAssistantServer):
                                     f"Tool call: {msg.tool_name}({json.dumps(msg.parameters, ensure_ascii=False)})"
                                 )
                                 arguments = {k: v for k, v in (msg.parameters or {}).items() if v is not None}
-                                result = await self.execute_tool(msg.tool_name, arguments)
+                                result = await self.execute_tool(self._eva_tool_name(msg.tool_name), arguments)
                                 await socket.send_tool_call_output(
                                     ToolCallOutputPayload(tool_call_id=msg.tool_call_id, output=result)
                                 )

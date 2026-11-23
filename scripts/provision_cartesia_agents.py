@@ -5,7 +5,7 @@ the dynamic variables system_prompt and initial_message. Settings that cannot be
 set here from EVA's own options, and the assistant server refuses to run against an agent whose
 settings do not match the run config:
 
-    --language                -> language.primary              (EVA_LANGUAGE, default en; no region tags)
+    --language                -> language.primary              (EVA_LANGUAGE, default en; fr-CA uses fr)
     --pre-tool-speech         -> each tool's pre_tool_speech  (EVA_MODEL__PRE_TOOL_SPEECH, default auto)
     --turn-end-fallback-time  -> turn.inactivity_check_in_secs (EVA_TURN_END_FALLBACK_TIME, default unset)
 
@@ -35,7 +35,7 @@ from pathlib import Path
 from dotenv import dotenv_values
 
 from eva.models.agents import AgentConfig
-from eva.models.config import LANGUAGE_DISPLAY_NAMES, ModelConfig
+from eva.models.config import LANGUAGE_DISPLAY_NAMES, ModelConfig, base_language
 from eva.utils import cartesia_agents
 
 DOMAINS = ("airline", "itsm", "medical_hr")
@@ -65,7 +65,7 @@ def agent_config(
         "initial_message": cartesia_agents.INITIAL_MESSAGE_VARIABLE,
         "speculative_generation": True,
         "model": {"id": model, "fallback_strategy": None},
-        "language": {"primary": language},
+        "language": {"primary": base_language(language)},
         "turn": {"inactivity_check_in_secs": turn_end_fallback_time},
         "audio": {
             "input": {"noise_suppression": "off", "asr_model": "auto"},
@@ -93,7 +93,7 @@ def main() -> None:
         "--language",
         choices=[lang.value for lang in LANGUAGE_DISPLAY_NAMES],
         default="en",
-        help="Base language code without a region tag (e.g. fr, not fr-CA); must match EVA_LANGUAGE for the run",
+        help="Must match EVA_LANGUAGE for the run; a region tag (fr-CA) gets its own agent but Cartesia gets the base (fr)",
     )
     parser.add_argument("--voice", default=DEFAULT_VOICE_ID, help="Cartesia voice ID for the agent (default: Katie)")
     parser.add_argument(
@@ -110,10 +110,6 @@ def main() -> None:
     )
     parser.add_argument("--domains", nargs="+", default=list(DOMAINS), choices=DOMAINS)
     args = parser.parse_args()
-    if "-" in args.language:
-        raise SystemExit(
-            f"--language takes a base language code without a region tag; use {args.language.split('-')[0]}"
-        )
     if args.turn_end_fallback_time is not None and not 5 <= args.turn_end_fallback_time <= 60:
         raise SystemExit("Cartesia supports --turn-end-fallback-time between 5 and 60 seconds")
 
