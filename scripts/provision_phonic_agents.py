@@ -7,11 +7,11 @@ agent.
 
 Usage:
     python scripts/provision_phonic_agents.py [--model phonic-1.1] [--voice sabrina] [--language en]
-        [--domains airline itsm medical_hr] [--backchannel]
+        [--domains airline itsm medical_hr] [--intelligence-level high] [--backchannel]
 
-Deploys all domains by default, with assistant backchannel cues off unless --backchannel is passed.
-Timing settings mirror the run config: --turn-end-fallback-time (EVA_TURN_END_FALLBACK_TIME) sets
-"Respond after" (no_input_poke_sec), and the silence limit (no_input_end_conversation_sec) is the user simulator's INACTIVITY_TIMEOUT_SECONDS.
+Deploys all domains by default at intelligence level high, with assistant backchannel cues off unless
+--backchannel is passed. Timing settings mirror the run config: --turn-end-fallback-time (default
+EVA_TURN_END_FALLBACK_TIME from the environment or .env) sets "Respond after" (no_input_poke_sec), and the silence limit (no_input_end_conversation_sec) is the user simulator's INACTIVITY_TIMEOUT_SECONDS.
 The assistant server sends the same values with every session, so the run matches the saved agent.
 
 Reads PHONIC_API_KEY from the environment or .env. Agent IDs are kept in output/phonic_agents.json.
@@ -38,7 +38,7 @@ from phonic.core.api_error import ApiError
 
 from eva.assistant.phonic_server import PHONIC_TOOL_PREFIXES
 from eva.models.agents import AgentConfig
-from eva.models.config import LANGUAGE_DISPLAY_NAMES, RunConfig
+from eva.models.config import LANGUAGE_DISPLAY_NAMES, RunConfig, base_language
 from eva.user_simulator.cascade.simulator import INACTIVITY_TIMEOUT_SECONDS
 
 DOMAINS = ("airline", "itsm", "medical_hr")
@@ -116,14 +116,16 @@ def agent_config(
     voice_id: str,
     backchannel: bool,
     turn_end_fallback_time: int | None,
+    intelligence_level: str,
 ) -> dict:
     return {
+        "intelligence_level": intelligence_level,
         "no_input_poke_sec": turn_end_fallback_time,
         "no_input_end_conversation_sec": int(INACTIVITY_TIMEOUT_SECONDS),
         "enable_assistant_backchannel": backchannel,
         "model": model,
         "voice_id": voice_id,
-        "default_language": language,
+        "default_language": base_language(language),
         "system_prompt": SYSTEM_PROMPT_VARIABLE,
         "welcome_message": INITIAL_MESSAGE_VARIABLE,
         "generate_welcome_message": False,
@@ -140,21 +142,26 @@ async def main() -> None:
         "--language",
         choices=[lang.value for lang in LANGUAGE_DISPLAY_NAMES],
         default="en",
-        help="Base language code without a region tag (e.g. fr, not fr-CA); must match EVA_LANGUAGE for the run",
+        help="Must match EVA_LANGUAGE for the run; a region tag (fr-CA) gets its own agent but Phonic gets the base (fr)",
     )
     parser.add_argument("--domains", nargs="+", default=list(DOMAINS), choices=DOMAINS)
+    # Defaults to the run's own setting so the saved agent matches what each session sends.
+    fallback = os.environ.get("EVA_TURN_END_FALLBACK_TIME") or dotenv_values(".env").get("EVA_TURN_END_FALLBACK_TIME")
     parser.add_argument(
         "--turn-end-fallback-time",
         type=int,
-        default=RunConfig.model_fields["turn_end_fallback_time"].default,
-        help="Must match EVA_TURN_END_FALLBACK_TIME for the run -> no_input_poke_sec (unset disables the poke)",
+        default=int(fallback) if fallback else RunConfig.model_fields["turn_end_fallback_time"].default,
+        help="Defaults to EVA_TURN_END_FALLBACK_TIME (environment or .env) -> no_input_poke_sec "
+        "(unset disables the poke)",
+    )
+    parser.add_argument(
+        "--intelligence-level",
+        choices=["standard", "high"],
+        default="high",
+        help="Phonic reasoning level: high for more complex reasoning, standard for lower latency",
     )
     parser.add_argument("--backchannel", action="store_true", help="Enable assistant backchannel cues (off by default)")
     args = parser.parse_args()
-    if "-" in args.language:
-        raise SystemExit(
-            f"--language takes a base language code without a region tag; use {args.language.split('-')[0]}"
-        )
 
     key = os.environ.get("PHONIC_API_KEY") or dotenv_values(".env").get("PHONIC_API_KEY")
     if not key:
@@ -183,6 +190,7 @@ async def main() -> None:
             args.voice,
             args.backchannel,
             args.turn_end_fallback_time,
+            args.intelligence_level,
         )
         if agent_key in state["agents"]:
             await client.agents.update(state["agents"][agent_key]["id"], name=name, **config)
