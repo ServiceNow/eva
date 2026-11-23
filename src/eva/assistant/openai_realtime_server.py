@@ -63,6 +63,12 @@ class _UserTurnRecord:
     # Set once the assistant has replied to this turn. A turn that was answered
     # but still has no transcript is not going to get one.
     answered: bool = False
+    # Conversation item this turn's speech belongs to, so a late transcription
+    # can be matched to it after a newer turn has started.
+    item_id: str = ""
+    # Audit-log turn id, used to replace a placeholder with the real transcript.
+    turn_id: int | None = None
+    placeholder_written: bool = False
 
 
 @dataclass
@@ -113,6 +119,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._user_turn: _UserTurnRecord | None = None
         self._assistant_state = _AssistantResponseState()
         self._pending_tool_calls: list[_PendingToolCall] = []
+        self._active_response_id: str | None = None
+        self._user_turns_by_item_id: dict[str, _UserTurnRecord] = {}
+        self._next_turn_id: int = 0
         self._stream_sid: str = ""
 
         self._user_speaking: bool = False
@@ -229,6 +238,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                         "threshold": vad.get("threshold", 0.5),
                         "prefix_padding_ms": vad.get("prefix_padding_ms", 300),
                         "silence_duration_ms": vad.get("silence_duration_ms", 200),
+                        "create_response": True,
                     },
                     "transcription": {
                         "model": s2s.get("transcription_model", "whisper-1"),
@@ -294,6 +304,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._user_turn = None
         self._assistant_state = _AssistantResponseState()
         self._pending_tool_calls = []
+        self._active_response_id = None
+        self._user_turns_by_item_id = {}
+        self._next_turn_id = 0
         self._stream_sid = self.conversation_id
         self._user_speaking = False
         self._bot_speaking = False
@@ -352,6 +365,10 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             logger.error(f"{self._service_name} session error: {e}", exc_info=True)
         finally:
             self._flush_user_turn_without_transcript()
+            try:
+                await client.close()
+            except Exception as e:
+                logger.warning(f"Failed to close {self._service_name} client: {e}")
             logger.info(f"Client disconnected from {self._service_name} server")
 
     # ── Audio output pacer (OpenAI -> Twilio WS at real-time rate) ───
@@ -484,6 +501,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             case "session.updated":
                 logger.debug(f"{self._service_name} session updated")
 
+            case "response.created":
+                self._active_response_id = getattr(getattr(event, "response", None), "id", None)
+
             case "input_audio_buffer.speech_started":
                 await self._on_speech_started(event)
 
@@ -565,7 +585,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         if not self._user_turn or self._user_turn.flushed:
             # Use timestamp from audio_interface if available (source of truth)
             start_ts = self._audio_interface_speech_start_ts or wall
-            self._user_turn = _UserTurnRecord(speech_started_wall_ms=start_ts)
+            self._user_turn = self._new_user_turn(
+                item_id=getattr(event, "item_id", "") or "", speech_started_wall_ms=start_ts
+            )
             if self._fw_log:
                 self._fw_log.turn_start(timestamp_ms=int(start_ts))
             logger.debug(
@@ -575,11 +597,27 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         else:
             logger.debug(f"Speech started at {wall} (continuing existing turn)")
 
+    def _new_user_turn(self, *, item_id: str = "", **fields: Any) -> _UserTurnRecord:
+        """Create a user turn with a fresh audit-log turn id, tracked by item id."""
+        self._next_turn_id += 1
+        turn = _UserTurnRecord(item_id=item_id, turn_id=self._next_turn_id, **fields)
+        if item_id:
+            self._user_turns_by_item_id[item_id] = turn
+        return turn
+
     def _write_missing_transcript_placeholder(self) -> None:
-        """Record that the current user turn happened but its transcript is unavailable."""
-        timestamp_ms = self._user_turn.speech_started_wall_ms or None
-        self.audit_log.append_user_input("[user speech - transcription unavailable]", timestamp_ms=timestamp_ms)
-        self._user_turn.flushed = True
+        """Record that the current user turn happened but its transcript is unavailable.
+
+        The entry carries the turn id so a late transcription replaces it instead of
+        adding a second entry for the same spoken turn.
+        """
+        turn = self._user_turn
+        timestamp_ms = turn.speech_started_wall_ms or None
+        self.audit_log.append_user_input(
+            "[user speech - transcription unavailable]", timestamp_ms=timestamp_ms, turn_id=turn.turn_id
+        )
+        turn.flushed = True
+        turn.placeholder_written = True
 
     def _flush_user_turn_without_transcript(self) -> None:
         """Write a placeholder for a spoken user turn that never received a transcript.
@@ -606,7 +644,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         if self._user_turn:
             self._user_turn.speech_stopped_wall_ms = wall
         else:
-            self._user_turn = _UserTurnRecord(speech_stopped_wall_ms=wall)
+            self._user_turn = self._new_user_turn(speech_stopped_wall_ms=wall)
 
         logger.debug(f"Speech stopped at {wall}")
 
@@ -619,13 +657,26 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             logger.debug("Empty transcription, skipping")
             return
 
-        timestamp_ms = None
-        if self._user_turn:
-            timestamp_ms = self._user_turn.speech_started_wall_ms or None
-            self._user_turn.transcript = transcript
-            self._user_turn.flushed = True
+        # The transcription may arrive after a newer turn started, so match it to its
+        # own conversation item when the event carries one.
+        item_id = getattr(event, "item_id", "") or ""
+        turn = self._user_turns_by_item_id.get(item_id) or self._user_turn
 
-        self.audit_log.append_user_input(transcript, timestamp_ms=timestamp_ms)
+        timestamp_ms = None
+        if turn:
+            timestamp_ms = turn.speech_started_wall_ms or None
+            turn.transcript = transcript
+            turn.flushed = True
+
+        if turn and turn.placeholder_written and turn.turn_id is not None:
+            # A placeholder was already written for this turn; replace it rather than
+            # recording the same spoken turn twice.
+            turn.placeholder_written = False
+            if self.audit_log.update_user_input_by_turn_id(turn.turn_id, transcript):
+                logger.debug(f"Replaced placeholder with late transcription: {transcript[:60]}...")
+                return
+
+        self.audit_log.append_user_input(transcript, timestamp_ms=timestamp_ms, turn_id=turn.turn_id if turn else None)
         logger.debug(f"User transcription: {transcript}...")
 
     async def _on_audio_delta(self, event: Any, audio_output_queue: asyncio.Queue[bytes]) -> None:
@@ -702,22 +753,32 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
 
     def _on_function_call_done(self, event: Any) -> None:
         """Handle response.function_call_arguments.done - record the call; it runs at response.done."""
-        arguments_str = getattr(event, "arguments", "{}") or "{}"
-
-        try:
-            arguments = json.loads(arguments_str)
-        except json.JSONDecodeError:
-            arguments = {}
-
         self._pending_tool_calls.append(
             _PendingToolCall(
                 call_id=getattr(event, "call_id", ""),
                 name=getattr(event, "name", ""),
-                arguments=arguments,
-                response_id=getattr(event, "response_id", "") or "",
+                arguments=self._parse_tool_arguments(getattr(event, "arguments", "{}") or "{}"),
+                response_id=getattr(event, "response_id", "") or self._active_response_id or "",
             )
         )
         self._assistant_state.has_function_calls = True
+
+    @staticmethod
+    def _parse_tool_arguments(arguments_raw: Any) -> dict[str, Any]:
+        """Parse function arguments, falling back to an empty object for anything else.
+
+        Valid JSON that is not an object (a list, a bare string, null) would otherwise
+        reach execute_tool as a non-mapping and fail there.
+        """
+        if isinstance(arguments_raw, dict):
+            return arguments_raw
+        if not isinstance(arguments_raw, str):
+            return {}
+        try:
+            arguments = json.loads(arguments_raw)
+        except json.JSONDecodeError:
+            return {}
+        return arguments if isinstance(arguments, dict) else {}
 
     def _take_response_tool_calls(self, event: Any) -> tuple[str, list[_PendingToolCall]]:
         """Remove and return the pending tool calls that belong to the finished response."""
@@ -730,24 +791,56 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._pending_tool_calls = [call for call in self._pending_tool_calls if call not in taken]
         return response_id, taken
 
-    async def _run_tool_batch(self, response_id: str, tool_calls: list[_PendingToolCall], conn: Any) -> None:
-        """Run a completed response's tools in order, return all results, then request one continuation."""
-        results: list[Any] = []
-        for call in tool_calls:
-            logger.info(f"Tool call: {call.name}({json.dumps(call.arguments, ensure_ascii=False)})")
+    async def _execute_pending_tool(self, call: _PendingToolCall) -> Any:
+        """Execute and audit one pending tool, converting unexpected failures to output."""
+        logger.info(f"Tool call: {call.name}({json.dumps(call.arguments, ensure_ascii=False)})")
+        try:
             result = await self.execute_tool(call.name, call.arguments)
-            results.append(result)
+        except asyncio.CancelledError:
+            # The session is shutting down mid-tool. execute_tool already
+            # recorded the call, so complete the audit pair before re-raising.
+            self.audit_log.append_tool_response(
+                call.name,
+                {"status": "error", "error_type": "cancelled", "message": "Tool execution was cancelled"},
+            )
+            raise
+        except Exception as exc:
+            logger.error(f"Tool execution failed for {call.name}: {exc}", exc_info=True)
+            result = {
+                "status": "error",
+                "error_type": "execution_error",
+                "message": f"Tool execution failed: {exc}",
+            }
+            # execute_tool records the call before invoking the handler. Complete
+            # the audit pair when the handler itself raises unexpectedly.
+            self.audit_log.append_tool_response(call.name, result)
 
-            if self._fw_log:
-                self._fw_log.write(
-                    "tool_call",
-                    {
-                        "frame": "tool_call",
-                        "tool_name": call.name,
-                        "arguments": call.arguments,
-                        "result": result,
-                    },
-                )
+        if self._fw_log:
+            self._fw_log.write(
+                "tool_call",
+                {
+                    "frame": "tool_call",
+                    "tool_name": call.name,
+                    "arguments": call.arguments,
+                    "result": result,
+                },
+            )
+        return result
+
+    async def _run_tool_batch(
+        self,
+        response_id: str,
+        tool_calls: list[_PendingToolCall],
+        conn: Any,
+        *,
+        create_response: bool = True,
+    ) -> None:
+        """Run a completed response's tools in order, return all results, then request one continuation.
+
+        When create_response is False (the user is speaking), the outputs are still sent
+        and server VAD creates the reply once the user's turn ends.
+        """
+        results: list[Any] = [await self._execute_pending_tool(call) for call in tool_calls]
 
         for call, result in zip(tool_calls, results, strict=True):
             await conn.conversation.item.create(
@@ -757,6 +850,13 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                     "output": json.dumps(result, ensure_ascii=False),
                 }
             )
+
+        if not create_response:
+            logger.debug(
+                f"Returned {len(tool_calls)} tool result(s) for response {response_id or '<unknown>'}; "
+                "user is speaking, leaving the reply to server VAD"
+            )
+            return
 
         # One response.create() per batch: a second one while the first is
         # active fails with "Conversation already has an active response".
@@ -772,6 +872,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         status = getattr(getattr(event, "response", None), "status", None)
 
         self._record_response_done(event)
+
+        if self._active_response_id == response_id:
+            self._active_response_id = None
 
         if not tool_calls:
             return
@@ -789,7 +892,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             logger.error("Cannot return Realtime tool results without an active connection")
             return
 
-        await self._run_tool_batch(response_id, tool_calls, conn)
+        await self._run_tool_batch(response_id, tool_calls, conn, create_response=not self._user_speaking)
 
     def _record_response_done(self, event: Any) -> None:
         """Handle response.done - assistant response complete.
@@ -818,7 +921,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
             self._reset_assistant_state()
             return
 
-        has_function_calls = self._response_has_function_calls(event)
+        has_function_calls = self._response_has_function_calls(event) or self._assistant_state.has_function_calls
 
         # Build transcript text from best available source:
         # 1. response.audio_transcript.done text (most reliable)

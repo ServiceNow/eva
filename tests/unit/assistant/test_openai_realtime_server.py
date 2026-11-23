@@ -5,6 +5,7 @@ They guard against regressions when refactoring shared logic.
 """
 
 import asyncio
+import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -109,6 +110,10 @@ def _batching_server() -> OpenAIRealtimeAssistantServer:
     srv._assistant_state = _AssistantResponseState()
     srv._pending_tool_calls = []
     srv._user_turn = None
+    srv._user_speaking = False
+    srv._active_response_id = None
+    srv._user_turns_by_item_id = {}
+    srv._next_turn_id = 0
     srv._metrics_log = None
     srv._fw_log = None
     srv.audit_log = MagicMock()
@@ -210,6 +215,10 @@ class TestToolBatching:
         srv._flush_pending_user_transcript = MagicMock()
         srv._pending_tool_calls = []
         srv._user_turn = None
+        srv._user_speaking = False
+        srv._active_response_id = None
+        srv._user_turns_by_item_id = {}
+        srv._next_turn_id = 0
         srv._assistant_state = _AssistantResponseState()
         srv._metrics_log = None
         srv._fw_log = None
@@ -281,8 +290,6 @@ PLACEHOLDER = "[user speech - transcription unavailable]"
 
 def _speech_server() -> OpenAIRealtimeAssistantServer:
     srv = _batching_server()
-    srv._user_turn = None
-    srv._user_speaking = False
     srv._audio_interface_speech_start_ts = None
     srv._stream_sid = "s"
     return srv
@@ -359,3 +366,186 @@ class TestMissingUserTranscript:
         srv._record_response_done(event)
 
         assert srv._user_turn.answered is False
+
+
+class TestContinuationWhileUserSpeaking:
+    @pytest.mark.asyncio
+    async def test_outputs_are_sent_but_response_create_is_skipped_while_user_speaks(self):
+        srv = _batching_server()
+        srv.execute_tool = AsyncMock(return_value={"status": "success"})
+        srv._user_speaking = True
+        conn = _connection()
+        srv._on_function_call_done(_arguments_done("resp_1", "call_1", "lookup", "{}"))
+
+        await srv._on_response_done(_response_done("resp_1"), conn)
+
+        srv.execute_tool.assert_awaited_once_with("lookup", {})
+        conn.conversation.item.create.assert_awaited_once()
+        conn.response.create.assert_not_awaited()
+
+    def test_session_config_sets_create_response_explicitly(self):
+        srv = _bare_server()
+        turn_detection = srv._build_session_config()["audio"]["input"]["turn_detection"]
+        assert turn_detection["create_response"] is True
+
+
+class TestToolFailures:
+    @pytest.mark.asyncio
+    async def test_tool_exception_becomes_an_error_output_and_completes_the_audit_pair(self):
+        srv = _batching_server()
+        srv.execute_tool = AsyncMock(side_effect=RuntimeError("boom"))
+        conn = _connection()
+        srv._on_function_call_done(_arguments_done("resp_1", "call_1", "lookup", "{}"))
+
+        await srv._on_response_done(_response_done("resp_1"), conn)
+
+        output = json.loads(conn.conversation.item.create.await_args.kwargs["item"]["output"])
+        assert output["error_type"] == "execution_error"
+        assert srv.audit_log.append_tool_response.call_args.args[1]["error_type"] == "execution_error"
+        conn.response.create.assert_awaited_once_with()
+
+    @pytest.mark.asyncio
+    async def test_cancelled_tool_completes_the_audit_pair(self):
+        srv = _batching_server()
+        started = asyncio.Event()
+
+        async def execute_tool(name, arguments):
+            started.set()
+            await asyncio.Event().wait()
+
+        srv.execute_tool = AsyncMock(side_effect=execute_tool)
+        conn = _connection()
+        srv._on_function_call_done(_arguments_done("resp_1", "call_1", "lookup", "{}"))
+
+        task = asyncio.create_task(srv._on_response_done(_response_done("resp_1"), conn))
+        await started.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        assert srv.audit_log.append_tool_response.call_args.args[1]["error_type"] == "cancelled"
+        conn.conversation.item.create.assert_not_awaited()
+
+
+class TestParseToolArguments:
+    @pytest.mark.parametrize(
+        "raw,expected",
+        [
+            ('{"city":"Paris"}', {"city": "Paris"}),
+            ({"city": "Paris"}, {"city": "Paris"}),
+            ("[1, 2]", {}),
+            ('"just a string"', {}),
+            ("null", {}),
+            ("not json", {}),
+            (None, {}),
+            (42, {}),
+        ],
+    )
+    def test_only_json_objects_survive(self, raw, expected):
+        assert OpenAIRealtimeAssistantServer._parse_tool_arguments(raw) == expected
+
+    @pytest.mark.asyncio
+    async def test_non_object_arguments_reach_the_tool_as_an_empty_dict(self):
+        srv = _batching_server()
+        srv.execute_tool = AsyncMock(return_value={"status": "success"})
+        conn = _connection()
+        srv._on_function_call_done(_arguments_done("resp_1", "call_1", "lookup", "[1, 2]"))
+
+        await srv._on_response_done(_response_done("resp_1"), conn)
+
+        srv.execute_tool.assert_awaited_once_with("lookup", {})
+
+
+class TestActiveResponseTracking:
+    @pytest.mark.asyncio
+    async def test_response_created_supplies_the_id_when_the_call_event_omits_it(self):
+        srv = _batching_server()
+        srv.execute_tool = AsyncMock(return_value={"status": "success"})
+        conn = _connection()
+        await srv._handle_openai_event(
+            SimpleNamespace(type="response.created", response=SimpleNamespace(id="resp_1")),
+            conn,
+            AsyncMock(),
+            asyncio.Queue(),
+        )
+        assert srv._active_response_id == "resp_1"
+
+        srv._on_function_call_done(SimpleNamespace(call_id="call_1", name="lookup", arguments="{}"))
+        assert srv._pending_tool_calls[0].response_id == "resp_1"
+
+        await srv._on_response_done(_response_done("resp_1"), conn)
+
+        srv.execute_tool.assert_awaited_once_with("lookup", {})
+        assert srv._active_response_id is None
+
+    @pytest.mark.asyncio
+    async def test_a_newer_responses_id_is_not_cleared_by_an_older_done(self):
+        srv = _batching_server()
+        srv._active_response_id = "resp_2"
+
+        await srv._on_response_done(_response_done("resp_1"), _connection())
+
+        assert srv._active_response_id == "resp_2"
+
+
+def _answer_the_turn(srv, response_id: str = "resp_1") -> None:
+    """Record a spoken assistant response, which marks the current user turn answered."""
+    srv._assistant_state.transcript_done_text = "Sure, one moment."
+    srv._assistant_state.first_audio_wall_ms = "1"
+    srv._record_response_done(_response_done(response_id))
+
+
+class TestLateTranscriptionAfterPlaceholder:
+    @pytest.mark.asyncio
+    async def test_late_transcription_replaces_the_placeholder_instead_of_duplicating(self):
+        srv = _speech_server()
+        srv.audit_log.update_user_input_by_turn_id = MagicMock(return_value=True)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-a"))
+        turn_a = srv._user_turn
+        _answer_the_turn(srv)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-b"))
+        assert _user_entries(srv) == [PLACEHOLDER]
+
+        # item-a's transcription finally arrives, after turn B already started.
+        await srv._on_transcription_completed(SimpleNamespace(item_id="item-a", transcript="I need a flight"))
+
+        srv.audit_log.update_user_input_by_turn_id.assert_called_once_with(turn_a.turn_id, "I need a flight")
+        assert _user_entries(srv) == [PLACEHOLDER]  # no second entry
+        assert turn_a.transcript == "I need a flight"
+
+    @pytest.mark.asyncio
+    async def test_a_late_transcription_is_matched_to_its_own_turn_not_the_current_one(self):
+        srv = _speech_server()
+        await srv._on_speech_started(SimpleNamespace(item_id="item-a"))
+        turn_a = srv._user_turn
+        _answer_the_turn(srv)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-b"))
+        turn_b = srv._user_turn
+
+        await srv._on_transcription_completed(SimpleNamespace(item_id="item-a", transcript="first utterance"))
+
+        assert turn_a.transcript == "first utterance"
+        assert turn_b.transcript == ""
+
+    @pytest.mark.asyncio
+    async def test_a_normal_transcription_is_still_appended_once(self):
+        srv = _speech_server()
+        srv.audit_log.update_user_input_by_turn_id = MagicMock(return_value=True)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-a"))
+
+        await srv._on_transcription_completed(SimpleNamespace(item_id="item-a", transcript="hello there"))
+
+        assert _user_entries(srv) == ["hello there"]
+        srv.audit_log.update_user_input_by_turn_id.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_a_failed_replacement_falls_back_to_appending(self):
+        srv = _speech_server()
+        srv.audit_log.update_user_input_by_turn_id = MagicMock(return_value=False)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-a"))
+        _answer_the_turn(srv)
+        await srv._on_speech_started(SimpleNamespace(item_id="item-b"))
+
+        await srv._on_transcription_completed(SimpleNamespace(item_id="item-a", transcript="late text"))
+
+        assert _user_entries(srv) == [PLACEHOLDER, "late text"]
