@@ -200,10 +200,10 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
 
                 # Detect "no audio" — Gemini may report it at the top level OR
                 # in every per-turn explanation when it drops inline audio payloads.
-                explanation = parsed.get("explanation", "")
+                explanation = parsed.get("explanation") or ""
                 turns = parsed.get("turns", [])
                 all_turns_no_audio = turns and all(
-                    "no audio" in t.get("explanation", "").lower() for t in turns if isinstance(t, dict)
+                    "no audio" in (t.get("explanation") or "").lower() for t in turns if isinstance(t, dict)
                 )
                 if "no audio" in explanation.lower() or all_turns_no_audio:
                     no_audio_source = "top-level" if "no audio" in explanation.lower() else "per-turn"
