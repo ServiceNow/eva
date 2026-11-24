@@ -1,0 +1,143 @@
+{
+ "latin_script": true,
+ "letter_names": {
+  "A": "a",
+  "B": "bé",
+  "C": "cé",
+  "D": "dé",
+  "E": "e",
+  "F": "effe",
+  "G": "gé",
+  "H": "ache",
+  "I": "i",
+  "J": "ji",
+  "K": "ka",
+  "L": "elle",
+  "M": "emme",
+  "N": "enne",
+  "O": "o",
+  "P": "pé",
+  "Q": "ku",
+  "R": "erre",
+  "S": "esse",
+  "T": "té",
+  "U": "u",
+  "V": "vé",
+  "W": "double-vé",
+  "X": "iks",
+  "Y": "i grec",
+  "Z": "zède"
+ },
+ "letter_note": "Pronunciations are written with French spelling conventions, not English ones.",
+ "digit_names": {
+  "0": "zéro",
+  "1": "un",
+  "2": "deux",
+  "3": "trois",
+  "4": "quatre",
+  "5": "cinq",
+  "6": "six (sis)",
+  "7": "sept",
+  "8": "huit",
+  "9": "neuf"
+ },
+ "number_readings": "'soixante-dix' = 70; 'soixante-dix-sept' = 77; 'quatre-vingts' = 80; 'quatre-vingt-onze' = 91",
+ "time_readings": "'quinze heures trente' = 15:30; 'trois heures et demie' = 3:30 or 15:30; 'trois heures et quart' = 3:15 or 15:15; 'trois heures moins le quart' / 'trois heures moins quart' (without 'le', common in Québec) = 2:45 or 14:45; 'midi' = 12:00; 'minuit' = 0:00",
+ "date_readings": "'le premier mars' = 1er mars; 'deux mille vingt-six' = 2026; 'mille neuf cent quatre-vingt-dix' / 'dix-neuf cent quatre-vingt-dix' = 1990",
+ "correct_other": [
+  "Spelling words such as 'A comme Anatole' and 'M comme Marcel' are correct. Names written like English names still have French pronunciations: A /a/ as in 'papa', E /ə/ as in 'le', I /i/ as in 'ici', U /y/ as in 'tu', and six pronounced 'sis'.",
+  "Phone numbers are usually read in two-digit pairs: 'zéro six, douze, trente-quatre…' for 06 12 34… is correct, not a code read as one number."
+ ],
+ "english_name_traps": [
+  "'ay', 'ee', 'eye', 'you', 'bee', 'jay', 'double-u', 'six' with English 'ks', 'two'; INC or EMP spelled with English names",
+  "English G /dʒiː/ sounds like French J /ʒi/; English J /dʒeɪ/ sounds like French G /ʒe/; English E /iː/ sounds like French I /i/."
+ ],
+ "wrong_by_name": [],
+ "wrong_value": [
+  "soixante-sept for 77",
+  "'moins le quart' for 3:45"
+ ],
+ "unusual": [
+  "'le un mars' instead of 'le premier mars'"
+ ],
+ "accent_notes": [],
+ "confusable": [
+  {
+   "forms": "M/N/L",
+   "names": "emme/enne/elle"
+  },
+  {
+   "forms": "B/D/P/T",
+   "names": "bé/dé/pé/té"
+  },
+  {
+   "forms": "G/J",
+   "names": "gé/ji"
+  },
+  {
+   "forms": "F/S",
+   "names": "effe/esse"
+  },
+  {
+   "forms": "B/C/D/G/P/T/V/W",
+   "names": "bé/cé/dé/gé/pé/té/vé/double-vé"
+  }
+ ],
+ "same_sound": [],
+ "letter_digit_homophones": null,
+ "names_logographic": false,
+ "disambiguation_questions": [],
+ "loanwords": [
+  "e-mail",
+  "week-end",
+  "OK",
+  "login",
+  "check-in"
+ ],
+ "loanword_notes": [
+  "Established loanwords, including badge and mail, are normal French and never a language violation."
+ ],
+ "speaker_gender": {
+  "forms": "adjectives, past participles and nouns for itself",
+  "pairs": [
+   [
+    "désolé",
+    "désolée"
+   ],
+   [
+    "ravi",
+    "ravie"
+   ],
+   [
+    "certain",
+    "certaine"
+   ],
+   [
+    "allé",
+    "allée"
+   ],
+   [
+    "conseiller",
+    "conseillère"
+   ]
+  ],
+  "not_flagged": "past participles with avoir ('j’ai vérifié votre dossier') and words agreeing with something else ('votre réservation est confirmée')"
+ },
+ "register": {
+  "applies": true,
+  "cultural_norms": [
+   "Formal vous register, including 'Pourriez-vous me donner…' and 'Je vais vous demander de…', is not filler. Short service formulas, one per function, are not filler: 'Je vous écoute', 'Parfait', 'Très bien', 'D’accord', 'Je vous en prie', 'Puis-je vous aider ?', 'Je vais vérifier cela pour vous', and addressing the user by name ('Très bien, Lucien').",
+   "Québec service register is often warmer than European French: 'Excellent, Lucien !', 'Ça me fait plaisir', 'Pas de problème', 'Je suis là pour vous aider'."
+  ],
+  "not_excess_length": []
+ },
+ "script_mixing": {
+  "applies": false,
+  "gloss_examples": [],
+  "not_violation": []
+ },
+ "transcription": {
+  "same_value": [],
+  "no_match": []
+ }
+}

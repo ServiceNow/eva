@@ -1,0 +1,161 @@
+{
+ "latin_script": false,
+ "letter_names": {
+  "A": "エー",
+  "B": "ビー",
+  "C": "シー",
+  "D": "ディー",
+  "E": "イー",
+  "F": "エフ",
+  "G": "ジー",
+  "H": "エイチ / エッチ",
+  "I": "アイ",
+  "J": "ジェー",
+  "K": "ケー",
+  "L": "エル",
+  "M": "エム",
+  "N": "エヌ",
+  "O": "オー",
+  "P": "ピー",
+  "Q": "キュー",
+  "R": "アール",
+  "S": "エス",
+  "T": "ティー",
+  "U": "ユー",
+  "V": "ブイ / ヴィー",
+  "W": "ダブリュー",
+  "X": "エックス",
+  "Y": "ワイ",
+  "Z": "ゼット / ズィー"
+ },
+ "letter_note": "Letter names are written in katakana and are correct even with an English-like accent.",
+ "digit_names": {
+  "0": "ゼロ / れい / まる",
+  "1": "いち",
+  "2": "に",
+  "3": "さん",
+  "4": "よん / し",
+  "5": "ご",
+  "6": "ろく",
+  "7": "なな / しち",
+  "8": "はち",
+  "9": "きゅう"
+ },
+ "number_readings": "'ひとり' = 1人; 'ふたり' = 2人; 'よにん' = 4人",
+ "time_readings": "'よじ' = 4時; 'しちじ' = 7時; 'くじ' = 9時; 'いっぷん' = 1分; 'じゅっぷん' = 10分",
+ "date_readings": "'しがつ' = 4月; 'しちがつ / なながつ' = 7月; 'くがつ' = 9月; 'ついたち' = 1日; 'はつか' = 20日; '千九百八十八年' = 1988年 (a year read as a number)",
+ "correct_other": [
+  "Katakana pronunciation of English names is correct, such as コンフルエンス for Confluence."
+ ],
+ "english_name_traps": [
+  "'six', 'two'"
+ ],
+ "wrong_by_name": [
+  {
+   "name": "ビー",
+   "said_for": "V",
+   "means": "B"
+  }
+ ],
+ "wrong_value": [],
+ "unusual": [
+  "Inside a code, し (4) or しち (7) can be understood but may be heard as シー (C) or いち (1); なな is preferred for 7.",
+  "Counter readings such as よんじ, きゅうじ, よんにち, and years read digit by digit are unusual but understandable."
+ ],
+ "accent_notes": [],
+ "confusable": [
+  {
+   "forms": "M/N/L",
+   "names": "エム/エヌ/エル"
+  },
+  {
+   "forms": "B/V",
+   "names": "ビー/ブイ"
+  },
+  {
+   "forms": "D/T",
+   "names": "ディー/ティー"
+  },
+  {
+   "forms": "G/Z",
+   "names": "ジー/ズィー"
+  },
+  {
+   "forms": "C/4/7",
+   "names": "シー/し/しち"
+  },
+  {
+   "forms": "7/1",
+   "names": "しち/いち"
+  },
+  {
+   "forms": "G/J/Z/D",
+   "names": "ジー/ジェー/ゼット・ズィー/ディー"
+  }
+ ],
+ "same_sound": [
+  {
+   "forms": "Q/9",
+   "names": "キュー/きゅう",
+   "scope": "code"
+  },
+  {
+   "forms": "L/R",
+   "names": "",
+   "scope": "name_spelling"
+  }
+ ],
+ "letter_digit_homophones": "The letter Q (キュー) and the digit 9 (きゅう) sound identical.",
+ "names_logographic": true,
+ "disambiguation_questions": [
+  "アルファベットのキューですか、数字のきゅうですか",
+  "お名前はどのような漢字をお書きになりますか"
+ ],
+ "loanwords": [
+  "パスワード",
+  "ログイン",
+  "チケット",
+  "ポータル",
+  "アカウント"
+ ],
+ "loanword_notes": [
+  "Latin-letter codes and acronyms such as EMP, INC, PC and ID are not language violations; a transcript rendering a spoken katakana loanword in Latin letters, such as OK, is not evidence of English speech.",
+  "An English term that is the official system name, such as HR Portal, is not a language violation."
+ ],
+ "speaker_gender": null,
+ "register": {
+  "applies": true,
+  "cultural_norms": [
+   "Keigo and humble and honorific verb forms are longer than plain forms without adding cognitive load.",
+   "Fixed service formulas, one per function, are not filler: 「かしこまりました」「恐れ入りますが」「少々お待ちください」「お待たせいたしました」「確認いたします / 確認させていただきます」 and 「ありがとうございます」 at the opening or closing."
+  ],
+  "not_excess_length": [
+   "Different formulas for different functions in one turn, such as お待たせいたしました followed by 確認いたしました, are not filler."
+  ]
+ },
+ "script_mixing": {
+  "applies": true,
+  "gloss_examples": [
+   "暗証番号（PIN）",
+   "病気休暇（sick leave）",
+   "PIN／暗証番号"
+  ],
+  "not_violation": [
+   "Latin-script words or codes used on their own, including confirmation codes, flight numbers, ID, PIN and brand or product names, and katakana loanwords.",
+   "Japanese punctuation 「」, 『』, 、, 。, ・, 〜 and full-width digits or letters are normal written Japanese, not formatting."
+  ]
+ },
+ "transcription": {
+  "same_value": [
+   "Katakana letter names and their Latin letters are equivalent; the transcription guidance also gives ティ = T.",
+   "ゼロ / れい / まる / 〇 / 零 = 0; いち / 一 = 1; に / 二 = 2; さん / 三 = 3; よん / し / 四 = 4; ご / 五 = 5; ろく / 六 = 6; なな / しち / 七 = 7; はち / 八 = 8; きゅう / く / 九 = 9.",
+   "A kana or romaji rendering of a kanji name is equivalent: 近藤 = こんどう = Kondo.",
+   "Different kanji spellings of the same name reading, such as 隼斗 for 隼人 or 斎藤 for 斉藤, are correct on first mention, but incorrect once the user has specified the kanji."
+  ],
+  "no_match": [
+   "キュー transcribed or used as 9, or きゅう as Q: Q and 9 remain different values despite sounding the same.",
+   "An ordinary word substituted for a name, such as 混同 for 近藤, is not a match.",
+   "An invalid or non-existent name form, such as 混藤 for 近藤, is not a match."
+  ]
+ }
+}

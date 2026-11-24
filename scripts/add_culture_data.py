@@ -27,9 +27,10 @@ Performs all one-time setup needed to run the benchmark in a new language:
 
   5. **Judge language guidance** — adds a ``<lang>`` entry to each file in
      ``configs/prompts/judge_language_guidance/``. Headings and rating rules come
-     from fixed templates; the LLM fills only the language-specific slots
-     (letter names, confusable pairs, loanwords, gendered self-reference forms).
-     Metrics where the language needs no guidance get no entry.
+     from fixed templates; the LLM returns only a language profile (letter names,
+     confusable pairs, loanwords, gendered self-reference forms), sampled several
+     times and merged by majority vote. Metrics where the language needs no
+     guidance get no entry.
 
 All steps are idempotent: existing entries are skipped.
 
@@ -55,7 +56,7 @@ Key arguments:
                         ``color``). Useful for languages with significant dialect
                         orthography divergence. English ships one by default; most
                         other languages don't need it.
-  --llm-model           Override the LLM used for generation (default: gpt-5.5).
+  --llm-model           Override the LLM used for generation (default: gpt-6.1-sol).
   --record-id           Mutate only a single record — useful for spot-checking a diff.
   --dry-run             Print what would be written without touching any files.
 
@@ -1514,9 +1515,9 @@ def update_env_example(language: str, language_name: str, env_example_path: Path
 # ── Judge language guidance ─────────────────────────────────────────────────
 # Each guidance entry is rendered from fixed templates: group headings and framing sentences
 # (which carry the rating rules) are copied from the existing native-speaker-reviewed files,
-# with {L} standing for the language name. The LLM only fills the language-specific slots
-# (letter names, confusable pairs, loanwords, gendered example forms, ...). The three
-# speech-fidelity judges share one LLM call and differ only in their headings.
+# with {L} standing for the language name. The LLM only returns a language profile (letter
+# names, confusable pairs, loanwords, gendered example forms, ...), sampled several times and
+# merged by majority vote; every metric file is rendered from that one profile.
 
 _SPEECH_FIDELITY_METRICS = ("agent_speech_fidelity", "tts_fidelity", "user_speech_fidelity")
 
@@ -1535,7 +1536,7 @@ _SPEECH_HEADINGS: dict[str, dict[str, str]] = {
         "english_names": "**English letter or digit names inside a trace entity: if the entity is not said in {L}, "
         "the rating should be 0.** Typical cases:",
         "wrong_entity": "**Rating = 0, the entity is wrong:**",
-        "unusual": "**Unusual but understandable: rating = 1; rating = 0 only if a {L} listener could take it for "
+        "unusual": "**Unusual but understandable: rating = 1; rating = 0 only if a native {L} listener could take it for "
         "a different value:**",
         "sound_alike": _SOUND_ALIKE.replace("{severity}", "rating = 0"),
         "same_sound": _SAME_SOUND.replace("{reference}", "the trace"),
@@ -1545,7 +1546,7 @@ _SPEECH_HEADINGS: dict[str, dict[str, str]] = {
         "`entity_error` when the English name sounds like a different {L} letter.** Typical cases:",
         "wrong_entity": "**Rating = 0 with `entity_error`:**",
         "unusual": "**Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if "
-        "a {L} listener could take it for a different value:**",
+        "a native {L} listener could take it for a different value:**",
         "sound_alike": _SOUND_ALIKE.replace("{severity}", "rating = 0 with `entity_error`"),
         "same_sound": _SAME_SOUND.replace("{reference}", "the intended text"),
     },
@@ -1565,134 +1566,116 @@ _SPEECH_HEADINGS: dict[str, dict[str, str]] = {
 _LETTERS = [chr(c) for c in range(ord("A"), ord("Z") + 1)]
 _DIGITS = [str(d) for d in range(10)]
 
-_GUIDANCE_PROMPT_HEADER = """You are writing evaluation guidance for LLM judges that score {L} ({lang}) voice-agent
-conversations. A script renders your JSON into the final guidance: it adds the group headings and the framing
-sentences that state the rating rules. You only supply the {L}-specific content for each slot.
+# One LLM call per sample returns a language profile: every {L} fact stated once. All metric files are
+# rendered from it, so the judges cannot disagree about e.g. which letters are confusable. Examples in this
+# prompt come only from the reference languages (or are placeholders), so a new language is not steered
+# toward another language's answers.
+_PROFILE_PROMPT = """You are building a LANGUAGE PROFILE for {L} ({lang}). A script renders it into guidance for
+several LLM judges that score {L} voice-agent conversations (airline / IT / HR service calls where users spell
+codes, names, dates). The script supplies all headings and rating rules; you supply only {L} facts.
 
 Rules:
-- Write in English, quoting {L} forms in their native script, in single quotes or as plain lists.
-- Each list item is one bullet: a short, concrete statement or example list. No headings, no markdown bold,
-  no leading "- ", no rating instructions (the headings carry those).
-- Only include what a native {L} speaker would confirm. Return an empty list (or null) for a slot that does
-  not apply to {L}; do not invent content to fill it.
-- Be brief. Include only what a judge who does not speak {L} would otherwise get wrong when rating these
-  conversations; leave out general facts about {L}. Most lists have 0-3 items, never more than the cap given
-  for the slot. Each item names the forms, it does not explain the language.
-- Do not repeat content across slots (e.g. a reading listed as correct is not listed again elsewhere).
-- Match the length, depth and style of the reference guidance below (written by native speakers for other
-  languages): it is the target, not a minimum.
-- Your guidance is inserted into the shared judge prompt(s) below, at their {language_guidance} slot. When
-  several prompts are given, the same guidance goes into each, so it must hold for all of them. Never
-  contradict them: a form any shared prompt treats as an error (or as a different value) must not be listed
-  as correct, and a rule it already states for every language need not be repeated.
-- A loanword is a word borrowed from another language, usually English. Native vocabulary, including
-  long-established words of native or classical origin, is not a loanword.
+- Write in English, quoting {L} forms in native script. Each list item is one short bullet, no markdown.
+- Only facts a native {L} speaker would confirm. Empty list / null / applies=false whenever nothing is needed.
+  There are NO minimum counts: [] is the expected answer for many fields.
+- Include only what a judge who does not speak {L} would otherwise get WRONG. No general facts about {L}.
+- State each fact ONCE in the profile; the script reuses it in every judge that needs it.
+- The guidance is inserted into the shared judge prompts below. Never contradict them: a form any shared
+  prompt treats as an error (or as a different value) must not be listed as correct.
+- A loanword is borrowed from another language (usually English); native vocabulary is not.
 
-Shared judge prompt (language-neutral; English text before guidance is inserted):
+Return JSON:
+{{
+ "latin_script": bool,
+ "letter_names": {{"A": .., ..., "Z": ..}},  // how {L} speakers name each Latin letter when spelling; variants " / ".
+                                         // Latin-script: pronunciation in {L} spelling ("beh"); else native script.
+ "letter_note": str|null,   // extra letters / digraphs, or which script the names are in
+ "digit_names": {{"0": .., ..., "9": ..}},
+ "number_readings": str|null, "time_readings": str|null, "date_readings": str|null,
+     // "'reading' = value" pairs, max 6, only quirks a non-native judge would misjudge; null if English-like.
+     // Check: digit order (units before tens), large-number grouping, half/quarter-hour conventions that point
+     // to the next hour, day-part words that decide AM/PM, ordinal vs cardinal day numbers, year readings.
+ "correct_other": [..],     // max 2: spelling-alphabet convention, other correct forms not covered above. (The
+                            // script itself notes letter names that are spelled like English ones.)
+ "english_name_traps": [..],// max 2: item 1 the English names as heard ('jay','six'); item 2 optional: which {L}
+                            // letter some English names sound like
+ "wrong_by_name": [{{"name": str, "said_for": str, "means": str}}],
+                            // a name / spelling word that clearly picks a DIFFERENT letter than intended:
+                            // {{"name": "<long-form name or spelling word of X>", "said_for": "Y", "means": "X"}}.
+                            // Only when two letters with the same sound each have their own distinct LETTER NAME
+                            // in {L} (so saying one name for the other letter is wrong); then one entry per
+                            // direction. Not for name-spelling merges, which have no letter names. Usually [].
+ "wrong_value": [..],       // {L} readings that state a different value, e.g. "siebenundfünfzig for 75". Usually []
+ "unusual": [..],           // max 2: non-standard but still parseable readings a {L} speaker would notice. Check
+                            // these categories: the wrong one of two number systems for the thing counted;
+                            // counting words used inside a code instead of digit names; a date / time / ID
+                            // format calqued from English; digits grouped in pairs or triples where {L} reads
+                            // them singly (or the reverse). [] if none applies.
+ "accent_notes": [..],      // max 2: widespread regional pronunciations that make one letter or digit sound like
+                            // another (consonant devoicing, merged vowels, dropped sounds), as a short clause
+                            // naming the forms, e.g. "final D devoiced, sounding like T (Rad / Rat)".
+ "confusable": [{{"forms": "M/N/L", "names": "emm/enn/ell"}}],
+                            // groups that SOUND SIMILAR (not identical) and get misheard in phone audio: letter
+                            // groups, digit/number words ("2/3" with names "zwei/drei"), letter/digit near-pairs.
+                            // "forms" = the values, "names" = the {L} spoken forms. No prose.
+ "same_sound": [{{"forms": "Q/9", "names": "キュー/きゅう", "scope": "code" | "name_spelling"}}],
+                            // forms that sound IDENTICAL in speech, so audio cannot decide: letter/digit
+                            // homophones and letters with identical names ("code"), and spellings of names that
+                            // sound the same, e.g. silent letters, merged sounds ("name_spelling": forms are
+                            // always the letters, "C/S", and names are example spellings, "Cécile / Sécile").
+                            // No prose.
+ "letter_digit_homophones": str|null, // ONLY when a letter name and a digit name are the same word, one clause:
+                            // "the letter Q (キュー) and the digit 9 (きゅう), ...". Must also appear in same_sound.
+ "names_logographic": bool, // true only if names are written in characters that cannot be heard (Japanese kanji)
+ "disambiguation_questions": [..], // 1-2 {L} questions to ask letter vs digit; [] if no homophones
+ "loanwords": [..],         // 3-5 established English loanwords normal in a {L} service call, as {L} writes them
+ "loanword_notes": [..],    // max 2: what else is NOT a language violation (script of loanwords, codes,
+                            // transcripts that render {L} speech in Latin letters). Usually []
+ "speaker_gender": null | {{"forms": str, "pairs": [[male, female], ..3-5], "not_flagged": str}},
+     // null unless {L} grammar marks the speaker's own gender in words about themselves. "forms" continues
+     // "...in any word that agrees with the speaker: ___"; "not_flagged" continues "...such as ___". lowercase.
+ "register": {{"applies": bool, "cultural_norms": [..], "not_excess_length": [..]}},
+     // applies only if polite/formal {L} service speech is much longer than English and a judge would wrongly
+     // call it filler. cultural_norms max 2 (register; set formulas quoted). not_excess_length usually [].
+ "script_mixing": {{"applies": bool, "gloss_examples": [..], "not_violation": [..]}},
+     // applies only if {L} text commonly mixes native script with Latin/English terms (false for most
+     // Latin-script European languages). gloss_examples 2-3 like "暗証番号（PIN）".
+ "transcription": {{"same_value": [..], "no_match": [..]}},
+     // {L}-specific equivalences a judge would wrongly call a mismatch (ä = ae, 万-based grouping, a special
+     // reading of 0), and close-looking forms that are different values. Usually [] for Latin-script languages.
+ "addenda": {{"<metric>": [{{"note": str, "prevents": str}}]}}
+     // OPTIONAL, max 2 per metric, metrics: {metrics}. Only for a {L} fact that fits NO field above and that
+     // the native reference guidance would plausibly contain. "prevents" names the concrete judge mistake.
+}}
+
+Before answering, work through your own letter_names and digit_names and consider each category below for
+{L}. Include an item only if a native {L} speaker would name it as a classic mix-up in spelled codes over the
+phone:
+- letter names that rhyme AND differ only in one similar consonant (same place or manner: b/d/p/t, m/n/l,
+  f/s). Give the whole such group (e.g. M/N/L rather than M/N), but at most 5 letters per group; a shared
+  vowel alone is not enough (a name that is only a vowel, or differs in two sounds, is not in the group)
+- letters that exist only in {L} or whose {L} name is close to another letter's (an extra letter vs its base
+  letter, two vowel names that collide)
+- digit / number words that are near-homophones (of each other, or a unit vs a teen or tens word)
+- letter/digit near-pairs and exact homophones
+- consonants or vowels that regional accents merge or devoice (put these in accent_notes)
+- long-form names or spelling words that select the other member of a same-sound pair (wrong_by_name)
+- spellings of names that are indistinguishable by sound (alphabetic scripts only; romanization variants of
+  names in other scripts do not count)
+Groups that hold in almost every language (e.g. M/N) are fine, but the profile must also capture what is
+specific to {L}. "confusable": at most 8 groups, most common first. Items name forms; they never explain why.
+"letter_note": one short sentence at most.
+
+Shared judge prompts (language-neutral) the guidance is inserted into:
 <<<
-{shared_prompt}
+{shared}
 >>>
 
-Reference guidance for other languages, as rendered (headings included):
+Profiles for other languages, extracted from guidance written by native speakers. They show the expected
+depth, brevity and kind of content; they are examples, not a template to copy for {L}:
 {references}
-"""
 
-_SPEECH_PROMPT = """=== SLOTS (speech-fidelity judges: is each entity spoken correctly in {L}?) ===
-Return JSON with these keys:
-  "latin_script": bool. True if {L} is written in the Latin alphabet.
-  "letter_names": {{"A": ..., ..., "Z": ...}} exactly the 26 letters. How a {L} speaker names each Latin
-     letter when spelling a code. Latin-script languages: the pronunciation written with {L} spelling
-     ("beh"), variants joined with " / ". Other scripts: the native-script name (e.g. katakana エー).
-  "letter_note": string or null. One sentence on extra letters (umlauts, digraphs) or null.
-  "digit_names": {{"0": ..., ..., "9": ...}} the {L} digit words, variants joined with " / ".
-  "number_readings", "time_readings", "date_readings": string or null each. Worked examples of how
-     numbers / times / dates and years are read aloud, as "'reading' = value" pairs separated by commas,
-     at most 6 pairs, covering only the {L} quirks a non-native judge would get wrong (units-before-tens,
-     half-hour conventions, number systems, counters). null if {L} reads them like English.
-  "correct_other": list, at most 3. Other correct forms not covered above: the spelling-alphabet convention
-     (one item, e.g. "Buchstabiertafel words (e.g. 'D wie Dora')"), or letters written like English names
-     that are the {L} ones. Do not restate letter or digit names.
-  "english_names": list, at most 2. Item 1: the English letter/digit names as heard, quoted ('jay', 'six').
-     Item 2 (optional): which {L} letter some of them sound like (e.g. "These English names sound like a
-     different {L} letter, so the code changes: English E /iː/ = {L} I /i/").
-  "wrong_entity": list, at most 2. {L}-specific ways the entity becomes wrong. Usually [].
-  "wrong_value": list, at most 2. Short examples of a different value being spoken, e.g.
-     "siebenundfünfzig for 75". Usually [].
-  "unusual": list, at most 2. Unusual but understandable readings (non-native but still parseable).
-  "sound_alike": list, usually 1 item: the confusable letter groups and digit pairs on one line, with their
-     {L} names in brackets, e.g. "M/N/L (emm/enn/ell), B/P (beh/peh); zwei/drei (2/3)".
-  "same_sound": list, at most 1 item. Only pairs with literally identical names (e.g. "E 이 and 2 이").
-     Usually [].
-  "loanwords": list, at most 2. Item 1: "Established loanwords, e.g. ..." with 3-4 genuine loanwords from
-     English. Item 2 only for a real {L} norm such as accepted code-switching.
-  "regional_user": list. Regional forms valid when a simulated user says them but not the agent. Usually [].
-"""
-
-_FAITHFULNESS_PROMPT = """=== SLOTS (faithfulness judge: did the assistant capture values faithfully, in {L}?) ===
-Return JSON with these keys:
-  "confusables": list, 1-3 items; when both letters and digits have confusable names in {L}, cover both.
-     Letter groups whose {L} names rhyme or collide, close digit words, and
-     number-structure traps (e.g. units-before-tens causing transpositions), with the spoken forms. Only pairs
-     that really get confused in spelled codes; no alternative readings of the same value.
-  "loanwords": list of strings. 4-6 established loanwords from English that are normal {L} in a service call
-     (login, e-mail, check-in, ...), in the form {L} speakers write them. Only true loanwords, not native words.
-  "loanword_notes": list, at most 2. Extra notes on what is not a language violation (script of loanwords,
-     code-switching). Usually [].
-  "speaker_gender": null if {L} grammar does not mark the speaker's own gender in words they use about
-     themselves. Otherwise an object whose strings are lowercase sentence fragments that continue the
-     template sentence (no capital letter, no final period):
-       "forms": continues "...in any word that agrees with the speaker: ___". E.g. "adjectives, past
-          participles and nouns for itself".
-       "pairs": 3-5 [male, female] pairs of first-person service phrases; the female side may give only the
-          changed word, e.g. ["je suis désolé", "désolée"].
-       "not_flagged": continues "...gendered words that do not refer to the assistant itself, such as ___".
-          A noun phrase with 1-2 quoted examples, e.g. "past participles with avoir (\\"j'ai vérifié votre
-          dossier\\") and words that agree with something else (\\"votre réservation est confirmée\\")".
-"""
-
-_CONCISENESS_PROMPT = """=== SLOTS (conciseness judge: is the assistant's speech free of filler?) ===
-Return JSON with these keys:
-  "cultural_norms": list, 2-3 items. Item 1: the formal register and polite constructions. Item 2: short
-     service formulas, one per function, quoted as one list. Item 3 only if {L} has another real norm.
-  "not_excess_length": list, at most 1. Only if {L} forms look much longer in writing than in English while
-     being one information unit (e.g. German compound number words). Usually [].
-"""
-
-_SPEAKABILITY_PROMPT = """=== SLOTS (speakability judge: is the text fit to be spoken by TTS?) ===
-The shared rule flags a gloss: a term followed in parentheses or after a slash by its translation, reading,
-abbreviation or exact synonym. This guidance is only needed for languages where mixing scripts or English
-terms is common ({L} speakers writing English words or Latin codes alongside native script).
-Return JSON with these keys:
-  "applies": bool. False if {L} needs no extra guidance here (most Latin-script European languages).
-  "gloss_examples": list of 2-3 strings. Glosses as they would appear in {L} text, e.g. "暗証番号（PIN）".
-  "not_violation": list, at most 2. Item 1: English words, codes or loanwords used on their own. Item 2 only
-     if {L} has native punctuation a judge could mistake for formatting.
-"""
-
-_CONVERSATION_PROGRESSION_PROMPT = """=== SLOTS (conversation_progression judge: did the assistant ask for clarification when
-a spoken value was genuinely ambiguous?) ===
-Only needed when, in {L}, the name of a Latin letter and the name of a digit are the same spoken word
-(Japanese きゅう = 9 and Q). Spelling variants of names in an alphabetic script (Dupont / Dupond) do NOT
-count: the shared prompt already covers asking to spell a name.
-Return JSON with these keys:
-  "applies": bool. False unless {L} has such a letter/digit homophone (false for most European languages).
-  "homophones": string. One clause listing them, e.g. "the letter E (이) and the digit 2 (이), the letter O (오)
-     and the digit 5 (오)".
-  "includes_names": bool. True only if {L} names are normally written in logographic characters that cannot
-     be heard and are looked up by exact characters (Japanese kanji). False otherwise.
-  "example_questions": list of 1-2 {L} disambiguation questions the assistant could ask.
-"""
-
-_TRANSCRIPTION_PROMPT = """=== SLOTS (transcription_accuracy_key_entities judge: does a transcribed or tool-call value
-match what the user said?) ===
-Return JSON with these keys:
-  "same_value": list, at most 3. Only {L}-specific equivalences a judge would wrongly mark as a mismatch:
-     standard transliterations (ä = ae), number grouping (만-based), a digit read in a special way (공 = 0),
-     loanwords written in native or Latin script. Do not list letter or digit name tables unless the
-     transcript writes letters in native script (as Japanese katakana or Hindi Devanagari do). Return [] if
-     {L} needs nothing beyond what the shared prompt covers (true for most Latin-script languages).
-  "no_match": list, at most 2. {L}-specific forms that look close but are a different value. Usually [].
-"""
+Return only the JSON object."""
 
 
 def _bullets(items: list) -> list[str]:
@@ -1903,24 +1886,201 @@ def _render_transcription(data: dict, language_name: str) -> str:
     )
 
 
-# One LLM call per prompt; each renders into one or more metric files.
-_GUIDANCE_SPECS: list[tuple[str, dict[str, Any]]] = [
-    (_SPEECH_PROMPT, {m: (lambda d, n, m=m: _render_speech_fidelity(m, d, n)) for m in _SPEECH_FIDELITY_METRICS}),
-    (_FAITHFULNESS_PROMPT, {"faithfulness": _render_faithfulness}),
-    (_CONCISENESS_PROMPT, {"conciseness": _render_conciseness}),
-    (_SPEAKABILITY_PROMPT, {"speakability": _render_speakability}),
-    (_CONVERSATION_PROGRESSION_PROMPT, {"conversation_progression": _render_conversation_progression}),
-    (_TRANSCRIPTION_PROMPT, {"transcription_accuracy_key_entities": _render_transcription}),
-]
+# Common English spellings of English letter names, as a transcript would show them. Vowels only match a
+# bare-letter name ("a"): a native "ee" for E is the English name of I, not of E.
+_ENGLISH_LETTER_SPELLINGS = {
+    "A": {"a"}, "B": {"bee"}, "C": {"cee"}, "D": {"dee"}, "E": {"e"}, "G": {"gee"}, "I": {"i"}, "J": {"jay"},
+    "K": {"kay"}, "O": {"o"}, "P": {"pee"}, "T": {"tee"}, "U": {"u"}, "V": {"vee"}, "W": {"wee"}, "Z": {"zee"},
+}  # fmt: skip
+_ENGLISH_VOWEL_NAMES = {"A": "ay", "E": "ee", "I": "eye", "O": "oh", "U": "you"}
+
+
+def _english_lookalike_notes(profile: dict, language_name: str) -> list[str]:
+    """Letters whose native name is spelled like the English one, which a judge reading a transcript may misjudge."""
+    if not profile.get("latin_script"):
+        return []
+    L = language_name
+    letters = profile.get("letter_names") or {}
+    variants = {k: {v.strip().lower() for v in str(letters.get(k, "")).split("/")} for k in _ENGLISH_LETTER_SPELLINGS}
+    vowels = [k for k in "AEIOU" if k.lower() in variants[k]]
+    words = [k for k in _ENGLISH_LETTER_SPELLINGS if k not in vowels and variants[k] & _ENGLISH_LETTER_SPELLINGS[k]]
+    notes = []
+    if words:
+        named = ", ".join(f"{k} ({min(variants[k] & _ENGLISH_LETTER_SPELLINGS[k])})" for k in words)
+        notes.append(
+            f"Some of these are spelled like English letter names but are the {L} ones: {named}. "
+            f"Said with the {L} sound, they are not English."
+        )
+    if vowels:
+        said = ", ".join(f"'{_ENGLISH_VOWEL_NAMES[k]}'" for k in vowels)
+        notes.append(
+            f"{', '.join(vowels)} are named with their {L} vowel sound; said the English way ({said}), they are "
+            "English names: see the English letter or digit names below."
+        )
+    return notes
+
+
+def _objects(profile: dict, key: str, *fields: str) -> list[dict]:
+    return [o for o in _as_list(profile.get(key)) if isinstance(o, dict) and all(o.get(f) for f in fields)]
+
+
+def _forms_names(o: dict) -> str:
+    return f"{str(o['forms']).strip()} ({str(o['names']).strip()})"
+
+
+def _profile_to_slots(profile: dict, language_name: str) -> dict[str, dict]:
+    """Map the language profile to the per-metric slot dicts the renderers take."""
+    p = profile
+    confusable = [_forms_names(o) for o in _objects(p, "confusable", "forms", "names")]
+    same = _objects(p, "same_sound", "forms", "names")
+    same_code = [_forms_names(o) for o in same if o.get("scope") != "name_spelling"]
+    same_names = [_forms_names(o) for o in same if o.get("scope") == "name_spelling"]
+    accents = [a for a in _as_list(p.get("accent_notes")) if isinstance(a, str) and a.strip()]
+    loanwords = [w for w in _as_list(p.get("loanwords")) if isinstance(w, str) and w.strip()]
+
+    speech = {
+        k: p.get(k)
+        for k in ("latin_script", "letter_names", "letter_note", "digit_names", "number_readings", "time_readings")
+        + ("date_readings", "wrong_value", "unusual")
+    }
+    speech |= {
+        "correct_other": [*_english_lookalike_notes(p, language_name), *_as_list(p.get("correct_other"))],
+        "english_names": p.get("english_name_traps"),
+        "wrong_entity": [
+            f"'{o['name']}' said for {o['said_for']} (it names {o['means']})"
+            for o in _objects(p, "wrong_by_name", "name", "said_for", "means")
+        ],
+        "sound_alike": ([", ".join(confusable)] if confusable else []) + accents,
+        "same_sound": ([", ".join(same_code)] if same_code else [])
+        + (["In names spelled by sound: " + ", ".join(same_names)] if same_names else []),
+        "loanwords": ["Established loanwords, e.g. " + ", ".join(loanwords) + "."] if loanwords else [],
+    }
+
+    # Letter/digit homophones get their own line below, so only letter-only same-sound pairs are listed here.
+    same_letters = [
+        _forms_names(o)
+        for o in same
+        if o.get("scope") != "name_spelling" and not any(ch.isdigit() for ch in str(o["forms"]))
+    ]
+    confusables = ([", ".join(confusable)] if confusable else []) + accents
+    if same_letters:
+        confusables.append("Same sound: " + ", ".join(same_letters))
+    if same_names:
+        confusables.append("Same sound in names: " + ", ".join(same_names))
+    if p.get("letter_digit_homophones"):
+        confusables.append("Letter/digit homophones: " + str(p["letter_digit_homophones"]).strip().rstrip(".") + ".")
+
+    register = p.get("register") or {}
+    return {
+        **dict.fromkeys(_SPEECH_FIDELITY_METRICS, speech),
+        "faithfulness": {
+            "confusables": confusables,
+            "loanwords": loanwords,
+            "loanword_notes": p.get("loanword_notes"),
+            "speaker_gender": p.get("speaker_gender"),
+        },
+        "conciseness": register if register.get("applies") else {},
+        "speakability": p.get("script_mixing") or {},
+        "conversation_progression": {
+            "applies": bool(p.get("letter_digit_homophones")),
+            "homophones": p.get("letter_digit_homophones"),
+            "includes_names": p.get("names_logographic"),
+            "example_questions": p.get("disambiguation_questions"),
+        },
+        "transcription_accuracy_key_entities": p.get("transcription") or {},
+    }
+
+
+_GUIDANCE_RENDERERS: dict[str, Any] = {
+    **{m: (lambda d, n, m=m: _render_speech_fidelity(m, d, n)) for m in _SPEECH_FIDELITY_METRICS},
+    "faithfulness": _render_faithfulness,
+    "conciseness": _render_conciseness,
+    "speakability": _render_speakability,
+    "conversation_progression": _render_conversation_progression,
+    "transcription_accuracy_key_entities": _render_transcription,
+}
+
+
+def _render_profile(profile: dict, metric: str, language_name: str) -> str:
+    text = _GUIDANCE_RENDERERS[metric](_profile_to_slots(profile, language_name)[metric], language_name).strip()
+    notes = [a["note"] for a in _objects(profile.get("addenda") or {}, metric, "note")]
+    if notes:
+        text = _join_blocks([[text] if text else [], _group("**Also note:**", notes, language_name)], sep="\n\n")
+    return text
+
+
+GUIDANCE_SAMPLES = 3  # Profiles sampled per language; structured items are kept when at least 2 agree.
+
+
+def _form_pairs(o: dict) -> set[tuple[str, str]]:
+    forms = sorted({t.strip().upper() for t in str(o.get("forms", "")).split("/") if t.strip()})
+    return {(a, b) for i, a in enumerate(forms) for b in forms[i + 1 :]}
+
+
+def _vote_profiles(samples: list[dict]) -> dict:
+    """Merge sampled profiles: free text from the first sample, structured items by majority.
+
+    Groups vote by their pairs, so "M/N" in one sample and "M/N/L" in another both support M/N; a group is
+    kept when at least half its pairs have majority support.
+    """
+    majority = len(samples) // 2 + 1
+    out = dict(samples[0])
+    for field in ("confusable", "same_sound"):
+        items = [o for s in samples for o in _as_list(s.get(field)) if isinstance(o, dict) and _form_pairs(o)]
+        support: dict[tuple[str, str], int] = {}
+        for s in samples:
+            for pair in set().union(set(), *(_form_pairs(o) for o in _as_list(s.get(field)) if isinstance(o, dict))):
+                support[pair] = support.get(pair, 0) + 1
+        covered: set[tuple[str, str]] = set()
+        kept = []
+        for o in sorted(items, key=lambda o: -len(_form_pairs(o))):  # prefer the fullest agreed group
+            pairs = _form_pairs(o)
+            if 2 * sum(support[x] >= majority for x in pairs) >= len(pairs) and not pairs <= covered:
+                covered |= pairs
+                kept.append(o)
+        out[field] = kept
+
+    def wrong_key(o: dict) -> tuple[str, str]:
+        return str(o.get("said_for")).strip().upper(), str(o.get("means")).strip().upper()
+
+    counts: dict[tuple[str, str], int] = {}
+    for s in samples:
+        for k in {wrong_key(o) for o in _as_list(s.get("wrong_by_name")) if isinstance(o, dict)}:
+            counts[k] = counts.get(k, 0) + 1
+    seen: set[tuple[str, str]] = set()
+    out["wrong_by_name"] = []
+    for s in samples:
+        for o in _as_list(s.get("wrong_by_name")):
+            if isinstance(o, dict) and counts.get(k := wrong_key(o), 0) >= majority and k not in seen:
+                seen.add(k)
+                out["wrong_by_name"].append(o)
+
+    # Whether a whole metric gets guidance is decided by majority too.
+    if sum(bool(s.get("letter_digit_homophones")) for s in samples) < majority:
+        out["letter_digit_homophones"] = None
+    for section in ("register", "script_mixing"):
+        if sum(bool((s.get(section) or {}).get("applies")) for s in samples) < majority:
+            out[section] = {"applies": False}
+
+    def has_transcription(s: dict) -> bool:
+        return any(_as_list((s.get("transcription") or {}).get(k)) for k in ("same_value", "no_match"))
+
+    if sum(has_transcription(s) for s in samples) < majority:
+        out["transcription"] = {}
+    return out
+
 
 JUDGE_PROMPTS_PATH = REPO_ROOT / "configs" / "prompts" / "judge.yaml"
-_REFERENCE_LANGUAGES = ("de", "fr", "hi", "ja")  # Latin and non-Latin examples, gendered and not.
+# Profiles extracted from the native-speaker guidance of these languages (Latin and non-Latin, gendered and
+# not), shown to the LLM as examples. Re-extract them when that guidance changes.
+REFERENCE_PROFILES_DIRNAME = "reference_profiles"
 
 
-def _guidance_references(metric: str, guidance_dir: Path) -> str:
-    path = guidance_dir / f"{metric}.yaml"
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
-    refs = [f"--- {lang} ---\n{data[lang].strip()}" for lang in _REFERENCE_LANGUAGES if (data or {}).get(lang)]
+def _reference_profiles(guidance_dir: Path) -> str:
+    paths = sorted((guidance_dir / REFERENCE_PROFILES_DIRNAME).glob("*.json"))
+    refs = [
+        f"--- {p.stem} ---\n{json.dumps(json.loads(p.read_text(encoding='utf-8')), ensure_ascii=False)}" for p in paths
+    ]
     return "\n\n".join(refs) or "(none)"
 
 
@@ -1980,34 +2140,32 @@ async def update_judge_language_guidance(
             return False
         return not (language != base and base in existing)
 
-    async def run(prompt: str, renderers: dict[str, Any]) -> None:
-        metrics = [m for m in renderers if needs(m)]
-        if not metrics:
-            logger.info(f"Guidance for {language!r} already present in {', '.join(renderers)} — skipping")
-            return
-        full_prompt = (
-            (_GUIDANCE_PROMPT_HEADER + "\n" + prompt + "\nReturn only the JSON object, no markdown.")
-            .replace("{{", "{")
-            .replace("}}", "}")
+    metrics = [m for m in _GUIDANCE_RENDERERS if needs(m)]
+    if not metrics:
+        logger.info(f"Judge guidance for {language!r} already present in every metric file — skipping")
+        return
+    prompt = (
+        _PROFILE_PROMPT.replace("{{", "{")
+        .replace("}}", "}")
+        .replace("{shared}", "\n\n".join(f"[{m}]\n{_shared_judge_prompt(m)}" for m in _GUIDANCE_RENDERERS))
+        .replace("{references}", _reference_profiles(guidance_dir))
+        .replace("{metrics}", ", ".join(_GUIDANCE_RENDERERS))
+        .replace("{L}", language_name)
+        .replace("{lang}", language)
+    )
+    replies = await asyncio.gather(
+        *(
+            llm.generate_text([{"role": "user", "content": prompt}], response_format={"type": "json_object"})
+            for _ in range(GUIDANCE_SAMPLES)
         )
-        full_prompt = (
-            full_prompt.replace("{shared_prompt}", "\n\n".join(f"[{m}]\n{_shared_judge_prompt(m)}" for m in metrics))
-            .replace("{references}", _guidance_references(metrics[0], guidance_dir))
-            .replace("{L}", language_name)
-            .replace("{lang}", language)
-        )
-        text, _ = await llm.generate_text(
-            [{"role": "user", "content": full_prompt}], response_format={"type": "json_object"}
-        )
-        data = extract_and_load_json(text)
-        for metric in metrics:
-            rendered = renderers[metric](data, language_name).strip()
-            if not rendered:
-                logger.info(f"No {metric} guidance needed for {language_name}")
-                continue
-            _write_guidance_entry(guidance_dir / f"{metric}.yaml", language, rendered, dry_run)
-
-    await asyncio.gather(*(run(prompt, renderers) for prompt, renderers in _GUIDANCE_SPECS))
+    )
+    profile = _vote_profiles([extract_and_load_json(text) for text, _ in replies])
+    for metric in metrics:
+        rendered = _render_profile(profile, metric, language_name)
+        if not rendered:
+            logger.info(f"No {metric} guidance needed for {language_name}")
+            continue
+        _write_guidance_entry(guidance_dir / f"{metric}.yaml", language, rendered, dry_run)
     logger.warning(
         f"Judge language guidance for {language_name} is LLM-generated: have a native speaker review "
         f"the new {language!r} entries in {guidance_dir} before relying on the scores."
