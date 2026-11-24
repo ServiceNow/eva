@@ -7,9 +7,9 @@
   },
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
-    "prompt_hash": "9dbd1ec23872",
-    "source_hash": "0b99715d1572",
-    "version": "v0.2"
+    "prompt_hash": "9a7a4307ce0f",
+    "source_hash": "89f5acbc86da",
+    "version": "v0.3"
   },
   "ConversationCorrectlyFinishedMetric": {
     "name": "conversation_correctly_finished",
@@ -19,9 +19,9 @@
   },
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
-    "prompt_hash": "af760af9b94c",
-    "source_hash": "8fee05463010",
-    "version": "v0.3"
+    "prompt_hash": "40de8b032c08",
+    "source_hash": "fb656a937c9c",
+    "version": "v0.4"
   },
   "ConversationValidEndMetric": {
     "name": "conversation_valid_end",

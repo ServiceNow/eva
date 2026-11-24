@@ -57,7 +57,7 @@ judge:
 
       ## Evaluation Criteria
       When evaluating each turn, consider:
-      - Does the response get to the point without filler, rambling, or unnecessary content?
+      - Does the response get to the point without rambling or unnecessary content? (Brief acknowledgments and speech around tool calls are not filler; see Allowed Exceptions.)
       - Is all the information relevant and necessary given the conversation context?
       - Is the amount of detail reasonable for someone listening to — not reading — the response?
       - If the response enumerates options or items (e.g., "Option one is… Option two is…"), does the structure help the user? The volume should not be overwhelming.
@@ -76,6 +76,11 @@ judge:
       3. **End-of-Call Wrap-Up**
       - The final assistant turn in a conversation may include a slightly longer recap or confirmation of next steps (e.g., summarizing the action taken, confirming what will be sent or followed up on, thanking the user).
       - Minor additional detail in this final wrap-up should not be penalized unless it becomes excessively long or introduces unrelated information.
+      4. **Backchannels and Acknowledgments**
+      - Short backchannels and acknowledgments ("Mm-hmm", "Okay", "Got it", "Sure"), including ones that interrupt the user's speech, are normal in spoken conversation. Do NOT flag them as verbosity_or_filler, and do NOT penalize a turn that consists only of a backchannel.
+      - Still flag an acknowledgment restated several times within one turn (e.g., "I'll check that. Sure, I can check that.") when it adds real length before the substance.
+      5. **Speech Before or Around Tool Calls**
+      - A brief statement before a tool call ("Let me check that", "One moment while I pull that up") and a short reconnect after it ("Thanks for waiting") are allowed. They signal progress and avoid dead air, so do NOT flag them as filler.
 
       Important principle: Information given in assistant turns must be short enough for an average person to easily follow in real-time conversation and retain in working memory.
 
@@ -209,6 +214,7 @@ judge:
       - Repeating information in direct response to the user explicitly requesting confirmation or asking to hear it again (the user must clearly ask — simply continuing the conversation is not a request for repetition)
       - Re-explaining a policy or constraint when the user continues to challenge, dispute, or insist against it — the assistant must reiterate its position in these cases and should not be penalized for doing so. However, if the assistant repeats the exact same explanation verbatim across multiple turns, flag it — the assistant should vary its phrasing.
       - Repeating a request for information (e.g., confirmation code, spelling) when speech recognition or transcription errors clearly caused the previous attempt to fail (e.g., garbled text, partial characters, obvious mishearing visible in the transcript). Do NOT apply this exception when the transcript shows no evidence of ASR failure — the assistant re-asking without cause is still a flag.
+      - Brief backchannels, acknowledgments, and status phrases ("Mm-hmm", "Okay", "Checking that now") before or after a tool call. They carry no information, so repeating them is not restating prior output. Flag only repeated substantive details.
 
       ### 4. question_quality
       **Scope: The quality and appropriateness of the assistant's questions, where the issue is NOT caused by forgetting information (that is information_loss).** Did the assistant ask poorly formed questions or fail to ask a necessary clarifying question?
