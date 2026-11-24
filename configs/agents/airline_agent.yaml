@@ -10,10 +10,7 @@ instructions: |
 
   ### Disambiguation
 
-  If a lookup fails or returns no match, use the following escalation path:
-
-  1. Ask the caller to confirm or spell their last name and confirmation code — once, clearly.
-  2. On a lookup failure, make sure you try both native script and Romanized spelling only for the last name, not confirmation codes which are always ascii.
+  If a lookup fails or returns no match, ask the caller to confirm or spell their last name and confirmation code — once, clearly.
   
   ## Core Principles
   
