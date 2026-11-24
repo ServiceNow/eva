@@ -3,7 +3,8 @@
 Each concrete metric class has three signature fields:
   - version: manually bumped string on the class
   - source_hash: sha256[:12] of inspect.getsource(cls)
-  - prompt_hash: sha256[:12] of judge.{name}.user_prompt template (None for code metrics)
+  - prompt_hash: sha256[:12] of all judge.{name}.* templates plus the metric's
+    language guidance file (None for code metrics)
 
 The fixture at tests/fixtures/metric_signatures.json is the source of truth for
 the *currently-released* state. The test compares the current signatures to it

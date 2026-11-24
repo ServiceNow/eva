@@ -895,3 +895,19 @@ class TestBuildDataQuality:
         assert dq["metrics_with_none_scores"] == {}
         assert dq["metrics_with_errors"] == {}
         assert dq["metrics_with_missing"] == {}
+
+
+@pytest.mark.parametrize(
+    ("model", "expected"),
+    [
+        ({"llm": "gpt-x", "assistant_gender": "F"}, "F"),
+        ({"llm": "gpt-x"}, None),
+        ({"s2s": "openai", "assistant_gender": "M"}, None),  # ignored for S2S, as at run time
+    ],
+)
+def test_assistant_gender_loaded_from_run_config(tmp_path, model, expected):
+    run_dir = _setup_run_dir(tmp_path, [])
+    config = json.loads((run_dir / "config.json").read_text())
+    (run_dir / "config.json").write_text(json.dumps({**config, "model": model}))
+    runner = MetricsRunner(run_dir=run_dir, dataset=[], metric_names=[])
+    assert runner._assistant_gender == expected

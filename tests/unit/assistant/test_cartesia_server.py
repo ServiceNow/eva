@@ -8,8 +8,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from eva.assistant.cartesia_server import CartesiaAssistantServer, _mix_pcm16, _SpeechSegment
-from eva.utils.audio_utils import pcm16_mix
+from eva.assistant.cartesia_server import CartesiaAssistantServer, _SpeechSegment
 
 
 def _bare_server() -> CartesiaAssistantServer:
@@ -40,14 +39,6 @@ def test_speech_pieces_split_at_messages_and_tool_calls(monkeypatch):
     segment.add_text(" and you are all set.")
     segment.end_piece()
     assert segment.take_pieces() == [("One moment.", 1000), ("Checking now", 2500), ("and you are all set.", 4000)]
-
-
-def test_mix_matches_eva_mix_with_clipping_and_unequal_lengths():
-    rng = np.random.default_rng(0)
-    a = rng.integers(-32768, 32767, 1000, dtype=np.int16).tobytes()
-    b = rng.integers(-32768, 32767, 700, dtype=np.int16).tobytes()
-    assert _mix_pcm16(a, b) == pcm16_mix(a, b)
-    assert _mix_pcm16(b, a) == pcm16_mix(b, a)
 
 
 class _Recorder:

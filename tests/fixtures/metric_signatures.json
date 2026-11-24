@@ -7,9 +7,9 @@
   },
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
-    "prompt_hash": "57caf9a18a3c",
-    "source_hash": "9f183871e45a",
-    "version": "v0.1"
+    "prompt_hash": "9dbd1ec23872",
+    "source_hash": "0b99715d1572",
+    "version": "v0.2"
   },
   "ConversationCorrectlyFinishedMetric": {
     "name": "conversation_correctly_finished",
@@ -19,9 +19,9 @@
   },
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
-    "prompt_hash": "174cdf93b398",
-    "source_hash": "84e43143d00d",
-    "version": "v0.2"
+    "prompt_hash": "af760af9b94c",
+    "source_hash": "8fee05463010",
+    "version": "v0.3"
   },
   "ConversationValidEndMetric": {
     "name": "conversation_valid_end",
@@ -37,9 +37,9 @@
   },
   "FaithfulnessJudgeMetric": {
     "name": "faithfulness",
-    "prompt_hash": "78028821ce37",
-    "source_hash": "ee9b8ea530a4",
-    "version": "v0.3"
+    "prompt_hash": "fd88fb675b84",
+    "source_hash": "76175f1b5505",
+    "version": "v0.4"
   },
   "ResponseSpeedMetric": {
     "name": "response_speed",
@@ -55,21 +55,21 @@
   },
   "SpeakabilityJudgeMetric": {
     "name": "speakability",
-    "prompt_hash": "1e4f78cb051e",
-    "source_hash": "7abcd995909a",
-    "version": "v0.3"
+    "prompt_hash": "d58209677aea",
+    "source_hash": "90ebbc2965e9",
+    "version": "v0.4"
   },
   "SpeechFidelityMetric": {
     "name": "agent_speech_fidelity",
-    "prompt_hash": "c614dd12d4fe",
-    "source_hash": "5e61505dc729",
-    "version": "v0.4"
+    "prompt_hash": "0ad14ef1e4a7",
+    "source_hash": "c4e6f3d0b3cf",
+    "version": "v0.5"
   },
   "TTSFidelityMetric": {
     "name": "tts_fidelity",
-    "prompt_hash": "c3a02ab03f06",
-    "source_hash": "10b97af355f7",
-    "version": "v0.3"
+    "prompt_hash": "334261014777",
+    "source_hash": "4846ca933c54",
+    "version": "v0.4"
   },
   "TaskCompletion": {
     "name": "task_completion",
@@ -85,9 +85,9 @@
   },
   "TranscriptionAccuracyKeyEntitiesMetric": {
     "name": "transcription_accuracy_key_entities",
-    "prompt_hash": "8492d1f0d168",
-    "source_hash": "018436ab79ac",
-    "version": "v0.4"
+    "prompt_hash": "ced28ef26cbd",
+    "source_hash": "1c8ba53d9c9e",
+    "version": "v0.5"
   },
   "TurnTakingMetric": {
     "name": "turn_taking",
@@ -97,14 +97,14 @@
   },
   "UserBehavioralFidelityMetric": {
     "name": "user_behavioral_fidelity",
-    "prompt_hash": "21527fa8d79b",
-    "source_hash": "7f5dcec51568",
-    "version": "v0.1"
+    "prompt_hash": "dfb9e4c46db9",
+    "source_hash": "6ff245924058",
+    "version": "v0.2"
   },
   "UserSpeechFidelityMetric": {
     "name": "user_speech_fidelity",
-    "prompt_hash": "849e13c42e3b",
-    "source_hash": "5463b901a11b",
-    "version": "v0.2"
+    "prompt_hash": "aad0fd8e228d",
+    "source_hash": "ec8ad53652e0",
+    "version": "v0.3"
   }
 }

@@ -65,7 +65,7 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
     """
 
     name = "transcription_accuracy_key_entities"
-    version = "v0.4"
+    version = "v0.5"
     description = (
         "Debug metric: LLM judge evaluation of user key entity accuracy (STT in cascade, tool calls in audio-native)"
     )
@@ -247,11 +247,13 @@ class TranscriptionAccuracyKeyEntitiesMetric(TextJudgeMetric):
         """
         if context.is_audio_native:
             conversation, tool_call_ids = self._build_audio_native_conversation(context)
-            prompt = self.get_judge_prompt(prompt_key="audio_native_prompt", conversation=conversation)
+            prompt = self.get_judge_prompt(
+                prompt_key="audio_native_prompt", language=context.language, conversation=conversation
+            )
             return prompt, tool_call_ids
 
         turn_ids = self._get_turns_to_evaluate(context)
-        prompt = self.get_judge_prompt(user_turns=self._format_user_turns(turn_ids, context))
+        prompt = self.get_judge_prompt(language=context.language, user_turns=self._format_user_turns(turn_ids, context))
         return prompt, turn_ids
 
     @staticmethod

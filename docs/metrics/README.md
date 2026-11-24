@@ -35,7 +35,7 @@ Measures whether the agent accomplished the user's goal correctly:
 | Metric | Type | Capabilities | Description |
 |--------|------|-------------|-------------|
 | [`task_completion`](task_completion.md) | Deterministic | Speech Recognition, Language Model | Binary pass/fail via scenario DB state hash comparison (0-1) |
-| [`faithfulness`](faithfulness.md) | Judge (Claude Opus) | Speech Recognition (audio-native only), Language Model | Faithfulness to information, policies, and instructions (1-3) |
+| [`faithfulness`](faithfulness.md) | Judge (GPT-5.2) | Speech Recognition (audio-native only), Language Model | Faithfulness to information, policies, and instructions (1-3) |
 | [`agent_speech_fidelity`](agent_speech_fidelity.md) | Audio Judge (Gemini) | Speech Synthesis | Whether key entities in the assistant's speech audio matches intended text (0-1) |
 
 ### Experience (3 metrics)
@@ -84,7 +84,7 @@ Each metric implements `BaseMetric.compute(context: MetricContext) -> MetricScor
 **LLM-as-Judge:**
 - Integer/boolean ratings (not decimals) to avoid precision issues
 - Structured prompts in `configs/prompts/judge.yaml`
-- GPT-5.2 for text judges, Gemini 3 Flash for audio judges, Claude Opus for faithfulness
+- GPT-5.2 for text judges, Gemini 3.8 Flash for audio judges
 
 **Audio Evaluation:**
 - Audio encoded as base64 WAV, sent to Gemini via LiteLLM

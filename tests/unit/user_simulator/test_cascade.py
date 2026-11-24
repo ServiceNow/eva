@@ -446,3 +446,24 @@ async def test_repeated_untranscribed_agent_lines_fail_the_call(tmp_path, monkey
         await asyncio.wait_for(simulator._run_turns(), timeout=1)
 
     assert turns == [None]  # asked to repeat once, then gave up
+
+
+def test_system_prompt_reuses_the_loaded_prompt_files(tmp_path, monkeypatch):
+    """The prompt is rebuilt every caller turn; a fresh PromptManager would re-parse the YAML on the shared loop."""
+    from eva.utils import prompt_manager
+
+    loads = []
+    original = prompt_manager.PromptManager._load_prompts
+
+    def counting_load(self):
+        loads.append(1)
+        original(self)
+
+    monkeypatch.setattr(prompt_manager.PromptManager, "_load_prompts", counting_load)
+    monkeypatch.setattr(prompt_manager, "_prompt_manager", None)
+
+    sim = _simulator(tmp_path)
+    prompts = [sim._build_prompt() for _ in range(3)]
+
+    assert len(set(prompts)) == 1
+    assert len(loads) == 1

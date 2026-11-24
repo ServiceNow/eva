@@ -18,7 +18,7 @@ Audio-based metric that evaluates whether the assistant's **spoken audio** accur
 ### Evaluation Method
 
 - **Type**: Audio Judge (multimodal LLM with audio input)
-- **Model**: Gemini 3 Flash
+- **Model**: Gemini 3.8 Flash
 - **Granularity**: Per-turn (each assistant turn evaluated independently)
 
 ### Input Data
@@ -79,4 +79,4 @@ The judge compares intended text against spoken audio, focusing on:
 - **Class**: `TTSFidelityMetric`
 - **Base Class**: `SpeechFidelityBaseMetric` → `AudioJudgeMetric`
 - **Prompt**: `configs/prompts/judge.yaml` under `judge.tts_fidelity`
-- **Configuration**: `audio_judge_model` (default: Gemini 3 Flash), `aggregation` (default: "mean")
+- **Configuration**: `audio_judge_model` (default: Gemini 3.8 Flash), `aggregation` (default: "mean")
