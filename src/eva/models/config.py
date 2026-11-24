@@ -259,9 +259,9 @@ class ModelConfig(BaseModel):
                         "s2s": get_model_alias_from_params(self.s2s_params) or self.s2s,
                         **_fetch_elevenlabs_agent_models(self.s2s_params),
                     }
-                if self.s2s == "cartesia":
+                if self.s2s in ("cartesia", "krisp"):
                     # The model is the agent's LLM; name the framework too
-                    return {"s2s": f"cartesia-{get_model_alias_from_params(self.s2s_params)}"}
+                    return {"s2s": f"{self.s2s}-{get_model_alias_from_params(self.s2s_params)}"}
                 return {"s2s": get_model_alias_from_params(self.s2s_params)}
             case PipelineType.CASCADE:
                 return {
@@ -362,7 +362,7 @@ def get_pipeline_type(model_data: dict) -> PipelineType:
     """
     if s2s_value := model_data.get("s2s"):
         # These frameworks use s2s_params but report the text they speak, as cascade pipelines do
-        if s2s_value in ("elevenlabs", "cartesia"):
+        if s2s_value in ("elevenlabs", "cartesia", "krisp"):
             return PipelineType.CASCADE
         # Ultravox uses s2s_params for plumbing but is an audio-LLM (audio in, text out, separate TTS)
         if s2s_value == "ultravox":
@@ -588,7 +588,14 @@ class RunConfig(BaseSettings):
 
     # Framework selection
     framework: Literal[
-        "pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra", "cartesia"
+        "pipecat",
+        "openai_realtime",
+        "gemini_live",
+        "elevenlabs",
+        "grok_voice",
+        "smallest_hydra",
+        "cartesia",
+        "krisp",
     ] = Field(
         "pipecat",
         description=(
@@ -600,6 +607,7 @@ class RunConfig(BaseSettings):
             "'grok_voice': xAI Grok voice realtime API."
             "'smallest_hydra': Smallest Hydra speech-to-speech API."
             "'cartesia': Cartesia Managed Agents over a WebSocket connection."
+            "'krisp': Krisp Managed Voice Agent over its media stream."
         ),
     )
 

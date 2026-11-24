@@ -13,6 +13,9 @@ class TestGetPipelineType:
     def test_cartesia_is_cascade(self):
         assert get_pipeline_type({"s2s": "cartesia"}) == PipelineType.CASCADE
 
+    def test_krisp_is_cascade(self):
+        assert get_pipeline_type({"s2s": "krisp"}) == PipelineType.CASCADE
+
     def test_audio_llm_from_audio_llm_key(self):
         assert get_pipeline_type({"audio_llm": "ultravox"}) == PipelineType.AUDIO_LLM
 
@@ -28,3 +31,19 @@ def test_cartesia_run_id_names_the_framework():
 
     cfg = ModelConfig(s2s="cartesia", s2s_params={"api_key": "k", "model": "gpt-5.5", "assistant_agent_id": "a"})
     assert cfg.pipeline_parts == {"s2s": "cartesia-gpt-5.5"}
+
+
+def test_krisp_run_id_names_the_framework():
+    from eva.models.config import ModelConfig
+
+    params = {"api_key": "k", "api_url": "u", "model": "gpt-5.5", "assistant_agent_id": "a"}
+    cfg = ModelConfig(s2s="krisp", s2s_params=params)
+    assert cfg.pipeline_parts == {"s2s": "krisp-gpt-5.5"}
+
+
+def test_krisp_gateway_secret_is_redacted_like_an_api_key():
+    from eva.models.config import ModelConfig, RunConfig
+
+    params = {"api_key": "k", "api_url": "u", "model": "gpt-5.5", "assistant_agent_id": "a", "gateway_secret": "b" * 40}
+    dumped = RunConfig._redact_model_params(ModelConfig(s2s="krisp", s2s_params=params))
+    assert dumped["s2s_params"]["gateway_secret"] == "***" and dumped["s2s_params"]["api_url"] == "u"

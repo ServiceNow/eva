@@ -26,3 +26,9 @@ def test_cartesia_dispatch_returns_cartesia_class():
     from eva.assistant.cartesia_server import CartesiaAssistantServer
 
     assert _get_server_class("cartesia") is CartesiaAssistantServer
+
+
+def test_krisp_dispatch_returns_krisp_class():
+    from eva.assistant.krisp_server import KrispAssistantServer
+
+    assert _get_server_class("krisp") is KrispAssistantServer

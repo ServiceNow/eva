@@ -65,10 +65,14 @@ def _get_server_class(framework: str, s2s_provider: str | None = None) -> type[A
         from eva.assistant.cartesia_server import CartesiaAssistantServer
 
         return CartesiaAssistantServer
+    elif framework == "krisp":
+        from eva.assistant.krisp_server import KrispAssistantServer
+
+        return KrispAssistantServer
     else:
         raise ValueError(
             f"Unknown framework: {framework!r}. "
-            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia"
+            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia, krisp"
         )
 
 
