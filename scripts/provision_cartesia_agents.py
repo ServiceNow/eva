@@ -19,7 +19,9 @@ Usage:
         [--pre-tool-speech auto|off] [--turn-end-fallback-time SECONDS] [--domains airline itsm medical_hr]
 
 Reads CARTESIA_API_KEY from the environment or .env. Tool and agent IDs are kept in
-output/cartesia_agents.json so a rerun updates the same agents. Prints each domain's
+output/cartesia_agents.json. Agents are keyed by domain and language, so a rerun updates the same agent
+for that domain and language while other languages keep their own agents. Tools are keyed by domain and
+tool name and shared by every language's agent for that domain. Prints each domain's
 EVA_MODEL__S2S_PARAMS (without the api_key) to use for the run.
 """
 
@@ -91,7 +93,7 @@ def main() -> None:
         "--language",
         choices=[lang.value for lang in LANGUAGE_DISPLAY_NAMES],
         default="en",
-        help="Must match EVA_LANGUAGE for the run",
+        help="Must match EVA_LANGUAGE for the run; a region tag (fr-CA) gets its own agent but Cartesia gets the base (fr)",
     )
     parser.add_argument("--voice", default=DEFAULT_VOICE_ID, help="Cartesia voice ID for the agent (default: Katie)")
     parser.add_argument(
@@ -134,19 +136,20 @@ def main() -> None:
                 STATE.write_text(json.dumps(state, indent=2))
             tool_ids.append(state["tools"][key])
 
-        name = f"eva-{domain.replace('_', '-')}-{args.model.replace('.', '').replace('-', '')}"
+        agent_key = f"{domain}/{args.language}"
+        name = f"eva-{domain.replace('_', '-')}-{args.language.lower()}-{args.model.replace('.', '').replace('-', '')}"
         payload = {
             "name": name,
             "description": "EVA-Bench agent",
             "config": agent_config(args.model, tool_ids, args.turn_end_fallback_time, args.language, args.voice),
         }
-        if domain in state["agents"]:
-            request("PATCH", f"/v1/agents/{state['agents'][domain]}", body=payload)
+        if agent_key in state["agents"]:
+            request("PATCH", f"/v1/agents/{state['agents'][agent_key]}", body=payload)
         else:
-            state["agents"][domain] = request("POST", "/v1/agents", body=payload)["id"]
+            state["agents"][agent_key] = request("POST", "/v1/agents", body=payload)["id"]
         STATE.write_text(json.dumps(state, indent=2))
-        print(f"{domain}: {state['agents'][domain]} with {len(tool_ids)} tools", file=sys.stderr)
-        print(f"{domain}: " + json.dumps({"model": args.model, "assistant_agent_id": state["agents"][domain]}))
+        print(f"{agent_key}: {state['agents'][agent_key]} with {len(tool_ids)} tools", file=sys.stderr)
+        print(f"{agent_key}: " + json.dumps({"model": args.model, "assistant_agent_id": state["agents"][agent_key]}))
 
 
 if __name__ == "__main__":

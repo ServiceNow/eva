@@ -597,7 +597,7 @@ class RunConfig(BaseSettings):
 
     # Framework selection
     framework: Literal[
-        "pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra", "cartesia"
+        "pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra", "cartesia", "phonic"
     ] = Field(
         "pipecat",
         description=(
@@ -609,6 +609,7 @@ class RunConfig(BaseSettings):
             "'grok_voice': xAI Grok voice realtime API."
             "'smallest_hydra': Smallest Hydra speech-to-speech API."
             "'cartesia': Cartesia Managed Agents over a WebSocket connection."
+            "'phonic': Phonic speech-to-speech API via the phonic SDK."
         ),
     )
 
@@ -764,7 +765,7 @@ class RunConfig(BaseSettings):
             "reprompt the caller ('sorry, I didn't catch that'), instead of waiting for the old "
             "hard inactivity timeout. Cancelled the moment the user starts speaking, so it only "
             "fires when turn detection drops a user turn. Applies to the Pipecat cascade and "
-            "audio-LLM pipelines. When unset, falls back to the old behavior of ending the "
+            "audio-LLM pipelines, and to Cartesia and Phonic agents (provisioned with the same value). When unset, falls back to the old behavior of ending the "
             "conversation after the provider's inactivity timeout elapses."
         ),
     )

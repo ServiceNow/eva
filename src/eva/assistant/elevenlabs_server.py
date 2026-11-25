@@ -39,8 +39,8 @@ from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWrite
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils.audio_utils import (
+    MulawStreamUpsampler,
     create_twilio_media_message,
-    mulaw_8k_to_pcm16_16k,
     parse_twilio_media_message,
 )
 from eva.utils.logging import get_logger
@@ -359,6 +359,8 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
 
             # ----- Concurrent tasks -----
 
+            _user_recording_upsampler = MulawStreamUpsampler(self._audio_sample_rate)
+
             async def _forward_user_audio() -> None:
                 """Read Twilio WS messages, convert audio, send to ElevenLabs."""
                 nonlocal stream_sid, twilio_connected
@@ -404,7 +406,7 @@ class ElevenLabsAssistantServer(AbstractAssistantServer):
 
                             # Record user audio as 16 kHz PCM for the WAV file,
                             # anchored to real time so gaps are preserved.
-                            pcm_16k = mulaw_8k_to_pcm16_16k(mulaw_bytes)
+                            pcm_16k = _user_recording_upsampler.process(mulaw_bytes)
                             now = time.monotonic()
                             if _record_t0 is None:
                                 _record_t0 = now
