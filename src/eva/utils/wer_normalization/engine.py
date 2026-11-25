@@ -111,6 +111,10 @@ class LanguageConfig(BaseModel):
     # multi-character. HI: nukta -> "", chandrabindu -> anusvara;
     # DE: ä -> ae, ö -> oe, ü -> ue, ß -> ss.
     char_folds: dict[str, str] = Field(default_factory=dict)
+    # Whole words replaced before ``char_folds``, for a word the folds would merge
+    # with a different word. HI: ज़ी (letter Z) -> ज़ेड, so it does not fold into
+    # जी (letter G).
+    char_fold_words: dict[str, str] = Field(default_factory=dict)
 
     # --- Pre-normalization (applied in wer_utils.normalize_text) -----------
     # Join letter-only hyphenated compounds ("anmelde-konto" -> "anmeldekonto").
@@ -276,7 +280,11 @@ class GenericNumberNormalizer:
         if not words:
             return
 
-        for prev, current, nxt in windowed([None] + words + [None], 3):
+        # Index of the word that left a round group ("70" from soixante-dix) at the
+        # end of a digit-string value, so a following ones word can still fill it.
+        open_tail_index: int | None = None
+
+        for i, (prev, current, nxt) in enumerate(windowed([None] + words + [None], 3)):
             if skip:
                 skip = False
                 continue
@@ -307,9 +315,16 @@ class GenericNumberNormalizer:
                 if value is None:
                     value = n
                 elif self._cardinal_should_concat_as_str(prev, value):
-                    if prev in self.tens and n < 10:
-                        assert isinstance(value, str) and value[-1] == "0"
+                    tail_open = isinstance(value, str) and (prev in self.tens or open_tail_index == i - 1)
+                    if tail_open and n < 10:
+                        assert value[-1] == "0"
                         value = value[:-1] + str(n)
+                    elif tail_open and int(value[-2:]) in self.config.additive_teen_residuals[1:]:
+                        # Digit string ending in a vigesimal group (fr 60 / 80): add the teen
+                        # as in a standalone number ("... soixante dix" -> ...70, not ...6010).
+                        value = value[:-2] + str(int(value[-2:]) + n)
+                        if value[-1] == "0":
+                            open_tail_index = i
                     else:
                         value = str(value) + str(n)
                 elif n < 10:
@@ -353,6 +368,16 @@ class GenericNumberNormalizer:
                     base = (value // 100) * 100
                     digit = value % 100
                     value = base + digit * self.config.vigesimal_multiplier
+                elif (
+                    current in self.vigesimal_trigger_words
+                    and isinstance(value, str)
+                    and prev in self.cardinals
+                    and self.cardinals[prev] in self.config.vigesimal_residuals
+                    and value.endswith(str(self.cardinals[prev]))
+                ):
+                    # Same inside a digit string: "... douze quatre vingt" -> ...1280.
+                    value = value[:-1] + str(self.cardinals[prev] * self.config.vigesimal_multiplier)
+                    open_tail_index = i
                 elif value is None:
                     value = tens
                 elif isinstance(value, str):
@@ -616,6 +641,16 @@ class GenericTextNormalizer(BaseTextNormalizer):
         self.config = config
         self.standardize_numbers = GenericNumberNormalizer(config)
         self._fold = make_char_folder(config.char_folds)
+        self._fold_words = {unicodedata.normalize("NFC", k): v for k, v in config.char_fold_words.items()}
+        self._fold_words_re = (
+            re.compile(
+                r"(?<![\w\u0900-\u097f])(?:"
+                + "|".join(map(re.escape, sorted(self._fold_words, key=len, reverse=True)))
+                + r")(?![\w\u0900-\u097f])"
+            )
+            if self._fold_words
+            else None
+        )
         self.spelling_map: dict[str, str] = {}
         if config.spelling_map_path:
             with open(CONFIGS_DIR / config.spelling_map_path) as f:
@@ -624,6 +659,8 @@ class GenericTextNormalizer(BaseTextNormalizer):
 
     def __call__(self, s: str) -> str:
         s = s.lower()
+        if self._fold_words_re is not None:
+            s = self._fold_words_re.sub(lambda m: self._fold_words[m.group()], unicodedata.normalize("NFC", s))
         s = self._fold(s)
         s = self._remove_markup(s)
         s = self._apply_ignore_patterns(s, self.config.ignore_patterns)

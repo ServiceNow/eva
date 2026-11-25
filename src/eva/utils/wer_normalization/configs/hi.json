@@ -512,6 +512,9 @@
     "फ़": "फ",
     "य़": "य"
   },
+  "char_fold_words": {
+    "ज़ी": "ज़ेड"
+  },
   "join_hyphenated_compounds": true,
   "code_switch_languages": [
     "en"
