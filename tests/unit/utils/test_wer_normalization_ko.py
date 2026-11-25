@@ -189,3 +189,48 @@ async def test_metric_scores_spoken_date_as_correct():
     )
     result = await metric.compute(ctx)
     assert result.details["cer"] == 0.0
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        # product and system names, with a particle
+        ("Confluence에 로그인할 수 없어요", "컨플루언스에 로그인할 수 없어요"),
+        ("Slack으로 보내 주세요", "슬랙으로 보내 주세요"),
+        ("Mac이 느려요", "맥이 느려요"),
+        ("데이터 독", "Datadog"),
+        ("Adobe Creative Cloud", "어도비 크리에이티브 클라우드"),
+        ("액티브 디렉터리", "Active Directory"),
+        # acronyms said as Hangul letter names
+        ("VPN이 안 돼요", "브이피엔이 안 돼요"),
+        ("ID를 알려주세요", "아이디를 알려주세요"),
+        ("IT 팀", "아이티 팀"),
+        # airline: cities, brand, cabin classes
+        ("Chicago행 비행기", "시카고행 비행기"),
+        ("뉴워크", "Newark"),
+        ("San Jose", "새너제이"),
+        ("SkyWay", "스카이웨이"),
+        ("Main Cabin", "메인 캐빈"),
+        # medical / HR: insurers and states
+        ("Coverys", "커버리스"),
+        ("매그 뮤추얼", "MagMutual"),
+        ("North Carolina", "노스캐롤라이나"),
+    ],
+)
+def test_loanwords_latin_and_hangul_equivalent(a: str, b: str):
+    assert _ko(a) == _ko(b)
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("맥주 한 잔", "맥주 1잔"),
+        ("델타 항공", "델타 항공"),
+        ("아이디어", "아이디어"),
+        ("시카고피자", "시카고피자"),
+        ("Dellwood", "dellwood"),
+    ],
+)
+def test_loanword_inside_a_longer_word_unchanged(text: str, expected: str):
+    # Only whole words, or a word followed by a particle, are mapped.
+    assert _ko(text) == expected

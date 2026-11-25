@@ -49,6 +49,21 @@ A language config can also opt into three rules for patterns that only some lang
 - `join_hyphenated_compounds`: treat `Anmelde-Konto` and `Anmeldekonto` as the same word.
 - `spoken_symbols`: the spoken word for a symbol in a spelled ID (French "trait d'union", German "Bindestrich") matches the written symbol.
 
+#### Code-switching (Hindi)
+
+Hindi speakers mix English words into Hindi ("मेरा flight कल है", "my flight is tomorrow"). The intended text and the STT transcript often write those words differently: in a different form (`seven बजे` vs `7 बजे`, `I'm` vs `I am`) or in a different script (`मार्च` vs `march`). With Hindi rules alone, a correct transcript would be scored as wrong.
+
+When a language config sets `code_switch_languages` (today only `hi`, with `["en"]`), the metric runs in two passes (`src/eva/utils/wer_normalization/code_switch.py`):
+
+1. **Hindi alignment.** Both texts are normalized with the Hindi rules and aligned as usual. This gives `strict_wer`.
+2. **English re-check of the errors.** Each error region (a run of mismatched words, up to 4 words per side) is compared again with an English view of the same text. In that view, Latin-script parts use the English rules ("twenty five" → 25, "I'm" → "i am") and Devanagari parts keep the Hindi rules. With `code_switch_phonetic: true` (on for `hi`), a single word written in Devanagari on one side and in Latin on the other also matches when the two words have the same consonants and a compatible first vowel. This covers English words (`कन्फर्म` / `confirm`) and Hindi written in Latin script (`सकता` / `sakta`), which both count as correct. Known English look-alikes of native Hindi words (कमरा / camera) are excluded. Words with fewer than three consonants are not compared (`मुझे` / `mujhe`), and some English look-alikes still pass (`बताना` / `button`).
+
+A region stops counting as an error only when the two sides match **and** the intended text is English there. If the intended text has the digit `7` and the STT writes "seven", the user may have said सात, so it stays an error. The STT side must be English too: intended "seven" vs STT सात is a translation and stays an error, even though both normalize to 7. So translation errors are not hidden. Errors can only go down: `wer` ≤ `strict_wer`.
+
+Each intended word is also tagged by language: `en` for Latin script, a known short loanword (कोड, but not the lexicon entries that are ordinary Hindi words such as पास or the month names), `num` for digits, `hi` otherwise. Substitutions and deletions count against the intended word's language, insertions against the inserted word's. Digits are in neither `hi` nor `en`. An English word written in Devanagari that the STT also writes in Devanagari, and that is not in the short-loanword lexicon, is counted as Hindi, so the English share is an undercount. A word rescued by the phonetic matcher keeps its own tag, because the matcher can't tell an English word (नेटवर्क / network) from romanized Hindi (सकता / sakta).
+
+Languages without `code_switch_languages` (all except `hi`) are scored exactly as before and have none of the fields below.
+
 #### Diagnostic metric
 
 `stt_wer` is a **diagnostic metric** — the benchmark runs and produces valid results even without any WER normalization config for a given language; the metric simply measures raw string distance in that case. You do not need to deeply curate the normalization to get useful benchmark output.
@@ -96,6 +111,43 @@ That said, the auto-generated configs can be brittle. The LLM generation step is
   }
 }
 ```
+
+### Hindi (code-switching)
+
+Turn 1: intended `मेरी फ़्लाइट seven बजे है` ("my flight is at seven o'clock"), STT `मेरी फ़्लाइट 7 बजे है`. Turn 2: intended `मुझे अपना कन्फर्मेशन कोड चाहिए` ("I need my confirmation code"), STT `मुझे अपना confirmation कोड चाहिए`. Turn 3 has one real error (a dropped `हैं`). The standard fields are as above (omitted here); these are added:
+
+```json
+{
+  "name": "stt_wer",
+  "score": 0.062,
+  "details": {
+    "wer": 0.062,
+    "language": "hi",
+    "reference_words": 16,
+    "strict_wer": 0.188,
+    "code_switch": {
+      "languages": ["hi", "en"],
+      "code_switched_words": 3,
+      "rescued_words": 2,
+      "rescues_by_matcher": {"secondary_view": 1, "phonetic": 1},
+      "per_language": {
+        "hi": {"wer": 0.077, "ref_words": 13, "errors": 1},
+        "en": {"wer": 0.0, "ref_words": 3, "errors": 0}
+      }
+    },
+    "per_turn_code_switch_rescues": {
+      "1": [{"expected": "seven", "actual": "7", "matcher": "secondary_view"}],
+      "2": [{"expected": "कन्फर्मेशन", "actual": "confirmation", "matcher": "phonetic"}]
+    }
+  }
+}
+```
+
+- `score` / `wer`: WER after the English re-check. `strict_wer`: WER with the Hindi rules alone.
+- `code_switch.code_switched_words`: intended words tagged `en`. `rescued_words`: intended words that stopped counting as errors. `rescues_by_matcher`: number of rescued regions per matcher (`secondary_view` for the English rules, `phonetic` for the sound match).
+- `code_switch.per_language`: WER per language tag. `wer` is `null` when the run has no intended words of that language.
+- `per_turn_code_switch_rescues`: each rescue, so it can be checked by hand.
+- Sub-metrics: `wer_hi`, `wer_en` (each omitted when the run has no intended words of that language), `code_switch_word_rate` (share of intended words that are English) and `code_switch_rescue_rate` (share of intended words rescued).
 
 ## Related Metrics
 

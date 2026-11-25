@@ -1,7 +1,10 @@
-"""Hindi WER normalization: nukta and chandrabindu spellings, compounds, spoken symbols."""
+"""Hindi WER normalization: nukta and chandrabindu spellings, compounds, Latin-script loanwords."""
+
+import json
 
 import pytest
 
+from eva.utils.wer_normalization.engine import CONFIGS_DIR, LanguageConfig
 from eva.utils.wer_normalization.wer_utils import normalize_text
 
 
@@ -39,6 +42,29 @@ def test_reduplication_keeps_the_boundary():
     same("अभी-अभी", "अभी अभी")
 
 
+# Short loanwords only: longer ones are left to the phonetic matcher (test_wer_code_switch.py).
+@pytest.mark.parametrize(
+    "latin,deva",
+    [
+        ("code", "कोड"),
+        ("email", "ईमेल"),
+        ("e-mail", "ईमेल"),
+        ("office", "ऑफ़िस"),
+        ("ID", "आईडी"),
+        # airline and HR names the phonetic matcher cannot match
+        ("Chicago", "शिकागो"),
+        ("Zoom", "ज़ूम"),
+        ("Coverys", "कवरीज़"),
+        ("insurance", "इंश्योरेंस"),
+        ("issue", "इश्यू"),
+        ("fees", "फ़ीस"),
+        ("HR", "एचआर"),
+    ],
+)
+def test_latin_loanword_matches_devanagari(latin, deva):
+    same(latin, deva)
+
+
 @pytest.mark.parametrize(
     "spoken,written",
     [
@@ -61,6 +87,15 @@ def test_numbers_still_converted():
 
 def test_plain_devanagari_unchanged():
     assert normalize_text("नमस्ते दोस्त", "hi") == "नमस्ते दोस्त"
+
+
+def test_loanword_keys_are_lowercase_ascii():
+    cfg = LanguageConfig.load("hi")
+    with open(CONFIGS_DIR / cfg.spelling_map_path) as f:
+        lexicon = json.load(f)
+    assert lexicon, "loanword lexicon must not be empty"
+    for k in lexicon:
+        assert k == k.lower() and k.isascii(), k
 
 
 def test_letter_z_is_not_folded_into_letter_g():

@@ -9,8 +9,10 @@ scaffold (markup removal, ignore patterns, whitespace collapsing) while
 overriding the number-conversion and script-specific steps.
 """
 
+import json
 import re
 import unicodedata
+from pathlib import Path
 
 from jaconv import jaconv
 
@@ -123,6 +125,48 @@ _JA_ORTHO_RE = re.compile("|".join(sorted(map(re.escape, _JA_ORTHO_VARIANTS), ke
 
 # Katakana block without the middle dot ・ (U+30FB), which is a separator.
 _KATA = "\u30a1-\u30fa\u30fc-\u30ff"
+
+
+def _compact_name(name: str) -> str:
+    return re.sub(r"[-\s]", "", name).lower()
+
+
+class _LoanwordMapper:
+    """Map Latin names and their native-script spellings to one native spelling.
+
+    The STT writes what the speaker says (katakana, Hangul), while the reference
+    may keep the Latin name. ``configs/<lang>_loanwords.json`` maps each native
+    spelling to its Latin name; the first spelling listed for a name is the
+    standard one. Both sides are mapped to it, so a near-miss STT spelling still
+    gets partial CER credit instead of a full mismatch against the Latin name.
+    Only whole words are mapped: ``native_after`` is what may follow a native
+    spelling (e.g. a Korean particle), and a Latin name may not touch letters or
+    digits. An optional hyphen or space between letters lets "Wi-Fi", "mac OS"
+    and "AdobeCreativeCloud" match "wifi", "macos" and "adobe creative cloud".
+    """
+
+    def __init__(self, language: str, native_chars: str, native_after: str):
+        path = Path(__file__).parent / "configs" / f"{language}_loanwords.json"
+        with path.open(encoding="utf-8") as f:
+            loanwords: dict[str, str] = json.load(f)["loanwords"]
+        standard: dict[str, str] = {}  # compact Latin name -> first native spelling listed
+        for native, latin in loanwords.items():
+            standard.setdefault(_compact_name(latin), native)
+        self._standard = standard
+        self._native = {native: standard[_compact_name(latin)] for native, latin in loanwords.items()}
+        natives = "|".join(sorted(map(re.escape, loanwords), key=len, reverse=True))
+        self._native_re = re.compile(rf"(?<![{native_chars}])(?:{natives})(?={native_after})")
+        latin = "|".join(r"[-\s]?".join(map(re.escape, n)) for n in sorted(standard, key=len, reverse=True))
+        self._latin_re = re.compile(rf"(?<![A-Za-z0-9])(?:{latin})(?![A-Za-z0-9])", re.IGNORECASE)
+
+    def __call__(self, s: str) -> str:
+        s = self._latin_re.sub(lambda m: self._standard[_compact_name(m.group())], s)
+        return self._native_re.sub(lambda m: self._native[m.group()], s)
+
+
+# Product, system, place and insurer names in the scenarios, mapped to one
+# standard katakana spelling (Confluence, コンフルエンス -> コンフルエンス).
+_JA_LOANWORDS = _LoanwordMapper("ja", _KATA, rf"[^{_KATA}]|$")
 
 
 # Katakana names of Latin letters, used when spelling codes.
@@ -267,11 +311,13 @@ class JapaneseTextNormalizer(BaseTextNormalizer):
     2. jaconv.normalize() — half/full-width normalisation, unicode compatibility
     3. Unify orthographic variants (苗字 → 名字, 振り替え → 振替)
     4. Convert kanji numerals → Arabic digits, and ゼロ → 0
-    5. In spelled codes, map katakana letter names and kana digit readings
+    5. Map product names, in Latin or katakana, to one standard katakana
+       spelling (Windows, ウインドウズ → ウィンドウズ)
+    6. In spelled codes, map katakana letter names and kana digit readings
        (イー、エム、ピー、さん → emp3)
-    6. Strip Japanese punctuation (。、「」 etc.)
-    7. Lower-case any remaining ASCII (loanwords, product codes)
-    8. Remove all whitespace: Japanese has no word spacing, so spaces must
+    7. Strip Japanese punctuation (。、「」 etc.)
+    8. Lower-case any remaining ASCII (loanwords, product codes)
+    9. Remove all whitespace: Japanese has no word spacing, so spaces must
        not count as character errors
     """
 
@@ -284,6 +330,7 @@ class JapaneseTextNormalizer(BaseTextNormalizer):
         s = jaconv.normalize(s)
         s = _JA_ORTHO_RE.sub(lambda m: _JA_ORTHO_VARIANTS[m.group()], s)
         s = _JP_NUM_RE.sub(lambda m: _parse_positional_number(m.group(), _JP_DIGIT, _JP_SMALL, _JP_LARGE), s)
+        s = _JA_LOANWORDS(s)
         s = _JA_CODE_RUN_RE.sub(_map_ja_code_run, s)
         s = _JA_ZERO_RE.sub("0", s)
         s = _JP_PUNCT_RE.sub(" ", s)
@@ -698,6 +745,17 @@ _KO_PUNCT_RE = re.compile(r"[。，、；：？！…—～「」『』【】《
 _KO_FILLERS = re.compile(r"(?<![가-힣])(?:음+|어+|그러니까|그냥|뭐)(?![가-힣])")
 
 
+# Particles and endings that may follow a Hangul loanword (슬랙으로, 시카고행,
+# 아이디입니다); one or two of them, then the end of the word.
+_KO_LOANWORD_PARTICLE = (
+    r"(?:입니다|이에요|예요|이요|에서|에게|으로|부터|까지|이나|이랑|하고|처럼|보다|"
+    r"은|는|이|가|을|를|에|께|로|와|과|의|도|만|나|랑|행|요)"
+)
+# Product, system, place and insurer names in the scenarios, mapped to one
+# standard Hangul spelling (Confluence, 컨플루언스 -> 컨플루언스).
+_KO_LOANWORDS = _LoanwordMapper("ko", "가-힣", rf"[^가-힣]|$|{_KO_LOANWORD_PARTICLE}{{1,2}}(?:[^가-힣]|$)")
+
+
 class KoreanTextNormalizer(BaseTextNormalizer):
     """Normalize Korean text for WER/CER calculation.
 
@@ -713,13 +771,15 @@ class KoreanTextNormalizer(BaseTextNormalizer):
 
     Pipeline:
     1. Remove markup and filler words
-    2. Irregular months (유월 → 6월, 시월 → 10월)
-    3. Spaced digit sequences (일 이 삼 → 123)
-    4. Sino-Korean number phrases → Arabic digits
-    5. Native Korean numbers → Arabic digits
-    6. Strip Korean/CJK punctuation, lower-case ASCII
-    7. Join a number and its counter (20 살 → 20살) and adjacent digit groups
-    8. Collapse whitespace (word spaces are kept)
+    2. Map product, place and insurer names, in Latin or Hangul, to one
+       standard Hangul spelling (Slack, 슬랙 → 슬랙; see ``ko_loanwords.json``)
+    3. Irregular months (유월 → 6월, 시월 → 10월)
+    4. Spaced digit sequences (일 이 삼 → 123)
+    5. Sino-Korean number phrases → Arabic digits
+    6. Native Korean numbers → Arabic digits
+    7. Strip Korean/CJK punctuation, lower-case ASCII
+    8. Join a number and its counter (20 살 → 20살) and adjacent digit groups
+    9. Collapse whitespace (word spaces are kept)
     """
 
     def __init__(self, ignore_patterns: str = ""):
@@ -729,6 +789,7 @@ class KoreanTextNormalizer(BaseTextNormalizer):
         s = self._remove_markup(s)
         s = self._apply_ignore_patterns(s, self._ignore_patterns)
         s = self._collapse_whitespace(s)
+        s = _KO_LOANWORDS(s)
         s = _KO_IRREGULAR_MONTH_RE.sub(lambda m: _KO_IRREGULAR_MONTHS[m.group(1)], s)
         s = _KO_DIGIT_SEQ_RE.sub(_convert_ko_digit_seq, s)
         s = _KO_PHRASE_RE.sub(_ko_split_groups, s)
