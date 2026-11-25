@@ -132,6 +132,21 @@ def test_names_from_all_domains_equivalent(a: str, b: str):
     assert _ja(a) == _ja(b)
 
 
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("ITチーム", "IT チーム"),
+        ("ITチーム", "アイティー チーム"),
+        ("VPNチーム", "VPN チーム"),
+        ("CRMシステム", "CRM システム"),
+    ],
+)
+def test_acronym_before_a_katakana_word(a: str, b: str):
+    # Acronyms go through the spelled-code mapping, not the loanword lexicon: the
+    # lexicon would turn IT into アイティー glued to チーム, which no longer reads as a code.
+    assert _ja(a) == _ja(b)
+
+
 def test_product_names_compare_in_katakana():
     assert _ja("Confluence") == "コンフルエンス"
 
