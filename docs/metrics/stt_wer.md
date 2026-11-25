@@ -114,7 +114,7 @@ That said, the auto-generated configs can be brittle. The LLM generation step is
 
 ### Hindi (code-switching)
 
-Turn 1: intended `मेरी फ़्लाइट seven बजे है` ("my flight is at seven o'clock"), STT `मेरी फ़्लाइट 7 बजे है`. Turn 2: intended `मुझे अपना कन्फर्मेशन कोड चाहिए`, STT `मुझे अपना confirmation कोड चाहिए`. Turn 3 has one real error (a dropped `हैं`). The standard fields are as above (omitted here); these are added:
+Turn 1: intended `मेरी फ़्लाइट seven बजे है` ("my flight is at seven o'clock"), STT `मेरी फ़्लाइट 7 बजे है`. Turn 2: intended `मुझे अपना कन्फर्मेशन कोड चाहिए` ("I need my confirmation code"), STT `मुझे अपना confirmation कोड चाहिए`. Turn 3 has one real error (a dropped `हैं`). The standard fields are as above (omitted here); these are added:
 
 ```json
 {
