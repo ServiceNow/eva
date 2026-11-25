@@ -9,8 +9,10 @@ scaffold (markup removal, ignore patterns, whitespace collapsing) while
 overriding the number-conversion and script-specific steps.
 """
 
+import json
 import re
 import unicodedata
+from pathlib import Path
 
 from jaconv import jaconv
 
@@ -122,6 +124,33 @@ _JA_ORTHO_RE = re.compile("|".join(sorted(map(re.escape, _JA_ORTHO_VARIANTS), ke
 
 # Katakana block without the middle dot ・ (U+30FB), which is a separator.
 _KATA = "\u30a1-\u30fa\u30fc-\u30ff"
+
+
+def _load_ja_loanwords() -> dict[str, str]:
+    path = Path(__file__).parent / "configs" / "ja_loanwords.json"
+    with path.open(encoding="utf-8") as f:
+        return json.load(f)["loanwords"]
+
+
+# Product and system names: the STT writes what a Japanese speaker says (katakana),
+# while the reference may keep the Latin name. Both are mapped to one standard
+# katakana spelling, so a near-miss STT spelling (コンフュエンス) still gets partial
+# CER credit instead of a full mismatch against "confluence".
+_JA_LOANWORDS = _load_ja_loanwords()  # katakana spelling -> Latin name
+_JA_KATA_STANDARD: dict[str, str] = {}  # Latin name -> first katakana spelling listed
+for _kata, _latin in _JA_LOANWORDS.items():
+    _JA_KATA_STANDARD.setdefault(_latin, _kata)
+_JA_LOANWORD_KATA_RE = re.compile(
+    rf"(?<![{_KATA}])(?:{'|'.join(sorted(map(re.escape, _JA_LOANWORDS), key=len, reverse=True))})(?![{_KATA}])"
+)
+# Whole Latin words, case-insensitive; an optional hyphen or space between letters
+# lets "Wi-Fi" and "mac OS" match "wifi" and "macos".
+_JA_LATIN_NAMES = "|".join(r"[-\s]?".join(map(re.escape, w)) for w in sorted(_JA_KATA_STANDARD, key=len, reverse=True))
+_JA_LOANWORD_LATIN_RE = re.compile(rf"(?<![A-Za-z0-9])(?:{_JA_LATIN_NAMES})(?![A-Za-z0-9])", re.IGNORECASE)
+
+
+def _ja_latin_to_kata(m: re.Match) -> str:
+    return _JA_KATA_STANDARD[re.sub(r"[-\s]", "", m.group()).lower()]
 
 
 # Katakana names of Latin letters, used when spelling codes.
@@ -266,11 +295,13 @@ class JapaneseTextNormalizer(BaseTextNormalizer):
     2. jaconv.normalize() — half/full-width normalisation, unicode compatibility
     3. Unify orthographic variants (苗字 → 名字, 振り替え → 振替)
     4. Convert kanji numerals → Arabic digits, and ゼロ → 0
-    5. In spelled codes, map katakana letter names and kana digit readings
+    5. Map product names, in Latin or katakana, to one standard katakana
+       spelling (Windows, ウインドウズ → ウィンドウズ)
+    6. In spelled codes, map katakana letter names and kana digit readings
        (イー、エム、ピー、さん → emp3)
-    6. Strip Japanese punctuation (。、「」 etc.)
-    7. Lower-case any remaining ASCII (loanwords, product codes)
-    8. Remove all whitespace: Japanese has no word spacing, so spaces must
+    7. Strip Japanese punctuation (。、「」 etc.)
+    8. Lower-case any remaining ASCII (loanwords, product codes)
+    9. Remove all whitespace: Japanese has no word spacing, so spaces must
        not count as character errors
     """
 
@@ -283,6 +314,8 @@ class JapaneseTextNormalizer(BaseTextNormalizer):
         s = jaconv.normalize(s)
         s = _JA_ORTHO_RE.sub(lambda m: _JA_ORTHO_VARIANTS[m.group()], s)
         s = _JP_NUM_RE.sub(lambda m: _parse_positional_number(m.group(), _JP_DIGIT, _JP_SMALL, _JP_LARGE), s)
+        s = _JA_LOANWORD_LATIN_RE.sub(_ja_latin_to_kata, s)
+        s = _JA_LOANWORD_KATA_RE.sub(lambda m: _JA_KATA_STANDARD[_JA_LOANWORDS[m.group()]], s)
         s = _JA_CODE_RUN_RE.sub(_map_ja_code_run, s)
         s = _JA_ZERO_RE.sub("0", s)
         s = _JP_PUNCT_RE.sub(" ", s)

@@ -5,6 +5,7 @@ normalize to the same string when they say the same thing, and ordinary
 words are not turned into letters or digits.
 """
 
+import jiwer
 import pytest
 
 from eva.metrics.diagnostic.stt_wer import STTWERMetric
@@ -90,10 +91,35 @@ def test_punctuation_and_spaces_equivalent(a: str, b: str):
         ("振替", "振り替え"),
         ("何とか", "なんとか"),
         ("合っています", "あっています"),
+        # product names: Latin vs katakana, and katakana spelling variants
+        ("コンフルエンスにログインできません", "Confluenceにログインできません"),
+        ("データドッグ", "Datadog"),
+        ("ウィンドウズ", "Windows"),
+        ("ウインドウズ", "Windows"),
+        ("ワイファイ", "Wi-Fi"),
+        ("スラック", "Slack"),
+        ("マイクロソフト", "Microsoft"),
+        ("フィグマ", "Figma"),
+        ("セールスフォース", "Salesforce"),
     ],
 )
 def test_spelling_variants_equivalent(a: str, b: str):
     assert _ja(a) == _ja(b)
+
+
+def test_product_names_compare_in_katakana():
+    assert _ja("Confluence") == "コンフルエンス"
+
+
+@pytest.mark.parametrize("hypothesis", ["コンフュエンス", "コンフレンス"])
+def test_near_miss_katakana_spelling_gets_partial_credit(hypothesis: str):
+    # Against the Latin reference this used to be a 100% character error.
+    assert jiwer.cer(_ja("Confluence"), _ja(hypothesis)) < 0.35
+
+
+@pytest.mark.parametrize("text", ["モデル", "デルタ航空", "Dellwood"])
+def test_product_name_inside_a_longer_word_unchanged(text: str):
+    assert _ja(text) == text.lower()
 
 
 def test_fillers_only_removed_at_word_start():
