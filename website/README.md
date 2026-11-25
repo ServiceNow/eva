@@ -8,8 +8,8 @@ Built with React, TypeScript, Vite, and Tailwind CSS.
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
+- Node.js ^20.19 or >=22.12
+- npm
 
 ### Installation
 
@@ -30,13 +30,15 @@ The site will be available at http://localhost:5173
 
 ### Production Build
 
-Build for production:
+The production site is served from the committed build in [`docs/`](../docs). You normally don't need to run `npm run build` yourself: the `build-website` pre-commit hook runs it for you whenever there are changes in `website/` or [`configs/prompts/judge.yaml`](../configs/prompts/judge.yaml) (the source of the judge prompts shown on the site), and CI rebuilds it on pull requests from this repository.
+
+To commit website changes without rebuilding the website (e.g. if you are missing Node.js), skip the pre-commit hook:
 
 ```bash
-npm run build
+SKIP=build-website git commit
 ```
 
-Preview the production build locally:
+Preview the production build (the current `docs/`) locally:
 
 ```bash
 npm run preview

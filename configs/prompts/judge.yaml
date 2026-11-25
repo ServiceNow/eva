@@ -6,7 +6,7 @@
 # The _shared section defines global template variables auto-injected into all prompts.
 
 _shared:
-  interruption_tags_reference: |
+  interruption_tags_reference: |-
     These are non-spoken metadata tags inserted during post-processing to annotate speech overlap events. They are NOT part of the spoken text.
 
     Tag definitions:
