@@ -467,6 +467,7 @@ class PhonicAssistantServer(AbstractAssistantServer):
                                 if text:
                                     if not _user_words:
                                         _user_utt_ts = _user_speech_start_ts or _now_ms()
+                                        _user_speech_start_ts = None
                                     _user_words.append(text)
 
                             elif etype == "assistant_started_speaking":
