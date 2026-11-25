@@ -13,6 +13,7 @@ import yaml
 
 from eva.assistant.openai_live_server import (
     ASSISTANT_QUIET_FLUSH_MS,
+    BACKCHANNEL_POLICIES,
     FORWARD_SILENCE_HOLD_MS,
     INTERRUPT_TAIL_MS,
     LIVE_INPUT_MAX_LEAD_S,
@@ -45,6 +46,30 @@ def _write_agent_dir(tmp_path: Path, gpt_live: dict | None) -> Path:
         live_dir.mkdir()
         (live_dir / "airline_agent.yaml").write_text(yaml.safe_dump(gpt_live), encoding="utf-8")
     return agent_yaml
+
+
+class TestBackchannelPolicy:
+    @pytest.mark.parametrize(
+        ("mode", "expected"),
+        [("auto", BACKCHANNEL_POLICIES["auto"]), ("none", "Don't use backchannels.")],
+    )
+    def test_server_substitutes_configured_policy_into_frontend_prompt(self, tmp_path, mode, expected):
+        agent_yaml = _write_agent_dir(
+            tmp_path, {"frontend_instructions": "Policy: {backchannel_policy}", "backend_instructions": "BACK"}
+        )
+        model_config = ModelConfig(s2s="gpt-live-1", s2s_params=S2S_PARAMS, backchanneling=mode)
+        with patch("eva.assistant.base_server.ToolExecutor"):
+            srv = OpenAILiveAssistantServer(
+                current_date_time="2026-10-28 12:00",
+                pipeline_config=model_config,
+                agent=_agent(),
+                agent_config_path=str(agent_yaml),
+                scenario_db_path=str(tmp_path / "db.json"),
+                output_dir=tmp_path / "out",
+                port=0,
+                conversation_id="conv",
+            )
+        assert srv._frontend_instructions.endswith(f"Policy: {expected}")
 
 
 class TestWithCurrentDate:

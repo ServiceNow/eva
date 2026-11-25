@@ -218,6 +218,20 @@ class ModelConfig(BaseModel):
         None,
         description="Forward parallel_tool_calls when tools are present; None leaves provider defaults.",
     )
+    backchanneling: Literal["none", "auto"] = Field(
+        "auto",
+        description=(
+            "Backchannel policy in the GPT-Live (openai_live) frontend prompt: 'none' tells the model not "
+            "to backchannel, 'auto' allows moderate backchannels. Note that backchannel control cannot be guaranteed. "
+            "Ignored by other pipelines."
+        ),
+    )
+
+    @field_validator("backchanneling", mode="before")
+    @classmethod
+    def _normalize_backchanneling(cls, value: str) -> str:
+        return value.strip().lower() if isinstance(value, str) else value
+
     assistant_gender: Literal["M", "F"] | None = Field(
         None,
         description=(

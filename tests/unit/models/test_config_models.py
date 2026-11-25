@@ -884,6 +884,15 @@ class TestLatencyOptimizationFlags:
         assert c.model.pre_tool_speech == "off"
         assert c.model.llm_streaming is False
 
+    def test_backchanneling_defaults_to_auto_and_is_set_via_env(self):
+        assert _config(env_vars=_BASE_ENV).model.backchanneling == "auto"
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__BACKCHANNELING": "None"})
+        assert c.model.backchanneling == "none"
+
+    def test_invalid_backchanneling_rejected(self):
+        with pytest.raises(ValueError):
+            _config(env_vars=_BASE_ENV | {"EVA_MODEL__BACKCHANNELING": "lots"})
+
     @pytest.mark.parametrize("value", ["bogus", "force"])
     def test_invalid_pre_tool_speech_rejected(self, value):
         with pytest.raises(ValueError):

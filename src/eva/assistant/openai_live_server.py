@@ -49,6 +49,16 @@ _FRONTEND_KEY = "frontend_instructions"
 _BACKEND_KEY = "backend_instructions"
 
 
+BACKCHANNEL_POLICIES = {
+    "none": "Don't use backchannels.",
+    "auto": (
+        "Use moderate backchannels, they should be realistic and not compete with the main response "
+        "and not compete with the user response."
+    ),
+}
+BACKCHANNEL_PLACEHOLDER = "{backchannel_policy}"
+
+
 def with_current_date(prompt: str, current_date_time: str) -> str:
     """Prefix a prompt with today's date, as the other assistant servers' system prompts do."""
     return f"Today is {current_date_time}.\n\n{prompt}"
@@ -489,6 +499,7 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
         self._audio_sample_rate = LIVE_SAMPLE_RATE
 
         frontend, backend = load_live_prompts(self.agent_config_path)
+        frontend = frontend.replace(BACKCHANNEL_PLACEHOLDER, BACKCHANNEL_POLICIES[self.pipeline_config.backchanneling])
         self._frontend_instructions = with_current_date(frontend, self.current_date_time)
         self._backend_instructions = with_current_date(backend, self.current_date_time)
         self._tools: list[dict] = build_function_tools(self.agent)
