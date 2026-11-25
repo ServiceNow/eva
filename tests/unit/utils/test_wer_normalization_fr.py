@@ -28,6 +28,7 @@ def test_fr_ca_uses_the_french_config():
         ("A B C trait d’union un deux trois", "ABC-123"),  # curly apostrophe
         ("P R V tiret S U R G tiret 004", "PRV-SURG-004"),
         ("A B C tiret bas X Y Z", "ABC_XYZ"),
+        ("A B C tiret du bas X Y Z", "ABC_XYZ"),
     ],
 )
 def test_spoken_symbol_matches_written_symbol(spoken, written, lang):

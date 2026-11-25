@@ -98,25 +98,26 @@ _JP_FILLERS = re.compile(
 
 
 # Orthographic variants with the same reading and meaning (kanji vs kana,
-# okurigana). Mapped to one canonical spelling on both sides.
+# okurigana). Mapped to one canonical spelling on both sides. Each line:
+# variant spelling -> canonical spelling  # reading: meaning.
 _JA_ORTHO_VARIANTS: dict[str, str] = {
-    "苗字": "名字",
-    "振り替え": "振替",
-    "振替え": "振替",
-    "何とか": "なんとか",
-    "合っ": "あっ",
-    "問い合わせ": "問合せ",
-    "問い合せ": "問合せ",
-    "申し込み": "申込",
-    "申込み": "申込",
-    "取り消し": "取消",
-    "取消し": "取消",
-    "払い戻し": "払戻",
-    "払戻し": "払戻",
-    "乗り換え": "乗換",
-    "乗換え": "乗換",
-    "受け付け": "受付",
-    "受付け": "受付",
+    "苗字": "名字",  # myōji: surname
+    "振り替え": "振替",  # furikae: transfer, rebooking
+    "振替え": "振替",  # furikae: transfer, rebooking
+    "何とか": "なんとか",  # nantoka: somehow
+    "合っ": "あっ",  # a(tte): to be correct, as in 合っています
+    "問い合わせ": "問合せ",  # toiawase: inquiry
+    "問い合せ": "問合せ",  # toiawase: inquiry
+    "申し込み": "申込",  # mōshikomi: application, booking
+    "申込み": "申込",  # mōshikomi: application, booking
+    "取り消し": "取消",  # torikeshi: cancellation
+    "取消し": "取消",  # torikeshi: cancellation
+    "払い戻し": "払戻",  # haraimodoshi: refund
+    "払戻し": "払戻",  # haraimodoshi: refund
+    "乗り換え": "乗換",  # norikae: transfer between trains or flights
+    "乗換え": "乗換",  # norikae: transfer between trains or flights
+    "受け付け": "受付",  # uketsuke: reception, accepting
+    "受付け": "受付",  # uketsuke: reception, accepting
 }
 _JA_ORTHO_RE = re.compile("|".join(sorted(map(re.escape, _JA_ORTHO_VARIANTS), key=len, reverse=True)))
 
