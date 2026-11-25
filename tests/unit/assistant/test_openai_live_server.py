@@ -51,7 +51,7 @@ def _write_agent_dir(tmp_path: Path, gpt_live: dict | None) -> Path:
 class TestBackchannelPolicy:
     @pytest.mark.parametrize(
         ("mode", "expected"),
-        [("auto", BACKCHANNEL_POLICIES["auto"]), ("none", "Don't use backchannels.")],
+        [("auto", BACKCHANNEL_POLICIES["auto"]), ("off", "Don't use backchannels.")],
     )
     def test_server_substitutes_configured_policy_into_frontend_prompt(self, tmp_path, mode, expected):
         agent_yaml = _write_agent_dir(

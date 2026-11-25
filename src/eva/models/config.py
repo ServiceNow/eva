@@ -218,10 +218,10 @@ class ModelConfig(BaseModel):
         None,
         description="Forward parallel_tool_calls when tools are present; None leaves provider defaults.",
     )
-    backchanneling: Literal["none", "auto"] = Field(
+    backchanneling: Literal["off", "auto"] = Field(
         "auto",
         description=(
-            "Backchannel policy in the GPT-Live (openai_live) frontend prompt: 'none' tells the model not "
+            "Backchannel policy in the GPT-Live (openai_live) frontend prompt: 'off' tells the model not "
             "to backchannel, 'auto' allows moderate backchannels. Note that backchannel control cannot be guaranteed. "
             "Ignored by other pipelines."
         ),

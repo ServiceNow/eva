@@ -886,8 +886,8 @@ class TestLatencyOptimizationFlags:
 
     def test_backchanneling_defaults_to_auto_and_is_set_via_env(self):
         assert _config(env_vars=_BASE_ENV).model.backchanneling == "auto"
-        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__BACKCHANNELING": "None"})
-        assert c.model.backchanneling == "none"
+        c = _config(env_vars=_BASE_ENV | {"EVA_MODEL__BACKCHANNELING": "OFF"})
+        assert c.model.backchanneling == "off"
 
     def test_invalid_backchanneling_rejected(self):
         with pytest.raises(ValueError):

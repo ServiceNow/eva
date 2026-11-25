@@ -50,7 +50,7 @@ _BACKEND_KEY = "backend_instructions"
 
 
 BACKCHANNEL_POLICIES = {
-    "none": "Don't use backchannels.",
+    "off": "Don't use backchannels.",
     "auto": (
         "Use moderate backchannels, they should be realistic and not compete with the main response "
         "and not compete with the user response."
