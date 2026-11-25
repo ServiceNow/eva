@@ -34,6 +34,7 @@ dependencies = [
     "azure-cognitiveservices-speech>=1.31.0",
     "cartesia>=3.0.0",
     "assemblyai>=0.17.0",
+    "phonic>=0.33.9",
     "setuptools>=65.0.0",
     "fastapi>=0.100.0",
     "uvicorn>=0.23.0",
