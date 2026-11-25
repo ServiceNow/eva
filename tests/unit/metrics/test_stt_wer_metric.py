@@ -130,7 +130,9 @@ class TestSTTWERCodeSwitch:
     async def test_reconciled_score_details_and_sub_metrics(self):
         metric = STTWERMetric(config={"language": "hi"})
         ctx = make_metric_context(
+            # 1: "my flight is at seven o'clock", 2: "my flight is tomorrow"
             intended_user_turns={1: "मेरी फ़्लाइट seven बजे है", 2: "मेरी flight कल है"},
+            # 1: "7" for "seven" is the same speech (rescued); 2: "fight" for "flight" is a real error
             transcribed_user_turns={1: "मेरी फ़्लाइट 7 बजे है", 2: "मेरी fight कल है"},
         )
         result = await metric.compute(ctx)
@@ -189,7 +191,9 @@ class TestSTTWERCodeSwitch:
     async def test_phonetic_rescue_counts_in_hindi_score(self):
         metric = STTWERMetric(config={"language": "hi"})
         ctx = make_metric_context(
+            # "there is a network problem on my laptop", with the English words written in Devanagari
             intended_user_turns={1: "मेरे लैपटॉप में नेटवर्क प्रॉब्लम है"},
+            # the STT writes नेटवर्क / प्रॉब्लम in Latin; the phonetic matcher rescues both
             transcribed_user_turns={1: "मेरे लैपटॉप में network problem है"},
         )
         result = await metric.compute(ctx)
