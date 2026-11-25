@@ -51,6 +51,10 @@ def test_reduplication_keeps_the_boundary():
         ("e-mail", "ईमेल"),
         ("office", "ऑफ़िस"),
         ("ID", "आईडी"),
+        # airline and HR names the phonetic matcher cannot match
+        ("Chicago", "शिकागो"),
+        ("Zoom", "ज़ूम"),
+        ("Coverys", "कवरीज़"),
         ("HR", "एचआर"),
     ],
 )

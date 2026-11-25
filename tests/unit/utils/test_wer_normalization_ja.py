@@ -107,6 +107,31 @@ def test_spelling_variants_equivalent(a: str, b: str):
     assert _ja(a) == _ja(b)
 
 
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        # multi-word names, with or without spaces
+        ("Adobe Creative Cloud", "アドビクリエイティブクラウド"),
+        ("AdobeCreativeCloud", "アドビクリエイティブクラウド"),
+        ("Active Directory", "アクティブディレクトリー"),
+        ("Production Deploy Access", "プロダクションデプロイアクセス"),
+        # airline: cities, brand, cabin classes
+        ("シカゴ行きの便", "Chicago行きの便"),
+        ("Los Angeles", "ロサンゼルス"),
+        ("SkyWay", "スカイウェイ"),
+        ("Main Cabin", "メインキャビン"),
+        # medical / HR: insurers and states
+        ("Mag Mutual", "マグミューチュアル"),
+        ("MagMutual", "マグミューチュアル"),
+        ("Coverys", "カバリーズ"),
+        ("ペンシルバニア", "Pennsylvania"),
+        ("North Carolina", "ノースカロライナ"),
+    ],
+)
+def test_names_from_all_domains_equivalent(a: str, b: str):
+    assert _ja(a) == _ja(b)
+
+
 def test_product_names_compare_in_katakana():
     assert _ja("Confluence") == "コンフルエンス"
 
