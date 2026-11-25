@@ -1065,5 +1065,137 @@
       "assistant_interrupted_turns": [1],
       "user_interrupted_turns": []
     }
+  },
+  {
+    "id": "s2s_pre_tool_speech_ordered_before_tool",
+    "description": "S2S: assistant says 'I'll pull that up', its audio ends, then the tool call fires before the user simulator's late transcript arrives. The pre-tool speech must be placed before the tool call (keyed by when its speech began), not merged with the post-tool reply.",
+    "pipeline_type": "s2s",
+    "history": [
+      {"timestamp_ms": 1000, "source": "audit_log", "event_type": "assistant", "data": "Hello! How can I help?"},
+      {"timestamp_ms": 1000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 2000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 3200, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "Hello. How can I help?"}}},
+      {"timestamp_ms": 3500, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 3500, "source": "audit_log", "event_type": "user", "data": "Code ABC123, last name Nelson."},
+      {"timestamp_ms": 3700, "source": "user_simulator", "event_type": "user_speech", "data": {"data": {"text": "Code ABC123, last name Nelson."}}},
+      {"timestamp_ms": 6000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 7000, "source": "audit_log", "event_type": "assistant", "data": "Thanks! I'll pull that up."},
+      {"timestamp_ms": 7040, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 8500, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 9000, "source": "audit_log", "event_type": "tool_call", "data": {"tool": "get_reservation", "parameters": {"confirmation_number": "ABC123", "last_name": "Nelson"}}},
+      {"timestamp_ms": 9000, "source": "audit_log", "event_type": "tool_response", "data": {"tool": "get_reservation", "response": {"status": "success"}}},
+      {"timestamp_ms": 10000, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "Thanks. I'll pull that up."}}},
+      {"timestamp_ms": 11000, "source": "audit_log", "event_type": "assistant", "data": "I see your reservation."},
+      {"timestamp_ms": 11000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 13000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 14400, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "I see your reservation."}}},
+      {"timestamp_ms": 15000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 15000, "source": "audit_log", "event_type": "user", "data": "Great."},
+      {"timestamp_ms": 15200, "source": "user_simulator", "event_type": "user_speech", "data": {"data": {"text": "Great."}}},
+      {"timestamp_ms": 16000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 17000, "source": "user_simulator", "event_type": "connection_state", "data": {"data": {"state": "session_ended"}}}
+    ],
+    "expected": {
+      "num_tool_calls": 1,
+      "conversation_trace": [
+        {"role": "assistant", "content": "Hello. How can I help?", "type": "transcribed", "turn_id": 0},
+        {"role": "user", "content": "Code ABC123, last name Nelson.", "type": "intended", "turn_id": 1},
+        {"role": "assistant", "content": "Thanks. I'll pull that up.", "type": "transcribed", "turn_id": 1},
+        {"tool_name": "get_reservation", "parameters": {"confirmation_number": "ABC123", "last_name": "Nelson"}, "type": "tool_call", "turn_id": 1},
+        {"tool_name": "get_reservation", "tool_response": {"status": "success"}, "type": "tool_response", "turn_id": 1},
+        {"role": "assistant", "content": "I see your reservation.", "type": "transcribed", "turn_id": 1},
+        {"role": "user", "content": "Great.", "type": "intended", "turn_id": 2}
+      ]
+    }
+  },
+  {
+    "id": "s2s_multi_segment_response_before_tool",
+    "description": "S2S: one model response ('Thanks. Checking now.') plays as two audio segments and the tool call lands between them. The audit-log response time, not the second segment's start, marks when the speech began, so the transcript is placed before the tool call.",
+    "pipeline_type": "s2s",
+    "history": [
+      {"timestamp_ms": 1000, "source": "audit_log", "event_type": "assistant", "data": "Hello! How can I help?"},
+      {"timestamp_ms": 1000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 2000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 3200, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "Hello. How can I help?"}}},
+      {"timestamp_ms": 3500, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 3500, "source": "audit_log", "event_type": "user", "data": "Code ABC123, last name Nelson."},
+      {"timestamp_ms": 3700, "source": "user_simulator", "event_type": "user_speech", "data": {"data": {"text": "Code ABC123, last name Nelson."}}},
+      {"timestamp_ms": 6000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 7000, "source": "audit_log", "event_type": "assistant", "data": "Thanks. Checking now."},
+      {"timestamp_ms": 7000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 7500, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 8000, "source": "audit_log", "event_type": "tool_call", "data": {"tool": "get_reservation", "parameters": {"confirmation_number": "ABC123", "last_name": "Nelson"}}},
+      {"timestamp_ms": 8000, "source": "audit_log", "event_type": "tool_response", "data": {"tool": "get_reservation", "response": {"status": "success"}}},
+      {"timestamp_ms": 8020, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 9000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 10500, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "Thanks. Checking now."}}},
+      {"timestamp_ms": 11000, "source": "audit_log", "event_type": "assistant", "data": "I see your reservation."},
+      {"timestamp_ms": 11000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 13000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 14400, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "I see your reservation."}}},
+      {"timestamp_ms": 15000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 15000, "source": "audit_log", "event_type": "user", "data": "Great."},
+      {"timestamp_ms": 15200, "source": "user_simulator", "event_type": "user_speech", "data": {"data": {"text": "Great."}}},
+      {"timestamp_ms": 16000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 17000, "source": "user_simulator", "event_type": "connection_state", "data": {"data": {"state": "session_ended"}}}
+    ],
+    "expected": {
+      "num_tool_calls": 1,
+      "conversation_trace": [
+        {"role": "assistant", "content": "Hello. How can I help?", "type": "transcribed", "turn_id": 0},
+        {"role": "user", "content": "Code ABC123, last name Nelson.", "type": "intended", "turn_id": 1},
+        {"role": "assistant", "content": "Thanks. Checking now.", "type": "transcribed", "turn_id": 1},
+        {"tool_name": "get_reservation", "parameters": {"confirmation_number": "ABC123", "last_name": "Nelson"}, "type": "tool_call", "turn_id": 1},
+        {"tool_name": "get_reservation", "tool_response": {"status": "success"}, "type": "tool_response", "turn_id": 1},
+        {"role": "assistant", "content": "I see your reservation.", "type": "transcribed", "turn_id": 1},
+        {"role": "user", "content": "Great.", "type": "intended", "turn_id": 2}
+      ]
+    }
+  },
+  {
+    "id": "s2s_transcript_arrives_during_next_segment",
+    "description": "S2S: the transcript of 'Okay.' arrives while the next response ('Let me check.') is already playing. That still-playing segment is not covered by the 'Okay.' transcript, so its start carries over and 'Let me check.' is still placed before the tool call that follows it.",
+    "pipeline_type": "s2s",
+    "history": [
+      {"timestamp_ms": 1000, "source": "audit_log", "event_type": "assistant", "data": "Hello! How can I help?"},
+      {"timestamp_ms": 1000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 2000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 3200, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "Hello. How can I help?"}}},
+      {"timestamp_ms": 3500, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 3500, "source": "audit_log", "event_type": "user", "data": "Code ABC123, last name Nelson."},
+      {"timestamp_ms": 3700, "source": "user_simulator", "event_type": "user_speech", "data": {"data": {"text": "Code ABC123, last name Nelson."}}},
+      {"timestamp_ms": 6000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 7000, "source": "audit_log", "event_type": "assistant", "data": "Okay."},
+      {"timestamp_ms": 7000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 7400, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 8900, "source": "audit_log", "event_type": "assistant", "data": "Let me check."},
+      {"timestamp_ms": 9000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 9100, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "Okay."}}},
+      {"timestamp_ms": 9600, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 10000, "source": "audit_log", "event_type": "tool_call", "data": {"tool": "get_reservation", "parameters": {"confirmation_number": "ABC123", "last_name": "Nelson"}}},
+      {"timestamp_ms": 10000, "source": "audit_log", "event_type": "tool_response", "data": {"tool": "get_reservation", "response": {"status": "success"}}},
+      {"timestamp_ms": 11000, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "Let me check."}}},
+      {"timestamp_ms": 12000, "source": "audit_log", "event_type": "assistant", "data": "I see your reservation."},
+      {"timestamp_ms": 12000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "assistant"}},
+      {"timestamp_ms": 14000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "assistant"}},
+      {"timestamp_ms": 15400, "source": "user_simulator", "event_type": "assistant_speech", "data": {"data": {"text": "I see your reservation."}}},
+      {"timestamp_ms": 16000, "source": "user_simulator", "event_type": "audio_start", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 16000, "source": "audit_log", "event_type": "user", "data": "Great."},
+      {"timestamp_ms": 16200, "source": "user_simulator", "event_type": "user_speech", "data": {"data": {"text": "Great."}}},
+      {"timestamp_ms": 17000, "source": "user_simulator", "event_type": "audio_end", "data": {"user": "simulated_user"}},
+      {"timestamp_ms": 18000, "source": "user_simulator", "event_type": "connection_state", "data": {"data": {"state": "session_ended"}}}
+    ],
+    "expected": {
+      "num_tool_calls": 1,
+      "conversation_trace": [
+        {"role": "assistant", "content": "Hello. How can I help?", "type": "transcribed", "turn_id": 0},
+        {"role": "user", "content": "Code ABC123, last name Nelson.", "type": "intended", "turn_id": 1},
+        {"role": "assistant", "content": "Okay. Let me check.", "type": "transcribed", "turn_id": 1},
+        {"tool_name": "get_reservation", "parameters": {"confirmation_number": "ABC123", "last_name": "Nelson"}, "type": "tool_call", "turn_id": 1},
+        {"tool_name": "get_reservation", "tool_response": {"status": "success"}, "type": "tool_response", "turn_id": 1},
+        {"role": "assistant", "content": "I see your reservation.", "type": "transcribed", "turn_id": 1},
+        {"role": "user", "content": "Great.", "type": "intended", "turn_id": 2}
+      ]
+    }
   }
 ]
