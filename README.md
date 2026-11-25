@@ -89,9 +89,8 @@ pip install -e ".[dev]"
 - STT/TTS API key and model: Passed via `EVA_MODEL__STT_PARAMS` / `EVA_MODEL__TTS_PARAMS` (default provider is Cartesia)
 
 **For all metrics:**
-- `OPENAI_API_KEY`: GPT-5.2 for text judge metrics (task completion, conciseness, turn taking, etc.)
+- `OPENAI_API_KEY`: GPT-5.2 for text judge metrics (faithfulness, task completion, conciseness, turn taking, etc.)
 - `GOOGLE_APPLICATION_CREDENTIALS`: Gemini via Vertex AI (audio judge metrics)
-- `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`: Claude via Bedrock (faithfulness metric)
 
 **Key Environment Variables:**
 ```bash
@@ -275,6 +274,8 @@ git lfs install
 ```
 
 Files matching the patterns in [`.gitattributes`](.gitattributes) are tracked by Git LFS automatically. To track a new kind of file, run `git lfs track "<pattern>"` and commit the updated `.gitattributes`.
+
+If you make changes to the website or the judge prompts, the `build-website` pre-commit hook needs Node.js to rebuild the site. See the [`website/README.md`](website/README.md).
 
 ### Running Tests
 

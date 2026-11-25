@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from eva.assistant.services.llm import LiteLLMClient
-from eva.models.config import PERSONA_GENDER, CascadeSimulatorConfig, PerturbationConfig
+from eva.models.config import PERSONA_GENDER, CascadeSimulatorConfig, PerturbationConfig, gender_word
 from eva.user_simulator.audio_bridge import BotToBotAudioBridge
 from eva.user_simulator.base import AbstractUserSimulator
 from eva.user_simulator.cascade.stt import ScribeStreamingSTT
@@ -197,7 +197,6 @@ class CascadeUserSimulator(AbstractUserSimulator):
         return self.simulator_config.female_voice
 
     def _build_prompt(self) -> str:
-        gender_word = "male" if self.caller_gender == "M" else "female"
         gender_instruction = get_prompt_manager().get_prompt(
             "user_simulator.gender_instruction", gender_word=gender_word(self.caller_gender)
         )

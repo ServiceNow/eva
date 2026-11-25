@@ -11,7 +11,7 @@ Audio-based validation metric that evaluates whether the user simulator's **spok
 ### Evaluation Method
 
 - **Type**: Audio Judge (multimodal LLM with audio input)
-- **Model**: Gemini 3 Flash
+- **Model**: Gemini 3.8 Flash
 - **Granularity**: Per-turn (each user turn evaluated independently)
 
 ### Input Data
@@ -67,5 +67,5 @@ This metric uses a 1-3 scale instead of binary 0-1 (like agent speech fidelity) 
 - **Prompt location**: `configs/prompts/judge.yaml` under `judge.user_speech_fidelity`
   - Uses the same speech fidelity prompt structure as `agent_speech_fidelity` but with `evaluation_mode="user"` and user turns
 - **Configuration options**:
-  - `audio_judge_model`: LLM model (default: Gemini 3 Flash)
+  - `audio_judge_model`: LLM model (default: Gemini 3.8 Flash)
   - `aggregation`: Aggregation method (default: "mean")
