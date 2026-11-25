@@ -55,6 +55,9 @@ def test_reduplication_keeps_the_boundary():
         ("Chicago", "शिकागो"),
         ("Zoom", "ज़ूम"),
         ("Coverys", "कवरीज़"),
+        ("insurance", "इंश्योरेंस"),
+        ("issue", "इश्यू"),
+        ("fees", "फ़ीस"),
         ("HR", "एचआर"),
     ],
 )

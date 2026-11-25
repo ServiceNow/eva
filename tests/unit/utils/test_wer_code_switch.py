@@ -84,7 +84,20 @@ def test_adjacent_errors_form_one_region_rescued_only_as_a_whole():
 
 @pytest.mark.parametrize(
     "token,tag",
-    [("seven", "en"), ("कोड", "en"), ("टाइम", "en"), ("फ्लाइट", "hi"), ("बजे", "hi"), ("25", "num")],
+    [
+        ("seven", "en"),
+        ("कोड", "en"),
+        ("टाइम", "en"),
+        ("फ्लाइट", "hi"),
+        ("बजे", "hi"),
+        ("25", "num"),
+        # lexicon values that are ordinary Hindi words, or plain Hindi month names
+        ("पास", "hi"),
+        ("सर", "hi"),
+        ("जीरा", "hi"),
+        ("मई", "hi"),
+        ("फरवरी", "hi"),
+    ],
 )
 def test_tag_token(token, tag):
     assert tag_token(token, "hi", "en") == tag
@@ -236,3 +249,30 @@ def test_phonetic_on_only_for_hindi():
         if isinstance(data := json.loads(path.read_text()), dict) and data.get("code_switch_phonetic")
     }
     assert enabled == {"hi.json"}
+
+
+@pytest.mark.parametrize(
+    "ref,hyp,rescued",
+    [
+        # "my code is seven two" / STT: "my code is 72"
+        ("मेरा code seven two है", "मेरा code 72 है", ("seven two", "72")),
+        # "my PIN is seven two" / STT: "my PIN is 72"
+        ("मेरा pin seven two है", "मेरा pin 72 है", ("seven two", "72")),
+        # "I'm okay" / STT: "I am okay"
+        ("I'm okay", "I am okay", ("m", "am")),
+        # "OK, seven" / STT: "OK, 7"
+        ("ok seven", "ok 7", ("seven", "7")),
+    ],
+)
+def test_english_view_rescues_next_to_a_lexicon_word(ref, hyp, rescued):
+    # code, pin and okay are in hi_loanwords.json: the English view must map them
+    # to Devanagari too, or the two views no longer line up around the error.
+    result = reconcile(ref, hyp)
+    assert [(r.expected, r.actual) for r in result.rescues] == [rescued]
+    assert reconciled_wer(result) == 0.0
+
+
+@pytest.mark.parametrize("deva,latin", [("सकता", "sakta"), ("करेंगे", "karenge"), ("नमस्ते", "namaste")])
+def test_romanized_hindi_counts_as_correct(deva, latin):
+    # Hindi written in Latin script by the STT is the same word: the phonetic matcher accepts it.
+    assert phonetic_match(deva, latin)

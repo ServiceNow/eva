@@ -174,7 +174,7 @@ class TestSTTWERCodeSwitch:
         assert result.details["per_turn_code_switch_rescues"] == {}
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("language", ["en", "fr", "de", "es", "it", "nl", "ja"])
+    @pytest.mark.parametrize("language", ["en", "fr", "de", "es", "it", "nl", "ja", "ko", "zh"])
     async def test_languages_without_code_switching_are_unchanged(self, language):
         metric = STTWERMetric(config={"language": language})
         ctx = make_metric_context(

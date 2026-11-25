@@ -60,7 +60,7 @@ When a language config sets `code_switch_languages` (today only `hi`, with `["en
 
 A region stops counting as an error only when the two sides match **and** the intended text is English there. If the intended text has the digit `7` and the STT writes "seven", the user may have said सात, so it stays an error. The STT side must be English too: intended "seven" vs STT सात is a translation and stays an error, even though both normalize to 7. So translation errors are not hidden. Errors can only go down: `wer` ≤ `strict_wer`.
 
-Each intended word is also tagged by language: `en` for Latin script, a known short loanword (कोड) or a word the phonetic matcher rescued, `num` for digits, `hi` otherwise. Substitutions and deletions count against the intended word's language, insertions against the inserted word's. Digits are in neither `hi` nor `en`. An English word written in Devanagari that the STT also writes in Devanagari, and that is not in the short-loanword lexicon, is counted as Hindi, so the English share is an undercount.
+Each intended word is also tagged by language: `en` for Latin script, a known short loanword (कोड, but not the lexicon entries that are ordinary Hindi words such as पास or the month names) or a word the phonetic matcher rescued, `num` for digits, `hi` otherwise. Substitutions and deletions count against the intended word's language, insertions against the inserted word's. Digits are in neither `hi` nor `en`. An English word written in Devanagari that the STT also writes in Devanagari, and that is not in the short-loanword lexicon, is counted as Hindi, so the English share is an undercount.
 
 Languages without `code_switch_languages` (all except `hi`) are scored exactly as before and have none of the fields below.
 

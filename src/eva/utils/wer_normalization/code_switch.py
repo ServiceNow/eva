@@ -217,9 +217,28 @@ class ReconcileResult:
 
 
 @lru_cache(maxsize=8)
+def _primary_lexicon(language: str) -> dict[str, str]:
+    """The primary language's loanword lexicon (``hi_loanwords.json``: code -> कोड)."""
+    return getattr(_make_normalizer(language), "spelling_map", {})
+
+
+@lru_cache(maxsize=8)
 def _loanword_values(language: str) -> frozenset[str]:
     """Primary-script spellings of known secondary-language loanwords (``hi_loanwords.json`` values)."""
     return frozenset(getattr(_make_normalizer(language), "spelling_map", {}).values())
+
+
+# Lexicon values that are also ordinary primary-language words (पास "near", सर
+# "head", जीरा "cumin"), or loans that are plain Hindi (the month names). They
+# are tagged primary even though the lexicon lists them.
+_PRIMARY_WORDS_IN_LEXICON = {
+    "hi": ("पास", "सर", "मेल", "जीरा", "जनवरी", "फ़रवरी", "मई", "जून", "जुलाई", "सितंबर"),
+}
+
+
+@lru_cache(maxsize=8)
+def _primary_words_in_lexicon(language: str) -> frozenset[str]:
+    return frozenset(normalize_text(w, language) for w in _PRIMARY_WORDS_IN_LEXICON.get(language, ()))
 
 
 def tag_token(token: str, primary: str, secondary: str) -> str:
@@ -230,7 +249,9 @@ def tag_token(token: str, primary: str, secondary: str) -> str:
     """
     if token.isdigit():
         return "num"
-    if _RE_LATIN.search(token) or token in _loanword_values(primary):
+    if _RE_LATIN.search(token):
+        return secondary
+    if token in _loanword_values(primary) and token not in _primary_words_in_lexicon(primary):
         return secondary
     return primary
 
@@ -280,7 +301,13 @@ def _build_view(raw: str, primary: str, secondary: str) -> _View:
     cuts: dict[int, int | None] = {}
     for is_primary, text in _split_runs(raw, primary):
         p_run = normalize_text(text, primary).split()
-        v_run = p_run if is_primary else normalize_text(text, secondary).split()
+        if is_primary:
+            v_run = p_run
+        else:
+            # The primary rules map lexicon loanwords to the primary script (code -> कोड);
+            # do the same here, or the views would not align around them.
+            lexicon = _primary_lexicon(primary)
+            v_run = [lexicon.get(t, t) for t in normalize_text(text, secondary).split()]
         for pi, vi in _cut_points(p_run, v_run).items():
             key = len(p_all) + pi
             val = None if vi is None else len(v_all) + vi
