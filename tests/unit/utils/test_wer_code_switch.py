@@ -35,11 +35,17 @@ def test_english_view_rescues_the_region(ref, hyp, rescued):
 @pytest.mark.parametrize(
     "ref,hyp",
     [
+        # "I ... at 7 o'clock" / STT: "I ... at seven o'clock"
         ("मुझे 7 बजे", "मुझे seven बजे"),  # reference digit is not attested as English: the user may have said सात
+        # "I ... at सात (seven, in Hindi) o'clock" / STT: "I ... at seven o'clock"
         ("मुझे सात बजे", "मुझे seven बजे"),  # no Hindi -> English cross-comparison
+        # "my flight is tomorrow" / STT: "my fight is tomorrow"
         ("मेरी flight कल है", "मेरी fight कल है"),  # real STT error
+        # "I will come tomorrow" / STT: "I will come call"
         ("मैं कल आऊँगा", "मैं call आऊँगा"),  # कल means tomorrow
+        # "I need seven" / STT: "I need सात (seven, in Hindi)"
         ("मुझे seven चाहिए", "मुझे सात चाहिए"),  # STT translated the English number into Hindi
+        # "March twenty-five" / STT: "March पच्चीस (twenty-five, in Hindi)"
         ("twenty five मार्च", "पच्चीस मार्च"),
     ],
 )
@@ -62,6 +68,7 @@ def test_region_longer_than_four_tokens_is_not_rescued():
 
 
 def test_reconciled_never_exceeds_strict():
+    # "my flight is tomorrow at seven" / STT: "my fight is tomorrow at 7"
     result = reconcile("मेरी flight कल seven बजे है", "मेरी fight कल 7 बजे है")
     assert [(r.expected, r.actual) for r in result.rescues] == [("seven", "7")]
     assert reconciled_wer(result) == pytest.approx(1 / 6)
@@ -70,6 +77,7 @@ def test_reconciled_never_exceeds_strict():
 
 def test_adjacent_errors_form_one_region_rescued_only_as_a_whole():
     # "flight seven" vs "fight 7" is one region; its English views differ, so nothing is rescued.
+    # "my flight is at seven" / STT: "my fight is at 7"
     result = reconcile("मेरी flight seven बजे है", "मेरी fight 7 बजे है")
     assert result.rescues == []
 
@@ -87,12 +95,18 @@ def test_tag_token(token, tag):
 @pytest.mark.parametrize(
     "ref,hyp,strict,after,english",
     [
+        # "I need to talk to the IT team" (both)
         ("मुझे आईटी टीम से बात करनी है", "मुझे IT टीम से बात करनी है", 0.0, 0.0, 2),
         ("can I book it", "can I book it", 0.0, 0.0, 4),
+        # "my flight is at seven o'clock" / STT: "my flight is at 7 o'clock"
         ("मेरी फ़्लाइट seven बजे है", "मेरी फ़्लाइट 7 बजे है", 0.2, 0.0, 1),
+        # "I need a booking for March twenty-five" / STT: "I need a booking for March 25"
         ("मुझे twenty five मार्च की booking चाहिए", "मुझे 25 मार्च की बुकिंग चाहिए", 3 / 7, 0.0, 3),
+        # "I'm not sure, can you check?" / STT: "I am not sure, can you check"
         ("I'm not sure, क्या आप check कर सकते हैं", "I am not sure क्या आप check कर सकते हैं", 0.1, 0.0, 5),
+        # "I want the 7 o'clock flight" / STT: "I want the seven o'clock flight"
         ("मुझे 7 बजे की फ़्लाइट चाहिए", "मुझे seven बजे की फ़्लाइट चाहिए", 1 / 6, 1 / 6, 0),
+        # "my flight is tomorrow" / STT: "my fight is tomorrow"
         ("मेरी flight कल है", "मेरी fight कल है", 0.25, 0.25, 1),
     ],
 )
@@ -179,15 +193,20 @@ def test_phonetic_no_match(ref_word, hyp_word):
 @pytest.mark.parametrize(
     "ref,hyp,strict,after",
     [
+        # "there is a network problem on my laptop" (both)
         ("मेरे लैपटॉप में नेटवर्क प्रॉब्लम है", "मेरे लैपटॉप में network problem है", 1 / 3, 0.0),
+        # "please confirm my appointment" (both)
         ("कृपया मेरा अपॉइंटमेंट कन्फर्म कीजिए", "कृपया मेरा appointment confirm कीजिए", 0.4, 0.0),
+        # "Hello, I need to change my flight date to March 25. My confirmation code is ready." (both)
         (
             "नमस्ते, मुझे अपनी उड़ान की तारीख 25 मार्च करनी है। मेरा कन्फर्मेशन कोड तैयार है।",
             "नमस्ते, मुझे अपनी उड़ान की तारीख 25 march करनी है। मेरा confirmation code तैयार है।",
             2 / 15,
             0.0,
         ),
+        # "I will come tomorrow" / STT: "I will come call"
         ("मैं कल आऊँगा", "मैं call आऊँगा", 1 / 3, 1 / 3),
+        # "I will come by bus" (both)
         ("मैं बस से आऊँगा", "मैं bus से आऊँगा", 0.25, 0.25),
     ],
 )
@@ -199,6 +218,7 @@ def test_phonetic_plan_examples(ref, hyp, strict, after):
 
 
 def test_phonetic_rescue_tags_the_reference_word_english():
+    # "in my network" (both)
     result = reconcile_code_switch("मेरे नेटवर्क में", "मेरे network में", "hi", ("en",), phonetic=True)
     assert result.ref_langs == ["hi", "en", "hi"]
     assert result.hyp_langs == ["hi", "en", "hi"]
