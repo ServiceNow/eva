@@ -25,6 +25,7 @@ def test_char_folds_keys_must_be_single_characters():
 def test_english_config_enables_no_hook():
     cfg = LanguageConfig.load("en")
     assert cfg.char_folds == {}
+    assert cfg.char_fold_words == {}
     assert cfg.join_hyphenated_compounds is False
 
 

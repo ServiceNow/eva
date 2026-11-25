@@ -111,6 +111,10 @@ class LanguageConfig(BaseModel):
     # multi-character. HI: nukta -> "", chandrabindu -> anusvara;
     # DE: ä -> ae, ö -> oe, ü -> ue, ß -> ss.
     char_folds: dict[str, str] = Field(default_factory=dict)
+    # Whole words replaced before ``char_folds``, for a word the folds would merge
+    # with a different word. HI: ज़ी (letter Z) -> ज़ेड, so it does not fold into
+    # जी (letter G).
+    char_fold_words: dict[str, str] = Field(default_factory=dict)
 
     # --- Pre-normalization (applied in wer_utils.normalize_text) -----------
     # Join letter-only hyphenated compounds ("anmelde-konto" -> "anmeldekonto").
@@ -608,6 +612,16 @@ class GenericTextNormalizer(BaseTextNormalizer):
         self.config = config
         self.standardize_numbers = GenericNumberNormalizer(config)
         self._fold = make_char_folder(config.char_folds)
+        self._fold_words = {unicodedata.normalize("NFC", k): v for k, v in config.char_fold_words.items()}
+        self._fold_words_re = (
+            re.compile(
+                r"(?<![\w\u0900-\u097f])(?:"
+                + "|".join(map(re.escape, sorted(self._fold_words, key=len, reverse=True)))
+                + r")(?![\w\u0900-\u097f])"
+            )
+            if self._fold_words
+            else None
+        )
         self.spelling_map: dict[str, str] = {}
         if config.spelling_map_path:
             with open(CONFIGS_DIR / config.spelling_map_path) as f:
@@ -616,6 +630,8 @@ class GenericTextNormalizer(BaseTextNormalizer):
 
     def __call__(self, s: str) -> str:
         s = s.lower()
+        if self._fold_words_re is not None:
+            s = self._fold_words_re.sub(lambda m: self._fold_words[m.group()], unicodedata.normalize("NFC", s))
         s = self._fold(s)
         s = self._remove_markup(s)
         s = self._apply_ignore_patterns(s, self.config.ignore_patterns)

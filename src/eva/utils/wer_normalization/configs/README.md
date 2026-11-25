@@ -280,6 +280,13 @@ to the text and to all number-word vocab, so both spellings converge.
 `hi`: nukta removed (ज़→ज, precomposed क़…य़ too) and chandrabindu → anusvara
 (हाँ→हां). `de`: ä→ae, ö→oe, ü→ue, ß→ss (Krüger == Krueger).
 
+### `char_fold_words` `{word: str}`
+
+Whole words replaced before `char_folds`, for a word the folds would merge with
+a different word. `hi`: `ज़ी` (the letter Z) → `ज़ेड`, which folds to `जेड`, so
+it stays distinct from `जी` (the letter G). Words that only contain it
+(`ज़ीरो`, `ज़ीनत`) are not touched.
+
 ### `join_hyphenated_compounds` `bool`
 
 `true` (de, nl, hi) joins letter-only hyphen compounds: `Anmelde-Konto` ==

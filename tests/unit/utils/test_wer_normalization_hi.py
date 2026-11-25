@@ -61,3 +61,12 @@ def test_numbers_still_converted():
 
 def test_plain_devanagari_unchanged():
     assert normalize_text("नमस्ते दोस्त", "hi") == "नमस्ते दोस्त"
+
+
+def test_letter_z_is_not_folded_into_letter_g():
+    # The nukta fold would turn ज़ी (Z) into जी (G); both are letter names in spelled codes.
+    assert normalize_text("ए ज़ी एक", "hi") != normalize_text("ए जी एक", "hi")
+    same("ज़ी", "ज़ेड")
+    same("ज़ी", "जेड")
+    same("ज़ीरो", "0")
+    same("ज़ीनत", "जीनत")
