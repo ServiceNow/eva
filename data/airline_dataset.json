@@ -35,7 +35,9 @@
       },
       "information_required": {
         "Passenger first name": "<FIRST_NAME>",
+        "Passenger first name spelling when asked": "<FIRST_NAME_ROMANIZED>",
         "Passenger last name": "<LAST_NAME>",
+        "Passenger last name spelling when asked": "<LAST_NAME_ROMANIZED>",
         "Booking confirmation number": "ZK3FFW",
         "Original route": "AUS to LAX",
         "Original departure date": "2026-03-20",
@@ -2568,7 +2570,9 @@
       "information_required": {
         "confirmation_number": "KOLTSF",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "original_outbound_date": "2026-08-14",
         "original_return_date": "2026-08-20",
         "desired_return_date": "2026-08-23",
@@ -7090,6 +7094,7 @@
       "information_required": {
         "confirmation_number": "70RDH8",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "seat_preference": {
           "first_choice": "aisle",
           "second_choice": "window",
@@ -9593,7 +9598,9 @@
       "information_required": {
         "confirmation_number": "MLATG2",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number": "<PHONE>",
         "email_address": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "seat_preference": {
@@ -13605,7 +13612,9 @@
       "information_required": {
         "confirmation_number": "PP248Z",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "original_route": "ATL-SEA",
         "original_flight_number": "SK518",
         "disruption_description": "Flight was canceled due to crew shortage",
@@ -15641,7 +15650,9 @@
       },
       "information_required": {
         "Passenger first name": "<FIRST_NAME>",
+        "Passenger first name spelling when asked": "<FIRST_NAME_ROMANIZED>",
         "Passenger last name": "<LAST_NAME>",
+        "Passenger last name spelling when asked": "<LAST_NAME_ROMANIZED>",
         "Confirmation number": "MZ30GI",
         "Original flight number": "SK877",
         "Original route": "JFK to LAX",
@@ -19027,7 +19038,9 @@
       "information_required": {
         "confirmation_number": "7MMHTS",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number": "<PHONE>",
         "email_address": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "date_of_birth": "June 14, 1995",
@@ -20871,7 +20884,9 @@
       },
       "information_required": {
         "Passenger first name": "<FIRST_NAME>",
+        "Passenger first name spelling when asked": "<FIRST_NAME_ROMANIZED>",
         "Passenger last name": "<LAST_NAME>",
+        "Passenger last name spelling when asked": "<LAST_NAME_ROMANIZED>",
         "Booking confirmation number": "5KR950",
         "Original travel date": "2026-06-14",
         "Original route (origin airport)": "DEN",
@@ -23969,7 +23984,9 @@
       },
       "information_required": {
         "Passenger first name": "<FIRST_NAME>",
+        "Passenger first name spelling when asked": "<FIRST_NAME_ROMANIZED>",
         "Passenger last name": "<LAST_NAME>",
+        "Passenger last name spelling when asked": "<LAST_NAME_ROMANIZED>",
         "Booking confirmation number": "M9M6FJ",
         "Original missed flight details": "SK715 ATL→ORD departing 8:00 AM on 2026-09-08",
         "Original connecting flight details": "ORD→MSP departing 1:00 PM on 2026-09-08",
@@ -27235,7 +27252,9 @@
       "information_required": {
         "confirmation_number": "I810KI",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name_if_requested": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number_if_requested": "<PHONE>",
         "email_if_requested": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "date_of_travel": "2026-05-14",
@@ -30471,7 +30490,9 @@
       "information_required": {
         "confirmation_number": "240QJE",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name_if_asked": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number_if_asked": "<PHONE>",
         "email_if_asked": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "date_of_birth_if_asked": "March 26, 1979",
@@ -32393,7 +32414,9 @@
       "information_required": {
         "confirmation_number": "CR27HC",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name_if_asked": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number_if_asked": "<PHONE>",
         "email_if_asked": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "seat_preference": {
@@ -35382,7 +35405,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "confirmation_code": "PZN19G",
         "phone_number": "<PHONE>",
         "email_address": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
@@ -37131,7 +37156,9 @@
       "information_required": {
         "confirmation_number": "HEEWRM",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name_if_asked": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number_if_asked": "<PHONE>",
         "email_if_asked": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "seat_preference": {
@@ -40000,7 +40027,9 @@
       "information_required": {
         "confirmation_number": "V062BJ",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number": "<PHONE>",
         "email_address": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "seat_preference": {
@@ -41792,7 +41821,9 @@
       "information_required": {
         "confirmation_number": "SOCATW",
         "passenger_last_name": "<LAST_NAME>",
+        "passenger_last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "passenger_first_name_if_asked": "<FIRST_NAME>",
+        "passenger_first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number_if_asked": "<PHONE>",
         "email_if_asked": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "date_needed_for_rebook_if_asked": "2026-07-22",
@@ -45462,7 +45493,9 @@
       "information_required": {
         "confirmation_number": "A83QV2",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "flight_number": "SK745",
         "phone_number": "<PHONE>",
         "email_address": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
@@ -47734,7 +47767,9 @@
       "information_required": {
         "confirmation_number": "BZIW48",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name_if_asked": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number_if_asked": "<PHONE>",
         "email_if_asked": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "flight_number_mentioned_by_user": "SK445",
@@ -51235,7 +51270,9 @@
       "information_required": {
         "confirmation_number": "M62JCV",
         "passenger_last_name": "<LAST_NAME>",
+        "passenger_last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "passenger_first_name_if_asked": "<FIRST_NAME>",
+        "passenger_first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "email_address_if_asked": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "phone_number_if_asked": "<PHONE>",
         "seat_preference": {
@@ -52763,7 +52800,9 @@
       "information_required": {
         "confirmation_number": "ZKXLE8",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "first_name_if_asked": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "phone_number_if_asked": "<PHONE>",
         "email_if_asked": "<FIRST_NAME_ROMANIZED>.<LAST_NAME_ROMANIZED>@gmail.com",
         "date_of_birth_if_asked": "August 14, 1994",

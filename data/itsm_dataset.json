@@ -36,7 +36,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP048271",
         "phone_last_four": "7294",
         "issue_description": "Locked out of Active Directory after too many failed login attempts",
@@ -1837,7 +1839,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP068347",
         "phone_last_four": "2916",
         "building_name": "<LOC:Headquarters>",
@@ -4785,7 +4789,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP077777",
         "phone_last_four": "9023",
         "otp_code": "405126",
@@ -6856,7 +6862,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP048271",
         "phone_last_four": "7294",
         "justification": "performance_degradation",
@@ -9643,7 +9651,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP071549",
         "phone_last_four": "5283",
         "application_name": "Datadog",
@@ -11682,7 +11692,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP083947",
         "phone_last_four": "6628",
         "license_product_name": "Figma",
@@ -14282,7 +14294,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP066666",
         "phone_last_four": "4425"
       }
@@ -16221,7 +16235,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP056428",
         "phone_last_four": "3391",
         "zone_name": "<LOC:Executive Garage>",
@@ -18849,7 +18865,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP068743",
         "phone_last_four": "7158",
         "building_name": "<LOC:Headquarters>",
@@ -20748,7 +20766,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP031482",
         "phone_last_four": "3614",
         "otp_code": "472018",
@@ -23720,7 +23740,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP055555",
         "phone_last_four": "8816",
         "otp_code": "105927",
@@ -25623,7 +25645,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP066666",
         "phone_last_four": "4425",
         "request_id": "REQ-SW-659dac3f4833",
@@ -29364,7 +29388,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP093471",
         "phone_last_four": "8215",
         "diagnostic_ref_code": "DIAG-2XM95PLQ",
@@ -31354,7 +31380,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP041829",
         "phone_last_four": "3157",
         "issue_description": "Email has been down for the past hour, messages delayed and calendar not syncing",
@@ -34777,7 +34805,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP067342",
         "phone_last_four": "2185",
         "building_name": "<LOC:Headquarters>",
@@ -36972,7 +37002,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP069135",
         "phone_last_four": "5891",
         "diagnostic_ref_code": "DIAG-8BV31NKW"
@@ -40638,7 +40670,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP053714",
         "phone_last_four": "8832",
         "issue_description": "VPN is completely down, GlobalConnect client won't connect at all",
@@ -43177,7 +43211,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP057491",
         "phone_last_four": "3842",
         "justification": "end_of_life",
@@ -46717,7 +46753,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP035784",
         "phone_last_four": "9182",
         "building_name": "<LOC:Headquarters>",
@@ -49151,7 +49189,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP058374",
         "phone_last_four": "7219",
         "justification": "end_of_life",
@@ -52859,7 +52899,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP073291",
         "phone_last_four": "4106",
         "target_system": "active_directory",
@@ -55470,7 +55512,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP046829",
         "phone_last_four": "9274",
         "justification": "end_of_life",
@@ -59452,7 +59496,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP061537",
         "phone_last_four": "4488",
         "issue_description": "External monitor shows no signal, was working yesterday"
@@ -61659,7 +61705,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP062918",
         "phone_last_four": "1753",
         "monitor_size": "24-inch",
@@ -64983,7 +65031,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP034817",
         "phone_last_four": "9246",
         "building_name": "<LOC:Headquarters>",
@@ -67585,7 +67635,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP057382",
         "phone_last_four": "4190",
         "justification": "physical_damage",
@@ -71994,7 +72046,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP074192",
         "phone_last_four": "5639",
         "issue_description": "Laptop won't power on at all, no lights or fan",
@@ -74321,7 +74375,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP086541",
         "phone_last_four": "3297",
         "building_name": "<LOC:Headquarters>",
@@ -78295,7 +78351,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP063517",
         "phone_last_four": "7948",
         "monitor_size": "27_inch",
@@ -81101,7 +81159,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP037294",
         "phone_last_four": "5681",
         "application_name": "Confluence",
@@ -85515,7 +85575,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP061748",
         "phone_last_four": "3824",
         "diagnostic_ref_code": "GENERATE"
@@ -87619,7 +87681,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "employee_id": "EMP082463",
         "phone_last_four": "7195",
         "target_employee_id": "EMP072948"
