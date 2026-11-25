@@ -41,6 +41,11 @@ def _make_normalizer(language: str) -> BasicTextNormalizer | GenericTextNormaliz
     return _DEFAULT_NORMALIZER
 
 
+def get_language_config(language: str) -> LanguageConfig | None:
+    """Return the JSON config used to normalize *language*, or None for CJK / default normalizers."""
+    return getattr(_make_normalizer(language), "config", None)
+
+
 # Basic transformations applied after Whisper normalization
 BASIC_TRANSFORMATIONS = Compose(
     [
