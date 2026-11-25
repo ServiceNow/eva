@@ -69,3 +69,33 @@ class TestServiceLabels:
 
     def test_metrics_processor_name(self):
         assert GrokVoiceAssistantServer._metrics_processor_name == "grok_voice"
+
+
+class TestFlushPendingUserTranscript:
+    def _server_with_turn(self, **turn_fields):
+        from eva.assistant.agentic.audit_log import AuditLog
+        from eva.assistant.openai_realtime_server import _UserTurnRecord
+
+        srv = _bare_server()
+        srv.audit_log = AuditLog()
+        srv._user_turn = _UserTurnRecord(speech_started_wall_ms="100", turn_id=1, **turn_fields)
+        return srv
+
+    def test_flush_records_turn_id(self):
+        srv = self._server_with_turn(transcript="hello")
+        srv._flush_pending_user_transcript()
+        assert [(e["value"], e["turn_id"]) for e in srv.audit_log.transcript] == [("hello", 1)]
+
+    def test_flush_replaces_placeholder_with_late_transcript(self):
+        srv = self._server_with_turn()
+        srv._write_missing_transcript_placeholder()
+        srv._user_turn.transcript = "late transcript"
+        srv._flush_pending_user_transcript()
+        assert [e["value"] for e in srv.audit_log.transcript] == ["late transcript"]
+        assert srv._user_turn.placeholder_written is False
+
+    def test_flush_is_idempotent(self):
+        srv = self._server_with_turn(transcript="hello")
+        srv._flush_pending_user_transcript()
+        srv._flush_pending_user_transcript()
+        assert len(srv.audit_log.transcript) == 1

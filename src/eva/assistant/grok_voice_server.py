@@ -47,11 +47,24 @@ class GrokVoiceAssistantServer(OpenAIRealtimeAssistantServer):
 
     def _flush_pending_user_transcript(self) -> None:
         """Write the buffered user transcript to the audit log if pending."""
-        if self._user_turn and self._user_turn.transcript and not self._user_turn.flushed:
-            timestamp_ms = self._user_turn.speech_started_wall_ms or None
-            self.audit_log.append_user_input(self._user_turn.transcript, timestamp_ms=timestamp_ms)
-            self._user_turn.flushed = True
-            logger.debug(f"Flushed deferred user transcript: {self._user_turn.transcript[:60]}...")
+        turn = self._user_turn
+        if not turn or not turn.transcript:
+            return
+        if turn.flushed and not turn.placeholder_written:
+            return
+
+        turn.flushed = True
+        if turn.placeholder_written and turn.turn_id is not None:
+            # A placeholder was written for this turn (transcription failed or was late);
+            # replace it rather than recording the same spoken turn twice.
+            turn.placeholder_written = False
+            if self.audit_log.update_user_input_by_turn_id(turn.turn_id, turn.transcript):
+                logger.debug(f"Replaced placeholder with deferred user transcript: {turn.transcript[:60]}...")
+                return
+
+        timestamp_ms = turn.speech_started_wall_ms or None
+        self.audit_log.append_user_input(turn.transcript, timestamp_ms=timestamp_ms, turn_id=turn.turn_id)
+        logger.debug(f"Flushed deferred user transcript: {turn.transcript[:60]}...")
 
     async def _on_transcription_completed(self, event: Any) -> None:
         """Buffer transcription instead of writing immediately.
@@ -76,7 +89,7 @@ class GrokVoiceAssistantServer(OpenAIRealtimeAssistantServer):
         self._flush_pending_user_transcript()
         await super()._on_speech_started(event)
 
-    async def _on_response_done(self, event: Any) -> None:
+    async def _on_response_done(self, event: Any, conn: Any | None = None) -> None:
         """Flush any pending transcript before recording assistant output."""
         self._flush_pending_user_transcript()
-        await super()._on_response_done(event)
+        await super()._on_response_done(event, conn)
