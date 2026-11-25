@@ -58,3 +58,34 @@ def test_abbreviated_monsieur_still_expands(lang):
 @pytest.mark.parametrize("lang", LANGS)
 def test_fillers_removed(lang):
     assert normalize_text("euh mm ah je voudrais réserver", lang) == normalize_text("je voudrais réserver", lang)
+
+
+@pytest.mark.parametrize("lang", LANGS)
+@pytest.mark.parametrize(
+    "spoken,written",
+    [
+        # phone numbers read in pairs, with no commas between the pairs
+        ("zéro six douze trente-quatre cinquante-six soixante-dix-huit", "0612345678"),
+        ("zéro un quatre-vingt-un soixante-quinze quatre-vingt-dix-neuf", "01 81 75 99"),
+        ("trente-quatre soixante-dix", "3470"),
+        ("douze quatre-vingt-dix", "1290"),
+        ("douze quatre-vingts", "1280"),
+    ],
+)
+def test_vigesimal_numbers_after_another_number(spoken, written, lang):
+    assert normalize_text(spoken, lang).replace(" ", "") == normalize_text(written, lang).replace(" ", "")
+
+
+@pytest.mark.parametrize("lang", LANGS)
+@pytest.mark.parametrize(
+    "spoken,written",
+    [
+        ("soixante-dix", "70"),
+        ("quatre-vingt-dix-sept", "97"),
+        ("mille neuf cent quatre-vingt-dix", "1990"),
+        ("un deux trois", "123"),
+        ("trente-quatre soixante", "3460"),
+    ],
+)
+def test_numbers_unchanged_by_the_vigesimal_fix(spoken, written, lang):
+    assert normalize_text(spoken, lang) == normalize_text(written, lang)
