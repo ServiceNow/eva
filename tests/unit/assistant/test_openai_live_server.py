@@ -27,6 +27,7 @@ from eva.assistant.openai_live_server import (
     drop_empty_optional_args,
     load_live_prompts,
     optional_param_names,
+    with_current_date,
 )
 from eva.models.agents import AgentConfig, AgentTool, AgentToolParameter
 from eva.models.config import ModelConfig
@@ -44,6 +45,11 @@ def _write_agent_dir(tmp_path: Path, gpt_live: dict | None) -> Path:
         live_dir.mkdir()
         (live_dir / "airline_agent.yaml").write_text(yaml.safe_dump(gpt_live), encoding="utf-8")
     return agent_yaml
+
+
+class TestWithCurrentDate:
+    def test_prefixes_the_date(self):
+        assert with_current_date("prompt", "2026-10-28 12:00") == "Today is 2026-10-28 12:00.\n\nprompt"
 
 
 class TestLoadLivePrompts:
@@ -556,11 +562,11 @@ class TestServerInit:
         srv = _make_server(tmp_path, params, parallel_tool_calls=True)
         cfg = srv._build_session_config()
         assert cfg["model"] == "gpt-live-1"
-        assert cfg["instructions"] == "FRONT"
+        assert cfg["instructions"] == "Today is 2026-10-28 12:00.\n\nFRONT"
         assert cfg["audio"]["output"]["voice"] == "cedar"
         responses = cfg["delegation"]["responses"]
         assert responses["model"] == "gpt-6-luna"
-        assert responses["instructions"] == "BACK"
+        assert responses["instructions"] == "Today is 2026-10-28 12:00.\n\nBACK"
         assert responses["reasoning"] == {"effort": "low"}
         assert responses["parallel_tool_calls"] is True
         assert [t["name"] for t in responses["tools"]] == [t.function_name for t in _agent().tools]

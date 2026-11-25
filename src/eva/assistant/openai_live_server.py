@@ -49,6 +49,11 @@ _FRONTEND_KEY = "frontend_instructions"
 _BACKEND_KEY = "backend_instructions"
 
 
+def with_current_date(prompt: str, current_date_time: str) -> str:
+    """Prefix a prompt with today's date, as the other assistant servers' system prompts do."""
+    return f"Today is {current_date_time}.\n\n{prompt}"
+
+
 def load_live_prompts(agent_config_path: str | Path) -> tuple[str, str]:
     """Load the (frontend, backend) prompts for an agent from ``configs/agents/gpt-live/``.
 
@@ -483,7 +488,9 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
         self._model: str = s2s_params["model"]
         self._audio_sample_rate = LIVE_SAMPLE_RATE
 
-        self._frontend_instructions, self._backend_instructions = load_live_prompts(self.agent_config_path)
+        frontend, backend = load_live_prompts(self.agent_config_path)
+        self._frontend_instructions = with_current_date(frontend, self.current_date_time)
+        self._backend_instructions = with_current_date(backend, self.current_date_time)
         self._tools: list[dict] = build_function_tools(self.agent)
         self._optional_params: dict[str, set[str]] = optional_param_names(self.agent)
 
