@@ -66,11 +66,20 @@ _LATIN_KEY = [
 ]  # fmt: skip
 _RE_LATIN_WORD = regex.compile(r"[a-z]+")
 _RE_DEVANAGARI_WORD = regex.compile(r"[\p{Devanagari}]+")
-# Native Hindi words with the same consonant key as an English word STT may
-# write instead (कल = tomorrow, not "call"; कमरा = room, not "camera").
+# Native Hindi words and the English look-alike an STT may write instead (कमरा =
+# room, not "camera"). Only these pairs are blocked: the same Hindi word in Latin
+# script (kamra, milna) is still accepted as romanized Hindi.
 _PHONETIC_STOPLIST = frozenset(
-    {"कल", "बस", "मैं", "मैन", "पर", "कमरा", "कमरे", "मिलना", "मिलने", "ज़रूरत", "जरूरत"}
-    | {"call", "bus", "main", "par", "camera", "million"}
+    {
+        ("कल", "call"),
+        ("बस", "bus"),
+        ("कमरा", "camera"),
+        ("कमरे", "camera"),
+        ("मिलना", "million"),
+        ("मिलने", "million"),
+        ("ज़रूरत", "jarrett"),
+        ("जरूरत", "jarrett"),
+    }
 )
 MIN_KEY_CONSONANTS = 3
 
@@ -178,11 +187,15 @@ def _first_vowel_compatible(deva_word: str, latin_word: str) -> bool:
 
 
 def phonetic_match(ref_word: str, hyp_word: str) -> bool:
-    """Are the two words the same English word, one in Devanagari and one in Latin script?
+    """Are the two words the same word, one in Devanagari and one in Latin script?
+
+    The word may be English (नेटवर्क / network) or Hindi written in Latin script
+    (सकता / sakta); both count as correct.
 
     Works in both directions (कन्फर्म / confirm, booking / बुकिंग). Conservative
     on purpose: one word per script, identical consonant keys of at least three
-    consonants, and native Hindi words with an English look-alike are excluded.
+    consonants, and known English look-alikes of native Hindi words are excluded
+    (कमरा / camera).
     The first vowels must also be compatible, so booking / backing differ;
     words that differ only in later vowels still match (confirm / conform).
     """
@@ -190,7 +203,7 @@ def phonetic_match(ref_word: str, hyp_word: str) -> bool:
         ref_word, hyp_word = hyp_word, ref_word
     if not (_RE_DEVANAGARI_WORD.fullmatch(ref_word) and _RE_LATIN_WORD.fullmatch(hyp_word)):
         return False
-    if ref_word in _PHONETIC_STOPLIST or hyp_word in _PHONETIC_STOPLIST:
+    if (ref_word, hyp_word) in _PHONETIC_STOPLIST:
         return False
     ref_key = devanagari_key(ref_word)
     if len(ref_key) < MIN_KEY_CONSONANTS:
@@ -390,11 +403,10 @@ def reconcile_code_switch(
                     rescues.append(Rescue(ref_p[rs + k], hyp_p[hs + k], MATCHER_PHONETIC, rs + k))
                     replacements.append((hs + k, hs + k + 1, [ref_p[rs + k]]))
 
-    # A phonetic rescue shows the reference word is English, even in Devanagari.
+    # A phonetic rescue keeps the reference word's own tag: the Latin STT word may be
+    # the English word (नेटवर्क / network) or romanized Hindi (सकता / sakta), and
+    # nothing here tells them apart.
     ref_langs = [tag_token(t, primary, secondary) for t in ref_p]
-    for rescue in rescues:
-        if rescue.matcher == MATCHER_PHONETIC:
-            ref_langs[rescue.ref_idx] = secondary
 
     # Rebuild the hypothesis front to back: rescued spans take the reference tokens and tags.
     hyp_tokens: list[str] = []

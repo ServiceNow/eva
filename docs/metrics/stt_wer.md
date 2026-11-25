@@ -56,11 +56,11 @@ Hindi speakers mix English words into Hindi ("मेरा flight कल है"
 When a language config sets `code_switch_languages` (today only `hi`, with `["en"]`), the metric runs in two passes (`src/eva/utils/wer_normalization/code_switch.py`):
 
 1. **Hindi alignment.** Both texts are normalized with the Hindi rules and aligned as usual. This gives `strict_wer`.
-2. **English re-check of the errors.** Each error region (a run of mismatched words, up to 4 words per side) is compared again with an English view of the same text. In that view, Latin-script parts use the English rules ("twenty five" → 25, "I'm" → "i am") and Devanagari parts keep the Hindi rules. With `code_switch_phonetic: true` (on for `hi`), a single English word written in Devanagari on one side and in Latin on the other (`कन्फर्म` / `confirm`) also matches when the two words have the same consonants and a compatible first vowel. Native Hindi words that look like an English word (कमरा / camera) are excluded.
+2. **English re-check of the errors.** Each error region (a run of mismatched words, up to 4 words per side) is compared again with an English view of the same text. In that view, Latin-script parts use the English rules ("twenty five" → 25, "I'm" → "i am") and Devanagari parts keep the Hindi rules. With `code_switch_phonetic: true` (on for `hi`), a single word written in Devanagari on one side and in Latin on the other also matches when the two words have the same consonants and a compatible first vowel. This covers English words (`कन्फर्म` / `confirm`) and Hindi written in Latin script (`सकता` / `sakta`), which both count as correct. Known English look-alikes of native Hindi words (कमरा / camera) are excluded. Words with fewer than three consonants are not compared (`मुझे` / `mujhe`), and some English look-alikes still pass (`बताना` / `button`).
 
 A region stops counting as an error only when the two sides match **and** the intended text is English there. If the intended text has the digit `7` and the STT writes "seven", the user may have said सात, so it stays an error. The STT side must be English too: intended "seven" vs STT सात is a translation and stays an error, even though both normalize to 7. So translation errors are not hidden. Errors can only go down: `wer` ≤ `strict_wer`.
 
-Each intended word is also tagged by language: `en` for Latin script, a known short loanword (कोड, but not the lexicon entries that are ordinary Hindi words such as पास or the month names) or a word the phonetic matcher rescued, `num` for digits, `hi` otherwise. Substitutions and deletions count against the intended word's language, insertions against the inserted word's. Digits are in neither `hi` nor `en`. An English word written in Devanagari that the STT also writes in Devanagari, and that is not in the short-loanword lexicon, is counted as Hindi, so the English share is an undercount.
+Each intended word is also tagged by language: `en` for Latin script, a known short loanword (कोड, but not the lexicon entries that are ordinary Hindi words such as पास or the month names), `num` for digits, `hi` otherwise. Substitutions and deletions count against the intended word's language, insertions against the inserted word's. Digits are in neither `hi` nor `en`. An English word written in Devanagari that the STT also writes in Devanagari, and that is not in the short-loanword lexicon, is counted as Hindi, so the English share is an undercount. A word rescued by the phonetic matcher keeps its own tag, because the matcher can't tell an English word (नेटवर्क / network) from romanized Hindi (सकता / sakta).
 
 Languages without `code_switch_languages` (all except `hi`) are scored exactly as before and have none of the fields below.
 
@@ -127,12 +127,12 @@ Turn 1: intended `मेरी फ़्लाइट seven बजे है` ("m
     "strict_wer": 0.188,
     "code_switch": {
       "languages": ["hi", "en"],
-      "code_switched_words": 4,
+      "code_switched_words": 3,
       "rescued_words": 2,
       "rescues_by_matcher": {"secondary_view": 1, "phonetic": 1},
       "per_language": {
-        "hi": {"wer": 0.083, "ref_words": 12, "errors": 1},
-        "en": {"wer": 0.0, "ref_words": 4, "errors": 0}
+        "hi": {"wer": 0.077, "ref_words": 13, "errors": 1},
+        "en": {"wer": 0.0, "ref_words": 3, "errors": 0}
       }
     },
     "per_turn_code_switch_rescues": {

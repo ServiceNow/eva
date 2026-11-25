@@ -230,11 +230,22 @@ def test_phonetic_plan_examples(ref, hyp, strict, after):
     assert all(r.matcher == "phonetic" for r in result.rescues)
 
 
-def test_phonetic_rescue_tags_the_reference_word_english():
-    # "in my network" (both)
-    result = reconcile_code_switch("मेरे नेटवर्क में", "मेरे network में", "hi", ("en",), phonetic=True)
-    assert result.ref_langs == ["hi", "en", "hi"]
-    assert result.hyp_langs == ["hi", "en", "hi"]
+@pytest.mark.parametrize(
+    "ref,hyp",
+    [
+        # "in my network" (both): an English word written in Devanagari
+        ("मेरे नेटवर्क में", "मेरे network में"),
+        # "I can tell you" (both): Hindi written in Latin script
+        ("मैं बता सकता हूँ", "मैं बता sakta हूँ"),
+    ],
+)
+def test_phonetic_rescue_keeps_the_reference_word_tag(ref, hyp):
+    # The Latin word may be English or romanized Hindi; the matcher can't tell, so the
+    # Devanagari reference word keeps its own tag and the rescued STT word takes it.
+    result = reconcile_code_switch(ref, hyp, "hi", ("en",), phonetic=True)
+    assert [r.matcher for r in result.rescues] == ["phonetic"]
+    assert "en" not in result.ref_langs
+    assert result.hyp_langs == result.ref_langs
 
 
 def test_phonetic_is_off_by_default():
@@ -272,7 +283,18 @@ def test_english_view_rescues_next_to_a_lexicon_word(ref, hyp, rescued):
     assert reconciled_wer(result) == 0.0
 
 
-@pytest.mark.parametrize("deva,latin", [("सकता", "sakta"), ("करेंगे", "karenge"), ("नमस्ते", "namaste")])
+@pytest.mark.parametrize(
+    "deva,latin",
+    [
+        ("सकता", "sakta"),
+        ("करेंगे", "karenge"),
+        ("नमस्ते", "namaste"),
+        # native words whose English look-alike is blocked: the romanized form still matches
+        ("कमरा", "kamra"),
+        ("मिलना", "milna"),
+        ("ज़रूरत", "zaroorat"),
+    ],
+)
 def test_romanized_hindi_counts_as_correct(deva, latin):
     # Hindi written in Latin script by the STT is the same word: the phonetic matcher accepts it.
     assert phonetic_match(deva, latin)

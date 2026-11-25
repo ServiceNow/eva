@@ -201,5 +201,7 @@ class TestSTTWERCodeSwitch:
         assert result.details["strict_wer"] == pytest.approx(0.333)
         assert result.details["wer"] == 0.0
         assert result.details["code_switch"]["rescues_by_matcher"] == {"phonetic": 2}
-        # नेटवर्क, प्रॉब्लम (rescued). लैपटॉप matched exactly and is not in the lexicon, so it stays hi.
-        assert result.details["code_switch"]["per_language"]["en"]["ref_words"] == 2
+        # नेटवर्क and प्रॉब्लम are rescued but keep their hi tag (the matcher can't tell English
+        # from romanized Hindi); लैपटॉप is not in the lexicon. So no intended word is tagged en.
+        assert result.details["code_switch"]["per_language"]["en"]["ref_words"] == 0
+        assert "wer_en" not in result.sub_metrics

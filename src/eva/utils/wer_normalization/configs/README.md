@@ -322,7 +322,9 @@ error. Empty for every other language, which keeps their scores unchanged.
 
 `true` for `hi` only. When `true`, a word written in Devanagari on one side and
 in Latin on the other is also rescued when both sound the same, in either
-direction. Both words are reduced to a consonant key, and the keys must be
+direction. The word may be English (`नेटवर्क` / `network`) or Hindi written in
+Latin script (`सकता` / `sakta`); both count as correct, and the rescued word
+keeps its own language tag. Both words are reduced to a consonant key, and the keys must be
 identical (`नेटवर्क` and `network` are both `ntwrk`):
 
 - The Latin key tries both readings of a soft g (`manager` = `मैनेजर`) and of
@@ -335,8 +337,10 @@ identical (`नेटवर्क` and `network` are both `ntwrk`):
   (`कन्फर्म` / `conform`).
 
 Guards: 1:1 words only, at least three consonants, and a stoplist of native
-Hindi words with an English look-alike (`कल`/`call`, `कमरा`/`camera`,
-`मिलना`/`million`).
+Hindi words paired with their English look-alike (`कमरा`/`camera`,
+`मिलना`/`million`). Only the pair is blocked: `कमरा`/`kamra` still matches.
+Known limits: words with fewer than three consonants are not compared
+(`मुझे`/`mujhe`), and some English look-alikes still pass (`बताना`/`button`).
 
 `hi_loanwords.json` keeps only the loanwords the matcher can't handle: words
 with fewer than three consonants (`code`/`कोड`, `time`/`टाइम`), Hindi forms
