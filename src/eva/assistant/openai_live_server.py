@@ -843,9 +843,6 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
             case "session.input_transcript.delta":
                 self._tracker.on_input_transcript(getattr(event, "delta", "") or "", _now_ms())
 
-            case "session.commentary.appended":
-                logger.info(f"{self._service_name} acknowledged the greeting commentary")
-
             case "session.output_transcript.delta":
                 if not self._logged_first_transcript:
                     self._logged_first_transcript = True
