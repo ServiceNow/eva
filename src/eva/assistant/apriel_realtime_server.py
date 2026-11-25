@@ -276,7 +276,7 @@ class AprielRealtimeAssistantServer(AbstractAssistantServer):
                 "input": {
                     "format": {"type": "audio/pcm", "rate": 24000},
                     "turn_detection": {
-                        "type": vad.get("type", "server_vad"),
+                        "type": vad.get("type", "semantic_vad"),
                         "threshold": vad.get("threshold", 0.5),
                         "prefix_padding_ms": vad.get("prefix_padding_ms", 300),
                         "silence_duration_ms": vad.get("silence_duration_ms", 200),
