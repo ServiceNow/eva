@@ -51,7 +51,7 @@ A language config can also opt into three rules for patterns that only some lang
 
 #### Code-switching (Hindi)
 
-Hindi speakers mix English words into Hindi ("मेरा flight कल है"). The intended text and the STT transcript often write those words differently: in a different form (`seven बजे` vs `7 बजे`, `I'm` vs `I am`) or in a different script (`मार्च` vs `march`). With Hindi rules alone, a correct transcript would be scored as wrong.
+Hindi speakers mix English words into Hindi ("मेरा flight कल है", "my flight is tomorrow"). The intended text and the STT transcript often write those words differently: in a different form (`seven बजे` vs `7 बजे`, `I'm` vs `I am`) or in a different script (`मार्च` vs `march`). With Hindi rules alone, a correct transcript would be scored as wrong.
 
 When a language config sets `code_switch_languages` (today only `hi`, with `["en"]`), the metric runs in two passes (`src/eva/utils/wer_normalization/code_switch.py`):
 
@@ -114,7 +114,7 @@ That said, the auto-generated configs can be brittle. The LLM generation step is
 
 ### Hindi (code-switching)
 
-Turn 1: intended `मेरी फ़्लाइट seven बजे है`, STT `मेरी फ़्लाइट 7 बजे है`. Turn 2: intended `मुझे अपना कन्फर्मेशन कोड चाहिए`, STT `मुझे अपना confirmation कोड चाहिए`. Turn 3 has one real error (a dropped `हैं`). The standard fields are as above (omitted here); these are added:
+Turn 1: intended `मेरी फ़्लाइट seven बजे है` ("my flight is at seven o'clock"), STT `मेरी फ़्लाइट 7 बजे है`. Turn 2: intended `मुझे अपना कन्फर्मेशन कोड चाहिए`, STT `मुझे अपना confirmation कोड चाहिए`. Turn 3 has one real error (a dropped `हैं`). The standard fields are as above (omitted here); these are added:
 
 ```json
 {
