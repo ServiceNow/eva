@@ -118,6 +118,56 @@ python main.py --domain airline
 
 `s2s_params`: `api_key`, `model` and `assistant_agent_id` (the agent for the run's domain) are required, as for ElevenLabs. `model` must match the model configured on the agent; `alias` optionally labels the run. `base_url` (default `wss://api.cartesia.ai`) and `cartesia_version` are optional. `EVA_MODEL__LLM` must be unset, as for any S2S run.
 
+### Krisp Managed Voice Agent
+
+`framework: krisp` runs a published Krisp managed voice agent as a phone call over its Twilio-style media stream. The platform runs the whole agent loop: Krisp speech-to-text and text-to-speech, turn-taking, interruptions and tool calling, around the reasoning model below. Krisp provisions one agent per domain from EVA's realtime system prompt, greeting and tools, and hands over everything a run needs: the API URL, each domain's agent ID and team token, the gateway secret, and the tool address setup described below.
+
+Known gaps against Cartesia's setup:
+
+- **Scenario date.** By default (`"call_date": "session"`) the prompt carries EVA's own line, `Today is {{vars.datetime}}.`, and the server sends the scenario's date when each call starts; if the platform does not accept it, every call fails as unscoreable, so try one record first. With `"call_date": "clock"`, the line tells the agent to call `get_current_datetime`, a tool the assistant server answers with the scenario's date. Every other line of the prompt is EVA's.
+- **Tools.** EVA's tools are HTTP tools that call a gateway hosted by the assistant server on `gateway_port` (default 8290). Krisp points each agent's tools at one fixed HTTPS address that forwards to that port: either a tunnel Krisp sets up, started next to EVA with `cloudflared tunnel run --token <tunnel token>` (outbound HTTPS only), or an address of your own that reaches the port. Each call carries the session id and the shared gateway secret. The domains share the address, so run them one after another.
+- **Tool names.** Names are unique per platform team, and the three domains define shared names such as `transfer_to_agent` differently, so each domain's agent lives in its own team with its own token.
+- **Transcript.** The media stream carries audio only. The server times each agent turn from the audio and reads the text from the platform's session history after the call; text the caller never heard because of an interruption is cut and marked `[interrupted]`.
+
+The assistant server checks the published agent against the run config and refuses to start if they don't match:
+
+| EVA option | Agent setting |
+|---|---|
+| `EVA_LANGUAGE` | the agent's supported languages and its greeting for that language |
+| `EVA_MODEL__PRE_TOOL_SPEECH` (`auto` or `off`) | the system prompt (the lead-in instruction is part of it) |
+| `s2s_params.model` | the agent's model |
+| `s2s_params.preamble` (`on` or `off`) | each tool's lead-ins, except `get_current_datetime` |
+| the domain's tools | the agent's tools (EVA's, plus `get_current_datetime` unless `call_date` is `session`) |
+
+```bash
+EVA_FRAMEWORK=krisp \
+EVA_MODEL__S2S=krisp \
+EVA_MODEL__PRE_TOOL_SPEECH=off \
+KRISP_GATEWAY_SECRET='<gateway secret>' \
+EVA_MODEL__S2S_PARAMS='{"model": "gpt-5.5", "api_url": "<API URL>", "api_key": "<airline team token>", "assistant_agent_id": "<airline agent id>"}' \
+python main.py --domain airline
+```
+
+Krisp evaluates this configuration:
+
+| Component | Parameter | Value |
+|-----------|-----------|-------|
+| LLM | Model | `gpt-5.5` |
+| | Reasoning effort | `none` |
+| | Service tier | `priority` |
+| STT | Engine | Krisp STT |
+| | Voice isolation | on |
+| TTS | Engine and voice | Krisp TTS, voice "Eva" |
+| Tools | Pre-tool speech | templated platform lead-ins ("One moment.", "Let me check.", ...) on every tool |
+| | Execution | HTTP call to the assistant server's gateway; writes are never replayed |
+| Prompt | Scenario date | sent per call (`call_date: session`) |
+| Agent | Turn taking | the platform's default turn hold |
+| Audio | Media stream | 8 kHz mu-law, both directions |
+
+The platform speaks the lead-ins, so the run uses `EVA_MODEL__PRE_TOOL_SPEECH=off` and the prompt carries no lead-in instruction; the run declares the setting as `s2s_params.preamble`, which the server checks against the tools.
+
+`s2s_params`: `api_url`, `api_key`, `model` and `assistant_agent_id` are required; `preamble` defaults to `on` and `call_date` to `session`. `gateway_secret` (or `KRISP_GATEWAY_SECRET`) must match the secret the agent's tools send; `gateway_port` defaults to 8290. `media_stream_url` overrides the stream endpoint derived from the session exchange. `EVA_MODEL__LLM` must be unset, as for any S2S run.
+
 ## Judge Models
 
 The table below lists the API-hosted models used as a judge.
