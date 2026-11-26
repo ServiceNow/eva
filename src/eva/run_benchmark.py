@@ -12,12 +12,21 @@ from eva.orchestrator.runner import BenchmarkRunner
 from eva.utils import router
 from eva.utils.llm_client import LLMClient
 from eva.utils.logging import get_logger, setup_logging
+from eva.utils.loop_watchdog import LoopWatchdog
 
 load_dotenv()
 
 
 async def run_benchmark(config: RunConfig) -> int:
     """Run the benchmark end-to-end and return an exit code."""
+    watchdog = LoopWatchdog.from_env()
+    if watchdog is None:
+        return await _run_benchmark(config)
+    with watchdog:
+        return await _run_benchmark(config)
+
+
+async def _run_benchmark(config: RunConfig) -> int:
     # Install custom hook to suppress threading cleanup errors at shutdown
     sys.unraisablehook = _suppress_threading_cleanup_error
 
