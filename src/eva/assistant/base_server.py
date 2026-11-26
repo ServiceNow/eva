@@ -30,6 +30,13 @@ logger = get_logger(__name__)
 SAMPLE_RATE = 24000
 
 
+RECORD_INVALID_REASON = "record_invalid"
+
+
+class RecordInvalidError(RuntimeError):
+    """Raised by ``stop()`` when the call's outputs must not be scored; the record is re-dialled."""
+
+
 class AbstractAssistantServer(ABC):
     """Base class for all assistant server implementations.
 

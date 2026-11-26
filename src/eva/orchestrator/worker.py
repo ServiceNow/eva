@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from eva.assistant.base_server import AbstractAssistantServer
+from eva.assistant.base_server import RECORD_INVALID_REASON, AbstractAssistantServer, RecordInvalidError
 from eva.models.agents import AgentConfig
 from eva.models.config import RunConfig
 from eva.models.record import EvaluationRecord
@@ -138,6 +138,7 @@ class ConversationWorker:
         self._conversation_stats: dict[str, Any] = {}
         self._log_file_handler = None
         self.deferred_audio_task: asyncio.Task | None = None
+        self._invalid_record: RecordInvalidError | None = None
 
     async def run(self) -> ConversationResult:
         """Execute one complete conversation.
@@ -207,6 +208,11 @@ class ConversationWorker:
             )
         finally:
             await self._cleanup()
+        if self._invalid_record is not None:
+            conversation_ended_reason = RECORD_INVALID_REASON
+            if error is None:
+                error = str(self._invalid_record)
+                error_details = create_error_details(error=self._invalid_record, retry_count=0, retry_succeeded=False)
 
         try:
             # If the conversation errored, return a failed result immediately.
@@ -222,7 +228,9 @@ class ConversationWorker:
                     ended_at=now,
                     duration_seconds=(now - started_at).total_seconds(),
                     output_dir=str(self.output_dir),
-                    conversation_ended_reason="error",
+                    conversation_ended_reason=(
+                        RECORD_INVALID_REASON if conversation_ended_reason == RECORD_INVALID_REASON else "error"
+                    ),
                 )
 
             ended_at = datetime.now()
@@ -433,6 +441,9 @@ class ConversationWorker:
         if self._assistant_server:
             try:
                 self.deferred_audio_task = await self._assistant_server.stop()
+            except RecordInvalidError as e:
+                logger.error(f"Record outputs invalid, it will be re-dialled: {e}")
+                self._invalid_record = e
             except Exception as e:
                 logger.warning(f"Error stopping assistant server: {e}")
             self._assistant_server = None

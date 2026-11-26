@@ -12,6 +12,7 @@ from typing import Any, TextIO
 from tqdm.asyncio import tqdm
 from tqdm.std import Bar
 
+from eva.assistant.base_server import RECORD_INVALID_REASON
 from eva.metrics.legacy_aliases import rename_metric_keys, rename_metric_list
 from eva.metrics.runner import MetricsRunner
 from eva.models.agents import AgentConfig
@@ -31,6 +32,11 @@ logger = get_logger(__name__)
 
 # Register a bright blue progress-bar colour.
 Bar.COLOURS["BRIGHT_BLUE"] = "\x1b[94m"
+
+
+def is_record_invalid(result: object) -> bool:
+    """True when the assistant server said the call's outputs must not be scored."""
+    return isinstance(result, ConversationResult) and result.conversation_ended_reason == RECORD_INVALID_REASON
 
 
 class TqdmNewlineStream:
@@ -325,6 +331,10 @@ class BenchmarkRunner:
                         except Exception as e:
                             logger.warning(f"Audio save failed for {output_id}: {e}")
 
+                    if is_record_invalid(result):
+                        logger.warning(f"{output_id}: assistant server marked the outputs unscoreable; re-dialling")
+                        return output_id, result, False, None
+
                     # Phase 5: Validate this record (gate + LLM metrics)
                     vr = await pipeline_validation_runner.validate_one(output_id)
 
@@ -389,6 +399,8 @@ class BenchmarkRunner:
                 cr = result_map.get(oid)
                 hit_time_limit = cr is not None and cr.conversation_ended_reason == "time_limit_exceeded"
                 reason = "time_limit_exceeded" if hit_time_limit else "not_finished"
+                if is_record_invalid(cr):
+                    reason = RECORD_INVALID_REASON
                 if hit_time_limit:
                     time_limit_attempt_counts[oid] = time_limit_attempt_counts.get(oid, 0) + 1
                     # Eagerly run LLM validation (skip gate) on every time-limit attempt
@@ -502,8 +514,14 @@ class BenchmarkRunner:
         successful_ids = (set(all_output_ids) - final_failed_ids) | already_passed_ids
 
         # Categorize failures
+        def _last_reason(oid: str) -> str | None:
+            return (rerun_history.get(oid) or [{}])[-1].get("reason")
+
         not_finished_count = sum(
-            1 for oid in final_failed_ids if not check_conversation_finished(self.output_dir / "records" / oid)
+            1
+            for oid in final_failed_ids
+            if _last_reason(oid) == RECORD_INVALID_REASON
+            or not check_conversation_finished(self.output_dir / "records" / oid)
         )
         validation_failed_count = len(final_failed_ids) - not_finished_count
 

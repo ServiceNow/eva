@@ -269,6 +269,22 @@ class TestCleanup:
         assert worker._assistant_server is None
 
     @pytest.mark.asyncio
+    async def test_invalid_record_from_stop_is_kept_for_the_result(self, tmp_path):
+        from eva.assistant.base_server import RecordInvalidError
+
+        worker = _make_worker(tmp_path)
+        worker._assistant_server = MagicMock(stop=AsyncMock(side_effect=RecordInvalidError("tool gateway unreachable")))
+        await worker._cleanup()
+        assert str(worker._invalid_record) == "tool gateway unreachable" and worker._assistant_server is None
+
+    @pytest.mark.asyncio
+    async def test_other_stop_errors_do_not_invalidate_the_record(self, tmp_path):
+        worker = _make_worker(tmp_path)
+        worker._assistant_server = MagicMock(stop=AsyncMock(side_effect=RuntimeError("socket error")))
+        await worker._cleanup()
+        assert worker._invalid_record is None
+
+    @pytest.mark.asyncio
     async def test_cleanup_when_nothing_initialized(self, tmp_path):
         worker = _make_worker(tmp_path)
         await worker._cleanup()  # Should not raise
@@ -280,6 +296,37 @@ class TestRunConversation:
         worker = _make_worker(tmp_path)
         with pytest.raises(RuntimeError, match="User simulator not initialized"):
             await worker._run_conversation()
+
+    @pytest.mark.asyncio
+    async def test_a_call_with_invalid_outputs_is_a_failed_result(self, tmp_path):
+        from eva.assistant.base_server import RecordInvalidError
+
+        worker = _make_worker(tmp_path)
+        worker._start_assistant = AsyncMock()
+        worker._start_user_simulator = AsyncMock()
+        worker._run_conversation = AsyncMock(return_value="goodbye")
+        worker._assistant_server = MagicMock(stop=AsyncMock(side_effect=RecordInvalidError("tool gateway unreachable")))
+        worker.config.conversation_time_limit_seconds = 60
+        result = await worker.run()
+        from eva.assistant.base_server import RECORD_INVALID_REASON
+
+        assert not result.completed and result.error == "tool gateway unreachable"
+        assert result.conversation_ended_reason == RECORD_INVALID_REASON
+
+    @pytest.mark.asyncio
+    async def test_a_call_with_invalid_outputs_stays_invalid_after_another_error(self, tmp_path):
+        from eva.assistant.base_server import RECORD_INVALID_REASON, RecordInvalidError
+
+        worker = _make_worker(tmp_path)
+        worker._start_assistant = AsyncMock()
+        worker._start_user_simulator = AsyncMock()
+        worker._run_conversation = AsyncMock(side_effect=RuntimeError("caller socket closed"))
+        worker._assistant_server = MagicMock(stop=AsyncMock(side_effect=RecordInvalidError("tool gateway unreachable")))
+        worker.config.conversation_time_limit_seconds = 60
+        result = await worker.run()
+
+        assert not result.completed and result.error == "caller socket closed"
+        assert result.conversation_ended_reason == RECORD_INVALID_REASON
 
 
 class TestUserSimulatorSelection:

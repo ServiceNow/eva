@@ -4,13 +4,15 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from eva.assistant.base_server import RECORD_INVALID_REASON
 from eva.models.config import ModelConfig, RunConfig
 from eva.models.results import ConversationResult
-from eva.orchestrator.runner import BenchmarkRunner
+from eva.orchestrator.runner import BenchmarkRunner, is_record_invalid
+from eva.orchestrator.validation_runner import ValidationResult
 from tests.unit.conftest import make_evaluation_record
 
 _MODEL_LIST = [{"model_name": "test", "litellm_params": {"model": "test"}}]
@@ -378,3 +380,85 @@ class TestFromExistingRun:
 
         with pytest.raises(FileNotFoundError, match="config.json not found"):
             BenchmarkRunner.from_existing_run(run_dir)
+
+
+def _result(reason: str) -> ConversationResult:
+    now = datetime(2026, 1, 1, 10, 0)
+    return ConversationResult(
+        record_id="rec-1",
+        completed=False,
+        started_at=now,
+        ended_at=now,
+        duration_seconds=1.0,
+        output_dir="/out",
+        num_turns=1,
+        num_tool_calls=0,
+        conversation_ended_reason=reason,
+    )
+
+
+@pytest.mark.parametrize(
+    ("result", "invalid"),
+    [
+        (_result(RECORD_INVALID_REASON), True),
+        (_result("error"), False),
+        (_result("goodbye"), False),
+        (RuntimeError(RECORD_INVALID_REASON), False),
+    ],
+)
+def test_only_a_result_marked_unscoreable_skips_validation(result, invalid):
+    assert is_record_invalid(result) is invalid
+
+
+@pytest.mark.parametrize(("reason", "validated"), [(RECORD_INVALID_REASON, 0), ("goodbye", 2)])
+@pytest.mark.asyncio
+async def test_an_unscoreable_call_is_re_dialled_without_validation(tmp_path, reason, validated):
+    config = _make_config(tmp_path)
+    config.max_rerun_attempts, config.metrics = 2, []
+    runner = _make_runner(config)
+    record = _make_record("1.1.1")
+    dial = AsyncMock(return_value=(_result(reason), None))
+    failed = ValidationResult(passed=False, failed_metrics=["user_speech_fidelity"])
+    validator = MagicMock(validate_one=AsyncMock(return_value=failed))
+    with (
+        patch("eva.orchestrator.runner.run_preflight", AsyncMock()),
+        patch("eva.orchestrator.runner.ValidationRunner", return_value=validator),
+        patch.object(runner.port_pool, "initialize", AsyncMock()),
+        patch.object(runner, "_run_conversation", dial),
+    ):
+        await runner._run(
+            pending_ids=["1.1.1"],
+            all_output_ids=["1.1.1"],
+            output_id_to_record={"1.1.1": record},
+            started_at=datetime(2026, 1, 1),
+        )
+    assert dial.await_count == 2
+    assert validator.validate_one.await_count == validated
+
+
+@pytest.mark.asyncio
+async def test_an_unscoreable_call_is_reported_as_not_finished(tmp_path):
+    config = _make_config(tmp_path)
+    config.max_rerun_attempts, config.metrics = 2, []
+    runner = _make_runner(config)
+    record = _make_record("1.1.1")
+    (runner.output_dir / "records" / "1.1.1").mkdir(parents=True, exist_ok=True)
+    dial = AsyncMock(return_value=(_result(RECORD_INVALID_REASON), None))
+    validator = MagicMock(validate_one=AsyncMock())
+    with (
+        patch("eva.orchestrator.runner.run_preflight", AsyncMock()),
+        patch("eva.orchestrator.runner.ValidationRunner", return_value=validator),
+        patch("eva.orchestrator.runner.check_conversation_finished", return_value=True),
+        patch.object(runner.port_pool, "initialize", AsyncMock()),
+        patch.object(runner, "_run_conversation", dial),
+    ):
+        await runner._run(
+            pending_ids=["1.1.1"],
+            all_output_ids=["1.1.1"],
+            output_id_to_record={"1.1.1": record},
+            started_at=datetime(2026, 1, 1),
+        )
+    summary = json.loads((runner.output_dir / "evaluation_summary.json").read_text())
+    assert summary["simulation"]["not_finished_count"] == 1
+    assert summary["simulation"]["validation_failed_count"] == 0
+    assert summary["final_failures"]["1.1.1"]["reason"] == RECORD_INVALID_REASON
