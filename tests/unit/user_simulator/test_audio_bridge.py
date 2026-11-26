@@ -159,6 +159,23 @@ class TestAudioStateTransitions:
         assert isinstance(args[1], float)
 
     @pytest.mark.asyncio
+    async def test_user_speech_stop_is_sent_in_wall_clock_ms(self):
+        """Assistant servers subtract this from wall-clock time to get response latency."""
+        from websockets.protocol import State as WebSocketState
+
+        iface = _make_interface()
+        iface._user_audio_active = True
+        iface._last_user_audio_send_time = 149.4
+        iface.websocket = MagicMock(state=WebSocketState.OPEN, send=AsyncMock())
+
+        with patch("eva.user_simulator.audio_bridge.time.time", return_value=1_000_000.0):
+            await iface._on_user_audio_end(150.0)
+
+        sent = json.loads(iface.websocket.send.call_args.args[0])
+        assert sent["event"] == "user_speech_stop"
+        assert sent["timestamp_ms"] == "999999400"
+
+    @pytest.mark.asyncio
     async def test_assistant_end_records_timestamp(self):
         event_logger = MagicMock()
         iface = _make_interface(event_logger=event_logger)
