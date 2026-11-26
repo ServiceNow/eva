@@ -6,6 +6,7 @@ responses and user utterances) are accurate by sending a redacted conversation
 trace alongside the agent audio to Gemini.
 """
 
+import asyncio
 import json
 from typing import Any
 
@@ -37,7 +38,8 @@ class SpeechFidelityMetric(SpeechFidelityBaseMetric):
     async def compute(self, context: MetricContext) -> MetricScore:
         """Compute entity fidelity score using redacted conversation trace + audio."""
         try:
-            audio_segment = self.load_role_audio(context, self.role)
+            # Off the event loop; see SpeechFidelityBaseMetric.compute.
+            audio_segment = await asyncio.to_thread(self.load_role_audio, context, self.role)
             if audio_segment is None:
                 return MetricScore(
                     name=self.name,
@@ -47,7 +49,7 @@ class SpeechFidelityMetric(SpeechFidelityBaseMetric):
                 )
 
             if self.trim_silence:
-                audio_segment = self._trim_silence(audio_segment, context)
+                audio_segment = await asyncio.to_thread(self._trim_silence, audio_segment, context)
 
             redacted_trace = self._build_redacted_trace(context)
             assistant_turn_ids = self._get_assistant_turn_ids(redacted_trace)
@@ -62,7 +64,7 @@ class SpeechFidelityMetric(SpeechFidelityBaseMetric):
 
             num_turns = len(assistant_turn_ids)
             trace_formatted = self._format_redacted_trace(redacted_trace)
-            audio_b64 = self.encode_audio_segment(audio_segment)
+            audio_b64 = await asyncio.to_thread(self.encode_audio_segment, audio_segment)
 
             prompt = self.get_judge_prompt(
                 language=context.language,
