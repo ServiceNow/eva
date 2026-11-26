@@ -499,5 +499,30 @@
   "decimal_separator": "dot",
   "thousand_separators": [
     "comma"
-  ]
+  ],
+  "char_folds": {
+    "़": "",
+    "ँ": "ं",
+    "क़": "क",
+    "ख़": "ख",
+    "ग़": "ग",
+    "ज़": "ज",
+    "ड़": "ड",
+    "ढ़": "ढ",
+    "फ़": "फ",
+    "य़": "य"
+  },
+  "char_fold_words": {
+    "ज़ी": "ज़ेड"
+  },
+  "join_hyphenated_compounds": true,
+  "spoken_symbols": {
+    "डैश": "-",
+    "अंडरस्कोर": "_",
+    "underscore": "_",
+    "स्लैश": "/"
+  },
+  "spoken_symbols_code_only": {
+    "slash": "/"
+  }
 }

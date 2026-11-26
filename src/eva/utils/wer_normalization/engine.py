@@ -12,6 +12,7 @@ keep dedicated normalizer classes; this engine is for alphabetic languages.
 
 import json
 import re
+import unicodedata
 from collections.abc import Iterator
 from fractions import Fraction
 from pathlib import Path
@@ -105,12 +106,46 @@ class LanguageConfig(BaseModel):
     # outer text normalizer uses ``remove_symbols_keep_marks`` instead of
     # ``remove_symbols_and_diacritics`` so vowel signs survive.
     preserve_combining_marks: bool = False
+    # Single-character orthographic folds applied (after NFC) right after
+    # lowercasing, to the text and to all number-word vocab. Values may be
+    # multi-character. HI: nukta -> "", chandrabindu -> anusvara;
+    # DE: ä -> ae, ö -> oe, ü -> ue, ß -> ss.
+    char_folds: dict[str, str] = Field(default_factory=dict)
+    # Whole words replaced before ``char_folds``, for a word the folds would merge
+    # with a different word. HI: ज़ी (letter Z) -> ज़ेड, so it does not fold into
+    # जी (letter G).
+    char_fold_words: dict[str, str] = Field(default_factory=dict)
+
+    # --- Pre-normalization (applied in wer_utils.normalize_text) -----------
+    # Join letter-only hyphenated compounds ("anmelde-konto" -> "anmeldekonto").
+    # Digit-bearing hyphen groups are always joined, for every language.
+    join_hyphenated_compounds: bool = False
+    # Spoken punctuation words used when spelling IDs, mapped to the written
+    # symbol: {"trait d'union": "-"}. Replaced (glued) when the word sits
+    # between two word tokens. Matching ignores case; spaces / apostrophes in
+    # a phrase match any whitespace or apostrophe.
+    spoken_symbols: dict[str, str] = Field(default_factory=dict)
+    # Same, for words that are also common in ordinary speech (es "barra",
+    # de "Strich"): only replaced when a neighbouring token looks like a code
+    # (contains a digit, or is all uppercase letters, e.g. "ABC" / "A").
+    spoken_symbols_code_only: dict[str, str] = Field(default_factory=dict)
 
     @classmethod
     def load(cls, language: str) -> "LanguageConfig":
         path = CONFIGS_DIR / f"{language}.json"
         with open(path) as f:
             return cls.model_validate(json.load(f))
+
+
+def make_char_folder(char_folds: dict[str, str]):
+    """Return a str -> str function applying NFC + ``char_folds`` (identity when empty)."""
+    if not char_folds:
+        return lambda s: s
+    for k in char_folds:
+        if len(k) != 1:
+            raise ValueError(f"char_folds keys must be single characters, got {k!r}")
+    table = str.maketrans(char_folds)
+    return lambda s: unicodedata.normalize("NFC", s).translate(table)
 
 
 class GenericNumberNormalizer:
@@ -128,7 +163,9 @@ class GenericNumberNormalizer:
         # the input. Without this, vocab entries like "zwölf"/"dreißig"/"fünf"
         # never match because the input has already been folded to ASCII.
         _strip_fn = remove_symbols_keep_marks if config.preserve_combining_marks else remove_symbols_and_diacritics
-        strip = lambda w: _strip_fn(w, keep="")  # noqa: E731
+        # Vocab must see the same char folds as the text (e.g. de "fünf" -> "fuenf").
+        fold = make_char_folder(config.char_folds)
+        strip = lambda w: _strip_fn(fold(w), keep="")  # noqa: E731
         _strip_dict = lambda d: {strip(k): v for k, v in d.items()}  # noqa: E731
         # For suffixed dicts the value is (int, suffix_str); strip the suffix too,
         # otherwise emitted tokens (e.g. "2ème") won't match digit-form outputs
@@ -179,7 +216,7 @@ class GenericNumberNormalizer:
         if config.reversed_units and self.cardinals:
             cardinals_pat = "|".join(re.escape(w) for w in sorted(self.cardinals, key=len, reverse=True))
             if config.conjunction_word and self.tens:
-                conj_stripped = remove_symbols_and_diacritics(config.conjunction_word, keep="")
+                conj_stripped = remove_symbols_and_diacritics(fold(config.conjunction_word), keep="")
                 tens_pat = "|".join(re.escape(w) for w in sorted(self.tens, key=len, reverse=True))
                 conj = re.escape(conj_stripped)
                 self._reversed_units_glued = re.compile(rf"\b({cardinals_pat}){conj}({tens_pat})\b", re.IGNORECASE)
@@ -235,7 +272,11 @@ class GenericNumberNormalizer:
         if not words:
             return
 
-        for prev, current, nxt in windowed([None] + words + [None], 3):
+        # Index of the word that left a round group ("70" from soixante-dix) at the
+        # end of a digit-string value, so a following ones word can still fill it.
+        open_tail_index: int | None = None
+
+        for i, (prev, current, nxt) in enumerate(windowed([None] + words + [None], 3)):
             if skip:
                 skip = False
                 continue
@@ -266,9 +307,16 @@ class GenericNumberNormalizer:
                 if value is None:
                     value = n
                 elif self._cardinal_should_concat_as_str(prev, value):
-                    if prev in self.tens and n < 10:
-                        assert isinstance(value, str) and value[-1] == "0"
+                    tail_open = isinstance(value, str) and (prev in self.tens or open_tail_index == i - 1)
+                    if tail_open and n < 10:
+                        assert value[-1] == "0"
                         value = value[:-1] + str(n)
+                    elif tail_open and int(value[-2:]) in self.config.additive_teen_residuals[1:]:
+                        # Digit string ending in a vigesimal group (fr 60 / 80): add the teen
+                        # as in a standalone number ("... soixante dix" -> ...70, not ...6010).
+                        value = value[:-2] + str(int(value[-2:]) + n)
+                        if value[-1] == "0":
+                            open_tail_index = i
                     else:
                         value = str(value) + str(n)
                 elif n < 10:
@@ -312,6 +360,16 @@ class GenericNumberNormalizer:
                     base = (value // 100) * 100
                     digit = value % 100
                     value = base + digit * self.config.vigesimal_multiplier
+                elif (
+                    current in self.vigesimal_trigger_words
+                    and isinstance(value, str)
+                    and prev in self.cardinals
+                    and self.cardinals[prev] in self.config.vigesimal_residuals
+                    and value.endswith(str(self.cardinals[prev]))
+                ):
+                    # Same inside a digit string: "... douze quatre vingt" -> ...1280.
+                    value = value[:-1] + str(self.cardinals[prev] * self.config.vigesimal_multiplier)
+                    open_tail_index = i
                 elif value is None:
                     value = tens
                 elif isinstance(value, str):
@@ -574,13 +632,28 @@ class GenericTextNormalizer(BaseTextNormalizer):
     def __init__(self, config: LanguageConfig):
         self.config = config
         self.standardize_numbers = GenericNumberNormalizer(config)
+        self._fold = make_char_folder(config.char_folds)
+        self._fold_words = {unicodedata.normalize("NFC", k): v for k, v in config.char_fold_words.items()}
+        self._fold_words_re = (
+            re.compile(
+                r"(?<![\w\u0900-\u097f])(?:"
+                + "|".join(map(re.escape, sorted(self._fold_words, key=len, reverse=True)))
+                + r")(?![\w\u0900-\u097f])"
+            )
+            if self._fold_words
+            else None
+        )
         self.spelling_map: dict[str, str] = {}
         if config.spelling_map_path:
             with open(CONFIGS_DIR / config.spelling_map_path) as f:
-                self.spelling_map = json.load(f)
+                # Values are compared against folded text, so fold them too.
+                self.spelling_map = {k: self._fold(v) for k, v in json.load(f).items()}
 
     def __call__(self, s: str) -> str:
         s = s.lower()
+        if self._fold_words_re is not None:
+            s = self._fold_words_re.sub(lambda m: self._fold_words[m.group()], unicodedata.normalize("NFC", s))
+        s = self._fold(s)
         s = self._remove_markup(s)
         s = self._apply_ignore_patterns(s, self.config.ignore_patterns)
         if self.config.strip_space_before_apostrophe:
